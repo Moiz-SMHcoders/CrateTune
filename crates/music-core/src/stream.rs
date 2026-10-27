@@ -1,7 +1,44 @@
+use std::io::Read;
+use std::sync::Arc;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
+use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
-use crate::http::{agent, read_body};
+use crate::buffer::{BufferEnd, StreamBuffer};
+use crate::http::agent;
 use crate::{Error, Result};
+
+/// Which of the formats a resolver returns to prefer.
+///
+/// [`IosClientResolver`] picks among YouTube's audio-only itags: 139 (HE-AAC
+/// ~48 kbps), 140 (AAC-LC 128 kbps), and Opus in WebM 249 (~50 kbps), 250
+/// (~70 kbps), 251 (~130-160 kbps). Every one of them decodes (Opus with the
+/// pure-Rust `opus-decoder`), so the order only trades bandwidth for quality;
+/// whatever is missing for a video falls through to the next entry.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum Quality {
+    /// Smallest streams: 139, then 249, 250, 140, 251.
+    Low,
+    /// AAC 128 kbps first (the long-standing default): 140, 251, 250, 139, 249.
+    #[default]
+    Normal,
+    /// Best available: Opus 251, then 140, 250, 139, 249.
+    High,
+}
+
+impl Quality {
+    pub const ALL: [Quality; 3] = [Quality::Low, Quality::Normal, Quality::High];
+
+    /// YouTube itags in order of preference.
+    pub fn preferred_itags(self) -> &'static [u32] {
+        match self {
+            Quality::Low => &[139, 249, 250, 140, 251],
+            Quality::Normal => &[140, 251, 250, 139, 249],
+            Quality::High => &[251, 140, 250, 139, 249],
+        }
+    }
+}
 
 /// A playable audio stream for one video.
 #[derive(Debug, Clone)]
@@ -24,6 +61,13 @@ pub struct ResolvedStream {
 /// provider, behind this same trait.
 pub trait StreamResolver: Send + Sync {
     fn resolve(&self, video_id: &str) -> Result<ResolvedStream>;
+
+    /// Like [`Self::resolve`], preferring formats according to `quality`.
+    /// Resolvers with a single format can keep the default, which ignores it.
+    fn resolve_with_quality(&self, video_id: &str, quality: Quality) -> Result<ResolvedStream> {
+        let _ = quality;
+        self.resolve(video_id)
+    }
 }
 
 /// Uses the iOS client, which currently returns plain (un-ciphered) URLs
@@ -34,13 +78,16 @@ pub struct IosClientResolver;
 const IOS_VERSION: &str = "20.10.4";
 const IOS_UA: &str =
     "com.google.ios.youtube/20.10.4 (iPhone16,2; U; CPU iOS 18_3_2 like Mac OS X;)";
-/// AAC-LC 128 kbps in MP4, then 48 kbps HE-AAC. Both decode with Symphonia alone.
-const PREFERRED_ITAGS: [u64; 2] = [140, 139];
 /// googlevideo answers 403 to iOS-client ranges above 1 MiB.
-const CHUNK_BYTES: u64 = 1024 * 1024;
+pub(crate) const CHUNK_BYTES: u64 = 1024 * 1024;
 
 impl StreamResolver for IosClientResolver {
+    /// Same as `resolve_with_quality(video_id, Quality::Normal)`: AAC 128 kbps when available.
     fn resolve(&self, video_id: &str) -> Result<ResolvedStream> {
+        self.resolve_with_quality(video_id, Quality::Normal)
+    }
+
+    fn resolve_with_quality(&self, video_id: &str, quality: Quality) -> Result<ResolvedStream> {
         let body = json!({
             "context": { "client": {
                 "clientName": "IOS",
@@ -82,14 +129,16 @@ impl StreamResolver for IosClientResolver {
             .pointer("/streamingData/adaptiveFormats")
             .and_then(Value::as_array)
             .ok_or_else(|| Error::Parse("player: no adaptiveFormats".into()))?;
-        let format = PREFERRED_ITAGS
+        let format = quality
+            .preferred_itags()
             .iter()
             .find_map(|itag| {
                 formats.iter().find(|f| {
-                    f.get("itag").and_then(Value::as_u64) == Some(*itag) && f.get("url").is_some()
+                    f.get("itag").and_then(Value::as_u64) == Some(u64::from(*itag))
+                        && f.get("url").is_some()
                 })
             })
-            .ok_or_else(|| Error::Unplayable("no cipher-free AAC format".into()))?;
+            .ok_or_else(|| Error::Unplayable("no cipher-free audio format".into()))?;
 
         Ok(ResolvedStream {
             url: format["url"].as_str().unwrap_or_default().to_owned(),
@@ -119,44 +168,422 @@ impl ResolvedStream {
     /// `complete: false` so the spike can still play a ~60 s preview; full
     /// playback needs a real PoToken provider behind [`StreamResolver`].
     ///
-    /// Spike shortcut: a real player streams progressively into a seekable
-    /// buffer instead of waiting for the download.
+    /// The player streams instead (see [`Self::download_into`]).
     pub fn download(&self) -> Result<Download> {
-        let total = self.content_length;
-        let mut bytes = Vec::with_capacity(total.unwrap_or(CHUNK_BYTES) as usize);
+        let buffer = StreamBuffer::new(self.content_length);
+        self.download_into(&buffer);
+        match buffer.end() {
+            Some(BufferEnd::Failed(msg)) => Err(Error::Audio(msg)),
+            end => Ok(Download {
+                complete: end == Some(BufferEnd::Complete),
+                bytes: buffer.to_vec(),
+            }),
+        }
+    }
+
+    /// Downloads into `buffer` as the bytes arrive, then marks how it ended
+    /// ([`BufferEnd::Truncated`] for a preview cut off with 403). Blocking; stops
+    /// early when the buffer is cancelled.
+    pub fn download_into(&self, buffer: &Arc<StreamBuffer>) {
+        Downloader::new(self.clone(), buffer.clone(), CHUNK_BYTES).run();
+    }
+
+    /// When the URL stops working (googlevideo's `expire` parameter).
+    pub fn expires_at(&self) -> Option<SystemTime> {
+        let query = self.url.split_once('?')?.1;
+        let secs = query
+            .split('&')
+            .find_map(|kv| kv.strip_prefix("expire="))?
+            .parse()
+            .ok()?;
+        Some(UNIX_EPOCH + Duration::from_secs(secs))
+    }
+}
+
+/// Re-resolves the same video when a URL expired mid-download.
+pub(crate) type Refresh = Box<dyn FnMut() -> Result<ResolvedStream> + Send>;
+
+/// Treat a URL as expired this long before its `expire` time.
+const EXPIRY_MARGIN: Duration = Duration::from_secs(30);
+/// Transport errors in a row (not HTTP statuses) before giving up.
+const MAX_TRANSPORT_RETRIES: u32 = 2;
+
+/// Fetches a stream chunk by chunk into a [`StreamBuffer`].
+pub(crate) struct Downloader {
+    stream: ResolvedStream,
+    buffer: Arc<StreamBuffer>,
+    chunk: u64,
+    refresh: Option<Refresh>,
+}
+
+enum ChunkError {
+    /// An HTTP status the server answered with.
+    Status(u16),
+    Other(String),
+}
+
+impl Downloader {
+    pub(crate) fn new(stream: ResolvedStream, buffer: Arc<StreamBuffer>, chunk: u64) -> Self {
+        Self {
+            stream,
+            buffer,
+            chunk: chunk.max(1),
+            refresh: None,
+        }
+    }
+
+    /// Re-resolve once if a complete stream starts failing with 403/410 (expired URL).
+    pub(crate) fn with_refresh(mut self, refresh: Refresh) -> Self {
+        self.refresh = Some(refresh);
+        self
+    }
+
+    pub(crate) fn run(mut self) {
+        let end = self.download();
+        self.buffer.finish(end);
+    }
+
+    fn download(&mut self) -> BufferEnd {
+        let total = self.stream.content_length;
+        // Chunks served in full; two or more means this is not a ~1 MiB preview.
+        let mut chunks_ok = 0u32;
+        let mut transport_errors = 0u32;
         loop {
-            let start = bytes.len() as u64;
+            if self.buffer.is_cancelled() {
+                return BufferEnd::Cancelled;
+            }
+            let start = self.buffer.len();
             if total.is_some_and(|t| start >= t) {
-                return Ok(Download {
-                    bytes,
-                    complete: true,
-                });
+                return BufferEnd::Complete;
             }
             // Ranges past the end of the file are rejected with 403, not truncated.
-            let end = (start + CHUNK_BYTES).min(total.unwrap_or(u64::MAX)) - 1;
-            let resp = agent()
-                .get(&self.url)
-                .header("User-Agent", self.user_agent)
-                .header("Range", format!("bytes={start}-{end}"))
-                .call();
-            let mut resp = match resp {
-                Err(ureq::Error::StatusCode(403)) if start > 0 => {
-                    return Ok(Download {
-                        bytes,
-                        complete: false,
-                    });
+            let end = (start + self.chunk).min(total.unwrap_or(u64::MAX)) - 1;
+            match self.fetch(start, end) {
+                Ok(n) => {
+                    transport_errors = 0;
+                    chunks_ok += 1;
+                    if n == 0 || (total.is_none() && n < end - start + 1) {
+                        return BufferEnd::Complete;
+                    }
                 }
-                other => other?,
-            };
-            let chunk = read_body(&mut resp)?;
-            let short = (chunk.len() as u64) < CHUNK_BYTES;
-            bytes.extend_from_slice(&chunk);
-            if chunk.is_empty() || (total.is_none() && short) {
-                return Ok(Download {
-                    bytes,
-                    complete: true,
-                });
+                Err(ChunkError::Status(code @ (403 | 410))) if start > 0 => {
+                    let expired = self
+                        .stream
+                        .expires_at()
+                        .is_some_and(|at| SystemTime::now() + EXPIRY_MARGIN >= at);
+                    // A preview is cut off right after the first chunk and long
+                    // before expiry; anything else is an expired URL.
+                    if !(expired || chunks_ok >= 2) {
+                        return BufferEnd::Truncated;
+                    }
+                    match self.refreshed() {
+                        Some(stream) => {
+                            log::info!("stream URL rejected ({code}) at byte {start}; re-resolved");
+                            self.stream = stream;
+                        }
+                        None => {
+                            return BufferEnd::Failed(format!(
+                                "stream URL expired (HTTP {code}) at byte {start}"
+                            ));
+                        }
+                    }
+                }
+                Err(ChunkError::Status(code)) => {
+                    return BufferEnd::Failed(format!("HTTP {code} at byte {start}"));
+                }
+                Err(ChunkError::Other(msg)) => {
+                    if self.buffer.is_cancelled() {
+                        return BufferEnd::Cancelled;
+                    }
+                    transport_errors += 1;
+                    if transport_errors > MAX_TRANSPORT_RETRIES {
+                        return BufferEnd::Failed(msg);
+                    }
+                    log::warn!("download error at byte {start}, retrying: {msg}");
+                    std::thread::sleep(Duration::from_millis(500 * u64::from(transport_errors)));
+                }
             }
+        }
+    }
+
+    /// The re-resolved stream, at most once, and only if it is the same file.
+    fn refreshed(&mut self) -> Option<ResolvedStream> {
+        let mut refresh = self.refresh.take()?;
+        match refresh() {
+            Ok(fresh)
+                if fresh.itag == self.stream.itag
+                    && fresh.content_length == self.stream.content_length =>
+            {
+                Some(fresh)
+            }
+            Ok(fresh) => {
+                log::warn!(
+                    "re-resolved a different format (itag {} vs {}); stopping",
+                    fresh.itag,
+                    self.stream.itag
+                );
+                None
+            }
+            Err(e) => {
+                log::warn!("re-resolving an expired stream failed: {e}");
+                None
+            }
+        }
+    }
+
+    /// Streams `start..=end` into the buffer; returns the bytes received.
+    fn fetch(&self, start: u64, end: u64) -> std::result::Result<u64, ChunkError> {
+        let resp = agent()
+            .get(&self.stream.url)
+            .header("User-Agent", self.stream.user_agent)
+            .header("Range", format!("bytes={start}-{end}"))
+            .call();
+        let mut resp = match resp {
+            Ok(resp) => resp,
+            Err(ureq::Error::StatusCode(code)) => return Err(ChunkError::Status(code)),
+            Err(e) => return Err(ChunkError::Other(e.to_string())),
+        };
+        // A server ignoring the range would resend the file from byte 0.
+        if resp.status().as_u16() == 200 && start > 0 {
+            return Err(ChunkError::Other("server ignored the byte range".into()));
+        }
+        let mut reader = resp.body_mut().as_reader();
+        let mut piece = vec![0u8; 64 * 1024];
+        let mut received = 0u64;
+        loop {
+            if self.buffer.is_cancelled() {
+                return Err(ChunkError::Other("cancelled".into()));
+            }
+            match reader.read(&mut piece) {
+                Ok(0) => return Ok(received),
+                Ok(n) => {
+                    self.buffer.append(&piece[..n]);
+                    received += n as u64;
+                }
+                Err(e) if e.kind() == std::io::ErrorKind::Interrupted => {}
+                Err(e) => return Err(ChunkError::Other(e.to_string())),
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::testutil::{Reply, TestServer, range_of};
+
+    fn data(len: usize) -> Arc<[u8]> {
+        (0..len)
+            .map(|i| (i * 7 % 251) as u8)
+            .collect::<Vec<_>>()
+            .into()
+    }
+
+    fn stream(url: String, len: usize) -> ResolvedStream {
+        ResolvedStream {
+            url,
+            itag: 140,
+            mime_type: "audio/mp4".into(),
+            content_length: Some(len as u64),
+            user_agent: "test",
+            loudness_db: None,
+        }
+    }
+
+    fn run(stream: ResolvedStream, chunk: u64, refresh: Option<Refresh>) -> Arc<StreamBuffer> {
+        let buffer = StreamBuffer::new(stream.content_length);
+        let mut d = Downloader::new(stream, buffer.clone(), chunk);
+        if let Some(r) = refresh {
+            d = d.with_refresh(r);
+        }
+        d.run();
+        buffer
+    }
+
+    #[test]
+    fn downloads_in_chunks_into_the_buffer() {
+        let bytes = data(10_000);
+        let server = TestServer::file(bytes.clone());
+        let buffer = run(
+            stream(format!("{}/a", server.base), bytes.len()),
+            3000,
+            None,
+        );
+        assert_eq!(buffer.end(), Some(BufferEnd::Complete));
+        assert_eq!(buffer.to_vec(), &*bytes);
+        let starts: Vec<u64> = server
+            .requests
+            .lock()
+            .unwrap()
+            .iter()
+            .map(|r| r.1)
+            .collect();
+        assert_eq!(starts, [0, 3000, 6000, 9000]);
+    }
+
+    #[test]
+    fn preview_cut_off_after_the_first_chunk_is_truncated() {
+        let bytes = data(10_000);
+        let served = bytes.clone();
+        let server = TestServer::start(move |_, start, end| {
+            if start > 0 {
+                Reply::Status(403)
+            } else {
+                range_of(&served, start, end)
+            }
+        });
+        let buffer = run(
+            stream(format!("{}/a", server.base), bytes.len()),
+            3000,
+            None,
+        );
+        assert_eq!(buffer.end(), Some(BufferEnd::Truncated));
+        assert_eq!(buffer.to_vec(), &bytes[..3000]);
+    }
+
+    #[test]
+    fn expired_url_is_re_resolved_once_and_the_download_continues() {
+        let bytes = data(10_000);
+        let served = bytes.clone();
+        // The old URL works for two chunks, then answers 403 (expired).
+        let server = TestServer::start(move |path, start, end| {
+            if path.starts_with("/old") && start >= 6000 {
+                Reply::Status(403)
+            } else {
+                range_of(&served, start, end)
+            }
+        });
+        let base = server.base.clone();
+        let calls = Arc::new(std::sync::atomic::AtomicU32::new(0));
+        let counter = calls.clone();
+        let refresh: Refresh = Box::new(move || {
+            counter.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            Ok(stream(format!("{base}/new"), 10_000))
+        });
+        let buffer = run(
+            stream(format!("{}/old", server.base), bytes.len()),
+            3000,
+            Some(refresh),
+        );
+        assert_eq!(buffer.end(), Some(BufferEnd::Complete));
+        assert_eq!(buffer.to_vec(), &*bytes);
+        assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst), 1);
+        let paths: Vec<String> = server
+            .requests
+            .lock()
+            .unwrap()
+            .iter()
+            .map(|r| r.0.clone())
+            .collect();
+        assert_eq!(paths, ["/old", "/old", "/old", "/new", "/new"]);
+    }
+
+    #[test]
+    fn expiry_is_recognised_from_the_url_even_on_the_second_chunk() {
+        let bytes = data(10_000);
+        let served = bytes.clone();
+        let server = TestServer::start(move |path, start, end| {
+            if path.contains("expire=1&") && start > 0 {
+                Reply::Status(410)
+            } else {
+                range_of(&served, start, end)
+            }
+        });
+        let base = server.base.clone();
+        let refresh: Refresh =
+            Box::new(move || Ok(stream(format!("{base}/new?expire=99999999999"), 10_000)));
+        let old = stream(format!("{}/old?expire=1&id=x", server.base), bytes.len());
+        assert!(old.expires_at().unwrap() < SystemTime::now());
+        let buffer = run(old, 4000, Some(refresh));
+        assert_eq!(buffer.end(), Some(BufferEnd::Complete));
+        assert_eq!(buffer.to_vec(), &*bytes);
+    }
+
+    #[test]
+    fn refresh_to_a_different_format_or_a_second_expiry_fails_cleanly() {
+        let bytes = data(10_000);
+        let served = bytes.clone();
+        let server = TestServer::start(move |_, start, end| {
+            if start >= 6000 {
+                Reply::Status(403)
+            } else {
+                range_of(&served, start, end)
+            }
+        });
+        let base = server.base.clone();
+        let refresh: Refresh = Box::new(move || {
+            let mut s = stream(format!("{base}/new"), 10_000);
+            s.itag = 251;
+            Ok(s)
+        });
+        let buffer = run(
+            stream(format!("{}/old", server.base), bytes.len()),
+            3000,
+            Some(refresh),
+        );
+        assert!(matches!(buffer.end(), Some(BufferEnd::Failed(_))));
+        assert_eq!(buffer.len(), 6000, "data so far stays playable");
+
+        // Same format, but the new URL fails too: only one retry.
+        let base = server.base.clone();
+        let refresh: Refresh = Box::new(move || Ok(stream(format!("{base}/new"), 10_000)));
+        let buffer = run(
+            stream(format!("{}/old", server.base), bytes.len()),
+            3000,
+            Some(refresh),
+        );
+        assert!(matches!(buffer.end(), Some(BufferEnd::Failed(_))));
+    }
+
+    #[test]
+    fn first_chunk_errors_fail_and_cancel_stops() {
+        let server = TestServer::start(|_, _, _| Reply::Status(404));
+        let buffer = run(stream(format!("{}/a", server.base), 100), 3000, None);
+        assert!(matches!(buffer.end(), Some(BufferEnd::Failed(m)) if m.contains("404")));
+
+        let bytes = data(10_000);
+        let server = TestServer::file(bytes);
+        let buffer = StreamBuffer::new(Some(10_000));
+        buffer.cancel();
+        Downloader::new(
+            stream(format!("{}/a", server.base), 10_000),
+            buffer.clone(),
+            3000,
+        )
+        .run();
+        assert_eq!(buffer.end(), Some(BufferEnd::Cancelled));
+        assert!(server.requests.lock().unwrap().is_empty());
+    }
+
+    #[test]
+    fn download_api_still_reports_previews() {
+        let bytes = data(5000);
+        let served = bytes.clone();
+        let server = TestServer::start(move |_, start, end| {
+            // Serve only the first 2000 bytes of the first range, then refuse.
+            if start > 0 {
+                Reply::Status(403)
+            } else {
+                range_of(&served[..2000], start, end)
+            }
+        });
+        let d = stream(format!("{}/a", server.base), bytes.len())
+            .download()
+            .unwrap();
+        assert!(!d.complete);
+        assert_eq!(d.bytes, &bytes[..2000]);
+    }
+
+    #[test]
+    fn quality_orders_itags() {
+        assert_eq!(Quality::default(), Quality::Normal);
+        assert_eq!(Quality::Normal.preferred_itags()[0], 140);
+        assert_eq!(Quality::High.preferred_itags()[0], 251);
+        assert_eq!(Quality::Low.preferred_itags()[0], 139);
+        for q in Quality::ALL {
+            let mut all = q.preferred_itags().to_vec();
+            all.sort();
+            assert_eq!(all, [139, 140, 249, 250, 251]);
         }
     }
 }

@@ -14,6 +14,7 @@
 //! * `discord` – Discord Rich Presence (cargo feature `discord`, on by default).
 //! * [`TrackDecoder`] – Symphonia 0.6 decoder as a seekable `rodio::Source`.
 
+pub mod buffer;
 mod decode;
 #[cfg(feature = "discord")]
 pub mod discord;
@@ -27,7 +28,10 @@ mod model;
 mod player;
 pub mod scrobble;
 mod stream;
+#[cfg(test)]
+mod testutil;
 
+pub use buffer::{BufferEnd, StreamBuffer, StreamReader};
 pub use decode::TrackDecoder;
 pub use equalizer::{EqBandKind, EqBandSettings, EqPreset, EqualizerSettings};
 pub use error::{Error, Result};
@@ -36,4 +40,4 @@ pub use innertube::InnerTube;
 pub use lyrics::{LyricLine, LyricWord, Lyrics, fetch_lyrics, parse_lrc};
 pub use model::{EntityRef, Track, format_duration};
 pub use player::{PlaybackState, PlaybackStatus, Player};
-pub use stream::{Download, IosClientResolver, ResolvedStream, StreamResolver};
+pub use stream::{Download, IosClientResolver, Quality, ResolvedStream, StreamResolver};
