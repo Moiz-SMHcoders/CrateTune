@@ -4,7 +4,9 @@
 //! its own executor (GPUI's background executor, Slint's event loop + threads),
 //! so the core owns no async runtime and callers decide where work runs.
 //!
-//! * [`InnerTube`] – YouTube Music metadata (search for now).
+//! * [`InnerTube`] – YouTube Music metadata: home, explore, charts, search, albums,
+//!   artists, playlists, play queues, and a cookie-based account layer ([`innertube`]).
+//! * [`http`] – the shared HTTP agent; [`http::configure`] sets a proxy / user agent.
 //! * [`fetch_lyrics`] – LRCLIB synced lyrics with per-word timings.
 //! * [`StreamResolver`] – turns a video id into a playable audio URL.
 //! * [`Player`] – background audio engine with a pollable [`PlaybackState`].
@@ -23,8 +25,8 @@ pub mod discord;
 pub mod downloads;
 pub mod equalizer;
 mod error;
-mod http;
-mod innertube;
+pub mod http;
+pub mod innertube;
 pub mod library;
 pub mod local_files;
 mod lyrics;
@@ -37,7 +39,7 @@ mod stream;
 pub use decode::TrackDecoder;
 pub use equalizer::{EqBandKind, EqBandSettings, EqPreset, EqualizerSettings};
 pub use error::{Error, Result};
-pub use http::fetch_bytes;
+pub use http::{HttpConfig, fetch_bytes};
 pub use innertube::InnerTube;
 pub use library::Library;
 pub use lyrics::{LyricLine, LyricWord, Lyrics, fetch_lyrics, parse_lrc};

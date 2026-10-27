@@ -1,0 +1,8 @@
+{"responseContext":{"mainAppWebResponseContext":{"dataSyncId":"111111111111111111111||","loggedOut":false}},
+ "actions":[{"openPopupAction":{"popup":{"multiPageMenuRenderer":{
+   "header":{"activeAccountHeaderRenderer":{
+     "accountName":{"runs":[{"text":"Test User"}]},
+     "email":{"runs":[{"text":"test.user@example.com"}]},
+     "channelHandle":{"runs":[{"text":"@testuser"}]},
+     "accountPhoto":{"thumbnails":[{"url":"https://yt3.ggpht.com/avatar=s48","width":48,"height":48},{"url":"https://yt3.ggpht.com/avatar=s88","width":88,"height":88}]}}},
+   "sections":[]}},"popupType":"DROPDOWN"}}]}
