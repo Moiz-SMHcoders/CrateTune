@@ -196,7 +196,10 @@ pub fn build(
         Route::Downloads => downloads::DownloadsPage::build(cx),
         Route::LocalFiles => local_files::LocalFilesPage::build(window, cx),
         Route::Import => import::ImportPage::build(window, cx),
-        Route::Together => together::TogetherPage::build(window, cx),
+        Route::Together => {
+            let last = ctx.settings.read(cx).settings().together.last_join.clone();
+            together::TogetherPage::build(last, window, cx)
+        }
         Route::Settings { section } => {
             // One long-lived entity: it owns the settings file and secrets.
             ctx.settings

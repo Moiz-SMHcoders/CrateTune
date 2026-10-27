@@ -504,14 +504,16 @@ pub(super) fn render_together(
                 )),
         )
         .child(
-            Button::new("together-open")
-                .small()
-                .outline()
-                .icon(Lucide::UsersRound)
-                .label("Open Listen together")
-                .on_click(|_, window, cx| {
-                    update_app(cx, |app, cx| app.navigate(Route::Together, window, cx));
-                }),
+            h_flex().child(
+                Button::new("together-open")
+                    .small()
+                    .outline()
+                    .icon(Lucide::UsersRound)
+                    .label("Open Listen together")
+                    .on_click(|_, window, cx| {
+                        update_app(cx, |app, cx| app.navigate(Route::Together, window, cx));
+                    }),
+            ),
         )
         .into_any_element()
 }
@@ -609,14 +611,16 @@ pub(super) fn render_spotify(
                     cx,
                 ))
                 .child(
-                    Button::new("spotify-open-import")
-                        .small()
-                        .outline()
-                        .icon(Lucide::Upload)
-                        .label("Open Import & export")
-                        .on_click(|_, window, cx| {
-                            update_app(cx, |app, cx| app.navigate(Route::Import, window, cx));
-                        }),
+                    h_flex().child(
+                        Button::new("spotify-open-import")
+                            .small()
+                            .outline()
+                            .icon(Lucide::Upload)
+                            .label("Open Import & export")
+                            .on_click(|_, window, cx| {
+                                update_app(cx, |app, cx| app.navigate(Route::Import, window, cx));
+                            }),
+                    ),
                 ),
         )
         .into_any_element()

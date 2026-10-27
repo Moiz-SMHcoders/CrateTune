@@ -91,6 +91,18 @@ its own executor.
 * `local_files` — scans music folders with `lofty` (tags, cover art, lyrics, ReplayGain) into
   the library as `local:<hash>` tracks, incrementally (`scan_with_progress` reports
   `(done, total)` per file).
+* `sponsorblock` — SponsorBlock segments through the privacy-preserving hash-prefix API
+  (`/api/skipSegments/<first 4 hex of sha256(id)>`), category filter + merge, per-video LRU,
+  configurable server, `SkipTracker` (skip each segment once per pass).
+* `playlist_import` — Exportify CSV / our CSV, M3U, JSON readers and writers; `matcher`
+  (ArchiveTune's FuzzyMatcher: Jaro–Winkler title / artist, recording markers, duration)
+  and a threaded `resolve` (direct video ids, up to two InnerTube searches per song, progress,
+  cancel).
+* `spotify` — Spotify Web API with the user's own Client ID: Authorization Code + PKCE with
+  a loopback redirect, playlists, liked songs, playlist items (read-only scopes).
+* `together` — Music Together on the LAN: ArchiveTune's JSON protocol over WebSockets
+  (`tungstenite` on std threads), `TogetherServer` / `TogetherClient`, heartbeat clock sync,
+  `GuestSync` (drift / play-state planner), join links.
 
 ```sh
 cargo run --release -p music-core --example library -- ~/Music   # scan a folder, print stats
@@ -265,6 +277,9 @@ src/
                      demo clock + smooth position)
   settings/prefs.rs  audio / lyrics / Now Playing / Discord activity / scrobble-rule
                      model; settings/prefs_ui.rs: their panel widgets + methods
+  integrations/      SponsorBlock, Music Together, import / export state + script actions
+                     (config.rs: their settings; settings/integrations_ui.rs: sections;
+                     pages/together.rs, pages/import.rs)
   services.rs, secrets.rs, script.rs, util.rs, icons.rs
 ```
 
@@ -312,7 +327,7 @@ src/
 ### Features
 
 * **Shell:** sidebar (Home, Explore, Charts, Moods & genres, New releases, Library,
-  History, Stats, Downloads, Local files, Settings), header with back/forward and the
+  History, Stats, Downloads, Local files, Import & export, Listen together, Settings), header with back/forward and the
   search field, routed content, player bar, queue panel, Now Playing overlay. Window
   title follows the page. Back/forward keep up to 64 entries; the 8 nearest keep
   their page alive (state + scroll), older ones are rebuilt and get their scroll offset
@@ -379,7 +394,7 @@ src/
   silence, auto-skip, crossfade, speed + pitch, output device, sleep timer), Equalizer,
   Lyrics (look, providers, translation, romanization), Content & region, Network, Privacy,
   Storage (file locations), Account (YouTube sign-in, planned), Scrobbling & Discord,
-  About (version, GPL-3.0 notice, ArchiveTune and Hummingbird credits). The old sheet
+  SponsorBlock, Music Together, Spotify import, About (version, GPL-3.0 notice, ArchiveTune and Hummingbird credits). The old sheet
   is gone; the Now Playing gear opens the page.
 * **Themes** (`theme.rs`): dark (gpui-component's), pure black, dynamic (accent = the most
   common vibrant hue of the current artwork, lightened to ≥ 4.5:1 against the
@@ -513,6 +528,64 @@ src/
   restore** (library database + settings JSON without secrets, window frames or account;
   restoring keeps the current sign-in) followed by a "Restart now" prompt (`cx.restart()`).
 
+### Integrations: SponsorBlock, Music Together, playlist import / export
+
+| ![SponsorBlock: Skip chip](docs/screenshots/integrations-sponsorblock-ask.png) | ![Settings: SponsorBlock](docs/screenshots/integrations-settings-sponsorblock.png) |
+|---|---|
+| ![Together: host](docs/screenshots/integrations-together-host.png) | ![Together: guest](docs/screenshots/integrations-together-guest.png) |
+| ![Together: approval](docs/screenshots/integrations-together-approval.png) | ![Settings: Music Together](docs/screenshots/integrations-settings-together.png) |
+| ![Import: matching](docs/screenshots/integrations-import-progress.png) | ![Import: results](docs/screenshots/integrations-import-results.png) |
+| ![Settings: Spotify import](docs/screenshots/integrations-settings-spotify.png) | ![Import page](docs/screenshots/integrations-import-page.png) |
+
+* **SponsorBlock** (Settings → SponsorBlock; on by default, `music_offtopic` only): when a
+  song starts, its segments are looked up on a worker thread (`music_core::sponsorblock`,
+  hash prefix only, cached per video / categories / server). While it plays, the poll skips
+  a segment once per pass: *Skip automatically* seeks to its end and shows "Skipped:
+  Non-music section (22 s)"; *Ask* puts a "Skip non-music section (19s)" chip next to the
+  transport buttons until the segment is over. Categories: non-music section, sponsor,
+  intro, outro, self-promotion, interaction, preview, filler, hook. Server URL (https only,
+  validated), "Forget looked-up segments". Local files and guests of a Together session never
+  skip on their own (a host's skip reaches guests through the room state).
+* **Listen together** (sidebar; Settings → Music Together for name, port 42117, "guests can
+  add songs", "guests can control playback", "approve guests"). **Host:** *Start session*
+  listens on the port (all interfaces) and shows a `music-together://join?host=…&port=…&sid=…&key=…`
+  link (random session id + key; "Copy code" gives `host|port|sid|key`). The room state —
+  current track + up next (YouTube songs only), playing, position from the smooth clock,
+  repeat / shuffle — goes out on every change and every 500 ms, stamped with the server
+  clock. People list with *Let in* / *Decline* for waiting guests and *Remove* / *Ban*;
+  room switches apply live. Guests' requests run through the normal player methods (play /
+  pause / seek / next / previous / jump / repeat / shuffle; suggestions as *Play next* /
+  *Add to queue* with a notification). **Guest:** *Join* with the link; the guest's queue
+  becomes the room's, its player loads the host's track and seeks when it is more than
+  0.7 s off (0.15 s while paused), using the host position + the message's age converted
+  through the heartbeat clock offset; play / pause follow. Local shuffle is off while in a
+  session. *Play next* / *Add to queue* anywhere in the app become suggestions to the host;
+  previous / play / next on the page are requests (when the host allows). Kicks, bans,
+  declined joins, a host that ends the session or goes silent for 15 s end the guest's
+  session with a message. LAN only: there is no relay server.
+* **Import & export** (sidebar): *Choose a file…* (Exportify CSV of a Spotify playlist,
+  M3U / M3U8, or our own CSV / JSON), or — after connecting Spotify — a playlist link, one
+  of *Show my playlists*, or *Liked songs*. The job reads the source, then matches every
+  song on YouTube Music (4 searches in flight, progress bar, Cancel; tracks that name a
+  YouTube video are taken directly). Results: found / not found counts, *Save N songs as a
+  playlist* (name from the source, editable) → a local library playlist, a "Not found"
+  list with the best guess (*Use guess*) and a search button, and the found songs as normal
+  track rows. The job keeps running when you leave the page. *Export a playlist*: every
+  library playlist as CSV (video id, title, artists, album, duration, URL), M3U8 (EXTINF +
+  YouTube Music links / local paths) or JSON (full metadata; re-imports without matching).
+* **Spotify** (Settings → Spotify import): uses the official Web API with *your own* app
+  (developer.spotify.com → create an app → add the shown redirect URI
+  `http://127.0.0.1:43819/callback` → paste its Client ID → Connect). The browser opens
+  Spotify's consent page; a one-shot loopback listener takes the code (PKCE, no client
+  secret); the refresh token goes to the keychain, the display name to the settings.
+  ArchiveTune's `sp_dc`-cookie login is **not** implemented: Spotify's web-player token
+  endpoint needs a TOTP generated from a secret extracted from the web player (ArchiveTune
+  fetches it from a third-party gist), which isn't a legitimate client flow. Without an
+  account, export the playlist with Exportify and import the CSV.
+
+**Verification (screen locked, `screenshot` build, temporary `MUSIC_CONFIG_DIR`s, muted):**
+see the integrations round notes below.
+
 ### Keyboard shortcuts and menus
 
 | Keys | Action |
@@ -543,7 +616,7 @@ switch + id + `activity`, theme + text size, shuffle + repeat, `audio`, `lyrics`
 `now_playing`, `scrobble_rules`, `content` (language / country / filters / autoplay),
 `network` (proxy), main window and mini player frames, and `library`: privacy switches,
 play-cache limit, music folders, the signed-in YouTube account's name / avatar /
-`auth_user` / channel) lives in the platform config dir — macOS
+`auth_user` / channel, `sponsorblock`, `together`, `spotify`) lives in the platform config dir — macOS
 `~/Library/Application Support/music-macos/`, Linux `~/.config/music-macos/`, Windows
 `%APPDATA%\music-macos\config\` — or `$MUSIC_CONFIG_DIR`. It is written 500 ms after the last
 change and on quit, atomically (temp file + rename), mode 0600 in a 0700 directory. Missing
@@ -552,8 +625,8 @@ file that isn't valid JSON is moved to `settings.json.bad`; an unknown theme / r
 (from a newer version) falls back to the default instead.
 
 The Last.fm shared secret and session key, the ListenBrainz token, the Paxsenix /
-BetterLyrics / AI-translation API keys, the proxy password and the YouTube Music sign-in
-cookie go to the OS keychain
+BetterLyrics / AI-translation API keys, the proxy password, the YouTube Music sign-in
+cookie and the Spotify refresh token go to the OS keychain
 (`keyring` 4: macOS Keychain, Windows Credential Manager, Secret Service), service
 `music-macos`, one entry each. If the keychain fails (or `MUSIC_SECRET_STORE=file`), they are
 stored in the `secrets` object of `settings.json` (still 0600) and moved back into the keychain
@@ -596,7 +669,13 @@ playback `@play=N @next @prev @seek=S @toggle @open @close @volume=V`; navigatio
 @sleep=MIN|eot|off|5s @speed=1.25 @pitch=-2 @crossfade=6 @quality=low|normal|high
 @normalize=on|off @skip-silence=on|off`; browse `@radio=N` (radio from search result N),
 `@suggest` (print the search dropdown), `@proxy=KIND:HOST:PORT|off`, `@locale=de:DE`,
-`@scroll=X;Y;DY`; `@quit`.
+`@scroll=X;Y;DY`; integrations (`integrations/script.rs`) `@sb=on|off @sb-mode=auto|ask
+@sb-category=CAT:on|off @sb-skip @sb-status @play-id=ID[:TITLE] @set=FIELD:VALUE
+@together-host[=FILE] @together-join=LINK|file:PATH @together-leave @together-approve
+@together-deny @together-kick=NAME @together-ban=NAME @together-allow=add|control|approval:on|off
+@together-suggest=N @together-control=play|pause|next|prev|seek:S @together-status
+@import-file=PATH @spotify-playlist=URL @spotify-liked @spotify-playlists @import-accept=N
+@import-save[=NAME] @import-cancel @import-status @export=PLAYLIST:FORMAT:PATH`; `@quit`.
 
 Screenshot builds draw both windows every 200 ms and right before each shot: while the
 screen is locked macOS delivers no display-link frames, so nothing would redraw (and

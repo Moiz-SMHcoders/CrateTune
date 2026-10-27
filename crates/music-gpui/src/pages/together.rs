@@ -38,16 +38,8 @@ pub struct TogetherPage {
 }
 
 impl TogetherPage {
-    pub fn build(window: &mut Window, cx: &mut Context<MusicApp>) -> PageView {
-        let last = cx
-            .entity()
-            .read(cx)
-            .settings
-            .read(cx)
-            .settings()
-            .together
-            .last_join
-            .clone();
+    /// `last` pre-fills the join field (the last link joined).
+    pub fn build(last: String, window: &mut Window, cx: &mut Context<MusicApp>) -> PageView {
         let scroll = ScrollHandle::new();
         let page = cx.new(|cx: &mut Context<Self>| {
             let link = cx.new(|cx| {
@@ -565,8 +557,8 @@ impl Render for TogetherPage {
                 v_flex()
                     .gap_2()
                     .child(section_header(
-                        "People",
-                        Some(format!("{}", participants.len()).into()),
+                        format!("People · {}", participants.len()),
+                        None,
                         None,
                         cx,
                     ))

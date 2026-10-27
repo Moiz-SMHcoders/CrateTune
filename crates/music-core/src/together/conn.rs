@@ -84,6 +84,10 @@ impl Conn {
                     tungstenite::Error::ConnectionClosed | tungstenite::Error::AlreadyClosed => {
                         None
                     }
+                    // A peer that vanished without a close frame (app quit, network gone).
+                    tungstenite::Error::Protocol(_) | tungstenite::Error::Io(_) => {
+                        Some("Connection lost".into())
+                    }
                     other => Some(other.to_string()),
                 })
             }

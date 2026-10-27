@@ -101,14 +101,16 @@ impl ImportPage {
                     .child("Exportify CSV (Spotify), M3U / M3U8, or a CSV / JSON exported here."),
             )
             .child(
-                Button::new("import-file")
-                    .small()
-                    .primary()
-                    .icon(Lucide::Upload)
-                    .label("Choose a file…")
-                    .on_click(|_, window, cx| {
-                        update_app(cx, |app, cx| app.import_pick_file(window, cx));
-                    }),
+                h_flex().child(
+                    Button::new("import-file")
+                        .small()
+                        .primary()
+                        .icon(Lucide::Upload)
+                        .label("Choose a file…")
+                        .on_click(|_, window, cx| {
+                            update_app(cx, |app, cx| app.import_pick_file(window, cx));
+                        }),
+                ),
             );
         let mut spotify = v_flex()
             .gap_2()
@@ -131,21 +133,23 @@ impl ImportPage {
                          to import your playlists and liked songs.",
                     ))
                     .child(
-                        Button::new("import-spotify-settings")
-                            .small()
-                            .outline()
-                            .label("Set up Spotify…")
-                            .on_click(|_, window, cx| {
-                                update_app(cx, |app, cx| {
-                                    app.navigate(
-                                        Route::Settings {
-                                            section: SectionId::Spotify,
-                                        },
-                                        window,
-                                        cx,
-                                    )
-                                });
-                            }),
+                        h_flex().child(
+                            Button::new("import-spotify-settings")
+                                .small()
+                                .outline()
+                                .label("Set up Spotify…")
+                                .on_click(|_, window, cx| {
+                                    update_app(cx, |app, cx| {
+                                        app.navigate(
+                                            Route::Settings {
+                                                section: SectionId::Spotify,
+                                            },
+                                            window,
+                                            cx,
+                                        )
+                                    });
+                                }),
+                        ),
                     );
             }
             Some(user) => {

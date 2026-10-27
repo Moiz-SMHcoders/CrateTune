@@ -6,6 +6,7 @@
 //! | `@sb=on\|off`, `@sb-mode=auto\|ask`, `@sb-category=CAT:on\|off` | SponsorBlock settings (`music_offtopic`, `sponsor`, …) |
 //! | `@sb-skip` | accept the offered skip ("ask" mode) |
 //! | `@sb-status` | print the current song's segments |
+//! | `@play-id=VIDEO_ID[:TITLE]` | play one YouTube video id (e.g. a music video with segments) |
 //! | `@set=FIELD:VALUE` | type into `sb-url`, `together-name`, `together-port`, `spotify-client`, `spotify-port` |
 //! | `@together-host[=FILE]` | start a session (and write the join link to FILE) |
 //! | `@together-join=LINK` / `@together-join=file:PATH` | join a session |
@@ -69,6 +70,18 @@ impl MusicApp {
                 }
             }
             "sb-skip" => self.sponsorblock_skip_offer(cx),
+            "play-id" => {
+                let (id, title) = arg
+                    .unwrap_or("")
+                    .split_once(':')
+                    .unwrap_or((arg.unwrap_or(""), ""));
+                let track = music_core::Track {
+                    video_id: id.to_owned(),
+                    title: if title.is_empty() { id } else { title }.to_owned(),
+                    ..music_core::Track::default()
+                };
+                self.play_list(std::rc::Rc::new(vec![track]), 0, cx);
+            }
             "sb-status" => {
                 let sb = &self.integrations.sponsorblock;
                 eprintln!(
