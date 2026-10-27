@@ -25,6 +25,10 @@
 //! * [`modules`] – `.arch` provider modules (QuickJS) as alternative audio sources, and
 //!   [`modules::ModuleResolver`] chaining them before YouTube.
 //! * [`SkipSilence`] – silence trimming as a `rodio::Source` wrapper.
+//! * [`sponsorblock`] – SponsorBlock segments (hash-prefix lookups) + skip tracking.
+//! * [`playlist_import`] – CSV / M3U / JSON playlists, matching tracks to YouTube Music.
+//! * [`spotify`] – Spotify Web API (PKCE sign-in, playlists, liked songs) for imports.
+//! * [`together`] – Music Together: synced listening on the LAN over WebSockets.
 
 pub mod buffer;
 mod deck;
@@ -46,13 +50,17 @@ pub mod modules;
 mod opus;
 mod output;
 mod player;
+pub mod playlist_import;
 pub mod recognition;
 pub mod scrobble;
 mod silence;
 mod sleep;
+pub mod sponsorblock;
+pub mod spotify;
 mod stream;
 #[cfg(test)]
 mod testutil;
+pub mod together;
 mod voice;
 
 pub use buffer::{BufferEnd, StreamBuffer, StreamReader};

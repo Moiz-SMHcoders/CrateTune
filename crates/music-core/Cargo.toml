@@ -11,7 +11,6 @@ crc32fast = "1.5"
 deunicode = "1.6"
 discord-rich-presence = { version = "1", optional = true }
 lindera = { version = "6.2", optional = true, features = ["embed-ipadic"] }
-getrandom = "0.3"
 # NFKD normalization for the module track matcher (already in the graph via url/idna).
 icu_normalizer = "2"
 lofty = "0.25"
@@ -27,7 +26,6 @@ rusqlite = { version = "0.41", features = ["bundled", "backup"] }
 serde = { version = "1.0.229", features = ["derive", "rc"] }
 serde_json = "1.0.154"
 sha1_smol = "1"
-sha2 = "0.11"
 symphonia = { version = "0.6", default-features = false, features = [
     "opt-simd",
     # codecs
@@ -51,6 +49,13 @@ opus-decoder = "0.1"
 # Pure-Rust port of Sonic (speed/pitch), the same algorithm ExoPlayer uses.
 libsonic = "0.1"
 thiserror = "2"
+# Integrations (SponsorBlock hash prefixes, Spotify PKCE, Together sessions, playlist import).
+csv = "1"
+getrandom = "0.3"
+sha2 = "0.10"
+# Music Together: blocking WebSockets over std TCP on worker threads (no async runtime).
+tungstenite = { version = "0.28", default-features = false, features = ["handshake"] }
+unicode-normalization = "0.1"
 ureq = { version = "3", features = ["json", "socks-proxy"] }
 url = "2.5"
 zip = { version = "9", default-features = false, features = ["deflate-flate2-zlib-rs"] }

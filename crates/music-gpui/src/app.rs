@@ -146,6 +146,8 @@ pub struct MusicApp {
     pub(crate) accent: Option<Hsla>,
     /// Library database, downloads, account (`store.rs`).
     pub(crate) store: crate::store::Store,
+    /// SponsorBlock, Music Together, playlist import (`integrations/`).
+    pub(crate) integrations: crate::integrations::Integrations,
     /// First-run guide overlay (`settings/onboarding.rs`).
     pub(crate) onboarding: Option<Entity<crate::settings::onboarding::Onboarding>>,
 
@@ -312,6 +314,7 @@ impl MusicApp {
             applied_theme: None,
             accent: None,
             store: crate::store::Store::open(saved.library.clone(), downloads_resolver),
+            integrations: Default::default(),
             onboarding: None,
             _poll: poll,
             _subscriptions: subscriptions,

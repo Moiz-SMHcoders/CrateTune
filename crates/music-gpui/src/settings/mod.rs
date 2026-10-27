@@ -21,6 +21,7 @@ mod content;
 mod equalizer;
 pub mod file;
 mod integrations;
+mod integrations_ui;
 pub mod library_config;
 mod library_glue;
 mod lyrics;
@@ -67,6 +68,12 @@ pub enum SectionId {
     Account,
     /// Last.fm, ListenBrainz, Discord.
     Integrations,
+    /// SponsorBlock segment skipping.
+    SponsorBlock,
+    /// Music Together (LAN sessions).
+    Together,
+    /// Spotify playlist import.
+    Spotify,
     About,
 }
 
@@ -139,6 +146,24 @@ pub const SECTIONS: &[Section] = &[
         render: integrations::render,
     },
     Section {
+        id: SectionId::SponsorBlock,
+        title: "SponsorBlock",
+        icon: IconName::SkipForward,
+        render: integrations_ui::render_sponsorblock,
+    },
+    Section {
+        id: SectionId::Together,
+        title: "Music Together",
+        icon: IconName::UsersRound,
+        render: integrations_ui::render_together,
+    },
+    Section {
+        id: SectionId::Spotify,
+        title: "Spotify import",
+        icon: IconName::ListMusic,
+        render: integrations_ui::render_spotify,
+    },
+    Section {
         id: SectionId::About,
         title: "About",
         icon: IconName::Info,
@@ -171,6 +196,9 @@ impl SectionId {
             SectionId::Storage => "storage",
             SectionId::Account => "account",
             SectionId::Integrations => "integrations",
+            SectionId::SponsorBlock => "sponsorblock",
+            SectionId::Together => "together",
+            SectionId::Spotify => "spotify",
             SectionId::About => "about",
         }
     }
@@ -196,7 +224,7 @@ mod tests {
             assert_eq!(SECTIONS.iter().filter(|s| s.id == section.id).count(), 1);
             assert_eq!(SectionId::from_key(section.id.key()), Some(section.id));
         }
-        assert_eq!(SECTIONS.len(), 12);
+        assert_eq!(SECTIONS.len(), 15);
         assert_eq!(
             SectionId::from_key("accounts"),
             Some(SectionId::Integrations)

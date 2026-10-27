@@ -1,0 +1,22 @@
+[
+  {
+    "videoID": "aaaaaaaaaaa",
+    "hash": "5f6b0000000000000000000000000000000000000000000000000000000000aa",
+    "segments": [
+      { "category": "music_offtopic", "actionType": "skip", "segment": [3.0, 9.0], "UUID": "x1", "videoDuration": 200.0, "locked": 0, "votes": 2, "description": "" }
+    ]
+  },
+  {
+    "videoID": "dQw4w9WgXcQ",
+    "hash": "5f6b0b4e201f2a7e66927abb5cadeec81624dcc8efe6644b78aa182213f653a2",
+    "segments": [
+      { "category": "sponsor", "actionType": "skip", "segment": [100.0, 130.0], "UUID": "a", "videoDuration": 212.0, "locked": 0, "votes": 5, "description": "" },
+      { "category": "intro", "actionType": "skip", "segment": [10.0, 15.0], "UUID": "b", "videoDuration": 212.0, "locked": 0, "votes": 1, "description": "" },
+      { "category": "music_offtopic", "actionType": "skip", "segment": [0.0, 12.5], "UUID": "c", "videoDuration": 212.0, "locked": 1, "votes": 9, "description": "" },
+      { "category": "selfpromo", "actionType": "mute", "segment": [150.0, 160.0], "UUID": "d", "videoDuration": 212.0, "locked": 0, "votes": 0, "description": "" },
+      { "category": "filler", "actionType": "skip", "segment": [180.0, 170.0], "UUID": "e", "videoDuration": 212.0, "locked": 0, "votes": 0, "description": "" },
+      { "category": "outro", "actionType": "skip", "segment": [200.0, 200.05], "UUID": "f", "videoDuration": 212.0, "locked": 0, "votes": 0, "description": "" },
+      { "category": "not_a_category", "actionType": "skip", "segment": [190.0, 195.0], "UUID": "g", "videoDuration": 212.0, "locked": 0, "votes": 0, "description": "" }
+    ]
+  }
+]
