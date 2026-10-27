@@ -9,13 +9,15 @@ use std::rc::Rc;
 use std::time::{Duration, Instant};
 
 use gpui::{ClickEvent, Context, Entity, Window};
+use gpui_component::menu::{PopupMenu, PopupMenuItem};
 use gpui_component::slider::{SliderEvent, SliderState};
 use music_core::media_controls::MediaControlEvent;
-use music_core::{PlaybackState, PlaybackStatus, Track};
+use music_core::{PlaybackState, PlaybackStatus, SleepTimer, Track, format_duration};
 
-use crate::app::{MusicApp, notify};
+use crate::app::{MusicApp, notify, update_app};
 use crate::now_playing::HiRes;
 use crate::queue::{Ended, Previous, Repeat};
+use crate::settings::prefs::SLEEP_PRESETS;
 use crate::tray::TrayCommand;
 
 /// Cmd+↑ / Cmd+↓ volume step.
@@ -181,14 +183,133 @@ impl MusicApp {
         // audio resolves.
         self.ensure_lyrics(&track, cx);
         self.ensure_hires(&track, cx);
+        let track = self.engine_track(track);
         match &mut self.engine {
             Some(engine) => {
                 engine.play(track);
+                // `play` may consume the engine's next track; send it again.
+                self.next_sent = None;
+                self.sync_engine_next();
                 self.refresh_soon(cx);
             }
             None => self.pending_play = Some(track),
         }
         cx.notify();
+    }
+
+    /// Hook for what the engine gets for a queue track (e.g. a downloaded copy's
+    /// `local_path`); used for `play` and for the preloaded next track alike.
+    pub(crate) fn engine_track(&self, track: Track) -> Track {
+        track
+    }
+
+    /// The track the engine should continue with by itself: the current one
+    /// again with repeat-one, else the queue's next (repeat-all wraps).
+    fn engine_next(&self) -> Option<Track> {
+        match self.queue.repeat() {
+            Repeat::One => self.queue.current().cloned(),
+            Repeat::Off | Repeat::All => self.queue.peek_next().cloned(),
+        }
+    }
+
+    /// Keeps the engine's preloaded next track in step with the queue (shuffle,
+    /// repeat and edits included). Cheap when nothing changed; runs on every poll
+    /// and after `play`.
+    pub(crate) fn sync_engine_next(&mut self) {
+        let next = self.engine_next();
+        let id = next.as_ref().map(|t| t.video_id.clone());
+        if self.next_sent.as_ref() == Some(&id) {
+            return;
+        }
+        let next = next.map(|t| self.engine_track(t));
+        if let Some(engine) = &mut self.engine {
+            engine.set_next(next);
+            self.next_sent = Some(id);
+        }
+    }
+
+    /// The engine moved on by itself (gapless / crossfade switch, or an auto-skip
+    /// after a load error): advance the queue to the track it now plays, without
+    /// calling `play` again.
+    fn engine_advanced(&mut self, state: &PlaybackState) {
+        self.next_sent = None;
+        let Some(id) = state.track.as_ref().map(|t| t.video_id.as_str()) else {
+            return;
+        };
+        if let Some(started) = self.trace {
+            eprintln!(
+                "music-gpui: [{:6.2}s] engine advanced to {id} (advance #{}); queue next was {:?}",
+                started.elapsed().as_secs_f64(),
+                state.advance_count,
+                self.queue.peek_next().map(|t| t.video_id.as_str()),
+            );
+        }
+        if self.queue.repeat() == Repeat::One && self.queue.is_current(id) {
+            return; // repeat-one looped gaplessly
+        }
+        if self.queue.peek_next().is_some_and(|t| t.video_id == id) {
+            self.queue.advance();
+        } else if let Some(uid) = self
+            .queue
+            .upcoming()
+            .iter()
+            .find(|i| i.track.video_id == id)
+            .map(|i| i.uid)
+        {
+            // The queue changed after the engine had preloaded: catch up.
+            self.queue.jump(uid);
+        }
+    }
+
+    // ---- sleep timer ---------------------------------------------------------------
+
+    /// Arms the sleep timer (`None` cancels it). Shown in the bar, Now Playing
+    /// and the Playback settings.
+    pub fn set_sleep_timer(&mut self, timer: Option<SleepTimer>, cx: &mut Context<Self>) {
+        if let Some(engine) = &mut self.engine {
+            engine.set_sleep_timer(timer);
+            self.refresh_soon(cx);
+        }
+        cx.notify();
+    }
+
+    /// Bar / Now Playing menu: presets, end of track, the saved custom length, off.
+    pub fn sleep_timer_menu(menu: PopupMenu, armed: bool, custom: Duration) -> PopupMenu {
+        let item = |label: String, timer: Option<SleepTimer>| {
+            PopupMenuItem::new(label).on_click(move |_, _, cx| {
+                update_app(cx, |app, cx| app.set_sleep_timer(timer, cx));
+            })
+        };
+        let mut menu = menu.label("Sleep timer");
+        for minutes in SLEEP_PRESETS {
+            menu = menu.item(item(
+                format!("{minutes} minutes"),
+                Some(SleepTimer::After(Duration::from_secs(
+                    u64::from(minutes) * 60,
+                ))),
+            ));
+        }
+        menu = menu
+            .item(item("End of track".into(), Some(SleepTimer::EndOfTrack)))
+            .item(item(
+                format!("Custom: {} min", custom.as_secs() / 60),
+                Some(SleepTimer::After(custom)),
+            ));
+        if armed {
+            menu = menu.separator().item(item("Turn off".into(), None));
+        }
+        menu
+    }
+
+    /// "23:41 left" / "End of track" while armed.
+    pub fn sleep_timer_label(&self) -> Option<String> {
+        let timer = self.playback.sleep_timer?;
+        Some(match timer.remaining {
+            Some(left) if !timer.end_of_track => {
+                format!("{} left", format_duration(left.as_secs() + 1))
+            }
+            _ => "End of track".into(),
+        })
     }
 
     pub fn toggle_pause(&mut self, _: &ClickEvent, _: &mut Window, cx: &mut Context<Self>) {
@@ -208,7 +329,7 @@ impl MusicApp {
         cx.spawn(async move |this, cx| {
             executor.timer(Duration::from_millis(30)).await;
             this.update(cx, |this, cx| {
-                if let Some(engine) = &this.engine {
+                if let Some(engine) = &mut this.engine {
                     let state = engine.state();
                     if this.ingest(state, cx) {
                         cx.notify();
@@ -235,6 +356,28 @@ impl MusicApp {
             state.status == PlaybackStatus::Ended && self.playback.status != PlaybackStatus::Ended;
         let track_changed = state.track.as_ref().map(|t| &t.video_id)
             != self.playback.track.as_ref().map(|t| &t.video_id);
+        let advanced = state.advance_count > self.seen_advance;
+        self.seen_advance = state.advance_count;
+        if state.error_count > self.playback.error_count
+            && let Some(failed) = &state.failed_track_id
+        {
+            let title = [self.playback.track.as_ref(), self.queue.current()]
+                .into_iter()
+                .flatten()
+                .find(|t| &t.video_id == failed)
+                .map_or_else(|| failed.clone(), |t| t.title.clone());
+            self.last_failure = Some((title, Instant::now()));
+        }
+        if advanced {
+            self.engine_advanced(&state);
+        }
+        if advanced
+            && track_changed
+            && let Some(track) = state.track.clone()
+        {
+            self.ensure_lyrics(&track, cx);
+            self.ensure_hires(&track, cx);
+        }
         self.playback = state;
         if track_changed {
             self.update_accent(cx);
@@ -258,7 +401,10 @@ impl MusicApp {
             window.focus(&self.focus, cx);
         }
         self.poll_tray(window, cx);
-        let Some(engine) = &self.engine else { return };
+        self.sync_engine_next();
+        let Some(engine) = &mut self.engine else {
+            return;
+        };
         let state = engine.state();
 
         let artwork = state
@@ -436,6 +582,13 @@ fn enqueue_message(what: &str, tracks: &[Track]) -> String {
 fn same_snapshot(a: &PlaybackState, b: &PlaybackState) -> bool {
     a.status == b.status
         && a.position == b.position
+        && a.advance_count == b.advance_count
+        && a.error_count == b.error_count
+        && a.buffering == b.buffering
+        && a.crossfading == b.crossfading
+        && a.sleep_timer == b.sleep_timer
+        && a.speed == b.speed
+        && a.output_device == b.output_device
         && a.duration == b.duration
         && a.preview_only == b.preview_only
         && a.volume == b.volume

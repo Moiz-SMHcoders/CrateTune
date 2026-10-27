@@ -59,7 +59,8 @@ its own executor.
   * plays `Track::local_path` files (ReplayGain / R128 track gain from tags) or streams
     YouTube progressively (`StreamBuffer`: playback starts with the first bytes, seeks
     into the undownloaded part wait up to 10 s; an expired URL is re-resolved once);
-    loudness normalization from YouTube's `loudnessDb`;
+    loudness normalization from YouTube's `loudnessDb` (`set_normalization(false)` turns
+    it off, ReplayGain included);
   * `set_next` → preload ~30 s ahead, gapless switch, optional crossfade
     (`set_crossfade`, ≤ 12 s, also before a preview's early end); engine-initiated
     switches bump `PlaybackState::advance_count`;
@@ -72,9 +73,14 @@ its own executor.
   `player.set_equalizer(EqPreset::Bass.settings())`, `player.clear_equalizer()`.
 * `media_controls` — macOS Now Playing / media keys, Windows SMTC, Linux MPRIS
   (feature `media-controls`, default on).
-* `scrobble` — Last.fm + ListenBrainz (`ScrobbleTracker` applies Last.fm's rules to
-  `PlaybackState` snapshots; `Scrobbler` sends on a worker thread).
-* `discord` — Discord Rich Presence (feature `discord`, default on).
+* `scrobble` — Last.fm + ListenBrainz (`ScrobbleTracker` applies `ScrobbleRules` — by
+  default Last.fm's 50 % / 4 min / > 30 s — to `PlaybackState` snapshots; `Scrobbler`
+  sends on a worker thread; `set_rules` changes them live).
+* `discord` — Discord Rich Presence (feature `discord`, default on). `DiscordConfig`
+  customizes the activity: type (listening / playing / watching / competing), name,
+  details / state / image-text templates with `{title}` `{artist}` `{album}`, large and
+  small image (artwork, asset key / URL, none), up to two buttons (the song on YouTube
+  Music or a custom URL), show while paused; `DiscordPresence::set_config` applies it live.
 * `lyrics` — lyrics stack ported from ArchiveTune (details below); `fetch_lyrics` stays the
   simple LRCLIB-only call.
 * `library` — SQLite library (`rusqlite`, bundled): likes, library, artists/albums, playlists
@@ -251,7 +257,13 @@ src/
   theme.rs           dark / pure black / dynamic accent, font scale, AppColors
   mini_player.rs     always-on-top mini player window
   tray.rs            menu-bar item (macOS)
-  now_playing.rs, karaoke.rs, anim.rs, backdrop.rs, clock.rs   Now Playing + lyrics
+  now_playing.rs     Now Playing: layouts, backgrounds, transport, lyrics pane
+  lyrics.rs          LyricsService wrapper: fetch, prepare (duets, background vocals,
+                     romanization), translation cache, cache hook
+  karaoke.rs, anim.rs, backdrop.rs (blur, palette, glow lights), clock.rs (engine +
+                     demo clock + smooth position)
+  settings/prefs.rs  audio / lyrics / Now Playing / Discord activity / scrobble-rule
+                     model; settings/prefs_ui.rs: their panel widgets + methods
   services.rs, secrets.rs, script.rs, util.rs, icons.rs
 ```
 
@@ -282,9 +294,14 @@ src/
 * **Hooks waiting for other layers:** `add_to_playlist`, `toggle_like` (context menu
   entries, currently a notification), the artist page's subscribe button (shows the
   state; changing it needs a signed-in account), the library pages (Library tabs, Stats,
-  Downloads, Local files) and the placeholder settings sections (Playback extras,
-  Lyrics, Privacy, Storage, Account). `Track::artist_refs` / `album_id` drive
-  "Go to artist / album".
+  Downloads, Local files) and the placeholder settings sections (Privacy, Storage,
+  Account). `Track::artist_refs` / `album_id` drive "Go to artist / album".
+* **Persistent lyrics cache:** `MusicApp::set_lyrics_cache(Arc<dyn LyricsCache>)` swaps
+  the in-memory cache (e.g. for the library database's lyrics table); the service is
+  rebuilt around it and every later fetch reads / writes it.
+* **What the engine plays:** `MusicApp::engine_track(track)` is applied both to `play`
+  and to the preloaded next track (`sync_engine_next`), so e.g. a downloaded copy's
+  `local_path` can be swapped in once for both paths.
 
 ### Features
 
@@ -352,8 +369,10 @@ src/
   saved. "Previous" restarts past 3 s; the end of a track (including a ~60 s preview)
   plays the next one. Queue panel: now playing, up next, history (click to play again).
 * **History** lists this session's plays.
-* **Settings page** with sections: Appearance (theme, text size), Playback (shuffle,
-  repeat + planned options), Equalizer, Lyrics, Content & region, Network, Privacy,
+* **Settings page** with sections: Appearance (theme, text size, Now Playing layout +
+  background, mini player style), Playback (queue modes, quality, normalization, skip
+  silence, auto-skip, crossfade, speed + pitch, output device, sleep timer), Equalizer,
+  Lyrics (look, providers, translation, romanization), Content & region, Network, Privacy,
   Storage (file locations), Account (YouTube sign-in, planned), Scrobbling & Discord,
   About (version, GPL-3.0 notice, ArchiveTune and Hummingbird credits). The old sheet
   is gone; the Now Playing gear opens the page.
@@ -372,8 +391,47 @@ src/
   mini player, show window, quit. It coexists with GPUI's run loop (the status item is
   just AppKit; menu events are drained by the poll). Not built on Linux/Windows.
 * **Window frame** saved (content size, position, maximized) and restored if on screen.
-* **Now Playing**, **OS media controls**, **Equalizer**, **Scrobbling & Discord**,
-  **volume**: unchanged from the previous round (details in the history below).
+* **Engine wiring** (`playback.rs`): the engine's `set_next` follows the queue on every
+  poll and after `play` (shuffle, repeat-all wrap, repeat-one = the same track again,
+  edits); when `PlaybackState::advance_count` grows (gapless / crossfade switch,
+  auto-skip after a load error) the queue moves to the track the engine now plays
+  without calling `play` (catching up if the queue changed after the preload). The bar
+  shows "Buffering…" and "Couldn't play “…”, skipped". The demo clock mimics this
+  (next track, advance count, speed, sleep timer), so it is testable without audio.
+* **Playback options** (Settings → Playback, persisted, applied live): quality
+  (low / normal / high), loudness normalization, skip silence, skip failing songs,
+  crossfade 0–12 s (0 = gapless), speed 0.5–2× and pitch ±12 st with reset, output
+  device (listed off-thread, saved by id, "not connected" when missing).
+* **Sleep timer**: 5 / 15 / 30 / 45 / 60 min, end of track, a custom length (slider), off —
+  in the bar (moon icon, remaining time as its label), the Now Playing header and the
+  Playback section. "End of track" moves on to the next song and waits there paused.
+* **Now Playing**: three layouts — split (artwork + controls | lyrics), big artwork
+  (centered, the current and next lyric line below the controls), lyrics first (lyrics
+  across the screen, artwork / title / progress / transport in a bottom strip) — and four
+  backgrounds: blurred artwork, gradient between two artwork colours, solid colour,
+  animated glow (three soft lights in the artwork's colours that drift only while
+  playing; pre-rendered images, since GPUI has no radial gradients). Colours cross-fade
+  between tracks. Layout and background are also in the header's layout menu. Mini
+  player style: theme or blurred artwork.
+* **Lyrics** (`lyrics.rs`): `LyricsService` with the provider order, switches and
+  Paxsenix / BetterLyrics keys from Settings → Lyrics; results cached in memory; the
+  pane shows provider · word-/line-synced/unsynced, a translate toggle and a reload
+  button (searches again, skipping the cache). Real word timings drive the per-word
+  fill; line-synced lyrics light the whole line. Background vocals (smaller, italic,
+  their own word timings) and duet singers (other side) when the provider has them.
+  Romanization line per script (Japanese kana — kanji readings need music-core's
+  `japanese-dict` feature —, Korean, Chinese pinyin, Devanagari, Cyrillic, others).
+  Translation (Google or any OpenAI-compatible endpoint, target language, off by
+  default) is requested once per song and translator settings and cached for the
+  session; failures show with a Retry button. Text size, line spacing, left / center /
+  right alignment, and six animation styles (None, Fade, Glow, Slide, Karaoke — the
+  original renderer —, Apple) as variants of `KaraokeLine` (sweep vs. per-word fade,
+  feather width, lift, scale, glyph halo). Click a line to seek; unsynced lyrics show as
+  a plain scrollable list.
+* **Scrobbling & Discord**: scrobble rules (percent, at most N minutes, ignore songs
+  under N s); Discord activity type, name, details/state templates, large/small image,
+  two buttons, show while paused (applied to the running presence without reconnecting).
+* **OS media controls**, **Equalizer**, **volume**: unchanged (history below).
 
 ### Keyboard shortcuts and menus
 
@@ -401,8 +459,9 @@ bindings (Space, ⌘←/→, ⌘↑/↓ edit text while the search field is focu
 ### Settings file and secrets
 
 `settings.json` (volume, EQ, Last.fm API key + user name, ListenBrainz user name, Discord
-switch + id, theme + text size, shuffle + repeat, content language / country / filters /
-autoplay, proxy, main window and mini player frames) lives in the platform config dir — macOS
+switch + id + `activity`, theme + text size, shuffle + repeat, `audio`, `lyrics`,
+`now_playing`, `scrobble_rules`, `content` (language / country / filters / autoplay),
+`network` (proxy), main window and mini player frames) lives in the platform config dir — macOS
 `~/Library/Application Support/music-macos/`, Linux `~/.config/music-macos/`, Windows
 `%APPDATA%\music-macos\config\` — or `$MUSIC_CONFIG_DIR`. It is written 500 ms after the last
 change and on quit, atomically (temp file + rename), mode 0600 in a 0700 directory. Missing
@@ -410,7 +469,8 @@ fields fall back to defaults, unknown ones are ignored, out-of-range values are 
 file that isn't valid JSON is moved to `settings.json.bad`; an unknown theme / repeat value
 (from a newer version) falls back to the default instead.
 
-The Last.fm shared secret and session key, the ListenBrainz token and the proxy password go to the OS keychain
+The Last.fm shared secret and session key, the ListenBrainz token, the Paxsenix /
+BetterLyrics / AI-translation API keys and the proxy password go to the OS keychain
 (`keyring` 4: macOS Keychain, Windows Credential Manager, Secret Service), service
 `music-macos`, one entry each. If the keychain fails (or `MUSIC_SECRET_STORE=file`), they are
 stored in the `secrets` object of `settings.json` (still 0600) and moved back into the keychain
@@ -446,12 +506,53 @@ playback `@play=N @next @prev @seek=S @toggle @open @close @volume=V`; navigatio
 @font-scale=1.125 @resize=W;H`; settings `@settings[=section] @close-settings
 @eq=Preset|on|off @field=lastfm-key|lastfm-secret|lb-token|discord-id:VALUE
 @lastfm-connect @lastfm-finish @lastfm-disconnect @lastfm-clear @lb-validate
-@lb-disconnect @discord=on|off`; browse `@radio=N` (radio from search result N),
-`@suggest` (print the search dropdown), `@proxy=KIND:HOST:PORT|off`; `@quit`.
+@lb-disconnect @discord=on|off`; player `@layout=split|centered|lyrics
+@np-bg=blur|gradient|solid|glow @mini-style=theme|artwork
+@lyrics-style=karaoke|apple|slide|glow|fade|none @lyrics-size=40 @lyrics-spacing=1.5
+@lyrics-align=left|center|right @translate=on|off @romanize=SCRIPT:on|off @lyrics-reload
+@sleep=MIN|eot|off|5s @speed=1.25 @pitch=-2 @crossfade=6 @quality=low|normal|high
+@normalize=on|off @skip-silence=on|off`; browse `@radio=N` (radio from search result N),
+`@suggest` (print the search dropdown), `@proxy=KIND:HOST:PORT|off`, `@locale=de:DE`,
+`@scroll=X;Y;DY`; `@quit`.
 
 Screenshot builds draw both windows every 200 ms and right before each shot: while the
 screen is locked macOS delivers no display-link frames, so nothing would redraw (and
 lazily started artwork downloads would never begin).
+
+### Player UI round: verification
+
+| ![Split, karaoke](docs/screenshots/player-np-split-karaoke.png) | ![Big artwork](docs/screenshots/player-np-big-artwork.png) |
+|---|---|
+| ![Lyrics first](docs/screenshots/player-np-lyrics-first.png) | ![Glow background](docs/screenshots/player-np-glow-background.png) |
+| ![Romanization, fade, centered](docs/screenshots/player-np-romanization-fade-center.png) | ![Line-synced, paused by the sleep timer](docs/screenshots/player-np-line-synced-sleep-paused.png) |
+| ![Gradient background](docs/screenshots/player-np-gradient.png) | ![Bar: sleep timer, queue after a gapless advance](docs/screenshots/player-bar-sleep-gapless.png) |
+| ![Settings: Playback](docs/screenshots/player-settings-playback.png) | ![Settings: Lyrics](docs/screenshots/player-settings-lyrics.png) |
+| ![Settings: Appearance](docs/screenshots/player-settings-appearance.png) | ![Settings: Scrobbling & Discord](docs/screenshots/player-settings-integrations.png) |
+| ![Mini player, artwork style](docs/screenshots/player-mini-artwork.png) | |
+
+All through `MUSIC_GPUI_SCREENSHOT` / `MUSIC_SCRIPT` with a temporary `MUSIC_CONFIG_DIR`
+(screen locked the whole session). **Real device, muted** (`MUSIC_VOLUME=0.0`): a ~60 s
+preview ran out and the engine switched by itself (`Playing → Playing`, no `Loading`
+or `Ended`); the UI logged `engine advanced to l4Gb0ViuJGw (advance #1); queue next was
+l4Gb0ViuJGw` and Now Playing / up next / lyrics followed; crossfade 4 s, speed 1.5×
+(position advanced 5 s per ~3.3 s), normalization off and quality high applied while
+playing without errors; `@sleep=5s` paused 5 s later. **Demo clock:** gapless advance
+to the next queue item, sleep timer countdown in the bar, "end of track" stopping paused
+at the start of the next song, all six lyric styles, the three layouts, four
+backgrounds, alignment, romanization (YOASOBI, word-synced TTML), mini player artwork
+style. Lyrics came from BetterLyrics (Portato) and Binimum, a handful of tracks only.
+
+**Not verified:** a successful translation (Google's free endpoint answered with an
+error from this IP — the failure / Retry path is what the screenshots show; the AI path
+had no key), Paxsenix / BetterLyrics keys against the live APIs, a provider result with
+background vocals or duets on screen (covered by a unit test on a TTML fixture), the
+output-device menu with a second device, Discord activity in a running Discord,
+scrobbles with custom rules against the real services (tracker unit-tested), auto-skip
+after a real load error, physical input. **CPU not measured:** with the screen locked
+macOS delivers no display-link frames (`MUSIC_TIMINGS` prints nothing; 0 % CPU sampled).
+Frames are still only requested while Now Playing is visible and something moves; the
+glow background adds no frames while paused, the mini player none at all. Backdrop blur
++ palette + glow lights: ~9.5 ms per track on a worker thread.
 
 ### Measurements (app shell round)
 

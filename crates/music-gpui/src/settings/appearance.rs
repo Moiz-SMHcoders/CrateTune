@@ -1,4 +1,5 @@
-//! Appearance section: theme (dark / pure black / dynamic accent) and font size.
+//! Appearance section: theme (dark / pure black / dynamic accent), font size,
+//! Now Playing layout + background, and the mini player style.
 
 use gpui::{
     AnyElement, Context, FontWeight, InteractiveElement as _, IntoElement, ParentElement as _,
@@ -12,7 +13,9 @@ use gpui_component::{
 };
 
 use super::SettingsPanel;
-use super::widgets::{group, note};
+use super::prefs::{MiniPlayerStyle, NowPlayingBackground, NowPlayingLayout};
+use super::prefs_ui::choice;
+use super::widgets::{group, note, row};
 use crate::theme::{AppColors, FONT_SCALES, ThemeChoice};
 
 pub(super) fn render(
@@ -91,6 +94,104 @@ pub(super) fn render(
             .on_click(cx.listener(move |this, _, _, cx| this.set_font_scale(value, cx)))
     }));
 
+    // ---- Now Playing: layout cards with a schematic preview
+    let np = panel.settings.now_playing;
+    let block = |w: f32, h: f32, alpha: f32| {
+        div()
+            .w(px(w))
+            .h(px(h))
+            .flex_none()
+            .rounded(px(2.))
+            .bg(hsla(0., 0., 1., alpha))
+    };
+    let lines = |n: usize, w: f32| {
+        v_flex()
+            .gap(px(3.))
+            .children((0..n).map(move |i| block(w * (1. - 0.15 * (i % 3) as f32), 3., 0.55)))
+    };
+    let preview = |layout: NowPlayingLayout| {
+        let frame = div()
+            .h(px(70.))
+            .w_full()
+            .rounded(px(6.))
+            .bg(hsla(0.62, 0.35, 0.22, 1.))
+            .p_2();
+        match layout {
+            NowPlayingLayout::Split => frame.child(
+                h_flex()
+                    .size_full()
+                    .gap_2()
+                    .child(
+                        v_flex()
+                            .gap(px(3.))
+                            .child(block(30., 30., 0.8))
+                            .child(block(30., 3., 0.5))
+                            .child(block(30., 3., 0.35)),
+                    )
+                    .child(lines(5, 50.)),
+            ),
+            NowPlayingLayout::Centered => frame.child(
+                v_flex()
+                    .size_full()
+                    .items_center()
+                    .gap(px(3.))
+                    .child(block(36., 36., 0.8))
+                    .child(block(44., 3., 0.5))
+                    .child(block(30., 3., 0.35)),
+            ),
+            NowPlayingLayout::Lyrics => frame.child(
+                v_flex()
+                    .size_full()
+                    .gap(px(4.))
+                    .child(div().flex_1().child(lines(4, 90.)))
+                    .child(
+                        h_flex()
+                            .gap(px(4.))
+                            .child(block(10., 10., 0.8))
+                            .child(block(60., 3., 0.5)),
+                    ),
+            ),
+        }
+    };
+    let layouts = h_flex()
+        .gap_3()
+        .children(NowPlayingLayout::ALL.map(|layout| {
+            let selected = np.layout == layout;
+            v_flex()
+                .id(SharedString::from(format!("np-layout-{}", layout.key())))
+                .w(px(150.))
+                .p_2()
+                .gap_2()
+                .rounded(px(10.))
+                .border_2()
+                .border_color(if selected { ring } else { border })
+                .cursor_pointer()
+                .child(preview(layout))
+                .child(
+                    div()
+                        .text_sm()
+                        .when(selected, |this| this.font_weight(FontWeight::SEMIBOLD))
+                        .child(layout.title()),
+                )
+                .on_click(cx.listener(move |this, _, _, cx| this.set_np_layout(layout, cx)))
+        }));
+    let backgrounds = choice(
+        "np-background",
+        &NowPlayingBackground::ALL,
+        np.background,
+        NowPlayingBackground::title,
+        |this, b, cx| this.set_np_background(b, cx),
+        cx,
+    );
+    let mini = choice(
+        "mini-style",
+        &MiniPlayerStyle::ALL,
+        np.mini_player,
+        MiniPlayerStyle::title,
+        |this, m, cx| this.set_mini_style(m, cx),
+        cx,
+    );
+
     v_flex()
         .gap_5()
         .child(group("Theme", cx).child(themes).child(note(
@@ -103,8 +204,20 @@ pub(super) fn render(
                 div()
                     .text_xs()
                     .text_color(muted)
-                    .child("Scales all interface text; lyrics keep their own size."),
+                    .child("Scales all interface text; lyrics keep their own size (Lyrics)."),
             ),
         )
+        .child(
+            group("Now Playing", cx)
+                .child(layouts)
+                .child(row("Background", None, backgrounds, cx))
+                .child(note(
+                    "Gradient, solid and glow take their colours from the artwork. The glow \
+                     only moves while music plays. Layout and background are also in the \
+                     Now Playing screen's layout menu.",
+                    cx,
+                )),
+        )
+        .child(group("Mini player", cx).child(row("Background", None, mini, cx)))
         .into_any_element()
 }

@@ -39,6 +39,11 @@
 //! | `@locale=de:DE` | Content & region: content language and country |
 //! | `@suggest` | print the search dropdown's entries and the recent searches |
 //! | `@proxy=KIND:HOST:PORT`, `@proxy=off` | Network section: apply a proxy (no credentials) |
+//! | `@layout=split\|centered\|lyrics`, `@np-bg=blur\|gradient\|solid\|glow`, `@mini-style=theme\|artwork` | Now Playing / mini player look (saved) |
+//! | `@lyrics-style=karaoke\|apple\|slide\|glow\|fade\|none`, `@lyrics-size=40`, `@lyrics-spacing=1.5`, `@lyrics-align=left\|center\|right` | lyrics look (saved) |
+//! | `@translate=on\|off`, `@romanize=SCRIPT:on\|off` (`japanese`, `korean`, `chinese`, `devanagari`, `cyrillic`, `other`), `@lyrics-reload` | lyrics extras |
+//! | `@sleep=MIN\|eot\|off` (`@sleep=5s`: seconds, for tests) | sleep timer |
+//! | `@speed=1.25`, `@pitch=-2`, `@crossfade=6`, `@quality=low\|normal\|high`, `@normalize=on\|off`, `@skip-silence=on\|off` | engine options (saved) |
 //! | `@quit` | quit |
 
 use std::time::{Duration, Instant};
@@ -48,13 +53,17 @@ use gpui::{
     MouseDownEvent, MouseMoveEvent, MouseUpEvent, NavigationDirection, PlatformInput, ScrollDelta,
     ScrollEvent, ScrollSource, TouchPhase, Window, point, px,
 };
-use music_core::EqPreset;
+use music_core::{EqPreset, Quality, SleepTimer};
 
 use crate::actions;
 use crate::app::MusicApp;
 use crate::queue::Repeat;
 use crate::router::Route;
 use crate::settings::SectionId;
+use crate::settings::prefs::{
+    LyricsAnimation, MiniPlayerStyle, NowPlayingBackground, NowPlayingLayout, RomanizeConfig,
+    TextAlign,
+};
 use crate::theme::ThemeChoice;
 
 /// Parses `"secs:item,item,..."`; items without a time use `default_delay`.
@@ -425,6 +434,105 @@ impl MusicApp {
             "proxy" => {
                 let spec = arg.unwrap_or("off").to_owned();
                 panel.update(cx, |p, cx| p.set_proxy_draft(&spec, window, cx));
+            }
+            "layout" => match arg.and_then(NowPlayingLayout::parse) {
+                Some(l) => panel.update(cx, |p, cx| p.set_np_layout(l, cx)),
+                None => eprintln!("music-gpui: @layout wants split|centered|lyrics"),
+            },
+            "np-bg" => match arg.and_then(NowPlayingBackground::parse) {
+                Some(b) => panel.update(cx, |p, cx| p.set_np_background(b, cx)),
+                None => eprintln!("music-gpui: @np-bg wants blur|gradient|solid|glow"),
+            },
+            "mini-style" => {
+                let style = if arg == Some("artwork") {
+                    MiniPlayerStyle::Artwork
+                } else {
+                    MiniPlayerStyle::Theme
+                };
+                panel.update(cx, |p, cx| p.set_mini_style(style, cx));
+            }
+            "lyrics-style" => match arg.and_then(LyricsAnimation::parse) {
+                Some(a) => panel.update(cx, |p, cx| p.set_lyrics_animation(a, cx)),
+                None => eprintln!("music-gpui: unknown lyrics style"),
+            },
+            "lyrics-size" | "lyrics-spacing" => {
+                let v = num().map(|v| v as f32);
+                let (size, spacing) = if name == "lyrics-size" {
+                    (v, None)
+                } else {
+                    (None, v)
+                };
+                panel.update(cx, |p, cx| p.set_lyrics_metrics(size, spacing, window, cx));
+            }
+            "lyrics-align" => {
+                let align = TextAlign::ALL
+                    .into_iter()
+                    .find(|a| Some(a.title().to_lowercase().as_str()) == arg);
+                if let Some(align) = align {
+                    panel.update(cx, |p, cx| p.set_lyrics_align(align, cx));
+                }
+            }
+            "translate" => {
+                let on = on();
+                panel.update(cx, |p, cx| p.set_translate(on, cx));
+            }
+            "romanize" => {
+                let (script, state) = arg.and_then(|a| a.split_once(':')).unwrap_or(("", "on"));
+                let script = RomanizeConfig::SCRIPTS
+                    .iter()
+                    .find(|(_, title)| title.to_lowercase().starts_with(script))
+                    .map(|(s, _)| *s);
+                match script {
+                    Some(script) if !arg.unwrap_or("").is_empty() => {
+                        let on = state != "off";
+                        panel.update(cx, |p, cx| p.set_romanize(script, on, cx));
+                    }
+                    _ => eprintln!("music-gpui: @romanize wants SCRIPT:on|off"),
+                }
+            }
+            "lyrics-reload" => self.reload_lyrics(cx),
+            "sleep" => {
+                let timer = match arg.unwrap_or("off") {
+                    "off" => None,
+                    "eot" => Some(SleepTimer::EndOfTrack),
+                    a => {
+                        let secs = match a.strip_suffix('s') {
+                            Some(secs) => secs.parse::<f64>().ok(),
+                            None => a.parse::<f64>().ok().map(|m| m * 60.),
+                        };
+                        secs.map(|s| SleepTimer::After(Duration::from_secs_f64(s.max(0.))))
+                    }
+                };
+                self.set_sleep_timer(timer, cx);
+            }
+            "speed" | "pitch" => {
+                let v = num().map(|v| v as f32);
+                let (speed, pitch) = if name == "speed" {
+                    (v, None)
+                } else {
+                    (None, v)
+                };
+                panel.update(cx, |p, cx| p.set_speed_pitch(speed, pitch, window, cx));
+            }
+            "crossfade" => {
+                let secs = num().unwrap_or(0.) as f32;
+                panel.update(cx, |p, cx| p.set_crossfade(secs, window, cx));
+            }
+            "quality" => {
+                let quality = match arg {
+                    Some("low") => Quality::Low,
+                    Some("high") => Quality::High,
+                    _ => Quality::Normal,
+                };
+                panel.update(cx, |p, cx| p.set_quality(quality, cx));
+            }
+            "normalize" => {
+                let on = on();
+                panel.update(cx, |p, cx| p.set_normalization(on, cx));
+            }
+            "skip-silence" => {
+                let on = on();
+                panel.update(cx, |p, cx| p.set_skip_silence(on, cx));
             }
             "quit" => cx.quit(),
             other => eprintln!("music-gpui: unknown script action @{other}"),

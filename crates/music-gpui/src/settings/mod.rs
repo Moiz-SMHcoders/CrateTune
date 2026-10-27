@@ -25,6 +25,8 @@ mod lyrics;
 mod network;
 pub mod panel;
 mod playback;
+pub mod prefs;
+mod prefs_ui;
 mod privacy;
 mod storage;
 mod widgets;

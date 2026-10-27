@@ -117,6 +117,7 @@ enum Command {
     Resume,
     Seek(Duration),
     SetVolume(f32),
+    SetNormalization(bool),
     SetNext(Option<Track>),
     SetCrossfade(Duration),
     SetSkipSilence(Option<SilenceConfig>),
@@ -235,6 +236,12 @@ impl Player {
 
     pub fn set_volume(&self, volume: f32) {
         self.send(Command::SetVolume(volume.clamp(0.0, 1.0)));
+    }
+
+    /// Loudness normalization (YouTube `loudnessDb`, ReplayGain / R128 tags of
+    /// local files), on by default. Applies to the playing track right away.
+    pub fn set_normalization(&self, enabled: bool) {
+        self.send(Command::SetNormalization(enabled));
     }
 
     /// The track to play after the current one (call whenever the queue
@@ -546,6 +553,7 @@ impl Engine {
                 self.state().volume = volume;
                 self.deck.set_volume(volume);
             }
+            Command::SetNormalization(enabled) => self.deck.set_normalization(enabled),
             Command::SetNext(track) => self.set_next(track),
             Command::SetCrossfade(d) => self.deck.set_crossfade(d),
             Command::SetSkipSilence(config) => {

@@ -26,14 +26,21 @@ pub enum Secret {
     ListenBrainzToken,
     /// Network section: the proxy password.
     ProxyPassword,
+    /// Lyrics providers / AI translation (Lyrics settings).
+    PaxsenixKey,
+    BetterLyricsKey,
+    AiTranslateKey,
 }
 
 impl Secret {
     #[cfg(test)]
-    pub const ALL: [Secret; 4] = [
+    pub const ALL: [Secret; 7] = [
         Secret::LastFmShared,
         Secret::LastFmSession,
         Secret::ListenBrainzToken,
+        Secret::PaxsenixKey,
+        Secret::BetterLyricsKey,
+        Secret::AiTranslateKey,
         Secret::ProxyPassword,
     ];
 
@@ -44,6 +51,9 @@ impl Secret {
             Secret::LastFmSession => "lastfm-session-key",
             Secret::ListenBrainzToken => "listenbrainz-token",
             Secret::ProxyPassword => "proxy-password",
+            Secret::PaxsenixKey => "paxsenix-api-key",
+            Secret::BetterLyricsKey => "betterlyrics-api-key",
+            Secret::AiTranslateKey => "ai-translate-api-key",
         }
     }
 }
