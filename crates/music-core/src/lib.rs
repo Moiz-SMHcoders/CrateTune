@@ -5,6 +5,7 @@
 //! so the core owns no async runtime and callers decide where work runs.
 //!
 //! * [`InnerTube`] – YouTube Music metadata (search for now).
+//! * [`http`] – the shared HTTP agent; [`http::configure`] sets a proxy / user agent.
 //! * [`fetch_lyrics`] – LRCLIB synced lyrics with per-word timings.
 //! * [`StreamResolver`] – turns a video id into a playable audio URL.
 //! * [`Player`] – background audio engine with a pollable [`PlaybackState`].
@@ -19,7 +20,7 @@ mod decode;
 pub mod discord;
 pub mod equalizer;
 mod error;
-mod http;
+pub mod http;
 mod innertube;
 mod lyrics;
 pub mod media_controls;
@@ -31,7 +32,7 @@ mod stream;
 pub use decode::TrackDecoder;
 pub use equalizer::{EqBandKind, EqBandSettings, EqPreset, EqualizerSettings};
 pub use error::{Error, Result};
-pub use http::fetch_bytes;
+pub use http::{HttpConfig, fetch_bytes};
 pub use innertube::InnerTube;
 pub use lyrics::{LyricLine, LyricWord, Lyrics, fetch_lyrics, parse_lrc};
 pub use model::{EntityRef, Track, format_duration};
