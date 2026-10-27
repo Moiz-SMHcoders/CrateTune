@@ -2,19 +2,27 @@
 //!
 //! One root view (`MusicApp`) owns all state. Blocking `music-core` calls run on
 //! GPUI's background executor; a foreground task polls `Player::state()` every
-//! 250 ms and only re-renders when the snapshot changed.
+//! 250 ms and only re-renders when the snapshot changed. The Now Playing screen
+//! (`now_playing.rs`) additionally renders at display rate while it is visible
+//! and something moves (see `anim::Frame`).
+
+mod anim;
+mod backdrop;
+mod clock;
+mod karaoke;
+mod now_playing;
 
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use gpui::{
     App, AppContext as _, Bounds, ClickEvent, Context, Entity, Focusable as _, FontWeight, Hsla,
-    Image, ImageFormat, InteractiveElement as _, IntoElement, ObjectFit, ParentElement as _,
-    Pixels, Render, SharedString, Size, StatefulInteractiveElement as _, Styled as _,
-    StyledImage as _, Subscription, Task, TitlebarOptions, Window, WindowBounds, WindowOptions,
-    div, img, prelude::FluentBuilder as _, px, size,
+    Image, ImageFormat, InteractiveElement as _, IntoElement, KeyBinding, ObjectFit,
+    ParentElement as _, Pixels, Render, SharedString, Size, StatefulInteractiveElement as _,
+    Styled as _, StyledImage as _, Subscription, Task, TitlebarOptions, Window, WindowBounds,
+    WindowOptions, div, img, prelude::FluentBuilder as _, px, size,
 };
 use gpui_component::{
     ActiveTheme as _, Disableable as _, IconName, Root, Sizable as _, Theme, ThemeMode,
@@ -31,6 +39,10 @@ use gpui_component::{
 use music_core::{
     InnerTube, IosClientResolver, PlaybackState, PlaybackStatus, Player, Track, format_duration,
 };
+
+use crate::anim::Frame;
+use crate::clock::{DemoPlayer, Engine, SmoothClock};
+use crate::now_playing::{CloseNowPlaying, HiRes, LyricsState, NowPlaying, TogglePlayback};
 
 const POLL_INTERVAL: Duration = Duration::from_millis(250);
 const SEARCH_DEBOUNCE: Duration = Duration::from_millis(400);
@@ -62,14 +74,28 @@ struct MusicApp {
     /// Per video id; entries are never evicted (fine for a spike).
     artwork: HashMap<String, Artwork>,
 
-    player: Option<Player>,
+    /// Real audio, or the demo wall clock (no audio device / `MUSIC_DEMO_CLOCK=1`).
+    engine: Option<Engine>,
+    /// A track picked before the engine finished starting.
+    pending_play: Option<Track>,
     audio_error: Option<String>,
     playback: PlaybackState,
+    /// `playback.position` extrapolated between polls, for display-rate lyrics.
+    clock: SmoothClock,
     progress: Entity<SliderState>,
     /// Seconds under the pointer while the user drags the progress slider.
     scrub: Option<f32>,
-    /// Play the first result of the next search (`MUSIC_GPUI_AUTOPLAY`, for measurements).
+    /// Play the first result of the next search (`MUSIC_AUTOOPEN` / `MUSIC_GPUI_AUTOPLAY`).
     autoplay: bool,
+    /// ...and open the Now Playing screen once it is playing (`MUSIC_AUTOOPEN`).
+    autoopen: bool,
+
+    np: NowPlaying,
+    /// `MUSIC_TIMINGS=1`: prints renders/s and the worst frame gap once a second.
+    frame_stats: Option<FrameStats>,
+    /// Per video id; never evicted.
+    lyrics: HashMap<String, LyricsState>,
+    hires: HashMap<String, HiRes>,
 
     _poll: Task<()>,
     _subscriptions: Vec<Subscription>,
@@ -87,15 +113,27 @@ impl MusicApp {
         ];
 
         // Opening the audio device can block briefly (and fails in sandboxes), so keep
-        // it off the main thread; search works regardless.
+        // it off the main thread; search works regardless. Without audio, a demo
+        // wall clock stands in so the Now Playing screen can still be exercised.
+        let force_demo = std::env::var("MUSIC_DEMO_CLOCK").is_ok_and(|v| v == "1");
         cx.spawn(async move |this, cx| {
-            let result = cx
-                .background_spawn(async { Player::new(Arc::new(IosClientResolver)) })
-                .await;
+            let result = if force_demo {
+                Err(None)
+            } else {
+                cx.background_spawn(async { Player::new(Arc::new(IosClientResolver)) })
+                    .await
+                    .map_err(Some)
+            };
             this.update(cx, |this, cx| {
-                match result {
-                    Ok(player) => this.player = Some(player),
-                    Err(e) => this.audio_error = Some(e.to_string()),
+                this.engine = Some(match result {
+                    Ok(player) => Engine::Audio(player),
+                    Err(e) => {
+                        this.audio_error = e.map(|e| format!("{e} (using a demo clock)"));
+                        Engine::Demo(DemoPlayer::default())
+                    }
+                });
+                if let Some(track) = this.pending_play.take() {
+                    this.play(track, cx);
                 }
                 cx.notify();
             })
@@ -127,24 +165,34 @@ impl MusicApp {
             row_sizes: Rc::default(),
             scroll: VirtualListScrollHandle::new(),
             artwork: HashMap::new(),
-            player: None,
+            engine: None,
+            pending_play: None,
             audio_error: None,
             playback: PlaybackState::default(),
+            clock: SmoothClock::default(),
             progress,
             scrub: None,
             autoplay: false,
+            autoopen: false,
+            np: NowPlaying::new(cx.focus_handle()),
+            frame_stats: std::env::var_os("MUSIC_TIMINGS").map(|_| FrameStats::default()),
+            lyrics: HashMap::new(),
+            hires: HashMap::new(),
             _poll: poll,
             _subscriptions: subscriptions,
         }
     }
 
-    /// `MUSIC_GPUI_QUERY` pre-fills and runs a search; `MUSIC_GPUI_AUTOPLAY=1` then plays
-    /// the first result. Lets RSS/CPU be measured without clicking around.
+    /// `MUSIC_QUERY` pre-fills and runs a search; `MUSIC_AUTOOPEN=1` then plays the first
+    /// result and opens Now Playing. Lets RSS/CPU be measured without clicking around.
+    /// (`MUSIC_GPUI_QUERY` / `MUSIC_GPUI_AUTOPLAY` from the first round still work.)
     fn apply_startup_env(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        let Ok(query) = std::env::var("MUSIC_GPUI_QUERY") else {
+        let env = |name: &str| std::env::var(name).ok().filter(|v| !v.is_empty());
+        let Some(query) = env("MUSIC_QUERY").or_else(|| env("MUSIC_GPUI_QUERY")) else {
             return;
         };
-        self.autoplay = std::env::var_os("MUSIC_GPUI_AUTOPLAY").is_some();
+        self.autoopen = env("MUSIC_AUTOOPEN").is_some_and(|v| v != "0");
+        self.autoplay = self.autoopen || env("MUSIC_GPUI_AUTOPLAY").is_some();
         self.search_input
             .update(cx, |input, cx| input.set_value(query.clone(), window, cx));
         self.start_search(query.trim().to_owned(), None, cx);
@@ -284,23 +332,28 @@ impl MusicApp {
     // ---- playback -----------------------------------------------------------
 
     fn play(&mut self, track: Track, cx: &mut Context<Self>) {
-        match &self.player {
-            Some(player) => {
-                player.play(track);
+        // Prefetch what the Now Playing screen needs while audio resolves.
+        self.ensure_lyrics(&track, cx);
+        self.ensure_hires(&track, cx);
+        match &mut self.engine {
+            Some(engine) => {
+                engine.play(track);
                 self.refresh_soon(cx);
             }
             None => {
-                if self.audio_error.is_none() {
-                    self.audio_error = Some("audio engine is still starting".into());
-                }
+                self.pending_play = Some(track);
                 cx.notify();
             }
         }
     }
 
     fn toggle_pause(&mut self, _: &ClickEvent, _: &mut Window, cx: &mut Context<Self>) {
-        if let Some(player) = &self.player {
-            player.toggle_pause();
+        self.toggle_playback(cx);
+    }
+
+    fn toggle_playback(&mut self, cx: &mut Context<Self>) {
+        if let Some(engine) = &mut self.engine {
+            engine.toggle_pause();
             self.refresh_soon(cx);
         }
     }
@@ -311,8 +364,9 @@ impl MusicApp {
         cx.spawn(async move |this, cx| {
             executor.timer(Duration::from_millis(30)).await;
             this.update(cx, |this, cx| {
-                if let Some(player) = &this.player {
-                    let state = player.state();
+                if let Some(engine) = &this.engine {
+                    let state = engine.state();
+                    this.clock.sync(&state, Instant::now());
                     if !same_snapshot(&this.playback, &state) {
                         this.playback = state;
                         cx.notify();
@@ -325,8 +379,9 @@ impl MusicApp {
     }
 
     fn poll_player(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        let Some(player) = &self.player else { return };
-        let state = player.state();
+        let Some(engine) = &self.engine else { return };
+        let state = engine.state();
+        self.clock.sync(&state, Instant::now());
         if same_snapshot(&self.playback, &state) {
             return;
         }
@@ -341,6 +396,10 @@ impl MusicApp {
             });
         }
         self.playback = state;
+        if self.autoopen && !self.autoplay && self.playback.track.is_some() {
+            self.autoopen = false;
+            self.open_now_playing(window, cx);
+        }
         cx.notify();
     }
 
@@ -358,10 +417,7 @@ impl MusicApp {
             }
             SliderEvent::Release(value) => {
                 self.scrub = None;
-                if let Some(player) = &self.player {
-                    player.seek(Duration::from_secs_f32(value.start().max(0.)));
-                }
-                self.refresh_soon(cx);
+                self.seek_to(Duration::from_secs_f32(value.start().max(0.)), cx);
             }
         }
     }
@@ -561,7 +617,7 @@ impl MusicApp {
         };
 
         let is_playing = state.status == PlaybackStatus::Playing;
-        let can_toggle = self.player.is_some()
+        let can_toggle = self.engine.is_some()
             && matches!(
                 state.status,
                 PlaybackStatus::Playing | PlaybackStatus::Paused | PlaybackStatus::Ended
@@ -592,27 +648,41 @@ impl MusicApp {
             .border_t_1()
             .border_color(theme.border)
             .bg(theme.secondary)
-            // Left: artwork + title.
+            // Left: artwork + title; click to expand into Now Playing.
             .child(
-                h_flex().w(px(300.)).flex_none().gap_3().child(art).child(
-                    v_flex()
-                        .min_w_0()
-                        .gap_0p5()
-                        .child(
-                            div()
-                                .truncate()
-                                .font_weight(FontWeight::SEMIBOLD)
-                                .text_color(theme.foreground)
-                                .child(title),
+                h_flex()
+                    .id("np-bar-open")
+                    .w(px(300.))
+                    .flex_none()
+                    .gap_3()
+                    .p_1()
+                    .rounded(px(8.))
+                    .when(track.is_some(), |this| {
+                        let hover = theme.list_hover;
+                        this.cursor_pointer().hover(move |s| s.bg(hover)).on_click(
+                            cx.listener(|this, _, window, cx| this.open_now_playing(window, cx)),
                         )
-                        .child(
-                            div()
-                                .truncate()
-                                .text_sm()
-                                .text_color(theme.muted_foreground)
-                                .child(artists),
-                        ),
-                ),
+                    })
+                    .child(art)
+                    .child(
+                        v_flex()
+                            .min_w_0()
+                            .gap_0p5()
+                            .child(
+                                div()
+                                    .truncate()
+                                    .font_weight(FontWeight::SEMIBOLD)
+                                    .text_color(theme.foreground)
+                                    .child(title),
+                            )
+                            .child(
+                                div()
+                                    .truncate()
+                                    .text_sm()
+                                    .text_color(theme.muted_foreground)
+                                    .child(artists),
+                            ),
+                    ),
             )
             // Centre: transport + progress.
             .child(
@@ -668,33 +738,101 @@ impl MusicApp {
                             })),
                     ),
             )
-            // Right: status / errors.
+            // Right: status / errors + expand button.
             .child(
-                div()
+                h_flex()
                     .w(px(260.))
                     .flex_none()
-                    .text_xs()
-                    .text_right()
-                    .line_clamp(3)
-                    .when_some(message, |this, (text, color)| {
-                        this.text_color(color).child(text)
-                    }),
+                    .gap_2()
+                    .child(
+                        div()
+                            .flex_1()
+                            .min_w_0()
+                            .text_xs()
+                            .text_right()
+                            .line_clamp(3)
+                            .when_some(message, |this, (text, color)| {
+                                this.text_color(color).child(text)
+                            }),
+                    )
+                    .child(
+                        Button::new("np-expand")
+                            .ghost()
+                            .icon(IconName::ChevronUp)
+                            .tooltip("Now Playing & lyrics")
+                            .disabled(track.is_none())
+                            .on_click(
+                                cx.listener(|this, _, window, cx| {
+                                    this.open_now_playing(window, cx)
+                                }),
+                            ),
+                    ),
             )
     }
 }
 
 impl Render for MusicApp {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let header = self.render_header(cx);
-        let results = self.render_results(cx);
-        let now_playing = self.render_now_playing(cx);
-        v_flex()
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let mut frame = Frame::new();
+        let reveal = frame.get(&self.np.reveal);
+        // Once the Now Playing screen fully covers the window, skip building the
+        // browse UI underneath, so per-frame lyric renders stay cheap.
+        let covered = reveal >= 1.;
+        let mut root = div()
+            .relative()
             .size_full()
             .bg(cx.theme().background)
-            .text_color(cx.theme().foreground)
-            .child(header)
-            .child(results)
-            .child(now_playing)
+            .text_color(cx.theme().foreground);
+        if !covered {
+            let header = self.render_header(cx);
+            let results = self.render_results(cx);
+            let now_playing = self.render_now_playing(cx);
+            root = root.child(
+                v_flex()
+                    .size_full()
+                    .child(header)
+                    .child(results)
+                    .child(now_playing),
+            );
+        }
+        if reveal > 0. {
+            root = root.child(self.render_now_playing_screen(reveal, &mut frame, window, cx));
+        }
+        if let Some(stats) = &mut self.frame_stats {
+            stats.record(frame.now);
+        }
+        frame.finish(window);
+        root
+    }
+}
+
+#[derive(Default)]
+struct FrameStats {
+    window_start: Option<Instant>,
+    last: Option<Instant>,
+    frames: u32,
+    worst_gap: Duration,
+}
+
+impl FrameStats {
+    fn record(&mut self, now: Instant) {
+        if let Some(last) = self.last {
+            self.worst_gap = self.worst_gap.max(now - last);
+        }
+        self.last = Some(now);
+        self.frames += 1;
+        let start = *self.window_start.get_or_insert(now);
+        if now - start >= Duration::from_secs(1) {
+            eprintln!(
+                "music-gpui: {} renders/s, worst gap {:.1} ms",
+                self.frames,
+                self.worst_gap.as_secs_f64() * 1e3
+            );
+            *self = Self {
+                last: Some(now),
+                ..Self::default()
+            };
+        }
     }
 }
 
@@ -738,11 +876,19 @@ fn main() {
         .run(|cx: &mut App| {
             gpui_component::init(cx);
             Theme::change(ThemeMode::Dark, None, cx);
+            cx.bind_keys([
+                KeyBinding::new("escape", CloseNowPlaying, Some("NowPlaying")),
+                KeyBinding::new("space", TogglePlayback, Some("NowPlaying")),
+            ]);
 
             let bounds = Bounds::centered(None, size(px(1100.), px(720.)), cx);
             let options = WindowOptions {
                 window_bounds: Some(WindowBounds::Windowed(bounds)),
                 window_min_size: Some(size(px(720.), px(480.))),
+                // GPUI caps unfocused windows to ~30 fps by default; lyrics should stay
+                // smooth while you work in another app (frames are only requested while
+                // the Now Playing screen is visible and moving anyway).
+                inactive_frame_interval: None,
                 titlebar: Some(TitlebarOptions {
                     title: Some("Music".into()),
                     ..Default::default()
@@ -770,31 +916,59 @@ fn main() {
 
 /// Dev-only: `MUSIC_GPUI_SCREENSHOT=out.png` renders the window offscreen after
 /// `MUSIC_GPUI_SCREENSHOT_DELAY` seconds (default 6), saves it, and quits.
+/// `MUSIC_GPUI_SCREENSHOT="12:a.png,12.4:b.png"` takes several (seconds since launch);
+/// `"14:@toggle"` / `"20:@close"` entries dispatch the play/pause and close actions.
 #[cfg(feature = "screenshot")]
 mod screenshot {
-    use std::time::Duration;
+    use std::time::{Duration, Instant};
 
     use gpui::{AnyWindowHandle, App, AppContext as _};
 
     pub fn schedule(window: AnyWindowHandle, cx: &mut App) {
-        let Ok(path) = std::env::var("MUSIC_GPUI_SCREENSHOT") else {
+        let Ok(spec) = std::env::var("MUSIC_GPUI_SCREENSHOT") else {
             return;
         };
-        let delay = std::env::var("MUSIC_GPUI_SCREENSHOT_DELAY")
+        let default_delay = std::env::var("MUSIC_GPUI_SCREENSHOT_DELAY")
             .ok()
             .and_then(|s| s.parse().ok())
             .unwrap_or(6.0);
+        let mut shots: Vec<(f64, String)> = spec
+            .split(',')
+            .map(|item| match item.split_once(':') {
+                Some((secs, path)) if secs.parse::<f64>().is_ok() => {
+                    (secs.parse().unwrap(), path.to_owned())
+                }
+                _ => (default_delay, item.to_owned()),
+            })
+            .collect();
+        shots.sort_by(|a, b| a.0.total_cmp(&b.0));
+        let started = Instant::now();
         let executor = cx.background_executor().clone();
         cx.spawn(async move |cx| {
-            executor.timer(Duration::from_secs_f64(delay)).await;
-            let result = cx.update_window(window, |_, window, _| window.render_to_image());
-            match result {
-                Ok(Ok(image)) => match image.save(&path) {
-                    Ok(()) => eprintln!("music-gpui: screenshot saved to {path}"),
-                    Err(e) => eprintln!("music-gpui: saving screenshot failed: {e}"),
-                },
-                Ok(Err(e)) => eprintln!("music-gpui: render_to_image failed: {e}"),
-                Err(e) => eprintln!("music-gpui: window gone: {e}"),
+            for (at, path) in shots {
+                let wait = Duration::from_secs_f64(at).saturating_sub(started.elapsed());
+                executor.timer(wait).await;
+                // `@close` / `@toggle` dispatch the Now Playing actions (as Esc / Space
+                // would) so transitions can be captured without input injection.
+                let action: Option<Box<dyn gpui::Action>> = match path.as_str() {
+                    "@close" => Some(Box::new(crate::now_playing::CloseNowPlaying)),
+                    "@toggle" => Some(Box::new(crate::now_playing::TogglePlayback)),
+                    _ => None,
+                };
+                if let Some(action) = action {
+                    cx.update_window(window, |_, window, cx| window.dispatch_action(action, cx))
+                        .ok();
+                    continue;
+                }
+                let result = cx.update_window(window, |_, window, _| window.render_to_image());
+                match result {
+                    Ok(Ok(image)) => match image.save(&path) {
+                        Ok(()) => eprintln!("music-gpui: screenshot saved to {path}"),
+                        Err(e) => eprintln!("music-gpui: saving screenshot failed: {e}"),
+                    },
+                    Ok(Err(e)) => eprintln!("music-gpui: render_to_image failed: {e}"),
+                    Err(e) => eprintln!("music-gpui: window gone: {e}"),
+                }
             }
             cx.update(|cx| cx.quit());
         })

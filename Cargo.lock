@@ -3918,6 +3918,7 @@ dependencies = [
 name = "music-gpui"
 version = "0.1.0"
 dependencies = [
+ "futures-channel",
  "gpui-component",
  "gpui-kit-assets",
  "gpui-pre",
