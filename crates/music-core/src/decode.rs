@@ -1,39 +1,201 @@
-//! In-memory audio decoding with Symphonia 0.6, exposed as a [`rodio::Source`].
+//! Audio decoding with Symphonia 0.6 (plus `opus-decoder` for Opus), exposed as
+//! a [`rodio::Source`].
 //!
 //! rodio 0.23 bundles Symphonia 0.5, whose MP4 reader scans every fragment up
 //! front when the input is seekable and fails ("end of stream") on the truncated
 //! fragmented MP4s we get without a PoToken. Symphonia 0.6's reader opens those
 //! fine and can seek anywhere inside the downloaded part, so we decode with it
 //! directly and only use rodio for mixing and output.
+//!
+//! Inputs: a file in memory, a local file, or a [`StreamBuffer`] that is still
+//! downloading (reads block until the bytes arrive). Formats: MP4/M4A (AAC,
+//! ALAC), MP3, FLAC, Ogg (Vorbis, Opus), WAV, AIFF, Matroska/WebM (Opus, Vorbis,
+//! AAC, FLAC, …).
 
+use std::fs::File;
 use std::io::Cursor;
 use std::num::NonZero;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
 
 use rodio::source::SeekError;
 use rodio::{ChannelCount, SampleRate, Source};
+use symphonia::core::codecs::audio::well_known::CODEC_ID_OPUS;
 use symphonia::core::codecs::audio::{AudioDecoder, AudioDecoderOptions};
 use symphonia::core::errors::Error as SymphoniaError;
 use symphonia::core::formats::probe::Hint;
 use symphonia::core::formats::{FormatOptions, FormatReader, SeekMode, SeekTo, TrackType};
-use symphonia::core::io::MediaSourceStream;
-use symphonia::core::meta::MetadataOptions;
+use symphonia::core::io::{MediaSource, MediaSourceStream};
+use symphonia::core::meta::{MetadataOptions, MetadataRevision, StandardTag};
 use symphonia::core::units::{Time, TimeBase, Timestamp};
 
+use crate::buffer::StreamBuffer;
 use crate::equalizer::{EqControl, EqStage};
+use crate::opus::{OPUS_PREROLL_FRAMES, OpusPacketDecoder};
 use crate::{Error, Result};
 
-/// Decodes an in-memory audio file (AAC in MP4/M4A, including truncated
-/// fragmented MP4 previews) and yields interleaved `f32` samples.
+/// Where the encoded bytes come from; reopened after a failed seek.
+#[derive(Clone)]
+enum Input {
+    Memory(Arc<[u8]>),
+    File(PathBuf),
+    Stream {
+        buffer: Arc<StreamBuffer>,
+        extension: Option<&'static str>,
+    },
+}
+
+impl Input {
+    fn media_source(&self) -> std::io::Result<Box<dyn MediaSource>> {
+        Ok(match self {
+            Input::Memory(audio) => Box::new(Cursor::new(audio.clone())),
+            Input::File(path) => Box::new(File::open(path)?),
+            Input::Stream { buffer, .. } => Box::new(buffer.reader()),
+        })
+    }
+
+    fn hint(&self) -> Hint {
+        let mut hint = Hint::new();
+        match self {
+            // Historically always YouTube's M4A; probing still checks the magic bytes.
+            Input::Memory(_) => {
+                hint.with_extension("m4a");
+            }
+            Input::File(path) => {
+                if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
+                    hint.with_extension(ext);
+                }
+            }
+            Input::Stream { extension, .. } => {
+                if let Some(ext) = extension {
+                    hint.with_extension(ext);
+                }
+            }
+        }
+        hint
+    }
+
+    fn open_format(&self) -> std::result::Result<Box<dyn FormatReader>, SymphoniaError> {
+        let mss = MediaSourceStream::new(self.media_source()?, Default::default());
+        symphonia::default::get_probe().probe(
+            &self.hint(),
+            mss,
+            FormatOptions::default(),
+            MetadataOptions::default(),
+        )
+    }
+}
+
+/// File extension for a MIME type such as `audio/webm; codecs="opus"`.
+fn extension_for_mime(mime: &str) -> Option<&'static str> {
+    let essence = mime.split(';').next()?.trim().to_ascii_lowercase();
+    Some(match essence.as_str() {
+        "audio/mp4" | "video/mp4" | "audio/m4a" | "audio/x-m4a" => "m4a",
+        "audio/webm" | "video/webm" => "webm",
+        "audio/ogg" | "audio/opus" => "ogg",
+        "audio/mpeg" | "audio/mp3" => "mp3",
+        "audio/flac" | "audio/x-flac" => "flac",
+        "audio/wav" | "audio/x-wav" | "audio/wave" => "wav",
+        _ => return None,
+    })
+}
+
+enum Codec {
+    Symphonia(Box<dyn AudioDecoder>),
+    Opus(Box<OpusPacketDecoder>),
+}
+
+impl Codec {
+    fn reset(&mut self) {
+        match self {
+            Codec::Symphonia(d) => d.reset(),
+            Codec::Opus(d) => d.reset(),
+        }
+    }
+}
+
+/// ReplayGain (or Opus R128) loudness information from a file's tags.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct ReplayGain {
+    /// Track gain in dB relative to the ReplayGain reference (89 dB SPL / -18 LUFS).
+    pub track_gain_db: f32,
+    /// Track peak amplitude (1.0 = full scale), when tagged.
+    pub track_peak: Option<f32>,
+}
+
+impl ReplayGain {
+    /// Multiplier to apply. Positive gains are limited so the peak stays at or
+    /// below full scale, and to unity when no peak is tagged.
+    pub fn linear(&self) -> f32 {
+        let gain = 10f32.powf(self.track_gain_db / 20.0);
+        let limit = match self.track_peak {
+            Some(peak) if peak > 0.0 => 1.0 / peak,
+            _ => 1.0,
+        };
+        if gain > 1.0 {
+            gain.min(limit.max(1.0))
+        } else {
+            gain
+        }
+    }
+
+    fn from_metadata(revisions: &[&MetadataRevision]) -> Option<Self> {
+        let (mut gain, mut peak, mut r128) = (None, None, None);
+        let tags = revisions.iter().flat_map(|rev| {
+            rev.media
+                .tags
+                .iter()
+                .chain(rev.per_track.iter().flat_map(|t| t.metadata.tags.iter()))
+        });
+        for tag in tags {
+            match &tag.std {
+                Some(StandardTag::ReplayGainTrackGain(v)) => gain = gain.or(parse_db(v)),
+                Some(StandardTag::ReplayGainTrackPeak(v)) => peak = peak.or(parse_db(v)),
+                _ => {
+                    let key = tag.raw.key.to_ascii_uppercase();
+                    let value = tag.raw.value.to_string();
+                    if key.ends_with("REPLAYGAIN_TRACK_GAIN") {
+                        gain = gain.or(parse_db(&value));
+                    } else if key.ends_with("REPLAYGAIN_TRACK_PEAK") {
+                        peak = peak.or(parse_db(&value));
+                    } else if key.ends_with("R128_TRACK_GAIN") {
+                        // Q7.8 dB relative to -23 LUFS; ReplayGain's reference is -18 LUFS.
+                        r128 = r128.or(value
+                            .trim()
+                            .parse::<i32>()
+                            .ok()
+                            .map(|q| q as f32 / 256.0 + 5.0));
+                    }
+                }
+            }
+        }
+        Some(Self {
+            track_gain_db: gain.or(r128)?,
+            track_peak: peak.filter(|p| *p > 0.0),
+        })
+    }
+}
+
+fn parse_db(text: &str) -> Option<f32> {
+    let text = text.trim();
+    let number = text
+        .strip_suffix("dB")
+        .or_else(|| text.strip_suffix("db"))
+        .unwrap_or(text);
+    number.trim().parse().ok().filter(|v: &f32| v.is_finite())
+}
+
+/// Decodes an audio file (local, in memory, or still downloading) and yields
+/// interleaved `f32` samples.
 ///
 /// Implements [`rodio::Source`] with sample-accurate [`Source::try_seek`], so it
 /// can be appended to a `rodio::Player` or consumed headlessly as an iterator.
 pub struct TrackDecoder {
-    /// The whole file, kept to reopen the demuxer after a failed seek.
-    audio: Arc<[u8]>,
+    /// Kept to reopen the demuxer after a failed seek.
+    input: Input,
     format: Box<dyn FormatReader>,
-    decoder: Box<dyn AudioDecoder>,
+    codec: Codec,
     track_id: u32,
     time_base: Option<TimeBase>,
     rate: u32,
@@ -48,14 +210,37 @@ pub struct TrackDecoder {
     /// Frames still to drop after an accurate seek landed before the target.
     skip_frames: u64,
     finished: bool,
+    /// Why decoding stopped early (an I/O error other than end of data).
+    end_error: Option<String>,
     eq: Option<EqStage>,
+    replay_gain: Option<ReplayGain>,
 }
 
 impl TrackDecoder {
-    /// Opens `audio` (an `.m4a`/MP4 file, complete or truncated) for decoding.
+    /// Opens `audio` (an in-memory file such as YouTube's `.m4a`, complete or
+    /// truncated) for decoding.
     pub fn new(audio: impl Into<Arc<[u8]>>) -> Result<Self> {
-        let audio: Arc<[u8]> = audio.into();
-        let format = open_format(&audio).map_err(audio_err)?;
+        Self::open(Input::Memory(audio.into()))
+    }
+
+    /// Opens a local audio file; the format is detected from its contents
+    /// (the extension is only a hint).
+    pub fn open_file(path: impl AsRef<Path>) -> Result<Self> {
+        Self::open(Input::File(path.as_ref().to_owned()))
+    }
+
+    /// Opens a file that is still downloading into `buffer`. Blocks until the
+    /// container header has arrived; afterwards reads block until the bytes they
+    /// need are downloaded (see [`StreamBuffer::set_read_timeout`]).
+    pub fn from_stream(buffer: Arc<StreamBuffer>, mime_type: &str) -> Result<Self> {
+        Self::open(Input::Stream {
+            buffer,
+            extension: extension_for_mime(mime_type),
+        })
+    }
+
+    fn open(input: Input) -> Result<Self> {
+        let mut format = input.open_format().map_err(audio_err)?;
         let track = format
             .first_track_known_codec(TrackType::Audio)
             .ok_or_else(|| Error::Audio("no audio track".into()))?;
@@ -65,38 +250,70 @@ impl TrackDecoder {
             .and_then(|p| p.audio())
             .ok_or_else(|| Error::Audio("no audio codec parameters".into()))?
             .clone();
-        let decoder = symphonia::default::get_codecs()
-            .make_audio_decoder(&params, &AudioDecoderOptions::default())
-            .map_err(audio_err)?;
         let (track_id, time_base) = (track.id, track.time_base);
         let total_duration = track
             .num_frames
             .zip(time_base)
             .and_then(|(frames, tb)| tb.calc_time(Timestamp::new(frames as i64)))
             .map(time_to_duration);
-
-        let mut this = Self {
-            audio,
-            format,
-            decoder,
-            track_id,
-            time_base,
-            rate: params.sample_rate.unwrap_or(44_100),
-            channels: params
+        let (codec, rate, channels) = if params.codec == CODEC_ID_OPUS {
+            let opus = OpusPacketDecoder::new(&params)?;
+            let channels = opus.channels();
+            (
+                Codec::Opus(Box::new(opus)),
+                crate::opus::OPUS_RATE,
+                channels,
+            )
+        } else {
+            let decoder = symphonia::default::get_codecs()
+                .make_audio_decoder(&params, &AudioDecoderOptions::default())
+                .map_err(audio_err)?;
+            let channels = params
                 .channels
                 .as_ref()
-                .map_or(2, |c| c.count().max(1) as u16),
+                .map_or(2, |c| c.count().max(1) as u16);
+            (
+                Codec::Symphonia(decoder),
+                params.sample_rate.unwrap_or(44_100),
+                channels,
+            )
+        };
+        let replay_gain = {
+            let mut metadata = format.metadata();
+            let mut revisions = Vec::new();
+            while let Some(rev) = metadata.pop() {
+                revisions.push(rev);
+            }
+            let current = metadata.current().cloned();
+            revisions.extend(current);
+            ReplayGain::from_metadata(&revisions.iter().collect::<Vec<_>>())
+        };
+
+        let mut this = Self {
+            input,
+            format,
+            codec,
+            track_id,
+            time_base,
+            rate,
+            channels,
             total_duration,
             buffer: Vec::new(),
             offset: 0,
             buffer_start: 0,
             skip_frames: 0,
             finished: false,
+            end_error: None,
             eq: None,
+            replay_gain,
         };
         // Decode the first packet now so the real output spec is known up front.
         if !this.refill() {
-            return Err(Error::Audio("no decodable audio".into()));
+            return Err(Error::Audio(
+                this.end_error
+                    .take()
+                    .unwrap_or_else(|| "no decodable audio".into()),
+            ));
         }
         Ok(this)
     }
@@ -117,6 +334,42 @@ impl TrackDecoder {
         Duration::from_secs_f64(frame as f64 / self.rate as f64)
     }
 
+    /// ReplayGain / R128 track gain from the file's tags, if any.
+    pub fn replay_gain(&self) -> Option<ReplayGain> {
+        self.replay_gain
+    }
+
+    /// True once every sample has been yielded.
+    pub fn is_finished(&self) -> bool {
+        self.finished && self.offset >= self.buffer.len()
+    }
+
+    /// Why decoding ended before the end of the data (e.g. a failed download).
+    pub(crate) fn end_error(&self) -> Option<&str> {
+        self.end_error.as_deref()
+    }
+
+    /// Where the audio really ends, found by demuxing (not decoding) every
+    /// packet on a fresh reader. Useful for truncated previews, whose container
+    /// still claims the full length. Reads only data that is already available
+    /// when the input is a finished download.
+    pub(crate) fn scan_end(&self) -> Option<Duration> {
+        let mut format = self.input.open_format().ok()?;
+        let tb = self.time_base?;
+        let mut end: Option<Timestamp> = None;
+        loop {
+            match format.next_packet() {
+                Ok(Some(packet)) if packet.track_id == self.track_id => {
+                    let packet_end = packet.pts.saturating_add(packet.dur);
+                    end = Some(end.map_or(packet_end, |e: Timestamp| e.max(packet_end)));
+                }
+                Ok(Some(_)) => {}
+                Ok(None) | Err(_) => break,
+            }
+        }
+        tb.calc_time(end?).map(time_to_duration)
+    }
+
     /// Decodes the next packet of our track into `buffer`. False at end of stream.
     fn refill(&mut self) -> bool {
         loop {
@@ -135,6 +388,7 @@ impl TrackDecoder {
                     // A truncated download simply ends here.
                     if !is_eof(&e) {
                         log::warn!("demux error, ending track: {e}");
+                        self.end_error = Some(e.to_string());
                     }
                     self.finished = true;
                     continue;
@@ -143,27 +397,64 @@ impl TrackDecoder {
             if packet.track_id != self.track_id {
                 continue;
             }
-            let decoded = match self.decoder.decode(&packet) {
-                Ok(decoded) => decoded,
-                // Skip corrupt packets instead of ending playback.
-                Err(SymphoniaError::DecodeError(e)) => {
-                    log::debug!("skipping undecodable packet: {e}");
-                    continue;
+            match &mut self.codec {
+                Codec::Symphonia(decoder) => {
+                    let decoded = match decoder.decode(&packet) {
+                        Ok(decoded) => decoded,
+                        // Skip corrupt packets instead of ending playback.
+                        Err(SymphoniaError::DecodeError(e)) => {
+                            log::debug!("skipping undecodable packet: {e}");
+                            continue;
+                        }
+                        Err(SymphoniaError::IoError(_)) => continue,
+                        Err(e) => {
+                            log::warn!("decode error, ending track: {e}");
+                            self.finished = true;
+                            continue;
+                        }
+                    };
+                    if decoded.frames() == 0 {
+                        continue;
+                    }
+                    let spec = decoded.spec();
+                    self.rate = spec.rate();
+                    self.channels = spec.channels().count().max(1) as u16;
+                    decoded.copy_to_vec_interleaved(&mut self.buffer);
                 }
-                Err(SymphoniaError::IoError(_)) => continue,
-                Err(e) => {
-                    log::warn!("decode error, ending track: {e}");
-                    self.finished = true;
-                    continue;
+                Codec::Opus(decoder) => {
+                    let frames = match decoder.decode(&packet.data, &mut self.buffer) {
+                        Ok(frames) => frames as u64,
+                        Err(e) => {
+                            log::debug!("skipping undecodable Opus packet: {e}");
+                            continue;
+                        }
+                    };
+                    // Encoder delay: Ogg marks it as a start trim, Matroska as
+                    // negative timestamps (CodecDelay, rounded to the track's
+                    // millisecond timestamps, so the header's exact pre-skip wins).
+                    let pre_skip = decoder.pre_skip();
+                    let trim_start = self.ticks_to_frames(packet.trim_start.get());
+                    let head = if trim_start > 0 {
+                        trim_start
+                    } else if packet.pts.is_negative() {
+                        pre_skip.unwrap_or_else(|| {
+                            self.ticks_to_frames(packet.pts.get().unsigned_abs())
+                        })
+                    } else {
+                        0
+                    }
+                    .min(frames);
+                    let tail = self
+                        .ticks_to_frames(packet.trim_end.get())
+                        .min(frames - head);
+                    let ch = self.channels as usize;
+                    self.buffer.truncate((frames - tail) as usize * ch);
+                    self.buffer.drain(..head as usize * ch);
+                    if self.buffer.is_empty() {
+                        continue;
+                    }
                 }
-            };
-            if decoded.frames() == 0 {
-                continue;
             }
-            let spec = decoded.spec();
-            self.rate = spec.rate();
-            self.channels = spec.channels().count().max(1) as u16;
-            decoded.copy_to_vec_interleaved(&mut self.buffer);
             self.offset = 0;
             self.buffer_start = self.pts_to_frame(packet.pts);
 
@@ -184,6 +475,16 @@ impl TrackDecoder {
         }
     }
 
+    fn ticks_to_frames(&self, ticks: u64) -> u64 {
+        let Some(time) = self
+            .time_base
+            .and_then(|tb| tb.calc_time(Timestamp::new(ticks.min(i64::MAX as u64) as i64)))
+        else {
+            return 0;
+        };
+        (time_to_duration(time).as_secs_f64() * self.rate as f64).round() as u64
+    }
+
     fn pts_to_frame(&self, pts: Timestamp) -> u64 {
         let Some(time) = self.time_base.and_then(|tb| tb.calc_time(pts)) else {
             return 0;
@@ -193,7 +494,16 @@ impl TrackDecoder {
 
     /// Seeks the demuxer and decodes the first packet at `pos`.
     fn seek_to(&mut self, pos: Duration) -> std::result::Result<(), SymphoniaError> {
-        let time = Time::try_from_secs_f64(pos.as_secs_f64()).unwrap_or(Time::ZERO);
+        let opus = matches!(self.codec, Codec::Opus(_));
+        // Opus needs ~80 ms of pre-roll before the target to converge.
+        let demux_to = if opus {
+            pos.saturating_sub(Duration::from_secs_f64(
+                OPUS_PREROLL_FRAMES as f64 / self.rate as f64,
+            ))
+        } else {
+            pos
+        };
+        let time = Time::try_from_secs_f64(demux_to.as_secs_f64()).unwrap_or(Time::ZERO);
         let seeked = self.format.seek(
             SeekMode::Accurate,
             SeekTo::Time {
@@ -201,14 +511,18 @@ impl TrackDecoder {
                 track_id: Some(self.track_id),
             },
         )?;
-        self.decoder.reset();
+        self.codec.reset();
         if let Some(eq) = &mut self.eq {
             eq.reset();
         }
         self.finished = false;
-        self.skip_frames = self
-            .pts_to_frame(seeked.required_ts)
-            .saturating_sub(self.pts_to_frame(seeked.actual_ts));
+        self.end_error = None;
+        let target = if opus {
+            (pos.as_secs_f64() * self.rate as f64).round() as u64
+        } else {
+            self.pts_to_frame(seeked.required_ts)
+        };
+        self.skip_frames = target.saturating_sub(self.pts_to_frame(seeked.actual_ts));
         if self.refill() {
             Ok(())
         } else {
@@ -224,21 +538,9 @@ impl TrackDecoder {
         let Err(first) = self.seek_to(pos) else {
             return Ok(());
         };
-        self.format = open_format(&self.audio)?;
+        self.format = self.input.open_format()?;
         self.seek_to(pos).map_err(|_| first)
     }
-}
-
-fn open_format(audio: &Arc<[u8]>) -> std::result::Result<Box<dyn FormatReader>, SymphoniaError> {
-    let mss = MediaSourceStream::new(Box::new(Cursor::new(audio.clone())), Default::default());
-    let mut hint = Hint::new();
-    hint.with_extension("m4a");
-    symphonia::default::get_probe().probe(
-        &hint,
-        mss,
-        FormatOptions::default(),
-        MetadataOptions::default(),
-    )
 }
 
 impl Iterator for TrackDecoder {
@@ -321,6 +623,12 @@ mod tests {
     /// Cuts the fixture inside its third fragment, like googlevideo's 1 MiB cutoff.
     const TRUNCATED_LEN: usize = 50_000;
 
+    fn fixture(name: &str) -> PathBuf {
+        Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/fixtures")
+            .join(name)
+    }
+
     fn frames(decoder: &mut TrackDecoder, n: usize) -> Vec<f32> {
         decoder.by_ref().take(n * 2).collect()
     }
@@ -395,6 +703,22 @@ mod tests {
     }
 
     #[test]
+    fn scan_end_finds_where_a_truncated_preview_stops() {
+        let d = TrackDecoder::new(&FIXTURE[..TRUNCATED_LEN]).unwrap();
+        let end = d.scan_end().unwrap();
+        let decoded = {
+            let mut d = TrackDecoder::new(&FIXTURE[..TRUNCATED_LEN]).unwrap();
+            let n = d.by_ref().count();
+            Duration::from_secs_f64(n as f64 / 2.0 / 44_100.0)
+        };
+        assert!(end < Duration::from_secs(19), "{end:?}");
+        assert!(
+            end.abs_diff(decoded) < Duration::from_millis(100),
+            "{end:?} vs {decoded:?}"
+        );
+    }
+
+    #[test]
     fn seeks_inside_a_rodio_player_without_an_output_device() {
         use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -456,5 +780,131 @@ mod tests {
         };
         let boosted: Vec<f32> = eq.by_ref().take(88_200).collect();
         assert!(energy(&boosted) > 4.0 * energy(&plain_next));
+    }
+
+    /// Dominant frequency estimate from zero crossings of the first channel.
+    fn zero_crossing_hz(samples: &[f32], channels: usize, rate: u32) -> f64 {
+        let mono: Vec<f32> = samples.iter().step_by(channels).copied().collect();
+        let crossings = mono
+            .windows(2)
+            .filter(|w| (w[0] < 0.0) != (w[1] < 0.0))
+            .count();
+        crossings as f64 / 2.0 / (mono.len() as f64 / rate as f64)
+    }
+
+    #[test]
+    fn decodes_every_local_format() {
+        // (file, expected seconds)
+        let cases = [
+            ("sine.mp3", 1.0),
+            ("sine_rg.flac", 1.0),
+            ("sine.ogg", 1.0),
+            ("a440.wav", 0.5),
+            ("sine.aiff", 0.25),
+            ("sine.m4a", 1.0),
+            ("sine_alac.m4a", 0.5),
+            ("sine.opus", 1.0),
+            ("sine.webm", 1.0),
+        ];
+        for (name, secs) in cases {
+            let mut d =
+                TrackDecoder::open_file(fixture(name)).unwrap_or_else(|e| panic!("{name}: {e}"));
+            let (rate, channels) = (d.rate, d.channels as usize);
+            let samples: Vec<f32> = d.by_ref().collect();
+            let decoded = samples.len() as f64 / channels as f64 / rate as f64;
+            // AAC carries ~2k frames of priming that Symphonia does not trim.
+            assert!(
+                (decoded - secs).abs() < 0.06,
+                "{name}: decoded {decoded} s, expected {secs}"
+            );
+            // Skip the edges (codec warm-up) and check the tone.
+            let mid = &samples[samples.len() / 4..samples.len() * 3 / 4];
+            let hz = zero_crossing_hz(mid, channels, rate);
+            assert!((hz - 440.0).abs() < 10.0, "{name}: {hz} Hz");
+            let peak = mid.iter().fold(0.0f32, |m, s| m.max(s.abs()));
+            assert!(peak > 0.05, "{name}: silent ({peak})");
+        }
+    }
+
+    #[test]
+    fn opus_seeks_accurately() {
+        let mut d = TrackDecoder::open_file(fixture("sine.webm")).unwrap();
+        d.try_seek(Duration::from_millis(500)).unwrap();
+        assert!(
+            d.pos().abs_diff(Duration::from_millis(500)) < Duration::from_millis(2),
+            "{:?}",
+            d.pos()
+        );
+        let rest = d.by_ref().count() as f64 / 2.0 / 48_000.0;
+        assert!((rest - 0.5).abs() < 0.03, "{rest}");
+    }
+
+    #[test]
+    fn replay_gain_from_tags() {
+        let d = TrackDecoder::open_file(fixture("sine_rg.flac")).unwrap();
+        let rg = d.replay_gain().expect("tagged");
+        assert_eq!(rg.track_gain_db, -6.0);
+        assert_eq!(rg.track_peak, Some(0.5));
+        assert!((rg.linear() - 0.501).abs() < 0.01);
+        assert!(
+            TrackDecoder::open_file(fixture("sine.mp3"))
+                .unwrap()
+                .replay_gain()
+                .is_none()
+        );
+
+        // Positive gain is capped by the peak (and at unity without one).
+        let boost = ReplayGain {
+            track_gain_db: 12.0,
+            track_peak: Some(0.5),
+        };
+        assert!((boost.linear() - 2.0).abs() < 1e-6);
+        let blind = ReplayGain {
+            track_gain_db: 12.0,
+            track_peak: None,
+        };
+        assert_eq!(blind.linear(), 1.0);
+        assert_eq!(parse_db(" -7.5 dB"), Some(-7.5));
+    }
+
+    #[test]
+    fn decodes_from_a_stream_that_is_still_downloading() {
+        use crate::buffer::BufferEnd;
+        let buffer = StreamBuffer::new(Some(FIXTURE.len() as u64));
+        let feeder = std::thread::spawn({
+            let buffer = buffer.clone();
+            move || {
+                for chunk in FIXTURE.chunks(8 * 1024) {
+                    buffer.append(chunk);
+                    std::thread::sleep(Duration::from_millis(2));
+                }
+                buffer.finish(BufferEnd::Complete);
+            }
+        });
+        let started = std::time::Instant::now();
+        let mut d =
+            TrackDecoder::from_stream(buffer.clone(), "audio/mp4; codecs=\"mp4a.40.2\"").unwrap();
+        // Opened long before the download finished.
+        assert!(
+            buffer.end().is_none(),
+            "opened after {:?}",
+            started.elapsed()
+        );
+        let samples = d.by_ref().count();
+        assert!((samples as f64 / 2.0 / 44_100.0 - 20.0).abs() < 0.2);
+        feeder.join().unwrap();
+
+        // A truncated stream ends at the cut, like an in-memory preview.
+        let buffer = StreamBuffer::new(Some(FIXTURE.len() as u64));
+        buffer.append(&FIXTURE[..TRUNCATED_LEN]);
+        buffer.finish(BufferEnd::Truncated);
+        let mut d = TrackDecoder::from_stream(buffer, "audio/mp4").unwrap();
+        assert!(d.try_seek(Duration::from_secs(15)).is_err());
+        let n = d.by_ref().count();
+        // Opened after the cut, it still plays the downloaded part of the cut-off
+        // fragment (unlike an in-memory copy, whose length ends mid-fragment).
+        assert!(n > 0 && d.pos() > Duration::from_secs(11) && d.pos() < Duration::from_secs(12));
+        assert!(d.end_error().is_none());
+        assert!(d.scan_end().unwrap().abs_diff(d.pos()) < Duration::from_millis(50));
     }
 }

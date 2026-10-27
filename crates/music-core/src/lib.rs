@@ -12,7 +12,8 @@
 //! * [`media_controls`] – OS now-playing info + media keys (macOS, Windows, Linux).
 //! * [`scrobble`] – Last.fm / ListenBrainz scrobbling driven by [`PlaybackState`] snapshots.
 //! * `discord` – Discord Rich Presence (cargo feature `discord`, on by default).
-//! * [`TrackDecoder`] – Symphonia 0.6 decoder as a seekable `rodio::Source`.
+//! * [`TrackDecoder`] – Symphonia 0.6 (+ pure-Rust Opus) decoder as a seekable `rodio::Source`,
+//!   for local files, in-memory files and still-downloading [`StreamBuffer`]s.
 
 pub mod buffer;
 mod decode;
@@ -25,6 +26,7 @@ mod innertube;
 mod lyrics;
 pub mod media_controls;
 mod model;
+mod opus;
 mod player;
 pub mod scrobble;
 mod stream;
@@ -32,7 +34,7 @@ mod stream;
 mod testutil;
 
 pub use buffer::{BufferEnd, StreamBuffer, StreamReader};
-pub use decode::TrackDecoder;
+pub use decode::{ReplayGain, TrackDecoder};
 pub use equalizer::{EqBandKind, EqBandSettings, EqPreset, EqualizerSettings};
 pub use error::{Error, Result};
 pub use http::fetch_bytes;
