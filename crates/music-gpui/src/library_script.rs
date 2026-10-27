@@ -14,6 +14,7 @@
 //! | `@cookie=VALUE`, `@sync`, `@sign-out`, `@login-window`, `@cookie-dialog` | account |
 //! | `@close-dialog` | close open dialogs |
 //! | `@scroll=PX` | scroll the current page to PX from the top |
+//! | `@submit=QUERY` | submit a search like Enter in the field (recorded in the history) |
 //! | `@seed-plays=N` | **test data**: record N fake plays of the search results spread over the last year |
 
 use std::path::PathBuf;
@@ -107,6 +108,7 @@ impl MusicApp {
             "sync" => self.sync_youtube_library(window, cx),
             "sign-out" => self.sign_out(window, cx),
             "cookie-dialog" => crate::settings::open_cookie_dialog(window, cx),
+            "submit" => self.submit_search(arg.unwrap_or_default().to_owned(), window, cx),
             "scroll" => {
                 let y = arg.and_then(|a| a.parse::<f32>().ok()).unwrap_or(0.);
                 if let Some(page) = &self.router.current().page {
