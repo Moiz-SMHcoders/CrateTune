@@ -3,7 +3,10 @@
 //! * `app.rs` – root view: sidebar, header, routed page, queue panel, player bar,
 //!   Now Playing overlay; `playback.rs` – transport, queue, poll, volume.
 //! * `router.rs` – `Route` + back/forward history; `pages/` – one file per page.
-//! * `components/` – track rows, cards, shelves, artwork cache, bar, sidebar, queue panel.
+//! * `components/` – track rows, cards, shelves, InnerTube items, artwork cache, bar,
+//!   sidebar, queue panel.
+//! * `browse.rs` – page data loading / cache, content filters, locale; `search_box.rs` –
+//!   search suggestions + recent searches; `radio.rs` – radio, autoplay, collections.
 //! * `settings/` – settings file, the settings page and its sections.
 //! * `actions.rs` – shortcuts + menu bar; `mini_player.rs`, `theme.rs`, `queue.rs`.
 //! * `now_playing.rs`, `karaoke.rs`, `anim.rs`, `backdrop.rs`, `clock.rs` – Now Playing.
@@ -18,6 +21,7 @@ mod actions;
 mod anim;
 mod app;
 mod backdrop;
+mod browse;
 mod clock;
 mod components;
 mod icons;
@@ -32,8 +36,10 @@ mod pages;
 mod playback;
 mod playlist_ops;
 mod queue;
+mod radio;
 mod router;
 mod script;
+mod search_box;
 mod secrets;
 mod services;
 mod settings;

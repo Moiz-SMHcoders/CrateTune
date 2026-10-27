@@ -27,25 +27,27 @@ use gpui_component::{
     ActiveTheme as _, Disableable as _, IconName, Sizable as _, WindowExt as _,
     button::{Button, ButtonVariants as _},
     h_flex,
-    input::{Input, InputEvent, InputState},
+    input::InputState,
     slider::SliderState,
     v_flex,
 };
-use music_core::{IosClientResolver, PlaybackState, Player, Track};
+use music_core::{InnerTube, IosClientResolver, PlaybackState, Player, Track};
 
 use crate::anim::Frame;
+use crate::browse::ContentFilter;
 use crate::clock::{Engine, SmoothClock};
 use crate::lyrics::LyricsHub;
 use crate::now_playing::{HiRes, NowPlaying};
 use crate::pages::{self, PageContext, PageView};
 use crate::queue::Queue;
+use crate::radio::RadioState;
 use crate::router::{Route, Router};
+use crate::search_box::SearchBox;
 use crate::services::{self, Services};
 use crate::settings::{SectionId, SettingsEvent, SettingsPanel, WindowGeometry};
 use crate::theme::{self, ThemeChoice};
 
 pub const POLL_INTERVAL: Duration = Duration::from_millis(250);
-const SEARCH_DEBOUNCE: Duration = Duration::from_millis(400);
 
 struct AppHandle(WeakEntity<MusicApp>);
 impl Global for AppHandle {}
@@ -78,15 +80,23 @@ pub struct MusicApp {
     pub(crate) router: Router<PageView>,
     pub(crate) search_input: Entity<InputState>,
     /// Trimmed text of the search field as last handled.
-    search_text: String,
-    /// Replacing this cancels a pending (debounced) search navigation.
-    search_debounce: Option<Task<()>>,
+    pub(crate) search_text: String,
+    /// Suggestions / recent-searches dropdown (`search_box.rs`).
+    pub(crate) search_box: SearchBox,
     /// Results of the latest search (`@play=N`, autoplay).
     pub(crate) last_results: Rc<Vec<Track>>,
     /// Play the first result of the next search (`MUSIC_AUTOOPEN` / `MUSIC_GPUI_AUTOPLAY`).
     pub(crate) autoplay: bool,
     /// ...and open the Now Playing screen once it is playing (`MUSIC_AUTOOPEN`).
     pub(crate) autoopen: bool,
+    /// YouTube Music client with the content language / country from settings
+    /// (`browse.rs`); pages clone it for their requests.
+    pub(crate) innertube: InnerTube,
+    /// Hide explicit / hide videos (Content & region settings).
+    pub(crate) content_filter: ContentFilter,
+    /// Append radio songs when the queue's last song plays (`radio.rs`).
+    pub(crate) autoplay_similar: bool,
+    pub(crate) radio: RadioState,
 
     // ---- playback (playback.rs)
     /// Real audio, or the demo wall clock (no audio device / `MUSIC_DEMO_CLOCK=1`).
@@ -170,7 +180,7 @@ impl MusicApp {
         queue.set_repeat(saved.playback.repeat);
 
         let subscriptions = vec![
-            cx.subscribe_in(&search_input, window, Self::on_search_event),
+            cx.subscribe_in(&search_input, window, Self::on_search_input),
             cx.subscribe_in(&progress, window, Self::on_progress_event),
             cx.subscribe_in(&volume_slider, window, Self::on_volume_event),
             cx.subscribe_in(&settings, window, Self::on_settings_event),
@@ -256,10 +266,14 @@ impl MusicApp {
             router: Router::new(Route::Home),
             search_input,
             search_text: String::new(),
-            search_debounce: None,
+            search_box: SearchBox::default(),
             last_results: Rc::default(),
             autoplay: false,
             autoopen: false,
+            innertube: crate::browse::innertube_for(&saved.content),
+            content_filter: ContentFilter::from_settings(&saved.content),
+            autoplay_similar: saved.content.autoplay_similar,
+            radio: RadioState::default(),
             engine: None,
             pending_play: None,
             audio_error: None,
@@ -296,9 +310,12 @@ impl MusicApp {
             _subscriptions: subscriptions,
         };
         this.apply_theme(cx);
+        this.sync_browse_client(cx);
+        this.start_radio_watch(window, cx);
         this.rebuild_lyrics_service(cx);
         this.use_library_lyrics_cache(cx);
         this.restore_queue();
+        this.load_recent_searches(cx);
         this.queue.set_shuffle(saved.playback.shuffle);
         this.ensure_page(window, cx);
         this
@@ -390,7 +407,7 @@ impl MusicApp {
         }
     }
 
-    fn save_scroll(&mut self) {
+    pub(crate) fn save_scroll(&mut self) {
         let entry = self.router.current_mut();
         if let Some(offset) = entry.page.as_ref().and_then(|p| p.scroll_offset()) {
             entry.scroll = offset;
@@ -425,7 +442,7 @@ impl MusicApp {
 
     /// Builds the current entry's page if it has none (first visit, or dropped
     /// from the live set) and re-applies its saved scroll offset.
-    fn ensure_page(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn ensure_page(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         if self.router.current().page.is_some() {
             return;
         }
@@ -459,47 +476,10 @@ impl MusicApp {
 
     // ---- search -----------------------------------------------------------------
 
-    fn on_search_event(
-        &mut self,
-        input: &Entity<InputState>,
-        event: &InputEvent,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
-        let query = input.read(cx).value().trim().to_owned();
-        match event {
-            InputEvent::Change if query != self.search_text => {
-                self.search_text = query.clone();
-                let executor = cx.background_executor().clone();
-                self.search_debounce = Some(cx.spawn_in(window, async move |this, cx| {
-                    executor.timer(SEARCH_DEBOUNCE).await;
-                    this.update_in(cx, |this, window, cx| this.show_search(query, window, cx))
-                        .ok();
-                }));
-            }
-            InputEvent::PressEnter { .. } => {
-                self.search_debounce = None;
-                self.record_search(&query, cx);
-                self.search_text = query.clone();
-                self.show_search(query, window, cx);
-            }
-            _ => {}
-        }
-    }
-
-    /// Shows the results page for `query` (replacing a search page that is open).
-    fn show_search(&mut self, query: String, window: &mut Window, cx: &mut Context<Self>) {
-        if query.is_empty() && !matches!(self.router.route(), Route::Search { .. }) {
-            return;
-        }
-        self.navigate(Route::Search { query }, window, cx);
-    }
-
     /// Fills the search field and searches right away (startup env, scripts).
     pub fn search_now(&mut self, query: &str, window: &mut Window, cx: &mut Context<Self>) {
         let query = query.trim().to_owned();
-        self.search_debounce = None;
-        self.record_search(&query, cx);
+        self.search_box_reset();
         self.search_text = query.clone();
         self.search_input
             .update(cx, |input, cx| input.set_value(query.clone(), window, cx));
@@ -587,6 +567,8 @@ impl MusicApp {
                 cx.notify();
             }
             SettingsEvent::Library => self.apply_library_settings(cx),
+            SettingsEvent::Content => self.apply_content(window, cx),
+            SettingsEvent::Network => self.refresh_pages(window, cx),
             SettingsEvent::Section(section) => {
                 let route = Route::Settings { section: *section };
                 if matches!(self.router.route(), Route::Settings { .. }) {
@@ -672,6 +654,7 @@ impl MusicApp {
     // ---- rendering ----------------------------------------------------------------
 
     fn render_header(&mut self, cx: &mut Context<Self>) -> impl IntoElement + use<> {
+        let search = self.render_search_box(cx);
         let theme = cx.theme();
         h_flex()
             .h(px(56.))
@@ -698,13 +681,7 @@ impl MusicApp {
                     .disabled(!self.router.can_go_forward())
                     .on_click(cx.listener(|this, _, window, cx| this.go_forward(window, cx))),
             )
-            .child(
-                div().flex_1().max_w(px(520.)).ml_2().child(
-                    Input::new(&self.search_input)
-                        .prefix(IconName::Search)
-                        .cleanable(true),
-                ),
-            )
+            .child(search)
             .child(div().flex_1())
     }
 }

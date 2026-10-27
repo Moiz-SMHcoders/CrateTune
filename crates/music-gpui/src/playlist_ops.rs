@@ -41,7 +41,7 @@ impl MusicApp {
         }
         let remote = self
             .remote_target(&playlist)
-            .map(|id| (id, self.innertube()));
+            .map(|id| (id, self.account_client()));
         self.with_library(
             "Renaming the playlist",
             move |lib| {
@@ -64,7 +64,7 @@ impl MusicApp {
         cx: &mut Context<Self>,
     ) {
         let signed_in = self.store.account.is_signed_in();
-        let it = self.innertube();
+        let it = self.account_client();
         self.with_library(
             "Deleting the playlist",
             move |lib| {
@@ -101,7 +101,7 @@ impl MusicApp {
     ) {
         let remote = self
             .remote_target(&playlist)
-            .map(|id| (id, self.innertube()));
+            .map(|id| (id, self.account_client()));
         let count = entries.len();
         self.with_library(
             "Removing from the playlist",
@@ -150,7 +150,7 @@ impl MusicApp {
         let moved = entries[from].set_video_id.clone();
         let remote = self
             .remote_target(&playlist)
-            .map(|id| (id, self.innertube()));
+            .map(|id| (id, self.account_client()));
         self.with_library(
             "Moving the song",
             move |lib| {
@@ -175,7 +175,7 @@ impl MusicApp {
         let Some(browse_id) = playlist.browse_id.clone() else {
             return;
         };
-        let it = self.innertube();
+        let it = self.account_client();
         self.with_library(
             "Refreshing the playlist",
             move |lib| {

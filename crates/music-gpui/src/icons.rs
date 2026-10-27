@@ -76,6 +76,9 @@ gpui_kit_assets::icon_assets!(
         ArrowUpDown,
         HardDriveDownload,
         Bookmark,
+        // browse & search
+        CloudOff,
+        ArrowUpLeft,
     ]
 );
 

@@ -350,6 +350,7 @@ impl MusicApp {
                 self.account_after_cookie(cx);
             }
         }
+        self.sync_account_auth(cx);
         cx.notify();
     }
 
@@ -358,11 +359,20 @@ impl MusicApp {
         self.store.account.auth()
     }
 
-    /// An InnerTube client acting as the signed-in account, if any.
-    pub fn innertube(&self) -> InnerTube {
-        match self.youtube_auth() {
-            Some(auth) => InnerTube::default().with_auth(auth),
-            None => InnerTube::default(),
+    /// The app's InnerTube client (content locale; the signed-in account, if any).
+    pub fn account_client(&self) -> InnerTube {
+        let mut client = self.innertube.clone();
+        client.auth = self.youtube_auth();
+        client
+    }
+
+    /// Puts the account (or none) on the app's InnerTube client and publishes it to
+    /// the pages (`BrowseClient`), so browse pages and search act signed-in.
+    pub(crate) fn sync_account_auth(&mut self, cx: &mut Context<Self>) {
+        let auth = self.youtube_auth();
+        if self.innertube.auth != auth {
+            self.innertube.auth = auth;
+            self.sync_browse_client(cx);
         }
     }
 
@@ -388,7 +398,7 @@ impl MusicApp {
         for t in &tracks {
             set_liked_flag(&t.video_id, like);
         }
-        let remote = self.innertube();
+        let remote = self.account_client();
         let signed_in = remote.is_signed_in();
         let message = match (tracks.as_slice(), like) {
             ([one], true) => format!("Liked “{}”", one.title),
@@ -505,7 +515,7 @@ impl MusicApp {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        let remote = self.innertube();
+        let remote = self.account_client();
         let count = tracks.len();
         self.with_library(
             "Adding to the playlist",
@@ -565,7 +575,7 @@ impl MusicApp {
             notify(window, cx, "Give the playlist a name.");
             return;
         }
-        let remote = self.innertube();
+        let remote = self.account_client();
         let on_youtube = on_youtube && remote.is_signed_in();
         self.with_library(
             "Creating the playlist",
@@ -697,8 +707,9 @@ impl MusicApp {
 
     // ---- search history ------------------------------------------------------------------
 
-    /// Remembers a submitted search (unless search history is paused).
-    pub fn record_search(&mut self, query: &str, cx: &mut Context<Self>) {
+    /// Saves a submitted search in the library (called by `record_search`, which also
+    /// keeps the search field's in-memory list). Nothing while search history is paused.
+    pub(crate) fn persist_search(&self, query: &str) {
         let query = query.trim().to_owned();
         if query.is_empty() || self.store.prefs.pause_search_history {
             return;
@@ -706,27 +717,38 @@ impl MusicApp {
         let Some(library) = self.store.library.clone() else {
             return;
         };
-        cx.background_spawn(async move {
+        std::thread::spawn(move || {
             if let Err(e) = library.add_search_query(&query) {
                 eprintln!("music-gpui: saving the search failed: {e}");
             }
-        })
-        .detach();
+        });
     }
 
-    /// Past searches starting with `prefix`, newest first (empty while paused). For the
-    /// search field's suggestions (browse / search page).
-    #[allow(dead_code)]
-    pub fn search_history(&self, prefix: &str, limit: u32) -> Vec<String> {
-        if self.store.prefs.pause_search_history {
-            return Vec::new();
-        }
-        self.store
-            .library
-            .as_ref()
-            .and_then(|lib| lib.search_history(prefix, limit).ok())
-            .map(|entries| entries.into_iter().map(|e| e.query).collect())
-            .unwrap_or_default()
+    /// Forgets one saved search (removed from the search field's list).
+    pub(crate) fn forget_search(&self, query: &str) {
+        let Some(library) = self.store.library.clone() else {
+            return;
+        };
+        let query = query.to_owned();
+        std::thread::spawn(move || {
+            let _ = library.remove_search_query(&query);
+        });
+    }
+
+    /// Fills the search field's recent searches from the library (startup, after
+    /// clearing or a restore).
+    pub(crate) fn load_recent_searches(&mut self, cx: &mut Context<Self>) {
+        let recent = if self.store.prefs.pause_search_history {
+            Vec::new()
+        } else {
+            self.store
+                .library
+                .as_ref()
+                .and_then(|lib| lib.search_history("", 30).ok())
+                .map(|entries| entries.into_iter().map(|e| e.query).collect())
+                .unwrap_or_default()
+        };
+        self.set_recent_searches(recent, cx);
     }
 
     // ---- polling: play history, queue, downloads -------------------------------------------

@@ -127,6 +127,7 @@ impl MusicApp {
                         }
                     }
                     this.reload_liked_flags();
+                    this.load_recent_searches(cx);
                     this.library_changed(cx);
                     window.open_alert_dialog(cx, move |alert, _, _| {
                         alert
@@ -169,7 +170,10 @@ impl MusicApp {
         self.with_library(
             "Clearing the search history",
             |lib| lib.clear_search_history(),
-            |_, _, window, cx| notify(window, cx, "Search history cleared"),
+            |app, _, window, cx| {
+                app.set_recent_searches(Vec::new(), cx);
+                notify(window, cx, "Search history cleared");
+            },
             window,
             cx,
         );

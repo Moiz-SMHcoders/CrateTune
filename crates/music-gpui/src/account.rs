@@ -164,6 +164,7 @@ impl MusicApp {
                         panel.set_youtube_cookie(Some(cookie.clone()), cx);
                     });
                     this.store.account.set_cookie(Some(cookie));
+                    this.sync_account_auth(cx);
                     notify(window, cx, format!("Signed in as {name}"));
                     this.sync_youtube_library(window, cx);
                 }
@@ -183,6 +184,7 @@ impl MusicApp {
         self.store.account.set_cookie(None);
         self.store.account.status = Busy::Idle;
         self.store.account.sync = Busy::Idle;
+        self.sync_account_auth(cx);
         self.settings.update(cx, |panel, cx| {
             panel.update_library(|l| l.account = None, cx);
             panel.set_youtube_cookie(None, cx);
@@ -255,6 +257,7 @@ impl MusicApp {
                     this.store.account.channels = channels;
                     this.store.account.config = Some(config.clone());
                     this.store.account.status = Busy::Idle;
+                    this.sync_account_auth(cx);
                     this.settings.update(cx, |panel, cx| {
                         panel.update_library(|l| l.account = Some(config), cx)
                     });
@@ -369,7 +372,7 @@ impl MusicApp {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        let remote = self.innertube();
+        let remote = self.account_client();
         self.with_library(
             "Subscribing",
             move |lib| {

@@ -124,20 +124,6 @@ impl MusicApp {
         cx.notify();
     }
 
-    // ---- hooks for features that live in other layers (stubs for now) ----------
-
-    /// Radio from a track: needs InnerTube's "watch next" radio playlist.
-    pub fn start_radio(&mut self, track: Track, window: &mut Window, cx: &mut Context<Self>) {
-        notify(
-            window,
-            cx,
-            format!(
-                "Radio for “{}” arrives with the InnerTube radio API.",
-                track.title
-            ),
-        );
-    }
-
     // ---- transport -------------------------------------------------------------
 
     pub fn next_track(&mut self, cx: &mut Context<Self>) {
