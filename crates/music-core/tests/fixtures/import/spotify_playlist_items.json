@@ -1,0 +1,55 @@
+{
+  "playlist": {
+    "id": "37i9dQZF1DXcBWIGoYBM5M",
+    "name": "Test mix",
+    "owner": { "id": "someone", "display_name": "Someone" },
+    "images": [{ "url": "https://i.scdn.co/640", "width": 640, "height": 640 }],
+    "tracks": { "total": 4 }
+  },
+  "href": "https://api.spotify.com/v1/playlists/37i9dQZF1DXcBWIGoYBM5M/items?offset=0&limit=50",
+  "limit": 50,
+  "next": null,
+  "offset": 0,
+  "total": 4,
+  "items": [
+    {
+      "added_at": "2024-01-02T03:04:05Z",
+      "is_local": false,
+      "track": {
+        "type": "track",
+        "id": "2cGxRwrMyEAp8dEbuZaVv6",
+        "uri": "spotify:track:2cGxRwrMyEAp8dEbuZaVv6",
+        "name": "Instant Crush (feat. Julian Casablancas)",
+        "duration_ms": 337560,
+        "explicit": false,
+        "external_ids": { "isrc": "USQX91300105" },
+        "artists": [{ "name": "Daft Punk" }, { "name": "Julian Casablancas" }],
+        "album": {
+          "name": "Random Access Memories",
+          "images": [
+            { "url": "https://i.scdn.co/640", "width": 640, "height": 640 },
+            { "url": "https://i.scdn.co/300", "width": 300, "height": 300 },
+            { "url": "https://i.scdn.co/64", "width": 64, "height": 64 }
+          ]
+        }
+      }
+    },
+    {
+      "added_at": "2024-01-02T03:04:05Z",
+      "item": {
+        "type": "track",
+        "uri": "spotify:track:abc",
+        "name": "Halo",
+        "duration_ms": 261640,
+        "explicit": false,
+        "artists": [{ "name": "Beyoncé" }],
+        "album": { "name": "I Am... Sasha Fierce", "images": [] }
+      }
+    },
+    {
+      "added_at": "2024-01-02T03:04:05Z",
+      "track": { "type": "episode", "name": "A podcast episode", "duration_ms": 1000 }
+    },
+    { "added_at": "2024-01-02T03:04:05Z", "track": null }
+  ]
+}

@@ -21,6 +21,10 @@
 //! * [`TrackDecoder`] – Symphonia 0.6 (+ pure-Rust Opus) decoder as a seekable `rodio::Source`,
 //!   for local files, in-memory files and still-downloading [`StreamBuffer`]s.
 //! * [`SkipSilence`] – silence trimming as a `rodio::Source` wrapper.
+//! * [`sponsorblock`] – SponsorBlock segments (hash-prefix lookups) + skip tracking.
+//! * [`playlist_import`] – CSV / M3U / JSON playlists, matching tracks to YouTube Music.
+//! * [`spotify`] – Spotify Web API (PKCE sign-in, playlists, liked songs) for imports.
+//! * [`together`] – Music Together: synced listening on the LAN over WebSockets.
 
 pub mod buffer;
 mod deck;
@@ -41,12 +45,16 @@ mod model;
 mod opus;
 mod output;
 mod player;
+pub mod playlist_import;
 pub mod scrobble;
 mod silence;
 mod sleep;
+pub mod sponsorblock;
+pub mod spotify;
 mod stream;
 #[cfg(test)]
 mod testutil;
+pub mod together;
 mod voice;
 
 pub use buffer::{BufferEnd, StreamBuffer, StreamReader};

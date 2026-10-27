@@ -43,6 +43,14 @@ opus-decoder = "0.1"
 # Pure-Rust port of Sonic (speed/pitch), the same algorithm ExoPlayer uses.
 libsonic = "0.1"
 thiserror = "2"
+# Integrations (SponsorBlock hash prefixes, Spotify PKCE, Together sessions, playlist import).
+base64 = "0.22"
+csv = "1"
+getrandom = "0.3"
+sha2 = "0.10"
+# Music Together: blocking WebSockets over std TCP on worker threads (no async runtime).
+tungstenite = { version = "0.28", default-features = false, features = ["handshake"] }
+unicode-normalization = "0.1"
 ureq = { version = "3", features = ["json", "socks-proxy"] }
 zip = { version = "9", default-features = false, features = ["deflate-flate2-zlib-rs"] }
 
