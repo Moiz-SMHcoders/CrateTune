@@ -14,11 +14,13 @@
 //! * `discord` – Discord Rich Presence (cargo feature `discord`, on by default).
 //! * [`TrackDecoder`] – Symphonia 0.6 (+ pure-Rust Opus) decoder as a seekable `rodio::Source`,
 //!   for local files, in-memory files and still-downloading [`StreamBuffer`]s.
+//! * [`SkipSilence`] – silence trimming as a `rodio::Source` wrapper.
 
 pub mod buffer;
 mod decode;
 #[cfg(feature = "discord")]
 pub mod discord;
+mod dsp;
 pub mod equalizer;
 mod error;
 mod http;
@@ -29,12 +31,15 @@ mod model;
 mod opus;
 mod player;
 pub mod scrobble;
+mod silence;
+mod sleep;
 mod stream;
 #[cfg(test)]
 mod testutil;
 
 pub use buffer::{BufferEnd, StreamBuffer, StreamReader};
 pub use decode::{ReplayGain, TrackDecoder};
+pub use dsp::{PITCH_RANGE, SPEED_RANGE};
 pub use equalizer::{EqBandKind, EqBandSettings, EqPreset, EqualizerSettings};
 pub use error::{Error, Result};
 pub use http::fetch_bytes;
@@ -42,4 +47,6 @@ pub use innertube::InnerTube;
 pub use lyrics::{LyricLine, LyricWord, Lyrics, fetch_lyrics, parse_lrc};
 pub use model::{EntityRef, Track, format_duration};
 pub use player::{PlaybackState, PlaybackStatus, Player};
+pub use silence::{SilenceConfig, SkipSilence};
+pub use sleep::{SleepTimer, SleepTimerState};
 pub use stream::{Download, IosClientResolver, Quality, ResolvedStream, StreamResolver};
