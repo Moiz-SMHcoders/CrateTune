@@ -5,12 +5,14 @@
 //! so the core owns no async runtime and callers decide where work runs.
 //!
 //! * [`InnerTube`] – YouTube Music metadata (search for now).
+//! * [`fetch_lyrics`] – LRCLIB synced lyrics with per-word timings.
 //! * [`StreamResolver`] – turns a video id into a playable audio URL.
 //! * [`Player`] – background audio engine with a pollable [`PlaybackState`].
 
 mod error;
 mod http;
 mod innertube;
+mod lyrics;
 mod model;
 mod player;
 mod stream;
@@ -18,6 +20,7 @@ mod stream;
 pub use error::{Error, Result};
 pub use http::fetch_bytes;
 pub use innertube::InnerTube;
+pub use lyrics::{LyricLine, LyricWord, Lyrics, fetch_lyrics, parse_lrc};
 pub use model::{Track, format_duration};
 pub use player::{PlaybackState, PlaybackStatus, Player};
 pub use stream::{Download, IosClientResolver, ResolvedStream, StreamResolver};
