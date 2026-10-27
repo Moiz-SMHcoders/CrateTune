@@ -42,11 +42,24 @@ Blocking, thread-safe, no async runtime, so every UI toolkit can drive it from
 its own executor.
 
 * `InnerTube` — anonymous YouTube Music (`WEB_REMIX`) song search.
-* `StreamResolver` trait + `IosClientResolver` — video id → audio URL (AAC itag 140).
-* `Player` — audio thread with a pollable `PlaybackState`, loudness normalization
-  from YouTube's per-format `loudnessDb`, `pause`/`resume`/`toggle_pause`/`seek`.
-  Decoding is Symphonia 0.6 (`TrackDecoder`, a seekable `rodio::Source`), so seeking
-  works inside truncated previews too; rodio/cpal only mix and output.
+* `StreamResolver` trait + `IosClientResolver` — video id → audio URL; `Quality`
+  (`Low`/`Normal`/`High`) picks among the itags it returns (AAC 139/140, Opus 249/250/251).
+* `Player` — audio thread with a pollable `PlaybackState`, `pause`/`resume`/`toggle_pause`/`seek`.
+  Decoding is Symphonia 0.6 plus the pure-Rust `opus-decoder` (`TrackDecoder`, a seekable
+  `rodio::Source`): MP4/M4A (AAC, ALAC), MP3, FLAC, Ogg Vorbis/Opus, WAV, AIFF, WebM/MKV.
+  rodio/cpal only mix and output. Engine features:
+  * plays `Track::local_path` files (ReplayGain / R128 track gain from tags) or streams
+    YouTube progressively (`StreamBuffer`: playback starts with the first bytes, seeks
+    into the undownloaded part wait up to 10 s; an expired URL is re-resolved once);
+    loudness normalization from YouTube's `loudnessDb`;
+  * `set_next` → preload ~30 s ahead, gapless switch, optional crossfade
+    (`set_crossfade`, ≤ 12 s, also before a preview's early end); engine-initiated
+    switches bump `PlaybackState::advance_count`;
+  * `set_skip_silence`, `set_speed` (0.5–2×) and `set_pitch` (±12 semitones, Sonic),
+    `set_sleep_timer` (duration or end of track), `set_auto_skip` (errors →
+    `error_count`/`failed_track_id`), `output_devices` / `set_output_device` (falls back
+    to the default and back when a device disappears/reappears);
+  * `Player::headless` renders without a device (tests use it end to end).
 * `equalizer` — parametric EQ (port of Hummingbird's), applied live:
   `player.set_equalizer(EqPreset::Bass.settings())`, `player.clear_equalizer()`.
 * `media_controls` — macOS Now Playing / media keys, Windows SMTC, Linux MPRIS
@@ -85,7 +98,8 @@ auth flow (`get_token` → `auth_url` → `get_session`). Threading details are 
 [`crates/music-core/THIRD_PARTY.md`](crates/music-core/THIRD_PARTY.md) (Apache-2.0).
 
 ```sh
-cargo run --release -p music-core --example resolve -- "daft punk"  # headless: search → resolve → download → seek to 30 s → decode
+cargo run --release -p music-core --example resolve -- "daft punk"  # headless: search → resolve → stream + decode → seek to 30 s (MUSIC_QUALITY=high: Opus)
+cargo run --release -p music-core --example devices                 # list output devices (+ a file path: muted real-device playback check)
 cargo run --release -p music-core --example cli -- "daft punk"      # plays ~8 s through the speakers (seeks, Bass EQ)
 ```
 
