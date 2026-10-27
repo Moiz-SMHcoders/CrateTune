@@ -24,7 +24,7 @@ use crate::output::{self, OutputDevice};
 use crate::silence::SilenceConfig;
 use crate::sleep::{SleepClock, SleepTimer, SleepTimerState};
 use crate::voice::{Phase, Settings, Voice, VoiceConfig};
-use crate::{EqualizerSettings, Error, Quality, Result, StreamResolver, Track};
+use crate::{EqualizerSettings, Error, Quality, Result, StreamResolver, StreamSource, Track};
 
 const TICK: Duration = Duration::from_millis(100);
 /// Start loading the next track this long before the current one ends.
@@ -84,6 +84,9 @@ pub struct PlaybackState {
     pub crossfading: bool,
     /// Name of the output device in use (`None` without one).
     pub output_device: Option<String>,
+    /// Where the current track's audio comes from (YouTube, a provider module,
+    /// a file) and its codec / sample rate / bit depth once decoding started.
+    pub source: Option<StreamSource>,
 }
 
 impl Default for PlaybackState {
@@ -106,6 +109,7 @@ impl Default for PlaybackState {
             buffering: false,
             crossfading: false,
             output_device: None,
+            source: None,
         }
     }
 }
@@ -865,6 +869,7 @@ impl Engine {
             st.duration = Some(d);
         }
         st.preview_only = voice.is_preview();
+        st.source = voice.source();
     }
 
     fn maybe_preload(&mut self) {

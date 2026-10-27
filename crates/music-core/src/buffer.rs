@@ -125,6 +125,17 @@ impl StreamBuffer {
         self.lock().total_len
     }
 
+    /// Records the file size once a server announces it (a download that
+    /// started without knowing it). Ignored when already known.
+    pub fn set_total_len(&self, total: u64) {
+        let mut state = self.lock();
+        if state.total_len.is_none() {
+            state.total_len = Some(total);
+            drop(state);
+            self.grew.notify_all();
+        }
+    }
+
     /// `None` while the download is still running.
     pub fn end(&self) -> Option<BufferEnd> {
         self.lock().end.clone()
