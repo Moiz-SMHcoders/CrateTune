@@ -8,6 +8,11 @@ pub enum Error {
     Unplayable(String),
     #[error("audio output: {0}")]
     Audio(String),
+    /// Local storage: the library database, backups, tags of local files.
+    #[error("storage: {0}")]
+    Storage(String),
+    #[error("i/o: {0}")]
+    Io(#[from] std::io::Error),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
