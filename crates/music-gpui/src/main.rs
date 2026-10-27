@@ -11,6 +11,11 @@ mod backdrop;
 mod clock;
 mod karaoke;
 mod now_playing;
+// Wired into the UI in the following commits.
+#[allow(dead_code)]
+mod secrets;
+#[allow(dead_code)]
+mod settings;
 
 use std::collections::HashMap;
 use std::rc::Rc;

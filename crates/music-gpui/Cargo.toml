@@ -16,6 +16,13 @@ gpui-kit-assets = "=0.8.1"
 futures-channel = "0.3"
 # Decoding + blurring the Now Playing background (GPUI already links image 0.25 with these codecs).
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp"] }
+# Settings file (serde/serde_json are already in GPUI's graph) in the platform config dir.
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+directories = "6"
+# Secrets in the OS keychain (macOS Keychain, Windows Credential Manager, Secret Service).
+keyring = "4.2"
+
 
 [features]
 # Dev-only offscreen screenshot hook (needs GPUI's test-support for `Window::render_to_image`).
