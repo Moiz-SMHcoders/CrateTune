@@ -1,0 +1,50 @@
+[
+ {
+  "id": 37472429,
+  "name": "Instant Crush",
+  "trackName": "Instant Crush",
+  "artistName": "Daft Punk",
+  "albumName": "Random Access Memories",
+  "duration": 367.0,
+  "instrumental": false,
+  "hasWordSync": false,
+  "plainLyrics": "I didn't want to be the one to forget\nI thought of everything I'd never regret\nA little time with you is all that I get\nThat's all we need because it's all we can take",
+  "syncedLyrics": "[00:26.31]I didn't want to be the one to forget\n[00:30.70]I thought of everything I'd never regret\n[00:34.93]A little time with you is all that I get\n[00:39.39]That's all we need because it's all we can take"
+ },
+ {
+  "id": 37515654,
+  "name": "Instant Crush",
+  "trackName": "Instant Crush",
+  "artistName": "Daft Punk",
+  "albumName": "Random Access Memories (Atmos)",
+  "duration": 338.0,
+  "instrumental": false,
+  "hasWordSync": false,
+  "plainLyrics": "I didn't want to be the one to forget\nI thought of everything I'd never regret\nA little time with you is all that I get\nThat's all we need because it's all we can take",
+  "syncedLyrics": "[00:26.31]I didn't want to be the one to forget\n[00:30.70]I thought of everything I'd never regret\n[00:34.93]A little time with you is all that I get\n[00:39.39]That's all we need because it's all we can take"
+ },
+ {
+  "id": 37397944,
+  "name": "Instant Crush",
+  "trackName": "Instant Crush",
+  "artistName": "Daft Punk",
+  "albumName": "Random Access Memories (10th Annyversary)",
+  "duration": 338.0,
+  "instrumental": false,
+  "hasWordSync": false,
+  "plainLyrics": "I didn't want to be the one to forget\nI thought of everything I'd never regret\nA little time with you is all that I get\nThat's all we need because it's all we can take",
+  "syncedLyrics": "[00:26.31]I didn't want to be the one to forget\n[00:30.70]I thought of everything I'd never regret\n[00:34.93]A little time with you is all that I get\n[00:39.39]That's all we need because it's all we can take"
+ },
+ {
+  "id": 34436009,
+  "name": "Instant Crush",
+  "trackName": "Instant Crush",
+  "artistName": "Daft Punk",
+  "albumName": "Random Access Memories",
+  "duration": 330.0,
+  "instrumental": false,
+  "hasWordSync": false,
+  "plainLyrics": "I didn't want to be the one to forget\nI thought of everything I'd never regret\nA little time with you is all that I get\nThat's all we need because it's all we can take",
+  "syncedLyrics": "[00:26.31] I didn't want to be the one to forget\n[00:30.70] I thought of everything I'd never regret\n[00:34.93] A little time with you is all that I get\n[00:39.39] That's all we need because it's all we can take"
+ }
+]

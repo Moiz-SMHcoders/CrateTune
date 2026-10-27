@@ -1,0 +1,25 @@
+{
+ "status": 200,
+ "info": "OK",
+ "errcode": 200,
+ "errmsg": "OK",
+ "expire": 7200,
+ "candidates": [
+  {
+   "id": "133543278",
+   "product_from": "官方推荐歌词",
+   "accesskey": "4A5810071FC6EB8AC04A32E715EC8EB2",
+   "duration": 337606,
+   "song": "Instant Crush",
+   "singer": "Daft Punk、julian casablancas"
+  },
+  {
+   "id": "50393867",
+   "product_from": "第三方歌词",
+   "accesskey": "1229AF4B2F8813C62CA3D2AA0E8B7852",
+   "duration": 337606,
+   "song": "Instant Crush",
+   "singer": "Daft Punk、Julian Casablancas"
+  }
+ ]
+}

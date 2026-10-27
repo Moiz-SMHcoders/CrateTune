@@ -1,0 +1,21 @@
+{
+ "success": true,
+ "data": [
+  {
+   "id": 7478,
+   "videoId": "khnokW3Mw24",
+   "song": "Instant Crush (feat. Julian Casablancas)",
+   "artist": "Daft Punk, Julian Casablancas",
+   "album": "Random Access Memories",
+   "lyrics": "<tt xmlns=\"http://www.w3.org/ns/ttml\" xmlns:ttm=\"http://www.w3.org/ns/ttml#metadata\" xmlns:ttp=\"http://www.w3.org/ns/ttml#parameter\" xmlns:itunes=\"http://music.apple.com/lyric-ttml-internal\" xmlns:composer=\"https://composer.betterlyrics.org/ttml\" ttp:timeBase=\"media\" itunes:timing=\"Word\" composer:timing=\"Word\"><head><metadata><ttm:title>Instant Crush</ttm:title><composer:meta key=\"artists\" value=\"Daft Punk\"/><composer:meta key=\"album\" value=\"Random Access Memories\"/><composer:meta key=\"isrc\" value=\"USQX91300105\"/><ttm:agent xml:id=\"v1\" type=\"person\"><ttm:name>Lead</ttm:name></ttm:agent><ttm:agent xml:id=\"v1000\" type=\"group\"><ttm:name>Harmony</ttm:name></ttm:agent></metadata></head><body dur=\"5:37.560\"><div><p begin=\"0:26.505\" end=\"0:30.327\" ttm:agent=\"v1\"><span begin=\"0:26.505\" end=\"0:26.842\">I</span> <span begin=\"0:26.842\" end=\"0:27.179\">didn't</span> <span begin=\"0:27.179\" end=\"0:27.580\">want</span> <span begin=\"0:27.580\" end=\"0:27.844\">to</span> <span begin=\"0:27.844\" end=\"0:28.110\">be</span> <span begin=\"0:28.110\" end=\"0:28.414\">the</span> <span begin=\"0:28.414\" end=\"0:28.641\">one</span> <span begin=\"0:28.641\" end=\"0:28.905\">to</span> <span begin=\"0:28.905\" end=\"0:30.327\">forget</span></p><p begin=\"0:30.767\" end=\"0:34.667\" ttm:agent=\"v1\"><span begin=\"0:30.767\" end=\"0:31.030\">I</span> <span begin=\"0:31.030\" end=\"0:31.298\">thought</span> <span begin=\"0:31.298\" end=\"0:31.563\">of</span> <span begin=\"0:31.563\" end=\"0:32.359\">everything</span> <span begin=\"0:32.359\" end=\"0:32.624\">I'd</span> <span begin=\"0:32.624\" end=\"0:33.371\">never</span> <span begin=\"0:33.371\" end=\"0:34.667\">regret</span></p><p begin=\"0:35.252\" end=\"0:39.024\" ttm:agent=\"v1\"><span begin=\"0:35.252\" end=\"0:35.388\">A</span> <span begin=\"0:35.388\" end=\"0:36.060\">little</span> <span begin=\"0:36.060\" end=\"0:36.356\">time</span> <span begin=\"0:36.356\" end=\"0:36.641\">with</span> <span begin=\"0:36.641\" end=\"0:36.869\">you</span> <span begin=\"0:36.869\" end=\"0:37.123\">is</span> <span begin=\"0:37.123\" end=\"0:37.500\">all</span> <span begin=\"0:37.500\" end=\"0:37.788\">that</span> <span begin=\"0:37.788\" end=\"0:38.034\">I</span> <span begin=\"0:38.034\" end=\"0:39.024\">get</span></p></div></body></tt>",
+   "format": "ttml",
+   "language": "en",
+   "syncType": "richsync",
+   "score": 15,
+   "effectiveScore": 1,
+   "voteCount": 13,
+   "confidence": "medium",
+   "hidden": false
+  }
+ ]
+}

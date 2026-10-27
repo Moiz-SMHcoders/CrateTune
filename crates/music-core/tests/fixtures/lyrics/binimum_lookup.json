@@ -1,0 +1,34 @@
+{
+ "results": [
+  {
+   "album_name": "Random Access Memories",
+   "artist_name": "Daft Punk, Julian Casablancas",
+   "duration": 338,
+   "id": "USQX91300105",
+   "isrc": "USQX91300105",
+   "lyricsUrl": "https://lrc.red/s/USQX91300105.ttml",
+   "timing_type": "line",
+   "track_name": "Instant Crush"
+  },
+  {
+   "album_name": "Random Access Memories (Drumless Edition)",
+   "artist_name": "Daft Punk, Julian Casablancas",
+   "duration": 337,
+   "id": "GBDUW2300130",
+   "isrc": "GBDUW2300130",
+   "lyricsUrl": "https://lrc.red/s/GBDUW2300130.ttml",
+   "timing_type": "line",
+   "track_name": "Instant Crush (Drumless Edition) (feat. Julian Casablancas)"
+  },
+  {
+   "album_name": "With Ram, to Daft Punk - EP",
+   "artist_name": "OvrWrt",
+   "duration": 338,
+   "id": "QZPJ32410012",
+   "isrc": "QZPJ32410012",
+   "lyricsUrl": "https://lrc.red/s/QZPJ32410012.ttml",
+   "timing_type": "none",
+   "track_name": "Instant Crush (Cover by Ovrwrt)"
+  }
+ ]
+}

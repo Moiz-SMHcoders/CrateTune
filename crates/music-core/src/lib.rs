@@ -5,7 +5,8 @@
 //! so the core owns no async runtime and callers decide where work runs.
 //!
 //! * [`InnerTube`] – YouTube Music metadata (search for now).
-//! * [`fetch_lyrics`] – LRCLIB synced lyrics with per-word timings.
+//! * [`lyrics`] – lyrics providers (LRCLIB, KuGou, BetterLyrics TTML, …), [`LyricsService`],
+//!   translation and romanization; [`fetch_lyrics`] is the simple LRCLIB-only call.
 //! * [`StreamResolver`] – turns a video id into a playable audio URL.
 //! * [`Player`] – background audio engine with a pollable [`PlaybackState`].
 //! * [`equalizer`] – parametric EQ applied live via [`Player::set_equalizer`].
@@ -21,7 +22,7 @@ pub mod equalizer;
 mod error;
 mod http;
 mod innertube;
-mod lyrics;
+pub mod lyrics;
 pub mod media_controls;
 mod model;
 mod player;
@@ -33,7 +34,10 @@ pub use equalizer::{EqBandKind, EqBandSettings, EqPreset, EqualizerSettings};
 pub use error::{Error, Result};
 pub use http::fetch_bytes;
 pub use innertube::InnerTube;
-pub use lyrics::{LyricLine, LyricWord, Lyrics, fetch_lyrics, parse_lrc};
+pub use lyrics::{
+    LyricLine, LyricWord, Lyrics, LyricsProvider, LyricsQuery, LyricsResult, LyricsService,
+    LyricsServiceConfig, fetch_lyrics, parse_lrc,
+};
 pub use model::{EntityRef, Track, format_duration};
 pub use player::{PlaybackState, PlaybackStatus, Player};
 pub use stream::{Download, IosClientResolver, ResolvedStream, StreamResolver};

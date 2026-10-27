@@ -1,0 +1,19 @@
+{
+ "type": "success",
+ "data": [
+  {
+   "id": "69b98934003b113be420",
+   "videoId": "khnokW3Mw24",
+   "songTitle": "Instant Crush (feat. Julian Casablancas)",
+   "artistName": "Daft Punk, Julian Casablancas",
+   "albumName": "Random Access Memories",
+   "durationSeconds": 337,
+   "plainLyric": "I didn't want to be the one to forget\nI thought of everything I'd never regret\nA little time with you is all that I get",
+   "syncedLyrics": "[00:26.03] I didn't want to be the one to forget\n[00:30.07] I thought of everything I'd never regret\n[00:34.09] A little time with you is all that I get",
+   "richSyncLyrics": "[00:26.49] <00:26.65>I <00:26.89>didn&#x27;t <00:27.21>want <00:27.77>to <00:27.77>be <00:28.09>the <00:28.40>one <00:28.71>to <00:28.96>forget\n[00:30.76] <00:30.94>I <00:31.13>thought <00:31.44>of <00:31.69>everything <00:32.39>I&#x27;d <00:32.70>never <00:33.20>regret\n[00:35.17] <00:35.25>A <00:35.49>little <00:35.80>time <00:36.25>with <00:36.56>you <00:36.81>is <00:37.11>all <00:37.36>that <00:37.67>I <00:37.98>get",
+   "trackType": "SONG",
+   "vote": 9
+  }
+ ],
+ "success": true
+}
