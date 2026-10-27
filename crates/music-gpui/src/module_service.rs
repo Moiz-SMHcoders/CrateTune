@@ -119,35 +119,6 @@ pub fn source_label(source: Option<&music_core::StreamSource>) -> Option<String>
     })
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use music_core::{SourceKind, StreamSource};
-
-    #[test]
-    fn labels() {
-        assert_eq!(source_label(None), None);
-        let yt = StreamSource::youtube(140);
-        assert_eq!(source_label(Some(&yt)).unwrap(), "YouTube · AAC 128 kbps");
-        let module = StreamSource {
-            kind: SourceKind::Module,
-            provider: "Echo".into(),
-            codec: Some("FLAC".into()),
-            sample_rate: Some(96_000),
-            bits_per_sample: Some(24),
-            ..Default::default()
-        };
-        assert_eq!(source_label(Some(&module)).unwrap(), "Echo · FLAC 24/96");
-        let odd = StreamSource {
-            provider: "X".into(),
-            codec: Some("ALAC".into()),
-            sample_rate: Some(44_100),
-            ..Default::default()
-        };
-        assert_eq!(source_label(Some(&odd)).unwrap(), "X · ALAC 44.1 kHz");
-    }
-}
-
 impl crate::app::MusicApp {
     /// Script actions for the Modules section (see `script.rs`); `false` if unknown.
     pub fn module_script_action(
@@ -212,5 +183,34 @@ impl crate::app::MusicApp {
             _ => return false,
         }
         true
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use music_core::{SourceKind, StreamSource};
+
+    #[test]
+    fn labels() {
+        assert_eq!(source_label(None), None);
+        let yt = StreamSource::youtube(140);
+        assert_eq!(source_label(Some(&yt)).unwrap(), "YouTube · AAC 128 kbps");
+        let module = StreamSource {
+            kind: SourceKind::Module,
+            provider: "Echo".into(),
+            codec: Some("FLAC".into()),
+            sample_rate: Some(96_000),
+            bits_per_sample: Some(24),
+            ..Default::default()
+        };
+        assert_eq!(source_label(Some(&module)).unwrap(), "Echo · FLAC 24/96");
+        let odd = StreamSource {
+            provider: "X".into(),
+            codec: Some("ALAC".into()),
+            sample_rate: Some(44_100),
+            ..Default::default()
+        };
+        assert_eq!(source_label(Some(&odd)).unwrap(), "X · ALAC 44.1 kHz");
     }
 }

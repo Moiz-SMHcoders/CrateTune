@@ -572,7 +572,8 @@ impl SettingsPanel {
                 if let Some(option) = f.field.options.iter().find(|o| {
                     o.label == value
                         || o.value.as_str() == Some(value)
-                        || o.value.to_string() == value
+                        || o.value == Value::String(value.to_owned())
+                        || o.value.to_string().as_str() == value
                 }) {
                     *selected = option.value.clone();
                 }
@@ -1511,7 +1512,7 @@ fn render_details(
             format!(
                 "Installed {} · package {} · {}",
                 ago(module.installed_at),
-                &module.package_sha256.get(..12).unwrap_or(""),
+                module.package_sha256.get(..12).unwrap_or(""),
                 if module.update_url.is_empty() {
                     "from a file".to_owned()
                 } else {

@@ -108,9 +108,48 @@ fn code(err: music_core::modules::ModuleError) -> String {
 
 #[test]
 fn committed_echo_fixture_matches_its_source() {
+    // Entry contents, not raw bytes (the compressed stream depends on the deflate
+    // backend), and the manifest as JSON (its key order depends on whether feature
+    // unification turned on serde_json's `preserve_order`).
+    fn entries(bytes: &[u8]) -> Vec<(String, Vec<u8>)> {
+        let mut zip = zip::ZipArchive::new(std::io::Cursor::new(bytes)).unwrap();
+        (0..zip.len())
+            .map(|i| {
+                let mut entry = zip.by_index(i).unwrap();
+                let name = entry.name().unwrap().into_owned();
+                let mut data = Vec::new();
+                std::io::Read::read_to_end(&mut entry, &mut data).unwrap();
+                if name == "manifest.json" {
+                    fn canonical(v: &Value) -> String {
+                        match v {
+                            Value::Object(map) => {
+                                let mut keys: Vec<_> = map.keys().collect();
+                                keys.sort();
+                                let parts: Vec<String> = keys
+                                    .iter()
+                                    .map(|k| format!("{k:?}:{}", canonical(&map[k.as_str()])))
+                                    .collect();
+                                format!("{{{}}}", parts.join(","))
+                            }
+                            Value::Array(items) => {
+                                format!(
+                                    "[{}]",
+                                    items.iter().map(canonical).collect::<Vec<_>>().join(",")
+                                )
+                            }
+                            other => other.to_string(),
+                        }
+                    }
+                    let value: Value = serde_json::from_slice(&data).unwrap();
+                    data = canonical(&value).into_bytes();
+                }
+                (name, data)
+            })
+            .collect()
+    }
     let packed = package::pack_dir(&echo_dir()).unwrap();
     let committed = std::fs::read(fixture("modules/echo.arch")).unwrap_or_default();
-    if packed != committed {
+    if committed.is_empty() || entries(&packed) != entries(&committed) {
         // Regenerate: cargo run -p music-core --example pack_module -- \
         //   crates/music-core/tests/fixtures/modules/echo crates/music-core/tests/fixtures/modules/echo.arch
         panic!("tests/fixtures/modules/echo.arch is stale; run the pack_module example");
