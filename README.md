@@ -602,7 +602,8 @@ src/
 | ![Together: host](docs/screenshots/integrations-together-host.png) | ![Together: guest](docs/screenshots/integrations-together-guest.png) |
 | ![Together: approval](docs/screenshots/integrations-together-approval.png) | ![Settings: Music Together](docs/screenshots/integrations-settings-together.png) |
 | ![Import: matching](docs/screenshots/integrations-import-progress.png) | ![Import: results](docs/screenshots/integrations-import-results.png) |
-| ![Settings: Spotify import](docs/screenshots/integrations-settings-spotify.png) | ![Import page](docs/screenshots/integrations-import-page.png) |
+| ![Settings: Spotify import](docs/screenshots/integrations-settings-spotify.png) | ![Import: saved](docs/screenshots/integrations-import-page.png) |
+| ![Together: start or join](docs/screenshots/integrations-together-idle.png) | ![Together: waiting for approval](docs/screenshots/integrations-together-waiting.png) |
 
 * **SponsorBlock** (Settings → SponsorBlock; on by default, `music_offtopic` only): when a
   song starts, its segments are looked up on a worker thread (`music_core::sponsorblock`,
@@ -650,8 +651,44 @@ src/
   fetches it from a third-party gist), which isn't a legitimate client flow. Without an
   account, export the playlist with Exportify and import the CSV.
 
-**Verification (screen locked, `screenshot` build, temporary `MUSIC_CONFIG_DIR`s, muted):**
-see the integrations round notes below.
+**Verification** (screen locked; `screenshot` build; temporary `MUSIC_CONFIG_DIR`s with
+`MUSIC_SECRET_STORE=file`; `MUSIC_VOLUME=0.0`):
+
+* SponsorBlock, real device (muted), `@play-id=kJQP7kiw5Fk` (a music video with locked
+  `music_offtopic` segments): the live lookup returned 0–21.8 s and 249.4–281.5 s; in *Ask*
+  mode the chip appeared at 0:06, `@sb-skip` landed at 21.8 s; in *Auto* mode `@seek=2` was
+  followed by a skip to 21.8 s 0.35 s later. `music-core` unit tests cover the hash prefix,
+  response filtering / merging (fixture), URL validation and the skip tracker; an ignored
+  test hits the live API.
+* Together, three app instances on one machine (demo clock): host "Hana" started a session
+  (port 42117, LAN address in the link), guest "Ann" joined from the link file; the guest
+  took the room's 10-song queue, loaded the host's track and seeked to the host position:
+  1 s later guest 31.9 s vs host 31.6 s (+ message age), clock offset 2288 ms, both
+  playing. Ann's suggestion arrived as *Play next* on the host ("Ann suggested …"), her
+  pause request was refused while control was off (server error → notification) and
+  applied after `@together-allow=control:on` — the host paused at 50.4 s, both guests
+  followed within 0.2 s. With approval on, "Bob" waited (redacted room state, "Waiting"
+  tag), `@together-approve` let him in, and he synced (seek to 45.2 s). Bob quitting shows
+  "Bob left (Connection lost)". Unit tests: wire format (camelCase / `type` like the Kotlin
+  classes), queue hash, links, clock estimate and the offset sign, the guest sync planner,
+  and an end-to-end localhost session (wrong key, join, room state, clock, suggestion,
+  refused / allowed control, approval, ban + rejoin refused, leave, host ends session).
+* Import: an Exportify CSV (6 songs, one made up) → 5 matched with score 1.00 (Instant Crush,
+  Get Lucky radio edit, Hello Goodbye, Shape of You, Blinding Lights), the made-up one
+  unmatched with a 45 % best guess; saved as "Spotify mix"; exported as M3U8 / CSV / JSON,
+  and the JSON re-imported as 6 direct hits without searching. Unit tests: Exportify +
+  own CSV, M3U, JSON round trips, YouTube links, the matcher (recording / cover / duration
+  cases) and the resolver (direct / matched / unmatched / cancel).
+* Spotify: PKCE (RFC 7636 vector), authorize URL, loopback redirect (code, state mismatch),
+  playlist-id parsing and the playlist-items JSON (fixture) are unit-tested.
+
+**Not verified:** the Spotify sign-in and API calls against Spotify (no developer Client
+ID available here — they are implemented per the documented Web API; Spotify's 2026
+development-mode changes renamed `/playlists/{id}/tracks` to `/items`, the client tries
+`/items` first and falls back), Together between two different machines / through a
+firewall prompt, Together with real audio on both sides (only demo clocks), drag of the
+progress bar by a guest (it is overridden by the host's state), a host transfer (not
+implemented), physical input.
 
 ### Keyboard shortcuts and menus
 
