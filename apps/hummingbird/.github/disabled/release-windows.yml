@@ -1,0 +1,95 @@
+name: Windows release (binary)
+
+on:
+  release:
+    types: [published]
+
+env:
+  CARGO_TERM_COLOR: always
+  LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
+  LASTFM_API_SECRET: ${{ secrets.LASTFM_API_SECRET }}
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, windows-11-arm]
+
+    runs-on: ${{ matrix.os }}
+
+    env:
+      ARCH: "${{ endsWith(matrix.os, 'arm') && 'aarch64' || 'x86_64' }}"
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update Inno Setup
+        run: choco upgrade innosetup -y
+      - name: Install minisign
+        shell: pwsh
+        run: |
+          Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+          $installer = "$env:RUNNER_TEMP\install-scoop.ps1"
+          Invoke-RestMethod -Uri https://get.scoop.sh -OutFile $installer
+          Unblock-File $installer
+          & $installer
+          if (-not (Get-Command scoop -ErrorAction SilentlyContinue)) {
+            throw "scoop is not available after running the installer"
+          }
+          scoop install minisign
+          "$env:USERPROFILE\scoop\shims" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      - name: Try minisign
+        shell: pwsh
+        run: minisign -v
+      - name: Update rust
+        run: rustup update
+      - name: Set ENV
+        run: echo "TARGET_TRIPLE=$((rustc -vV | Select-String 'host:').ToString().Split(' ')[1])" >> $Env:GITHUB_ENV
+      - name: Install cntp build tools
+        run: |
+          cargo install --git https://github.com/vicr123/contemporary-rs.git cargo-cntp-bundle
+      - name: Build
+        run: cargo build --verbose --profile release-distro -F update
+      - name: Bundle
+        run: |
+          cargo cntp-bundle --no-open --verbose --profile release-distro
+      - name: Build installer
+        run: |
+          iscc.exe /Q package\inno\Hummingbird_${{ env.ARCH }}.iss
+      - name: Move binary
+        run: mv target\bundle\${{ env.TARGET_TRIPLE }}\release-distro\Hummingbird.exe target\bundle\${{ env.TARGET_TRIPLE }}\release-distro\Hummingbird-${{ env.ARCH }}.exe
+      - name: Write minisign private key
+        shell: pwsh
+        env:
+          MINISIGN_PRIV_KEY: ${{ secrets.MINISIGN_PRIV_KEY }}
+        run: |
+          Set-Content -Path minisign.key -Value $env:MINISIGN_PRIV_KEY -NoNewline
+      - name: Sign portable binary
+        shell: pwsh
+        run: minisign -S -s minisign.key -m target/bundle/${{ env.TARGET_TRIPLE }}/release-distro/Hummingbird-${{ env.ARCH }}.exe
+      - name: Sign installer
+        shell: pwsh
+        run: minisign -S -s minisign.key -m package/inno/Output/HummingbirdSetup_${{ env.ARCH }}.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hummingbird-${{ env.ARCH }}.exe
+          path: |
+            target/bundle/${{ env.TARGET_TRIPLE }}/release-distro/Hummingbird-${{ env.ARCH }}.exe
+            target/bundle/${{ env.TARGET_TRIPLE }}/release-distro/Hummingbird-${{ env.ARCH }}.exe.minisig
+      - uses: actions/upload-artifact@v4
+        with:
+          name: HummingbirdSetup_${{ env.ARCH }}.exe
+          path: |
+            package\inno\Output\HummingbirdSetup_${{ env.ARCH }}.exe
+            package\inno\Output\HummingbirdSetup_${{ env.ARCH }}.exe.minisig
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            target/bundle/${{ env.TARGET_TRIPLE }}/release-distro/Hummingbird-${{ env.ARCH }}.exe
+            target/bundle/${{ env.TARGET_TRIPLE }}/release-distro/Hummingbird-${{ env.ARCH }}.exe.minisig
+            package/inno/Output/HummingbirdSetup_${{ env.ARCH }}.exe
+            package/inno/Output/HummingbirdSetup_${{ env.ARCH }}.exe.minisig
+          name: ${{ github.event.release.name }}
+          tag_name: ${{ github.event.release.tag_name }}

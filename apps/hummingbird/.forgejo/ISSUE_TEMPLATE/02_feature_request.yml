@@ -1,0 +1,35 @@
+name: Feature Request
+about: Suggest a new feature for Hummingbird.
+labels:
+  - type\feature
+  - "needs triage"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Has this feature been requested before?** Please search [existing issues](https://git.mailliw.org/hummingbird/hummingbird/issues) to check.
+  - type: textarea
+    attributes:
+      label: Description
+      description: |
+        Describe the feature you want. What would it do? What would it look like? How would it behave?
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Why do you want this feature?
+      description: |
+        Explain your use case. What problem does this solve? How would this improve your experience?
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Additional information
+      description: |
+        Any other context, mockups, references, or alternatives you've considered.
+    validations:
+      required: false
+  - type: markdown
+    attributes:
+      value: |
+        **If you have any relevant screenshots or videos, please attach them in a comment after creating the issue.**

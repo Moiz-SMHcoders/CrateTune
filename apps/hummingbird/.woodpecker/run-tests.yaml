@@ -1,0 +1,15 @@
+when:
+  - event: pull_request
+    branch: master
+  - event: push
+    branch: master
+
+steps:
+  - name: run cargo tests
+    image: hummingbird-ci:rust-1.97-bookworm
+    pull: false
+    environment:
+      CARGO_TERM_COLOR: always
+      CARGO_TARGET_DIR: /opt/hummingbird/target
+    commands:
+      - cargo test --all-features --locked

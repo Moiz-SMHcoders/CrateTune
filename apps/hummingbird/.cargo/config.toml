@@ -1,0 +1,8 @@
+# hack to get fdk-aac to build on Windows aarch64 because it was written before this was a thing
+# this leads to correct code, it just looks silly
+[env]
+CFLAGS_aarch64_pc_windows_msvc = "-D__x86__"
+
+# music-macos vendoring: build.rs runs `git rev-parse` in a dev channel build, which
+# fails without a .git dir here; pin the version id to the vendored upstream commit.
+HUMMINGBIRD_VERSION_ID = "e15e8ba-ytm"

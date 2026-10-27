@@ -1,0 +1,927 @@
+use std::path::PathBuf;
+
+use album_view::AlbumView;
+use artist_detail_view::ArtistDetailView;
+use artist_view::ArtistView;
+use cntp_i18n::tr;
+use files_view::FilesView;
+use gpui::{prelude::FluentBuilder, *};
+use release_view::ReleaseView;
+use rustc_hash::FxHashMap;
+use tracing::debug;
+use track_view::TrackView;
+
+#[derive(Clone, Default)]
+struct ScrollStateStorage {
+    scroll_offsets: FxHashMap<ViewSwitchMessage, f32>,
+    files_expanded: Vec<PathBuf>,
+}
+
+use crate::{
+    library::db::artists,
+    settings::storage::DEFAULT_SPLIT_FRACTION,
+    ui::{
+        app::Pool,
+        command_palette::{CommandCategory, CommandManager, CommandSpec},
+        components::{
+            resizable::{ResizeEdge, resizable},
+            table::table_data::TABLE_MAX_WIDTH,
+        },
+        constants::PANEL_ROUNDING,
+        library::{
+            playlist_view::{Import, PlaylistView},
+            sidebar::Sidebar,
+            update_playlist::UpdatePlaylist,
+        },
+        theme::Theme,
+    },
+};
+
+use super::models::Models;
+
+pub mod add_to_playlist;
+mod album_view;
+mod artist_detail_view;
+mod artist_view;
+mod collection_summary;
+pub mod context_menus;
+pub mod files_view;
+pub(crate) mod library_view_header;
+pub mod missing_folder_dialog;
+pub mod nav_buttons;
+pub mod playlist_view;
+mod release_view;
+mod sidebar;
+mod table_view_header;
+mod track_listing;
+mod track_view;
+mod update_playlist;
+
+actions!(library, [NavigateBack, NavigateForward, EscapeBack]);
+
+/// The left padding used by the detail views (release, artist detail, playlist)
+/// and the track rows within them.
+pub const DETAIL_VIEW_PADDING_SINGLE_COLUMN: Pixels = px(12.0);
+pub const DETAIL_VIEW_PADDING_TWO_COLUMN: Pixels = px(18.0);
+
+/// Left padding for detail views and the track listings inside them.
+///
+/// In single-column mode this is 12px so the content aligns with the back
+/// button in the header; in two-column mode it is 18px instead.
+pub fn detail_view_padding(cx: &App) -> Pixels {
+    let two_column = cx
+        .global::<crate::settings::SettingsGlobal>()
+        .model
+        .read(cx)
+        .interface
+        .two_column_library;
+
+    if two_column {
+        DETAIL_VIEW_PADDING_TWO_COLUMN
+    } else {
+        DETAIL_VIEW_PADDING_SINGLE_COLUMN
+    }
+}
+
+/// The navigation history + a cursor noting what the current message is.
+#[derive(Debug)]
+pub struct NavigationHistory {
+    startup_view: ViewSwitchMessage,
+    history: Vec<ViewSwitchMessage>,
+    cursor: usize,
+    forward_peek_generation: usize,
+    forward_peek_armed: bool,
+    forward_peek_active: bool,
+}
+
+impl NavigationHistory {
+    pub fn new(startup_view: ViewSwitchMessage) -> Self {
+        Self {
+            startup_view,
+            history: vec![startup_view],
+            cursor: 0,
+            forward_peek_generation: 0,
+            forward_peek_armed: true,
+            forward_peek_active: false,
+        }
+    }
+
+    pub fn current(&self) -> ViewSwitchMessage {
+        self.history[self.cursor]
+    }
+
+    pub fn can_go_back(&self) -> bool {
+        self.cursor > 0
+    }
+
+    pub fn can_go_forward(&self) -> bool {
+        self.cursor < self.history.len() - 1
+    }
+
+    pub fn forward_peek_generation(&self) -> usize {
+        self.forward_peek_generation
+    }
+
+    pub fn forward_peek_active(&self) -> bool {
+        self.forward_peek_active
+    }
+
+    /// Returns the history entry immediately before the cursor, if any.
+    pub fn previous(&self) -> Option<ViewSwitchMessage> {
+        if self.cursor > 0 {
+            Some(self.history[self.cursor - 1])
+        } else {
+            None
+        }
+    }
+
+    pub fn go_back(&mut self) -> Option<ViewSwitchMessage> {
+        self.forward_peek_active = false;
+
+        if self.can_go_back() {
+            self.cursor -= 1;
+
+            if self.forward_peek_armed {
+                self.forward_peek_generation = self.forward_peek_generation.wrapping_add(1).max(1);
+                self.forward_peek_armed = false;
+                self.forward_peek_active = true;
+            }
+
+            Some(self.current())
+        } else {
+            None
+        }
+    }
+
+    pub fn go_forward(&mut self) -> Option<ViewSwitchMessage> {
+        self.forward_peek_active = false;
+
+        if self.can_go_forward() {
+            self.cursor += 1;
+            self.forward_peek_armed = true;
+            Some(self.current())
+        } else {
+            None
+        }
+    }
+
+    /// Navigates to a new view. All history entries after the cursor are discarded, then the new
+    /// view is appended and the cursor advances to it. History is capped at 100 entries.
+    pub fn navigate(&mut self, message: ViewSwitchMessage) {
+        // Drop any forward history.
+        self.history.truncate(self.cursor + 1);
+        self.forward_peek_armed = true;
+        self.forward_peek_active = false;
+
+        // Cap total history at 100 entries by evicting the oldest.
+        if self.history.len() >= 100 {
+            let remove_idx = self.eviction_index();
+            self.history.remove(remove_idx);
+
+            if remove_idx <= self.cursor {
+                self.cursor = self.cursor.saturating_sub(1);
+            }
+        }
+
+        self.history.push(message);
+        self.cursor = self.history.len() - 1;
+    }
+
+    fn eviction_index(&self) -> usize {
+        let oldest_idx = 0;
+        let most_recent_key_idx = self
+            .history
+            .iter()
+            .rposition(ViewSwitchMessage::is_key_page);
+
+        if most_recent_key_idx == Some(oldest_idx) && self.history.len() > 1 {
+            1
+        } else {
+            oldest_idx
+        }
+    }
+
+    /// Finds the most recent history entry (before the cursor) that matches a predicate.
+    pub fn last_matching(
+        &self,
+        pred: impl Fn(&ViewSwitchMessage) -> bool,
+    ) -> Option<ViewSwitchMessage> {
+        self.history[..self.cursor]
+            .iter()
+            .rev()
+            .find(|m| pred(m))
+            .copied()
+    }
+
+    /// Removes history entries that do not satisfy `f`, adjusting the cursor so that it continues
+    /// to point at the same entry if it survives, or backs up to the nearest preceding survivor
+    /// otherwise. History is guaranteed to never become empty (falls back to the startup view).
+    ///
+    /// Used to remove entries that are no longer valid.
+    pub fn retain<F>(&mut self, f: F)
+    where
+        F: Fn(&ViewSwitchMessage) -> bool,
+    {
+        // Count how many entries at or before the cursor will be removed.
+        let removed_before_or_at_cursor = self.history[..=self.cursor]
+            .iter()
+            .filter(|v| !f(v))
+            .count();
+
+        self.history.retain(f);
+
+        if self.history.is_empty() {
+            self.history.push(self.startup_view);
+            self.cursor = 0;
+        } else {
+            self.cursor = self
+                .cursor
+                .saturating_sub(removed_before_or_at_cursor)
+                .min(self.history.len() - 1);
+        }
+    }
+}
+
+impl Default for NavigationHistory {
+    fn default() -> Self {
+        Self::new(ViewSwitchMessage::Albums)
+    }
+}
+
+impl EventEmitter<ViewSwitchMessage> for NavigationHistory {}
+
+/// Tracks which top-level section the user is currently in so that
+/// context-dependent actions (like "go up") can behave correctly.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum LibrarySection {
+    Albums,
+    Artists,
+    Tracks,
+    Files,
+    Playlists,
+}
+
+impl LibrarySection {
+    /// Derive the section from a navigation message. Returns `None` for
+    /// ambiguous messages (e.g. `Release`) that should keep the current section.
+    fn from_message(msg: &ViewSwitchMessage) -> Option<Self> {
+        match msg {
+            ViewSwitchMessage::Albums => Some(Self::Albums),
+            ViewSwitchMessage::Tracks => Some(Self::Tracks),
+            ViewSwitchMessage::Artists | ViewSwitchMessage::Artist(_) => Some(Self::Artists),
+            ViewSwitchMessage::Files => Some(Self::Files),
+            ViewSwitchMessage::Playlist(_) => Some(Self::Playlists),
+            // Release can appear under Albums or Artists – keep current section.
+            ViewSwitchMessage::Release(_, _) => None,
+            ViewSwitchMessage::Back | ViewSwitchMessage::Forward | ViewSwitchMessage::Refresh => {
+                None
+            }
+        }
+    }
+}
+
+#[derive(Clone)]
+enum LibraryView {
+    Album(Entity<AlbumView>),
+    Tracks(Entity<TrackView>),
+    Release(Entity<ReleaseView>),
+    Playlist(Entity<PlaylistView>),
+    Artists(Entity<ArtistView>),
+    ArtistDetail(Entity<ArtistDetailView>),
+    Files(Entity<FilesView>),
+}
+
+impl LibraryView {
+    fn scroll_offset(&self, cx: &App) -> f32 {
+        match self {
+            LibraryView::Album(view) => view.read(cx).get_scroll_offset(cx),
+            LibraryView::Tracks(view) => view.read(cx).get_scroll_offset(cx),
+            LibraryView::Artists(view) => view.read(cx).get_scroll_offset(cx),
+            LibraryView::Files(view) => view.read(cx).get_scroll_offset(),
+            LibraryView::Release(view) => view.read(cx).get_scroll_offset(),
+            LibraryView::ArtistDetail(view) => view.read(cx).get_scroll_offset(),
+            LibraryView::Playlist(view) => view.read(cx).get_scroll_offset(),
+        }
+    }
+
+    fn split_key(&self) -> &'static str {
+        match self {
+            LibraryView::Album(_) => "albums",
+            LibraryView::Tracks(_) => "tracks",
+            LibraryView::Artists(_) => "artists",
+            LibraryView::Playlist(_) => "playlist",
+            LibraryView::Release(_) => "albums",
+            LibraryView::ArtistDetail(_) => "artists",
+            LibraryView::Files(_) => "files",
+        }
+    }
+}
+
+pub struct Library {
+    view: LibraryView,
+    view_message: ViewSwitchMessage,
+    left_view: Option<LibraryView>,
+    right_view: Option<LibraryView>,
+    section: LibrarySection,
+    sidebar: Entity<Sidebar>,
+    show_update_playlist: Entity<bool>,
+    update_playlist: Entity<UpdatePlaylist>,
+    focus_handle: FocusHandle,
+    scroll_state: ScrollStateStorage,
+    reclaim_focus: bool,
+    _focus_lost_sub: Option<Subscription>,
+}
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ViewSwitchMessage {
+    Albums,
+    Tracks,
+    Artists,
+    Files,
+    /// album id, track id
+    Release(i64, Option<i64>),
+    Artist(i64),
+    Playlist(i64),
+    Back,
+    Forward,
+    Refresh,
+}
+
+impl ViewSwitchMessage {
+    pub fn is_detail_page(&self) -> bool {
+        matches!(
+            self,
+            ViewSwitchMessage::Release(_, _) | ViewSwitchMessage::Artist(_)
+        )
+    }
+
+    pub fn is_key_page(&self) -> bool {
+        !self.is_detail_page()
+            && !matches!(
+                self,
+                ViewSwitchMessage::Back | ViewSwitchMessage::Forward | ViewSwitchMessage::Refresh
+            )
+    }
+
+    fn library_view_matches(&self, lv: &LibraryView) -> bool {
+        matches!(
+            (lv, self),
+            (LibraryView::Album(_), ViewSwitchMessage::Albums)
+                | (LibraryView::Tracks(_), ViewSwitchMessage::Tracks)
+                // ArtistDetail: don't cache – we can't verify the id matches without extra storage
+                | (LibraryView::Artists(_), ViewSwitchMessage::Artists)
+                | (LibraryView::Files(_), ViewSwitchMessage::Files)
+        )
+    }
+}
+
+enum ViewOpenMode {
+    Navigate,
+    Restore,
+}
+
+impl ViewOpenMode {
+    fn release_target(
+        self,
+        target_track_id: Option<i64>,
+        scroll_offset: Option<f32>,
+    ) -> Option<i64> {
+        // don't repeat the original track jump when restoring history
+        if matches!(self, Self::Restore) && scroll_offset.is_some() {
+            None
+        } else {
+            target_track_id
+        }
+    }
+}
+
+fn make_view(
+    message: &ViewSwitchMessage,
+    mode: ViewOpenMode,
+    cx: &mut App,
+    model: &Entity<NavigationHistory>,
+    scroll_state: &ScrollStateStorage,
+) -> LibraryView {
+    let scroll_offset = scroll_state.scroll_offsets.get(message).copied();
+    match message {
+        ViewSwitchMessage::Albums => {
+            LibraryView::Album(AlbumView::new(cx, model.clone(), scroll_offset))
+        }
+        ViewSwitchMessage::Tracks => LibraryView::Tracks(TrackView::new(cx, scroll_offset)),
+        ViewSwitchMessage::Artists => {
+            LibraryView::Artists(ArtistView::new(cx, model.clone(), scroll_offset))
+        }
+        ViewSwitchMessage::Files => LibraryView::Files(FilesView::new(
+            cx,
+            scroll_state.files_expanded.clone(),
+            scroll_offset,
+        )),
+        ViewSwitchMessage::Release(id, target_track_id) => {
+            let target_track_id = mode.release_target(*target_track_id, scroll_offset);
+            LibraryView::Release(ReleaseView::new(cx, *id, target_track_id, scroll_offset))
+        }
+        ViewSwitchMessage::Artist(id) => {
+            LibraryView::ArtistDetail(ArtistDetailView::new(cx, *id, model.clone(), scroll_offset))
+        }
+        ViewSwitchMessage::Playlist(id) => {
+            LibraryView::Playlist(PlaylistView::new(cx, *id, scroll_offset))
+        }
+        ViewSwitchMessage::Back => panic!("improper use of make_view (cannot make Back)"),
+        ViewSwitchMessage::Forward => panic!("improper use of make_view (cannot make Forward)"),
+        ViewSwitchMessage::Refresh => panic!("improper use of make_view (cannot make Refresh)"),
+    }
+}
+
+fn library_section_from_history(history: &NavigationHistory) -> LibrarySection {
+    LibrarySection::from_message(&history.current())
+        .or_else(|| {
+            history
+                .last_matching(ViewSwitchMessage::is_key_page)
+                .and_then(|message| LibrarySection::from_message(&message))
+        })
+        .unwrap_or(LibrarySection::Albums)
+}
+
+impl Library {
+    fn sync_visible_views(&mut self, model: &Entity<NavigationHistory>, cx: &mut App) {
+        let history = model.read(cx);
+        let current_msg = history.current();
+        let two_column = cx
+            .global::<crate::settings::SettingsGlobal>()
+            .model
+            .read(cx)
+            .interface
+            .two_column_library;
+
+        self.section = library_section_from_history(history);
+
+        if two_column {
+            if current_msg.is_detail_page() {
+                self.right_view = Some(self.view.clone());
+
+                let left_msg = history.last_matching(ViewSwitchMessage::is_key_page);
+
+                let needs_new_left = match (&self.left_view, &left_msg) {
+                    (None, Some(_)) | (Some(_), None) => true,
+                    (Some(lv), Some(msg)) => !msg.library_view_matches(lv),
+                    (None, None) => false,
+                };
+
+                if needs_new_left {
+                    self.left_view = left_msg.as_ref().map(|message| {
+                        make_view(
+                            message,
+                            ViewOpenMode::Restore,
+                            cx,
+                            model,
+                            &self.scroll_state,
+                        )
+                    });
+                }
+            } else {
+                self.left_view = Some(self.view.clone());
+                self.right_view = None;
+            }
+        } else {
+            self.left_view = None;
+            self.right_view = None;
+        }
+    }
+
+    pub fn new(cx: &mut App) -> Entity<Self> {
+        cx.new(|cx| {
+            let switcher_model = cx.global::<Models>().switcher_model.clone();
+            let scroll_state = ScrollStateStorage::default();
+            let initial_message = switcher_model.read(cx).current();
+            let view = make_view(
+                &initial_message,
+                ViewOpenMode::Restore,
+                cx,
+                &switcher_model,
+                &scroll_state,
+            );
+            let section = library_section_from_history(switcher_model.read(cx));
+
+            cx.subscribe(
+                &switcher_model,
+                move |this: &mut Library, m, message, cx| {
+                    let scroll_offset = this.view.scroll_offset(cx);
+                    this.scroll_state
+                        .scroll_offsets
+                        .insert(this.view_message, scroll_offset);
+
+                    if let LibraryView::Files(files_view) = &this.view {
+                        this.scroll_state.files_expanded = files_view.read(cx).expanded_paths();
+                    }
+
+                    // if we're navigating away from a view that stole focus (e.g. PlaylistView),
+                    // schedule a focus reclaim so the Library div retakes focus on next render.
+                    if matches!(this.view, LibraryView::Playlist(_)) {
+                        this.reclaim_focus = true;
+                    }
+
+                    this.view = match message {
+                        ViewSwitchMessage::Back => {
+                            let destination =
+                                m.update(cx, |history: &mut NavigationHistory, cx| {
+                                    let result = history.go_back();
+                                    cx.notify();
+                                    result
+                                });
+
+                            if let Some(dest) = destination {
+                                debug!("back → {:?}", dest);
+                                make_view(&dest, ViewOpenMode::Restore, cx, &m, &this.scroll_state)
+                            } else {
+                                this.view.clone()
+                            }
+                        }
+
+                        ViewSwitchMessage::Forward => {
+                            let destination =
+                                m.update(cx, |history: &mut NavigationHistory, cx| {
+                                    let result = history.go_forward();
+                                    cx.notify();
+                                    result
+                                });
+
+                            if let Some(dest) = destination {
+                                debug!("forward → {:?}", dest);
+                                make_view(&dest, ViewOpenMode::Restore, cx, &m, &this.scroll_state)
+                            } else {
+                                this.view.clone()
+                            }
+                        }
+
+                        ViewSwitchMessage::Refresh => {
+                            let current = m.read(cx).current();
+                            make_view(&current, ViewOpenMode::Restore, cx, &m, &this.scroll_state)
+                        }
+
+                        _ => {
+                            m.update(cx, |history, cx| {
+                                history.navigate(*message);
+                                cx.notify();
+                            });
+
+                            make_view(message, ViewOpenMode::Navigate, cx, &m, &this.scroll_state)
+                        }
+                    };
+
+                    this.view_message = m.read(cx).current();
+                    this.sync_visible_views(&m, cx);
+
+                    cx.notify();
+                },
+            )
+            .detach();
+
+            let split_width_entities: Vec<Entity<Pixels>> = cx
+                .global::<Models>()
+                .split_widths
+                .values()
+                .cloned()
+                .collect();
+            for sw in split_width_entities {
+                cx.observe(&sw, |_, _, cx| cx.notify()).detach();
+            }
+
+            let focus_handle = cx.focus_handle();
+
+            cx.register_command(
+                CommandSpec::new(
+                    ("playlist::import", 0),
+                    Some(CommandCategory::Playlist),
+                    tr!("ACTION_IMPORT_PLAYLIST", "Import M3U Playlist"),
+                    Import,
+                )
+                .focus_handle(focus_handle.clone()),
+            );
+
+            cx.register_command(
+                CommandSpec::new(
+                    ("library::go_back", 0),
+                    Some(CommandCategory::Library),
+                    tr!("ACTION_GO_BACK", "Go Back"),
+                    NavigateBack,
+                )
+                .focus_handle(focus_handle.clone()),
+            );
+
+            cx.register_command(
+                CommandSpec::new(
+                    ("library::go_forward", 0),
+                    Some(CommandCategory::Library),
+                    tr!("ACTION_GO_FORWARD", "Go Forward"),
+                    NavigateForward,
+                )
+                .focus_handle(focus_handle.clone()),
+            );
+
+            cx.register_command(
+                CommandSpec::new(
+                    ("library::close_detail_view", 0),
+                    Some(CommandCategory::Library),
+                    tr!("ACTION_CLOSE_DETAIL_VIEW", "Close Detail View"),
+                    EscapeBack,
+                )
+                .focus_handle(focus_handle.clone()),
+            );
+
+            cx.on_release(move |_, cx| {
+                cx.unregister_command(("playlist::import", 0));
+                cx.unregister_command(("library::go_back", 0));
+                cx.unregister_command(("library::go_forward", 0));
+                cx.unregister_command(("library::close_detail_view", 0));
+            })
+            .detach();
+
+            let show_update_playlist = cx.new(|_| false);
+
+            let settings = cx.global::<crate::settings::SettingsGlobal>().model.clone();
+            cx.observe(&settings, {
+                let switcher_model = switcher_model.clone();
+                move |this: &mut Library, _, cx| {
+                    this.sync_visible_views(&switcher_model, cx);
+                    cx.notify();
+                }
+            })
+            .detach();
+
+            let mut library = Library {
+                sidebar: Sidebar::new(cx, switcher_model.clone()),
+                view,
+                view_message: initial_message,
+                left_view: None,
+                right_view: None,
+                section,
+                update_playlist: UpdatePlaylist::new(cx, show_update_playlist.clone()),
+                show_update_playlist,
+                focus_handle,
+                scroll_state,
+                reclaim_focus: true,
+                _focus_lost_sub: None,
+            };
+            library.sync_visible_views(&switcher_model, cx);
+            library
+        })
+    }
+}
+
+impl Render for Library {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        if self._focus_lost_sub.is_none() {
+            self._focus_lost_sub = Some(cx.on_focus_lost(window, |this, window, _cx| {
+                this.focus_handle.focus(window, _cx);
+            }));
+        }
+        if self.reclaim_focus {
+            self.reclaim_focus = false;
+            self.focus_handle.focus(window, cx);
+        }
+        let show_update_playlist = self.show_update_playlist.clone();
+        let settings = cx
+            .global::<crate::settings::SettingsGlobal>()
+            .model
+            .read(cx);
+        let full_width = settings.interface.effective_full_width();
+        let two_column = settings.interface.two_column_library;
+        let theme = cx.global::<Theme>().clone();
+
+        fn render_library_view(view: &LibraryView) -> AnyElement {
+            let page = match view {
+                LibraryView::Album(v) => return v.clone().into_any_element(),
+                LibraryView::Tracks(v) => return v.clone().into_any_element(),
+                LibraryView::Artists(v) => return v.clone().into_any_element(),
+                LibraryView::Release(v) => AnyView::from(v.clone()),
+                LibraryView::Playlist(v) => AnyView::from(v.clone()),
+                LibraryView::ArtistDetail(v) => AnyView::from(v.clone()),
+                LibraryView::Files(v) => AnyView::from(v.clone()),
+            };
+            page.cached(
+                StyleRefinement::default()
+                    .w_full()
+                    .h_full()
+                    .flex_shrink(1.0),
+            )
+            .into_any_element()
+        }
+
+        let single_column = |view: &LibraryView| {
+            div()
+                .w_full()
+                .h_full()
+                .flex()
+                .flex_col()
+                .flex_shrink(1.0)
+                .items_center()
+                .overflow_hidden()
+                .rounded(PANEL_ROUNDING)
+                .bg(theme.background_primary)
+                .child(
+                    div()
+                        .w_full()
+                        .h_full()
+                        .flex()
+                        .flex_col()
+                        .overflow_hidden()
+                        .when(!full_width, |this: Div| this.max_w(px(TABLE_MAX_WIDTH)))
+                        .child(render_library_view(view)),
+                )
+                .into_any_element()
+        };
+
+        App::on_action(cx, move |_: &Import, cx| {
+            show_update_playlist.update(cx, |v, cx| {
+                *v = true;
+                cx.notify();
+            })
+        });
+
+        let content = if let (true, Some(left), Some(right)) = (
+            two_column,
+            self.left_view.as_ref(),
+            self.right_view.as_ref(),
+        ) {
+            // two column
+            let key = left.split_key();
+            let split_widths = &cx.global::<Models>().split_widths;
+            let split_width_model = split_widths
+                .get(key)
+                .unwrap_or_else(|| split_widths.get("albums").unwrap())
+                .clone();
+
+            div()
+                .w_full()
+                .h_full()
+                .flex()
+                .flex_shrink(1.0)
+                .mr_auto()
+                .overflow_hidden()
+                .child(
+                    resizable("split-resizable", split_width_model, ResizeEdge::Right)
+                        .percent_mode()
+                        .min_size(px(0.10))
+                        .max_size(px(0.80))
+                        .default_size(DEFAULT_SPLIT_FRACTION)
+                        .h_full()
+                        .child(
+                            div()
+                                .w_full()
+                                .h_full()
+                                .flex()
+                                .flex_col()
+                                .overflow_hidden()
+                                .rounded(PANEL_ROUNDING)
+                                .bg(theme.background_primary)
+                                .child(render_library_view(left)),
+                        ),
+                )
+                .child(
+                    div()
+                        .w_full()
+                        .h_full()
+                        .flex()
+                        .flex_col()
+                        .flex_shrink(1.0)
+                        .overflow_hidden()
+                        .rounded(PANEL_ROUNDING)
+                        .bg(theme.background_primary)
+                        .child(render_library_view(right)),
+                )
+                .into_any_element()
+        } else if two_column {
+            // single column - two column mode but views not available
+            single_column(self.left_view.as_ref().unwrap_or(&self.view))
+        } else {
+            // single column - two column mode disabled
+            single_column(&self.view)
+        };
+
+        div()
+            .id("library")
+            .track_focus(&self.focus_handle)
+            .key_context("Library")
+            .on_action(cx.listener(|this, _: &EscapeBack, _, cx| {
+                let switcher = cx.global::<Models>().switcher_model.clone();
+                let current = switcher.read(cx).current();
+
+                if let ViewSwitchMessage::Release(album_id, _) = current
+                    && this.section == LibrarySection::Artists
+                {
+                    let pool = cx.global::<Pool>().0.clone();
+                    let previous = switcher.read(cx).previous();
+                    cx.spawn(async move |this, cx| {
+                        let task = crate::RUNTIME.spawn(async move {
+                            artists().related_to_album(album_id).fetch_ids(&pool).await
+                        });
+                        let artist_ids = match task.await {
+                            Ok(Ok(ids)) => ids,
+                            Ok(Err(error)) => {
+                                debug!(?error, album_id, "failed to resolve release parent");
+                                return;
+                            }
+                            Err(error) => {
+                                tracing::error!(
+                                    ?error,
+                                    album_id,
+                                    "resolve release parent task panicked"
+                                );
+                                return;
+                            }
+                        };
+                        this.update(cx, |this, cx| {
+                            if this.section != LibrarySection::Artists
+                                || switcher.read(cx).current() != current
+                            {
+                                return;
+                            }
+                            let parent_artist = match previous {
+                                Some(ViewSwitchMessage::Artist(id)) if artist_ids.contains(&id) => {
+                                    Some(id)
+                                }
+                                _ => artist_ids.first().copied(),
+                            };
+                            if let Some(dest) = parent_artist.map(ViewSwitchMessage::Artist) {
+                                let msg = if switcher.read(cx).previous() == Some(dest) {
+                                    ViewSwitchMessage::Back
+                                } else {
+                                    dest
+                                };
+                                switcher.update(cx, |_, cx| cx.emit(msg));
+                            }
+                        })
+                        .ok();
+                    })
+                    .detach();
+                    return;
+                }
+
+                let parent = match current {
+                    ViewSwitchMessage::Release(album_id, _) => {
+                        let _ = album_id;
+                        Some(ViewSwitchMessage::Albums)
+                    }
+                    ViewSwitchMessage::Artist(_) => Some(ViewSwitchMessage::Artists),
+                    _ => None, // Already at top level
+                };
+
+                if let Some(dest) = parent {
+                    // If the previous history entry matches the parent, go back
+                    // instead of creating a new history entry.
+                    let msg = if switcher.read(cx).previous() == Some(dest) {
+                        ViewSwitchMessage::Back
+                    } else {
+                        dest
+                    };
+                    switcher.update(cx, |_, cx| {
+                        cx.emit(msg);
+                    });
+                }
+            }))
+            .on_action(cx.listener(|_, _: &NavigateBack, _, cx| {
+                let switcher = cx.global::<Models>().switcher_model.clone();
+                switcher.update(cx, |_, cx| {
+                    cx.emit(ViewSwitchMessage::Back);
+                });
+            }))
+            .on_action(cx.listener(|_, _: &NavigateForward, _, cx| {
+                let switcher = cx.global::<Models>().switcher_model.clone();
+                switcher.update(cx, |_, cx| {
+                    cx.emit(ViewSwitchMessage::Forward);
+                });
+            }))
+            .on_mouse_down(
+                MouseButton::Navigate(gpui::NavigationDirection::Back),
+                |_, _, cx| {
+                    let switcher = cx.global::<Models>().switcher_model.clone();
+                    switcher.update(cx, |_, cx| {
+                        cx.emit(ViewSwitchMessage::Back);
+                    });
+                },
+            )
+            .on_mouse_down(
+                MouseButton::Navigate(gpui::NavigationDirection::Forward),
+                |_, _, cx| {
+                    let switcher = cx.global::<Models>().switcher_model.clone();
+                    switcher.update(cx, |_, cx| {
+                        cx.emit(ViewSwitchMessage::Forward);
+                    });
+                },
+            )
+            .w_full()
+            .h_full()
+            .flex()
+            .flex_shrink(1.0)
+            .max_w_full()
+            .max_h_full()
+            .overflow_hidden()
+            .child(
+                self.sidebar
+                    .clone()
+                    .cached(Sidebar::layout_style(cx).mr_auto()),
+            )
+            .child(content)
+            .child(self.update_playlist.clone())
+    }
+}

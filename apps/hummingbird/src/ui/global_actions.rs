@@ -1,0 +1,410 @@
+use std::sync::atomic::{AtomicUsize, Ordering};
+
+use cntp_i18n::tr;
+use gpui::{App, AppContext, MenuItem, actions};
+use tracing::{debug, info, warn};
+
+use crate::{
+    define_error,
+    errors::emit_error,
+    library::{db::tracks, scan::ScanInterface},
+    playback::{interface::PlaybackInterface, queue::QueueItemData, thread::PlaybackState},
+    toasts::{Toast, emit_toast},
+    ui::{
+        app::Pool,
+        command_palette::OpenPalette,
+        components::menus_builder::{
+            MenuBuilder, MenuPlatform, MenusBuilder, menu_item, menu_separator,
+        },
+        library::playlist_view,
+        settings::{SettingsSectionKind, open_settings_window, open_settings_window_with_section},
+        troubleshooting::{CopyTroubleshootingInfo, OpenLog, copy_troubleshooting_info, open_log},
+    },
+};
+
+use super::models::{Models, PlaybackInfo};
+
+actions!(
+    hummingbird,
+    [Quit, About, CloseWindow, Search, Settings, OpenEqualizer]
+);
+actions!(hummingbird, [OpenThemeFolder]);
+#[cfg(feature = "update")]
+actions!(hummingbird, [CheckForUpdates]);
+actions!(
+    player,
+    [PlayPause, Next, Previous, ShuffleAll, StopAfterCurrent]
+);
+actions!(scan, [ForceScan, Scan]);
+actions!(debug, [TestToast]);
+actions!(hummingbird, [HideSelf, HideOthers, ShowAll]);
+actions!(help, [Discord, Patreon, Issues]);
+actions!(queue, [Undo]);
+
+pub fn register_actions(cx: &mut App) {
+    debug!("registering actions");
+    cx.on_action(quit);
+    cx.on_action(close_window);
+    cx.on_action(play_pause);
+    cx.on_action(next);
+    cx.on_action(previous);
+    cx.on_action(hide_self);
+    cx.on_action(hide_others);
+    cx.on_action(show_all);
+    cx.on_action(about);
+    cx.on_action(force_scan);
+    cx.on_action(open_settings);
+    cx.on_action(open_equalizer);
+    #[cfg(feature = "update")]
+    cx.on_action(check_for_updates);
+    cx.on_action(discord);
+    cx.on_action(patreon);
+    cx.on_action(undo);
+    cx.on_action(issues);
+    cx.on_action(shuffle_all);
+    cx.on_action(stop_after_current);
+    cx.on_action(scan);
+    cx.on_action(open_log);
+    cx.on_action(copy_troubleshooting_info);
+    cx.on_action(open_theme_folder);
+    cx.on_action(test_toast);
+
+    debug!("actions: {:?}", cx.all_action_names());
+    debug!("action available: {:?}", cx.is_action_available(&Quit));
+
+    let mut app_menu = MenuBuilder::new(tr!("APP_NAME"))
+        .add_item(menu_item(
+            tr!("ABOUT", "About Hummingbird"),
+            About,
+            MenuPlatform::All,
+        ))
+        .add_item(menu_separator(MenuPlatform::All))
+        .add_item(menu_item(tr!("SETTINGS"), Settings, MenuPlatform::All));
+
+    #[cfg(feature = "update")]
+    {
+        app_menu = app_menu.add_item(menu_item(
+            tr!("ACTION_CHECK_FOR_UPDATES"),
+            CheckForUpdates,
+            MenuPlatform::All,
+        ));
+    }
+
+    app_menu = app_menu
+        .platform(MenuPlatform::MacOS)
+        .add_item(menu_separator(MenuPlatform::MacOS))
+        .add_item(Some(MenuItem::os_submenu(
+            "Services",
+            gpui::SystemMenuType::Services,
+        )))
+        .add_item(menu_separator(MenuPlatform::MacOS))
+        .add_item(menu_item(
+            tr!("HIDE", "Hide Hummingbird"),
+            HideSelf,
+            MenuPlatform::MacOS,
+        ))
+        .add_item(menu_item(
+            tr!("HIDE_OTHERS", "Hide Others"),
+            HideOthers,
+            MenuPlatform::MacOS,
+        ))
+        .add_item(menu_item(
+            tr!("SHOW_ALL", "Show All"),
+            ShowAll,
+            MenuPlatform::MacOS,
+        ))
+        .add_item(menu_separator(MenuPlatform::All))
+        .add_item(menu_item(
+            tr!("QUIT", "Quit Hummingbird"),
+            Quit,
+            MenuPlatform::All,
+        ));
+
+    let mut help_menu = MenuBuilder::new(tr!("HELP", "Help")).add_item(menu_item(
+        tr!("ABOUT"),
+        About,
+        MenuPlatform::NonMacOS,
+    ));
+
+    #[cfg(feature = "update")]
+    {
+        help_menu = help_menu.add_item(menu_item(
+            tr!("ACTION_CHECK_FOR_UPDATES"),
+            CheckForUpdates,
+            MenuPlatform::NonMacOS,
+        ));
+    }
+
+    help_menu = help_menu
+        .add_item(menu_separator(MenuPlatform::NonMacOS))
+        .add_item(menu_item(
+            tr!("FORGEJO_ISSUES", "Report an Issue"),
+            Issues,
+            MenuPlatform::All,
+        ))
+        .add_item(menu_item(
+            tr!("DISCORD", "Join us on Discord"),
+            Discord,
+            MenuPlatform::All,
+        ))
+        .add_item(menu_separator(MenuPlatform::All))
+        .add_item(menu_item(
+            tr!("ACTION_COPY_TROUBLESHOOTING_INFO"),
+            CopyTroubleshootingInfo,
+            MenuPlatform::All,
+        ))
+        .add_item(menu_item(
+            tr!("ACTION_OPEN_LOG"),
+            OpenLog,
+            MenuPlatform::All,
+        ))
+        .add_item(menu_separator(MenuPlatform::All))
+        .add_item(menu_item(
+            tr!("PATREON", "Support us on Patreon"),
+            Patreon,
+            MenuPlatform::All,
+        ));
+
+    MenusBuilder::new()
+        .add_menu(app_menu)
+        .add_menu(
+            MenuBuilder::new(tr!("FILE", "File"))
+                .add_item(menu_item(tr!("SETTINGS"), Settings, MenuPlatform::NonMacOS))
+                .add_item(menu_separator(MenuPlatform::NonMacOS))
+                .add_item(menu_item(tr!("QUIT"), Quit, MenuPlatform::NonMacOS)),
+        )
+        .add_menu(MenuBuilder::new(tr!("EDIT", "Edit")).add_item(menu_item(
+            tr!("UNDO_QUEUE", "Undo Last Queue Change"),
+            Undo,
+            MenuPlatform::All,
+        )))
+        .add_menu(
+            MenuBuilder::new(tr!(
+                "VIEW",
+                "View",
+                #description = "The View menu. Must *exactly* match the text required by macOS."
+            ))
+            .add_item(menu_item(
+                tr!("COMMAND_PALETTE", "Command Palette"),
+                OpenPalette,
+                MenuPlatform::All,
+            ))
+            .add_item(menu_item(
+                tr!("SEARCH", "Search"),
+                Search,
+                MenuPlatform::All,
+            )),
+        )
+        .add_menu(
+            MenuBuilder::new(tr!("LIBRARY"))
+                .add_item(menu_item(
+                    tr!("LIBRARY_SHUFFLE_ALL", "Shuffle All"),
+                    ShuffleAll,
+                    MenuPlatform::All,
+                ))
+                .add_item(menu_separator(MenuPlatform::All))
+                .add_item(menu_item(
+                    tr!("LIBRARY_SCAN", "Scan"),
+                    Scan,
+                    MenuPlatform::All,
+                ))
+                .add_item(menu_item(
+                    tr!("LIBRARY_FORCE_RESCAN", "Rescan Entire Library"),
+                    ForceScan,
+                    MenuPlatform::All,
+                ))
+                .add_item(menu_item(
+                    tr!("ACTION_IMPORT_PLAYLIST"),
+                    playlist_view::Import,
+                    MenuPlatform::All,
+                )),
+        )
+        .add_menu(
+            MenuBuilder::new(tr!(
+                "WINDOW",
+                "Window",
+                #description = "The Window menu. Must *exactly* match the text required by macOS."
+            ))
+            .platform(MenuPlatform::MacOS),
+        )
+        .add_menu(help_menu)
+        .set(cx);
+}
+
+fn quit(_: &Quit, cx: &mut App) {
+    info!("Quitting...");
+    cx.quit();
+}
+
+fn close_window(_: &CloseWindow, cx: &mut App) {
+    cx.defer(|cx| {
+        let Some(window_id) = cx.active_window() else {
+            warn!("No active window to close");
+            return;
+        };
+        _ = cx.update_window(window_id, |_, window, _| {
+            window.remove_window();
+        })
+    });
+}
+
+fn play_pause(_: &PlayPause, cx: &mut App) {
+    let state = cx.global::<PlaybackInfo>().playback_state.read(cx);
+    let interface = cx.global::<PlaybackInterface>();
+    match state {
+        PlaybackState::Stopped => {
+            interface.play();
+        }
+        PlaybackState::Playing => {
+            interface.pause();
+        }
+        PlaybackState::Paused => {
+            interface.play();
+        }
+    }
+}
+
+fn next(_: &Next, cx: &mut App) {
+    let interface = cx.global::<PlaybackInterface>();
+    interface.next();
+}
+
+fn previous(_: &Previous, cx: &mut App) {
+    let interface = cx.global::<PlaybackInterface>();
+    interface.previous();
+}
+
+fn hide_self(_: &HideSelf, cx: &mut App) {
+    cx.hide();
+}
+
+fn hide_others(_: &HideOthers, cx: &mut App) {
+    cx.hide_other_apps();
+}
+
+fn show_all(_: &ShowAll, cx: &mut App) {
+    cx.unhide_other_apps();
+}
+
+fn about(_: &About, cx: &mut App) {
+    let show_about = cx.global::<Models>().show_about.clone();
+    show_about.write(cx, true);
+}
+
+fn force_scan(_: &ForceScan, cx: &mut App) {
+    let scanner = cx.global::<ScanInterface>();
+    scanner.force_scan();
+}
+
+fn scan(_: &Scan, cx: &mut App) {
+    let scanner = cx.global::<ScanInterface>();
+    scanner.scan();
+}
+
+fn test_toast(_: &TestToast, _cx: &mut App) {
+    define_error!(
+        TestError { n: usize },
+        tr!(
+            "TEST_TOAST_EMIT_ERROR",
+            "Error via emit_error (n={{n}})",
+            n = n
+        ),
+        "test emit_error, n={n}"
+    );
+
+    static COUNTER: AtomicUsize = AtomicUsize::new(0);
+    let n = COUNTER.fetch_add(1, Ordering::Relaxed);
+
+    match n % 5 {
+        0 => emit_toast(Toast::info(tr!(
+            "TEST_TOAST_INFO",
+            "Info toast #{{n}}",
+            n = n
+        ))),
+        1 => emit_toast(Toast::success(tr!(
+            "TEST_TOAST_SUCCESS",
+            "Success toast #{{n}}",
+            n = n
+        ))),
+        2 => emit_toast(Toast::warning(tr!(
+            "TEST_TOAST_WARNING",
+            "Warning toast #{{n}}",
+            n = n
+        ))),
+        3 => emit_toast(
+            Toast::error(tr!(
+                "TEST_TOAST_ERROR",
+                "Error toast #{{n}} (with action)",
+                n = n
+            ))
+            .with_action(tr!("TEST_TOAST_RETRY", "Retry"), |_cx| {
+                info!("test toast action clicked");
+            }),
+        ),
+        _ => emit_error(TestError { n }),
+    }
+}
+
+fn open_settings(_: &Settings, cx: &mut App) {
+    open_settings_window(cx);
+}
+
+fn open_equalizer(_: &OpenEqualizer, cx: &mut App) {
+    open_settings_window_with_section(cx, SettingsSectionKind::Equalizer);
+}
+
+#[cfg(feature = "update")]
+fn check_for_updates(_: &CheckForUpdates, cx: &mut App) {
+    crate::update::start_update_task(cx);
+}
+
+fn discord(_: &Discord, cx: &mut App) {
+    cx.open_url("https://discord.gg/cpBnukdjke");
+}
+
+fn patreon(_: &Patreon, cx: &mut App) {
+    cx.open_url("https://www.patreon.com/c/william341");
+}
+
+fn issues(_: &Issues, cx: &mut App) {
+    cx.open_url("https://git.mailliw.org/hummingbird/hummingbird/issues");
+}
+
+fn shuffle_all(_: &ShuffleAll, cx: &mut App) {
+    let pool = cx.global::<Pool>().0.clone();
+    let task = crate::RUNTIME.spawn(async move { tracks().for_playback().fetch_rows(&pool).await });
+    cx.spawn(async move |cx| match task.await {
+        Ok(Ok(rows)) => {
+            cx.update(|cx| {
+                let queue = rows
+                    .into_iter()
+                    .map(|row| QueueItemData::new(cx, row.location, Some(row.id), row.album_id))
+                    .collect();
+                let interface = cx.global::<PlaybackInterface>();
+                if !(*cx.global::<PlaybackInfo>().shuffling.read(cx)) {
+                    interface.toggle_shuffle();
+                }
+                interface.replace_queue(queue);
+            });
+        }
+        Ok(Err(error)) => warn!(?error, "failed to load tracks for shuffle"),
+        Err(error) => warn!(?error, "shuffle query task failed"),
+    })
+    .detach();
+}
+
+fn undo(_: &Undo, cx: &mut App) {
+    let interface = cx.global::<PlaybackInterface>();
+    interface.undo();
+}
+
+fn stop_after_current(_: &StopAfterCurrent, cx: &mut App) {
+    let interface = cx.global::<PlaybackInterface>();
+    interface.toggle_stop_after_current();
+}
+
+fn open_theme_folder(_: &OpenThemeFolder, cx: &mut App) {
+    let themes_dir = crate::paths::data_dir().join(crate::ui::theme::THEMES_DIR_NAME);
+    let _ = std::fs::create_dir_all(&themes_dir);
+    cx.open_with_system(&themes_dir);
+}

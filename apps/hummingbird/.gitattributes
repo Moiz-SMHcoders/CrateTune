@@ -1,0 +1,2 @@
+# Force line endings in migrations to line feeds (LF) on all platforms to avoid changing checksums
+*.sql text eol=lf

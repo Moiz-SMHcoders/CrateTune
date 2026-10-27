@@ -1,0 +1,22 @@
+[config]
+i18n_dir = "res/bundle_translations"
+blueprint = "false"
+
+[application]
+theme_colors = [] # TODO: fix this, this shouldn't be required
+
+[deployment]
+application_name = "Hummingbird"
+application_generic_name = "t:APPLICATION_GENERIC_NAME"
+application_machine_name = "hummingbird-player"
+organization_name = "mailliw"
+desktop_entry = "org.mailliw.hummingbird"
+desktop_entry_categories = ["Audio", "AudioVideo"]
+icon = "res/icon.svg"
+disk_image_background = "res/dmg-background.svg"
+
+[deployment."aarch64-apple-darwin"]
+icon = "res/macos-icon.svg"
+
+[deployment."x86_64-apple-darwin"]
+icon = "res/macos-icon.svg"

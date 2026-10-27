@@ -1,0 +1,288 @@
+#[cfg(target_os = "windows")]
+use std::path::PathBuf;
+use std::{path::Path, sync::Arc};
+
+use globwalk::GlobWalkerBuilder;
+use gpui::{
+    AnyElement, App, Bounds, Element, ElementId, Entity, GlobalElementId, InspectorElementId,
+    IntoElement, LayoutId, ParentElement, Pixels, Render, RenderImage, Stateful, StyleRefinement,
+    Styled, Window,
+};
+use rustc_hash::{FxHashMap, FxHashSet};
+use tracing::debug;
+
+/// Prunes ID-keyed views after the render cycle, retaining all keys requested by the list.
+/// Keep `rendered_keys` alongside `views_model` and pass the keys from each rendered range.
+pub fn prune_views_keyed<T>(
+    views_model: &Entity<FxHashMap<usize, Entity<T>>>,
+    rendered_keys: &Entity<Option<Vec<usize>>>,
+    keys: &[usize],
+    cx: &mut App,
+) where
+    T: Render,
+{
+    let schedule_prune = rendered_keys.update(cx, |rendered_keys, _| {
+        let schedule_prune = rendered_keys.is_none();
+        rendered_keys
+            .get_or_insert_with(Vec::new)
+            .extend_from_slice(keys);
+        schedule_prune
+    });
+
+    // uniform_list requests the measurement row separately from the visible rows, so wait
+    // until both have rendered before pruning.
+    if schedule_prune {
+        let views_model = views_model.clone();
+        let rendered_keys = rendered_keys.clone();
+        cx.defer(move |cx| {
+            let keys = rendered_keys.update(cx, |keys, _| keys.take());
+            if let Some(keys) = keys {
+                retain_views(&views_model, &keys, cx);
+            }
+        });
+    }
+}
+
+pub fn create_or_retrieve_view<T>(
+    views_model: &Entity<FxHashMap<usize, Entity<T>>>,
+    idx: usize,
+    creation_fn: impl FnOnce(&mut App) -> Entity<T>,
+    cx: &mut App,
+) -> Entity<T>
+where
+    T: Render,
+{
+    create_or_retrieve_view_keyed(views_model, idx, creation_fn, cx)
+}
+
+pub fn create_or_retrieve_view_keyed<T>(
+    views_model: &Entity<FxHashMap<usize, Entity<T>>>,
+    key: usize,
+    creation_fn: impl FnOnce(&mut App) -> Entity<T>,
+    cx: &mut App,
+) -> Entity<T>
+where
+    T: Render,
+{
+    let view = views_model.read(cx).get(&key).cloned();
+    match view {
+        Some(view) => view,
+        None => {
+            let view = creation_fn(cx);
+            views_model.update(cx, |m, _| {
+                m.insert(key, view.clone());
+            });
+            view
+        }
+    }
+}
+
+/// Removes all views from the map whose key is not in `valid_keys`, used when items are keyed
+/// by their ID instead of their index
+pub fn retain_views<T>(
+    views_model: &Entity<FxHashMap<usize, Entity<T>>>,
+    valid_keys: &[usize],
+    cx: &mut App,
+) where
+    T: Render,
+{
+    let key_set: FxHashSet<usize> = valid_keys.iter().copied().collect();
+    views_model.update(cx, |m, _| {
+        m.retain(|k, _| key_set.contains(k));
+    });
+}
+
+pub fn drop_image_from_app(cx: &mut App, image: Arc<RenderImage>) {
+    cx.defer(move |cx| {
+        debug!("attempting image drop");
+
+        for window in cx.windows() {
+            let image = image.clone();
+
+            debug!("dropping an image from {:?}", window.window_id());
+
+            window
+                .update(cx, move |_, window, _| {
+                    window.drop_image(image).expect("couldn't drop image");
+                })
+                .expect("couldn't get window");
+        }
+    });
+}
+
+pub fn reveal_path_for_file_manager(path: &Path, cx: &mut App) {
+    #[cfg(windows)]
+    {
+        // this is some crazy garbage but it has to be this way because of windows wonkyness
+        let path_for_reveal = match path.to_string_lossy().strip_prefix("\\\\?\\") {
+            Some(stripped) => PathBuf::from(stripped),
+            None => path.to_path_buf(),
+        };
+
+        cx.reveal_path(path_for_reveal.as_path());
+    }
+
+    #[cfg(not(windows))]
+    {
+        cx.reveal_path(path);
+    }
+}
+
+pub enum MaybeStateful<T> {
+    Stateful(Stateful<T>),
+    NotStateful(T),
+}
+
+impl<T> Styled for MaybeStateful<T>
+where
+    T: Styled,
+{
+    fn style(&mut self) -> &mut StyleRefinement {
+        match self {
+            MaybeStateful::Stateful(stateful) => stateful.style(),
+            MaybeStateful::NotStateful(not_stateful) => not_stateful.style(),
+        }
+    }
+}
+
+impl<T> Element for MaybeStateful<T>
+where
+    T: Element,
+{
+    type RequestLayoutState = T::RequestLayoutState;
+    type PrepaintState = T::PrepaintState;
+
+    fn id(&self) -> Option<ElementId> {
+        match self {
+            MaybeStateful::Stateful(stateful) => stateful.id(),
+            MaybeStateful::NotStateful(not_stateful) => not_stateful.id(),
+        }
+    }
+
+    fn source_location(&self) -> Option<&'static core::panic::Location<'static>> {
+        match self {
+            MaybeStateful::Stateful(stateful) => stateful.source_location(),
+            MaybeStateful::NotStateful(not_stateful) => not_stateful.source_location(),
+        }
+    }
+
+    fn request_layout(
+        &mut self,
+        id: Option<&GlobalElementId>,
+        inspector_id: Option<&InspectorElementId>,
+        window: &mut Window,
+        cx: &mut App,
+    ) -> (LayoutId, Self::RequestLayoutState) {
+        match self {
+            MaybeStateful::Stateful(stateful) => {
+                stateful.request_layout(id, inspector_id, window, cx)
+            }
+            MaybeStateful::NotStateful(not_stateful) => {
+                not_stateful.request_layout(id, inspector_id, window, cx)
+            }
+        }
+    }
+
+    fn prepaint(
+        &mut self,
+        id: Option<&GlobalElementId>,
+        inspector_id: Option<&InspectorElementId>,
+        bounds: Bounds<Pixels>,
+        state: &mut Self::RequestLayoutState,
+        window: &mut Window,
+        cx: &mut App,
+    ) -> T::PrepaintState {
+        match self {
+            MaybeStateful::Stateful(stateful) => {
+                stateful.prepaint(id, inspector_id, bounds, state, window, cx)
+            }
+            MaybeStateful::NotStateful(not_stateful) => {
+                not_stateful.prepaint(id, inspector_id, bounds, state, window, cx)
+            }
+        }
+    }
+
+    fn paint(
+        &mut self,
+        id: Option<&GlobalElementId>,
+        inspector_id: Option<&InspectorElementId>,
+        bounds: Bounds<Pixels>,
+        request_layout: &mut Self::RequestLayoutState,
+        prepaint: &mut Self::PrepaintState,
+        window: &mut Window,
+        cx: &mut App,
+    ) {
+        match self {
+            MaybeStateful::Stateful(stateful) => stateful.paint(
+                id,
+                inspector_id,
+                bounds,
+                request_layout,
+                prepaint,
+                window,
+                cx,
+            ),
+            MaybeStateful::NotStateful(not_stateful) => not_stateful.paint(
+                id,
+                inspector_id,
+                bounds,
+                request_layout,
+                prepaint,
+                window,
+                cx,
+            ),
+        }
+    }
+}
+
+impl<T> IntoElement for MaybeStateful<T>
+where
+    T: Element,
+{
+    type Element = Self;
+
+    fn into_element(self) -> Self::Element {
+        self
+    }
+}
+
+impl<T> ParentElement for MaybeStateful<T>
+where
+    T: ParentElement,
+{
+    fn extend(&mut self, elements: impl IntoIterator<Item = AnyElement>) {
+        match self {
+            MaybeStateful::Stateful(stateful) => stateful.extend(elements),
+            MaybeStateful::NotStateful(not_stateful) => not_stateful.extend(elements),
+        }
+    }
+}
+
+pub fn format_duration(secs: i64, pad_minutes: bool) -> String {
+    let secs = secs.max(0);
+    let hours = secs / 3_600;
+    let minutes = (secs % 3_600) / 60;
+    let seconds = secs % 60;
+
+    if hours > 0 {
+        format!("{hours}:{minutes:02}:{seconds:02}")
+    } else if pad_minutes {
+        format!("{minutes:02}:{seconds:02}")
+    } else {
+        format!("{minutes}:{seconds:02}")
+    }
+}
+
+pub fn find_art_file_for_path(path: &Path) -> Option<Arc<Path>> {
+    let parent = path.parent()?;
+
+    let mut glob =
+        GlobWalkerBuilder::from_patterns(parent, &["{folder,cover,front}.{jpg,jpeg,png}"])
+            .case_insensitive(true)
+            .max_depth(1)
+            .build()
+            .expect("Failed to build album art glob")
+            .filter_map(|e| e.ok());
+
+    glob.next().map(|e| Arc::from(e.path()))
+}

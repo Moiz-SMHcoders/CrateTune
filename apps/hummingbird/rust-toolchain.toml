@@ -1,0 +1,4 @@
+[toolchain]
+# Upstream pins "stable"; the locally installed "stable" is 1.91 (too old, upstream needs
+# >= 1.95), so match the music-macos workspace toolchain instead.
+channel = "1.99"

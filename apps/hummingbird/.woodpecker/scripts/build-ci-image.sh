@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+image="${1:-hummingbird-ci:rust-1.97-bookworm}"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+repo_root="$(cd "$script_dir/../.." && pwd)"
+
+docker build \
+  --file "$repo_root/.woodpecker/images/linux-ci.Dockerfile" \
+  --tag "$image" \
+  "$repo_root"
+
+docker image inspect "$image" --format 'built {{.RepoTags}} {{.Id}} {{.Size}} bytes'

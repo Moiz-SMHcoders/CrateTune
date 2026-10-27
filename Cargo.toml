@@ -1,6 +1,8 @@
 [workspace]
 resolver = "3"
 members = ["crates/*"]
+# Hummingbird fork is its own workspace (it needs [patch.crates-io] + its own profiles).
+exclude = ["apps/hummingbird"]
 
 [workspace.package]
 edition = "2024"

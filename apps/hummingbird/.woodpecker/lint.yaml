@@ -1,0 +1,22 @@
+when:
+  - event: pull_request
+    branch: master
+  - event: push
+    branch: master
+
+steps:
+  - name: cargo fmt
+    image: hummingbird-ci:rust-1.97-bookworm
+    pull: false
+    environment:
+      CARGO_TERM_COLOR: always
+    commands:
+      - cargo fmt --all -- --check
+
+  - name: cargo clippy
+    image: hummingbird-ci:rust-1.97-bookworm
+    pull: false
+    environment:
+      CARGO_TERM_COLOR: always
+    commands:
+      - cargo clippy --all-targets --all-features -- -D warnings

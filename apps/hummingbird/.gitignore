@@ -1,0 +1,19 @@
+# cargo artifacts
+target/
+
+# nix artifacts
+.direnv/
+result
+
+# bundle artifacts
+**.AppImage
+**.dmg
+package/inno/Output/*.exe
+
+**/.DS_Store
+.env
+.cargo/
+.idea/
+.vscode/
+.zed/
+Session.vim

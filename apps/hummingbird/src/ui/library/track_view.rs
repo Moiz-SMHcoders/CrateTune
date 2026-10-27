@@ -1,0 +1,193 @@
+use std::{cell::RefCell, rc::Rc};
+
+use tracing::debug;
+
+use gpui::{prelude::FluentBuilder, *};
+
+use crate::{
+    library::{
+        db::{SortDirection, tracks},
+        scan::ScanEvent,
+        types::{Track, table::TrackColumn},
+    },
+    playback::{interface::PlaybackInterface, queue::QueueItemData},
+    ui::{
+        app::Pool,
+        availability::snapshot,
+        components::table::{
+            Table, TableEvent,
+            table_data::{TABLE_MAX_WIDTH, TableSort},
+        },
+        library::{
+            context_menus::{TrackContextMenuContext, play_from_track_path},
+            table_view_header::TableViewHeader,
+        },
+        models::Models,
+    },
+};
+#[derive(Clone)]
+pub struct TrackView {
+    table_view_header: Entity<TableViewHeader<Track, TrackColumn>>,
+    table: Entity<Table<Track, TrackColumn>>,
+}
+
+impl TrackView {
+    pub(super) fn new(cx: &mut App, initial_scroll_offset: Option<f32>) -> Entity<Self> {
+        cx.new(|cx| {
+            let state = cx.global::<Models>().scan_state.clone();
+
+            let table_settings = cx.global::<Models>().table_settings.clone();
+            let initial_settings = table_settings
+                .read(cx)
+                .get(Table::<Track, TrackColumn>::get_table_key())
+                .cloned();
+
+            let table_ref = Rc::new(RefCell::new(None::<Entity<Table<Track, TrackColumn>>>));
+            let table_ref_clone = table_ref.clone();
+
+            let handler = Rc::new(move |cx: &mut App, id: &i64| {
+                if let Some(table) = table_ref_clone.borrow().as_ref() {
+                    let id = *id;
+                    load_playable_queue(cx, table, move |cx, queue_items| {
+                        let index = queue_items
+                            .iter()
+                            .position(|item| item.get_db_id() == Some(id))
+                            .unwrap_or(0);
+
+                        let playback = cx.global::<PlaybackInterface>();
+                        playback.replace_queue_with_index(queue_items, index);
+                        playback.play();
+                    });
+                }
+            });
+
+            let context_menu_context = TrackContextMenuContext {
+                show_go_to_album: true,
+                show_go_to_artist: true,
+                play_from_here: Some(Rc::new({
+                    let table_ref = table_ref.clone();
+                    move |cx, track| {
+                        let table_ref_read = table_ref.borrow();
+                        let Some(table) = table_ref_read.as_ref() else {
+                            return;
+                        };
+                        let path = track.location.clone();
+                        load_playable_queue(cx, table, move |cx, queue_items| {
+                            play_from_track_path(cx, &path, queue_items);
+                        });
+                    }
+                })),
+            };
+
+            let table = Table::new(
+                cx,
+                Some(handler),
+                context_menu_context,
+                initial_scroll_offset,
+                initial_settings.as_ref(),
+            );
+            *table_ref.borrow_mut() = Some(table.clone());
+
+            let table_clone = table.clone();
+
+            cx.observe(&state, move |_: &mut TrackView, e, cx| {
+                let value = e.read(cx);
+                match value {
+                    ScanEvent::ScanCompleteIdle
+                    | ScanEvent::ScanCompleteWatching
+                    | ScanEvent::TargetedRescanComplete => {
+                        table_clone.update(cx, |_, cx| cx.emit(TableEvent::NewRows));
+                    }
+                    ScanEvent::ScanProgress { current, .. } if current % 100 == 0 => {
+                        table_clone.update(cx, |_, cx| cx.emit(TableEvent::NewRows));
+                    }
+                    _ => {}
+                }
+            })
+            .detach();
+
+            TrackView {
+                table_view_header: TableViewHeader::new(cx, table.clone()),
+                table,
+            }
+        })
+    }
+
+    pub fn get_scroll_offset(&self, cx: &App) -> f32 {
+        self.table.read(cx).get_scroll_offset(cx)
+    }
+}
+
+impl Render for TrackView {
+    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let settings = cx
+            .global::<crate::settings::SettingsGlobal>()
+            .model
+            .read(cx);
+        let full_width = settings.interface.effective_full_width();
+
+        div()
+            .flex()
+            .flex_col()
+            .w_full()
+            .h_full()
+            .when(!full_width, |this: Div| this.max_w(px(TABLE_MAX_WIDTH)))
+            .child(
+                div()
+                    .pb(px(0.0))
+                    .flex()
+                    .flex_col()
+                    .w_full()
+                    .h_full()
+                    .child(self.table_view_header.clone())
+                    .child(self.table.clone()),
+            )
+    }
+}
+
+fn load_playable_queue(
+    cx: &mut App,
+    table: &Entity<Table<Track, TrackColumn>>,
+    on_ready: impl FnOnce(&mut App, Vec<QueueItemData>) + 'static,
+) {
+    let sort = table.read(cx).get_sort(cx).unwrap_or(TableSort {
+        column: TrackColumn::Artist,
+        direction: SortDirection::Ascending,
+    });
+    let pool = cx.global::<Pool>().0.clone();
+    let task = crate::RUNTIME.spawn(async move {
+        tracks()
+            .sort(sort.column, sort.direction)
+            .for_playback()
+            .fetch_rows(&pool)
+            .await
+    });
+
+    cx.spawn(async move |cx| {
+        match task.await {
+            Ok(Ok(tracks)) => {
+                let queue_items: Vec<QueueItemData> = cx.update(|cx| {
+                    let availability = snapshot(cx);
+                    tracks
+                        .into_iter()
+                        .filter(|track| availability.is_track_path_available(&track.location))
+                        .map(|track| {
+                            QueueItemData::new(cx, track.location, Some(track.id), track.album_id)
+                        })
+                        .collect()
+                });
+                if !queue_items.is_empty() {
+                    cx.update(|cx| on_ready(cx, queue_items));
+                }
+            }
+            Ok(Err(error)) => {
+                debug!("Failed to load tracks for playback: {error:?}");
+            }
+            Err(error) => {
+                debug!("Track playback query task failed: {error:?}");
+            }
+        }
+        anyhow::Ok(())
+    })
+    .detach();
+}

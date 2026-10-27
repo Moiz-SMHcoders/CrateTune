@@ -1,0 +1,60 @@
+name: Bug Report
+about: Report a bug, crash, freeze, or hang in Hummingbird.
+labels:
+  - type/bug
+  - "needs triage"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Is this bug already reported?** Please search [existing issues](https://git.mailliw.org/hummingbird/hummingbird/issues) to check.
+  - type: textarea
+    attributes:
+      label: Reproduction steps
+      description: A step-by-step description of how to reproduce the bug. The more context you provide, the easier it is to find and fix the problem.
+      placeholder: |
+        1. Start Hummingbird
+        2. Click X
+        3. Observe the bug
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Current vs. Expected behavior
+      description: |
+        Describe the current behavior vs. what you expected. Screenshots or videos are helpful.
+      placeholder: |
+        Current behavior: The button does not respond when clicked.
+        Expected behavior: The button should open the settings dialog.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Environment and Hardware
+      description: |
+        Click Help -> Copy Troubleshooting Info in the menu bar or run "Hummingbird: Copy Troubleshooting Info" in the command palette
+        to copy version and system information to your clipboard. Paste it here.
+      placeholder: |
+        <!-- Paste the output from "Hummingbird: Copy Troubleshooting Info" here -->
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Logs
+      description: |
+        If applicable, paste any relevant log output. Click Help -> Open Log in the menu bar or run "Hummingbird: Open Log" in the
+        command palette to open the log file. Please review logs for any sensitive information and redact them before posting.
+      value: |
+        <details><summary>Logs</summary>
+
+        ```
+        <!-- Paste your logs here -->
+        ```
+
+        </details>
+    validations:
+      required: false
+  - type: markdown
+    attributes:
+      value: |
+        **If you have any relevant screenshots or videos, please attach them in a comment after creating the issue.**
