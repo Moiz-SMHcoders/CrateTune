@@ -136,30 +136,6 @@ impl MusicApp {
         );
     }
 
-    /// Needs the library database / account playlists.
-    pub fn add_to_playlist(&mut self, track: Track, window: &mut Window, cx: &mut Context<Self>) {
-        notify(
-            window,
-            cx,
-            format!(
-                "Playlists arrive with the library database (“{}”).",
-                track.title
-            ),
-        );
-    }
-
-    /// Needs the library database / account likes.
-    pub fn toggle_like(&mut self, track: Track, window: &mut Window, cx: &mut Context<Self>) {
-        notify(
-            window,
-            cx,
-            format!(
-                "Likes arrive with the library database (“{}”).",
-                track.title
-            ),
-        );
-    }
-
     // ---- transport -------------------------------------------------------------
 
     pub fn next_track(&mut self, cx: &mut Context<Self>) {
@@ -193,12 +169,15 @@ impl MusicApp {
         // audio resolves.
         self.ensure_lyrics(&track, cx);
         self.ensure_hires(&track, cx);
-        match &mut self.engine {
-            Some(engine) => {
+        if self.engine.is_some() {
+            // A downloaded copy plays from disk (`store.rs`).
+            let track = self.playable(track);
+            if let Some(engine) = &mut self.engine {
                 engine.play(track);
-                self.refresh_soon(cx);
             }
-            None => self.pending_play = Some(track),
+            self.refresh_soon(cx);
+        } else {
+            self.pending_play = Some(track);
         }
         cx.notify();
     }
@@ -208,6 +187,10 @@ impl MusicApp {
     }
 
     pub fn toggle_playback(&mut self, cx: &mut Context<Self>) {
+        // Last session's queue: start it where it was left.
+        if self.start_restored(cx) {
+            return;
+        }
         if let Some(engine) = &mut self.engine {
             engine.toggle_pause();
             self.refresh_soon(cx);
@@ -292,6 +275,8 @@ impl MusicApp {
         for event in self.services.take_events() {
             self.on_media_event(event, window, cx);
         }
+        // Play history, saved queue, download flags.
+        self.poll_store(&state, cx);
 
         if !self.ingest(state, cx) {
             return;

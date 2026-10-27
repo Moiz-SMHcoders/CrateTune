@@ -23,34 +23,46 @@ pub const LIVE_PAGES: usize = 8;
 pub enum LibraryTab {
     #[default]
     Songs,
+    Liked,
     Albums,
     Artists,
     Playlists,
+    Downloaded,
+    Local,
 }
 
 impl LibraryTab {
-    pub const ALL: [LibraryTab; 4] = [
+    pub const ALL: [LibraryTab; 7] = [
         LibraryTab::Songs,
+        LibraryTab::Liked,
         LibraryTab::Albums,
         LibraryTab::Artists,
         LibraryTab::Playlists,
+        LibraryTab::Downloaded,
+        LibraryTab::Local,
     ];
 
     pub fn title(self) -> &'static str {
         match self {
             LibraryTab::Songs => "Songs",
+            LibraryTab::Liked => "Liked",
             LibraryTab::Albums => "Albums",
             LibraryTab::Artists => "Artists",
             LibraryTab::Playlists => "Playlists",
+            LibraryTab::Downloaded => "Downloaded",
+            LibraryTab::Local => "Local files",
         }
     }
 
     pub fn key(self) -> &'static str {
         match self {
             LibraryTab::Songs => "songs",
+            LibraryTab::Liked => "liked",
             LibraryTab::Albums => "albums",
             LibraryTab::Artists => "artists",
             LibraryTab::Playlists => "playlists",
+            LibraryTab::Downloaded => "downloaded",
+            LibraryTab::Local => "local",
         }
     }
 
@@ -87,8 +99,25 @@ pub enum Route {
         id: String,
         name: String,
     },
+    /// An artist / album as the local library has it (songs in the collection).
+    LibraryArtist {
+        id: String,
+        name: String,
+    },
+    LibraryAlbum {
+        id: String,
+        name: String,
+    },
+    /// A playlist from the library database (local, or the mirror of a YouTube one).
+    LocalPlaylist {
+        id: String,
+        name: String,
+    },
     History,
     Stats,
+    YearInMusic {
+        year: i32,
+    },
     Downloads,
     LocalFiles,
     Settings {
@@ -109,9 +138,13 @@ impl Route {
             Route::Library { tab } => format!("Library · {}", tab.title()),
             Route::Artist { name, .. }
             | Route::Album { name, .. }
-            | Route::Playlist { name, .. } => name.clone(),
+            | Route::Playlist { name, .. }
+            | Route::LibraryArtist { name, .. }
+            | Route::LibraryAlbum { name, .. }
+            | Route::LocalPlaylist { name, .. } => name.clone(),
             Route::History => "History".into(),
             Route::Stats => "Stats".into(),
+            Route::YearInMusic { year } => format!("{year} in music"),
             Route::Downloads => "Downloads".into(),
             Route::LocalFiles => "Local files".into(),
             Route::Settings { section } => format!("Settings · {}", section.title()),
@@ -125,7 +158,13 @@ impl Route {
         std::mem::discriminant(self) == std::mem::discriminant(other)
             && !matches!(
                 self,
-                Route::Artist { .. } | Route::Album { .. } | Route::Playlist { .. }
+                Route::Artist { .. }
+                    | Route::Album { .. }
+                    | Route::Playlist { .. }
+                    | Route::LibraryArtist { .. }
+                    | Route::LibraryAlbum { .. }
+                    | Route::LocalPlaylist { .. }
+                    | Route::YearInMusic { .. }
             )
     }
 
@@ -155,8 +194,14 @@ impl Route {
             "artist" => entity(arg).map(|(id, name)| Route::Artist { id, name })?,
             "album" => entity(arg).map(|(id, name)| Route::Album { id, name })?,
             "playlist" => entity(arg).map(|(id, name)| Route::Playlist { id, name })?,
+            "library-artist" => entity(arg).map(|(id, name)| Route::LibraryArtist { id, name })?,
+            "library-album" => entity(arg).map(|(id, name)| Route::LibraryAlbum { id, name })?,
+            "local-playlist" => entity(arg).map(|(id, name)| Route::LocalPlaylist { id, name })?,
             "history" => Route::History,
             "stats" => Route::Stats,
+            "year" => Route::YearInMusic {
+                year: arg?.parse().ok()?,
+            },
             "downloads" => Route::Downloads,
             "local" | "local-files" => Route::LocalFiles,
             "settings" => Route::Settings {

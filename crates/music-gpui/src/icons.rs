@@ -59,6 +59,18 @@ gpui_kit_assets::icon_assets!(
         Wifi,
         Shield,
         Type,
+        // library / account
+        Pencil,
+        LogOut,
+        Upload,
+        FolderPlus,
+        ListChecks,
+        Trophy,
+        Cookie,
+        CalendarDays,
+        ArrowUpDown,
+        HardDriveDownload,
+        Bookmark,
     ]
 );
 
@@ -69,7 +81,13 @@ pub enum AppIcon {
     Volume,
     VolumeLow,
     Muted,
+    /// Filled heart (liked); the outline is `Lucide::Heart`.
+    HeartFilled,
 }
+
+/// Lucide's heart, filled.
+const HEART_FILLED_PATH: &str = "icons/app-heart-filled.svg";
+const HEART_FILLED_SVG: &[u8] = br#"<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5"/></svg>"#;
 
 impl IconNamed for AppIcon {
     fn path(self) -> SharedString {
@@ -79,6 +97,7 @@ impl IconNamed for AppIcon {
             AppIcon::Volume => Lucide::Volume2,
             AppIcon::VolumeLow => Lucide::Volume1,
             AppIcon::Muted => Lucide::VolumeX,
+            AppIcon::HeartFilled => return HEART_FILLED_PATH.into(),
         }
         .path()
     }
@@ -89,6 +108,9 @@ pub struct Assets;
 
 impl AssetSource for Assets {
     fn load(&self, path: &str) -> gpui::Result<Option<Cow<'static, [u8]>>> {
+        if path == HEART_FILLED_PATH {
+            return Ok(Some(Cow::Borrowed(HEART_FILLED_SVG)));
+        }
         match ExtraIcons.load(path)? {
             Some(bytes) => Ok(Some(bytes)),
             None => gpui_kit_assets::Assets.load(path),

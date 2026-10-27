@@ -1,85 +1,576 @@
-//! Library with tabs (songs, albums, artists, playlists). Data arrives with the
-//! SQLite library + account sync in music-core; switching tabs replaces the
-//! route so back leaves the library.
+//! Library with tabs: Songs, Liked, Albums, Artists, Playlists (local and
+//! YouTube mirrors), Downloaded and Local files, all from the SQLite library.
+//! Song tabs are virtualized lists with filter, sort and multi-select; the
+//! others are card grids. Switching tabs replaces the route, so back leaves
+//! the library.
+
+use std::rc::Rc;
 
 use gpui::{
-    AppContext as _, Context, IntoElement, ParentElement as _, Render, ScrollHandle, SharedString,
-    Styled as _, Window, prelude::FluentBuilder as _,
+    AppContext as _, Context, Entity, IntoElement, ParentElement as _, Render, ScrollHandle,
+    SharedString, Styled as _, Subscription, Window, div, prelude::FluentBuilder as _,
 };
 use gpui_component::{
     Selectable as _, Sizable as _,
     button::{Button, ButtonVariants as _},
-    h_flex, v_flex,
+    h_flex,
+    input::InputState,
+    menu::PopupMenuItem,
+    v_flex,
+};
+use music_core::Track;
+use music_core::library::{
+    AlbumQuery, AlbumSort, ArtistQuery, ArtistSort, LibraryAlbum, LibraryArtist, Playlist,
+    PlaylistSort, SongQuery, SongScope, SongSort,
 };
 
 use super::PageView;
-use crate::app::{MusicApp, update_app};
-use crate::components::{empty_state, page_scroll, page_title};
+use super::loader::{Loaded, key_of};
+use super::song_list::{RemoveHandler, SongList};
+use super::widgets::{filter_field, filter_input, songs_label, sort_button};
+use crate::app::{MusicApp, read_app, update_app};
+use crate::components::card::{Card, CardKind};
+use crate::components::{empty_state, grid, page_scroll, page_title};
 use crate::icons::Lucide;
 use crate::router::{LibraryTab, Route};
 
+const SONG_SORTS: &[(SongSort, &str)] = &[
+    (SongSort::DateAdded, "Date added"),
+    (SongSort::Title, "Title"),
+    (SongSort::Artist, "Artist"),
+    (SongSort::PlayCount, "Play count"),
+    (SongSort::PlayTime, "Listening time"),
+    (SongSort::LastPlayed, "Last played"),
+];
+const ALBUM_SORTS: &[(AlbumSort, &str)] = &[
+    (AlbumSort::DateAdded, "Date added"),
+    (AlbumSort::Title, "Title"),
+    (AlbumSort::Artist, "Artist"),
+    (AlbumSort::Year, "Year"),
+    (AlbumSort::SongCount, "Song count"),
+    (AlbumSort::PlayTime, "Listening time"),
+];
+const ARTIST_SORTS: &[(ArtistSort, &str)] = &[
+    (ArtistSort::DateAdded, "Date added"),
+    (ArtistSort::Name, "Name"),
+    (ArtistSort::SongCount, "Song count"),
+    (ArtistSort::PlayTime, "Listening time"),
+];
+const PLAYLIST_SORTS: &[(PlaylistSort, &str)] = &[
+    (PlaylistSort::Updated, "Last updated"),
+    (PlaylistSort::Created, "Date created"),
+    (PlaylistSort::Name, "Name"),
+    (PlaylistSort::SongCount, "Song count"),
+];
+
 pub struct LibraryPage {
     tab: LibraryTab,
+    filter: Entity<InputState>,
+    filter_text: String,
+    descending: bool,
+    song_sort: SongSort,
+    album_sort: AlbumSort,
+    artist_sort: ArtistSort,
+    playlist_sort: PlaylistSort,
+    /// Albums / artists: only saved ones (bookmarked or synced) instead of every one
+    /// that has songs in the collection.
+    saved_only: bool,
+    songs: Loaded<Vec<Track>>,
+    have_songs: bool,
+    list: SongList,
+    albums: Loaded<Vec<LibraryAlbum>>,
+    artists: Loaded<Vec<LibraryArtist>>,
+    playlists: Loaded<Vec<Playlist>>,
     scroll: ScrollHandle,
+    _subs: Vec<Subscription>,
 }
 
 impl LibraryPage {
-    pub fn build(tab: LibraryTab, cx: &mut Context<MusicApp>) -> PageView {
+    pub fn build(tab: LibraryTab, window: &mut Window, cx: &mut Context<MusicApp>) -> PageView {
         let scroll = ScrollHandle::new();
-        let page = cx.new(|_| Self {
-            tab,
-            scroll: scroll.clone(),
+        let page = cx.new(|cx| {
+            let (filter, sub) = filter_input("Filter", window, cx, |p: &mut Self, text, _| {
+                p.filter_text = text;
+            });
+            Self {
+                tab,
+                filter,
+                filter_text: String::new(),
+                descending: !matches!(tab, LibraryTab::Albums | LibraryTab::Artists),
+                song_sort: SongSort::DateAdded,
+                album_sort: AlbumSort::DateAdded,
+                artist_sort: ArtistSort::DateAdded,
+                playlist_sort: PlaylistSort::Updated,
+                saved_only: false,
+                songs: Loaded::default(),
+                have_songs: false,
+                list: SongList::new(),
+                albums: Loaded::default(),
+                artists: Loaded::default(),
+                playlists: Loaded::default(),
+                scroll: scroll.clone(),
+                _subs: vec![sub],
+            }
         });
-        PageView::new(page, Some(scroll))
+        let handle = if is_song_tab(tab) {
+            page.read(cx).list.scroll_handle()
+        } else {
+            scroll
+        };
+        PageView::new(page, Some(handle))
     }
+
+    fn scope(&self) -> Option<SongScope> {
+        Some(match self.tab {
+            LibraryTab::Songs => SongScope::Library,
+            LibraryTab::Liked => SongScope::Liked,
+            LibraryTab::Downloaded => SongScope::Downloaded,
+            LibraryTab::Local => SongScope::Local,
+            _ => return None,
+        })
+    }
+
+    fn load(&mut self, cx: &mut Context<Self>) {
+        let filter = (!self.filter_text.is_empty()).then(|| self.filter_text.clone());
+        let desc = self.descending;
+        if let Some(scope) = self.scope() {
+            let query = SongQuery {
+                scope,
+                sort: self.song_sort,
+                descending: desc,
+                filter,
+                limit: None,
+                offset: 0,
+            };
+            let key = key_of(format!("{query:?}"));
+            self.songs.ensure(
+                key,
+                cx,
+                |p| &mut p.songs,
+                move |lib| Ok(lib.songs(&query)?.into_iter().map(|s| s.track).collect()),
+            );
+            if let Some(tracks) = self.songs.value.take() {
+                self.list.set_tracks(tracks);
+                self.have_songs = true;
+            }
+            return;
+        }
+        match self.tab {
+            LibraryTab::Albums => {
+                let query = AlbumQuery {
+                    bookmarked_only: self.saved_only,
+                    filter,
+                    sort: self.album_sort,
+                    descending: desc,
+                    ..Default::default()
+                };
+                let key = key_of(format!("{query:?}"));
+                self.albums
+                    .ensure(key, cx, |p| &mut p.albums, move |lib| lib.albums(&query));
+            }
+            LibraryTab::Artists => {
+                let query = ArtistQuery {
+                    bookmarked_only: self.saved_only,
+                    filter,
+                    sort: self.artist_sort,
+                    descending: desc,
+                    ..Default::default()
+                };
+                let key = key_of(format!("{query:?}"));
+                self.artists
+                    .ensure(key, cx, |p| &mut p.artists, move |lib| lib.artists(&query));
+            }
+            LibraryTab::Playlists => {
+                let sort = self.playlist_sort;
+                let key = key_of(format!("{sort:?}{desc}"));
+                self.playlists.ensure(
+                    key,
+                    cx,
+                    |p| &mut p.playlists,
+                    move |lib| lib.playlists(sort, desc),
+                );
+            }
+            _ => {}
+        }
+    }
+
+    fn tabs(&self) -> impl IntoElement + use<> {
+        let current = self.tab;
+        h_flex()
+            .gap_1()
+            .flex_wrap()
+            .children(LibraryTab::ALL.map(|tab| {
+                let selected = tab == current;
+                Button::new(SharedString::from(format!("library-tab-{}", tab.key())))
+                    .small()
+                    .map(|b| if selected { b.primary() } else { b.ghost() })
+                    .selected(selected)
+                    .label(tab.title())
+                    .on_click(move |_, window, cx| {
+                        update_app(cx, |app, cx| {
+                            app.navigate_replace(Route::Library { tab }, window, cx)
+                        });
+                    })
+            }))
+    }
+
+    fn toolbar(&self, cx: &mut Context<Self>) -> impl IntoElement + use<> {
+        let desc = self.descending;
+        let sort = match self.tab {
+            LibraryTab::Albums => sort_button(
+                "library-sort",
+                ALBUM_SORTS,
+                self.album_sort,
+                desc,
+                |p: &mut Self, s, _| {
+                    p.descending ^= p.album_sort == s;
+                    p.album_sort = s;
+                },
+                cx,
+            )
+            .into_any_element(),
+            LibraryTab::Artists => sort_button(
+                "library-sort",
+                ARTIST_SORTS,
+                self.artist_sort,
+                desc,
+                |p: &mut Self, s, _| {
+                    p.descending ^= p.artist_sort == s;
+                    p.artist_sort = s;
+                },
+                cx,
+            )
+            .into_any_element(),
+            LibraryTab::Playlists => sort_button(
+                "library-sort",
+                PLAYLIST_SORTS,
+                self.playlist_sort,
+                desc,
+                |p: &mut Self, s, _| {
+                    p.descending ^= p.playlist_sort == s;
+                    p.playlist_sort = s;
+                },
+                cx,
+            )
+            .into_any_element(),
+            _ => sort_button(
+                "library-sort",
+                SONG_SORTS,
+                self.song_sort,
+                desc,
+                |p: &mut Self, s, _| {
+                    p.descending ^= p.song_sort == s;
+                    p.song_sort = s;
+                },
+                cx,
+            )
+            .into_any_element(),
+        };
+        let saved_toggle =
+            matches!(self.tab, LibraryTab::Albums | LibraryTab::Artists).then(|| {
+                Button::new("library-saved-only")
+                    .ghost()
+                    .small()
+                    .selected(self.saved_only)
+                    .label(if self.tab == LibraryTab::Artists {
+                        "Subscribed only"
+                    } else {
+                        "Saved only"
+                    })
+                    .on_click(cx.listener(|p, _, _, cx| {
+                        p.saved_only = !p.saved_only;
+                        cx.notify();
+                    }))
+            });
+        let new_playlist = (self.tab == LibraryTab::Playlists).then(|| {
+            Button::new("library-new-playlist")
+                .primary()
+                .small()
+                .icon(Lucide::Plus)
+                .label("New playlist")
+                .on_click(|_, window, cx| {
+                    update_app(cx, |app, cx| {
+                        app.add_tracks_to_playlist(Vec::new(), window, cx)
+                    });
+                })
+        });
+        let list_buttons = is_song_tab(self.tab).then(|| {
+            self.list
+                .header_buttons("library", |p: &mut Self| &mut p.list, cx)
+        });
+        h_flex()
+            .w_full()
+            .gap_2()
+            .flex_wrap()
+            .children(list_buttons)
+            .children(new_playlist)
+            .child(div().flex_1())
+            .children(saved_toggle)
+            .child(sort)
+            .when(self.tab != LibraryTab::Playlists, |this| {
+                this.child(filter_field(&self.filter))
+            })
+    }
+
+    fn render_songs(&mut self, cx: &mut Context<Self>) -> gpui::AnyElement {
+        if self.list.is_empty() {
+            let (icon, title, detail) = match self.tab {
+                _ if !self.have_songs => (Lucide::Music, "Loading…", ""),
+                _ if !self.filter_text.is_empty() => {
+                    (Lucide::Search, "No matches", "Nothing matches the filter.")
+                }
+                LibraryTab::Liked => (
+                    Lucide::Heart,
+                    "No liked songs",
+                    "Tap the heart on any song. Signed in, your YouTube Music likes sync here.",
+                ),
+                LibraryTab::Downloaded => (
+                    Lucide::Download,
+                    "Nothing downloaded",
+                    "Choose “Download” in a song's menu to keep it on this computer.",
+                ),
+                LibraryTab::Local => (
+                    Lucide::FileMusic,
+                    "No local files",
+                    "Add music folders on the Local files page and scan them.",
+                ),
+                _ => (
+                    Lucide::Music,
+                    "No songs in your library",
+                    "Liked songs, songs you add and local files show up here.",
+                ),
+            };
+            return div()
+                .flex_1()
+                .child(empty_state(icon, title, detail, cx))
+                .into_any_element();
+        }
+        let remove: Option<(&'static str, RemoveHandler<Self>)> = match self.tab {
+            LibraryTab::Songs => Some((
+                "Remove from library",
+                Rc::new(|_: &mut Self, tracks: Vec<Track>, _, window, cx| {
+                    update_app(cx, |app, cx| app.remove_from_library(tracks, window, cx));
+                }),
+            )),
+            LibraryTab::Liked => Some((
+                "Unlike",
+                Rc::new(|_: &mut Self, tracks: Vec<Track>, _, window, cx| {
+                    update_app(cx, |app, cx| app.set_liked(tracks, false, window, cx));
+                }),
+            )),
+            LibraryTab::Downloaded => Some((
+                "Delete downloads",
+                Rc::new(|_: &mut Self, tracks: Vec<Track>, _, window, cx| {
+                    update_app(cx, |app, cx| {
+                        for t in tracks {
+                            app.delete_download(t.video_id, window, cx);
+                        }
+                    });
+                }),
+            )),
+            _ => None,
+        };
+        let bar = self
+            .list
+            .selection_bar("library", |p: &mut Self| &mut p.list, remove, cx);
+        v_flex()
+            .flex_1()
+            .min_h_0()
+            .gap_2()
+            .children(bar.map(|b| div().px_8().child(b)))
+            .child(
+                self.list
+                    .render("library-songs", |p: &mut Self| &mut p.list, None, cx),
+            )
+            .into_any_element()
+    }
+
+    fn render_grid(&mut self, cx: &mut Context<Self>) -> gpui::AnyElement {
+        let cards: Option<Vec<gpui::AnyElement>> = match self.tab {
+            LibraryTab::Albums => self.albums.value.as_ref().map(|albums| {
+                albums
+                    .iter()
+                    .enumerate()
+                    .map(|(ix, a)| album_card(ix, a).into_any_element())
+                    .collect()
+            }),
+            LibraryTab::Artists => self.artists.value.as_ref().map(|artists| {
+                artists
+                    .iter()
+                    .enumerate()
+                    .map(|(ix, a)| artist_card(ix, a).into_any_element())
+                    .collect()
+            }),
+            LibraryTab::Playlists => self.playlists.value.as_ref().map(|playlists| {
+                playlists
+                    .iter()
+                    .enumerate()
+                    .map(|(ix, p)| playlist_card(ix, p).into_any_element())
+                    .collect()
+            }),
+            _ => None,
+        };
+        let error = match self.tab {
+            LibraryTab::Albums => self.albums.error.clone(),
+            LibraryTab::Artists => self.artists.error.clone(),
+            _ => self.playlists.error.clone(),
+        };
+        let body = match (cards, error) {
+            (_, Some(e)) => {
+                empty_state(Lucide::Library, "Couldn't load the library", e, cx).into_any_element()
+            }
+            (None, None) => empty_state(Lucide::Library, "Loading…", "", cx).into_any_element(),
+            (Some(cards), None) if cards.is_empty() => {
+                let (icon, title, detail) = match self.tab {
+                    LibraryTab::Albums => (
+                        Lucide::Disc3,
+                        "No albums yet",
+                        "Albums of your songs, and albums saved on YouTube Music, show up here.",
+                    ),
+                    LibraryTab::Artists => (
+                        Lucide::MicVocal,
+                        "No artists yet",
+                        "Artists of your songs and your subscriptions show up here.",
+                    ),
+                    _ => (
+                        Lucide::ListMusic,
+                        "No playlists yet",
+                        "Create one with “New playlist”, or sign in to sync your YouTube Music \
+                         playlists.",
+                    ),
+                };
+                empty_state(icon, title, detail, cx).into_any_element()
+            }
+            (Some(cards), None) => grid(cards).into_any_element(),
+        };
+        page_scroll("library-grid", &self.scroll, body).into_any_element()
+    }
+}
+
+fn is_song_tab(tab: LibraryTab) -> bool {
+    matches!(
+        tab,
+        LibraryTab::Songs | LibraryTab::Liked | LibraryTab::Downloaded | LibraryTab::Local
+    )
+}
+
+fn album_card(ix: usize, a: &LibraryAlbum) -> Card {
+    let route = Route::LibraryAlbum {
+        id: a.meta.id.clone(),
+        name: a.meta.title.clone(),
+    };
+    let mut subtitle = a.meta.artists.clone();
+    if let Some(year) = a.meta.year {
+        subtitle = format!("{subtitle} · {year}");
+    }
+    let (id, saved) = (a.meta.id.clone(), a.bookmarked_at.is_some());
+    Card::new(("library-album", ix), CardKind::Album, a.meta.title.clone())
+        .subtitle(subtitle)
+        .artwork(a.meta.thumbnail_url.clone())
+        .on_click(move |_, window, cx| {
+            let route = route.clone();
+            update_app(cx, |app, cx| app.navigate(route, window, cx));
+        })
+        .context_menu(move |menu, _, _| {
+            let id = id.clone();
+            menu.item(
+                PopupMenuItem::new(if saved {
+                    "Remove from saved albums"
+                } else {
+                    "Save album"
+                })
+                .on_click(move |_, window, cx| {
+                    let id = id.clone();
+                    update_app(cx, |app, cx| {
+                        app.with_library(
+                            "Saving the album",
+                            move |lib| lib.set_album_bookmarked(&id, !saved),
+                            |_, _, _, _| {},
+                            window,
+                            cx,
+                        )
+                    });
+                }),
+            )
+        })
+}
+
+fn artist_card(ix: usize, a: &LibraryArtist) -> Card {
+    let route = Route::LibraryArtist {
+        id: a.id.clone(),
+        name: a.name.clone(),
+    };
+    let subtitle = if a.bookmarked_at.is_some() {
+        format!("Subscribed · {}", songs_label(a.song_count))
+    } else {
+        songs_label(a.song_count).to_string()
+    };
+    Card::new(("library-artist", ix), CardKind::Artist, a.name.clone())
+        .subtitle(subtitle)
+        .artwork(a.thumbnail_url.clone())
+        .on_click(move |_, window, cx| {
+            let route = route.clone();
+            update_app(cx, |app, cx| app.navigate(route, window, cx));
+        })
+}
+
+fn playlist_card(ix: usize, p: &Playlist) -> Card {
+    let route = Route::LocalPlaylist {
+        id: p.id.clone(),
+        name: p.name.clone(),
+    };
+    let mut subtitle = songs_label(p.song_count).to_string();
+    if p.browse_id.is_some() {
+        subtitle.push_str(" · YouTube Music");
+    }
+    Card::new(("library-playlist", ix), CardKind::Playlist, p.name.clone())
+        .subtitle(subtitle)
+        .artwork(p.thumbnail_url.clone())
+        .on_click(move |_, window, cx| {
+            let route = route.clone();
+            update_app(cx, |app, cx| app.navigate(route, window, cx));
+        })
 }
 
 impl Render for LibraryPage {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let tabs = h_flex().gap_1().children(LibraryTab::ALL.map(|tab| {
-            let selected = tab == self.tab;
-            Button::new(SharedString::from(format!("library-tab-{}", tab.key())))
-                .small()
-                .map(|b| if selected { b.primary() } else { b.ghost() })
-                .selected(selected)
-                .label(tab.title())
-                .on_click(move |_, window, cx| {
-                    update_app(cx, |app, cx| {
-                        app.navigate_replace(Route::Library { tab }, window, cx)
-                    });
-                })
-        }));
-        let (icon, title, detail) = match self.tab {
-            LibraryTab::Songs => (
-                Lucide::Music,
-                "No songs in your library",
-                "Liked and saved songs appear here once the library database and account sync \
-                 land in music-core.",
-            ),
-            LibraryTab::Albums => (
-                Lucide::Disc3,
-                "No saved albums",
-                "Albums you save (or sync from YouTube Music) will be listed here.",
-            ),
-            LibraryTab::Artists => (
-                Lucide::MicVocal,
-                "No artists yet",
-                "Subscribed artists and artists from your songs will be listed here.",
-            ),
-            LibraryTab::Playlists => (
-                Lucide::ListMusic,
-                "No playlists yet",
-                "Your playlists (local and YouTube Music) will be listed here.",
-            ),
+        self.load(cx);
+        let signed_in = read_app(cx, |app, _| app.store.account.is_signed_in()).unwrap_or(false);
+        let count: Option<SharedString> = match self.tab {
+            _ if is_song_tab(self.tab) => Some(songs_label(self.list.tracks.len() as u64)),
+            LibraryTab::Albums => self.albums.value.as_ref().map(|v| match v.len() {
+                1 => "1 album".into(),
+                n => format!("{n} albums").into(),
+            }),
+            LibraryTab::Artists => self.artists.value.as_ref().map(|v| match v.len() {
+                1 => "1 artist".into(),
+                n => format!("{n} artists").into(),
+            }),
+            _ => self.playlists.value.as_ref().map(|v| match v.len() {
+                1 => "1 playlist".into(),
+                n => format!("{n} playlists").into(),
+            }),
         };
-        page_scroll(
-            "library-page",
-            &self.scroll,
-            v_flex()
-                .gap_6()
-                .child(page_title("Library", None, cx))
-                .child(tabs)
-                .child(empty_state(icon, title, detail, cx)),
-        )
+        let detail = match (count, signed_in) {
+            (Some(c), true) => Some(format!("{c} · signed in to YouTube Music").into()),
+            (c, _) => c,
+        };
+        let header = v_flex()
+            .px_8()
+            .pt_6()
+            .pb_3()
+            .gap_4()
+            .child(page_title("Library", detail, cx))
+            .child(self.tabs())
+            .child(self.toolbar(cx));
+        let body = if is_song_tab(self.tab) {
+            self.render_songs(cx)
+        } else {
+            self.render_grid(cx)
+        };
+        v_flex()
+            .size_full()
+            .child(header)
+            .child(div().flex_1().min_h_0().flex().flex_col().child(body))
     }
 }

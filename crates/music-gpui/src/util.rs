@@ -37,6 +37,102 @@ pub fn sniff_format(bytes: &[u8]) -> ImageFormat {
     }
 }
 
+/// Local calendar date `YYYY-MM-DD` of a Unix-ms instant (same days the library's
+/// `TimeZone::Local` grouping uses).
+pub fn local_date(ms: i64) -> String {
+    let secs = ms.div_euclid(1000);
+    let days = (secs + local_offset_secs(secs)).div_euclid(86_400);
+    let (y, m, d) = civil_from_days(days);
+    format!("{y:04}-{m:02}-{d:02}")
+}
+
+/// Local year of a Unix-ms instant.
+pub fn local_year(ms: i64) -> i32 {
+    let secs = ms.div_euclid(1000);
+    civil_from_days((secs + local_offset_secs(secs)).div_euclid(86_400)).0 as i32
+}
+
+/// Seconds east of UTC at `secs` (Unix time), from the C library's `localtime_r`.
+#[cfg(unix)]
+fn local_offset_secs(secs: i64) -> i64 {
+    // `struct tm` as on macOS and glibc (both have `tm_gmtoff` / `tm_zone`).
+    #[repr(C)]
+    struct Tm {
+        tm_sec: i32,
+        tm_min: i32,
+        tm_hour: i32,
+        tm_mday: i32,
+        tm_mon: i32,
+        tm_year: i32,
+        tm_wday: i32,
+        tm_yday: i32,
+        tm_isdst: i32,
+        tm_gmtoff: std::ffi::c_long,
+        tm_zone: *const std::ffi::c_char,
+    }
+    unsafe extern "C" {
+        fn localtime_r(time: *const i64, result: *mut Tm) -> *mut Tm;
+    }
+    let mut tm = std::mem::MaybeUninit::<Tm>::zeroed();
+    // SAFETY: `localtime_r` is thread-safe, reads `secs` and fills the `struct tm`
+    // behind the pointer; it returns null on failure.
+    let filled = unsafe { !localtime_r(&secs, tm.as_mut_ptr()).is_null() };
+    if filled {
+        // SAFETY: zero-initialised and filled by the successful call.
+        // `c_long` is `i64` on 64-bit targets, narrower elsewhere.
+        #[allow(clippy::useless_conversion)]
+        i64::from(unsafe { tm.assume_init() }.tm_gmtoff)
+    } else {
+        0
+    }
+}
+
+#[cfg(not(unix))]
+fn local_offset_secs(_: i64) -> i64 {
+    0
+}
+
+/// Days since 1970-01-01 → (year, month, day) (Howard Hinnant's `civil_from_days`).
+pub fn civil_from_days(z: i64) -> (i64, u32, u32) {
+    let z = z + 719_468;
+    let era = z.div_euclid(146_097);
+    let doe = z.rem_euclid(146_097);
+    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let d = (doy - (153 * mp + 2) / 5 + 1) as u32;
+    let m = if mp < 10 { mp + 3 } else { mp - 9 } as u32;
+    let y = yoe + era * 400;
+    (if m <= 2 { y + 1 } else { y }, m, d)
+}
+
+pub const MONTHS: [&str; 12] = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+];
+
+/// `2026-10-28` → `28 October 2026`.
+pub fn pretty_date(day: &str) -> String {
+    let mut parts = day.splitn(3, '-');
+    let (Some(y), Some(m), Some(d)) = (parts.next(), parts.next(), parts.next()) else {
+        return day.to_owned();
+    };
+    match (m.parse::<usize>(), d.parse::<u32>()) {
+        (Ok(m @ 1..=12), Ok(d)) => format!("{d} {} {y}", MONTHS[m - 1]),
+        _ => day.to_owned(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -47,5 +143,16 @@ mod tests {
         assert_eq!(sniff_format(b"RIFF1234WEBPVP8 "), ImageFormat::Webp);
         assert_eq!(sniff_format(b"GIF89a"), ImageFormat::Gif);
         assert_eq!(sniff_format(b"\xff\xd8\xff"), ImageFormat::Jpeg);
+    }
+
+    #[test]
+    fn dates() {
+        assert_eq!(civil_from_days(0), (1970, 1, 1));
+        assert_eq!(civil_from_days(20_389), (2025, 10, 28));
+        assert_eq!(civil_from_days(-1), (1969, 12, 31));
+        assert_eq!(pretty_date("2026-10-28"), "28 October 2026");
+        assert_eq!(pretty_date("bogus"), "bogus");
+        assert_eq!(local_date(0).len(), 10);
+        assert!((1969..=1970).contains(&local_year(0)));
     }
 }

@@ -666,18 +666,28 @@ impl MusicApp {
             .gap_4()
             .child(artwork)
             .child(
-                v_flex()
+                h_flex()
                     .w_full()
-                    .gap_0p5()
                     .pt_2()
+                    .gap_2()
                     .child(
-                        div()
-                            .text_xl()
-                            .font_weight(FontWeight::BOLD)
-                            .line_clamp(2)
-                            .child(title),
+                        v_flex()
+                            .flex_1()
+                            .min_w_0()
+                            .gap_0p5()
+                            .child(
+                                div()
+                                    .text_xl()
+                                    .font_weight(FontWeight::BOLD)
+                                    .line_clamp(2)
+                                    .child(title),
+                            )
+                            .child(div().text_color(white(0.65)).truncate().child(artists)),
                     )
-                    .child(div().text_color(white(0.65)).truncate().child(artists)),
+                    // Like (library + YouTube Music when signed in).
+                    .children(track.map(|t| {
+                        crate::components::like::like_button("np-like", t, Some(white(0.8)), cx)
+                    })),
             )
             .child(v_flex().w_full().gap_1().child(progress).child(times))
             .child(transport)

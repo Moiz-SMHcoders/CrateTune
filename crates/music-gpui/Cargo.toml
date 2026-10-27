@@ -34,6 +34,12 @@ raw-window-handle = "0.6"
 objc2 = "0.6"
 # Menu-bar (status item) icon with playback controls; works alongside GPUI's NSApplication.
 tray-icon = { version = "0.26", default-features = false }
+# YouTube Music sign-in window: a WKWebView child of a GPUI window (wry), and its cookie
+# store read directly (wry's `cookies()` spins the run loop, re-entering GPUI).
+wry = { version = "0.57", default-features = false }
+objc2-web-kit = { version = "0.3.2", default-features = false, features = ["std", "objc2-app-kit", "block2", "WKWebView", "WKWebViewConfiguration", "WKWebsiteDataStore", "WKHTTPCookieStore"] }
+objc2-foundation = { version = "0.3.2", default-features = false, features = ["std", "NSArray", "NSHTTPCookie", "NSString", "NSURL"] }
+block2 = "0.6"
 
 [features]
 # Dev-only offscreen screenshot hook (needs GPUI's test-support for `Window::render_to_image`).

@@ -35,6 +35,9 @@
 //! | `@discord=on\|off` | Discord presence switch |
 //! | `@resize=W;H` | resize the main window (frame is saved) |
 //! | `@quit` | quit |
+//!
+//! Library / account / storage actions (`@like`, `@download`, `@backup`, …) are listed
+//! in `library_script.rs`.
 
 use std::time::{Duration, Instant};
 
@@ -371,7 +374,12 @@ impl MusicApp {
                 }
             }
             "quit" => cx.quit(),
-            other => eprintln!("music-gpui: unknown script action @{other}"),
+            // Library, downloads, account, storage (`library_script.rs`).
+            other => {
+                if !self.library_script_action(other, arg, window, cx) {
+                    eprintln!("music-gpui: unknown script action @{other}");
+                }
+            }
         }
     }
 }

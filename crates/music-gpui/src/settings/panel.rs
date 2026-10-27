@@ -55,6 +55,8 @@ pub enum SettingsEvent {
     Section(SectionId),
     /// Shuffle / repeat changed on the settings page (apply to the queue).
     PlaybackModes,
+    /// Library / privacy / storage / account preferences or the YouTube cookie changed.
+    Library,
 }
 
 pub(super) enum LastFmFlow {
@@ -87,7 +89,7 @@ pub struct SettingsPanel {
     integrations_dirty: bool,
 
     backend: Option<Arc<dyn Backend>>,
-    secrets: BTreeMap<Secret, String>,
+    pub(super) secrets: BTreeMap<Secret, String>,
     pub(super) secrets_loaded: bool,
     /// Where secrets go / came from, for the status line.
     pub(super) secret_store: SharedString,
@@ -227,6 +229,7 @@ impl SettingsPanel {
             (Secret::LastFmShared, !s.lastfm.api_key.is_empty()),
             (Secret::LastFmSession, s.lastfm.user.is_some()),
             (Secret::ListenBrainzToken, s.listenbrainz.user.is_some()),
+            (Secret::YouTubeCookie, s.library.account.is_some()),
         ]
         .into_iter()
         .filter_map(|(secret, wanted)| wanted.then_some(secret))
@@ -262,6 +265,7 @@ impl SettingsPanel {
                     }
                 }
                 cx.emit(SettingsEvent::Integrations);
+                cx.emit(SettingsEvent::Library);
                 cx.notify();
             })
             .ok();
@@ -392,7 +396,7 @@ impl SettingsPanel {
 
     /// Schedules a save (and, if `integrations`, an `Integrations` event) after
     /// [`SAVE_DEBOUNCE`] without further changes.
-    fn changed(&mut self, integrations: bool, cx: &mut Context<Self>) {
+    pub(super) fn changed(&mut self, integrations: bool, cx: &mut Context<Self>) {
         self.integrations_dirty |= integrations;
         self.save_pending = true;
         let executor = cx.background_executor().clone();
@@ -432,7 +436,12 @@ impl SettingsPanel {
 
     /// Stores (`Some`) or deletes (`None`) a secret off the UI thread, then
     /// records whether the settings file has to hold it.
-    fn put_secret(&mut self, secret: Secret, value: Option<String>, cx: &mut Context<Self>) {
+    pub(super) fn put_secret(
+        &mut self,
+        secret: Secret,
+        value: Option<String>,
+        cx: &mut Context<Self>,
+    ) {
         match &value {
             Some(v) => self.secrets.insert(secret, v.clone()),
             None => self.secrets.remove(&secret),

@@ -458,6 +458,61 @@ impl Queue {
     }
 }
 
+/// Saving and restoring across launches (`store.rs` keeps it in the library database).
+impl Queue {
+    /// Tracks in their original order, the current track's index in it, and the play
+    /// order as indices into it while shuffled.
+    pub fn snapshot(&self) -> (Vec<Track>, usize, Option<Vec<usize>>) {
+        let base = if self.shuffle {
+            &self.unshuffled
+        } else {
+            &self.items
+        };
+        let position = |uid: u64| base.iter().position(|i| i.uid == uid);
+        let index = self
+            .current_item()
+            .and_then(|i| position(i.uid))
+            .unwrap_or(0);
+        let order = self
+            .shuffle
+            .then(|| self.items.iter().filter_map(|i| position(i.uid)).collect());
+        (base.iter().map(|i| i.track.clone()).collect(), index, order)
+    }
+
+    /// Replaces the queue with a [`Self::snapshot`] without playing anything. A valid
+    /// `order` turns shuffle on with that play order; otherwise shuffle is off.
+    pub fn restore(&mut self, tracks: Vec<Track>, index: usize, order: Option<Vec<usize>>) {
+        let base: Vec<QueueItem> = tracks.into_iter().map(|t| self.item(t)).collect();
+        if base.is_empty() {
+            self.items.clear();
+            self.unshuffled.clear();
+            self.index = None;
+            return;
+        }
+        let index = index.min(base.len() - 1);
+        let valid = order.filter(|o| {
+            let mut sorted = o.clone();
+            sorted.sort_unstable();
+            sorted.len() == base.len() && sorted.iter().enumerate().all(|(i, v)| i == *v)
+        });
+        match valid {
+            Some(order) => {
+                let current = base[index].uid;
+                self.items = order.iter().map(|&i| base[i].clone()).collect();
+                self.unshuffled = base;
+                self.shuffle = true;
+                self.index = self.position(current);
+            }
+            None => {
+                self.items = base;
+                self.unshuffled.clear();
+                self.shuffle = false;
+                self.index = Some(index);
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -724,5 +779,37 @@ mod tests {
         assert_eq!(id(q.jump(uid)), Some("v3".into()));
         assert_eq!(q.jump(12345), None);
         assert!(q.upcoming().is_empty());
+    }
+
+    #[test]
+    fn snapshot_and_restore() {
+        let mut q = Queue::with_seed(7);
+        q.replace(tracks(5), 2);
+        let (saved, index, order) = q.snapshot();
+        assert_eq!((saved.len(), index, order), (5, 2, None));
+        let mut r = Queue::with_seed(1);
+        r.restore(saved, index, None);
+        assert_eq!(r.current().unwrap().video_id, "v2");
+        assert!(!r.shuffle());
+
+        q.set_shuffle(true);
+        let play_order: Vec<String> = q.items().iter().map(|i| i.track.video_id.clone()).collect();
+        let (saved, index, order) = q.snapshot();
+        assert_eq!(saved[index].video_id, "v2");
+        let mut r = Queue::with_seed(1);
+        r.restore(saved.clone(), index, order);
+        assert!(r.shuffle());
+        let restored: Vec<String> = r.items().iter().map(|i| i.track.video_id.clone()).collect();
+        assert_eq!(restored, play_order);
+        assert_eq!(r.current().unwrap().video_id, "v2");
+        // Turning shuffle off brings the original order back.
+        r.set_shuffle(false);
+        assert_eq!(r.items()[0].track.video_id, "v0");
+        assert_eq!(r.current().unwrap().video_id, "v2");
+        // A broken order is ignored.
+        let mut r = Queue::with_seed(1);
+        r.restore(saved, 1, Some(vec![0, 0, 1, 2, 3]));
+        assert!(!r.shuffle());
+        assert_eq!(r.current().unwrap().video_id, "v1");
     }
 }

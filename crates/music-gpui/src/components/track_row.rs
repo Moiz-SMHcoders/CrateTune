@@ -85,12 +85,15 @@ impl RenderOnce for TrackRow {
             .unwrap_or_default();
         let (hover_bg, muted, fg) = (theme.list_hover, theme.muted_foreground, theme.foreground);
         let group = self.group.clone();
+        let group_heart = self.group.clone();
         let (list, index) = (self.list.clone(), self.index);
         let menu_ctx: ListContext = Some((self.list.clone(), self.index));
         let menu_track = track.clone();
         let more_track = track.clone();
         let more_ctx = menu_ctx.clone();
         let (next_track, add_track) = (track.clone(), track.clone());
+        let liked = crate::store::is_liked(&track.video_id);
+        let heart = super::like::like_button("like", &track, None, cx);
 
         h_flex()
             .id(self.id)
@@ -152,6 +155,7 @@ impl RenderOnce for TrackRow {
                             .icon(Lucide::ListStart)
                             .tooltip("Play next")
                             .on_click(move |_, window, cx| {
+                                cx.stop_propagation();
                                 let t = next_track.clone();
                                 update_app(cx, |app, cx| app.queue_play_next(vec![t], window, cx));
                             }),
@@ -163,6 +167,7 @@ impl RenderOnce for TrackRow {
                             .icon(Lucide::ListEnd)
                             .tooltip("Add to queue")
                             .on_click(move |_, window, cx| {
+                                cx.stop_propagation();
                                 let t = add_track.clone();
                                 update_app(cx, |app, cx| app.queue_add(vec![t], window, cx));
                             }),
@@ -177,6 +182,15 @@ impl RenderOnce for TrackRow {
                                 track_menu(menu, &more_track, more_ctx.clone())
                             }),
                     ),
+            )
+            // The heart stays visible once liked.
+            .child(
+                div()
+                    .flex_none()
+                    .when(!liked, |this| {
+                        this.opacity(0.).group_hover(group_heart, |s| s.opacity(1.))
+                    })
+                    .child(heart),
             )
             .child(
                 div()
@@ -209,7 +223,7 @@ pub fn explicit_badge(cx: &App) -> impl IntoElement + use<> {
 pub fn track_menu(menu: PopupMenu, track: &Track, list: ListContext) -> PopupMenu {
     let item = |label: &str, icon: Lucide| PopupMenuItem::new(label.to_owned()).icon(icon);
     let t = track.clone();
-    let mut menu = menu
+    let menu = menu
         .item(item("Play", Lucide::Play).on_click({
             let t = t.clone();
             move |_, _, cx| {
@@ -249,14 +263,25 @@ pub fn track_menu(menu: PopupMenu, track: &Track, list: ListContext) -> PopupMen
                 update_app(cx, |app, cx| app.add_to_playlist(t, window, cx));
             }
         }))
-        .item(item("Like", Lucide::Heart).on_click({
-            let t = t.clone();
-            move |_, window, cx| {
+        .item(
+            item(
+                if crate::store::is_liked(&track.video_id) {
+                    "Remove from liked songs"
+                } else {
+                    "Like"
+                },
+                Lucide::Heart,
+            )
+            .disabled(!crate::store::library_open())
+            .on_click({
                 let t = t.clone();
-                update_app(cx, |app, cx| app.toggle_like(t, window, cx));
-            }
-        }))
-        .separator();
+                move |_, window, cx| {
+                    let t = t.clone();
+                    update_app(cx, |app, cx| app.toggle_like(t, window, cx));
+                }
+            }),
+        );
+    let mut menu = download_item(menu, track).separator();
 
     // One "Go to artist" entry per artist with a channel id (disabled without any).
     let artists: Vec<_> = track
@@ -296,6 +321,36 @@ pub fn track_menu(menu: PopupMenu, track: &Track, list: ListContext) -> PopupMen
                     let route = Route::Album { id, name };
                     update_app(cx, |app, cx| app.navigate(route, window, cx));
                 }
+            }),
+    )
+}
+
+/// "Download" / "Remove download" (nothing for local files).
+fn download_item(menu: PopupMenu, track: &Track) -> PopupMenu {
+    use crate::store::{DownloadFlag, download_flag};
+    if track.is_local() || track.video_id.starts_with("local:") {
+        return menu;
+    }
+    let id = track.video_id.clone();
+    let t = track.clone();
+    let (label, busy, delete) = match download_flag(&id) {
+        None | Some(DownloadFlag::Failed) => ("Download", false, false),
+        Some(DownloadFlag::Queued | DownloadFlag::Downloading) => ("Downloading…", true, false),
+        Some(DownloadFlag::Done { .. }) => ("Remove download", false, true),
+    };
+    menu.item(
+        PopupMenuItem::new(label)
+            .icon(Lucide::Download)
+            .disabled(busy)
+            .on_click(move |_, window, cx| {
+                let (id, t) = (id.clone(), t.clone());
+                update_app(cx, |app, cx| {
+                    if delete {
+                        app.delete_download(id, window, cx)
+                    } else {
+                        app.download_tracks(vec![t], window, cx)
+                    }
+                });
             }),
     )
 }

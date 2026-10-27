@@ -21,12 +21,17 @@ mod explore;
 mod history;
 mod home;
 mod library;
-mod local_files;
+mod library_item;
+mod loader;
+pub mod local_files;
+mod local_playlist;
 mod moods;
 mod new_releases;
 mod playlist;
 pub mod search;
+mod song_list;
 mod stats;
+pub mod widgets;
 
 use gpui::{AnyView, App, Context, Entity, Pixels, Point, ScrollHandle, Window};
 
@@ -146,20 +151,35 @@ pub fn build(
         Route::MoodsAndGenres => moods::MoodsPage::build(cx),
         Route::NewReleases => new_releases::NewReleasesPage::build(cx),
         Route::Search { query } => search::SearchPage::build(query.clone(), cx),
-        Route::Library { tab } => library::LibraryPage::build(*tab, cx),
+        Route::Library { tab } => library::LibraryPage::build(*tab, window, cx),
+        Route::LibraryArtist { id, name } => library_item::LibraryItemPage::build(
+            library_item::Kind::Artist,
+            id.clone(),
+            name.clone(),
+            cx,
+        ),
+        Route::LibraryAlbum { id, name } => library_item::LibraryItemPage::build(
+            library_item::Kind::Album,
+            id.clone(),
+            name.clone(),
+            cx,
+        ),
+        Route::LocalPlaylist { id, name } => {
+            local_playlist::LocalPlaylistPage::build(id.clone(), name.clone(), window, cx)
+        }
+        Route::YearInMusic { year } => stats::YearInMusicPage::build(*year, cx),
         Route::Artist { id, name } => artist::ArtistPage::build(id.clone(), name.clone(), cx),
         Route::Album { id, name } => album::AlbumPage::build(id.clone(), name.clone(), cx),
         Route::Playlist { id, name } => playlist::PlaylistPage::build(id.clone(), name.clone(), cx),
         Route::History => history::HistoryPage::build(cx),
         Route::Stats => stats::StatsPage::build(cx),
         Route::Downloads => downloads::DownloadsPage::build(cx),
-        Route::LocalFiles => local_files::LocalFilesPage::build(cx),
+        Route::LocalFiles => local_files::LocalFilesPage::build(window, cx),
         Route::Settings { section } => {
             // One long-lived entity: it owns the settings file and secrets.
             ctx.settings
                 .update(cx, |panel, cx| panel.show_section(*section, cx));
             let scroll = ctx.settings.read(cx).scroll_handle();
-            let _ = window;
             PageView::new(ctx.settings.clone(), Some(scroll))
         }
     }

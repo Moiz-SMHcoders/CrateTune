@@ -128,6 +128,8 @@ pub struct MusicApp {
     applied_theme: Option<(ThemeChoice, f32, Option<Hsla>)>,
     /// Last accent extracted for a playing track (dynamic theme).
     pub(crate) accent: Option<Hsla>,
+    /// Library database, downloads, account (`store.rs`).
+    pub(crate) store: crate::store::Store,
 
     _poll: Task<()>,
     _subscriptions: Vec<Subscription>,
@@ -172,6 +174,11 @@ impl MusicApp {
             ),
             cx.observe_window_bounds(window, |this, window, cx| {
                 this.save_window_bounds(window, cx)
+            }),
+            cx.on_app_quit(|this, _| {
+                this.flush_listening();
+                this.save_queue_now();
+                async {}
             }),
         ];
 
@@ -273,10 +280,13 @@ impl MusicApp {
             hires_order: VecDeque::new(),
             applied_theme: None,
             accent: None,
+            store: crate::store::Store::open(saved.library.clone()),
             _poll: poll,
             _subscriptions: subscriptions,
         };
         this.apply_theme(cx);
+        this.restore_queue();
+        this.queue.set_shuffle(saved.playback.shuffle);
         this.ensure_page(window, cx);
         this
     }
@@ -456,6 +466,7 @@ impl MusicApp {
             }
             InputEvent::PressEnter { .. } => {
                 self.search_debounce = None;
+                self.record_search(&query, cx);
                 self.search_text = query.clone();
                 self.show_search(query, window, cx);
             }
@@ -475,6 +486,7 @@ impl MusicApp {
     pub fn search_now(&mut self, query: &str, window: &mut Window, cx: &mut Context<Self>) {
         let query = query.trim().to_owned();
         self.search_debounce = None;
+        self.record_search(&query, cx);
         self.search_text = query.clone();
         self.search_input
             .update(cx, |input, cx| input.set_value(query.clone(), window, cx));
@@ -515,9 +527,11 @@ impl MusicApp {
         }
     }
 
-    /// Esc: close Now Playing, else the queue panel, else go back.
+    /// Esc: close a dialog, else Now Playing, else the queue panel, else go back.
     pub fn escape(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        if self.np.open {
+        if window.has_active_dialog(cx) {
+            window.close_dialog(cx);
+        } else if self.np.open {
             self.close_now_playing(window, cx);
         } else if self.queue_open {
             self.toggle_queue_panel(cx);
@@ -549,6 +563,7 @@ impl MusicApp {
                 self.queue.set_repeat(modes.repeat);
                 cx.notify();
             }
+            SettingsEvent::Library => self.apply_library_settings(cx),
             SettingsEvent::Section(section) => {
                 let route = Route::Settings { section: *section };
                 if matches!(self.router.route(), Route::Settings { .. }) {

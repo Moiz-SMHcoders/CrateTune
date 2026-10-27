@@ -1,23 +1,36 @@
-//! History: tracks played this session (from the queue's history), newest
-//! first. Persistent listening history comes from the library database later.
+//! Listening history from the library database, grouped by day (newest first):
+//! remove single plays, clear everything, load more. Plays count once a song
+//! was listened to for 30 s (`store.rs`); Privacy → "Pause listen history"
+//! stops recording.
 
 use std::rc::Rc;
 
 use gpui::{
     AppContext as _, Context, IntoElement, ParentElement as _, Render, ScrollHandle, Styled as _,
-    Window,
+    Window, div, px,
 };
-use gpui_component::v_flex;
+use gpui_component::{
+    ActiveTheme as _, Disableable as _, Sizable as _, WindowExt as _,
+    button::{Button, ButtonVariants as _},
+    h_flex, v_flex,
+};
 use music_core::Track;
+use music_core::library::{HistoryDay, TimeZone, now_ms};
 
+use super::loader::{Loaded, key_of};
 use super::{PageView, is_playing};
-use crate::app::{MusicApp, read_app};
+use crate::app::{MusicApp, read_app, update_app};
 use crate::components::track_row::TrackRow;
-use crate::components::{empty_state, page_scroll, page_title};
+use crate::components::{empty_state, page_scroll, page_title, section_header};
 use crate::icons::Lucide;
+use crate::util::{local_date, pretty_date};
+
+const PAGE: u32 = 300;
 
 pub struct HistoryPage {
     scroll: ScrollHandle,
+    limit: u32,
+    days: Loaded<Vec<HistoryDay>>,
 }
 
 impl HistoryPage {
@@ -25,36 +38,185 @@ impl HistoryPage {
         let scroll = ScrollHandle::new();
         let page = cx.new(|_| Self {
             scroll: scroll.clone(),
+            limit: PAGE,
+            days: Loaded::default(),
         });
         PageView::new(page, Some(scroll))
+    }
+
+    fn confirm_clear(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        window.open_alert_dialog(cx, |alert, _, _| {
+            alert
+                .title("Clear listening history?")
+                .description(
+                    "Every recorded play is deleted, and play counts and stats start over. \
+                     Your library, likes and playlists stay.",
+                )
+                .show_cancel(true)
+                .ok_text("Clear history")
+                .on_ok(|_, window, cx| {
+                    update_app(cx, |app, cx| app.clear_listen_history(window, cx));
+                    true
+                })
+        });
+    }
+}
+
+/// "Today", "Yesterday", or the date.
+fn day_title(day: &str) -> String {
+    let now = now_ms();
+    if local_date(now) == day {
+        "Today".into()
+    } else if local_date(now - 86_400_000) == day {
+        "Yesterday".into()
+    } else {
+        pretty_date(day)
     }
 }
 
 impl Render for HistoryPage {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let played: Rc<Vec<Track>> = Rc::new(
-            read_app(cx, |app, _| app.queue.history().cloned().collect()).unwrap_or_default(),
-        );
-        let mut content = v_flex().gap_6().child(page_title(
-            "History",
-            Some("Played this session. Saved history arrives with the library database.".into()),
+        let limit = self.limit;
+        self.days.ensure(
+            key_of(limit),
             cx,
-        ));
-        if played.is_empty() {
-            content = content.child(empty_state(
-                Lucide::Clock,
-                "Nothing played yet",
-                "Songs you skip past or finish show up here.",
-                cx,
-            ));
+            |p| &mut p.days,
+            move |lib| lib.history_by_day(TimeZone::Local, limit, 0),
+        );
+        let paused = read_app(cx, |app, _| app.store.prefs.pause_listen_history).unwrap_or(false);
+        let detail = if paused {
+            "Listen history is paused (Settings → Privacy)."
         } else {
-            content = content.child(v_flex().children((0..played.len()).map(|ix| {
-                let active = is_playing(&played[ix].video_id, cx);
-                TrackRow::new("history", played.clone(), ix)
-                    .numbered(false)
-                    .active(active)
-            })));
+            "Songs count once you listened for 30 seconds."
+        };
+        let total: usize = self
+            .days
+            .value
+            .as_ref()
+            .map_or(0, |d| d.iter().map(|d| d.entries.len()).sum());
+        let clear = Button::new("history-clear")
+            .ghost()
+            .small()
+            .icon(Lucide::Trash)
+            .label("Clear history")
+            .disabled(total == 0)
+            .on_click(cx.listener(|p, _, window, cx| p.confirm_clear(window, cx)));
+        let mut content = v_flex().gap_6().child(
+            h_flex()
+                .items_end()
+                .justify_between()
+                .child(page_title("History", Some(detail.into()), cx))
+                .child(clear),
+        );
+        let muted = cx.theme().muted_foreground;
+        match (&self.days.value, &self.days.error) {
+            (_, Some(e)) => {
+                content = content.child(empty_state(Lucide::Clock, "Couldn't load", e.clone(), cx))
+            }
+            (None, None) => content = content.child(empty_state(Lucide::Clock, "Loading…", "", cx)),
+            (Some(days), None) if days.is_empty() => {
+                content = content.child(empty_state(
+                    Lucide::Clock,
+                    "Nothing played yet",
+                    "Songs you listen to show up here, grouped by day.",
+                    cx,
+                ))
+            }
+            (Some(days), None) => {
+                for (d, day) in days.iter().enumerate() {
+                    let tracks: Rc<Vec<Track>> =
+                        Rc::new(day.entries.iter().map(|e| e.song.track.clone()).collect());
+                    let mut rows = Vec::new();
+                    for (ix, entry) in day.entries.iter().enumerate() {
+                        let active = is_playing(&entry.song.track.video_id, cx);
+                        let id = entry.id;
+                        let played = format!("{} min", (entry.played_ms + 30_000) / 60_000);
+                        rows.push(
+                            h_flex()
+                                .gap_2()
+                                .child(
+                                    div().flex_1().min_w_0().child(
+                                        TrackRow::new(&format!("history-{d}"), tracks.clone(), ix)
+                                            .numbered(false)
+                                            .active(active),
+                                    ),
+                                )
+                                .child(
+                                    div()
+                                        .w(px(56.))
+                                        .flex_none()
+                                        .text_xs()
+                                        .text_right()
+                                        .text_color(muted)
+                                        .child(played),
+                                )
+                                .child(
+                                    Button::new(("history-remove", id as u64))
+                                        .ghost()
+                                        .xsmall()
+                                        .icon(Lucide::X)
+                                        .tooltip("Remove from history")
+                                        .on_click(move |_, window, cx| {
+                                            update_app(cx, |app, cx| {
+                                                app.with_library(
+                                                    "Removing from history",
+                                                    move |lib| lib.delete_history_entries(&[id]),
+                                                    |_, _, _, _| {},
+                                                    window,
+                                                    cx,
+                                                )
+                                            });
+                                        }),
+                                ),
+                        );
+                    }
+                    let plays = match day.entries.len() {
+                        1 => "1 play".to_owned(),
+                        n => format!("{n} plays"),
+                    };
+                    content = content.child(
+                        v_flex()
+                            .gap_2()
+                            .child(section_header(
+                                day_title(&day.day),
+                                None,
+                                Some(
+                                    div()
+                                        .text_sm()
+                                        .text_color(muted)
+                                        .child(plays)
+                                        .into_any_element(),
+                                ),
+                                cx,
+                            ))
+                            .child(v_flex().children(rows)),
+                    );
+                }
+                if total as u32 >= self.limit {
+                    content = content.child(
+                        Button::new("history-more")
+                            .ghost()
+                            .label("Show more")
+                            .on_click(cx.listener(|p, _, _, cx| {
+                                p.limit += PAGE;
+                                cx.notify();
+                            })),
+                    );
+                }
+            }
         }
         page_scroll("history-page", &self.scroll, content)
+    }
+}
+
+impl MusicApp {
+    pub fn clear_listen_history(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        self.with_library(
+            "Clearing the history",
+            |lib| lib.clear_history(),
+            |_, _, window, cx| crate::app::notify(window, cx, "Listening history cleared"),
+            window,
+            cx,
+        );
     }
 }

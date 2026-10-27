@@ -26,7 +26,13 @@ pub const BAR_HEIGHT: f32 = 88.;
 
 impl MusicApp {
     pub(crate) fn render_player_bar(&mut self, cx: &mut Context<Self>) -> impl IntoElement + use<> {
-        let track = self.playback.track.clone();
+        // Last session's queue (restored, not loaded yet) shows its current track.
+        let restored = self.playback.track.is_none() && self.store.resume_at.is_some();
+        let track = self
+            .playback
+            .track
+            .clone()
+            .or_else(|| restored.then(|| self.queue.current().cloned()).flatten());
         let art = artwork(
             track.as_ref().and_then(|t| t.artwork_url(120)),
             px(56.),
@@ -35,6 +41,7 @@ impl MusicApp {
         );
         let has_next = self.queue.has_next();
         let (shuffle, repeat) = (self.queue.shuffle(), self.queue.repeat());
+        let heart_track = track.clone();
         let theme = cx.theme();
         let state = &self.playback;
 
@@ -45,10 +52,11 @@ impl MusicApp {
 
         let is_playing = state.status == PlaybackStatus::Playing;
         let can_toggle = self.engine.is_some()
-            && matches!(
-                state.status,
-                PlaybackStatus::Playing | PlaybackStatus::Paused | PlaybackStatus::Ended
-            );
+            && (restored
+                || matches!(
+                    state.status,
+                    PlaybackStatus::Playing | PlaybackStatus::Paused | PlaybackStatus::Ended
+                ));
         let loading = state.status == PlaybackStatus::Loading;
 
         let total = state.duration.map(|d| d.as_secs()).unwrap_or(0);
@@ -93,6 +101,7 @@ impl MusicApp {
                     .child(art)
                     .child(
                         v_flex()
+                            .flex_1()
                             .min_w_0()
                             .gap_0p5()
                             .child(
@@ -109,6 +118,11 @@ impl MusicApp {
                                     .text_color(theme.muted_foreground)
                                     .child(artists),
                             ),
+                    )
+                    .children(
+                        heart_track
+                            .as_ref()
+                            .map(|t| crate::components::like::like_button("bar-like", t, None, cx)),
                     ),
             )
             // Centre: transport + progress.

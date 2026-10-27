@@ -22,6 +22,7 @@ use music_core::equalizer::GRAPHIC_BANDS_HZ;
 use music_core::{EqPreset, EqualizerSettings};
 use serde::{Deserialize, Serialize};
 
+use super::library_config::LibraryConfig;
 use crate::queue::Repeat;
 use crate::theme::{FONT_SCALES, ThemeChoice};
 
@@ -49,6 +50,8 @@ pub struct Settings {
     pub window: Option<WindowGeometry>,
     /// Mini player position (its size is fixed).
     pub mini_player: Option<WindowGeometry>,
+    /// Library, privacy, storage, local files and YouTube account.
+    pub library: LibraryConfig,
     /// Secrets that could not go to the OS keychain (see `secrets.rs`).
     #[serde(skip_serializing_if = "FileSecrets::is_empty")]
     pub secrets: FileSecrets,
@@ -67,6 +70,7 @@ impl Default for Settings {
             playback: PlaybackConfig::default(),
             window: None,
             mini_player: None,
+            library: LibraryConfig::default(),
             secrets: FileSecrets::default(),
         }
     }
@@ -254,6 +258,7 @@ impl Settings {
         }
         self.window = self.window.filter(WindowGeometry::is_sane);
         self.mini_player = self.mini_player.filter(WindowGeometry::is_sane);
+        self.library.normalize();
         let trim = |s: &mut String| *s = s.trim().to_owned();
         trim(&mut self.lastfm.api_key);
         trim(&mut self.discord.client_id);
