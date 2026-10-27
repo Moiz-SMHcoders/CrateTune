@@ -24,16 +24,23 @@ pub enum Secret {
     LastFmShared,
     LastFmSession,
     ListenBrainzToken,
+    /// Lyrics providers / AI translation (Lyrics settings).
+    PaxsenixKey,
+    BetterLyricsKey,
+    AiTranslateKey,
     /// `Cookie` header of a signed-in music.youtube.com session.
     YouTubeCookie,
 }
 
 impl Secret {
     #[cfg(test)]
-    pub const ALL: [Secret; 4] = [
+    pub const ALL: [Secret; 7] = [
         Secret::LastFmShared,
         Secret::LastFmSession,
         Secret::ListenBrainzToken,
+        Secret::PaxsenixKey,
+        Secret::BetterLyricsKey,
+        Secret::AiTranslateKey,
         Secret::YouTubeCookie,
     ];
 
@@ -43,6 +50,9 @@ impl Secret {
             Secret::LastFmShared => "lastfm-api-secret",
             Secret::LastFmSession => "lastfm-session-key",
             Secret::ListenBrainzToken => "listenbrainz-token",
+            Secret::PaxsenixKey => "paxsenix-api-key",
+            Secret::BetterLyricsKey => "betterlyrics-api-key",
+            Secret::AiTranslateKey => "ai-translate-api-key",
             Secret::YouTubeCookie => "youtube-cookie",
         }
     }

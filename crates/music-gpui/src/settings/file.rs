@@ -23,6 +23,9 @@ use music_core::{EqPreset, EqualizerSettings};
 use serde::{Deserialize, Serialize};
 
 use super::library_config::LibraryConfig;
+use super::prefs::{
+    ActivityConfig, AudioConfig, LyricsConfig, NowPlayingConfig, ScrobbleRulesConfig,
+};
 use crate::queue::Repeat;
 use crate::theme::{FONT_SCALES, ThemeChoice};
 
@@ -46,6 +49,13 @@ pub struct Settings {
     pub discord: DiscordConfig,
     pub appearance: AppearanceConfig,
     pub playback: PlaybackConfig,
+    /// Engine options (quality, crossfade, speed, …; see `prefs.rs`).
+    pub audio: AudioConfig,
+    pub lyrics: LyricsConfig,
+    /// Now Playing layout / background, mini player style.
+    pub now_playing: NowPlayingConfig,
+    /// When Last.fm / ListenBrainz count a play.
+    pub scrobble_rules: ScrobbleRulesConfig,
     /// Main window frame, restored at launch.
     pub window: Option<WindowGeometry>,
     /// Mini player position (its size is fixed).
@@ -68,6 +78,10 @@ impl Default for Settings {
             discord: DiscordConfig::default(),
             appearance: AppearanceConfig::default(),
             playback: PlaybackConfig::default(),
+            audio: AudioConfig::default(),
+            lyrics: LyricsConfig::default(),
+            now_playing: NowPlayingConfig::default(),
+            scrobble_rules: ScrobbleRulesConfig::default(),
             window: None,
             mini_player: None,
             library: LibraryConfig::default(),
@@ -148,6 +162,8 @@ pub struct DiscordConfig {
     pub enabled: bool,
     /// Discord application ("client") id.
     pub client_id: String,
+    /// What the activity shows (see `prefs::ActivityConfig`).
+    pub activity: ActivityConfig,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -178,7 +194,7 @@ pub struct PlaybackConfig {
 
 /// Unknown enum values (e.g. a theme added by a newer version) fall back to the
 /// default instead of failing the whole file.
-fn lenient<'de, D, T>(deserializer: D) -> Result<T, D::Error>
+pub(super) fn lenient<'de, D, T>(deserializer: D) -> Result<T, D::Error>
 where
     D: serde::Deserializer<'de>,
     T: serde::de::DeserializeOwned + Default,
@@ -262,6 +278,9 @@ impl Settings {
         let trim = |s: &mut String| *s = s.trim().to_owned();
         trim(&mut self.lastfm.api_key);
         trim(&mut self.discord.client_id);
+        self.audio.normalize();
+        self.lyrics.normalize();
+        self.scrobble_rules.normalize();
     }
 
     pub fn from_json(text: &str) -> serde_json::Result<Self> {
@@ -420,6 +439,7 @@ mod tests {
         s.discord = DiscordConfig {
             enabled: true,
             client_id: "123".into(),
+            ..DiscordConfig::default()
         };
         let json = s.to_json();
         assert!(!json.contains("secrets"));

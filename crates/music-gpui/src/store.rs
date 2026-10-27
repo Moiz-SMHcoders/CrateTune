@@ -1095,3 +1095,82 @@ impl MusicApp {
 pub fn replace_liked(ids: HashSet<String>) {
     FLAGS.with(|f| f.borrow_mut().liked = ids);
 }
+
+/// Lyrics cache in the library database (`lyrics` table): fetched lyrics survive
+/// restarts and go into backups. Keyed by video id (else title/artist/duration);
+/// "not found" is remembered for a week.
+pub struct LibraryLyricsCache(pub Library);
+
+const LYRICS_NOT_FOUND: &str = "__not_found__";
+const LYRICS_NOT_FOUND_TTL_MS: i64 = 7 * 86_400_000;
+
+fn lyrics_key(query: &music_core::LyricsQuery) -> String {
+    match query.video_id.as_deref().filter(|v| !v.is_empty()) {
+        Some(id) => id.to_owned(),
+        None => music_core::lyrics::cache_key(query),
+    }
+}
+
+impl music_core::lyrics::LyricsCache for LibraryLyricsCache {
+    fn load(&self, query: &music_core::LyricsQuery) -> Option<music_core::lyrics::CachedLyrics> {
+        use music_core::lyrics::{CachedLyrics, RawLyrics};
+        let entry = self.0.cached_lyrics(&lyrics_key(query), None).ok()??;
+        if entry.provider == LYRICS_NOT_FOUND {
+            return (now_ms() - entry.fetched_at < LYRICS_NOT_FOUND_TTL_MS)
+                .then_some(CachedLyrics::NotFound);
+        }
+        Some(CachedLyrics::Found(RawLyrics::new(
+            entry.provider,
+            entry.text,
+        )))
+    }
+
+    fn store(&self, query: &music_core::LyricsQuery, entry: &music_core::lyrics::CachedLyrics) {
+        use music_core::lyrics::CachedLyrics;
+        let key = lyrics_key(query);
+        let result = match entry {
+            CachedLyrics::Found(raw) => {
+                let _ = self.0.remove_cached_lyrics(&key, Some(LYRICS_NOT_FOUND));
+                self.0.cache_lyrics(&key, &raw.provider, &raw.raw)
+            }
+            CachedLyrics::NotFound => self.0.cache_lyrics(&key, LYRICS_NOT_FOUND, ""),
+        };
+        if let Err(e) = result {
+            eprintln!("music-gpui: caching lyrics failed: {e}");
+        }
+    }
+}
+
+impl MusicApp {
+    /// Swaps the lyrics service's in-memory cache for the library database.
+    pub(crate) fn use_library_lyrics_cache(&mut self, cx: &mut Context<Self>) {
+        if let Some(library) = self.store.library.clone() {
+            self.set_lyrics_cache(Arc::new(LibraryLyricsCache(library)), cx);
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use music_core::LyricsQuery;
+    use music_core::lyrics::{CachedLyrics, LyricsCache, RawLyrics};
+
+    use super::*;
+
+    #[test]
+    fn lyrics_cache_round_trip() {
+        let cache = LibraryLyricsCache(Library::open_in_memory().unwrap());
+        let query = LyricsQuery {
+            video_id: Some("vid".into()),
+            title: "T".into(),
+            artist: "A".into(),
+            ..Default::default()
+        };
+        assert_eq!(cache.load(&query), None);
+        cache.store(&query, &CachedLyrics::NotFound);
+        assert_eq!(cache.load(&query), Some(CachedLyrics::NotFound));
+        let raw = RawLyrics::new("LRCLIB", "[00:01.00] hi");
+        cache.store(&query, &CachedLyrics::Found(raw.clone()));
+        assert_eq!(cache.load(&query), Some(CachedLyrics::Found(raw)));
+    }
+}

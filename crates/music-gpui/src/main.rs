@@ -25,6 +25,7 @@ mod karaoke;
 mod library_script;
 #[cfg(target_os = "macos")]
 mod login_webview;
+mod lyrics;
 mod mini_player;
 mod now_playing;
 mod pages;

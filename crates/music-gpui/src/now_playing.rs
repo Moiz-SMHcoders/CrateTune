@@ -1,6 +1,12 @@
-//! Full-window "Now Playing" screen: blurred artwork backdrop, artwork that
-//! breathes with play state, progress/transport, and a synced, karaoke-style
-//! lyrics pane with Apple-Music-like staggered scrolling.
+//! Full-window "Now Playing" screen in three layouts (split, big artwork,
+//! lyrics first) over one of four backgrounds (blurred artwork, artwork
+//! gradient, solid colour, drifting glow), with transport, sleep timer and a
+//! lyrics pane: synced lyrics with Apple-Music-like staggered scrolling in six
+//! animation styles (variants of the `KaraokeLine` renderer), background vocals,
+//! duet sides, romanization and translation lines, or plain text.
+//!
+//! Frames are only requested while something moves (`anim::Frame`): the
+//! playback clock, a tween, or the glow background while playing.
 
 use std::cell::Cell;
 use std::rc::Rc;
@@ -8,28 +14,35 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use gpui::{
-    AnimationExt as _, AnyElement, Bounds, Context, FocusHandle, FontWeight, Hsla, Image,
-    InteractiveElement as _, IntoElement, MouseButton, MouseDownEvent, ObjectFit,
+    AnimationExt as _, AnyElement, Bounds, Context, Div, FocusHandle, FontStyle, FontWeight, Hsla,
+    Image, InteractiveElement as _, IntoElement, MouseButton, MouseDownEvent, ObjectFit,
     ParentElement as _, Pixels, RenderImage, ScrollEvent, ScrollHandle, SharedString,
     SpringAnimation, SpringConfig, StatefulInteractiveElement as _, Styled as _, StyledImage as _,
     Transformation, Window, canvas, div, hsla, img, linear_color_stop, linear_gradient, point,
     prelude::FluentBuilder as _, px, radians, relative, size, svg,
 };
 use gpui_component::{
-    IconName, IconNamed as _, Sizable as _,
+    IconName, IconNamed as _, Selectable as _, Sizable as _,
     button::{Button, ButtonVariants as _},
     h_flex,
+    menu::{DropdownMenu as _, PopupMenuItem},
     spinner::Spinner,
     tag::Tag,
     v_flex,
 };
-use music_core::{Lyrics, PlaybackStatus, Track, format_duration};
+use music_core::lyrics::SyncKind;
+use music_core::{PlaybackStatus, Track, format_duration};
 
 use crate::anim::{Frame, Spec, Tween, ease_in_out_cubic, ease_out_cubic};
-use crate::app::MusicApp;
+use crate::app::{MusicApp, update_app};
+use crate::backdrop::Palette;
 use crate::components::artwork::ArtworkCache;
-use crate::icons::AppIcon;
-use crate::karaoke::{self, Fill, KaraokeLine};
+use crate::icons::{AppIcon, Lucide};
+use crate::karaoke::{FEATHER, Fill, KaraokeLine};
+use crate::lyrics::{LyricsState, PreparedLyrics};
+use crate::settings::prefs::{
+    LyricsAnimation, LyricsDisplay, NowPlayingBackground, NowPlayingLayout, TextAlign,
+};
 use crate::theme::AppColors;
 use crate::util::off_thread;
 
@@ -50,48 +63,26 @@ const MANUAL_SCROLL_HOLD: Duration = Duration::from_secs(3);
 /// Where the focused lyric line's center sits, as a fraction of the pane height.
 const FOCUS_ANCHOR: f32 = 0.36;
 
-const LYRIC_SIZE: f32 = 34.;
-const LYRIC_LINE_HEIGHT: f32 = 42.;
 /// Lyrics column width cap (long lines wrap, like Apple Music's lyrics column).
 const LYRICS_MAX_WIDTH: f32 = 600.;
-const INACTIVE_SCALE: f32 = 0.9;
+/// ...in the lyrics-first layout.
+const LYRICS_WIDE_MAX_WIDTH: f32 = 920.;
 /// Alpha of the not-yet-sung part of the active line.
 const ACTIVE_DIM: f32 = 0.32;
+/// Romanization / translation lines, relative to the lyric size.
+const SUB_LINE_SCALE: f32 = 0.5;
+const BACKGROUND_VOCALS_SCALE: f32 = 0.62;
 
-pub enum LyricsState {
-    Loading,
-    Missing,
-    Failed(String),
-    Ready(Arc<PreparedLyrics>),
-}
-
-pub struct PreparedLyrics {
-    lyrics: Lyrics,
-    lines: Vec<(SharedString, Arc<[usize]>)>,
-}
-
-impl PreparedLyrics {
-    fn new(lyrics: Lyrics) -> Self {
-        let lines = lyrics
-            .lines
-            .iter()
-            .map(|l| {
-                (
-                    l.text.clone().into(),
-                    karaoke::word_starts(&l.text, &l.words),
-                )
-            })
-            .collect();
-        Self { lyrics, lines }
-    }
-}
-
-/// Large artwork, its pre-blurred backdrop and accent colour, per video id.
+/// Large artwork, its pre-blurred backdrop, palette and accent colour, per video id.
 pub enum HiRes {
     Loading,
     Ready {
         art: Arc<Image>,
         backdrop: Arc<RenderImage>,
+        /// Gradient / solid / glow background colours.
+        palette: Palette,
+        /// Soft lights in the palette's colours (animated glow background).
+        glows: [Arc<RenderImage>; 3],
         /// Dominant vibrant colour (dynamic theme), if the art has one.
         accent: Option<Hsla>,
     },
@@ -117,6 +108,67 @@ impl LineAnim {
     }
 }
 
+/// How an animation style drives the karaoke renderer.
+#[derive(Clone, Copy)]
+struct Look {
+    /// Scale of lines that aren't being sung.
+    inactive_scale: f32,
+    /// Lift of sung words, as a fraction of the font size.
+    lift: f32,
+    /// Per-word fill for word-synced lyrics (else the line lights as a whole).
+    per_word: bool,
+    sweep: bool,
+    feather: f32,
+    /// Halo alpha behind sung glyphs.
+    glow: Option<f32>,
+}
+
+impl Look {
+    fn of(animation: LyricsAnimation) -> Self {
+        let karaoke = Self {
+            inactive_scale: 0.9,
+            lift: 0.08,
+            per_word: true,
+            sweep: true,
+            feather: FEATHER,
+            glow: None,
+        };
+        match animation {
+            LyricsAnimation::None => Self {
+                inactive_scale: 1.0,
+                lift: 0.0,
+                per_word: false,
+                ..karaoke
+            },
+            LyricsAnimation::Fade => Self {
+                inactive_scale: 0.96,
+                lift: 0.0,
+                sweep: false,
+                ..karaoke
+            },
+            LyricsAnimation::Glow => Self {
+                inactive_scale: 0.92,
+                lift: 0.04,
+                glow: Some(0.16),
+                ..karaoke
+            },
+            LyricsAnimation::Slide => Self {
+                lift: 0.18,
+                feather: 0.2,
+                ..karaoke
+            },
+            LyricsAnimation::Karaoke => karaoke,
+            LyricsAnimation::Apple => Self {
+                inactive_scale: 0.86,
+                lift: 0.12,
+                feather: 1.0,
+                glow: Some(0.08),
+                ..karaoke
+            },
+        }
+    }
+}
+
 pub struct NowPlaying {
     pub open: bool,
     pub reveal: Tween<f32>,
@@ -125,8 +177,16 @@ pub struct NowPlaying {
     backdrop_cur: Option<Arc<RenderImage>>,
     backdrop_id: Option<String>,
     backdrop_fade: Tween<f32>,
+    /// Gradient / solid / glow colours, cross-faded between tracks.
+    colors: [Tween<Hsla>; 3],
+    colors_id: Option<String>,
+    /// Glow background phase; advances only while playing.
+    glow_phase: f32,
+    glows: Option<[Arc<RenderImage>; 3]>,
+    glow_last: Option<Instant>,
     play_morph: Tween<f32>,
     scroll: ScrollHandle,
+    plain_scroll: ScrollHandle,
     lines_for: Option<String>,
     line_anims: Vec<LineAnim>,
     focus_line: Option<usize>,
@@ -138,6 +198,7 @@ pub struct NowPlaying {
 
 impl NowPlaying {
     pub fn new(focus: FocusHandle) -> Self {
+        let grey = Tween::new(hsla(0., 0., 0.12, 1.));
         Self {
             open: false,
             reveal: Tween::new(0.),
@@ -146,8 +207,14 @@ impl NowPlaying {
             backdrop_cur: None,
             backdrop_id: None,
             backdrop_fade: Tween::new(1.),
+            colors: [grey, grey, grey],
+            colors_id: None,
+            glow_phase: 0.,
+            glows: None,
+            glow_last: None,
             play_morph: Tween::new(0.),
             scroll: ScrollHandle::new(),
+            plain_scroll: ScrollHandle::new(),
             lines_for: None,
             line_anims: Vec::new(),
             focus_line: None,
@@ -161,6 +228,11 @@ impl NowPlaying {
 
 fn white(alpha: f32) -> Hsla {
     hsla(0., 0., 1., alpha)
+}
+
+/// `color`'s hue at a fixed (dark) lightness, saturation capped for readability.
+fn deep(color: Hsla, lightness: f32, alpha: f32) -> Hsla {
+    hsla(color.h, (color.s * 0.9).min(0.75), lightness, alpha)
 }
 
 impl MusicApp {
@@ -194,39 +266,9 @@ impl MusicApp {
         cx.notify();
     }
 
-    /// Fetches lyrics for `track` once (LRCLIB, blocking → background executor).
-    pub fn ensure_lyrics(&mut self, track: &Track, cx: &mut Context<Self>) {
-        // Failed fetches are retried the next time the track is played / opened.
-        if self
-            .lyrics
-            .get(&track.video_id)
-            .is_some_and(|l| !matches!(l, LyricsState::Failed(_)))
-        {
-            return;
-        }
-        self.lyrics
-            .insert(track.video_id.clone(), LyricsState::Loading);
-        let track = track.clone();
-        cx.spawn(async move |this, cx| {
-            let id = track.video_id.clone();
-            let result = off_thread(move || music_core::fetch_lyrics(&track)).await;
-            this.update(cx, |this, cx| {
-                let state = match result {
-                    Ok(Some(lyrics)) => LyricsState::Ready(Arc::new(PreparedLyrics::new(lyrics))),
-                    Ok(None) => LyricsState::Missing,
-                    Err(e) => LyricsState::Failed(e.to_string()),
-                };
-                this.lyrics.insert(id, state);
-                cx.notify();
-            })
-            .ok();
-        })
-        .detach();
-    }
-
     /// Fetches the 544 px artwork (shared cache, fetch threads) and blurs it +
-    /// extracts its accent on a worker thread, once per track; keeps the last
-    /// [`HIRES_KEEP`] tracks.
+    /// extracts its palette and accent on a worker thread, once per track; keeps
+    /// the last [`HIRES_KEEP`] tracks.
     pub fn ensure_hires(&mut self, track: &Track, cx: &mut Context<Self>) {
         if self.hires.contains_key(&track.video_id) {
             return;
@@ -260,13 +302,23 @@ impl MusicApp {
                                 started.elapsed()
                             );
                         }
-                        backdrop.map(|b| (b, accent))
+                        backdrop.map(|(backdrop, palette)| {
+                            let [a, b, c] = palette;
+                            let glows = [
+                                crate::backdrop::glow_blob(deep(c, 0.5, 0.8)),
+                                crate::backdrop::glow_blob(deep(a, 0.42, 0.7)),
+                                crate::backdrop::glow_blob(deep(b, 0.38, 0.65)),
+                            ];
+                            ((backdrop, palette, glows), accent)
+                        })
                     })
                     .await;
                     match result {
-                        Ok((backdrop, accent)) => HiRes::Ready {
+                        Ok(((backdrop, palette, glows), accent)) => HiRes::Ready {
                             art,
                             backdrop,
+                            palette,
+                            glows,
                             accent,
                         },
                         Err(e) => {
@@ -303,18 +355,117 @@ impl MusicApp {
             // Lyrics, progress and time labels move continuously while playing.
             frame.keep_alive();
         }
+        let (config, display) = {
+            let s = self.settings.read(cx).settings();
+            (s.now_playing, s.lyrics.display())
+        };
 
-        let backdrop = self.render_backdrop(track.as_ref(), frame);
-        let left = self.render_player_column(track.as_ref(), position, viewport, frame, cx);
-        let lyrics =
-            self.render_lyrics(track.as_ref(), position, viewport.height, frame, window, cx);
+        let backdrop = self.render_backdrop(track.as_ref(), config.background, viewport, frame);
+        let header = self.render_np_header(config.layout, config.background, cx);
+        let body: AnyElement = match config.layout {
+            NowPlayingLayout::Split => {
+                let left = self.render_player_column(track.as_ref(), position, viewport, frame, cx);
+                let lyrics = self.render_lyrics(
+                    track.as_ref(),
+                    position,
+                    viewport.height,
+                    LYRICS_MAX_WIDTH,
+                    display,
+                    frame,
+                    window,
+                    cx,
+                );
+                h_flex()
+                    .flex_1()
+                    .min_h_0()
+                    .px(px(48.))
+                    .gap(px(48.))
+                    .child(
+                        h_flex()
+                            .flex_1()
+                            .min_w_0()
+                            .h_full()
+                            .justify_center()
+                            .child(left),
+                    )
+                    .child(
+                        h_flex()
+                            .flex_1()
+                            .min_w_0()
+                            .h_full()
+                            .justify_center()
+                            .child(lyrics),
+                    )
+                    .into_any_element()
+            }
+            NowPlayingLayout::Centered => self
+                .render_centered(track.as_ref(), position, viewport, frame, cx)
+                .into_any_element(),
+            NowPlayingLayout::Lyrics => {
+                let lyrics = self.render_lyrics(
+                    track.as_ref(),
+                    position,
+                    viewport.height,
+                    LYRICS_WIDE_MAX_WIDTH,
+                    display,
+                    frame,
+                    window,
+                    cx,
+                );
+                let strip = self.render_strip(track.as_ref(), position, frame, cx);
+                v_flex()
+                    .flex_1()
+                    .min_h_0()
+                    .child(
+                        h_flex()
+                            .flex_1()
+                            .min_h_0()
+                            .px(px(48.))
+                            .justify_center()
+                            .child(lyrics),
+                    )
+                    .child(strip)
+                    .into_any_element()
+            }
+        };
 
+        div()
+            .id("now-playing")
+            .key_context("NowPlaying")
+            .track_focus(&self.np.focus)
+            .occlude()
+            .absolute()
+            .left_0()
+            .top(viewport.height * (1. - reveal))
+            .w_full()
+            .h(viewport.height)
+            .overflow_hidden()
+            .opacity((reveal * 1.8).min(1.))
+            .text_color(gpui::white())
+            .child(backdrop)
+            .child(v_flex().absolute().inset_0().child(header).child(body))
+            .into_any_element()
+    }
+
+    fn render_np_header(
+        &mut self,
+        layout: NowPlayingLayout,
+        background: NowPlayingBackground,
+        cx: &mut Context<Self>,
+    ) -> impl IntoElement + use<> {
         let demo = self.engine.as_ref().is_some_and(|e| e.is_demo());
-        let header = h_flex()
+        let state = &self.playback;
+        let buffering = state.buffering && state.status == PlaybackStatus::Playing;
+        let speed = (state.speed - 1.).abs() > 0.01;
+        let speed_label = format!("{:.2}×", state.speed);
+        let sleep = self.sleep_timer_label();
+        let custom = self.settings.read(cx).sleep_custom();
+        let armed = sleep.is_some();
+        h_flex()
             .h(px(56.))
             .flex_none()
             .px_5()
-            .gap_3()
+            .gap_2()
             .child(
                 Button::new("np-close")
                     .ghost()
@@ -336,9 +487,63 @@ impl MusicApp {
             .when(demo, |this| {
                 this.child(Tag::secondary().small().rounded_full().child("Demo clock"))
             })
+            .when(buffering, |this| {
+                this.child(Tag::secondary().small().rounded_full().child("Buffering…"))
+            })
+            .when(speed, |this| {
+                this.child(Tag::secondary().small().rounded_full().child(speed_label))
+            })
             .when(self.playback.preview_only, |this| {
                 this.child(Tag::warning().small().rounded_full().child("Preview"))
             })
+            .child(
+                Button::new("np-sleep")
+                    .ghost()
+                    .small()
+                    .rounded(px(999.))
+                    .icon(Lucide::Moon)
+                    .selected(armed)
+                    .when_some(sleep, |b, label| b.label(label))
+                    .tooltip("Sleep timer")
+                    .dropdown_menu(move |menu, _, _| {
+                        MusicApp::sleep_timer_menu(menu, armed, custom)
+                    }),
+            )
+            .child(
+                Button::new("np-layout")
+                    .ghost()
+                    .rounded(px(999.))
+                    .icon(Lucide::LayoutTemplate)
+                    .tooltip("Layout and background")
+                    .dropdown_menu(move |mut menu, _, _| {
+                        menu = menu.label("Layout");
+                        for l in NowPlayingLayout::ALL {
+                            menu = menu.item(
+                                PopupMenuItem::new(l.title()).checked(l == layout).on_click(
+                                    move |_, _, cx| {
+                                        update_app(cx, |app, cx| {
+                                            app.settings.update(cx, |p, cx| p.set_np_layout(l, cx))
+                                        });
+                                    },
+                                ),
+                            );
+                        }
+                        menu = menu.separator().label("Background");
+                        for b in NowPlayingBackground::ALL {
+                            menu = menu.item(
+                                PopupMenuItem::new(b.title())
+                                    .checked(b == background)
+                                    .on_click(move |_, _, cx| {
+                                        update_app(cx, |app, cx| {
+                                            app.settings
+                                                .update(cx, |p, cx| p.set_np_background(b, cx))
+                                        });
+                                    }),
+                            );
+                        }
+                        menu
+                    }),
+            )
             .child(
                 Button::new("np-settings")
                     .ghost()
@@ -348,87 +553,131 @@ impl MusicApp {
                     .on_click(
                         cx.listener(|this, _, window, cx| this.open_settings(None, window, cx)),
                     ),
-            );
-
-        div()
-            .id("now-playing")
-            .key_context("NowPlaying")
-            .track_focus(&self.np.focus)
-            .occlude()
-            .absolute()
-            .left_0()
-            .top(viewport.height * (1. - reveal))
-            .w_full()
-            .h(viewport.height)
-            .overflow_hidden()
-            .opacity((reveal * 1.8).min(1.))
-            .text_color(gpui::white())
-            .child(backdrop)
-            .child(
-                v_flex().absolute().inset_0().child(header).child(
-                    h_flex()
-                        .flex_1()
-                        .min_h_0()
-                        .px(px(48.))
-                        .gap(px(48.))
-                        .child(
-                            h_flex()
-                                .flex_1()
-                                .min_w_0()
-                                .h_full()
-                                .justify_center()
-                                .child(left),
-                        )
-                        .child(
-                            h_flex()
-                                .flex_1()
-                                .min_w_0()
-                                .h_full()
-                                .justify_center()
-                                .child(lyrics),
-                        ),
-                ),
             )
-            .into_any_element()
     }
 
     fn render_backdrop(
         &mut self,
         track: Option<&Track>,
+        style: NowPlayingBackground,
+        viewport: gpui::Size<Pixels>,
         frame: &mut Frame,
     ) -> impl IntoElement + use<> {
-        // Swap in the new track's blurred art once it's ready, cross-fading from the old one.
-        if let Some(track) = track
-            && self.np.backdrop_id.as_deref() != Some(&track.video_id)
-            && let Some(HiRes::Ready { backdrop, .. }) = self.hires.get(&track.video_id)
-        {
-            self.np.backdrop_prev = self.np.backdrop_cur.replace(backdrop.clone());
-            self.np.backdrop_id = Some(track.video_id.clone());
-            self.np
-                .backdrop_fade
-                .animate_from(0., 1., BACKDROP_FADE, frame.now);
+        let ready = track.and_then(|t| match self.hires.get(&t.video_id) {
+            Some(HiRes::Ready {
+                backdrop,
+                palette,
+                glows,
+                ..
+            }) => Some((
+                t.video_id.clone(),
+                backdrop.clone(),
+                *palette,
+                glows.clone(),
+            )),
+            _ => None,
+        });
+        if let Some((id, backdrop, palette, glows)) = ready {
+            // Swap in the new track's blurred art, cross-fading from the old one.
+            if self.np.backdrop_id.as_deref() != Some(id.as_str()) {
+                self.np.backdrop_prev = self.np.backdrop_cur.replace(backdrop);
+                self.np.backdrop_id = Some(id.clone());
+                self.np
+                    .backdrop_fade
+                    .animate_from(0., 1., BACKDROP_FADE, frame.now);
+            }
+            if self.np.colors_id.as_deref() != Some(id.as_str()) {
+                self.np.colors_id = Some(id);
+                self.np.glows = Some(glows);
+                for (tween, color) in self.np.colors.iter_mut().zip(palette) {
+                    tween.animate_to(color, BACKDROP_FADE, frame.now);
+                }
+            }
         }
-        let fade = frame.get(&self.np.backdrop_fade);
-        if fade >= 1. {
-            self.np.backdrop_prev = None;
-        }
-        let layer = |image: Arc<RenderImage>| {
-            div()
-                .absolute()
-                .inset_0()
-                .child(img(image).size_full().object_fit(ObjectFit::Cover))
+        let base = div().absolute().inset_0().bg(gpui::rgb(0x141418));
+        let layer = match style {
+            NowPlayingBackground::Blur => {
+                let fade = frame.get(&self.np.backdrop_fade);
+                if fade >= 1. {
+                    self.np.backdrop_prev = None;
+                }
+                let image = |image: Arc<RenderImage>| {
+                    div()
+                        .absolute()
+                        .inset_0()
+                        .child(img(image).size_full().object_fit(ObjectFit::Cover))
+                };
+                base.when_some(self.np.backdrop_prev.clone(), |this, i| {
+                    this.child(image(i))
+                })
+                .when_some(self.np.backdrop_cur.clone(), |this, i| {
+                    this.child(image(i).opacity(fade))
+                })
+            }
+            NowPlayingBackground::Gradient => {
+                let [a, b, _] = self.np.colors.each_ref().map(|t| frame.get(t));
+                base.bg(linear_gradient(
+                    160.,
+                    linear_color_stop(deep(a, 0.30, 1.), 0.),
+                    linear_color_stop(deep(b, 0.12, 1.), 1.),
+                ))
+            }
+            NowPlayingBackground::Solid => {
+                let a = frame.get(&self.np.colors[0]);
+                base.bg(deep(a, 0.17, 1.))
+            }
+            NowPlayingBackground::Glow => {
+                let a = frame.get(&self.np.colors[0]);
+                // The phase only advances while playing, so a paused screen is still.
+                let now = frame.now;
+                if self.clock.is_running() {
+                    if let Some(last) = self.np.glow_last {
+                        self.np.glow_phase += (now - last).as_secs_f32().min(0.1);
+                    }
+                    self.np.glow_last = Some(now);
+                } else {
+                    self.np.glow_last = None;
+                }
+                let t = self.np.glow_phase;
+                let (w, h) = (viewport.width, viewport.height);
+                let diameter = w.max(h) * 0.9;
+                let blob = |fx: f32, fy: f32, image: Arc<RenderImage>| {
+                    img(image)
+                        .absolute()
+                        .left(w * fx - diameter * 0.5)
+                        .top(h * fy - diameter * 0.5)
+                        .size(diameter)
+                };
+                let positions = [
+                    (
+                        0.28 + 0.16 * (t * 0.21).sin(),
+                        0.30 + 0.14 * (t * 0.17 + 1.).cos(),
+                    ),
+                    (
+                        0.72 + 0.14 * (t * 0.19 + 2.).cos(),
+                        0.62 + 0.16 * (t * 0.23).sin(),
+                    ),
+                    (
+                        0.50 + 0.22 * (t * 0.13 + 4.).sin(),
+                        0.85 + 0.10 * (t * 0.29 + 3.).cos(),
+                    ),
+                ];
+                base.bg(deep(a, 0.06, 1.))
+                    .when_some(self.np.glows.clone(), |this, glows| {
+                        this.children(
+                            glows
+                                .into_iter()
+                                .zip(positions)
+                                .map(|(image, (x, y))| blob(x, y, image)),
+                        )
+                    })
+            }
         };
         div()
             .absolute()
             .inset_0()
-            .bg(gpui::rgb(0x141418))
-            .when_some(self.np.backdrop_prev.clone(), |this, image| {
-                this.child(layer(image))
-            })
-            .when_some(self.np.backdrop_cur.clone(), |this, image| {
-                this.child(layer(image).opacity(fade))
-            })
-            // Dark gradient so white text stays readable on bright artwork.
+            .child(layer)
+            // Dark gradient so white text stays readable on bright colours.
             .child(div().absolute().inset_0().bg(linear_gradient(
                 180.,
                 linear_color_stop(hsla(0., 0., 0., 0.2), 0.),
@@ -436,22 +685,8 @@ impl MusicApp {
             )))
     }
 
-    fn render_player_column(
-        &mut self,
-        track: Option<&Track>,
-        position: Duration,
-        viewport: gpui::Size<Pixels>,
-        frame: &mut Frame,
-        cx: &mut Context<Self>,
-    ) -> impl IntoElement + use<> {
-        // Half the content row (minus padding/gap), and leave room for text below.
-        let half_width = (viewport.width - px(144.)) * 0.5;
-        let side = (viewport.height * 0.46)
-            .min(half_width * 0.9)
-            .clamp(px(120.), px(400.));
-        let status = self.playback.status.clone();
-        let playing = status == PlaybackStatus::Playing;
-
+    fn artwork_view(&self, track: Option<&Track>, side: Pixels, cx: &mut Context<Self>) -> Div {
+        let playing = self.playback.status == PlaybackStatus::Playing;
         // Prefer the 544 px art; fall back to the list thumbnail while it loads.
         let art: Option<Arc<Image>> = track.and_then(|t| match self.hires.get(&t.video_id) {
             Some(HiRes::Ready { art, .. }) => Some(art.clone()),
@@ -460,8 +695,8 @@ impl MusicApp {
                 ArtworkCache::global(cx).update(cx, |cache, cx| cache.get(&url, cx))
             }
         });
-        let progress_fill = AppColors::get(cx).np_progress;
-        let artwork = div()
+        let radius = (side * 0.035).max(px(6.));
+        div()
             .size(side)
             .flex_none()
             .flex()
@@ -469,14 +704,14 @@ impl MusicApp {
             .justify_center()
             .child(
                 div()
-                    .rounded(px(14.))
+                    .rounded(radius)
                     .shadow_2xl()
                     .bg(white(0.08))
                     .when_some(art, |this, art| {
                         this.child(
                             img(art)
                                 .size_full()
-                                .rounded(px(14.))
+                                .rounded(radius)
                                 .object_fit(ObjectFit::Cover),
                         )
                     })
@@ -491,21 +726,20 @@ impl MusicApp {
                         }),
                         move |this, scale| this.size(side * scale),
                     ),
-            );
+            )
+    }
 
-        let (title, artists): (SharedString, SharedString) = match track {
-            Some(t) => (t.title.clone().into(), t.artists.clone().into()),
-            None => ("Not playing".into(), "".into()),
-        };
+    /// Progress bar (click to seek) and elapsed / remaining time.
+    fn progress_view(&self, position: Duration, cx: &mut Context<Self>) -> Div {
         let total = self.playback.duration.unwrap_or_default();
         let frac = if total.is_zero() {
             0.
         } else {
             (position.as_secs_f32() / total.as_secs_f32()).clamp(0., 1.)
         };
-
+        let progress_fill = AppColors::get(cx).np_progress;
         let bounds_cell = self.np.progress_bounds.clone();
-        let progress = div()
+        let bar = div()
             .id("np-progress")
             .group("np-progress")
             .w_full()
@@ -561,22 +795,27 @@ impl MusicApp {
                     format_duration(total.saturating_sub(position).as_secs())
                 )
             });
+        v_flex().w_full().gap_1().child(bar).child(times)
+    }
 
+    /// Previous / play-pause / next; `scale` 1 = the full-size buttons.
+    fn transport_view(&mut self, scale: f32, frame: &mut Frame, cx: &mut Context<Self>) -> Div {
+        let status = self.playback.status.clone();
+        let playing = status == PlaybackStatus::Playing;
+        let busy = status == PlaybackStatus::Loading || (playing && self.playback.buffering);
         // Play/pause: the two icons rotate + scale + fade through each other.
         self.np
             .play_morph
             .animate_to(if playing { 1. } else { 0. }, ICON_MORPH, frame.now);
         let morph = frame.get(&self.np.play_morph);
         let icon = |name: IconName, shown: f32, turn: f32| {
-            let scale = 0.35 + 0.65 * shown;
+            let s = 0.35 + 0.65 * shown;
             svg()
                 .absolute()
-                .size(px(30.))
+                .size(px(30. * scale))
                 .path(name.path())
                 .text_color(hsla(0., 0., 0.08, shown))
-                .with_transformation(
-                    Transformation::scale(size(scale, scale)).with_rotation(radians(turn)),
-                )
+                .with_transformation(Transformation::scale(size(s, s)).with_rotation(radians(turn)))
         };
         let can_toggle = self.engine.is_some()
             && matches!(
@@ -585,7 +824,7 @@ impl MusicApp {
             );
         let play_button = div()
             .id("np-play")
-            .size(px(68.))
+            .size(px(68. * scale))
             .flex_none()
             .rounded_full()
             .bg(white(if can_toggle { 0.95 } else { 0.4 }))
@@ -598,10 +837,10 @@ impl MusicApp {
                     .hover(|s| s.bg(white(0.82)))
                     .on_click(cx.listener(|this, _, _, cx| this.toggle_playback(cx)))
             })
-            .when(status == PlaybackStatus::Loading, |this| {
+            .when(busy, |this| {
                 this.child(Spinner::new().large().color(hsla(0., 0., 0.1, 1.)))
             })
-            .when(status != PlaybackStatus::Loading, |this| {
+            .when(!busy, |this| {
                 this.child(icon(IconName::Play, 1. - morph, -morph * 1.6))
                     .child(icon(IconName::Pause, morph, (1. - morph) * 1.6))
             });
@@ -610,7 +849,7 @@ impl MusicApp {
         let skip = |id: &'static str, icon: AppIcon, enabled: bool| {
             div()
                 .id(id)
-                .size(px(48.))
+                .size(px(48. * scale))
                 .flex_none()
                 .rounded_full()
                 .flex()
@@ -621,16 +860,16 @@ impl MusicApp {
                 })
                 .child(
                     svg()
-                        .size(px(26.))
+                        .size(px(26. * scale))
                         .path(icon.path())
                         .text_color(white(if enabled { 0.92 } else { 0.35 })),
                 )
         };
-        let has_track = track.is_some();
-        let transport = h_flex()
-            .w_full()
+        let has_track = self.playback.track.is_some();
+        let has_next = self.queue.has_next();
+        h_flex()
             .justify_center()
-            .gap(px(28.))
+            .gap(px(28. * scale))
             .child(
                 skip("np-prev", AppIcon::Previous, has_track).when(has_track, |this| {
                     this.on_click(cx.listener(|this, _, _, cx| this.previous_track(cx)))
@@ -638,12 +877,14 @@ impl MusicApp {
             )
             .child(play_button)
             .child(
-                skip("np-next", AppIcon::Next, self.queue.has_next())
-                    .when(self.queue.has_next(), |this| {
-                        this.on_click(cx.listener(|this, _, _, cx| this.next_track(cx)))
-                    }),
-            );
-        let up_next = self.queue.peek_next().map(|next| {
+                skip("np-next", AppIcon::Next, has_next).when(has_next, |this| {
+                    this.on_click(cx.listener(|this, _, _, cx| this.next_track(cx)))
+                }),
+            )
+    }
+
+    fn up_next_view(&self) -> Option<Div> {
+        self.queue.peek_next().map(|next| {
             h_flex()
                 .w_full()
                 .justify_center()
@@ -657,14 +898,37 @@ impl MusicApp {
                         .text_color(white(0.7))
                         .child(format!("{} · {}", next.title, next.artists)),
                 )
-        });
+        })
+    }
 
+    fn titles(track: Option<&Track>) -> (SharedString, SharedString) {
+        match track {
+            Some(t) => (t.title.clone().into(), t.artists.clone().into()),
+            None => ("Not playing".into(), "".into()),
+        }
+    }
+
+    /// Split layout: artwork, title, progress, transport, up next.
+    fn render_player_column(
+        &mut self,
+        track: Option<&Track>,
+        position: Duration,
+        viewport: gpui::Size<Pixels>,
+        frame: &mut Frame,
+        cx: &mut Context<Self>,
+    ) -> impl IntoElement + use<> {
+        // Half the content row (minus padding/gap), and leave room for text below.
+        let half_width = (viewport.width - px(144.)) * 0.5;
+        let side = (viewport.height * 0.46)
+            .min(half_width * 0.9)
+            .clamp(px(120.), px(400.));
+        let (title, artists) = Self::titles(track);
         v_flex()
             .w(side)
             .flex_none()
             .justify_center()
             .gap_4()
-            .child(artwork)
+            .child(self.artwork_view(track, side, cx))
             .child(
                 h_flex()
                     .w_full()
@@ -689,25 +953,146 @@ impl MusicApp {
                         crate::components::like::like_button("np-like", t, Some(white(0.8)), cx)
                     })),
             )
-            .child(v_flex().w_full().gap_1().child(progress).child(times))
-            .child(transport)
-            .children(up_next)
+            .child(self.progress_view(position, cx))
+            .child(self.transport_view(1., frame, cx))
+            .children(self.up_next_view())
     }
 
+    /// Big-artwork layout: everything centered, the current lyric line below.
+    fn render_centered(
+        &mut self,
+        track: Option<&Track>,
+        position: Duration,
+        viewport: gpui::Size<Pixels>,
+        frame: &mut Frame,
+        cx: &mut Context<Self>,
+    ) -> impl IntoElement + use<> {
+        let side = (viewport.height * 0.5)
+            .min(viewport.width * 0.6)
+            .clamp(px(140.), px(520.));
+        let (title, artists) = Self::titles(track);
+        // The line being sung (or the last one) and the next, as plain text.
+        let current = track.and_then(|t| match self.lyrics.states.get(&t.video_id) {
+            Some(LyricsState::Ready(p)) => p.synced.as_ref().map(|l| {
+                let i = l.lines.partition_point(|line| line.start <= position);
+                let now = i.checked_sub(1).map(|i| l.lines[i].text.clone());
+                let next = l.lines.get(i).map(|line| line.text.clone());
+                (now, next)
+            }),
+            _ => None,
+        });
+        let width = (side * 1.15).min(viewport.width - px(64.));
+        v_flex()
+            .flex_1()
+            .min_h_0()
+            .items_center()
+            .justify_center()
+            .gap_4()
+            .pb_6()
+            .child(self.artwork_view(track, side, cx))
+            .child(
+                v_flex()
+                    .w(width)
+                    .items_center()
+                    .gap_0p5()
+                    .child(
+                        div()
+                            .w_full()
+                            .text_2xl()
+                            .font_weight(FontWeight::BOLD)
+                            .text_center()
+                            .truncate()
+                            .child(title),
+                    )
+                    .child(div().text_color(white(0.65)).truncate().child(artists)),
+            )
+            .child(div().w(width).child(self.progress_view(position, cx)))
+            .child(self.transport_view(1., frame, cx))
+            .when_some(current, |this, (now, next)| {
+                this.child(
+                    v_flex()
+                        .w(width)
+                        .items_center()
+                        .gap_1()
+                        .pt_2()
+                        .child(
+                            div()
+                                .text_lg()
+                                .font_weight(FontWeight::SEMIBOLD)
+                                .text_center()
+                                .text_color(white(0.92))
+                                .line_clamp(2)
+                                .child(now.unwrap_or_else(|| "♪".into())),
+                        )
+                        .when_some(next, |this, next| {
+                            this.child(
+                                div()
+                                    .text_sm()
+                                    .text_center()
+                                    .text_color(white(0.5))
+                                    .truncate()
+                                    .child(next),
+                            )
+                        }),
+                )
+            })
+    }
+
+    /// Lyrics-first layout: small artwork, title, progress and transport in one strip.
+    fn render_strip(
+        &mut self,
+        track: Option<&Track>,
+        position: Duration,
+        frame: &mut Frame,
+        cx: &mut Context<Self>,
+    ) -> impl IntoElement + use<> {
+        let (title, artists) = Self::titles(track);
+        h_flex()
+            .h(px(104.))
+            .flex_none()
+            .px(px(48.))
+            .gap_5()
+            .child(self.artwork_view(track, px(72.), cx))
+            .child(
+                v_flex()
+                    .w(px(220.))
+                    .flex_none()
+                    .gap_0p5()
+                    .child(div().font_weight(FontWeight::BOLD).truncate().child(title))
+                    .child(
+                        div()
+                            .text_sm()
+                            .text_color(white(0.65))
+                            .truncate()
+                            .child(artists),
+                    ),
+            )
+            .child(
+                div()
+                    .flex_1()
+                    .min_w_0()
+                    .child(self.progress_view(position, cx)),
+            )
+            .child(self.transport_view(0.75, frame, cx))
+    }
+
+    #[allow(clippy::too_many_arguments)]
     fn render_lyrics(
         &mut self,
         track: Option<&Track>,
         position: Duration,
         viewport_height: Pixels,
+        max_width: f32,
+        display: LyricsDisplay,
         frame: &mut Frame,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> AnyElement {
         let pane = || {
-            div()
+            v_flex()
                 .flex_1()
                 .min_w_0()
-                .max_w(px(LYRICS_MAX_WIDTH))
+                .max_w(px(max_width))
                 .h_full()
                 .relative()
         };
@@ -728,7 +1113,13 @@ impl MusicApp {
                                 .child(title.to_owned()),
                         )
                         .when_some(detail, |this, detail| {
-                            this.child(div().text_sm().text_color(white(0.5)).child(detail))
+                            this.child(
+                                div()
+                                    .text_sm()
+                                    .text_center()
+                                    .text_color(white(0.5))
+                                    .child(detail),
+                            )
                         }),
                 )
                 .into_any_element()
@@ -736,14 +1127,14 @@ impl MusicApp {
         let Some(track) = track else {
             return message("Nothing playing", None, false);
         };
-        let prepared = match self.lyrics.get(&track.video_id) {
+        let prepared = match self.lyrics.states.get(&track.video_id) {
             None | Some(LyricsState::Loading) => {
                 return message("Loading lyrics…", None, true);
             }
-            Some(LyricsState::Missing) => {
+            Some(LyricsState::Missing { .. }) => {
                 return message(
-                    "No synced lyrics",
-                    Some("LRCLIB has no time-synced lyrics for this track.".into()),
+                    "No lyrics",
+                    Some("None of the enabled lyrics providers has this track.".into()),
                     false,
                 );
             }
@@ -753,18 +1144,199 @@ impl MusicApp {
             Some(LyricsState::Ready(prepared)) => prepared.clone(),
         };
 
+        // Translation (requested once per track and translator settings).
+        let translation = if display.translate {
+            self.translation_for(&track.video_id, &prepared, cx)
+        } else {
+            None
+        };
+        let translation_status = match (&translation, display.translate) {
+            (_, false) => None,
+            (None, true) => Some(("Translating…".to_owned(), false)),
+            (Some(Err(e)), true) => Some((format!("Translation failed: {e}"), true)),
+            (Some(Ok(_)), true) => None,
+        };
+        let translated = match translation {
+            Some(Ok(lines)) => Some(lines),
+            _ => None,
+        };
+        let toolbar = self.lyrics_toolbar(&prepared, display, translation_status, cx);
+
+        let body = if prepared.synced.is_some() {
+            self.synced_lines(
+                track,
+                &prepared,
+                translated.as_deref(),
+                position,
+                viewport_height,
+                display,
+                frame,
+                window,
+                cx,
+            )
+        } else {
+            self.plain_lines(&prepared, translated.as_deref(), display)
+        };
+        pane()
+            .child(toolbar)
+            .child(div().flex_1().min_h_0().relative().child(body))
+            .into_any_element()
+    }
+
+    /// Provider · sync kind, translation status, translate and reload buttons.
+    fn lyrics_toolbar(
+        &self,
+        prepared: &PreparedLyrics,
+        display: LyricsDisplay,
+        translation_status: Option<(String, bool)>,
+        cx: &mut Context<Self>,
+    ) -> impl IntoElement + use<> {
+        let kind = match prepared.kind {
+            SyncKind::Word => "Word-synced",
+            SyncKind::Line => "Line-synced",
+            SyncKind::Plain => "Unsynced",
+        };
+        h_flex()
+            .h(px(32.))
+            .flex_none()
+            .px_3()
+            .gap_2()
+            .text_xs()
+            .text_color(white(0.5))
+            .child(
+                div()
+                    .flex_1()
+                    .min_w_0()
+                    .truncate()
+                    .child(format!("{} · {kind}", prepared.provider)),
+            )
+            .when_some(translation_status, |this, (text, failed)| {
+                this.child(
+                    div()
+                        .min_w_0()
+                        .truncate()
+                        .text_color(if failed { white(0.7) } else { white(0.5) })
+                        .child(text),
+                )
+                .when(failed, |this| {
+                    this.child(
+                        Button::new("np-translate-retry")
+                            .ghost()
+                            .xsmall()
+                            .label("Retry")
+                            .on_click(cx.listener(|this, _, _, cx| this.retry_translation(cx))),
+                    )
+                })
+            })
+            .child(
+                Button::new("np-translate")
+                    .ghost()
+                    .xsmall()
+                    .rounded(px(999.))
+                    .icon(Lucide::Languages)
+                    .selected(display.translate)
+                    .tooltip(if display.translate {
+                        "Translation: on"
+                    } else {
+                        "Translation: off"
+                    })
+                    .on_click(cx.listener(move |this, _, _, cx| {
+                        let on = !display.translate;
+                        this.settings.update(cx, |p, cx| p.set_translate(on, cx));
+                    })),
+            )
+            .child(
+                Button::new("np-lyrics-reload")
+                    .ghost()
+                    .xsmall()
+                    .rounded(px(999.))
+                    .icon(Lucide::RotateCcw)
+                    .tooltip("Search the providers again")
+                    .on_click(cx.listener(|this, _, _, cx| this.reload_lyrics(cx))),
+            )
+    }
+
+    /// Unsynced lyrics: a plain scrollable list (with romanization / translation).
+    fn plain_lines(
+        &self,
+        prepared: &PreparedLyrics,
+        translated: Option<&Vec<Option<SharedString>>>,
+        display: LyricsDisplay,
+    ) -> AnyElement {
+        let size = display.text_size * 0.72;
+        let align = |d: Div| match display.align {
+            TextAlign::Left => d,
+            TextAlign::Center => d.text_center(),
+            TextAlign::Right => d.text_right(),
+        };
+        let rows = prepared.plain.iter().enumerate().map(|(i, text)| {
+            let roman = prepared
+                .romanized
+                .get(i)
+                .cloned()
+                .flatten()
+                .and_then(|(script, r)| display.romanize.enabled(script).then_some(r));
+            let translation = translated.and_then(|t| t.get(i).cloned().flatten());
+            align(v_flex().w_full().px_3().py(px(size * 0.22)))
+                .child(align(
+                    div()
+                        .text_size(px(size))
+                        .line_height(px(size * display.line_spacing))
+                        .font_weight(FontWeight::SEMIBOLD)
+                        .text_color(white(0.85))
+                        .child(if text.trim().is_empty() {
+                            SharedString::from(" ")
+                        } else {
+                            text.clone()
+                        }),
+                ))
+                .children([roman, translation].into_iter().flatten().map(|sub| {
+                    align(
+                        div()
+                            .text_size(px(size * 0.62))
+                            .text_color(white(0.55))
+                            .child(sub),
+                    )
+                }))
+        });
+        div()
+            .id("lyrics-plain")
+            .size_full()
+            .overflow_y_scroll()
+            .track_scroll(&self.np.plain_scroll)
+            .child(v_flex().w_full().py_6().children(rows))
+            .into_any_element()
+    }
+
+    /// Synced lyrics: staggered auto-scroll, karaoke lines, click to seek.
+    #[allow(clippy::too_many_arguments)]
+    fn synced_lines(
+        &mut self,
+        track: &Track,
+        prepared: &Arc<PreparedLyrics>,
+        translated: Option<&Vec<Option<SharedString>>>,
+        position: Duration,
+        viewport_height: Pixels,
+        display: LyricsDisplay,
+        frame: &mut Frame,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> AnyElement {
+        let Some(lyrics) = prepared.synced.as_ref() else {
+            return div().into_any_element();
+        };
         let now = frame.now;
         let np = &mut self.np;
         if np.lines_for.as_deref() != Some(&track.video_id) {
             np.lines_for = Some(track.video_id.clone());
-            np.line_anims = prepared.lines.iter().map(|_| LineAnim::new()).collect();
+            np.line_anims = lyrics.lines.iter().map(|_| LineAnim::new()).collect();
             np.focus_line = None;
             np.applied_scroll = None;
             np.hovered_line = None;
         }
 
-        let lines = &prepared.lyrics.lines;
-        let active = prepared.lyrics.active_line(position);
+        let lines = &lyrics.lines;
+        let active = lyrics.active_line(position);
         // The line the list centers on: the active one, else the last one started.
         let focus = active
             .or_else(|| {
@@ -810,9 +1382,20 @@ impl MusicApp {
             frame.keep_alive();
         }
 
+        let look = Look::of(display.animation);
+        let word_synced = prepared.kind == SyncKind::Word;
+        let size = display.text_size;
         let mut font = window.text_style().font();
         font.weight = FontWeight::BOLD;
-        let lift = px(LYRIC_SIZE * 0.08);
+        let mut sub_font = font.clone();
+        sub_font.weight = FontWeight::MEDIUM;
+        let mut bg_font = font.clone();
+        bg_font.weight = FontWeight::SEMIBOLD;
+        bg_font.style = FontStyle::Italic;
+        let lift = px(size * look.lift);
+        let base_align = display.align;
+        let sub_size = (size * SUB_LINE_SCALE).max(12.);
+        let bg_size = size * BACKGROUND_VOCALS_SCALE;
 
         let mut children: Vec<AnyElement> = Vec::with_capacity(lines.len() + 2);
         children.push(div().h(viewport_height).into_any_element());
@@ -821,7 +1404,11 @@ impl MusicApp {
             let anim = &mut np.line_anims[i];
             let distance = i.abs_diff(focus);
             let dim_target = if is_active {
-                ACTIVE_DIM
+                if look.per_word && word_synced {
+                    ACTIVE_DIM
+                } else {
+                    0.9
+                }
             } else if np.hovered_line == Some(i) {
                 0.75
             } else {
@@ -834,28 +1421,131 @@ impl MusicApp {
             let act = frame.get(&anim.active);
             let dim = frame.get(&anim.dim);
             let shift = frame.get(&anim.shift);
+            let past = i < focus || (i == focus && position >= line.end);
 
-            let fill = if is_active {
+            let fill = if is_active && look.per_word && word_synced {
                 Fill::Words(
                     (0..line.words.len())
                         .map(|w| line.word_progress(w, position))
                         .collect(),
                 )
-            } else if i < focus || (i == focus && position >= line.end) {
+            } else if is_active || past {
                 Fill::All
             } else {
                 Fill::None
             };
-            let (text, word_starts) = prepared.lines[i].clone();
+            let info = &prepared.lines[i];
+            // Duets: the other singer's lines go to the other side.
+            let align = match (
+                base_align,
+                info.secondary_singer && display.show_background_vocals,
+            ) {
+                (TextAlign::Left, true) => TextAlign::Right,
+                (TextAlign::Right, true) => TextAlign::Left,
+                (a, _) => a,
+            }
+            .factor();
+            let scale = look.inactive_scale + (1. - look.inactive_scale) * act;
+            let lit = white(dim + (1. - dim) * act);
+            let glow = look.glow.map(|a| white(a * act));
+            let karaoke = |text: SharedString,
+                           word_starts: Arc<[usize]>,
+                           fill: Fill,
+                           font: gpui::Font,
+                           font_size: f32,
+                           lit: Hsla,
+                           dim: Hsla,
+                           lift: Pixels,
+                           glow: Option<Hsla>| KaraokeLine {
+                text,
+                word_starts,
+                fill,
+                font,
+                font_size: px(font_size),
+                line_height: px(font_size * display.line_spacing),
+                scale,
+                lit,
+                dim,
+                lift,
+                shift,
+                align,
+                sweep: look.sweep,
+                feather: look.feather,
+                glow,
+            };
+            let mut row = v_flex()
+                .id(("lyric", i))
+                .w_full()
+                .px_3()
+                .py(px(size * 0.26))
+                .cursor_pointer()
+                .child(karaoke(
+                    info.text.clone(),
+                    info.word_starts.clone(),
+                    fill,
+                    font.clone(),
+                    size,
+                    lit,
+                    white(dim),
+                    lift * act,
+                    glow,
+                ));
+            if display.show_background_vocals
+                && let Some((bg, text, starts)) = &info.background
+            {
+                let bg_fill = if is_active && look.per_word && word_synced {
+                    Fill::Words(
+                        (0..bg.words.len())
+                            .map(|w| bg.word_progress(w, position))
+                            .collect(),
+                    )
+                } else if is_active || past {
+                    Fill::All
+                } else {
+                    Fill::None
+                };
+                row = row.child(karaoke(
+                    text.clone(),
+                    starts.clone(),
+                    bg_fill,
+                    bg_font.clone(),
+                    bg_size,
+                    white((dim + (1. - dim) * act) * 0.8),
+                    white(dim * 0.8),
+                    px(0.),
+                    None,
+                ));
+            }
+            let sub_alpha = (dim + 0.12 + 0.5 * act).min(0.85);
+            let roman = prepared
+                .romanized
+                .get(i)
+                .cloned()
+                .flatten()
+                .and_then(|(script, r)| display.romanize.enabled(script).then_some(r));
+            let translation = if display.translate {
+                translated
+                    .and_then(|t| t.get(i).cloned().flatten())
+                    .or_else(|| info.provided_translation.clone())
+            } else {
+                None
+            };
+            for sub in [roman, translation].into_iter().flatten() {
+                row = row.child(div().pt(px(2.)).child(karaoke(
+                    sub,
+                    Arc::from([0usize]),
+                    Fill::All,
+                    sub_font.clone(),
+                    sub_size,
+                    white(sub_alpha),
+                    white(sub_alpha),
+                    px(0.),
+                    None,
+                )));
+            }
             let start = line.start;
             children.push(
-                div()
-                    .id(("lyric", i))
-                    .w_full()
-                    .px_3()
-                    .py(px(9.))
-                    .cursor_pointer()
-                    .on_click(cx.listener(move |this, _, _, cx| this.seek_to(start, cx)))
+                row.on_click(cx.listener(move |this, _, _, cx| this.seek_to(start, cx)))
                     .on_hover(cx.listener(move |this, hovered: &bool, _, cx| {
                         if *hovered {
                             this.np.hovered_line = Some(i);
@@ -864,37 +1554,21 @@ impl MusicApp {
                         }
                         cx.notify();
                     }))
-                    .child(KaraokeLine {
-                        text,
-                        word_starts,
-                        fill,
-                        font: font.clone(),
-                        font_size: px(LYRIC_SIZE),
-                        line_height: px(LYRIC_LINE_HEIGHT),
-                        scale: INACTIVE_SCALE + (1. - INACTIVE_SCALE) * act,
-                        lit: white(dim + (1. - dim) * act),
-                        dim: white(dim),
-                        lift: lift * act,
-                        shift,
-                    })
                     .into_any_element(),
             );
         }
         children.push(div().h(viewport_height).into_any_element());
 
-        pane()
-            .child(
-                div()
-                    .id("lyrics")
-                    .size_full()
-                    .overflow_y_scroll()
-                    .track_scroll(&self.np.scroll)
-                    .on_scroll(cx.listener(|this, _: &ScrollEvent, _, cx| {
-                        this.np.manual_until = Some(Instant::now() + MANUAL_SCROLL_HOLD);
-                        cx.notify();
-                    }))
-                    .children(children),
-            )
+        div()
+            .id("lyrics")
+            .size_full()
+            .overflow_y_scroll()
+            .track_scroll(&self.np.scroll)
+            .on_scroll(cx.listener(|this, _: &ScrollEvent, _, cx| {
+                this.np.manual_until = Some(Instant::now() + MANUAL_SCROLL_HOLD);
+                cx.notify();
+            }))
+            .children(children)
             .into_any_element()
     }
 }

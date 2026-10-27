@@ -29,7 +29,7 @@ use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use discord_rich_presence::activity::{
-    Activity, ActivityType, Assets, StatusDisplayType, Timestamps,
+    Activity, ActivityType, Assets, Button, StatusDisplayType, Timestamps,
 };
 use discord_rich_presence::{DiscordIpc, DiscordIpcClient};
 
@@ -42,7 +42,7 @@ const MIN_UPDATE_INTERVAL: Duration = Duration::from_secs(4);
 const SEEK_TOLERANCE: Duration = Duration::from_secs(2);
 const ARTWORK_SIZE: u32 = 512;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct DiscordConfig {
     /// Discord application id ("client id"); its name is what "Listening to" shows
     /// unless [`Self::activity_name`] overrides it.
@@ -51,6 +51,22 @@ pub struct DiscordConfig {
     /// Image key (uploaded to the Discord app's Rich Presence assets) or URL used
     /// when a track has no artwork.
     pub fallback_image: Option<String>,
+    /// "Listening to" (default), "Playing", "Watching" or "Competing in".
+    pub activity_kind: ActivityKind,
+    /// First line under the name. Placeholders: `{title}`, `{artist}`, `{album}`.
+    pub details: String,
+    /// Second line (same placeholders).
+    pub state: String,
+    /// Tooltip of the large image (same placeholders; empty = none).
+    pub large_text: String,
+    pub large_image: PresenceImage,
+    pub small_image: PresenceImage,
+    /// Tooltip of the small image (same placeholders; while paused "Paused" is shown).
+    pub small_text: String,
+    /// Up to two link buttons (Discord shows them to other users only).
+    pub buttons: Vec<PresenceButton>,
+    /// Keep the activity (without the running time) while paused instead of clearing it.
+    pub show_when_paused: bool,
 }
 
 impl DiscordConfig {
@@ -59,8 +75,63 @@ impl DiscordConfig {
             client_id: client_id.into(),
             activity_name: None,
             fallback_image: None,
+            activity_kind: ActivityKind::Listening,
+            details: "{title}".into(),
+            state: "by {artist}".into(),
+            large_text: "{album}".into(),
+            large_image: PresenceImage::Artwork,
+            small_image: PresenceImage::None,
+            small_text: String::new(),
+            buttons: Vec::new(),
+            show_when_paused: false,
         }
     }
+}
+
+/// Discord activity type.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum ActivityKind {
+    #[default]
+    Listening,
+    Playing,
+    Watching,
+    Competing,
+}
+
+/// Where an activity image comes from.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub enum PresenceImage {
+    /// The track's artwork (YouTube Music thumbnail, 512 px).
+    #[default]
+    Artwork,
+    /// An asset key of the Discord application or an image URL.
+    Custom(String),
+    None,
+}
+
+/// A link button on the activity.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PresenceButton {
+    /// At most 32 characters (longer labels are cut).
+    pub label: String,
+    pub url: ButtonUrl,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ButtonUrl {
+    /// `https://music.youtube.com/watch?v=<id>` of the playing track.
+    YouTubeMusic,
+    Custom(String),
+}
+
+/// Fills `{title}`, `{artist}` and `{album}` in a presence template.
+pub fn expand_template(template: &str, title: &str, artist: &str, album: Option<&str>) -> String {
+    template
+        .replace("{title}", title)
+        .replace("{artist}", artist)
+        .replace("{album}", album.unwrap_or(""))
+        .trim()
+        .to_owned()
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -77,6 +148,9 @@ pub enum DiscordStatus {
 /// What should be shown; `None` clears the activity.
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct Presence {
+    video_id: String,
+    /// Shown while paused (`show_when_paused`): no running time.
+    paused: bool,
     title: String,
     artists: String,
     album: Option<String>,
@@ -91,6 +165,8 @@ pub(crate) struct Presence {
 pub(crate) struct PresenceTracker {
     shown: Option<(Option<String>, PlaybackStatus)>,
     anchor: Option<(Duration, Instant)>,
+    /// Paused tracks keep a (static) activity instead of clearing it.
+    pub(crate) show_when_paused: bool,
 }
 
 impl PresenceTracker {
@@ -102,12 +178,21 @@ impl PresenceTracker {
         wall: SystemTime,
     ) -> Option<Option<Presence>> {
         let playing = state.status == PlaybackStatus::Playing && state.track.is_some();
+        let paused = !playing
+            && self.show_when_paused
+            && state.track.is_some()
+            && matches!(
+                state.status,
+                PlaybackStatus::Paused | PlaybackStatus::Loading
+            );
         let key = (
             state.track.as_ref().map(|t| t.video_id.clone()),
             if playing {
                 PlaybackStatus::Playing
-            } else {
+            } else if paused {
                 PlaybackStatus::Paused
+            } else {
+                PlaybackStatus::Idle
             },
         );
         let seeked = playing
@@ -123,7 +208,7 @@ impl PresenceTracker {
             return None;
         }
         self.shown = Some(key);
-        if !playing {
+        if !playing && !paused {
             return Some(None);
         }
         let track = state.track.as_ref()?;
@@ -136,6 +221,8 @@ impl PresenceTracker {
             .duration
             .or(track.duration_secs.map(|s| Duration::from_secs(s.into())));
         Some(Some(Presence {
+            video_id: track.video_id.clone(),
+            paused,
             title: track.title.clone(),
             artists: track.artists.clone(),
             album: track.album.clone(),
@@ -156,6 +243,7 @@ pub struct DiscordPresence {
 
 enum Message {
     Show(Option<Presence>),
+    Configure(Box<DiscordConfig>),
 }
 
 impl DiscordPresence {
@@ -163,6 +251,10 @@ impl DiscordPresence {
     pub fn new(config: DiscordConfig) -> Self {
         let (tx, rx) = mpsc::channel();
         let status = Arc::new(Mutex::new(DiscordStatus::Idle));
+        let tracker = PresenceTracker {
+            show_when_paused: config.show_when_paused,
+            ..PresenceTracker::default()
+        };
         let worker = Worker {
             client: None,
             config,
@@ -176,11 +268,21 @@ impl DiscordPresence {
             log::warn!("could not start the Discord thread: {e}");
         }
         Self {
-            tracker: PresenceTracker::default(),
+            tracker,
             tx,
             status,
             enabled: true,
         }
+    }
+
+    /// Applies new activity settings; the activity is shown again with them on
+    /// the next update. A different `client_id` reconnects.
+    pub fn set_config(&mut self, config: DiscordConfig) {
+        self.tracker = PresenceTracker {
+            show_when_paused: config.show_when_paused,
+            ..PresenceTracker::default()
+        };
+        let _ = self.tx.send(Message::Configure(Box::new(config)));
     }
 
     /// Feeds one snapshot; any IPC happens on the worker thread.
@@ -202,7 +304,10 @@ impl DiscordPresence {
             return;
         }
         self.enabled = enabled;
-        self.tracker = PresenceTracker::default();
+        self.tracker = PresenceTracker {
+            show_when_paused: self.tracker.show_when_paused,
+            ..PresenceTracker::default()
+        };
         if !enabled {
             let _ = self.tx.send(Message::Show(None));
         }
@@ -242,6 +347,16 @@ impl Worker {
             };
             match received {
                 Ok(Message::Show(presence)) => pending = Some(presence),
+                Ok(Message::Configure(config)) => {
+                    if config.client_id != self.config.client_id
+                        && let Some(mut client) = self.client.take()
+                    {
+                        let _ = client.clear_activity();
+                        let _ = client.close();
+                        self.last_attempt = None;
+                    }
+                    self.config = *config;
+                }
                 Err(RecvTimeoutError::Timeout) => {}
                 Err(RecvTimeoutError::Disconnected) => {
                     if let Some(presence) = pending.take() {
@@ -329,28 +444,92 @@ impl Worker {
 }
 
 fn activity<'a>(config: &'a DiscordConfig, p: &'a Presence) -> Activity<'a> {
-    let mut timestamps = Timestamps::new().start(p.start);
-    if let Some(end) = p.end {
-        timestamps = timestamps.end(end);
-    }
+    let fill = |template: &str| expand_template(template, &p.title, &p.artists, p.album.as_deref());
+    let image = |source: &'a PresenceImage| -> Option<&'a str> {
+        match source {
+            PresenceImage::Artwork => p.artwork.as_deref().or(config.fallback_image.as_deref()),
+            PresenceImage::Custom(key) => Some(key.as_str()).filter(|k| !k.trim().is_empty()),
+            PresenceImage::None => None,
+        }
+    };
     let mut assets = Assets::new();
-    if let Some(image) = p.artwork.as_ref().or(config.fallback_image.as_ref()) {
-        assets = assets.large_image(image.as_str());
+    if let Some(large) = image(&config.large_image) {
+        assets = assets.large_image(large);
+        let text = fill(&config.large_text);
+        if text.chars().count() >= 2 {
+            assets = assets.large_text(text);
+        }
     }
-    if let Some(album) = &p.album {
-        assets = assets.large_text(album.as_str());
+    if let Some(small) = image(&config.small_image) {
+        assets = assets.small_image(small);
+        let text = if p.paused {
+            "Paused".to_owned()
+        } else {
+            fill(&config.small_text)
+        };
+        if text.chars().count() >= 2 {
+            assets = assets.small_text(text);
+        }
     }
+    // Discord rejects fields shorter than 2 characters.
+    let line = |template: &str, fallback: &str| {
+        let text = fill(template);
+        if text.chars().count() >= 2 {
+            text
+        } else {
+            fallback.to_owned()
+        }
+    };
+    let details = line(&config.details, &p.title);
+    let state = line(&config.state, &format!("by {}", p.artists));
+    let kind = match config.activity_kind {
+        ActivityKind::Listening => ActivityType::Listening,
+        ActivityKind::Playing => ActivityType::Playing,
+        ActivityKind::Watching => ActivityType::Watching,
+        ActivityKind::Competing => ActivityType::Competing,
+    };
     let mut activity = Activity::new()
-        .activity_type(ActivityType::Listening)
+        .activity_type(kind)
         .status_display_type(StatusDisplayType::Details)
-        .details(p.title.as_str())
-        .state(format!("by {}", p.artists))
-        .timestamps(timestamps)
+        .details(truncate(details, 128))
+        .state(truncate(state, 128))
         .assets(assets);
+    if !p.paused {
+        let mut timestamps = Timestamps::new().start(p.start);
+        if let Some(end) = p.end {
+            timestamps = timestamps.end(end);
+        }
+        activity = activity.timestamps(timestamps);
+    }
+    let buttons: Vec<Button> = config
+        .buttons
+        .iter()
+        .filter_map(|b| {
+            let url = match &b.url {
+                ButtonUrl::YouTubeMusic => {
+                    format!("https://music.youtube.com/watch?v={}", p.video_id)
+                }
+                ButtonUrl::Custom(url) => url.trim().to_owned(),
+            };
+            let label = truncate(b.label.trim().to_owned(), 32);
+            (!label.is_empty() && url.starts_with("http")).then(|| Button::new(label, url))
+        })
+        .take(2)
+        .collect();
+    if !buttons.is_empty() {
+        activity = activity.buttons(buttons);
+    }
     if let Some(name) = &config.activity_name {
         activity = activity.name(name.as_str());
     }
     activity
+}
+
+fn truncate(mut text: String, max_chars: usize) -> String {
+    if let Some((idx, _)) = text.char_indices().nth(max_chars) {
+        text.truncate(idx);
+    }
+    text
 }
 
 #[cfg(test)]
@@ -431,6 +610,58 @@ mod tests {
             tracker.update(&state("b", PlaybackStatus::Playing, 0), now, w),
             Some(Some(_))
         ));
+    }
+
+    #[test]
+    fn paused_presence_is_kept_when_configured() {
+        let mut tracker = PresenceTracker {
+            show_when_paused: true,
+            ..PresenceTracker::default()
+        };
+        let t0 = Instant::now();
+        let wall = UNIX_EPOCH + Duration::from_secs(1_000_000);
+        let shown = tracker
+            .update(&state("a", PlaybackStatus::Playing, 0), t0, wall)
+            .unwrap()
+            .unwrap();
+        assert!(!shown.paused);
+        let paused = tracker
+            .update(
+                &state("a", PlaybackStatus::Paused, 5),
+                t0 + Duration::from_secs(5),
+                wall,
+            )
+            .unwrap()
+            .unwrap();
+        assert!(paused.paused);
+        assert_eq!(paused.video_id, "a");
+        // Stopped/ended still clears.
+        assert_eq!(
+            tracker.update(
+                &state("a", PlaybackStatus::Ended, 200),
+                t0 + Duration::from_secs(9),
+                wall
+            ),
+            Some(None)
+        );
+    }
+
+    #[test]
+    fn templates_fill_placeholders() {
+        assert_eq!(
+            expand_template("{title} — {artist}", "Song", "Artist", None),
+            "Song — Artist"
+        );
+        assert_eq!(
+            expand_template(" from {album} ", "S", "A", Some("LP")),
+            "from LP"
+        );
+        assert_eq!(expand_template("{album}", "S", "A", None), "");
+        assert_eq!(truncate("abcdef".into(), 3), "abc");
+        assert_eq!(truncate("äöü".into(), 5), "äöü");
+        let config = DiscordConfig::new("1");
+        assert_eq!(config.details, "{title}");
+        assert_eq!(config.activity_kind, ActivityKind::Listening);
     }
 
     #[test]
