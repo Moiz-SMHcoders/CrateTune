@@ -26,6 +26,7 @@ use gpui_component::{
 use music_core::{Lyrics, PlaybackStatus, Track, format_duration};
 
 use crate::anim::{Frame, Spec, Tween, ease_in_out_cubic, ease_out_cubic};
+use crate::icons::AppIcon;
 use crate::karaoke::{self, Fill, KaraokeLine};
 use crate::{Artwork, MusicApp, sniff_format};
 
@@ -124,7 +125,7 @@ pub struct NowPlaying {
     line_anims: Vec<LineAnim>,
     focus_line: Option<usize>,
     applied_scroll: Option<Pixels>,
-    manual_until: Option<Instant>,
+    pub manual_until: Option<Instant>,
     hovered_line: Option<usize>,
     progress_bounds: Rc<Cell<Bounds<Pixels>>>,
 }
@@ -572,6 +573,59 @@ impl MusicApp {
                     .child(icon(IconName::Pause, morph, (1. - morph) * 1.6))
             });
 
+        // Previous / next: white glyphs on a translucent circle.
+        let skip = |id: &'static str, icon: AppIcon, enabled: bool| {
+            div()
+                .id(id)
+                .size(px(48.))
+                .flex_none()
+                .rounded_full()
+                .flex()
+                .items_center()
+                .justify_center()
+                .when(enabled, |this| {
+                    this.cursor_pointer().hover(|s| s.bg(white(0.14)))
+                })
+                .child(
+                    svg()
+                        .size(px(26.))
+                        .path(icon.path())
+                        .text_color(white(if enabled { 0.92 } else { 0.35 })),
+                )
+        };
+        let has_track = track.is_some();
+        let transport = h_flex()
+            .w_full()
+            .justify_center()
+            .gap(px(28.))
+            .child(
+                skip("np-prev", AppIcon::Previous, has_track).when(has_track, |this| {
+                    this.on_click(cx.listener(|this, _, _, cx| this.previous_track(cx)))
+                }),
+            )
+            .child(play_button)
+            .child(
+                skip("np-next", AppIcon::Next, self.queue.has_next())
+                    .when(self.queue.has_next(), |this| {
+                        this.on_click(cx.listener(|this, _, _, cx| this.next_track(cx)))
+                    }),
+            );
+        let up_next = self.queue.peek_next().map(|next| {
+            h_flex()
+                .w_full()
+                .justify_center()
+                .gap_1()
+                .text_sm()
+                .child(div().flex_none().text_color(white(0.45)).child("Up next"))
+                .child(
+                    div()
+                        .min_w_0()
+                        .truncate()
+                        .text_color(white(0.7))
+                        .child(format!("{} · {}", next.title, next.artists)),
+                )
+        });
+
         v_flex()
             .w(side)
             .flex_none()
@@ -593,7 +647,8 @@ impl MusicApp {
                     .child(div().text_color(white(0.65)).truncate().child(artists)),
             )
             .child(v_flex().w_full().gap_1().child(progress).child(times))
-            .child(h_flex().w_full().justify_center().child(play_button))
+            .child(transport)
+            .children(up_next)
     }
 
     fn render_lyrics(
@@ -804,7 +859,7 @@ impl MusicApp {
 /// Runs blocking work on a dedicated thread. GPUI's background executor has about
 /// one thread per core, so a burst of blocking artwork downloads for the results
 /// list would otherwise queue the lyrics request behind them (seen: >15 s).
-async fn off_thread<T: Send + 'static>(work: impl FnOnce() -> T + Send + 'static) -> T {
+pub(crate) async fn off_thread<T: Send + 'static>(work: impl FnOnce() -> T + Send + 'static) -> T {
     let (tx, rx) = futures_channel::oneshot::channel();
     std::thread::spawn(move || {
         let _ = tx.send(work());

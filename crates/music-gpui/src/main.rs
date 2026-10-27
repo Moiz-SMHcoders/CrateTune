@@ -9,8 +9,10 @@
 mod anim;
 mod backdrop;
 mod clock;
+mod icons;
 mod karaoke;
 mod now_playing;
+mod queue;
 // Wired into the UI in the following commits.
 #[allow(dead_code)]
 mod secrets;
@@ -47,7 +49,9 @@ use music_core::{
 
 use crate::anim::Frame;
 use crate::clock::{DemoPlayer, Engine, SmoothClock};
+use crate::icons::AppIcon;
 use crate::now_playing::{CloseNowPlaying, HiRes, LyricsState, NowPlaying, TogglePlayback};
+use crate::queue::{Previous, Queue};
 
 const POLL_INTERVAL: Duration = Duration::from_millis(250);
 const SEARCH_DEBOUNCE: Duration = Duration::from_millis(400);
@@ -94,6 +98,10 @@ struct MusicApp {
     autoplay: bool,
     /// ...and open the Now Playing screen once it is playing (`MUSIC_AUTOOPEN`).
     autoopen: bool,
+    /// The result list the current track was started from.
+    queue: Queue,
+    /// `MUSIC_TRACE=1`: log playback transitions (launch time).
+    trace: Option<Instant>,
 
     np: NowPlaying,
     /// `MUSIC_TIMINGS=1`: prints renders/s and the worst frame gap once a second.
@@ -179,6 +187,8 @@ impl MusicApp {
             scrub: None,
             autoplay: false,
             autoopen: false,
+            queue: Queue::default(),
+            trace: std::env::var_os("MUSIC_TRACE").map(|_| Instant::now()),
             np: NowPlaying::new(cx.focus_handle()),
             frame_stats: std::env::var_os("MUSIC_TIMINGS").map(|_| FrameStats::default()),
             lyrics: HashMap::new(),
@@ -259,10 +269,8 @@ impl MusicApp {
                         this.tracks = Rc::new(tracks);
                         this.search_status = SearchStatus::Done;
                         this.scroll.scroll_to_item(0, gpui::ScrollStrategy::Top);
-                        if std::mem::take(&mut this.autoplay)
-                            && let Some(first) = this.tracks.first().cloned()
-                        {
-                            this.play(first, cx);
+                        if std::mem::take(&mut this.autoplay) {
+                            this.play_result(0, cx);
                         }
                     }
                     Err(e) => this.search_status = SearchStatus::Failed(e.to_string()),
@@ -336,6 +344,37 @@ impl MusicApp {
 
     // ---- playback -----------------------------------------------------------
 
+    /// Plays result `ix` with the whole result list as the queue.
+    fn play_result(&mut self, ix: usize, cx: &mut Context<Self>) {
+        if let Some(track) = self.queue.replace(self.tracks.clone(), ix) {
+            self.play(track, cx);
+        }
+    }
+
+    pub fn next_track(&mut self, cx: &mut Context<Self>) {
+        if let Some(track) = self.queue.advance() {
+            self.play(track, cx);
+        }
+    }
+
+    /// Restarts the track past 3 s, else plays the previous one.
+    pub fn previous_track(&mut self, cx: &mut Context<Self>) {
+        if self.playback.track.is_none() {
+            return;
+        }
+        match self.queue.previous(self.clock.position(Instant::now())) {
+            Previous::Play(track) => self.play(track, cx),
+            Previous::Restart => {
+                if let Some(engine) = &mut self.engine {
+                    engine.restart();
+                    self.clock.seek(Duration::ZERO, Instant::now());
+                    self.np.manual_until = None;
+                    self.refresh_soon(cx);
+                }
+            }
+        }
+    }
+
     fn play(&mut self, track: Track, cx: &mut Context<Self>) {
         // Prefetch what the Now Playing screen needs while audio resolves.
         self.ensure_lyrics(&track, cx);
@@ -371,9 +410,7 @@ impl MusicApp {
             this.update(cx, |this, cx| {
                 if let Some(engine) = &this.engine {
                     let state = engine.state();
-                    this.clock.sync(&state, Instant::now());
-                    if !same_snapshot(&this.playback, &state) {
-                        this.playback = state;
+                    if this.ingest(state, cx) {
                         cx.notify();
                     }
                 }
@@ -383,13 +420,36 @@ impl MusicApp {
         .detach();
     }
 
+    /// Takes a new snapshot; returns whether it differs from the last one.
+    /// Auto-advances when the queue's current track just ended (a preview ending
+    /// early is an ordinary `Ended` too).
+    fn ingest(&mut self, state: PlaybackState, cx: &mut Context<Self>) -> bool {
+        self.clock.sync(&state, Instant::now());
+        if same_snapshot(&self.playback, &state) {
+            return false;
+        }
+        if let Some(started) = self.trace {
+            trace(started, &self.playback, &state);
+        }
+        let just_ended =
+            state.status == PlaybackStatus::Ended && self.playback.status != PlaybackStatus::Ended;
+        self.playback = state;
+        if just_ended
+            && let Some(track) = &self.playback.track
+            && self.queue.is_current(&track.video_id)
+        {
+            self.next_track(cx);
+        }
+        true
+    }
+
     fn poll_player(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let Some(engine) = &self.engine else { return };
         let state = engine.state();
-        self.clock.sync(&state, Instant::now());
-        if same_snapshot(&self.playback, &state) {
+        if !self.ingest(state, cx) {
             return;
         }
+        let state = &self.playback;
         let max = state.duration.map_or(1., |d| d.as_secs_f32().max(1.));
         let pos = state.position.as_secs_f32().min(max);
         if self.scrub.is_none() {
@@ -400,7 +460,6 @@ impl MusicApp {
                 slider.set_value(pos, window, cx);
             });
         }
-        self.playback = state;
         if self.autoopen && !self.autoplay && self.playback.track.is_some() {
             self.autoopen = false;
             self.open_now_playing(window, cx);
@@ -559,7 +618,6 @@ impl MusicApp {
         } else {
             theme.muted_foreground
         };
-        let track_to_play = track.clone();
 
         h_flex()
             .id(("row", ix))
@@ -570,7 +628,7 @@ impl MusicApp {
             .cursor_pointer()
             .when(active, |this| this.bg(theme.list_active))
             .hover(move |style| style.bg(hover_bg))
-            .on_click(cx.listener(move |this, _, _, cx| this.play(track_to_play.clone(), cx)))
+            .on_click(cx.listener(move |this, _, _, cx| this.play_result(ix, cx)))
             .child(
                 div()
                     .w(px(24.))
@@ -613,6 +671,7 @@ impl MusicApp {
     fn render_now_playing(&mut self, cx: &mut Context<Self>) -> impl IntoElement + use<> {
         let track = self.playback.track.clone();
         let art = self.artwork_element(track.as_ref(), px(56.), cx);
+        let has_next = self.queue.has_next();
         let theme = cx.theme();
         let state = &self.playback;
 
@@ -700,6 +759,17 @@ impl MusicApp {
                         h_flex()
                             .gap_2()
                             .child(
+                                Button::new("previous")
+                                    .ghost()
+                                    .rounded(px(999.))
+                                    .icon(AppIcon::Previous)
+                                    .tooltip("Previous (restarts after 3 s)")
+                                    .disabled(track.is_none())
+                                    .on_click(
+                                        cx.listener(|this, _, _, cx| this.previous_track(cx)),
+                                    ),
+                            )
+                            .child(
                                 Button::new("play-pause")
                                     .primary()
                                     .rounded(px(999.))
@@ -711,6 +781,15 @@ impl MusicApp {
                                     .loading(loading)
                                     .disabled(!can_toggle)
                                     .on_click(cx.listener(Self::toggle_pause)),
+                            )
+                            .child(
+                                Button::new("next")
+                                    .ghost()
+                                    .rounded(px(999.))
+                                    .icon(AppIcon::Next)
+                                    .tooltip("Next")
+                                    .disabled(!has_next)
+                                    .on_click(cx.listener(|this, _, _, cx| this.next_track(cx))),
                             )
                             .when(state.preview_only, |this| {
                                 this.child(Tag::warning().small().rounded_full().child("Preview"))
@@ -851,6 +930,26 @@ fn same_snapshot(a: &PlaybackState, b: &PlaybackState) -> bool {
         && a.track.as_ref().map(|t| &t.video_id) == b.track.as_ref().map(|t| &t.video_id)
 }
 
+/// `MUSIC_TRACE=1`: one line per status/track change, seek, and every 5 s of position.
+fn trace(started: Instant, old: &PlaybackState, new: &PlaybackState) {
+    let id = |s: &PlaybackState| s.track.as_ref().map(|t| t.video_id.clone());
+    let jumped = new.position.abs_diff(old.position) > Duration::from_millis(1500);
+    let tick = new.position.as_secs() / 5 != old.position.as_secs() / 5;
+    if old.status != new.status || id(old) != id(new) || jumped || tick {
+        eprintln!(
+            "music-gpui: [{:6.2}s] {:?} {} pos {:.1}s / {} vol {:.2}{}",
+            started.elapsed().as_secs_f64(),
+            new.status,
+            id(new).unwrap_or_default(),
+            new.position.as_secs_f64(),
+            new.duration
+                .map_or("?".into(), |d| format!("{:.1}s", d.as_secs_f64())),
+            new.volume,
+            if new.preview_only { " preview" } else { "" },
+        );
+    }
+}
+
 /// YouTube serves JPEG for `=w..-h..` URLs but may switch to WebP/PNG.
 fn sniff_format(bytes: &[u8]) -> ImageFormat {
     match bytes {
@@ -877,7 +976,7 @@ fn sniff_format(bytes: &[u8]) -> ImageFormat {
 
 fn main() {
     gpui_platform::application()
-        .with_assets(gpui_kit_assets::Assets)
+        .with_assets(icons::Assets)
         .run(|cx: &mut App| {
             gpui_component::init(cx);
             Theme::change(ThemeMode::Dark, None, cx);
@@ -960,6 +1059,30 @@ mod screenshot {
                     "@toggle" => Some(Box::new(crate::now_playing::TogglePlayback)),
                     _ => None,
                 };
+                // `@next` / `@prev` / `@seek=SECS` drive the queue and seeking directly.
+                if action.is_none()
+                    && let Some(command) = path.strip_prefix('@')
+                {
+                    cx.update_window(window, |root, _, cx| {
+                        let Ok(root) = root.downcast::<gpui_component::Root>() else {
+                            return;
+                        };
+                        let Ok(app) = root.read(cx).view().clone().downcast::<crate::MusicApp>()
+                        else {
+                            return;
+                        };
+                        app.update(cx, |app, cx| match command.split_once('=') {
+                            Some(("seek", secs)) => {
+                                app.seek_to(Duration::from_secs_f64(secs.parse().unwrap_or(0.)), cx)
+                            }
+                            _ if command == "next" => app.next_track(cx),
+                            _ if command == "prev" => app.previous_track(cx),
+                            _ => eprintln!("music-gpui: unknown action {path}"),
+                        });
+                    })
+                    .ok();
+                    continue;
+                }
                 if let Some(action) = action {
                     cx.update_window(window, |_, window, cx| window.dispatch_action(action, cx))
                         .ok();

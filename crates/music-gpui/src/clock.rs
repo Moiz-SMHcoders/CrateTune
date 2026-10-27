@@ -6,9 +6,9 @@ use music_core::{PlaybackState, PlaybackStatus, Player, Track};
 
 /// Where the demo clock starts (the first lyric of most songs is a bit later).
 const DEMO_START: Duration = Duration::from_secs(20);
-/// The demo clock loops back to `DEMO_START` here (or at the track end, if shorter),
-/// mimicking the ~60 s previews we can actually stream.
-const DEMO_LOOP_END: Duration = Duration::from_secs(80);
+/// The demo track "ends" here (or at the track end, if shorter), like the ~60 s
+/// previews we can actually stream, so auto-advance can be exercised without audio.
+const DEMO_END: Duration = Duration::from_secs(80);
 /// A polled position further than this from the extrapolated one re-anchors the clock.
 const RESYNC_THRESHOLD: Duration = Duration::from_millis(400);
 
@@ -41,6 +41,16 @@ impl Engine {
         }
     }
 
+    /// Back to 0 s; replays the track if it already ended.
+    pub fn restart(&mut self) {
+        let ended = self.state().status == PlaybackStatus::Ended;
+        match self {
+            Engine::Audio(player) if ended => player.resume(),
+            Engine::Audio(player) => player.seek(Duration::ZERO),
+            Engine::Demo(demo) => demo.seek(Duration::ZERO),
+        }
+    }
+
     pub fn state(&self) -> PlaybackState {
         match self {
             Engine::Audio(player) => player.state(),
@@ -53,14 +63,25 @@ impl Engine {
     }
 }
 
-/// Fake player: "plays" instantly from 20 s and loops, so lyrics can be verified
-/// without audio.
-#[derive(Default)]
+/// Fake player: "plays" instantly from 20 s and ends at 80 s like a preview, so
+/// lyrics and the queue can be verified without audio.
 pub struct DemoPlayer {
     track: Option<Track>,
     base: Duration,
     /// `Some` while playing: the instant `base` was valid.
     since: Option<Instant>,
+    volume: f32,
+}
+
+impl Default for DemoPlayer {
+    fn default() -> Self {
+        Self {
+            track: None,
+            base: Duration::ZERO,
+            since: None,
+            volume: 1.0,
+        }
+    }
 }
 
 impl DemoPlayer {
@@ -72,12 +93,20 @@ impl DemoPlayer {
 
     fn toggle_pause(&mut self) {
         let now = Instant::now();
-        if self.since.is_some() {
+        if self.ended(now) {
+            // Like `Player`: resuming an ended track replays it.
+            self.base = Duration::ZERO;
+            self.since = Some(now);
+        } else if self.since.is_some() {
             self.base = self.position(now);
             self.since = None;
         } else if self.track.is_some() {
             self.since = Some(now);
         }
+    }
+
+    fn ended(&self, now: Instant) -> bool {
+        self.track.is_some() && self.position(now) >= self.end()
     }
 
     fn seek(&mut self, position: Duration) {
@@ -87,25 +116,18 @@ impl DemoPlayer {
         }
     }
 
-    fn loop_end(&self) -> Duration {
+    fn end(&self) -> Duration {
         let total = self
             .track
             .as_ref()
             .and_then(|t| t.duration_secs)
-            .map_or(DEMO_LOOP_END, |s| Duration::from_secs(s.into()));
-        total
-            .min(DEMO_LOOP_END)
-            .max(DEMO_START + Duration::from_secs(5))
+            .map_or(DEMO_END, |s| Duration::from_secs(s.into()));
+        total.min(DEMO_END).max(DEMO_START + Duration::from_secs(5))
     }
 
     fn position(&self, now: Instant) -> Duration {
         let pos = self.base + self.since.map_or(Duration::ZERO, |s| now - s);
-        let end = self.loop_end();
-        if pos < end {
-            return pos;
-        }
-        let span = (end - DEMO_START).as_secs_f64();
-        DEMO_START + Duration::from_secs_f64((pos - end).as_secs_f64() % span)
+        pos.min(self.end())
     }
 
     fn state(&self, now: Instant) -> PlaybackState {
@@ -113,6 +135,7 @@ impl DemoPlayer {
             track: self.track.clone(),
             status: match (&self.track, self.since) {
                 (None, _) => PlaybackStatus::Idle,
+                (Some(_), _) if self.ended(now) => PlaybackStatus::Ended,
                 (Some(_), Some(_)) => PlaybackStatus::Playing,
                 (Some(_), None) => PlaybackStatus::Paused,
             },
@@ -122,7 +145,8 @@ impl DemoPlayer {
                 .as_ref()
                 .and_then(|t| t.duration_secs)
                 .map(|s| Duration::from_secs(s.into())),
-            ..PlaybackState::default()
+            volume: self.volume,
+            preview_only: true,
         }
     }
 }
