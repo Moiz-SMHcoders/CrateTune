@@ -12,15 +12,21 @@
 //! * [`media_controls`] – OS now-playing info + media keys (macOS, Windows, Linux).
 //! * [`scrobble`] – Last.fm / ListenBrainz scrobbling driven by [`PlaybackState`] snapshots.
 //! * `discord` – Discord Rich Presence (cargo feature `discord`, on by default).
+//! * [`library`] – SQLite library: likes, playlists, history, stats, queue, backups.
+//! * [`downloads`] – user downloads + LRU play cache on disk.
+//! * [`local_files`] – scan music folders (lofty tags, artwork, lyrics) into the library.
 //! * [`TrackDecoder`] – Symphonia 0.6 decoder as a seekable `rodio::Source`.
 
 mod decode;
 #[cfg(feature = "discord")]
 pub mod discord;
+pub mod downloads;
 pub mod equalizer;
 mod error;
 mod http;
 mod innertube;
+pub mod library;
+pub mod local_files;
 mod lyrics;
 pub mod media_controls;
 mod model;
@@ -33,6 +39,7 @@ pub use equalizer::{EqBandKind, EqBandSettings, EqPreset, EqualizerSettings};
 pub use error::{Error, Result};
 pub use http::fetch_bytes;
 pub use innertube::InnerTube;
+pub use library::Library;
 pub use lyrics::{LyricLine, LyricWord, Lyrics, fetch_lyrics, parse_lrc};
 pub use model::{EntityRef, Track, format_duration};
 pub use player::{PlaybackState, PlaybackStatus, Player};
