@@ -24,6 +24,7 @@ mod integrations;
 pub mod library_config;
 mod library_glue;
 mod lyrics;
+pub mod modules;
 mod network;
 pub mod panel;
 mod playback;
@@ -53,6 +54,8 @@ pub enum SectionId {
     #[default]
     Appearance,
     Playback,
+    /// `.arch` provider modules (alternative audio sources).
+    Modules,
     Equalizer,
     Lyrics,
     Content,
@@ -79,6 +82,12 @@ pub const SECTIONS: &[Section] = &[
         title: "Playback",
         icon: IconName::Play,
         render: playback::render,
+    },
+    Section {
+        id: SectionId::Modules,
+        title: "Modules",
+        icon: IconName::Puzzle,
+        render: modules::render,
     },
     Section {
         id: SectionId::Equalizer,
@@ -152,6 +161,7 @@ impl SectionId {
         match self {
             SectionId::Appearance => "appearance",
             SectionId::Playback => "playback",
+            SectionId::Modules => "modules",
             SectionId::Equalizer => "eq",
             SectionId::Lyrics => "lyrics",
             SectionId::Content => "content",
@@ -185,7 +195,7 @@ mod tests {
             assert_eq!(SECTIONS.iter().filter(|s| s.id == section.id).count(), 1);
             assert_eq!(SectionId::from_key(section.id.key()), Some(section.id));
         }
-        assert_eq!(SECTIONS.len(), 11);
+        assert_eq!(SECTIONS.len(), 12);
         assert_eq!(
             SectionId::from_key("accounts"),
             Some(SectionId::Integrations)

@@ -14,6 +14,8 @@
 //! * `store.rs` – library database, downloads, play history, saved queue;
 //!   `account.rs` – YouTube Music sign-in and library sync (`login_webview.rs`: macOS
 //!   login window).
+//! * `module_service.rs` – provider modules (`.arch`): the store, the module-first
+//!   resolver used by the player and downloads, keychain-backed secret settings.
 //! * `script.rs` – timed actions / screenshots for verification.
 
 mod account;
@@ -31,6 +33,7 @@ mod library_script;
 mod login_webview;
 mod lyrics;
 mod mini_player;
+mod module_service;
 mod now_playing;
 mod pages;
 mod playback;

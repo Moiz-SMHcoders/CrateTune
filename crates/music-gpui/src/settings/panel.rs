@@ -122,6 +122,8 @@ pub struct SettingsPanel {
     pub(super) network: super::network::NetworkState,
     /// Player / lyrics / Now Playing / activity widgets (`prefs_ui.rs`).
     pub(super) prefs: PrefsUi,
+    /// Modules section (inputs, review, open settings form, status).
+    pub(super) modules: super::modules::ModulesState,
     _subscriptions: Vec<Subscription>,
 }
 
@@ -202,6 +204,7 @@ impl SettingsPanel {
             super::content::ContentState::new(&settings, window, cx);
         subscriptions.extend(content_subscriptions);
         let network = super::network::NetworkState::new(&settings, window, cx);
+        let modules = super::modules::ModulesState::new(window, cx);
         let (prefs, prefs_subscriptions) = PrefsUi::new(&settings, window, cx);
         subscriptions.extend(prefs_subscriptions);
         subscriptions.push(cx.on_app_quit(|this, _| {
@@ -239,6 +242,7 @@ impl SettingsPanel {
             content,
             network,
             prefs,
+            modules,
             _subscriptions: subscriptions,
         };
         // Before any page loads (the password, if any, follows once read).

@@ -496,6 +496,11 @@ impl MusicApp {
             .when(self.playback.preview_only, |this| {
                 this.child(Tag::warning().small().rounded_full().child("Preview"))
             })
+            .when_some(
+                crate::module_service::source_label(self.playback.source.as_ref())
+                    .filter(|_| self.playback.track.is_some()),
+                |this, label| this.child(Tag::secondary().small().rounded_full().child(label)),
+            )
             .child(
                 Button::new("np-sleep")
                     .ghost()

@@ -79,6 +79,17 @@ gpui_kit_assets::icon_assets!(
         // browse & search
         CloudOff,
         ArrowUpLeft,
+        // modules
+        Puzzle,
+        FolderOpen,
+        Link,
+        LibraryBig,
+        Settings2,
+        Stethoscope,
+        RefreshCw,
+        ArrowUp,
+        ArrowDown,
+        ClipboardCopy,
     ]
 );
 

@@ -14,7 +14,6 @@
 
 use std::collections::{HashMap, VecDeque};
 use std::rc::Rc;
-use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use gpui::{
@@ -31,7 +30,7 @@ use gpui_component::{
     slider::SliderState,
     v_flex,
 };
-use music_core::{InnerTube, IosClientResolver, PlaybackState, Player, Track};
+use music_core::{InnerTube, PlaybackState, Player, Track};
 
 use crate::anim::Frame;
 use crate::browse::ContentFilter;
@@ -203,11 +202,16 @@ impl MusicApp {
         // it off the main thread; search works regardless. Without audio, a demo
         // wall clock stands in so the Now Playing screen can still be exercised.
         let force_demo = std::env::var("MUSIC_DEMO_CLOCK").is_ok_and(|v| v == "1");
+        // Provider modules come first (when enabled), YouTube after them.
+        let module_service = crate::module_service::ModuleService::open();
+        let resolver = module_service.resolver.clone();
+        cx.set_global(module_service);
+        let downloads_resolver = resolver.clone();
         cx.spawn_in(window, async move |this, cx| {
             let result = if force_demo {
                 Err(None)
             } else {
-                cx.background_spawn(async { Player::new(Arc::new(IosClientResolver)) })
+                cx.background_spawn(async move { Player::new(resolver) })
                     .await
                     .map_err(Some)
             };
@@ -305,7 +309,7 @@ impl MusicApp {
             hires_order: VecDeque::new(),
             applied_theme: None,
             accent: None,
-            store: crate::store::Store::open(saved.library.clone()),
+            store: crate::store::Store::open(saved.library.clone(), downloads_resolver),
             _poll: poll,
             _subscriptions: subscriptions,
         };
