@@ -45,6 +45,10 @@ pub struct Settings {
     pub discord: DiscordConfig,
     pub appearance: AppearanceConfig,
     pub playback: PlaybackConfig,
+    /// Content language / country, filters, autoplay (Content & region section).
+    pub content: ContentConfig,
+    /// Proxy (Network section); the proxy password is a secret.
+    pub network: NetworkConfig,
     /// Main window frame, restored at launch.
     pub window: Option<WindowGeometry>,
     /// Mini player position (its size is fixed).
@@ -65,6 +69,8 @@ impl Default for Settings {
             discord: DiscordConfig::default(),
             appearance: AppearanceConfig::default(),
             playback: PlaybackConfig::default(),
+            content: ContentConfig::default(),
+            network: NetworkConfig::default(),
             window: None,
             mini_player: None,
             secrets: FileSecrets::default(),
@@ -172,6 +178,158 @@ pub struct PlaybackConfig {
     pub repeat: Repeat,
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct ContentConfig {
+    /// YouTube Music content language (`hl`), e.g. `en`, `de`, `pt-BR`.
+    pub language: String,
+    /// Content country (`gl`), ISO 3166 code, e.g. `US`.
+    pub country: String,
+    pub hide_explicit: bool,
+    /// Hide music videos in shelves and search results (songs stay).
+    pub hide_videos: bool,
+    /// When the queue's last song plays, append songs from its radio.
+    pub autoplay_similar: bool,
+}
+
+impl Default for ContentConfig {
+    fn default() -> Self {
+        Self {
+            language: "en".into(),
+            country: "US".into(),
+            hide_explicit: false,
+            hide_videos: false,
+            autoplay_similar: true,
+        }
+    }
+}
+
+/// Proxy protocol (`Off` = direct connections).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ProxyKind {
+    #[default]
+    Off,
+    Http,
+    Https,
+    Socks4,
+    Socks5,
+    /// SOCKS5 with DNS resolved by the proxy.
+    Socks5h,
+}
+
+impl ProxyKind {
+    pub const ALL: [ProxyKind; 6] = [
+        ProxyKind::Off,
+        ProxyKind::Http,
+        ProxyKind::Https,
+        ProxyKind::Socks4,
+        ProxyKind::Socks5,
+        ProxyKind::Socks5h,
+    ];
+
+    pub fn title(self) -> &'static str {
+        match self {
+            ProxyKind::Off => "Off",
+            ProxyKind::Http => "HTTP",
+            ProxyKind::Https => "HTTPS",
+            ProxyKind::Socks4 => "SOCKS4",
+            ProxyKind::Socks5 => "SOCKS5",
+            ProxyKind::Socks5h => "SOCKS5h",
+        }
+    }
+
+    pub fn scheme(self) -> Option<&'static str> {
+        Some(match self {
+            ProxyKind::Off => return None,
+            ProxyKind::Http => "http",
+            ProxyKind::Https => "https",
+            ProxyKind::Socks4 => "socks4",
+            ProxyKind::Socks5 => "socks5",
+            ProxyKind::Socks5h => "socks5h",
+        })
+    }
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct NetworkConfig {
+    #[serde(deserialize_with = "lenient")]
+    pub proxy: ProxyKind,
+    pub host: String,
+    /// 0 = not set.
+    pub port: u16,
+    pub username: String,
+    /// A password is stored as a secret (keychain, else this file's `secrets`).
+    pub has_password: bool,
+}
+
+impl NetworkConfig {
+    /// Checks the fields (always fine with the proxy off).
+    pub fn validate(&self) -> Result<(), String> {
+        if self.proxy == ProxyKind::Off {
+            return Ok(());
+        }
+        let host = self.host.trim();
+        if host.is_empty() {
+            return Err("Enter the proxy host.".into());
+        }
+        if host.contains(|c: char| c.is_whitespace() || "/@?#".contains(c)) {
+            return Err(
+                "The host must be a name or address only (no scheme, path or spaces).".into(),
+            );
+        }
+        if self.port == 0 {
+            return Err("Enter a port between 1 and 65535.".into());
+        }
+        if self.proxy == ProxyKind::Socks4 && !self.username.is_empty() {
+            return Err("SOCKS4 doesn't support passwords; leave the user name empty.".into());
+        }
+        Ok(())
+    }
+
+    /// The proxy URL for `music_core::http` (`None` = direct). Credentials are
+    /// percent-encoded; the result contains the password, so never log it.
+    pub fn proxy_url(&self, password: Option<&str>) -> Result<Option<String>, String> {
+        self.validate()?;
+        let Some(scheme) = self.proxy.scheme() else {
+            return Ok(None);
+        };
+        let host = self.host.trim();
+        let host = if host.contains(':') && !host.starts_with('[') {
+            format!("[{host}]") // IPv6 literal
+        } else {
+            host.to_owned()
+        };
+        let user = self.username.trim();
+        let auth = match (user.is_empty(), password.filter(|p| !p.is_empty())) {
+            (true, _) => String::new(),
+            (false, None) => format!("{}@", percent_encode(user)),
+            (false, Some(p)) => format!("{}:{}@", percent_encode(user), percent_encode(p)),
+        };
+        Ok(Some(format!("{scheme}://{auth}{host}:{}", self.port)))
+    }
+
+    /// The URL without credentials, for display.
+    pub fn display_url(&self) -> Option<String> {
+        let scheme = self.proxy.scheme()?;
+        Some(format!("{scheme}://{}:{}", self.host.trim(), self.port))
+    }
+}
+
+/// RFC 3986 userinfo encoding (everything but unreserved characters).
+fn percent_encode(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    for b in s.bytes() {
+        if b.is_ascii_alphanumeric() || b"-._~".contains(&b) {
+            out.push(b as char);
+        } else {
+            out.push_str(&format!("%{b:02X}"));
+        }
+    }
+    out
+}
+
 /// Unknown enum values (e.g. a theme added by a newer version) fall back to the
 /// default instead of failing the whole file.
 fn lenient<'de, D, T>(deserializer: D) -> Result<T, D::Error>
@@ -257,6 +415,17 @@ impl Settings {
         let trim = |s: &mut String| *s = s.trim().to_owned();
         trim(&mut self.lastfm.api_key);
         trim(&mut self.discord.client_id);
+        trim(&mut self.content.language);
+        trim(&mut self.content.country);
+        if self.content.language.is_empty() {
+            self.content.language = ContentConfig::default().language;
+        }
+        self.content.country = self.content.country.to_ascii_uppercase();
+        if self.content.country.len() != 2 {
+            self.content.country = ContentConfig::default().country;
+        }
+        trim(&mut self.network.host);
+        trim(&mut self.network.username);
     }
 
     pub fn from_json(text: &str) -> serde_json::Result<Self> {
@@ -459,6 +628,66 @@ mod tests {
             "unknown values fall back"
         );
         assert_eq!(newer.playback.repeat, Repeat::Off);
+    }
+
+    #[test]
+    fn content_and_network_round_trip_and_validate() {
+        let s = Settings::from_json(
+            r#"{"content": {"language": " de ", "country": "at", "hide_explicit": true},
+                "network": {"proxy": "socks5h", "host": "127.0.0.1", "port": 1080,
+                            "username": "me", "has_password": true}}"#,
+        )
+        .unwrap();
+        assert_eq!(s.content.language, "de");
+        assert_eq!(s.content.country, "AT");
+        assert!(s.content.hide_explicit && s.content.autoplay_similar);
+        assert_eq!(s.network.proxy, ProxyKind::Socks5h);
+        assert_eq!(Settings::from_json(&s.to_json()).unwrap(), s);
+        assert_eq!(
+            s.network.proxy_url(Some("p@ss:w/rd")).unwrap().unwrap(),
+            "socks5h://me:p%40ss%3Aw%2Frd@127.0.0.1:1080"
+        );
+        assert_eq!(
+            s.network.display_url().unwrap(),
+            "socks5h://127.0.0.1:1080",
+            "no credentials"
+        );
+        let bad = Settings::from_json(
+            r#"{"content": {"country": "nowhere"}, "network": {"proxy": "gopher"}}"#,
+        )
+        .unwrap();
+        assert_eq!(bad.content.country, "US");
+        assert_eq!(bad.network.proxy, ProxyKind::Off);
+        assert_eq!(bad.network.proxy_url(None).unwrap(), None);
+
+        let mut n = NetworkConfig {
+            proxy: ProxyKind::Http,
+            ..NetworkConfig::default()
+        };
+        assert!(n.validate().is_err(), "host missing");
+        n.host = "http://x".into();
+        assert!(n.validate().is_err(), "scheme in host");
+        n.host = "proxy.local".into();
+        assert!(n.validate().is_err(), "port missing");
+        n.port = 3128;
+        assert_eq!(
+            n.proxy_url(None).unwrap().unwrap(),
+            "http://proxy.local:3128"
+        );
+        n.host = "::1".into();
+        assert_eq!(n.proxy_url(None).unwrap().unwrap(), "http://[::1]:3128");
+        // Every URL we build is accepted by music-core's HTTP layer.
+        for kind in ProxyKind::ALL {
+            n.proxy = kind;
+            if let Some(url) = n.proxy_url(Some("pw")).unwrap() {
+                music_core::http::configure(music_core::HttpConfig {
+                    proxy: Some(url),
+                    ..Default::default()
+                })
+                .unwrap();
+            }
+        }
+        music_core::http::configure(music_core::HttpConfig::default()).unwrap();
     }
 
     #[test]

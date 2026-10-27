@@ -59,6 +59,9 @@ gpui_kit_assets::icon_assets!(
         Wifi,
         Shield,
         Type,
+        // browse & search
+        CloudOff,
+        ArrowUpLeft,
     ]
 );
 

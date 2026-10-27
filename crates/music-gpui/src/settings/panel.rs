@@ -55,6 +55,10 @@ pub enum SettingsEvent {
     Section(SectionId),
     /// Shuffle / repeat changed on the settings page (apply to the queue).
     PlaybackModes,
+    /// Content language / country, filters or autoplay changed.
+    Content,
+    /// The proxy was (re)applied; online pages should reload.
+    Network,
 }
 
 pub(super) enum LastFmFlow {
@@ -87,7 +91,7 @@ pub struct SettingsPanel {
     integrations_dirty: bool,
 
     backend: Option<Arc<dyn Backend>>,
-    secrets: BTreeMap<Secret, String>,
+    pub(super) secrets: BTreeMap<Secret, String>,
     pub(super) secrets_loaded: bool,
     /// Where secrets go / came from, for the status line.
     pub(super) secret_store: SharedString,
@@ -103,6 +107,10 @@ pub struct SettingsPanel {
     pub(super) discord_id: Entity<InputState>,
     pub(super) discord_status: DiscordStatus,
     pub(super) scrobble_errors: VecDeque<String>,
+    /// Content & region section (language / country pickers).
+    pub(super) content: super::content::ContentState,
+    /// Network section (proxy draft fields, status).
+    pub(super) network: super::network::NetworkState,
     _subscriptions: Vec<Subscription>,
 }
 
@@ -179,6 +187,10 @@ impl SettingsPanel {
                 }
             }));
         }
+        let (content, content_subscriptions) =
+            super::content::ContentState::new(&settings, window, cx);
+        subscriptions.extend(content_subscriptions);
+        let network = super::network::NetworkState::new(&settings, window, cx);
         subscriptions.push(cx.on_app_quit(|this, _| {
             this.flush();
             async {}
@@ -211,8 +223,14 @@ impl SettingsPanel {
             discord_id,
             discord_status: DiscordStatus::Idle,
             scrobble_errors: VecDeque::new(),
+            content,
+            network,
             _subscriptions: subscriptions,
         };
+        // Before any page loads (the password, if any, follows once read).
+        if let Err(e) = this.apply_proxy() {
+            eprintln!("music-gpui: proxy not applied: {e}");
+        }
         this.load_secrets(window, cx);
         this
     }
@@ -227,6 +245,7 @@ impl SettingsPanel {
             (Secret::LastFmShared, !s.lastfm.api_key.is_empty()),
             (Secret::LastFmSession, s.lastfm.user.is_some()),
             (Secret::ListenBrainzToken, s.listenbrainz.user.is_some()),
+            (Secret::ProxyPassword, s.network.has_password),
         ]
         .into_iter()
         .filter_map(|(secret, wanted)| wanted.then_some(secret))
@@ -260,6 +279,13 @@ impl SettingsPanel {
                     if let Some(value) = this.secrets.get(&secret).cloned() {
                         input.update(cx, |input, cx| input.set_value(value, window, cx));
                     }
+                }
+                if let Some(password) = this.secrets.get(&Secret::ProxyPassword).cloned() {
+                    this.network.show_password(password, window, cx);
+                    if let Err(e) = this.apply_proxy() {
+                        eprintln!("music-gpui: proxy not applied: {e}");
+                    }
+                    cx.emit(SettingsEvent::Network);
                 }
                 cx.emit(SettingsEvent::Integrations);
                 cx.notify();
@@ -392,7 +418,7 @@ impl SettingsPanel {
 
     /// Schedules a save (and, if `integrations`, an `Integrations` event) after
     /// [`SAVE_DEBOUNCE`] without further changes.
-    fn changed(&mut self, integrations: bool, cx: &mut Context<Self>) {
+    pub(super) fn changed(&mut self, integrations: bool, cx: &mut Context<Self>) {
         self.integrations_dirty |= integrations;
         self.save_pending = true;
         let executor = cx.background_executor().clone();
@@ -432,7 +458,12 @@ impl SettingsPanel {
 
     /// Stores (`Some`) or deletes (`None`) a secret off the UI thread, then
     /// records whether the settings file has to hold it.
-    fn put_secret(&mut self, secret: Secret, value: Option<String>, cx: &mut Context<Self>) {
+    pub(super) fn put_secret(
+        &mut self,
+        secret: Secret,
+        value: Option<String>,
+        cx: &mut Context<Self>,
+    ) {
         match &value {
             Some(v) => self.secrets.insert(secret, v.clone()),
             None => self.secrets.remove(&secret),

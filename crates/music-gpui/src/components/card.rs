@@ -13,7 +13,6 @@ use gpui_component::{ActiveTheme as _, menu::ContextMenuExt as _, menu::PopupMen
 use super::artwork::artwork;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-#[allow(dead_code)] // albums / playlists come with the InnerTube browse pages
 pub enum CardKind {
     Album,
     Playlist,

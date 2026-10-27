@@ -10,11 +10,13 @@
 //! Pages reach the app (play, enqueue, navigate) through
 //! [`crate::app::update_app`] and read shared state (current track, session
 //! history) through [`crate::app::read_app`]; they never hold the app entity.
-//! Pages whose data comes from core features that don't exist yet render a
-//! clear empty state ([`crate::components::empty_state`]).
+//! Online pages load through [`crate::browse`] (`fetch`, `Load`, `PageCache`)
+//! and build their UI from [`crate::components::items`].
 
 mod album;
 mod artist;
+mod artist_items;
+mod browse_page;
 mod charts;
 mod downloads;
 mod explore;
@@ -150,6 +152,12 @@ pub fn build(
         Route::Artist { id, name } => artist::ArtistPage::build(id.clone(), name.clone(), cx),
         Route::Album { id, name } => album::AlbumPage::build(id.clone(), name.clone(), cx),
         Route::Playlist { id, name } => playlist::PlaylistPage::build(id.clone(), name.clone(), cx),
+        Route::Browse { id, params, name } => {
+            browse_page::BrowsePage::build(id.clone(), params.clone(), name.clone(), cx)
+        }
+        Route::ArtistItems { id, params, name } => {
+            artist_items::ArtistItemsPage::build(id.clone(), params.clone(), name.clone(), cx)
+        }
         Route::History => history::HistoryPage::build(cx),
         Route::Stats => stats::StatsPage::build(cx),
         Route::Downloads => downloads::DownloadsPage::build(cx),
