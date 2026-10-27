@@ -5,34 +5,52 @@
 //! * `MUSIC_GPUI_SCREENSHOT=out.png` (feature `screenshot`) renders the window
 //!   offscreen after `MUSIC_GPUI_SCREENSHOT_DELAY` seconds (default 6), saves it
 //!   and quits; `"12:a.png,13:@settings,14:b.png"` mixes shots and actions and
-//!   quits after the last entry.
+//!   quits after the last entry. `mini:path.png` shoots the mini player window.
 //!
 //! Actions (`@name` or `@name=arg`):
 //!
 //! | action | does |
 //! |---|---|
-//! | `@toggle`, `@close` | dispatch the Now Playing Space / Esc actions |
+//! | `@key=cmd-right` | synthetic key press through GPUI's normal key dispatch (bindings → actions) |
+//! | `@click=X;Y`, `@rclick=X;Y`, `@move=X;Y`, `@mouse-back`, `@mouse-forward` | synthetic mouse events at window coordinates (hit-testing, hover, context menus, nav buttons) |
+//! | `@toggle`, `@close` | dispatch the Space / Esc actions |
 //! | `@open` | open Now Playing |
-//! | `@play=N` | play result N (0-based) with the results as queue |
+//! | `@play=N` | play search result N (0-based) with the results as queue |
 //! | `@next`, `@prev` | queue navigation (as the buttons / media keys) |
-//! | `@seek=SECS` | seek |
-//! | `@volume=0.3` | set the volume (saved) |
-//! | `@settings[=eq\|accounts]`, `@close-settings` | settings sheet |
+//! | `@seek=SECS`, `@volume=0.3` | seek, set the volume (saved) |
+//! | `@nav=ROUTE` | navigate (`home`, `search:q`, `library:albums`, `settings:eq`, `artist:ID`, …) |
+//! | `@back`, `@forward` | history navigation |
+//! | `@search=QUERY` | type into the search field and search now |
+//! | `@play-next=N`, `@enqueue=N` | queue search result N next / at the end |
+//! | `@queue[=on\|off]` | queue panel |
+//! | `@queue-move=FROM:TO`, `@queue-remove=N`, `@queue-jump=N`, `@queue-clear` | edit "up next" (0-based indices) |
+//! | `@shuffle=on\|off`, `@repeat=off\|all\|one` | queue modes (saved) |
+//! | `@mini[=on\|off]` | mini player window |
+//! | `@theme=dark\|black\|dynamic`, `@font-scale=1.125` | appearance (saved) |
+//! | `@settings[=SECTION]`, `@close-settings` | settings page (`eq`, `integrations`/`accounts`, `appearance`, `about`, …) |
 //! | `@eq=Bass`, `@eq=off`, `@eq=on` | equalizer preset / switch |
 //! | `@field=lastfm-key:VALUE` (also `lastfm-secret`, `lb-token`, `discord-id`) | type into a settings field |
 //! | `@lastfm-connect`, `@lastfm-finish`, `@lastfm-disconnect`, `@lastfm-clear` | Last.fm auth flow |
 //! | `@lb-validate`, `@lb-disconnect` | ListenBrainz |
 //! | `@discord=on\|off` | Discord presence switch |
+//! | `@resize=W;H` | resize the main window (frame is saved) |
 //! | `@quit` | quit |
 
 use std::time::{Duration, Instant};
 
-use gpui::{AnyWindowHandle, App, AppContext as _, Context, Entity, Window};
-use gpui_component::WindowExt as _;
+use gpui::{
+    AnyWindowHandle, App, AppContext as _, Context, Entity, Keystroke, Modifiers, MouseButton,
+    MouseDownEvent, MouseMoveEvent, MouseUpEvent, NavigationDirection, PlatformInput, Window,
+    point, px,
+};
 use music_core::EqPreset;
 
-use crate::MusicApp;
-use crate::settings_panel::Tab;
+use crate::actions;
+use crate::app::MusicApp;
+use crate::queue::Repeat;
+use crate::router::Route;
+use crate::settings::SectionId;
+use crate::theme::ThemeChoice;
 
 /// Parses `"secs:item,item,..."`; items without a time use `default_delay`.
 fn parse(spec: &str, default_delay: f64) -> Vec<(f64, String)> {
@@ -69,20 +87,35 @@ pub fn schedule(window: AnyWindowHandle, app: Entity<MusicApp>, cx: &mut App) {
     }
     let started = Instant::now();
     let executor = cx.background_executor().clone();
+    #[cfg(feature = "screenshot")]
+    pump_frames(window, app.clone(), cx);
     cx.spawn(async move |cx| {
         for (at, item) in items {
             let wait = Duration::from_secs_f64(at).saturating_sub(started.elapsed());
             executor.timer(wait).await;
-            let ok = cx.update_window(window, |_, window, cx| match item.strip_prefix('@') {
+            // `mini:path.png` shoots the mini player window instead of the main one.
+            let (target, item) = match item.strip_prefix("mini:") {
+                Some(path) => match cx.update(|cx| app.read(cx).mini) {
+                    Some(mini) => (mini, path.to_owned()),
+                    None => {
+                        eprintln!("music-gpui: no mini player window for {path}");
+                        continue;
+                    }
+                },
+                None => (window, item),
+            };
+            let ok = cx.update_window(target, |_, window, cx| match item.strip_prefix('@') {
                 Some(action) => {
                     let (name, arg) = match action.split_once('=') {
                         Some((name, arg)) => (name, Some(arg)),
                         None => (action, None),
                     };
                     eprintln!("music-gpui: script @{name}");
-                    app.update(cx, |app, cx| app.script_action(name, arg, window, cx));
+                    if !input_event(name, arg, window, cx) {
+                        app.update(cx, |app, cx| app.script_action(name, arg, window, cx));
+                    }
                 }
-                None => screenshot(&item, window),
+                None => screenshot(&item, window, cx),
             });
             if ok.is_err() {
                 eprintln!("music-gpui: window gone");
@@ -96,8 +129,102 @@ pub fn schedule(window: AnyWindowHandle, app: Entity<MusicApp>, cx: &mut App) {
     .detach();
 }
 
+/// Synthetic keyboard / mouse input through GPUI's regular dispatch. Returns
+/// `false` if `name` isn't an input action.
+fn input_event(name: &str, arg: Option<&str>, window: &mut Window, cx: &mut App) -> bool {
+    let at = || {
+        let (x, y) = arg?.split_once(';')?;
+        Some(point(
+            px(x.trim().parse().ok()?),
+            px(y.trim().parse().ok()?),
+        ))
+    };
+    let mouse_move = |window: &mut Window, cx: &mut App| {
+        window.dispatch_event(
+            PlatformInput::MouseMove(MouseMoveEvent {
+                position: at().unwrap_or_default(),
+                pressed_button: None,
+                modifiers: Modifiers::default(),
+            }),
+            cx,
+        );
+    };
+    let click = |button: MouseButton, window: &mut Window, cx: &mut App| {
+        let position = at().unwrap_or_default();
+        let modifiers = Modifiers::default();
+        mouse_move(window, cx);
+        window.dispatch_event(
+            PlatformInput::MouseDown(MouseDownEvent {
+                button,
+                position,
+                modifiers,
+                click_count: 1,
+                first_mouse: false,
+            }),
+            cx,
+        );
+        window.dispatch_event(
+            PlatformInput::MouseUp(MouseUpEvent {
+                button,
+                position,
+                modifiers,
+                click_count: 1,
+            }),
+            cx,
+        );
+    };
+    match name {
+        "key" => {
+            // `Keystroke::parse` wants a static string; scripts are tiny and run once.
+            let source: &'static str = Box::leak(arg.unwrap_or("").to_owned().into_boxed_str());
+            match Keystroke::parse(source) {
+                Ok(keystroke) => {
+                    window.dispatch_keystroke(keystroke, cx);
+                }
+                Err(e) => eprintln!("music-gpui: bad keystroke {source:?}: {e}"),
+            }
+        }
+        "click" => click(MouseButton::Left, window, cx),
+        "rclick" => click(MouseButton::Right, window, cx),
+        "mouse-back" => click(MouseButton::Navigate(NavigationDirection::Back), window, cx),
+        "mouse-forward" => click(
+            MouseButton::Navigate(NavigationDirection::Forward),
+            window,
+            cx,
+        ),
+        "move" => mouse_move(window, cx),
+        _ => return false,
+    }
+    window.refresh();
+    true
+}
+
+/// Screenshot builds: draw both windows every 200 ms. With the screen locked
+/// (or the window hidden) macOS stops the display link, and lazily started
+/// work (artwork downloads, image decoding) only begins when a frame is drawn.
 #[cfg(feature = "screenshot")]
-fn screenshot(path: &str, window: &mut Window) {
+fn pump_frames(window: AnyWindowHandle, app: Entity<MusicApp>, cx: &mut App) {
+    let executor = cx.background_executor().clone();
+    cx.spawn(async move |cx| {
+        loop {
+            executor.timer(Duration::from_millis(200)).await;
+            let mini = cx.update(|cx| app.read(cx).mini);
+            for target in std::iter::once(window).chain(mini) {
+                let _ = cx.update_window(target, |_, window, cx| window.draw(cx).clear(cx));
+            }
+        }
+    })
+    .detach();
+}
+
+#[cfg(feature = "screenshot")]
+fn screenshot(path: &str, window: &mut Window, cx: &mut App) {
+    // Draw now instead of using the last presented frame: with the screen locked
+    // (or the window occluded) macOS stops the display link, so no frames arrive.
+    // Twice, so views that read last frame's layout (lyrics scrolling) settle.
+    for _ in 0..2 {
+        window.draw(cx).clear(cx);
+    }
     match window.render_to_image() {
         Ok(image) => match image.save(path) {
             Ok(()) => eprintln!("music-gpui: screenshot saved to {path}"),
@@ -108,7 +235,7 @@ fn screenshot(path: &str, window: &mut Window) {
 }
 
 #[cfg(not(feature = "screenshot"))]
-fn screenshot(path: &str, _: &mut Window) {
+fn screenshot(path: &str, _: &mut Window, _: &mut App) {
     eprintln!("music-gpui: screenshot {path} skipped (build with --features screenshot)");
 }
 
@@ -122,26 +249,88 @@ impl MusicApp {
         cx: &mut Context<Self>,
     ) {
         let num = || arg.and_then(|a| a.parse::<f64>().ok());
+        let index = || num().unwrap_or(0.).max(0.) as usize;
+        let on = || arg != Some("off");
         let panel = self.settings.clone();
         match name {
             // Through the key-binding actions, like Space / Esc would.
-            "toggle" => window.dispatch_action(Box::new(crate::now_playing::TogglePlayback), cx),
-            "close" => window.dispatch_action(Box::new(crate::now_playing::CloseNowPlaying), cx),
+            "toggle" => window.dispatch_action(Box::new(actions::TogglePlayback), cx),
+            "close" => window.dispatch_action(Box::new(actions::Escape), cx),
             "open" => self.open_now_playing(window, cx),
-            "play" => self.play_result(num().unwrap_or(0.) as usize, cx),
+            "play" => self.play_list(self.last_results.clone(), index(), cx),
             "next" => self.next_track(cx),
             "prev" => self.previous_track(cx),
             "seek" => self.seek_to(Duration::from_secs_f64(num().unwrap_or(0.).max(0.)), cx),
             "volume" => self.set_volume(num().unwrap_or(1.) as f32, window, cx),
-            "settings" => {
-                let tab = match arg {
-                    Some("accounts" | "scrobbling" | "discord") => Some(Tab::Accounts),
-                    Some("eq" | "equalizer") => Some(Tab::Equalizer),
-                    _ => None,
-                };
-                self.open_settings(tab, window, cx);
+            "nav" => match arg.and_then(Route::parse) {
+                Some(route) => self.navigate(route, window, cx),
+                None => eprintln!("music-gpui: unknown route {arg:?}"),
+            },
+            "back" => self.go_back(window, cx),
+            "forward" => self.go_forward(window, cx),
+            "search" => self.search_now(arg.unwrap_or(""), window, cx),
+            "play-next" | "enqueue" => {
+                if let Some(track) = self.last_results.get(index()).cloned() {
+                    if name == "play-next" {
+                        self.queue_play_next(vec![track], window, cx);
+                    } else {
+                        self.queue_add(vec![track], window, cx);
+                    }
+                }
             }
-            "close-settings" => window.close_sheet(cx),
+            "queue" => {
+                if arg.is_none() || self.queue_open != on() {
+                    self.toggle_queue_panel(cx);
+                }
+            }
+            "queue-move" => {
+                let upcoming: Vec<u64> = self.queue.upcoming().iter().map(|i| i.uid).collect();
+                let pair = arg
+                    .and_then(|a| a.split_once(':'))
+                    .and_then(|(a, b)| Some((a.parse::<usize>().ok()?, b.parse::<usize>().ok()?)));
+                if let Some((from, to)) = pair
+                    && let (Some(&uid), Some(&target)) = (upcoming.get(from), upcoming.get(to))
+                {
+                    self.queue_move_to(uid, target, cx);
+                }
+            }
+            "queue-remove" | "queue-jump" => {
+                if let Some(uid) = self.queue.upcoming().get(index()).map(|i| i.uid) {
+                    if name == "queue-remove" {
+                        self.queue_remove(uid, cx);
+                    } else {
+                        self.queue_jump(uid, cx);
+                    }
+                }
+            }
+            "queue-clear" => self.queue_clear(cx),
+            "shuffle" => self.set_shuffle(on(), cx),
+            "repeat" => match arg.and_then(Repeat::parse) {
+                Some(repeat) => self.set_repeat(repeat, cx),
+                None => self.cycle_repeat(cx),
+            },
+            "mini" => {
+                if arg.is_none() || self.mini.is_some() != on() {
+                    self.toggle_mini_player(cx);
+                }
+            }
+            "theme" => match arg.and_then(ThemeChoice::parse) {
+                Some(theme) => panel.update(cx, |p, cx| p.set_theme(theme, cx)),
+                None => eprintln!("music-gpui: unknown theme {arg:?}"),
+            },
+            "font-scale" => {
+                let scale = num().unwrap_or(1.) as f32;
+                panel.update(cx, |p, cx| p.set_font_scale(scale, cx));
+            }
+            "settings" => {
+                let section = arg.and_then(SectionId::from_key);
+                self.open_settings(section, window, cx);
+            }
+            "close-settings" => {
+                if matches!(self.router.route(), Route::Settings { .. }) {
+                    self.go_back(window, cx);
+                }
+            }
             "eq" => match arg.unwrap_or("") {
                 "off" => panel.update(cx, |p, cx| p.set_eq_enabled(false, cx)),
                 "on" => panel.update(cx, |p, cx| p.set_eq_enabled(true, cx)),
@@ -169,8 +358,17 @@ impl MusicApp {
             "lb-validate" => panel.update(cx, |p, cx| p.lb_validate(cx)),
             "lb-disconnect" => panel.update(cx, |p, cx| p.lb_disconnect(window, cx)),
             "discord" => {
-                let on = arg != Some("off");
+                let on = on();
                 panel.update(cx, |p, cx| p.set_discord_enabled(on, cx));
+            }
+            "resize" => {
+                let size = arg
+                    .and_then(|a| a.split_once(';'))
+                    .and_then(|(w, h)| Some(gpui::size(px(w.parse().ok()?), px(h.parse().ok()?))));
+                match size {
+                    Some(size) => window.resize(size),
+                    None => eprintln!("music-gpui: @resize wants W;H"),
+                }
             }
             "quit" => cx.quit(),
             other => eprintln!("music-gpui: unknown script action @{other}"),
@@ -195,5 +393,13 @@ mod tests {
         );
         // A Windows-style path is not mistaken for a time.
         assert_eq!(parse("C:/x.png", 1.0), vec![(1.0, "C:/x.png".into())]);
+        // Mini player shots and click coordinates keep their syntax.
+        assert_eq!(
+            parse("4:mini:/tmp/m.png,5:@click=300;40", 1.0),
+            vec![
+                (4.0, "mini:/tmp/m.png".into()),
+                (5.0, "@click=300;40".into())
+            ]
+        );
     }
 }

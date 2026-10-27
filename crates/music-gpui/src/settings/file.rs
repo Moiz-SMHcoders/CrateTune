@@ -22,6 +22,9 @@ use music_core::equalizer::GRAPHIC_BANDS_HZ;
 use music_core::{EqPreset, EqualizerSettings};
 use serde::{Deserialize, Serialize};
 
+use crate::queue::Repeat;
+use crate::theme::{FONT_SCALES, ThemeChoice};
+
 pub const APP_ID: &str = "music-macos";
 pub const FILE_NAME: &str = "settings.json";
 /// Bumped when a field changes meaning; [`Settings::normalize`] migrates older files.
@@ -40,6 +43,12 @@ pub struct Settings {
     pub lastfm: LastFmConfig,
     pub listenbrainz: ListenBrainzConfig,
     pub discord: DiscordConfig,
+    pub appearance: AppearanceConfig,
+    pub playback: PlaybackConfig,
+    /// Main window frame, restored at launch.
+    pub window: Option<WindowGeometry>,
+    /// Mini player position (its size is fixed).
+    pub mini_player: Option<WindowGeometry>,
     /// Secrets that could not go to the OS keychain (see `secrets.rs`).
     #[serde(skip_serializing_if = "FileSecrets::is_empty")]
     pub secrets: FileSecrets,
@@ -54,6 +63,10 @@ impl Default for Settings {
             lastfm: LastFmConfig::default(),
             listenbrainz: ListenBrainzConfig::default(),
             discord: DiscordConfig::default(),
+            appearance: AppearanceConfig::default(),
+            playback: PlaybackConfig::default(),
+            window: None,
+            mini_player: None,
             secrets: FileSecrets::default(),
         }
     }
@@ -133,6 +146,66 @@ pub struct DiscordConfig {
     pub client_id: String,
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct AppearanceConfig {
+    #[serde(deserialize_with = "lenient")]
+    pub theme: ThemeChoice,
+    /// One of [`FONT_SCALES`] (other values are snapped to the nearest).
+    pub font_scale: f32,
+}
+
+impl Default for AppearanceConfig {
+    fn default() -> Self {
+        Self {
+            theme: ThemeChoice::Dark,
+            font_scale: 1.0,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct PlaybackConfig {
+    pub shuffle: bool,
+    #[serde(deserialize_with = "lenient")]
+    pub repeat: Repeat,
+}
+
+/// Unknown enum values (e.g. a theme added by a newer version) fall back to the
+/// default instead of failing the whole file.
+fn lenient<'de, D, T>(deserializer: D) -> Result<T, D::Error>
+where
+    D: serde::Deserializer<'de>,
+    T: serde::de::DeserializeOwned + Default,
+{
+    let value = serde_json::Value::deserialize(deserializer)?;
+    Ok(serde_json::from_value(value).unwrap_or_default())
+}
+
+/// A window frame in screen coordinates (logical pixels).
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub struct WindowGeometry {
+    pub x: f32,
+    pub y: f32,
+    pub width: f32,
+    pub height: f32,
+    #[serde(default)]
+    pub maximized: bool,
+}
+
+impl WindowGeometry {
+    pub fn is_sane(&self) -> bool {
+        [self.x, self.y, self.width, self.height]
+            .iter()
+            .all(|v| v.is_finite())
+            && self.width >= 200.
+            && self.height >= 80.
+            && self.width <= 20_000.
+            && self.height <= 20_000.
+    }
+}
+
 /// Secret name → value, for when the keychain is unavailable. `Debug` is redacted.
 #[derive(Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(transparent)]
@@ -171,6 +244,16 @@ impl Settings {
                 0.0
             };
         }
+        let scale = self.appearance.font_scale;
+        self.appearance.font_scale = FONT_SCALES
+            .into_iter()
+            .min_by(|a, b| (a - scale).abs().total_cmp(&(b - scale).abs()))
+            .unwrap_or(1.0);
+        if !scale.is_finite() {
+            self.appearance.font_scale = 1.0;
+        }
+        self.window = self.window.filter(WindowGeometry::is_sane);
+        self.mini_player = self.mini_player.filter(WindowGeometry::is_sane);
         let trim = |s: &mut String| *s = s.trim().to_owned();
         trim(&mut self.lastfm.api_key);
         trim(&mut self.discord.client_id);
@@ -345,6 +428,37 @@ mod tests {
         assert_eq!(Settings::from_json(&json).unwrap(), s);
         // ...but Debug output never shows it.
         assert!(!format!("{s:?}").contains("hunter2"));
+    }
+
+    #[test]
+    fn appearance_playback_and_window_round_trip() {
+        let s = Settings::from_json(
+            r#"{"appearance": {"theme": "dynamic", "font_scale": 1.2},
+                "playback": {"shuffle": true, "repeat": "one"},
+                "window": {"x": 10, "y": 20, "width": 1200, "height": 800},
+                "mini_player": {"x": 0, "y": 0, "width": 1, "height": 1}}"#,
+        )
+        .unwrap();
+        assert_eq!(s.appearance.theme, ThemeChoice::Dynamic);
+        assert_eq!(
+            s.appearance.font_scale, 1.25,
+            "snapped to the nearest scale"
+        );
+        assert!(s.playback.shuffle);
+        assert_eq!(s.playback.repeat, Repeat::One);
+        let w = s.window.unwrap();
+        assert_eq!((w.x, w.width, w.maximized), (10., 1200., false));
+        assert_eq!(s.mini_player, None, "absurd sizes are dropped");
+        assert_eq!(Settings::from_json(&s.to_json()).unwrap(), s);
+        let newer =
+            Settings::from_json(r#"{"appearance": {"theme": "neon"}, "playback": {"repeat": 3}}"#)
+                .unwrap();
+        assert_eq!(
+            newer.appearance.theme,
+            ThemeChoice::Dark,
+            "unknown values fall back"
+        );
+        assert_eq!(newer.playback.repeat, Repeat::Off);
     }
 
     #[test]

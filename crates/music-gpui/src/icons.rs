@@ -1,14 +1,65 @@
-//! Lucide icons beyond gpui-component's 101 defaults (skip, volume), embedded
-//! individually so the binary doesn't carry the whole 1,800-icon catalog.
+//! Lucide icons beyond gpui-component's 101 defaults, embedded individually so
+//! the binary doesn't carry the whole 1,800-icon catalog.
+//!
+//! Use [`Lucide`] (the full catalog enum) for any icon; names that are neither
+//! in gpui-component's default set nor listed in [`ExtraIcons`] render blank,
+//! so add new ones to the `icon_assets!` list below.
 
 use std::borrow::Cow;
 
 use gpui::{AssetSource, SharedString};
-use gpui_kit_assets::{IconName, IconNamed};
+pub use gpui_kit_assets::IconName as Lucide;
+use gpui_kit_assets::IconNamed;
 
 gpui_kit_assets::icon_assets!(
     ExtraIcons,
-    [SkipBack, SkipForward, Volume1, Volume2, VolumeX]
+    [
+        SkipBack,
+        SkipForward,
+        Volume1,
+        Volume2,
+        VolumeX,
+        // shell
+        House,
+        Compass,
+        ChartNoAxesColumn,
+        Shapes,
+        Flame,
+        Sparkles,
+        Library,
+        Clock,
+        ChartColumn,
+        Download,
+        FileMusic,
+        // player / queue
+        Shuffle,
+        Repeat,
+        Repeat1,
+        ListMusic,
+        PictureInPicture2,
+        ListPlus,
+        ListStart,
+        ListEnd,
+        ListX,
+        GripVertical,
+        Trash,
+        AudioLines,
+        Music,
+        Disc3,
+        MicVocal,
+        UsersRound,
+        Radio,
+        Pin,
+        PinOff,
+        X,
+        // settings
+        SlidersHorizontal,
+        ScrollText,
+        Languages,
+        Wifi,
+        Shield,
+        Type,
+    ]
 );
 
 #[derive(Clone, Copy)]
@@ -23,11 +74,11 @@ pub enum AppIcon {
 impl IconNamed for AppIcon {
     fn path(self) -> SharedString {
         match self {
-            AppIcon::Previous => IconName::SkipBack,
-            AppIcon::Next => IconName::SkipForward,
-            AppIcon::Volume => IconName::Volume2,
-            AppIcon::VolumeLow => IconName::Volume1,
-            AppIcon::Muted => IconName::VolumeX,
+            AppIcon::Previous => Lucide::SkipBack,
+            AppIcon::Next => Lucide::SkipForward,
+            AppIcon::Volume => Lucide::Volume2,
+            AppIcon::VolumeLow => Lucide::Volume1,
+            AppIcon::Muted => Lucide::VolumeX,
         }
         .path()
     }

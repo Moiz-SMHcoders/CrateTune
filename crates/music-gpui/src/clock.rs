@@ -16,7 +16,7 @@ const RESYNC_THRESHOLD: Duration = Duration::from_millis(400);
 /// (`Player::new` failed) or `MUSIC_DEMO_CLOCK=1`.
 pub enum Engine {
     Audio(Player),
-    Demo(DemoPlayer),
+    Demo(Box<DemoPlayer>),
 }
 
 impl Engine {

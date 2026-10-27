@@ -1,10 +1,11 @@
-//! Settings sheet: 10-band equalizer, Last.fm / ListenBrainz scrobbling and
-//! Discord Rich Presence. Owns the persisted [`Settings`] and the secrets.
+//! The settings page: owns the persisted [`Settings`] and the secrets, and
+//! renders the section list plus the selected section (each section is a file
+//! next to this one, registered in [`super::SECTIONS`]).
 //!
-//! The panel is its own entity, shown inside gpui-component's `Sheet` (see
-//! `MusicApp::open_settings`). It never touches the player or the services
-//! directly: it emits [`SettingsEvent`]s and `MusicApp` applies them, and
-//! `MusicApp` pushes scrobble errors / Discord state back in from its poll.
+//! The panel is a long-lived entity; the `Settings { section }` route shows it
+//! as a page. It never touches the player or the services directly: it emits
+//! [`SettingsEvent`]s and `MusicApp` applies them, and `MusicApp` pushes
+//! scrobble errors / Discord state back in from its poll.
 //!
 //! Changes are saved 500 ms after the last edit (and on quit). Network calls
 //! (Last.fm auth, ListenBrainz token validation) and keychain access run on
@@ -16,48 +17,47 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use gpui::{
-    AppContext as _, Context, Entity, EventEmitter, FontWeight, IntoElement, ParentElement as _,
-    Render, SharedString, Styled as _, Subscription, Task, Window, div,
+    AppContext as _, Context, Entity, EventEmitter, FontWeight, InteractiveElement as _,
+    IntoElement, ParentElement as _, Render, ScrollHandle, SharedString,
+    StatefulInteractiveElement as _, Styled as _, Subscription, Task, Window, div,
     prelude::FluentBuilder as _, px,
 };
 use gpui_component::{
-    ActiveTheme as _, Selectable as _, Sizable as _,
-    button::{Button, ButtonVariants as _},
-    h_flex,
-    input::{Input, InputEvent, InputState},
-    slider::{Slider, SliderEvent, SliderState},
-    switch::Switch,
-    tag::Tag,
+    ActiveTheme as _, Icon, Sizable as _, h_flex,
+    input::{InputEvent, InputState},
+    scroll::ScrollableElement as _,
+    slider::{SliderEvent, SliderState},
     v_flex,
 };
 use music_core::discord::DiscordStatus;
-use music_core::equalizer::GRAPHIC_BANDS_HZ;
 use music_core::scrobble::{LastFm, ListenBrainz};
 use music_core::{EqPreset, EqualizerSettings};
 
-use crate::now_playing::off_thread;
+use super::file::{self, EQ_RANGE_DB, Settings, WindowGeometry};
+use super::{SECTIONS, SectionId};
+use crate::queue::Repeat;
 use crate::secrets::{self, Backend, Secret, Stored};
 use crate::services::ScrobbleConfig;
-use crate::settings::{self, EQ_RANGE_DB, Settings};
+use crate::theme::ThemeChoice;
+use crate::util::off_thread;
 
 const SAVE_DEBOUNCE: Duration = Duration::from_millis(500);
 const MAX_ERRORS: usize = 5;
-const SLIDER_HEIGHT: f32 = 150.;
 
 pub enum SettingsEvent {
     /// Apply to the player now (`None` = equalizer off).
     Equalizer(Option<EqualizerSettings>),
     /// Credentials or Discord settings changed: rebuild the services.
     Integrations,
+    /// Theme or font scale changed.
+    Appearance,
+    /// The user picked another section (the app keeps the route in sync).
+    Section(SectionId),
+    /// Shuffle / repeat changed on the settings page (apply to the queue).
+    PlaybackModes,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
-pub enum Tab {
-    Equalizer,
-    Accounts,
-}
-
-enum LastFmFlow {
+pub(super) enum LastFmFlow {
     Idle,
     Busy(&'static str),
     /// Token issued; the user approves it in the browser, then presses Finish.
@@ -70,17 +70,17 @@ enum LastFmFlow {
     Failed(String),
 }
 
-enum Validation {
+pub(super) enum Validation {
     Idle,
     Busy,
     Failed(String),
 }
 
 pub struct SettingsPanel {
-    settings: Settings,
-    path: Option<PathBuf>,
-    /// Load/save problems, shown at the bottom of the Accounts tab.
-    file_error: Option<String>,
+    pub(super) settings: Settings,
+    pub(super) path: Option<PathBuf>,
+    /// Load/save problems, shown in the Storage and Integrations sections.
+    pub(super) file_error: Option<String>,
     save_task: Option<Task<()>>,
     save_pending: bool,
     /// Emit `Integrations` when the pending save fires (typed ids/keys).
@@ -88,20 +88,21 @@ pub struct SettingsPanel {
 
     backend: Option<Arc<dyn Backend>>,
     secrets: BTreeMap<Secret, String>,
-    secrets_loaded: bool,
+    pub(super) secrets_loaded: bool,
     /// Where secrets go / came from, for the status line.
-    secret_store: SharedString,
+    pub(super) secret_store: SharedString,
 
-    pub tab: Tab,
-    eq_sliders: Vec<Entity<SliderState>>,
-    lastfm_key: Entity<InputState>,
-    lastfm_secret: Entity<InputState>,
-    lastfm: LastFmFlow,
-    lb_token: Entity<InputState>,
-    lb: Validation,
-    discord_id: Entity<InputState>,
-    discord_status: DiscordStatus,
-    scrobble_errors: VecDeque<String>,
+    pub section: SectionId,
+    scroll: ScrollHandle,
+    pub(super) eq_sliders: Vec<Entity<SliderState>>,
+    pub(super) lastfm_key: Entity<InputState>,
+    pub(super) lastfm_secret: Entity<InputState>,
+    pub(super) lastfm: LastFmFlow,
+    pub(super) lb_token: Entity<InputState>,
+    pub(super) lb: Validation,
+    pub(super) discord_id: Entity<InputState>,
+    pub(super) discord_status: DiscordStatus,
+    pub(super) scrobble_errors: VecDeque<String>,
     _subscriptions: Vec<Subscription>,
 }
 
@@ -110,7 +111,7 @@ impl EventEmitter<SettingsEvent> for SettingsPanel {}
 impl SettingsPanel {
     /// Loads `settings.json` synchronously (small file) and the secrets on a worker thread.
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let path = settings::settings_path();
+        let path = file::settings_path();
         let (settings, file_error) = match &path {
             Some(path) => Settings::load(path),
             None => (
@@ -199,7 +200,8 @@ impl SettingsPanel {
             secrets: BTreeMap::new(),
             secrets_loaded: false,
             secret_store,
-            tab: Tab::Equalizer,
+            section: SectionId::default(),
+            scroll: ScrollHandle::new(),
             eq_sliders,
             lastfm_key,
             lastfm_secret,
@@ -307,6 +309,65 @@ impl SettingsPanel {
         (d.enabled && !d.client_id.is_empty()).then(|| d.client_id.clone())
     }
 
+    pub fn show_section(&mut self, section: SectionId, cx: &mut Context<Self>) {
+        if self.section != section {
+            self.section = section;
+            self.scroll.set_offset(gpui::point(px(0.), px(0.)));
+            cx.notify();
+        }
+    }
+
+    pub fn scroll_handle(&self) -> ScrollHandle {
+        self.scroll.clone()
+    }
+
+    pub fn set_theme(&mut self, theme: ThemeChoice, cx: &mut Context<Self>) {
+        if self.settings.appearance.theme != theme {
+            self.settings.appearance.theme = theme;
+            cx.emit(SettingsEvent::Appearance);
+            self.changed(false, cx);
+        }
+    }
+
+    pub fn set_font_scale(&mut self, scale: f32, cx: &mut Context<Self>) {
+        if (self.settings.appearance.font_scale - scale).abs() > f32::EPSILON {
+            self.settings.appearance.font_scale = scale;
+            self.settings.normalize();
+            cx.emit(SettingsEvent::Appearance);
+            self.changed(false, cx);
+        }
+    }
+
+    /// From the settings page: store and tell the app to apply.
+    pub fn choose_playback_modes(&mut self, shuffle: bool, repeat: Repeat, cx: &mut Context<Self>) {
+        self.set_playback_modes(shuffle, repeat, cx);
+        cx.emit(SettingsEvent::PlaybackModes);
+    }
+
+    /// From the app (bar / queue panel / shortcuts): store only.
+    pub fn set_playback_modes(&mut self, shuffle: bool, repeat: Repeat, cx: &mut Context<Self>) {
+        let p = &mut self.settings.playback;
+        if p.shuffle != shuffle || p.repeat != repeat {
+            p.shuffle = shuffle;
+            p.repeat = repeat;
+            self.changed(false, cx);
+        }
+    }
+
+    pub fn set_window_geometry(&mut self, geometry: WindowGeometry, cx: &mut Context<Self>) {
+        if self.settings.window != Some(geometry) && geometry.is_sane() {
+            self.settings.window = Some(geometry);
+            self.changed(false, cx);
+        }
+    }
+
+    pub fn set_mini_player_geometry(&mut self, geometry: WindowGeometry, cx: &mut Context<Self>) {
+        if self.settings.mini_player != Some(geometry) && geometry.is_sane() {
+            self.settings.mini_player = Some(geometry);
+            self.changed(false, cx);
+        }
+    }
+
     pub fn set_volume(&mut self, volume: f32, cx: &mut Context<Self>) {
         if (self.settings.volume - volume).abs() > f32::EPSILON {
             self.settings.volume = volume;
@@ -350,7 +411,7 @@ impl SettingsPanel {
     }
 
     /// Writes the file now if a save is pending.
-    fn flush(&mut self) {
+    pub fn flush(&mut self) {
         if !std::mem::take(&mut self.save_pending) {
             return;
         }
@@ -623,404 +684,85 @@ impl SettingsPanel {
 
     // ---- rendering -------------------------------------------------------------
 
-    fn render_tabs(&self, cx: &mut Context<Self>) -> impl IntoElement + use<> {
-        let tab = |id: &'static str, label: &'static str, value: Tab| {
-            Button::new(id)
-                .ghost()
-                .small()
-                .label(label)
-                .selected(self.tab == value)
-                .on_click(cx.listener(move |this, _, _, cx| {
-                    this.tab = value;
-                    cx.notify();
-                }))
-        };
-        h_flex()
-            .gap_1()
-            .pb_3()
-            .child(tab("tab-eq", "Equalizer", Tab::Equalizer))
-            .child(tab("tab-accounts", "Scrobbling & Discord", Tab::Accounts))
-    }
-
-    fn render_equalizer(&self, cx: &mut Context<Self>) -> impl IntoElement + use<> {
+    fn render_nav(&self, cx: &mut Context<Self>) -> impl IntoElement + use<> {
         let theme = cx.theme();
-        let eq = &self.settings.equalizer;
-        let current = eq.preset();
-        let presets =
-            h_flex()
-                .flex_wrap()
-                .gap_1()
-                .children(EqPreset::ALL.map(|preset| {
-                    let selected = eq.enabled && current == Some(preset);
-                    Button::new(SharedString::from(format!("preset-{}", preset.name())))
-                        .small()
-                        .map(|b| if selected { b.primary() } else { b.outline() })
-                        .label(preset.name())
-                        .selected(selected)
-                        .on_click(cx.listener(move |this, _, window, cx| {
-                            this.apply_preset(preset, window, cx)
-                        }))
-                }));
-        let muted = theme.muted_foreground;
-        let bands =
-            h_flex()
-                .w_full()
-                .justify_between()
-                .children(self.eq_sliders.iter().enumerate().map(|(i, slider)| {
-                    let gain = eq.gains_db[i];
-                    v_flex()
-                        .w(px(34.))
-                        .items_center()
-                        .gap_2()
-                        .child(
-                            div()
-                                .text_xs()
-                                .text_color(if gain.abs() < 0.05 {
-                                    muted
-                                } else {
-                                    theme.foreground
-                                })
-                                .child(if gain.abs() < 0.05 {
-                                    "0".to_owned()
-                                } else {
-                                    format!("{gain:+.1}")
-                                }),
-                        )
-                        .child(
-                            div().h(px(SLIDER_HEIGHT)).child(
-                                Slider::new(slider)
-                                    .vertical()
-                                    .h_full()
-                                    .disabled(!eq.enabled),
-                            ),
-                        )
-                        .child(
-                            div()
-                                .text_xs()
-                                .text_color(muted)
-                                .child(band_label(GRAPHIC_BANDS_HZ[i])),
-                        )
-                }));
+        let (active_bg, hover_bg) = (theme.sidebar_accent, theme.list_hover);
+        let (fg, muted) = (theme.foreground, theme.muted_foreground);
         v_flex()
-            .gap_3()
-            .child(
-                h_flex()
-                    .justify_between()
-                    .child(section_title("Equalizer"))
-                    .child(
-                        Switch::new("eq-enabled")
-                            .checked(eq.enabled)
-                            .label(if eq.enabled { "On" } else { "Off" })
-                            .on_click(cx.listener(|this, checked: &bool, _, cx| {
-                                this.set_eq_enabled(*checked, cx)
-                            })),
-                    ),
-            )
-            .child(
-                h_flex()
-                    .gap_2()
-                    .child(presets)
-                    .when(current.is_none(), |this| {
-                        this.child(Tag::secondary().small().child("Custom"))
-                    }),
-            )
-            .child(
-                h_flex()
-                    .items_start()
-                    .gap_2()
-                    .child(
-                        v_flex()
-                            .h(px(SLIDER_HEIGHT))
-                            .mt(px(24.))
-                            .justify_between()
-                            .text_xs()
-                            .text_color(muted)
-                            .child("+12")
-                            .child("0")
-                            .child("−12"),
-                    )
-                    .child(bands),
-            )
-            .child(note(
-                "Applied live. Boosts are compensated so the output never clips.",
-                cx,
-            ))
-    }
-
-    fn render_accounts(&self, cx: &mut Context<Self>) -> impl IntoElement + use<> {
-        let theme = cx.theme();
-        let danger = theme.danger;
-        let success = theme.success;
-        let muted = theme.muted_foreground;
-        let s = &self.settings;
-
-        // ---- Last.fm
-        let lastfm_status: (SharedString, gpui::Hsla) = match (&s.lastfm.user, &self.lastfm) {
-            (_, LastFmFlow::Busy(what)) => ((*what).into(), muted),
-            (_, LastFmFlow::Waiting { error: None, .. }) => (
-                "Approve the app in your browser, then press Finish.".into(),
-                muted,
-            ),
-            (_, LastFmFlow::Waiting { error: Some(e), .. }) => (e.clone().into(), danger),
-            (_, LastFmFlow::Failed(e)) => (e.clone().into(), danger),
-            (Some(user), LastFmFlow::Idle) => (format!("Connected as {user}").into(), success),
-            (None, LastFmFlow::Idle) => ("Not connected".into(), muted),
-        };
-        let lastfm_buttons = match (&s.lastfm.user, &self.lastfm) {
-            (_, LastFmFlow::Waiting { .. }) => h_flex()
-                .gap_2()
-                .child(
-                    Button::new("lastfm-finish")
-                        .small()
-                        .primary()
-                        .label("Finish")
-                        .on_click(cx.listener(|this, _, _, cx| this.lastfm_finish(cx))),
-                )
-                .child(
-                    Button::new("lastfm-cancel")
-                        .small()
-                        .ghost()
-                        .label("Cancel")
-                        .on_click(cx.listener(|this, _, _, cx| {
-                            this.lastfm = LastFmFlow::Idle;
-                            cx.notify();
-                        })),
-                ),
-            (Some(_), _) => h_flex().gap_2().child(
-                Button::new("lastfm-disconnect")
-                    .small()
-                    .outline()
-                    .label("Disconnect")
-                    .on_click(cx.listener(|this, _, _, cx| this.lastfm_disconnect(cx))),
-            ),
-            (None, flow) => h_flex()
-                .gap_2()
-                .child(
-                    Button::new("lastfm-connect")
-                        .small()
-                        .primary()
-                        .label("Connect")
-                        .loading(matches!(flow, LastFmFlow::Busy(_)))
-                        .on_click(cx.listener(|this, _, _, cx| this.lastfm_connect(cx))),
-                )
-                .when(!s.lastfm.api_key.is_empty(), |this| {
-                    this.child(
-                        Button::new("lastfm-clear")
-                            .small()
-                            .ghost()
-                            .label("Forget key")
-                            .on_click(
-                                cx.listener(|this, _, window, cx| this.lastfm_clear(window, cx)),
-                            ),
-                    )
-                }),
-        };
-        let lastfm = v_flex()
-            .gap_2()
-            .child(
-                h_flex()
-                    .justify_between()
-                    .child(section_title("Last.fm"))
-                    .child(lastfm_buttons),
-            )
-            .child(field("API key", Input::new(&self.lastfm_key).small(), cx))
-            .child(field(
-                "Shared secret",
-                Input::new(&self.lastfm_secret).small().mask_toggle(),
-                cx,
-            ))
-            .child(status_line(lastfm_status.0, lastfm_status.1));
-
-        // ---- ListenBrainz
-        let lb_status: (SharedString, gpui::Hsla) = match (&s.listenbrainz.user, &self.lb) {
-            (_, Validation::Busy) => ("Checking the token…".into(), muted),
-            (_, Validation::Failed(e)) => (e.clone().into(), danger),
-            (Some(user), Validation::Idle) => (format!("Connected as {user}").into(), success),
-            (None, Validation::Idle) => ("Not connected".into(), muted),
-        };
-        let lb_button = if s.listenbrainz.user.is_some() {
-            Button::new("lb-disconnect")
-                .small()
-                .outline()
-                .label("Disconnect")
-                .on_click(cx.listener(|this, _, window, cx| this.lb_disconnect(window, cx)))
-        } else {
-            Button::new("lb-validate")
-                .small()
-                .primary()
-                .label("Validate")
-                .loading(matches!(self.lb, Validation::Busy))
-                .on_click(cx.listener(|this, _, _, cx| this.lb_validate(cx)))
-        };
-        let listenbrainz = v_flex()
-            .gap_2()
-            .child(
-                h_flex()
-                    .justify_between()
-                    .child(section_title("ListenBrainz"))
-                    .child(lb_button),
-            )
-            .child(field(
-                "User token",
-                Input::new(&self.lb_token).small().mask_toggle(),
-                cx,
-            ))
-            .child(status_line(lb_status.0, lb_status.1));
-
-        // ---- Discord
-        let enabled = s.discord.enabled;
-        let discord_status: (SharedString, gpui::Hsla) = match (&self.discord_status, enabled) {
-            (_, false) => ("Off".into(), muted),
-            (_, true) if s.discord.client_id.is_empty() => {
-                ("Enter your Discord application ID.".into(), muted)
-            }
-            (DiscordStatus::Connected, true) => ("Connected to Discord".into(), success),
-            (DiscordStatus::Disconnected { error }, true) => {
-                (format!("Discord not reachable: {error}").into(), danger)
-            }
-            (DiscordStatus::Idle, true) => ("Waiting for playback…".into(), muted),
-        };
-        let discord =
-            v_flex()
-                .gap_2()
-                .child(
-                    h_flex()
-                        .justify_between()
-                        .child(section_title("Discord Rich Presence"))
-                        .child(Switch::new("discord-enabled").checked(enabled).on_click(
-                            cx.listener(|this, checked: &bool, _, cx| {
-                                this.set_discord_enabled(*checked, cx)
-                            }),
-                        )),
-                )
-                .child(field(
-                    "Application ID",
-                    Input::new(&self.discord_id).small(),
-                    cx,
-                ))
-                .child(status_line(discord_status.0, discord_status.1));
-
-        // ---- footer: errors + where things are stored
-        let errors = (!self.scrobble_errors.is_empty()).then(|| {
-            v_flex()
-                .gap_1()
-                .child(
-                    h_flex()
-                        .justify_between()
-                        .child(
-                            div()
-                                .text_xs()
-                                .font_weight(FontWeight::SEMIBOLD)
-                                .text_color(danger)
-                                .child(format!("Scrobble errors ({})", self.scrobble_errors.len())),
-                        )
-                        .child(
-                            Button::new("errors-clear")
-                                .xsmall()
-                                .ghost()
-                                .label("Clear")
-                                .on_click(cx.listener(|this, _, _, cx| this.clear_errors(cx))),
-                        ),
-                )
-                .children(self.scrobble_errors.iter().rev().map(|e| {
-                    div()
-                        .text_xs()
-                        .text_color(muted)
-                        .line_clamp(2)
-                        .child(e.clone())
-                }))
-        });
-        let secrets_line = if self.secrets_loaded {
-            format!("Secrets: {}", self.secret_store)
-        } else {
-            "Secrets: loading…".into()
-        };
-        let path_line = match &self.path {
-            Some(p) => format!("Settings: {}", p.display()),
-            None => "Settings are not saved (no config directory)".into(),
-        };
-        let footer = v_flex()
-            .gap_1()
-            .pt_2()
-            .border_t_1()
+            .w(px(210.))
+            .flex_none()
+            .h_full()
+            .py_4()
+            .px_2()
+            .gap_0p5()
+            .border_r_1()
             .border_color(theme.border)
-            .children(errors)
-            .child(note(secrets_line, cx))
-            .child(note(path_line, cx))
-            .when_some(self.file_error.clone(), |this, e| {
-                this.child(status_line(e.into(), danger))
-            });
-
-        v_flex()
-            .gap_5()
-            .child(lastfm)
-            .child(listenbrainz)
-            .child(discord)
-            .child(footer)
+            .child(
+                div()
+                    .px_3()
+                    .pb_3()
+                    .text_xl()
+                    .font_weight(FontWeight::BOLD)
+                    .child("Settings"),
+            )
+            .children(SECTIONS.iter().map(|section| {
+                let id = section.id;
+                let active = self.section == id;
+                h_flex()
+                    .id(SharedString::from(format!("settings-nav-{}", id.key())))
+                    .px_3()
+                    .py_1p5()
+                    .gap_2p5()
+                    .rounded(px(6.))
+                    .text_sm()
+                    .cursor_pointer()
+                    .text_color(if active { fg } else { muted })
+                    .when(active, |this| this.bg(active_bg))
+                    .when(!active, |this| this.hover(move |s| s.bg(hover_bg)))
+                    .child(Icon::new(section.icon).small())
+                    .child(section.title)
+                    .on_click(cx.listener(move |this, _, _, cx| {
+                        this.show_section(id, cx);
+                        cx.emit(SettingsEvent::Section(id));
+                    }))
+            }))
     }
 }
 
 impl Render for SettingsPanel {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let tabs = self.render_tabs(cx);
-        let body = match self.tab {
-            Tab::Equalizer => self.render_equalizer(cx).into_any_element(),
-            Tab::Accounts => self.render_accounts(cx).into_any_element(),
-        };
-        v_flex().w_full().pb_4().child(tabs).child(body)
-    }
-}
-
-fn band_label(hz: f64) -> String {
-    if hz >= 1000. {
-        format!("{}k", hz / 1000.)
-    } else {
-        format!("{hz}")
-    }
-}
-
-fn section_title(title: &'static str) -> impl IntoElement {
-    div().font_weight(FontWeight::SEMIBOLD).child(title)
-}
-
-fn note<T: Into<SharedString>>(text: T, cx: &Context<SettingsPanel>) -> impl IntoElement + use<T> {
-    div()
-        .text_xs()
-        .text_color(cx.theme().muted_foreground)
-        .line_clamp(2)
-        .child(text.into())
-}
-
-fn status_line(text: SharedString, color: gpui::Hsla) -> impl IntoElement {
-    div().text_xs().text_color(color).line_clamp(3).child(text)
-}
-
-fn field(
-    label: &'static str,
-    input: Input,
-    cx: &Context<SettingsPanel>,
-) -> impl IntoElement + use<> {
-    h_flex()
-        .gap_3()
-        .child(
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let nav = self.render_nav(cx);
+        let section = self.section.section();
+        let body = (section.render)(self, window, cx);
+        h_flex().size_full().items_start().child(nav).child(
             div()
-                .w(px(96.))
-                .flex_none()
-                .text_sm()
-                .text_color(cx.theme().muted_foreground)
-                .child(label),
+                .id("settings-scroll")
+                .flex_1()
+                .min_w_0()
+                .h_full()
+                .relative()
+                .child(
+                    div()
+                        .id("settings-content")
+                        .size_full()
+                        .overflow_y_scroll()
+                        .track_scroll(&self.scroll)
+                        .child(
+                            v_flex()
+                                .max_w(px(720.))
+                                .px_8()
+                                .py_6()
+                                .gap_5()
+                                .child(
+                                    div()
+                                        .text_2xl()
+                                        .font_weight(FontWeight::BOLD)
+                                        .child(section.title),
+                                )
+                                .child(body),
+                        ),
+                )
+                .vertical_scrollbar(&self.scroll),
         )
-        .child(div().flex_1().min_w_0().child(input))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::band_label;
-
-    #[test]
-    fn band_labels() {
-        assert_eq!(band_label(31.), "31");
-        assert_eq!(band_label(1000.), "1k");
-        assert_eq!(band_label(16000.), "16k");
     }
 }
