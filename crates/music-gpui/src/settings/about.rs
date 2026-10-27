@@ -22,6 +22,56 @@ pub(super) fn render(
     _: &mut Window,
     cx: &mut Context<SettingsPanel>,
 ) -> AnyElement {
+    let welcome = h_flex().gap_2().child(
+        Button::new("about-onboarding")
+            .small()
+            .outline()
+            .label("Show welcome guide")
+            .on_click(|_, window, cx| {
+                crate::app::update_app(cx, |app, cx| app.open_onboarding(0, window, cx));
+            }),
+    );
+    let updates = crate::update_check::repo().map(|repo| {
+        use crate::update_check::UpdateStatus;
+        let status = crate::update_check::status(cx);
+        let (text, url): (SharedString, Option<String>) = match &status {
+            UpdateStatus::Unknown => (format!("Releases from github.com/{repo}").into(), None),
+            UpdateStatus::Checking => ("Checking…".into(), None),
+            UpdateStatus::UpToDate => (
+                format!(
+                    "You have the latest version ({}).",
+                    env!("CARGO_PKG_VERSION")
+                )
+                .into(),
+                None,
+            ),
+            UpdateStatus::Available { version, url } => (
+                format!("Version {version} is available.").into(),
+                Some(url.clone()),
+            ),
+            UpdateStatus::Failed(e) => (format!("Couldn't check: {e}").into(), None),
+        };
+        group("Updates", cx).child(note(text, cx)).child(
+            h_flex()
+                .gap_2()
+                .child(
+                    Button::new("about-update-check")
+                        .small()
+                        .outline()
+                        .label("Check now")
+                        .on_click(|_, _, cx| {
+                            crate::app::update_app(cx, |app, cx| app.check_for_updates(true, cx));
+                        }),
+                )
+                .children(url.map(|url| {
+                    Button::new("about-update-open")
+                        .small()
+                        .primary()
+                        .label("Download…")
+                        .on_click(move |_, _, cx| cx.open_url(&url))
+                })),
+        )
+    });
     let muted = cx.theme().muted_foreground;
     let link = |id: &'static str, label: &'static str, url: &'static str| {
         Button::new(id)
@@ -39,19 +89,22 @@ pub(super) fn render(
     v_flex()
         .gap_5()
         .child(
-            group("Music", cx)
+            group(crate::identity::APP_NAME, cx)
                 .child(note(
                     SharedString::from(format!(
-                        "Version {} · a native desktop client for YouTube Music",
-                        env!("CARGO_PKG_VERSION")
+                        "Version {} · {}",
+                        env!("CARGO_PKG_VERSION"),
+                        crate::identity::APP_SUMMARY
                     )),
                     cx,
                 ))
                 .child(note(
                     "Not affiliated with, endorsed or sponsored by YouTube or Google.",
                     cx,
-                )),
+                ))
+                .child(welcome),
         )
+        .children(updates)
         .child(
             group("License", cx)
                 .child(note(
@@ -73,6 +126,11 @@ pub(super) fn render(
                     "Hummingbird",
                     "Equalizer, OS media controls, scrobbling and Discord presence are \
                      ported from Hummingbird (Apache-2.0), © Hummingbird contributors.",
+                ))
+                .child(credit(
+                    "Song recognition",
+                    "Shazam-compatible fingerprinting ported from ArchiveTune's shazamkit \
+                     (GPL-3.0), which follows SongRec's format. Not affiliated with Shazam or Apple.",
                 ))
                 .child(credit(
                     "Libraries",
