@@ -87,6 +87,21 @@ impl Input {
     }
 }
 
+/// Display name of a codec.
+fn codec_name(id: symphonia::core::codecs::audio::AudioCodecId) -> Option<&'static str> {
+    use symphonia::core::codecs::audio::well_known::*;
+    Some(match id {
+        CODEC_ID_FLAC => "FLAC",
+        CODEC_ID_ALAC => "ALAC",
+        CODEC_ID_AAC => "AAC",
+        CODEC_ID_MP3 => "MP3",
+        CODEC_ID_VORBIS => "Vorbis",
+        CODEC_ID_OPUS => "Opus",
+        _ if (CODEC_ID_PCM_S32LE..=CODEC_ID_PCM_MULAW).contains(&id) => "PCM",
+        _ => return None,
+    })
+}
+
 /// File extension for a MIME type such as `audio/webm; codecs="opus"`.
 fn extension_for_mime(mime: &str) -> Option<&'static str> {
     let essence = mime.split(';').next()?.trim().to_ascii_lowercase();
@@ -97,6 +112,7 @@ fn extension_for_mime(mime: &str) -> Option<&'static str> {
         "audio/mpeg" | "audio/mp3" => "mp3",
         "audio/flac" | "audio/x-flac" => "flac",
         "audio/wav" | "audio/x-wav" | "audio/wave" => "wav",
+        "audio/aiff" | "audio/x-aiff" => "aiff",
         _ => return None,
     })
 }
@@ -214,6 +230,8 @@ pub struct TrackDecoder {
     end_error: Option<String>,
     eq: Option<EqStage>,
     replay_gain: Option<ReplayGain>,
+    codec_name: Option<&'static str>,
+    bits_per_sample: Option<u32>,
 }
 
 impl TrackDecoder {
@@ -251,6 +269,8 @@ impl TrackDecoder {
             .ok_or_else(|| Error::Audio("no audio codec parameters".into()))?
             .clone();
         let (track_id, time_base) = (track.id, track.time_base);
+        let codec_name = codec_name(params.codec);
+        let bits_per_sample = params.bits_per_sample.filter(|b| *b > 0);
         let total_duration = track
             .num_frames
             .zip(time_base)
@@ -306,6 +326,8 @@ impl TrackDecoder {
             end_error: None,
             eq: None,
             replay_gain,
+            codec_name,
+            bits_per_sample,
         };
         // Decode the first packet now so the real output spec is known up front.
         if !this.refill() {
@@ -332,6 +354,17 @@ impl TrackDecoder {
     pub fn pos(&self) -> Duration {
         let frame = self.buffer_start + (self.offset / self.channels as usize) as u64;
         Duration::from_secs_f64(frame as f64 / self.rate as f64)
+    }
+
+    /// Codec ("FLAC", "AAC", "Opus", …), bit depth of the source (lossless
+    /// and PCM codecs), sample rate and channel count of the decoded audio.
+    pub fn format_info(&self) -> (Option<&'static str>, Option<u32>, u32, u16) {
+        (
+            self.codec_name,
+            self.bits_per_sample,
+            self.rate,
+            self.channels,
+        )
     }
 
     /// ReplayGain / R128 track gain from the file's tags, if any.

@@ -122,6 +122,8 @@ pub struct SettingsPanel {
     pub(super) network: super::network::NetworkState,
     /// Player / lyrics / Now Playing / activity widgets (`prefs_ui.rs`).
     pub(super) prefs: PrefsUi,
+    /// Modules section (inputs, review, open settings form, status).
+    pub(super) modules: super::modules::ModulesState,
     /// SponsorBlock / Music Together / Spotify inputs (`integrations_ui.rs`).
     pub(super) extras: super::integrations_ui::ExtrasUi,
     _subscriptions: Vec<Subscription>,
@@ -209,6 +211,7 @@ impl SettingsPanel {
             super::content::ContentState::new(&settings, window, cx);
         subscriptions.extend(content_subscriptions);
         let network = super::network::NetworkState::new(&settings, window, cx);
+        let modules = super::modules::ModulesState::new(window, cx);
         let (prefs, prefs_subscriptions) = PrefsUi::new(&settings, window, cx);
         subscriptions.extend(prefs_subscriptions);
         let (extras, extras_subscriptions) =
@@ -249,6 +252,7 @@ impl SettingsPanel {
             content,
             network,
             prefs,
+            modules,
             extras,
             _subscriptions: subscriptions,
         };

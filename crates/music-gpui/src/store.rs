@@ -25,7 +25,7 @@ use music_core::downloads::{DownloadKind, DownloadManager, DownloadStatus};
 use music_core::innertube::{Auth, InnerTube};
 use music_core::library::{Library, PlaylistSort, SavedQueue, SongQuery, SongScope, now_ms};
 use music_core::local_files::{ScanConfig, scan_with_progress};
-use music_core::{IosClientResolver, PlaybackState, PlaybackStatus, Track};
+use music_core::{PlaybackState, PlaybackStatus, StreamResolver, Track};
 
 use crate::account::Account;
 use crate::app::{MusicApp, notify};
@@ -139,7 +139,7 @@ pub struct Store {
 impl Store {
     /// Opens `library.sqlite` and the download store in the settings directory
     /// (`MUSIC_CONFIG_DIR` respected). Failures leave the app usable without them.
-    pub fn open(prefs: LibraryConfig) -> Self {
+    pub fn open(prefs: LibraryConfig, resolver: Arc<dyn StreamResolver>) -> Self {
         let dir = crate::settings::file::config_dir();
         let mut error = None;
         let library =
@@ -156,11 +156,7 @@ impl Store {
             error = Some("No data directory; the library is not available.".into());
         }
         let downloads = dir.as_ref().and_then(|dir| {
-            match DownloadManager::new(
-                dir.join("media"),
-                Arc::new(IosClientResolver),
-                library.clone(),
-            ) {
+            match DownloadManager::new(dir.join("media"), resolver, library.clone()) {
                 Ok(manager) => {
                     manager.set_cache_limit(prefs.cache_limit_bytes());
                     Some(Arc::new(manager))

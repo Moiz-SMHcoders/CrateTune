@@ -49,6 +49,7 @@ impl StreamResolver for FakeResolver {
             content_length: Some(CHIRP.len() as u64),
             user_agent: "test",
             loudness_db: Some(3.0),
+            ..Default::default()
         })
     }
 }

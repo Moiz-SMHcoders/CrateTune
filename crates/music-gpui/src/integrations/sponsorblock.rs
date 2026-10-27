@@ -58,6 +58,14 @@ impl MusicApp {
             .track
             .as_ref()
             .filter(|t| !t.is_local() && is_video_id(&t.video_id))
+            // Segments are times in the YouTube video; audio from a provider module is
+            // another file with its own timeline.
+            .filter(|_| {
+                state
+                    .source
+                    .as_ref()
+                    .is_none_or(|s| s.kind != music_core::SourceKind::Module)
+            })
             .map(|t| t.video_id.clone());
         let sb = &mut self.integrations.sponsorblock;
         let (Some(video), true) = (video, prefs.enabled && !prefs.categories.is_empty()) else {

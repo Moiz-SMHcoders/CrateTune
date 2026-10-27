@@ -1,0 +1,53 @@
+{
+  "format": "archivetune.module",
+  "formatVersion": 1,
+  "apiVersion": 1,
+  "entry": "provider.js",
+  "module": {
+    "id": "dev.music-macos.echo",
+    "name": "Echo",
+    "displayName": "Echo (test provider)",
+    "version": "1.0.0",
+    "author": "music-macos tests",
+    "description": "Test provider: serves the audio files listed in catalog.json of a server you point it at. For development only.",
+    "license": "GPL-3.0-only",
+    "type": ["audio_provider"],
+    "requiredRuntimeFeatures": ["fetch@1", "settings@1", "streamResolution@1", "packagedIcon@1", "qualityOptions@1"],
+    "labels": ["test", "lossless"],
+    "capabilities": ["searchTracks", "getTrackStreamUrl"],
+    "icon": "icon.png",
+    "settings": {
+      "baseUrl": {
+        "type": "url",
+        "label": "Server URL",
+        "description": "Base URL serving catalog.json and audio/<file>.",
+        "defaultValue": null,
+        "required": true
+      },
+      "apiToken": {
+        "type": "password",
+        "label": "Access token",
+        "description": "Sent as a bearer token when set.",
+        "defaultValue": null
+      },
+      "searchLimit": {
+        "type": "integer",
+        "label": "Results",
+        "min": 1,
+        "max": 50,
+        "defaultValue": 10
+      },
+      "preferLossless": {
+        "type": "boolean",
+        "label": "Prefer lossless",
+        "defaultValue": true
+      }
+    },
+    "qualityLabel": "Audio quality",
+    "defaultQuality": "lossless",
+    "qualityOptions": [
+      {"id": "lossless", "label": "Lossless", "description": "FLAC when the server has it.", "kind": "lossless"},
+      {"id": "compressed", "label": "Compressed", "description": "MP3 / Ogg / AAC.", "kind": "lossy"}
+    ]
+  }
+}

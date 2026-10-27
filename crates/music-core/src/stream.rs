@@ -41,16 +41,116 @@ impl Quality {
 }
 
 /// A playable audio stream for one video.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct ResolvedStream {
     pub url: String,
+    /// YouTube itag (0 for streams from elsewhere, e.g. a provider module).
     pub itag: u32,
     pub mime_type: String,
     pub content_length: Option<u64>,
     /// User agent the URL was minted for; googlevideo rejects mismatches.
+    /// Empty: the HTTP agent's default (or a `User-Agent` in [`Self::headers`]).
     pub user_agent: &'static str,
     /// YouTube's per-track loudness relative to its reference, in dB (positive = louder).
     pub loudness_db: Option<f32>,
+    /// Extra request headers for every request of this stream (module streams;
+    /// empty for YouTube). A `User-Agent` here wins over [`Self::user_agent`].
+    pub headers: Vec<(String, String)>,
+    /// Fetch with one progressive GET (resumed with an open-ended `Range` after a
+    /// dropped connection) instead of googlevideo's 1 MiB range chunks. For
+    /// ordinary HTTP(S) servers, which may not even support ranges.
+    pub progressive: bool,
+    /// Where the audio comes from, for display. `None`: YouTube.
+    pub source: Option<StreamSource>,
+}
+
+/// What kind of source a track is played from.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub enum SourceKind {
+    #[default]
+    YouTube,
+    /// An installed provider module (see [`crate::modules`]).
+    Module,
+    /// A file on disk (local music or a downloaded copy).
+    File,
+}
+
+/// Where the playing audio comes from and what it is, for a "source" badge.
+///
+/// [`ResolvedStream::source`] carries what the resolver declared; the player
+/// fills in what the decoder found ([`crate::PlaybackState::source`]).
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+pub struct StreamSource {
+    pub kind: SourceKind,
+    /// "YouTube", a module's display name, "File".
+    pub provider: String,
+    /// Installation id of the module that resolved the stream.
+    pub module_id: Option<String>,
+    /// Codec, e.g. "FLAC", "AAC", "Opus" (decoder's, else the declared one).
+    pub codec: Option<String>,
+    /// Hz.
+    pub sample_rate: Option<u32>,
+    /// Bit depth of lossless/PCM audio.
+    pub bits_per_sample: Option<u32>,
+    /// Declared bitrate in bits per second.
+    pub bitrate: Option<u32>,
+    pub channels: Option<u16>,
+    /// The module's identity for the selected encoding (`variant`).
+    pub variant: Option<String>,
+}
+
+impl StreamSource {
+    /// The YouTube source for an itag (bitrates are YouTube's nominal ones).
+    pub fn youtube(itag: u32) -> Self {
+        let (codec, kbps) = match itag {
+            139 => (Some("AAC"), Some(48)),
+            140 => (Some("AAC"), Some(128)),
+            249 => (Some("Opus"), Some(50)),
+            250 => (Some("Opus"), Some(70)),
+            251 => (Some("Opus"), Some(160)),
+            _ => (None, None),
+        };
+        Self {
+            kind: SourceKind::YouTube,
+            provider: "YouTube".into(),
+            codec: codec.map(str::to_owned),
+            bitrate: kbps.map(|k: u32| k * 1000),
+            ..Default::default()
+        }
+    }
+
+    /// Lossless codecs show bit depth / sample rate, lossy ones their bitrate:
+    /// "FLAC 16/44.1", "AAC 128 kbps", "Opus".
+    pub fn quality_label(&self) -> Option<String> {
+        let codec = self.codec.as_deref()?;
+        let lossless = matches!(
+            codec.to_ascii_uppercase().as_str(),
+            "FLAC" | "ALAC" | "PCM" | "WAV" | "AIFF"
+        );
+        let khz = |hz: u32| {
+            let k = hz as f64 / 1000.0;
+            if (k - k.round()).abs() < 0.05 {
+                format!("{}", k.round() as u32)
+            } else {
+                format!("{k:.1}")
+            }
+        };
+        Some(
+            match (
+                lossless,
+                self.bits_per_sample,
+                self.sample_rate,
+                self.bitrate,
+            ) {
+                (true, Some(bits), Some(rate), _) => format!("{codec} {bits}/{}", khz(rate)),
+                (true, None, Some(rate), _) => format!("{codec} {} kHz", khz(rate)),
+                (false, _, _, Some(bps)) if bps > 0 => {
+                    format!("{codec} {} kbps", (bps + 500) / 1000)
+                }
+                _ => codec.to_owned(),
+            },
+        )
+    }
 }
 
 /// Turns a video id into a playable audio URL.
@@ -67,6 +167,14 @@ pub trait StreamResolver: Send + Sync {
     fn resolve_with_quality(&self, video_id: &str, quality: Quality) -> Result<ResolvedStream> {
         let _ = quality;
         self.resolve(video_id)
+    }
+
+    /// Resolves a whole track. The player and the download manager call this;
+    /// resolvers that look a song up elsewhere by its metadata (e.g.
+    /// [`crate::modules::ModuleResolver`]) override it. The default resolves
+    /// the video id.
+    fn resolve_track(&self, track: &crate::Track, quality: Quality) -> Result<ResolvedStream> {
+        self.resolve_with_quality(&track.video_id, quality)
     }
 }
 
@@ -149,6 +257,7 @@ impl StreamResolver for IosClientResolver {
                 .and_then(|s| s.parse().ok()),
             user_agent: IOS_UA,
             loudness_db: format["loudnessDb"].as_f64().map(|db| db as f32),
+            ..Default::default()
         })
     }
 }
@@ -244,6 +353,9 @@ impl Downloader {
     }
 
     fn download(&mut self) -> BufferEnd {
+        if self.stream.progressive {
+            return self.download_progressive();
+        }
         let total = self.stream.content_length;
         // Chunks served in full; two or more means this is not a ~1 MiB preview.
         let mut chunks_ok = 0u32;
@@ -331,18 +443,155 @@ impl Downloader {
         }
     }
 
+    /// One GET for the whole file (module streams from ordinary servers). A
+    /// dropped connection resumes with `Range: bytes=N-` (skipping the bytes a
+    /// server without range support resends); a 401/403/410 re-resolves once.
+    fn download_progressive(&mut self) -> BufferEnd {
+        let mut transport_errors = 0u32;
+        loop {
+            if self.buffer.is_cancelled() {
+                return BufferEnd::Cancelled;
+            }
+            let start = self.buffer.len();
+            if self.buffer.total_len().is_some_and(|t| start >= t) {
+                return BufferEnd::Complete;
+            }
+            match self.fetch_progressive(start) {
+                Ok(()) => {
+                    let len = self.buffer.len();
+                    match self.buffer.total_len() {
+                        // The connection closed early: resume below.
+                        Some(total) if len < total => {
+                            transport_errors += 1;
+                            if transport_errors > MAX_TRANSPORT_RETRIES {
+                                return BufferEnd::Failed(format!(
+                                    "connection closed at byte {len} of {total}"
+                                ));
+                            }
+                        }
+                        _ => return BufferEnd::Complete,
+                    }
+                }
+                Err(ChunkError::Status(code @ (401 | 403 | 410))) if self.refresh.is_some() => {
+                    match self.refreshed() {
+                        Some(stream) => {
+                            log::info!("stream URL rejected ({code}) at byte {start}; re-resolved");
+                            self.stream = stream;
+                        }
+                        None => return BufferEnd::Failed(format!("HTTP {code} at byte {start}")),
+                    }
+                }
+                Err(ChunkError::Status(code)) => {
+                    return BufferEnd::Failed(format!("HTTP {code} at byte {start}"));
+                }
+                Err(ChunkError::Other(msg)) => {
+                    if self.buffer.is_cancelled() {
+                        return BufferEnd::Cancelled;
+                    }
+                    transport_errors += 1;
+                    if transport_errors > MAX_TRANSPORT_RETRIES {
+                        return BufferEnd::Failed(msg);
+                    }
+                    log::warn!("download error at byte {start}, retrying: {msg}");
+                    std::thread::sleep(Duration::from_millis(500 * u64::from(transport_errors)));
+                }
+            }
+        }
+    }
+
+    /// A GET with the stream's user agent and headers. No overall timeout: a
+    /// progressive download of a large file takes as long as it takes; only
+    /// connecting and each wait for data are bounded.
+    fn request(
+        &self,
+        range: Option<String>,
+    ) -> std::result::Result<ureq::http::Response<ureq::Body>, ChunkError> {
+        let mut req = agent().get(&self.stream.url);
+        let custom_ua = self
+            .stream
+            .headers
+            .iter()
+            .any(|(k, _)| k.eq_ignore_ascii_case("user-agent"));
+        if !custom_ua && !self.stream.user_agent.is_empty() {
+            req = req.header("User-Agent", self.stream.user_agent);
+        }
+        for (key, value) in &self.stream.headers {
+            if key.eq_ignore_ascii_case("range") || key.eq_ignore_ascii_case("host") {
+                continue;
+            }
+            req = req.header(key.as_str(), value.as_str());
+        }
+        if let Some(range) = range {
+            req = req.header("Range", range);
+        }
+        let resp = if self.stream.progressive {
+            req.config()
+                .timeout_global(None)
+                .timeout_connect(Some(Duration::from_secs(15)))
+                .timeout_recv_response(Some(Duration::from_secs(30)))
+                .timeout_recv_body(Some(Duration::from_secs(30)))
+                .build()
+                .call()
+        } else {
+            req.call()
+        };
+        match resp {
+            Ok(resp) => Ok(resp),
+            Err(ureq::Error::StatusCode(code)) => Err(ChunkError::Status(code)),
+            Err(e) => Err(ChunkError::Other(e.to_string())),
+        }
+    }
+
+    /// Streams from `start` to the end of the file into the buffer.
+    fn fetch_progressive(&self, start: u64) -> std::result::Result<(), ChunkError> {
+        let mut resp = self.request((start > 0).then(|| format!("bytes={start}-")))?;
+        let status = resp.status().as_u16();
+        let length = resp
+            .headers()
+            .get("content-length")
+            .and_then(|v| v.to_str().ok())
+            .and_then(|v| v.parse::<u64>().ok());
+        // A server without range support resends the file from byte 0.
+        let mut skip = if status == 200 { start } else { 0 };
+        if status == 200 {
+            if let Some(len) = length {
+                self.buffer.set_total_len(len);
+            }
+        } else if status == 206 {
+            let total = resp
+                .headers()
+                .get("content-range")
+                .and_then(|v| v.to_str().ok())
+                .and_then(|v| v.rsplit('/').next())
+                .and_then(|v| v.trim().parse::<u64>().ok());
+            if let Some(total) = total {
+                self.buffer.set_total_len(total);
+            }
+        }
+        let mut reader = resp.body_mut().as_reader();
+        let mut piece = vec![0u8; 64 * 1024];
+        loop {
+            if self.buffer.is_cancelled() {
+                return Err(ChunkError::Other("cancelled".into()));
+            }
+            match reader.read(&mut piece) {
+                Ok(0) => return Ok(()),
+                Ok(n) => {
+                    let dropped = (skip as usize).min(n);
+                    skip -= dropped as u64;
+                    if dropped < n {
+                        self.buffer.append(&piece[dropped..n]);
+                    }
+                }
+                Err(e) if e.kind() == std::io::ErrorKind::Interrupted => {}
+                Err(e) => return Err(ChunkError::Other(e.to_string())),
+            }
+        }
+    }
+
     /// Streams `start..=end` into the buffer; returns the bytes received.
     fn fetch(&self, start: u64, end: u64) -> std::result::Result<u64, ChunkError> {
-        let resp = agent()
-            .get(&self.stream.url)
-            .header("User-Agent", self.stream.user_agent)
-            .header("Range", format!("bytes={start}-{end}"))
-            .call();
-        let mut resp = match resp {
-            Ok(resp) => resp,
-            Err(ureq::Error::StatusCode(code)) => return Err(ChunkError::Status(code)),
-            Err(e) => return Err(ChunkError::Other(e.to_string())),
-        };
+        let mut resp = self.request(Some(format!("bytes={start}-{end}")))?;
         // A server ignoring the range would resend the file from byte 0.
         if resp.status().as_u16() == 200 && start > 0 {
             return Err(ChunkError::Other("server ignored the byte range".into()));
@@ -387,6 +636,7 @@ mod tests {
             content_length: Some(len as u64),
             user_agent: "test",
             loudness_db: None,
+            ..Default::default()
         }
     }
 

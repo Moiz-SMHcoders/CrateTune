@@ -142,6 +142,7 @@ copies your YouTube Music library into the local one; **Sign out** forgets the c
 |---|---|
 | Appearance | theme (dark, pure black, dynamic accent from the artwork), text size, Now Playing layout and background, mini player style |
 | Playback | shuffle / repeat, quality, loudness normalization, skip silence, skip failing songs, crossfade, speed and pitch, output device, sleep timer |
+| Modules | provider modules (alternative audio sources) and where songs play from |
 | Equalizer | 10-band equalizer with presets |
 | Lyrics | look, animation style, providers and their order, translation, romanization |
 | Content & region | content language and country, hide explicit, hide videos, autoplay similar songs |
@@ -180,8 +181,51 @@ Super key in place of ⌘ and Alt for ⌥.
 
 ## Modules
 
-Modules (`.arch` plugins that add features) are being worked on and are not part of this
-release yet. This section will describe installing and managing them.
+A **module** is a small add-on (an `.arch` file) that can supply the audio for the songs you
+play from another source you have access to, for example a service that offers lossless
+files. The song stays the same song — title, artists, lyrics, your likes and playlists don't
+change; only the audio comes from elsewhere. **The app ships with no modules** and doesn't
+recommend any: you get them from their authors. Install only modules you trust, like any
+other software; they run in a sandbox (no access to your files, network only through the
+app, the same proxy).
+
+**Installing.** Settings → Modules → *Add a module*:
+
+* **Install from file…** — pick an `.arch` file;
+* **Install from URL** — paste the link to an `.arch` file (or to a small "descriptor" that
+  points to the current version);
+* **Add catalog** — paste a catalog link; its modules are listed under *Catalogs* with an
+  **Install** (or **Update**) button.
+
+Every package is checked first (format, checksum, settings, what it provides). A review card
+shows the name, version, author, what it can do and which settings it needs; press
+**Install**. If it needs settings (an account token, a server, a quality), its settings form
+opens: fill it in and press **Save**. Passwords and tokens are kept in the system keychain.
+
+**Using modules.** Choose under *Playback source*:
+
+* **YouTube only** — modules are not used (the default);
+* **Modules first, then YouTube** — each song is looked up in your enabled modules, top to
+  bottom; the first module with the same recording plays it, otherwise YouTube does;
+* **Modules only** — songs no module has fail (and are skipped when "Skip failing songs" is
+  on).
+
+The bar and Now Playing show where the audio comes from and its quality, e.g. "YouTube · AAC
+128 kbps" or "*Module name* · FLAC 16/44.1". Songs from a module play in full (the YouTube
+one-minute preview limit doesn't apply to them) and downloads use the same order. A module
+only plays a song when title, artist and length agree closely, so a live version or a remix
+is not swapped in for the studio recording. Your own music files never go through modules.
+
+**Managing.** Each installed module has an on/off switch, arrows to change the order,
+**Settings**, **Check** (does it load and is it configured), **Check for update** (for
+modules installed from a link; re-import the file otherwise) and **Uninstall** (removes its
+settings too). Under *Settings* → *Diagnostics* you see the last check, what happened with
+the last song (played, no match, or an error code) and the module's own log; **Copy
+diagnostics** copies a report without your settings or tokens, for the module's author.
+
+**For module authors:** the format is ArchiveTune's `.arch` module format, API v1; see
+"Provider modules" in the [README](../README.md#provider-modules-arch) for the APIs and limits
+of this app and the packaging tool.
 
 ## Privacy
 
@@ -199,7 +243,7 @@ release yet. This section will describe installing and managing them.
   through an anti-abuse challenge), YouTube serves only about the first minute of each
   song; the app doesn't work around this. Songs are marked "preview" in the player, the
   next song starts when the preview ends, and downloads are previews too. Your own music
-  files play in full.
+  files, and songs played through a [module](#modules), play in full.
 * The YouTube Music account features are new and not yet tested against many accounts.
 * Recognition uses Shazam's public endpoint, which may rate-limit ("Too many requests —
   try again in a minute") or change without notice.

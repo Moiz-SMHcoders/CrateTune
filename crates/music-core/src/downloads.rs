@@ -25,7 +25,7 @@ use std::thread;
 use serde::{Deserialize, Serialize};
 
 use crate::library::now_ms;
-use crate::{Error, Library, Result, StreamResolver, Track};
+use crate::{Error, Library, Quality, Result, StreamResolver, Track};
 
 /// Worker threads (parallel downloads).
 pub const CONCURRENCY: usize = 2;
@@ -161,7 +161,9 @@ fn file_name(video_id: &str, mime_type: &str) -> String {
         "audio/webm" => "webm",
         "audio/mpeg" => "mp3",
         "audio/ogg" => "ogg",
-        "audio/flac" => "flac",
+        "audio/flac" | "audio/x-flac" => "flac",
+        "audio/wav" | "audio/x-wav" | "audio/wave" => "wav",
+        "audio/aiff" | "audio/x-aiff" => "aiff",
         _ => "bin",
     };
     format!("{safe}.{ext}")
@@ -296,13 +298,16 @@ impl Inner {
                 }
             };
 
-            let fetched = self.resolver.resolve(&track.video_id).and_then(|stream| {
-                if let Some(job) = self.lock().jobs.iter_mut().find(|j| j.id == job_id) {
-                    job.state.total_bytes = stream.content_length;
-                }
-                let download = stream.download()?;
-                Ok((stream, download))
-            });
+            let fetched = self
+                .resolver
+                .resolve_track(&track, Quality::default())
+                .and_then(|stream| {
+                    if let Some(job) = self.lock().jobs.iter_mut().find(|j| j.id == job_id) {
+                        job.state.total_bytes = stream.content_length;
+                    }
+                    let download = stream.download()?;
+                    Ok((stream, download))
+                });
 
             let cancelled = self
                 .lock()
@@ -776,6 +781,7 @@ mod tests {
                 content_length: len.parse().ok(),
                 user_agent: "music-core-test",
                 loudness_db: Some(-3.0),
+                ..Default::default()
             })
         }
     }

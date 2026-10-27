@@ -91,6 +91,15 @@ impl MusicApp {
             })
         };
         let sleep_armed = sleep.is_some();
+        let source = crate::module_service::source_label(state.source.as_ref())
+            .filter(|_| track.is_some() && state.status != PlaybackStatus::Idle)
+            .map(|label| {
+                let module = state
+                    .source
+                    .as_ref()
+                    .is_some_and(|s| s.kind == music_core::SourceKind::Module);
+                (label, module)
+            });
         let sleep_custom = self.settings.read(cx).sleep_custom();
 
         h_flex()
@@ -222,6 +231,19 @@ impl MusicApp {
                             )
                             .when(state.preview_only, |this| {
                                 this.child(Tag::warning().small().rounded_full().child("Preview"))
+                            })
+                            .when_some(source, |this, (label, module)| {
+                                // Where the audio comes from: YouTube, a module, a file.
+                                this.child(
+                                    if module {
+                                        Tag::primary()
+                                    } else {
+                                        Tag::secondary()
+                                    }
+                                    .small()
+                                    .rounded_full()
+                                    .child(label),
+                                )
                             })
                             .children(chips),
                     )

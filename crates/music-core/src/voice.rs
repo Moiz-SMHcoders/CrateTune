@@ -20,7 +20,9 @@ use crate::dsp::Conform;
 use crate::equalizer::EqControl;
 use crate::silence::{SilenceConfig, SkipSilence};
 use crate::stream::{CHUNK_BYTES, Downloader};
-use crate::{Error, Quality, Result, StreamResolver, Track, TrackDecoder};
+use crate::{
+    Error, Quality, Result, SourceKind, StreamResolver, StreamSource, Track, TrackDecoder,
+};
 
 /// Audio kept ready ahead of the deck (also the latency of EQ/speed changes).
 const QUEUE_AHEAD: Duration = Duration::from_millis(150);
@@ -99,6 +101,8 @@ pub(crate) struct Voice {
     wake: Condvar,
     info: Mutex<Info>,
     buffer: Mutex<Option<Arc<StreamBuffer>>>,
+    /// Where the audio comes from (set while loading, completed by the decoder).
+    source: Mutex<Option<StreamSource>>,
     /// Loudness normalization multiplier (f32 bits).
     gain: AtomicU32,
     /// Track position of the audio the deck played last, in microseconds.
@@ -155,6 +159,7 @@ impl Voice {
                 stream_error: None,
             }),
             buffer: Mutex::new(None),
+            source: Mutex::new(None),
             gain: AtomicU32::new(1f32.to_bits()),
             played_us: AtomicU64::new(0),
             epoch: AtomicU64::new(0),
@@ -214,6 +219,11 @@ impl Voice {
 
     pub(crate) fn stream_error(&self) -> Option<String> {
         lock(&self.info).stream_error.clone()
+    }
+
+    /// Where the audio comes from, once known.
+    pub(crate) fn source(&self) -> Option<StreamSource> {
+        lock(&self.source).clone()
     }
 
     /// True once the stream turned out to be a truncated preview.
@@ -297,15 +307,44 @@ impl Voice {
         lock(&self.queue).eof = true;
     }
 
+    /// Completes the source with what the decoder found.
+    fn describe(&self, mut source: StreamSource, decoder: &TrackDecoder) {
+        let (codec, bits, rate, channels) = decoder.format_info();
+        if let Some(codec) = codec {
+            source.codec = Some(codec.to_owned());
+        }
+        source.bits_per_sample = bits.or(source.bits_per_sample);
+        source.sample_rate = Some(rate);
+        source.channels = Some(channels);
+        *lock(&self.source) = Some(source);
+    }
+
     fn open(&self, config: &VoiceConfig) -> Result<TrackDecoder> {
+        let decoder = self.open_decoder(config)?;
+        let source = lock(&self.source).clone().unwrap_or_default();
+        self.describe(source, &decoder);
+        Ok(decoder)
+    }
+
+    fn open_decoder(&self, config: &VoiceConfig) -> Result<TrackDecoder> {
         if let Some(path) = &self.track.local_path {
+            *lock(&self.source) = Some(StreamSource {
+                kind: SourceKind::File,
+                provider: "File".into(),
+                ..Default::default()
+            });
             let decoder = TrackDecoder::open_file(path)?;
             let gain = decoder.replay_gain().map_or(1.0, |rg| rg.linear());
             self.gain.store(gain.to_bits(), Ordering::Relaxed);
             return Ok(decoder);
         }
-        let id = self.track.video_id.clone();
-        let stream = config.resolver.resolve_with_quality(&id, config.quality)?;
+        let stream = config.resolver.resolve_track(&self.track, config.quality)?;
+        *lock(&self.source) = Some(
+            stream
+                .source
+                .clone()
+                .unwrap_or_else(|| StreamSource::youtube(stream.itag)),
+        );
         // Only attenuate tracks louder than YouTube's reference; boosting quiet ones would clip.
         let gain = stream
             .loudness_db
@@ -320,9 +359,9 @@ impl Voice {
             return Err(Error::Audio("stopped".into()));
         }
         let (resolver, quality) = (config.resolver.clone(), config.quality);
-        let downloader = Downloader::new(stream.clone(), buffer.clone(), CHUNK_BYTES).with_refresh(
-            Box::new(move || resolver.resolve_with_quality(&id, quality)),
-        );
+        let track = self.track.clone();
+        let downloader = Downloader::new(stream.clone(), buffer.clone(), CHUNK_BYTES)
+            .with_refresh(Box::new(move || resolver.resolve_track(&track, quality)));
         thread::Builder::new()
             .name("music-core-download".into())
             .spawn(move || downloader.run())

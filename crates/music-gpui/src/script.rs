@@ -44,6 +44,10 @@
 //! | `@translate=on\|off`, `@romanize=SCRIPT:on\|off` (`japanese`, `korean`, `chinese`, `devanagari`, `cyrillic`, `other`), `@lyrics-reload` | lyrics extras |
 //! | `@sleep=MIN\|eot\|off` (`@sleep=5s`: seconds, for tests) | sleep timer |
 //! | `@speed=1.25`, `@pitch=-2`, `@crossfade=6`, `@quality=low\|normal\|high`, `@normalize=on\|off`, `@skip-silence=on\|off` | engine options (saved) |
+//! | `@modules=youtube\|first\|only` | playback source (Settings → Modules) |
+//! | `@module-install=PATH\|URL`, `@module-catalog=URL`, `@module-confirm`, `@module-cancel` | add a module / catalog (review, then install) |
+//! | `@module-open=N\|ID`, `@module-field=KEY:VALUE`, `@module-save` | a module's settings form (index in playback order or manifest id) |
+//! | `@module-check=N`, `@module-update=N`, `@module-enable=N:on\|off`, `@module-remove=N` (twice: confirm) | module actions |
 //! | `@quit` | quit |
 //!
 //! Library / account / storage actions (`@like`, `@download`, `@backup`, …) are listed
@@ -541,7 +545,8 @@ impl MusicApp {
             "quit" => cx.quit(),
             // Library, downloads, account, storage (`library_script.rs`).
             other => {
-                if !self.library_script_action(other, arg, window, cx)
+                if !self.module_script_action(other, arg, window, cx)
+                    && !self.library_script_action(other, arg, window, cx)
                     && !self.integrations_script_action(other, arg, window, cx)
                     && !self.release_script_action(other, arg, window, cx)
                 {
