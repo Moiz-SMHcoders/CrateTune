@@ -1,0 +1,459 @@
+import { LineEdit, ListView, Spinner } from "std-widgets.slint";
+
+export struct TrackRow {
+    video-id: string,
+    title: string,
+    subtitle: string,
+    duration: string,
+    art: image,
+}
+
+global Theme {
+    out property <color> bg: #0e0e11;
+    out property <color> surface: #16161a;
+    out property <color> raised: #24242a;
+    out property <color> hover: #1d1d22;
+    out property <color> divider: #26262c;
+    out property <color> text: #f2f2f4;
+    out property <color> muted: #9a9aa4;
+    out property <color> accent: #ff4d6d;
+    out property <color> danger: #ff8a80;
+}
+
+// Square artwork with a placeholder note while the image is loading/missing.
+component Artwork inherits Rectangle {
+    in property <image> source;
+    background: Theme.raised;
+    border-radius: 4px;
+    clip: true;
+
+    if root.source.width == 0: Text {
+        text: "♪";
+        color: Theme.muted;
+        font-size: root.height * 0.4;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+    Image {
+        width: 100%;
+        height: 100%;
+        source: root.source;
+        image-fit: cover;
+    }
+}
+
+component TrackItem inherits Rectangle {
+    in property <TrackRow> track;
+    in property <int> index;
+    in property <bool> current;
+    callback clicked();
+
+    height: 60px;
+    border-radius: 6px;
+    background: touch.has-hover ? Theme.hover : transparent;
+
+    HorizontalLayout {
+        padding-left: 8px;
+        padding-right: 16px;
+        spacing: 14px;
+
+        Text {
+            width: 28px;
+            text: root.current ? "▶" : root.index + 1;
+            color: root.current ? Theme.accent : Theme.muted;
+            font-size: 12px;
+            horizontal-alignment: right;
+            vertical-alignment: center;
+        }
+
+        Artwork {
+            width: 44px;
+            height: 44px;
+            source: root.track.art;
+        }
+
+        VerticalLayout {
+            horizontal-stretch: 1;
+            alignment: center;
+            spacing: 3px;
+            Text {
+                text: root.track.title;
+                color: root.current ? Theme.accent : Theme.text;
+                font-size: 14px;
+                font-weight: 600;
+                overflow: elide;
+            }
+
+            Text {
+                text: root.track.subtitle;
+                color: Theme.muted;
+                font-size: 12px;
+                overflow: elide;
+            }
+        }
+
+        Text {
+            width: 48px;
+            text: root.track.duration;
+            color: Theme.muted;
+            font-size: 12px;
+            horizontal-alignment: right;
+            vertical-alignment: center;
+        }
+    }
+
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => {
+            root.clicked();
+        }
+    }
+}
+
+component PlayButton inherits Rectangle {
+    in property <bool> playing;
+    in property <bool> loading;
+    in property <bool> enabled;
+    callback clicked();
+
+    width: 38px;
+    height: 38px;
+    border-radius: self.width / 2;
+    background: touch.pressed ? #d0d0d6 : Theme.text;
+    opacity: root.enabled ? 1 : 0.35;
+
+    if root.loading: Spinner {
+        width: 22px;
+        height: 22px;
+        indeterminate: true;
+    }
+    if !root.loading && root.playing: Path {
+        width: 12px;
+        height: 14px;
+        viewbox-width: 12;
+        viewbox-height: 14;
+        fill: Theme.bg;
+        commands: "M 0 0 L 4 0 L 4 14 L 0 14 Z M 8 0 L 12 0 L 12 14 L 8 14 Z";
+    }
+    if !root.loading && !root.playing: Path {
+        x: (parent.width - self.width) / 2 + 1.5px;
+        width: 13px;
+        height: 15px;
+        viewbox-width: 13;
+        viewbox-height: 15;
+        fill: Theme.bg;
+        commands: "M 0 0 L 13 7.5 L 0 15 Z";
+    }
+
+    touch := TouchArea {
+        enabled: root.enabled;
+        mouse-cursor: pointer;
+        clicked => {
+            root.clicked();
+        }
+    }
+}
+
+// Thin progress bar; click anywhere to seek.
+component SeekBar inherits Rectangle {
+    in property <float> progress;
+    in property <bool> enabled;
+    callback seek(float);
+
+    height: 14px;
+
+    Rectangle {
+        y: (parent.height - self.height) / 2;
+        height: 4px;
+        border-radius: 2px;
+        background: Theme.raised;
+
+        Rectangle {
+            x: 0;
+            width: parent.width * clamp(root.progress, 0, 1);
+            border-radius: 2px;
+            background: touch.has-hover ? Theme.accent : Theme.text;
+        }
+    }
+
+    if touch.has-hover && root.enabled: Rectangle {
+        x: root.width * clamp(root.progress, 0, 1) - self.width / 2;
+        width: 12px;
+        height: 12px;
+        border-radius: 6px;
+        background: Theme.text;
+    }
+
+    touch := TouchArea {
+        enabled: root.enabled;
+        mouse-cursor: pointer;
+        clicked => {
+            root.seek(self.mouse-x / self.width);
+        }
+    }
+}
+
+component Badge inherits Rectangle {
+    in property <string> text;
+    border-radius: 4px;
+    border-width: 1px;
+    border-color: Theme.accent;
+    HorizontalLayout {
+        padding-left: 6px;
+        padding-right: 6px;
+        padding-top: 1px;
+        padding-bottom: 1px;
+        Text {
+            text: root.text;
+            color: Theme.accent;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+    }
+}
+
+export component AppWindow inherits Window {
+    title: "Music";
+    preferred-width: 1100px;
+    preferred-height: 720px;
+    min-width: 720px;
+    min-height: 460px;
+    background: Theme.bg;
+
+    // Search
+    in property <[TrackRow]> results;
+    in property <bool> searching;
+    in property <string> search-status;
+    in-out property <string> query <=> search.text;
+    callback search(string);
+    callback play(int);
+
+    // Now playing
+    in property <string> now-video-id;
+    in property <string> now-title;
+    in property <string> now-artists;
+    in property <image> now-art;
+    in property <bool> playing;
+    in property <bool> loading;
+    in property <bool> preview;
+    in property <float> progress;
+    in property <string> elapsed: "0:00";
+    in property <string> total: "0:00";
+    in property <string> player-message;
+    in property <bool> player-error;
+    callback toggle-pause();
+    callback seek(float);
+
+    changed results => {
+        list.content-y = 0;
+    }
+
+    VerticalLayout {
+        // Header
+        HorizontalLayout {
+            padding-left: 20px;
+            padding-right: 20px;
+            padding-top: 14px;
+            padding-bottom: 14px;
+            spacing: 18px;
+
+            Text {
+                text: "Music";
+                color: Theme.text;
+                font-size: 20px;
+                font-weight: 800;
+                vertical-alignment: center;
+            }
+
+            search := LineEdit {
+                width: 420px;
+                placeholder-text: "Search songs";
+                accepted(text) => {
+                    root.search(text);
+                }
+            }
+
+            if root.searching: Spinner {
+                width: 20px;
+                height: 20px;
+                indeterminate: true;
+            }
+            Text {
+                horizontal-stretch: 1;
+                text: root.search-status;
+                color: Theme.muted;
+                font-size: 12px;
+                vertical-alignment: center;
+                overflow: elide;
+            }
+        }
+
+        Rectangle {
+            height: 1px;
+            background: Theme.divider;
+        }
+
+        // Results
+        Rectangle {
+            vertical-stretch: 1;
+
+            list := ListView {
+                x: 12px;
+                width: parent.width - 24px;
+                height: 100%;
+                for row[i] in root.results: TrackItem {
+                    track: row;
+                    index: i;
+                    current: row.video-id == root.now-video-id;
+                    clicked => {
+                        root.play(i);
+                    }
+                }
+            }
+
+            if root.results.length == 0 && !root.searching: VerticalLayout {
+                width: 100%;
+                height: 100%;
+                alignment: center;
+                spacing: 6px;
+                Text {
+                    text: "Search YouTube Music";
+                    color: Theme.text;
+                    font-size: 18px;
+                    font-weight: 700;
+                    horizontal-alignment: center;
+                }
+
+                Text {
+                    text: "Type a song or artist and press Enter.";
+                    color: Theme.muted;
+                    font-size: 13px;
+                    horizontal-alignment: center;
+                }
+            }
+        }
+
+        // Now-playing bar
+        Rectangle {
+            height: 88px;
+            background: Theme.surface;
+
+            Rectangle {
+                y: 0;
+                height: 1px;
+                background: Theme.divider;
+            }
+
+            HorizontalLayout {
+                padding-left: 16px;
+                padding-right: 20px;
+                spacing: 20px;
+
+                // Track info
+                HorizontalLayout {
+                    width: 300px;
+                    spacing: 12px;
+                    alignment: start;
+
+                    Artwork {
+                        width: 56px;
+                        height: 56px;
+                        source: root.now-art;
+                    }
+
+                    VerticalLayout {
+                        horizontal-stretch: 1;
+                        alignment: center;
+                        spacing: 4px;
+
+                        HorizontalLayout {
+                            spacing: 8px;
+                            Text {
+                                text: root.now-title == "" ? "Nothing playing" : root.now-title;
+                                color: root.now-title == "" ? Theme.muted : Theme.text;
+                                font-size: 14px;
+                                font-weight: 600;
+                                overflow: elide;
+                            }
+
+                            if root.preview: VerticalLayout {
+                                alignment: center;
+                                Badge {
+                                    text: "PREVIEW";
+                                }
+                            }
+                        }
+
+                        Text {
+                            text: root.now-artists;
+                            color: Theme.muted;
+                            font-size: 12px;
+                            overflow: elide;
+                        }
+                    }
+                }
+
+                // Transport + progress
+                VerticalLayout {
+                    horizontal-stretch: 1;
+                    alignment: center;
+                    spacing: 6px;
+
+                    HorizontalLayout {
+                        alignment: center;
+                        PlayButton {
+                            playing: root.playing;
+                            loading: root.loading;
+                            enabled: root.now-video-id != "" && !root.player-error;
+                            clicked => {
+                                root.toggle-pause();
+                            }
+                        }
+                    }
+
+                    HorizontalLayout {
+                        spacing: 10px;
+                        Text {
+                            width: 44px;
+                            text: root.elapsed;
+                            color: Theme.muted;
+                            font-size: 11px;
+                            horizontal-alignment: right;
+                            vertical-alignment: center;
+                        }
+
+                        SeekBar {
+                            horizontal-stretch: 1;
+                            progress: root.progress;
+                            enabled: root.now-video-id != "" && !root.loading;
+                            seek(fraction) => {
+                                root.seek(fraction);
+                            }
+                        }
+
+                        Text {
+                            width: 44px;
+                            text: root.total;
+                            color: Theme.muted;
+                            font-size: 11px;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+
+                // Status / errors
+                Text {
+                    width: 240px;
+                    text: root.player-message;
+                    color: root.player-error ? Theme.danger : Theme.muted;
+                    font-size: 12px;
+                    horizontal-alignment: right;
+                    vertical-alignment: center;
+                    wrap: word-wrap;
+                    overflow: elide;
+                }
+            }
+        }
+    }
+}

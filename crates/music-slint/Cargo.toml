@@ -1,0 +1,21 @@
+[package]
+name = "music-slint"
+edition.workspace = true
+version.workspace = true
+description = "Slint UI spike for the YouTube Music client"
+
+[dependencies]
+music-core = { path = "../music-core" }
+# Only winit + FemtoVG (OpenGL): no Qt backend, no software/Skia renderers, no system tray.
+slint = { version = "1.18.1", default-features = false, features = [
+    "std",
+    "compat-1-2",
+    "backend-winit",
+    "renderer-femtovg",
+    "accessibility",
+] }
+# Album art is JPEG (lh3.googleusercontent.com) or JPEG/WebP (i.ytimg.com).
+image = { version = "0.25.10", default-features = false, features = ["jpeg", "png", "webp"] }
+
+[build-dependencies]
+slint-build = "1.18.1"
