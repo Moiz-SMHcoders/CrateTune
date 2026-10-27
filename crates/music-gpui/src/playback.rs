@@ -124,32 +124,6 @@ impl MusicApp {
         cx.notify();
     }
 
-    // ---- hooks for features that live in other layers (stubs for now) ----------
-
-    /// Needs the library database / account playlists.
-    pub fn add_to_playlist(&mut self, track: Track, window: &mut Window, cx: &mut Context<Self>) {
-        notify(
-            window,
-            cx,
-            format!(
-                "Playlists arrive with the library database (“{}”).",
-                track.title
-            ),
-        );
-    }
-
-    /// Needs the library database / account likes.
-    pub fn toggle_like(&mut self, track: Track, window: &mut Window, cx: &mut Context<Self>) {
-        notify(
-            window,
-            cx,
-            format!(
-                "Likes arrive with the library database (“{}”).",
-                track.title
-            ),
-        );
-    }
-
     // ---- transport -------------------------------------------------------------
 
     pub fn next_track(&mut self, cx: &mut Context<Self>) {
@@ -200,7 +174,8 @@ impl MusicApp {
     /// Hook for what the engine gets for a queue track (e.g. a downloaded copy's
     /// `local_path`); used for `play` and for the preloaded next track alike.
     pub(crate) fn engine_track(&self, track: Track) -> Track {
-        track
+        // A downloaded copy plays from disk (`store.rs`).
+        self.playable(track)
     }
 
     /// The track the engine should continue with by itself: the current one
@@ -317,6 +292,10 @@ impl MusicApp {
     }
 
     pub fn toggle_playback(&mut self, cx: &mut Context<Self>) {
+        // Last session's queue: start it where it was left.
+        if self.start_restored(cx) {
+            return;
+        }
         if let Some(engine) = &mut self.engine {
             engine.toggle_pause();
             self.refresh_soon(cx);
@@ -426,6 +405,8 @@ impl MusicApp {
         for event in self.services.take_events() {
             self.on_media_event(event, window, cx);
         }
+        // Play history, saved queue, download flags.
+        self.poll_store(&state, cx);
 
         if !self.ingest(state, cx) {
             return;

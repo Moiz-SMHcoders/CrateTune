@@ -10,11 +10,14 @@
 //! * [`empty_state`] – centred icon + title + detail.
 //! * [`artwork`] – the shared image cache and the artwork element.
 //! * [`sidebar`], [`player_bar`], [`queue_panel`] – the shell's fixed parts.
+//! * [`like::like_button`] – the heart; [`playlist_dialog`] – "Add to playlist".
 
 pub mod artwork;
 pub mod card;
 pub mod items;
+pub mod like;
 pub mod player_bar;
+pub mod playlist_dialog;
 pub mod queue_panel;
 pub mod sidebar;
 pub mod track_row;

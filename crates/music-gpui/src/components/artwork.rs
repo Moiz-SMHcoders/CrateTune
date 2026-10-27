@@ -254,7 +254,11 @@ impl Pool {
             if job.done.is_canceled() {
                 continue;
             }
-            let result = music_core::fetch_bytes(&job.url).map_err(|e| e.to_string());
+            // Local files' cover art is extracted to disk (`file://` URLs).
+            let result = match music_core::local_files::artwork_path_from_url(&job.url) {
+                Some(path) => std::fs::read(path).map_err(|e| e.to_string()),
+                None => music_core::fetch_bytes(&job.url).map_err(|e| e.to_string()),
+            };
             let _ = job.done.send(result);
         }
     }

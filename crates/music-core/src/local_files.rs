@@ -364,6 +364,16 @@ fn canonical(path: &Path) -> PathBuf {
 /// Scans `config.include`, adds new/changed files to `library` and removes local songs that
 /// are gone. Blocking; run it on a worker thread.
 pub fn scan(library: &Library, config: &ScanConfig) -> Result<ScanSummary> {
+    scan_with_progress(library, config, &|_, _| {})
+}
+
+/// [`scan`], calling `progress(done, total)` once the folders were walked, before each
+/// file and once more when every file was read (`total` = audio files found).
+pub fn scan_with_progress(
+    library: &Library,
+    config: &ScanConfig,
+    progress: &dyn Fn(usize, usize),
+) -> Result<ScanSummary> {
     let exclude: Vec<PathBuf> = config.exclude.iter().map(|p| canonical(p)).collect();
     let mut found = Vec::new();
     let mut roots: Vec<PathBuf> = config.include.iter().map(|p| canonical(p)).collect();
@@ -398,7 +408,10 @@ pub fn scan(library: &Library, config: &ScanConfig) -> Result<ScanSummary> {
     };
     let mut keep: HashSet<String> = HashSet::new();
     let min = config.min_duration_secs;
-    for file in found {
+    let total = found.len();
+    progress(0, total);
+    for (done, file) in found.into_iter().enumerate() {
+        progress(done, total);
         let key = file.path.to_string_lossy().into_owned();
         if let Some((id, mtime, size, duration)) = known.get(&key)
             && *mtime == file.mtime_ms
@@ -490,6 +503,8 @@ pub fn scan(library: &Library, config: &ScanConfig) -> Result<ScanSummary> {
             summary.added += 1;
         }
     }
+
+    progress(total, total);
 
     // Remove local songs that weren't kept, plus artists/albums only they used.
     summary.removed = library.write(|tx| {
@@ -787,9 +802,17 @@ mod tests {
         assert_eq!(lib.song_count(SongScope::Local).unwrap(), 5);
         assert_eq!(lib.song_count(SongScope::Library).unwrap(), 5);
 
-        // Rescan without changes reads nothing.
-        let s = scan(&lib, &config).unwrap();
+        // Rescan without changes reads nothing (and reports progress per file).
+        let calls = std::cell::RefCell::new(Vec::new());
+        let s = scan_with_progress(&lib, &config, &|done, total| {
+            calls.borrow_mut().push((done, total))
+        })
+        .unwrap();
         assert_eq!((s.added, s.updated, s.unchanged, s.removed), (0, 0, 5, 0));
+        let calls = calls.into_inner();
+        assert_eq!(calls.first(), Some(&(0, 7)));
+        assert_eq!(calls.last(), Some(&(7, 7)));
+        assert_eq!(calls.len(), 7 + 2);
 
         // Change one file's tags, delete another, and play a third.
         let loose_id = loose.track.video_id.clone();

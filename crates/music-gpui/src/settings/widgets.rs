@@ -72,50 +72,6 @@ pub fn row(
         .child(div().flex_none().child(control))
 }
 
-/// Placeholder for a section whose backend is being built: what it will hold
-/// and which part of the core it waits for.
-pub fn coming_soon(
-    waits_for: &'static str,
-    planned: &[&'static str],
-    cx: &App,
-) -> impl IntoElement + use<> {
-    let theme = cx.theme();
-    v_flex()
-        .gap_3()
-        .p_4()
-        .rounded(px(10.))
-        .border_1()
-        .border_color(theme.border)
-        .bg(theme.secondary.opacity(0.4))
-        .child(
-            h_flex()
-                .gap_2()
-                .child(
-                    div()
-                        .px_2()
-                        .py_0p5()
-                        .rounded(px(999.))
-                        .text_xs()
-                        .bg(theme.muted)
-                        .text_color(theme.muted_foreground)
-                        .child("Coming soon"),
-                )
-                .child(
-                    div()
-                        .text_sm()
-                        .text_color(theme.muted_foreground)
-                        .child(waits_for),
-                ),
-        )
-        .child(v_flex().gap_1().children(planned.iter().map(|item| {
-            h_flex()
-                .gap_2()
-                .text_sm()
-                .child(div().text_color(theme.muted_foreground).child("•"))
-                .child(*item)
-        })))
-}
-
 pub fn band_label(hz: f64) -> String {
     if hz >= 1000. {
         format!("{}k", hz / 1000.)

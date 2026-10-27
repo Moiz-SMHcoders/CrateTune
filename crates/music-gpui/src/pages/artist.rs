@@ -17,7 +17,7 @@ use gpui_component::{
 use music_core::innertube::ArtistPage as ArtistData;
 
 use super::PageView;
-use crate::app::{MusicApp, notify, update_app};
+use crate::app::{MusicApp, update_app};
 use crate::browse::{Load, PageCache, fetch, on_view};
 use crate::components::items::{
     Hero, ShelfModel, ShelfStyle, action_button, hero, load_state, shelf_view,
@@ -40,6 +40,8 @@ pub struct ArtistPage {
     name: String,
     scroll: ScrollHandle,
     data: Load<Rc<Data>>,
+    /// Set after (un)subscribing here (the fetched page keeps the old state).
+    subscribed: Option<bool>,
     _task: Option<Task<()>>,
 }
 
@@ -52,6 +54,7 @@ impl ArtistPage {
                 name,
                 scroll: scroll.clone(),
                 data: Load::Loading,
+                subscribed: None,
                 _task: None,
             };
             page.load(cx);
@@ -149,8 +152,19 @@ impl ArtistPage {
                 },
             ));
         }
-        // Subscription state (changing it needs a signed-in account).
-        let subscribed = page.subscribed;
+        // Subscription: YouTube Music when signed in, the library's bookmark always
+        // (`MusicApp::set_subscribed`).
+        let subscribed = self.subscribed.unwrap_or(page.subscribed);
+        let signed_in =
+            crate::app::read_app(cx, |app, _| app.store.account.is_signed_in()).unwrap_or(false);
+        let meta = music_core::library::ArtistMeta {
+            id: page
+                .channel_id
+                .clone()
+                .unwrap_or_else(|| artist.browse_id.clone()),
+            name: artist.name.clone(),
+            thumbnail_url: artist.thumbnail_url.clone(),
+        };
         actions.push(
             Button::new("artist-subscribe")
                 .rounded(ButtonRounded::Large)
@@ -165,14 +179,19 @@ impl ArtistPage {
                 } else {
                     "Subscribe"
                 })
-                .tooltip("Subscribing needs a signed-in YouTube account")
-                .on_click(|_, window, cx| {
-                    notify(
-                        window,
-                        cx,
-                        "Sign in to YouTube Music (Settings → Account) to manage subscriptions.",
-                    );
+                .tooltip(if signed_in {
+                    "Subscribe on YouTube Music (also saved in your library)"
+                } else {
+                    "Saved in your library; sign in to subscribe on YouTube Music"
                 })
+                .on_click(cx.listener(move |this, _, window, cx| {
+                    let meta = meta.clone();
+                    this.subscribed = Some(!subscribed);
+                    update_app(cx, |app, cx| {
+                        app.set_subscribed(meta, !subscribed, window, cx)
+                    });
+                    cx.notify();
+                }))
                 .into_any_element(),
         );
         hero(

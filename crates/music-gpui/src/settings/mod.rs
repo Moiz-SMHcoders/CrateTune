@@ -21,6 +21,8 @@ mod content;
 mod equalizer;
 pub mod file;
 mod integrations;
+pub mod library_config;
+mod library_glue;
 mod lyrics;
 mod network;
 pub mod panel;
@@ -34,6 +36,7 @@ mod widgets;
 use crate::icons::Lucide as IconName;
 use gpui::{AnyElement, Context, Window};
 
+pub use accounts::open_cookie_dialog;
 pub use file::{APP_ID, Settings, WindowGeometry};
 pub use panel::{SettingsEvent, SettingsPanel};
 

@@ -56,6 +56,8 @@ pub enum SettingsEvent {
     Section(SectionId),
     /// Shuffle / repeat changed on the settings page (apply to the queue).
     PlaybackModes,
+    /// Library / privacy / storage / account preferences or the YouTube cookie changed.
+    Library,
     /// Content language / country, filters or autoplay changed.
     Content,
     /// The proxy was (re)applied; online pages should reload.
@@ -257,6 +259,7 @@ impl SettingsPanel {
             (Secret::LastFmShared, !s.lastfm.api_key.is_empty()),
             (Secret::LastFmSession, s.lastfm.user.is_some()),
             (Secret::ListenBrainzToken, s.listenbrainz.user.is_some()),
+            (Secret::YouTubeCookie, s.library.account.is_some()),
             (Secret::ProxyPassword, s.network.has_password),
             (Secret::PaxsenixKey, s.lyrics.paxsenix_key_set),
             (Secret::BetterLyricsKey, s.lyrics.betterlyrics_key_set),
@@ -304,6 +307,7 @@ impl SettingsPanel {
                 }
                 this.fill_secret_inputs(window, cx);
                 cx.emit(SettingsEvent::Integrations);
+                cx.emit(SettingsEvent::Library);
                 cx.emit(SettingsEvent::Lyrics);
                 cx.notify();
             })

@@ -45,6 +45,9 @@
 //! | `@sleep=MIN\|eot\|off` (`@sleep=5s`: seconds, for tests) | sleep timer |
 //! | `@speed=1.25`, `@pitch=-2`, `@crossfade=6`, `@quality=low\|normal\|high`, `@normalize=on\|off`, `@skip-silence=on\|off` | engine options (saved) |
 //! | `@quit` | quit |
+//!
+//! Library / account / storage actions (`@like`, `@download`, `@backup`, …) are listed
+//! in `library_script.rs`.
 
 use std::time::{Duration, Instant};
 
@@ -535,7 +538,12 @@ impl MusicApp {
                 panel.update(cx, |p, cx| p.set_skip_silence(on, cx));
             }
             "quit" => cx.quit(),
-            other => eprintln!("music-gpui: unknown script action @{other}"),
+            // Library, downloads, account, storage (`library_script.rs`).
+            other => {
+                if !self.library_script_action(other, arg, window, cx) {
+                    eprintln!("music-gpui: unknown script action @{other}");
+                }
+            }
         }
     }
 }

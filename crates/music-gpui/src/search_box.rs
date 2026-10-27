@@ -73,9 +73,11 @@ impl MusicApp {
     /// Remembers a submitted query (most recent first). Called for every search.
     pub fn record_search(&mut self, query: &str) {
         let query = query.trim();
-        if query.is_empty() {
+        if query.is_empty() || self.store.prefs.pause_search_history {
             return;
         }
+        // The library keeps it across launches (`store.rs`).
+        self.persist_search(query);
         let recent = &mut self.search_box.recent;
         recent.retain(|q| !q.eq_ignore_ascii_case(query));
         recent.push_front(query.to_owned());
@@ -83,7 +85,6 @@ impl MusicApp {
     }
 
     /// Replaces the recent searches (e.g. loaded from the library database).
-    #[allow(dead_code)] // wired up by the library integration
     pub fn set_recent_searches(&mut self, queries: Vec<String>, cx: &mut Context<Self>) {
         self.search_box.recent = queries.into_iter().take(RECENT_MAX).collect();
         cx.notify();
@@ -94,6 +95,7 @@ impl MusicApp {
     }
 
     pub fn remove_recent_search(&mut self, query: &str, cx: &mut Context<Self>) {
+        self.forget_search(query);
         self.search_box.recent.retain(|q| q != query);
         self.search_box.highlight = None;
         cx.notify();

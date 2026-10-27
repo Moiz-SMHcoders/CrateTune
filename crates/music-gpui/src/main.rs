@@ -11,8 +11,12 @@
 //! * `actions.rs` – shortcuts + menu bar; `mini_player.rs`, `theme.rs`, `queue.rs`.
 //! * `now_playing.rs`, `karaoke.rs`, `anim.rs`, `backdrop.rs`, `clock.rs` – Now Playing.
 //! * `services.rs` – media controls, scrobbling, Discord; `secrets.rs` – keychain.
+//! * `store.rs` – library database, downloads, play history, saved queue;
+//!   `account.rs` – YouTube Music sign-in and library sync (`login_webview.rs`: macOS
+//!   login window).
 //! * `script.rs` – timed actions / screenshots for verification.
 
+mod account;
 mod actions;
 mod anim;
 mod app;
@@ -22,11 +26,15 @@ mod clock;
 mod components;
 mod icons;
 mod karaoke;
+mod library_script;
+#[cfg(target_os = "macos")]
+mod login_webview;
 mod lyrics;
 mod mini_player;
 mod now_playing;
 mod pages;
 mod playback;
+mod playlist_ops;
 mod queue;
 mod radio;
 mod router;
@@ -35,6 +43,8 @@ mod search_box;
 mod secrets;
 mod services;
 mod settings;
+mod storage_ops;
+mod store;
 mod theme;
 mod tray;
 mod util;

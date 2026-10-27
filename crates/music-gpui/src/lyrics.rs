@@ -210,7 +210,6 @@ impl MusicApp {
 
     /// Hook for a persistent lyrics cache (e.g. the library database): later
     /// fetches read and write it.
-    #[allow(dead_code)] // for the library database
     pub fn set_lyrics_cache(&mut self, cache: Arc<dyn LyricsCache>, cx: &mut Context<Self>) {
         let config = self.lyrics.service.config().clone();
         self.lyrics.cache = cache.clone();
