@@ -1,8 +1,9 @@
 // Ported from ArchiveTune app/src/main/kotlin/moe/rukamori/archivetune/lyrics/translation/{StandardLyricsTranslationRepository,TranslateLyricsUseCase}.kt and ai/{AiTextService,AiLyricsTranslator,AiJsonUtils,AiRequestParameters}.kt — © Rukamori and ArchiveTune contributors, GPL-3.0
 //! Lyrics translation, aligned to the original lines.
 //!
-//! * [`GoogleTranslator`] — Google Translate's free `translate_a/single` endpoint,
-//!   batched with unique separators (no key).
+//! * [`GoogleTranslator`] — Google Translate's free `translate_a/single` endpoint
+//!   (no key), batched as newline-joined lines; a batch whose line count comes back
+//!   different is split in halves until it matches.
 //! * [`AiTranslator`] — any OpenAI-compatible chat-completions API (OpenAI,
 //!   OpenRouter, a local server, …) with ArchiveTune's prompt and JSON handling.
 //!
@@ -10,8 +11,7 @@
 //! for lines the translation left unchanged. Repeated lines are sent once.
 
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicU64, Ordering};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::Duration;
 
 use serde_json::{Map, Value, json};
 
@@ -147,32 +147,44 @@ impl GoogleTranslator {
     }
 }
 
+impl GoogleTranslator {
+    /// Translates `batch` (single lines) keeping one result per line: newline-joined
+    /// first, halving the batch whenever the service merges or splits lines.
+    fn translate_batch(&self, batch: &[&str], target: &str, out: &mut Vec<String>) -> Result<()> {
+        if let [single] = batch {
+            out.push(self.translate_text(single, target)?.replace('\n', " "));
+            return Ok(());
+        }
+        let joined = batch.join("\n");
+        let parts = split_lines(&self.translate_text(&joined, target)?);
+        if parts.len() == batch.len() {
+            out.extend(parts);
+            return Ok(());
+        }
+        log::debug!(
+            "google translate returned {} lines for {}; splitting the batch",
+            parts.len(),
+            batch.len()
+        );
+        let (a, b) = batch.split_at(batch.len() / 2);
+        self.translate_batch(a, target, out)?;
+        self.translate_batch(b, target, out)
+    }
+}
+
 impl LyricsTranslator for GoogleTranslator {
     fn translate_lines(&self, lines: &[&str], target: &str) -> Result<Vec<Option<String>>> {
         validate_language_code(target)?;
         let (unique, map) = dedupe(lines);
-        let mut translated = vec![String::new(); unique.len()];
-        let separator = unique_separator(&unique);
-        for range in batches(
-            &unique,
-            self.max_items_per_batch,
-            self.max_chars_per_batch,
-            separator.len(),
-        ) {
-            let batch = &unique[range.clone()];
-            let joined = batch.join(&separator);
-            let parts = split_batch(&self.translate_text(&joined, target)?, &separator);
-            if parts.len() == batch.len() {
-                for (slot, part) in translated[range].iter_mut().zip(parts) {
-                    *slot = part;
-                }
-            } else {
-                // The service merged or mangled a separator: one request per line instead.
-                log::debug!("google translate changed segment boundaries; retrying line by line");
-                for (slot, text) in translated[range].iter_mut().zip(batch) {
-                    *slot = self.translate_text(text, target)?;
-                }
-            }
+        // A line must not contain the batch separator itself.
+        let flattened: Vec<String> = unique
+            .iter()
+            .map(|t| t.replace(['\n', '\r'], " "))
+            .collect();
+        let flat: Vec<&str> = flattened.iter().map(String::as_str).collect();
+        let mut translated = Vec::with_capacity(unique.len());
+        for range in batches(&flat, self.max_items_per_batch, self.max_chars_per_batch, 1) {
+            self.translate_batch(&flat[range], target, &mut translated)?;
         }
         Ok(realign(&unique, &map, &translated))
     }
@@ -195,22 +207,11 @@ pub(crate) fn parse_google_response(body: &str) -> Result<String> {
     Ok(text)
 }
 
-fn split_batch(text: &str, separator: &str) -> Vec<String> {
-    text.split(separator).map(|s| s.trim().to_owned()).collect()
-}
-
-fn unique_separator(texts: &[&str]) -> String {
-    static COUNTER: AtomicU64 = AtomicU64::new(0);
-    loop {
-        let nanos = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .map_or(0, |d| d.subsec_nanos());
-        let n = COUNTER.fetch_add(1, Ordering::Relaxed);
-        let sep = format!("<<<SEP-{:x}{n:x}>>>", nanos & 0xffff);
-        if !texts.iter().any(|t| t.contains(&sep)) {
-            return sep;
-        }
-    }
+fn split_lines(text: &str) -> Vec<String> {
+    text.trim_end_matches('\n')
+        .split('\n')
+        .map(|s| s.trim().to_owned())
+        .collect()
 }
 
 fn validate_language_code(code: &str) -> Result<&str> {
@@ -582,9 +583,10 @@ mod tests {
     #[test]
     fn google_batch_response() {
         let text = parse_google_response(&fixture("google_translate_batch.json")).unwrap();
-        let parts = split_batch(&text, "<<<SEP-0>>>");
+        let parts = split_lines(&text);
         assert_eq!(parts.len(), 3);
-        assert_eq!(parts[0], "Media that trolls with an invincible smile");
+        assert_eq!(parts[0], "Media trolls with an invincible smile");
+        assert_eq!(parts[2], "Even the missing parts are her area");
         assert!(parse_google_response("[null]").is_err());
         assert!(parse_google_response("<html>").is_err());
     }
@@ -617,8 +619,6 @@ mod tests {
         assert_eq!(batches(&texts, 3, 10_000, 1), [0..3, 3..6, 6..7]);
         assert_eq!(batches(&texts, 100, 9, 1), [0..2, 2..4, 4..6, 6..7]);
         assert!(batches(&[], 3, 10, 1).is_empty());
-        let sep = unique_separator(&["x"]);
-        assert!(sep.starts_with("<<<SEP-") && sep.ends_with(">>>"));
         assert!(validate_language_code("zh-CN").is_ok());
         assert!(validate_language_code("en&x=1").is_err());
     }

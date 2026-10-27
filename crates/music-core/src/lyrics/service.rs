@@ -98,7 +98,9 @@ pub struct LyricsServiceConfig {
     pub prefer_word_synced: bool,
     /// After the first usable result, wait at most this long for a better one.
     pub quality_grace: Duration,
-    /// … or this long once the best possible quality was found (for higher-priority providers to finish).
+    /// … or this long once the best possible quality was found, for higher-priority
+    /// providers to finish (ArchiveTune uses 350 ms, which lets a fast lower-priority
+    /// provider win most races; the default favours the configured order).
     pub priority_grace: Duration,
     /// Providers queried at once (1 = strictly one after another).
     pub max_concurrent: usize,
@@ -119,7 +121,7 @@ impl Default for LyricsServiceConfig {
             total_timeout: Duration::from_secs(12),
             prefer_word_synced: true,
             quality_grace: Duration::from_millis(1500),
-            priority_grace: Duration::from_millis(350),
+            priority_grace: Duration::from_millis(2000),
             max_concurrent: 6,
             duration_tolerance_secs: None,
             accept_plain: true,

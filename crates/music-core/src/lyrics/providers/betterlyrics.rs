@@ -172,6 +172,27 @@ mod tests {
     }
 
     #[test]
+    fn portato_qrc() {
+        let raw = decode_lyrics(&fixture("betterlyrics_portato_qrc.json")).unwrap();
+        let r = LyricsResult::parse("BetterLyrics Portato", raw, Some(338)).unwrap();
+        assert_eq!(r.format, crate::lyrics::LyricsFormat::Qrc);
+        assert_eq!(r.sync_kind(), SyncKind::Word);
+        let l = r.synced.unwrap();
+        // Title and "Lyrics by：…" credit lines are dropped; the unescaped quotes survive.
+        assert_eq!(
+            l.lines.len(),
+            4,
+            "{:#?}",
+            l.lines.iter().map(|l| &l.text).collect::<Vec<_>>()
+        );
+        assert_eq!(l.lines[0].text, "I didn't wanna be the one to forget");
+        assert_eq!(
+            l.lines[3].text,
+            "I wanna take you to that place near the \"Roche\""
+        );
+    }
+
+    #[test]
     fn unwraps_nested_payloads() {
         let ttml =
             r#"<tt xmlns="http://www.w3.org/ns/ttml"><body><p begin="1" end="2">x</p></body></tt>"#;

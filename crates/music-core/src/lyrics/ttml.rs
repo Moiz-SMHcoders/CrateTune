@@ -5,7 +5,6 @@
 
 use std::collections::{HashMap, HashSet};
 use std::sync::LazyLock;
-use std::time::Duration;
 
 use regex::Regex;
 use roxmltree::{Document, Node, ParsingOptions};
@@ -207,7 +206,8 @@ pub(crate) fn is_ttml(src: &str) -> bool {
 }
 
 /// True when some `<span>` carries both `begin` and `end`/`dur` (word timing).
-pub(crate) fn has_word_timing(src: &str) -> bool {
+#[cfg(test)]
+fn has_word_timing(src: &str) -> bool {
     static SPAN: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?is)<span\b[^>]*>").unwrap());
     static BEGIN: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?i)\bbegin\s*=").unwrap());
     static END: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?i)\b(?:end|dur)\s*=").unwrap());
@@ -919,6 +919,25 @@ fn background_line(tracks: &[Track], line_start: i64, line_end: i64) -> Option<L
     line_from_words(words, start, end)
 }
 
+/// Apple's Korean transliteration spaces every syllable and separates words with
+/// two spaces ("a chi meun  da si"); rejoin syllables into words ("achimeun dasi").
+fn tidy_romanization(track: &Track) -> String {
+    let korean = track
+        .lang
+        .as_deref()
+        .is_some_and(|l| l.to_ascii_lowercase().starts_with("ko"));
+    if korean && track.text.contains("  ") {
+        return track
+            .text
+            .split("  ")
+            .map(|w| w.split_whitespace().collect::<String>())
+            .filter(|w| !w.is_empty())
+            .collect::<Vec<_>>()
+            .join(" ");
+    }
+    normalized_text(&track.text)
+}
+
 fn to_model(lines: Vec<TtmlLine>, agents: Vec<LyricsAgent>) -> TtmlDocument {
     let mut out_lines = Vec::with_capacity(lines.len());
     let mut extras = Vec::with_capacity(lines.len());
@@ -966,7 +985,7 @@ fn to_model(lines: Vec<TtmlLine>, agents: Vec<LyricsAgent>) -> TtmlDocument {
                     .is_some_and(|l| l.to_ascii_lowercase().contains("latn"))
             })
             .or_else(|| line.romanizations.first())
-            .map(|t| normalized_text(&t.text))
+            .map(tidy_romanization)
             .filter(|t| !t.is_empty());
         let translation = line
             .translations
@@ -997,6 +1016,7 @@ fn to_model(lines: Vec<TtmlLine>, agents: Vec<LyricsAgent>) -> TtmlDocument {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::time::Duration;
 
     fn s(secs: f64) -> Duration {
         Duration::from_secs_f64(secs)
@@ -1090,6 +1110,15 @@ mod tests {
         assert_eq!(doc.agents.len(), 2);
         assert_eq!(doc.agents[0].name.as_deref(), Some("Alice"));
         assert_eq!(l.active_line(s(4.5)), Some(1));
+    }
+
+    #[test]
+    fn korean_syllable_transliteration() {
+        let src = r#"<tt xmlns="http://www.w3.org/ns/ttml"><head><metadata><transliterations>
+<transliteration xml:lang="ko-Latn"><text for="L1"><span begin="1" end="2">a chi meun</span>  <span begin="2" end="3">da si</span></text></transliteration>
+</transliterations></metadata></head><body><p begin="1" end="3" itunes:key="L1"><span begin="1" end="2">아침은</span> <span begin="2" end="3">다시</span></p></body></tt>"#;
+        let doc = parse_ttml(src).unwrap();
+        assert_eq!(doc.extras[0].romanization.as_deref(), Some("achimeun dasi"));
     }
 
     #[test]

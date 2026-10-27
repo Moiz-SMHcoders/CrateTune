@@ -207,7 +207,14 @@ fn extract_lyric_content(content: &str) -> String {
         return content.to_owned();
     };
     let rest = &content[m.end()..];
-    let Some(end) = rest.find('"') else {
+    // Providers often leave quotes inside the value unescaped (`place near the "Roche"`),
+    // so the value ends at the quote that closes the element, not the first one.
+    static CLOSE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#""\s*/?>"#).unwrap());
+    let Some(end) = CLOSE
+        .find(rest)
+        .map(|c| c.start())
+        .or_else(|| rest.find('"'))
+    else {
         return content.to_owned();
     };
     unescape_xml(&rest[..end])
@@ -328,10 +335,22 @@ fn is_metadata_line(line: &ParsedLine, title: Option<&str>, artist: Option<&str>
             .all(|w| (w.dur - line.words[0].dur).abs() < 10)
 }
 
+/// Credit keywords beyond ArchiveTune's list (seen in QQ Music K-pop/J-pop credits).
+#[rustfmt::skip]
+const CREDIT_KEYWORDS: &[&str] = &[
+    "engineer", "arrangement", "arranged", "synthesizer", "keyboard", "recording", "recorded",
+    "mixed", "mastered", "programming", "produced", "director", "assistant", "studio",
+    "작사", "작곡", "편곡", "作詞", "作曲", "編曲", "编曲", "制作", "監製", "监制", "出品",
+    "发行", "企划", "统筹", "录音", "混音", "母带", "和声编写",
+];
+
 fn is_metadata_prefix(value: &str) -> bool {
     let n = normalize_for_comparison(value);
     METADATA_PREFIXES.contains(&n.as_str())
         || ["词", "曲", "声", "音"].iter().any(|s| n.ends_with(s))
+        // "Keyboard by", "Background Vocals by", …
+        || value.trim().to_lowercase().ends_with(" by")
+        || CREDIT_KEYWORDS.iter().any(|k| n.contains(k))
 }
 
 fn remove_character_prefix(words: &mut Vec<TimedWord>, count: usize) {
@@ -371,8 +390,10 @@ mod tests {
 [ar:Band]
 [0,3000]Song(0,1000) - (1000,1000)Band(2000,1000)
 [5000,2000]A：(5000,100)Hello (5100,400)there(5500,1500)
-[8000,1500]world(8000,700) &amp; (8700,100)me(8800,700)
+[8000,1500]world(8000,700) &amp; (8700,100)"me"(8800,700)
 [10000,1000]合：(10000,10)All(10010,990)
+[11000,500]Keyboard (11000,100)by：(11100,100)Pdogg(11200,300)
+[11500,500]작사：(11500,100)Someone(11600,400)
 "/></LyricInfo></QrcInfos>"#;
 
     #[test]
@@ -386,7 +407,7 @@ mod tests {
         assert_eq!(first.text, "Hello there");
         assert_eq!(first.start, Duration::from_millis(5100));
         assert_eq!(first.words[1].end, Duration::from_millis(7000));
-        assert_eq!(lyrics.lines[1].text, "world & me");
+        assert_eq!(lyrics.lines[1].text, "world & \"me\"");
         assert_eq!(extras[0].agent.as_deref(), Some("v1"));
         // A line without a prefix keeps the current singer.
         assert_eq!(extras[1].agent.as_deref(), Some("v1"));
