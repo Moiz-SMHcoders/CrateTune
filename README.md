@@ -674,6 +674,51 @@ Screenshot builds draw both windows every 200 ms and right before each shot: whi
 screen is locked macOS delivers no display-link frames, so nothing would redraw (and
 lazily started artwork downloads would never begin).
 
+### Release round: recognition, onboarding, packaging
+
+| ![Recognition result](docs/screenshots/release-recognition-result.png) | ![From the history](docs/screenshots/release-recognition-history.png) |
+|---|---|
+| ![Listening page](docs/screenshots/release-recognition-idle.png) | ![Identifying](docs/screenshots/release-recognition-identifying.png) |
+| ![Onboarding: welcome](docs/screenshots/release-onboarding-welcome.png) | ![Onboarding: language & region](docs/screenshots/release-onboarding-content.png) |
+| ![Onboarding: theme](docs/screenshots/release-onboarding-theme.png) | ![Onboarding: account](docs/screenshots/release-onboarding-account.png) |
+| ![Onboarding: music folders](docs/screenshots/release-onboarding-local-files.png) | ![Onboarding: privacy & previews](docs/screenshots/release-onboarding-privacy.png) |
+| ![About with update check](docs/screenshots/release-about-update.png) | ![App icon](docs/screenshots/release-app-icon.png) |
+
+* **Recognition** (sidebar "Recognize", ⇧⌘R, View → Recognize Song): big listen button
+  (stop while busy), level ring + progress while recording 10 s, "Identifying…", then the
+  result (art, title, artist, album · year · genre · label, Play / Add to queue / Radio /
+  Search, Shazam / Apple Music / Spotify / YouTube links — Android deep links converted to
+  web URLs) and the top five YouTube Music matches as track rows; history below (click
+  to show again, × to remove, Clear with confirmation). Permission: AVFoundation status /
+  prompt before recording on macOS; denied, restricted or pure-silence input shows "Open
+  privacy settings". The session survives leaving the page (global entity).
+* **Onboarding**: 6 steps over a scrim (Esc / "Skip setup" closes it for good, `onboarded`
+  in settings.json; files from older versions count as onboarded). Reopen: Settings →
+  About → "Show welcome guide".
+* **Update check**: only with `UPDATE_REPO` (or `MUSIC_UPDATE_REPO`); once per launch +
+  "Check now"; a newer tag shows a notification and a "Download…" link to the release
+  page.
+
+**Verified:** signature generation is bit-identical to a Java transliteration of
+ArchiveTune's Kotlin generator on a synthetic fixture (golden file, unit test), plus
+encode/decode round trip, request building and response parsing against a fixture.
+**Live** (`examples/recognize.rs`, decoding YouTube streams, nothing played): "Get Lucky"
+and "Take On Me" were recognized correctly by the live endpoint. In the app (screenshot
+build, demo clock): `@recognize-file` with 12 s WAV clips → result, YouTube Music matches,
+history of two entries, `@recognize-history=1`; clicking Play on the result played the
+match. Onboarding all six steps + finish (`onboarded: true` written). Update check against
+`zed-industries/zed` → "Version 1.25.3 is available". **Bundle:** `scripts/bundle-macos.sh`
+→ `Music.app` (34 MB, ad-hoc signed, `codesign --verify --strict` passes, Info.plist
+linted) + 15 MB DMG; launched with `open --env …` (temp config, `MUSIC_VOLUME=0.0`):
+menu-bar item created, media controls started without error, search → play (real device,
+muted) → next → pause/resume → mini player on/off → Recognition page → quit.
+
+**Not verified:** a real microphone recording and the macOS permission prompt (not
+triggered on purpose — the screen was locked; the capture code path is the example's
+`--mic`, untested), the Windows resource embedding and installer, the Linux tarball /
+AppImage and `.desktop` integration, the CI workflows (YAML parsed only), notarization,
+clicking the menu-bar item / media keys from the bundle (no input injection possible).
+
 ### Player UI round: verification
 
 | ![Split, karaoke](docs/screenshots/player-np-split-karaoke.png) | ![Big artwork](docs/screenshots/player-np-big-artwork.png) |
