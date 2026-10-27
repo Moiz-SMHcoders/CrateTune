@@ -88,6 +88,12 @@ its own executor.
   history, lyrics cache, saved queue, zip backup/restore. `Library` is `Clone + Send + Sync`.
 * `downloads` — `DownloadManager`: user downloads (never evicted) and an LRU play cache, two
   workers on the `StreamResolver`, pollable `states()`.
+* `modules` — `.arch` provider modules (details [below](#provider-modules-arch)): JavaScript
+  providers (QuickJS via `rquickjs`, sandboxed) that supply alternative audio for a song;
+  `ModuleResolver` (a `StreamResolver`) tries the enabled modules before YouTube. Module streams
+  download progressively with their request headers (any size, no 1 MiB range chunks), also
+  for downloads. `StreamResolver::resolve_track` resolves a whole `Track` (default: its video id);
+  `PlaybackState::source` says where the audio comes from and what it is ("FLAC 16/44.1").
 * `local_files` — scans music folders with `lofty` (tags, cover art, lyrics, ReplayGain) into
   the library as `local:<hash>` tracks, incrementally (`scan_with_progress` reports
   `(done, total)` per file).
@@ -265,6 +271,9 @@ src/
                      demo clock + smooth position)
   settings/prefs.rs  audio / lyrics / Now Playing / Discord activity / scrobble-rule
                      model; settings/prefs_ui.rs: their panel widgets + methods
+  module_service.rs  provider modules: the shared `Modules` store, the module-first resolver
+                     (player + downloads), keychain hook for secret module settings;
+                     settings/modules.rs: the Modules section
   services.rs, secrets.rs, script.rs, util.rs, icons.rs
 ```
 
@@ -377,7 +386,8 @@ src/
 * **Settings page** with sections: Appearance (theme, text size, Now Playing layout +
   background, mini player style), Playback (queue modes, quality, normalization, skip
   silence, auto-skip, crossfade, speed + pitch, output device, sleep timer), Equalizer,
-  Lyrics (look, providers, translation, romanization), Content & region, Network, Privacy,
+  Modules (provider modules, playback source), Lyrics (look, providers, translation,
+  romanization), Content & region, Network, Privacy,
   Storage (file locations), Account (YouTube sign-in, planned), Scrobbling & Discord,
   About (version, GPL-3.0 notice, ArchiveTune and Hummingbird credits). The old sheet
   is gone; the Now Playing gear opens the page.
@@ -513,6 +523,86 @@ src/
   restore** (library database + settings JSON without secrets, window frames or account;
   restoring keeps the current sign-in) followed by a "Restart now" prompt (`cx.restart()`).
 
+### Provider modules (`.arch`)
+
+| ![Modules section](docs/screenshots/modules-installed.png) | ![Install review](docs/screenshots/modules-review.png) |
+|---|---|
+| ![Settings form](docs/screenshots/modules-settings-form.png) | ![Diagnostics and log](docs/screenshots/modules-diagnostics.png) |
+| ![Now Playing from a module](docs/screenshots/modules-now-playing.png) | ![Bar: module source badge](docs/screenshots/modules-bar.png) |
+| ![Catalog](docs/screenshots/modules-catalog.png) | |
+
+A module is a JavaScript provider in an `.arch` package (ZIP with `manifest.json`,
+`provider.js`, optional `icon.png`) that implements `searchTracks(query, limit, context)` and
+`getTrackStreamUrl(trackId, quality, context)`. The format and the JavaScript API v1 are
+ArchiveTune's (`MODULES.md` in the ArchiveTune repository, ported in `music_core::modules`);
+existing v1 packages install unchanged. The song keeps its identity (title, artists, library
+entry, queue position): a module only supplies its audio. **No module, catalog or provider is
+bundled or preconfigured.**
+
+* **Playback** (`ModuleResolver`): for a YouTube song, each enabled module in priority order is
+  searched with "title + primary artist"; the recording matcher (ArchiveTune's
+  `ModuleTrackMatcher`: Jaro–Winkler ≥ 0.9 on normalized title and primary artist, matching
+  live / remix / remaster / … markers, explicit flag, duration within max(5 s, 5 %)) picks the
+  best acceptable result, and its stream URL plays. 15 s per module, 30 s for the sequence;
+  results are cached until a minute before the URL expires (misses 30 s, failures 10 s). Then
+  YouTube, unless the source is "Modules only". Local files never go through modules. Streams
+  are any HTTP(S) URL with the module's headers, played while they download (FLAC, ALAC,
+  MP3, AAC/M4A, Ogg Vorbis/Opus, WAV, AIFF); HLS / DASH results are rejected. Downloads use
+  the same resolver, so a module source is downloaded as the full file.
+* **Install**: from a file, a direct package URL, a descriptor (`{"download": …}`, followed up to
+  4 deep, cycles rejected) or a catalog (`modules` / `category:*` / `external_sources`, an HTML
+  page linking its `index.json`). Packages are validated before review (ZIP entries and sizes,
+  4 MiB package / 128 KiB manifest / 3 MiB script / 256 KiB icon, nesting ≤ 32, `format` /
+  versions, `sha256` and `iconSha256`, identity, capabilities, typed settings, quality options,
+  runtime features, `minAppVersion`) and the script is run once to check that its exports match
+  the declared capabilities. Updates revisit the import URL; catalog entries are checked against
+  their `sha256`. Codes such as `ARCH_CHECKSUM` follow MODULES.md's diagnostics table.
+* **Sandbox** (one QuickJS engine thread per module): ECMAScript built-ins plus the v1 host
+  APIs — `fetch` (HTTP(S) only, app proxy, 8 MiB bodies, 10 / 15 / 20 s timeouts, 8 concurrent
+  and 64 requests per call, redirects drop credentials across origins), `Headers`, `URL`,
+  `URLSearchParams`, `TextEncoder` / `TextDecoder`, `atob` / `btoa`, `Blob`, `FormData`,
+  `setTimeout` (≤ 128, ≤ 15 s), `AbortController`, `console` (to the module's log) — and the
+  helpers `storage` (1 MiB per installation), `utils` (SHA-256/SHA-1/MD5, UUID, Base64) and
+  `crypto.getRandomValues` / `randomUUID`. No files, no `require` / `import()`, no process
+  access. 32 MiB heap, 1 MiB stack, interrupted at the deadline; a failed engine is discarded.
+* **Settings → Modules**: playback source (YouTube only / modules first, then YouTube /
+  modules only), install from file / URL / catalog URL with a review card (icon, identity,
+  capabilities, required settings, checksum), installed modules in priority order (icon, name,
+  version, author, capabilities, enable switch, move up / down, uninstall with confirmation),
+  a settings form generated from the manifest (text, password with reveal, number / integer
+  with bounds, toggle, select incl. `qualityOptions`) with Save, Check, Check for update, and
+  diagnostics (last check, last song's outcome — resolved / no match + reason / failure code —,
+  the module's log, copy diagnostics). Catalogs list their entries with Install / Update.
+* **Where the audio comes from**: a badge in the bar and the Now Playing header —
+  "YouTube · AAC 128 kbps", "Echo (test provider) · FLAC 16/44.1", "File · …" — from the decoder.
+* **Storage**: `modules/registry.json` in the settings directory (0600) holds installed modules,
+  order, switches and non-secret settings; secret settings (passwords, token-like keys) go to
+  the keychain (`module.<installation>.<key>`; with `MUSIC_SECRET_STORE=file`:
+  `modules/secrets.json`, 0600); script storage in `modules/storage/`. Backups do not include
+  modules yet.
+
+**Verified in the app** (release `screenshot` build, temporary `MUSIC_CONFIG_DIR`,
+`MUSIC_SECRET_STORE=file`, real output device muted with `MUSIC_VOLUME=0.0`, screen locked):
+the echo module served by `module_server` was added through a catalog URL, installed from its
+URL (review card), configured (server URL, token as a secret), checked ("Ready"); with "Modules
+first" the YouTube search hit "Instant Crush (feat. Julian Casablancas)" played as a 338 s
+FLAC from the local server (badge "Echo (test provider) · FLAC 16/44.1", lyrics and artwork
+from YouTube Music as usual), was seeked to 320 s and played to its real end — not a 60 s
+preview —, then the engine advanced gaplessly to the next song, which the module didn't have:
+it fell back to YouTube (badge "YouTube · AAC 128 kbps", "Preview"), and the diagnostics show
+both outcomes ("Resolved · lossless:…", "No results"). **Not verified:** a real third-party
+provider (none is bundled), the macOS file picker for "Install from file…" (the same import
+path ran via `@module-install=PATH`), keychain storage of secret settings (the file store was
+used), HLS / DASH sources (rejected by design), Windows / Linux.
+
+Authoring: `cargo run -p music-core --example pack_module -- <dir> <out.arch>` packs and validates
+a provider directory (adds `sha256` / `iconSha256`), `cargo run -p music-core --example
+module_server -- <dir> [port]` serves files locally. `crates/music-core/tests/fixtures/modules/echo`
+is a small test provider that serves the files listed in a server's `catalog.json`; the
+`modules` integration tests use it against a local server (install validation, sandbox limits,
+search → match → stream → full decode through the headless player, chaining / fallback, URL /
+descriptor / catalog installs and updates, secrets, downloads).
+
 ### Keyboard shortcuts and menus
 
 | Keys | Action |
@@ -596,7 +686,10 @@ playback `@play=N @next @prev @seek=S @toggle @open @close @volume=V`; navigatio
 @sleep=MIN|eot|off|5s @speed=1.25 @pitch=-2 @crossfade=6 @quality=low|normal|high
 @normalize=on|off @skip-silence=on|off`; browse `@radio=N` (radio from search result N),
 `@suggest` (print the search dropdown), `@proxy=KIND:HOST:PORT|off`, `@locale=de:DE`,
-`@scroll=X;Y;DY`; `@quit`.
+`@scroll=X;Y;DY`; modules `@modules=youtube|first|only`, `@module-install=PATH|URL`,
+`@module-catalog=URL`, `@module-confirm`, `@module-cancel`, `@module-open=N|ID`,
+`@module-field=KEY:VALUE`, `@module-save`, `@module-check=N`, `@module-update=N`,
+`@module-enable=N:on|off`, `@module-remove=N`; `@quit`.
 
 Screenshot builds draw both windows every 200 ms and right before each shot: while the
 screen is locked macOS delivers no display-link frames, so nothing would redraw (and
