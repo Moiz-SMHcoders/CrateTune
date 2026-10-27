@@ -15,6 +15,7 @@ mod icons;
 mod karaoke;
 mod now_playing;
 mod queue;
+mod script;
 mod secrets;
 mod services;
 mod settings;
@@ -242,8 +243,17 @@ impl MusicApp {
     /// `MUSIC_QUERY` pre-fills and runs a search; `MUSIC_AUTOOPEN=1` then plays the first
     /// result and opens Now Playing. Lets RSS/CPU be measured without clicking around.
     /// (`MUSIC_GPUI_QUERY` / `MUSIC_GPUI_AUTOPLAY` from the first round still work.)
+    ///
+    /// `MUSIC_OPEN_SETTINGS=1|eq|accounts` opens the settings sheet,
+    /// `MUSIC_EQ_PRESET=Bass` applies (and saves) an EQ preset.
     fn apply_startup_env(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let env = |name: &str| std::env::var(name).ok().filter(|v| !v.is_empty());
+        if let Some(name) = env("MUSIC_EQ_PRESET") {
+            self.script_action("eq", Some(&name), window, cx);
+        }
+        if let Some(tab) = env("MUSIC_OPEN_SETTINGS").filter(|v| v != "0") {
+            self.script_action("settings", Some(&tab), window, cx);
+        }
         let Some(query) = env("MUSIC_QUERY").or_else(|| env("MUSIC_GPUI_QUERY")) else {
             return;
         };
@@ -1223,8 +1233,7 @@ fn main() {
                     app.update(cx, |app, cx| app.apply_startup_env(window, cx))
                 })
                 .ok();
-            #[cfg(feature = "screenshot")]
-            screenshot::schedule(window.into(), cx);
+            script::schedule(window.into(), app, cx);
             cx.on_window_closed(|cx, _| {
                 if cx.windows().is_empty() {
                     cx.quit();
@@ -1233,90 +1242,4 @@ fn main() {
             .detach();
             cx.activate(true);
         });
-}
-
-/// Dev-only: `MUSIC_GPUI_SCREENSHOT=out.png` renders the window offscreen after
-/// `MUSIC_GPUI_SCREENSHOT_DELAY` seconds (default 6), saves it, and quits.
-/// `MUSIC_GPUI_SCREENSHOT="12:a.png,12.4:b.png"` takes several (seconds since launch);
-/// `"14:@toggle"` / `"20:@close"` entries dispatch the play/pause and close actions.
-#[cfg(feature = "screenshot")]
-mod screenshot {
-    use std::time::{Duration, Instant};
-
-    use gpui::{AnyWindowHandle, App, AppContext as _};
-
-    pub fn schedule(window: AnyWindowHandle, cx: &mut App) {
-        let Ok(spec) = std::env::var("MUSIC_GPUI_SCREENSHOT") else {
-            return;
-        };
-        let default_delay = std::env::var("MUSIC_GPUI_SCREENSHOT_DELAY")
-            .ok()
-            .and_then(|s| s.parse().ok())
-            .unwrap_or(6.0);
-        let mut shots: Vec<(f64, String)> = spec
-            .split(',')
-            .map(|item| match item.split_once(':') {
-                Some((secs, path)) if secs.parse::<f64>().is_ok() => {
-                    (secs.parse().unwrap(), path.to_owned())
-                }
-                _ => (default_delay, item.to_owned()),
-            })
-            .collect();
-        shots.sort_by(|a, b| a.0.total_cmp(&b.0));
-        let started = Instant::now();
-        let executor = cx.background_executor().clone();
-        cx.spawn(async move |cx| {
-            for (at, path) in shots {
-                let wait = Duration::from_secs_f64(at).saturating_sub(started.elapsed());
-                executor.timer(wait).await;
-                // `@close` / `@toggle` dispatch the Now Playing actions (as Esc / Space
-                // would) so transitions can be captured without input injection.
-                let action: Option<Box<dyn gpui::Action>> = match path.as_str() {
-                    "@close" => Some(Box::new(crate::now_playing::CloseNowPlaying)),
-                    "@toggle" => Some(Box::new(crate::now_playing::TogglePlayback)),
-                    _ => None,
-                };
-                // `@next` / `@prev` / `@seek=SECS` drive the queue and seeking directly.
-                if action.is_none()
-                    && let Some(command) = path.strip_prefix('@')
-                {
-                    cx.update_window(window, |root, _, cx| {
-                        let Ok(root) = root.downcast::<gpui_component::Root>() else {
-                            return;
-                        };
-                        let Ok(app) = root.read(cx).view().clone().downcast::<crate::MusicApp>()
-                        else {
-                            return;
-                        };
-                        app.update(cx, |app, cx| match command.split_once('=') {
-                            Some(("seek", secs)) => {
-                                app.seek_to(Duration::from_secs_f64(secs.parse().unwrap_or(0.)), cx)
-                            }
-                            _ if command == "next" => app.next_track(cx),
-                            _ if command == "prev" => app.previous_track(cx),
-                            _ => eprintln!("music-gpui: unknown action {path}"),
-                        });
-                    })
-                    .ok();
-                    continue;
-                }
-                if let Some(action) = action {
-                    cx.update_window(window, |_, window, cx| window.dispatch_action(action, cx))
-                        .ok();
-                    continue;
-                }
-                let result = cx.update_window(window, |_, window, _| window.render_to_image());
-                match result {
-                    Ok(Ok(image)) => match image.save(&path) {
-                        Ok(()) => eprintln!("music-gpui: screenshot saved to {path}"),
-                        Err(e) => eprintln!("music-gpui: saving screenshot failed: {e}"),
-                    },
-                    Ok(Err(e)) => eprintln!("music-gpui: render_to_image failed: {e}"),
-                    Err(e) => eprintln!("music-gpui: window gone: {e}"),
-                }
-            }
-            cx.update(|cx| cx.quit());
-        })
-        .detach();
-    }
 }

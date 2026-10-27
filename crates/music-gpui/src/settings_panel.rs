@@ -451,6 +451,30 @@ impl SettingsPanel {
         }
     }
 
+    /// Script hook: types into one of the account fields.
+    pub fn set_field(
+        &mut self,
+        field: &str,
+        value: &str,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let input = match field {
+            "lastfm-key" => &self.lastfm_key,
+            "lastfm-secret" => &self.lastfm_secret,
+            "lb-token" => &self.lb_token,
+            "discord-id" => &self.discord_id,
+            _ => {
+                eprintln!("music-gpui: unknown settings field {field}");
+                return;
+            }
+        };
+        let value = value.to_owned();
+        input.update(cx, |input, cx| input.set_value(value, window, cx));
+        // `set_value` doesn't emit `InputEvent::Change` like typing does.
+        self.sync_inputs(cx);
+    }
+
     /// Step 1–2 of Last.fm's desktop auth: get a token, open the approval page.
     pub fn lastfm_connect(&mut self, cx: &mut Context<Self>) {
         let key = self.lastfm_key.read(cx).value().trim().to_owned();
