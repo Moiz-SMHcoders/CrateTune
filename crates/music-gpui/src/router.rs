@@ -132,6 +132,10 @@ pub enum Route {
     },
     Downloads,
     LocalFiles,
+    /// Playlist import (Spotify, Exportify CSV, M3U, JSON) and export.
+    Import,
+    /// Music Together: listen with others on the LAN.
+    Together,
     Settings {
         section: SectionId,
     },
@@ -161,6 +165,8 @@ impl Route {
             Route::YearInMusic { year } => format!("{year} in music"),
             Route::Downloads => "Downloads".into(),
             Route::LocalFiles => "Local files".into(),
+            Route::Import => "Import & export".into(),
+            Route::Together => "Listen together".into(),
             Route::Settings { section } => format!("Settings · {}", section.title()),
         }
     }
@@ -235,6 +241,8 @@ impl Route {
             },
             "downloads" => Route::Downloads,
             "local" | "local-files" => Route::LocalFiles,
+            "import" => Route::Import,
+            "together" => Route::Together,
             "settings" => Route::Settings {
                 section: arg.and_then(SectionId::from_key).unwrap_or_default(),
             },

@@ -66,6 +66,12 @@ pub struct Settings {
     pub mini_player: Option<WindowGeometry>,
     /// Library, privacy, storage, local files and YouTube account.
     pub library: LibraryConfig,
+    /// SponsorBlock segment skipping (`integrations/config.rs`).
+    pub sponsorblock: crate::integrations::config::SponsorBlockPrefs,
+    /// Music Together (LAN sessions).
+    pub together: crate::integrations::config::TogetherPrefs,
+    /// Spotify playlist import (own Client ID; the refresh token is a secret).
+    pub spotify: crate::integrations::config::SpotifyPrefs,
     /// Secrets that could not go to the OS keychain (see `secrets.rs`).
     #[serde(skip_serializing_if = "FileSecrets::is_empty")]
     pub secrets: FileSecrets,
@@ -91,6 +97,9 @@ impl Default for Settings {
             window: None,
             mini_player: None,
             library: LibraryConfig::default(),
+            sponsorblock: Default::default(),
+            together: Default::default(),
+            spotify: Default::default(),
             secrets: FileSecrets::default(),
         }
     }

@@ -25,6 +25,7 @@ mod browse;
 mod clock;
 mod components;
 mod icons;
+mod integrations;
 mod karaoke;
 mod library_script;
 #[cfg(target_os = "macos")]

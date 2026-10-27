@@ -22,6 +22,7 @@ mod downloads;
 mod explore;
 mod history;
 mod home;
+mod import;
 mod library;
 mod library_item;
 mod loader;
@@ -33,6 +34,7 @@ mod playlist;
 pub mod search;
 mod song_list;
 mod stats;
+mod together;
 pub mod widgets;
 
 use gpui::{AnyView, App, Context, Entity, Pixels, Point, ScrollHandle, Window};
@@ -132,6 +134,16 @@ pub const NAV: &[NavItem] = &[
         icon: Lucide::FileMusic,
         route: || Route::LocalFiles,
     },
+    NavItem::Page {
+        title: "Import & export",
+        icon: Lucide::Upload,
+        route: || Route::Import,
+    },
+    NavItem::Page {
+        title: "Listen together",
+        icon: Lucide::UsersRound,
+        route: || Route::Together,
+    },
 ];
 
 /// What [`build`] may need besides the route.
@@ -183,6 +195,8 @@ pub fn build(
         Route::Stats => stats::StatsPage::build(cx),
         Route::Downloads => downloads::DownloadsPage::build(cx),
         Route::LocalFiles => local_files::LocalFilesPage::build(window, cx),
+        Route::Import => import::ImportPage::build(window, cx),
+        Route::Together => together::TogetherPage::build(window, cx),
         Route::Settings { section } => {
             // One long-lived entity: it owns the settings file and secrets.
             ctx.settings
