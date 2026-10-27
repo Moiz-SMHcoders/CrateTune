@@ -1,10 +1,12 @@
 //! YouTube Music spike UI on GPUI + gpui-component.
 //!
-//! One root view (`MusicApp`) owns all state. Blocking `music-core` calls run on
-//! GPUI's background executor; a foreground task polls `Player::state()` every
-//! 250 ms and only re-renders when the snapshot changed. The Now Playing screen
+//! One root view (`MusicApp`) owns the playback state. Blocking `music-core` calls
+//! run on GPUI's background executor; a foreground task polls `Player::state()`
+//! every 250 ms, feeds the OS media controls / scrobbler / Discord (`services.rs`)
+//! and only re-renders when the snapshot changed. The Now Playing screen
 //! (`now_playing.rs`) additionally renders at display rate while it is visible
-//! and something moves (see `anim::Frame`).
+//! and something moves (see `anim::Frame`). Settings live in their own entity
+//! (`settings_panel.rs`), shown in a gpui-component `Sheet`.
 
 mod anim;
 mod backdrop;
@@ -13,11 +15,10 @@ mod icons;
 mod karaoke;
 mod now_playing;
 mod queue;
-// Wired into the UI in the following commits.
-#[allow(dead_code)]
 mod secrets;
-#[allow(dead_code)]
+mod services;
 mod settings;
+mod settings_panel;
 
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -33,7 +34,7 @@ use gpui::{
 };
 use gpui_component::{
     ActiveTheme as _, Disableable as _, IconName, Root, Sizable as _, Theme, ThemeMode,
-    VirtualListScrollHandle,
+    VirtualListScrollHandle, WindowExt as _,
     button::{Button, ButtonVariants as _},
     h_flex,
     input::{Input, InputEvent, InputState},
@@ -43,6 +44,7 @@ use gpui_component::{
     tag::Tag,
     v_flex, v_virtual_list,
 };
+use music_core::media_controls::MediaControlEvent;
 use music_core::{
     InnerTube, IosClientResolver, PlaybackState, PlaybackStatus, Player, Track, format_duration,
 };
@@ -52,6 +54,8 @@ use crate::clock::{DemoPlayer, Engine, SmoothClock};
 use crate::icons::AppIcon;
 use crate::now_playing::{CloseNowPlaying, HiRes, LyricsState, NowPlaying, TogglePlayback};
 use crate::queue::{Previous, Queue};
+use crate::services::Services;
+use crate::settings_panel::{SettingsEvent, SettingsPanel, Tab};
 
 const POLL_INTERVAL: Duration = Duration::from_millis(250);
 const SEARCH_DEBOUNCE: Duration = Duration::from_millis(400);
@@ -100,6 +104,13 @@ struct MusicApp {
     autoopen: bool,
     /// The result list the current track was started from.
     queue: Queue,
+    /// Media controls, scrobbling, Discord.
+    services: Services,
+    settings: Entity<SettingsPanel>,
+    volume_slider: Entity<SliderState>,
+    volume: f32,
+    /// Restored by the mute button.
+    unmuted_volume: f32,
     /// `MUSIC_TRACE=1`: log playback transitions (launch time).
     trace: Option<Instant>,
 
@@ -119,17 +130,34 @@ impl MusicApp {
         let search_input =
             cx.new(|cx| InputState::new(window, cx).placeholder("Search songs, artists, albums"));
         let progress = cx.new(|_| SliderState::new().min(0.).max(1.).step(0.25));
+        let settings = cx.new(|cx| SettingsPanel::new(window, cx));
+        // `MUSIC_VOLUME` (e.g. 0.0 for muted real-device tests) is for this session only.
+        let volume = std::env::var("MUSIC_VOLUME")
+            .ok()
+            .and_then(|v| v.parse::<f32>().ok())
+            .filter(|v| v.is_finite())
+            .map(|v| v.clamp(0., 1.))
+            .unwrap_or_else(|| settings.read(cx).settings().volume);
+        let volume_slider = cx.new(|_| {
+            SliderState::new()
+                .min(0.)
+                .max(1.)
+                .step(0.01)
+                .default_value(volume)
+        });
 
         let subscriptions = vec![
             cx.subscribe_in(&search_input, window, Self::on_search_event),
             cx.subscribe_in(&progress, window, Self::on_progress_event),
+            cx.subscribe_in(&volume_slider, window, Self::on_volume_event),
+            cx.subscribe_in(&settings, window, Self::on_settings_event),
         ];
 
         // Opening the audio device can block briefly (and fails in sandboxes), so keep
         // it off the main thread; search works regardless. Without audio, a demo
         // wall clock stands in so the Now Playing screen can still be exercised.
         let force_demo = std::env::var("MUSIC_DEMO_CLOCK").is_ok_and(|v| v == "1");
-        cx.spawn(async move |this, cx| {
+        cx.spawn_in(window, async move |this, cx| {
             let result = if force_demo {
                 Err(None)
             } else {
@@ -137,14 +165,22 @@ impl MusicApp {
                     .await
                     .map_err(Some)
             };
-            this.update(cx, |this, cx| {
-                this.engine = Some(match result {
+            this.update_in(cx, |this, window, cx| {
+                let mut engine = match result {
                     Ok(player) => Engine::Audio(player),
                     Err(e) => {
                         this.audio_error = e.map(|e| format!("{e} (using a demo clock)"));
                         Engine::Demo(DemoPlayer::default())
                     }
-                });
+                };
+                // Volume and EQ before anything can play (MUSIC_VOLUME=0.0 stays silent).
+                engine.set_volume(this.volume);
+                engine.set_equalizer(this.settings.read(cx).equalizer());
+                // Main thread, window exists: what the media-controls docs require.
+                this.services
+                    .start_media_controls(&engine, services::hwnd(window));
+                this.engine = Some(engine);
+                this.apply_integrations(cx);
                 if let Some(track) = this.pending_play.take() {
                     this.play(track, cx);
                 }
@@ -188,6 +224,11 @@ impl MusicApp {
             autoplay: false,
             autoopen: false,
             queue: Queue::default(),
+            services: Services::default(),
+            settings,
+            volume_slider,
+            volume,
+            unmuted_volume: if volume > 0. { volume } else { 1. },
             trace: std::env::var_os("MUSIC_TRACE").map(|_| Instant::now()),
             np: NowPlaying::new(cx.focus_handle()),
             frame_stats: std::env::var_os("MUSIC_TIMINGS").map(|_| FrameStats::default()),
@@ -446,6 +487,27 @@ impl MusicApp {
     fn poll_player(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let Some(engine) = &self.engine else { return };
         let state = engine.state();
+
+        let artwork = state
+            .track
+            .as_ref()
+            .and_then(|t| match self.hires.get(&t.video_id) {
+                Some(HiRes::Ready { art, .. }) => Some(art.bytes()),
+                _ => None,
+            });
+        let report = self.services.update(&state, artwork);
+        if !report.scrobble_errors.is_empty() || report.discord_status.is_some() {
+            self.settings.update(cx, |panel, cx| {
+                if let Some(status) = report.discord_status {
+                    panel.set_discord_status(status, cx);
+                }
+                panel.push_scrobble_errors(report.scrobble_errors, cx);
+            });
+        }
+        for event in self.services.take_events() {
+            self.on_media_event(event, window, cx);
+        }
+
         if !self.ingest(state, cx) {
             return;
         }
@@ -484,6 +546,121 @@ impl MusicApp {
                 self.seek_to(Duration::from_secs_f32(value.start().max(0.)), cx);
             }
         }
+    }
+
+    /// OS media keys / Control Center. With real audio only next/previous get
+    /// here (`MediaControls::for_player` routes the rest to the `Player`).
+    fn on_media_event(
+        &mut self,
+        event: MediaControlEvent,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let playing = self.playback.status == PlaybackStatus::Playing;
+        match event {
+            MediaControlEvent::Next => self.next_track(cx),
+            MediaControlEvent::Previous => self.previous_track(cx),
+            MediaControlEvent::Toggle => self.toggle_playback(cx),
+            MediaControlEvent::Play if !playing => self.toggle_playback(cx),
+            MediaControlEvent::Pause | MediaControlEvent::Stop if playing => {
+                self.toggle_playback(cx)
+            }
+            MediaControlEvent::Play | MediaControlEvent::Pause | MediaControlEvent::Stop => {}
+            MediaControlEvent::SeekTo(position) => self.seek_to(position, cx),
+            MediaControlEvent::SeekBy(secs) => {
+                let now = self.clock.position(Instant::now()).as_secs_f64();
+                self.seek_to(Duration::from_secs_f64((now + secs).max(0.)), cx);
+            }
+            MediaControlEvent::SetVolume(volume) => self.set_volume(volume as f32, window, cx),
+        }
+    }
+
+    // ---- volume & settings ----------------------------------------------------
+
+    fn on_volume_event(
+        &mut self,
+        _: &Entity<SliderState>,
+        event: &SliderEvent,
+        _: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let (SliderEvent::Change(value) | SliderEvent::Release(value)) = event;
+        self.apply_volume(value.start(), cx);
+    }
+
+    /// Sets the volume (live + saved) and moves the slider.
+    pub fn set_volume(&mut self, volume: f32, window: &mut Window, cx: &mut Context<Self>) {
+        let volume = volume.clamp(0., 1.);
+        self.volume_slider
+            .update(cx, |slider, cx| slider.set_value(volume, window, cx));
+        self.apply_volume(volume, cx);
+    }
+
+    fn apply_volume(&mut self, volume: f32, cx: &mut Context<Self>) {
+        self.volume = volume;
+        if volume > 0. {
+            self.unmuted_volume = volume;
+        }
+        if let Some(engine) = &mut self.engine {
+            engine.set_volume(volume);
+        }
+        self.settings
+            .update(cx, |panel, cx| panel.set_volume(volume, cx));
+        cx.notify();
+    }
+
+    fn toggle_mute(&mut self, _: &ClickEvent, window: &mut Window, cx: &mut Context<Self>) {
+        let target = if self.volume > 0. {
+            0.
+        } else {
+            self.unmuted_volume
+        };
+        self.set_volume(target, window, cx);
+    }
+
+    fn on_settings_event(
+        &mut self,
+        _: &Entity<SettingsPanel>,
+        event: &SettingsEvent,
+        _: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        match event {
+            SettingsEvent::Equalizer(eq) => {
+                if let Some(engine) = &mut self.engine {
+                    engine.set_equalizer(eq.clone());
+                }
+            }
+            SettingsEvent::Integrations => self.apply_integrations(cx),
+        }
+    }
+
+    /// (Re)builds the scrobbler and Discord presence from the current settings.
+    fn apply_integrations(&mut self, cx: &mut Context<Self>) {
+        let panel = self.settings.read(cx);
+        let scrobble = panel.scrobble_config();
+        let discord = panel.discord_client_id();
+        self.services.configure_scrobbling(scrobble);
+        let status = self.services.configure_discord(discord);
+        self.settings
+            .update(cx, |panel, cx| panel.set_discord_status(status, cx));
+    }
+
+    pub fn open_settings(&mut self, tab: Option<Tab>, window: &mut Window, cx: &mut Context<Self>) {
+        if let Some(tab) = tab {
+            self.settings.update(cx, |panel, cx| {
+                panel.tab = tab;
+                cx.notify();
+            });
+        }
+        let panel = self.settings.clone();
+        window.open_sheet(cx, move |sheet, _, _| {
+            sheet
+                .title("Settings")
+                .size(px(480.))
+                .resizable(false)
+                .child(panel.clone())
+        });
     }
 
     // ---- rendering ----------------------------------------------------------
@@ -526,6 +703,16 @@ impl MusicApp {
                         |this| this.child(Spinner::new().small()),
                     )
                     .children(status),
+            )
+            .child(div().flex_1())
+            .child(
+                Button::new("open-settings")
+                    .ghost()
+                    .icon(IconName::Settings)
+                    .tooltip("Settings: equalizer, scrobbling, Discord")
+                    .on_click(
+                        cx.listener(|this, _, window, cx| this.open_settings(None, window, cx)),
+                    ),
             )
     }
 
@@ -716,7 +903,7 @@ impl MusicApp {
             .child(
                 h_flex()
                     .id("np-bar-open")
-                    .w(px(300.))
+                    .w(px(280.))
                     .flex_none()
                     .gap_3()
                     .p_1()
@@ -822,10 +1009,10 @@ impl MusicApp {
                             })),
                     ),
             )
-            // Right: status / errors + expand button.
+            // Right: status / errors, volume, expand button.
             .child(
                 h_flex()
-                    .w(px(260.))
+                    .w(px(300.))
                     .flex_none()
                     .gap_2()
                     .child(
@@ -838,6 +1025,26 @@ impl MusicApp {
                             .when_some(message, |this, (text, color)| {
                                 this.text_color(color).child(text)
                             }),
+                    )
+                    .child(
+                        Button::new("mute")
+                            .ghost()
+                            .small()
+                            .icon(if self.volume <= 0. {
+                                AppIcon::Muted
+                            } else if self.volume < 0.5 {
+                                AppIcon::VolumeLow
+                            } else {
+                                AppIcon::Volume
+                            })
+                            .tooltip(format!("Volume {:.0} %", self.volume * 100.))
+                            .on_click(cx.listener(Self::toggle_mute)),
+                    )
+                    .child(
+                        div()
+                            .w(px(84.))
+                            .flex_none()
+                            .child(Slider::new(&self.volume_slider).horizontal()),
                     )
                     .child(
                         Button::new("np-expand")
@@ -980,6 +1187,8 @@ fn main() {
         .run(|cx: &mut App| {
             gpui_component::init(cx);
             Theme::change(ThemeMode::Dark, None, cx);
+            // No custom title bar, so sheets can start at the top of the content.
+            Theme::global_mut(cx).sheet.margin_top = px(0.);
             cx.bind_keys([
                 KeyBinding::new("escape", CloseNowPlaying, Some("NowPlaying")),
                 KeyBinding::new("space", TogglePlayback, Some("NowPlaying")),
@@ -999,15 +1208,23 @@ fn main() {
                 }),
                 ..Default::default()
             };
-            let _window = cx
+            let mut app = None;
+            let window = cx
                 .open_window(options, |window, cx| {
                     let view = cx.new(|cx| MusicApp::new(window, cx));
-                    view.update(cx, |app, cx| app.apply_startup_env(window, cx));
+                    app = Some(view.clone());
                     cx.new(|cx| Root::new(view, window, cx))
                 })
                 .expect("failed to open window");
+            let app = app.expect("window built");
+            // After the Root exists, so the settings sheet can open from startup hooks.
+            window
+                .update(cx, |_, window, cx| {
+                    app.update(cx, |app, cx| app.apply_startup_env(window, cx))
+                })
+                .ok();
             #[cfg(feature = "screenshot")]
-            screenshot::schedule(_window.into(), cx);
+            screenshot::schedule(window.into(), cx);
             cx.on_window_closed(|cx, _| {
                 if cx.windows().is_empty() {
                     cx.quit();

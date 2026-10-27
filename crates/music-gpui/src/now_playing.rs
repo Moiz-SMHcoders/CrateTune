@@ -312,7 +312,17 @@ impl MusicApp {
             })
             .when(self.playback.preview_only, |this| {
                 this.child(Tag::warning().small().rounded_full().child("Preview"))
-            });
+            })
+            .child(
+                Button::new("np-settings")
+                    .ghost()
+                    .rounded(px(999.))
+                    .icon(IconName::Settings)
+                    .tooltip("Settings")
+                    .on_click(
+                        cx.listener(|this, _, window, cx| this.open_settings(None, window, cx)),
+                    ),
+            );
 
         div()
             .id("now-playing")

@@ -23,6 +23,9 @@ directories = "6"
 # Secrets in the OS keychain (macOS Keychain, Windows Credential Manager, Secret Service).
 keyring = "4.2"
 
+[target.'cfg(target_os = "windows")'.dependencies]
+# HWND of the main window for the SMTC media controls (GPUI's `Window` implements it).
+raw-window-handle = "0.6"
 
 [features]
 # Dev-only offscreen screenshot hook (needs GPUI's test-support for `Window::render_to_image`).

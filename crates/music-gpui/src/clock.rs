@@ -2,7 +2,7 @@
 
 use std::time::{Duration, Instant};
 
-use music_core::{PlaybackState, PlaybackStatus, Player, Track};
+use music_core::{EqualizerSettings, PlaybackState, PlaybackStatus, Player, Track};
 
 /// Where the demo clock starts (the first lyric of most songs is a bit later).
 const DEMO_START: Duration = Duration::from_secs(20);
@@ -48,6 +48,23 @@ impl Engine {
             Engine::Audio(player) if ended => player.resume(),
             Engine::Audio(player) => player.seek(Duration::ZERO),
             Engine::Demo(demo) => demo.seek(Duration::ZERO),
+        }
+    }
+
+    pub fn set_volume(&mut self, volume: f32) {
+        match self {
+            Engine::Audio(player) => player.set_volume(volume),
+            Engine::Demo(demo) => demo.volume = volume.clamp(0., 1.),
+        }
+    }
+
+    /// `None` turns the equalizer off. The demo clock has no audio to equalize.
+    pub fn set_equalizer(&mut self, settings: Option<EqualizerSettings>) {
+        if let Engine::Audio(player) = self {
+            match settings {
+                Some(settings) => player.set_equalizer(settings),
+                None => player.clear_equalizer(),
+            }
         }
     }
 

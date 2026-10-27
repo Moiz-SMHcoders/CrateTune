@@ -4103,6 +4103,7 @@ dependencies = [
  "image",
  "keyring",
  "music-core",
+ "raw-window-handle",
  "serde",
  "serde_json",
 ]

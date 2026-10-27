@@ -1,0 +1,1002 @@
+//! Settings sheet: 10-band equalizer, Last.fm / ListenBrainz scrobbling and
+//! Discord Rich Presence. Owns the persisted [`Settings`] and the secrets.
+//!
+//! The panel is its own entity, shown inside gpui-component's `Sheet` (see
+//! `MusicApp::open_settings`). It never touches the player or the services
+//! directly: it emits [`SettingsEvent`]s and `MusicApp` applies them, and
+//! `MusicApp` pushes scrobble errors / Discord state back in from its poll.
+//!
+//! Changes are saved 500 ms after the last edit (and on quit). Network calls
+//! (Last.fm auth, ListenBrainz token validation) and keychain access run on
+//! worker threads.
+
+use std::collections::{BTreeMap, VecDeque};
+use std::path::PathBuf;
+use std::sync::Arc;
+use std::time::Duration;
+
+use gpui::{
+    AppContext as _, Context, Entity, EventEmitter, FontWeight, IntoElement, ParentElement as _,
+    Render, SharedString, Styled as _, Subscription, Task, Window, div,
+    prelude::FluentBuilder as _, px,
+};
+use gpui_component::{
+    ActiveTheme as _, Selectable as _, Sizable as _,
+    button::{Button, ButtonVariants as _},
+    h_flex,
+    input::{Input, InputEvent, InputState},
+    slider::{Slider, SliderEvent, SliderState},
+    switch::Switch,
+    tag::Tag,
+    v_flex,
+};
+use music_core::discord::DiscordStatus;
+use music_core::equalizer::GRAPHIC_BANDS_HZ;
+use music_core::scrobble::{LastFm, ListenBrainz};
+use music_core::{EqPreset, EqualizerSettings};
+
+use crate::now_playing::off_thread;
+use crate::secrets::{self, Backend, Secret, Stored};
+use crate::services::ScrobbleConfig;
+use crate::settings::{self, EQ_RANGE_DB, Settings};
+
+const SAVE_DEBOUNCE: Duration = Duration::from_millis(500);
+const MAX_ERRORS: usize = 5;
+const SLIDER_HEIGHT: f32 = 150.;
+
+pub enum SettingsEvent {
+    /// Apply to the player now (`None` = equalizer off).
+    Equalizer(Option<EqualizerSettings>),
+    /// Credentials or Discord settings changed: rebuild the services.
+    Integrations,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum Tab {
+    Equalizer,
+    Accounts,
+}
+
+enum LastFmFlow {
+    Idle,
+    Busy(&'static str),
+    /// Token issued; the user approves it in the browser, then presses Finish.
+    Waiting {
+        key: String,
+        secret: String,
+        token: String,
+        error: Option<String>,
+    },
+    Failed(String),
+}
+
+enum Validation {
+    Idle,
+    Busy,
+    Failed(String),
+}
+
+pub struct SettingsPanel {
+    settings: Settings,
+    path: Option<PathBuf>,
+    /// Load/save problems, shown at the bottom of the Accounts tab.
+    file_error: Option<String>,
+    save_task: Option<Task<()>>,
+    save_pending: bool,
+    /// Emit `Integrations` when the pending save fires (typed ids/keys).
+    integrations_dirty: bool,
+
+    backend: Option<Arc<dyn Backend>>,
+    secrets: BTreeMap<Secret, String>,
+    secrets_loaded: bool,
+    /// Where secrets go / came from, for the status line.
+    secret_store: SharedString,
+
+    pub tab: Tab,
+    eq_sliders: Vec<Entity<SliderState>>,
+    lastfm_key: Entity<InputState>,
+    lastfm_secret: Entity<InputState>,
+    lastfm: LastFmFlow,
+    lb_token: Entity<InputState>,
+    lb: Validation,
+    discord_id: Entity<InputState>,
+    discord_status: DiscordStatus,
+    scrobble_errors: VecDeque<String>,
+    _subscriptions: Vec<Subscription>,
+}
+
+impl EventEmitter<SettingsEvent> for SettingsPanel {}
+
+impl SettingsPanel {
+    /// Loads `settings.json` synchronously (small file) and the secrets on a worker thread.
+    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
+        let path = settings::settings_path();
+        let (settings, file_error) = match &path {
+            Some(path) => Settings::load(path),
+            None => (
+                Settings::default(),
+                Some("no config directory; settings are not saved".into()),
+            ),
+        };
+        if let Some(e) = &file_error {
+            eprintln!("music-gpui: settings: {e}");
+        }
+
+        let gains = settings.equalizer.gains();
+        let eq_sliders: Vec<_> = gains
+            .iter()
+            .map(|&gain| {
+                cx.new(|_| {
+                    SliderState::new()
+                        .min(-EQ_RANGE_DB as f32)
+                        .max(EQ_RANGE_DB as f32)
+                        .step(0.5)
+                        .default_value(gain as f32)
+                })
+            })
+            .collect();
+        let input = |placeholder: &str,
+                     value: &str,
+                     masked: bool,
+                     window: &mut Window,
+                     cx: &mut Context<Self>| {
+            let (placeholder, value) = (placeholder.to_owned(), value.to_owned());
+            cx.new(|cx| {
+                InputState::new(window, cx)
+                    .placeholder(placeholder)
+                    .masked(masked)
+                    .default_value(value)
+            })
+        };
+        let lastfm_key = input("API key", &settings.lastfm.api_key, false, window, cx);
+        let lastfm_secret = input("Shared secret", "", true, window, cx);
+        let lb_token = input("User token", "", true, window, cx);
+        let discord_id = input(
+            "Application ID",
+            &settings.discord.client_id,
+            false,
+            window,
+            cx,
+        );
+
+        let mut subscriptions: Vec<Subscription> = eq_sliders
+            .iter()
+            .enumerate()
+            .map(|(band, slider)| {
+                cx.subscribe(slider, move |this, _, event: &SliderEvent, cx| {
+                    let value = match event {
+                        SliderEvent::Change(v) | SliderEvent::Release(v) => v.start(),
+                    };
+                    this.set_band(band, value as f64, cx);
+                })
+            })
+            .collect();
+        for input in [&lastfm_key, &discord_id] {
+            subscriptions.push(cx.subscribe(input, |this, _, event: &InputEvent, cx| {
+                if matches!(event, InputEvent::Change) {
+                    this.sync_inputs(cx);
+                }
+            }));
+        }
+        subscriptions.push(cx.on_app_quit(|this, _| {
+            this.flush();
+            async {}
+        }));
+
+        let backend: Option<Arc<dyn Backend>> = secrets::default_backend().map(Arc::from);
+        let secret_store = match &backend {
+            Some(b) => b.name().into(),
+            None => "settings file (0600; keychain disabled)".into(),
+        };
+        let mut this = Self {
+            settings,
+            path,
+            file_error,
+            save_task: None,
+            save_pending: false,
+            integrations_dirty: false,
+            backend,
+            secrets: BTreeMap::new(),
+            secrets_loaded: false,
+            secret_store,
+            tab: Tab::Equalizer,
+            eq_sliders,
+            lastfm_key,
+            lastfm_secret,
+            lastfm: LastFmFlow::Idle,
+            lb_token,
+            lb: Validation::Idle,
+            discord_id,
+            discord_status: DiscordStatus::Idle,
+            scrobble_errors: VecDeque::new(),
+            _subscriptions: subscriptions,
+        };
+        this.load_secrets(window, cx);
+        this
+    }
+
+    fn load_secrets(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let backend = self.backend.clone();
+        let file = self.settings.secrets.0.clone();
+        // Only what the settings say exists, so the keychain isn't touched at all
+        // until an account has been set up.
+        let s = &self.settings;
+        let wanted: Vec<Secret> = [
+            (Secret::LastFmShared, !s.lastfm.api_key.is_empty()),
+            (Secret::LastFmSession, s.lastfm.user.is_some()),
+            (Secret::ListenBrainzToken, s.listenbrainz.user.is_some()),
+        ]
+        .into_iter()
+        .filter_map(|(secret, wanted)| wanted.then_some(secret))
+        .collect();
+        cx.spawn_in(window, async move |this, cx| {
+            let loaded =
+                off_thread(move || secrets::load_all(backend.as_deref(), &file, &wanted)).await;
+            this.update_in(cx, |this, window, cx| {
+                for e in &loaded.errors {
+                    eprintln!("music-gpui: keychain read failed ({e}); using the settings file");
+                }
+                if !loaded.errors.is_empty() {
+                    this.secret_store = "settings file (0600; keychain read failed)".into();
+                } else if !this.settings.secrets.is_empty() {
+                    this.secret_store =
+                        format!("{} + settings file (0600)", this.secret_store).into();
+                }
+                if std::env::var_os("MUSIC_TRACE").is_some() {
+                    eprintln!(
+                        "music-gpui: secrets loaded: {} present, {} from the keychain",
+                        loaded.values.len(),
+                        loaded.in_keychain
+                    );
+                }
+                this.secrets = loaded.values;
+                this.secrets_loaded = true;
+                for (secret, input) in [
+                    (Secret::LastFmShared, this.lastfm_secret.clone()),
+                    (Secret::ListenBrainzToken, this.lb_token.clone()),
+                ] {
+                    if let Some(value) = this.secrets.get(&secret).cloned() {
+                        input.update(cx, |input, cx| input.set_value(value, window, cx));
+                    }
+                }
+                cx.emit(SettingsEvent::Integrations);
+                cx.notify();
+            })
+            .ok();
+        })
+        .detach();
+    }
+
+    // ---- what MusicApp reads -------------------------------------------------
+
+    pub fn settings(&self) -> &Settings {
+        &self.settings
+    }
+
+    pub fn equalizer(&self) -> Option<EqualizerSettings> {
+        self.settings.equalizer.player_settings()
+    }
+
+    pub fn scrobble_config(&self) -> ScrobbleConfig {
+        let s = &self.settings;
+        let secret = |k| self.secrets.get(&k).cloned();
+        ScrobbleConfig {
+            lastfm: s
+                .lastfm
+                .user
+                .as_ref()
+                .filter(|_| !s.lastfm.api_key.is_empty())
+                .and_then(|_| {
+                    Some((
+                        s.lastfm.api_key.clone(),
+                        secret(Secret::LastFmShared)?,
+                        secret(Secret::LastFmSession)?,
+                    ))
+                }),
+            listenbrainz_token: s
+                .listenbrainz
+                .user
+                .as_ref()
+                .and_then(|_| secret(Secret::ListenBrainzToken)),
+        }
+    }
+
+    /// `Some(application id)` while Discord presence is on.
+    pub fn discord_client_id(&self) -> Option<String> {
+        let d = &self.settings.discord;
+        (d.enabled && !d.client_id.is_empty()).then(|| d.client_id.clone())
+    }
+
+    pub fn set_volume(&mut self, volume: f32, cx: &mut Context<Self>) {
+        if (self.settings.volume - volume).abs() > f32::EPSILON {
+            self.settings.volume = volume;
+            self.changed(false, cx);
+        }
+    }
+
+    pub fn push_scrobble_errors(&mut self, errors: Vec<String>, cx: &mut Context<Self>) {
+        self.scrobble_errors.extend(errors);
+        while self.scrobble_errors.len() > MAX_ERRORS {
+            self.scrobble_errors.pop_front();
+        }
+        cx.notify();
+    }
+
+    pub fn set_discord_status(&mut self, status: DiscordStatus, cx: &mut Context<Self>) {
+        self.discord_status = status;
+        cx.notify();
+    }
+
+    // ---- persistence ---------------------------------------------------------
+
+    /// Schedules a save (and, if `integrations`, an `Integrations` event) after
+    /// [`SAVE_DEBOUNCE`] without further changes.
+    fn changed(&mut self, integrations: bool, cx: &mut Context<Self>) {
+        self.integrations_dirty |= integrations;
+        self.save_pending = true;
+        let executor = cx.background_executor().clone();
+        self.save_task = Some(cx.spawn(async move |this, cx| {
+            executor.timer(SAVE_DEBOUNCE).await;
+            this.update(cx, |this, cx| {
+                this.flush();
+                if std::mem::take(&mut this.integrations_dirty) {
+                    cx.emit(SettingsEvent::Integrations);
+                }
+                cx.notify();
+            })
+            .ok();
+        }));
+        cx.notify();
+    }
+
+    /// Writes the file now if a save is pending.
+    fn flush(&mut self) {
+        if !std::mem::take(&mut self.save_pending) {
+            return;
+        }
+        let Some(path) = &self.path else { return };
+        match self.settings.save(path) {
+            Ok(()) => {
+                self.file_error = None;
+                if std::env::var_os("MUSIC_TRACE").is_some() {
+                    eprintln!("music-gpui: saved {}", path.display());
+                }
+            }
+            Err(e) => {
+                eprintln!("music-gpui: saving {} failed: {e}", path.display());
+                self.file_error = Some(format!("saving failed: {e}"));
+            }
+        }
+    }
+
+    /// Stores (`Some`) or deletes (`None`) a secret off the UI thread, then
+    /// records whether the settings file has to hold it.
+    fn put_secret(&mut self, secret: Secret, value: Option<String>, cx: &mut Context<Self>) {
+        match &value {
+            Some(v) => self.secrets.insert(secret, v.clone()),
+            None => self.secrets.remove(&secret),
+        };
+        let backend = self.backend.clone();
+        cx.spawn(async move |this, cx| {
+            let (stored, value) = off_thread(move || {
+                let stored = match &value {
+                    Some(v) => secrets::store(backend.as_deref(), secret, v),
+                    None => match secrets::delete(backend.as_deref(), secret) {
+                        Ok(()) => Stored::Keychain,
+                        Err(e) => Stored::File(e),
+                    },
+                };
+                (stored, value)
+            })
+            .await;
+            this.update(cx, |this, cx| {
+                if let Stored::File(reason) = &stored {
+                    eprintln!("music-gpui: {}: keychain not used ({reason})", secret.key());
+                    if value.is_some() && this.backend.is_some() {
+                        this.secret_store = "settings file (0600; keychain unavailable)".into();
+                    }
+                }
+                secrets::apply(
+                    &mut this.settings.secrets.0,
+                    secret,
+                    value.as_deref(),
+                    &stored,
+                );
+                this.changed(false, cx);
+            })
+            .ok();
+        })
+        .detach();
+    }
+
+    // ---- equalizer -------------------------------------------------------------
+
+    fn set_band(&mut self, band: usize, gain: f64, cx: &mut Context<Self>) {
+        let eq = &mut self.settings.equalizer;
+        if (eq.gains_db[band] - gain).abs() < 1e-6 {
+            return;
+        }
+        eq.gains_db[band] = gain;
+        eq.enabled = true;
+        cx.emit(SettingsEvent::Equalizer(self.equalizer()));
+        self.changed(false, cx);
+    }
+
+    pub fn apply_preset(&mut self, preset: EqPreset, window: &mut Window, cx: &mut Context<Self>) {
+        self.settings.equalizer.apply_preset(preset);
+        for (slider, gain) in self.eq_sliders.iter().zip(preset.gains_db()) {
+            slider.update(cx, |s, cx| s.set_value(gain as f32, window, cx));
+        }
+        cx.emit(SettingsEvent::Equalizer(self.equalizer()));
+        self.changed(false, cx);
+    }
+
+    pub fn set_eq_enabled(&mut self, enabled: bool, cx: &mut Context<Self>) {
+        self.settings.equalizer.enabled = enabled;
+        cx.emit(SettingsEvent::Equalizer(self.equalizer()));
+        self.changed(false, cx);
+    }
+
+    // ---- accounts --------------------------------------------------------------
+
+    /// Copies the typed API key / Discord id into the settings (saved debounced).
+    fn sync_inputs(&mut self, cx: &mut Context<Self>) {
+        let key = self.lastfm_key.read(cx).value().trim().to_owned();
+        let id = self.discord_id.read(cx).value().trim().to_owned();
+        let s = &mut self.settings;
+        if key != s.lastfm.api_key || id != s.discord.client_id {
+            s.lastfm.api_key = key;
+            s.discord.client_id = id;
+            self.changed(true, cx);
+        }
+    }
+
+    /// Step 1–2 of Last.fm's desktop auth: get a token, open the approval page.
+    pub fn lastfm_connect(&mut self, cx: &mut Context<Self>) {
+        let key = self.lastfm_key.read(cx).value().trim().to_owned();
+        let secret = self.lastfm_secret.read(cx).value().trim().to_owned();
+        if key.is_empty() || secret.is_empty() {
+            self.lastfm = LastFmFlow::Failed("Enter the API key and shared secret first.".into());
+            cx.notify();
+            return;
+        }
+        self.settings.lastfm.api_key = key.clone();
+        if self.secrets.get(&Secret::LastFmShared) != Some(&secret) {
+            self.put_secret(Secret::LastFmShared, Some(secret.clone()), cx);
+        }
+        self.changed(false, cx);
+        self.lastfm = LastFmFlow::Busy("Requesting a token…");
+        cx.spawn(async move |this, cx| {
+            let client = LastFm::new(key.clone(), secret.clone());
+            let result = off_thread(move || {
+                let token = client.get_token()?;
+                Ok::<_, music_core::Error>((client.auth_url(&token), token))
+            })
+            .await;
+            this.update(cx, |this, cx| {
+                this.lastfm = match result {
+                    Ok((url, token)) => {
+                        cx.open_url(&url);
+                        LastFmFlow::Waiting {
+                            key,
+                            secret,
+                            token,
+                            error: None,
+                        }
+                    }
+                    Err(e) => LastFmFlow::Failed(e.to_string()),
+                };
+                cx.notify();
+            })
+            .ok();
+        })
+        .detach();
+        cx.notify();
+    }
+
+    /// Step 3: exchange the approved token for a session key.
+    pub fn lastfm_finish(&mut self, cx: &mut Context<Self>) {
+        let LastFmFlow::Waiting {
+            key, secret, token, ..
+        } = std::mem::replace(&mut self.lastfm, LastFmFlow::Busy("Finishing…"))
+        else {
+            return;
+        };
+        cx.spawn(async move |this, cx| {
+            let (k, s, t) = (key.clone(), secret.clone(), token.clone());
+            let result = off_thread(move || LastFm::new(k, s).get_session(&t)).await;
+            this.update(cx, |this, cx| {
+                match result {
+                    Ok(session) => {
+                        this.settings.lastfm.user = Some(session.name);
+                        this.put_secret(Secret::LastFmSession, Some(session.key), cx);
+                        this.lastfm = LastFmFlow::Idle;
+                        this.changed(true, cx);
+                    }
+                    // Usually "not authorized yet": keep the token so Finish can be retried.
+                    Err(e) => {
+                        this.lastfm = LastFmFlow::Waiting {
+                            key,
+                            secret,
+                            token,
+                            error: Some(e.to_string()),
+                        }
+                    }
+                }
+                cx.notify();
+            })
+            .ok();
+        })
+        .detach();
+        cx.notify();
+    }
+
+    pub fn lastfm_disconnect(&mut self, cx: &mut Context<Self>) {
+        self.settings.lastfm.user = None;
+        self.lastfm = LastFmFlow::Idle;
+        self.put_secret(Secret::LastFmSession, None, cx);
+        self.changed(true, cx);
+    }
+
+    /// Forgets the API key and secret too.
+    pub fn lastfm_clear(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        self.lastfm_disconnect(cx);
+        self.put_secret(Secret::LastFmShared, None, cx);
+        self.settings.lastfm.api_key.clear();
+        for input in [self.lastfm_key.clone(), self.lastfm_secret.clone()] {
+            input.update(cx, |input, cx| input.set_value("", window, cx));
+        }
+    }
+
+    pub fn lb_validate(&mut self, cx: &mut Context<Self>) {
+        let token = self.lb_token.read(cx).value().trim().to_owned();
+        if token.is_empty() {
+            self.lb = Validation::Failed("Paste your user token first.".into());
+            cx.notify();
+            return;
+        }
+        self.lb = Validation::Busy;
+        cx.spawn(async move |this, cx| {
+            let t = token.clone();
+            let result = off_thread(move || ListenBrainz::new(t).validate_token()).await;
+            this.update(cx, |this, cx| {
+                match result {
+                    Ok(user) => {
+                        this.settings.listenbrainz.user = Some(user);
+                        this.put_secret(Secret::ListenBrainzToken, Some(token), cx);
+                        this.lb = Validation::Idle;
+                        this.changed(true, cx);
+                    }
+                    Err(e) => this.lb = Validation::Failed(e.to_string()),
+                }
+                cx.notify();
+            })
+            .ok();
+        })
+        .detach();
+        cx.notify();
+    }
+
+    pub fn lb_disconnect(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        self.settings.listenbrainz.user = None;
+        self.lb = Validation::Idle;
+        self.put_secret(Secret::ListenBrainzToken, None, cx);
+        self.lb_token
+            .update(cx, |input, cx| input.set_value("", window, cx));
+        self.changed(true, cx);
+    }
+
+    pub fn set_discord_enabled(&mut self, enabled: bool, cx: &mut Context<Self>) {
+        self.settings.discord.enabled = enabled;
+        cx.emit(SettingsEvent::Integrations);
+        self.changed(false, cx);
+    }
+
+    pub fn clear_errors(&mut self, cx: &mut Context<Self>) {
+        self.scrobble_errors.clear();
+        cx.notify();
+    }
+
+    // ---- rendering -------------------------------------------------------------
+
+    fn render_tabs(&self, cx: &mut Context<Self>) -> impl IntoElement + use<> {
+        let tab = |id: &'static str, label: &'static str, value: Tab| {
+            Button::new(id)
+                .ghost()
+                .small()
+                .label(label)
+                .selected(self.tab == value)
+                .on_click(cx.listener(move |this, _, _, cx| {
+                    this.tab = value;
+                    cx.notify();
+                }))
+        };
+        h_flex()
+            .gap_1()
+            .pb_3()
+            .child(tab("tab-eq", "Equalizer", Tab::Equalizer))
+            .child(tab("tab-accounts", "Scrobbling & Discord", Tab::Accounts))
+    }
+
+    fn render_equalizer(&self, cx: &mut Context<Self>) -> impl IntoElement + use<> {
+        let theme = cx.theme();
+        let eq = &self.settings.equalizer;
+        let current = eq.preset();
+        let presets =
+            h_flex()
+                .flex_wrap()
+                .gap_1()
+                .children(EqPreset::ALL.map(|preset| {
+                    let selected = eq.enabled && current == Some(preset);
+                    Button::new(SharedString::from(format!("preset-{}", preset.name())))
+                        .small()
+                        .map(|b| if selected { b.primary() } else { b.outline() })
+                        .label(preset.name())
+                        .selected(selected)
+                        .on_click(cx.listener(move |this, _, window, cx| {
+                            this.apply_preset(preset, window, cx)
+                        }))
+                }));
+        let muted = theme.muted_foreground;
+        let bands =
+            h_flex()
+                .w_full()
+                .justify_between()
+                .children(self.eq_sliders.iter().enumerate().map(|(i, slider)| {
+                    let gain = eq.gains_db[i];
+                    v_flex()
+                        .w(px(34.))
+                        .items_center()
+                        .gap_2()
+                        .child(
+                            div()
+                                .text_xs()
+                                .text_color(if gain.abs() < 0.05 {
+                                    muted
+                                } else {
+                                    theme.foreground
+                                })
+                                .child(if gain.abs() < 0.05 {
+                                    "0".to_owned()
+                                } else {
+                                    format!("{gain:+.1}")
+                                }),
+                        )
+                        .child(
+                            div().h(px(SLIDER_HEIGHT)).child(
+                                Slider::new(slider)
+                                    .vertical()
+                                    .h_full()
+                                    .disabled(!eq.enabled),
+                            ),
+                        )
+                        .child(
+                            div()
+                                .text_xs()
+                                .text_color(muted)
+                                .child(band_label(GRAPHIC_BANDS_HZ[i])),
+                        )
+                }));
+        v_flex()
+            .gap_3()
+            .child(
+                h_flex()
+                    .justify_between()
+                    .child(section_title("Equalizer"))
+                    .child(
+                        Switch::new("eq-enabled")
+                            .checked(eq.enabled)
+                            .label(if eq.enabled { "On" } else { "Off" })
+                            .on_click(cx.listener(|this, checked: &bool, _, cx| {
+                                this.set_eq_enabled(*checked, cx)
+                            })),
+                    ),
+            )
+            .child(
+                h_flex()
+                    .gap_2()
+                    .child(presets)
+                    .when(current.is_none(), |this| {
+                        this.child(Tag::secondary().small().child("Custom"))
+                    }),
+            )
+            .child(
+                h_flex()
+                    .items_start()
+                    .gap_2()
+                    .child(
+                        v_flex()
+                            .h(px(SLIDER_HEIGHT))
+                            .mt(px(24.))
+                            .justify_between()
+                            .text_xs()
+                            .text_color(muted)
+                            .child("+12")
+                            .child("0")
+                            .child("−12"),
+                    )
+                    .child(bands),
+            )
+            .child(note(
+                "Applied live. Boosts are compensated so the output never clips.",
+                cx,
+            ))
+    }
+
+    fn render_accounts(&self, cx: &mut Context<Self>) -> impl IntoElement + use<> {
+        let theme = cx.theme();
+        let danger = theme.danger;
+        let success = theme.success;
+        let muted = theme.muted_foreground;
+        let s = &self.settings;
+
+        // ---- Last.fm
+        let lastfm_status: (SharedString, gpui::Hsla) = match (&s.lastfm.user, &self.lastfm) {
+            (_, LastFmFlow::Busy(what)) => ((*what).into(), muted),
+            (_, LastFmFlow::Waiting { error: None, .. }) => (
+                "Approve the app in your browser, then press Finish.".into(),
+                muted,
+            ),
+            (_, LastFmFlow::Waiting { error: Some(e), .. }) => (e.clone().into(), danger),
+            (_, LastFmFlow::Failed(e)) => (e.clone().into(), danger),
+            (Some(user), LastFmFlow::Idle) => (format!("Connected as {user}").into(), success),
+            (None, LastFmFlow::Idle) => ("Not connected".into(), muted),
+        };
+        let lastfm_buttons = match (&s.lastfm.user, &self.lastfm) {
+            (_, LastFmFlow::Waiting { .. }) => h_flex()
+                .gap_2()
+                .child(
+                    Button::new("lastfm-finish")
+                        .small()
+                        .primary()
+                        .label("Finish")
+                        .on_click(cx.listener(|this, _, _, cx| this.lastfm_finish(cx))),
+                )
+                .child(
+                    Button::new("lastfm-cancel")
+                        .small()
+                        .ghost()
+                        .label("Cancel")
+                        .on_click(cx.listener(|this, _, _, cx| {
+                            this.lastfm = LastFmFlow::Idle;
+                            cx.notify();
+                        })),
+                ),
+            (Some(_), _) => h_flex().gap_2().child(
+                Button::new("lastfm-disconnect")
+                    .small()
+                    .outline()
+                    .label("Disconnect")
+                    .on_click(cx.listener(|this, _, _, cx| this.lastfm_disconnect(cx))),
+            ),
+            (None, flow) => h_flex()
+                .gap_2()
+                .child(
+                    Button::new("lastfm-connect")
+                        .small()
+                        .primary()
+                        .label("Connect")
+                        .loading(matches!(flow, LastFmFlow::Busy(_)))
+                        .on_click(cx.listener(|this, _, _, cx| this.lastfm_connect(cx))),
+                )
+                .when(!s.lastfm.api_key.is_empty(), |this| {
+                    this.child(
+                        Button::new("lastfm-clear")
+                            .small()
+                            .ghost()
+                            .label("Forget key")
+                            .on_click(
+                                cx.listener(|this, _, window, cx| this.lastfm_clear(window, cx)),
+                            ),
+                    )
+                }),
+        };
+        let lastfm = v_flex()
+            .gap_2()
+            .child(
+                h_flex()
+                    .justify_between()
+                    .child(section_title("Last.fm"))
+                    .child(lastfm_buttons),
+            )
+            .child(field("API key", Input::new(&self.lastfm_key).small(), cx))
+            .child(field(
+                "Shared secret",
+                Input::new(&self.lastfm_secret).small().mask_toggle(),
+                cx,
+            ))
+            .child(status_line(lastfm_status.0, lastfm_status.1));
+
+        // ---- ListenBrainz
+        let lb_status: (SharedString, gpui::Hsla) = match (&s.listenbrainz.user, &self.lb) {
+            (_, Validation::Busy) => ("Checking the token…".into(), muted),
+            (_, Validation::Failed(e)) => (e.clone().into(), danger),
+            (Some(user), Validation::Idle) => (format!("Connected as {user}").into(), success),
+            (None, Validation::Idle) => ("Not connected".into(), muted),
+        };
+        let lb_button = if s.listenbrainz.user.is_some() {
+            Button::new("lb-disconnect")
+                .small()
+                .outline()
+                .label("Disconnect")
+                .on_click(cx.listener(|this, _, window, cx| this.lb_disconnect(window, cx)))
+        } else {
+            Button::new("lb-validate")
+                .small()
+                .primary()
+                .label("Validate")
+                .loading(matches!(self.lb, Validation::Busy))
+                .on_click(cx.listener(|this, _, _, cx| this.lb_validate(cx)))
+        };
+        let listenbrainz = v_flex()
+            .gap_2()
+            .child(
+                h_flex()
+                    .justify_between()
+                    .child(section_title("ListenBrainz"))
+                    .child(lb_button),
+            )
+            .child(field(
+                "User token",
+                Input::new(&self.lb_token).small().mask_toggle(),
+                cx,
+            ))
+            .child(status_line(lb_status.0, lb_status.1));
+
+        // ---- Discord
+        let enabled = s.discord.enabled;
+        let discord_status: (SharedString, gpui::Hsla) = match (&self.discord_status, enabled) {
+            (_, false) => ("Off".into(), muted),
+            (_, true) if s.discord.client_id.is_empty() => {
+                ("Enter your Discord application ID.".into(), muted)
+            }
+            (DiscordStatus::Connected, true) => ("Connected to Discord".into(), success),
+            (DiscordStatus::Disconnected { error }, true) => {
+                (format!("Discord not reachable: {error}").into(), danger)
+            }
+            (DiscordStatus::Idle, true) => ("Waiting for playback…".into(), muted),
+        };
+        let discord =
+            v_flex()
+                .gap_2()
+                .child(
+                    h_flex()
+                        .justify_between()
+                        .child(section_title("Discord Rich Presence"))
+                        .child(Switch::new("discord-enabled").checked(enabled).on_click(
+                            cx.listener(|this, checked: &bool, _, cx| {
+                                this.set_discord_enabled(*checked, cx)
+                            }),
+                        )),
+                )
+                .child(field(
+                    "Application ID",
+                    Input::new(&self.discord_id).small(),
+                    cx,
+                ))
+                .child(status_line(discord_status.0, discord_status.1));
+
+        // ---- footer: errors + where things are stored
+        let errors = (!self.scrobble_errors.is_empty()).then(|| {
+            v_flex()
+                .gap_1()
+                .child(
+                    h_flex()
+                        .justify_between()
+                        .child(
+                            div()
+                                .text_xs()
+                                .font_weight(FontWeight::SEMIBOLD)
+                                .text_color(danger)
+                                .child(format!("Scrobble errors ({})", self.scrobble_errors.len())),
+                        )
+                        .child(
+                            Button::new("errors-clear")
+                                .xsmall()
+                                .ghost()
+                                .label("Clear")
+                                .on_click(cx.listener(|this, _, _, cx| this.clear_errors(cx))),
+                        ),
+                )
+                .children(self.scrobble_errors.iter().rev().map(|e| {
+                    div()
+                        .text_xs()
+                        .text_color(muted)
+                        .line_clamp(2)
+                        .child(e.clone())
+                }))
+        });
+        let secrets_line = if self.secrets_loaded {
+            format!("Secrets: {}", self.secret_store)
+        } else {
+            "Secrets: loading…".into()
+        };
+        let path_line = match &self.path {
+            Some(p) => format!("Settings: {}", p.display()),
+            None => "Settings are not saved (no config directory)".into(),
+        };
+        let footer = v_flex()
+            .gap_1()
+            .pt_2()
+            .border_t_1()
+            .border_color(theme.border)
+            .children(errors)
+            .child(note(secrets_line, cx))
+            .child(note(path_line, cx))
+            .when_some(self.file_error.clone(), |this, e| {
+                this.child(status_line(e.into(), danger))
+            });
+
+        v_flex()
+            .gap_5()
+            .child(lastfm)
+            .child(listenbrainz)
+            .child(discord)
+            .child(footer)
+    }
+}
+
+impl Render for SettingsPanel {
+    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let tabs = self.render_tabs(cx);
+        let body = match self.tab {
+            Tab::Equalizer => self.render_equalizer(cx).into_any_element(),
+            Tab::Accounts => self.render_accounts(cx).into_any_element(),
+        };
+        v_flex().w_full().pb_4().child(tabs).child(body)
+    }
+}
+
+fn band_label(hz: f64) -> String {
+    if hz >= 1000. {
+        format!("{}k", hz / 1000.)
+    } else {
+        format!("{hz}")
+    }
+}
+
+fn section_title(title: &'static str) -> impl IntoElement {
+    div().font_weight(FontWeight::SEMIBOLD).child(title)
+}
+
+fn note<T: Into<SharedString>>(text: T, cx: &Context<SettingsPanel>) -> impl IntoElement + use<T> {
+    div()
+        .text_xs()
+        .text_color(cx.theme().muted_foreground)
+        .line_clamp(2)
+        .child(text.into())
+}
+
+fn status_line(text: SharedString, color: gpui::Hsla) -> impl IntoElement {
+    div().text_xs().text_color(color).line_clamp(3).child(text)
+}
+
+fn field(
+    label: &'static str,
+    input: Input,
+    cx: &Context<SettingsPanel>,
+) -> impl IntoElement + use<> {
+    h_flex()
+        .gap_3()
+        .child(
+            div()
+                .w(px(96.))
+                .flex_none()
+                .text_sm()
+                .text_color(cx.theme().muted_foreground)
+                .child(label),
+        )
+        .child(div().flex_1().min_w_0().child(input))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::band_label;
+
+    #[test]
+    fn band_labels() {
+        assert_eq!(band_label(31.), "31");
+        assert_eq!(band_label(1000.), "1k");
+        assert_eq!(band_label(16000.), "16k");
+    }
+}

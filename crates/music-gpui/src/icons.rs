@@ -1,4 +1,4 @@
-//! Lucide icons beyond gpui-component's 101 defaults (skip), embedded
+//! Lucide icons beyond gpui-component's 101 defaults (skip, volume), embedded
 //! individually so the binary doesn't carry the whole 1,800-icon catalog.
 
 use std::borrow::Cow;
@@ -6,12 +6,18 @@ use std::borrow::Cow;
 use gpui::{AssetSource, SharedString};
 use gpui_kit_assets::{IconName, IconNamed};
 
-gpui_kit_assets::icon_assets!(ExtraIcons, [SkipBack, SkipForward]);
+gpui_kit_assets::icon_assets!(
+    ExtraIcons,
+    [SkipBack, SkipForward, Volume1, Volume2, VolumeX]
+);
 
 #[derive(Clone, Copy)]
 pub enum AppIcon {
     Previous,
     Next,
+    Volume,
+    VolumeLow,
+    Muted,
 }
 
 impl IconNamed for AppIcon {
@@ -19,6 +25,9 @@ impl IconNamed for AppIcon {
         match self {
             AppIcon::Previous => IconName::SkipBack,
             AppIcon::Next => IconName::SkipForward,
+            AppIcon::Volume => IconName::Volume2,
+            AppIcon::VolumeLow => IconName::Volume1,
+            AppIcon::Muted => IconName::VolumeX,
         }
         .path()
     }
