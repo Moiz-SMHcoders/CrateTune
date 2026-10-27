@@ -1,52 +1,227 @@
-//! Artist page (`Route::Artist { id, name }`) — stub until music-core can browse it.
+//! Artist page (`InnerTube::artist`): header (art, name, audience, subscribe
+//! state), Play / Shuffle / Radio, the description, then the shelves: songs as
+//! a track list, albums / singles / videos / related artists as cards, each
+//! with "See all" (artist items page or playlist).
+
+use std::rc::Rc;
 
 use gpui::{
     AppContext as _, Context, IntoElement, ParentElement as _, Render, ScrollHandle, Styled as _,
-    Window,
+    Task, Window, prelude::FluentBuilder as _,
 };
-use gpui_component::v_flex;
+use gpui_component::{
+    IconName,
+    button::{Button, ButtonRounded, ButtonVariants as _},
+    v_flex,
+};
+use music_core::innertube::ArtistPage as ArtistData;
 
 use super::PageView;
-use crate::app::MusicApp;
-use crate::components::{empty_state, page_scroll, page_title};
+use crate::app::{MusicApp, notify, update_app};
+use crate::browse::{Load, PageCache, fetch, on_view};
+use crate::components::items::{
+    Hero, ShelfModel, ShelfStyle, action_button, hero, load_state, shelf_view,
+};
+use crate::components::{page_scroll, page_title};
 use crate::icons::Lucide;
+use crate::radio::CollectionAction;
+
+/// Rows of the songs shelf.
+const TOP_SONGS: usize = 5;
+
+#[derive(Clone)]
+struct Data {
+    page: ArtistData,
+    shelves: Vec<ShelfModel>,
+}
 
 pub struct ArtistPage {
     id: String,
     name: String,
     scroll: ScrollHandle,
+    data: Load<Rc<Data>>,
+    _task: Option<Task<()>>,
 }
 
 impl ArtistPage {
     pub fn build(id: String, name: String, cx: &mut Context<MusicApp>) -> PageView {
         let scroll = ScrollHandle::new();
-        let page = cx.new(|_| Self {
-            id,
-            name,
-            scroll: scroll.clone(),
+        let page = cx.new(|cx| {
+            let mut page = Self {
+                id,
+                name,
+                scroll: scroll.clone(),
+                data: Load::Loading,
+                _task: None,
+            };
+            page.load(cx);
+            page
         });
         PageView::new(page, Some(scroll))
+    }
+
+    fn key(&self) -> String {
+        format!("artist:{}", self.id)
+    }
+
+    fn load(&mut self, cx: &mut Context<Self>) {
+        if let Some(data) = PageCache::get::<Rc<Data>>(&self.key(), cx) {
+            self.data = Load::Ready(data);
+            return;
+        }
+        self.data = Load::Loading;
+        let id = self.id.clone();
+        self._task = Some(fetch(
+            cx,
+            move |client, filter| {
+                let mut page = client.artist(&id)?;
+                let shelves = filter.shelves(std::mem::take(&mut page.shelves));
+                Ok((page, shelves))
+            },
+            |this: &mut Self, result, cx| {
+                let result = result.map(|(page, shelves)| {
+                    Rc::new(Data {
+                        page,
+                        shelves: ShelfModel::all(shelves),
+                    })
+                });
+                if let Ok(data) = &result {
+                    PageCache::put(&this.key(), data.clone(), cx);
+                }
+                this.data = Load::from_result(result);
+            },
+        ));
+    }
+
+    fn header(&self, data: &Data, cx: &mut Context<Self>) -> gpui::AnyElement {
+        let page = &data.page;
+        let artist = &page.artist;
+        let lines: Vec<gpui::AnyElement> = [
+            page.monthly_audience_text.clone(),
+            page.subscribers_text.clone(),
+        ]
+        .into_iter()
+        .flatten()
+        .map(|t| t.into_any_element())
+        .collect();
+
+        let mut actions = Vec::new();
+        // Play: the songs shelf (top songs), as on YouTube Music.
+        if let Some(songs) = data.shelves.iter().find(|s| s.is_songs()) {
+            let tracks = songs.songs.tracks.clone();
+            actions.push(action_button(
+                "artist-play",
+                "Play",
+                Lucide::Play,
+                true,
+                move |_, cx| {
+                    let tracks = tracks.clone();
+                    update_app(cx, |app, cx| app.play_list(tracks, 0, cx));
+                },
+            ));
+        }
+        if let Some(target) = page.shuffle.clone() {
+            actions.push(action_button(
+                "artist-shuffle",
+                "Shuffle",
+                Lucide::Shuffle,
+                actions.is_empty(),
+                move |window, cx| {
+                    let target = target.clone();
+                    update_app(cx, |app, cx| {
+                        app.play_watch_target(target, CollectionAction::Shuffle, window, cx)
+                    });
+                },
+            ));
+        }
+        if let Some(target) = page.radio.clone() {
+            let label = artist.name.clone();
+            actions.push(action_button(
+                "artist-radio",
+                "Radio",
+                Lucide::Radio,
+                false,
+                move |window, cx| {
+                    let target = target.clone();
+                    update_app(cx, |app, cx| {
+                        app.start_radio_target(target, &label, window, cx)
+                    });
+                },
+            ));
+        }
+        // Subscription state (changing it needs a signed-in account).
+        let subscribed = page.subscribed;
+        actions.push(
+            Button::new("artist-subscribe")
+                .rounded(ButtonRounded::Large)
+                .map(|b| if subscribed { b.outline() } else { b.ghost() })
+                .icon(if subscribed {
+                    IconName::Check
+                } else {
+                    IconName::Bell
+                })
+                .label(if subscribed {
+                    "Subscribed"
+                } else {
+                    "Subscribe"
+                })
+                .tooltip("Subscribing needs a signed-in YouTube account")
+                .on_click(|_, window, cx| {
+                    notify(
+                        window,
+                        cx,
+                        "Sign in to YouTube Music (Settings → Account) to manage subscriptions.",
+                    );
+                })
+                .into_any_element(),
+        );
+        hero(
+            Hero {
+                art: crate::components::items::sized_art(artist.thumbnail_url.as_deref(), 480),
+                round: true,
+                kind: "Artist".into(),
+                title: artist.name.clone().into(),
+                lines,
+                actions,
+                description: page.description.clone(),
+            },
+            cx,
+        )
     }
 }
 
 impl Render for ArtistPage {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        page_scroll(
-            "artist-page",
-            &self.scroll,
-            v_flex()
-                .gap_6()
-                .child(page_title(
-                    self.name.clone(),
-                    Some(format!("Artist · {}", self.id).into()),
-                    cx,
-                ))
-                .child(empty_state(
-                    Lucide::MicVocal,
-                    "Coming soon",
-                    "Artist pages arrive with the InnerTube artist browse in music-core: top songs, albums, singles, videos and related artists.",
-                    cx,
-                )),
-        )
+        let mut content = v_flex().gap_8();
+        match &self.data {
+            Load::Ready(data) => {
+                let data = data.clone();
+                content = content.child(self.header(&data, cx));
+                for (i, model) in data.shelves.iter().enumerate() {
+                    content = content.child(shelf_view(
+                        &format!("artist-{i}"),
+                        model,
+                        ShelfStyle::List(TOP_SONGS),
+                        cx,
+                    ));
+                }
+            }
+            Load::Loading => {
+                content = content
+                    .child(page_title(self.name.clone(), Some("Artist".into()), cx))
+                    .child(load_state("artist", None, |_, _| {}, cx))
+            }
+            Load::Failed(e) => {
+                content = content
+                    .child(page_title(self.name.clone(), Some("Artist".into()), cx))
+                    .child(load_state(
+                        "artist",
+                        Some(e),
+                        on_view(cx, |this: &mut Self, _, cx| this.load(cx)),
+                        cx,
+                    ))
+            }
+        }
+        page_scroll("artist-page", &self.scroll, content)
     }
 }

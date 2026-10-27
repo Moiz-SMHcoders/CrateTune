@@ -56,6 +56,10 @@ pub enum SettingsEvent {
     Section(SectionId),
     /// Shuffle / repeat changed on the settings page (apply to the queue).
     PlaybackModes,
+    /// Content language / country, filters or autoplay changed.
+    Content,
+    /// The proxy was (re)applied; online pages should reload.
+    Network,
     /// Engine options (quality, crossfade, speed, device, …) changed.
     Audio,
     /// Lyrics providers / keys changed: rebuild the lyrics service.
@@ -94,7 +98,7 @@ pub struct SettingsPanel {
     integrations_dirty: bool,
 
     backend: Option<Arc<dyn Backend>>,
-    secrets: BTreeMap<Secret, String>,
+    pub(super) secrets: BTreeMap<Secret, String>,
     pub(super) secrets_loaded: bool,
     /// Where secrets go / came from, for the status line.
     pub(super) secret_store: SharedString,
@@ -110,6 +114,10 @@ pub struct SettingsPanel {
     pub(super) discord_id: Entity<InputState>,
     pub(super) discord_status: DiscordStatus,
     pub(super) scrobble_errors: VecDeque<String>,
+    /// Content & region section (language / country pickers).
+    pub(super) content: super::content::ContentState,
+    /// Network section (proxy draft fields, status).
+    pub(super) network: super::network::NetworkState,
     /// Player / lyrics / Now Playing / activity widgets (`prefs_ui.rs`).
     pub(super) prefs: PrefsUi,
     _subscriptions: Vec<Subscription>,
@@ -188,6 +196,10 @@ impl SettingsPanel {
                 }
             }));
         }
+        let (content, content_subscriptions) =
+            super::content::ContentState::new(&settings, window, cx);
+        subscriptions.extend(content_subscriptions);
+        let network = super::network::NetworkState::new(&settings, window, cx);
         let (prefs, prefs_subscriptions) = PrefsUi::new(&settings, window, cx);
         subscriptions.extend(prefs_subscriptions);
         subscriptions.push(cx.on_app_quit(|this, _| {
@@ -222,9 +234,15 @@ impl SettingsPanel {
             discord_id,
             discord_status: DiscordStatus::Idle,
             scrobble_errors: VecDeque::new(),
+            content,
+            network,
             prefs,
             _subscriptions: subscriptions,
         };
+        // Before any page loads (the password, if any, follows once read).
+        if let Err(e) = this.apply_proxy() {
+            eprintln!("music-gpui: proxy not applied: {e}");
+        }
         this.load_secrets(window, cx);
         this
     }
@@ -239,6 +257,7 @@ impl SettingsPanel {
             (Secret::LastFmShared, !s.lastfm.api_key.is_empty()),
             (Secret::LastFmSession, s.lastfm.user.is_some()),
             (Secret::ListenBrainzToken, s.listenbrainz.user.is_some()),
+            (Secret::ProxyPassword, s.network.has_password),
             (Secret::PaxsenixKey, s.lyrics.paxsenix_key_set),
             (Secret::BetterLyricsKey, s.lyrics.betterlyrics_key_set),
             (Secret::AiTranslateKey, s.lyrics.ai_key_set),
@@ -275,6 +294,13 @@ impl SettingsPanel {
                     if let Some(value) = this.secrets.get(&secret).cloned() {
                         input.update(cx, |input, cx| input.set_value(value, window, cx));
                     }
+                }
+                if let Some(password) = this.secrets.get(&Secret::ProxyPassword).cloned() {
+                    this.network.show_password(password, window, cx);
+                    if let Err(e) = this.apply_proxy() {
+                        eprintln!("music-gpui: proxy not applied: {e}");
+                    }
+                    cx.emit(SettingsEvent::Network);
                 }
                 this.fill_secret_inputs(window, cx);
                 cx.emit(SettingsEvent::Integrations);

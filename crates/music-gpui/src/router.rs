@@ -87,6 +87,18 @@ pub enum Route {
         id: String,
         name: String,
     },
+    /// Any browse page as shelves (mood / genre categories, "see all" targets).
+    Browse {
+        id: String,
+        params: Option<String>,
+        name: String,
+    },
+    /// An artist's "see all" page (discography, videos, …).
+    ArtistItems {
+        id: String,
+        params: Option<String>,
+        name: String,
+    },
     History,
     Stats,
     Downloads,
@@ -109,7 +121,9 @@ impl Route {
             Route::Library { tab } => format!("Library · {}", tab.title()),
             Route::Artist { name, .. }
             | Route::Album { name, .. }
-            | Route::Playlist { name, .. } => name.clone(),
+            | Route::Playlist { name, .. }
+            | Route::Browse { name, .. }
+            | Route::ArtistItems { name, .. } => name.clone(),
             Route::History => "History".into(),
             Route::Stats => "Stats".into(),
             Route::Downloads => "Downloads".into(),
@@ -125,12 +139,17 @@ impl Route {
         std::mem::discriminant(self) == std::mem::discriminant(other)
             && !matches!(
                 self,
-                Route::Artist { .. } | Route::Album { .. } | Route::Playlist { .. }
+                Route::Artist { .. }
+                    | Route::Album { .. }
+                    | Route::Playlist { .. }
+                    | Route::Browse { .. }
+                    | Route::ArtistItems { .. }
             )
     }
 
     /// Parses the script / startup form: `home`, `search:daft punk`,
-    /// `library:albums`, `settings:eq`, `artist:UC…`, `album:MPREb_…`, …
+    /// `library:albums`, `settings:eq`, `artist:UC…`, `album:MPREb_…`,
+    /// `browse:ID|PARAMS`, `artist-items:ID|PARAMS`, …
     pub fn parse(spec: &str) -> Option<Route> {
         let (name, arg) = match spec.split_once(':') {
             Some((name, arg)) => (name.trim(), Some(arg.trim())),
@@ -155,6 +174,20 @@ impl Route {
             "artist" => entity(arg).map(|(id, name)| Route::Artist { id, name })?,
             "album" => entity(arg).map(|(id, name)| Route::Album { id, name })?,
             "playlist" => entity(arg).map(|(id, name)| Route::Playlist { id, name })?,
+            "browse" | "artist-items" => {
+                let (id, _) = entity(arg)?;
+                let (id, params) = match id.split_once('|') {
+                    Some((id, params)) => (id.to_owned(), Some(params.to_owned())),
+                    None => (id, None),
+                };
+                let kind = name;
+                let name = id.clone();
+                if kind == "browse" {
+                    Route::Browse { id, params, name }
+                } else {
+                    Route::ArtistItems { id, params, name }
+                }
+            }
             "history" => Route::History,
             "stats" => Route::Stats,
             "downloads" => Route::Downloads,
@@ -259,6 +292,14 @@ impl<P> Router<P> {
         self.index += 1;
         self.trim();
         true
+    }
+
+    /// Drops every entry's page (routes and scroll offsets stay), e.g. after the
+    /// content language changed; the current page is rebuilt on the next render.
+    pub fn drop_pages(&mut self) {
+        for entry in &mut self.entries {
+            entry.page = None;
+        }
     }
 
     /// Drops the pages of entries further than [`LIVE_PAGES`] / 2 from the current one
@@ -379,6 +420,18 @@ mod tests {
             })
         );
         assert_eq!(Route::parse("artist"), None);
+        assert_eq!(
+            Route::parse("browse:FEmusic_moods_and_genres_category|ggMP"),
+            Some(Route::Browse {
+                id: "FEmusic_moods_and_genres_category".into(),
+                params: Some("ggMP".into()),
+                name: "FEmusic_moods_and_genres_category".into(),
+            })
+        );
+        assert!(matches!(
+            Route::parse("artist-items:UC1"),
+            Some(Route::ArtistItems { params: None, .. })
+        ));
         assert_eq!(Route::parse("nope"), None);
     }
 

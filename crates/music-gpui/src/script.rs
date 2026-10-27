@@ -34,6 +34,11 @@
 //! | `@lb-validate`, `@lb-disconnect` | ListenBrainz |
 //! | `@discord=on\|off` | Discord presence switch |
 //! | `@resize=W;H` | resize the main window (frame is saved) |
+//! | `@radio=N` | start a radio from search result N |
+//! | `@scroll=X;Y;DY` | synthetic scroll wheel at window coordinates (DY < 0 scrolls down) |
+//! | `@locale=de:DE` | Content & region: content language and country |
+//! | `@suggest` | print the search dropdown's entries and the recent searches |
+//! | `@proxy=KIND:HOST:PORT`, `@proxy=off` | Network section: apply a proxy (no credentials) |
 //! | `@layout=split\|centered\|lyrics`, `@np-bg=blur\|gradient\|solid\|glow`, `@mini-style=theme\|artwork` | Now Playing / mini player look (saved) |
 //! | `@lyrics-style=karaoke\|apple\|slide\|glow\|fade\|none`, `@lyrics-size=40`, `@lyrics-spacing=1.5`, `@lyrics-align=left\|center\|right` | lyrics look (saved) |
 //! | `@translate=on\|off`, `@romanize=SCRIPT:on\|off` (`japanese`, `korean`, `chinese`, `devanagari`, `cyrillic`, `other`), `@lyrics-reload` | lyrics extras |
@@ -45,8 +50,8 @@ use std::time::{Duration, Instant};
 
 use gpui::{
     AnyWindowHandle, App, AppContext as _, Context, Entity, Keystroke, Modifiers, MouseButton,
-    MouseDownEvent, MouseMoveEvent, MouseUpEvent, NavigationDirection, PlatformInput, Window,
-    point, px,
+    MouseDownEvent, MouseMoveEvent, MouseUpEvent, NavigationDirection, PlatformInput, ScrollDelta,
+    ScrollEvent, ScrollSource, TouchPhase, Window, point, px,
 };
 use music_core::{EqPreset, Quality, SleepTimer};
 
@@ -202,6 +207,28 @@ fn input_event(name: &str, arg: Option<&str>, window: &mut Window, cx: &mut App)
             cx,
         ),
         "move" => mouse_move(window, cx),
+        "scroll" => {
+            let mut parts = arg
+                .unwrap_or("")
+                .split(';')
+                .map(|p| p.trim().parse::<f32>());
+            let (Some(Ok(x)), Some(Ok(y)), Some(Ok(dy))) =
+                (parts.next(), parts.next(), parts.next())
+            else {
+                eprintln!("music-gpui: @scroll wants X;Y;DY");
+                return true;
+            };
+            window.dispatch_event(
+                PlatformInput::Scroll(ScrollEvent {
+                    position: point(px(x), px(y)),
+                    delta: ScrollDelta::Pixels(point(px(0.), px(dy))),
+                    modifiers: Modifiers::default(),
+                    touch_phase: TouchPhase::Moved,
+                    source: ScrollSource::default(),
+                }),
+                cx,
+            );
+        }
         _ => return false,
     }
     window.refresh();
@@ -378,6 +405,35 @@ impl MusicApp {
                     Some(size) => window.resize(size),
                     None => eprintln!("music-gpui: @resize wants W;H"),
                 }
+            }
+            "radio" => {
+                if let Some(track) = self.last_results.get(index()).cloned() {
+                    self.start_radio(track, window, cx);
+                }
+            }
+            "suggest" => {
+                eprintln!(
+                    "music-gpui: suggestions {:?}; recent {:?}",
+                    self.debug_suggestions(),
+                    self.recent_searches().collect::<Vec<_>>()
+                );
+            }
+            "locale" => {
+                let (hl, gl) = arg.and_then(|a| a.split_once(':')).unwrap_or(("en", "US"));
+                let (hl, gl) = (hl.to_owned(), gl.to_owned());
+                panel.update(cx, |p, cx| {
+                    p.set_content(
+                        |c| {
+                            c.language = hl;
+                            c.country = gl;
+                        },
+                        cx,
+                    )
+                });
+            }
+            "proxy" => {
+                let spec = arg.unwrap_or("off").to_owned();
+                panel.update(cx, |p, cx| p.set_proxy_draft(&spec, window, cx));
             }
             "layout" => match arg.and_then(NowPlayingLayout::parse) {
                 Some(l) => panel.update(cx, |p, cx| p.set_np_layout(l, cx)),

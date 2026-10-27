@@ -5,12 +5,15 @@
 //!   ([`track_row::track_menu`] builds the same menu for other places).
 //! * [`card::Card`] – album / playlist / artist tile; [`shelf`] (horizontal,
 //!   scrollable) and [`grid`] lay them out; [`section_header`] titles a block.
-//! * [`empty_state`] – centred icon + title + detail, used by stub pages.
+//! * [`items`] – InnerTube items: cards / rows / menus for any `Item`, shelves
+//!   (quick picks or cards), chips, loading + error states with retry.
+//! * [`empty_state`] – centred icon + title + detail.
 //! * [`artwork`] – the shared image cache and the artwork element.
 //! * [`sidebar`], [`player_bar`], [`queue_panel`] – the shell's fixed parts.
 
 pub mod artwork;
 pub mod card;
+pub mod items;
 pub mod player_bar;
 pub mod queue_panel;
 pub mod sidebar;

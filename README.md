@@ -217,6 +217,19 @@ MUSIC_QUERY="daft punk" MUSIC_GPUI_SCREENSHOT="9:/tmp/search.png,9.5:@settings=e
 | ![Dynamic accent](docs/screenshots/shell-dynamic-accent.png) | ![Pure black](docs/screenshots/shell-pure-black.png) |
 | ![Equalizer section](docs/screenshots/shell-settings-eq.png) | ![Mini player](docs/screenshots/shell-mini-player.png) |
 
+Browse & search (live YouTube Music data, `screenshot` build, 1180 pt wide window):
+
+| ![Home feed](docs/screenshots/browse-home.png) | ![Search suggestions](docs/screenshots/browse-suggestions.png) |
+|---|---|
+| ![Search: all](docs/screenshots/browse-search.png) | ![Search: songs tab](docs/screenshots/browse-search-songs.png) |
+| ![Artist](docs/screenshots/browse-artist.png) | ![Artist shelves](docs/screenshots/browse-artist-shelves.png) |
+| ![Artist items](docs/screenshots/browse-artist-items.png) | ![Album](docs/screenshots/browse-album.png) |
+| ![Playlist](docs/screenshots/browse-playlist.png) | ![Radio queue](docs/screenshots/browse-radio-queue.png) |
+| ![Explore](docs/screenshots/browse-explore.png) | ![Charts](docs/screenshots/browse-charts.png) |
+| ![Moods & genres](docs/screenshots/browse-moods.png) | ![Mood category](docs/screenshots/browse-category.png) |
+| ![New releases](docs/screenshots/browse-new-releases.png) | ![Error with retry](docs/screenshots/browse-proxy-error.png) |
+| ![Content & region](docs/screenshots/browse-settings-content.png) | ![Network](docs/screenshots/browse-settings-network.png) |
+
 ### Structure
 
 ```
@@ -230,8 +243,13 @@ src/
   router.rs          Route enum + Router (back/forward history, per-entry scroll offsets)
   pages/             one file per page; mod.rs: PageView, NAV (sidebar), build()
   components/        track_row (hover actions + context menu), card, shelf/grid/section
-                     header/empty state (mod.rs), artwork (shared cache), sidebar,
-                     player_bar, queue_panel
+                     header/empty state (mod.rs), items (InnerTube items: card / row /
+                     menu / shelf / quick picks / chips / header / loading + retry),
+                     artwork (shared cache), sidebar, player_bar, queue_panel
+  browse.rs          online pages: Load state, fetch (worker thread, app's InnerTube),
+                     PageCache, Paging (infinite scroll), content filters, locale
+  search_box.rs      header search: suggestions + recent searches dropdown
+  radio.rs           radio / autoplay / play-an-album-or-playlist (InnerTube `next`)
   settings/          file.rs (settings.json model), panel.rs (SettingsPanel entity: state,
                      persistence, secrets, section list), one file per section, mod.rs
                      (SectionId + SECTIONS registry), widgets.rs
@@ -259,23 +277,31 @@ src/
   `app.navigate(route, window, cx)`, `app.queue_add(..)`, and read shared state with
   `read_app(cx, |app, _| ..)`. Build UI from `components::{TrackRow, Card, shelf, grid,
   section_header, empty_state, page_scroll}`; images go through `components::artwork`.
+  Online pages fetch with `browse::fetch(cx, |client, filter| .., |page, result, cx| ..)`
+  (blocking InnerTube call on a worker thread with the configured locale), keep a
+  `browse::Load<T>`, store their data in `browse::PageCache` (so back/forward and revisits
+  don't refetch) and render `components::items::{shelf_view, item_card, ItemRow,
+  load_state, more_footer}`.
 * **Add a settings section:** add a `SectionId` variant (+ `key`), create
   `settings/<name>.rs` with `pub(super) fn render(panel, window, cx) -> AnyElement`, and
   register it in `settings::SECTIONS`. Persisted values go into `settings/file.rs`
   (every field has a default); change them through a `SettingsPanel` method that calls
   `changed()` and emits a `SettingsEvent` if the app must react.
-* **Hooks waiting for core features:** `MusicApp::start_radio`, `add_to_playlist`,
-  `toggle_like` (context menu entries, currently a notification), the stub pages
-  (Home feed, Explore, Charts, Moods, New releases, Library tabs, Artist / Album /
-  Playlist, Stats, Downloads, Local files) and the placeholder settings sections
-  (Content & region, Network, Privacy, Storage, Account).
+* **Search history hook:** `MusicApp::record_search(query)` is called for every submitted
+  search (in-memory list of 30 feeding the "Recent searches" dropdown);
+  `MusicApp::set_recent_searches(..)` seeds it, `remove_recent_search` deletes one. A
+  persistent history (`Library::add_search_query`) wires into these.
+* **Hooks waiting for other layers:** `add_to_playlist`, `toggle_like` (context menu
+  entries, currently a notification), the artist page's subscribe button (shows the
+  state; changing it needs a signed-in account), the library pages (Library tabs, Stats,
+  Downloads, Local files) and the placeholder settings sections (Privacy, Storage,
+  Account). `Track::artist_refs` / `album_id` drive "Go to artist / album".
 * **Persistent lyrics cache:** `MusicApp::set_lyrics_cache(Arc<dyn LyricsCache>)` swaps
   the in-memory cache (e.g. for the library database's lyrics table); the service is
   rebuilt around it and every later fetch reads / writes it.
 * **What the engine plays:** `MusicApp::engine_track(track)` is applied both to `play`
   and to the preloaded next track (`sync_engine_next`), so e.g. a downloaded copy's
   `local_path` can be swapped in once for both paths.
-  `Track::artist_refs` / `album_id` already drive "Go to artist / album".
 
 ### Features
 
@@ -285,18 +311,64 @@ src/
   title follows the page. Back/forward keep up to 64 entries; the 8 nearest keep
   their page alive (state + scroll), older ones are rebuilt and get their scroll offset
   back. Typing in the search field replaces the current search entry (no history spam).
-* **Search** page: debounced, `InnerTube::search_songs`, virtualized rows with artwork.
-  Rows: click plays the list from that row; hover shows play next / add to queue / more;
-  right click (or "…") opens play, play next, add to queue, start radio, add to playlist,
-  like, go to artist (one entry per artist with an id), go to album (disabled without ids).
+* **Search field:** typing shows YouTube Music suggestions (`search_suggestions`,
+  220 ms debounce, cached per query): completed queries plus direct hits (artists,
+  songs, albums with artwork); with an empty field it lists recent searches (× removes
+  one). ↑ / ↓ move through the list, Enter picks the highlighted entry or searches the
+  text, Esc closes it. Picking a song suggestion starts its radio, an artist / album /
+  playlist opens its page.
+* **Search** page: **All** (top result card with Play / Shuffle / Radio and its songs,
+  then one block per category with "See all") and tabs for Songs, Videos, Albums,
+  Artists, Community playlists, Featured playlists, Podcasts and Episodes (fetched when
+  first opened; virtualized rows; more results load as you scroll). Each query is its
+  own history entry (replaced while you stay on search).
+  Song rows: click plays the list from that row; hover shows play next / add to queue /
+  more; right click (or "…") opens play, play next, add to queue, start radio, add to
+  playlist, like, go to artist (one entry per artist with an id), go to album.
+  Album / playlist / artist / podcast rows and cards open their page; their menu has
+  Open, Play, Shuffle, Play next, Add to queue, Start radio and Go to artist.
+* **Home:** the YouTube Music home feed: mood chips (Energize, Relax, …; click again for
+  the full feed), song shelves as a quick-picks grid (four rows, scrolling sideways),
+  albums / playlists / artists as cards, "See all" where YouTube offers it, more shelves
+  as you scroll. "Played this session" stays on top until a persistent history exists.
+* **Explore** (new releases / charts / moods shortcuts, a two-row moods carousel, the
+  explore shelves), **Charts** (country picker with search; song and video charts as
+  numbered lists of 20, artists as cards), **Moods & genres** (tiles per category →
+  category page of playlists), **New releases** (album / single grid).
+* **Artist page:** round art, name, monthly audience / subscribers, subscribed state,
+  Play (top songs), Shuffle and Radio, description, top songs as a track list, albums /
+  singles / videos / playlists / related artists as cards; "See all" opens the artist's
+  items page (discography grid or song list, more as you scroll) or the playlist.
+  **Album page:** art, type · year, linked artists, track count, Play / Shuffle / Radio /
+  Add to queue, numbered tracks, other versions. **Playlist page** (also podcasts):
+  author, track count, description, Play / Shuffle / Radio / Add to queue, tracks in a
+  virtualized list that loads more rows as you scroll.
+* **Radio:** "Start radio" (track menus, song suggestions, top result, header buttons of
+  artists / albums / playlists) replaces the queue with the radio mix (`InnerTube::next`
+  with `RDAMVM…` / `RDAMPL…` / the artist's radio); while it plays, the next batch loads
+  when three songs are left. **Autoplay similar songs** (Content & region, on by
+  default): when an ordinary queue's last song starts, songs from its radio are added.
+* **Loading, empty and error states** on every online page (spinner; error with Retry;
+  "Load more" / Retry footer if a continuation fails). Fetched page data is cached for
+  20 minutes (48 pages), so back/forward and revisits don't refetch; changing the
+  content language / country, filters or the proxy clears it and reloads the page.
+* **Content & region** settings: content language (41) and country (50) as searchable
+  pickers (InnerTube `hl` / `gl`, applied live: pages reload, suggestions too), hide
+  explicit (songs, albums, tracks, radio), hide music videos (shelves, search, the Videos
+  tab), autoplay similar songs.
+* **Network** settings: proxy Off / HTTP / HTTPS / SOCKS4 / SOCKS5 / SOCKS5h, host, port,
+  user name, password (masked; kept in the keychain). Apply validates (host without
+  scheme, port 1–65535, no credentials for SOCKS4), rebuilds music-core's HTTP agent
+  (`http::configure`; an invalid proxy keeps the previous one) and reloads pages; "Test
+  connection" fetches `youtube.com/generate_204` through it. Applied at launch before the
+  first request (again with the password once the keychain has been read).
 * **Queue** (`queue.rs`): play next, add to queue, remove, move (up/down buttons or drag
   and drop in the panel), clear, shuffle (current track first; turning it off restores
   the original order including tracks added meanwhile), repeat off / all / one (repeat-one
   replays on end, "next" still skips), history of played tracks. Shuffle and repeat are
   saved. "Previous" restarts past 3 s; the end of a track (including a ~60 s preview)
   plays the next one. Queue panel: now playing, up next, history (click to play again).
-* **Home** shows this session's tracks and up next as shelves until the home feed exists;
-  **History** lists this session's plays.
+* **History** lists this session's plays.
 * **Settings page** with sections: Appearance (theme, text size, Now Playing layout +
   background, mini player style), Playback (queue modes, quality, normalization, skip
   silence, auto-skip, crossfade, speed + pitch, output device, sleep timer), Equalizer,
@@ -388,7 +460,8 @@ bindings (Space, ⌘←/→, ⌘↑/↓ edit text while the search field is focu
 
 `settings.json` (volume, EQ, Last.fm API key + user name, ListenBrainz user name, Discord
 switch + id + `activity`, theme + text size, shuffle + repeat, `audio`, `lyrics`,
-`now_playing`, `scrobble_rules`, main window and mini player frames) lives in the platform config dir — macOS
+`now_playing`, `scrobble_rules`, `content` (language / country / filters / autoplay),
+`network` (proxy), main window and mini player frames) lives in the platform config dir — macOS
 `~/Library/Application Support/music-macos/`, Linux `~/.config/music-macos/`, Windows
 `%APPDATA%\music-macos\config\` — or `$MUSIC_CONFIG_DIR`. It is written 500 ms after the last
 change and on quit, atomically (temp file + rename), mode 0600 in a 0700 directory. Missing
@@ -396,8 +469,8 @@ fields fall back to defaults, unknown ones are ignored, out-of-range values are 
 file that isn't valid JSON is moved to `settings.json.bad`; an unknown theme / repeat value
 (from a newer version) falls back to the default instead.
 
-The Last.fm shared secret and session key, the ListenBrainz token and the Paxsenix /
-BetterLyrics / AI-translation API keys go to the OS keychain
+The Last.fm shared secret and session key, the ListenBrainz token, the Paxsenix /
+BetterLyrics / AI-translation API keys and the proxy password go to the OS keychain
 (`keyring` 4: macOS Keychain, Windows Credential Manager, Secret Service), service
 `music-macos`, one entry each. If the keychain fails (or `MUSIC_SECRET_STORE=file`), they are
 stored in the `secrets` object of `settings.json` (still 0600) and moved back into the keychain
@@ -412,7 +485,7 @@ item's ACL is tied to the binary). Secrets are never logged.
 |---|---|
 | `MUSIC_QUERY=…` | pre-fill and run a search (`MUSIC_GPUI_QUERY` still works) |
 | `MUSIC_AUTOOPEN=1` | play the first hit and open Now Playing (`MUSIC_GPUI_AUTOPLAY=1`: play only) |
-| `MUSIC_ROUTE=library:albums` | open a page at startup (`home`, `explore`, `search:q`, `settings:eq`, `artist:ID`, …) |
+| `MUSIC_ROUTE=library:albums` | open a page at startup (`home`, `explore`, `search:q`, `settings:eq`, `artist:ID`, `album:ID`, `playlist:ID`, `browse:ID\|PARAMS`, `artist-items:ID\|PARAMS`, …) |
 | `MUSIC_OPEN_SETTINGS=1\|<section>` | open the settings page (`eq`, `integrations`/`accounts`, `appearance`, `about`, …) |
 | `MUSIC_DEMO_CLOCK=1` | demo clock instead of audio (also used automatically when `Player::new` fails) |
 | `MUSIC_VOLUME=0.0` | volume for this session (muted real-device tests; ⌘↑/↓ and `@volume` still save) |
@@ -438,7 +511,9 @@ playback `@play=N @next @prev @seek=S @toggle @open @close @volume=V`; navigatio
 @lyrics-style=karaoke|apple|slide|glow|fade|none @lyrics-size=40 @lyrics-spacing=1.5
 @lyrics-align=left|center|right @translate=on|off @romanize=SCRIPT:on|off @lyrics-reload
 @sleep=MIN|eot|off|5s @speed=1.25 @pitch=-2 @crossfade=6 @quality=low|normal|high
-@normalize=on|off @skip-silence=on|off`; `@quit`.
+@normalize=on|off @skip-silence=on|off`; browse `@radio=N` (radio from search result N),
+`@suggest` (print the search dropdown), `@proxy=KIND:HOST:PORT|off`, `@locale=de:DE`,
+`@scroll=X;Y;DY`; `@quit`.
 
 Screenshot builds draw both windows every 200 ms and right before each shot: while the
 screen is locked macOS delivers no display-link frames, so nothing would redraw (and
