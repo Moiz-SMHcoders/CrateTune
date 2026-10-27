@@ -83,7 +83,8 @@ its own executor.
 * `downloads` — `DownloadManager`: user downloads (never evicted) and an LRU play cache, two
   workers on the `StreamResolver`, pollable `states()`.
 * `local_files` — scans music folders with `lofty` (tags, cover art, lyrics, ReplayGain) into
-  the library as `local:<hash>` tracks, incrementally.
+  the library as `local:<hash>` tracks, incrementally (`scan_with_progress` reports
+  `(done, total)` per file).
 
 ```sh
 cargo run --release -p music-core --example library -- ~/Music   # scan a folder, print stats
@@ -252,12 +253,21 @@ src/
   register it in `settings::SECTIONS`. Persisted values go into `settings/file.rs`
   (every field has a default); change them through a `SettingsPanel` method that calls
   `changed()` and emits a `SettingsEvent` if the app must react.
-* **Hooks waiting for core features:** `MusicApp::start_radio`, `add_to_playlist`,
-  `toggle_like` (context menu entries, currently a notification), the stub pages
-  (Home feed, Explore, Charts, Moods, New releases, Library tabs, Artist / Album /
-  Playlist, Stats, Downloads, Local files) and the placeholder settings sections
-  (Playback extras, Lyrics, Content & region, Network, Privacy, Storage, Account).
-  `Track::artist_refs` / `album_id` already drive "Go to artist / album".
+* **Hooks waiting for core features:** `MusicApp::start_radio` (context menu entry,
+  currently a notification), the stub pages (Home feed, Explore, Charts, Moods, New
+  releases, Artist / Album / Playlist) and the placeholder settings sections (Playback
+  extras, Lyrics, Content & region, Network). `Track::artist_refs` / `album_id` already
+  drive "Go to artist / album".
+* **Library services** (`store.rs`, see [Library, account, downloads](#library-account-downloads-local-files)):
+  `app.library()` (the SQLite `Library`, `None` if it couldn't open), `app.store.downloads`,
+  `app.innertube()` / `app.youtube_auth()` (signed-in InnerTube for personalized pages),
+  `toggle_like` / `set_liked`, `add_tracks_to_playlist` (dialog) / `append_to_playlist` /
+  `create_playlist`, `download_tracks` / `delete_download`, `record_search` /
+  `search_history`, `set_subscribed`. Pages load library data with `pages::loader::Loaded`
+  (re-queried when `store.revision` moves) and list songs with `pages::song_list::SongList`
+  (virtualized, multi-select + action bar). Playback hands tracks through
+  `MusicApp::playable(track)` so downloaded copies play from disk — a gapless
+  `Player::set_next` should do the same.
 
 ### Features
 
@@ -277,8 +287,7 @@ src/
   replays on end, "next" still skips), history of played tracks. Shuffle and repeat are
   saved. "Previous" restarts past 3 s; the end of a track (including a ~60 s preview)
   plays the next one. Queue panel: now playing, up next, history (click to play again).
-* **Home** shows this session's tracks and up next as shelves until the home feed exists;
-  **History** lists this session's plays.
+* **Home** shows this session's tracks and up next as shelves until the home feed exists.
 * **Settings page** with sections: Appearance (theme, text size), Playback (shuffle,
   repeat + planned options), Equalizer, Lyrics, Content & region, Network, Privacy,
   Storage (file locations), Account (YouTube sign-in, planned), Scrobbling & Discord,
@@ -301,6 +310,81 @@ src/
 * **Window frame** saved (content size, position, maximized) and restored if on screen.
 * **Now Playing**, **OS media controls**, **Equalizer**, **Scrobbling & Discord**,
   **volume**: unchanged from the previous round (details in the history below).
+
+### Library, account, downloads, local files
+
+| ![Library songs](docs/screenshots/library-songs.png) | ![Multi-select](docs/screenshots/library-select.png) |
+|---|---|
+| ![Playlist](docs/screenshots/library-playlist.png) | ![Add to playlist](docs/screenshots/library-add-to-playlist.png) |
+| ![History](docs/screenshots/library-history.png) | ![Stats](docs/screenshots/library-stats.png) |
+| ![Year in Music](docs/screenshots/library-year.png) | ![Year in Music, bars](docs/screenshots/library-year-bars.png) |
+| ![Downloads](docs/screenshots/library-downloads.png) | ![Local files](docs/screenshots/library-local-files.png) |
+| ![Account](docs/screenshots/library-account.png) | ![Paste cookie](docs/screenshots/library-cookie-dialog.png) |
+| ![Storage](docs/screenshots/library-storage.png) | |
+
+* **Services** (`store.rs`): `library.sqlite` and the download store (`media/downloads`,
+  `media/cache`) are opened at startup in the settings directory (`MUSIC_CONFIG_DIR`
+  respected); without them the app still works, library entries are disabled.
+* **Play history**: the 250 ms poll counts wall time while a track plays; leaving it (next,
+  end, another track, quit) records it with `record_play` once it played ≥ 30 s
+  (ArchiveTune's default), unless Privacy → "Pause listen history". Downloaded copies are
+  recorded under their YouTube id.
+* **Saved queue**: tracks, current index, play order while shuffled, repeat mode and position
+  are saved on every queue change, every 10 s while playing and on quit
+  (`Library::save_queue`). On launch the queue comes back paused, showing its track in the
+  bar; Play starts it and seeks to the saved position.
+* **Likes**: heart on track rows (on hover, always once liked), the player bar and Now
+  Playing; "Like / Remove from liked songs" in menus. Local DB, plus `rate_song` on YouTube
+  Music when signed in.
+* **Library page** (tabs replace the route): Songs (library = added, liked or local), Liked,
+  Albums, Artists, Playlists (local and YouTube mirrors), Downloaded, Local files. Song tabs:
+  virtualized list, filter, sort (date added, title, artist, plays, listening time, last
+  played; picking the current sort flips the direction), Play / Shuffle, and **Select**:
+  checkboxes + action bar (play, play next, add to queue, add to playlist, like, download,
+  remove from library / unlike / delete downloads). Albums / Artists: card grids with sort
+  and "Saved / Subscribed only"; they open **library views** (`Route::LibraryAlbum` /
+  `LibraryArtist`: the collection's songs, save / subscribe, "Open on YouTube Music" for
+  real ids).
+* **Playlists**: "New playlist" and "Add to playlist…" (dialog: pick an editable playlist or
+  create one, optionally also on YouTube Music); `Route::LocalPlaylist` page with rename,
+  delete (confirmation), per-row move up / down / remove, multi-select remove, and "Refresh"
+  for YouTube mirrors. Edits to the account's own playlists go to YouTube Music as well
+  (`edit_playlist` actions with `setVideoId`s); deleting a saved playlist removes it from
+  the account's library.
+* **History**: grouped by day (Today / Yesterday / date), play time per entry, remove an entry,
+  clear (confirmation), "Show more" in pages of 300.
+* **Stats**: 7 / 30 / 90 days, this year, all time — listening time, plays, unique songs /
+  artists / albums, top songs / artists / albums, listening by hour and weekday; **Year in
+  Music** (`Route::YearInMusic`) per year with history: totals, top song / artist, favourite
+  hour, busiest day, month-by-month and hourly bars.
+* **Downloads**: "Download" / "Remove download" in every song menu and the selection bar;
+  the page polls `DownloadManager::states()` (queued / downloading / done / preview only /
+  failed, cancel and retry), lists downloads with size and delete, shows download and cache
+  usage. Playback prefers the stored file (`local_file`: downloads always, cached copies when
+  complete). Without a PoToken downloads are the ~1 MiB preview (marked "preview").
+* **Local files**: music folders and skipped folders (folder picker), Rescan with progress
+  (`local_files::scan_with_progress`, new in music-core), the scanned tracks (filter,
+  select); local cover art (`file://`) goes through the artwork cache.
+* **Account** (Settings → Account): on macOS **"Sign in with Google…"** opens a window with a
+  WKWebView child (wry `build_as_child` on the GPUI window's NSView, non-persistent data
+  store, Safari user agent) on Google's sign-in page continuing to music.youtube.com; once
+  there with a SAPISID cookie, the `.youtube.com` cookies are read from WebKit's cookie store
+  (`getAllCookies` + a channel polled by a GPUI timer — wry's `cookies()` spins the run loop
+  and would re-enter GPUI) and the window closes. Everywhere: **"Paste cookie…"** with
+  step-by-step instructions (copy the `cookie` request header from the browser's dev tools).
+  The cookie goes to the keychain (`Secret::YouTubeCookie`); the account card shows avatar,
+  name, handle / e-mail; channels (brand accounts, `account_channels` → `data_sync_id`) and
+  the Google account index (`auth_user`) can be switched; Sign out forgets cookie and account
+  (synced data stays). **Sync now** (also right after signing in / switching) mirrors liked
+  songs, library songs, saved albums, subscriptions and playlists (with entries and
+  `setVideoId`s) into the database; YouTube wins for likes / saved albums / subscriptions /
+  playlist mirrors, local-only items are untouched. Artist library views subscribe /
+  unsubscribe (`set_subscribed`).
+* **Privacy**: pause / clear listen history, pause / clear search history (submitted searches
+  are stored via `record_search`). **Storage**: file locations, play-cache limit (128 MB–8 GB),
+  usage and clear, optional "cache played songs", download folder + usage, **backup export /
+  restore** (library database + settings JSON without secrets, window frames or account;
+  restoring keeps the current sign-in) followed by a "Restart now" prompt (`cx.restart()`).
 
 ### Keyboard shortcuts and menus
 
@@ -328,7 +412,9 @@ bindings (Space, ⌘←/→, ⌘↑/↓ edit text while the search field is focu
 ### Settings file and secrets
 
 `settings.json` (volume, EQ, Last.fm API key + user name, ListenBrainz user name, Discord
-switch + id, theme + text size, shuffle + repeat, main window and mini player frames) lives in the platform config dir — macOS
+switch + id, theme + text size, shuffle + repeat, main window and mini player frames, and
+`library`: privacy switches, play-cache limit, music folders, the signed-in YouTube account's
+name / avatar / `auth_user` / channel) lives in the platform config dir — macOS
 `~/Library/Application Support/music-macos/`, Linux `~/.config/music-macos/`, Windows
 `%APPDATA%\music-macos\config\` — or `$MUSIC_CONFIG_DIR`. It is written 500 ms after the last
 change and on quit, atomically (temp file + rename), mode 0600 in a 0700 directory. Missing
@@ -336,7 +422,8 @@ fields fall back to defaults, unknown ones are ignored, out-of-range values are 
 file that isn't valid JSON is moved to `settings.json.bad`; an unknown theme / repeat value
 (from a newer version) falls back to the default instead.
 
-The Last.fm shared secret and session key and the ListenBrainz token go to the OS keychain
+The Last.fm shared secret and session key, the ListenBrainz token and the YouTube Music
+sign-in cookie go to the OS keychain
 (`keyring` 4: macOS Keychain, Windows Credential Manager, Secret Service), service
 `music-macos`, one entry each. If the keychain fails (or `MUSIC_SECRET_STORE=file`), they are
 stored in the `secrets` object of `settings.json` (still 0600) and moved back into the keychain
