@@ -51,6 +51,7 @@ infer = "0.22"
 intx = "0.1"
 itertools = "0.15"
 lofty = "0.25"
+music-core = { path = "../../crates/music-core" }
 md5 = "0.8"
 mimalloc = { version = "0.1", features = ["no_thp"] }
 minisign-verify = { version = "0.2", optional = true }

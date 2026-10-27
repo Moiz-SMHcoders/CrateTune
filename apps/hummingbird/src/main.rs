@@ -34,6 +34,7 @@ mod update;
 mod util;
 #[cfg(target_os = "windows")]
 mod windows;
+mod youtube;
 
 const VERSION_STRING: &str = env!("HUMMINGBIRD_VERSION_STRING");
 

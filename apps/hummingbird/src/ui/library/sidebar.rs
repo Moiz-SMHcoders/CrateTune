@@ -13,7 +13,7 @@ use crate::ui::constants::{INNER_PANEL_ROUNDING, PANEL_GAP, PANEL_ROUNDING};
 
 const COLLAPSED_SIDEBAR_WIDTH: Pixels = px(52.0);
 
-use crate::ui::components::icons::{FOLDER, MUSIC, SIDEBAR, SIDEBAR_INACTIVE};
+use crate::ui::components::icons::{FOLDER, MUSIC, SIDEBAR, SIDEBAR_INACTIVE, WORLD};
 use crate::ui::components::tooltip::build_tooltip;
 use crate::{
     library::{db::track_stats, types::TrackStats},
@@ -235,6 +235,24 @@ impl Render for Sidebar {
                         });
                     }))
                     .when(matches!(sidebar_view, ViewSwitchMessage::Files), |this| {
+                        this.active()
+                    }),
+            )
+            .child(
+                sidebar_item("youtube")
+                    .icon(WORLD)
+                    .when(!collapsed, |this| {
+                        this.child(tr!("YOUTUBE_MUSIC", "YouTube Music"))
+                    })
+                    .when(collapsed, |this| {
+                        this.collapsed().collapsed_label(tr!("YOUTUBE_MUSIC"))
+                    })
+                    .on_click(cx.listener(|this, _, _, cx| {
+                        this.nav_model.update(cx, |_, cx| {
+                            cx.emit(ViewSwitchMessage::YouTube);
+                        });
+                    }))
+                    .when(matches!(sidebar_view, ViewSwitchMessage::YouTube), |this| {
                         this.active()
                     }),
             )

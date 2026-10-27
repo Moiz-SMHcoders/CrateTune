@@ -323,5 +323,15 @@
   "UPDATE_PLAYLIST": "Update {{name}}",
   "UPDATE_READY": "Update ready",
   "VIEW": "View",
-  "WINDOW": "Window"
+  "WINDOW": "Window",
+  "YOUTUBE_ADD_TO_QUEUE": "Add to Queue",
+  "YOUTUBE_EMPTY": "Search YouTube Music for songs, then click one to play it.",
+  "YOUTUBE_FAILED": "Unavailable",
+  "YOUTUBE_LOADING": "Loading…",
+  "YOUTUBE_MUSIC": "YouTube Music",
+  "YOUTUBE_NO_RESULTS": "No results.",
+  "YOUTUBE_PREVIEW": "Preview",
+  "YOUTUBE_PREVIEW_TOOLTIP": "Only the first minute of this track could be downloaded.",
+  "YOUTUBE_SEARCHING": "Searching…",
+  "YOUTUBE_SEARCH_FAILED": "Search failed: {{error}}"
 }

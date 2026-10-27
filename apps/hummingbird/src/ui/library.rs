@@ -10,6 +10,7 @@ use release_view::ReleaseView;
 use rustc_hash::FxHashMap;
 use tracing::debug;
 use track_view::TrackView;
+use youtube_view::YouTubeView;
 
 #[derive(Clone, Default)]
 struct ScrollStateStorage {
@@ -56,6 +57,7 @@ mod table_view_header;
 mod track_listing;
 mod track_view;
 mod update_playlist;
+mod youtube_view;
 
 actions!(library, [NavigateBack, NavigateForward, EscapeBack]);
 
@@ -259,6 +261,7 @@ enum LibrarySection {
     Tracks,
     Files,
     Playlists,
+    YouTube,
 }
 
 impl LibrarySection {
@@ -271,6 +274,7 @@ impl LibrarySection {
             ViewSwitchMessage::Artists | ViewSwitchMessage::Artist(_) => Some(Self::Artists),
             ViewSwitchMessage::Files => Some(Self::Files),
             ViewSwitchMessage::Playlist(_) => Some(Self::Playlists),
+            ViewSwitchMessage::YouTube => Some(Self::YouTube),
             // Release can appear under Albums or Artists – keep current section.
             ViewSwitchMessage::Release(_, _) => None,
             ViewSwitchMessage::Back | ViewSwitchMessage::Forward | ViewSwitchMessage::Refresh => {
@@ -289,6 +293,7 @@ enum LibraryView {
     Artists(Entity<ArtistView>),
     ArtistDetail(Entity<ArtistDetailView>),
     Files(Entity<FilesView>),
+    YouTube(Entity<YouTubeView>),
 }
 
 impl LibraryView {
@@ -301,6 +306,7 @@ impl LibraryView {
             LibraryView::Release(view) => view.read(cx).get_scroll_offset(),
             LibraryView::ArtistDetail(view) => view.read(cx).get_scroll_offset(),
             LibraryView::Playlist(view) => view.read(cx).get_scroll_offset(),
+            LibraryView::YouTube(view) => view.read(cx).get_scroll_offset(),
         }
     }
 
@@ -313,6 +319,7 @@ impl LibraryView {
             LibraryView::Release(_) => "albums",
             LibraryView::ArtistDetail(_) => "artists",
             LibraryView::Files(_) => "files",
+            LibraryView::YouTube(_) => "youtube",
         }
     }
 }
@@ -342,6 +349,7 @@ pub enum ViewSwitchMessage {
     Release(i64, Option<i64>),
     Artist(i64),
     Playlist(i64),
+    YouTube,
     Back,
     Forward,
     Refresh,
@@ -371,6 +379,7 @@ impl ViewSwitchMessage {
                 // ArtistDetail: don't cache – we can't verify the id matches without extra storage
                 | (LibraryView::Artists(_), ViewSwitchMessage::Artists)
                 | (LibraryView::Files(_), ViewSwitchMessage::Files)
+                | (LibraryView::YouTube(_), ViewSwitchMessage::YouTube)
         )
     }
 }
@@ -426,6 +435,7 @@ fn make_view(
         ViewSwitchMessage::Playlist(id) => {
             LibraryView::Playlist(PlaylistView::new(cx, *id, scroll_offset))
         }
+        ViewSwitchMessage::YouTube => LibraryView::YouTube(YouTubeView::new(cx)),
         ViewSwitchMessage::Back => panic!("improper use of make_view (cannot make Back)"),
         ViewSwitchMessage::Forward => panic!("improper use of make_view (cannot make Forward)"),
         ViewSwitchMessage::Refresh => panic!("improper use of make_view (cannot make Refresh)"),
@@ -697,6 +707,7 @@ impl Render for Library {
                 LibraryView::Playlist(v) => AnyView::from(v.clone()),
                 LibraryView::ArtistDetail(v) => AnyView::from(v.clone()),
                 LibraryView::Files(v) => AnyView::from(v.clone()),
+                LibraryView::YouTube(v) => AnyView::from(v.clone()),
             };
             page.cached(
                 StyleRefinement::default()

@@ -103,7 +103,7 @@
   },
   "ACTION_CLOSE_DETAIL_VIEW": {
     "context": "library.rs",
-    "definedIn": "src/ui/library.rs:625",
+    "definedIn": "src/ui/library.rs:635",
     "plural": false,
     "description": null
   },
@@ -121,13 +121,13 @@
   },
   "ACTION_GO_BACK": {
     "context": "library.rs",
-    "definedIn": "src/ui/library.rs:605",
+    "definedIn": "src/ui/library.rs:615",
     "plural": false,
     "description": null
   },
   "ACTION_GO_FORWARD": {
     "context": "library.rs",
-    "definedIn": "src/ui/library.rs:615",
+    "definedIn": "src/ui/library.rs:625",
     "plural": false,
     "description": null
   },
@@ -169,7 +169,7 @@
   },
   "ACTION_IMPORT_PLAYLIST": {
     "context": "library.rs",
-    "definedIn": "src/ui/library.rs:595",
+    "definedIn": "src/ui/library.rs:605",
     "plural": false,
     "description": null
   },
@@ -1639,7 +1639,7 @@
   },
   "STATS_TRACKS": {
     "context": "sidebar.rs",
-    "definedIn": "src/ui/library/sidebar.rs:275",
+    "definedIn": "src/ui/library/sidebar.rs:293",
     "plural": true,
     "description": null
   },
@@ -1822,5 +1822,65 @@
     "definedIn": "src/ui/global_actions.rs:224",
     "plural": false,
     "description": "The Window menu. Must *exactly* match the text required by macOS."
+  },
+  "YOUTUBE_ADD_TO_QUEUE": {
+    "context": "youtube_view.rs",
+    "definedIn": "src/ui/library/youtube_view.rs:412",
+    "plural": false,
+    "description": null
+  },
+  "YOUTUBE_EMPTY": {
+    "context": "youtube_view.rs",
+    "definedIn": "src/ui/library/youtube_view.rs:262",
+    "plural": false,
+    "description": null
+  },
+  "YOUTUBE_FAILED": {
+    "context": "youtube_view.rs",
+    "definedIn": "src/ui/library/youtube_view.rs:328",
+    "plural": false,
+    "description": null
+  },
+  "YOUTUBE_LOADING": {
+    "context": "youtube_view.rs",
+    "definedIn": "src/ui/library/youtube_view.rs:315",
+    "plural": false,
+    "description": null
+  },
+  "YOUTUBE_MUSIC": {
+    "context": "sidebar.rs",
+    "definedIn": "src/ui/library/sidebar.rs:245",
+    "plural": false,
+    "description": null
+  },
+  "YOUTUBE_NO_RESULTS": {
+    "context": "youtube_view.rs",
+    "definedIn": "src/ui/library/youtube_view.rs:268",
+    "plural": false,
+    "description": null
+  },
+  "YOUTUBE_PREVIEW": {
+    "context": "youtube_view.rs",
+    "definedIn": "src/ui/library/youtube_view.rs:318",
+    "plural": false,
+    "description": null
+  },
+  "YOUTUBE_PREVIEW_TOOLTIP": {
+    "context": "youtube_view.rs",
+    "definedIn": "src/ui/library/youtube_view.rs:321",
+    "plural": false,
+    "description": null
+  },
+  "YOUTUBE_SEARCHING": {
+    "context": "youtube_view.rs",
+    "definedIn": "src/ui/library/youtube_view.rs:266",
+    "plural": false,
+    "description": null
+  },
+  "YOUTUBE_SEARCH_FAILED": {
+    "context": "youtube_view.rs",
+    "definedIn": "src/ui/library/youtube_view.rs:272",
+    "plural": false,
+    "description": null
   }
 }
