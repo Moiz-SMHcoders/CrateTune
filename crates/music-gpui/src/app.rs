@@ -35,7 +35,8 @@ use music_core::{IosClientResolver, PlaybackState, Player, Track};
 
 use crate::anim::Frame;
 use crate::clock::{Engine, SmoothClock};
-use crate::now_playing::{HiRes, LyricsState, NowPlaying};
+use crate::lyrics::LyricsHub;
+use crate::now_playing::{HiRes, NowPlaying};
 use crate::pages::{self, PageContext, PageView};
 use crate::queue::Queue;
 use crate::router::{Route, Router};
@@ -109,6 +110,12 @@ pub struct MusicApp {
     pub(crate) unmuted_volume: f32,
     /// `MUSIC_TRACE=1`: log playback transitions (launch time).
     pub(crate) trace: Option<Instant>,
+    /// Video id last given to the engine's `set_next` (`None`: must be sent again).
+    pub(crate) next_sent: Option<Option<String>>,
+    /// `PlaybackState::advance_count` already handled (gapless switches, auto-skips).
+    pub(crate) seen_advance: u64,
+    /// Title of the last track that failed to load and when (shown in the bar).
+    pub(crate) last_failure: Option<(String, Instant)>,
 
     // ---- overlays & windows
     pub(crate) np: NowPlaying,
@@ -119,8 +126,8 @@ pub struct MusicApp {
     pub(crate) tray: Option<crate::tray::Tray>,
     /// `MUSIC_TIMINGS=1`: prints renders/s and the worst frame gap once a second.
     frame_stats: Option<FrameStats>,
-    /// Per video id; never evicted (small).
-    pub(crate) lyrics: HashMap<String, LyricsState>,
+    /// Lyrics service, per-track lyrics and translations (`lyrics.rs`).
+    pub(crate) lyrics: LyricsHub,
     /// Per video id, for the last few tracks (see `now_playing::ensure_hires`).
     pub(crate) hires: HashMap<String, HiRes>,
     pub(crate) hires_order: VecDeque<String>,
@@ -198,6 +205,7 @@ impl MusicApp {
                 // Volume and EQ before anything can play (MUSIC_VOLUME=0.0 stays silent).
                 engine.set_volume(this.volume);
                 engine.set_equalizer(this.settings.read(cx).equalizer());
+                engine.apply_audio(&this.settings.read(cx).settings().audio);
                 // Main thread, window exists: what the media-controls docs require.
                 this.services
                     .start_media_controls(&engine, services::hwnd(window));
@@ -259,6 +267,9 @@ impl MusicApp {
             volume,
             unmuted_volume: if volume > 0. { volume } else { 1. },
             trace: std::env::var_os("MUSIC_TRACE").map(|_| Instant::now()),
+            next_sent: None,
+            seen_advance: 0,
+            last_failure: None,
             np,
             queue_open: false,
             queue_scroll: ScrollHandle::new(),
@@ -268,7 +279,7 @@ impl MusicApp {
                 .then(crate::tray::Tray::new)
                 .flatten(),
             frame_stats: std::env::var_os("MUSIC_TIMINGS").map(|_| FrameStats::default()),
-            lyrics: HashMap::new(),
+            lyrics: LyricsHub::default(),
             hires: HashMap::new(),
             hires_order: VecDeque::new(),
             applied_theme: None,
@@ -277,6 +288,7 @@ impl MusicApp {
             _subscriptions: subscriptions,
         };
         this.apply_theme(cx);
+        this.rebuild_lyrics_service(cx);
         this.ensure_page(window, cx);
         this
     }
@@ -542,6 +554,16 @@ impl MusicApp {
                 }
             }
             SettingsEvent::Integrations => self.apply_integrations(cx),
+            SettingsEvent::Audio => {
+                let audio = self.settings.read(cx).settings().audio.clone();
+                if let Some(engine) = &mut self.engine {
+                    engine.apply_audio(&audio);
+                }
+                self.refresh_soon(cx);
+                cx.notify();
+            }
+            SettingsEvent::Lyrics => self.rebuild_lyrics_service(cx),
+            SettingsEvent::NowPlaying => cx.notify(),
             SettingsEvent::Appearance => self.apply_theme(cx),
             SettingsEvent::PlaybackModes => {
                 let modes = self.settings.read(cx).settings().playback.clone();
@@ -565,8 +587,9 @@ impl MusicApp {
     pub(crate) fn apply_integrations(&mut self, cx: &mut Context<Self>) {
         let panel = self.settings.read(cx);
         let scrobble = panel.scrobble_config();
-        let discord = panel.discord_client_id();
-        self.services.configure_scrobbling(scrobble);
+        let rules = panel.settings().scrobble_rules.to_core();
+        let discord = panel.discord_config();
+        self.services.configure_scrobbling(scrobble, rules);
         let status = self.services.configure_discord(discord);
         self.settings
             .update(cx, |panel, cx| panel.set_discord_status(status, cx));

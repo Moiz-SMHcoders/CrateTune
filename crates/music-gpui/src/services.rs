@@ -10,7 +10,7 @@ use std::sync::mpsc::{Receiver, Sender, channel};
 use music_core::PlaybackState;
 use music_core::discord::{DiscordConfig, DiscordPresence, DiscordStatus};
 use music_core::media_controls::{MediaControlEvent, MediaControls, MediaControlsConfig};
-use music_core::scrobble::{LastFm, ListenBrainz, ScrobbleService, Scrobbler};
+use music_core::scrobble::{LastFm, ListenBrainz, ScrobbleRules, ScrobbleService, Scrobbler};
 
 use crate::clock::Engine;
 
@@ -40,7 +40,9 @@ pub struct Services {
     artwork_sent: Option<String>,
     scrobbler: Option<Scrobbler>,
     scrobble_config: ScrobbleConfig,
-    discord: Option<(String, DiscordPresence)>,
+    scrobble_rules: ScrobbleRules,
+    /// The presence and the config it was last given.
+    discord: Option<(DiscordConfig, DiscordPresence)>,
     discord_status: DiscordStatus,
     /// Scrobbling and Discord stay off with the demo clock (nothing is really playing).
     real_audio: bool,
@@ -56,6 +58,7 @@ impl Default for Services {
             artwork_sent: None,
             scrobbler: None,
             scrobble_config: ScrobbleConfig::default(),
+            scrobble_rules: ScrobbleRules::default(),
             discord: None,
             discord_status: DiscordStatus::Idle,
             real_audio: false,
@@ -131,8 +134,15 @@ impl Services {
         report
     }
 
-    /// Rebuilds the scrobbler when the credentials changed.
-    pub fn configure_scrobbling(&mut self, config: ScrobbleConfig) {
+    /// Rebuilds the scrobbler when the credentials changed; applies the rules
+    /// (percent, minimum length, delay) to it.
+    pub fn configure_scrobbling(&mut self, config: ScrobbleConfig, rules: ScrobbleRules) {
+        if rules != self.scrobble_rules {
+            self.scrobble_rules = rules;
+            if let Some(scrobbler) = &mut self.scrobbler {
+                scrobbler.set_rules(rules);
+            }
+        }
         if config == self.scrobble_config {
             return;
         }
@@ -149,18 +159,28 @@ impl Services {
             ));
         }
         // Dropping the old one lets its queued requests finish in the background.
-        self.scrobbler = (!services.is_empty()).then(|| Scrobbler::new(services));
+        self.scrobbler = (!services.is_empty()).then(|| {
+            let mut scrobbler = Scrobbler::new(services);
+            scrobbler.set_rules(rules);
+            scrobbler
+        });
         self.scrobble_config = config;
     }
 
-    /// `Some(client id)` shows presence through that Discord application.
-    pub fn configure_discord(&mut self, client_id: Option<String>) -> DiscordStatus {
-        let current = self.discord.as_ref().map(|(id, _)| id.clone());
-        if client_id != current {
-            // Dropping the old presence clears it.
-            self.discord =
-                client_id.map(|id| (id.clone(), DiscordPresence::new(DiscordConfig::new(id))));
-            self.discord_status = DiscordStatus::Idle;
+    /// `Some(config)` shows presence through that Discord application; a new
+    /// application id reconnects, other changes apply to the running presence.
+    pub fn configure_discord(&mut self, config: Option<DiscordConfig>) -> DiscordStatus {
+        match (&mut self.discord, config) {
+            (Some((current, _)), Some(config)) if *current == config => {}
+            (Some((current, presence)), Some(config)) if current.client_id == config.client_id => {
+                presence.set_config(config.clone());
+                *current = config;
+            }
+            (slot, config) => {
+                // Dropping the old presence clears it.
+                *slot = config.map(|c| (c.clone(), DiscordPresence::new(c)));
+                self.discord_status = DiscordStatus::Idle;
+            }
         }
         self.discord_status.clone()
     }

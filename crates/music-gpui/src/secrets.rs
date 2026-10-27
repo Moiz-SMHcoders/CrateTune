@@ -24,14 +24,21 @@ pub enum Secret {
     LastFmShared,
     LastFmSession,
     ListenBrainzToken,
+    /// Lyrics providers / AI translation (Lyrics settings).
+    PaxsenixKey,
+    BetterLyricsKey,
+    AiTranslateKey,
 }
 
 impl Secret {
     #[cfg(test)]
-    pub const ALL: [Secret; 3] = [
+    pub const ALL: [Secret; 6] = [
         Secret::LastFmShared,
         Secret::LastFmSession,
         Secret::ListenBrainzToken,
+        Secret::PaxsenixKey,
+        Secret::BetterLyricsKey,
+        Secret::AiTranslateKey,
     ];
 
     /// Keychain account name and settings-file key.
@@ -40,6 +47,9 @@ impl Secret {
             Secret::LastFmShared => "lastfm-api-secret",
             Secret::LastFmSession => "lastfm-session-key",
             Secret::ListenBrainzToken => "listenbrainz-token",
+            Secret::PaxsenixKey => "paxsenix-api-key",
+            Secret::BetterLyricsKey => "betterlyrics-api-key",
+            Secret::AiTranslateKey => "ai-translate-api-key",
         }
     }
 }

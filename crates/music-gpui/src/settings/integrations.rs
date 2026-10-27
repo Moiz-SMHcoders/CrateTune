@@ -1,5 +1,6 @@
 //! Scrobbling & Discord section: Last.fm (desktop auth flow), ListenBrainz
-//! (token validation), Discord Rich Presence, recent scrobble errors.
+//! (token validation), scrobble rules, Discord Rich Presence with activity
+//! customization, recent scrobble errors.
 
 use gpui::{
     AnyElement, Context, FontWeight, IntoElement, ParentElement as _, SharedString, Styled as _,
@@ -17,7 +18,9 @@ use music_core::discord::DiscordStatus;
 
 use super::SettingsPanel;
 use super::panel::{LastFmFlow, Validation};
-use super::widgets::{field, note, section_title, status_line};
+use super::prefs::{ActivityType, ButtonTarget, ImageSource};
+use super::prefs_ui::{ActivityField, choice, slider_row};
+use super::widgets::{field, note, row, section_title, status_line};
 
 pub(super) fn render(
     panel: &mut SettingsPanel,
@@ -175,6 +178,148 @@ pub(super) fn render(
         ))
         .child(status_line(discord_status.0, discord_status.1));
 
+    // ---- Discord activity
+    let act = s.discord.activity.clone();
+    let input = |field: ActivityField| {
+        panel
+            .prefs
+            .activity
+            .iter()
+            .find(|(f, _)| *f == field)
+            .map(|(_, input)| Input::new(input).small())
+            .expect("every activity field has an input")
+    };
+    let kind = choice(
+        "discord-kind",
+        &ActivityType::ALL,
+        act.kind,
+        ActivityType::title,
+        |this, k, cx| this.set_activity_kind(k, cx),
+        cx,
+    );
+    let large = choice(
+        "discord-large",
+        &ImageSource::ALL,
+        act.large_image,
+        ImageSource::title,
+        |this, src, cx| this.set_activity_image(false, src, cx),
+        cx,
+    );
+    let small = choice(
+        "discord-small",
+        &ImageSource::ALL,
+        act.small_image,
+        ImageSource::title,
+        |this, src, cx| this.set_activity_image(true, src, cx),
+        cx,
+    );
+    let button_target = |index: usize, cx: &Context<SettingsPanel>| {
+        let pick: fn(&mut SettingsPanel, ButtonTarget, &mut Context<SettingsPanel>) = if index == 0
+        {
+            |this, t, cx| this.set_activity_button(0, t, cx)
+        } else {
+            |this, t, cx| this.set_activity_button(1, t, cx)
+        };
+        choice(
+            if index == 0 {
+                "discord-button-0"
+            } else {
+                "discord-button-1"
+            },
+            &ButtonTarget::ALL,
+            act.buttons[index].target,
+            ButtonTarget::title,
+            pick,
+            cx,
+        )
+    };
+    let button0 = button_target(0, cx);
+    let button1 = button_target(1, cx);
+    let paused = Switch::new("discord-paused")
+        .checked(act.show_when_paused)
+        .on_click(
+            cx.listener(|this, checked: &bool, _, cx| this.set_show_when_paused(*checked, cx)),
+        );
+    let mut activity = v_flex()
+        .gap_2()
+        .pl_3()
+        .border_l_2()
+        .border_color(theme.border)
+        .child(section_title("Activity"))
+        .child(row("Type", None, kind, cx))
+        .child(field("Name", input(ActivityField::Name), cx))
+        .child(field("Details", input(ActivityField::Details), cx))
+        .child(field("State", input(ActivityField::State), cx))
+        .child(note(
+            "Placeholders: {title}, {artist}, {album}. An empty name uses the Discord \
+             application's name.",
+            cx,
+        ))
+        .child(row("Large image", None, large, cx));
+    if act.large_image == ImageSource::Custom {
+        activity = activity.child(field("Large image", input(ActivityField::LargeImage), cx));
+    }
+    activity = activity.child(row("Small image", None, small, cx));
+    if act.small_image == ImageSource::Custom {
+        activity = activity.child(field("Small image", input(ActivityField::SmallImage), cx));
+    }
+    for (index, target) in [(0, button0), (1, button1)] {
+        activity = activity.child(row(
+            if index == 0 { "Button 1" } else { "Button 2" },
+            None,
+            target,
+            cx,
+        ));
+        if act.buttons[index].target != ButtonTarget::Off {
+            activity = activity.child(field("Label", input(ActivityField::ButtonLabel(index)), cx));
+        }
+        if act.buttons[index].target == ButtonTarget::Custom {
+            activity = activity.child(field("URL", input(ActivityField::ButtonUrl(index)), cx));
+        }
+    }
+    let activity = activity
+        .child(row(
+            "Show while paused",
+            Some("Keeps the activity (without the running time) when playback pauses."),
+            paused,
+            cx,
+        ))
+        .child(note(
+            "Custom images are asset keys of your Discord application or image URLs. \
+             Buttons are visible to others, not to yourself.",
+            cx,
+        ));
+    let discord = discord.child(activity);
+
+    // ---- scrobble rules
+    let r = s.scrobble_rules;
+    let rules = v_flex()
+        .gap_2()
+        .child(section_title("When a song counts"))
+        .child(slider_row(
+            "Played",
+            format!("{} %", r.percent),
+            &panel.prefs.scrobble_percent,
+            cx,
+        ))
+        .child(slider_row(
+            "…or at most",
+            format_secs(r.max_delay_secs),
+            &panel.prefs.scrobble_delay,
+            cx,
+        ))
+        .child(slider_row(
+            "Ignore songs under",
+            format_secs(r.min_track_secs),
+            &panel.prefs.scrobble_min,
+            cx,
+        ))
+        .child(note(
+            "Last.fm's rule is 50 % or 4 minutes, songs over 30 s. Applies to Last.fm and \
+             ListenBrainz.",
+            cx,
+        ));
+
     // ---- footer: errors + where things are stored
     let errors = (!panel.scrobble_errors.is_empty()).then(|| {
         v_flex()
@@ -230,7 +375,18 @@ pub(super) fn render(
         .gap_5()
         .child(lastfm)
         .child(listenbrainz)
+        .child(rules)
         .child(discord)
         .child(footer)
         .into_any_element()
+}
+
+fn format_secs(secs: u32) -> String {
+    if secs >= 60 && secs.is_multiple_of(60) {
+        format!("{} min", secs / 60)
+    } else if secs >= 60 {
+        format!("{}:{:02} min", secs / 60, secs % 60)
+    } else {
+        format!("{secs} s")
+    }
 }
