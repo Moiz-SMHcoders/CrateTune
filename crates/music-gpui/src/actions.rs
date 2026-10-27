@@ -10,6 +10,7 @@ use gpui::{Action, App, KeyBinding, Menu, MenuItem, NoAction, OsAction, SystemMe
 use gpui_component::input;
 
 use crate::app::{MusicApp, update_app};
+use crate::identity::APP_NAME;
 use crate::playback::VOLUME_STEP;
 use crate::router::{LibraryTab, Route};
 use crate::settings::SectionId;
@@ -35,6 +36,7 @@ gpui::actions!(
         GoExplore,
         GoLibrary,
         GoHistory,
+        RecognizeSong,
         Escape,
         About,
         Hide,
@@ -71,6 +73,7 @@ pub fn init(cx: &mut App) {
         KeyBinding::new("cmd-2", GoExplore, None),
         KeyBinding::new("cmd-3", GoLibrary, None),
         KeyBinding::new("cmd-y", GoHistory, None),
+        KeyBinding::new("cmd-shift-r", RecognizeSong, None),
         KeyBinding::new("escape", Escape, None),
         KeyBinding::new("cmd-h", Hide, None),
         KeyBinding::new("cmd-alt-h", HideOthers, None),
@@ -122,6 +125,10 @@ pub fn init(cx: &mut App) {
     on::<GoHistory>(cx, |app, window, cx| {
         app.navigate(Route::History, window, cx)
     });
+    on::<RecognizeSong>(cx, |app, window, cx| {
+        activate_main(window);
+        app.recognize_song(window, cx)
+    });
     on::<Escape>(cx, |app, window, cx| app.escape(window, cx));
     on::<Minimize>(cx, |_, window, _| window.minimize_window());
     on::<Zoom>(cx, |_, window, _| window.zoom_window());
@@ -135,18 +142,18 @@ pub fn init(cx: &mut App) {
 
 fn menus() -> Vec<Menu> {
     vec![
-        Menu::new("Music").items([
-            MenuItem::action("About Music", About),
+        Menu::new(APP_NAME).items([
+            MenuItem::action(format!("About {APP_NAME}"), About),
             MenuItem::separator(),
             MenuItem::action("Settings…", OpenSettings),
             MenuItem::separator(),
             MenuItem::os_submenu("Services", SystemMenuType::Services),
             MenuItem::separator(),
-            MenuItem::action("Hide Music", Hide),
+            MenuItem::action(format!("Hide {APP_NAME}"), Hide),
             MenuItem::action("Hide Others", HideOthers),
             MenuItem::action("Show All", ShowAll),
             MenuItem::separator(),
-            MenuItem::action("Quit Music", Quit),
+            MenuItem::action(format!("Quit {APP_NAME}"), Quit),
         ]),
         Menu::new("Edit").items([
             MenuItem::os_action("Undo", input::Undo, OsAction::Undo),
@@ -167,6 +174,7 @@ fn menus() -> Vec<Menu> {
             MenuItem::action("Explore", GoExplore),
             MenuItem::action("Library", GoLibrary),
             MenuItem::action("History", GoHistory),
+            MenuItem::action("Recognize Song", RecognizeSong),
             MenuItem::separator(),
             MenuItem::action("Now Playing", ToggleNowPlaying),
             MenuItem::action("Queue", ToggleQueue),

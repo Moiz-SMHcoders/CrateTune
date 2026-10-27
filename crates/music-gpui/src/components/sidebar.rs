@@ -114,7 +114,12 @@ impl MusicApp {
                             .text_color(crate::theme::on_color(colors.accent))
                             .child(Icon::new(Lucide::Music).small()),
                     )
-                    .child(div().text_lg().font_weight(FontWeight::BOLD).child("Music")),
+                    .child(
+                        div()
+                            .text_lg()
+                            .font_weight(FontWeight::BOLD)
+                            .child(crate::identity::APP_NAME),
+                    ),
             )
             .child(
                 div()

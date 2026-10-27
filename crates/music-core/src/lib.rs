@@ -18,6 +18,8 @@
 //! * [`library`] – SQLite library: likes, playlists, history, stats, queue, backups.
 //! * [`downloads`] – user downloads + LRU play cache on disk.
 //! * [`local_files`] – scan music folders (lofty tags, artwork, lyrics) into the library.
+//! * [`recognition`] – Shazam-compatible song recognition: microphone capture, signature,
+//!   request, history.
 //! * [`TrackDecoder`] – Symphonia 0.6 (+ pure-Rust Opus) decoder as a seekable `rodio::Source`,
 //!   for local files, in-memory files and still-downloading [`StreamBuffer`]s.
 //! * [`SkipSilence`] – silence trimming as a `rodio::Source` wrapper.
@@ -46,6 +48,7 @@ mod opus;
 mod output;
 mod player;
 pub mod playlist_import;
+pub mod recognition;
 pub mod scrobble;
 mod silence;
 mod sleep;

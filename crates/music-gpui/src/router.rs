@@ -136,6 +136,8 @@ pub enum Route {
     Import,
     /// Music Together: listen with others on the LAN.
     Together,
+    /// Song recognition (microphone → Shazam-compatible match) and its history.
+    Recognition,
     Settings {
         section: SectionId,
     },
@@ -167,6 +169,7 @@ impl Route {
             Route::LocalFiles => "Local files".into(),
             Route::Import => "Import & export".into(),
             Route::Together => "Listen together".into(),
+            Route::Recognition => "Recognize music".into(),
             Route::Settings { section } => format!("Settings · {}", section.title()),
         }
     }
@@ -243,6 +246,7 @@ impl Route {
             "local" | "local-files" => Route::LocalFiles,
             "import" => Route::Import,
             "together" => Route::Together,
+            "recognize" | "recognition" => Route::Recognition,
             "settings" => Route::Settings {
                 section: arg.and_then(SectionId::from_key).unwrap_or_default(),
             },

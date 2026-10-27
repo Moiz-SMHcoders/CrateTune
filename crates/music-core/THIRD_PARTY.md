@@ -132,3 +132,21 @@ third-party gist) are **not** ported.
 `src/spotify.rs` (official Web API, Authorization Code + PKCE with the user's own Client
 ID) contains no ported code; the playlist / liked-songs model follows
 `spotifycore/src/.../spotify/models/*.kt`.
+
+## ArchiveTune (feat/release: song recognition)
+
+The song-recognition module is ported from **ArchiveTune**'s `shazamkit` module and
+recognition repository (<https://github.com/rukamori/ArchiveTune>), © Rukamori and
+ArchiveTune contributors, GPL-3.0. ArchiveTune's generator follows the Shazam signature
+format reverse-engineered by SongRec (GPL-3.0). Files carry a header naming their source.
+
+| music-core file | Upstream file(s) | Changes |
+|---|---|---|
+| `src/recognition/signature.rs` | `shazamkit/src/main/kotlin/moe/koiverse/rukamori/shazamkit/ShazamSignatureGenerator.kt` | Same arithmetic order (bit-identical output, checked against `tests/fixtures/recognition/ReferenceSignature.java`, a Java transliteration of the Kotlin file); `crc32fast`/`base64` instead of `java.util`; a decoder for the binary format. |
+| `src/recognition/shazam.rs` | `shazamkit/.../Shazam.kt`, `shazamkit/.../models/ShazamModels.kt` | Blocking `ureq` + `serde_json::Value`; one fixed user agent, neutral geolocation and the system time zone instead of random ones; no queue/cache/automatic retries; Android deep links mapped to web URLs. |
+| `src/recognition/history.rs` | `app/.../musicrecognition/MusicRecognitionRepository.kt` (history) | JSON list in the library's key/value table (50 entries, newest first, de-duplicated by stable key). |
+| `src/recognition/capture.rs`, `audio.rs` | `MusicRecognitionRepository.kt` (`captureAudio`) | cpal input at the device's rate, down-mixed and resampled (windowed sinc) to 16 kHz instead of Android's `AudioRecord`; cancellable, with a level callback. |
+
+`tests/fixtures/recognition/ReferenceSignature.java` is itself a transliteration of
+`ShazamSignatureGenerator.kt` (GPL-3.0). `synth_16k_mono.s16le` is synthetic audio
+generated for the test (tones + deterministic noise).

@@ -543,6 +543,7 @@ impl MusicApp {
             other => {
                 if !self.library_script_action(other, arg, window, cx)
                     && !self.integrations_script_action(other, arg, window, cx)
+                    && !self.release_script_action(other, arg, window, cx)
                 {
                     eprintln!("music-gpui: unknown script action @{other}");
                 }

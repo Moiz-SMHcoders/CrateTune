@@ -80,7 +80,8 @@ impl Services {
     /// `Player` and only next/previous reach the UI; with the demo clock every
     /// event goes to the UI.
     pub fn start_media_controls(&mut self, engine: &Engine, hwnd: Option<std::num::NonZeroIsize>) {
-        let mut config = MediaControlsConfig::new("music_macos", "Music");
+        let mut config =
+            MediaControlsConfig::new(crate::identity::bus_name(), crate::identity::APP_NAME);
         config.hwnd = hwnd;
         let tx = self.events_tx.clone();
         let forward = move |event| {
@@ -155,7 +156,7 @@ impl Services {
         if let Some(token) = &config.listenbrainz_token {
             services.push(Box::new(
                 ListenBrainz::new(token.clone())
-                    .with_client("music-macos", env!("CARGO_PKG_VERSION")),
+                    .with_client(crate::identity::APP_ID, env!("CARGO_PKG_VERSION")),
             ));
         }
         // Dropping the old one lets its queued requests finish in the background.
