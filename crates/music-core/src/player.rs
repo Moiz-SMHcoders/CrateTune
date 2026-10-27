@@ -51,6 +51,8 @@ impl Default for PlaybackState {
 enum Command {
     Play(Track),
     TogglePause,
+    Pause,
+    Resume,
     Seek(Duration),
     SetVolume(f32),
     Loaded {
@@ -108,6 +110,16 @@ impl Player {
 
     pub fn toggle_pause(&self) {
         let _ = self.tx.send(Command::TogglePause);
+    }
+
+    /// Pauses if playing; otherwise does nothing.
+    pub fn pause(&self) {
+        let _ = self.tx.send(Command::Pause);
+    }
+
+    /// Resumes if paused, or replays the track if it ended; otherwise does nothing.
+    pub fn resume(&self) {
+        let _ = self.tx.send(Command::Resume);
     }
 
     pub fn seek(&self, position: Duration) {
@@ -189,9 +201,12 @@ impl Engine {
     fn handle(&mut self, cmd: Command) {
         match cmd {
             Command::Play(track) => self.start_loading(track),
-            Command::TogglePause => {
+            Command::TogglePause | Command::Pause | Command::Resume => {
                 let status = self.state.lock().unwrap().status.clone();
                 match (status, &self.player) {
+                    (PlaybackStatus::Playing, _) if matches!(cmd, Command::Resume) => {}
+                    (PlaybackStatus::Paused | PlaybackStatus::Ended, _)
+                        if matches!(cmd, Command::Pause) => {}
                     (PlaybackStatus::Playing, Some(player)) => {
                         player.pause();
                         self.state.lock().unwrap().status = PlaybackStatus::Paused;

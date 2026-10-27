@@ -9,6 +9,7 @@
 //! * [`StreamResolver`] – turns a video id into a playable audio URL.
 //! * [`Player`] – background audio engine with a pollable [`PlaybackState`].
 //! * [`equalizer`] – parametric EQ applied live via [`Player::set_equalizer`].
+//! * [`media_controls`] – OS now-playing info + media keys (macOS, Windows, Linux).
 //! * [`TrackDecoder`] – Symphonia 0.6 decoder as a seekable `rodio::Source`.
 
 mod decode;
@@ -17,6 +18,7 @@ mod error;
 mod http;
 mod innertube;
 mod lyrics;
+pub mod media_controls;
 mod model;
 mod player;
 mod stream;
