@@ -537,5 +537,9 @@ pub(crate) mod testing {
         pub(crate) fn is_stopped(&self) -> bool {
             self.stopped()
         }
+
+        pub(crate) fn set_test_gain(&self, gain: f32) {
+            self.gain.store(gain.to_bits(), Ordering::Relaxed);
+        }
     }
 }
