@@ -54,7 +54,8 @@ its own executor.
 * `scrobble` — Last.fm + ListenBrainz (`ScrobbleTracker` applies Last.fm's rules to
   `PlaybackState` snapshots; `Scrobbler` sends on a worker thread).
 * `discord` — Discord Rich Presence (feature `discord`, default on).
-* `fetch_lyrics` — LRCLIB synced lyrics.
+* `lyrics` — lyrics stack ported from ArchiveTune (details below); `fetch_lyrics` stays the
+  simple LRCLIB-only call.
 
 Media controls, scrobbling and Discord all hang off the poll the UI already does:
 
@@ -87,6 +88,46 @@ auth flow (`get_token` → `auth_url` → `get_session`). Threading details are 
 ```sh
 cargo run --release -p music-core --example resolve -- "daft punk"  # headless: search → resolve → download → seek to 30 s → decode
 cargo run --release -p music-core --example cli -- "daft punk"      # plays ~8 s through the speakers (seeks, Bass EQ)
+```
+
+### Lyrics (`music_core::lyrics`)
+
+Providers (ported from ArchiveTune, default priority order): BetterLyrics (Apple Music TTML,
+word-synced with background vocals; uncached songs need an `X-API-Key`), BetterLyrics Portato
+(QQ Music QRC), YouLyPlus, Binimum (lrc.red TTML), LRCLIB, KuGou, Megalobiz, SimpMusic (by
+video id), Unison, Paxsenix Apple Music / Spotify / Musixmatch (API key required, skipped
+without one) and YouTube Music's own plain-text lyrics (InnerTube `next` → lyrics `browse`).
+
+```rust
+use music_core::lyrics::{LyricsQuery, LyricsService, LyricsServiceConfig, MemoryLyricsCache};
+use music_core::lyrics::romanize::{Script, romanize_result};
+use music_core::lyrics::translate::{GoogleTranslator, LyricsTranslator};
+
+let service = LyricsService::new(LyricsServiceConfig::default())   // order, disabled, preferred,
+    .with_cache(std::sync::Arc::new(MemoryLyricsCache::new()));     // timeouts, keys, …
+if let Some(result) = service.fetch(&LyricsQuery::from_track(&track))? {
+    let lyrics = result.synced.as_ref();          // Option<Lyrics>: what the renderer draws
+    let extras = &result.extras;                  // per line: agent, background vocals, translation, romanization
+    let romaji = romanize_result(&result, Script::Auto);
+    let english = GoogleTranslator::default().translate_lyrics(lyrics.unwrap(), "en")?;
+}
+```
+
+* `LyricsResult` keeps the raw payload (`to_raw()` / `RawLyrics::parse`) so a library database
+  can implement `LyricsCache` and store what was fetched.
+* Selection: providers run concurrently (`max_concurrent`, 1 = one after another); with
+  `prefer_word_synced` a word-synced result beats a line-synced one from a higher-priority
+  provider; otherwise the highest-priority synced result wins; plain text is the fallback.
+* Translation: `GoogleTranslator` (free endpoint, batched) or `AiTranslator` (any
+  OpenAI-compatible chat-completions endpoint; key, model and custom prompt from the caller).
+* Romanization: Japanese kana (kanji readings only with the off-by-default `japanese-dict`
+  feature: lindera + IPADIC adds ~48 MB and downloads the dictionary at build time), Korean
+  (Revised Romanization), Chinese (pinyin with tones), Hindi/Devanagari, Cyrillic, other scripts
+  via `deunicode`.
+
+```sh
+cargo run -p music-core --example lyrics -- "daft punk instant crush"     # every provider, then the service pick
+cargo run -p music-core --example lyrics -- --translate en "yoasobi idol" # + romanization and translation
 ```
 
 ### Known limitation: previews only (PoToken)

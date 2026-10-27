@@ -345,17 +345,21 @@ fn parse_agents(root: Node) -> Vec<LyricsAgent> {
                     .find(|c| has_local_name(*c, "name"))
                     .map(|c| normalized_text(&text_content(c)))
                     .filter(|s| !s.is_empty()),
-                kind: Some(
-                    match attr(n, "type").map(str::to_ascii_lowercase).as_deref() {
-                        Some(k @ ("person" | "character" | "group" | "organization")) => k,
-                        _ => "other",
-                    }
-                    .to_owned(),
-                ),
+                kind: Some(agent_kind(n)),
                 id,
             })
         })
         .collect()
+}
+
+fn agent_kind(n: Node) -> String {
+    let kind = attr(n, "type")
+        .map(str::to_ascii_lowercase)
+        .unwrap_or_default();
+    match kind.as_str() {
+        "person" | "character" | "group" | "organization" => kind,
+        _ => "other".to_owned(),
+    }
 }
 
 fn parse_head_tracks(

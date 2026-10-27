@@ -48,7 +48,7 @@ impl LyricsProvider for YouLyPlus {
             (TTML_PATH, decode_ttml as fn(&str) -> Option<String>),
             (LYRICS_PATH, decode_lines),
         ] {
-            match self.from_mirrors(path, query, decode) {
+            match self.query_mirrors(path, query, decode) {
                 Ok(Some(raw)) => {
                     if let Some(r) = LyricsResult::parse(self.name(), raw, query.duration_secs) {
                         return Ok(Some(r));
@@ -64,7 +64,7 @@ impl LyricsProvider for YouLyPlus {
 
 impl YouLyPlus {
     /// First mirror that answers with usable lyrics; `Err` only when every mirror failed at the network level.
-    fn from_mirrors(
+    fn query_mirrors(
         &self,
         path: &str,
         query: &LyricsQuery,
