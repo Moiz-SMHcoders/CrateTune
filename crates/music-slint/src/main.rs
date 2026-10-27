@@ -1,9 +1,19 @@
-//! Slint UI spike: search YouTube Music, play a result, show a now-playing bar.
+//! Slint UI spike: search YouTube Music, play a result, show a now-playing bar
+//! and a full-window Now Playing screen with synced karaoke lyrics.
 //!
 //! Threading model: the Slint event loop owns the UI thread. Blocking core calls
-//! (search, artwork download + decode) run on `std::thread`s and hand their
-//! results back with `slint::invoke_from_event_loop`. Playback state is polled
-//! with a `slint::Timer`; there is no other cross-thread plumbing.
+//! (search, artwork download + decode + blur, lyrics) run on `std::thread`s and
+//! hand their results back with `slint::invoke_from_event_loop`. Playback state
+//! is polled with a `slint::Timer`; the `.slint` side interpolates the clock at
+//! display refresh rate between polls (see `sync-clock` in `ui/app.slint`).
+//!
+//! Scripting: `music-slint <query>` or `MUSIC_QUERY=...` searches at launch,
+//! `MUSIC_AUTOOPEN=1` plays the first result and opens Now Playing,
+//! `MUSIC_DEMO_CLOCK=1` (or no audio device) drives playback from a wall clock.
+
+mod lyrics_layout;
+mod now_playing;
+mod playback;
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -13,12 +23,16 @@ use std::thread;
 use std::time::Duration;
 
 use music_core::{
-    InnerTube, IosClientResolver, PlaybackState, PlaybackStatus, Player, Track, format_duration,
+    InnerTube, IosClientResolver, Lyrics, PlaybackState, PlaybackStatus, Player, Track,
+    format_duration,
 };
 use slint::{
-    ComponentHandle, Image, Model, ModelRc, Rgba8Pixel, SharedPixelBuffer, SharedString, Timer,
-    TimerMode, VecModel, Weak,
+    ComponentHandle, Image, Model, ModelRc, Rgba8Pixel, SharedPixelBuffer, Timer, TimerMode,
+    VecModel, Weak,
 };
+
+use crate::lyrics_layout::WordMeasurer;
+use crate::playback::{ClockSync, Playback};
 
 slint::include_modules!();
 
@@ -30,6 +44,7 @@ type Pixels = SharedPixelBuffer<Rgba8Pixel>;
 
 /// UI-thread-only state. `slint::Image` is `!Send`, so it lives in a
 /// thread-local that closures run via `invoke_from_event_loop` can reach.
+#[derive(Default)]
 struct State {
     /// Tracks backing the current results model, by row index.
     tracks: Vec<Track>,
@@ -38,34 +53,43 @@ struct State {
     /// Artwork by video id; `None` while in flight or after a failed fetch.
     art: HashMap<String, Option<Image>>,
     art_jobs: Option<Sender<(String, String)>>,
+    /// `MUSIC_AUTOOPEN=1`: play the first result of the first search and open Now Playing.
+    autoopen: bool,
+    clock: ClockSync,
+    /// Lyrics of the current track, once loaded.
+    lyrics: Option<Lyrics>,
+    measurer: Option<WordMeasurer>,
 }
 
 thread_local! {
-    static STATE: RefCell<State> = RefCell::new(State {
-        tracks: Vec::new(),
-        search_generation: 0,
-        art: HashMap::new(),
-        art_jobs: None,
-    });
+    static STATE: RefCell<State> = RefCell::new(State::default());
 }
 
 fn with_state<R>(f: impl FnOnce(&mut State) -> R) -> R {
     STATE.with_borrow_mut(f)
 }
 
+fn env_flag(name: &str) -> bool {
+    std::env::var(name).is_ok_and(|v| v == "1")
+}
+
 fn main() -> Result<(), slint::PlatformError> {
     let ui = AppWindow::new()?;
     start_art_workers(ui.as_weak());
 
-    let player = match Player::new(Arc::new(IosClientResolver)) {
-        Ok(player) => Some(player),
-        Err(e) => {
-            eprintln!("audio unavailable: {e}");
-            ui.set_player_error(true);
-            ui.set_player_message(format!("Audio unavailable: {e}").into());
-            None
+    let playback = if env_flag("MUSIC_DEMO_CLOCK") {
+        Playback::demo()
+    } else {
+        match Player::new(Arc::new(IosClientResolver)) {
+            Ok(player) => Playback::Audio(player),
+            Err(e) => {
+                eprintln!("audio unavailable ({e}); using the demo clock");
+                Playback::demo()
+            }
         }
     };
+    ui.set_demo_clock(playback.is_demo());
+    with_state(|s| s.autoopen = env_flag("MUSIC_AUTOOPEN"));
 
     ui.on_search({
         let ui = ui.as_weak();
@@ -73,52 +97,79 @@ fn main() -> Result<(), slint::PlatformError> {
     });
 
     ui.on_play({
-        let player = player.clone();
+        let (ui, playback) = (ui.as_weak(), playback.clone());
         move |index| {
-            let track = with_state(|s| s.tracks.get(index as usize).cloned());
-            if let (Some(player), Some(track)) = (&player, track) {
-                player.play(track);
-            }
+            let Some(track) = with_state(|s| s.tracks.get(index as usize).cloned()) else {
+                return;
+            };
+            let Some(ui) = ui.upgrade() else { return };
+            // Show the track right away; the audio engine reports it asynchronously.
+            now_playing::show_track(&ui, &track);
+            playback.play(track);
+            refresh(&ui, &playback);
         }
     });
 
     ui.on_toggle_pause({
-        let player = player.clone();
+        let (ui, playback) = (ui.as_weak(), playback.clone());
         move || {
-            if let Some(player) = &player {
-                player.toggle_pause();
+            playback.toggle_pause();
+            // The audio thread applies the toggle within ~100 ms; poll again shortly.
+            let (ui, playback) = (ui.clone(), playback.clone());
+            Timer::single_shot(Duration::from_millis(60), move || {
+                if let Some(ui) = ui.upgrade() {
+                    refresh(&ui, &playback);
+                }
+            });
+        }
+    });
+
+    ui.on_seek_to({
+        let (ui, playback) = (ui.as_weak(), playback.clone());
+        move |secs| {
+            let Some(ui) = ui.upgrade() else { return };
+            let secs = secs.max(0.0);
+            playback.seek(Duration::from_secs_f32(secs));
+            with_state(|s| s.clock.seek(secs.into(), !playback.is_demo()));
+            ui.invoke_sync_clock(secs);
+            now_playing::sync_active_line(&ui, secs);
+        }
+    });
+
+    ui.on_lyrics_layout_changed({
+        let ui = ui.as_weak();
+        move || {
+            if let Some(ui) = ui.upgrade() {
+                now_playing::relayout_lyrics(&ui);
             }
         }
     });
 
-    ui.on_seek({
-        let player = player.clone();
-        move |fraction| {
-            let Some(player) = &player else { return };
-            if let Some(duration) = player.state().duration {
-                player.seek(duration.mul_f32(fraction.clamp(0.0, 1.0)));
-            }
-        }
-    });
-
-    // `music-slint <query>` searches on launch (handy for scripted RSS measurements).
-    let query = std::env::args().skip(1).collect::<Vec<_>>().join(" ");
+    // `music-slint <query>` or `MUSIC_QUERY=<query>` searches on launch.
+    let query = std::env::var("MUSIC_QUERY")
+        .ok()
+        .filter(|q| !q.trim().is_empty())
+        .unwrap_or_else(|| std::env::args().skip(1).collect::<Vec<_>>().join(" "));
     if !query.is_empty() {
         ui.set_query(query.as_str().into());
         search(&ui.as_weak(), &query);
     }
 
     let poll = Timer::default();
-    if let Some(player) = player {
+    poll.start(TimerMode::Repeated, POLL_INTERVAL, {
         let ui = ui.as_weak();
-        poll.start(TimerMode::Repeated, POLL_INTERVAL, move || {
+        move || {
             if let Some(ui) = ui.upgrade() {
-                show_playback(&ui, &player.state());
+                refresh(&ui, &playback);
             }
-        });
-    }
+        }
+    });
 
     ui.run()
+}
+
+fn refresh(ui: &AppWindow, playback: &Playback) {
+    show_playback(ui, &playback.state(), playback.is_demo());
 }
 
 fn search(ui: &Weak<AppWindow>, query: &str) {
@@ -178,9 +229,16 @@ fn show_results(ui: &AppWindow, query: &str, tracks: Vec<Track>) {
             }
         })
         .collect();
-    with_state(|s| s.tracks = tracks);
+    let autoopen = with_state(|s| {
+        s.tracks = tracks;
+        !s.tracks.is_empty() && std::mem::take(&mut s.autoopen)
+    });
     // A fresh model (rather than `set_vec`) lets the .slint side reset scroll on change.
     ui.set_results(ModelRc::new(VecModel::from(rows)));
+    if autoopen {
+        ui.invoke_play(0);
+        ui.invoke_open_now_playing();
+    }
 }
 
 /// Cached artwork for `track`, or `None` after queueing a fetch (once per video id).
@@ -210,8 +268,8 @@ fn start_art_workers(ui: Weak<AppWindow>) {
                 loop {
                     let job = rx.lock().unwrap().recv();
                     let Ok((video_id, url)) = job else { return };
-                    let pixels = match load_pixels(&url) {
-                        Ok(pixels) => pixels,
+                    let pixels = match load_rgba(&url) {
+                        Ok(rgba) => to_pixels(&rgba),
                         Err(e) => {
                             eprintln!("artwork {video_id}: {e}");
                             continue;
@@ -230,14 +288,15 @@ fn start_art_workers(ui: Weak<AppWindow>) {
     with_state(|s| s.art_jobs = Some(tx));
 }
 
-fn load_pixels(url: &str) -> Result<Pixels, Box<dyn std::error::Error>> {
+type BoxError = Box<dyn std::error::Error + Send + Sync>;
+
+fn load_rgba(url: &str) -> Result<image::RgbaImage, BoxError> {
     let bytes = music_core::fetch_bytes(url)?;
-    let rgba = image::load_from_memory(&bytes)?.into_rgba8();
-    Ok(SharedPixelBuffer::clone_from_slice(
-        rgba.as_raw(),
-        rgba.width(),
-        rgba.height(),
-    ))
+    Ok(image::load_from_memory(&bytes)?.into_rgba8())
+}
+
+fn to_pixels(rgba: &image::RgbaImage) -> Pixels {
+    SharedPixelBuffer::clone_from_slice(rgba.as_raw(), rgba.width(), rgba.height())
 }
 
 fn artwork_loaded(ui: &AppWindow, video_id: String, pixels: Pixels) {
@@ -257,36 +316,26 @@ fn artwork_loaded(ui: &AppWindow, video_id: String, pixels: Pixels) {
     with_state(|s| s.art.insert(video_id, Some(image)));
 }
 
-fn show_playback(ui: &AppWindow, state: &PlaybackState) {
+fn show_playback(ui: &AppWindow, state: &PlaybackState, demo: bool) {
     let Some(track) = &state.track else { return };
     if ui.get_now_video_id() != track.video_id.as_str() {
-        ui.set_now_video_id(track.video_id.as_str().into());
-        ui.set_now_title(track.title.as_str().into());
-        ui.set_now_artists(track.artists.as_str().into());
-        ui.set_now_art(artwork(track).unwrap_or_default());
+        now_playing::show_track(ui, track);
     }
 
-    let position = state.position;
-    let duration = state.duration.unwrap_or_default();
-    let progress = if duration.is_zero() {
-        0.0
-    } else {
-        (position.as_secs_f32() / duration.as_secs_f32()).clamp(0.0, 1.0)
-    };
-    ui.set_progress(progress);
-    ui.set_elapsed(format_duration(position.as_secs()).into());
-    ui.set_total(match state.duration {
-        Some(d) => format_duration(d.as_secs()).into(),
-        None => SharedString::from("–:––"),
-    });
-    ui.set_playing(state.status == PlaybackStatus::Playing);
+    let playing = state.status == PlaybackStatus::Playing;
+    ui.set_duration_s(state.duration.unwrap_or_default().as_secs_f32());
+    ui.set_playing(playing);
     ui.set_loading(state.status == PlaybackStatus::Loading);
     ui.set_preview(state.preview_only);
+    if let Some(pos) = with_state(|s| s.clock.update(state.position, playing)) {
+        ui.invoke_sync_clock(pos as f32);
+    }
 
     let (message, is_error) = match &state.status {
         PlaybackStatus::Loading => ("Loading…".to_owned(), false),
         PlaybackStatus::Ended if state.preview_only => ("Preview ended".to_owned(), false),
         PlaybackStatus::Error(e) => (e.clone(), true),
+        _ if demo => ("Demo clock — no audio output".to_owned(), false),
         _ => (String::new(), false),
     };
     ui.set_player_message(message.into());

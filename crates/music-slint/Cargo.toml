@@ -12,10 +12,18 @@ slint = { version = "1.18.1", default-features = false, features = [
     "compat-1-2",
     "backend-winit",
     "renderer-femtovg",
-    "accessibility",
 ] }
 # Album art is JPEG (lh3.googleusercontent.com) or JPEG/WebP (i.ytimg.com).
 image = { version = "0.25.10", default-features = false, features = ["jpeg", "png", "webp"] }
+# Word measurement for the karaoke lyrics layout. Same version Slint 1.18 uses
+# internally for text, so it adds no new crates to the build.
+parley = "0.11.1"
+
+[features]
+# AccessKit. On by default; see the README ("lyrics & Now Playing round") for its
+# per-frame cost while animating when an accessibility client is attached.
+default = ["accessibility"]
+accessibility = ["slint/accessibility"]
 
 [build-dependencies]
 slint-build = "1.18.1"

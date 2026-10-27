@@ -1,4 +1,6 @@
 import { LineEdit, ListView, Spinner } from "std-widgets.slint";
+// Bundled so lyrics render, and are measured by `src/lyrics_layout.rs`, with the same font everywhere.
+import "fonts/Inter-VariableFont.ttf";
 
 export struct TrackRow {
     video-id: string,
@@ -6,6 +8,29 @@ export struct TrackRow {
     subtitle: string,
     duration: string,
     art: image,
+}
+
+// One lyric word, pre-positioned by Rust (Slint has no flow layout for word elements).
+export struct LyricWordData {
+    text: string,
+    // Position inside its line block, and measured advance width.
+    x: length,
+    y: length,
+    w: length,
+    // Seconds.
+    start: float,
+    end: float,
+}
+
+export struct LyricLineData {
+    // Top of the line block in the lyrics column, and its height (rows × row-h).
+    y: length,
+    h: length,
+    row-h: length,
+    start: float,
+    end: float,
+    text: string,
+    words: [LyricWordData],
 }
 
 global Theme {
@@ -18,6 +43,14 @@ global Theme {
     out property <color> muted: #9a9aa4;
     out property <color> accent: #ff4d6d;
     out property <color> danger: #ff8a80;
+    out property <string> display-font: "Inter";
+}
+
+global Fmt {
+    // Seconds → "m:ss".
+    public pure function time(secs: float) -> string {
+        return floor(max(secs, 0) / 60) + ":" + (mod(floor(max(secs, 0)), 60) < 10 ? "0" : "") + mod(floor(max(secs, 0)), 60);
+    }
 }
 
 // Square artwork with a placeholder note while the image is loading/missing.
@@ -110,39 +143,67 @@ component TrackItem inherits Rectangle {
     }
 }
 
+// Play and pause glyphs that cross-fade, rotate and scale into each other.
+component PlayPauseIcon inherits Rectangle {
+    in property <bool> playing;
+    in property <brush> fill;
+    property <float> k: root.playing ? 1 : 0;
+    animate k {
+        duration: 280ms;
+        easing: cubic-bezier(0.3, 1.4, 0.5, 1);
+    }
+
+    Path {
+        width: root.width * 0.8;
+        height: root.height;
+        viewbox-width: 12;
+        viewbox-height: 14;
+        fill: root.fill;
+        opacity: clamp(root.k, 0, 1);
+        transform-scale: 0.4 + 0.6 * root.k;
+        transform-rotation: (1 - root.k) * -90deg;
+        commands: "M 0 0 L 4 0 L 4 14 L 0 14 Z M 8 0 L 12 0 L 12 14 L 8 14 Z";
+    }
+
+    Path {
+        x: (parent.width - self.width) / 2 + parent.width * 0.08;
+        width: root.width * 0.9;
+        height: root.height;
+        viewbox-width: 13;
+        viewbox-height: 15;
+        fill: root.fill;
+        opacity: clamp(1 - root.k, 0, 1);
+        transform-scale: 1 - 0.6 * root.k;
+        transform-rotation: root.k * 90deg;
+        commands: "M 0 0 L 13 7.5 L 0 15 Z";
+    }
+}
+
 component PlayButton inherits Rectangle {
     in property <bool> playing;
     in property <bool> loading;
     in property <bool> enabled;
+    in property <length> size: 38px;
     callback clicked();
 
-    width: 38px;
-    height: 38px;
+    width: root.size;
+    height: root.size;
     border-radius: self.width / 2;
     background: touch.pressed ? #d0d0d6 : Theme.text;
     opacity: root.enabled ? 1 : 0.35;
+    transform-scale: touch.pressed ? 0.92 : 1;
+    animate transform-scale { duration: 120ms; }
 
     if root.loading: Spinner {
-        width: 22px;
-        height: 22px;
+        width: root.size * 0.58;
+        height: root.size * 0.58;
         indeterminate: true;
     }
-    if !root.loading && root.playing: Path {
-        width: 12px;
-        height: 14px;
-        viewbox-width: 12;
-        viewbox-height: 14;
+    if !root.loading: PlayPauseIcon {
+        width: root.size * 0.36;
+        height: root.size * 0.38;
+        playing: root.playing;
         fill: Theme.bg;
-        commands: "M 0 0 L 4 0 L 4 14 L 0 14 Z M 8 0 L 12 0 L 12 14 L 8 14 Z";
-    }
-    if !root.loading && !root.playing: Path {
-        x: (parent.width - self.width) / 2 + 1.5px;
-        width: 13px;
-        height: 15px;
-        viewbox-width: 13;
-        viewbox-height: 15;
-        fill: Theme.bg;
-        commands: "M 0 0 L 13 7.5 L 0 15 Z";
     }
 
     touch := TouchArea {
@@ -158,21 +219,24 @@ component PlayButton inherits Rectangle {
 component SeekBar inherits Rectangle {
     in property <float> progress;
     in property <bool> enabled;
+    in property <color> track-color: Theme.raised;
+    in property <color> fill-color: Theme.text;
     callback seek(float);
 
     height: 14px;
 
     Rectangle {
         y: (parent.height - self.height) / 2;
-        height: 4px;
-        border-radius: 2px;
-        background: Theme.raised;
+        height: touch.has-hover && root.enabled ? 6px : 4px;
+        border-radius: self.height / 2;
+        background: root.track-color;
+        animate height { duration: 120ms; }
 
         Rectangle {
             x: 0;
             width: parent.width * clamp(root.progress, 0, 1);
-            border-radius: 2px;
-            background: touch.has-hover ? Theme.accent : Theme.text;
+            border-radius: parent.border-radius;
+            background: touch.has-hover ? Theme.accent : root.fill-color;
         }
     }
 
@@ -188,16 +252,17 @@ component SeekBar inherits Rectangle {
         enabled: root.enabled;
         mouse-cursor: pointer;
         clicked => {
-            root.seek(self.mouse-x / self.width);
+            root.seek(clamp(self.mouse-x / self.width, 0, 1));
         }
     }
 }
 
 component Badge inherits Rectangle {
     in property <string> text;
+    in property <color> tint: Theme.accent;
     border-radius: 4px;
     border-width: 1px;
-    border-color: Theme.accent;
+    border-color: root.tint;
     HorizontalLayout {
         padding-left: 6px;
         padding-right: 6px;
@@ -205,10 +270,138 @@ component Badge inherits Rectangle {
         padding-bottom: 1px;
         Text {
             text: root.text;
-            color: Theme.accent;
+            color: root.tint;
             font-size: 10px;
             font-weight: 700;
             letter-spacing: 0.5px;
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Now Playing screen
+// ---------------------------------------------------------------------------
+
+// One word of a lyric line. On the active line its fill is a left-to-right
+// gradient sweep (with a soft edge) driven by the word's own timing.
+component KaraokeWord inherits Text {
+    in property <LyricWordData> word;
+    in property <bool> active;
+    in property <float> pos;
+    in property <float> alpha;
+    in property <length> row-h;
+
+    // 0..1 fill progress; only tracked on the active line so other lines don't re-evaluate per frame.
+    property <float> p: root.active ? clamp((root.pos - root.word.start) / max(root.word.end - root.word.start, 0.01), 0, 1) : 0;
+    // Width of the soft sweep edge, as a fraction of the word.
+    property <float> feather: 16px / max(root.width, 1px);
+    property <float> edge: root.p * (1 + root.feather);
+    property <float> lit-stop: root.edge - root.feather;
+
+    x: root.word.x;
+    // Words lift slightly while they are sung.
+    y: root.word.y - (root.active ? 2px * root.p : 0);
+    width: root.word.w + 4px;
+    height: root.row-h;
+    text: root.word.text;
+    font-family: Theme.display-font;
+    font-weight: 700;
+    vertical-alignment: center;
+    // Not exposed to accessibility (see `lyrics-pane`).
+    accessible-role: none;
+    color: root.active ? @linear-gradient(90deg, #ffffff 0%, #ffffff root.lit-stop * 100%, #ffffff6b root.edge * 100%, #ffffff6b 100%) : rgba(255, 255, 255, root.alpha);
+}
+
+component LyricLineView inherits Rectangle {
+    in property <LyricLineData> line;
+    in property <int> index;
+    in property <int> active-index;
+    in property <float> pos;
+    in property <length> font-size;
+    // Height of the viewport the line scrolls in; lines fade out near its edges
+    // (Slint has no alpha masks, so this stands in for a gradient mask).
+    in property <length> viewport-height;
+    callback activated(int);
+    callback clicked(float);
+
+    // Frame-accurate: follows the interpolated clock, not the 250 ms poll.
+    property <bool> active: root.pos >= root.line.start && root.pos < root.line.end;
+    property <int> distance: abs(root.index - root.active-index);
+    // Apple-Music style: the active line is full size, the rest shrink and fade with distance.
+    property <float> zoom: root.active ? 1 : 0.9;
+    property <float> edge-fade: clamp((root.y + root.height / 2) / 90px, 0, 1) * clamp((root.viewport-height - root.y - root.height / 2) / 90px, 0, 1);
+    property <float> alpha: root.active ? 1 : (max(0.12, 0.46 - (root.distance - 1) * 0.075) + (touch.has-hover ? 0.18 : 0)) * root.edge-fade;
+    animate zoom {
+        duration: 450ms;
+        easing: cubic-bezier(0.2, 0.9, 0.3, 1);
+    }
+    animate alpha {
+        duration: 450ms;
+        easing: ease-out;
+    }
+
+    height: root.line.h;
+    accessible-role: none;
+
+    changed active => {
+        if (root.active) {
+            root.activated(root.index);
+        }
+    }
+    init => {
+        if (root.active) {
+            root.activated(root.index);
+        }
+    }
+
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => {
+            root.clicked(root.line.start);
+        }
+    }
+
+    // Transforms can't go on a component's root element.
+    Rectangle {
+        transform-scale: root.zoom;
+        transform-origin: { x: 0, y: root.height / 2 };
+
+        for w in root.line.words: KaraokeWord {
+            word: w;
+            active: root.active;
+            pos: root.pos;
+            alpha: root.alpha;
+            row-h: root.line.row-h;
+            font-size: root.font-size;
+        }
+    }
+}
+
+component IconButton inherits Rectangle {
+    in property <string> commands;
+    in property <float> view: 24;
+    callback clicked();
+    width: 40px;
+    height: 40px;
+    border-radius: 20px;
+    background: touch.pressed ? #ffffff30 : touch.has-hover ? #ffffff1a : transparent;
+    animate background { duration: 120ms; }
+
+    Path {
+        width: 20px;
+        height: 20px;
+        viewbox-width: root.view;
+        viewbox-height: root.view;
+        stroke: Theme.text;
+        stroke-width: 2.4px;
+        fill: transparent;
+        commands: root.commands;
+    }
+
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => {
+            root.clicked();
         }
     }
 }
@@ -233,23 +426,82 @@ export component AppWindow inherits Window {
     in property <string> now-video-id;
     in property <string> now-title;
     in property <string> now-artists;
+    in property <string> now-album;
     in property <image> now-art;
     in property <bool> playing;
     in property <bool> loading;
     in property <bool> preview;
-    in property <float> progress;
-    in property <string> elapsed: "0:00";
-    in property <string> total: "0:00";
+    in property <bool> demo-clock;
+    in property <float> duration-s;
     in property <string> player-message;
     in property <bool> player-error;
     callback toggle-pause();
-    callback seek(float);
+    // Seconds.
+    callback seek-to(float);
+
+    // Clock. Rust re-anchors it on every 250 ms poll (`sync-clock`); in between,
+    // `animation-tick()` interpolates at display refresh rate. Only while the
+    // Now Playing screen is up and playing does anything depend on the tick, so
+    // the window stays idle otherwise.
+    property <float> clock-base;
+    property <duration> clock-anchor;
+    property <bool> ticking: root.playing && (root.np-open || root.np-t > 0);
+    out property <float> pos: root.ticking ? root.clock-base + (animation-tick() - root.clock-anchor) / 1s : root.clock-base;
+    public function sync-clock(secs: float) {
+        root.clock-base = secs;
+        root.clock-anchor = animation-tick();
+    }
+
+    // Now Playing screen
+    in-out property <bool> np-open;
+    in property <image> np-art;
+    // Blurred backgrounds: two layers that cross-fade when the track changes.
+    in property <image> bg-a;
+    in property <image> bg-b;
+    in property <bool> bg-b-front;
+    property <float> np-t: root.np-open ? 1 : 0;
+    animate np-t {
+        duration: 320ms;
+        easing: cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    // Lyrics: 0 loading, 1 none, 2 ready, 3 error.
+    in property <int> lyrics-state;
+    in property <string> lyrics-message;
+    in property <string> lyrics-note;
+    in property <[LyricLineData]> lyric-lines;
+    in-out property <int> active-line: -1;
+    out property <length> lyrics-width: lyrics-pane.width;
+    // Scales with the column (whole pixels, so resizing re-flows only at size steps).
+    out property <length> lyrics-font-size: clamp(round(lyrics-pane.width / 17 / 1px), 28, 44) * 1px;
+    // Rust re-flows the words when the column width or font size changes.
+    callback lyrics-layout-changed();
+    changed lyrics-width => {
+        root.lyrics-layout-changed();
+    }
+    changed lyrics-font-size => {
+        root.lyrics-layout-changed();
+    }
+
+    public function open-now-playing() {
+        if (root.now-video-id != "") {
+            root.np-open = true;
+            np-keys.focus();
+        }
+    }
+    function close-now-playing() {
+        root.np-open = false;
+        search.focus();
+    }
 
     changed results => {
         list.content-y = 0;
     }
 
     VerticalLayout {
+        // Fully covered by the Now Playing screen: skip rendering it.
+        visible: root.np-t < 1;
+
         // Header
         HorizontalLayout {
             padding-left: 20px;
@@ -337,7 +589,15 @@ export component AppWindow inherits Window {
         // Now-playing bar
         Rectangle {
             height: 88px;
-            background: Theme.surface;
+            background: bar-touch.has-hover && root.now-video-id != "" ? #1a1a1f : Theme.surface;
+
+            // Clicking anywhere on the bar outside the controls opens Now Playing.
+            bar-touch := TouchArea {
+                mouse-cursor: root.now-video-id != "" ? pointer : default;
+                clicked => {
+                    root.open-now-playing();
+                }
+            }
 
             Rectangle {
                 y: 0;
@@ -352,7 +612,9 @@ export component AppWindow inherits Window {
 
                 // Track info
                 HorizontalLayout {
-                    width: 300px;
+                    min-width: 180px;
+                    max-width: 300px;
+                    horizontal-stretch: 1;
                     spacing: 12px;
                     alignment: start;
 
@@ -396,7 +658,7 @@ export component AppWindow inherits Window {
 
                 // Transport + progress
                 VerticalLayout {
-                    horizontal-stretch: 1;
+                    horizontal-stretch: 3;
                     alignment: center;
                     spacing: 6px;
 
@@ -416,7 +678,7 @@ export component AppWindow inherits Window {
                         spacing: 10px;
                         Text {
                             width: 44px;
-                            text: root.elapsed;
+                            text: Fmt.time(root.pos);
                             color: Theme.muted;
                             font-size: 11px;
                             horizontal-alignment: right;
@@ -425,16 +687,16 @@ export component AppWindow inherits Window {
 
                         SeekBar {
                             horizontal-stretch: 1;
-                            progress: root.progress;
+                            progress: root.duration-s > 0 ? root.pos / root.duration-s : 0;
                             enabled: root.now-video-id != "" && !root.loading;
                             seek(fraction) => {
-                                root.seek(fraction);
+                                root.seek-to(fraction * root.duration-s);
                             }
                         }
 
                         Text {
                             width: 44px;
-                            text: root.total;
+                            text: root.duration-s > 0 ? Fmt.time(root.duration-s) : "–:––";
                             color: Theme.muted;
                             font-size: 11px;
                             vertical-alignment: center;
@@ -444,7 +706,9 @@ export component AppWindow inherits Window {
 
                 // Status / errors
                 Text {
-                    width: 240px;
+                    min-width: 110px;
+                    max-width: 240px;
+                    horizontal-stretch: 1;
                     text: root.player-message;
                     color: root.player-error ? Theme.danger : Theme.muted;
                     font-size: 12px;
@@ -452,6 +716,331 @@ export component AppWindow inherits Window {
                     vertical-alignment: center;
                     wrap: word-wrap;
                     overflow: elide;
+                }
+            }
+        }
+    }
+
+    // Full-window Now Playing screen; slides up over everything.
+    np := Rectangle {
+        y: (1 - root.np-t) * root.height;
+        width: root.width;
+        height: root.height;
+        visible: root.np-t > 0;
+        background: #08080a;
+        clip: true;
+
+        // Swallow clicks so nothing underneath reacts.
+        TouchArea { }
+
+        np-keys := FocusScope {
+            key-pressed(event) => {
+                if (event.text == Key.Escape) {
+                    root.close-now-playing();
+                    return accept;
+                }
+                if (event.text == " ") {
+                    root.toggle-pause();
+                    return accept;
+                }
+                return reject;
+            }
+        }
+
+        // Background: CPU-blurred artwork, cross-faded per track, under a dark gradient.
+        Image {
+            width: 100%;
+            height: 100%;
+            source: root.bg-a;
+            image-fit: cover;
+            opacity: root.bg-b-front ? 0 : 1;
+            animate opacity {
+                duration: 500ms;
+                easing: ease-in-out;
+            }
+        }
+
+        Image {
+            width: 100%;
+            height: 100%;
+            source: root.bg-b;
+            image-fit: cover;
+            opacity: root.bg-b-front ? 1 : 0;
+            animate opacity {
+                duration: 500ms;
+                easing: ease-in-out;
+            }
+        }
+
+        Rectangle {
+            background: @linear-gradient(180deg, #00000070 0%, #00000040 35%, #000000b0 100%);
+        }
+
+        Rectangle {
+            background: @linear-gradient(90deg, #00000060 0%, #00000010 55%, #00000050 100%);
+        }
+
+        // Content fades in slightly behind the slide.
+        Rectangle {
+            opacity: root.np-t;
+
+            VerticalLayout {
+                padding-left: 28px;
+                padding-right: 40px;
+                padding-top: 18px;
+                padding-bottom: 28px;
+
+                // Header
+                HorizontalLayout {
+                    height: 44px;
+                    spacing: 12px;
+                    IconButton {
+                        commands: "M 5 9 L 12 16 L 19 9";
+                        clicked => {
+                            root.close-now-playing();
+                        }
+                    }
+
+                    VerticalLayout {
+                        alignment: center;
+                        horizontal-stretch: 1;
+                        Text {
+                            text: "NOW PLAYING";
+                            color: #ffffffa0;
+                            font-family: Theme.display-font;
+                            font-size: 11px;
+                            font-weight: 700;
+                            letter-spacing: 1.5px;
+                        }
+
+                        Text {
+                            text: root.now-album;
+                            color: #ffffff70;
+                            font-family: Theme.display-font;
+                            font-size: 12px;
+                            overflow: elide;
+                        }
+                    }
+
+                    if root.lyrics-state == 2: Text {
+                        text: root.lyrics-note;
+                        color: #ffffff60;
+                        font-family: Theme.display-font;
+                        font-size: 11px;
+                        vertical-alignment: center;
+                    }
+                    if root.demo-clock: VerticalLayout {
+                        alignment: center;
+                        Badge {
+                            text: "DEMO CLOCK";
+                            tint: #ffffffa0;
+                        }
+                    }
+                    if root.preview: VerticalLayout {
+                        alignment: center;
+                        Badge {
+                            text: "PREVIEW";
+                        }
+                    }
+                }
+
+                HorizontalLayout {
+                    vertical-stretch: 1;
+                    spacing: 56px;
+                    padding-left: 20px;
+
+                    // Left column: artwork, title, transport.
+                    left := VerticalLayout {
+                        width: min(root.width * 0.38, 440px);
+                        alignment: center;
+
+                        // From the window height: the column's own height depends on this.
+                        property <length> art-size: max(120px, min(self.width, root.height - 90px - 240px));
+
+                        Rectangle {
+                            height: left.art-size;
+                            // Artwork "breathes": full size while playing, shrinks when paused.
+                            property <float> zoom: root.playing || root.loading ? 1 : 0.92;
+                            animate zoom {
+                                duration: 500ms;
+                                easing: cubic-bezier(0.34, 1.35, 0.64, 1);
+                            }
+
+                            Rectangle {
+                                x: (parent.width - self.width) / 2;
+                                width: left.art-size;
+                                height: left.art-size;
+                                transform-scale: parent.zoom;
+                                border-radius: 12px;
+                                background: Theme.raised;
+                                drop-shadow-blur: 48px;
+                                drop-shadow-offset-y: 18px;
+                                drop-shadow-color: #00000090;
+
+                                Artwork {
+                                    border-radius: 12px;
+                                    source: root.np-art.width > 0 ? root.np-art : root.now-art;
+                                }
+                            }
+                        }
+
+                        Rectangle {
+                            height: 28px;
+                        }
+
+                        Text {
+                            text: root.now-title;
+                            color: Theme.text;
+                            font-family: Theme.display-font;
+                            font-size: 24px;
+                            font-weight: 700;
+                            overflow: elide;
+                        }
+
+                        Text {
+                            text: root.now-artists;
+                            color: #ffffffa8;
+                            font-family: Theme.display-font;
+                            font-size: 16px;
+                            font-weight: 500;
+                            overflow: elide;
+                        }
+
+                        Rectangle {
+                            height: 18px;
+                        }
+
+                        SeekBar {
+                            progress: root.duration-s > 0 ? root.pos / root.duration-s : 0;
+                            enabled: !root.loading;
+                            track-color: #ffffff30;
+                            fill-color: #ffffffe0;
+                            seek(fraction) => {
+                                root.seek-to(fraction * root.duration-s);
+                            }
+                        }
+
+                        HorizontalLayout {
+                            Text {
+                                text: Fmt.time(root.pos);
+                                color: #ffffff90;
+                                font-family: Theme.display-font;
+                                font-size: 12px;
+                            }
+
+                            Text {
+                                horizontal-stretch: 1;
+                                horizontal-alignment: right;
+                                text: root.duration-s > 0 ? "-" + Fmt.time(root.duration-s - root.pos) : "–:––";
+                                color: #ffffff90;
+                                font-family: Theme.display-font;
+                                font-size: 12px;
+                            }
+                        }
+
+                        Rectangle {
+                            height: 14px;
+                        }
+
+                        HorizontalLayout {
+                            alignment: center;
+                            PlayButton {
+                                size: 64px;
+                                playing: root.playing;
+                                loading: root.loading;
+                                enabled: !root.player-error;
+                                clicked => {
+                                    root.toggle-pause();
+                                }
+                            }
+                        }
+                    }
+
+                    // Right column: synced lyrics.
+                    lyrics-pane := Rectangle {
+                        horizontal-stretch: 1;
+                        clip: true;
+                        // Accessibility sees one node with the current line. Per-line or
+                        // per-word nodes move every frame, and Slint's AccessKit bridge
+                        // then rebuilds them at frame rate whenever an accessibility
+                        // client (VoiceOver, window managers, ...) is attached.
+                        accessible-role: text;
+                        accessible-label: root.lyrics-state == 2 ? root.lyric-lines[max(root.active-line, 0)].text : "";
+
+                        // The active line sits about a third of the way down.
+                        property <length> anchor-y: self.height * 0.3;
+                        property <length> scroll: root.lyric-lines[max(root.active-line, 0)].y;
+                        animate scroll {
+                            duration: 480ms;
+                            easing: cubic-bezier(0.25, 0.8, 0.25, 1);
+                        }
+
+                        if root.lyrics-state == 2: Rectangle {
+                            for line[i] in root.lyric-lines: LyricLineView {
+                                x: 0;
+                                y: line.y - lyrics-pane.scroll + lyrics-pane.anchor-y;
+                                width: lyrics-pane.width;
+                                // Off-screen lines aren't traversed by the renderer at all.
+                                visible: self.y + self.height > 0 && self.y < lyrics-pane.height;
+                                line: line;
+                                index: i;
+                                active-index: root.active-line;
+                                pos: root.pos;
+                                font-size: root.lyrics-font-size;
+                                viewport-height: lyrics-pane.height;
+                                activated(index) => {
+                                    root.active-line = index;
+                                }
+                                clicked(start) => {
+                                    root.seek-to(start);
+                                }
+                            }
+                        }
+
+                        if root.lyrics-state == 0: VerticalLayout {
+                            alignment: center;
+                            spacing: 14px;
+                            HorizontalLayout {
+                                alignment: center;
+                                Spinner {
+                                    width: 28px;
+                                    height: 28px;
+                                    indeterminate: true;
+                                }
+                            }
+
+                            Text {
+                                text: "Loading lyrics…";
+                                color: #ffffff90;
+                                font-family: Theme.display-font;
+                                font-size: 16px;
+                                horizontal-alignment: center;
+                            }
+                        }
+
+                        if root.lyrics-state == 1 || root.lyrics-state == 3: VerticalLayout {
+                            alignment: center;
+                            spacing: 8px;
+                            Text {
+                                text: root.lyrics-state == 1 ? "No synced lyrics" : "Couldn’t load lyrics";
+                                color: #ffffffd0;
+                                font-family: Theme.display-font;
+                                font-size: 26px;
+                                font-weight: 700;
+                                horizontal-alignment: center;
+                            }
+
+                            Text {
+                                text: root.lyrics-message;
+                                color: #ffffff80;
+                                font-family: Theme.display-font;
+                                font-size: 14px;
+                                horizontal-alignment: center;
+                                wrap: word-wrap;
+                            }
+                        }
+
+                    }
                 }
             }
         }
