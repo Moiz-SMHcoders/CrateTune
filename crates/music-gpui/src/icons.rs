@@ -79,6 +79,9 @@ gpui_kit_assets::icon_assets!(
         // browse & search
         CloudOff,
         ArrowUpLeft,
+        // recognition / onboarding
+        AudioWaveform,
+        CircleStop,
     ]
 );
 

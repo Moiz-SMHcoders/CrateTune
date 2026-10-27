@@ -5,6 +5,7 @@
 //! cargo run -p music-core --example recognize -- --youtube "artist title"   # first ~12 s of a search hit
 //! cargo run -p music-core --example recognize -- --mic 8                    # records 8 s from the microphone
 //! cargo run -p music-core --example recognize -- --signature-only file.wav  # print the signature, no request
+//! cargo run -p music-core --example recognize -- --save /tmp/x.wav --youtube "…"   # also keep the 16 kHz PCM
 //! ```
 
 use std::sync::atomic::AtomicBool;
@@ -17,10 +18,20 @@ use rodio::Source as _;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let mut signature_only = false;
+    let mut save: Option<String> = None;
     let mut rest = args.as_slice();
-    if rest.first().map(String::as_str) == Some("--signature-only") {
-        signature_only = true;
-        rest = &rest[1..];
+    loop {
+        match rest.first().map(String::as_str) {
+            Some("--signature-only") => {
+                signature_only = true;
+                rest = &rest[1..];
+            }
+            Some("--save") if rest.len() > 1 => {
+                save = Some(rest[1].clone());
+                rest = &rest[2..];
+            }
+            _ => break,
+        }
     }
     let pcm = match rest.first().map(String::as_str) {
         Some("--youtube") => {
@@ -65,10 +76,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             audio::decode_file(path, Duration::from_secs(start), Duration::from_secs(12))?
         }
         None => {
-            return Err("usage: recognize <file> [start] | --youtube <query> | --mic [secs]".into());
+            return Err(
+                "usage: recognize <file> [start] | --youtube <query> | --mic [secs]".into(),
+            );
         }
     };
     println!("\n{} samples at 16 kHz", pcm.len());
+    if let Some(path) = save {
+        std::fs::write(&path, wav(&pcm))?;
+        println!("saved {path}");
+    }
     let sig = recognition::signature_from_pcm(&pcm).ok_or("no signature (silence?)")?;
     let decoded = signature::decode(&sig.to_bytes().ok_or("bad uri")?)?;
     println!(
@@ -86,4 +103,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Err(e) => println!("recognition: {e}"),
     }
     Ok(())
+}
+
+/// 16 kHz mono 16-bit WAV.
+fn wav(pcm: &[i16]) -> Vec<u8> {
+    let data = (pcm.len() * 2) as u32;
+    let mut out = Vec::with_capacity(44 + data as usize);
+    out.extend_from_slice(b"RIFF");
+    out.extend_from_slice(&(36 + data).to_le_bytes());
+    out.extend_from_slice(b"WAVEfmt ");
+    out.extend_from_slice(&16u32.to_le_bytes());
+    out.extend_from_slice(&1u16.to_le_bytes()); // PCM
+    out.extend_from_slice(&1u16.to_le_bytes()); // mono
+    out.extend_from_slice(&16_000u32.to_le_bytes());
+    out.extend_from_slice(&32_000u32.to_le_bytes());
+    out.extend_from_slice(&2u16.to_le_bytes());
+    out.extend_from_slice(&16u16.to_le_bytes());
+    out.extend_from_slice(b"data");
+    out.extend_from_slice(&data.to_le_bytes());
+    for s in pcm {
+        out.extend_from_slice(&s.to_le_bytes());
+    }
+    out
 }

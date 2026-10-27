@@ -30,6 +30,7 @@ mod local_playlist;
 mod moods;
 mod new_releases;
 mod playlist;
+mod recognition;
 pub mod search;
 mod song_list;
 mod stats;
@@ -103,6 +104,11 @@ pub const NAV: &[NavItem] = &[
         title: "New releases",
         icon: Lucide::Sparkles,
         route: || Route::NewReleases,
+    },
+    NavItem::Page {
+        title: "Recognize",
+        icon: Lucide::AudioWaveform,
+        route: || Route::Recognition,
     },
     NavItem::Group("Library"),
     NavItem::Page {
@@ -183,6 +189,7 @@ pub fn build(
         Route::Stats => stats::StatsPage::build(cx),
         Route::Downloads => downloads::DownloadsPage::build(cx),
         Route::LocalFiles => local_files::LocalFilesPage::build(window, cx),
+        Route::Recognition => recognition::RecognitionPage::build(cx),
         Route::Settings { section } => {
             // One long-lived entity: it owns the settings file and secrets.
             ctx.settings
