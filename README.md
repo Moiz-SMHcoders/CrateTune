@@ -1,14 +1,34 @@
-# music-macos — desktop YouTube Music client spikes
+# music-macos — native desktop YouTube Music client
 
-Three UI spikes on top of one shared Rust core, to pick a UI framework by
-measurement instead of by opinion. All three target macOS, Windows and Linux.
+A lightweight Rust desktop client (macOS, Windows, Linux) in the spirit of the
+Android app ArchiveTune: a UI-agnostic core (`crates/music-core`) and a GPUI
+app (`crates/music-gpui`, see [music-gpui](#music-gpui-gpui--gpui-component)).
 
-| Branch | UI stack | Idea |
+## Decision: GPUI + gpui-component
+
+The UI framework was picked by building the same spikes in three stacks. `main`
+now carries the winner; the other branches are kept for reference.
+
+| Branch | UI stack | Outcome |
 |---|---|---|
-| `main` | — | Shared core only (`crates/music-core`) |
-| `ui/slint` | Slint 1.x | Stable, declarative, accessible |
-| `ui/gpui-component` | GPUI (`gpui-pre`) + gpui-component | Zed's GPU UI + 60-widget kit |
-| `ui/hummingbird` | Hummingbird (GPUI, `gpui-unofficial`) | Fork an existing native GPUI music player and add YouTube Music to it |
+| `main` (= `ui/gpui-component`) | GPUI (`gpui-pre` 0.3.10) + gpui-component 0.8.1 | **Chosen** |
+| `ui/slint` | Slint 1.18 (FemtoVG) | Built everything incl. karaoke lyrics, but word layout relies on Slint's internal text engine (Parley) and the accessibility tree is rebuilt every animated frame |
+| `ui/hummingbird` | Fork of Hummingbird (GPUI, `gpui-unofficial`) | Works by converting YouTube tracks to tagged local files; 38.5 MB binary, fork upkeep. Used as a donor instead (EQ, media controls, scrobbling ported into music-core) |
+
+Deciding test — Now Playing with word-by-word karaoke lyrics (release, macOS arm64, 60 Hz):
+
+| | Slint | GPUI |
+|---|---|---|
+| CPU while lyrics animate | 79 % avg (19 % with accessibility compiled out) | 17 % avg |
+| Frame rate | 53–61 fps (steady 60 without accessibility) | ~61 fps, worst gap 17.8 ms |
+| RSS while animating | ~139 MB | ~104 MB |
+| Idle, screen closed | 0 % | ~0 % |
+| Binary | 17.7 MB | 21.8 MB |
+
+Accepted risks of GPUI: a pinned pre-release snapshot (Zed deprioritises
+non-Zed users), thin accessibility, no transforms/blur/masks on arbitrary
+elements (worked around with custom painting and `anim.rs`). The core stays
+UI-agnostic so the UI could be swapped again.
 
 ## Shared core (`crates/music-core`)
 
