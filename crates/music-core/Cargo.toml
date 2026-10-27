@@ -1,0 +1,12 @@
+[package]
+name = "music-core"
+edition.workspace = true
+version.workspace = true
+description = "UI-agnostic YouTube Music backend + audio engine shared by every UI spike"
+
+[dependencies]
+log = "0.4.34"
+rodio = { version = "0.23", default-features = false, features = ["mp4", "playback", "symphonia-simd"] }
+serde_json = "1.0.154"
+thiserror = "2"
+ureq = { version = "3", features = ["json"] }
