@@ -7,7 +7,8 @@
 //! * [`InnerTube`] – YouTube Music metadata: home, explore, charts, search, albums,
 //!   artists, playlists, play queues, and a cookie-based account layer ([`innertube`]).
 //! * [`http`] – the shared HTTP agent; [`http::configure`] sets a proxy / user agent.
-//! * [`fetch_lyrics`] – LRCLIB synced lyrics with per-word timings.
+//! * [`lyrics`] – lyrics providers (LRCLIB, KuGou, BetterLyrics TTML, …), [`LyricsService`],
+//!   translation and romanization; [`fetch_lyrics`] is the simple LRCLIB-only call.
 //! * [`StreamResolver`] – turns a video id into a playable audio URL.
 //! * [`Player`] – background audio engine with a pollable [`PlaybackState`].
 //! * [`equalizer`] – parametric EQ applied live via [`Player::set_equalizer`].
@@ -29,7 +30,7 @@ pub mod http;
 pub mod innertube;
 pub mod library;
 pub mod local_files;
-mod lyrics;
+pub mod lyrics;
 pub mod media_controls;
 mod model;
 mod player;
@@ -42,7 +43,10 @@ pub use error::{Error, Result};
 pub use http::{HttpConfig, fetch_bytes};
 pub use innertube::InnerTube;
 pub use library::Library;
-pub use lyrics::{LyricLine, LyricWord, Lyrics, fetch_lyrics, parse_lrc};
+pub use lyrics::{
+    LyricLine, LyricWord, Lyrics, LyricsProvider, LyricsQuery, LyricsResult, LyricsService,
+    LyricsServiceConfig, fetch_lyrics, parse_lrc,
+};
 pub use model::{EntityRef, Track, format_duration};
 pub use player::{PlaybackState, PlaybackStatus, Player};
 pub use stream::{Download, IosClientResolver, ResolvedStream, StreamResolver};

@@ -1,0 +1,33 @@
+{
+ "status": 1,
+ "errcode": 0,
+ "error": "",
+ "data": {
+  "info": [
+   {
+    "hash": "af38145cd9d8092157c442e31280c0b6",
+    "duration": 337,
+    "songname": "Instant Crush",
+    "singername": "Daft Punk、julian casablancas"
+   },
+   {
+    "hash": "86b0987e9451dbc796612e0b67edc0ed",
+    "duration": 337,
+    "songname": "Instant Crush",
+    "singername": "Daft Punk、julian casablancas"
+   },
+   {
+    "hash": "2d4c996e3708f634fbb11e5baced1e1d",
+    "duration": 334,
+    "songname": "Instant Crush (黑胶版)",
+    "singername": "Daft Punk"
+   },
+   {
+    "hash": "072b3f6163b79609b754c1549f173ebd",
+    "duration": 230,
+    "songname": "Starboy (Explicit)",
+    "singername": "The Weeknd、Daft Punk"
+   }
+  ]
+ }
+}

@@ -6,10 +6,15 @@ license = "GPL-3.0-only"
 description = "UI-agnostic YouTube Music backend + audio engine shared by every UI spike"
 
 [dependencies]
+deunicode = "1.6"
 discord-rich-presence = { version = "1", optional = true }
+lindera = { version = "6.2", optional = true, features = ["embed-ipadic"] }
 lofty = "0.25"
 log = "0.4.34"
 md5 = "0.8"
+pinyin = { version = "0.11", default-features = false, features = ["with_tone"] }
+regex = "1.13"
+roxmltree = "0.21"
 rodio = { version = "0.23", default-features = false, features = ["playback"] }
 rusqlite = { version = "0.41", features = ["bundled", "backup"] }
 serde = { version = "1.0.229", features = ["derive", "rc"] }
@@ -22,6 +27,9 @@ zip = { version = "9", default-features = false, features = ["deflate-flate2-zli
 
 [features]
 default = ["media-controls", "discord"]
+# Kanji readings for Japanese romanization (lindera + embedded IPADIC). Off by default:
+# adds ~48 MB to the binary and downloads the dictionary (~13 MB) at build time.
+japanese-dict = ["dep:lindera"]
 # Discord Rich Presence (`discord` module).
 discord = ["dep:discord-rich-presence"]
 # OS media controls (`media_controls` module): MediaPlayer on macOS, SMTC on Windows, MPRIS on Linux.
