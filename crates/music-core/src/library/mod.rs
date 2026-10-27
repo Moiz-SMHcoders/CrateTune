@@ -48,6 +48,7 @@ pub use backup::{
 pub use history::{CachedLyrics, HistoryDay, HistoryEntry, SearchHistoryEntry, group_by_day};
 pub use playlists::{Playlist, PlaylistEntry, PlaylistSort, RemotePlaylist};
 pub use schema::SCHEMA_VERSION;
+pub(crate) use songs::upsert_track_tx;
 pub use songs::{
     AlbumMeta, AlbumQuery, AlbumSort, ArtistMeta, ArtistQuery, ArtistSort, LibraryAlbum,
     LibraryArtist, LibrarySong, LocalSearch, ReplayGain, SongExtras, SongQuery, SongScope,

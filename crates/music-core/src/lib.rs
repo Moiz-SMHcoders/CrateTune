@@ -14,6 +14,7 @@
 //! * `discord` – Discord Rich Presence (cargo feature `discord`, on by default).
 //! * [`library`] – SQLite library: likes, playlists, history, stats, queue, backups.
 //! * [`downloads`] – user downloads + LRU play cache on disk.
+//! * [`local_files`] – scan music folders (lofty tags, artwork, lyrics) into the library.
 //! * [`TrackDecoder`] – Symphonia 0.6 decoder as a seekable `rodio::Source`.
 
 mod decode;
@@ -25,6 +26,7 @@ mod error;
 mod http;
 mod innertube;
 pub mod library;
+pub mod local_files;
 mod lyrics;
 pub mod media_controls;
 mod model;
