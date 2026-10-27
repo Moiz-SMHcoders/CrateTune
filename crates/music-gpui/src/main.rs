@@ -29,6 +29,7 @@ mod secrets;
 mod services;
 mod settings;
 mod theme;
+mod tray;
 mod util;
 
 use gpui::{
@@ -43,10 +44,18 @@ use crate::settings::{Settings, WindowGeometry};
 
 const DEFAULT_SIZE: (f32, f32) = (1180., 760.);
 
-/// Whether at least a grabbable part of `bounds` is on some display.
+/// Whether at least a grabbable part of `bounds` is on some display. Without
+/// display information (seen while the screen is locked) the frame is trusted;
+/// macOS moves windows that are fully off-screen back anyway.
 pub fn on_screen(bounds: &Bounds<Pixels>, cx: &App) -> bool {
-    cx.displays().iter().any(|display| {
-        let d = display.bounds();
+    let mut displays: Vec<Bounds<Pixels>> = cx.displays().iter().map(|d| d.bounds()).collect();
+    if displays.is_empty() {
+        displays.extend(cx.primary_display().map(|d| d.bounds()));
+    }
+    if displays.is_empty() {
+        return true;
+    }
+    displays.iter().any(|d| {
         let overlap_w = (bounds.right().min(d.right()) - bounds.left().max(d.left())).max(px(0.));
         let overlap_h = (bounds.bottom().min(d.bottom()) - bounds.top().max(d.top())).max(px(0.));
         overlap_w >= px(120.) && overlap_h >= px(40.)

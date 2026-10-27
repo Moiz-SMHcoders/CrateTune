@@ -115,6 +115,8 @@ pub struct MusicApp {
     pub(crate) queue_open: bool,
     pub(crate) queue_scroll: ScrollHandle,
     pub(crate) mini: Option<AnyWindowHandle>,
+    /// Menu-bar item (macOS; `MUSIC_TRAY=0` disables it).
+    pub(crate) tray: Option<crate::tray::Tray>,
     /// `MUSIC_TIMINGS=1`: prints renders/s and the worst frame gap once a second.
     frame_stats: Option<FrameStats>,
     /// Per video id; never evicted (small).
@@ -223,6 +225,13 @@ impl MusicApp {
             }
         });
 
+        if std::env::var_os("MUSIC_TRACE").is_some() {
+            eprintln!(
+                "music-gpui: window bounds {:?}, displays {:?}",
+                window.window_bounds(),
+                cx.displays().iter().map(|d| d.bounds()).collect::<Vec<_>>()
+            );
+        }
         let focus = cx.focus_handle();
         window.focus(&focus, cx);
         let np = NowPlaying::new(cx.focus_handle());
@@ -254,6 +263,10 @@ impl MusicApp {
             queue_open: false,
             queue_scroll: ScrollHandle::new(),
             mini: None,
+            tray: std::env::var("MUSIC_TRAY")
+                .map_or(true, |v| v != "0")
+                .then(crate::tray::Tray::new)
+                .flatten(),
             frame_stats: std::env::var_os("MUSIC_TIMINGS").map(|_| FrameStats::default()),
             lyrics: HashMap::new(),
             hires: HashMap::new(),
@@ -363,7 +376,14 @@ impl MusicApp {
 
     fn on_route_changed(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         self.ensure_page(window, cx);
-        window.set_window_title(&format!("{} — Music", self.router.route().title()));
+        let title = self.router.route().title();
+        if let Some(started) = self.trace {
+            eprintln!(
+                "music-gpui: [{:6.2}s] route {title}",
+                started.elapsed().as_secs_f64()
+            );
+        }
+        window.set_window_title(&format!("{title} — Music"));
         match self.router.route().clone() {
             // Keep the search field in sync when going back/forward between searches.
             Route::Search { query } if query != self.search_text => {
@@ -586,11 +606,24 @@ impl MusicApp {
             WindowBounds::Windowed(b) => (b, false),
             WindowBounds::Maximized(b) | WindowBounds::Fullscreen(b) => (b, true),
         };
+        // `open_window` takes the content size; `window_bounds` reports the frame
+        // (with the title bar), so store the viewport size to avoid drift.
+        let content = window.viewport_size();
         let geometry = WindowGeometry {
             x: bounds.origin.x.into(),
             y: bounds.origin.y.into(),
-            width: bounds.size.width.into(),
-            height: bounds.size.height.into(),
+            width: if maximized {
+                bounds.size.width
+            } else {
+                content.width
+            }
+            .into(),
+            height: if maximized {
+                bounds.size.height
+            } else {
+                content.height
+            }
+            .into(),
             maximized,
         };
         self.settings

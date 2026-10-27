@@ -33,6 +33,7 @@
 //! | `@lastfm-connect`, `@lastfm-finish`, `@lastfm-disconnect`, `@lastfm-clear` | Last.fm auth flow |
 //! | `@lb-validate`, `@lb-disconnect` | ListenBrainz |
 //! | `@discord=on\|off` | Discord presence switch |
+//! | `@resize=W;H` | resize the main window (frame is saved) |
 //! | `@quit` | quit |
 
 use std::time::{Duration, Instant};
@@ -359,6 +360,15 @@ impl MusicApp {
             "discord" => {
                 let on = on();
                 panel.update(cx, |p, cx| p.set_discord_enabled(on, cx));
+            }
+            "resize" => {
+                let size = arg
+                    .and_then(|a| a.split_once(';'))
+                    .and_then(|(w, h)| Some(gpui::size(px(w.parse().ok()?), px(h.parse().ok()?))));
+                match size {
+                    Some(size) => window.resize(size),
+                    None => eprintln!("music-gpui: @resize wants W;H"),
+                }
             }
             "quit" => cx.quit(),
             other => eprintln!("music-gpui: unknown script action @{other}"),

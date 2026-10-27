@@ -36,9 +36,13 @@ pub struct MiniPlayer {
 impl MusicApp {
     pub fn toggle_mini_player(&mut self, cx: &mut Context<Self>) {
         if let Some(handle) = self.mini.take() {
-            handle
-                .update(cx, |_, window, _| window.remove_window())
-                .ok();
+            // Closing runs the window-closed observers, which update the app:
+            // do it after this update.
+            cx.defer(move |cx| {
+                handle
+                    .update(cx, |_, window, _| window.remove_window())
+                    .ok();
+            });
             cx.notify();
             return;
         }

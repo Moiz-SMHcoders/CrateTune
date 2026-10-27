@@ -16,6 +16,7 @@ use music_core::{PlaybackState, PlaybackStatus, Track};
 use crate::app::{MusicApp, notify};
 use crate::now_playing::HiRes;
 use crate::queue::{Ended, Previous, Repeat};
+use crate::tray::TrayCommand;
 
 /// Cmd+↑ / Cmd+↓ volume step.
 pub const VOLUME_STEP: f32 = 0.05;
@@ -268,6 +269,7 @@ impl MusicApp {
         if window.focused(cx).is_none() {
             window.focus(&self.focus, cx);
         }
+        self.poll_tray(window, cx);
         let Some(engine) = &self.engine else { return };
         let state = engine.state();
 
@@ -310,6 +312,33 @@ impl MusicApp {
             self.open_now_playing(window, cx);
         }
         cx.notify();
+    }
+
+    /// Menu-bar clicks, and keeping its "now playing" line current.
+    fn poll_tray(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let Some(tray) = &mut self.tray else { return };
+        let title = self
+            .playback
+            .track
+            .as_ref()
+            .map(|t| format!("{} — {}", t.title, t.artists));
+        tray.update(
+            title.as_deref(),
+            self.playback.status == PlaybackStatus::Playing,
+        );
+        for command in tray.take_commands() {
+            match command {
+                TrayCommand::TogglePlayback => self.toggle_playback(cx),
+                TrayCommand::Next => self.next_track(cx),
+                TrayCommand::Previous => self.previous_track(cx),
+                TrayCommand::ToggleMiniPlayer => self.toggle_mini_player(cx),
+                TrayCommand::ShowWindow => {
+                    cx.activate(true);
+                    window.activate_window();
+                }
+                TrayCommand::Quit => cx.quit(),
+            }
+        }
     }
 
     pub(crate) fn on_progress_event(
