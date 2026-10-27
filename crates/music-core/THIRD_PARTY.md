@@ -20,3 +20,26 @@ each carries a header naming its upstream source. A copy of the license is at
 | `src/scrobble/lastfm.rs` | `src/services/mmb/lastfm.rs`, `lastfm/client.rs`, `lastfm/types.rs` | Blocking `ureq`; `serde_json::Value` instead of serde derives; API errors surfaced; runtime credentials instead of env vars; documented auth flow. |
 | `src/scrobble/listenbrainz.rs` | `src/services/mmb/listenbrainz.rs`, `listenbrainz/client.rs`, `listenbrainz/types.rs` | Blocking `ureq`; `json!` payloads; YouTube Music `origin_url`/`music_service`; configurable client name and API root. |
 | `src/discord.rs` | `src/services/mmb/discord.rs` | Snapshot-driven `PresenceTracker`; IPC on a worker thread with update coalescing (≤1 per 4 s) instead of async + `watch`; caller-supplied application id/name; YouTube Music artwork URL. |
+
+## ArchiveTune (feat/library)
+
+Parts of music-core are ported from **ArchiveTune**, an Android YouTube Music client
+(© Rukamori and ArchiveTune contributors), licensed under the GNU General Public License
+v3.0 — the reason this project is GPL-3.0. Reference checkout: `archivetune-ref`
+(`app/src/main/kotlin/moe/rukamori/archivetune/…`, Room schemas in `app/schemas/`).
+Each ported file carries a header naming its upstream source; all were rewritten from
+Kotlin/Room/Android APIs into blocking Rust over SQLite (`rusqlite`) and `lofty`.
+
+| music-core file | Upstream file(s) | Changes |
+|---|---|---|
+| `src/library/schema.rs` | `db/entities/*.kt`, `app/schemas/` | Condensed table set (song, artist, album, maps, playlist + entries with `setVideoId`, play events, search history, lyrics, key/value, local files) as one `user_version` migration; no formats/podcasts/top-mix/aliases tables. |
+| `src/library/mod.rs` | `db/MusicDatabase.kt`, `db/LocalMusicIdentity.kt` | Single mutex-guarded connection, `user_version` migrations, name normalization without NFKC, key/value store, saved queue. |
+| `src/library/songs.rs` | `db/DatabaseDao.kt`, `db/entities/{SongEntity,ArtistEntity,AlbumEntity}.kt` | Like/library semantics of `toggleLike`/`toggleLibrary`; upserts from `Track`; sorted/filtered listings and local search as dynamic SQL; synthetic `LA:`/`LB:` ids for name-only artists/albums. |
+| `src/library/playlists.rs` | `db/entities/{PlaylistEntity,PlaylistSongMap}.kt`, `db/DatabaseDao.kt` | Local + mirrored playlists, contiguous positions with insert/move/remove. |
+| `src/library/history.rs` | `db/DatabaseDao.kt`, `db/entities/{Event,SearchHistory,LyricsEntity}.kt` | Play events with per-song aggregates recomputed on delete; day grouping in SQL with a caller-chosen time zone. |
+| `src/library/stats.rs` | `db/DatabaseDao.kt` (`mostPlayed*`, `listeningBy*`, `listeningTotals`), `viewmodels/YearInMusicViewModel.kt`, `ui/screens/{StatsScreen,YearInMusicScreen}.kt` | Half-open ranges, explicit `TimeZone` (local or fixed offset), month/day breakdowns, top hour/busiest day; no artist blocking. |
+| `src/library/backup.rs` | `backup/BackupArchiveRepository.kt` | SQLite online backup API instead of copying DB/WAL files; JSON manifest + caller's settings JSON instead of preferences XML; validated restore into the live connection. |
+| `src/local_files.rs` | `localmedia/{LocalSongScanner,LocalAudioMetadataReader,SupportedLocalAudio}.kt` | Directory walk instead of MediaStore; `lofty` instead of `MediaMetadataRetriever`; artwork deduplicated by content hash (not resized); ReplayGain + embedded lyrics; mtime/size incremental rescan. |
+
+`src/downloads.rs` follows the split between user downloads and the player cache in
+ArchiveTune's `playback/DownloadUtil.kt` but contains no ported code.

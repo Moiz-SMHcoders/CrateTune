@@ -55,6 +55,17 @@ its own executor.
   `PlaybackState` snapshots; `Scrobbler` sends on a worker thread).
 * `discord` — Discord Rich Presence (feature `discord`, default on).
 * `fetch_lyrics` — LRCLIB synced lyrics.
+* `library` — SQLite library (`rusqlite`, bundled): likes, library, artists/albums, playlists
+  (local + YouTube mirrors), play history, listening stats and "year in music", search
+  history, lyrics cache, saved queue, zip backup/restore. `Library` is `Clone + Send + Sync`.
+* `downloads` — `DownloadManager`: user downloads (never evicted) and an LRU play cache, two
+  workers on the `StreamResolver`, pollable `states()`.
+* `local_files` — scans music folders with `lofty` (tags, cover art, lyrics, ReplayGain) into
+  the library as `local:<hash>` tracks, incrementally.
+
+```sh
+cargo run --release -p music-core --example library -- ~/Music   # scan a folder, print stats
+```
 
 Media controls, scrobbling and Discord all hang off the poll the UI already does:
 
