@@ -13,11 +13,13 @@
 //! * [`scrobble`] – Last.fm / ListenBrainz scrobbling driven by [`PlaybackState`] snapshots.
 //! * `discord` – Discord Rich Presence (cargo feature `discord`, on by default).
 //! * [`library`] – SQLite library: likes, playlists, history, stats, queue, backups.
+//! * [`downloads`] – user downloads + LRU play cache on disk.
 //! * [`TrackDecoder`] – Symphonia 0.6 decoder as a seekable `rodio::Source`.
 
 mod decode;
 #[cfg(feature = "discord")]
 pub mod discord;
+pub mod downloads;
 pub mod equalizer;
 mod error;
 mod http;

@@ -638,6 +638,30 @@ impl Library {
         .map(|n| n as u64)
     }
 
+    /// Marks a user download (`Some(complete)`, storing the track) or its removal (`None`).
+    /// Called by [`crate::downloads::DownloadManager`].
+    pub fn set_downloaded(&self, track: &Track, complete: Option<bool>) -> Result<()> {
+        self.write(|tx| {
+            match complete {
+                Some(complete) => {
+                    upsert_track_tx(tx, track, None, now_ms())?;
+                    tx.execute(
+                        "UPDATE song SET downloaded_at = COALESCE(downloaded_at, ?2),
+                                download_complete = ?3 WHERE id = ?1",
+                        params![track.video_id, now_ms(), complete],
+                    )?;
+                }
+                None => {
+                    tx.execute(
+                        "UPDATE song SET downloaded_at = NULL, download_complete = 0 WHERE id = ?1",
+                        [&track.video_id],
+                    )?;
+                }
+            }
+            Ok(())
+        })
+    }
+
     // ---- artists ---------------------------------------------------------------------------
 
     pub fn upsert_artist(&self, artist: &ArtistMeta) -> Result<()> {
