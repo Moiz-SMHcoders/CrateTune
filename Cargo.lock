@@ -4468,6 +4468,7 @@ version = "0.1.0"
 dependencies = [
  "base64 0.22.1",
  "block2 0.6.2",
+ "crc32fast",
  "deunicode",
  "discord-rich-presence",
  "getrandom 0.3.4",
@@ -4509,6 +4510,7 @@ version = "0.1.0"
 dependencies = [
  "block2 0.6.2",
  "directories",
+ "embed-resource",
  "futures-channel",
  "gpui-component",
  "gpui-kit-assets",

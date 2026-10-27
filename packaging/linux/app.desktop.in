@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=@APP_NAME@
+GenericName=Music Player
+Comment=@APP_SUMMARY@
+Exec=@APP_ID@ %U
+Icon=@APP_ID@
+Terminal=false
+Categories=AudioVideo;Audio;Player;
+Keywords=music;youtube;player;lyrics;
+StartupNotify=true
+StartupWMClass=@APP_ID@

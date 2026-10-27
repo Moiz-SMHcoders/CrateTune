@@ -90,6 +90,9 @@ gpui_kit_assets::icon_assets!(
         ArrowUp,
         ArrowDown,
         ClipboardCopy,
+        // recognition / onboarding
+        AudioWaveform,
+        CircleStop,
     ]
 );
 

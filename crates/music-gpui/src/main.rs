@@ -27,11 +27,13 @@ mod browse;
 mod clock;
 mod components;
 mod icons;
+mod identity;
 mod karaoke;
 mod library_script;
 #[cfg(target_os = "macos")]
 mod login_webview;
 mod lyrics;
+mod mic_permission;
 mod mini_player;
 mod module_service;
 mod now_playing;
@@ -40,6 +42,8 @@ mod playback;
 mod playlist_ops;
 mod queue;
 mod radio;
+mod recognize;
+mod release_script;
 mod router;
 mod script;
 mod search_box;
@@ -50,6 +54,7 @@ mod storage_ops;
 mod store;
 mod theme;
 mod tray;
+mod update_check;
 mod util;
 
 use gpui::{
@@ -119,8 +124,10 @@ fn main() {
                 // smooth while you work in another app (frames are only requested while
                 // the Now Playing screen is visible and moving anyway).
                 inactive_frame_interval: None,
+                // Wayland app id / X11 WM_CLASS: matches the .desktop file (packaging/linux).
+                app_id: Some(identity::APP_ID.into()),
                 titlebar: Some(TitlebarOptions {
-                    title: Some("Music".into()),
+                    title: Some(identity::APP_NAME.into()),
                     ..Default::default()
                 }),
                 ..Default::default()

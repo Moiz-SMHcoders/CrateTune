@@ -6,10 +6,11 @@ license = "GPL-3.0-only"
 description = "UI-agnostic YouTube Music backend + audio engine shared by every UI spike"
 
 [dependencies]
+base64 = "0.22"
+crc32fast = "1.5"
 deunicode = "1.6"
 discord-rich-presence = { version = "1", optional = true }
 lindera = { version = "6.2", optional = true, features = ["embed-ipadic"] }
-base64 = "0.22"
 getrandom = "0.3"
 # NFKD normalization for the module track matcher (already in the graph via url/idna).
 icu_normalizer = "2"

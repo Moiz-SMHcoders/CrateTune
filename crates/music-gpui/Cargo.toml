@@ -24,6 +24,11 @@ directories = "6"
 # Secrets in the OS keychain (macOS Keychain, Windows Credential Manager, Secret Service).
 keyring = "4.2"
 
+[target.'cfg(windows)'.build-dependencies]
+# Icon + version info in the .exe (`build.rs`, `packaging/windows/app.rc`); already a
+# build dependency of GPUI on Windows.
+embed-resource = "3"
+
 [target.'cfg(any(target_os = "windows", target_os = "macos"))'.dependencies]
 # Native handles of GPUI windows: the HWND for the SMTC media controls (Windows),
 # the NSWindow of the mini player (macOS).

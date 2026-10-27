@@ -26,6 +26,7 @@ mod library_glue;
 mod lyrics;
 pub mod modules;
 mod network;
+pub mod onboarding;
 pub mod panel;
 mod playback;
 pub mod prefs;

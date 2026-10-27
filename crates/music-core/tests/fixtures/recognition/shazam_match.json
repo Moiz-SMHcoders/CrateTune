@@ -1,0 +1,75 @@
+{
+  "matches": [
+    { "id": "40333609", "offset": 12.34, "timeskew": 0.0001, "frequencyskew": 0.0 }
+  ],
+  "location": { "accuracy": 0.01 },
+  "timestamp": 1700000000000,
+  "timezone": "Europe/Berlin",
+  "tagid": "0A1B2C3D-0000-4000-8000-00000000000A",
+  "track": {
+    "layout": "5",
+    "type": "MUSIC",
+    "key": "40333609",
+    "title": "Example Song",
+    "subtitle": "Example Artist",
+    "images": {
+      "background": "https://example.invalid/bg.jpg",
+      "coverart": "https://example.invalid/cover.jpg",
+      "coverarthq": "https://example.invalid/hq.jpg",
+      "joecolor": "b:000000p:ffffff"
+    },
+    "share": { "subject": "Example Song - Example Artist", "href": "https://www.shazam.com/track/40333609" },
+    "hub": {
+      "type": "APPLEMUSIC",
+      "actions": [ { "name": "apple", "type": "applemusicplay", "id": "2" } ],
+      "options": [
+        {
+          "caption": "OPEN IN",
+          "actions": [ { "name": "hub:applemusic:deeplink", "type": "applemusicopen", "uri": "intent://music.apple.com/us/album/example/1?i=2#Intent;scheme=http;package=com.apple.android.music;end" } ],
+          "beacondata": { "type": "open", "providername": "applemusic" },
+          "type": "open",
+          "providername": "applemusic"
+        },
+        {
+          "caption": "WATCH",
+          "actions": [ { "name": "video", "type": "uri", "uri": "https://www.youtube.com/watch?v=5NV6Rdv1a3I&feature=shazam" } ],
+          "type": "video",
+          "providername": "youtube"
+        }
+      ],
+      "providers": [
+        {
+          "caption": "Open in Spotify",
+          "images": { "default": "https://example.invalid/spotify.png" },
+          "actions": [ { "name": "hub:spotify:searchdeeplink", "type": "uri", "uri": "spotify:search:Example%20Song%20Example%20Artist" } ],
+          "type": "SPOTIFY"
+        },
+        {
+          "caption": "Open in Deezer",
+          "actions": [ { "name": "hub:deezer:searchdeeplink", "type": "uri", "uri": "deezer-query://www.deezer.com/search/Example" } ],
+          "type": "DEEZER"
+        }
+      ],
+      "explicit": false,
+      "displayname": "APPLE MUSIC"
+    },
+    "sections": [
+      {
+        "type": "SONG",
+        "metapages": [ { "image": "https://example.invalid/cover.jpg", "caption": "Example Song" } ],
+        "tabname": "Song",
+        "metadata": [
+          { "title": "Album", "text": "Example Album" },
+          { "title": "Label", "text": "Example Records" },
+          { "title": "Released", "text": "2013" }
+        ]
+      },
+      { "type": "LYRICS", "text": [ "First line", "Second line" ], "tabname": "Lyrics" },
+      { "type": "VIDEO", "tabname": "Video" }
+    ],
+    "url": "https://www.shazam.com/track/40333609/example-song",
+    "artists": [ { "id": "42", "adamid": "1" } ],
+    "isrc": "USQX91300108",
+    "genres": { "primary": "Electronic" }
+  }
+}

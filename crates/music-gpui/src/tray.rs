@@ -40,8 +40,8 @@ mod imp {
             let next = MenuItem::new("Next", true, None);
             let previous = MenuItem::new("Previous", true, None);
             let mini = MenuItem::new("Mini Player", true, None);
-            let show = MenuItem::new("Show Music", true, None);
-            let quit = MenuItem::new("Quit Music", true, None);
+            let show = MenuItem::new(format!("Show {}", crate::identity::APP_NAME), true, None);
+            let quit = MenuItem::new(format!("Quit {}", crate::identity::APP_NAME), true, None);
             let menu = Menu::new();
             let separator = PredefinedMenuItem::separator();
             let result = menu.append_items(&[
@@ -70,7 +70,7 @@ mod imp {
             let tray = TrayIconBuilder::new()
                 .with_menu(Box::new(menu))
                 .with_icon_templated(icon)
-                .with_tooltip("Music")
+                .with_tooltip(crate::identity::APP_NAME)
                 .build();
             let tray = match tray {
                 Ok(tray) => tray,

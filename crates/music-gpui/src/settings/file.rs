@@ -29,7 +29,8 @@ use super::prefs::{
 use crate::queue::Repeat;
 use crate::theme::{FONT_SCALES, ThemeChoice};
 
-pub const APP_ID: &str = "music-macos";
+/// From `packaging/app.env` (see `identity.rs`).
+pub const APP_ID: &str = crate::identity::APP_ID;
 pub const FILE_NAME: &str = "settings.json";
 /// Bumped when a field changes meaning; [`Settings::normalize`] migrates older files.
 pub const VERSION: u32 = 1;
@@ -66,6 +67,10 @@ pub struct Settings {
     pub mini_player: Option<WindowGeometry>,
     /// Library, privacy, storage, local files and YouTube account.
     pub library: LibraryConfig,
+    /// The first-run guide was finished or skipped. Missing in files from before the
+    /// guide existed: those users count as onboarded; a fresh install starts `false`.
+    #[serde(default = "onboarded_default")]
+    pub onboarded: bool,
     /// Secrets that could not go to the OS keychain (see `secrets.rs`).
     #[serde(skip_serializing_if = "FileSecrets::is_empty")]
     pub secrets: FileSecrets,
@@ -91,9 +96,14 @@ impl Default for Settings {
             window: None,
             mini_player: None,
             library: LibraryConfig::default(),
+            onboarded: true,
             secrets: FileSecrets::default(),
         }
     }
+}
+
+fn onboarded_default() -> bool {
+    true
 }
 
 /// The 10-band graphic EQ as the UI shows it.

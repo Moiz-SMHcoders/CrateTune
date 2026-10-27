@@ -146,6 +146,8 @@ pub struct MusicApp {
     pub(crate) accent: Option<Hsla>,
     /// Library database, downloads, account (`store.rs`).
     pub(crate) store: crate::store::Store,
+    /// First-run guide overlay (`settings/onboarding.rs`).
+    pub(crate) onboarding: Option<Entity<crate::settings::onboarding::Onboarding>>,
 
     _poll: Task<()>,
     _subscriptions: Vec<Subscription>,
@@ -310,6 +312,7 @@ impl MusicApp {
             applied_theme: None,
             accent: None,
             store: crate::store::Store::open(saved.library.clone(), downloads_resolver),
+            onboarding: None,
             _poll: poll,
             _subscriptions: subscriptions,
         };
@@ -333,6 +336,8 @@ impl MusicApp {
     /// any page (see `Route::parse`), `MUSIC_EQ_PRESET=Bass` applies (and saves) a preset.
     pub fn apply_startup_env(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let env = |name: &str| std::env::var(name).ok().filter(|v| !v.is_empty());
+        self.maybe_open_onboarding(window, cx);
+        self.check_for_updates(false, cx);
         if let Some(name) = env("MUSIC_EQ_PRESET") {
             self.script_action("eq", Some(&name), window, cx);
         }
@@ -427,7 +432,7 @@ impl MusicApp {
                 started.elapsed().as_secs_f64()
             );
         }
-        window.set_window_title(&format!("{title} — Music"));
+        window.set_window_title(&format!("{title} — {}", crate::identity::APP_NAME));
         match self.router.route().clone() {
             // Keep the search field in sync when going back/forward between searches.
             Route::Search { query } if query != self.search_text => {
@@ -528,6 +533,8 @@ impl MusicApp {
     pub fn escape(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         if window.has_active_dialog(cx) {
             window.close_dialog(cx);
+        } else if self.onboarding.is_some() {
+            self.close_onboarding(cx);
         } else if self.np.open {
             self.close_now_playing(window, cx);
         } else if self.queue_open {
@@ -744,6 +751,9 @@ impl Render for MusicApp {
         }
         if reveal > 0. {
             root = root.child(self.render_now_playing_screen(reveal, &mut frame, window, cx));
+        }
+        if let Some(onboarding) = &self.onboarding {
+            root = root.child(onboarding.clone());
         }
         if let Some(stats) = &mut self.frame_stats {
             stats.record(frame.now);
