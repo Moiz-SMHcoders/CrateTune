@@ -961,6 +961,12 @@ mod tests {
     }
 
     #[test]
+    fn manager_is_send_sync() {
+        fn assert_send_sync<T: Send + Sync>() {}
+        assert_send_sync::<DownloadManager>();
+    }
+
+    #[test]
     fn file_names_are_safe_and_distinct() {
         assert_eq!(file_name("abc_-1", "audio/mp4"), "abc_-1.m4a");
         let a = file_name("local:x/y", "audio/flac");
