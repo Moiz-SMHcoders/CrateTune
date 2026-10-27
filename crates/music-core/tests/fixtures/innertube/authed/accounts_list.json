@@ -1,0 +1,10 @@
+{"responseContext":{"mainAppWebResponseContext":{"dataSyncId":"111111111111111111111||"}},
+ "actions":[{"getMultiPageMenuAction":{"menu":{"multiPageMenuRenderer":{"sections":[{"accountSectionListRenderer":{"contents":[{"accountItemSectionRenderer":{"contents":[
+  {"accountItemRenderer":{"accountName":{"simpleText":"Test User"},"accountPhoto":{"thumbnails":[{"url":"https://yt3.ggpht.com/a=s88","width":88,"height":88}]},
+    "isSelected":true,"isDisabled":false,"hasChannel":true,"channelHandle":{"simpleText":"@testuser"},"accountByline":{"simpleText":"test.user@example.com"},
+    "serviceEndpoint":{"selectActiveIdentityEndpoint":{"supportedTokens":[{"accountStateToken":{"hasChannel":true,"isMerged":false,"obfuscatedGaiaId":"111111111111111111111"}},{"datasyncIdToken":{"datasyncIdToken":"111111111111111111111||"}}]}}}},
+  {"accountItemRenderer":{"accountName":{"simpleText":"Brand Channel"},"accountPhoto":{"thumbnails":[{"url":"//yt3.ggpht.com/b=s88","width":88,"height":88}]},
+    "isSelected":false,"isDisabled":false,"hasChannel":true,"channelHandle":{"simpleText":"@brand"},"accountByline":{"simpleText":"1 subscriber"},
+    "serviceEndpoint":{"selectActiveIdentityEndpoint":{"supportedTokens":[{"pageIdToken":{"pageId":"222"}},{"datasyncIdToken":{"datasyncIdToken":"222222222222||111111111111111111111"}}]}}}},
+  {"accountItemRenderer":{"accountName":{"simpleText":"Disabled"},"isDisabled":true,"hasChannel":true,"serviceEndpoint":{}}}
+ ]}}]}}]}}}}]}

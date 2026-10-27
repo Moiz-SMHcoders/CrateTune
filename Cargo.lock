@@ -4084,6 +4084,7 @@ dependencies = [
  "rodio",
  "serde",
  "serde_json",
+ "sha1_smol",
  "symphonia",
  "thiserror 2.0.21",
  "ureq",
