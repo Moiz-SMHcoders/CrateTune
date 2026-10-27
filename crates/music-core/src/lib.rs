@@ -18,12 +18,17 @@
 //! * [`library`] – SQLite library: likes, playlists, history, stats, queue, backups.
 //! * [`downloads`] – user downloads + LRU play cache on disk.
 //! * [`local_files`] – scan music folders (lofty tags, artwork, lyrics) into the library.
-//! * [`TrackDecoder`] – Symphonia 0.6 decoder as a seekable `rodio::Source`.
+//! * [`TrackDecoder`] – Symphonia 0.6 (+ pure-Rust Opus) decoder as a seekable `rodio::Source`,
+//!   for local files, in-memory files and still-downloading [`StreamBuffer`]s.
+//! * [`SkipSilence`] – silence trimming as a `rodio::Source` wrapper.
 
+pub mod buffer;
+mod deck;
 mod decode;
 #[cfg(feature = "discord")]
 pub mod discord;
 pub mod downloads;
+mod dsp;
 pub mod equalizer;
 mod error;
 pub mod http;
@@ -33,11 +38,21 @@ pub mod local_files;
 pub mod lyrics;
 pub mod media_controls;
 mod model;
+mod opus;
+mod output;
 mod player;
 pub mod scrobble;
+mod silence;
+mod sleep;
 mod stream;
+#[cfg(test)]
+mod testutil;
+mod voice;
 
-pub use decode::TrackDecoder;
+pub use buffer::{BufferEnd, StreamBuffer, StreamReader};
+pub use deck::{HeadlessOutput, MAX_CROSSFADE};
+pub use decode::{ReplayGain, TrackDecoder};
+pub use dsp::{PITCH_RANGE, SPEED_RANGE};
 pub use equalizer::{EqBandKind, EqBandSettings, EqPreset, EqualizerSettings};
 pub use error::{Error, Result};
 pub use http::{HttpConfig, fetch_bytes};
@@ -48,5 +63,8 @@ pub use lyrics::{
     LyricsServiceConfig, fetch_lyrics, parse_lrc,
 };
 pub use model::{EntityRef, Track, format_duration};
+pub use output::OutputDevice;
 pub use player::{PlaybackState, PlaybackStatus, Player};
-pub use stream::{Download, IosClientResolver, ResolvedStream, StreamResolver};
+pub use silence::{SilenceConfig, SkipSilence};
+pub use sleep::{SleepTimer, SleepTimerState};
+pub use stream::{Download, IosClientResolver, Quality, ResolvedStream, StreamResolver};

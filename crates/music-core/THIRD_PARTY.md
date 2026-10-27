@@ -90,3 +90,21 @@ repository root.
 | `src/lyrics/romanize/japanese.rs` | `app/.../lyrics/LyricsUtils.kt` (`KANA_ROMAJI_MAP`, `katakanaToRomaji`, `romanizeJapanese`) | Hiragana handled directly; extra digraphs; ー repeats the vowel; in-token sokuon; lindera instead of Kuromoji (feature `japanese-dict`). |
 | `src/lyrics/romanize/korean.rs` | `app/.../lyrics/LyricsUtils.kt` (`HANGUL_ROMAJA_MAP`, `romanizeKorean`) | Index tables; context forms replace final + next initial; silent ㅎ before vowels; ㅢ → ui. |
 | `src/lyrics/romanize/mod.rs` | `app/.../lyrics/LyricsUtils.kt` (script detection, provided-romanization preference) | `pinyin`/`deunicode` and own tables instead of ICU `Any-Latin`. |
+
+## ArchiveTune (feat/playback)
+
+Playback-engine behaviour is ported from **ArchiveTune**
+(<https://github.com/rukamori/ArchiveTune>, commit `c7f0e243c637e039bce4b92fecdf7179804114fb`), © Rukamori and ArchiveTune contributors,
+GPL-3.0. Files carry a header naming their upstream source.
+
+| music-core file | Upstream file(s) | What was ported |
+|---|---|---|
+| `src/sleep.rs` | `playback/SleepTimer.kt` | Sleep timer model: a duration timer or "pause when the song ends", re-arming replaces the previous mode, clearing after it fires; driven by engine ticks instead of coroutines. |
+| `src/deck.rs` | `playback/CrossfadeHandoffPolicy.kt`, `playback/MusicService.kt` (`scheduleCrossfade`, `effectiveCrossfadeDuration`, `applyCrossfadeVolumes`) | Equal-power crossfade gains (cos/sin quarter circle); crossfade timing (minimum 500 ms, 150 ms end guard, shortened when started late); mixed sample-accurately in one source instead of two ExoPlayers. |
+| `src/player.rs` | `playback/MusicService.kt` (`skipOnError`, `CROSSFADE_PREPARE_AHEAD_MS`), `playback/preload/NextStreamPreloader.kt` | Auto-skip to the next item on load errors with a cap on consecutive skips; preparing the next stream ahead of the end (30 s) and replacing the preload target when the queue changes. |
+
+Paths are relative to `app/src/main/kotlin/moe/rukamori/archivetune/`. All Kotlin/Android
+specifics (Media3, coroutines, DataStore) are replaced by the blocking engine thread.
+
+Libraries used by the engine (not ported code): `opus-decoder` (MIT OR Apache-2.0,
+pure-Rust Opus), `libsonic` (Apache-2.0, Rust port of Bill Cox's Sonic, used for speed/pitch).

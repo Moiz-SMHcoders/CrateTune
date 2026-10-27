@@ -10,3 +10,10 @@ version = "0.1.0"
 opt-level = 3
 lto = "thin"
 strip = "symbols"
+
+# opus-decoder's CELT code has shifts that overflow on some real streams (harmless
+# wrapping in release builds, where overflow checks are off); keep dev builds from
+# panicking on YouTube's Opus formats, and fast enough to decode in real time.
+[profile.dev.package.opus-decoder]
+overflow-checks = false
+opt-level = 3

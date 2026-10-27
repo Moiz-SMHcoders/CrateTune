@@ -1,9 +1,12 @@
-//! Headless check of search → resolve → download → decode, without opening an audio device.
+//! Headless check of search → resolve → progressive download → decode, without opening an
+//! audio device. `MUSIC_QUALITY=low|normal|high` picks the format (high = Opus itag 251).
 //! `cargo run -p music-core --example resolve -- "query"`
 
 use std::time::{Duration, Instant};
 
-use music_core::{InnerTube, IosClientResolver, StreamResolver, TrackDecoder};
+use music_core::{
+    InnerTube, IosClientResolver, Quality, StreamBuffer, StreamResolver, TrackDecoder,
+};
 use rodio::Source;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -20,8 +23,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .ok_or("no results")?;
     println!("track: {} — {}", track.title, track.artists);
 
+    let quality = match std::env::var("MUSIC_QUALITY").as_deref() {
+        Ok("low") => Quality::Low,
+        Ok("high") => Quality::High,
+        _ => Quality::Normal,
+    };
     let t = Instant::now();
-    let stream = IosClientResolver.resolve(&track.video_id)?;
+    let stream = IosClientResolver.resolve_with_quality(&track.video_id, quality)?;
     println!(
         "resolved itag {} {} ({:?} bytes, loudness {:?} dB) in {:?}",
         stream.itag,
@@ -31,18 +39,28 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         t.elapsed()
     );
 
+    // Decode while downloading, like the player does.
     let t = Instant::now();
-    let download = stream.download()?;
-    let audio = download.bytes;
+    let buffer = StreamBuffer::new(stream.content_length);
+    let download = std::thread::spawn({
+        let (stream, buffer) = (stream.clone(), buffer.clone());
+        move || stream.download_into(&buffer)
+    });
+    let mut decoder = TrackDecoder::from_stream(buffer.clone(), &stream.mime_type)?;
     println!(
-        "downloaded {} bytes (complete: {}) in {:?}",
-        audio.len(),
-        download.complete,
+        "decoder open after {:?} with {} bytes downloaded",
+        t.elapsed(),
+        buffer.len()
+    );
+    download.join().map_err(|_| "download thread panicked")?;
+    println!(
+        "download ended ({:?}, {} bytes) after {:?}",
+        buffer.end(),
+        buffer.len(),
         t.elapsed()
     );
 
     // Opened seekable even when the download is a truncated preview.
-    let mut decoder = TrackDecoder::new(audio)?;
     let (rate, channels, duration) = (
         decoder.sample_rate(),
         decoder.channels(),
