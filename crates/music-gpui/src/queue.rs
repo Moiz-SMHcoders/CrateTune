@@ -92,6 +92,7 @@ mod tests {
                     album: None,
                     duration_secs: Some(200),
                     thumbnail_url: None,
+                    ..Default::default()
                 })
                 .collect(),
         )

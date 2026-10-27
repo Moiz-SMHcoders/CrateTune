@@ -4,6 +4,12 @@ A lightweight Rust desktop client (macOS, Windows, Linux) in the spirit of the
 Android app ArchiveTune: a UI-agnostic core (`crates/music-core`) and a GPUI
 app (`crates/music-gpui`, see [music-gpui](#music-gpui-gpui--gpui-component)).
 
+**License:** GPL-3.0 (see `LICENSE`), because features are ported from
+ArchiveTune (GPL-3.0, © Rukamori and contributors). Code ported from
+Hummingbird is Apache-2.0 and listed in `crates/music-core/THIRD_PARTY.md`.
+This is an independent project: it is not ArchiveTune and uses none of its
+name or branding.
+
 ## Decision: GPUI + gpui-component
 
 The UI framework was picked by building the same spikes in three stacks. `main`

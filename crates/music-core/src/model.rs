@@ -1,15 +1,41 @@
-#[derive(Debug, Clone, PartialEq, Eq)]
+use std::path::PathBuf;
+
+use serde::{Deserialize, Serialize};
+
+/// A named link to a YouTube Music page (artist channel, album, playlist).
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub struct EntityRef {
+    pub name: String,
+    /// InnerTube `browseId`, when the page exists.
+    pub id: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(default)]
 pub struct Track {
+    /// YouTube video id, or `local:<hash>` for local files (see [`Track::local_path`]).
     pub video_id: String,
     pub title: String,
+    /// Display string, e.g. "Daft Punk, Julian Casablancas".
     pub artists: String,
     pub album: Option<String>,
     pub duration_secs: Option<u32>,
     /// Largest square thumbnail InnerTube offered (usually 120px; see [`Track::artwork_url`]).
     pub thumbnail_url: Option<String>,
+    /// Artists with their channel ids, in display order (may be empty for local files).
+    pub artist_refs: Vec<EntityRef>,
+    /// Album `browseId` (`MPREb_…`) when known.
+    pub album_id: Option<String>,
+    pub explicit: bool,
+    /// Set for tracks played from disk instead of YouTube.
+    pub local_path: Option<PathBuf>,
 }
 
 impl Track {
+    pub fn is_local(&self) -> bool {
+        self.local_path.is_some()
+    }
+
     /// Thumbnail URL rewritten to the requested square size.
     ///
     /// YouTube Music art URLs end in `=w120-h120-...`; swapping the size suffix

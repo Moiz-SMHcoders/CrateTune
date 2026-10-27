@@ -2,7 +2,7 @@ use serde_json::{Value, json};
 
 use crate::http::agent;
 use crate::model::parse_duration;
-use crate::{Error, Result, Track};
+use crate::{EntityRef, Error, Result, Track};
 
 const BASE: &str = "https://music.youtube.com/youtubei/v1";
 const CLIENT_NAME: &str = "WEB_REMIX";
@@ -74,6 +74,12 @@ fn page_type(run: &Value) -> Option<&str> {
         .as_str()
 }
 
+fn browse_id(run: &Value) -> Option<String> {
+    run.pointer("/navigationEndpoint/browseEndpoint/browseId")?
+        .as_str()
+        .map(str::to_owned)
+}
+
 fn parse_list_item(item: &Value) -> Option<Track> {
     let video_id = item
         .pointer("/playlistItemData/videoId")?
@@ -88,23 +94,45 @@ fn parse_list_item(item: &Value) -> Option<Track> {
 
     // Second column: "Artist & Artist • Album • 3:45" as separate runs.
     let meta = columns.get(1).map(runs).unwrap_or_default();
-    let mut artists = Vec::new();
+    let mut artist_refs = Vec::new();
     let mut album = None;
+    let mut album_id = None;
     let mut duration_secs = None;
     for run in meta {
         let Some(text) = run.get("text").and_then(Value::as_str) else {
             continue;
         };
         match page_type(run) {
-            Some("MUSIC_PAGE_TYPE_ARTIST") => artists.push(text),
-            Some("MUSIC_PAGE_TYPE_ALBUM") => album = Some(text.to_owned()),
+            Some("MUSIC_PAGE_TYPE_ARTIST") => artist_refs.push(EntityRef {
+                name: text.to_owned(),
+                id: browse_id(run),
+            }),
+            Some("MUSIC_PAGE_TYPE_ALBUM") => {
+                album = Some(text.to_owned());
+                album_id = browse_id(run);
+            }
             _ => duration_secs = duration_secs.or_else(|| parse_duration(text)),
         }
     }
-    if artists.is_empty() {
+    if artist_refs.is_empty() {
         // Artists without a channel page have no endpoint; fall back to the first run.
-        artists.extend(meta.first().and_then(|r| r.get("text")?.as_str()));
+        artist_refs.extend(meta.first().and_then(|r| {
+            Some(EntityRef {
+                name: r.get("text")?.as_str()?.to_owned(),
+                id: None,
+            })
+        }));
     }
+    let explicit = item
+        .get("badges")
+        .and_then(Value::as_array)
+        .is_some_and(|badges| {
+            badges.iter().any(|b| {
+                b.pointer("/musicInlineBadgeRenderer/icon/iconType")
+                    .and_then(Value::as_str)
+                    == Some("MUSIC_EXPLICIT_BADGE")
+            })
+        });
 
     let thumbnail_url = item
         .pointer("/thumbnail/musicThumbnailRenderer/thumbnail/thumbnails")
@@ -115,9 +143,17 @@ fn parse_list_item(item: &Value) -> Option<Track> {
     Some(Track {
         video_id,
         title,
-        artists: artists.join(", "),
+        artists: artist_refs
+            .iter()
+            .map(|a| a.name.as_str())
+            .collect::<Vec<_>>()
+            .join(", "),
         album,
         duration_secs,
         thumbnail_url,
+        artist_refs,
+        album_id,
+        explicit,
+        local_path: None,
     })
 }

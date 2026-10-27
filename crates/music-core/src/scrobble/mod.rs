@@ -288,6 +288,7 @@ mod tests {
             album: None,
             duration_secs: Some(secs),
             thumbnail_url: None,
+            ..Default::default()
         }
     }
 

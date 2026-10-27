@@ -4082,6 +4082,7 @@ dependencies = [
  "objc2-foundation 0.3.2",
  "objc2-media-player",
  "rodio",
+ "serde",
  "serde_json",
  "symphonia",
  "thiserror 2.0.21",

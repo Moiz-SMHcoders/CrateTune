@@ -34,6 +34,6 @@ pub use error::{Error, Result};
 pub use http::fetch_bytes;
 pub use innertube::InnerTube;
 pub use lyrics::{LyricLine, LyricWord, Lyrics, fetch_lyrics, parse_lrc};
-pub use model::{Track, format_duration};
+pub use model::{EntityRef, Track, format_duration};
 pub use player::{PlaybackState, PlaybackStatus, Player};
 pub use stream::{Download, IosClientResolver, ResolvedStream, StreamResolver};

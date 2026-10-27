@@ -414,6 +414,7 @@ mod tests {
             album: Some("Album".into()),
             duration_secs: Some(200),
             thumbnail_url: Some("https://lh3.googleusercontent.com/x=w120-h120-l90-rj".into()),
+            ..Default::default()
         }
     }
 
