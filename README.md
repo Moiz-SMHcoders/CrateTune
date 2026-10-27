@@ -41,7 +41,15 @@ UI-agnostic so the UI could be swapped again.
 Blocking, thread-safe, no async runtime, so every UI toolkit can drive it from
 its own executor.
 
-* `InnerTube` — anonymous YouTube Music (`WEB_REMIX`) song search.
+* `InnerTube` — YouTube Music (`WEB_REMIX`) metadata: home (+ mood chips, continuation),
+  explore, charts (per country), moods & genres, new releases, album / artist / playlist
+  pages, search (summary, per-category filters, suggestions, continuations), play queues
+  (`next`, `RDAMVM<id>` radio), related and lyrics tabs; locale via `hl`/`gl`. A cookie-based
+  account layer (`innertube::Auth`, SAPISIDHASH) adds account info, library, history, likes,
+  subscriptions and playlist editing (request bodies unit-tested; not yet verified live).
+  Ported from ArchiveTune, see `THIRD_PARTY.md`.
+* `http::configure(HttpConfig { proxy, user_agent, timeout })` — process-wide HTTP agent
+  (http/https/socks4/socks5 proxies; no DNS-over-HTTPS).
 * `StreamResolver` trait + `IosClientResolver` — video id → audio URL (AAC itag 140).
 * `Player` — audio thread with a pollable `PlaybackState`, loudness normalization
   from YouTube's per-format `loudnessDb`, `pause`/`resume`/`toggle_pause`/`seek`.
@@ -87,6 +95,7 @@ auth flow (`get_token` → `auth_url` → `get_session`). Threading details are 
 ```sh
 cargo run --release -p music-core --example resolve -- "daft punk"  # headless: search → resolve → download → seek to 30 s → decode
 cargo run --release -p music-core --example cli -- "daft punk"      # plays ~8 s through the speakers (seeks, Bass EQ)
+cargo run --release -p music-core --example browse -- "daft punk"   # every anonymous InnerTube endpoint, live
 ```
 
 ### Known limitation: previews only (PoToken)
