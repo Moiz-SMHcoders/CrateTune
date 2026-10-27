@@ -540,7 +540,9 @@ impl MusicApp {
             "quit" => cx.quit(),
             // Library, downloads, account, storage (`library_script.rs`).
             other => {
-                if !self.library_script_action(other, arg, window, cx) {
+                if !self.library_script_action(other, arg, window, cx)
+                    && !self.release_script_action(other, arg, window, cx)
+                {
                     eprintln!("music-gpui: unknown script action @{other}");
                 }
             }

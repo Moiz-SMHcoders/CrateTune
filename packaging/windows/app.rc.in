@@ -1,0 +1,33 @@
+// Windows resources for the music-gpui executable: icon + version info.
+// Template: crates/music-gpui/build.rs fills in the @KEY@ placeholders from
+// packaging/app.env and compiles it with embed-resource (native Windows builds only).
+#include <winver.h>
+
+1 ICON "@ICON_PATH@"
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION @APP_VERSION_NUM@
+PRODUCTVERSION @APP_VERSION_NUM@
+FILEOS VOS_NT_WINDOWS32
+FILETYPE VFT_APP
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904B0"
+    BEGIN
+      VALUE "CompanyName", "@APP_NAME@ contributors"
+      VALUE "FileDescription", "@APP_NAME@"
+      VALUE "FileVersion", "@APP_VERSION@"
+      VALUE "InternalName", "@APP_ID@"
+      VALUE "LegalCopyright", "GPL-3.0-only"
+      VALUE "OriginalFilename", "music-gpui.exe"
+      VALUE "ProductName", "@APP_NAME@"
+      VALUE "ProductVersion", "@APP_VERSION@"
+      VALUE "Comments", "@APP_SUMMARY@"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x409, 1200
+  END
+END

@@ -131,7 +131,9 @@ impl SettingsPanel {
     /// Loads `settings.json` synchronously (small file) and the secrets on a worker thread.
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         let path = file::settings_path();
-        let (settings, file_error) = match &path {
+        // No settings file yet: a fresh install, show the first-run guide.
+        let first_run = path.as_ref().is_some_and(|p| !p.exists());
+        let (mut settings, file_error) = match &path {
             Some(path) => Settings::load(path),
             None => (
                 Settings::default(),
@@ -140,6 +142,9 @@ impl SettingsPanel {
         };
         if let Some(e) = &file_error {
             eprintln!("music-gpui: settings: {e}");
+        }
+        if first_run {
+            settings.onboarded = false;
         }
 
         let gains = settings.equalizer.gains();

@@ -132,6 +132,8 @@ pub enum Route {
     },
     Downloads,
     LocalFiles,
+    /// Song recognition (microphone → Shazam-compatible match) and its history.
+    Recognition,
     Settings {
         section: SectionId,
     },
@@ -161,6 +163,7 @@ impl Route {
             Route::YearInMusic { year } => format!("{year} in music"),
             Route::Downloads => "Downloads".into(),
             Route::LocalFiles => "Local files".into(),
+            Route::Recognition => "Recognize music".into(),
             Route::Settings { section } => format!("Settings · {}", section.title()),
         }
     }
@@ -235,6 +238,7 @@ impl Route {
             },
             "downloads" => Route::Downloads,
             "local" | "local-files" => Route::LocalFiles,
+            "recognize" | "recognition" => Route::Recognition,
             "settings" => Route::Settings {
                 section: arg.and_then(SectionId::from_key).unwrap_or_default(),
             },
