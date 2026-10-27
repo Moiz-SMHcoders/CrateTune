@@ -4104,6 +4104,7 @@ dependencies = [
  "image",
  "keyring",
  "music-core",
+ "objc2 0.6.5",
  "raw-window-handle",
  "serde",
  "serde_json",

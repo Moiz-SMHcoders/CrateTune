@@ -26,11 +26,15 @@ use gpui_component::{
 use music_core::{Lyrics, PlaybackStatus, Track, format_duration};
 
 use crate::anim::{Frame, Spec, Tween, ease_in_out_cubic, ease_out_cubic};
+use crate::app::MusicApp;
+use crate::components::artwork::ArtworkCache;
 use crate::icons::AppIcon;
 use crate::karaoke::{self, Fill, KaraokeLine};
-use crate::{Artwork, MusicApp, sniff_format};
+use crate::theme::AppColors;
+use crate::util::off_thread;
 
-gpui::actions!(music_gpui, [CloseNowPlaying, TogglePlayback]);
+/// Hi-res artwork + blurred backdrop entries kept (most recent tracks).
+const HIRES_KEEP: usize = 8;
 
 const OPEN: Spec = Spec::ms(320, ease_out_cubic);
 const CLOSE: Spec = Spec::ms(260, ease_in_out_cubic);
@@ -82,12 +86,14 @@ impl PreparedLyrics {
     }
 }
 
-/// Large artwork + its pre-blurred backdrop, per video id.
+/// Large artwork, its pre-blurred backdrop and accent colour, per video id.
 pub enum HiRes {
     Loading,
     Ready {
         art: Arc<Image>,
         backdrop: Arc<RenderImage>,
+        /// Dominant vibrant colour (dynamic theme), if the art has one.
+        accent: Option<Hsla>,
     },
     Failed,
 }
@@ -173,10 +179,7 @@ impl MusicApp {
     pub fn close_now_playing(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         self.np.open = false;
         self.np.reveal.animate_to(0., CLOSE, Instant::now());
-        window.focus(
-            &gpui::Focusable::focus_handle(self.search_input.read(cx), cx),
-            cx,
-        );
+        window.focus(&self.focus, cx);
         cx.notify();
     }
 
@@ -221,41 +224,64 @@ impl MusicApp {
         .detach();
     }
 
-    /// Fetches the 544 px artwork and blurs it on a background thread, once per track.
+    /// Fetches the 544 px artwork (shared cache, fetch threads) and blurs it +
+    /// extracts its accent on a worker thread, once per track; keeps the last
+    /// [`HIRES_KEEP`] tracks.
     pub fn ensure_hires(&mut self, track: &Track, cx: &mut Context<Self>) {
         if self.hires.contains_key(&track.video_id) {
             return;
         }
+        let id = track.video_id.clone();
+        self.hires_order.push_back(id.clone());
+        while self.hires_order.len() > HIRES_KEEP {
+            if let Some(old) = self.hires_order.pop_front() {
+                self.hires.remove(&old);
+            }
+        }
         let Some(url) = track.artwork_url(544) else {
-            self.hires.insert(track.video_id.clone(), HiRes::Failed);
+            self.hires.insert(id, HiRes::Failed);
             return;
         };
-        let id = track.video_id.clone();
         self.hires.insert(id.clone(), HiRes::Loading);
+        let art = ArtworkCache::global(cx).update(cx, |cache, cx| cache.load(url, cx));
         cx.spawn(async move |this, cx| {
-            let result = off_thread(move || {
-                let bytes = music_core::fetch_bytes(&url).map_err(|e| e.to_string())?;
-                let started = Instant::now();
-                let backdrop =
-                    crate::backdrop::blurred_backdrop(&bytes).map_err(|e| e.to_string())?;
-                if std::env::var_os("MUSIC_TIMINGS").is_some() {
-                    eprintln!("music-gpui: backdrop blur took {:?}", started.elapsed());
-                }
-                Ok::<_, String>((bytes, backdrop))
-            })
-            .await;
-            this.update(cx, |this, cx| {
-                let entry = match result {
-                    Ok((bytes, backdrop)) => HiRes::Ready {
-                        art: Arc::new(Image::from_bytes(sniff_format(&bytes), bytes)),
-                        backdrop,
-                    },
-                    Err(e) => {
-                        eprintln!("music-gpui: hi-res artwork {id}: {e}");
-                        HiRes::Failed
+            let entry = match art.await {
+                None => HiRes::Failed,
+                Some(art) => {
+                    let image = art.clone();
+                    let result = off_thread(move || {
+                        let bytes = image.bytes();
+                        let started = Instant::now();
+                        let backdrop = crate::backdrop::blurred_backdrop(bytes);
+                        let accent = crate::theme::accent_from_artwork(bytes);
+                        if std::env::var_os("MUSIC_TIMINGS").is_some() {
+                            eprintln!(
+                                "music-gpui: backdrop blur + accent took {:?}",
+                                started.elapsed()
+                            );
+                        }
+                        backdrop.map(|b| (b, accent))
+                    })
+                    .await;
+                    match result {
+                        Ok((backdrop, accent)) => HiRes::Ready {
+                            art,
+                            backdrop,
+                            accent,
+                        },
+                        Err(e) => {
+                            eprintln!("music-gpui: hi-res artwork {id}: {e}");
+                            HiRes::Failed
+                        }
                     }
-                };
-                this.hires.insert(id, entry);
+                }
+            };
+            this.update(cx, |this, cx| {
+                // Dropped from the keep-list meanwhile: don't resurrect it.
+                if let Some(slot) = this.hires.get_mut(&id) {
+                    *slot = entry;
+                    this.update_accent(cx);
+                }
                 cx.notify();
             })
             .ok();
@@ -328,10 +354,6 @@ impl MusicApp {
             .id("now-playing")
             .key_context("NowPlaying")
             .track_focus(&self.np.focus)
-            .on_action(cx.listener(|this, _: &CloseNowPlaying, window, cx| {
-                this.close_now_playing(window, cx)
-            }))
-            .on_action(cx.listener(|this, _: &TogglePlayback, _, cx| this.toggle_playback(cx)))
             .occlude()
             .absolute()
             .left_0()
@@ -433,11 +455,12 @@ impl MusicApp {
         // Prefer the 544 px art; fall back to the list thumbnail while it loads.
         let art: Option<Arc<Image>> = track.and_then(|t| match self.hires.get(&t.video_id) {
             Some(HiRes::Ready { art, .. }) => Some(art.clone()),
-            _ => match self.artwork.get(&t.video_id) {
-                Some(Artwork::Ready(image)) => Some(image.clone()),
-                _ => None,
-            },
+            _ => {
+                let url = t.artwork_url(120)?;
+                ArtworkCache::global(cx).update(cx, |cache, cx| cache.get(&url, cx))
+            }
         });
+        let progress_fill = AppColors::get(cx).np_progress;
         let artwork = div()
             .size(side)
             .flex_none()
@@ -516,7 +539,7 @@ impl MusicApp {
                             .h_full()
                             .w(relative(frac))
                             .rounded_full()
-                            .bg(white(0.92)),
+                            .bg(progress_fill),
                     )
                     .child(
                         canvas(move |bounds, _, _| bounds_cell.set(bounds), |_, _, _, _| {})
@@ -864,15 +887,4 @@ impl MusicApp {
             )
             .into_any_element()
     }
-}
-
-/// Runs blocking work on a dedicated thread. GPUI's background executor has about
-/// one thread per core, so a burst of blocking artwork downloads for the results
-/// list would otherwise queue the lyrics request behind them (seen: >15 s).
-pub(crate) async fn off_thread<T: Send + 'static>(work: impl FnOnce() -> T + Send + 'static) -> T {
-    let (tx, rx) = futures_channel::oneshot::channel();
-    std::thread::spawn(move || {
-        let _ = tx.send(work());
-    });
-    rx.await.expect("worker thread panicked")
 }
