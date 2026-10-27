@@ -18,6 +18,7 @@ mod clock;
 mod components;
 mod icons;
 mod karaoke;
+mod lyrics;
 mod mini_player;
 mod now_playing;
 mod pages;

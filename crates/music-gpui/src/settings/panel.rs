@@ -34,6 +34,7 @@ use music_core::scrobble::{LastFm, ListenBrainz};
 use music_core::{EqPreset, EqualizerSettings};
 
 use super::file::{self, EQ_RANGE_DB, Settings, WindowGeometry};
+use super::prefs_ui::PrefsUi;
 use super::{SECTIONS, SectionId};
 use crate::queue::Repeat;
 use crate::secrets::{self, Backend, Secret, Stored};
@@ -55,6 +56,12 @@ pub enum SettingsEvent {
     Section(SectionId),
     /// Shuffle / repeat changed on the settings page (apply to the queue).
     PlaybackModes,
+    /// Engine options (quality, crossfade, speed, device, …) changed.
+    Audio,
+    /// Lyrics providers / keys changed: rebuild the lyrics service.
+    Lyrics,
+    /// Now Playing / lyrics display options changed (re-render only).
+    NowPlaying,
 }
 
 pub(super) enum LastFmFlow {
@@ -103,6 +110,8 @@ pub struct SettingsPanel {
     pub(super) discord_id: Entity<InputState>,
     pub(super) discord_status: DiscordStatus,
     pub(super) scrobble_errors: VecDeque<String>,
+    /// Player / lyrics / Now Playing / activity widgets (`prefs_ui.rs`).
+    pub(super) prefs: PrefsUi,
     _subscriptions: Vec<Subscription>,
 }
 
@@ -179,6 +188,8 @@ impl SettingsPanel {
                 }
             }));
         }
+        let (prefs, prefs_subscriptions) = PrefsUi::new(&settings, window, cx);
+        subscriptions.extend(prefs_subscriptions);
         subscriptions.push(cx.on_app_quit(|this, _| {
             this.flush();
             async {}
@@ -211,6 +222,7 @@ impl SettingsPanel {
             discord_id,
             discord_status: DiscordStatus::Idle,
             scrobble_errors: VecDeque::new(),
+            prefs,
             _subscriptions: subscriptions,
         };
         this.load_secrets(window, cx);
@@ -227,6 +239,9 @@ impl SettingsPanel {
             (Secret::LastFmShared, !s.lastfm.api_key.is_empty()),
             (Secret::LastFmSession, s.lastfm.user.is_some()),
             (Secret::ListenBrainzToken, s.listenbrainz.user.is_some()),
+            (Secret::PaxsenixKey, s.lyrics.paxsenix_key_set),
+            (Secret::BetterLyricsKey, s.lyrics.betterlyrics_key_set),
+            (Secret::AiTranslateKey, s.lyrics.ai_key_set),
         ]
         .into_iter()
         .filter_map(|(secret, wanted)| wanted.then_some(secret))
@@ -261,12 +276,19 @@ impl SettingsPanel {
                         input.update(cx, |input, cx| input.set_value(value, window, cx));
                     }
                 }
+                this.fill_secret_inputs(window, cx);
                 cx.emit(SettingsEvent::Integrations);
+                cx.emit(SettingsEvent::Lyrics);
                 cx.notify();
             })
             .ok();
         })
         .detach();
+    }
+
+    /// A loaded secret (after the keychain read finished).
+    pub(super) fn secret(&self, secret: Secret) -> Option<String> {
+        self.secrets.get(&secret).cloned()
     }
 
     // ---- what MusicApp reads -------------------------------------------------
@@ -301,12 +323,6 @@ impl SettingsPanel {
                 .as_ref()
                 .and_then(|_| secret(Secret::ListenBrainzToken)),
         }
-    }
-
-    /// `Some(application id)` while Discord presence is on.
-    pub fn discord_client_id(&self) -> Option<String> {
-        let d = &self.settings.discord;
-        (d.enabled && !d.client_id.is_empty()).then(|| d.client_id.clone())
     }
 
     pub fn show_section(&mut self, section: SectionId, cx: &mut Context<Self>) {
@@ -392,7 +408,7 @@ impl SettingsPanel {
 
     /// Schedules a save (and, if `integrations`, an `Integrations` event) after
     /// [`SAVE_DEBOUNCE`] without further changes.
-    fn changed(&mut self, integrations: bool, cx: &mut Context<Self>) {
+    pub(super) fn changed(&mut self, integrations: bool, cx: &mut Context<Self>) {
         self.integrations_dirty |= integrations;
         self.save_pending = true;
         let executor = cx.background_executor().clone();
@@ -432,7 +448,12 @@ impl SettingsPanel {
 
     /// Stores (`Some`) or deletes (`None`) a secret off the UI thread, then
     /// records whether the settings file has to hold it.
-    fn put_secret(&mut self, secret: Secret, value: Option<String>, cx: &mut Context<Self>) {
+    pub(super) fn put_secret(
+        &mut self,
+        secret: Secret,
+        value: Option<String>,
+        cx: &mut Context<Self>,
+    ) {
         match &value {
             Some(v) => self.secrets.insert(secret, v.clone()),
             None => self.secrets.remove(&secret),

@@ -7,11 +7,12 @@
 //! macOS: a floating `NSPanel` (GPUI `WindowKind::Floating`) whose
 //! `hidesOnDeactivate` is turned off, so it stays visible over other apps.
 
+use gpui::prelude::FluentBuilder as _;
 use gpui::{
     AnyWindowHandle, App, AppContext as _, Bounds, Context, FocusHandle, FontWeight,
-    InteractiveElement as _, IntoElement, ParentElement as _, Render, Styled as _, Subscription,
-    TitlebarOptions, Window, WindowBounds, WindowKind, WindowOptions, div, point, px, relative,
-    size,
+    InteractiveElement as _, IntoElement, ParentElement as _, Render, Styled as _,
+    StyledImage as _, Subscription, TitlebarOptions, Window, WindowBounds, WindowKind,
+    WindowOptions, div, point, px, relative, size,
 };
 use gpui_component::{
     ActiveTheme as _, Disableable as _, IconName, Root, Sizable as _,
@@ -142,9 +143,10 @@ impl Render for MiniPlayer {
                 app.playback.duration,
                 app.queue.has_next(),
                 app.engine.is_some(),
+                app.mini_backdrop(cx),
             )
         });
-        let Some((track, status, position, duration, has_next, has_engine)) = info else {
+        let Some((track, status, position, duration, has_next, has_engine, backdrop)) = info else {
             return div().size_full().into_any_element();
         };
         let art = artwork(
@@ -154,12 +156,18 @@ impl Render for MiniPlayer {
             cx,
         );
         let theme = cx.theme();
-        let (fg, muted, bg, track_bg) = (
+        let (mut fg, mut muted, bg, mut track_bg) = (
             theme.foreground,
             theme.muted_foreground,
             theme.background,
             theme.muted,
         );
+        if backdrop.is_some() {
+            // White text on the darkened artwork, like Now Playing.
+            fg = gpui::white();
+            muted = gpui::hsla(0., 0., 1., 0.7);
+            track_bg = gpui::hsla(0., 0., 1., 0.22);
+        }
         let accent = crate::theme::AppColors::get(cx).accent;
         let playing = status == PlaybackStatus::Playing;
         let can_toggle = has_engine
@@ -182,8 +190,22 @@ impl Render for MiniPlayer {
             .id("mini-player")
             .track_focus(&self.focus)
             .size_full()
+            .relative()
             .bg(bg)
             .text_color(fg)
+            .when_some(backdrop, |this, image| {
+                this.child(
+                    div()
+                        .absolute()
+                        .inset_0()
+                        .child(
+                            gpui::img(image)
+                                .size_full()
+                                .object_fit(gpui::ObjectFit::Cover),
+                        )
+                        .child(div().absolute().inset_0().bg(gpui::hsla(0., 0., 0., 0.35))),
+                )
+            })
             .child(
                 // Title-bar strip (draggable natively; the close button sits at its left).
                 h_flex().h(px(28.)).pl(px(72.)).pr_1().justify_end().child(
@@ -308,3 +330,17 @@ fn keep_visible_when_inactive(window: &Window) {
 
 #[cfg(not(target_os = "macos"))]
 fn keep_visible_when_inactive(_: &Window) {}
+
+impl MusicApp {
+    /// The blurred artwork behind the mini player ("Blurred artwork" style), once ready.
+    fn mini_backdrop(&self, cx: &App) -> Option<std::sync::Arc<gpui::RenderImage>> {
+        let style = self.settings.read(cx).settings().now_playing.mini_player;
+        if style != crate::settings::prefs::MiniPlayerStyle::Artwork {
+            return None;
+        }
+        match self.hires.get(self.current_video_id()?) {
+            Some(crate::now_playing::HiRes::Ready { backdrop, .. }) => Some(backdrop.clone()),
+            _ => None,
+        }
+    }
+}

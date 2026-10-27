@@ -21,8 +21,8 @@ use gpui::{
     SharedString, Style, TextRun, Window, point, px, relative, size,
 };
 
-/// Feather (soft edge) of the karaoke sweep, as a fraction of the font size.
-const FEATHER: f32 = 0.55;
+/// Default feather (soft edge) of the karaoke sweep, as a fraction of the font size.
+pub const FEATHER: f32 = 0.55;
 /// Number of stepped color slices that approximate the feather gradient
 /// (content masks are hard-edged; GPUI has no gradient text fill).
 const FEATHER_STEPS: usize = 10;
@@ -53,6 +53,15 @@ pub struct KaraokeLine {
     pub lift: Pixels,
     /// Paint-time vertical offset (staggered scrolling); doesn't affect layout.
     pub shift: Pixels,
+    /// Row alignment: 0 = left, 0.5 = centered, 1 = right.
+    pub align: f32,
+    /// `true`: a soft-edged left→right sweep through the word being sung;
+    /// `false`: each word fades from `dim` to `lit` as a whole.
+    pub sweep: bool,
+    /// Sweep edge width as a fraction of the font size.
+    pub feather: f32,
+    /// Halo painted behind sung glyphs (Glow / Apple styles).
+    pub glow: Option<Hsla>,
 }
 
 struct Glyph {
@@ -223,6 +232,12 @@ impl Element for KaraokeLine {
         for i in 0..glyphs.len() {
             glyphs[i].right = glyphs.get(i + 1).map_or(layout.width, |next| next.x);
         }
+        // Visible width of each row (trailing spaces excluded), for alignment.
+        let mut row_widths = vec![px(0.); row_starts.len()];
+        for g in glyphs.iter().filter(|g| !g.blank) {
+            let w = &mut row_widths[g.row];
+            *w = (*w).max(g.right - row_starts[g.row]);
+        }
 
         // Horizontal extent of each word (ignoring its trailing space), unwrapped coords.
         let mut extents = vec![(Pixels::MAX, px(f32::MIN)); self.word_starts.len().max(1)];
@@ -239,8 +254,13 @@ impl Element for KaraokeLine {
         let s = paint_size / self.font_size;
         let pivot_y = bounds.top() + bounds.size.height * 0.5;
         let baseline = (self.line_height - layout.ascent - layout.descent) * 0.5 + layout.ascent;
-        let feather = self.font_size * FEATHER;
-        let screen_x = |x: Pixels, row: usize| bounds.left() + (x - row_starts[row]) * s;
+        let feather = self.font_size * self.feather.max(0.05);
+        let align = self.align.clamp(0., 1.);
+        let screen_x = |x: Pixels, row: usize| {
+            let slack = (bounds.size.width - row_widths[row] * s).max(px(0.));
+            bounds.left() + slack * align + (x - row_starts[row]) * s
+        };
+        let halo = self.font_size * 0.07;
         // Mask edges snapped to device pixels, so adjacent feather slices tile exactly
         // (GPUI snaps content masks itself; unsnapped edges leave hairline seams).
         let device = window.scale_factor();
@@ -267,6 +287,24 @@ impl Element for KaraokeLine {
                     .paint_glyph(origin, g.font_id, g.id, paint_size, color)
                     .ok();
             };
+            if let Some(glow) = self.glow
+                && p > 0.0
+            {
+                let color = Hsla {
+                    a: glow.a * p.min(1.0),
+                    ..glow
+                };
+                for (dx, dy) in [(1., 0.), (-1., 0.), (0., 1.), (0., -1.)] {
+                    let at = point(origin.x + halo * dx, origin.y + halo * dy);
+                    window
+                        .paint_glyph(at, g.font_id, g.id, paint_size, color)
+                        .ok();
+                }
+            }
+            if !self.sweep {
+                glyph(window, Hsla::interpolate(self.dim, self.lit, p));
+                continue;
+            }
             if p >= 1.0 {
                 glyph(window, self.lit);
                 continue;

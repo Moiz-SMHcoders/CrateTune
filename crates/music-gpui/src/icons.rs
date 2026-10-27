@@ -52,6 +52,11 @@ gpui_kit_assets::icon_assets!(
         Pin,
         PinOff,
         X,
+        // Now Playing: sleep timer, lyrics reload, layout menu, speed
+        Moon,
+        RotateCcw,
+        LayoutTemplate,
+        Gauge,
         // settings
         SlidersHorizontal,
         ScrollText,

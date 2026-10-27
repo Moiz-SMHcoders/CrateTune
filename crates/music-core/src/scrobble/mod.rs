@@ -101,6 +101,44 @@ pub enum ScrobbleEvent {
 pub const MIN_TRACK_LENGTH: Duration = Duration::from_secs(30);
 /// Last.fm: a play counts after this much listening even if under half the track.
 pub const MAX_PLAY_THRESHOLD: Duration = Duration::from_secs(240);
+/// When a play counts as a scrobble. The default is Last.fm's rule: tracks
+/// longer than 30 s, after half the track or 4 minutes, whichever comes first.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct ScrobbleRules {
+    /// Fraction of the track that has to be played (0.0..=1.0).
+    pub percent: f32,
+    /// Tracks this short or shorter are never scrobbled.
+    pub min_track_length: Duration,
+    /// A play counts after this much listening even below `percent`.
+    pub max_delay: Duration,
+}
+
+impl Default for ScrobbleRules {
+    fn default() -> Self {
+        Self {
+            percent: 0.5,
+            min_track_length: MIN_TRACK_LENGTH,
+            max_delay: MAX_PLAY_THRESHOLD,
+        }
+    }
+}
+
+impl ScrobbleRules {
+    /// Listening time after which a track of `duration` is scrobbled, or
+    /// `None` when it is too short to ever count.
+    pub fn threshold(&self, duration: Duration) -> Option<Duration> {
+        if duration <= self.min_track_length {
+            return None;
+        }
+        let percent = if self.percent.is_finite() {
+            self.percent.clamp(0.0, 1.0)
+        } else {
+            0.5
+        };
+        Some(duration.mul_f32(percent).min(self.max_delay))
+    }
+}
+
 /// Position advances up to this much beyond the wall-clock time are still counted
 /// (polling jitter); larger jumps are seeks.
 const JITTER: Duration = Duration::from_millis(1000);
@@ -120,11 +158,28 @@ struct Play {
 pub struct ScrobbleTracker {
     play: Option<Play>,
     last: Option<(PlaybackStatus, Duration, Instant)>,
+    rules: ScrobbleRules,
 }
 
 impl ScrobbleTracker {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    pub fn with_rules(rules: ScrobbleRules) -> Self {
+        Self {
+            rules,
+            ..Self::default()
+        }
+    }
+
+    /// Changes the rules; applies to the play in progress too.
+    pub fn set_rules(&mut self, rules: ScrobbleRules) {
+        self.rules = rules;
+    }
+
+    pub fn rules(&self) -> ScrobbleRules {
+        self.rules
     }
 
     /// Feeds one snapshot; call it on every poll of [`crate::Player::state`].
@@ -200,9 +255,8 @@ impl ScrobbleTracker {
         }
 
         if !play.scrobbled
-            && let Some(duration) = duration
-            && duration > MIN_TRACK_LENGTH
-            && play.played >= (duration / 2).min(MAX_PLAY_THRESHOLD)
+            && let Some(threshold) = duration.and_then(|d| self.rules.threshold(d))
+            && play.played >= threshold
         {
             play.scrobbled = true;
             events.push(ScrobbleEvent::Scrobble(snapshot(play)));
@@ -261,6 +315,11 @@ impl Scrobbler {
             tx,
             errors,
         }
+    }
+
+    /// See [`ScrobbleTracker::set_rules`].
+    pub fn set_rules(&mut self, rules: ScrobbleRules) {
+        self.tracker.set_rules(rules);
     }
 
     /// Feeds one snapshot; any resulting requests are queued, never awaited.
@@ -352,6 +411,37 @@ mod tests {
                 ScrobbleEvent::Scrobble(_) => "scrobble",
             })
             .collect()
+    }
+
+    #[test]
+    fn custom_rules_change_the_threshold() {
+        let rules = ScrobbleRules {
+            percent: 0.25,
+            min_track_length: Duration::from_secs(60),
+            max_delay: Duration::from_secs(30),
+        };
+        assert_eq!(rules.threshold(Duration::from_secs(60)), None);
+        assert_eq!(
+            rules.threshold(Duration::from_secs(100)),
+            Some(Duration::from_secs(25))
+        );
+        assert_eq!(
+            rules.threshold(Duration::from_secs(400)),
+            Some(Duration::from_secs(30))
+        );
+        assert_eq!(
+            ScrobbleRules::default().threshold(Duration::from_secs(200)),
+            Some(Duration::from_secs(100))
+        );
+
+        let mut sim = Sim::new();
+        sim.tracker.set_rules(rules);
+        let t = track("a", 100);
+        assert_eq!(kinds(&sim.play(&t, 0.0, 20.0)), vec!["now"]);
+        assert_eq!(kinds(&sim.play(&t, 20.0, 6.0)), vec!["scrobble"]);
+        // Too short under these rules.
+        let short = track("b", 50);
+        assert_eq!(kinds(&sim.play(&short, 0.0, 50.0)), vec!["now"]);
     }
 
     #[test]

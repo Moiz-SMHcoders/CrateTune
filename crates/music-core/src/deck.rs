@@ -103,9 +103,10 @@ impl Active {
     }
 
     /// Adds up to `out.len() / 2` frames into `out`.
-    fn mix(&mut self, out: &mut [f32], volume: f32) -> MixEnd {
+    fn mix(&mut self, out: &mut [f32], volume: f32, normalize: bool) -> MixEnd {
         let frames = out.len() / 2;
-        let target = self.voice.gain() * volume;
+        let gain = if normalize { self.voice.gain() } else { 1.0 };
+        let target = gain * volume;
         if self.gain.is_nan() {
             self.gain = target;
         }
@@ -170,6 +171,8 @@ impl Active {
 struct DeckState {
     paused: bool,
     volume: f32,
+    /// Apply each voice's loudness normalization gain (on by default).
+    normalize: bool,
     crossfade: Duration,
     hold_at_end: bool,
     current: Option<Active>,
@@ -204,6 +207,7 @@ impl Deck {
             rate,
             state: Mutex::new(DeckState {
                 volume: 1.0,
+                normalize: true,
                 master: 1.0,
                 ..Default::default()
             }),
@@ -260,6 +264,10 @@ impl Deck {
 
     pub(crate) fn set_volume(&self, volume: f32) {
         self.lock().volume = volume;
+    }
+
+    pub(crate) fn set_normalization(&self, enabled: bool) {
+        self.lock().normalize = enabled;
     }
 
     pub(crate) fn set_crossfade(&self, crossfade: Duration) {
@@ -319,7 +327,7 @@ impl Deck {
             let Some(cur) = st.current.as_mut() else {
                 break;
             };
-            match cur.mix(&mut out[done * 2..], st.volume) {
+            match cur.mix(&mut out[done * 2..], st.volume, st.normalize) {
                 MixEnd::Filled => break,
                 MixEnd::Exhausted(n) => {
                     done += n;
@@ -348,7 +356,7 @@ impl Deck {
         scratch.resize(out.len(), 0.0);
         st.fading.retain_mut(|f| {
             scratch.fill(0.0);
-            let end = f.mix(&mut scratch, st.volume);
+            let end = f.mix(&mut scratch, st.volume, st.normalize);
             for (o, s) in out.iter_mut().zip(&scratch) {
                 *o += s;
             }
@@ -506,6 +514,20 @@ mod tests {
             assert!(g.0 < prev.0 && g.1 > prev.1, "monotonic");
             prev = g;
         }
+    }
+
+    #[test]
+    fn normalization_gain_can_be_switched_off() {
+        let deck = Deck::new(RATE);
+        let v = voice(1, 0.5, 10_000);
+        v.set_test_gain(0.5);
+        deck.set_current(Some(v));
+        let out = render(&deck, 500);
+        assert!((out[400] - 0.25).abs() < 1e-3, "normalized: {}", out[400]);
+        // The gain change is smoothed (~500 samples per e-fold at this rate).
+        deck.set_normalization(false);
+        let out = render(&deck, 5000);
+        assert!((out[4900] - 0.5).abs() < 1e-3, "raw: {}", out[4900]);
     }
 
     #[test]

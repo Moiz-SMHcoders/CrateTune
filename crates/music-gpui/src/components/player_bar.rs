@@ -11,6 +11,7 @@ use gpui_component::{
     ActiveTheme as _, Disableable as _, IconName, Selectable as _, Sizable as _,
     button::{Button, ButtonVariants as _},
     h_flex,
+    menu::DropdownMenu as _,
     slider::Slider,
     tag::Tag,
     v_flex,
@@ -57,15 +58,30 @@ impl MusicApp {
             .map(|s| s as u64)
             .unwrap_or_else(|| state.position.as_secs());
 
+        let recent_failure = self
+            .last_failure
+            .as_ref()
+            .filter(|(_, at)| at.elapsed() < std::time::Duration::from_secs(8))
+            .map(|(title, _)| title.clone());
+        let sleep = self.sleep_timer_label();
         let message: Option<(SharedString, Hsla)> = if let Some(err) = &self.audio_error {
             Some((format!("Audio unavailable: {err}").into(), theme.danger))
         } else if let PlaybackStatus::Error(err) = &state.status {
             Some((err.clone().into(), theme.danger))
         } else if loading {
             Some(("Loading…".into(), theme.muted_foreground))
+        } else if state.buffering && is_playing {
+            Some(("Buffering…".into(), theme.muted_foreground))
         } else {
-            None
+            recent_failure.map(|title| {
+                (
+                    format!("Couldn't play “{title}”, skipped").into(),
+                    theme.warning,
+                )
+            })
         };
+        let sleep_armed = sleep.is_some();
+        let sleep_custom = self.settings.read(cx).sleep_custom();
 
         h_flex()
             .h(px(BAR_HEIGHT))
@@ -234,6 +250,18 @@ impl MusicApp {
                             .line_clamp(3)
                             .when_some(message, |this, (text, color)| {
                                 this.text_color(color).child(text)
+                            }),
+                    )
+                    .child(
+                        Button::new("sleep-timer")
+                            .ghost()
+                            .small()
+                            .icon(Lucide::Moon)
+                            .selected(sleep_armed)
+                            .when_some(sleep, |b, label| b.label(label))
+                            .tooltip("Sleep timer")
+                            .dropdown_menu(move |menu, _, _| {
+                                MusicApp::sleep_timer_menu(menu, sleep_armed, sleep_custom)
                             }),
                     )
                     .child(
