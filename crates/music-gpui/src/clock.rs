@@ -164,6 +164,7 @@ impl DemoPlayer {
                 .map(|s| Duration::from_secs(s.into())),
             volume: self.volume,
             preview_only: true,
+            ..PlaybackState::default()
         }
     }
 }

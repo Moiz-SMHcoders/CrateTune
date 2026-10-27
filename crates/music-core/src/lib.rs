@@ -17,6 +17,7 @@
 //! * [`SkipSilence`] – silence trimming as a `rodio::Source` wrapper.
 
 pub mod buffer;
+mod deck;
 mod decode;
 #[cfg(feature = "discord")]
 pub mod discord;
@@ -29,6 +30,7 @@ mod lyrics;
 pub mod media_controls;
 mod model;
 mod opus;
+mod output;
 mod player;
 pub mod scrobble;
 mod silence;
@@ -36,8 +38,10 @@ mod sleep;
 mod stream;
 #[cfg(test)]
 mod testutil;
+mod voice;
 
 pub use buffer::{BufferEnd, StreamBuffer, StreamReader};
+pub use deck::{HeadlessOutput, MAX_CROSSFADE};
 pub use decode::{ReplayGain, TrackDecoder};
 pub use dsp::{PITCH_RANGE, SPEED_RANGE};
 pub use equalizer::{EqBandKind, EqBandSettings, EqPreset, EqualizerSettings};
@@ -46,6 +50,7 @@ pub use http::fetch_bytes;
 pub use innertube::InnerTube;
 pub use lyrics::{LyricLine, LyricWord, Lyrics, fetch_lyrics, parse_lrc};
 pub use model::{EntityRef, Track, format_duration};
+pub use output::OutputDevice;
 pub use player::{PlaybackState, PlaybackStatus, Player};
 pub use silence::{SilenceConfig, SkipSilence};
 pub use sleep::{SleepTimer, SleepTimerState};
