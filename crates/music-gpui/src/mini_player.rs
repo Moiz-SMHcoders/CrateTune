@@ -183,7 +183,7 @@ impl Render for MiniPlayer {
         };
         let (title, artists) = match &track {
             Some(t) => (t.title.clone(), t.artists.clone()),
-            None => ("Not playing".into(), "Music".into()),
+            None => ("Not playing".into(), crate::identity::APP_NAME.into()),
         };
 
         div()
