@@ -108,3 +108,27 @@ specifics (Media3, coroutines, DataStore) are replaced by the blocking engine th
 
 Libraries used by the engine (not ported code): `opus-decoder` (MIT OR Apache-2.0,
 pure-Rust Opus), `libsonic` (Apache-2.0, Rust port of Bill Cox's Sonic, used for speed/pitch).
+
+## ArchiveTune (feat/modules)
+
+The `.arch` provider-module system follows ArchiveTune's `MODULES.md` (package format and
+JavaScript API v1) and ports its implementation (© Rukamori and ArchiveTune contributors,
+GPL-3.0) from Kotlin + Android (QuickJS via `dokar/quickjs-kt`, OkHttp, Android Keystore)
+to blocking Rust with `rquickjs`, `ureq` and a caller-supplied secret hook. Each file
+carries a header naming its upstream source. The manifest `format` string
+`archivetune.module` is kept verbatim for package compatibility; it is not shown in the UI.
+
+| music-core file | Upstream file(s) | Changes |
+|---|---|---|
+| `src/modules/package.rs` | `modules/.../ModulePackageReader.kt`, `scripts/package_module.py` (packaging rules) | `zip` crate in memory; duplicate entries detected from the end-of-central-directory count; the `extension` runtime and `index.js` packages are rejected (`ARCH_UNSUPPORTED_runtime`); PNG checked from its IHDR instead of `BitmapFactory`; `pack_dir` is a minimal deterministic packager (no interactive studio / reports). |
+| `src/modules/manifest.rs` | `modules/.../ModuleModels.kt` (`ModuleManifest.parse`, `ModuleSetting.acceptsValue`, `requireCompatible`, `moduleIcon`) | serde types; settings keep their typed JSON values instead of JSON text; app version is the host's. No `authentication` / signed sessions. |
+| `src/modules/runtime.rs`, `src/modules/host.js` | `modules/.../ModuleRuntime.kt`, `modules/src/main/assets/module-host.js` | One engine thread per module instead of coroutines; promises, timers and requests settle through a Rust event loop (`__moduleSettle` / `__moduleTimerFire`); interrupt handler bound to the call deadline; console output kept in a per-module log; extra `storage` / `utils` / `crypto` helpers; HLS / DASH results rejected (no segmented playback); no extension-compatibility host. |
+| `src/modules/http.rs` | `modules/.../ModuleHttpClient.kt`, `app/.../modules/ModuleNetworkPolicy.kt` | Blocking `ureq` with the app proxy; redirects followed manually with credential headers stripped across origins; per-call deadline; no cookie jar. |
+| `src/modules/catalog.rs` | `modules/.../ModuleCatalogReader.kt` | Regex link discovery instead of Jsoup; same depth / document / entry limits. |
+| `src/modules/registry.rs` | `app/.../modules/ModuleRepository.kt` (encode/decode), `modules/.../ModuleRuntimeStorage.kt` | JSON registry file (0600) instead of AtomicFile + Keystore encryption; secret settings go to a `SecretHook` (the app's keychain) and are never written to the registry; runtime storage is a plain 0600 JSON file. No portable backups yet. |
+| `src/modules/matcher.rs` | `app/.../modules/ModuleTrackMatcher.kt`, `app/.../utils/FuzzyMatcher.kt` | Trailing-feature lookahead regex rewritten as a scan (Rust `regex` has no lookaround); NFKD via `icu_normalizer`. |
+| `src/modules/mod.rs` | `app/.../modules/ModuleRepository.kt`, `ModulePlaybackUseCases.kt` (`ResolveModuleAudioUseCase`, diagnostics), `ModuleSettingsUseCases.kt` | Blocking API with deadlines instead of coroutines/flows; `ModuleResolver` adapts it to `StreamResolver` with a YouTube fallback switch; no local metadata edits or authorization flows. |
+| `src/stream.rs` (`Downloader::download_progressive`), `src/voice.rs` (source reporting) | `playback/ModuleMediaSource.kt` (role only) | Module streams are fetched with one progressive GET + request headers instead of googlevideo's 1 MiB ranges; the decoder's codec / rate / bit depth is reported in `PlaybackState::source`. |
+
+Libraries used by the module system (not ported code): `rquickjs` (MIT; bundles QuickJS-ng,
+MIT), `url` (MIT OR Apache-2.0), `sha2` (MIT OR Apache-2.0), `icu_normalizer` (Unicode-3.0).

@@ -9,6 +9,10 @@ description = "UI-agnostic YouTube Music backend + audio engine shared by every 
 deunicode = "1.6"
 discord-rich-presence = { version = "1", optional = true }
 lindera = { version = "6.2", optional = true, features = ["embed-ipadic"] }
+base64 = "0.22"
+getrandom = "0.3"
+# NFKD normalization for the module track matcher (already in the graph via url/idna).
+icu_normalizer = "2"
 lofty = "0.25"
 log = "0.4.34"
 md5 = "0.8"
@@ -16,10 +20,13 @@ pinyin = { version = "0.11", default-features = false, features = ["with_tone"] 
 regex = "1.13"
 roxmltree = "0.21"
 rodio = { version = "0.23", default-features = false, features = ["playback"] }
+# QuickJS for provider modules (`modules`): sandboxed, no async runtime, no cmake.
+rquickjs = "0.14"
 rusqlite = { version = "0.41", features = ["bundled", "backup"] }
 serde = { version = "1.0.229", features = ["derive", "rc"] }
 serde_json = "1.0.154"
 sha1_smol = "1"
+sha2 = "0.11"
 symphonia = { version = "0.6", default-features = false, features = [
     "opt-simd",
     # codecs
@@ -44,6 +51,7 @@ opus-decoder = "0.1"
 libsonic = "0.1"
 thiserror = "2"
 ureq = { version = "3", features = ["json", "socks-proxy"] }
+url = "2.5"
 zip = { version = "9", default-features = false, features = ["deflate-flate2-zlib-rs"] }
 
 [features]

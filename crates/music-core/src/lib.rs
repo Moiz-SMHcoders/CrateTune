@@ -20,6 +20,8 @@
 //! * [`local_files`] – scan music folders (lofty tags, artwork, lyrics) into the library.
 //! * [`TrackDecoder`] – Symphonia 0.6 (+ pure-Rust Opus) decoder as a seekable `rodio::Source`,
 //!   for local files, in-memory files and still-downloading [`StreamBuffer`]s.
+//! * [`modules`] – `.arch` provider modules (QuickJS) as alternative audio sources, and
+//!   [`modules::ModuleResolver`] chaining them before YouTube.
 //! * [`SkipSilence`] – silence trimming as a `rodio::Source` wrapper.
 
 pub mod buffer;
@@ -38,6 +40,7 @@ pub mod local_files;
 pub mod lyrics;
 pub mod media_controls;
 mod model;
+pub mod modules;
 mod opus;
 mod output;
 mod player;
@@ -67,4 +70,6 @@ pub use output::OutputDevice;
 pub use player::{PlaybackState, PlaybackStatus, Player};
 pub use silence::{SilenceConfig, SkipSilence};
 pub use sleep::{SleepTimer, SleepTimerState};
-pub use stream::{Download, IosClientResolver, Quality, ResolvedStream, StreamResolver};
+pub use stream::{
+    Download, IosClientResolver, Quality, ResolvedStream, SourceKind, StreamResolver, StreamSource,
+};
