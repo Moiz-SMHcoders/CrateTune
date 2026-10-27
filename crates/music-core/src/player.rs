@@ -1,12 +1,11 @@
-use std::io::Cursor;
 use std::sync::mpsc::{self, Receiver, RecvTimeoutError, Sender};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
-use rodio::{Decoder, DeviceSinkBuilder, MixerDeviceSink, Source};
+use rodio::{DeviceSinkBuilder, MixerDeviceSink, Source};
 
-use crate::{Error, Result, StreamResolver, Track};
+use crate::{Error, Result, StreamResolver, Track, TrackDecoder};
 
 const TICK: Duration = Duration::from_millis(100);
 
@@ -123,7 +122,6 @@ impl Player {
 #[derive(Clone)]
 struct Loaded {
     audio: Arc<[u8]>,
-    complete: bool,
     loudness_db: Option<f32>,
 }
 
@@ -207,7 +205,6 @@ impl Engine {
                 self.state.lock().unwrap().preview_only = !complete;
                 let loaded = Loaded {
                     audio: audio.into(),
-                    complete,
                     loudness_db,
                 };
                 self.current = Some(loaded.clone());
@@ -265,21 +262,9 @@ impl Engine {
     }
 
     fn start_playback(&mut self, loaded: Loaded) -> Result<()> {
-        let Loaded {
-            audio,
-            complete,
-            loudness_db,
-        } = loaded;
-        let len = audio.len() as u64;
-        let decoder = Decoder::builder()
-            .with_data(Cursor::new(audio))
-            .with_byte_len(len)
-            // Symphonia's MP4 reader scans every fragment up front when seekable,
-            // which fails on a truncated file; unseekable decodes it sequentially.
-            .with_seekable(complete)
-            .with_hint("m4a")
-            .build()
-            .map_err(|e| Error::Audio(e.to_string()))?;
+        let Loaded { audio, loudness_db } = loaded;
+        // Symphonia 0.6 opens truncated previews seekably, so seeking works in them too.
+        let decoder = TrackDecoder::new(audio)?;
         let duration = decoder.total_duration();
 
         let sink = self
