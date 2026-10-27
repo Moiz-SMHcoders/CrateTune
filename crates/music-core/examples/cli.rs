@@ -1,10 +1,11 @@
 //! Smoke test for the shared core: `cargo run -p music-core --example cli -- "daft punk"`.
-//! Searches, plays the first result for ~8 seconds, seeks, then exits.
+//! Searches, plays the first result for ~8 seconds, seeks (switching on the Bass
+//! EQ preset live), then exits.
 
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use music_core::{InnerTube, IosClientResolver, PlaybackStatus, Player, format_duration};
+use music_core::{EqPreset, InnerTube, IosClientResolver, PlaybackStatus, Player, format_duration};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let query = std::env::args().skip(1).collect::<Vec<_>>().join(" ");
@@ -53,7 +54,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     Instant::now()
                 });
                 if !seeked && since.elapsed() > Duration::from_secs(4) {
-                    player.seek(Duration::from_secs(60));
+                    // Inside the ~60 s preview, so this works without a PoToken.
+                    player.seek(Duration::from_secs(30));
+                    player.set_equalizer(EqPreset::Bass.settings());
                     seeked = true;
                 }
                 if since.elapsed() > Duration::from_secs(8) {

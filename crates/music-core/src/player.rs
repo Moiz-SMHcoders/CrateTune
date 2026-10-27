@@ -5,7 +5,8 @@ use std::time::Duration;
 
 use rodio::{DeviceSinkBuilder, MixerDeviceSink, Source};
 
-use crate::{Error, Result, StreamResolver, Track, TrackDecoder};
+use crate::equalizer::EqControl;
+use crate::{EqualizerSettings, Error, Result, StreamResolver, Track, TrackDecoder};
 
 const TICK: Duration = Duration::from_millis(100);
 
@@ -69,6 +70,7 @@ enum Command {
 pub struct Player {
     tx: Sender<Command>,
     state: Arc<Mutex<PlaybackState>>,
+    eq: Arc<EqControl>,
 }
 
 impl Player {
@@ -76,10 +78,12 @@ impl Player {
     pub fn new(resolver: Arc<dyn StreamResolver>) -> Result<Self> {
         let (tx, rx) = mpsc::channel();
         let state = Arc::new(Mutex::new(PlaybackState::default()));
+        let eq = Arc::new(EqControl::default());
         let (ready_tx, ready_rx) = mpsc::channel();
         let engine = Engine {
             tx: tx.clone(),
             state: state.clone(),
+            eq: eq.clone(),
             resolver,
             generation: 0,
             gain: 1.0,
@@ -94,7 +98,7 @@ impl Player {
         ready_rx
             .recv()
             .map_err(|_| Error::Audio("audio thread died".into()))??;
-        Ok(Self { tx, state })
+        Ok(Self { tx, state, eq })
     }
 
     /// Replaces whatever is playing with `track`.
@@ -117,6 +121,25 @@ impl Player {
     pub fn state(&self) -> PlaybackState {
         self.state.lock().unwrap().clone()
     }
+
+    /// Applies `settings` to the playing track within a few milliseconds
+    /// (smoothed, no restart) and to every track after it.
+    ///
+    /// Out-of-range values are clamped; see [`EqualizerSettings::sanitize`].
+    pub fn set_equalizer(&self, mut settings: EqualizerSettings) {
+        settings.sanitize();
+        self.eq.set(settings);
+    }
+
+    /// Turns the equalizer off (bit-exact passthrough).
+    pub fn clear_equalizer(&self) {
+        self.eq.set(EqualizerSettings::default());
+    }
+
+    /// The settings last passed to [`Self::set_equalizer`] (disabled by default).
+    pub fn equalizer(&self) -> EqualizerSettings {
+        self.eq.get()
+    }
 }
 
 #[derive(Clone)]
@@ -128,6 +151,7 @@ struct Loaded {
 struct Engine {
     tx: Sender<Command>,
     state: Arc<Mutex<PlaybackState>>,
+    eq: Arc<EqControl>,
     resolver: Arc<dyn StreamResolver>,
     /// Bumped on every Play so late downloads for skipped tracks are dropped.
     generation: u64,
@@ -264,7 +288,7 @@ impl Engine {
     fn start_playback(&mut self, loaded: Loaded) -> Result<()> {
         let Loaded { audio, loudness_db } = loaded;
         // Symphonia 0.6 opens truncated previews seekably, so seeking works in them too.
-        let decoder = TrackDecoder::new(audio)?;
+        let decoder = TrackDecoder::new(audio)?.with_equalizer(self.eq.clone());
         let duration = decoder.total_duration();
 
         let sink = self

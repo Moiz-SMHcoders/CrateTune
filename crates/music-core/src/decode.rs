@@ -21,6 +21,7 @@ use symphonia::core::io::MediaSourceStream;
 use symphonia::core::meta::MetadataOptions;
 use symphonia::core::units::{Time, TimeBase, Timestamp};
 
+use crate::equalizer::{EqControl, EqStage};
 use crate::{Error, Result};
 
 /// Decodes an in-memory audio file (AAC in MP4/M4A, including truncated
@@ -47,6 +48,7 @@ pub struct TrackDecoder {
     /// Frames still to drop after an accurate seek landed before the target.
     skip_frames: u64,
     finished: bool,
+    eq: Option<EqStage>,
 }
 
 impl TrackDecoder {
@@ -90,12 +92,23 @@ impl TrackDecoder {
             buffer_start: 0,
             skip_frames: 0,
             finished: false,
+            eq: None,
         };
         // Decode the first packet now so the real output spec is known up front.
         if !this.refill() {
             return Err(Error::Audio("no decodable audio".into()));
         }
         Ok(this)
+    }
+
+    /// Applies the equalizer shared through `control`; changes to it take
+    /// effect at the next packet (a few ms) without reopening the decoder.
+    pub(crate) fn with_equalizer(mut self, control: Arc<EqControl>) -> Self {
+        let mut stage = EqStage::new(control, self.rate, self.channels);
+        // The first packet was decoded before the EQ existed; filter it now.
+        stage.process_interleaved(&mut self.buffer[self.offset..]);
+        self.eq = Some(stage);
+        self
     }
 
     /// Position of the next sample to be yielded.
@@ -163,6 +176,10 @@ impl TrackDecoder {
                     continue;
                 }
             }
+            if let Some(eq) = &mut self.eq {
+                eq.set_format(self.rate, self.channels);
+                eq.process_interleaved(&mut self.buffer[self.offset..]);
+            }
             return true;
         }
     }
@@ -185,6 +202,9 @@ impl TrackDecoder {
             },
         )?;
         self.decoder.reset();
+        if let Some(eq) = &mut self.eq {
+            eq.reset();
+        }
         self.finished = false;
         self.skip_frames = self
             .pts_to_frame(seeked.required_ts)
@@ -407,5 +427,34 @@ mod tests {
 
         stop.store(true, Ordering::Relaxed);
         drain.join().unwrap();
+    }
+
+    #[test]
+    fn equalizer_applies_to_decoded_audio_and_follows_live_changes() {
+        use crate::{EqPreset, EqualizerSettings};
+
+        let plain: Vec<f32> = TrackDecoder::new(FIXTURE).unwrap().take(88_200).collect();
+        let control = Arc::new(EqControl::default());
+        control.set(EqPreset::Flat.settings());
+        let mut eq = TrackDecoder::new(FIXTURE)
+            .unwrap()
+            .with_equalizer(control.clone());
+        let flat: Vec<f32> = eq.by_ref().take(88_200).collect();
+        assert_eq!(plain, flat);
+
+        // The chirp sits at 200-1000 Hz: a +12 dB bell at 500 Hz must make it louder.
+        control.set(EqualizerSettings {
+            enabled: true,
+            volume_compensation: false,
+            bands: vec![crate::EqBandSettings::bell(500.0, 12.0, 0.5)],
+        });
+        let energy = |s: &[f32]| s.iter().map(|x| x * x).sum::<f32>();
+        let plain_next: Vec<f32> = {
+            let mut d = TrackDecoder::new(FIXTURE).unwrap();
+            d.try_seek(Duration::from_secs(1)).unwrap();
+            d.take(88_200).collect()
+        };
+        let boosted: Vec<f32> = eq.by_ref().take(88_200).collect();
+        assert!(energy(&boosted) > 4.0 * energy(&plain_next));
     }
 }
