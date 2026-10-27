@@ -515,3 +515,28 @@ impl SettingsPanel {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::super::Settings;
+    use super::*;
+
+    #[test]
+    fn files_from_before_the_guide_count_as_onboarded() {
+        assert!(Settings::from_json(r#"{"volume": 0.5}"#).unwrap().onboarded);
+        let fresh = Settings {
+            onboarded: false,
+            ..Settings::default()
+        };
+        let back = Settings::from_json(&fresh.to_json()).unwrap();
+        assert!(!back.onboarded);
+    }
+
+    #[test]
+    fn steps_are_unique_and_titled() {
+        for (i, step) in STEPS.iter().enumerate() {
+            assert!(!step.title().is_empty() && !step.subtitle().is_empty());
+            assert_eq!(STEPS.iter().position(|s| s == step), Some(i));
+        }
+    }
+}
