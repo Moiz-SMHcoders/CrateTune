@@ -1,11 +1,10 @@
 //! Headless check of search → resolve → download → decode, without opening an audio device.
 //! `cargo run -p music-core --example resolve -- "query"`
 
-use std::io::Cursor;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
-use music_core::{InnerTube, IosClientResolver, StreamResolver};
-use rodio::{Decoder, Source};
+use music_core::{InnerTube, IosClientResolver, StreamResolver, TrackDecoder};
+use rodio::Source;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let query = std::env::args().skip(1).collect::<Vec<_>>().join(" ");
@@ -42,22 +41,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         t.elapsed()
     );
 
-    let len = audio.len() as u64;
-    let decoder = Decoder::builder()
-        .with_data(Cursor::new(audio))
-        .with_byte_len(len)
-        .with_seekable(download.complete)
-        .with_hint("m4a")
-        .build()?;
+    // Opened seekable even when the download is a truncated preview.
+    let mut decoder = TrackDecoder::new(audio)?;
     let (rate, channels, duration) = (
         decoder.sample_rate(),
         decoder.channels(),
         decoder.total_duration(),
     );
+    let seek_to = Duration::from_secs(30);
     let t = Instant::now();
-    let samples = decoder.count();
+    decoder.try_seek(seek_to)?;
     println!(
-        "decoded {samples} samples ({rate:?} Hz x {channels:?}ch, reported {duration:?}) in {:?}",
+        "seeked to {seek_to:?} in {:?}, now at {:?}",
+        t.elapsed(),
+        decoder.pos()
+    );
+    let t = Instant::now();
+    let samples = decoder.by_ref().count();
+    println!(
+        "decoded {samples} samples after the seek ({rate:?} Hz x {channels:?}ch, reported {duration:?}), \
+         ended at {:?} in {:?}",
+        decoder.pos(),
         t.elapsed()
     );
     Ok(())

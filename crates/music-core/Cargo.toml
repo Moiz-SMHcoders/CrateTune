@@ -5,8 +5,59 @@ version.workspace = true
 description = "UI-agnostic YouTube Music backend + audio engine shared by every UI spike"
 
 [dependencies]
+discord-rich-presence = { version = "1", optional = true }
 log = "0.4.34"
-rodio = { version = "0.23", default-features = false, features = ["mp4", "playback", "symphonia-simd"] }
+md5 = "0.8"
+rodio = { version = "0.23", default-features = false, features = ["playback"] }
 serde_json = "1.0.154"
+symphonia = { version = "0.6", default-features = false, features = ["aac", "isomp4", "opt-simd"] }
 thiserror = "2"
 ureq = { version = "3", features = ["json"] }
+
+[features]
+default = ["media-controls", "discord"]
+# Discord Rich Presence (`discord` module).
+discord = ["dep:discord-rich-presence"]
+# OS media controls (`media_controls` module): MediaPlayer on macOS, SMTC on Windows, MPRIS on Linux.
+media-controls = [
+    "dep:block2",
+    "dep:objc2",
+    "dep:objc2-app-kit",
+    "dep:objc2-core-foundation",
+    "dep:objc2-foundation",
+    "dep:objc2-media-player",
+    "dep:windows",
+    "dep:windows-future",
+    "dep:mpris-server",
+]
+
+[target.'cfg(target_os = "macos")'.dependencies]
+block2 = { version = "0.6", optional = true }
+objc2 = { version = "0.6", optional = true }
+objc2-app-kit = { version = "0.3", optional = true, default-features = false, features = ["std", "NSImage"] }
+objc2-core-foundation = { version = "0.3", optional = true, default-features = false, features = ["std", "CFCGTypes"] }
+objc2-foundation = { version = "0.3", optional = true, default-features = false, features = ["std", "NSData", "NSDictionary", "NSGeometry", "NSString", "NSValue"] }
+objc2-media-player = { version = "0.3", optional = true, default-features = false, features = [
+    "std",
+    "block2",
+    "objc2-app-kit",
+    "objc2-core-foundation",
+    "MPMediaItem",
+    "MPNowPlayingInfoCenter",
+    "MPRemoteCommand",
+    "MPRemoteCommandCenter",
+    "MPRemoteCommandEvent",
+] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows = { version = "0.62", optional = true, features = [
+    "Foundation",
+    "Media",
+    "Storage_Streams",
+    "Win32_Foundation",
+    "Win32_System_WinRT",
+] }
+windows-future = { version = "0.3", optional = true }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+mpris-server = { version = "0.10", optional = true }

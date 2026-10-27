@@ -8,15 +8,28 @@
 //! * [`fetch_lyrics`] – LRCLIB synced lyrics with per-word timings.
 //! * [`StreamResolver`] – turns a video id into a playable audio URL.
 //! * [`Player`] – background audio engine with a pollable [`PlaybackState`].
+//! * [`equalizer`] – parametric EQ applied live via [`Player::set_equalizer`].
+//! * [`media_controls`] – OS now-playing info + media keys (macOS, Windows, Linux).
+//! * [`scrobble`] – Last.fm / ListenBrainz scrobbling driven by [`PlaybackState`] snapshots.
+//! * `discord` – Discord Rich Presence (cargo feature `discord`, on by default).
+//! * [`TrackDecoder`] – Symphonia 0.6 decoder as a seekable `rodio::Source`.
 
+mod decode;
+#[cfg(feature = "discord")]
+pub mod discord;
+pub mod equalizer;
 mod error;
 mod http;
 mod innertube;
 mod lyrics;
+pub mod media_controls;
 mod model;
 mod player;
+pub mod scrobble;
 mod stream;
 
+pub use decode::TrackDecoder;
+pub use equalizer::{EqBandKind, EqBandSettings, EqPreset, EqualizerSettings};
 pub use error::{Error, Result};
 pub use http::fetch_bytes;
 pub use innertube::InnerTube;
