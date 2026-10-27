@@ -10,6 +10,47 @@ Hummingbird is Apache-2.0 and listed in `crates/music-core/THIRD_PARTY.md`.
 This is an independent project: it is not ArchiveTune and uses none of its
 name or branding.
 
+## Install / build
+
+**Users:** download the DMG (macOS), the AppImage / tarball (Linux) or the installer / zip
+(Windows) from the releases, see [docs/USER_GUIDE.md](docs/USER_GUIDE.md) (features,
+shortcuts, settings, sign-in, limitations) and [CHANGELOG.md](CHANGELOG.md).
+
+**From source** (Rust 1.99 via `rust-toolchain.toml`; no Xcode needed on macOS — the
+Command Line Tools suffice, GPUI's shaders are compiled at runtime):
+
+```sh
+cargo build --release -p music-gpui      # → target/release/music-gpui
+cargo run --release -p music-gpui
+```
+
+Linux needs the development packages GPUI and the audio stack link against (Debian /
+Ubuntu names): `build-essential pkg-config clang libasound2-dev libfontconfig-dev
+libfreetype-dev libwayland-dev libxkbcommon-dev libxkbcommon-x11-dev libx11-xcb-dev
+libxcb1-dev libvulkan-dev libdbus-1-dev` (the list CI installs, `.github/workflows/ci.yml`).
+
+**Packages** (`target/bundle/`):
+
+| Platform | Command | Output |
+|---|---|---|
+| macOS | `scripts/bundle-macos.sh [--no-build] [--no-dmg]` | `Music.app` (Info.plist with bundle id, version from Cargo, `LSMinimumSystemVersion` 11.0, `NSMicrophoneUsageDescription`, high-res, music category; ad-hoc signed, or Developer ID + hardened runtime with `MACOS_SIGN_IDENTITY`) and `music-macos-<ver>-macos-<arch>.dmg` |
+| Linux | `scripts/bundle-linux.sh [--no-build] [--appimage]` | `.tar.gz` with `bin/`, `.desktop`, hicolor icons, AppStream metainfo, `install.sh`; AppImage via `appimagetool` |
+| Windows | `pwsh scripts/bundle-windows.ps1` | `.zip` and an Inno Setup 6 per-user installer (`packaging/windows/installer.iss`); the `.exe` gets its icon + version resource from `build.rs` (`embed-resource`, native Windows builds). An MSI could be made with `cargo-wix` instead. |
+
+CI (`.github/workflows/ci.yml`) runs fmt, clippy (also with `--features screenshot`) and
+tests on macOS, Ubuntu and Windows; `release.yml` builds every package on a `v*` tag and
+attaches them to a draft release.
+
+**App identity.** No final name has been chosen: "Music" and the `music-macos` ids are
+working names. They live in **one file, `packaging/app.env`** (`APP_NAME`, `APP_ID`,
+`BUNDLE_ID`, `APP_SUMMARY`, `UPDATE_REPO`), read by `crates/music-gpui/build.rs`
+(→ `identity.rs`: window title, menus, tray, About, media-controls / MPRIS name, settings
+directory and keychain service) and by the packaging scripts. Renaming `APP_ID` moves the
+settings directory and keychain entries (move them by hand to keep them). The app icon is
+original artwork: `packaging/icons/app-icon.svg`, rendered by `scripts/make-icons.sh`
+(rsvg-convert, iconutil, ImageMagick) into the committed `packaging/macos/AppIcon.icns`,
+`packaging/windows/app.ico` and `packaging/linux/icons/*.png`.
+
 ## Decision: GPUI + gpui-component
 
 The UI framework was picked by building the same spikes in three stacks. `main`
@@ -91,6 +132,16 @@ its own executor.
 * `local_files` — scans music folders with `lofty` (tags, cover art, lyrics, ReplayGain) into
   the library as `local:<hash>` tracks, incrementally (`scan_with_progress` reports
   `(done, total)` per file).
+* `recognition` — Shazam-compatible song recognition ported from ArchiveTune's `shazamkit`:
+  `capture::record_microphone(len, &cancel, |progress| ..)` (cpal input, any rate → 16 kHz
+  mono, cancellable, level callback), `audio::decode_file` / `to_signature_pcm`,
+  `signature_from_pcm` / `SignatureGenerator` (2048-point FFT every 128 samples, spread
+  peaks in four bands, Shazam's binary format as a `data:` URI; bit-identical to the
+  Kotlin generator on a fixture, see `tests/fixtures/recognition/ReferenceSignature.java`),
+  `ShazamClient::recognize` → `Recognition` (title, artist, album, art, genre, label, release,
+  ISRC, Shazam / Apple Music / Spotify links, YouTube id), and the history on `Library`
+  (`recognition_history`, `add_recognition`, `remove_recognition`,
+  `clear_recognition_history`; JSON in the key/value table, 50 entries).
 
 ```sh
 cargo run --release -p music-core --example library -- ~/Music   # scan a folder, print stats
@@ -129,6 +180,8 @@ cargo run --release -p music-core --example resolve -- "daft punk"  # headless: 
 cargo run --release -p music-core --example devices                 # list output devices (+ a file path: muted real-device playback check)
 cargo run --release -p music-core --example cli -- "daft punk"      # plays ~8 s through the speakers (seeks, Bass EQ)
 cargo run --release -p music-core --example browse -- "daft punk"   # every anonymous InnerTube endpoint, live
+cargo run -p music-core --example recognize -- --youtube "a-ha take on me"  # decode 12 s of a stream → signature → Shazam
+cargo run -p music-core --example recognize -- song.flac 30         # a local file from 30 s (`--mic 8`: the microphone)
 ```
 
 ### Lyrics (`music_core::lyrics`)
@@ -266,6 +319,12 @@ src/
   settings/prefs.rs  audio / lyrics / Now Playing / Discord activity / scrobble-rule
                      model; settings/prefs_ui.rs: their panel widgets + methods
   services.rs, secrets.rs, script.rs, util.rs, icons.rs
+  recognize.rs       recognition session (Recognizer global entity: permission → capture →
+                     signature → request → history → YouTube Music search);
+                     pages/recognition.rs renders it; mic_permission.rs (macOS AVFoundation)
+  settings/onboarding.rs  first-run guide overlay (reuses the settings sections)
+  update_check.rs    optional GitHub release check; identity.rs (name / ids from
+                     packaging/app.env via build.rs); release_script.rs (script actions)
 ```
 
 ### Extension points
@@ -308,6 +367,14 @@ src/
   button). Pages load library data with `pages::loader::Loaded` (re-queried when
   `store.revision` moves) and list songs with `pages::song_list::SongList` (virtualized,
   multi-select + action bar). The library database also backs the lyrics cache.
+
+* **Recognition:** `crate::recognize::Recognizer::global(cx)` is the session (`listen`,
+  `recognize_file(path)`, `cancel`, `show(entry)`, `phase`, `history`); `app.recognize_song`
+  is the ⇧⌘R entry point.
+* **Onboarding:** add a `Step` to `settings/onboarding.rs` (`STEPS`, `title`, `subtitle`,
+  `icon`, a body arm — any `settings/<section>::render` can be reused via the panel).
+  `app.open_onboarding(step, ..)` / `close_onboarding` (sets `settings.onboarded`).
+* **Renaming the app:** edit `packaging/app.env` only (see Install / build).
 
 ### Features
 
@@ -528,6 +595,7 @@ src/
 | ⌘S / ⌘R | shuffle / cycle repeat |
 | ⌘[ / ⌘] (also mouse back/forward buttons) | back / forward |
 | ⌘1 / ⌘2 / ⌘3 / ⌘Y | Home / Explore / Library / History |
+| ⇧⌘R | Recognize: open the page and listen (again: stop) |
 | Esc | close Now Playing, else the queue panel, else back |
 | ⌘H, ⌥⌘H, ⌘M, ⌘Q | hide, hide others, minimize, quit |
 
@@ -575,6 +643,8 @@ item's ACL is tied to the binary). Secrets are never logged.
 | `MUSIC_EQ_PRESET=Bass` | apply an EQ preset at startup (saved like a click) |
 | `MUSIC_CONFIG_DIR=…` / `MUSIC_SECRET_STORE=file` | other settings dir / skip the keychain |
 | `MUSIC_TRAY=0` | no menu-bar item |
+| `MUSIC_ONBOARDING=1\|0` | force / suppress the first-run guide (it is skipped automatically for `MUSIC_SCRIPT` / screenshot runs) |
+| `MUSIC_UPDATE_REPO=owner/name` | enable the update check against that repo (testing; the default comes from `packaging/app.env`) |
 | `MUSIC_TRACE=1` | log playback transitions, seeks, saves, route changes, artwork downloads; `MUSIC_TIMINGS=1`: renders/s + worst frame gap |
 | `MUSIC_SCRIPT="5:@next,9:@seek=75,30:@quit"` | timed actions (any build) |
 | `MUSIC_GPUI_SCREENSHOT="12:a.png,13:@settings,14:b.png,15:mini:m.png"` | offscreen shots + actions, quits after the last (feature `screenshot`; `mini:` shoots the mini player) |
@@ -596,7 +666,9 @@ playback `@play=N @next @prev @seek=S @toggle @open @close @volume=V`; navigatio
 @sleep=MIN|eot|off|5s @speed=1.25 @pitch=-2 @crossfade=6 @quality=low|normal|high
 @normalize=on|off @skip-silence=on|off`; browse `@radio=N` (radio from search result N),
 `@suggest` (print the search dropdown), `@proxy=KIND:HOST:PORT|off`, `@locale=de:DE`,
-`@scroll=X;Y;DY`; `@quit`.
+`@scroll=X;Y;DY`; recognition `@recognize` (microphone), `@recognize-file=PATH`,
+`@recognize-cancel`, `@recognize-history=N`; `@onboarding[=STEP|off]`, `@onboarding-next`,
+`@onboarding-back`, `@update-check` (`release_script.rs`); `@quit`.
 
 Screenshot builds draw both windows every 200 ms and right before each shot: while the
 screen is locked macOS delivers no display-link frames, so nothing would redraw (and
