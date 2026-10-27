@@ -1,7 +1,8 @@
 //! Where credentials live: the OS keychain when it works, else the settings file.
 //!
 //! Secrets are the Last.fm API secret and session key, the ListenBrainz user
-//! token, the proxy password and the YouTube Music sign-in cookie. They are stored with the `keyring` crate (macOS Keychain, Windows
+//! token, the proxy password, the YouTube Music sign-in cookie and the Spotify
+//! refresh token. They are stored with the `keyring` crate (macOS Keychain, Windows
 //! Credential Manager, Secret Service on Linux) under service [`SERVICE`], one
 //! entry per [`Secret`].
 //!
@@ -32,11 +33,13 @@ pub enum Secret {
     AiTranslateKey,
     /// `Cookie` header of a signed-in music.youtube.com session.
     YouTubeCookie,
+    /// Spotify Web API refresh token (playlist import).
+    SpotifyRefreshToken,
 }
 
 impl Secret {
     #[cfg(test)]
-    pub const ALL: [Secret; 8] = [
+    pub const ALL: [Secret; 9] = [
         Secret::LastFmShared,
         Secret::LastFmSession,
         Secret::ListenBrainzToken,
@@ -45,6 +48,7 @@ impl Secret {
         Secret::AiTranslateKey,
         Secret::YouTubeCookie,
         Secret::ProxyPassword,
+        Secret::SpotifyRefreshToken,
     ];
 
     /// Keychain account name and settings-file key.
@@ -58,6 +62,7 @@ impl Secret {
             Secret::BetterLyricsKey => "betterlyrics-api-key",
             Secret::AiTranslateKey => "ai-translate-api-key",
             Secret::YouTubeCookie => "youtube-cookie",
+            Secret::SpotifyRefreshToken => "spotify-refresh-token",
         }
     }
 }

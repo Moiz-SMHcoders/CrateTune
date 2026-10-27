@@ -27,6 +27,8 @@ pub const BAR_HEIGHT: f32 = 88.;
 
 impl MusicApp {
     pub(crate) fn render_player_bar(&mut self, cx: &mut Context<Self>) -> impl IntoElement + use<> {
+        // SponsorBlock "Skip", Music Together status.
+        let chips = self.integration_chips(cx);
         // Last session's queue (restored, not loaded yet) shows its current track.
         let restored = self.playback.track.is_none() && self.store.resume_at.is_some();
         let track = self
@@ -220,7 +222,8 @@ impl MusicApp {
                             )
                             .when(state.preview_only, |this| {
                                 this.child(Tag::warning().small().rounded_full().child("Preview"))
-                            }),
+                            })
+                            .children(chips),
                     )
                     .child(
                         h_flex()

@@ -46,6 +46,10 @@ impl MusicApp {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        let mode = music_core::together::AddTrackMode::PlayNext;
+        if self.together_intercept_enqueue(&tracks, mode, window, cx) {
+            return; // a Together guest suggests to the host instead
+        }
         let message = enqueue_message("will play next", &tracks);
         match self.queue.play_next(tracks) {
             Some(track) => self.play(track, cx),
@@ -55,6 +59,10 @@ impl MusicApp {
     }
 
     pub fn queue_add(&mut self, tracks: Vec<Track>, window: &mut Window, cx: &mut Context<Self>) {
+        let mode = music_core::together::AddTrackMode::AddToQueue;
+        if self.together_intercept_enqueue(&tracks, mode, window, cx) {
+            return;
+        }
         let message = enqueue_message("added to the queue", &tracks);
         match self.queue.add(tracks) {
             Some(track) => self.play(track, cx),
@@ -407,6 +415,8 @@ impl MusicApp {
         }
         // Play history, saved queue, download flags.
         self.poll_store(&state, cx);
+        // SponsorBlock, Music Together.
+        self.poll_integrations(&state, window, cx);
 
         if !self.ingest(state, cx) {
             return;

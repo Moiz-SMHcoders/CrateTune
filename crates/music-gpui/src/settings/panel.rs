@@ -122,6 +122,8 @@ pub struct SettingsPanel {
     pub(super) network: super::network::NetworkState,
     /// Player / lyrics / Now Playing / activity widgets (`prefs_ui.rs`).
     pub(super) prefs: PrefsUi,
+    /// SponsorBlock / Music Together / Spotify inputs (`integrations_ui.rs`).
+    pub(super) extras: super::integrations_ui::ExtrasUi,
     _subscriptions: Vec<Subscription>,
 }
 
@@ -209,6 +211,9 @@ impl SettingsPanel {
         let network = super::network::NetworkState::new(&settings, window, cx);
         let (prefs, prefs_subscriptions) = PrefsUi::new(&settings, window, cx);
         subscriptions.extend(prefs_subscriptions);
+        let (extras, extras_subscriptions) =
+            super::integrations_ui::ExtrasUi::new(&settings, window, cx);
+        subscriptions.extend(extras_subscriptions);
         subscriptions.push(cx.on_app_quit(|this, _| {
             this.flush();
             async {}
@@ -244,6 +249,7 @@ impl SettingsPanel {
             content,
             network,
             prefs,
+            extras,
             _subscriptions: subscriptions,
         };
         // Before any page loads (the password, if any, follows once read).
@@ -269,6 +275,7 @@ impl SettingsPanel {
             (Secret::PaxsenixKey, s.lyrics.paxsenix_key_set),
             (Secret::BetterLyricsKey, s.lyrics.betterlyrics_key_set),
             (Secret::AiTranslateKey, s.lyrics.ai_key_set),
+            (Secret::SpotifyRefreshToken, s.spotify.user.is_some()),
         ]
         .into_iter()
         .filter_map(|(secret, wanted)| wanted.then_some(secret))

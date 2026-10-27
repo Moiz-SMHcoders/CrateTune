@@ -109,6 +109,30 @@ specifics (Media3, coroutines, DataStore) are replaced by the blocking engine th
 Libraries used by the engine (not ported code): `opus-decoder` (MIT OR Apache-2.0,
 pure-Rust Opus), `libsonic` (Apache-2.0, Rust port of Bill Cox's Sonic, used for speed/pitch).
 
+## ArchiveTune (feat/integrations)
+
+SponsorBlock, playlist import and Music Together are ported from **ArchiveTune**
+(<https://github.com/rukamori/ArchiveTune>), © Rukamori and ArchiveTune contributors,
+GPL-3.0. Files carry a header naming their upstream source. Paths are relative to
+`app/src/main/kotlin/moe/rukamori/archivetune/` unless noted. ArchiveTune's online
+Together relay and its Spotify web-player login (`sp_dc` cookie + TOTP secret from a
+third-party gist) are **not** ported.
+
+| music-core file | Upstream file(s) | Changes |
+|---|---|---|
+| `src/sponsorblock.rs` | `sponsorblock/SponsorBlockModels.kt`, `SponsorBlockRepository.kt`, `SponsorBlockUseCases.kt`, `SponsorBlockPlaybackController.kt` | Blocking `ureq`; LRU cache keyed by URL/video/categories; category kept on merged segments; `SkipTracker` (once-per-segment, end tolerance, minimum seek distance) is pollable instead of a coroutine loop; `music_offtopic` is the default category. |
+| `src/playlist_import/matcher.rs` | `utils/FuzzyMatcher.kt`, `modules/ModuleTrackMatcher.kt` (title clean-up, recording markers), `spotifycore/src/.../spotify/SpotifyMapper.kt` (duration tiers) | One score: FuzzyMatcher's 0.6 title / 0.4 artist Jaro–Winkler on NFKD-folded text, recording-marker mismatch as a penalty instead of a rejection, duration and explicit penalties. |
+| `src/playlist_import/mod.rs` | `playlistimport/ImportSongResolver.kt`, `spotify/SpotifyPlaybackResolver.kt` | Scoped worker threads instead of a coroutine semaphore; direct video ids; second query (`artist title`) when the first finds nothing good; cancel flag. CSV / M3U / JSON readers and writers are new. |
+| `src/together/messages.rs` | `together/TogetherMessages.kt`, `TogetherModels.kt`, `TogetherJson.kt` | serde enums with the same `type` discriminators and camelCase fields; host transfer not implemented. |
+| `src/together/sync.rs` | `together/TogetherClock.kt`, `TogetherPlaybackSync.kt` | Clock offset applied with the correct sign when converting the host's timestamp; `GuestSync` bundles stale-state dropping, drift thresholds and echo suppression into a pure planner. |
+| `src/together/server.rs` | `together/TogetherServer.kt` | std threads + `tungstenite` instead of Ktor; room-settings checks (add / control) on the server; ban list per session. |
+| `src/together/client.rs` | `together/TogetherClient.kt` | One worker thread polling the socket; heartbeats and the clock estimate live in the client. |
+| `src/together/link.rs` | `together/TogetherLink.kt` | Own `music-together://join?…` scheme; IPv6 hosts; LAN address via the default route. |
+
+`src/spotify.rs` (official Web API, Authorization Code + PKCE with the user's own Client
+ID) contains no ported code; the playlist / liked-songs model follows
+`spotifycore/src/.../spotify/models/*.kt`.
+
 ## ArchiveTune (feat/release: song recognition)
 
 The song-recognition module is ported from **ArchiveTune**'s `shazamkit` module and

@@ -67,6 +67,12 @@ pub struct Settings {
     pub mini_player: Option<WindowGeometry>,
     /// Library, privacy, storage, local files and YouTube account.
     pub library: LibraryConfig,
+    /// SponsorBlock segment skipping (`integrations/config.rs`).
+    pub sponsorblock: crate::integrations::config::SponsorBlockPrefs,
+    /// Music Together (LAN sessions).
+    pub together: crate::integrations::config::TogetherPrefs,
+    /// Spotify playlist import (own Client ID; the refresh token is a secret).
+    pub spotify: crate::integrations::config::SpotifyPrefs,
     /// The first-run guide was finished or skipped. Missing in files from before the
     /// guide existed: those users count as onboarded; a fresh install starts `false`.
     #[serde(default = "onboarded_default")]
@@ -96,6 +102,9 @@ impl Default for Settings {
             window: None,
             mini_player: None,
             library: LibraryConfig::default(),
+            sponsorblock: Default::default(),
+            together: Default::default(),
+            spotify: Default::default(),
             onboarded: true,
             secrets: FileSecrets::default(),
         }

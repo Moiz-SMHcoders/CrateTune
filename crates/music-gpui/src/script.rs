@@ -47,7 +47,8 @@
 //! | `@quit` | quit |
 //!
 //! Library / account / storage actions (`@like`, `@download`, `@backup`, …) are listed
-//! in `library_script.rs`.
+//! in `library_script.rs`; SponsorBlock / Together / import actions (`@sb`,
+//! `@together-host`, `@import-file`, …) in `integrations/script.rs`.
 
 use std::time::{Duration, Instant};
 
@@ -541,6 +542,7 @@ impl MusicApp {
             // Library, downloads, account, storage (`library_script.rs`).
             other => {
                 if !self.library_script_action(other, arg, window, cx)
+                    && !self.integrations_script_action(other, arg, window, cx)
                     && !self.release_script_action(other, arg, window, cx)
                 {
                     eprintln!("music-gpui: unknown script action @{other}");
