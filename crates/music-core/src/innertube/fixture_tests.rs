@@ -535,3 +535,195 @@ fn history_and_liked_songs() {
         .collect();
     assert_eq!(sets, [Some("SET_A"), Some("SET_B")]);
 }
+
+// ---------------------------------------------------------------- video types, podcasts, long albums
+
+#[test]
+fn video_types_on_every_track_source() {
+    use crate::MusicVideoType::{Atv, Omv, Ugc};
+    let songs = pages::search_results(&fixture("search_songs"));
+    for t in tracks(&songs.items) {
+        assert_eq!(t.music_video_type, Some(Atv), "{t:?}");
+        assert!(!t.is_video());
+    }
+    let videos = pages::search_results(&fixture("search_videos"));
+    for t in tracks(&videos.items) {
+        assert_eq!(t.music_video_type, Some(Ugc), "{t:?}");
+        assert!(t.is_video());
+    }
+    // Some albums are only on YouTube as "official audio" videos (OMV).
+    let album = pages::album(&fixture("album"), "MPREb_K8qWMWVqXGi").unwrap();
+    assert!(album.tracks.iter().all(|t| t.music_video_type == Some(Omv)));
+    let long = pages::album(&fixture("album_long"), "MPREb_8Up7Y28SB9h").unwrap();
+    assert!(long.tracks.iter().all(|t| t.music_video_type == Some(Atv)));
+    // Mixed playlist: songs and music videos.
+    let playlist = pages::playlist(
+        &fixture("playlist"),
+        "RDCLAK5uy_lfTOUBaGMSEoO2The1XiaG75RghLtrVtM",
+    )
+    .unwrap();
+    let kinds: Vec<_> = playlist
+        .tracks
+        .iter()
+        .map(|e| e.track.music_video_type)
+        .collect();
+    assert!(
+        kinds.contains(&Some(Atv)) && kinds.contains(&Some(Omv)),
+        "{kinds:?}"
+    );
+    // Radio queue rows.
+    let q = pages::watch_queue(&fixture("next")).unwrap();
+    assert!(q.tracks.iter().all(|t| t.music_video_type.is_some()));
+    assert!(q.tracks.iter().any(Track::is_video));
+    // Artist shelves.
+    let artist = pages::artist(&fixture("artist"), "UCRr1xG_2WIDs18a6cIiCxeA").unwrap();
+    let top: Vec<_> = tracks(&artist.shelves[0].items);
+    assert!(top.iter().all(|t| t.music_video_type.is_some()));
+    // Episodes.
+    let episodes = pages::search_results(&fixture("search_episodes"));
+    assert!(tracks(&episodes.items).iter().all(|t| t.is_episode()));
+}
+
+#[test]
+fn podcast_show_and_episodes() {
+    let page = pages::podcast(
+        &fixture("podcast"),
+        "MPSPPL7NN9zBWhixq7aJ2OXKhmI2K1B4nBd4dw",
+    )
+    .unwrap();
+    let p = &page.podcast;
+    assert_eq!(p.title, "Joe Rogan Content");
+    assert_eq!(p.playlist_id(), "PL7NN9zBWhixq7aJ2OXKhmI2K1B4nBd4dw");
+    assert!(p.author.as_ref().is_some_and(|a| a.id.is_some()), "{p:?}");
+    assert!(p.thumbnail_url.as_deref().unwrap().starts_with("https://"));
+    assert!(page.description.as_deref().unwrap().contains("Joe Rogan"));
+    assert_eq!(page.saved, None, "anonymous");
+    assert!(!page.episodes.is_empty());
+    assert!(page.continuation.is_none(), "13 episodes, all on the page");
+    let long = pages::podcast(
+        &fixture("podcast_long"),
+        "MPSPPLk1Sqn_f33KuWf3tW9BBe_4TP7x8l0m3T",
+    )
+    .unwrap();
+    assert_eq!(long.podcast.title, "The Joe Rogan Experience");
+    assert_eq!(
+        long.podcast.author.as_ref().map(|a| a.name.as_str()),
+        Some("PowerfulJRE")
+    );
+    assert!(long.continuation.is_some());
+    assert!(!long.episodes.is_empty());
+    for e in &page.episodes {
+        let t = &e.track;
+        assert!(t.is_episode(), "{t:?}");
+        assert_eq!(t.artists, "Joe Rogan Content");
+        assert_eq!(
+            t.artist_refs[0].id.as_deref(),
+            Some("MPSPPL7NN9zBWhixq7aJ2OXKhmI2K1B4nBd4dw")
+        );
+        assert!(t.duration_secs.is_some_and(|d| d > 0), "{t:?}");
+        assert!(e.date.is_some(), "{e:?}");
+        assert!(e.page_id.as_deref().unwrap().starts_with("MPED"));
+    }
+
+    let show = crate::EntityRef {
+        name: "The Joe Rogan Experience".into(),
+        id: Some("MPSPPLk1Sqn_f33KuWf3tW9BBe_4TP7x8l0m3T".into()),
+    };
+    let more = pages::podcast_continuation(&fixture("podcast_continuation"), Some(&show));
+    assert!(!more.episodes.is_empty());
+    assert!(more.continuation.is_some());
+    assert!(
+        more.episodes
+            .iter()
+            .all(|e| e.track.artists == "The Joe Rogan Experience" && e.track.is_episode())
+    );
+    // "2 hr 43 min" style lengths.
+    assert!(
+        more.episodes
+            .iter()
+            .all(|e| e.track.duration_secs > Some(60))
+    );
+
+    let ep = pages::episode_page(&fixture("episode"), "MPEDrn6iW7XDEHc").unwrap();
+    assert_eq!(ep.episode.track.video_id, "rn6iW7XDEHc");
+    assert!(
+        ep.episode
+            .track
+            .title
+            .starts_with("Joe Rogan Experience #2570")
+    );
+    assert_eq!(ep.episode.track.duration_secs, Some(2 * 3600 + 43 * 60));
+    assert!(ep.episode.track.is_episode());
+    assert_eq!(ep.episode.date.as_deref(), Some("4d ago"));
+    assert!(
+        ep.episode
+            .description
+            .as_deref()
+            .unwrap()
+            .contains("Mystery Boys")
+    );
+    let show = ep.podcast.unwrap();
+    assert_eq!(show.name, "The Joe Rogan Experience");
+    assert_eq!(
+        show.id.as_deref(),
+        Some("MPSPPLk1Sqn_f33KuWf3tW9BBe_4TP7x8l0m3T")
+    );
+}
+
+#[test]
+fn long_album_pages_continue_through_its_playlist() {
+    let page = pages::album(&fixture("album_long"), "MPREb_8Up7Y28SB9h").unwrap();
+    assert_eq!(page.track_total, Some(294));
+    assert!(page.has_more_tracks(), "the page lists fewer than 294");
+    assert_eq!(
+        page.album.playlist_id.as_deref(),
+        Some("OLAK5uy_ktO04wEhAMxK2rN9vxubUvyOoghhJgZFg")
+    );
+    let first = pages::album_tracks(&fixture("album_long_playlist"), &page.album);
+    assert!(!first.tracks.is_empty());
+    assert!(first.continuation.is_some());
+    for t in &first.tracks {
+        assert_eq!(t.album.as_deref(), Some(page.album.title.as_str()));
+        assert_eq!(t.album_id.as_deref(), Some("MPREb_8Up7Y28SB9h"));
+        assert_track_basics(t);
+    }
+    let next = pages::album_tracks(&fixture("album_long_continuation"), &page.album);
+    assert!(!next.tracks.is_empty());
+    assert!(next.continuation.is_some());
+    assert!(next.tracks.iter().all(|t| t.album_id.is_some()));
+    // A short album is complete.
+    let short = pages::album(&fixture("album"), "MPREb_K8qWMWVqXGi").unwrap();
+    assert_eq!(short.track_total, Some(13));
+    assert!(!short.has_more_tracks());
+}
+
+#[test]
+fn corrected_search() {
+    let s = pages::search_summary(&fixture("search_corrected"));
+    let c = s.correction.unwrap();
+    assert_eq!(c.corrected, "justice genesis");
+    assert_eq!(c.original, "justice genisis");
+    assert!(c.applied);
+    assert!(
+        pages::search_summary(&fixture("search_summary"))
+            .correction
+            .is_none()
+    );
+}
+
+#[test]
+fn library_podcasts_tab() {
+    let page = account::parse_library(&fixture("authed/library_podcasts"));
+    assert_eq!(page.items.len(), 2);
+    assert_eq!(page.continuation.as_deref(), Some("LIB_PODCASTS_PAGE_2"));
+    let Item::Playlist(later) = &page.items[0] else {
+        panic!("{:?}", page.items[0])
+    };
+    assert_eq!(later.playlist_id, "SE");
+    let Item::Podcast(p) = &page.items[1] else {
+        panic!("{:?}", page.items[1])
+    };
+    assert_eq!(p.browse_id, "MPSPPLk1Sqn_f33KuWf3tW9BBe_4TP7x8l0m3T");
+    assert_eq!(p.author.as_ref().unwrap().name, "PowerfulJRE");
+    assert!(page.feedback[1].as_ref().unwrap().in_library);
+}

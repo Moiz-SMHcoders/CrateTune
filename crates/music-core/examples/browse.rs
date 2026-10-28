@@ -1,7 +1,9 @@
 //! Exercises every anonymous InnerTube endpoint against the live API and prints a
 //! summary per call: `cargo run -p music-core --example browse [-- "query"]`.
 //!
-//! Set `MUSIC_PROXY=socks5h://host:port` to route everything through a proxy.
+//! Set `MUSIC_PROXY=socks5h://host:port` to route everything through a proxy, and
+//! `MUSIC_DOH=cloudflare|google|quad9|https://…/dns-query` to resolve names with
+//! DNS-over-HTTPS (no fallback to the system resolver).
 
 use music_core::http::{self, HttpConfig};
 use music_core::innertube::{BrowseTarget, InnerTube, Item, SearchFilter, Shelf, WatchTarget};
@@ -68,12 +70,26 @@ fn kind(item: &Item) -> &'static str {
 }
 
 fn main() {
-    if let Ok(proxy) = std::env::var("MUSIC_PROXY") {
-        http::configure(HttpConfig {
-            proxy: Some(proxy),
-            ..HttpConfig::default()
-        })
-        .expect("proxy");
+    let doh = std::env::var("MUSIC_DOH").ok().map(|v| {
+        let provider = match v.as_str() {
+            "cloudflare" => http::DohProvider::Cloudflare,
+            "google" => http::DohProvider::Google,
+            "quad9" => http::DohProvider::Quad9,
+            url => http::DohProvider::Custom(url.to_owned()),
+        };
+        http::DohConfig {
+            provider,
+            fallback_to_system: false,
+        }
+    });
+    http::configure(HttpConfig {
+        proxy: std::env::var("MUSIC_PROXY").ok(),
+        doh,
+        ..HttpConfig::default()
+    })
+    .expect("proxy / DoH");
+    if std::env::var_os("MUSIC_DOH").is_some() {
+        println!("DNS: {:?}", http::lookup("music.youtube.com"));
     }
     let query = std::env::args()
         .nth(1)
@@ -399,6 +415,83 @@ fn main() {
             }
         }
     }
+    // Podcasts: the first show of the podcast search, its episodes and one episode page.
+    let podcast = it
+        .search(&format!("{query} podcast"), SearchFilter::Podcasts)
+        .ok()
+        .and_then(|res| {
+            res.items.into_iter().find_map(|i| match i {
+                Item::Podcast(p) => Some(p),
+                _ => None,
+            })
+        });
+    if let Some(show) = podcast
+        && let Some(page) = r.check(
+            &format!("podcast {}", show.browse_id),
+            it.podcast(&show.browse_id),
+            |p| {
+                format!(
+                    "\"{}\" by {:?}: {} episodes, more={} first={:?}",
+                    p.podcast.title,
+                    p.podcast.author.as_ref().map(|a| &a.name),
+                    p.episodes.len(),
+                    p.continuation.is_some(),
+                    p.episodes
+                        .first()
+                        .map(|e| (&e.track.title, e.track.duration_secs, &e.date))
+                )
+            },
+        )
+    {
+        if let Some(cont) = &page.continuation {
+            r.check(
+                "podcast_continuation",
+                it.podcast_continuation(&page.podcast, cont),
+                |c| {
+                    format!(
+                        "{} episodes, more={}",
+                        c.episodes.len(),
+                        c.continuation.is_some()
+                    )
+                },
+            );
+        }
+        if let Some(id) = page.episodes.first().and_then(|e| e.page_id.clone()) {
+            r.check(&format!("episode {id}"), it.episode(&id), |e| {
+                format!(
+                    "\"{}\" show={:?} {:?}s",
+                    e.episode.track.title,
+                    e.podcast.as_ref().map(|p| &p.name),
+                    e.episode.track.duration_secs
+                )
+            });
+        }
+    }
+    // A 294-track album: the page lists 200, the rest comes from its playlist.
+    r.check(
+        "album_complete (long)",
+        it.album_complete("MPREb_8Up7Y28SB9h"),
+        |a| {
+            format!(
+                "{} of {:?} tracks, last={:?}",
+                a.tracks.len(),
+                a.track_total,
+                a.tracks.last().map(|t| &t.title)
+            )
+        },
+    );
+    // Spelling correction.
+    r.check(
+        "search_summary (corrected)",
+        it.search_summary("justice genisis"),
+        |s| format!("{:?}", s.correction),
+    );
+    r.check(
+        "search_summary_exact",
+        it.search_summary_exact("justice genisis"),
+        |s| format!("correction={:?} items={}", s.correction, s.items.len()),
+    );
+
     r.check("fetch_visitor_data", it.fetch_visitor_data(), |v| {
         format!("{} chars", v.len())
     });

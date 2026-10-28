@@ -4,18 +4,20 @@
 use serde_json::Value;
 
 use super::models::{
-    AlbumPage, AlbumSummary, ArtistItemsPage, ArtistPage, ArtistSummary, BrowsePage, ChartCountry,
-    ChartsPage, ExplorePage, HomePage, Item, LyricsText, MoodCategory, MoodsPage,
-    PlaylistContinuation, PlaylistEntry, PlaylistPage, PlaylistSummary, QueueChip, RelatedPage,
+    AlbumPage, AlbumSummary, AlbumTracks, ArtistItemsPage, ArtistPage, ArtistSummary, BrowsePage,
+    ChartCountry, ChartsPage, Episode, EpisodePage, ExplorePage, HomePage, Item, LyricsText,
+    MoodCategory, MoodsPage, PlaylistContinuation, PlaylistEntry, PlaylistPage, PlaylistSummary,
+    PodcastContinuation, PodcastPage, PodcastSummary, QueueChip, RelatedPage, SearchCorrection,
     SearchResults, SearchSuggestions, SearchSummary, Shelf, WatchQueue,
 };
 use super::parse::{
-    analyze_runs, arr_at, browse_target, card_item, continuation_item_token, continuation_of,
-    has_explicit_badge, header_title, non_empty, parse_chip, parse_item, parse_nav_button,
-    parse_panel_video, parse_playlist_entry, parse_responsive, parse_shelf, primary_section_list,
-    primary_sections, renderer_thumbnail, runs, str_at, text, watch_target,
+    PAGE_PODCAST, analyze_runs, arr_at, browse_target, card_item, continuation_item_token,
+    continuation_of, has_explicit_badge, header_title, non_empty, page_type, parse_chip,
+    parse_item, parse_multi_row, parse_nav_button, parse_panel_video, parse_playlist_entry,
+    parse_responsive, parse_shelf, primary_section_list, primary_sections, renderer_thumbnail,
+    run_text, runs, spoken_or_clock_duration, str_at, text, watch_target,
 };
-use crate::{EntityRef, Error, Result, Track};
+use crate::{EntityRef, Error, MusicVideoType, Result, Track};
 
 fn shelves(sections: &[Value]) -> Vec<Shelf> {
     sections.iter().filter_map(parse_shelf).collect()
@@ -286,6 +288,7 @@ pub(crate) fn album(resp: &Value, browse_id: &str) -> Result<AlbumPage> {
 
     let mut tracks = Vec::new();
     let mut extra_shelves = Vec::new();
+    let mut continuation = None;
     for section in secondary_sections(resp) {
         if let Some(shelf) = section
             .get("musicShelfRenderer")
@@ -296,6 +299,7 @@ pub(crate) fn album(resp: &Value, browse_id: &str) -> Result<AlbumPage> {
                     tracks.push(t);
                 }
             }
+            continuation = continuation.or_else(|| continuation_of(shelf));
         } else if let Some(s) = parse_shelf(section) {
             extra_shelves.push(s);
         }
@@ -304,11 +308,64 @@ pub(crate) fn album(resp: &Value, browse_id: &str) -> Result<AlbumPage> {
         album: summary,
         description: text(header.pointer("/description/musicDescriptionShelfRenderer/description"))
             .or_else(|| text(header.get("description"))),
+        track_total: runs(header.get("secondSubtitle"))
+            .first()
+            .and_then(|r| leading_number(run_text(r))),
         track_count_text: text(header.get("secondSubtitle")),
         tracks,
         shelves: extra_shelves,
         in_library: header_library_toggle(header),
+        continuation,
     })
+}
+
+/// "294 songs" / "1,024 Titel" → 294 / 1024 (the first number of a header run).
+fn leading_number(text: &str) -> Option<u32> {
+    let digits: String = text
+        .trim()
+        .chars()
+        .take_while(|c| c.is_ascii_digit() || matches!(c, ',' | '.' | '\u{a0}' | ' '))
+        .filter(char::is_ascii_digit)
+        .collect();
+    digits.parse().ok()
+}
+
+/// Album tracks from a playlist page or a list continuation (long albums), with the
+/// album's name, id, artists and art filled in like [`album`] does.
+pub(crate) fn album_tracks(resp: &Value, album: &AlbumSummary) -> AlbumTracks {
+    let album_ref = EntityRef {
+        name: album.title.clone(),
+        id: Some(album.browse_id.clone()),
+    };
+    let fill = |row: &Value| {
+        album_track(
+            row,
+            &album_ref,
+            &album.artists,
+            album.thumbnail_url.as_deref(),
+        )
+    };
+    if resp.get("continuationContents").is_some() || resp.get("onResponseReceivedActions").is_some()
+    {
+        let (rows, next) = list_continuation(resp);
+        let tracks: Vec<Track> = rows.into_iter().filter_map(fill).collect();
+        return AlbumTracks {
+            continuation: if tracks.is_empty() { None } else { next },
+            tracks,
+        };
+    }
+    let mut out = AlbumTracks::default();
+    for section in secondary_sections(resp) {
+        if let Some(shelf) = section
+            .get("musicPlaylistShelfRenderer")
+            .or_else(|| section.get("musicShelfRenderer"))
+        {
+            out.tracks
+                .extend(arr_at(shelf, "/contents").iter().filter_map(fill));
+            out.continuation = out.continuation.take().or_else(|| continuation_of(shelf));
+        }
+    }
+    out
 }
 
 fn album_track(
@@ -605,6 +662,172 @@ pub(crate) fn playlist_continuation(resp: &Value) -> PlaylistContinuation {
     }
 }
 
+// ---------------------------------------------------------------- podcasts
+
+/// An episode row (`musicMultiRowListItemRenderer`); `show` replaces the artists
+/// (episode rows on a show page don't name the show).
+pub(crate) fn parse_episode(v: &Value, show: Option<&EntityRef>) -> Option<Episode> {
+    let r = v.get("musicMultiRowListItemRenderer")?;
+    let Item::Episode(mut track) = parse_multi_row(r)? else {
+        return None;
+    };
+    let subtitle: Vec<&Value> = runs(r.get("subtitle")).iter().collect();
+    let meta = analyze_runs(&subtitle);
+    if let Some(show) = show {
+        track.artists = show.name.clone();
+        track.artist_refs = vec![show.clone()];
+    }
+    let show_name = track.artist_refs.first().map(|a| a.name.clone());
+    let date = meta
+        .other
+        .iter()
+        .find(|g| !is_stat(g) && Some(*g) != show_name.as_ref())
+        .cloned();
+    let page_id = runs(r.get("title"))
+        .iter()
+        .find_map(|run| browse_target(run.get("navigationEndpoint")))
+        .map(|t| t.browse_id)
+        .filter(|id| id.starts_with("MPED"));
+    Some(Episode {
+        track,
+        date,
+        description: text(r.get("description")),
+        page_id,
+    })
+}
+
+/// "1.6M views", "52 episodes": a statistic rather than a date.
+fn is_stat(group: &str) -> bool {
+    let mut words = group.split_whitespace();
+    let (Some(number), Some(_unit), None) = (words.next(), words.next(), words.next()) else {
+        return false;
+    };
+    let digits = number.trim_end_matches(['K', 'M', 'B', 'k']);
+    !digits.is_empty()
+        && digits
+            .chars()
+            .all(|c| c.is_ascii_digit() || c == '.' || c == ',')
+        && group.contains(|c: char| c.is_alphabetic())
+        && !group.contains("ago")
+}
+
+fn podcast_shelf(resp: &Value) -> Option<&Value> {
+    secondary_sections(resp)
+        .iter()
+        .find_map(|s| s.get("musicShelfRenderer"))
+}
+
+/// `browse_id` is the requested `MPSP…` id.
+pub(crate) fn podcast(resp: &Value, browse_id: &str) -> Result<PodcastPage> {
+    let header = responsive_header(resp)
+        .or_else(|| legacy_header(resp))
+        .ok_or_else(|| Error::Parse(format!("podcast {browse_id}: no header")))?;
+    let title = text(header.get("title"))
+        .ok_or_else(|| Error::Parse(format!("podcast {browse_id}: no title")))?;
+    let strapline: Vec<&Value> = runs(header.get("straplineTextOne")).iter().collect();
+    let subtitle: Vec<&Value> = runs(header.get("subtitle")).iter().collect();
+    let author = analyze_runs(&strapline)
+        .artists
+        .into_iter()
+        .next()
+        .or_else(|| analyze_runs(&subtitle).artists.into_iter().next())
+        .or_else(|| {
+            let name = strapline.first().map(|r| run_text(r))?;
+            non_empty(name).map(|name| EntityRef { name, id: None })
+        });
+    let podcast = PodcastSummary {
+        browse_id: browse_id.to_owned(),
+        title,
+        author,
+        thumbnail_url: renderer_thumbnail(header),
+    };
+    let show = EntityRef {
+        name: podcast.title.clone(),
+        id: Some(browse_id.to_owned()),
+    };
+    let shelf = podcast_shelf(resp);
+    let episodes = shelf
+        .map(|s| {
+            arr_at(s, "/contents")
+                .iter()
+                .filter_map(|v| parse_episode(v, Some(&show)))
+                .collect()
+        })
+        .unwrap_or_default();
+    Ok(PodcastPage {
+        description: text(header.pointer("/description/musicDescriptionShelfRenderer/description"))
+            .or_else(|| description_shelf(primary_sections(resp))),
+        episodes,
+        continuation: shelf.and_then(continuation_of),
+        saved: header_library_toggle(header),
+        podcast,
+    })
+}
+
+/// More episodes; `show` is the podcast (its rows don't name it).
+pub(crate) fn podcast_continuation(resp: &Value, show: Option<&EntityRef>) -> PodcastContinuation {
+    let (raw, next) = list_continuation(resp);
+    let episodes: Vec<Episode> = raw
+        .into_iter()
+        .filter_map(|v| parse_episode(v, show))
+        .collect();
+    PodcastContinuation {
+        continuation: if episodes.is_empty() { None } else { next },
+        episodes,
+    }
+}
+
+/// `browse_id` is the requested `MPED…` id.
+pub(crate) fn episode_page(resp: &Value, browse_id: &str) -> Result<EpisodePage> {
+    let header = responsive_header(resp)
+        .ok_or_else(|| Error::Parse(format!("episode {browse_id}: no header")))?;
+    let title = text(header.get("title"))
+        .ok_or_else(|| Error::Parse(format!("episode {browse_id}: no title")))?;
+    let video_id = header_buttons(header)
+        .iter()
+        .find_map(|b| {
+            watch_target(b.pointer("/musicPlayButtonRenderer/playNavigationEndpoint"))?.video_id
+        })
+        .or_else(|| browse_id.strip_prefix("MPED").map(str::to_owned))
+        .filter(|id| !id.is_empty())
+        .ok_or_else(|| Error::Parse(format!("episode {browse_id}: no video id")))?;
+    let podcast = runs(header.get("straplineTextOne")).iter().find_map(|r| {
+        let ep = r.get("navigationEndpoint")?;
+        (page_type(ep) == Some(PAGE_PODCAST)).then(|| EntityRef {
+            name: run_text(r).to_owned(),
+            id: browse_target(Some(ep)).map(|t| t.browse_id),
+        })
+    });
+    let subtitle: Vec<&Value> = runs(header.get("subtitle")).iter().collect();
+    let meta = analyze_runs(&subtitle);
+    let date = meta.other.iter().find(|g| !is_stat(g)).cloned();
+    let duration = text(header.pointer("/progress/musicPlaybackProgressRenderer/durationText"))
+        .as_deref()
+        .and_then(spoken_or_clock_duration);
+    let artist_refs: Vec<EntityRef> = podcast.iter().cloned().collect();
+    let track = Track {
+        video_id,
+        title,
+        artists: podcast.as_ref().map(|p| p.name.clone()).unwrap_or_default(),
+        duration_secs: duration,
+        thumbnail_url: renderer_thumbnail(header),
+        artist_refs,
+        explicit: has_explicit_badge(header),
+        music_video_type: Some(MusicVideoType::PodcastEpisode),
+        ..Track::default()
+    };
+    Ok(EpisodePage {
+        episode: Episode {
+            track,
+            date,
+            description: description_shelf(secondary_sections(resp))
+                .or_else(|| description_shelf(primary_sections(resp))),
+            page_id: Some(browse_id.to_owned()),
+        },
+        podcast,
+    })
+}
+
 // ---------------------------------------------------------------- search
 
 fn search_sections(resp: &Value) -> &[Value] {
@@ -614,8 +837,42 @@ fn search_sections(resp: &Value) -> &[Value] {
     )
 }
 
+/// "Showing results for" / "Did you mean" above the results.
+fn search_correction(resp: &Value) -> Option<SearchCorrection> {
+    search_sections(resp).iter().find_map(|section| {
+        arr_at(section, "/itemSectionRenderer/contents")
+            .iter()
+            .find_map(|c| {
+                if let Some(r) = c.get("showingResultsForRenderer") {
+                    Some(SearchCorrection {
+                        corrected: str_at(r, "/correctedQueryEndpoint/searchEndpoint/query")
+                            .map(str::to_owned)
+                            .or_else(|| text(r.get("correctedQuery")))?,
+                        original: str_at(r, "/originalQueryEndpoint/searchEndpoint/query")
+                            .map(str::to_owned)
+                            .or_else(|| text(r.get("originalQuery")))?,
+                        applied: true,
+                    })
+                } else if let Some(r) = c.get("didYouMeanRenderer") {
+                    Some(SearchCorrection {
+                        corrected: str_at(r, "/correctedQueryEndpoint/searchEndpoint/query")
+                            .map(str::to_owned)
+                            .or_else(|| text(r.get("correctedQuery")))?,
+                        original: String::new(),
+                        applied: false,
+                    })
+                } else {
+                    None
+                }
+            })
+    })
+}
+
 pub(crate) fn search_summary(resp: &Value) -> SearchSummary {
-    let mut out = SearchSummary::default();
+    let mut out = SearchSummary {
+        correction: search_correction(resp),
+        ..SearchSummary::default()
+    };
     let mut seen = std::collections::HashSet::new();
     for section in search_sections(resp) {
         if let Some(card) = section.get("musicCardShelfRenderer") {
@@ -682,6 +939,7 @@ pub(crate) fn search_results(resp: &Value) -> SearchResults {
         );
     }
     SearchResults {
+        correction: search_correction(resp),
         items,
         continuation,
     }
@@ -691,6 +949,7 @@ pub(crate) fn search_continuation(resp: &Value) -> SearchResults {
     let (raw, next) = list_continuation(resp);
     let items: Vec<Item> = raw.into_iter().filter_map(parse_item).collect();
     SearchResults {
+        correction: None,
         continuation: if items.is_empty() { None } else { next },
         items,
     }

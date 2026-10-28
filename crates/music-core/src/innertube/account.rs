@@ -116,6 +116,11 @@ pub enum PlaylistAction {
     Rename(String),
     SetDescription(String),
     SetPrivacy(PlaylistPrivacy),
+    /// Uses an uploaded image as the cover (`playlistScottyEncryptedBlobId` from
+    /// [`InnerTube::upload_playlist_cover`]).
+    SetCustomThumbnail(String),
+    /// Goes back to the automatic cover (the first song's art).
+    RemoveCustomThumbnail,
 }
 
 impl PlaylistAction {
@@ -155,8 +160,36 @@ impl PlaylistAction {
             PlaylistAction::SetPrivacy(p) => {
                 json!({ "action": "ACTION_SET_PLAYLIST_PRIVACY", "playlistPrivacy": p.as_str() })
             }
+            PlaylistAction::SetCustomThumbnail(blob) => json!({
+                "action": "ACTION_SET_CUSTOM_THUMBNAIL",
+                "addedCustomThumbnail": {
+                    "imageKey": COVER_IMAGE_KEY.clone(),
+                    "playlistScottyEncryptedBlobId": blob,
+                },
+            }),
+            PlaylistAction::RemoveCustomThumbnail => json!({
+                "action": "ACTION_REMOVE_CUSTOM_THUMBNAIL",
+                "deletedCustomThumbnail": COVER_IMAGE_KEY.clone(),
+            }),
         }
     }
+}
+
+static COVER_IMAGE_KEY: std::sync::LazyLock<Value> = std::sync::LazyLock::new(
+    || json!({ "name": "studio_square_thumbnail", "type": "PLAYLIST_IMAGE_TYPE_CUSTOM_THUMBNAIL" }),
+);
+
+/// Upload endpoint for custom playlist covers (Google's resumable "Scotty" protocol).
+pub(crate) const COVER_UPLOAD_URL: &str =
+    "https://music.youtube.com/playlist_image_upload/playlist_custom_thumbnail";
+/// Largest cover accepted (ArchiveTune's limit; the web client uploads ≤ 2 MiB JPEGs).
+pub const MAX_COVER_BYTES: usize = 2 * 1024 * 1024;
+
+/// One HTTP request of the cover upload (built separately so it can be unit-tested).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct UploadRequest {
+    pub url: String,
+    pub headers: Vec<(&'static str, String)>,
 }
 
 fn strip_vl(id: &str) -> &str {
@@ -363,6 +396,26 @@ pub(crate) fn parse_history(resp: &Value) -> Vec<HistorySection> {
         .collect()
 }
 
+/// `encryptedBlobId` of an upload's finalize response.
+pub(crate) fn parse_cover_blob(body: &str) -> Result<String> {
+    let v: Value = serde_json::from_str(body)
+        .map_err(|e| Error::Parse(format!("cover upload: not JSON ({e})")))?;
+    v.get("encryptedBlobId")
+        .and_then(Value::as_str)
+        .filter(|s| !s.is_empty())
+        .map(str::to_owned)
+        .ok_or_else(|| Error::Parse("cover upload: no encryptedBlobId".into()))
+}
+
+/// The new cover URL from an `edit_playlist` response (`newHeader`).
+pub(crate) fn parse_new_cover(resp: &Value) -> Option<String> {
+    let header = resp.pointer("/newHeader/musicEditablePlaylistDetailHeaderRenderer/header")?;
+    let r = header
+        .get("musicResponsiveHeaderRenderer")
+        .or_else(|| header.get("musicDetailHeaderRenderer"))?;
+    super::parse::renderer_thumbnail(r)
+}
+
 /// `setVideoId`s of the rows an `edit_playlist` call added.
 pub(crate) fn parse_edit_result(resp: &Value) -> Result<Vec<String>> {
     if let Some(status) = resp.get("status").and_then(Value::as_str)
@@ -388,6 +441,94 @@ const LIBRARY_PODCASTS: &str = "FEmusic_library_non_music_audio_list";
 const HISTORY: &str = "FEmusic_history";
 
 impl InnerTube {
+    /// The upload requests: `start` (announce `len` bytes) or, with an upload id,
+    /// `upload, finalize` (send them). Headers are the signed-in InnerTube ones.
+    pub(crate) fn cover_upload_request(
+        &self,
+        len: usize,
+        upload_id: Option<&str>,
+    ) -> UploadRequest {
+        let mut headers = self.headers(true);
+        match upload_id {
+            None => {
+                headers.push(("X-Goog-Upload-Command", "start".into()));
+                headers.push(("X-Goog-Upload-Protocol", "resumable".into()));
+                headers.push(("X-Goog-Upload-Header-Content-Length", len.to_string()));
+                UploadRequest {
+                    url: COVER_UPLOAD_URL.to_owned(),
+                    headers,
+                }
+            }
+            Some(id) => {
+                headers.push(("X-Goog-Upload-Command", "upload, finalize".into()));
+                headers.push(("X-Goog-Upload-Offset", "0".into()));
+                headers.push(("Content-Type", "application/octet-stream".into()));
+                let id: String = url::form_urlencoded::byte_serialize(id.as_bytes()).collect();
+                UploadRequest {
+                    url: format!("{COVER_UPLOAD_URL}?upload_id={id}&upload_protocol=resumable"),
+                    headers,
+                }
+            }
+        }
+    }
+
+    /// Replaces the cover of one of the account's own playlists with `image` (a JPEG
+    /// or PNG, square, ≤ [`MAX_COVER_BYTES`]; crop / scale / compress it first).
+    /// Returns the new cover URL when YouTube reports it. **Live-untested.**
+    pub fn upload_playlist_cover(&self, playlist_id: &str, image: &[u8]) -> Result<Option<String>> {
+        if !self.is_signed_in() {
+            return Err(Error::Parse(
+                "playlist cover: needs a signed-in account".into(),
+            ));
+        }
+        if image.is_empty() || image.len() > MAX_COVER_BYTES {
+            return Err(Error::Parse(format!(
+                "playlist cover: {} bytes (1 B – 2 MiB allowed)",
+                image.len()
+            )));
+        }
+        // 1. Start a resumable upload session.
+        let start = self.cover_upload_request(image.len(), None);
+        let mut req = crate::http::agent().post(&start.url);
+        for (k, v) in &start.headers {
+            req = req.header(*k, v);
+        }
+        let resp = req.send_empty()?;
+        let upload_id = resp
+            .headers()
+            .get("x-guploader-uploadid")
+            .and_then(|v| v.to_str().ok())
+            .filter(|v| !v.is_empty())
+            .map(str::to_owned)
+            .ok_or_else(|| Error::Parse("playlist cover: no upload session".into()))?;
+        // 2. Send the bytes and finalize.
+        let upload = self.cover_upload_request(image.len(), Some(&upload_id));
+        let mut req = crate::http::agent().post(&upload.url);
+        for (k, v) in &upload.headers {
+            req = req.header(*k, v);
+        }
+        let mut resp = req.send(image)?;
+        let body = String::from_utf8_lossy(&crate::http::read_body(&mut resp)?).into_owned();
+        let blob = parse_cover_blob(&body)?;
+        // 3. Point the playlist at the uploaded image.
+        let resp = self.post_authed(
+            "browse/edit_playlist",
+            edit_playlist_body(playlist_id, &[PlaylistAction::SetCustomThumbnail(blob)]),
+        )?;
+        parse_edit_result(&resp)?;
+        Ok(parse_new_cover(&resp))
+    }
+
+    /// Removes a custom cover; returns the automatic cover URL when reported.
+    pub fn remove_playlist_cover(&self, playlist_id: &str) -> Result<Option<String>> {
+        let resp = self.post_authed(
+            "browse/edit_playlist",
+            edit_playlist_body(playlist_id, &[PlaylistAction::RemoveCustomThumbnail]),
+        )?;
+        parse_edit_result(&resp)?;
+        Ok(parse_new_cover(&resp))
+    }
+
     fn browse_authed(&self, browse_id: &str) -> Result<Value> {
         self.post_authed("browse", json!({ "browseId": browse_id }))
     }
@@ -677,6 +818,108 @@ mod tests {
         });
         assert_eq!(parse_edit_result(&ok).unwrap(), vec!["S9".to_owned()]);
         assert!(parse_edit_result(&json!({ "status": "STATUS_FAILED" })).is_err());
+    }
+
+    #[test]
+    fn cover_upload_requests() {
+        let mut auth = super::super::Auth::new("SAPISID=abc; HSID=x");
+        auth.auth_user = 2;
+        let it = InnerTube::default().with_auth(auth);
+        let get = |r: &UploadRequest, k: &str| {
+            r.headers
+                .iter()
+                .find(|(n, _)| *n == k)
+                .map(|(_, v)| v.clone())
+        };
+        let start = it.cover_upload_request(12345, None);
+        assert_eq!(start.url, COVER_UPLOAD_URL);
+        assert_eq!(
+            get(&start, "X-Goog-Upload-Command").as_deref(),
+            Some("start")
+        );
+        assert_eq!(
+            get(&start, "X-Goog-Upload-Protocol").as_deref(),
+            Some("resumable")
+        );
+        assert_eq!(
+            get(&start, "X-Goog-Upload-Header-Content-Length").as_deref(),
+            Some("12345")
+        );
+        assert_eq!(
+            get(&start, "Cookie").as_deref(),
+            Some("SAPISID=abc; HSID=x")
+        );
+        assert_eq!(get(&start, "X-Goog-AuthUser").as_deref(), Some("2"));
+        assert!(
+            get(&start, "Authorization")
+                .unwrap()
+                .starts_with("SAPISIDHASH ")
+        );
+
+        let upload = it.cover_upload_request(12345, Some("AB+c/d"));
+        assert_eq!(
+            upload.url,
+            format!("{COVER_UPLOAD_URL}?upload_id=AB%2Bc%2Fd&upload_protocol=resumable")
+        );
+        assert_eq!(
+            get(&upload, "X-Goog-Upload-Command").as_deref(),
+            Some("upload, finalize")
+        );
+        assert_eq!(get(&upload, "X-Goog-Upload-Offset").as_deref(), Some("0"));
+        assert_eq!(
+            get(&upload, "Content-Type").as_deref(),
+            Some("application/octet-stream")
+        );
+        assert!(get(&upload, "X-Goog-Upload-Header-Content-Length").is_none());
+
+        assert_eq!(
+            edit_playlist_body(
+                "VLPL1",
+                &[PlaylistAction::SetCustomThumbnail("BLOB".into())]
+            ),
+            json!({
+                "playlistId": "PL1",
+                "actions": [{
+                    "action": "ACTION_SET_CUSTOM_THUMBNAIL",
+                    "addedCustomThumbnail": {
+                        "imageKey": { "name": "studio_square_thumbnail", "type": "PLAYLIST_IMAGE_TYPE_CUSTOM_THUMBNAIL" },
+                        "playlistScottyEncryptedBlobId": "BLOB",
+                    },
+                }]
+            })
+        );
+        assert_eq!(
+            PlaylistAction::RemoveCustomThumbnail.to_json(),
+            json!({
+                "action": "ACTION_REMOVE_CUSTOM_THUMBNAIL",
+                "deletedCustomThumbnail": { "name": "studio_square_thumbnail", "type": "PLAYLIST_IMAGE_TYPE_CUSTOM_THUMBNAIL" },
+            })
+        );
+        assert_eq!(
+            parse_cover_blob(r#"{"encryptedBlobId":"AGk3"}"#).unwrap(),
+            "AGk3"
+        );
+        assert!(parse_cover_blob("{}").is_err());
+        assert!(parse_cover_blob("<html>").is_err());
+        let edited = json!({
+            "status": "STATUS_SUCCEEDED",
+            "newHeader": { "musicEditablePlaylistDetailHeaderRenderer": { "header": {
+                "musicResponsiveHeaderRenderer": { "thumbnail": { "musicThumbnailRenderer": { "thumbnail": {
+                    "thumbnails": [{ "url": "https://yt3.googleusercontent.com/cover=s544", "width": 544 }]
+                } } } }
+            } } }
+        });
+        assert_eq!(
+            parse_new_cover(&edited).as_deref(),
+            Some("https://yt3.googleusercontent.com/cover=s544")
+        );
+        // Without a cookie nothing is sent.
+        assert!(
+            InnerTube::default()
+                .upload_playlist_cover("PL1", b"jpeg")
+                .is_err()
+        );
+        assert!(it.upload_playlist_cover("PL1", &[]).is_err());
     }
 
     #[test]
