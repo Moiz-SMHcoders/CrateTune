@@ -89,7 +89,7 @@ impl Services {
         };
         let result = match engine {
             Engine::Audio(player) => MediaControls::for_player(config, player.clone(), forward),
-            Engine::Demo(_) => MediaControls::new(config, forward),
+            Engine::Demo(_) | Engine::Cast(_) => MediaControls::new(config, forward),
         };
         match result {
             Ok(controls) => self.controls = Some(controls),

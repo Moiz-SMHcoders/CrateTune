@@ -1,9 +1,15 @@
 # Changelog
 
 All notable changes. The format follows [Keep a Changelog](https://keepachangelog.com/),
-versions follow [SemVer](https://semver.org/). "Music" is a working name.
+versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
+
+### Changed
+
+* The app is now called **TuneDesk** (app id `tunedesk`): settings live in
+  `~/Library/Application Support/tunedesk` (macOS), `~/.config/tunedesk` (Linux),
+  `%APPDATA%\tunedesk\config` (Windows), and keychain entries use the service `tunedesk`.
 
 ### Added
 
@@ -13,9 +19,78 @@ versions follow [SemVer](https://semver.org/). "Music" is a working name.
   Waits out YouTube's pre-roll ad delay while playing the song's start from the iOS
   client, so playback starts in seconds. Settings → Playback → YouTube streams. Downloads
   are now full files. The ~1-minute preview remains as the last fallback.
+* **Podcasts**: show pages (description, episodes with date / length / description,
+  infinite scroll, Play / Shuffle / Add to queue, Save to library when signed in),
+  episode pages, Library → Podcasts (signed in); podcasts and episodes from search, Home
+  and Explore open there.
+* **DNS-over-HTTPS** (Settings → Network → DNS): Cloudflare, Google, Quad9 or a custom
+  RFC 8484 URL, answers cached per TTL, optional fallback to the system resolver, Test DNS.
+  Applies to all requests (YouTube Music, streams, lyrics, modules, …).
+* **Change cover…** for your own YouTube Music playlists (not yet tried against a real
+  account).
+* Search shows YouTube's spelling corrections ("Showing results for … · Search instead
+  for …", "Did you mean …?").
+* **Kanji readings without the 48 MB build**: Settings → Lyrics → Romanization downloads
+  the Japanese dictionary on demand (10.5 MB, checksum-verified, 45 MB on disk) with
+  progress, cancel and remove; until then romanization is kana-only.
+* **Translations are kept** in the library: reopening a song doesn't translate it again.
+* **Multichannel Opus** (5.1 / 7.1, mapping family 1 and 255) plays, mixed down to stereo.
+
+### Changed
+
+* **YouTube songs start faster**: about 0.5–0.8 s from click to sound instead of
+  1.2–2.3 s (the start of the file downloads while the stream is still being resolved,
+  the challenge solver loads during the player request, the session renews in the
+  background).
+* **Hide music videos** now also hides music videos and user videos inside playlists,
+  albums, radio, queues and card actions (each track carries its YouTube video type); an
+  album that YouTube only offers as official-audio videos stays complete.
+
+* **Music Together across networks**: a self-hostable relay server (`music-relay`, one
+  small binary; TLS through a reverse proxy) — set it in Settings → Music Together and
+  press **Host via relay**; the link works from anywhere.
+* **Hand the host role to a guest** (Listen together → **Make host**): the queue, position,
+  repeat and room settings move to them, everyone follows the new host automatically.
+* **Chromecast**: cast the queue to a Chromecast, Google TV or Nest speaker from the
+  player bar's Cast button (Settings → Chromecast); play / pause / seek / skip / volume
+  control the device, Stop casting continues on this computer. Not yet tested with a real
+  device.
+* **AI content filter** (optional, off by default): hide songs in categories you choose
+  (explicit lyrics, AI-generated music, holiday songs, …, or your own) using an
+  OpenAI-compatible model you configure (OpenAI, OpenRouter, or a local Ollama / LM
+  Studio). Settings → AI content filter.
+* **PoTokens on Windows** (WebView2) and, optionally, **Linux** (WebKitGTK, build
+  feature `webkitgtk-potoken`) for the web stream client. Not yet tested on those systems.
 
 ### Fixed
 
+* **Gapless AAC**: the encoder delay (~25–50 ms of warm-up) and the end padding of AAC
+  files (local M4A, YouTube, modules) are trimmed, so gapless albums no longer get a gap
+  or click between tracks; seeks in AAC are sample-accurate.
+* **Expiring module streams** are renewed through their module shortly before they
+  expire or when the server rejects them, and continue at the same byte (also for a
+  preloaded next song and for downloads).
+* Age-restricted YouTube videos no longer throw away the shared session (they were taken
+  for YouTube's bot check), so they fail and get skipped in well under a second.
+* Albums with more than 200 tracks showed only the first 200; the rest now loads (also
+  for Play / Shuffle from cards). Playing a playlist from its card plays up to ~1,100
+  songs instead of the first 100.
+* A saved search could disappear from the search history: saves and removals ran on
+  separate threads in no guaranteed order, and could be lost when quitting while the
+  library was busy. They are now written in order and flushed on quit; searches that
+  differ only in letter case are one entry.
+* Podcast episode lengths ("2 hr 43 min") were missing.
+* **Credit lines** before the lyrics ("Julian Casablancas/Thomas Bangalter/…", "作词：…",
+  "Written by: …", "Title - Artist") are filtered for every provider and format, without
+  touching lyrics that contain "/" or ":".
+* Instrumentals no longer show another song's lyrics (or a fan-written poem) when a
+  provider reports "pure music"; QQ Music title lines like "MALAMENTE (Cap.1: Augurio) -
+  ROSALÍA" are no longer shown as a duet singer.
+* Google Translate rate limits: the app backs off (2 min, doubling up to 30 min, or the
+  server's Retry-After), says "rate-limited, try again in N min" and retries by itself,
+  instead of failing on every song. AI translation errors say what to check (key,
+  endpoint, model, unreachable).
+* Provider romanization is no longer shown under lines that are already Latin.
 * A module playback test was sensitive to machine speed (it sampled positions on 100 ms
   ticks while rendering at ~3× real time).
 

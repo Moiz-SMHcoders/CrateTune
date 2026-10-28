@@ -150,6 +150,7 @@ pub(crate) fn song_from_row(row: &Row<'_>, base: usize) -> rusqlite::Result<Libr
             thumbnail_url: row.get(c(7))?,
             explicit: row.get(c(8))?,
             local_path: local_path.map(PathBuf::from),
+            ..Track::default()
         },
         extras: SongExtras {
             album_artist: row.get(c(10))?,

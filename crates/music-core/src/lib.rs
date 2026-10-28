@@ -31,11 +31,14 @@
 //! * [`spotify`] – Spotify Web API (PKCE sign-in, playlists, liked songs) for imports.
 //! * [`together`] – Music Together: synced listening on the LAN over WebSockets.
 
+pub mod ai_filter;
 pub mod buffer;
+pub mod cast;
 mod deck;
 mod decode;
 #[cfg(feature = "discord")]
 pub mod discord;
+pub mod doh;
 pub mod downloads;
 mod dsp;
 pub mod equalizer;
@@ -48,6 +51,7 @@ pub mod lyrics;
 pub mod media_controls;
 mod model;
 pub mod modules;
+mod mp4_gapless;
 mod opus;
 mod output;
 mod player;
@@ -78,12 +82,12 @@ pub use lyrics::{
     LyricLine, LyricWord, Lyrics, LyricsProvider, LyricsQuery, LyricsResult, LyricsService,
     LyricsServiceConfig, fetch_lyrics, parse_lrc,
 };
-pub use model::{EntityRef, Track, format_duration};
+pub use model::{EntityRef, MusicVideoType, Track, format_duration};
 pub use output::OutputDevice;
 pub use player::{PlaybackState, PlaybackStatus, Player};
 pub use silence::{SilenceConfig, SkipSilence};
 pub use sleep::{SleepTimer, SleepTimerState};
 pub use stream::{
-    Download, IosClientResolver, Quality, ResolvedStream, SourceKind, StreamPrefix, StreamResolver,
-    StreamSource,
+    Download, IosClientResolver, PrefetchedHead, Quality, ResolvedStream, SourceKind, StreamPrefix,
+    StreamResolver, StreamSource,
 };

@@ -51,7 +51,7 @@ impl Paxsenix {
             api_key: api_key
                 .map(|k| k.trim().to_owned())
                 .filter(|k| !k.is_empty()),
-            user_agent: "music-macos".into(),
+            user_agent: "TuneDesk".into(),
         }
     }
 

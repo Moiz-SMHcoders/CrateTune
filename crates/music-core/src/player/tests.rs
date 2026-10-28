@@ -15,10 +15,15 @@ const CHIRP: &[u8] = include_bytes!("../../tests/fixtures/chirp_frag.m4a");
 const PREVIEW_LEN: usize = 50_000;
 
 /// Resolves ids against a local server: `full` (the chirp), `preview` (the
-/// chirp cut off after 50 kB with 403s afterwards), anything else fails.
+/// chirp cut off after 50 kB with 403s afterwards), `expired` / `expiring`
+/// (module-like progressive streams whose URL already expired / drops after
+/// 60 kB and then answers 403; [`StreamResolver::refresh_track`] hands out a
+/// working one), anything else fails.
 struct FakeResolver {
     full: TestServer,
     preview: TestServer,
+    modules: TestServer,
+    refreshes: std::sync::atomic::AtomicU32,
 }
 
 impl FakeResolver {
@@ -31,12 +36,59 @@ impl FakeResolver {
                 range_of(&CHIRP[..PREVIEW_LEN], start, end)
             }
         });
-        Arc::new(Self { full, preview })
+        let modules = TestServer::start(|path, start, end| {
+            if path.starts_with("/stale") {
+                if start > 0 || path.contains("expired") {
+                    return Reply::Status(403);
+                }
+                return Reply::Partial {
+                    body: CHIRP.to_vec(),
+                    start: 0,
+                    total: CHIRP.len() as u64,
+                    sent: 60_000,
+                };
+            }
+            range_of(CHIRP, start, end)
+        });
+        Arc::new(Self {
+            full,
+            preview,
+            modules,
+            refreshes: Default::default(),
+        })
+    }
+
+    fn module_stream(&self, path: &str, valid_for: Duration, expired: bool) -> ResolvedStream {
+        let now = std::time::SystemTime::now();
+        ResolvedStream {
+            url: format!("{}{path}", self.modules.base),
+            mime_type: "audio/mp4".into(),
+            progressive: true,
+            full_access: true,
+            source: Some(crate::StreamSource {
+                kind: crate::SourceKind::Module,
+                provider: "Test".into(),
+                module_id: Some("test".into()),
+                ..Default::default()
+            }),
+            valid_until: Some(if expired {
+                now - valid_for
+            } else {
+                now + valid_for
+            }),
+            ..Default::default()
+        }
     }
 }
 
 impl StreamResolver for FakeResolver {
     fn resolve(&self, video_id: &str) -> Result<ResolvedStream> {
+        let hour = Duration::from_secs(3600);
+        match video_id {
+            "expired" => return Ok(self.module_stream("/stale/expired", hour, true)),
+            "expiring" => return Ok(self.module_stream("/stale/expiring", hour, false)),
+            _ => {}
+        }
         let base = match video_id {
             "full" => &self.full.base,
             "preview" => &self.preview.base,
@@ -51,6 +103,22 @@ impl StreamResolver for FakeResolver {
             loudness_db: Some(3.0),
             ..Default::default()
         })
+    }
+
+    fn refresh_track(
+        &self,
+        track: &Track,
+        _: Quality,
+        stale: &ResolvedStream,
+    ) -> Result<ResolvedStream> {
+        assert!(stale.url.contains(&track.video_id));
+        self.refreshes
+            .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        Ok(self.module_stream(
+            &format!("/fresh/{}", track.video_id),
+            Duration::from_secs(3600),
+            false,
+        ))
     }
 }
 
@@ -115,6 +183,17 @@ fn pull_until(
     what: &str,
     cond: impl Fn(&PlaybackState) -> bool,
 ) -> Run {
+    pull_fast_until(player, output, 480, what, cond)
+}
+
+/// Like [`pull_until`], `frames` per ~3 ms.
+fn pull_fast_until(
+    player: &Player,
+    output: &mut HeadlessOutput,
+    frames: usize,
+    what: &str,
+    cond: impl Fn(&PlaybackState) -> bool,
+) -> Run {
     let deadline = Instant::now() + Duration::from_secs(30);
     let mut run = Run {
         audio: Vec::new(),
@@ -132,7 +211,8 @@ fn pull_until(
             "timed out pulling until {what}: {:?}",
             run.states.last()
         );
-        run.audio.extend(output.by_ref().take(480 * 2).step_by(2));
+        run.audio
+            .extend(output.by_ref().take(frames * 2).step_by(2));
         std::thread::sleep(Duration::from_millis(3));
     }
 }
@@ -252,6 +332,109 @@ fn gapless_transition_to_the_preloaded_next_track() {
         (a_hz - 440.0).abs() < 5.0 && (b_hz - 880.0).abs() < 5.0,
         "{a_hz} {b_hz}"
     );
+}
+
+#[test]
+fn gapless_aac_tracks_join_without_priming_or_padding() {
+    // One chirp split into two AAC files at 0.6 s (not a frame boundary): each
+    // has 1024 frames of encoder priming and a padded last frame, which the
+    // edit list trims. Played back to back, they must reproduce the chirp.
+    const AAC_RATE: u32 = 44_100;
+    let (player, mut out) = Player::headless(FakeResolver::new(), AAC_RATE).unwrap();
+    player.play(local("gapless_a.m4a"));
+    player.set_next(Some(local("gapless_b.m4a")));
+    wait_for(&player, "preload", |s| s.next_preloaded);
+    let run = pull_until(&player, &mut out, "end of b", |s| {
+        s.advance_count == 1 && s.status == PlaybackStatus::Ended
+    });
+    let a = player_track_duration(&run, "gapless_a.m4a");
+    assert_eq!(a, Some(Duration::from_millis(600)));
+
+    // Align the output with the source signal on the first track...
+    let reference = |i: i64| {
+        if i < 0 {
+            0.0
+        } else {
+            crate::decode::tests::reference_chirp(i as u64)
+        }
+    };
+    let start = run.audio.iter().position(|&s| is_sound(s)).unwrap();
+    let from = start.saturating_sub(4);
+    let (lag, corr) = crate::decode::tests::best_lag(&run.audio[from..from + 8192], reference, 16);
+    assert!(corr > 0.99, "{corr}");
+    let origin = from as i64 - lag;
+    // ...then the whole 1.3 s, across the switch, must line up with it: a gap
+    // or overlap of even a few frames at 0.6 s would shift the second half.
+    let total = 57_330; // 0.6 s + 0.7 s at 44.1 kHz
+    let audio = &run.audio[origin as usize..];
+    assert!(audio.len() >= total, "{}", audio.len());
+    let boundary = 26_460;
+    let window = &audio[boundary - 4096..boundary + 4096];
+    let (lag, corr) =
+        crate::decode::tests::best_lag(window, |i| reference(i + boundary as i64 - 4096), 64);
+    assert_eq!(
+        lag, 0,
+        "track b is shifted by {lag} frames (correlation {corr})"
+    );
+    assert!(corr > 0.99, "{corr}");
+    let tail = &audio[total - 4096..total];
+    let (lag, corr) =
+        crate::decode::tests::best_lag(tail, |i| reference(i + total as i64 - 4096), 64);
+    assert_eq!(
+        lag, 0,
+        "end of track b shifted by {lag} (correlation {corr})"
+    );
+    // Nothing inserted around the switch, and the audio stops right at 1.3 s.
+    assert!(longest_silence(&audio[boundary - 2048..boundary + 2048]) <= 2);
+    assert!(
+        audio[total + 64..].iter().all(|s| !is_sound(*s)),
+        "audio continues past the end of track b"
+    );
+}
+
+/// The duration the player reported for `name` while it was current.
+fn player_track_duration(run: &Run, name: &str) -> Option<Duration> {
+    run.states
+        .iter()
+        .find(|s| title(s) == name && s.duration.is_some())
+        .and_then(|s| s.duration)
+}
+
+#[test]
+fn module_streams_recover_from_expired_urls_mid_stream_and_when_preloaded() {
+    let (player, mut out, resolver) = player();
+    // Its URL dies after 60 kB (of 330 kB): re-resolved, resumed at the same byte.
+    player.play(remote("expiring"));
+    // Preloaded with a URL that has expired already: re-resolved before use.
+    player.set_next(Some(remote("expired")));
+    let run = pull_fast_until(&player, &mut out, 2400, "end of both", |s| {
+        s.advance_count == 1 && s.status == PlaybackStatus::Ended
+    });
+    assert!(
+        run.states
+            .iter()
+            .all(|s| s.error_count == 0 && !s.preview_only)
+    );
+    assert_eq!(
+        resolver.refreshes.load(std::sync::atomic::Ordering::SeqCst),
+        2
+    );
+    // Two full 20 s chirps, back to back.
+    let (first, last) = sound_span(&run.audio);
+    assert!(
+        (secs(last - first) - 40.0).abs() < 0.2,
+        "{}",
+        secs(last - first)
+    );
+    assert!(longest_silence(&run.audio[first..=last]) < RATE as usize / 10);
+    let requests = resolver.modules.requests.lock().unwrap().clone();
+    assert!(requests.contains(&("/stale/expiring".into(), 0)));
+    assert!(
+        requests.contains(&("/fresh/expiring".into(), 60_000)),
+        "{requests:?}"
+    );
+    assert!(requests.contains(&("/fresh/expired".into(), 0)));
+    assert!(!requests.iter().any(|(p, _)| p == "/stale/expired"));
 }
 
 #[test]

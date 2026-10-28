@@ -3,14 +3,17 @@
 //! meriyah (ISC) and astring (MIT)) running in an embedded QuickJS.
 //!
 //! The solver parses the player script once ("preprocessing", a few seconds in
-//! QuickJS) and returns a much smaller script holding just the two functions; that
-//! is cached per player id in memory and on disk, so later solves take milliseconds.
+//! QuickJS) and returns a script exposing just the two functions; that is cached
+//! per player id in memory and on disk. Loading it into a fresh engine still takes
+//! a few hundred ms (it is ~4 MB), so [`ChallengeSolver::prepare`] does that ahead
+//! of time — while the player request is in flight — and the solve itself then
+//! only calls the functions.
 //!
 //! [yt-dlp/ejs]: https://github.com/yt-dlp/ejs
 
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
-use std::sync::mpsc::{self, Sender};
+use std::sync::mpsc::{self, RecvTimeoutError, Sender};
 use std::sync::{Arc, Mutex, PoisonError};
 use std::thread;
 
@@ -29,6 +32,8 @@ pub(crate) const SOLVER_VERSION: &str = "ejs-0.8.0";
 const MEMORY_LIMIT: usize = 768 * 1024 * 1024;
 const JS_STACK: usize = 16 * 1024 * 1024;
 const THREAD_STACK: usize = 64 * 1024 * 1024;
+/// A prepared engine nobody used within this time is dropped (memory).
+const PREPARED_IDLE: std::time::Duration = std::time::Duration::from_secs(30);
 
 /// Solutions for one player, keyed by challenge.
 #[derive(Debug, Default, Clone)]
@@ -46,9 +51,22 @@ struct Job {
     reply: Sender<Result<Solutions>>,
 }
 
+enum Message {
+    Solve(Job),
+    /// Load this (preprocessed) player into an engine for the next solve.
+    Prepare(String),
+}
+
+/// An engine with a preprocessed player loaded (`globalThis.__ejs.n` / `.sig`).
+struct Prepared {
+    player_id: String,
+    engine: Engine,
+    at: std::time::Instant,
+}
+
 /// Runs the solver on one dedicated thread (QuickJS runtimes aren't `Send`).
 pub(crate) struct ChallengeSolver {
-    jobs: Mutex<Option<Sender<Job>>>,
+    jobs: Mutex<Option<Sender<Message>>>,
     cache_dir: Option<PathBuf>,
     /// Player ids preprocessed in this process.
     known: Arc<Mutex<HashSet<String>>>,
@@ -95,18 +113,30 @@ impl ChallengeSolver {
             reply,
         };
         self.sender()?
-            .send(job)
+            .send(Message::Solve(job))
             .map_err(|_| Error::Audio("challenge solver stopped".into()))?;
         rx.recv()
             .map_err(|_| Error::Audio("challenge solver crashed".into()))?
     }
 
-    fn sender(&self) -> Result<Sender<Job>> {
+    /// Starts loading `player_id`'s preprocessed player into an engine on the
+    /// solver thread, so that a [`Self::solve`] soon after only runs the
+    /// challenge functions. Returns at once; a no-op if it isn't preprocessed.
+    pub(crate) fn prepare(&self, player_id: &str) {
+        if !self.has_preprocessed(player_id) {
+            return;
+        }
+        if let Ok(tx) = self.sender() {
+            let _ = tx.send(Message::Prepare(player_id.to_owned()));
+        }
+    }
+
+    fn sender(&self) -> Result<Sender<Message>> {
         let mut slot = self.jobs.lock().unwrap_or_else(PoisonError::into_inner);
         if let Some(tx) = slot.as_ref() {
             return Ok(tx.clone());
         }
-        let (tx, rx) = mpsc::channel::<Job>();
+        let (tx, rx) = mpsc::channel::<Message>();
         let cache_dir = self.cache_dir.clone();
         let known = self.known.clone();
         thread::Builder::new()
@@ -117,20 +147,77 @@ impl ChallengeSolver {
                 // job: parsing a full player script leaves ~300 MB in QuickJS's heap,
                 // and recreating the engine for the next song takes only milliseconds.
                 let mut preprocessed = HashMap::new();
-                for job in rx {
-                    let mut engine = None;
-                    let result =
-                        solve_job(&mut engine, &mut preprocessed, cache_dir.as_deref(), &job);
+                let mut prepared: Option<Prepared> = None;
+                loop {
+                    let message = match rx.recv_timeout(PREPARED_IDLE) {
+                        Ok(message) => message,
+                        Err(RecvTimeoutError::Timeout) => {
+                            prepared = prepared.filter(|p| p.at.elapsed() < PREPARED_IDLE);
+                            continue;
+                        }
+                        Err(RecvTimeoutError::Disconnected) => return,
+                    };
+                    let job = match message {
+                        Message::Prepare(player_id) => {
+                            if prepared.as_ref().is_none_or(|p| p.player_id != player_id) {
+                                prepared = None;
+                                let started = std::time::Instant::now();
+                                match prepare_engine(
+                                    &mut preprocessed,
+                                    cache_dir.as_deref(),
+                                    &player_id,
+                                ) {
+                                    Ok(engine) => {
+                                        log::debug!(
+                                            "jsc: player {player_id} loaded in {:?}",
+                                            started.elapsed()
+                                        );
+                                        prepared = Some(Prepared {
+                                            player_id,
+                                            engine,
+                                            at: std::time::Instant::now(),
+                                        });
+                                    }
+                                    Err(e) => log::debug!("jsc: preparing {player_id} failed: {e}"),
+                                }
+                            }
+                            continue;
+                        }
+                        Message::Solve(job) => job,
+                    };
+                    // A prepared engine serves one solve, then goes (memory).
+                    let fast = prepared
+                        .take()
+                        .filter(|p| p.player_id == job.player_id)
+                        .and_then(|p| match solve_prepared(&p.engine, &job) {
+                            Ok(solutions) => Some(solutions),
+                            Err(e) => {
+                                log::debug!("jsc: prepared solve failed, solving afresh: {e}");
+                                None
+                            }
+                        });
+                    let result = match fast {
+                        Some(solutions) => Ok(solutions),
+                        None => {
+                            let mut engine = None;
+                            let result = solve_job(
+                                &mut engine,
+                                &mut preprocessed,
+                                cache_dir.as_deref(),
+                                &job,
+                            );
+                            if let Some(engine) = &engine {
+                                engine._runtime.run_gc();
+                            }
+                            result
+                        }
+                    };
                     if result.is_ok() {
                         known
                             .lock()
                             .unwrap_or_else(PoisonError::into_inner)
                             .insert(job.player_id.clone());
                     }
-                    if let Some(engine) = &engine {
-                        engine._runtime.run_gc();
-                    }
-                    drop(engine);
                     let _ = job.reply.send(result);
                 }
             })
@@ -146,6 +233,101 @@ struct Engine {
     context: Context,
     _runtime: Runtime,
     _zone: zone::Zone,
+}
+
+/// An engine with `player_id`'s preprocessed player evaluated, the way yt-dlp's
+/// solver runs one (`Function("_result", player)(result)` → `result.n` / `.sig`),
+/// without loading the solver itself.
+fn prepare_engine(
+    preprocessed: &mut HashMap<String, String>,
+    cache_dir: Option<&std::path::Path>,
+    player_id: &str,
+) -> Result<Engine> {
+    let source = match preprocessed.get(player_id) {
+        Some(source) => source.clone(),
+        None => {
+            let path = cache_path(
+                cache_dir.ok_or_else(|| Error::Parse("no solver cache".into()))?,
+                player_id,
+            );
+            let source = std::fs::read_to_string(path)
+                .map_err(|e| Error::Parse(format!("preprocessed player: {e}")))?;
+            preprocessed.insert(player_id.to_owned(), source.clone());
+            source
+        }
+    };
+    let engine = bare_engine()?;
+    engine.context.with(|ctx| -> Result<()> {
+        ctx.globals()
+            .set("__ejsPlayer", source)
+            .map_err(|e| Error::Audio(format!("challenge solver: {e}")))?;
+        ctx.eval_with_options::<(), _>(
+            "globalThis.__ejs = { n: null, sig: null };\n\
+             Function('_result', globalThis.__ejsPlayer)(globalThis.__ejs);\n\
+             delete globalThis.__ejsPlayer;",
+            eval_options("prepare.js"),
+        )
+        .catch(&ctx)
+        .map_err(|e| Error::Audio(format!("challenge solver: loading the player: {e}")))
+    })?;
+    Ok(engine)
+}
+
+/// Runs a job's challenges through a [`prepare_engine`] engine.
+fn solve_prepared(engine: &Engine, job: &Job) -> Result<Solutions> {
+    let input = json!({ "n": job.n, "sig": job.sig }).to_string();
+    let output: String = engine.context.with(|ctx| {
+        ctx.globals()
+            .set("__jscInput", input)
+            .map_err(|e| Error::Audio(format!("challenge solver: {e}")))?;
+        ctx.eval_with_options::<String, _>(
+            "(() => {\n\
+               const input = JSON.parse(globalThis.__jscInput);\n\
+               const out = { n: {}, sig: {} };\n\
+               for (const kind of ['n', 'sig']) {\n\
+                 if (!input[kind].length) continue;\n\
+                 const f = globalThis.__ejs[kind];\n\
+                 if (!f) throw new Error(`no ${kind} function`);\n\
+                 for (const c of input[kind]) out[kind][c] = f(c);\n\
+               }\n\
+               return JSON.stringify(out);\n\
+             })()",
+            eval_options("solve-prepared.js"),
+        )
+        .catch(&ctx)
+        .map_err(|e| Error::Audio(format!("challenge solver: {e}")))
+    })?;
+    let output: Value = serde_json::from_str(&output)
+        .map_err(|e| Error::Parse(format!("challenge solver output: {e}")))?;
+    let mut solutions = Solutions::default();
+    for (kind, target) in [("n", &mut solutions.n), ("sig", &mut solutions.sig)] {
+        for (challenge, solution) in output[kind].as_object().into_iter().flatten() {
+            let solution = solution
+                .as_str()
+                .ok_or_else(|| Error::Parse(format!("challenge solver: no {kind} solution")))?;
+            target.insert(challenge.clone(), solution.to_owned());
+        }
+    }
+    Ok(solutions)
+}
+
+/// A QuickJS engine without the solver loaded.
+fn bare_engine() -> Result<Engine> {
+    let fail = |what: &str| Error::Audio(format!("challenge solver: {what}"));
+    let zone = zone::Zone::new();
+    let runtime = match zone.allocator() {
+        Some(allocator) => Runtime::new_with_alloc(allocator),
+        None => Runtime::new(),
+    }
+    .map_err(|_| fail("runtime"))?;
+    runtime.set_memory_limit(MEMORY_LIMIT);
+    runtime.set_max_stack_size(JS_STACK);
+    let context = Context::full(&runtime).map_err(|_| fail("context"))?;
+    Ok(Engine {
+        context,
+        _runtime: runtime,
+        _zone: zone,
+    })
 }
 
 fn new_engine() -> Result<Engine> {
@@ -376,4 +558,58 @@ mod zone {
     }
 
     pub use imp::Zone;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A stand-in for a preprocessed player: what yt-dlp's solver outputs
+    /// defines `_result.n` and `_result.sig`.
+    const PLAYER: &str = "_result.n = c => c.split('').reverse().join('');\n\
+                          _result.sig = c => c + '!';";
+
+    #[test]
+    fn prepared_and_fresh_solves_agree() {
+        let dir = std::env::temp_dir().join(format!("music-core-jsc-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(cache_path(&dir, "test"), PLAYER).unwrap();
+        let solver = ChallengeSolver::new(Some(dir.clone()));
+        assert!(solver.has_preprocessed("test"));
+        let solve = || {
+            solver
+                .solve("test", None, vec!["abc".into()], vec!["x".into()])
+                .unwrap()
+        };
+        // Without preparing: the full solver.
+        let fresh = solve();
+        assert_eq!(fresh.n["abc"], "cba");
+        assert_eq!(fresh.sig["x"], "x!");
+        // Prepared ahead (as during the player request): the same answers.
+        solver.prepare("test");
+        let prepared = solve();
+        assert_eq!((prepared.n, prepared.sig), (fresh.n, fresh.sig));
+        // The prepared path on its own.
+        let mut cache = HashMap::new();
+        let engine = prepare_engine(&mut cache, Some(&dir), "test").unwrap();
+        let (reply, _rx) = mpsc::channel();
+        let job = Job {
+            player_id: "test".into(),
+            player: None,
+            n: vec!["xyz".into()],
+            sig: vec![],
+            reply,
+        };
+        let direct = solve_prepared(&engine, &job).unwrap();
+        assert_eq!(direct.n["xyz"], "zyx");
+        assert!(direct.sig.is_empty());
+        // A player that isn't preprocessed is not prepared (and can't be solved).
+        solver.prepare("unknown");
+        assert!(
+            solver
+                .solve("unknown", None, vec!["a".into()], vec![])
+                .is_err()
+        );
+        let _ = std::fs::remove_dir_all(dir);
+    }
 }

@@ -49,6 +49,8 @@ gpui_kit_assets::icon_assets!(
         MicVocal,
         UsersRound,
         Radio,
+        // integrations: Chromecast
+        Cast,
         Pin,
         PinOff,
         X,

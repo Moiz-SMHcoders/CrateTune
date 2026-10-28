@@ -65,6 +65,12 @@ impl ContentFilter {
     }
 
     pub fn keep_item(&self, item: &Item) -> bool {
+        // AI content filter (off by default): its cached verdicts.
+        if crate::integrations::ai_filter::item_id(item)
+            .is_some_and(crate::integrations::ai_filter::hidden)
+        {
+            return false;
+        }
         match item {
             Item::Song(t) | Item::Episode(t) => !(self.hide_explicit && t.explicit),
             Item::Video(t) => !self.hide_videos && !(self.hide_explicit && t.explicit),
@@ -74,21 +80,44 @@ impl ContentFilter {
     }
 
     pub fn items(&self, items: Vec<Item>) -> Vec<Item> {
+        crate::integrations::ai_filter::prepare_items(&items);
         items.into_iter().filter(|i| self.keep_item(i)).collect()
     }
 
+    /// Hide explicit, and hide music / user videos (`Track::is_video`: OMV / UGC) in
+    /// playlists, queues, radio and search.
     pub fn keep_track(&self, track: &Track) -> bool {
         !(self.hide_explicit && track.explicit)
+            && !(self.hide_videos && track.is_video())
+            && !crate::integrations::ai_filter::hidden(&track.video_id)
     }
 
     pub fn tracks(&self, tracks: Vec<Track>) -> Vec<Track> {
+        crate::integrations::ai_filter::prepare_tracks(&tracks);
         tracks.into_iter().filter(|t| self.keep_track(t)).collect()
+    }
+
+    /// An album's tracks. Like [`Self::tracks`], except that an album YouTube only has
+    /// as videos (every track an "official audio" OMV, e.g. Random Access Memories)
+    /// keeps its tracks rather than showing up empty.
+    pub fn album_tracks(&self, tracks: Vec<Track>) -> Vec<Track> {
+        let all_videos = !tracks.is_empty() && tracks.iter().all(Track::is_video);
+        if self.hide_videos && all_videos {
+            let explicit_only = ContentFilter {
+                hide_videos: false,
+                ..*self
+            };
+            return explicit_only.tracks(tracks);
+        }
+        self.tracks(tracks)
     }
 
     pub fn shelves(
         &self,
         shelves: Vec<music_core::innertube::Shelf>,
     ) -> Vec<music_core::innertube::Shelf> {
+        // One classification for every shelf (then `items` finds them cached).
+        crate::integrations::ai_filter::prepare_items(shelves.iter().flat_map(|s| &s.items));
         shelves
             .into_iter()
             .filter_map(|mut s| {
@@ -325,6 +354,11 @@ impl PageCache {
         }
     }
 
+    /// Forgets one entry (its page refetches next time).
+    pub fn remove(key: &str, cx: &mut App) {
+        cx.default_global::<PageCache>().map.remove(key);
+    }
+
     pub fn clear(cx: &mut App) {
         cx.default_global::<PageCache>().map.clear();
     }
@@ -384,5 +418,33 @@ mod tests {
                 .len(),
             1
         );
+    }
+
+    #[test]
+    fn hide_videos_filters_tracks_by_video_type() {
+        use music_core::MusicVideoType::{Atv, Omv, Ugc};
+        let typed = |id: &str, t| Track {
+            video_id: id.into(),
+            music_video_type: Some(t),
+            ..Track::default()
+        };
+        let videos = ContentFilter {
+            hide_explicit: false,
+            hide_videos: true,
+        };
+        let mixed = vec![
+            typed("a", Atv),
+            typed("o", Omv),
+            typed("u", Ugc),
+            song("?", false),
+        ];
+        let ids = |t: Vec<Track>| t.into_iter().map(|t| t.video_id).collect::<Vec<_>>();
+        assert_eq!(ids(videos.tracks(mixed.clone())), ["a", "?"]);
+        assert_eq!(ids(videos.album_tracks(mixed.clone())), ["a", "?"]);
+        assert_eq!(ContentFilter::default().tracks(mixed).len(), 4);
+        // An album that exists only as official-audio videos stays whole.
+        let omv_album = vec![typed("1", Omv), typed("2", Omv)];
+        assert_eq!(videos.album_tracks(omv_album.clone()).len(), 2);
+        assert!(videos.tracks(omv_album).is_empty());
     }
 }

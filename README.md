@@ -1,4 +1,4 @@
-# music-macos — native desktop YouTube Music client
+# TuneDesk — native desktop YouTube Music client
 
 A lightweight Rust desktop client (macOS, Windows, Linux) in the spirit of the
 Android app ArchiveTune: a UI-agnostic core (`crates/music-core`) and a GPUI
@@ -28,12 +28,15 @@ Linux needs the development packages GPUI and the audio stack link against (Debi
 Ubuntu names): `build-essential pkg-config clang libasound2-dev libfontconfig-dev
 libfreetype-dev libwayland-dev libxkbcommon-dev libxkbcommon-x11-dev libx11-xcb-dev
 libxcb1-dev libvulkan-dev libdbus-1-dev` (the list CI installs, `.github/workflows/ci.yml`).
+For PoTokens on Linux (optional, untested) add `libwebkit2gtk-4.1-dev` and build with
+`--features music-core/webkitgtk-potoken`. The relay server is `cargo build --release -p
+music-relay` ([Relay server](#relay-server-music-relay)).
 
 **Packages** (`target/bundle/`):
 
 | Platform | Command | Output |
 |---|---|---|
-| macOS | `scripts/bundle-macos.sh [--no-build] [--no-dmg]` | `Music.app` (Info.plist with bundle id, version from Cargo, `LSMinimumSystemVersion` 11.0, `NSMicrophoneUsageDescription`, high-res, music category; ad-hoc signed, or Developer ID + hardened runtime with `MACOS_SIGN_IDENTITY`) and `music-macos-<ver>-macos-<arch>.dmg` |
+| macOS | `scripts/bundle-macos.sh [--no-build] [--no-dmg]` | `TuneDesk.app` (Info.plist with bundle id, version from Cargo, `LSMinimumSystemVersion` 11.0, `NSMicrophoneUsageDescription`, high-res, music category; ad-hoc signed, or Developer ID + hardened runtime with `MACOS_SIGN_IDENTITY`) and `tunedesk-<ver>-macos-<arch>.dmg` |
 | Linux | `scripts/bundle-linux.sh [--no-build] [--appimage]` | `.tar.gz` with `bin/`, `.desktop`, hicolor icons, AppStream metainfo, `install.sh`; AppImage via `appimagetool` |
 | Windows | `pwsh scripts/bundle-windows.ps1` | `.zip` and an Inno Setup 6 per-user installer (`packaging/windows/installer.iss`); the `.exe` gets its icon + version resource from `build.rs` (`embed-resource`, native Windows builds). An MSI could be made with `cargo-wix` instead. |
 
@@ -41,8 +44,8 @@ CI (`.github/workflows/ci.yml`) runs fmt, clippy (also with `--features screensh
 tests on macOS, Ubuntu and Windows; `release.yml` builds every package on a `v*` tag and
 attaches them to a draft release.
 
-**App identity.** No final name has been chosen: "Music" and the `music-macos` ids are
-working names. They live in **one file, `packaging/app.env`** (`APP_NAME`, `APP_ID`,
+**App identity.** The app is **TuneDesk** (app id `tunedesk`; the bundle id
+`io.github.tunedesk` is a placeholder). Name and ids live in **one file, `packaging/app.env`** (`APP_NAME`, `APP_ID`,
 `BUNDLE_ID`, `APP_SUMMARY`, `UPDATE_REPO`), read by `crates/music-gpui/build.rs`
 (→ `identity.rs`: window title, menus, tray, About, media-controls / MPRIS name, settings
 directory and keychain service) and by the packaging scripts. Renaming `APP_ID` moves the
@@ -84,22 +87,52 @@ its own executor.
 
 * `InnerTube` — YouTube Music (`WEB_REMIX`) metadata: home (+ mood chips, continuation),
   explore, charts (per country), moods & genres, new releases, album / artist / playlist
-  pages, search (summary, per-category filters, suggestions, continuations), play queues
-  (`next`, `RDAMVM<id>` radio), related and lyrics tabs; locale via `hl`/`gl`. A cookie-based
-  account layer (`innertube::Auth`, SAPISIDHASH) adds account info, library, history, likes,
-  subscriptions and playlist editing (request bodies unit-tested; not yet verified live).
-  Ported from ArchiveTune, see `THIRD_PARTY.md`.
-* `http::configure(HttpConfig { proxy, user_agent, timeout })` — process-wide HTTP agent
-  (http/https/socks4/socks5 proxies; no DNS-over-HTTPS).
+  pages (long albums: `album_tracks` / `album_complete` load past the page's 200 tracks
+  through the album playlist; `playlist_complete`), podcasts (`podcast` show pages with
+  `Episode`s, `podcast_continuation`, `episode` pages), search (summary, per-category
+  filters, suggestions, continuations, spelling `correction` + `search_summary_exact`),
+  play queues (`next`, `RDAMVM<id>` radio), related and lyrics tabs; locale via `hl`/`gl`.
+  Every parsed `Track` carries `music_video_type` (`MusicVideoType::{Atv, Omv, Ugc,
+  PodcastEpisode, Uploaded, Other}`; `Track::is_video` = OMV or UGC). A cookie-based
+  account layer (`innertube::Auth`, SAPISIDHASH) adds account info, library (incl.
+  podcasts), history, likes, subscriptions, playlist editing and custom playlist covers
+  (`upload_playlist_cover`; request bodies unit-tested; not yet verified live). Ported from
+  ArchiveTune, see `THIRD_PARTY.md`.
+* `http::configure(HttpConfig { proxy, user_agent, timeout, doh })` — process-wide HTTP agent
+  (http/https/socks4/socks5 proxies) with optional DNS-over-HTTPS (`doh` module: RFC 8484
+  wire format over ureq's resolver hook, `DohProvider::{Cloudflare, Google, Quad9,
+  Custom(url)}` reached through bootstrap IPs, A + AAAA in parallel, TTL cache 30 s – 1 h,
+  `fallback_to_system`); `http::lookup(host)` reports how a name resolves. The modules'
+  agent shares the resolver. ureq speaks HTTP/1.1 only, so Quad9 uses its port-5053 endpoint.
 * `StreamResolver` trait + `IosClientResolver` — video id → audio URL; `Quality`
   (`Low`/`Normal`/`High`) picks among the itags it returns (AAC 139/140, Opus 249/250/251).
 * `Player` — audio thread with a pollable `PlaybackState`, `pause`/`resume`/`toggle_pause`/`seek`.
   Decoding is Symphonia 0.6 plus the pure-Rust `opus-decoder` (`TrackDecoder`, a seekable
   `rodio::Source`): MP4/M4A (AAC, ALAC), MP3, FLAC, Ogg Vorbis/Opus, WAV, AIFF, WebM/MKV.
-  rodio/cpal only mix and output. Engine features:
+  rodio/cpal only mix and output. Gapless details the libraries leave out:
+  * AAC in MP4 (files, YouTube's fragmented DASH `.m4a`): the encoder delay ("priming",
+    ~1–2k frames) and the last frame's padding are trimmed from the edit list
+    (`moov/trak/edts/elst`; iTunes' `iTunSMPB` when there is none) by a small box parser
+    (`mp4_gapless`), since Symphonia ignores edit lists. Durations, positions and seeks
+    use the trimmed timeline; AAC seeks pre-roll two frames, so audio after a seek is
+    identical to sequential decoding. Two halves of one signal play back without a gap
+    (`player::tests::gapless_aac_tracks_join_without_priming_or_padding`).
+  * Opus: mono / stereo (mapping family 0, everything YouTube serves) and multichannel
+    (family 1 up to 7.1, family 255): multistream packets are split per RFC 6716 App. B
+    (`opus-decoder` 0.1's own multistream splitter misreads them) and mixed down to
+    stereo (ITU-style matrix normalized like opusfile's; family 255 keeps its first two
+    channels). Ambisonics (families 2 / 3) are rejected.
+
+  Engine features:
   * plays `Track::local_path` files (ReplayGain / R128 track gain from tags) or streams
     YouTube progressively (`StreamBuffer`: playback starts with the first bytes, seeks
-    into the undownloaded part wait up to 10 s; an expired URL is re-resolved once);
+    into the undownloaded part wait up to 10 s). Expiring URLs (googlevideo's `expire`,
+    a module's `expiresAt` → `ResolvedStream::valid_until`) are re-resolved through
+    `StreamResolver::refresh_track` 30 s before they expire (also before first use, e.g.
+    a preloaded next track) and when rejected (401/403/410), and the download resumes at
+    the same byte — only if it is provably the same file (format, size, module + variant;
+    a server-reported size change fails instead of splicing two files); up to 3 times per
+    download, each after progress. Downloads do the same (`download_refreshing`);
     loudness normalization from YouTube's `loudnessDb` (`set_normalization(false)` turns
     it off, ReplayGain included);
   * `set_next` → preload ~30 s ahead, gapless switch, optional crossfade
@@ -147,9 +180,19 @@ its own executor.
   cancel).
 * `spotify` — Spotify Web API with the user's own Client ID: Authorization Code + PKCE with
   a loopback redirect, playlists, liked songs, playlist items (read-only scopes).
-* `together` — Music Together on the LAN: ArchiveTune's JSON protocol over WebSockets
-  (`tungstenite` on std threads), `TogetherServer` / `TogetherClient`, heartbeat clock sync,
-  `GuestSync` (drift / play-state planner), join links.
+* `together` — Music Together on the LAN or through a self-hosted relay: ArchiveTune's JSON
+  protocol over WebSockets (`tungstenite` on std threads, `wss://` via rustls),
+  `TogetherServer` (`start` on a port, `start_relay` through a `music-relay` server) /
+  `TogetherClient`, heartbeat clock sync, `GuestSync` (drift / play-state planner), join
+  links, host transfer (`transfer_host`: the guest starts its own server with the room's
+  state, everyone reconnects). See [Relay server](#relay-server-music-relay).
+* `cast` — Chromecast / Google Cast: mDNS discovery (`discover`, `_googlecast._tcp`),
+  `CastSession` (CASTV2 over TLS: Default Media Receiver, LOAD / PLAY / PAUSE / SEEK /
+  STOP / volume, status), `MediaProxy` (serves a `ResolvedStream` or a local file to the
+  receiver over HTTP with ranges).
+* `ai_filter` — AI content filter: classifies songs / albums into categories the user
+  hides with any OpenAI-compatible chat-completions API (user-supplied endpoint / key /
+  model), verdicts cached per id (memory + JSON file), cache-only `hidden(id)`.
 * `recognition` — Shazam-compatible song recognition ported from ArchiveTune's `shazamkit`:
   `capture::record_microphone(len, &cancel, |progress| ..)` (cpal input, any rate → 16 kHz
   mono, cancellable, level callback), `audio::decode_file` / `to_signature_pcm`,
@@ -171,7 +214,7 @@ Media controls, scrobbling and Discord all hang off the poll the UI already does
 // once, on the UI thread after the event loop/main window exists
 // (macOS: main thread; Windows: set `config.hwnd` to the main window's HWND)
 let mut controls = MediaControls::for_player(
-    MediaControlsConfig::new("music_macos", "Music"),
+    MediaControlsConfig::new("tunedesk", "TuneDesk"),
     player.clone(),
     |event| { /* MediaControlEvent::Next / Previous → UI queue */ },
 )?;
@@ -227,19 +270,59 @@ if let Some(result) = service.fetch(&LyricsQuery::from_track(&track))? {
 
 * `LyricsResult` keeps the raw payload (`to_raw()` / `RawLyrics::parse`) so a library database
   can implement `LyricsCache` and store what was fetched.
+* Credit lines (`lyrics/credits.rs`, one heuristic for TTML, QRC, LRC and plain text): the
+  leading (and a short trailing) block is checked for credit labels in English, Romance
+  languages, Chinese, Japanese and Korean (`Written by:`, `Keyboard by：`, `作词 :`, `작곡 :`,
+  `Letra:` …), "Written by X" lines, songwriter lists that name one of the track's artists
+  (`Julian Casablancas/Thomas Bangalter/…`), a `Title - Artist` header, copyright notices.
+  Weak signals (an ambiguous `Music:` label, a plain list of names, a lone Chinese name) only
+  count with support: the line spans 0 s, its words are evenly timed (synthesized by the
+  provider), or the line next to it is a credit. Names are compared transliterated
+  (`ROSALÍA` = `Rosalia`, `周杰倫` = `周杰伦`). `parse` uses the payload's own `[ti:]`/`[ar:]`;
+  `LyricsResult::without_credits(&query)` adds the track's title and artists (the service
+  applies it to every result and cache hit). Lines in the middle of a song are never touched.
+* "Instrumental" answers (`纯音乐，请欣赏`, `Instrumental`, `♪`) are not lyrics
+  (`LyricsResult::is_instrumental`); one such answer vetoes line-synced / plain results from
+  other providers (for an instrumental they are another song or a fan-written poem), while
+  word-synced lyrics still win.
 * Selection: providers run concurrently (`max_concurrent`, 1 = one after another); with
   `prefer_word_synced` a word-synced result beats a line-synced one from a higher-priority
   provider; otherwise the highest-priority synced result wins; plain text is the fallback.
-* Translation: `GoogleTranslator` (free endpoint, batched) or `AiTranslator` (any
-  OpenAI-compatible chat-completions endpoint; key, model and custom prompt from the caller).
-* Romanization: Japanese kana (kanji readings only with the off-by-default `japanese-dict`
-  feature: lindera + IPADIC adds ~48 MB and downloads the dictionary at build time), Korean
-  (Revised Romanization), Chinese (pinyin with tones), Hindi/Devanagari, Cyrillic, other scripts
-  via `deunicode`.
+* Translation: `GoogleTranslator` (free endpoint, batched; requests of one translation are
+  spaced 400 ms and capped at 12) or `AiTranslator` (any OpenAI-compatible chat-completions
+  endpoint; key, model and custom prompt from the caller). A 429 / 503 blocks that endpoint
+  for its `Retry-After`, else 2 min doubling up to 30 min; calls meanwhile fail at once with
+  "… rate-limited this connection; try again in N min" (`translate::is_rate_limited`,
+  `LyricsTranslator::retry_after`); a `Retry-After` ≤ 10 s is waited out once. Google answers
+  a burst with a redirect to its "sorry" page (a 429 without `Retry-After`).
+  `CachedTranslator` + `TranslationCache` (`MemoryTranslationCache`, or `Library`: rows in the
+  lyrics table) keep finished translations per translator settings, language and lyrics text.
+* Romanization: Japanese (kana table; kanji readings with lindera + IPADIC), Korean (Revised
+  Romanization), Chinese (pinyin with tones), Hindi/Devanagari, Cyrillic, other scripts via
+  `deunicode`. Kanji: `romanize::dictionary` downloads lindera's prebuilt IPADIC on demand
+  (`DictionarySource::ipadic()`: 10.5 MB zip from lindera's v6.2.0 release, SHA-256 pinned,
+  45 MB unpacked — UniDic would be 46 MB zipped), unpacks it into a cache directory and
+  `load`s it memory-mapped (~9 ms); without it only kana are romanized. The off-by-default
+  `japanese-dict` feature embeds the same dictionary instead (+~48 MB binary, downloaded at
+  build time). lindera without a dictionary adds ~0.23 MB to the release binary. The pinned
+  zip must match the lindera version in `Cargo.toml` (its dictionary format); update both
+  together.
+
+```rust
+use music_core::lyrics::romanize::dictionary::{self, DictionarySource};
+let source = DictionarySource::ipadic();
+let path = match dictionary::installed(&source, &cache_dir) {
+    Some(path) => path,
+    None => dictionary::install(&source, &cache_dir, &cancel, |done, total| { /* progress */ })?,
+};
+dictionary::load(&path)?;   // romanize_line / romanize_result read kanji from now on
+```
 
 ```sh
 cargo run -p music-core --example lyrics -- "daft punk instant crush"     # every provider, then the service pick
 cargo run -p music-core --example lyrics -- --translate en "yoasobi idol" # + romanization and translation
+cargo run -p music-core --example lyrics -- --ja-dict /tmp/ja "yoasobi idol" # download IPADIC: kanji readings
+cargo run -p music-core --example lyrics -- --raw /tmp/raw "rosalia malamente" # + every provider's raw payload
 ```
 
 ### Full-length YouTube streams (`youtube` module)
@@ -259,7 +342,7 @@ cargo run -p music-core --example lyrics -- --translate en "yoasobi idol" # + ro
   from `adPlacements` / `adSlots`). `ResolvedStream::not_before` carries that time and the
   downloader waits; meanwhile it plays the head of the file from the iOS client's URL when
   that is provably the same file (`ResolvedStream::prefix`: same itag, size and `lmt`), so
-  playback usually starts in 2–5 s anyway.
+  playback starts long before that (see first audio below).
 
 Pieces:
 
@@ -272,9 +355,36 @@ Pieces:
   youtube.com's page, the interpreter, `GenerateIT`, then a minter that makes per-video
   tokens (cached; the integrity token lasts ~12 h). The browser part is the `BotGuardVm`
   trait: `WebKitBotGuard` runs `assets/po_token.html` in a hidden WKWebView on macOS (work
-  is dispatched to the main thread, so never call the resolver from it). No PoToken
-  provider on Linux / Windows yet; they use the TV client.
+  is dispatched to the main thread, so never call the resolver from it). On **Windows** a
+  hidden WebView2 on its own thread (feature `webview2-potoken`, default; the WebView2
+  runtime ships with Windows 10/11, the loader is linked statically with MSVC), on
+  **Linux** WebKitGTK on its own GTK thread (feature `webkitgtk-potoken`, **off by
+  default**: build with `--features music-core/webkitgtk-potoken` and
+  `libwebkit2gtk-4.1-dev` ≥ 2.40). Both run the same page and calls (`webview_host.rs`) and
+  fetch the challenge with their engine's User-Agent (`BotGuardVm::user_agent`). **They are
+  untested**: written and type-checked / clippy-clean for `x86_64-pc-windows-gnu` and
+  `x86_64-unknown-linux-gnu` from macOS only. Without a provider the TV client is used.
 * `WebResolver::prewarm()` does the slow one-time work at launch; the app calls it.
+* **First audio** (time from `play` to audible output) after `prewarm`: one player request
+  plus ~70 ms. The iOS client's head starts downloading as soon as that client answers
+  (`PrefetchedHead`, in parallel with the web client's player request), so the decoder
+  opens on bytes that are already there once the web URL confirms the same file; the
+  solver loads the ~4 MB preprocessed player while the player request is in flight
+  (`ChallengeSolver::prepare`), so solving `n` takes ~15 ms instead of 200–500 ms; a
+  session older than 40 min (TTL 45) is renewed on a background thread. Measured with
+  `youtube_play --first-audio` (muted real device, Oct 2026, other builds running):
+
+  | | before | after |
+  |---|---|---|
+  | TV, 4 songs × 2 searches | 1478 1358 2286 1464 / 1573 1158 2005 1161 ms (mean 1.56 s) | 729 841 841 835 / 626 532 528 526 ms (mean 0.68 s) |
+  | Web + PoToken, 3 songs | 2806 2170 1055 ms | 726 728 636 ms |
+  | TV, cold (no prewarm), first / second song | 3329 / 1439 ms | 2604 / 838 ms |
+
+* The PoToken attestation is renewed when its integrity token runs out (~12 h, minus
+  10 min): `PoTokenProvider::expire_attestation` forces that (unit test without network;
+  `youtube_play --first-audio 3 --expire-potoken web` live: ~1 s BotGuard renewal, then
+  full streams again). Age-restricted and unavailable videos fail with a clean error after
+  the client chain and the fallback (~0.4 s warm), and the player auto-skips them.
 * Settings → Playback → **YouTube streams**: Automatic (TV, then web + PoToken, then
   preview), TV client, Web + PoToken, Previews only.
 
@@ -282,6 +392,7 @@ Pieces:
 cargo run --release -p music-core --example youtube -- tv  "daft punk instant crush"  # resolve + full download + decode
 cargo run --release -p music-core --example youtube -- web khnokW3Mw24                # same with a PoToken (macOS)
 cargo run --release -p music-core --example youtube_play -- tv "daft punk"            # muted real-device playback
+cargo run --release -p music-core --example youtube_play -- --first-audio 4 tv "daft punk"  # time to first audio, 4 songs (MUSIC_LOG=debug: timings)
 ```
 
 This uses YouTube in ways its terms of service don't allow, as ArchiveTune and yt-dlp do,
@@ -357,7 +468,9 @@ src/
                      artwork (shared cache), sidebar, player_bar, queue_panel
   browse.rs          online pages: Load state, fetch (worker thread, app's InnerTube),
                      PageCache, Paging (infinite scroll), content filters, locale
-  search_box.rs      header search: suggestions + recent searches dropdown
+  search_box.rs      header search: suggestions + recent searches dropdown;
+                     search_history.rs: ordered, flushable history writes
+  playlist_cover.rs  "Change cover…": image → square JPEG ≤ 2 MiB → upload
   radio.rs           radio / autoplay / play-an-album-or-playlist (InnerTube `next`)
   settings/          file.rs (settings.json model), panel.rs (SettingsPanel entity: state,
                      persistence, secrets, section list), one file per section, mod.rs
@@ -376,9 +489,10 @@ src/
   module_service.rs  provider modules: the shared `Modules` store, the module-first resolver
                      (player + downloads), keychain hook for secret module settings;
                      settings/modules.rs: the Modules section
-  integrations/      SponsorBlock, Music Together, import / export state + script actions
-                     (config.rs: their settings; settings/integrations_ui.rs: sections;
-                     pages/together.rs, pages/import.rs)
+  integrations/      SponsorBlock, Music Together (+ relay, host transfer), import / export,
+                     AI content filter (ai_filter.rs), Chromecast (cast.rs: Engine::Cast)
+                     state + script actions (config.rs: their settings;
+                     settings/integrations_ui.rs: sections; pages/together.rs, pages/import.rs)
   services.rs, secrets.rs, script.rs, util.rs, icons.rs
   recognize.rs       recognition session (Recognizer global entity: permission → capture →
                      signature → request → history → YouTube Music search);
@@ -412,7 +526,9 @@ src/
   search (in-memory list of 30 feeding the "Recent searches" dropdown) and also saves it in
   the library (`Library::add_search_query`, unless Privacy → "Pause search history");
   `set_recent_searches(..)` is seeded from the library at launch, `remove_recent_search`
-  deletes one from both. `Track::artist_refs` / `album_id` drive "Go to artist / album".
+  deletes one from both. Database writes go through one ordered worker
+  (`search_history.rs`), flushed on quit, before reloading and before clearing; entries
+  differing only in letter case are one entry in both lists. `Track::artist_refs` / `album_id` drive "Go to artist / album".
 * **Persistent lyrics cache:** `MusicApp::set_lyrics_cache(Arc<dyn LyricsCache>)` swaps
   the in-memory cache (e.g. for the library database's lyrics table); the service is
   rebuilt around it and every later fetch reads / writes it.
@@ -455,7 +571,9 @@ src/
   then one block per category with "See all") and tabs for Songs, Videos, Albums,
   Artists, Community playlists, Featured playlists, Podcasts and Episodes (fetched when
   first opened; virtualized rows; more results load as you scroll). Each query is its
-  own history entry (replaced while you stay on search).
+  own history entry (replaced while you stay on search). A spelling correction shows as
+  "Showing results for *X* · Search instead for *Y*" (the latter reloads All without
+  correction) or "Did you mean *X*?"; the history keeps the typed query.
   Song rows: click plays the list from that row; hover shows play next / add to queue /
   more; right click (or "…") opens play, play next, add to queue, start radio, add to
   playlist, like, go to artist (one entry per artist with an id), go to album.
@@ -474,9 +592,16 @@ src/
   singles / videos / playlists / related artists as cards; "See all" opens the artist's
   items page (discography grid or song list, more as you scroll) or the playlist.
   **Album page:** art, type · year, linked artists, track count, Play / Shuffle / Radio /
-  Add to queue, numbered tracks, other versions. **Playlist page** (also podcasts):
-  author, track count, description, Play / Shuffle / Radio / Add to queue, tracks in a
-  virtualized list that loads more rows as you scroll.
+  Add to queue, numbered tracks (albums over 200 tracks load the rest right away, with a
+  Retry footer), other versions. **Playlist page**: author, track count, description,
+  Play / Shuffle / Radio / Add to queue (/ Change cover… for your own playlists when
+  signed in), tracks in a virtualized list that loads more rows as you scroll.
+  **Podcast page** (`Route::Podcast`, `MPSP…`): art, publisher, episode count,
+  description, Play / Shuffle / Add to queue / Save to library (signed in), episodes
+  (art, title, date · length, two lines of description) virtualized with infinite scroll;
+  click plays from that episode, the menu adds "Open episode page" (`Route::Episode`:
+  Play, Add to queue, Go to podcast, full description). Episodes are videos and play
+  through the normal resolver; "Go to podcast" replaces "Go to artist" in their menus.
 * **Radio:** "Start radio" (track menus, song suggestions, top result, header buttons of
   artists / albums / playlists) replaces the queue with the radio mix (`InnerTube::next`
   with `RDAMVM…` / `RDAMPL…` / the artist's radio); while it plays, the next batch loads
@@ -488,14 +613,18 @@ src/
   content language / country, filters or the proxy clears it and reloads the page.
 * **Content & region** settings: content language (41) and country (50) as searchable
   pickers (InnerTube `hl` / `gl`, applied live: pages reload, suggestions too), hide
-  explicit (songs, albums, tracks, radio), hide music videos (shelves, search, the Videos
-  tab), autoplay similar songs.
+  explicit (songs, albums, tracks, radio), hide music videos (OMV / UGC by video type:
+  shelves, search, the Videos tab, playlists, albums — unless every track of the album is
+  a video —, radio, queues, card actions), autoplay similar songs.
 * **Network** settings: proxy Off / HTTP / HTTPS / SOCKS4 / SOCKS5 / SOCKS5h, host, port,
   user name, password (masked; kept in the keychain). Apply validates (host without
   scheme, port 1–65535, no credentials for SOCKS4), rebuilds music-core's HTTP agent
   (`http::configure`; an invalid proxy keeps the previous one) and reloads pages; "Test
   connection" fetches `youtube.com/generate_204` through it. Applied at launch before the
-  first request (again with the password once the keychain has been read).
+  first request (again with the password once the keychain has been read). **DNS**:
+  System / Cloudflare / Google / Quad9 / Custom (https URL), "fall back to the system
+  resolver", Apply, **Test DNS** (addresses of music.youtube.com and whether DoH, its cache
+  or the system answered); `network.dns` in settings.json.
 * **Queue** (`queue.rs`): play next, add to queue, remove, move (up/down buttons or drag
   and drop in the panel), clear, shuffle (current track first; turning it off restores
   the original order including tracks added meanwhile), repeat off / all / one (repeat-one
@@ -553,11 +682,15 @@ src/
   button (searches again, skipping the cache). Real word timings drive the per-word
   fill; line-synced lyrics light the whole line. Background vocals (smaller, italic,
   their own word timings) and duet singers (other side) when the provider has them.
-  Romanization line per script (Japanese kana — kanji readings need music-core's
-  `japanese-dict` feature —, Korean, Chinese pinyin, Devanagari, Cyrillic, others).
-  Translation (Google or any OpenAI-compatible endpoint, target language, off by
-  default) is requested once per song and translator settings and cached for the
-  session; failures show with a Retry button. Text size, line spacing, left / center /
+  Romanization line per script (Japanese — kanji readings once the dictionary is
+  downloaded: Settings → Lyrics → Romanization shows its size, a progress bar with Cancel,
+  Remove; turning Japanese on fetches it the first time; it lives in the platform cache dir,
+  `$MUSIC_CONFIG_DIR/cache/ja-dict` with that variable —, Korean, Chinese pinyin, Devanagari,
+  Cyrillic, others). Translation (Google or any OpenAI-compatible endpoint, target
+  language, off by default) is requested once per song and translator settings and kept in
+  the library database (`CachedTranslator`), so reopening a song or restarting doesn't ask
+  again; failures show with a Retry button, and a rate-limited one ("rate-limited this
+  connection; try again in 2 min") retries by itself after the back-off. Text size, line spacing, left / center /
   right alignment, and six animation styles (None, Fade, Glow, Slide, Karaoke — the
   original renderer —, Apple) as variants of `KaraokeLine` (sweep vs. per-word fade,
   feather width, lift, scale, glyph halo). Click a line to seek; unsynced lyrics show as
@@ -593,7 +726,8 @@ src/
   Playing; "Like / Remove from liked songs" in menus. Local DB, plus `rate_song` on YouTube
   Music when signed in.
 * **Library page** (tabs replace the route): Songs (library = added, liked or local), Liked,
-  Albums, Artists, Playlists (local and YouTube mirrors), Downloaded, Local files. Song tabs:
+  Albums, Artists, Playlists (local and YouTube mirrors), Podcasts (the account's saved
+  shows, fetched from YouTube Music when signed in), Downloaded, Local files. Song tabs:
   virtualized list, filter, sort (date added, title, artist, plays, listening time, last
   played; picking the current sort flips the direction), Play / Shuffle, and **Select**:
   checkboxes + action bar (play, play next, add to queue, add to playlist, like, download,
@@ -665,7 +799,10 @@ bundled or preconfigured.**
   live / remix / remaster / … markers, explicit flag, duration within max(5 s, 5 %)) picks the
   best acceptable result, and its stream URL plays. 15 s per module, 30 s for the sequence;
   results are cached until a minute before the URL expires (misses 30 s, failures 10 s). Then
-  YouTube, unless the source is "Modules only". Local files never go through modules. Streams
+  YouTube, unless the source is "Modules only". A module URL that expires (its declared
+  `expiresAt`, or 401/403/410 mid-stream) is resolved again through the same module, past
+  this cache (`ModuleResolver::refresh_track`), and the download resumes at the same byte.
+  Local files never go through modules. Streams
   are any HTTP(S) URL with the module's headers, played while they download (FLAC, ALAC,
   MP3, AAC/M4A, Ogg Vorbis/Opus, WAV, AIFF); HLS / DASH results are rejected. Downloads use
   the same resolver, so a module source is downloaded as the full file.
@@ -725,6 +862,9 @@ descriptor / catalog installs and updates, secrets, downloads).
 
 ### Integrations: SponsorBlock, Music Together, playlist import / export
 
+(Relay, host transfer, Chromecast and the AI content filter:
+[next section](#integrations-round-2-relay-host-transfer-chromecast-ai-filter-potoken).)
+
 | ![SponsorBlock: Skip chip](docs/screenshots/integrations-sponsorblock-ask.png) | ![Settings: SponsorBlock](docs/screenshots/integrations-settings-sponsorblock.png) |
 |---|---|
 | ![Together: host](docs/screenshots/integrations-together-host.png) | ![Together: guest](docs/screenshots/integrations-together-guest.png) |
@@ -758,7 +898,8 @@ descriptor / catalog installs and updates, secrets, downloads).
   session. *Play next* / *Add to queue* anywhere in the app become suggestions to the host;
   previous / play / next on the page are requests (when the host allows). Kicks, bans,
   declined joins, a host that ends the session or goes silent for 15 s end the guest's
-  session with a message. LAN only: there is no relay server.
+  session with a message. Across networks: a self-hosted relay and **Make host** (host
+  transfer), see the next section.
 * **Import & export** (sidebar): *Choose a file…* (Exportify CSV of a Spotify playlist,
   M3U / M3U8, or our own CSV / JSON), or — after connecting Spotify — a playlist link, one
   of *Show my playlists*, or *Liked songs*. The job reads the source, then matches every
@@ -815,8 +956,194 @@ ID available here — they are implemented per the documented Web API; Spotify's
 development-mode changes renamed `/playlists/{id}/tracks` to `/items`, the client tries
 `/items` first and falls back), Together between two different machines / through a
 firewall prompt, Together with real audio on both sides (only demo clocks), drag of the
-progress bar by a guest (it is overridden by the host's state), a host transfer (not
-implemented), physical input.
+progress bar by a guest (it is overridden by the host's state), physical input.
+
+### Integrations round 2: relay, host transfer, Chromecast, AI filter, PoToken
+
+| ![Together: hosting via relay](docs/screenshots/integrations2-together-relay-host.png) | ![Together: after a host transfer](docs/screenshots/integrations2-together-transferred.png) |
+|---|---|
+| ![Settings: Music Together (relay)](docs/screenshots/integrations2-settings-together.png) | ![Settings: AI content filter](docs/screenshots/integrations2-settings-ai-filter.png) |
+| ![Casting (player bar)](docs/screenshots/integrations2-casting.png) | ![Settings: Chromecast](docs/screenshots/integrations2-settings-cast.png) |
+| ![AI filter: "christmas songs" with holiday music hidden](docs/screenshots/integrations2-ai-filter-search.png) | |
+
+* **Host transfer** (Listen together → a guest's **Make host**): the host sends that guest
+  `host_transfer` with the room (queue, position stamped with its clock, repeat, room
+  settings), the client ids that may rejoin without approval (everyone admitted + the old
+  host) and the banned ones. The guest's app starts its own server with the same session id
+  and key (`TogetherServer::start_with` + `HostOptions`; LAN: its port, relay: the same
+  relay with the room's secret), takes over the queue / position / repeat / settings and
+  answers `host_transfer_ready` (its LAN address). The old host broadcasts
+  `host_transferred`; every `TogetherClient` reconnects on its own (same client id and
+  name, waits for the welcome, retries refusals for 15 s, resets its clock and the sync
+  planner), the old host stops its server and joins as a guest. ArchiveTune's bare
+  `host_transfer` / `host_transferred` messages still decode.
+* **Relay** (Settings → Music Together → Relay server, then **Host via relay**): the
+  host keeps one WebSocket to a [`music-relay`](#relay-server-music-relay) server and
+  serves the guests it tunnels in; the link is `music-together://join?url=wss…&sid=…&key=…`
+  and works from any network. Guests speak the normal protocol to the relay URL, so the
+  session logic (key, approval, heartbeats, requests) is the same code as on the LAN (a
+  `Link` trait over a direct connection or a tunnelled one). The relay re-routes on a
+  transfer: the new host claims the room with its secret, new connections go to it,
+  connections to the old host stay with it until it leaves.
+* **Chromecast** (player bar Cast button, Settings → Chromecast): devices are found with
+  mDNS when the menu / section opens (4 s); casting swaps the engine for `Engine::Cast`,
+  which plays the queue on the device and reports its state back as `PlaybackState`, so the
+  player bar ("Casting to Living Room"), Now Playing, the queue and auto-advance (on the
+  receiver's `FINISHED`) work unchanged; play / pause / seek / next / previous / volume go
+  to the device; the local engine waits paused (media keys that reach it are forwarded);
+  Stop casting continues here at the device's position. Audio goes through the app's
+  `MediaProxy` (googlevideo: see below; local files too); "Let the device fetch YouTube
+  audio itself" sends plain YouTube URLs directly and falls back to the proxy on an error.
+  The sleep timer, EQ and speed don't apply while casting.
+* **AI content filter** (Settings → AI content filter; off by default): an
+  OpenAI-compatible endpoint (OpenAI, OpenRouter, Ollama / LM Studio on this machine), model
+  and optional key (keychain); categories explicit lyrics, AI-generated music, holiday,
+  children's, sleep sounds / noise, sped-up / slowed edits, covers & karaoke, live
+  recordings, plus up to 8 of the user's own. Applied next to "hide explicit" in
+  `browse::ContentFilter`: pages classify unknown songs / albums in batches of 25 on their
+  fetch worker before filtering; UI-thread callers (radio batches, search suggestions) read
+  the cache and classify in the background. Verdicts are cached per video / album id in
+  `<config>/cache/ai_filter.json` (re-asked when a new category is selected); unknown =
+  shown. Only id, title, artists and album are sent, and nothing while it is off.
+  (ArchiveTune's "AI content filter" is a different thing — channel blocklists of
+  AI-generated music from a third-party list — and isn't used.)
+
+**Verification** (`MUSIC_VOLUME=0.0`, demo clocks, temporary `MUSIC_CONFIG_DIR`s):
+
+* Relay, three app instances + `music-relay` on localhost: Hana hosted via relay
+  (`ws://127.0.0.1:42118`), Ann and Bob joined from the link; Hana handed the session to
+  Ann at 24 s: Ann started hosting through the relay (room secret), Bob was re-routed
+  ("Ann is the host now; reconnecting…" → "Reconnected to the new host"), Hana rejoined as
+  a guest; 20 s later all three played the same track (status lines from each app's own
+  timer, started up to 1 s apart: 34.9 / 36.3 / 36.5 s), the relay log showing the second
+  host connection and the reconnects; `/health` answered.
+* LAN, three instances with approval on: Hana let Ann and Bob in, transferred to Ann (port
+  42119): Bob and Hana reconnected to Ann's address without approval (trusted ids), the
+  positions were continuous (6.8 s at 22 s → 18.7 s at 34 s).
+* Unit / integration tests: wire format (incl. ArchiveTune's bare transfer messages),
+  relay envelopes, relay links / URLs; `host_transfer_on_the_lan` (state, trusted / banned
+  lists, reconnect, clock); `crates/music-relay/tests/relay_e2e.rs` (relay + host + 2
+  guests: wrong key, approval, full room, health, room state, clock through the relay,
+  suggestions, a second host without the secret refused, transfer re-routed, end of
+  session).
+* Chromecast: `cargo run -p music-core --example cast -- list` found no device on this
+  network (none available). `-- check khnokW3Mw24` resolved a TV-client stream and
+  requested it like a receiver would: googlevideo accepted another User-Agent and no
+  headers, but a GET without `Range` was throttled (6.1 MB in 173 s) while
+  `Range: bytes=0-` took 5 s, after the pre-roll wait — hence the proxy by default. In the
+  app against `examples/fake_cast_receiver.rs` (CASTV2 over TLS, downloads like a receiver):
+  the current track was loaded at the current position (22 s), the receiver fetched the
+  real stream through the proxy (2.2 MB, 206, 3.7 s), pause / play / seek 120 s reached it,
+  the end of the track advanced the queue (next LOAD, 3.4 MB), Stop casting resumed here.
+  Unit tests: protobuf framing, a fake TLS receiver (launch, load, controls, volume,
+  refused load, stopped on the device), the proxy (ranges, 404 / 416, files).
+* AI filter: request body / lenient parsing / a local stub server (batches, auth, cache,
+  category change, persistence); in the app, a Python stub endpoint classified 17 search
+  results for "christmas songs" (13 holiday) and the search page hid them.
+* PoToken Windows / Linux: type-checked and clippy-clean for both targets in a temporary
+  crate including the real files (stub `pkg-config` for the GTK sys crates; removed);
+  `webview_host` tests run the shared call sequence against a fake engine. macOS unchanged
+  (the default `user_agent` is the old constant).
+
+**Not verified:** a real Chromecast / Google TV / Nest device (none here; the receiver's
+real fetch behaviour, codec support for Opus-in-WebM and the TLS handshake with a real
+device certificate are untested), PoToken on real Windows (WebView2) and Linux
+(WebKitGTK) machines, the relay behind a real TLS reverse proxy and across the internet,
+a host transfer between two different machines, a real LLM endpoint (only stubs).
+
+### Relay server (`music-relay`)
+
+`crates/music-relay`: one small binary (std threads + tungstenite, ~0.9 MB release) for
+Music Together sessions across networks. It never decides anything: it checks a guest's
+first frame (session id + key against the room's key hash; same answer for unknown
+session and wrong key), then forwards text frames between the host and its guests.
+
+```sh
+cargo build --release -p music-relay
+./target/release/music-relay --listen 0.0.0.0:42118 -v
+curl http://localhost:42118/health   # {"app":"TuneDesk","connections":1,"guests":0,"rooms":0,"status":"ok"}
+```
+
+Options: `--max-rooms 100`, `--max-guests 20` (per room), `--max-connections 1000`,
+`--max-message-kib 1024` (a guest's frame; hosts may send twice that), `--rate 20`
+(messages / s per guest, burst 3×; over it a guest is disconnected, a host's excess frames
+are dropped — room states repeat), `--idle-timeout 60`; `MUSIC_RELAY_LISTEN` sets the
+address. Rooms live while their host is connected (a host transfer moves them).
+
+TLS is left to a reverse proxy; give the app the `wss://` URL. Caddy:
+
+```
+relay.example.com {
+    reverse_proxy 127.0.0.1:42118
+}
+```
+
+nginx:
+
+```nginx
+location / {
+    proxy_pass http://127.0.0.1:42118;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_read_timeout 120s;
+}
+```
+
+The relay sees what the session sends (song ids and titles, display names, the session
+key in each guest's hello), like any host would; run your own.
+
+### Content round: video types, podcasts, long albums, DNS-over-HTTPS, covers
+
+| ![Podcast show](docs/screenshots/content-podcast.png) | ![Episode page](docs/screenshots/content-episode.png) |
+|---|---|
+| ![Album of 294 tracks, all loaded](docs/screenshots/content-album-long.png) | ![Hide videos: playlist without its music videos](docs/screenshots/content-playlist-hide-videos.png) |
+| ![Spelling correction](docs/screenshots/content-search-corrected.png) | ![Settings: Network → DNS](docs/screenshots/content-settings-network-dns.png) |
+| ![Settings: Content & region](docs/screenshots/content-settings-content.png) | ![Library → Podcasts (signed out)](docs/screenshots/content-library-podcasts.png) |
+
+* **Video types.** Every InnerTube track keeps `musicVideoType` (`Track::music_video_type`),
+  so **Hide music videos** works inside lists, not only on shelves: `ContentFilter::tracks`
+  drops OMV / UGC tracks from playlists (online pages and card actions), radio batches,
+  queues built from watch targets and search tabs; `ContentFilter::album_tracks` does the
+  same for albums, except that an album YouTube only has as official-audio videos (all
+  OMV, e.g. *Random Access Memories*) stays complete instead of turning up empty.
+* **Podcasts**: show and episode pages, the library tab and routing (`MPSP…` →
+  `Route::Podcast`, `MPED…` → `Route::Episode`, episode menus "Go to podcast"); see
+  Features above.
+* **Long albums**: album pages list at most 200 tracks (a 294-track box set had no
+  continuation); the rest comes from the album's playlist (`VL<audioPlaylistId>`, whose first
+  pages repeat the 200 and are deduplicated). Card actions use `album_complete`; playlist
+  card actions follow up to 10 continuations.
+* **DNS-over-HTTPS**: Settings → Network → DNS (see Features).
+* **Playlist covers**: "Change cover…" on your own playlists (online page when editable,
+  library mirror page) → `playlist_cover::prepare_cover` (ArchiveTune's crop / scale / JPEG
+  steps) → `InnerTube::upload_playlist_cover` (resumable upload to
+  `playlist_image_upload/playlist_custom_thumbnail`, then `ACTION_SET_CUSTOM_THUMBNAIL`).
+* **Search history fix**: see Extension points → Search history; the corrected-query banner
+  never rewrites history.
+
+**Verified:** fixture tests on trimmed live responses (video types on search / album /
+playlist / next / artist rows, podcast page with and without continuation, episode
+continuation, episode page, 294-track album + its playlist pages, corrected search, a
+synthetic library-podcasts page); the live `browse` example (48 calls ok, incl. a
+podcast with continuation and episode page, `album_complete` → 294 of 294, correction and
+exact search) also with `MUSIC_DOH=cloudflare`; DoH unit tests against a local RFC 8484
+stub server (resolution, A + AAAA, TTL cache, IP literals / local names, fallback on/off,
+unreachable server) and the live providers (`cargo test -p music-core doh -- --ignored`:
+Cloudflare and Google answer, Quad9's port 5053 is unreachable from this network). In the
+app (screenshot build, temporary config): the screens above; the 294-track album loaded
+in 3 extra requests; `@dns=cloudflare` + `@dns-test` → "music.youtube.com → … via
+DNS-over-HTTPS in 52 ms" and `network.dns` saved; with Hide videos on, *Indie Disco* starts
+at "Last Nite" (its OMV opener "Feel Good Inc." gone); a JRE episode (2 h 43 min) played
+through the normal resolver on the real device (muted): full 9821 s length, seek to 1 h.
+Search history: `@submit` "justice genesis", "justice genisis" (YouTube shows results for
+"justice genesis"), "Daft Punk", "daft punk", "queen", `@quit` 0.1 s later → the
+database holds queen, daft punk, justice genisis, justice genesis and the next launch lists
+them in that order; unit tests for the ordered writer and case-insensitive dedupe.
+**Not verified:** anything signed in (library Podcasts tab, Save to library, cover
+upload — the upload's requests are unit-tested only), Quad9 DoH, DoH through a proxy, the
+original "vanished" report itself (not reproduced; the race above is the cause found in the
+code, removed by design), physical clicks on the new buttons (script actions instead).
 
 ### Keyboard shortcuts and menus
 
@@ -849,9 +1176,10 @@ switch + id + `activity`, theme + text size, shuffle + repeat, `audio`, `lyrics`
 `now_playing`, `scrobble_rules`, `content` (language / country / filters / autoplay),
 `network` (proxy), main window and mini player frames, and `library`: privacy switches,
 play-cache limit, music folders, the signed-in YouTube account's name / avatar /
-`auth_user` / channel, `sponsorblock`, `together`, `spotify`) lives in the platform config dir — macOS
-`~/Library/Application Support/music-macos/`, Linux `~/.config/music-macos/`, Windows
-`%APPDATA%\music-macos\config\` — or `$MUSIC_CONFIG_DIR`. It is written 500 ms after the last
+`auth_user` / channel, `sponsorblock`, `together` (incl. `relay_url`), `spotify`, `ai_filter`,
+`cast`) lives in the platform config dir — macOS
+`~/Library/Application Support/tunedesk/`, Linux `~/.config/tunedesk/`, Windows
+`%APPDATA%\tunedesk\config\` — or `$MUSIC_CONFIG_DIR`. It is written 500 ms after the last
 change and on quit, atomically (temp file + rename), mode 0600 in a 0700 directory. Missing
 fields fall back to defaults, unknown ones are ignored, out-of-range values are clamped, and a
 file that isn't valid JSON is moved to `settings.json.bad`; an unknown theme / repeat value
@@ -859,9 +1187,9 @@ file that isn't valid JSON is moved to `settings.json.bad`; an unknown theme / r
 
 The Last.fm shared secret and session key, the ListenBrainz token, the Paxsenix /
 BetterLyrics / AI-translation API keys, the proxy password, the YouTube Music sign-in
-cookie and the Spotify refresh token go to the OS keychain
+cookie, the Spotify refresh token and the AI-filter API key go to the OS keychain
 (`keyring` 4: macOS Keychain, Windows Credential Manager, Secret Service), service
-`music-macos`, one entry each. If the keychain fails (or `MUSIC_SECRET_STORE=file`), they are
+`tunedesk`, one entry each. If the keychain fails (or `MUSIC_SECRET_STORE=file`), they are
 stored in the `secrets` object of `settings.json` (still 0600) and moved back into the keychain
 the next time it accepts a write; the Storage and Scrobbling sections show where secrets are kept. The keychain
 is only read for accounts the settings say exist, on a worker thread (macOS may show an
@@ -874,7 +1202,7 @@ item's ACL is tied to the binary). Secrets are never logged.
 |---|---|
 | `MUSIC_QUERY=…` | pre-fill and run a search (`MUSIC_GPUI_QUERY` still works) |
 | `MUSIC_AUTOOPEN=1` | play the first hit and open Now Playing (`MUSIC_GPUI_AUTOPLAY=1`: play only) |
-| `MUSIC_ROUTE=library:albums` | open a page at startup (`home`, `explore`, `search:q`, `settings:eq`, `artist:ID`, `album:ID`, `playlist:ID`, `browse:ID\|PARAMS`, `artist-items:ID\|PARAMS`, …) |
+| `MUSIC_ROUTE=library:albums` | open a page at startup (`home`, `explore`, `search:q`, `settings:eq`, `artist:ID`, `album:ID`, `playlist:ID`, `podcast:MPSP…`, `episode:MPED…`, `library:podcasts`, `browse:ID\|PARAMS`, `artist-items:ID\|PARAMS`, …) |
 | `MUSIC_OPEN_SETTINGS=1\|<section>` | open the settings page (`eq`, `integrations`/`accounts`, `appearance`, `about`, …) |
 | `MUSIC_DEMO_CLOCK=1` | demo clock instead of audio (also used automatically when `Player::new` fails) |
 | `MUSIC_VOLUME=0.0` | volume for this session (muted real-device tests; ⌘↑/↓ and `@volume` still save) |
@@ -901,10 +1229,12 @@ playback `@play=N @next @prev @seek=S @toggle @open @close @volume=V`; navigatio
 @np-bg=blur|gradient|solid|glow @mini-style=theme|artwork
 @lyrics-style=karaoke|apple|slide|glow|fade|none @lyrics-size=40 @lyrics-spacing=1.5
 @lyrics-align=left|center|right @translate=on|off @romanize=SCRIPT:on|off @lyrics-reload
+@kanji-dict[=remove|cancel]
 @sleep=MIN|eot|off|5s @speed=1.25 @pitch=-2 @crossfade=6 @quality=low|normal|high
 @normalize=on|off @skip-silence=on|off`; browse `@radio=N` (radio from search result N),
 `@suggest` (print the search dropdown), `@proxy=KIND:HOST:PORT|off`, `@locale=de:DE`,
-`@scroll=X;Y;DY`; modules `@modules=youtube|first|only`, `@module-install=PATH|URL`,
+`@scroll=X;Y;DY`, `@dns=system|cloudflare|google|quad9|URL[;nofallback]`, `@dns-test`,
+`@hide-videos[=off]`; modules `@modules=youtube|first|only`, `@module-install=PATH|URL`,
 `@module-catalog=URL`, `@module-confirm`, `@module-cancel`, `@module-open=N|ID`,
 `@module-field=KEY:VALUE`, `@module-save`, `@module-check=N`, `@module-update=N`,
 `@module-enable=N:on|off`, `@module-remove=N`; integrations (`integrations/script.rs`) `@sb=on|off @sb-mode=auto|ask
@@ -912,6 +1242,9 @@ playback `@play=N @next @prev @seek=S @toggle @open @close @volume=V`; navigatio
 @together-host[=FILE] @together-join=LINK|file:PATH @together-leave @together-approve
 @together-deny @together-kick=NAME @together-ban=NAME @together-allow=add|control|approval:on|off
 @together-suggest=N @together-control=play|pause|next|prev|seek:S @together-status
+@together-host-relay[=FILE] @together-transfer=NAME @ai-filter=on|off @ai-category=KEY:on|off
+@ai-filter-status @ai-filter-clear @cast-scan @cast=NAME|IP:PORT[:NAME] @cast-stop[=off]
+@cast-status
 @import-file=PATH @spotify-playlist=URL @spotify-liked @spotify-playlists @import-accept=N
 @import-save[=NAME] @import-cancel @import-status @export=PLAYLIST:FORMAT:PATH`;
 recognition `@recognize` (microphone), `@recognize-file=PATH`,
@@ -956,7 +1289,7 @@ build, demo clock): `@recognize-file` with 12 s WAV clips → result, YouTube Mu
 history of two entries, `@recognize-history=1`; clicking Play on the result played the
 match. Onboarding all six steps + finish (`onboarded: true` written). Update check against
 `zed-industries/zed` → "Version 1.25.3 is available". **Bundle:** `scripts/bundle-macos.sh`
-→ `Music.app` (34 MB, ad-hoc signed, `codesign --verify --strict` passes, Info.plist
+→ `TuneDesk.app` (34 MB, ad-hoc signed, `codesign --verify --strict` passes, Info.plist
 linted) + 15 MB DMG; launched with `open --env …` (temp config, `MUSIC_VOLUME=0.0`):
 menu-bar item created, media controls started without error, search → play (real device,
 muted) → next → pause/resume → mini player on/off → Recognition page → quit.
@@ -1001,6 +1334,38 @@ macOS delivers no display-link frames (`MUSIC_TIMINGS` prints nothing; 0 % CPU s
 Frames are still only requested while Now Playing is visible and something moves; the
 glow background adds no frames while paused, the mini player none at all. Backdrop blur
 + palette + glow lights: ~9.5 ms per track on a worker thread.
+
+### Lyrics round: verification
+
+`examples/lyrics.rs` against the live providers (no API keys; Paxsenix skipped), after the
+fixes. Cells: sync kind, format, lines; "credits" = credit lines the filter removed.
+
+| Provider | Instant Crush (EN) | Hype Boy (KR) | アイドル (JP) | MALAMENTE (ES) | Time (instrumental) | 晴天 (ZH) | Double Talk (obscure) |
+|---|---|---|---|---|---|---|---|
+| BetterLyrics | Line TTML 82 | Word TTML 66, 1 bg | Line LRC 75 | Word TTML 57, 25 bg | Line LRC 20 (a fan poem) | Line LRC 50 | — |
+| BetterLyrics Portato | Word QRC 76 (credits) | Word QRC 68 (title + credits) | Word QRC 75 | Word QRC 60 (title line was a "singer") | "纯音乐" → instrumental | Word QRC 50 | — |
+| YouLyPlus | Word TTML 76 (songwriter line) | Word LRC 66 | Word TTML 76 | Word LRC 57 | — | — | — (11.5 s → stops at the 404) |
+| Binimum | Word TTML 84 | Word TTML 66, 1 bg | Word TTML 74 | Word TTML 57, 25 bg | — | — | Line TTML 12 |
+| LRCLIB | Line 80 | Line 49 | Line 76 | Line 57 (≈ 7 s early) | — | Line 50 (header + 词/曲) | Line 12 |
+| KuGou | Line 76 (credits) | Line 68 | Line 75 | Line 60 (title line, with the query) | "纯音乐" → instrumental | Line 50 | — |
+| Megalobiz | — | — | — | — | — | — | — (site rebuilt: search 301 → 404/410) |
+| SimpMusic | Word LRC 82 | Word LRC 66 | Word LRC 76 | Word LRC 57 | Line 42: another song | Word LRC 56 → 50 (producer names, with the query) | — |
+| Unison | Word TTML 78 | — | Word TTML 74 | — | — | Word TTML 49 | — |
+| YouTube Music | Plain 100 | Plain 68 | Plain 88 | Plain 65 | — | Plain 48 | Plain 15 |
+| **Service pick** | Portato (Word) | BetterLyrics (Word) | Portato / YouLyPlus (Word) | BetterLyrics (Word) | **no lyrics** (was the poem) | Portato (Word) | Binimum (Line) |
+
+Google Translate (one live request, spaced): still refused for this IP — a 302 to
+`google.com/sorry` that answers 429 without `Retry-After`; the translator now reports
+"Google Translate rate-limited this connection; try again in 2 min" and sends nothing until
+then. In the app (release build, temp `MUSIC_CONFIG_DIR`, demo clock — no audio): an
+OpenAI-compatible fake server got one request for アイドル's 74 lines; after a restart the
+translation came from the library (still one request in total). `@kanji-dict` downloaded
+and verified the real IPADIC in ~1.6 s and loaded it; at the next start it was mapped in
+0.45 s after launch; `@kanji-dict=remove` deleted it. Release binary 40,020,928 B
+(+236,192 B for lindera without a dictionary and this round's code). **Not verified:** the
+Settings → Lyrics dictionary row and progress bar on screen (rendered, not looked at),
+in-app cancel of a running download (unit-tested; the real download finished first), a
+successful Google translation, Paxsenix / BetterLyrics keys.
 
 ### Measurements (app shell round)
 

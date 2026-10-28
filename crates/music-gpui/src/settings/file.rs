@@ -73,6 +73,10 @@ pub struct Settings {
     pub together: crate::integrations::config::TogetherPrefs,
     /// Spotify playlist import (own Client ID; the refresh token is a secret).
     pub spotify: crate::integrations::config::SpotifyPrefs,
+    /// AI content filter (off by default; the API key is a secret).
+    pub ai_filter: crate::integrations::config::AiFilterPrefs,
+    /// Chromecast.
+    pub cast: crate::integrations::config::CastPrefs,
     /// The first-run guide was finished or skipped. Missing in files from before the
     /// guide existed: those users count as onboarded; a fresh install starts `false`.
     #[serde(default = "onboarded_default")]
@@ -105,6 +109,8 @@ impl Default for Settings {
             sponsorblock: Default::default(),
             together: Default::default(),
             spotify: Default::default(),
+            ai_filter: Default::default(),
+            cast: Default::default(),
             onboarded: true,
             secrets: FileSecrets::default(),
         }
@@ -301,11 +307,99 @@ pub struct NetworkConfig {
     pub username: String,
     /// A password is stored as a secret (keychain, else this file's `secrets`).
     pub has_password: bool,
+    /// DNS-over-HTTPS.
+    pub dns: DnsConfig,
+}
+
+/// Name resolution: the system resolver or DNS-over-HTTPS.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum DnsMode {
+    #[default]
+    System,
+    Cloudflare,
+    Google,
+    Quad9,
+    Custom,
+}
+
+impl DnsMode {
+    pub const ALL: [DnsMode; 5] = [
+        DnsMode::System,
+        DnsMode::Cloudflare,
+        DnsMode::Google,
+        DnsMode::Quad9,
+        DnsMode::Custom,
+    ];
+
+    pub fn title(self) -> &'static str {
+        match self {
+            DnsMode::System => "System",
+            DnsMode::Cloudflare => "Cloudflare",
+            DnsMode::Google => "Google",
+            DnsMode::Quad9 => "Quad9",
+            DnsMode::Custom => "Custom",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct DnsConfig {
+    #[serde(deserialize_with = "lenient")]
+    pub mode: DnsMode,
+    /// RFC 8484 endpoint for [`DnsMode::Custom`] (`https://…/dns-query`).
+    pub custom_url: String,
+    /// Use the system resolver when the DoH server fails or doesn't know a name.
+    pub fallback: bool,
+}
+
+impl Default for DnsConfig {
+    fn default() -> Self {
+        Self {
+            mode: DnsMode::System,
+            custom_url: String::new(),
+            fallback: true,
+        }
+    }
+}
+
+impl DnsConfig {
+    /// Checks the custom URL (https only).
+    pub fn validate(&self) -> Result<(), String> {
+        if self.mode != DnsMode::Custom {
+            return Ok(());
+        }
+        let url = self.custom_url.trim();
+        if !url.starts_with("https://") {
+            return Err("The DNS-over-HTTPS URL must start with https://.".into());
+        }
+        music_core::http::DohProvider::Custom(url.to_owned())
+            .validate()
+            .map_err(|e| format!("The DNS-over-HTTPS URL isn't valid: {e}."))
+    }
+
+    /// The `music_core` setting (`None` = system DNS).
+    pub fn doh(&self) -> Option<music_core::http::DohConfig> {
+        use music_core::http::DohProvider;
+        let provider = match self.mode {
+            DnsMode::System => return None,
+            DnsMode::Cloudflare => DohProvider::Cloudflare,
+            DnsMode::Google => DohProvider::Google,
+            DnsMode::Quad9 => DohProvider::Quad9,
+            DnsMode::Custom => DohProvider::Custom(self.custom_url.trim().to_owned()),
+        };
+        Some(music_core::http::DohConfig {
+            provider,
+            fallback_to_system: self.fallback,
+        })
+    }
 }
 
 impl NetworkConfig {
     /// Checks the fields (always fine with the proxy off).
     pub fn validate(&self) -> Result<(), String> {
+        self.dns.validate()?;
         if self.proxy == ProxyKind::Off {
             return Ok(());
         }
@@ -732,6 +826,46 @@ mod tests {
             }
         }
         music_core::http::configure(music_core::HttpConfig::default()).unwrap();
+    }
+
+    #[test]
+    fn dns_settings() {
+        let s: Settings = serde_json::from_str(r#"{"network": {"proxy": "off"}}"#).unwrap();
+        assert_eq!(s.network.dns, DnsConfig::default());
+        assert!(s.network.dns.fallback, "fallback on by default");
+        assert!(s.network.dns.doh().is_none());
+        let s: Settings = serde_json::from_str(
+            r#"{"network": {"dns": {"mode": "dnscrypt", "fallback": false}}}"#,
+        )
+        .unwrap();
+        assert_eq!(s.network.dns.mode, DnsMode::System, "unknown mode");
+        let mut dns = DnsConfig {
+            mode: DnsMode::Quad9,
+            ..DnsConfig::default()
+        };
+        assert_eq!(
+            dns.doh().unwrap().provider,
+            music_core::http::DohProvider::Quad9
+        );
+        dns.mode = DnsMode::Custom;
+        dns.custom_url = "http://doh.example/dns-query".into();
+        assert!(dns.validate().is_err(), "https only");
+        dns.custom_url = "https://doh.example/dns-query".into();
+        assert!(dns.validate().is_ok());
+        let net = NetworkConfig {
+            dns: DnsConfig {
+                custom_url: "nope".into(),
+                ..dns.clone()
+            },
+            ..NetworkConfig::default()
+        };
+        assert!(net.validate().is_err());
+        let json = serde_json::to_string(&NetworkConfig {
+            dns,
+            ..NetworkConfig::default()
+        })
+        .unwrap();
+        assert!(json.contains(r#""mode":"custom""#), "{json}");
     }
 
     #[test]

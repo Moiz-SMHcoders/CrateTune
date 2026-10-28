@@ -1,11 +1,14 @@
 //! Integrations on top of the player: SponsorBlock skipping, Music Together
-//! sessions, playlist import (Spotify / Exportify CSV / M3U / JSON) and export.
+//! sessions, playlist import (Spotify / Exportify CSV / M3U / JSON) and export,
+//! the AI content filter and Chromecast.
 //!
 //! The state lives in [`Integrations`] (one field of `MusicApp`); everything is
 //! driven from the app's 250 ms poll ([`MusicApp::poll_integrations`]) and from
 //! the pages / settings sections. Blocking `music-core` calls run on worker
 //! threads (`util::off_thread`).
 
+pub mod ai_filter;
+pub mod cast;
 pub mod config;
 pub mod import;
 mod script;
@@ -22,6 +25,8 @@ pub struct Integrations {
     pub sponsorblock: sponsorblock::SponsorBlockState,
     pub together: together::TogetherState,
     pub import: import::ImportState,
+    pub ai_filter: ai_filter::AiFilterState,
+    pub cast: cast::CastState,
 }
 
 impl MusicApp {
@@ -34,6 +39,7 @@ impl MusicApp {
     ) {
         self.poll_together(state, window, cx);
         self.poll_sponsorblock(state, window, cx);
+        self.sync_ai_filter(window, cx);
     }
 
     /// Extra chips for the player bar's transport row (SponsorBlock "Skip", Together).
@@ -41,6 +47,7 @@ impl MusicApp {
         let mut chips = Vec::new();
         chips.extend(self.sponsorblock_chip(cx));
         chips.extend(self.together_chip(cx));
+        chips.extend(self.cast_chip(cx));
         chips
     }
 }

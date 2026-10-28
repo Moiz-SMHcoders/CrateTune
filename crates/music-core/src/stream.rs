@@ -73,6 +73,11 @@ pub struct ResolvedStream {
     /// Another URL for the very same file whose first bytes work right away,
     /// used while waiting for [`Self::not_before`] so playback starts at once.
     pub prefix: Option<StreamPrefix>,
+    /// When the URL stops working, as the resolver declared it (a module's
+    /// `expiresAt`). The downloader re-resolves shortly before (see
+    /// [`StreamResolver::refresh_track`]). `None`: googlevideo's `expire`
+    /// parameter, if any (see [`Self::expires_at`]).
+    pub valid_until: Option<SystemTime>,
 }
 
 /// The start of a stream from a URL usable immediately (see [`ResolvedStream::prefix`]).
@@ -82,6 +87,61 @@ pub struct StreamPrefix {
     pub user_agent: &'static str,
     /// How many bytes this URL serves (the iOS client: 1 MiB).
     pub bytes: u64,
+    /// The same bytes, already being fetched since before the stream was
+    /// resolved (see [`PrefetchedHead`]); the downloader starts from them.
+    pub head: Option<Arc<PrefetchedHead>>,
+}
+
+/// The first bytes of a URL, fetched speculatively on a background thread
+/// while a resolver is still working out whether it is the right file.
+/// Dropping the last handle cancels the fetch.
+pub struct PrefetchedHead {
+    buffer: Arc<StreamBuffer>,
+}
+
+impl PrefetchedHead {
+    /// Starts fetching the first `bytes` of `url` (one range request).
+    pub fn start(url: &str, user_agent: &'static str, bytes: u64) -> Arc<Self> {
+        let buffer = StreamBuffer::new(Some(bytes));
+        let stream = ResolvedStream {
+            url: url.to_owned(),
+            user_agent,
+            content_length: Some(bytes),
+            ..Default::default()
+        };
+        let downloader = Downloader::new(stream, buffer.clone(), bytes.max(1));
+        let spawned = std::thread::Builder::new()
+            .name("music-core-prefetch".into())
+            .spawn(move || downloader.run());
+        if spawned.is_err() {
+            buffer.finish(BufferEnd::Failed("could not start the prefetch".into()));
+        }
+        Arc::new(Self { buffer })
+    }
+
+    /// Bytes fetched so far.
+    pub fn len(&self) -> u64 {
+        self.buffer.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.buffer.is_empty()
+    }
+}
+
+impl Drop for PrefetchedHead {
+    fn drop(&mut self) {
+        // No effect once the fetch is over.
+        self.buffer.cancel();
+    }
+}
+
+impl std::fmt::Debug for PrefetchedHead {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PrefetchedHead")
+            .field("buffer", &self.buffer)
+            .finish()
+    }
 }
 
 /// What kind of source a track is played from.
@@ -195,6 +255,21 @@ pub trait StreamResolver: Send + Sync {
     /// the video id.
     fn resolve_track(&self, track: &crate::Track, quality: Quality) -> Result<ResolvedStream> {
         self.resolve_with_quality(&track.video_id, quality)
+    }
+
+    /// Resolves `track` again because `stale` (a stream this resolver returned
+    /// earlier) stopped working or is about to expire. The player and the
+    /// download manager call it mid-download and resume at the same byte, so
+    /// the result must be the same file; resolvers that cache results must not
+    /// hand `stale` out again. The default resolves the track afresh.
+    fn refresh_track(
+        &self,
+        track: &crate::Track,
+        quality: Quality,
+        stale: &ResolvedStream,
+    ) -> Result<ResolvedStream> {
+        let _ = stale;
+        self.resolve_track(track, quality)
     }
 }
 
@@ -322,8 +397,12 @@ impl ResolvedStream {
         self.chunk_size.unwrap_or(CHUNK_BYTES)
     }
 
-    /// When the URL stops working (googlevideo's `expire` parameter).
+    /// When the URL stops working: [`Self::valid_until`], else googlevideo's
+    /// `expire` parameter.
     pub fn expires_at(&self) -> Option<SystemTime> {
+        if self.valid_until.is_some() {
+            return self.valid_until;
+        }
         let query = self.url.split_once('?')?.1;
         let secs = query
             .split('&')
@@ -332,13 +411,66 @@ impl ResolvedStream {
             .ok()?;
         Some(UNIX_EPOCH + Duration::from_secs(secs))
     }
+
+    /// Downloads the whole file like [`Self::download`], re-resolving through
+    /// `resolver` (see [`StreamResolver::refresh_track`]) if the URL expires
+    /// before or during the download.
+    pub fn download_refreshing(
+        &self,
+        resolver: Arc<dyn StreamResolver>,
+        track: &crate::Track,
+        quality: Quality,
+    ) -> Result<Download> {
+        let buffer = StreamBuffer::new(self.content_length);
+        let track = track.clone();
+        Downloader::new(self.clone(), buffer.clone(), self.chunk_bytes())
+            .with_refresh(Box::new(move |stale| {
+                resolver.refresh_track(&track, quality, stale)
+            }))
+            .run();
+        match buffer.end() {
+            Some(BufferEnd::Failed(msg)) => Err(Error::Audio(msg)),
+            end => Ok(Download {
+                complete: end == Some(BufferEnd::Complete),
+                bytes: buffer.to_vec(),
+            }),
+        }
+    }
+
+    /// Expires within `margin` (or already did).
+    fn expires_within(&self, margin: Duration) -> bool {
+        self.expires_at()
+            .is_some_and(|at| SystemTime::now() + margin >= at)
+    }
+
+    /// `fresh` is provably not another file than `self`: same format, same
+    /// size when both declare one, and for module streams the same module and
+    /// variant. (A size only the server reports is checked when resuming.)
+    pub(crate) fn same_file_as(&self, fresh: &ResolvedStream) -> bool {
+        let module = |s: &ResolvedStream| {
+            s.source
+                .as_ref()
+                .filter(|src| src.kind == SourceKind::Module)
+                .map(|src| (src.module_id.clone(), src.variant.clone()))
+        };
+        let sizes_agree = match (self.content_length, fresh.content_length) {
+            (Some(a), Some(b)) => a == b,
+            _ => true,
+        };
+        fresh.itag == self.itag
+            && sizes_agree
+            && module(fresh) == module(self)
+            && (self.itag != 0 || fresh.mime_type == self.mime_type)
+    }
 }
 
-/// Re-resolves the same video when a URL expired mid-download.
-pub(crate) type Refresh = Box<dyn FnMut() -> Result<ResolvedStream> + Send>;
+/// Re-resolves the same track when its URL expired (given the stale stream).
+pub(crate) type Refresh = Box<dyn FnMut(&ResolvedStream) -> Result<ResolvedStream> + Send>;
 
 /// Treat a URL as expired this long before its `expire` time.
 const EXPIRY_MARGIN: Duration = Duration::from_secs(30);
+/// Re-resolutions per download (each needs progress since the previous one).
+const MAX_REFRESHES: u32 = 3;
 /// Transport errors in a row (not HTTP statuses) before giving up.
 const MAX_TRANSPORT_RETRIES: u32 = 2;
 
@@ -348,11 +480,21 @@ pub(crate) struct Downloader {
     buffer: Arc<StreamBuffer>,
     chunk: u64,
     refresh: Option<Refresh>,
+    /// Successful re-resolutions so far.
+    refreshes: u32,
+    /// Bytes downloaded when the URL was last replaced: failing again at the
+    /// same offset means the fresh URL doesn't work either.
+    refreshed_at: Option<u64>,
 }
 
 enum ChunkError {
     /// An HTTP status the server answered with.
     Status(u16),
+    /// A resumed download reports another file size than before.
+    SizeChanged {
+        expected: u64,
+        got: u64,
+    },
     Other(String),
 }
 
@@ -363,10 +505,14 @@ impl Downloader {
             buffer,
             chunk: chunk.max(1),
             refresh: None,
+            refreshes: 0,
+            refreshed_at: None,
         }
     }
 
-    /// Re-resolve once if a complete stream starts failing with 403/410 (expired URL).
+    /// Re-resolve when the URL expired: shortly before its declared expiry,
+    /// and when a full stream starts failing with 401/403/410 (each time only
+    /// after progress since the previous re-resolution, at most 3 times).
     pub(crate) fn with_refresh(mut self, refresh: Refresh) -> Self {
         self.refresh = Some(refresh);
         self
@@ -401,6 +547,11 @@ impl Downloader {
         let limit = prefix
             .bytes
             .min(self.stream.content_length.unwrap_or(u64::MAX));
+        if let Some(head) = &prefix.head
+            && !self.copy_head(head, limit)
+        {
+            return false;
+        }
         while self
             .stream
             .not_before
@@ -425,9 +576,62 @@ impl Downloader {
                     log::info!("stream head from the preview URL failed: {msg}");
                     break;
                 }
+                Err(ChunkError::SizeChanged { .. }) => break,
             }
         }
         true
+    }
+
+    /// Replaces the URL ahead of its expiry (also before the first request:
+    /// a preloaded or cached stream may have expired meanwhile). False if
+    /// cancelled.
+    fn renew_if_expiring(&mut self) -> bool {
+        let start = self.buffer.len();
+        if self.refresh.is_none()
+            || self.refreshed_at == Some(start)
+            || !self.stream.expires_within(EXPIRY_MARGIN)
+        {
+            return true;
+        }
+        match self.refreshed() {
+            Some(stream) => {
+                log::info!("stream URL expires soon; re-resolved at byte {start}");
+                self.replace(stream)
+            }
+            // Keep trying the old URL; a rejection re-resolves again.
+            None => true,
+        }
+    }
+
+    /// Switches to a re-resolved URL; waits for its `not_before`. False if cancelled.
+    fn replace(&mut self, stream: ResolvedStream) -> bool {
+        self.stream = ResolvedStream {
+            prefix: None,
+            ..stream
+        };
+        self.wait_until_available()
+    }
+
+    /// Moves the speculatively fetched head into the buffer as it arrives,
+    /// until it ends (complete or not: the rest comes from the URLs). False
+    /// if cancelled.
+    fn copy_head(&mut self, head: &PrefetchedHead, limit: u64) -> bool {
+        loop {
+            if self.buffer.is_cancelled() {
+                return false;
+            }
+            let pos = self.buffer.len();
+            if pos >= limit {
+                return true;
+            }
+            head.buffer.wait_for(pos + 1, Duration::from_millis(100));
+            let bytes = head.buffer.copy_range(pos, (limit - pos).min(256 * 1024));
+            if !bytes.is_empty() {
+                self.buffer.append(&bytes);
+            } else if head.buffer.end().is_some() {
+                return true;
+            }
+        }
     }
 
     fn download(&mut self) -> BufferEnd {
@@ -444,7 +648,7 @@ impl Downloader {
         let mut chunks_ok = 0u32;
         let mut transport_errors = 0u32;
         loop {
-            if self.buffer.is_cancelled() {
+            if self.buffer.is_cancelled() || !self.renew_if_expiring() {
                 return BufferEnd::Cancelled;
             }
             let start = self.buffer.len();
@@ -481,7 +685,9 @@ impl Downloader {
                     match self.refreshed() {
                         Some(stream) => {
                             log::info!("stream URL rejected ({code}) at byte {start}; re-resolved");
-                            self.stream = stream;
+                            if !self.replace(stream) {
+                                return BufferEnd::Cancelled;
+                            }
                         }
                         None => {
                             return BufferEnd::Failed(format!(
@@ -492,6 +698,11 @@ impl Downloader {
                 }
                 Err(ChunkError::Status(code)) => {
                     return BufferEnd::Failed(format!("HTTP {code} at byte {start}"));
+                }
+                Err(ChunkError::SizeChanged { expected, got }) => {
+                    return BufferEnd::Failed(format!(
+                        "the stream changed size ({got} bytes, expected {expected})"
+                    ));
                 }
                 Err(ChunkError::Other(msg)) => {
                     if self.buffer.is_cancelled() {
@@ -508,21 +719,29 @@ impl Downloader {
         }
     }
 
-    /// The re-resolved stream, at most once, and only if it is the same file.
+    /// The re-resolved stream, if it is the same file and there was progress
+    /// since the previous re-resolution (see [`Self::with_refresh`]).
     fn refreshed(&mut self) -> Option<ResolvedStream> {
-        let mut refresh = self.refresh.take()?;
-        match refresh() {
-            Ok(fresh)
-                if fresh.itag == self.stream.itag
-                    && fresh.content_length == self.stream.content_length =>
-            {
+        let start = self.buffer.len();
+        if self.refreshes >= MAX_REFRESHES || self.refreshed_at == Some(start) {
+            return None;
+        }
+        let refresh = self.refresh.as_mut()?;
+        // Whatever happens, don't ask again before there is progress.
+        self.refreshed_at = Some(start);
+        match refresh(&self.stream) {
+            Ok(fresh) if self.stream.same_file_as(&fresh) => {
+                self.refreshes += 1;
                 Some(fresh)
             }
             Ok(fresh) => {
                 log::warn!(
-                    "re-resolved a different format (itag {} vs {}); stopping",
+                    "re-resolved a different file (itag {} vs {}, {:?} vs {:?} bytes, {:?}); stopping",
                     fresh.itag,
-                    self.stream.itag
+                    self.stream.itag,
+                    fresh.content_length,
+                    self.stream.content_length,
+                    fresh.source.as_ref().map(|s| &s.provider),
                 );
                 None
             }
@@ -539,7 +758,7 @@ impl Downloader {
     fn download_progressive(&mut self) -> BufferEnd {
         let mut transport_errors = 0u32;
         loop {
-            if self.buffer.is_cancelled() {
+            if self.buffer.is_cancelled() || !self.renew_if_expiring() {
                 return BufferEnd::Cancelled;
             }
             let start = self.buffer.len();
@@ -566,13 +785,21 @@ impl Downloader {
                     match self.refreshed() {
                         Some(stream) => {
                             log::info!("stream URL rejected ({code}) at byte {start}; re-resolved");
-                            self.stream = stream;
+                            transport_errors = 0;
+                            if !self.replace(stream) {
+                                return BufferEnd::Cancelled;
+                            }
                         }
                         None => return BufferEnd::Failed(format!("HTTP {code} at byte {start}")),
                     }
                 }
                 Err(ChunkError::Status(code)) => {
                     return BufferEnd::Failed(format!("HTTP {code} at byte {start}"));
+                }
+                Err(ChunkError::SizeChanged { expected, got }) => {
+                    return BufferEnd::Failed(format!(
+                        "the re-resolved stream is another file ({got} bytes, expected {expected})"
+                    ));
                 }
                 Err(ChunkError::Other(msg)) => {
                     if self.buffer.is_cancelled() {
@@ -652,19 +879,33 @@ impl Downloader {
             .and_then(|v| v.parse::<u64>().ok());
         // A server without range support resends the file from byte 0.
         let mut skip = if status == 200 { start } else { 0 };
-        if status == 200 {
-            if let Some(len) = length {
-                self.buffer.set_total_len(len);
-            }
-        } else if status == 206 {
-            let total = resp
+        let total = match status {
+            200 => length,
+            206 => resp
                 .headers()
                 .get("content-range")
                 .and_then(|v| v.to_str().ok())
                 .and_then(|v| v.rsplit('/').next())
-                .and_then(|v| v.trim().parse::<u64>().ok());
-            if let Some(total) = total {
-                self.buffer.set_total_len(total);
+                .and_then(|v| v.trim().parse::<u64>().ok()),
+            _ => None,
+        };
+        if let Some(total) = total {
+            // Resuming (after a dropped connection or a re-resolved URL) must
+            // continue the very same file.
+            match self.buffer.total_len() {
+                // Nothing downloaded yet: the server knows better than a declared size.
+                Some(expected) if expected != total && start == 0 && self.buffer.is_empty() => {
+                    log::info!("stream is {total} bytes, not the declared {expected}");
+                    self.buffer.replace_total_len(total);
+                }
+                Some(expected) if expected != total => {
+                    return Err(ChunkError::SizeChanged {
+                        expected,
+                        got: total,
+                    });
+                }
+                Some(_) => {}
+                None => self.buffer.set_total_len(total),
             }
         }
         let mut reader = resp.body_mut().as_reader();
@@ -816,7 +1057,7 @@ mod tests {
         let base = server.base.clone();
         let calls = Arc::new(std::sync::atomic::AtomicU32::new(0));
         let counter = calls.clone();
-        let refresh: Refresh = Box::new(move || {
+        let refresh: Refresh = Box::new(move |_| {
             counter.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
             Ok(stream(format!("{base}/new"), 10_000))
         });
@@ -851,7 +1092,7 @@ mod tests {
         });
         let base = server.base.clone();
         let refresh: Refresh =
-            Box::new(move || Ok(stream(format!("{base}/new?expire=99999999999"), 10_000)));
+            Box::new(move |_| Ok(stream(format!("{base}/new?expire=99999999999"), 10_000)));
         let old = stream(format!("{}/old?expire=1&id=x", server.base), bytes.len());
         assert!(old.expires_at().unwrap() < SystemTime::now());
         let buffer = run(old, 4000, Some(refresh));
@@ -871,7 +1112,7 @@ mod tests {
             }
         });
         let base = server.base.clone();
-        let refresh: Refresh = Box::new(move || {
+        let refresh: Refresh = Box::new(move |_| {
             let mut s = stream(format!("{base}/new"), 10_000);
             s.itag = 251;
             Ok(s)
@@ -886,13 +1127,278 @@ mod tests {
 
         // Same format, but the new URL fails too: only one retry.
         let base = server.base.clone();
-        let refresh: Refresh = Box::new(move || Ok(stream(format!("{base}/new"), 10_000)));
+        let refresh: Refresh = Box::new(move |_| Ok(stream(format!("{base}/new"), 10_000)));
         let buffer = run(
             stream(format!("{}/old", server.base), bytes.len()),
             3000,
             Some(refresh),
         );
         assert!(matches!(buffer.end(), Some(BufferEnd::Failed(_))));
+    }
+
+    /// A progressive stream from a provider module.
+    fn module_stream(url: String, len: Option<usize>, module: &str) -> ResolvedStream {
+        ResolvedStream {
+            url,
+            itag: 0,
+            mime_type: "audio/flac".into(),
+            content_length: len.map(|l| l as u64),
+            progressive: true,
+            full_access: true,
+            source: Some(StreamSource {
+                kind: SourceKind::Module,
+                provider: "Test".into(),
+                module_id: Some(module.into()),
+                variant: Some("lossless".into()),
+                ..Default::default()
+            }),
+            valid_until: Some(SystemTime::now() + Duration::from_secs(3600)),
+            ..Default::default()
+        }
+    }
+
+    fn counting_refresh(
+        calls: &Arc<std::sync::atomic::AtomicU32>,
+        make: impl Fn(u32) -> ResolvedStream + Send + 'static,
+    ) -> Refresh {
+        let calls = calls.clone();
+        Box::new(move |_| {
+            let n = calls.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            Ok(make(n))
+        })
+    }
+
+    fn requests(server: &TestServer) -> Vec<(String, u64)> {
+        server.requests.lock().unwrap().clone()
+    }
+
+    #[test]
+    fn module_stream_resumes_at_the_same_byte_after_its_url_expired() {
+        let bytes = data(10_000);
+        let served = bytes.clone();
+        // The old URL's connection drops after 4000 bytes; resuming it is refused.
+        let server = TestServer::start(move |path, start, end| {
+            if path.starts_with("/old") {
+                if start > 0 {
+                    return Reply::Status(403);
+                }
+                return Reply::Partial {
+                    body: served.to_vec(),
+                    start: 0,
+                    total: served.len() as u64,
+                    sent: 4000,
+                };
+            }
+            range_of(&served, start, end)
+        });
+        let calls = Arc::default();
+        let base = server.base.clone();
+        let refresh = counting_refresh(&calls, move |_| {
+            module_stream(format!("{base}/new"), None, "echo")
+        });
+        // The module declared no size: the server's is checked on resume.
+        let buffer = run(
+            module_stream(format!("{}/old", server.base), None, "echo"),
+            0,
+            Some(refresh),
+        );
+        assert_eq!(buffer.end(), Some(BufferEnd::Complete));
+        assert_eq!(buffer.to_vec(), &*bytes);
+        assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst), 1);
+        assert_eq!(
+            requests(&server),
+            [
+                ("/old".into(), 0),
+                ("/old".into(), 4000),
+                ("/new".into(), 4000)
+            ]
+        );
+    }
+
+    #[test]
+    fn declared_expiry_re_resolves_before_the_url_is_used() {
+        let bytes = data(10_000);
+        let served = bytes.clone();
+        let server = TestServer::start(move |path, start, end| {
+            if path.starts_with("/old") {
+                Reply::Status(403)
+            } else {
+                range_of(&served, start, end)
+            }
+        });
+        // Expired already (a preloaded track's URL), or about to (within 30 s).
+        for left in [-5i64, 10] {
+            let calls = Arc::default();
+            let base = server.base.clone();
+            let refresh = counting_refresh(&calls, move |_| {
+                module_stream(format!("{base}/new"), Some(10_000), "echo")
+            });
+            let mut old = module_stream(format!("{}/old", server.base), Some(10_000), "echo");
+            old.valid_until = Some(if left < 0 {
+                SystemTime::now() - Duration::from_secs(left.unsigned_abs())
+            } else {
+                SystemTime::now() + Duration::from_secs(left as u64)
+            });
+            server.requests.lock().unwrap().clear();
+            let buffer = run(old, 0, Some(refresh));
+            assert_eq!(buffer.end(), Some(BufferEnd::Complete), "{left}");
+            assert_eq!(buffer.to_vec(), &*bytes);
+            assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst), 1);
+            assert_eq!(requests(&server), [("/new".into(), 0)], "{left}");
+        }
+
+        // A URL that isn't near its expiry is used as is.
+        let calls = Arc::default();
+        let refresh = counting_refresh(&calls, |_| unreachable!());
+        server.requests.lock().unwrap().clear();
+        let buffer = run(
+            module_stream(format!("{}/fine", server.base), Some(10_000), "echo"),
+            0,
+            Some(refresh),
+        );
+        assert_eq!(buffer.end(), Some(BufferEnd::Complete));
+        assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst), 0);
+    }
+
+    #[test]
+    fn a_long_download_survives_several_expiries() {
+        let bytes = data(10_000);
+        let served = bytes.clone();
+        // URL n works up to byte 3000 * (n + 1), then the connection drops and
+        // resuming it is refused.
+        let server = TestServer::start(move |path, start, end| {
+            let n: u64 = path.trim_start_matches("/u").parse().unwrap();
+            let limit = 3000 * (n + 1);
+            if start >= limit {
+                return Reply::Status(403);
+            }
+            match range_of(&served, start, end) {
+                Reply::Bytes { body, start, total } if start + body.len() as u64 > limit => {
+                    Reply::Partial {
+                        sent: (limit - start) as usize,
+                        body,
+                        start,
+                        total,
+                    }
+                }
+                other => other,
+            }
+        });
+        let calls = Arc::default();
+        let base = server.base.clone();
+        let refresh = counting_refresh(&calls, move |n| {
+            module_stream(format!("{base}/u{}", n + 1), Some(10_000), "echo")
+        });
+        let buffer = run(
+            module_stream(format!("{}/u0", server.base), Some(10_000), "echo"),
+            0,
+            Some(refresh),
+        );
+        assert_eq!(buffer.end(), Some(BufferEnd::Complete));
+        assert_eq!(buffer.to_vec(), &*bytes);
+        assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst), 3);
+    }
+
+    #[test]
+    fn a_re_resolved_module_stream_must_be_the_same_file() {
+        let bytes = data(10_000);
+        let other = data(12_000);
+        let served = bytes.clone();
+        let server = TestServer::start(move |path, start, end| {
+            if path.starts_with("/old") {
+                if start > 0 {
+                    return Reply::Status(410);
+                }
+                return Reply::Partial {
+                    body: served.to_vec(),
+                    start: 0,
+                    total: served.len() as u64,
+                    sent: 4000,
+                };
+            }
+            if path.starts_with("/bigger") {
+                return range_of(&other, start, end);
+            }
+            range_of(&served, start, end)
+        });
+        // The server says the new URL is a 12000-byte file: not resumed.
+        let base = server.base.clone();
+        let refresh: Refresh =
+            Box::new(move |_| Ok(module_stream(format!("{base}/bigger"), None, "echo")));
+        let buffer = run(
+            module_stream(format!("{}/old", server.base), None, "echo"),
+            0,
+            Some(refresh),
+        );
+        assert!(
+            matches!(buffer.end(), Some(BufferEnd::Failed(ref m)) if m.contains("another file")),
+            "{:?}",
+            buffer.end()
+        );
+        assert_eq!(buffer.len(), 4000, "data so far stays playable");
+
+        // Another module (or YouTube) never continues the download.
+        for fresh in [
+            module_stream(format!("{}/new", server.base), None, "other-module"),
+            stream(format!("{}/new", server.base), 10_000),
+        ] {
+            server.requests.lock().unwrap().clear();
+            let refresh: Refresh = Box::new(move |_| Ok(fresh.clone()));
+            let buffer = run(
+                module_stream(format!("{}/old", server.base), None, "echo"),
+                0,
+                Some(refresh),
+            );
+            assert!(matches!(buffer.end(), Some(BufferEnd::Failed(_))));
+            assert!(requests(&server).iter().all(|(p, _)| p == "/old"));
+        }
+    }
+
+    #[test]
+    fn a_prefetched_head_is_used_while_the_main_url_is_not_usable_yet() {
+        let bytes = data(10_000);
+        let ios = TestServer::file(bytes.clone());
+        let main = TestServer::file(bytes.clone());
+        // Fetched speculatively, before the stream was even resolved.
+        let head = PrefetchedHead::start(&format!("{}/head", ios.base), "test", 4000);
+        let deadline = std::time::Instant::now() + Duration::from_secs(5);
+        while head.len() < 4000 {
+            assert!(std::time::Instant::now() < deadline);
+            std::thread::sleep(Duration::from_millis(5));
+        }
+        let mut s = stream(format!("{}/main", main.base), bytes.len());
+        s.full_access = true;
+        s.not_before = Some(SystemTime::now() + Duration::from_millis(300));
+        s.prefix = Some(StreamPrefix {
+            url: format!("{}/head", ios.base),
+            user_agent: "test",
+            bytes: 4000,
+            head: Some(head),
+        });
+        let started = std::time::Instant::now();
+        let buffer = run(s, 3000, None);
+        assert_eq!(buffer.end(), Some(BufferEnd::Complete));
+        assert_eq!(buffer.to_vec(), &*bytes);
+        assert!(
+            started.elapsed() >= Duration::from_millis(250),
+            "waited for not_before"
+        );
+        // The head was fetched once; the main URL only served the rest.
+        assert_eq!(requests(&ios), [("/head".into(), 0)]);
+        assert_eq!(
+            requests(&main),
+            [("/main".into(), 4000), ("/main".into(), 7000)]
+        );
+
+        // Dropping an unused head cancels its fetch.
+        let slow = TestServer::start(|_, _, _| {
+            std::thread::sleep(Duration::from_millis(200));
+            Reply::Status(500)
+        });
+        let head = PrefetchedHead::start(&format!("{}/x", slow.base), "test", 4000);
+        let buffer = head.buffer.clone();
+        drop(head);
+        assert_eq!(buffer.end(), Some(BufferEnd::Cancelled));
     }
 
     #[test]

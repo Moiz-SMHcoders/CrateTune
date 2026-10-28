@@ -9,13 +9,25 @@
 //!
 //! Both return one `Option<String>` per input line: `None` for blank lines and
 //! for lines the translation left unchanged. Repeated lines are sent once.
+//!
+//! Rate limits: an HTTP 429 / 503 (Google answers a burst with a redirect to its
+//! "sorry" page, which is a 429) blocks further requests to that endpoint for its
+//! `Retry-After`, or with an exponential back-off (2 min doubling up to 30 min)
+//! when there is none; calls during the block fail at once with a "rate-limited"
+//! error ([`is_rate_limited`], [`LyricsTranslator::retry_after`]). A short
+//! `Retry-After` (≤ 10 s) is waited out and retried once.
+//!
+//! [`CachedTranslator`] keeps finished translations in a [`TranslationCache`]
+//! (memory, or the library database) keyed by translator, language and lyrics.
 
 use std::collections::HashMap;
-use std::time::Duration;
+use std::sync::{Arc, LazyLock, Mutex};
+use std::time::{Duration, Instant};
 
 use serde_json::{Map, Value, json};
+use sha2::{Digest, Sha256};
 
-use super::providers::{http_post_form, http_post_json};
+use super::providers::{HttpResponse, http_post_form, http_post_json};
 use super::types::Lyrics;
 use crate::{Error, Result};
 
@@ -33,6 +45,237 @@ pub trait LyricsTranslator: Send + Sync {
     ) -> Result<Vec<Option<String>>> {
         let lines: Vec<&str> = lyrics.lines.iter().map(|l| l.text.as_str()).collect();
         self.translate_lines(&lines, target_language)
+    }
+
+    /// While the service rate-limits us: how long until it is asked again.
+    fn retry_after(&self) -> Option<Duration> {
+        None
+    }
+}
+
+impl<T: LyricsTranslator + ?Sized> LyricsTranslator for Box<T> {
+    fn translate_lines(&self, lines: &[&str], target: &str) -> Result<Vec<Option<String>>> {
+        (**self).translate_lines(lines, target)
+    }
+
+    fn retry_after(&self) -> Option<Duration> {
+        (**self).retry_after()
+    }
+}
+
+// --- rate limits -----------------------------------------------------------------------
+
+const RATE_LIMITED: &str = "rate-limited";
+/// A `Retry-After` up to this long is waited out (once) instead of failing.
+const SHORT_RETRY: Duration = Duration::from_secs(10);
+const BACKOFF_START: Duration = Duration::from_secs(120);
+const BACKOFF_MAX: Duration = Duration::from_secs(30 * 60);
+
+struct Backoff {
+    until: Instant,
+    strikes: u32,
+}
+
+/// Per endpoint URL.
+static BACKOFF: LazyLock<Mutex<HashMap<String, Backoff>>> = LazyLock::new(Default::default);
+
+fn backoff_map() -> std::sync::MutexGuard<'static, HashMap<String, Backoff>> {
+    BACKOFF.lock().unwrap_or_else(|e| e.into_inner())
+}
+
+/// Time left in `endpoint`'s rate-limit block.
+fn blocked_for(endpoint: &str) -> Option<Duration> {
+    let now = Instant::now();
+    backoff_map()
+        .get(endpoint)
+        .and_then(|b| b.until.checked_duration_since(now))
+        .filter(|d| !d.is_zero())
+}
+
+/// Starts (or extends) a block; returns its length.
+fn block(endpoint: &str, retry_after: Option<Duration>) -> Duration {
+    let mut map = backoff_map();
+    let entry = map.entry(endpoint.to_owned()).or_insert(Backoff {
+        until: Instant::now(),
+        strikes: 0,
+    });
+    entry.strikes += 1;
+    let backoff = BACKOFF_START
+        .saturating_mul(1 << (entry.strikes - 1).min(8))
+        .min(BACKOFF_MAX);
+    let wait = retry_after.unwrap_or(backoff).max(Duration::from_secs(1));
+    entry.until = Instant::now() + wait;
+    wait
+}
+
+fn unblock(endpoint: &str) {
+    backoff_map().remove(endpoint);
+}
+
+fn is_throttled(resp: &HttpResponse) -> bool {
+    matches!(resp.status, 429 | 503)
+        || (resp.status == 200 && resp.body.contains("google.com/sorry"))
+}
+
+fn rate_limited_error(service: &str, wait: Duration) -> Error {
+    let secs = wait.as_secs().max(1);
+    let when = if secs < 90 {
+        format!("{secs} s")
+    } else {
+        format!("{} min", secs.div_ceil(60))
+    };
+    Error::Parse(format!(
+        "{service} {RATE_LIMITED} this connection; try again in {when}"
+    ))
+}
+
+/// True for the errors translators return while a service rate-limits us.
+pub fn is_rate_limited(error: &Error) -> bool {
+    matches!(error, Error::Parse(m) if m.contains(RATE_LIMITED))
+}
+
+/// Sends one request with the shared rate-limit handling: fails fast while
+/// `endpoint` is blocked, waits out a short `Retry-After` once, blocks on a 429.
+fn throttled(
+    endpoint: &str,
+    service: &str,
+    mut send: impl FnMut() -> Result<HttpResponse>,
+) -> Result<HttpResponse> {
+    if let Some(wait) = blocked_for(endpoint) {
+        return Err(rate_limited_error(service, wait));
+    }
+    let mut retried = false;
+    loop {
+        let resp = send()?;
+        if !is_throttled(&resp) {
+            if resp.ok() {
+                unblock(endpoint);
+            }
+            return Ok(resp);
+        }
+        match resp.retry_after {
+            Some(d) if d <= SHORT_RETRY && !retried => {
+                log::debug!("{service}: HTTP {}, retrying in {d:?}", resp.status);
+                retried = true;
+                std::thread::sleep(d);
+            }
+            retry_after => {
+                let wait = block(endpoint, retry_after);
+                log::warn!(
+                    "{service}: HTTP {}, pausing requests for {wait:?}",
+                    resp.status
+                );
+                return Err(rate_limited_error(service, wait));
+            }
+        }
+    }
+}
+
+// --- caching ---------------------------------------------------------------------------
+
+/// Where finished translations are kept. Keys come from [`translation_key`].
+pub trait TranslationCache: Send + Sync {
+    fn load(&self, key: &str) -> Option<Vec<Option<String>>>;
+    fn store(&self, key: &str, lines: &[Option<String>]);
+}
+
+/// A key for `lines` translated to `target` by the translator identified by
+/// `translator` (any string that changes with its settings, e.g. `google`).
+pub fn translation_key(translator: &str, target: &str, lines: &[&str]) -> String {
+    let mut h = Sha256::new();
+    for part in [translator, "\0", target.trim(), "\0"] {
+        h.update(part.as_bytes());
+    }
+    for l in lines {
+        h.update(l.trim().as_bytes());
+        h.update(b"\n");
+    }
+    h.finalize()[..16]
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect()
+}
+
+/// In-memory [`TranslationCache`] (process lifetime).
+#[derive(Debug, Default)]
+pub struct MemoryTranslationCache {
+    entries: Mutex<HashMap<String, Vec<Option<String>>>>,
+}
+
+impl TranslationCache for MemoryTranslationCache {
+    fn load(&self, key: &str) -> Option<Vec<Option<String>>> {
+        self.entries
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .get(key)
+            .cloned()
+    }
+
+    fn store(&self, key: &str, lines: &[Option<String>]) {
+        self.entries
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .insert(key.to_owned(), lines.to_vec());
+    }
+}
+
+/// Library-backed cache: rows `translation:<key>` in the lyrics cache table.
+impl TranslationCache for crate::library::Library {
+    fn load(&self, key: &str) -> Option<Vec<Option<String>>> {
+        let row = self
+            .cached_lyrics(&format!("translation:{key}"), Some("translation"))
+            .ok()??;
+        serde_json::from_str(&row.text).ok()
+    }
+
+    fn store(&self, key: &str, lines: &[Option<String>]) {
+        let Ok(json) = serde_json::to_string(lines) else {
+            return;
+        };
+        if let Err(e) = self.cache_lyrics(&format!("translation:{key}"), "translation", &json) {
+            log::warn!("caching a translation failed: {e}");
+        }
+    }
+}
+
+/// A translator whose results are cached (failures are not).
+pub struct CachedTranslator<T> {
+    inner: T,
+    cache: Arc<dyn TranslationCache>,
+    id: String,
+}
+
+impl<T: LyricsTranslator> CachedTranslator<T> {
+    /// `id` identifies `inner`'s settings (endpoint, model, …) in the cache key.
+    pub fn new(inner: T, cache: Arc<dyn TranslationCache>, id: impl Into<String>) -> Self {
+        Self {
+            inner,
+            cache,
+            id: id.into(),
+        }
+    }
+
+    /// The cached translation, without asking the service.
+    pub fn cached(&self, lines: &[&str], target: &str) -> Option<Vec<Option<String>>> {
+        self.cache
+            .load(&translation_key(&self.id, target, lines))
+            .filter(|t| t.len() == lines.len())
+    }
+}
+
+impl<T: LyricsTranslator> LyricsTranslator for CachedTranslator<T> {
+    fn translate_lines(&self, lines: &[&str], target: &str) -> Result<Vec<Option<String>>> {
+        if let Some(hit) = self.cached(lines, target) {
+            return Ok(hit);
+        }
+        let out = self.inner.translate_lines(lines, target)?;
+        self.cache
+            .store(&translation_key(&self.id, target, lines), &out);
+        Ok(out)
+    }
+
+    fn retry_after(&self) -> Option<Duration> {
+        self.inner.retry_after()
     }
 }
 
@@ -104,6 +347,10 @@ pub struct GoogleTranslator {
     pub timeout: Duration,
     pub max_items_per_batch: usize,
     pub max_chars_per_batch: usize,
+    /// Pause between the requests of one translation (batches, re-splits).
+    pub request_spacing: Duration,
+    /// Most requests one [`LyricsTranslator::translate_lines`] call may send.
+    pub max_requests: usize,
 }
 
 impl Default for GoogleTranslator {
@@ -111,10 +358,12 @@ impl Default for GoogleTranslator {
         Self {
             endpoint: "https://translate.googleapis.com/translate_a/single".into(),
             client: "at".into(),
-            user_agent: "music-macos".into(),
+            user_agent: "TuneDesk".into(),
             timeout: Duration::from_secs(30),
             max_items_per_batch: 50,
             max_chars_per_batch: 4000,
+            request_spacing: Duration::from_millis(400),
+            max_requests: 12,
         }
     }
 }
@@ -123,20 +372,22 @@ impl GoogleTranslator {
     /// Translates one block of text (`target`: a language code such as `en`, `ja`, `zh-CN`).
     pub fn translate_text(&self, text: &str, target: &str) -> Result<String> {
         let target = validate_language_code(target)?;
-        let resp = http_post_form(
-            &self.endpoint,
-            &[
-                ("client", &self.client),
-                ("dt", "t"),
-                ("ie", "UTF-8"),
-                ("oe", "UTF-8"),
-                ("sl", "auto"),
-                ("tl", target),
-                ("q", text),
-            ],
-            &[("User-Agent", &self.user_agent)],
-            Some(self.timeout),
-        )?;
+        let resp = throttled(&self.endpoint, "Google Translate", || {
+            http_post_form(
+                &self.endpoint,
+                &[
+                    ("client", &self.client),
+                    ("dt", "t"),
+                    ("ie", "UTF-8"),
+                    ("oe", "UTF-8"),
+                    ("sl", "auto"),
+                    ("tl", target),
+                    ("q", text),
+                ],
+                &[("User-Agent", &self.user_agent)],
+                Some(self.timeout),
+            )
+        })?;
         if !resp.ok() {
             return Err(Error::Parse(format!(
                 "translation service returned HTTP {}",
@@ -148,15 +399,35 @@ impl GoogleTranslator {
 }
 
 impl GoogleTranslator {
+    /// One request of a translation: spaced from the previous one, within the budget.
+    fn request(&self, text: &str, target: &str, sent: &mut usize) -> Result<String> {
+        if *sent >= self.max_requests.max(1) {
+            return Err(Error::Parse(
+                "Google Translate kept merging lines; try again later".into(),
+            ));
+        }
+        if *sent > 0 && !self.request_spacing.is_zero() {
+            std::thread::sleep(self.request_spacing);
+        }
+        *sent += 1;
+        self.translate_text(text, target)
+    }
+
     /// Translates `batch` (single lines) keeping one result per line: newline-joined
     /// first, halving the batch whenever the service merges or splits lines.
-    fn translate_batch(&self, batch: &[&str], target: &str, out: &mut Vec<String>) -> Result<()> {
+    fn translate_batch(
+        &self,
+        batch: &[&str],
+        target: &str,
+        out: &mut Vec<String>,
+        sent: &mut usize,
+    ) -> Result<()> {
         if let [single] = batch {
-            out.push(self.translate_text(single, target)?.replace('\n', " "));
+            out.push(self.request(single, target, sent)?.replace('\n', " "));
             return Ok(());
         }
         let joined = batch.join("\n");
-        let parts = split_lines(&self.translate_text(&joined, target)?);
+        let parts = split_lines(&self.request(&joined, target, sent)?);
         if parts.len() == batch.len() {
             out.extend(parts);
             return Ok(());
@@ -167,8 +438,13 @@ impl GoogleTranslator {
             batch.len()
         );
         let (a, b) = batch.split_at(batch.len() / 2);
-        self.translate_batch(a, target, out)?;
-        self.translate_batch(b, target, out)
+        self.translate_batch(a, target, out, sent)?;
+        self.translate_batch(b, target, out, sent)
+    }
+
+    /// While Google rate-limits this connection: time until it is asked again.
+    pub fn rate_limited_for(&self) -> Option<Duration> {
+        blocked_for(&self.endpoint)
     }
 }
 
@@ -183,10 +459,15 @@ impl LyricsTranslator for GoogleTranslator {
             .collect();
         let flat: Vec<&str> = flattened.iter().map(String::as_str).collect();
         let mut translated = Vec::with_capacity(unique.len());
+        let mut sent = 0;
         for range in batches(&flat, self.max_items_per_batch, self.max_chars_per_batch, 1) {
-            self.translate_batch(&flat[range], target, &mut translated)?;
+            self.translate_batch(&flat[range], target, &mut translated, &mut sent)?;
         }
         Ok(realign(&unique, &map, &translated))
+    }
+
+    fn retry_after(&self) -> Option<Duration> {
+        self.rate_limited_for()
     }
 }
 
@@ -324,7 +605,14 @@ impl AiTranslator {
         let url = chat_completion_endpoint(&self.endpoint)?;
         let body = self.request_body(target_language, lines)?;
         let auth = format!("Bearer {}", self.api_key.trim());
-        let resp = http_post_json(&url, &body, &[("Authorization", &auth)], Some(self.timeout))?;
+        let resp = throttled(&url, "The AI provider", || {
+            http_post_json(&url, &body, &[("Authorization", &auth)], Some(self.timeout)).map_err(
+                |e| match e {
+                    Error::Http(e) => Error::Parse(format!("AI endpoint unreachable: {e}")),
+                    e => e,
+                },
+            )
+        })?;
         if !resp.ok() {
             return Err(api_error(resp.status, &resp.body));
         }
@@ -350,6 +638,12 @@ impl LyricsTranslator for AiTranslator {
             translated.extend(self.translate_batch(target_language, &unique[range])?);
         }
         Ok(realign(&unique, &map, &translated))
+    }
+
+    fn retry_after(&self) -> Option<Duration> {
+        chat_completion_endpoint(&self.endpoint)
+            .ok()
+            .and_then(|url| blocked_for(&url))
     }
 }
 
@@ -572,13 +866,213 @@ fn api_error(status: u16, raw: &str) -> Error {
                 raw.chars().take(300).collect()
             }
         });
-    Error::Parse(format!("AI API failed ({status}): {message}"))
+    let hint = match status {
+        401 | 403 => " (check the API key)",
+        404 => " (check the endpoint and model)",
+        _ => "",
+    };
+    Error::Parse(format!("AI API failed ({status}): {message}{hint}"))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::lyrics::providers::fixture;
+    use crate::testutil::{Reply, TestServer};
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    fn google(server: &TestServer) -> GoogleTranslator {
+        GoogleTranslator {
+            endpoint: format!("{}/translate_a/single", server.base),
+            request_spacing: Duration::ZERO,
+            ..GoogleTranslator::default()
+        }
+    }
+
+    fn google_reply(lines: &[&str]) -> Reply {
+        let text = lines.join("\n");
+        Reply::Full {
+            status: 200,
+            headers: vec!["Content-Type: application/json".into()],
+            body: json!([[[text, "x", null, null, 10]], null, "ja"])
+                .to_string()
+                .into_bytes(),
+        }
+    }
+
+    #[test]
+    fn google_rate_limit_blocks_and_fails_fast() {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let counter = calls.clone();
+        // Like Google's "sorry" page: a 429 without Retry-After.
+        let server = TestServer::start(move |_, _, _| {
+            counter.fetch_add(1, Ordering::SeqCst);
+            Reply::Full {
+                status: 429,
+                headers: vec![],
+                body: b"<html>unusual traffic</html>".to_vec(),
+            }
+        });
+        let t = google(&server);
+        let err = t.translate_lines(&["a", "b"], "en").unwrap_err();
+        assert!(is_rate_limited(&err), "{err}");
+        assert!(err.to_string().contains("try again in 2 min"), "{err}");
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+        // Blocked: no request at all, same message.
+        let again = t.translate_lines(&["a", "b"], "en").unwrap_err();
+        assert!(is_rate_limited(&again));
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+        assert!(
+            t.retry_after()
+                .is_some_and(|d| d > Duration::from_secs(100))
+        );
+    }
+
+    #[test]
+    fn google_short_retry_after_is_waited_out() {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let counter = calls.clone();
+        let server = TestServer::start(move |_, _, _| {
+            if counter.fetch_add(1, Ordering::SeqCst) == 0 {
+                Reply::Full {
+                    status: 429,
+                    headers: vec!["Retry-After: 1".into()],
+                    body: Vec::new(),
+                }
+            } else {
+                google_reply(&["Hello", "World"])
+            }
+        });
+        let t = google(&server);
+        let started = Instant::now();
+        let out = t.translate_lines(&["こんにちは", "世界"], "en").unwrap();
+        assert_eq!(out, [Some("Hello".into()), Some("World".into())]);
+        assert_eq!(calls.load(Ordering::SeqCst), 2);
+        assert!(started.elapsed() >= Duration::from_secs(1));
+        assert!(t.retry_after().is_none());
+
+        // A long Retry-After is respected as the block length.
+        let server = TestServer::start(|_, _, _| Reply::Full {
+            status: 429,
+            headers: vec!["Retry-After: 600".into()],
+            body: Vec::new(),
+        });
+        let t = google(&server);
+        let err = t.translate_lines(&["x"], "en").unwrap_err();
+        assert!(err.to_string().contains("10 min"), "{err}");
+    }
+
+    #[test]
+    fn google_request_budget() {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let counter = calls.clone();
+        // Always merges lines: the batch is halved until single lines, within the budget.
+        let server = TestServer::start(move |_, _, _| {
+            counter.fetch_add(1, Ordering::SeqCst);
+            google_reply(&["merged"])
+        });
+        let t = GoogleTranslator {
+            max_requests: 5,
+            ..google(&server)
+        };
+        let lines = ["a", "b", "c", "d", "e", "f", "g", "h"];
+        assert!(t.translate_lines(&lines, "en").is_err());
+        assert_eq!(calls.load(Ordering::SeqCst), 5);
+    }
+
+    #[test]
+    fn cached_translator() {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let counter = calls.clone();
+        let server = TestServer::start(move |_, _, _| {
+            counter.fetch_add(1, Ordering::SeqCst);
+            google_reply(&["Hello", "World"])
+        });
+        let cache: Arc<dyn TranslationCache> =
+            Arc::new(crate::library::Library::open_in_memory().unwrap());
+        let t = CachedTranslator::new(google(&server), cache.clone(), "google");
+        let lines = ["こんにちは", "世界"];
+        assert!(t.cached(&lines, "en").is_none());
+        let first = t.translate_lines(&lines, "en").unwrap();
+        let second = t.translate_lines(&lines, "en").unwrap();
+        assert_eq!(first, second);
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+        // Another language or other lyrics are separate entries.
+        assert!(t.cached(&lines, "de").is_none());
+        assert!(t.cached(&["こんにちは"], "en").is_none());
+        assert_ne!(
+            translation_key("google", "en", &lines),
+            translation_key("ai:x", "en", &lines)
+        );
+    }
+
+    #[test]
+    fn ai_errors_are_clear() {
+        let server = TestServer::start(|path, _, _| match path {
+            "/bad-key/v1/chat/completions" => Reply::Full {
+                status: 401,
+                headers: vec![],
+                body: br#"{"error":{"message":"Incorrect API key provided"}}"#.to_vec(),
+            },
+            "/busy/v1/chat/completions" => Reply::Full {
+                status: 429,
+                headers: vec!["Retry-After: 120".into()],
+                body: br#"{"error":{"message":"Rate limit reached"}}"#.to_vec(),
+            },
+            _ => Reply::Full {
+                status: 200,
+                headers: vec![],
+                body: json!({ "choices": [{ "finish_reason": "stop",
+                    "message": { "content": "[\"only one\"]" } }] })
+                .to_string()
+                .into_bytes(),
+            },
+        });
+        let ai = |path: &str| AiTranslator::new(format!("{}/{path}/v1", server.base), "k", "m");
+        let e = ai("bad-key")
+            .translate_lines(&["a"], "en")
+            .unwrap_err()
+            .to_string();
+        assert!(
+            e.contains("401") && e.contains("Incorrect API key") && e.contains("check the API key"),
+            "{e}"
+        );
+        let busy = ai("busy");
+        let e = busy.translate_lines(&["a"], "en").unwrap_err();
+        assert!(
+            is_rate_limited(&e) && e.to_string().contains("2 min"),
+            "{e}"
+        );
+        assert!(busy.retry_after().is_some());
+        let e = ai("ok")
+            .translate_lines(&["a", "b"], "en")
+            .unwrap_err()
+            .to_string();
+        assert!(e.contains("segment count"), "{e}");
+        let e = AiTranslator::new("http://127.0.0.1:9/v1", "k", "m")
+            .translate_lines(&["a"], "en")
+            .unwrap_err()
+            .to_string();
+        assert!(e.contains("unreachable"), "{e}");
+        let e = AiTranslator::new("http://x", "", "m")
+            .translate_lines(&["a"], "en")
+            .unwrap_err()
+            .to_string();
+        assert!(e.contains("no API key"), "{e}");
+    }
+
+    #[test]
+    fn retry_after_values() {
+        use crate::lyrics::providers::parse_retry_after;
+        assert_eq!(parse_retry_after("120"), Some(Duration::from_secs(120)));
+        assert_eq!(
+            parse_retry_after("Wed, 21 Oct 2015 07:28:00 GMT"),
+            Some(Duration::ZERO)
+        );
+        let soon = parse_retry_after("Wed, 21 Oct 2099 07:28:00 GMT").unwrap();
+        assert!(soon > Duration::from_secs(86_400 * 365));
+        assert_eq!(parse_retry_after("soon"), None);
+    }
 
     #[test]
     fn google_batch_response() {

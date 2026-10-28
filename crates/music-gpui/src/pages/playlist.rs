@@ -228,6 +228,23 @@ impl PlaylistPage {
                 });
             },
         ));
+        let signed_in =
+            crate::app::read_app(cx, |app, _| app.store.account.is_signed_in()).unwrap_or(false);
+        if page.editable && signed_in {
+            let id = playlist.playlist_id.clone();
+            actions.push(action_button(
+                "playlist-cover",
+                "Change cover…",
+                Lucide::Upload,
+                false,
+                move |window, cx| {
+                    let id = id.clone();
+                    update_app(cx, |app, cx| {
+                        app.change_playlist_cover(id, None, window, cx)
+                    });
+                },
+            ));
+        }
         if !data.tracks.is_empty() {
             actions.push(action_button(
                 "playlist-enqueue",

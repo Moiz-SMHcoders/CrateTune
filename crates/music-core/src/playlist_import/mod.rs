@@ -72,6 +72,7 @@ impl SourceTrack {
             album_id: None,
             explicit: self.explicit.unwrap_or(false),
             local_path: None,
+            ..Track::default()
         }
     }
 }

@@ -198,6 +198,7 @@ impl MusicApp {
             cx.on_app_quit(|this, _| {
                 this.flush_listening();
                 this.save_queue_now();
+                this.flush_searches();
                 async {}
             }),
         ];

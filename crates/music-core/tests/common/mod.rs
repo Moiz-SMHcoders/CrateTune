@@ -44,6 +44,12 @@ impl Resp {
         }
     }
 
+    /// This response, cut off after `sent` bytes of its body.
+    pub fn truncated(mut self, sent: usize) -> Self {
+        self.headers.push((TRUNCATE.into(), sent.to_string()));
+        self
+    }
+
     pub fn redirect(to: &str) -> Self {
         Self {
             status: 302,
@@ -54,6 +60,10 @@ impl Resp {
 }
 
 type Handler = dyn Fn(&Req) -> Resp + Send + Sync;
+
+/// A response header the server interprets instead of sending: the connection
+/// drops after that many body bytes (see [`Resp::truncated`]).
+const TRUNCATE: &str = "X-Test-Truncate";
 
 pub struct Server {
     pub base: String,
@@ -129,11 +139,22 @@ fn serve(stream: TcpStream, handler: &Handler, log: &Mutex<Vec<Req>>) {
             resp.status,
             resp.body.len()
         );
+        // `X-Test-Truncate: N`: send only N bytes of the body, then hang up.
+        let mut truncate = None;
         for (k, v) in &resp.headers {
+            if k == TRUNCATE {
+                truncate = v.parse::<usize>().ok();
+                continue;
+            }
             head.push_str(&format!("{k}: {v}\r\n"));
         }
         head.push_str("\r\n");
         if out.write_all(head.as_bytes()).is_err() {
+            return;
+        }
+        if let Some(n) = truncate {
+            let _ = out.write_all(&resp.body[..n.min(resp.body.len())]);
+            let _ = out.shutdown(std::net::Shutdown::Both);
             return;
         }
         if req.method != "HEAD" && out.write_all(&resp.body).is_err() {

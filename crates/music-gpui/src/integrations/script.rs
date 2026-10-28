@@ -7,8 +7,10 @@
 //! | `@sb-skip` | accept the offered skip ("ask" mode) |
 //! | `@sb-status` | print the current song's segments |
 //! | `@play-id=VIDEO_ID[:TITLE]` | play one YouTube video id (e.g. a music video with segments) |
-//! | `@set=FIELD:VALUE` | type into `sb-url`, `together-name`, `together-port`, `spotify-client`, `spotify-port` |
+//! | `@set=FIELD:VALUE` | type into `sb-url`, `together-name`, `together-port`, `together-relay`, `spotify-client`, `spotify-port`, `ai-endpoint`, `ai-model`, `ai-custom`, `ai-key` |
 //! | `@together-host[=FILE]` | start a session (and write the join link to FILE) |
+//! | `@together-host-relay[=FILE]` | start a session through the relay from the settings |
+//! | `@together-transfer=NAME` | hand the session to a guest |
 //! | `@together-join=LINK` / `@together-join=file:PATH` | join a session |
 //! | `@together-leave` | leave / end the session |
 //! | `@together-approve`, `@together-deny` | decide on every pending guest |
@@ -21,11 +23,15 @@
 //! | `@import-accept=N`, `@import-save[=NAME]`, `@import-cancel`, `@import-status` | the import job |
 //! | `@spotify-playlists`, `@spotify-connect` | Spotify account |
 //! | `@export=PLAYLIST:FORMAT:PATH` | export a library playlist (`csv`, `m3u`, `json`) |
+//! | `@ai-filter=on\|off`, `@ai-category=KEY:on\|off` | AI content filter (`explicit`, `holiday`, …) |
+//! | `@ai-filter-status`, `@ai-filter-clear` | print / forget its verdicts |
+//! | `@cast-scan`, `@cast=NAME\|IP:PORT[:NAME]`, `@cast-stop[=here\|off]`, `@cast-status` | Chromecast |
 
 use std::path::PathBuf;
 use std::time::Instant;
 
 use gpui::{Context, Window};
+use music_core::ai_filter::AiCategory;
 use music_core::library::PlaylistSort;
 use music_core::playlist_import::{Format, Resolution};
 use music_core::sponsorblock::Category;
@@ -112,6 +118,31 @@ impl MusicApp {
                     && let Err(e) = std::fs::write(path, link)
                 {
                     eprintln!("music-gpui: writing {path}: {e}");
+                }
+            }
+            "together-host-relay" => {
+                let path = arg.map(str::to_owned);
+                self.together_host_relay(window, cx, move |link| {
+                    eprintln!("music-gpui: together link {link:?}");
+                    if let Some(path) = path
+                        && let Err(e) = std::fs::write(&path, link)
+                    {
+                        eprintln!("music-gpui: writing {path}: {e}");
+                    }
+                });
+            }
+            "together-transfer" => {
+                let wanted = arg.unwrap_or("");
+                let id = self
+                    .integrations
+                    .together
+                    .participants()
+                    .into_iter()
+                    .find(|p| !p.is_host && !p.is_pending && p.name == wanted)
+                    .map(|p| p.id);
+                match id {
+                    Some(id) => self.together_transfer(&id, cx),
+                    None => eprintln!("music-gpui: no admitted guest called {wanted:?}"),
                 }
             }
             "together-join" => {
@@ -205,6 +236,90 @@ impl MusicApp {
                 }
             }
             "together-status" => self.print_together_status(),
+            "cast-scan" => self.cast_scan(window, cx),
+            "cast" => {
+                let raw = arg.unwrap_or("");
+                // `IP:PORT[:NAME]` connects to that address (e.g. the fake receiver).
+                let mut parts = raw.splitn(3, ':');
+                let direct = match (parts.next(), parts.next()) {
+                    (Some(ip), Some(port)) => format!("{ip}:{port}").parse().ok().map(|addr| {
+                        music_core::cast::CastDevice {
+                            name: parts.next().unwrap_or(raw).to_owned(),
+                            model: None,
+                            id: None,
+                            addr,
+                        }
+                    }),
+                    _ => None,
+                };
+                let device = direct.or_else(|| {
+                    self.integrations
+                        .cast
+                        .devices
+                        .iter()
+                        .find(|d| d.name.eq_ignore_ascii_case(raw))
+                        .cloned()
+                });
+                match device {
+                    Some(device) => self.cast_to(device, window, cx),
+                    None => eprintln!("music-gpui: no Cast device {raw:?} (try @cast-scan)"),
+                }
+            }
+            "cast-stop" => self.cast_stop(arg != Some("off"), cx),
+            "cast-status" => {
+                let c = &self.integrations.cast;
+                eprintln!(
+                    "music-gpui: cast devices={:?} scanning={} connecting={:?} error={:?} casting={:?}",
+                    c.devices
+                        .iter()
+                        .map(|d| format!("{} ({})", d.name, d.addr))
+                        .collect::<Vec<_>>(),
+                    c.scanning,
+                    c.connecting,
+                    c.error,
+                    self.cast_device().map(|d| d.name.clone())
+                );
+                eprintln!(
+                    "music-gpui: cast   player: {:?} {:?} at {:.1} s / {:?} on {:?}",
+                    self.playback.track.as_ref().map(|t| t.title.as_str()),
+                    self.playback.status,
+                    self.playback.position.as_secs_f64(),
+                    self.playback.duration,
+                    self.playback.output_device
+                );
+            }
+            "ai-filter" => panel.update(cx, |p, cx| p.set_ai_filter(|a| a.enabled = on, cx)),
+            "ai-category" => {
+                let (key, state) = arg.unwrap_or("").split_once(':').unwrap_or(("", "on"));
+                match AiCategory::from_key(key) {
+                    Some(c) => panel.update(cx, |p, cx| {
+                        p.set_ai_filter(
+                            |a| {
+                                a.categories.retain(|x| *x != c);
+                                if state != "off" {
+                                    a.categories.push(c);
+                                }
+                            },
+                            cx,
+                        )
+                    }),
+                    None => eprintln!("music-gpui: unknown AI filter category {key:?}"),
+                }
+            }
+            "ai-filter-clear" => self.ai_filter_clear_cache(window, cx),
+            "ai-filter-status" => {
+                let (count, error) = self.ai_filter_status();
+                let hidden: Vec<&str> = self
+                    .last_results
+                    .iter()
+                    .filter(|t| super::ai_filter::hidden(&t.video_id))
+                    .map(|t| t.title.as_str())
+                    .collect();
+                eprintln!(
+                    "music-gpui: ai filter active={} classified={count} error={error:?} hidden in results: {hidden:?}",
+                    super::ai_filter::active().is_some()
+                );
+            }
             "import-file" => {
                 let path = PathBuf::from(arg.unwrap_or(""));
                 self.import_start(ImportSource::File(path), window, cx);

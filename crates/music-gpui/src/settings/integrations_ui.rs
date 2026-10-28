@@ -1,5 +1,6 @@
-//! Settings sections for SponsorBlock, Music Together and Spotify import, the
-//! inputs they need ([`ExtrasUi`]) and the `SettingsPanel` methods behind them.
+//! Settings sections for SponsorBlock, Music Together, Spotify import and the AI
+//! content filter, the inputs they need ([`ExtrasUi`]) and the `SettingsPanel`
+//! methods behind them.
 //! The app reads the saved values every poll / when it needs them, so these
 //! sections emit no events.
 
@@ -17,6 +18,7 @@ use gpui_component::{
     switch::Switch,
     v_flex,
 };
+use music_core::ai_filter::AiCategory;
 use music_core::sponsorblock::{Category, DEFAULT_API_URL, normalize_api_url};
 use music_core::spotify;
 
@@ -43,10 +45,18 @@ pub struct ExtrasUi {
     sb_url: Entity<InputState>,
     together_name: Entity<InputState>,
     together_port: Entity<InputState>,
+    together_relay: Entity<InputState>,
     spotify_client: Entity<InputState>,
     spotify_port: Entity<InputState>,
+    ai_endpoint: Entity<InputState>,
+    ai_model: Entity<InputState>,
+    ai_custom: Entity<InputState>,
+    ai_key: Entity<InputState>,
+    /// The key field shows the stored key once the keychain was read.
+    ai_key_filled: bool,
     sb_url_error: Option<String>,
     port_error: Option<String>,
+    relay_error: Option<String>,
     pub(super) spotify: SpotifyFlow,
 }
 
@@ -68,18 +78,52 @@ impl ExtrasUi {
             sb_url: input(DEFAULT_API_URL, settings.sponsorblock.api_url.clone()),
             together_name: input("Your name", settings.together.display_name.clone()),
             together_port: input("42117", settings.together.port.to_string()),
+            together_relay: input(
+                "wss://relay.example.com (empty: LAN only)",
+                settings.together.relay_url.clone(),
+            ),
             spotify_client: input("Client ID", settings.spotify.client_id.clone()),
             spotify_port: input("43819", settings.spotify.redirect_port.to_string()),
+            ai_endpoint: input(
+                "https://api.openai.com/v1 or http://localhost:11434/v1",
+                settings.ai_filter.endpoint.clone(),
+            ),
+            ai_model: input("gpt-4o-mini, llama3.1, …", settings.ai_filter.model.clone()),
+            ai_custom: input(
+                "e.g. songs about cars, meme songs",
+                settings.ai_filter.custom.clone(),
+            ),
+            ai_key: cx.new(|cx| {
+                InputState::new(window, cx)
+                    .placeholder("API key (not needed for local servers)")
+                    .masked(true)
+            }),
+            ai_key_filled: false,
             sb_url_error: None,
             port_error: None,
+            relay_error: None,
             spotify: SpotifyFlow::Idle,
         };
-        let subscriptions = [
+        let mut subscriptions: Vec<Subscription> = Vec::new();
+        subscriptions.push(cx.subscribe(
+            &this.ai_key,
+            |panel: &mut SettingsPanel, input, event: &InputEvent, cx| {
+                if matches!(event, InputEvent::Blur | InputEvent::PressEnter { .. }) {
+                    let value = input.read(cx).value().trim().to_owned();
+                    panel.set_ai_filter_key(value, cx);
+                }
+            },
+        ));
+        let rest = [
             &this.sb_url,
             &this.together_name,
             &this.together_port,
+            &this.together_relay,
             &this.spotify_client,
             &this.spotify_port,
+            &this.ai_endpoint,
+            &this.ai_model,
+            &this.ai_custom,
         ]
         .into_iter()
         .map(|input| {
@@ -91,8 +135,8 @@ impl ExtrasUi {
                     }
                 },
             )
-        })
-        .collect();
+        });
+        subscriptions.extend(rest);
         (this, subscriptions)
     }
 }
@@ -105,9 +149,20 @@ impl SettingsPanel {
         let url = read(&self.extras.sb_url, cx);
         let name = read(&self.extras.together_name, cx);
         let port = read(&self.extras.together_port, cx);
+        let relay = read(&self.extras.together_relay, cx);
         let client = read(&self.extras.spotify_client, cx);
         let redirect = read(&self.extras.spotify_port, cx);
+        let ai = (
+            read(&self.extras.ai_endpoint, cx),
+            read(&self.extras.ai_model, cx),
+            read(&self.extras.ai_custom, cx),
+        );
         let mut changed = false;
+        let a = &mut self.settings.ai_filter;
+        if (&a.endpoint, &a.model, &a.custom) != (&ai.0, &ai.1, &ai.2) {
+            (a.endpoint, a.model, a.custom) = ai;
+            changed = true;
+        }
         match normalize_api_url(&url) {
             Some(url) => {
                 self.extras.sb_url_error = None;
@@ -123,6 +178,13 @@ impl SettingsPanel {
         }
         if name != self.settings.together.display_name {
             self.settings.together.display_name = name;
+            changed = true;
+        }
+        self.extras.relay_error = (!relay.is_empty()
+            && music_core::together::relay_url(&relay).is_none())
+        .then(|| "Needs a ws:// or wss:// address (no user name or query)".into());
+        if self.extras.relay_error.is_none() && relay != self.settings.together.relay_url {
+            self.settings.together.relay_url = relay;
             changed = true;
         }
         let parse_port = |p: &str| p.parse::<u16>().ok().filter(|p| *p >= 1024);
@@ -161,8 +223,16 @@ impl SettingsPanel {
             "sb-url" => &self.extras.sb_url,
             "together-name" => &self.extras.together_name,
             "together-port" => &self.extras.together_port,
+            "together-relay" => &self.extras.together_relay,
             "spotify-client" => &self.extras.spotify_client,
             "spotify-port" => &self.extras.spotify_port,
+            "ai-endpoint" => &self.extras.ai_endpoint,
+            "ai-model" => &self.extras.ai_model,
+            "ai-custom" => &self.extras.ai_custom,
+            "ai-key" => {
+                self.set_ai_filter_key(value.trim().to_owned(), cx);
+                return true;
+            }
             _ => return false,
         };
         let value = value.to_owned();
@@ -202,6 +272,59 @@ impl SettingsPanel {
             },
             cx,
         );
+    }
+
+    // ---- Chromecast ------------------------------------------------------------------------
+
+    pub fn set_cast(
+        &mut self,
+        f: impl FnOnce(&mut crate::integrations::config::CastPrefs),
+        cx: &mut Context<Self>,
+    ) {
+        let before = self.settings.cast.clone();
+        f(&mut self.settings.cast);
+        if self.settings.cast != before {
+            self.changed(false, cx);
+        }
+        cx.notify();
+    }
+
+    // ---- AI content filter ---------------------------------------------------------------
+
+    pub fn set_ai_filter(
+        &mut self,
+        f: impl FnOnce(&mut crate::integrations::config::AiFilterPrefs),
+        cx: &mut Context<Self>,
+    ) {
+        let before = self.settings.ai_filter.clone();
+        f(&mut self.settings.ai_filter);
+        if self.settings.ai_filter != before {
+            self.changed(false, cx);
+        }
+        cx.notify();
+    }
+
+    fn set_ai_filter_key(&mut self, value: String, cx: &mut Context<Self>) {
+        if self.secret(Secret::AiFilterKey).unwrap_or_default() == value {
+            return;
+        }
+        let set = !value.is_empty();
+        self.put_secret(Secret::AiFilterKey, set.then_some(value), cx);
+        self.settings.ai_filter.key_set = set;
+        self.changed(false, cx);
+        cx.notify();
+    }
+
+    /// The API key for the filter: `Some("")` without one, `None` while the
+    /// keychain hasn't been read yet.
+    pub fn ai_filter_key(&self) -> Option<String> {
+        if !self.settings.ai_filter.key_set {
+            return Some(String::new());
+        }
+        if !self.secrets_loaded {
+            return None;
+        }
+        Some(self.secret(Secret::AiFilterKey).unwrap_or_default())
     }
 
     // ---- Together -----------------------------------------------------------------------
@@ -443,6 +566,7 @@ pub(super) fn render_together(
 ) -> AnyElement {
     let t = panel.settings.together.clone();
     let port_error = panel.extras.port_error.clone();
+    let relay_error = panel.extras.relay_error.clone();
     v_flex()
         .gap_5()
         .child(
@@ -496,10 +620,28 @@ pub(super) fn render_together(
                     cx,
                 ))
                 .child(note(
-                    "Sessions run on your local network only: guests connect straight to this \
+                    "Sessions run on your local network: guests connect straight to this \
                      computer (allow incoming connections if the firewall asks). The link \
                      contains a random key; only people with the link can join. Changes apply \
-                     to a running session right away.",
+                     to a running session right away. On the Listen together page, “Make host” \
+                     hands the session to a guest: everyone follows the new host.",
+                    cx,
+                )),
+        )
+        .child(
+            group("Across networks", cx)
+                .child(field(
+                    "Relay server",
+                    Input::new(&panel.extras.together_relay).small(),
+                    cx,
+                ))
+                .children(relay_error.map(|e| status_line(e.into(), cx.theme().danger)))
+                .child(note(
+                    "“Host via relay” runs the session through a music-relay server you host \
+                     yourself (see the README: one small binary, put it behind a TLS reverse \
+                     proxy for wss://). Guests then join from anywhere with the link. The relay \
+                     forwards the session's messages (song ids, titles, names) but never \
+                     decides anything; empty = LAN only.",
                     cx,
                 )),
         )
@@ -624,4 +766,283 @@ pub(super) fn render_spotify(
                 ),
         )
         .into_any_element()
+}
+
+pub(super) fn render_ai_filter(
+    panel: &mut SettingsPanel,
+    window: &mut Window,
+    cx: &mut Context<SettingsPanel>,
+) -> AnyElement {
+    if !panel.extras.ai_key_filled && panel.secrets_loaded {
+        panel.extras.ai_key_filled = true;
+        if let Some(key) = panel.secret(Secret::AiFilterKey) {
+            panel
+                .extras
+                .ai_key
+                .update(cx, |input, cx| input.set_value(key, window, cx));
+        }
+    }
+    let a = panel.settings.ai_filter.clone();
+    let usable = a.core("x".into()).is_usable();
+    let (classified, error) =
+        crate::app::read_app(cx, |app, _| app.ai_filter_status()).unwrap_or_default();
+    let theme = cx.theme();
+    let (status, color): (SharedString, gpui::Hsla) = match (a.enabled, usable, &error) {
+        (false, _, _) => (
+            "Off: nothing is sent anywhere".into(),
+            theme.muted_foreground,
+        ),
+        (true, false, _) => (
+            "Needs an endpoint, a model and at least one category".into(),
+            theme.warning,
+        ),
+        (true, true, Some(e)) => (format!("Last request failed: {e}").into(), theme.danger),
+        (true, true, None) => (
+            format!("On · {classified} songs and albums classified").into(),
+            theme.success,
+        ),
+    };
+    let mut categories = group("Hide", cx);
+    for category in AiCategory::ALL {
+        let on = a.categories.contains(&category);
+        categories = categories.child(row(
+            category.label(),
+            None,
+            switch(
+                SharedString::from(format!("ai-cat-{}", category.key())),
+                on,
+                move |p, on, cx| {
+                    p.set_ai_filter(
+                        |a| {
+                            a.categories.retain(|c| *c != category);
+                            if on {
+                                a.categories.push(category);
+                            }
+                        },
+                        cx,
+                    )
+                },
+                cx,
+            ),
+            cx,
+        ));
+    }
+    categories = categories
+        .child(field(
+            "Also hide",
+            Input::new(&panel.extras.ai_custom).small(),
+            cx,
+        ))
+        .child(note(
+            "Your own categories, comma-separated (up to 8), described in plain words.",
+            cx,
+        ));
+    v_flex()
+        .gap_5()
+        .child(
+            group("AI content filter", cx)
+                .child(row(
+                    "Filter songs with an AI model",
+                    Some("Like “Hide explicit content”, for the categories below."),
+                    switch(
+                        "ai-filter-enabled",
+                        a.enabled,
+                        |p, on, cx| p.set_ai_filter(|a| a.enabled = on, cx),
+                        cx,
+                    ),
+                    cx,
+                ))
+                .child(status_line(status, color))
+                .child(
+                    h_flex().child(
+                        Button::new("ai-filter-clear")
+                            .small()
+                            .ghost()
+                            .label("Forget classifications")
+                            .disabled(classified == 0)
+                            .on_click(|_, window, cx| {
+                                update_app(cx, |app, cx| app.ai_filter_clear_cache(window, cx));
+                            }),
+                    ),
+                ),
+        )
+        .child(
+            group("Model", cx)
+                .child(field(
+                    "Endpoint",
+                    Input::new(&panel.extras.ai_endpoint).small(),
+                    cx,
+                ))
+                .child(field(
+                    "Model",
+                    Input::new(&panel.extras.ai_model).small(),
+                    cx,
+                ))
+                .child(field(
+                    "API key",
+                    Input::new(&panel.extras.ai_key).small().mask_toggle(),
+                    cx,
+                ))
+                .child(note(
+                    "Any OpenAI-compatible chat-completions API: OpenAI, OpenRouter, or a model \
+                     on this computer (Ollama, LM Studio, llama.cpp server). The key is kept in \
+                     the keychain.",
+                    cx,
+                )),
+        )
+        .child(categories)
+        .child(group("Privacy", cx).child(note(
+            "Off by default. While on, the title, artists and album of the songs and \
+                 albums on the pages you open are sent to the endpoint above (nothing about \
+                 you, no listening history); each verdict is cached on this computer, so a \
+                 song is asked about once. Songs the model hasn't judged yet stay visible.",
+            cx,
+        )))
+        .into_any_element()
+}
+
+pub(super) fn render_cast(
+    panel: &mut SettingsPanel,
+    _: &mut Window,
+    cx: &mut Context<SettingsPanel>,
+) -> AnyElement {
+    let prefs = panel.settings.cast.clone();
+    let (devices, scanning, connecting, error, casting) = crate::app::read_app(cx, |app, _| {
+        let c = &app.integrations.cast;
+        (
+            c.devices.clone(),
+            c.scanning,
+            c.connecting.clone(),
+            c.error.clone(),
+            app.cast_device().map(|d| d.name.clone()),
+        )
+    })
+    .unwrap_or_default();
+    let theme = cx.theme();
+    let (status, color): (SharedString, gpui::Hsla) = match (&casting, &connecting, &error) {
+        (Some(name), _, _) => (format!("Casting to {name}").into(), theme.success),
+        (None, Some(name), _) => (
+            format!("Connecting to {name}…").into(),
+            theme.muted_foreground,
+        ),
+        (None, None, Some(e)) => (e.clone().into(), theme.danger),
+        (None, None, None) if scanning => {
+            ("Looking for Cast devices…".into(), theme.muted_foreground)
+        }
+        (None, None, None) => (
+            format!(
+                "{} device{} found",
+                devices.len(),
+                if devices.len() == 1 { "" } else { "s" }
+            )
+            .into(),
+            theme.muted_foreground,
+        ),
+    };
+    let mut list = group("Devices", cx).child(
+        h_flex()
+            .justify_between()
+            .child(status_line(status, color))
+            .child(
+                h_flex()
+                    .gap_2()
+                    .child(
+                        Button::new("cast-scan")
+                            .small()
+                            .outline()
+                            .label("Search")
+                            .loading(scanning)
+                            .disabled(scanning)
+                            .on_click(|_, window, cx| {
+                                update_app(cx, |app, cx| app.cast_scan(window, cx));
+                            }),
+                    )
+                    .children(casting.is_some().then(|| {
+                        Button::new("cast-stop")
+                            .small()
+                            .danger()
+                            .label("Stop casting")
+                            .on_click(|_, _, cx| {
+                                update_app(cx, |app, cx| app.cast_stop(true, cx));
+                            })
+                    })),
+            ),
+    );
+    for (ix, device) in devices.into_iter().enumerate() {
+        let current = casting.as_deref() == Some(device.name.as_str());
+        let detail = format!(
+            "{}{}",
+            device
+                .model
+                .as_deref()
+                .map(|m| format!("{m} · "))
+                .unwrap_or_default(),
+            device.addr.ip()
+        );
+        let target = device.clone();
+        list = list.child(
+            h_flex()
+                .gap_3()
+                .justify_between()
+                .child(
+                    v_flex()
+                        .min_w_0()
+                        .child(div().text_sm().child(device.name.clone()))
+                        .child(
+                            div()
+                                .text_xs()
+                                .text_color(theme.muted_foreground)
+                                .child(detail),
+                        ),
+                )
+                .child(
+                    Button::new(("cast-to", ix))
+                        .small()
+                        .when_primary(!current)
+                        .label(if current { "Casting" } else { "Cast" })
+                        .disabled(current || connecting.is_some())
+                        .on_click(move |_, window, cx| {
+                            let device = target.clone();
+                            update_app(cx, |app, cx| app.cast_to(device, window, cx));
+                        }),
+                ),
+        );
+    }
+    v_flex()
+        .gap_5()
+        .child(list)
+        .child(
+            group("Streaming", cx)
+                .child(row(
+                    "Let the device fetch YouTube audio itself",
+                    Some("Off: this app streams it to the device (works with every song)."),
+                    switch(
+                        "cast-direct",
+                        prefs.direct,
+                        |p, on, cx| p.set_cast(|c| c.direct = on, cx),
+                        cx,
+                    ),
+                    cx,
+                ))
+                .child(note(
+                    "Casting plays the queue on a Chromecast, Google TV or Nest speaker on this \
+                     network (Google's Default Media Receiver). The player bar's Cast button \
+                     picks a device; play, pause, seek, skip and volume then control it, and \
+                     Stop casting continues here. YouTube audio and local files are streamed \
+                     from this computer to the device (keep the app open); the device and this \
+                     computer must be on the same network. Changes apply to the next song.",
+                    cx,
+                )),
+        )
+        .into_any_element()
+}
+
+trait WhenPrimary {
+    fn when_primary(self, on: bool) -> Self;
+}
+
+impl WhenPrimary for Button {
+    fn when_primary(self, on: bool) -> Self {
+        if on { self.primary() } else { self.outline() }
+    }
 }

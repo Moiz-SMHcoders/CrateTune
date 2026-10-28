@@ -6,6 +6,7 @@ use gpui::{
     AnyElement, Context, IntoElement, ParentElement as _, SharedString, Styled as _, Window, div,
     prelude::FluentBuilder as _, px,
 };
+use gpui_component::progress::Progress;
 use gpui_component::{
     ActiveTheme as _, Disableable as _, Sizable as _,
     button::{Button, ButtonVariants as _},
@@ -15,12 +16,16 @@ use gpui_component::{
     v_flex,
 };
 use music_core::lyrics::ProviderId;
-use music_core::lyrics::romanize::HAS_KANJI_READINGS;
+use music_core::lyrics::romanize::Script;
+use music_core::lyrics::romanize::dictionary::DictionarySource;
 
 use super::SettingsPanel;
 use super::prefs::{LyricsAnimation, RomanizeConfig, TextAlign, TranslatorKind};
 use super::prefs_ui::{choice, slider_row};
 use super::widgets::{field, group, note, row};
+use crate::app::{read_app, update_app};
+use crate::lyrics::KanjiDictionary;
+use crate::pages::widgets::format_bytes;
 
 pub(super) fn render(
     panel: &mut SettingsPanel,
@@ -126,11 +131,16 @@ pub(super) fn render(
                     .checked(on)
                     .small()
                     .on_click(cx.listener(move |this, checked: &bool, _, cx| {
-                        this.set_romanize(script, *checked, cx)
+                        this.set_romanize(script, *checked, cx);
+                        // Kanji readings need the dictionary: fetch it the first time.
+                        if script == Script::Japanese && *checked {
+                            update_app(cx, |app, cx| app.download_kanji_dictionary(cx));
+                        }
                     })),
                 cx,
             )
         }));
+    let kanji = kanji_dictionary_row(cx);
 
     // ---- display
     let animation = choice(
@@ -256,22 +266,116 @@ pub(super) fn render(
                 })
                 .child(note(
                     "Language codes like en, de, ja, zh-CN. Each song is translated once per \
-                     language and kept for the session. Google's free endpoint is rate limited.",
+                     language and translator and kept in the library. Google's free endpoint \
+                     is rate limited: after a refusal it is left alone for a while (2 min, \
+                     longer if it keeps refusing) and the translation is retried then.",
                     cx,
                 )),
         )
         .child(
             group("Romanization", cx)
                 .child(note(
-                    if HAS_KANJI_READINGS {
-                        "Adds a Latin-script line under lines in these scripts."
-                    } else {
-                        "Adds a Latin-script line under lines in these scripts. Japanese: kana \
-                         only in this build (kanji readings need the japanese-dict feature)."
-                    },
+                    "Adds a Latin-script line under lines in these scripts.",
                     cx,
                 ))
-                .child(romanize),
+                .child(romanize)
+                .children(kanji),
         )
         .into_any_element()
+}
+
+/// Kanji readings for Japanese: the dictionary's state, size, download progress.
+fn kanji_dictionary_row(cx: &mut Context<SettingsPanel>) -> Option<AnyElement> {
+    let state = read_app(cx, |app, _| app.lyrics.kanji.clone())?;
+    let theme = cx.theme();
+    let (muted, danger) = (theme.muted_foreground, theme.danger);
+    let source = DictionarySource::ipadic();
+    let download_size = format_bytes(source.size);
+    let (status, control): (String, AnyElement) = match state {
+        KanjiDictionary::Embedded => ("Built into this version.".into(), div().into_any_element()),
+        KanjiDictionary::Unknown | KanjiDictionary::Missing => (
+            format!(
+                "Without it kanji stay as they are and only kana are romanized. Downloads \
+                 {download_size} once ({} on disk).",
+                format_bytes(source.unpacked_size)
+            ),
+            Button::new("kanji-dict-download")
+                .small()
+                .label(format!("Download ({download_size})"))
+                .on_click(|_, _, cx| {
+                    update_app(cx, |app, cx| app.download_kanji_dictionary(cx));
+                })
+                .into_any_element(),
+        ),
+        KanjiDictionary::Downloading { done, total, .. } => (
+            format!(
+                "Downloading… {} of {}",
+                format_bytes(done),
+                format_bytes(total)
+            ),
+            h_flex()
+                .gap_2()
+                .child(
+                    div()
+                        .w(px(120.))
+                        .child(Progress::new("kanji-dict-progress").value(if total == 0 {
+                            0.
+                        } else {
+                            done as f32 * 100. / total as f32
+                        })),
+                )
+                .child(
+                    Button::new("kanji-dict-cancel")
+                        .small()
+                        .ghost()
+                        .label("Cancel")
+                        .on_click(|_, _, cx| {
+                            update_app(cx, |app, cx| app.cancel_kanji_dictionary(cx));
+                        }),
+                )
+                .into_any_element(),
+        ),
+        KanjiDictionary::Ready(bytes) => (
+            format!("{} · {} on disk.", source.name, format_bytes(bytes)),
+            Button::new("kanji-dict-remove")
+                .small()
+                .ghost()
+                .label("Remove")
+                .on_click(|_, _, cx| {
+                    update_app(cx, |app, cx| app.remove_kanji_dictionary(cx));
+                })
+                .into_any_element(),
+        ),
+        KanjiDictionary::Failed(e) => (
+            format!("Download failed: {e}"),
+            Button::new("kanji-dict-retry")
+                .small()
+                .label("Retry")
+                .on_click(|_, _, cx| {
+                    update_app(cx, |app, cx| app.download_kanji_dictionary(cx));
+                })
+                .into_any_element(),
+        ),
+    };
+    let failed = status.starts_with("Download failed");
+    Some(
+        h_flex()
+            .gap_4()
+            .justify_between()
+            .child(
+                v_flex()
+                    .min_w_0()
+                    .gap_0p5()
+                    .child(div().text_sm().child("Kanji readings (Japanese)"))
+                    .child(
+                        div()
+                            .text_xs()
+                            .text_color(if failed { danger } else { muted })
+                            .line_clamp(3)
+                            .child(status),
+                    ),
+            )
+            .child(div().flex_none().child(control))
+            .into_any_element(),
+    )
 }
