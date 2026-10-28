@@ -74,6 +74,8 @@ pub enum SectionId {
     Together,
     /// Spotify playlist import.
     Spotify,
+    /// AI content filter (OpenAI-compatible classifier).
+    AiFilter,
     About,
 }
 
@@ -164,6 +166,12 @@ pub const SECTIONS: &[Section] = &[
         render: integrations_ui::render_spotify,
     },
     Section {
+        id: SectionId::AiFilter,
+        title: "AI content filter",
+        icon: IconName::Bot,
+        render: integrations_ui::render_ai_filter,
+    },
+    Section {
         id: SectionId::About,
         title: "About",
         icon: IconName::Info,
@@ -199,6 +207,7 @@ impl SectionId {
             SectionId::SponsorBlock => "sponsorblock",
             SectionId::Together => "together",
             SectionId::Spotify => "spotify",
+            SectionId::AiFilter => "ai-filter",
             SectionId::About => "about",
         }
     }

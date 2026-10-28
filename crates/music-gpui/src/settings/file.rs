@@ -73,6 +73,10 @@ pub struct Settings {
     pub together: crate::integrations::config::TogetherPrefs,
     /// Spotify playlist import (own Client ID; the refresh token is a secret).
     pub spotify: crate::integrations::config::SpotifyPrefs,
+    /// AI content filter (off by default; the API key is a secret).
+    pub ai_filter: crate::integrations::config::AiFilterPrefs,
+    /// Chromecast.
+    pub cast: crate::integrations::config::CastPrefs,
     /// The first-run guide was finished or skipped. Missing in files from before the
     /// guide existed: those users count as onboarded; a fresh install starts `false`.
     #[serde(default = "onboarded_default")]
@@ -105,6 +109,8 @@ impl Default for Settings {
             sponsorblock: Default::default(),
             together: Default::default(),
             spotify: Default::default(),
+            ai_filter: Default::default(),
+            cast: Default::default(),
             onboarded: true,
             secrets: FileSecrets::default(),
         }

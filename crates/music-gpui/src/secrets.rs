@@ -35,11 +35,13 @@ pub enum Secret {
     YouTubeCookie,
     /// Spotify Web API refresh token (playlist import).
     SpotifyRefreshToken,
+    /// AI content filter: the OpenAI-compatible API key.
+    AiFilterKey,
 }
 
 impl Secret {
     #[cfg(test)]
-    pub const ALL: [Secret; 9] = [
+    pub const ALL: [Secret; 10] = [
         Secret::LastFmShared,
         Secret::LastFmSession,
         Secret::ListenBrainzToken,
@@ -49,6 +51,7 @@ impl Secret {
         Secret::YouTubeCookie,
         Secret::ProxyPassword,
         Secret::SpotifyRefreshToken,
+        Secret::AiFilterKey,
     ];
 
     /// Keychain account name and settings-file key.
@@ -63,6 +66,7 @@ impl Secret {
             Secret::AiTranslateKey => "ai-translate-api-key",
             Secret::YouTubeCookie => "youtube-cookie",
             Secret::SpotifyRefreshToken => "spotify-refresh-token",
+            Secret::AiFilterKey => "ai-filter-api-key",
         }
     }
 }

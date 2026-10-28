@@ -7,7 +7,7 @@
 //! | `@sb-skip` | accept the offered skip ("ask" mode) |
 //! | `@sb-status` | print the current song's segments |
 //! | `@play-id=VIDEO_ID[:TITLE]` | play one YouTube video id (e.g. a music video with segments) |
-//! | `@set=FIELD:VALUE` | type into `sb-url`, `together-name`, `together-port`, `together-relay`, `spotify-client`, `spotify-port` |
+//! | `@set=FIELD:VALUE` | type into `sb-url`, `together-name`, `together-port`, `together-relay`, `spotify-client`, `spotify-port`, `ai-endpoint`, `ai-model`, `ai-custom`, `ai-key` |
 //! | `@together-host[=FILE]` | start a session (and write the join link to FILE) |
 //! | `@together-host-relay[=FILE]` | start a session through the relay from the settings |
 //! | `@together-transfer=NAME` | hand the session to a guest |
@@ -23,11 +23,14 @@
 //! | `@import-accept=N`, `@import-save[=NAME]`, `@import-cancel`, `@import-status` | the import job |
 //! | `@spotify-playlists`, `@spotify-connect` | Spotify account |
 //! | `@export=PLAYLIST:FORMAT:PATH` | export a library playlist (`csv`, `m3u`, `json`) |
+//! | `@ai-filter=on\|off`, `@ai-category=KEY:on\|off` | AI content filter (`explicit`, `holiday`, …) |
+//! | `@ai-filter-status`, `@ai-filter-clear` | print / forget its verdicts |
 
 use std::path::PathBuf;
 use std::time::Instant;
 
 use gpui::{Context, Window};
+use music_core::ai_filter::AiCategory;
 use music_core::library::PlaylistSort;
 use music_core::playlist_import::{Format, Resolution};
 use music_core::sponsorblock::Category;
@@ -232,6 +235,38 @@ impl MusicApp {
                 }
             }
             "together-status" => self.print_together_status(),
+            "ai-filter" => panel.update(cx, |p, cx| p.set_ai_filter(|a| a.enabled = on, cx)),
+            "ai-category" => {
+                let (key, state) = arg.unwrap_or("").split_once(':').unwrap_or(("", "on"));
+                match AiCategory::from_key(key) {
+                    Some(c) => panel.update(cx, |p, cx| {
+                        p.set_ai_filter(
+                            |a| {
+                                a.categories.retain(|x| *x != c);
+                                if state != "off" {
+                                    a.categories.push(c);
+                                }
+                            },
+                            cx,
+                        )
+                    }),
+                    None => eprintln!("music-gpui: unknown AI filter category {key:?}"),
+                }
+            }
+            "ai-filter-clear" => self.ai_filter_clear_cache(window, cx),
+            "ai-filter-status" => {
+                let (count, error) = self.ai_filter_status();
+                let hidden: Vec<&str> = self
+                    .last_results
+                    .iter()
+                    .filter(|t| super::ai_filter::hidden(&t.video_id))
+                    .map(|t| t.title.as_str())
+                    .collect();
+                eprintln!(
+                    "music-gpui: ai filter active={} classified={count} error={error:?} hidden in results: {hidden:?}",
+                    super::ai_filter::active().is_some()
+                );
+            }
             "import-file" => {
                 let path = PathBuf::from(arg.unwrap_or(""));
                 self.import_start(ImportSource::File(path), window, cx);

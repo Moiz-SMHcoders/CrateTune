@@ -1,6 +1,8 @@
 //! Persisted preferences of the integrations (`settings.json` → `sponsorblock`,
-//! `together`, `spotify`). Every field has a default so older files keep loading.
+//! `together`, `spotify`, `ai_filter`, `cast`). Every field has a default so older
+//! files keep loading.
 
+use music_core::ai_filter::{AiCategory, AiFilterConfig};
 use music_core::sponsorblock::{Category, DEFAULT_API_URL, SponsorBlockConfig};
 use music_core::together::{DEFAULT_PORT, RoomSettings};
 use serde::{Deserialize, Serialize};
@@ -140,6 +142,64 @@ impl Default for SpotifyPrefs {
     }
 }
 
+/// AI content filter (off by default; nothing is sent while it is off).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct AiFilterPrefs {
+    pub enabled: bool,
+    /// OpenAI-compatible endpoint (`https://api.openai.com/v1`, `http://localhost:11434/v1`).
+    pub endpoint: String,
+    pub model: String,
+    pub categories: Vec<AiCategory>,
+    /// Extra categories in the user's words, comma-separated.
+    pub custom: String,
+    /// The API key is in the keychain (`Secret::AiFilterKey`).
+    pub key_set: bool,
+}
+
+impl Default for AiFilterPrefs {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            endpoint: String::new(),
+            model: String::new(),
+            categories: vec![AiCategory::Explicit, AiCategory::AiGenerated],
+            custom: String::new(),
+            key_set: false,
+        }
+    }
+}
+
+impl AiFilterPrefs {
+    pub fn core(&self, api_key: String) -> AiFilterConfig {
+        AiFilterConfig {
+            endpoint: self.endpoint.trim().to_owned(),
+            api_key,
+            model: self.model.trim().to_owned(),
+            categories: self.categories.clone(),
+            custom: self
+                .custom
+                .split([',', '\n'])
+                .map(|c| c.trim().to_owned())
+                .filter(|c| !c.is_empty())
+                .take(8)
+                .collect(),
+            ..AiFilterConfig::default()
+        }
+    }
+}
+
+/// Chromecast (Google Cast).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct CastPrefs {
+    /// Always stream through this app (a local HTTP proxy) instead of letting the
+    /// receiver fetch the audio itself.
+    pub always_proxy: bool,
+    /// Name of the last device cast to (pre-selected in the picker).
+    pub last_device: Option<String>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -163,5 +223,17 @@ mod tests {
         assert_eq!(t.relay().as_deref(), Some("wss://relay.example.com/"));
         let s: SpotifyPrefs = serde_json::from_str("{}").unwrap();
         assert_eq!(s.redirect_port, 43819);
+        let ai: AiFilterPrefs = serde_json::from_str("{}").unwrap();
+        assert!(!ai.enabled, "off by default");
+        let ai: AiFilterPrefs = serde_json::from_str(
+            r#"{"enabled":true,"model":" m ","categories":["holiday"],"custom":"cars, ,boats"}"#,
+        )
+        .unwrap();
+        let core = ai.core(String::new());
+        assert_eq!(core.model, "m");
+        assert_eq!(core.categories, vec![AiCategory::Holiday]);
+        assert_eq!(core.custom, vec!["cars", "boats"]);
+        let cast: CastPrefs = serde_json::from_str("{}").unwrap();
+        assert!(!cast.always_proxy);
     }
 }
