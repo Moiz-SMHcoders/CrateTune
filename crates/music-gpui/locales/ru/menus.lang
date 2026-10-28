@@ -1,0 +1,34 @@
+# Menu bar (Russian). {app} is the app's name.
+menu.about = О программе {app}
+menu.settings = Настройки…
+menu.services = Службы
+menu.hide = Скрыть {app}
+menu.hide_others = Скрыть остальные
+menu.show_all = Показать все
+menu.quit = Завершить {app}
+menu.edit = Правка
+menu.undo = Отменить
+menu.redo = Повторить
+menu.cut = Вырезать
+menu.copy = Скопировать
+menu.paste = Вставить
+menu.select_all = Выбрать все
+menu.search = Поиск
+menu.view = Вид
+menu.back = Назад
+menu.forward = Вперёд
+menu.recognize = Распознать трек
+menu.controls = Управление
+menu.play_pause = Воспроизведение / пауза
+menu.repeat = Повтор (выкл. / все / один)
+menu.volume_up = Громче
+menu.volume_down = Тише
+menu.window = Окно
+menu.minimize = Свернуть
+menu.zoom = Изменить масштаб
+
+tray.next = Следующий трек
+tray.previous = Предыдущий трек
+tray.mini_player = Мини-плеер
+tray.show_window = Показать {app}
+tray.quit = Завершить {app}

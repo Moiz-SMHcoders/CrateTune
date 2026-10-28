@@ -1,0 +1,114 @@
+# Integrations on top of the player (Polish).
+
+# ---- SponsorBlock: segment categories
+sponsorblock.category.music_offtopic = Sekcja niemuzyczna
+sponsorblock.category.sponsor = Sponsor
+sponsorblock.category.intro = Przerwa / intro
+sponsorblock.category.outro = Ekrany końcowe / napisy
+sponsorblock.category.selfpromo = Autopromocja
+sponsorblock.category.interaction = Przypomnienie o interakcji
+sponsorblock.category.preview = Zapowiedź / podsumowanie
+sponsorblock.category.filler = Dygresja
+sponsorblock.category.hook = Zachęta / powitanie
+sponsorblock.category_in_chip.music_offtopic = sekcja niemuzyczna
+sponsorblock.category_in_chip.sponsor = sponsor
+sponsorblock.category_in_chip.intro = przerwa / intro
+sponsorblock.category_in_chip.outro = ekrany końcowe
+sponsorblock.category_in_chip.selfpromo = autopromocja
+sponsorblock.category_in_chip.interaction = przypomnienie
+sponsorblock.category_in_chip.preview = zapowiedź / podsumowanie
+sponsorblock.category_in_chip.filler = dygresja
+sponsorblock.category_in_chip.hook = zachęta / powitanie
+sponsorblock.toast.skipped = Pominięto: {category} ({seconds} s)
+sponsorblock.chip.skip = Pomiń: {category} ({seconds} s)
+sponsorblock.chip.tooltip = SponsorBlock: przejdź do końca tego segmentu
+
+# ---- AI content filter: categories
+ai_filter.category.explicit = Wulgarne teksty
+ai_filter.category.ai_generated = Muzyka wygenerowana przez AI
+ai_filter.category.holiday = Muzyka świąteczna
+ai_filter.category.children = Muzyka dla dzieci
+ai_filter.category.noise = Dźwięki do snu i biały szum
+ai_filter.category.sped_up = Wersje przyspieszone / zwolnione
+ai_filter.category.covers = Covery i karaoke
+ai_filter.category.live = Nagrania na żywo
+
+# ---- Chromecast
+cast.casting_to = Przesyłanie na {device}
+cast.connecting_to = Łączenie z {device}…
+cast.tooltip = Przesyłaj na urządzenie
+cast.menu.title = Przesyłaj na
+cast.menu.searching = Szukanie urządzeń Cast…
+cast.menu.none_found = Nie znaleziono urządzeń Cast
+cast.menu.search_again = Szukaj ponownie
+cast.stop = Zatrzymaj przesyłanie
+cast.error.disconnected = Urządzenie Cast zostało rozłączone
+cast.error.scan_failed = Nie udało się wyszukać urządzeń: {error}
+cast.error.connect_failed = Nie udało się połączyć z {device}: {error}
+
+# ---- Import: sources and progress
+import.source.spotify_playlist = Playlista Spotify
+import.source.spotify_liked = Polubione utwory Spotify
+import.error.connect_spotify = Połącz Spotify w Ustawienia → Import ze Spotify.
+import.error.connect_spotify_first = Najpierw połącz Spotify w Ustawienia → Import ze Spotify.
+import.error.not_spotify_link = To nie jest link ani ID playlisty Spotify.
+import.stage.reading = Odczytywanie
+import.stage.reading_playlist = Odczytywanie playlisty
+import.stage.reading_liked = Odczytywanie polubionych utworów
+import.stage.matching = Dopasowywanie
+import.liked_playlist_name = Polubione w Spotify
+import.cancelled = Anulowano
+import.nothing_to_save = Nie ma czego zapisać: nie znaleziono żadnego utworu.
+import.exporting = Eksportowanie playlisty
+import.exported.one = Wyeksportowano {count} utwór do {path}
+import.exported.few = Wyeksportowano {count} utwory do {path}
+import.exported.many = Wyeksportowano {count} utworów do {path}
+import.exported.other = Wyeksportowano {count} utworu do {path}
+
+# ---- Import & export page
+import.page.subtitle = Przenieś playlisty ze Spotify lub z plików do swojej biblioteki albo zabierz je gdzie indziej.
+import.file.title = Z pliku
+import.file.description = CSV z Exportify (Spotify), M3U / M3U8 lub CSV / JSON wyeksportowany tutaj.
+import.file.choose = Wybierz plik…
+import.spotify.title = Ze Spotify
+import.spotify.connect_hint = Połącz konto Spotify (z własnym darmowym Client ID dewelopera), aby zaimportować swoje playlisty i polubione utwory.
+import.spotify.set_up = Skonfiguruj Spotify…
+import.spotify.signed_in = Zalogowano jako {user}.
+import.spotify.liked = Polubione utwory
+import.spotify.show_playlists = Pokaż moje playlisty
+import.spotify.playlist_meta.one = {owner} · {count} utwór
+import.spotify.playlist_meta.few = {owner} · {count} utwory
+import.spotify.playlist_meta.many = {owner} · {count} utworów
+import.spotify.playlist_meta.other = {owner} · {count} utworu
+import.spotify.playlist_meta_unknown = {owner} · ? utworów
+import.job.progress = {stage} · {done} z {total}
+import.job.progress_count = {stage} · {done}
+import.job.found.one = Znaleziono {count}
+import.job.found.few = Znaleziono {count}
+import.job.found.many = Znaleziono {count}
+import.job.found.other = Znaleziono {count}
+import.job.not_found.one = Nie znaleziono {count}
+import.job.not_found.few = Nie znaleziono {count}
+import.job.not_found.many = Nie znaleziono {count}
+import.job.not_found.other = Nie znaleziono {count}
+import.job.saved_as = Zapisano jako „{name}”
+import.job.save.one = Zapisz {count} utwór jako playlistę
+import.job.save.few = Zapisz {count} utwory jako playlistę
+import.job.save.many = Zapisz {count} utworów jako playlistę
+import.job.save.other = Zapisz {count} utworu jako playlistę
+import.job.open_playlists = Otwórz playlisty
+import.job.name_placeholder = Nazwa playlisty
+import.guess.best = Najlepsze dopasowanie: {artists} — {title} ({percent}%)
+import.guess.search_failed = Wyszukiwanie nie powiodło się: {error}
+import.guess.no_results = Brak wyników
+import.guess.using = Wybrano
+import.guess.use = Wybierz
+import.guess.search_tooltip = Szukaj w YouTube Music
+import.not_found.title = Nie znaleziono
+import.not_found.subtitle = Zaakceptuj najlepsze dopasowanie albo wyszukaj i dodaj utwór samodzielnie.
+import.found.title = Znaleziono w YouTube Music
+import.found.first = pierwsze {shown} z {total}
+import.export.title = Eksportuj playlistę
+import.export.subtitle = CSV i M3U otworzysz w innych odtwarzaczach i arkuszach kalkulacyjnych; JSON zachowuje wszystko do importu tutaj.
+import.export.empty = W bibliotece nie ma jeszcze playlist.
+import.export.from_youtube_music = {songs} · YouTube Music

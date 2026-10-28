@@ -1,0 +1,114 @@
+# Integrations on top of the player (Russian).
+
+# ---- SponsorBlock: segment categories
+sponsorblock.category.music_offtopic = Немузыкальный фрагмент
+sponsorblock.category.sponsor = Спонсор
+sponsorblock.category.intro = Перерыв / вступление
+sponsorblock.category.outro = Конечные заставки / титры
+sponsorblock.category.selfpromo = Самореклама
+sponsorblock.category.interaction = Напоминание о взаимодействии
+sponsorblock.category.preview = Анонс / пересказ
+sponsorblock.category.filler = Отступление
+sponsorblock.category.hook = Тизер / приветствие
+sponsorblock.category_in_chip.music_offtopic = немузыкальный фрагмент
+sponsorblock.category_in_chip.sponsor = спонсор
+sponsorblock.category_in_chip.intro = перерыв / вступление
+sponsorblock.category_in_chip.outro = заставки / титры
+sponsorblock.category_in_chip.selfpromo = самореклама
+sponsorblock.category_in_chip.interaction = напоминание
+sponsorblock.category_in_chip.preview = анонс / пересказ
+sponsorblock.category_in_chip.filler = отступление
+sponsorblock.category_in_chip.hook = тизер / приветствие
+sponsorblock.toast.skipped = Пропущено: {category} ({seconds} с)
+sponsorblock.chip.skip = Пропустить: {category} ({seconds} с)
+sponsorblock.chip.tooltip = SponsorBlock: перейти к концу этого сегмента
+
+# ---- AI content filter: categories
+ai_filter.category.explicit = Откровенные тексты
+ai_filter.category.ai_generated = Музыка, созданная ИИ
+ai_filter.category.holiday = Праздничная музыка
+ai_filter.category.children = Детская музыка
+ai_filter.category.noise = Звуки для сна и белый шум
+ai_filter.category.sped_up = Ускоренные / замедленные версии
+ai_filter.category.covers = Каверы и караоке
+ai_filter.category.live = Концертные записи
+
+# ---- Chromecast
+cast.casting_to = Трансляция на {device}
+cast.connecting_to = Подключение к {device}…
+cast.tooltip = Транслировать на устройство
+cast.menu.title = Транслировать на
+cast.menu.searching = Поиск устройств Cast…
+cast.menu.none_found = Устройства Cast не найдены
+cast.menu.search_again = Искать снова
+cast.stop = Остановить трансляцию
+cast.error.disconnected = Устройство Cast отключилось
+cast.error.scan_failed = Не удалось найти устройства: {error}
+cast.error.connect_failed = Не удалось подключиться к {device}: {error}
+
+# ---- Import: sources and progress
+import.source.spotify_playlist = Плейлист Spotify
+import.source.spotify_liked = Понравившиеся треки Spotify
+import.error.connect_spotify = Подключите Spotify в разделе «Настройки → Импорт из Spotify».
+import.error.connect_spotify_first = Сначала подключите Spotify в разделе «Настройки → Импорт из Spotify».
+import.error.not_spotify_link = Это не ссылка на плейлист Spotify и не его ID.
+import.stage.reading = Чтение
+import.stage.reading_playlist = Чтение плейлиста
+import.stage.reading_liked = Чтение понравившихся треков
+import.stage.matching = Сопоставление
+import.liked_playlist_name = Понравилось в Spotify
+import.cancelled = Отменено
+import.nothing_to_save = Нечего сохранять: ни один трек не найден.
+import.exporting = Экспорт плейлиста
+import.exported.one = {count} трек экспортирован в {path}
+import.exported.few = {count} трека экспортировано в {path}
+import.exported.many = {count} треков экспортировано в {path}
+import.exported.other = {count} трека экспортировано в {path}
+
+# ---- Import & export page
+import.page.subtitle = Переносите плейлисты из Spotify или файлов в свою библиотеку — или забирайте их в другие сервисы.
+import.file.title = Из файла
+import.file.description = CSV из Exportify (Spotify), M3U / M3U8 или CSV / JSON, экспортированный здесь.
+import.file.choose = Выбрать файл…
+import.spotify.title = Из Spotify
+import.spotify.connect_hint = Подключите аккаунт Spotify (со своим бесплатным Client ID разработчика), чтобы импортировать плейлисты и понравившиеся треки.
+import.spotify.set_up = Настроить Spotify…
+import.spotify.signed_in = Вы вошли как {user}.
+import.spotify.liked = Понравившиеся треки
+import.spotify.show_playlists = Показать мои плейлисты
+import.spotify.playlist_meta.one = {owner} · {count} трек
+import.spotify.playlist_meta.few = {owner} · {count} трека
+import.spotify.playlist_meta.many = {owner} · {count} треков
+import.spotify.playlist_meta.other = {owner} · {count} трека
+import.spotify.playlist_meta_unknown = {owner} · ? треков
+import.job.progress = {stage} · {done} из {total}
+import.job.progress_count = {stage} · {done}
+import.job.found.one = Найден {count}
+import.job.found.few = Найдено {count}
+import.job.found.many = Найдено {count}
+import.job.found.other = Найдено {count}
+import.job.not_found.one = Не найден {count}
+import.job.not_found.few = Не найдено {count}
+import.job.not_found.many = Не найдено {count}
+import.job.not_found.other = Не найдено {count}
+import.job.saved_as = Сохранено как «{name}»
+import.job.save.one = Сохранить {count} трек как плейлист
+import.job.save.few = Сохранить {count} трека как плейлист
+import.job.save.many = Сохранить {count} треков как плейлист
+import.job.save.other = Сохранить {count} трека как плейлист
+import.job.open_playlists = Открыть плейлисты
+import.job.name_placeholder = Название плейлиста
+import.guess.best = Лучшее совпадение: {artists} — {title} ({percent} %)
+import.guess.search_failed = Ошибка поиска: {error}
+import.guess.no_results = Нет результатов
+import.guess.using = Выбрано
+import.guess.use = Выбрать
+import.guess.search_tooltip = Искать в YouTube Music
+import.not_found.title = Не найдено
+import.not_found.subtitle = Примите лучшее совпадение или найдите и добавьте трек сами.
+import.found.title = Найдено в YouTube Music
+import.found.first = первые {shown} из {total}
+import.export.title = Экспорт плейлиста
+import.export.subtitle = CSV и M3U открываются в других плеерах и таблицах; JSON сохраняет всё для импорта сюда.
+import.export.empty = В библиотеке пока нет плейлистов.
+import.export.from_youtube_music = {songs} · YouTube Music

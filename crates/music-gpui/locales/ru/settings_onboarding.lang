@@ -1,0 +1,56 @@
+# First-run guide (Russian).
+
+# ---- Step titles
+onboarding.step.welcome = Добро пожаловать
+onboarding.step.content = Язык и регион
+onboarding.step.theme = Оформление
+onboarding.step.account = Аккаунт YouTube Music
+onboarding.step.local_files = Музыка на этом компьютере
+onboarding.step.privacy = Конфиденциальность и ограничения
+onboarding.welcome_title = Добро пожаловать в {app}
+onboarding.step_of = Шаг {step} из {total}
+
+# ---- Step subtitles
+onboarding.subtitle.welcome = Быстрый нативный плеер для YouTube Music: обзор и поиск, тексты, которые следуют за песней, библиотека с историей и статистикой, ваши собственные музыкальные файлы и распознавание треков. Несколько настроек — и готово; всё это можно изменить позже в настройках.
+onboarding.subtitle.content = На каком языке YouTube Music показывает названия и рекомендации и чарты и новинки какой страны вы видите.
+onboarding.subtitle.theme = Выберите тему и размер текста.
+onboarding.subtitle.account = Необязательно. После входа появятся ваши отметки «Нравится», библиотека, плейлисты и персональные рекомендации. Всё остальное работает без аккаунта.
+onboarding.subtitle.local_files = Необязательно. Добавьте папки с музыкальными файлами: они будут просканированы в библиотеку и воспроизводятся наравне с YouTube Music.
+onboarding.subtitle.privacy = Что нужно знать перед началом.
+
+# ---- Footer buttons
+onboarding.skip = Пропустить настройку
+onboarding.get_started = Начать
+onboarding.finish = Готово
+onboarding.next_or_skip = Далее (или пропустить)
+
+# ---- Welcome step: feature list
+onboarding.feature.browse.title = Обзор и поиск
+onboarding.feature.browse.text = Главная лента, чарты, настроения, новинки, исполнители, альбомы и плейлисты.
+onboarding.feature.lyrics.title = Тексты песен
+onboarding.feature.lyrics.text = Тексты с синхронизацией по словам из многих источников, с переводом и латинизацией.
+onboarding.feature.library.title = Библиотека
+onboarding.feature.library.text = Отметки «Нравится», плейлисты, история прослушивания, статистика и загрузки — всё хранится на этом компьютере.
+onboarding.feature.recognize.title = Распознавание музыки
+onboarding.feature.recognize.text = Узнайте, какой трек звучит рядом (⇧⌘R), и сразу включите его.
+
+# ---- Look step
+onboarding.theme.group = Тема
+onboarding.theme.dynamic_note = «Динамическая» берёт акцентный цвет из обложки текущего трека.
+onboarding.theme.text_size = Размер текста
+
+# ---- Music on this computer step
+onboarding.local.group = Папки с музыкой
+onboarding.local.empty = Папок пока нет.
+onboarding.local.add = Добавить папку…
+onboarding.local.note = Просканируйте папки сейчас или позже; управлять ими можно на странице «Локальные файлы».
+
+# ---- Privacy & limitations step
+onboarding.privacy.streaming.title = Как воспроизводятся треки
+onboarding.privacy.streaming.text = Полные треки берутся из TV-клиента YouTube или его веб-клиента с PoToken (токен защиты от злоупотреблений, создаваемый в скрытом окне браузера на macOS). YouTube заставляет новые потоки ждать несколько секунд; тем временем приложение начинает с короткого превью. Если YouTube что-то изменит, треки переключатся на превью ~1 минуты (это отмечается в плеере). Способ выбирается в разделе «Настройки → Воспроизведение → Потоки YouTube».
+onboarding.privacy.data.title = Ваши данные остаются здесь
+onboarding.privacy.data.text = Библиотека, история, статистика и настройки хранятся на этом компьютере. Пароли, ключи API и cookie входа в YouTube хранятся в системной связке ключей. Приостановить или очистить историю прослушивания и поиска можно в любой момент в разделе «Настройки → Конфиденциальность».
+onboarding.privacy.recipients.title = Кто что получает
+onboarding.privacy.recipients.text = YouTube Music получает ваши поисковые запросы и прослушивания (и cookie аккаунта, если вы вошли). Источники текстов получают названия треков. Распознавание отправляет в Shazam аудиоотпечаток, а не запись. Скробблинг и Discord работают, только если вы их настроили.
+onboarding.privacy.independent.title = Независимый проект
+onboarding.privacy.independent.text = Не связан с YouTube, Google или Shazam. Свободное ПО под лицензией GPL-3.0.

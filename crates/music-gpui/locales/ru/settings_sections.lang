@@ -1,0 +1,18 @@
+# Settings page: section names (Russian).
+settings.section.appearance = Оформление
+settings.section.playback = Воспроизведение
+settings.section.modules = Модули
+settings.section.equalizer = Эквалайзер
+settings.section.lyrics = Тексты песен
+settings.section.content = Контент и регион
+settings.section.network = Сеть
+settings.section.privacy = Конфиденциальность
+settings.section.storage = Хранилище
+settings.section.account = Аккаунт
+settings.section.integrations = Скробблинг и Discord
+settings.section.sponsorblock = SponsorBlock
+settings.section.together = Music Together
+settings.section.spotify = Импорт из Spotify
+settings.section.ai_filter = ИИ-фильтр контента
+settings.section.cast = Chromecast
+settings.section.about = О программе

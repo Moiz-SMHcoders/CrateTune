@@ -1,0 +1,146 @@
+# Settings → Modules (Russian).
+
+# ---- Playback source
+modules.source.group = Источник воспроизведения
+modules.source.youtube = Только YouTube
+modules.source.first = Сначала модули, затем YouTube
+modules.source.only = Только модули
+modules.source_note.youtube = Треки воспроизводятся из YouTube; установленные модули не используются.
+modules.source_note.first.one = Каждый трек ищется в {count} включённом модуле сверху вниз; играет первое подходящее совпадение, иначе YouTube.
+modules.source_note.first.few = Каждый трек ищется в {count} включённых модулях сверху вниз; играет первое подходящее совпадение, иначе YouTube.
+modules.source_note.first.many = Каждый трек ищется в {count} включённых модулях сверху вниз; играет первое подходящее совпадение, иначе YouTube.
+modules.source_note.first.other = Каждый трек ищется в {count} включённых модулях сверху вниз; играет первое подходящее совпадение, иначе YouTube.
+modules.source_note.only.one = Треки воспроизводятся только из {count} включённого модуля; трек, для которого ни один модуль не нашёл совпадения, не воспроизводится (и пропускается, если включено «Пропускать треки, которые не загружаются»).
+modules.source_note.only.few = Треки воспроизводятся только из {count} включённых модулей; трек, для которого ни один модуль не нашёл совпадения, не воспроизводится (и пропускается, если включено «Пропускать треки, которые не загружаются»).
+modules.source_note.only.many = Треки воспроизводятся только из {count} включённых модулей; трек, для которого ни один модуль не нашёл совпадения, не воспроизводится (и пропускается, если включено «Пропускать треки, которые не загружаются»).
+modules.source_note.only.other = Треки воспроизводятся только из {count} включённых модулей; трек, для которого ни один модуль не нашёл совпадения, не воспроизводится (и пропускается, если включено «Пропускать треки, которые не загружаются»).
+modules.source.note = Модуль поставляет звук для трека, который вы включаете; название, исполнители и ваша библиотека не меняются. Панель плеера и экран «Сейчас играет» показывают, откуда идёт звук. Загрузки используют тот же порядок.
+
+# ---- Unavailable
+modules.unavailable = Модули недоступны.
+modules.no_data_dir = Нет папки данных; модули недоступны.
+modules.unavailable_error = Модули недоступны: {error}
+
+# ---- Add a module
+modules.add.group = Добавить модуль
+modules.add.from_file = Установить из файла…
+modules.add.from_file_note = Пакет .arch с вашего диска.
+modules.add.from_url = Установить по URL
+modules.add.catalog = Добавить каталог
+modules.add.note = Пакеты проверяются (формат, контрольная сумма, настройки, экспортируемые функции) до вашего подтверждения. Модули и каталоги не предустановлены: модули поставляются их авторами и работают в песочнице (без доступа к файлам, сеть — через прокси приложения).
+modules.url_missing = Введите URL пакета .arch, дескриптора или каталога.
+modules.catalog_url_missing = Введите URL каталога.
+
+# ---- Progress lines
+modules.busy.saving = Сохранение…
+modules.busy.saving_catalog = Сохранение каталога…
+modules.busy.checking_package = Проверка пакета…
+modules.busy.reading_catalog = Чтение каталога…
+modules.busy.installing = Установка…
+modules.busy.removing = Удаление…
+modules.busy.checking = Проверка…
+modules.busy.checking_update = Проверка обновлений…
+modules.busy.loading_settings = Загрузка настроек…
+modules.busy.saving_settings = Сохранение настроек…
+modules.busy.refreshing = Обновление…
+
+# ---- Results
+modules.catalog_added.one = Добавлен каталог «{name}» ({count} запись).
+modules.catalog_added.few = Добавлен каталог «{name}» ({count} записи).
+modules.catalog_added.many = Добавлен каталог «{name}» ({count} записей).
+modules.catalog_added.other = Добавлен каталог «{name}» ({count} записи).
+modules.installed_needs_setup = Модуль {name} установлен. Заполните его настройки и нажмите «Сохранить».
+modules.installed = Модуль {name} установлен.
+modules.removed = Модуль удалён.
+modules.update_available = Доступна версия {version}.
+modules.up_to_date = Обновлений нет.
+modules.update_from_file = Установлен из файла: чтобы обновить, импортируйте новый пакет.
+modules.settings_read_failed = Не удалось прочитать настройки этого модуля.
+modules.settings_saved = Настройки сохранены.
+modules.catalog_refreshed = Каталог обновлён.
+modules.diagnostics_copied = Диагностика скопирована.
+
+# ---- Review card
+modules.review.group = Проверка
+modules.review.replaces = Обновляет установленную версию {version}; её настройки сохраняются.
+modules.review.new = Новая установка, добавляется в конец порядка воспроизведения.
+modules.review.needs = Требуется: {settings}.
+modules.review.homepage = Сайт: {url}
+modules.review.license = Лицензия: {license}
+modules.review.sha256 = SHA-256 пакета {hash}
+
+# ---- Installed modules
+modules.installed_group = Установленные ({count})
+modules.nothing_installed = Пока ничего не установлено.
+modules.action.settings = Настройки
+modules.action.check = Проверить
+modules.action.check_update = Проверить обновления
+modules.action.uninstall = Удалить
+modules.action.confirm_remove = Удалить — точно?
+modules.action.higher = Выше приоритет
+modules.action.lower = Ниже приоритет
+modules.needs_configuration = Требуется настройка: {settings}
+modules.settings_heading = Настройки
+modules.no_settings = У этого модуля нет настроек.
+modules.field.placeholder_required = обязательно
+modules.field.placeholder_optional = необязательно
+modules.field.not_a_number = {field}: должно быть число.
+modules.field.required = {field}: обязательное поле.
+modules.field.invalid = {field}: недопустимое значение.
+
+# ---- Diagnostics
+modules.diagnostics = Диагностика
+modules.diagnostic_line = {label} {when}: {summary}
+modules.diagnostic_track = {line} — {track}
+modules.diag.last_song = Последний трек
+modules.diag.check = Проверка
+modules.diag.playback = Воспроизведение
+modules.diag.not_checked = Ещё не проверялся.
+modules.diag.not_used = Ещё не использовался для треков.
+modules.installed_line_file = Установлен {when} · пакет {hash} · из файла
+modules.installed_line_url = Установлен {when} · пакет {hash} · с {url}
+modules.log_empty = Журнал пуст.
+modules.copy_diagnostics = Копировать диагностику
+modules.clear_log = Очистить журнал
+
+modules.status.ready = Готов
+modules.status.configuration = Требуется настройка
+modules.status.unavailable = Сервис недоступен
+modules.status.failed = Ошибка
+modules.status.no_results = Нет результатов
+modules.status.no_match = Нет подходящего совпадения ({reason})
+modules.status.resolved = Найдено
+modules.status.timeout = Время ожидания истекло
+modules.rejection.metadata = метаданные
+modules.rejection.title = название
+modules.rejection.artist = исполнитель
+modules.rejection.recording = запись
+modules.rejection.duration = длительность
+modules.rejection.explicit = откровенный контент
+modules.phase.search = при поиске
+modules.phase.match = при сопоставлении
+modules.phase.stream = при получении потока
+modules.candidates.one = {count} кандидат
+modules.candidates.few = {count} кандидата
+modules.candidates.many = {count} кандидатов
+modules.candidates.other = {count} кандидата
+modules.elapsed_ms = {ms} мс
+
+modules.failure.invalid_document = Недопустимый документ модуля
+modules.failure.unsupported = Не поддерживается этим приложением
+modules.failure.invalid_configuration = Настройки модуля неполные или недопустимые
+modules.failure.network = Ошибка сети
+modules.failure.timeout = Время ожидания истекло
+modules.failure.execution = Ошибка модуля
+modules.failure.integrity = Контрольная сумма не совпадает
+modules.error_with_code = {error} ({code})
+
+# ---- Catalogs
+modules.catalogs = Каталоги
+modules.catalog_line.one = {url} · {count} запись · обновлён {when}
+modules.catalog_line.few = {url} · {count} записи · обновлён {when}
+modules.catalog_line.many = {url} · {count} записей · обновлён {when}
+modules.catalog_line.other = {url} · {count} записи · обновлён {when}
+modules.remove_catalog = Удалить каталог
+modules.entry.installed = Установлен
+modules.entry.not_a_module = Не модуль

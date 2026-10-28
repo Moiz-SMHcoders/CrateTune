@@ -1,0 +1,171 @@
+# Shared strings (Polish). Format: see crates/music-gpui/i18n_parse.rs.
+
+locale.native_name = Polski
+
+# ---- Actions
+common.play = Odtwórz
+common.pause = Wstrzymaj
+common.shuffle = Losowo
+common.radio = Radio
+common.start_radio = Włącz radio
+common.play_next = Odtwórz jako następny
+common.add_to_queue = Dodaj do kolejki
+common.add_to_playlist = Dodaj do playlisty…
+common.like = Lubię to
+common.remove_from_liked = Usuń z polubionych
+common.download = Pobierz
+common.remove_download = Usuń pobrany plik
+common.go_to_artist = Przejdź do wykonawcy
+common.go_to_album = Przejdź do albumu
+common.open = Otwórz
+common.cancel = Anuluj
+common.close = Zamknij
+common.retry = Ponów
+common.remove = Usuń
+common.delete = Usuń
+common.clear = Wyczyść
+common.save = Zapisz
+common.apply = Zastosuj
+common.reset = Resetuj
+common.done = Gotowe
+common.copy = Kopiuj
+common.rename = Zmień nazwę
+common.refresh = Odśwież
+common.install = Zainstaluj
+common.update = Aktualizuj
+common.import = Importuj
+common.search = Szukaj
+common.search_placeholder = Szukaj…
+common.see_all = Zobacz wszystkie
+common.load_more = Wczytaj więcej
+common.show_more = Pokaż więcej
+common.back = Wstecz
+common.next = Dalej
+common.connect = Połącz
+common.disconnect = Rozłącz
+common.sign_in = Zaloguj się
+common.sign_out = Wyloguj się
+common.select = Zaznacz
+common.select_all = Zaznacz wszystko
+common.settings = Ustawienia
+
+# ---- States
+common.loading = Wczytywanie…
+common.saving = Zapisywanie…
+common.downloading = Pobieranie…
+common.off = Wył.
+common.on = Wł.
+common.none = Brak
+common.custom = Własne
+common.automatic = Automatycznie
+common.not_playing = Nic nie gra
+common.not_connected = Nie połączono
+common.nothing_here = Nic tu nie ma
+
+# ---- Things
+common.song = Utwór
+common.video = Film
+common.artist = Wykonawca
+common.album = Album
+common.playlist = Playlista
+common.podcast = Podcast
+common.episode = Odcinek
+common.queue = Kolejka
+common.now_playing = Teraz odtwarzane
+common.youtube_music = YouTube Music
+
+common.songs.one = {count} utwór
+common.songs.few = {count} utwory
+common.songs.many = {count} utworów
+common.songs.other = {count} utworu
+common.plays.one = {count} odtworzenie
+common.plays.few = {count} odtworzenia
+common.plays.many = {count} odtworzeń
+common.plays.other = {count} odtworzenia
+common.selected.one = Zaznaczono {count}
+common.selected.few = Zaznaczono {count}
+common.selected.many = Zaznaczono {count}
+common.selected.other = Zaznaczono {count}
+
+# ---- Sidebar
+nav.home = Główna
+nav.explore = Odkrywaj
+nav.charts = Listy przebojów
+nav.moods = Nastroje i gatunki
+nav.new_releases = Nowości
+nav.recognize = Rozpoznaj
+nav.library_group = Biblioteka
+nav.library = Biblioteka
+nav.history = Historia
+nav.stats = Statystyki
+nav.downloads = Pobrane
+nav.local_files = Pliki lokalne
+nav.import = Import i eksport
+nav.together = Słuchaj razem
+nav.settings = Ustawienia
+
+# ---- Dates
+date.full = {day} {month} {year}
+date.today = Dzisiaj
+date.yesterday = Wczoraj
+date.month_in_date.1 = stycznia
+date.month_in_date.2 = lutego
+date.month_in_date.3 = marca
+date.month_in_date.4 = kwietnia
+date.month_in_date.5 = maja
+date.month_in_date.6 = czerwca
+date.month_in_date.7 = lipca
+date.month_in_date.8 = sierpnia
+date.month_in_date.9 = września
+date.month_in_date.10 = października
+date.month_in_date.11 = listopada
+date.month_in_date.12 = grudnia
+date.month_short.1 = Sty
+date.month_short.2 = Lut
+date.month_short.3 = Mar
+date.month_short.4 = Kwi
+date.month_short.5 = Maj
+date.month_short.6 = Cze
+date.month_short.7 = Lip
+date.month_short.8 = Sie
+date.month_short.9 = Wrz
+date.month_short.10 = Paź
+date.month_short.11 = Lis
+date.month_short.12 = Gru
+date.weekday_short.1 = Pon
+date.weekday_short.2 = Wt
+date.weekday_short.3 = Śr
+date.weekday_short.4 = Czw
+date.weekday_short.5 = Pt
+date.weekday_short.6 = Sob
+date.weekday_short.7 = Ndz
+
+# ---- Durations and relative times
+time.just_now = przed chwilą
+time.seconds_ago.one = {count} s temu
+time.seconds_ago.few = {count} s temu
+time.seconds_ago.many = {count} s temu
+time.seconds_ago.other = {count} s temu
+time.minutes_ago.one = {count} min temu
+time.minutes_ago.few = {count} min temu
+time.minutes_ago.many = {count} min temu
+time.minutes_ago.other = {count} min temu
+time.hours_ago.one = {count} godz. temu
+time.hours_ago.few = {count} godz. temu
+time.hours_ago.many = {count} godz. temu
+time.hours_ago.other = {count} godz. temu
+time.days_ago.one = {count} dzień temu
+time.days_ago.few = {count} dni temu
+time.days_ago.many = {count} dni temu
+time.days_ago.other = {count} dnia temu
+time.hours_minutes = {hours} godz. {minutes} min
+time.minutes = {minutes} min
+time.seconds = {seconds} s
+
+# ---- File sizes
+units.size = {value} {unit}
+units.b = B
+units.kb = KB
+units.mb = MB
+units.gb = GB
+units.tb = TB

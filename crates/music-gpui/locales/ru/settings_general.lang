@@ -1,0 +1,121 @@
+# Settings: Account, Network, About, update check, sign-in window (Russian).
+
+# ---- Account
+settings.account.cookie_title = Вход с cookie браузера
+settings.account.cookie_steps = 1. Откройте music.youtube.com в браузере и войдите в аккаунт.\n2. Откройте инструменты разработчика (⌥⌘I в Safari / Chrome) → Network (Сеть) и перезагрузите страницу.\n3. Нажмите любой запрос к music.youtube.com (например, “browse”), найдите “Cookie” в разделе Request Headers и скопируйте всё значение.\n4. Вставьте его ниже. Оно хранится в связке ключей ОС и отправляется только в YouTube.
+settings.account.cookie_index = Номер аккаунта Google (если вошли в несколько):
+settings.account.not_signed_in = Вход не выполнен. Всё работает анонимно; после входа понравившиеся треки, сохранённые альбомы, подписки и плейлисты синхронизируются в библиотеку, а отметки «Нравится» и изменения плейлистов отправляются обратно в YouTube Music.
+settings.account.sign_in_google = Войти через Google…
+settings.account.paste_cookie = Вставить cookie…
+settings.account.google_refused = Если Google отклоняет окно входа («Этот браузер или приложение может быть небезопасным»), используйте «Вставить cookie».
+settings.account.last_synced = Последняя синхронизация: {date}
+settings.account.not_synced = Ещё не синхронизировано
+settings.account.sync_now = Синхронизировать
+settings.account.syncing = Синхронизация…
+settings.account.sync_group = Синхронизация библиотеки
+settings.account.sync_row = Синхронизировать библиотеку YouTube Music
+settings.account.sync_row_desc = Понравившиеся треки, треки из библиотеки, сохранённые альбомы, подписки, плейлисты.
+settings.account.accounts_group = Аккаунты
+settings.account.channels = Каналы (аккаунты брендов) этого аккаунта Google:
+settings.account.google_index = Аккаунт Google
+settings.account.google_index_desc = Если в cookie несколько аккаунтов Google — какой использовать (0 = первый).
+settings.account.cookie_note = Для входа используется cookie сеанса браузера для music.youtube.com. Он хранится в связке ключей ОС и отправляется только в YouTube. Функции аккаунта созданы по веб-API YouTube, но ещё не проверены на реальном аккаунте.
+
+# ---- About
+settings.about.show_welcome = Показать приветственное руководство
+settings.about.version_summary = Версия {version} · {summary}
+settings.about.summary = Нативный десктопный клиент для YouTube Music
+settings.about.not_affiliated = Не связан с YouTube или Google и не одобрен и не спонсируется ими.
+settings.about.license = Лицензия
+settings.about.license_notice = Это свободная программа: вы можете распространять и/или изменять её на условиях GNU General Public License версии 3. Она распространяется БЕЗ КАКИХ-ЛИБО ГАРАНТИЙ; подробности см. в лицензии.
+settings.about.credits = Благодарности
+settings.about.credit.archivetune = Функции и экраны перенесены из {project} (GPL-3.0), © Rukamori и участники. Это независимый проект.
+settings.about.credit.hummingbird = Эквалайзер, системные элементы управления медиа, скробблинг и статус в Discord перенесены из Hummingbird (Apache-2.0), © участники Hummingbird.
+settings.about.credit.recognition_title = Распознавание треков
+settings.about.credit.recognition = Совместимые с Shazam аудиоотпечатки перенесены из shazamkit проекта {project} (GPL-3.0), который следует формату SongRec. Не связано с Shazam или Apple.
+settings.about.credit.libraries_title = Библиотеки
+settings.about.credit.libraries = GPUI и gpui-component (Apache-2.0), Symphonia и rodio, иконки Lucide (ISC), тексты песен LRCLIB.
+
+# ---- Update check
+update.group = Обновления
+update.releases_from = Релизы с github.com/{repo}
+update.checking = Проверка…
+update.up_to_date_version = У вас последняя версия ({version}).
+update.available_version = Доступна версия {version}.
+update.check_failed = Не удалось проверить: {error}
+update.check_now = Проверить
+update.download = Скачать…
+update.no_release = нет опубликованных релизов
+update.available_toast = Доступна версия {app} {version} («Настройки → О программе»)
+update.up_to_date_toast = У вас последняя версия {app}
+
+# ---- Network
+settings.network.proxy = Прокси
+settings.network.proxy_off = Нет
+settings.network.host = Хост
+settings.network.port = Порт
+settings.network.user = Пользователь
+settings.network.password = Пароль
+settings.network.doh_url = URL DoH
+settings.network.host_placeholder = proxy.example.com или 127.0.0.1
+settings.network.optional = необязательно
+settings.network.test_connection = Проверить соединение
+settings.network.test_dns = Проверить DNS
+settings.network.using_proxy = Используется {url}
+settings.network.direct = Прямое подключение (без прокси)
+settings.network.status_with_doh = {proxy} · DNS-over-HTTPS ({server})
+settings.network.testing = Проверка…
+settings.network.test_ok = Подключено к YouTube за {ms} мс
+settings.network.test_failed = Ошибка подключения: {error}
+settings.network.lookup_failed = Ошибка разрешения имени: {error}
+settings.network.looking_up = Разрешение имени…
+settings.network.dns_ok = {host} → {addresses} через {via} за {ms} мс
+settings.network.dns_via_doh = DNS-over-HTTPS
+settings.network.dns_via_cache = DNS-over-HTTPS (из кеша)
+settings.network.dns_via_system = системный резолвер
+settings.network.proxy_note = Применяется ко всему: YouTube Music, аудиопотокам, обложкам, текстам и скробблингу. SOCKS5h разрешает имена хостов через прокси. Пароль хранится в связке ключей.
+settings.network.dns = DNS
+settings.network.dns_system = Системный
+settings.network.dns_custom = Свой
+settings.network.dns_fallback = Использовать системный резолвер, если DoH не работает
+settings.network.dns_note = DNS-over-HTTPS (RFC 8484) разрешает имена хостов через зашифрованное HTTPS-соединение вместо обычного DNS. Ответы кешируются на время их TTL. С прокси SOCKS5h имена разрешает сам прокси. Quad9 доступен через порт HTTP/1.1 5053, который в некоторых сетях заблокирован.
+settings.network.error.port_number = Порт должен быть числом (1–65535).
+settings.network.error.doh_invalid = Недопустимый URL DNS-over-HTTPS.
+settings.network.error.proxy_invalid = Адрес прокси не подходит для этого типа прокси.
+settings.network.error.doh_https = URL DNS-over-HTTPS должен начинаться с https://.
+settings.network.error.doh_invalid_detail = Недопустимый URL DNS-over-HTTPS: {error}.
+settings.network.error.host_missing = Введите хост прокси.
+settings.network.error.host_invalid = Хост должен быть только именем или адресом (без схемы, пути и пробелов).
+settings.network.error.port_missing = Введите порт от 1 до 65535.
+settings.network.error.socks4_auth = SOCKS4 не поддерживает пароли; оставьте имя пользователя пустым.
+
+# ---- Settings panel
+settings.panel.placeholder.api_key = Ключ API
+settings.panel.placeholder.shared_secret = Общий секрет
+settings.panel.placeholder.user_token = Токен пользователя
+settings.panel.placeholder.application_id = ID приложения
+settings.panel.lastfm_missing = Сначала введите ключ API и общий секрет.
+settings.panel.lastfm_requesting = Запрос токена…
+settings.panel.lastfm_finishing = Завершение…
+settings.panel.lb_missing = Сначала вставьте токен пользователя.
+settings.panel.secrets.backend_and_file = {backend} + файл настроек (0600)
+settings.panel.secrets.file_keychain_disabled = файл настроек (0600; связка ключей отключена)
+settings.panel.secrets.file_keychain_read_failed = файл настроек (0600; не удалось прочитать связку ключей)
+settings.panel.secrets.file_keychain_unavailable = файл настроек (0600; связка ключей недоступна)
+
+# ---- Credential stores
+secrets.backend.macos = Связка ключей macOS
+secrets.backend.windows = Диспетчер учётных данных Windows
+secrets.backend.secret_service = Secret Service
+
+# ---- Settings file problems
+settings.file.no_config_dir = нет папки конфигурации; настройки не сохраняются
+settings.file.save_failed = не удалось сохранить: {error}
+settings.file.read_failed = чтение {path}: {error}
+settings.file.invalid_moved = {path} повреждён ({error}); перемещён в {backup}
+
+# ---- Google sign-in window
+login.window_title = Вход в YouTube Music
+login.instructions = Войдите в аккаунт Google. Окно закроется, как только откроется YouTube Music.
+login.webview_failed = Не удалось создать веб-представление ({error}). Используйте «Вставить cookie».
+login.checking = Вход выполнен — проверка аккаунта…

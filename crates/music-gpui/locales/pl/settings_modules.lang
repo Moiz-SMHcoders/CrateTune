@@ -1,0 +1,146 @@
+# Settings → Modules (Polish).
+
+# ---- Playback source
+modules.source.group = Źródło odtwarzania
+modules.source.youtube = Tylko YouTube
+modules.source.first = Najpierw moduły, potem YouTube
+modules.source.only = Tylko moduły
+modules.source_note.youtube = Utwory są odtwarzane z YouTube; zainstalowane moduły nie są używane.
+modules.source_note.first.one = Każdy utwór jest wyszukiwany w {count} włączonym module, od góry do dołu; odtwarzane jest pierwsze akceptowalne dopasowanie, w przeciwnym razie YouTube.
+modules.source_note.first.few = Każdy utwór jest wyszukiwany w {count} włączonych modułach, od góry do dołu; odtwarzane jest pierwsze akceptowalne dopasowanie, w przeciwnym razie YouTube.
+modules.source_note.first.many = Każdy utwór jest wyszukiwany w {count} włączonych modułach, od góry do dołu; odtwarzane jest pierwsze akceptowalne dopasowanie, w przeciwnym razie YouTube.
+modules.source_note.first.other = Każdy utwór jest wyszukiwany w {count} włączonych modułach, od góry do dołu; odtwarzane jest pierwsze akceptowalne dopasowanie, w przeciwnym razie YouTube.
+modules.source_note.only.one = Utwory są odtwarzane tylko z {count} włączonego modułu; utwór, którego żaden moduł nie dopasuje, nie zostanie odtworzony (i zostanie pominięty, gdy włączone jest „Pomijaj utwory, których nie da się wczytać”).
+modules.source_note.only.few = Utwory są odtwarzane tylko z {count} włączonych modułów; utwór, którego żaden moduł nie dopasuje, nie zostanie odtworzony (i zostanie pominięty, gdy włączone jest „Pomijaj utwory, których nie da się wczytać”).
+modules.source_note.only.many = Utwory są odtwarzane tylko z {count} włączonych modułów; utwór, którego żaden moduł nie dopasuje, nie zostanie odtworzony (i zostanie pominięty, gdy włączone jest „Pomijaj utwory, których nie da się wczytać”).
+modules.source_note.only.other = Utwory są odtwarzane tylko z {count} włączonego modułu; utwór, którego żaden moduł nie dopasuje, nie zostanie odtworzony (i zostanie pominięty, gdy włączone jest „Pomijaj utwory, których nie da się wczytać”).
+modules.source.note = Moduł dostarcza dźwięk dla odtwarzanego utworu; tytuł, wykonawcy i Twoja biblioteka pozostają bez zmian. Pasek odtwarzacza i ekran Teraz odtwarzane pokazują, skąd pochodzi dźwięk. Pobieranie używa tej samej kolejności.
+
+# ---- Unavailable
+modules.unavailable = Moduły są niedostępne.
+modules.no_data_dir = Brak katalogu danych; moduły są niedostępne.
+modules.unavailable_error = Moduły niedostępne: {error}
+
+# ---- Add a module
+modules.add.group = Dodaj moduł
+modules.add.from_file = Zainstaluj z pliku…
+modules.add.from_file_note = Pakiet .arch z Twojego dysku.
+modules.add.from_url = Zainstaluj z adresu URL
+modules.add.catalog = Dodaj katalog
+modules.add.note = Pakiety są sprawdzane (format, suma kontrolna, ustawienia, eksportowane funkcje), zanim je zatwierdzisz. Żaden moduł ani katalog nie jest preinstalowany: moduły pochodzą od ich autorów i działają w piaskownicy (bez dostępu do plików, sieć przez proxy aplikacji).
+modules.url_missing = Wpisz adres URL pakietu .arch, deskryptora lub katalogu.
+modules.catalog_url_missing = Wpisz adres URL katalogu.
+
+# ---- Progress lines
+modules.busy.saving = Zapisywanie…
+modules.busy.saving_catalog = Zapisywanie katalogu…
+modules.busy.checking_package = Sprawdzanie pakietu…
+modules.busy.reading_catalog = Odczytywanie katalogu…
+modules.busy.installing = Instalowanie…
+modules.busy.removing = Usuwanie…
+modules.busy.checking = Sprawdzanie…
+modules.busy.checking_update = Sprawdzanie aktualizacji…
+modules.busy.loading_settings = Wczytywanie ustawień…
+modules.busy.saving_settings = Zapisywanie ustawień…
+modules.busy.refreshing = Odświeżanie…
+
+# ---- Results
+modules.catalog_added.one = Dodano katalog „{name}” ({count} pozycja).
+modules.catalog_added.few = Dodano katalog „{name}” ({count} pozycje).
+modules.catalog_added.many = Dodano katalog „{name}” ({count} pozycji).
+modules.catalog_added.other = Dodano katalog „{name}” ({count} pozycji).
+modules.installed_needs_setup = Zainstalowano {name}. Uzupełnij jego ustawienia i kliknij „Zapisz”.
+modules.installed = Zainstalowano {name}.
+modules.removed = Usunięto moduł.
+modules.update_available = Dostępna jest wersja {version}.
+modules.up_to_date = Aktualny.
+modules.update_from_file = Zainstalowano z pliku: aby zaktualizować, zaimportuj nowy pakiet.
+modules.settings_read_failed = Nie udało się odczytać ustawień tego modułu.
+modules.settings_saved = Zapisano ustawienia.
+modules.catalog_refreshed = Odświeżono katalog.
+modules.diagnostics_copied = Skopiowano diagnostykę.
+
+# ---- Review card
+modules.review.group = Przegląd
+modules.review.replaces = Aktualizuje zainstalowaną wersję {version}; jej ustawienia zostają zachowane.
+modules.review.new = Nowa instalacja, dodana na końcu kolejności odtwarzania.
+modules.review.needs = Wymaga: {settings}.
+modules.review.homepage = Strona domowa: {url}
+modules.review.license = Licencja: {license}
+modules.review.sha256 = SHA-256 pakietu {hash}
+
+# ---- Installed modules
+modules.installed_group = Zainstalowane ({count})
+modules.nothing_installed = Nic jeszcze nie zainstalowano.
+modules.action.settings = Ustawienia
+modules.action.check = Sprawdź
+modules.action.check_update = Sprawdź aktualizację
+modules.action.uninstall = Odinstaluj
+modules.action.confirm_remove = Usunąć — na pewno?
+modules.action.higher = Wyższy priorytet
+modules.action.lower = Niższy priorytet
+modules.needs_configuration = Wymaga konfiguracji: {settings}
+modules.settings_heading = Ustawienia
+modules.no_settings = Ten moduł nie ma ustawień.
+modules.field.placeholder_required = wymagane
+modules.field.placeholder_optional = opcjonalne
+modules.field.not_a_number = {field} musi być liczbą.
+modules.field.required = {field} jest wymagane.
+modules.field.invalid = {field} ma nieprawidłową wartość.
+
+# ---- Diagnostics
+modules.diagnostics = Diagnostyka
+modules.diagnostic_line = {label} {when}: {summary}
+modules.diagnostic_track = {line} — {track}
+modules.diag.last_song = Ostatni utwór
+modules.diag.check = Sprawdzenie
+modules.diag.playback = Odtwarzanie
+modules.diag.not_checked = Jeszcze nie sprawdzono.
+modules.diag.not_used = Jeszcze nie użyto dla utworu.
+modules.installed_line_file = Zainstalowano {when} · pakiet {hash} · z pliku
+modules.installed_line_url = Zainstalowano {when} · pakiet {hash} · z {url}
+modules.log_empty = Dziennik jest pusty.
+modules.copy_diagnostics = Kopiuj diagnostykę
+modules.clear_log = Wyczyść dziennik
+
+modules.status.ready = Gotowy
+modules.status.configuration = Wymaga konfiguracji
+modules.status.unavailable = Usługa niedostępna
+modules.status.failed = Błąd
+modules.status.no_results = Brak wyników
+modules.status.no_match = Brak akceptowalnego dopasowania ({reason})
+modules.status.resolved = Znaleziono
+modules.status.timeout = Przekroczono limit czasu
+modules.rejection.metadata = metadane
+modules.rejection.title = tytuł
+modules.rejection.artist = wykonawca
+modules.rejection.recording = nagranie
+modules.rejection.duration = czas trwania
+modules.rejection.explicit = treści dla dorosłych
+modules.phase.search = podczas wyszukiwania
+modules.phase.match = podczas dopasowywania
+modules.phase.stream = podczas pobierania strumienia
+modules.candidates.one = {count} kandydat
+modules.candidates.few = {count} kandydatów
+modules.candidates.many = {count} kandydatów
+modules.candidates.other = {count} kandydata
+modules.elapsed_ms = {ms} ms
+
+modules.failure.invalid_document = Nieprawidłowy dokument modułu
+modules.failure.unsupported = Nieobsługiwane przez tę aplikację
+modules.failure.invalid_configuration = Ustawienia modułu są niekompletne lub nieprawidłowe
+modules.failure.network = Błąd sieci
+modules.failure.timeout = Przekroczono limit czasu
+modules.failure.execution = Moduł zgłosił błąd
+modules.failure.integrity = Niezgodna suma kontrolna
+modules.error_with_code = {error} ({code})
+
+# ---- Catalogs
+modules.catalogs = Katalogi
+modules.catalog_line.one = {url} · {count} pozycja · odświeżono {when}
+modules.catalog_line.few = {url} · {count} pozycje · odświeżono {when}
+modules.catalog_line.many = {url} · {count} pozycji · odświeżono {when}
+modules.catalog_line.other = {url} · {count} pozycji · odświeżono {when}
+modules.remove_catalog = Usuń katalog
+modules.entry.installed = Zainstalowano
+modules.entry.not_a_module = To nie moduł

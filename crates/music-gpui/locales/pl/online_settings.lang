@@ -1,0 +1,20 @@
+# Settings → Content & region (Polish).
+
+settings.content.group_region = Język i region
+settings.content.language = Język treści
+settings.content.language_description = Język tytułów, sekcji i wyszukiwania w YouTube Music.
+settings.content.language_placeholder = Język
+settings.content.country = Kraj treści
+settings.content.country_description = Region strony głównej, list przebojów i nowości.
+settings.content.country_placeholder = Kraj
+settings.content.region_note = Zmiany obowiązują od razu; otwarte strony wczytują się ponownie w nowym języku.
+
+settings.content.group_filters = Filtry
+settings.content.hide_explicit = Ukrywaj treści dla dorosłych
+settings.content.hide_explicit_description = Usuwa utwory i albumy oznaczone jako treści dla dorosłych ze stron, wyszukiwania i radia.
+settings.content.hide_videos = Ukrywaj teledyski
+settings.content.hide_videos_description = Tylko utwory: teledyski i filmy użytkowników są pomijane w sekcjach, wyszukiwaniu, playlistach, albumach, radiu i kolejkach (album, który YouTube ma tylko w postaci oficjalnych filmów audio, pozostaje kompletny).
+
+settings.content.group_radio = Radio
+settings.content.autoplay = Autoodtwarzanie podobnych utworów
+settings.content.autoplay_description = Gdy zaczyna się ostatni utwór w kolejce, po nim dodawane są utwory z jego radia.

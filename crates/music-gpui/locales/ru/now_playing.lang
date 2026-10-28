@@ -1,0 +1,85 @@
+# Now Playing screen, lyrics pane and lyrics card dialog (Russian).
+
+# ---- Header
+np.close_tooltip = Закрыть (Esc)
+np.header = СЕЙЧАС ИГРАЕТ
+np.demo_clock = Демо-время
+np.buffering = Буферизация…
+np.preview = Превью
+np.speed = {speed}×
+np.sleep_tooltip = Таймер сна
+np.layout_tooltip = Оформление и фон
+np.menu.design = Оформление
+np.menu.background = Фон
+
+# ---- Player
+np.up_next = Далее
+np.playing_from = ИГРАЕТ ИЗ
+np.your_queue = Ваша очередь
+np.of_total = из {total}
+np.editorial.header_album = СЕЙЧАС ИГРАЕТ  ·  {album}
+np.editorial.play = СЛУШАТЬ
+np.editorial.pause = ПАУЗА
+np.editorial.loading = ЗАГРУЗКА
+np.queue.title = ДАЛЕЕ
+np.queue.more.one = и ещё {count}
+np.queue.more.few = и ещё {count}
+np.queue.more.many = и ещё {count}
+np.queue.more.other = и ещё {count}
+np.queue.empty = Очередь пуста. Добавьте треки из списка или включите автовоспроизведение.
+
+# ---- Lyrics pane
+lyrics.nothing_playing = Ничего не играет
+lyrics.loading = Загрузка текста…
+lyrics.missing_title = Нет текста
+lyrics.missing_detail = Ни у одного из включённых источников текстов нет этого трека.
+lyrics.failed = Не удалось загрузить текст
+lyrics.translating = Перевод…
+lyrics.translation_failed = Не удалось перевести: {error}
+lyrics.kind.word = По словам
+lyrics.kind.line = По строкам
+lyrics.kind.plain = Без синхронизации
+lyrics.source = {provider} · {kind}
+lyrics.select_hint.one = Выберите до {count} строки для карточки
+lyrics.select_hint.few = Выберите до {count} строк для карточки
+lyrics.select_hint.many = Выберите до {count} строк для карточки
+lyrics.select_hint.other = Выберите до {count} строки для карточки
+lyrics.selected.one = Выбрана {count} строка
+lyrics.selected.few = Выбрано {count} строки
+lyrics.selected.many = Выбрано {count} строк
+lyrics.selected.other = Выбрано {count} строки
+lyrics.create_card = Создать карточку…
+lyrics.share_tooltip = Поделиться текстом в виде карточки
+lyrics.translation_on = Перевод: вкл.
+lyrics.translation_off = Перевод: выкл.
+lyrics.reload_tooltip = Снова поискать в источниках
+
+# ---- Lyrics card dialog
+card.dialog_title = Карточка с текстом
+card.row.background = Фон
+card.row.text = Текст
+card.row.size = Размер
+card.row.shape = Формат
+card.row.cover = Обложка
+card.cover.show = Показать
+card.cover.hide = Скрыть
+card.save = Сохранить изображение…
+card.copy = Скопировать изображение
+card.copying = Копирование…
+card.copied = Скопировано в буфер обмена
+card.saved = Сохранено: {path}
+card.save_failed = Не удалось сохранить: {error}
+card.draw_failed = Не удалось нарисовать карточку: {error}
+card.aspect.square = Квадрат
+card.aspect.portrait = Портрет
+card.aspect.story = История
+card.bg.blur = Размытая обложка
+card.bg.album = Цвет альбома
+card.bg.dark = Тёмный
+card.bg.light = Светлый
+card.align.left = Слева
+card.align.center = По центру
+card.align.right = Справа
+card.size.small = Мелкий
+card.size.medium = Средний
+card.size.large = Крупный

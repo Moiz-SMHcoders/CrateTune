@@ -1,0 +1,60 @@
+# Online browse pages (Polish).
+
+# ---- Home
+home.recent.title = Odtworzone w tej sesji
+home.recent.subtitle = Posłuchaj ponownie
+
+# ---- Explore
+explore.new_releases_detail = Świeże albumy i single
+explore.charts_detail = Co jest popularne w poszczególnych krajach
+explore.moods_detail = Playlisty na każdą chwilę
+
+# ---- Charts
+charts.country_placeholder = Kraj
+charts.search_countries = Szukaj krajów…
+charts.empty.title = Brak list przebojów
+charts.empty.detail = YouTube Music nie ma list przebojów dla tego kraju.
+
+# ---- Moods & genres
+moods.empty = YouTube Music nie zwróciło nastrojów ani gatunków dla tego regionu.
+
+# ---- New releases
+new_releases.subtitle = Nowe albumy i single
+new_releases.empty.title = Nic nowego
+new_releases.empty.detail = YouTube Music nie zwróciło nowości dla tego regionu.
+
+# ---- Browse pages
+browse.empty = Na tej stronie nie ma playlist ani utworów (albo wszystkie zostały odfiltrowane).
+
+# ---- Album
+album.empty.title = Brak utworów do odtworzenia
+album.empty.detail = Ten album nie ma tutaj utworów (albo wszystkie zostały odfiltrowane).
+
+# ---- Artist
+artist.subscribed = Subskrybujesz
+artist.subscribe = Subskrybuj
+artist.subscribe_tooltip = Subskrybuj w YouTube Music (zapisywane także w bibliotece)
+artist.subscribe_tooltip_signed_out = Zapisywane w bibliotece; zaloguj się, aby subskrybować w YouTube Music
+artist.items_empty = Na tej stronie nie ma wydań (albo wszystkie zostały odfiltrowane).
+
+# ---- Playlist
+playlist.change_cover = Zmień okładkę…
+playlist.empty.title = Brak utworów
+playlist.empty.detail = Ta playlista jest pusta (albo wszystkie jej utwory zostały odfiltrowane).
+
+# ---- Podcast / episode
+podcast.episodes.one = {count} odcinek
+podcast.episodes.few = {count} odcinki
+podcast.episodes.many = {count} odcinków
+podcast.episodes.other = {count} odcinka
+podcast.episodes_more.one = {count}+ odcinków
+podcast.episodes_more.few = {count}+ odcinków
+podcast.episodes_more.many = {count}+ odcinków
+podcast.episodes_more.other = {count}+ odcinków
+podcast.saved = Zapisano
+podcast.save = Zapisz w bibliotece
+podcast.save_failed = Nie udało się zaktualizować biblioteki: {error}
+podcast.open_episode_page = Otwórz stronę odcinka
+podcast.go_to_podcast = Przejdź do podcastu
+podcast.empty.title = Brak odcinków
+podcast.empty.detail = Ten podcast nie ma tutaj jeszcze odcinków.

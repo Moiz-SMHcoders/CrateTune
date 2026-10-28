@@ -1,0 +1,28 @@
+# UI language picker (Russian).
+settings.language.group = Язык
+settings.language.label = Язык
+settings.language.description = Язык интерфейса. Для контента YouTube Music есть отдельная настройка («Контент и регион»).
+settings.language.system = Как в системе ({language})
+settings.language.system_search = по умолчанию автоматически системный default automatic
+
+language.name.en = Английский
+language.name.es = Испанский
+language.name.pt-BR = Португальский (Бразилия)
+language.name.fr = Французский
+language.name.de = Немецкий
+language.name.it = Итальянский
+language.name.nl = Нидерландский
+language.name.pl = Польский
+language.name.ru = Русский
+language.name.uk = Украинский
+language.name.tr = Турецкий
+language.name.id = Индонезийский
+language.name.vi = Вьетнамский
+language.name.ja = Японский
+language.name.ko = Корейский
+language.name.zh-CN = Китайский (упрощённый)
+language.name.zh-TW = Китайский (традиционный)
+language.name.hi = Хинди
+language.name.ar = Арабский
+language.name.fa = Персидский
+language.name.he = Иврит
