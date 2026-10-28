@@ -886,6 +886,8 @@ impl SettingsPanel {
             .border_color(theme.border)
             .child(
                 div()
+                    // Items keep their height (the list scrolls instead of shrinking).
+                    .flex_none()
                     .px_3()
                     .pb_3()
                     .text_xl()
@@ -898,6 +900,7 @@ impl SettingsPanel {
                 let active = self.section == id;
                 h_flex()
                     .id(SharedString::from(format!("settings-nav-{}", id.key())))
+                    .flex_none()
                     .px_3()
                     .py_1p5()
                     .gap_2p5()
