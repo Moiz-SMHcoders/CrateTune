@@ -481,7 +481,9 @@ src/
   components/        track_row (hover actions + context menu), card, shelf/grid/section
                      header/empty state (mod.rs), items (InnerTube items: card / row /
                      menu / shelf / quick picks / chips / header / loading + retry),
-                     artwork (shared cache), sidebar, player_bar, queue_panel
+                     artwork (shared cache), sidebar, player_bar (+ progress.rs: the
+                     progress / volume track element, bar_fx.rs: its animation state and
+                     the play / pause background, np_visualizer.rs), queue_panel
   browse.rs          online pages: Load state, fetch (worker thread, app's InnerTube),
                      PageCache, Paging (infinite scroll), content filters, locale
   search_box.rs      header search: suggestions + recent searches dropdown;
@@ -607,6 +609,16 @@ locales/<locale>/*.lang  the catalogs (English = source), embedded by build.rs v
   in `settings/portable.rs::BAR_STYLE_KEYS`. A new field in one of these structs is picked
   up automatically; a new *section* is one entry in those lists. Minimal / Fast values:
   `profiles::minimal_settings`.
+* **Player bar** (see [Player bar](#player-bar-redesign-progress-styles-backgrounds)):
+  a progress style is a `ProgressStyle` variant (`settings/bar_prefs.rs`: `ALL`, `title`,
+  `key`) plus an arm in `components/progress.rs::paint_track` (quads / one path per
+  frame; positions in, nothing stored); a background is a `BarBackground` variant plus
+  an arm in `bar_fx::BackgroundFx::layers`. Static by default: anything that moves on
+  its own must ask for frames with `Frame::wake_in` at a capped interval only while
+  playing, and say so in `PlayerBarConfig::animates` (and `least_resources` for the
+  Minimal / Fast profile). A new bar control goes into `bar_layout` with a priority.
+  Never request frames from the zones (`AppRegion`s): they are cached while the bar
+  animates.
 * **Renaming the app:** edit `packaging/app.env` only (see Install / build).
 * **UI text** (see [Translations](#translations-ui-languages)): add the English string to
   `locales/en/<area>.lang` and use `t!("key")` / `t!("key", name = value)` /
@@ -786,6 +798,11 @@ locales/<locale>/*.lang  the catalogs (English = source), embedded by build.rs v
 * **Scrobbling & Discord**: scrobble rules (percent, at most N minutes, ignore songs
   under N s); Discord activity type, name, details/state templates, large/small image,
   two buttons, show while paused (applied to the running presence without reconnecting).
+* **Player bar**: three zones, five progress styles (Standard, Thick, Simple, Wavy,
+  Equalizer), a background that reacts to play / pause (artwork glow, dynamic gradient,
+  pulse), elapsed / remaining time, hover thumb + time bubble, volume with mute, scroll
+  and a percentage bubble, lyrics button; static by default — see
+  [Player bar](#player-bar-redesign-progress-styles-backgrounds).
 * **OS media controls**, **Equalizer**, **volume**: unchanged (history below).
 
 ### Library, account, downloads, local files
@@ -1365,7 +1382,7 @@ switch + id + `activity`, theme + text size, shuffle + repeat, `audio`, `lyrics`
 main window and mini player frames, and `library`: privacy switches,
 play-cache limit, music folders, the signed-in YouTube account's name / avatar /
 `auth_user` / channel, `library.downloads` (download liked songs), `sponsorblock`, `together`
-(incl. `relay_url`), `spotify`, `ai_filter`, `cast`, `custom_theme`) lives in the platform config dir — macOS
+(incl. `relay_url`), `spotify`, `ai_filter`, `cast`, `custom_theme`, `player_bar`) lives in the platform config dir — macOS
 `~/Library/Application Support/tunedesk/`, Linux `~/.config/tunedesk/`, Windows
 `%APPDATA%\tunedesk\config\` — or `$MUSIC_CONFIG_DIR`. It is written 500 ms after the last
 change and on quit, atomically (temp file + rename), mode 0600 in a 0700 directory. Missing
@@ -1401,6 +1418,7 @@ item's ACL is tied to the binary). Secrets are never logged.
 | `MUSIC_ONBOARDING=1\|0` | force / suppress the first-run guide (it is skipped automatically for `MUSIC_SCRIPT` / screenshot runs) |
 | `MUSIC_UPDATE_REPO=owner/name` | enable the update check against that repo (testing; the default comes from `packaging/app.env`) |
 | `MUSIC_NO_TRANSITIONS=1` | switch dynamic colours at once (no 400 ms cross-fade) |
+| `MUSIC_BAR_SPECTRUM_DUMP=1` | print the player bar analyzer's band statistics once a second (tuning the Equalizer style) |
 | `MUSIC_TRACE=1` | log playback transitions, seeks, saves, route changes, artwork downloads; `MUSIC_TIMINGS=1`: renders/s + worst frame gap |
 | `MUSIC_SCRIPT="5:@next,9:@seek=75,30:@quit"` | timed actions (any build) |
 | `MUSIC_ON_TOP=1` | keep the main window above other apps and on every Space (CPU sampling while the machine is in use: macOS sends an occluded or off-Space window no frames) |
@@ -1449,13 +1467,175 @@ recognition `@recognize` (microphone), `@recognize-file=PATH`,
 `@onboarding-back`, `@update-check` (`release_script.rs`); `@lang=CODE|system` (UI language,
 saved); lyrics cards (`lyrics_card.rs`)
 `@card-select=3;4;5 @card-open @card-style=aspect:story|bg:blur|album|dark|light|align:left|size:large|art:off
-@card-save=PATH @card-copy @card-close`; measurement `@bench=N[:MS]` (draws the main window N
+@card-save=PATH @card-copy @card-close`; measurement player bar (`bar_script.rs`) `@bar-style=wavy @bar-bg=gradient @bar-gradient=dir:diagonal @bar-hover=0.4 @bar-status`, `@bench-bar=N[:MS]` (only the bar marked dirty), `@bench=N[:MS]` (draws the main window N
 times MS ms apart and prints the draw times: the UI's CPU per frame, also with the screen
 locked); `@quit`.
 
 Screenshot builds draw both windows every 200 ms and right before each shot: while the
 screen is locked macOS delivers no display-link frames, so nothing would redraw (and
 lazily started artwork downloads would never begin).
+
+### Player bar redesign: progress styles, backgrounds
+
+| Before | After |
+|---|---|
+| ![Before: playing, 1280 pt](docs/screenshots/bar-before-playing-1280.png) | ![After: playing, 1280 pt](docs/screenshots/bar-playing-1280.png) |
+| ![Before: 880 pt](docs/screenshots/bar-before-playing-880.png) | ![After: 880 pt](docs/screenshots/bar-playing-880.png) |
+| ![Before: casting, Together, SponsorBlock at 880 pt](docs/screenshots/bar-before-chips-cast-880.png) | ![After: casting, Together, SponsorBlock at 880 pt](docs/screenshots/bar-chips-cast-880.png) |
+| ![Before: loading](docs/screenshots/bar-before-loading.png) | ![After: loading (status under the artist)](docs/screenshots/bar-loading-1280.png) |
+| ![Before: idle](docs/screenshots/bar-before-idle-880.png) | ![After: idle](docs/screenshots/bar-idle-880.png) |
+
+| | |
+|---|---|
+| ![Hover: thumb + time](docs/screenshots/bar-hover-1280.png) | ![Volume bubble](docs/screenshots/bar-volume-tooltip.png) |
+| ![Thick](docs/screenshots/bar-style-thick.png) | ![Simple](docs/screenshots/bar-style-simple.png) |
+| ![Wavy](docs/screenshots/bar-style-wavy.png) | ![Equalizer](docs/screenshots/bar-style-equalizer.png) |
+| ![Artwork glow, playing](docs/screenshots/bar-bg-glow-playing.png) | ![Artwork glow, paused](docs/screenshots/bar-bg-glow-paused.png) |
+| ![Dynamic gradient, playing](docs/screenshots/bar-bg-gradient-playing.png) | ![Dynamic gradient, paused (dimmed)](docs/screenshots/bar-bg-gradient-paused.png) |
+| ![Gradient, dim theme, playing](docs/screenshots/bar-bg-gradient-dim-playing.png) | ![Gradient, dim theme, paused](docs/screenshots/bar-bg-gradient-dim-paused.png) |
+| ![Gradient, black theme, playing](docs/screenshots/bar-bg-gradient-black-playing.png) | ![Gradient, black theme, paused](docs/screenshots/bar-bg-gradient-black-paused.png) |
+| ![Gradient, diagonal, 90 %](docs/screenshots/bar-bg-gradient-diagonal-90.png) | ![Gradient, right to left](docs/screenshots/bar-bg-gradient-rtl.png) |
+| ![Pulse](docs/screenshots/bar-bg-pulse.png) | ![Dynamic theme](docs/screenshots/bar-theme-dynamic.png) |
+| ![Mini player: standard](docs/screenshots/bar-mini-standard.png) | ![Mini player: wavy + gradient](docs/screenshots/bar-mini-wavy-gradient.png) |
+| ![Now Playing visualizer](docs/screenshots/bar-np-visualizer.png) | ![Settings → Appearance → Player bar](docs/screenshots/bar-settings.png) |
+
+**Review of the old bar** (screenshots `bar-before-*`): the transport sat off-centre (the
+chip area beside it was only on one side), the source tag and the Cast button floated in
+the transport row, the progress and volume thumbs were large black discs with no
+contrast on the dark surface and the volume thumb at 0 % covered the mute icon; icons
+mixed 24 and 32 pt buttons (secondary ones below the 28 pt hit-target minimum); the time
+showed only the length; status messages ("Loading…", errors) sat far from the track
+they belong to; there was no lyrics button and the Now Playing chevron had no active
+state; idle / loading artwork was an empty box; at 880 pt the progress bar shrank to
+~220 pt and the right zone kept every control.
+
+**Now** (`components/player_bar.rs`): three zones — track info (artwork with a
+placeholder, title, artists, a status line in the warning / danger colour, like) ·
+transport (32 / 36 / 40 pt buttons, toggles tinted in the accent, tags left and
+SponsorBlock / Together chips right of it, both flanks equal so it stays centred) above
+the progress row (elapsed, track, remaining / length — click toggles) · secondary
+(lyrics, queue, sleep timer, Cast, mini player, Now Playing, mute + volume). The side
+zones are equally wide (27 % of the window, 200–380 pt), so the transport is centred in
+the window. `bar_layout` drops controls by priority instead of overlapping: Now
+Playing, queue and mute always, then an active Cast session and an armed sleep timer,
+the volume slider (92 / 80 / 64 pt), lyrics, Cast, sleep timer, mini player, the timer's
+label (unit-tested 700–2400 pt). Progress and volume are one custom element
+(`components/progress.rs`): hover reveals the thumb and a lighter "ghost" fill to the
+pointer, a time bubble follows the pointer / scrub, click or drag seeks (`@bar-hover`
+drives a real mouse move for tests); the volume shows a percentage bubble and changes
+by scrolling over the slider or the mute button. Buttons keep gpui-component's keyboard
+focus ring and tab order. The lyrics button opens Now Playing with lyrics in view
+(designs without a lyrics pane show "Lyrics first" until it closes).
+
+**Progress styles** (Settings → Appearance → Player bar; `player_bar.progress_style`):
+Standard (4 pt, today's look), Thick (8 pt, pill thumb), Simple (2 pt hairline), Wavy
+(the played part is a sine wave — 20 pt wavelength, half a wavelength per second, calm
+when paused or dragging, gap and pill thumb, stop dot; after ArchiveTune's
+`WavySliderExpressive`), Equalizer (one bar per 5 pt from the bar's own
+`SpectrumAnalyzer`, played bars in the accent, peak caps optional, still seekable). The
+analyzer mapping was tuned on real music with `MUSIC_BAR_SPECTRUM_DUMP=1` (band means
+per group, % full / empty, level, once a second): with the defaults pop / rock averaged
+0.35–0.7, never reached the top and the low bands sat ~0.25 above the mids; quiet piano
+used only the middle octaves. Now floor −64 dB, ceiling −16 dB, +4 dB / octave
+(`bar_fx::bar_spectrum_config`): 0.4–0.65 across all groups for the same songs.
+
+**Background reacting to play / pause** (`player_bar.background_effect`, off by
+default): **Artwork glow** (the blurred artwork plus the artwork's main colour behind the
+track info, fading towards the transport), **Dynamic gradient** (two colours of the
+artwork; direction left → right / right → left / diagonal, intensity 30–90 %, optional
+slow drift), **Pulse** (a band of the artwork's colour behind the transport, width and
+strength follow the music's loudness). Colours come from the dynamic theme's artwork
+analysis (`palette.rs` seeds as tonal colours, or `AppPalette` for grey art) — computed
+once per track, also when only the bar needs them; nothing is extracted twice.
+**Dim when paused** (default on) fades to a dimmed, desaturated version; otherwise the
+colour stays. Glow and the static gradient change in one 350 ms transition (new track,
+play / pause) and then draw nothing on their own.
+
+**Mini player**: the same track (click / drag to seek) and background
+(`player_bar.mini_follows_bar`); **Now Playing**: an optional spectrum strip along the
+bottom edge (`player_bar.np_visualizer`).
+
+**Static by default, animations opt-in.** Default settings never ask for frames: the
+fill and times follow the app's once-a-second update. Wavy (~17 fps), Equalizer (~20 fps),
+Pulse (~17 fps), the animated gradient (~13 fps) and the visualizer wake on timers
+(`bar_fx::EQ_INTERVAL` 40 ms, `ANIM_INTERVAL` 50 ms, `GRADIENT_INTERVAL` 66 ms) only
+while music plays; paused they finish their fade / let the bars fall and stop. A wake-up
+is only re-armed by a render, so a hidden or occluded window (no frames) and a bar
+covered by Now Playing stop by themselves. The spectrum tap (`Player::set_spectrum_enabled`)
+is on only while a visible view asks for it (`MusicApp::want_spectrum`), and the poll
+turns it off 2 s after the last request.
+
+**Why a bar frame is cheap.** GPUI draws the whole window from the root on every frame
+and re-renders every view that isn't cached; a full redraw of the shell with a search
+page costs ~5.3 ms (`@bench=300`), far too much for 20 fps. The bar is its own view
+(`PlayerBar`); its button zones and everything above it (`MusicApp::render_shell`) are
+`AppRegion`s — rendered from the app, re-rendered whenever the app notifies — embedded as
+*cached* views while the bar is "live" (animating, fading or under the pointer), and
+inline otherwise (so the static path is exactly the old one). A bar frame then redraws
+only the bar's tracks and background: `@bench-bar` 1.0–1.7 ms; the rest is GPUI replaying
+the cached scene, mostly its tab-stop map (`TabStopMap::replay`, profiled with `sample`).
+
+**CPU** (release, macOS arm64, 1180 × 793, `MUSIC_ON_TOP=1`, "Instant Crush" seeked to
+1:10, muted real device, Now Playing closed; `ps -o %cpu=` once a second for 12 s, avg;
+several runs where noted — other agents were building and measuring on the same machine,
+single samples up to ~100 % from that were discarded and re-run):
+
+| Scenario | CPU % avg | renders / s |
+|---|---|---|
+| Before (main) | 0.7 / 1.4 / 2.6 / 1.3 / 1.2 | ~1 |
+| Static default (Standard, no effect) | 1.6 / 0.7 / 2.7 / 0.4 / 1.1 | ~1 |
+| Minimal / Fast profile | 0.4 | ~1 |
+| Thick / Simple | 1.2 – 1.1 / 1.2 – 0.4 – 0.9 | ~1 |
+| Artwork glow / dynamic gradient (static) | 0.9 – 1.4 / 1.2 – 1.2 | ~1 (+ one 350 ms fade) |
+| Wavy | 5.9 / 6.5 / 4.8 | 16–18 |
+| Equalizer | 6.6 / 6.9 / 4.3 | 18–22 |
+| Pulse | 6.5 / 5.4 / 5.1 | 16–17 |
+| Dynamic gradient, animated | 2.7 / 5.0 | 13–14 |
+| Wavy / Equalizer / Pulse / animated gradient, paused | 0.0 / 0.2–0.4 / 0.3 / 0.0–0.3 | 0 |
+| Mini player open: static / with Wavy (both animate) | 1.2 – 1.3 / 7.3 | 1 / 17 |
+| Now Playing open (lyrics) without / with the visualizer | 8.5 – 9.6 – 7.7 / 10.4 – 10.8 | 46–50 |
+
+Each animated frame costs ~3–4 ms of process CPU in total (draw ~1–1.7 ms plus presenting
+the whole window), which is why the rates are capped at 13–22 fps rather than 30.
+
+**Settings** (`player_bar` in settings.json, carried by profiles and theme files through
+`portable::BAR_STYLE_KEYS`; the least-resource values are what the Minimal / Fast
+profile sets, `PlayerBarConfig::least_resources`):
+
+| Key | Default | Least resources |
+|---|---|---|
+| `progress_style` | `standard` | `simple` (`standard` / `thick` are static too; `wavy`, `equalizer` animate) |
+| `peak_caps` | `true` | `false` |
+| `background_effect` | `false` | `false` |
+| `background` | `glow` | any (unused while off; `pulse` animates) |
+| `gradient_direction` | `left-to-right` | any |
+| `gradient_intensity` | `0.5` | any (0.1–1) |
+| `animate_gradient` | `false` | `false` |
+| `dim_when_paused` | `true` | any |
+| `show_remaining` | `false` | any |
+| `scroll_volume` | `true` | any |
+| `mini_follows_bar` | `true` | any |
+| `np_visualizer` | `false` | `false` |
+
+**Script actions** (`bar_script.rs`): `@bar-style=standard|thick|simple|wavy|equalizer`,
+`@bar-bg=glow|gradient|pulse|off`, `@bar-gradient=dir:…|intensity:0.7|animate:on|dim:off`,
+`@bar-peaks`, `@bar-remaining`, `@bar-scroll-volume`, `@mini-follow`, `@np-viz` (`=on|off`),
+`@bar-hover=F|off`, `@bar-volume-hover=F|off`, `@bar-status` (settings, `animates`, tap
+state), `@bench-bar=N[:MS]`; env `MUSIC_BAR_SPECTRUM_DUMP=1`.
+
+**Verified** (screenshot build, temporary `MUSIC_CONFIG_DIR`s, real device at
+`MUSIC_VOLUME=0.0` or the demo clock): every style and background on screen (above),
+playing / paused / loading / idle, 880 / 1280 / 1600 pt, dark / dim / black / dynamic,
+SponsorBlock "Skip" chip, Together host chip and casting to `fake_cast_receiver` at 1280
+and 880 pt (the Cast label clips, nothing overlaps), mini player in three looks, the Now
+Playing strip; `@bar-status` showed the tap on while the Equalizer played, off within
+2 s after Now Playing covered the bar and after the bars had fallen when paused;
+hover / volume bubbles through real mouse-move dispatch; the profile and theme-file
+tests carry `player_bar`; Minimal / Fast sets `least_resources()` (unit test).
+**Not verified:** physical mouse dragging and trackpad scrolling over the volume (the same
+handlers ran through dispatched events and scripts), keyboard-only operation beyond the
+buttons' tab order (the tracks themselves aren't focusable), Windows / Linux, a 120 Hz
+display, a light theme (the app has none; "dim" darkness is the lightest).
 
 ### Theming round: Customize theme, dynamic colours, profiles, downloads
 
@@ -1501,8 +1681,9 @@ lazily started artwork downloads would never begin).
   `theme::preview`, the onboarding scrim from `AppPalette::scrim`, all list / card /
   dialog / sidebar / queue radii from `theme::radius`. Left on purpose: Now Playing
   designs and the lyrics card draw white / artwork colours on the blurred artwork, the
-  schematic Now Playing previews in Appearance, and the player bar / mini player (owned
-  by the player-bar round).
+  schematic Now Playing previews in Appearance. The player bar uses theme tokens
+  (`slider_bar`, `secondary`, `popover`, `AppColors::accent`), its backgrounds the dynamic
+  palette / `AppPalette`, the mini player `AppPalette::on_artwork` on the artwork.
 * **Settings export / import** (Settings → Backup & sync, `settings/portable.rs`): a
   header (`format`, `schema` = `settings::file::VERSION`, `app_version`, `exported_at`)
   around every setting except `LOCAL_ONLY` (secrets, window frames, the account, the
