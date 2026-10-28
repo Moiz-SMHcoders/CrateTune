@@ -161,12 +161,13 @@ impl SongList {
         let selecting = self.selection.is_some();
         h_flex()
             .gap_1()
+            .flex_wrap()
             .child(
                 Button::new(SharedString::from(format!("{id}-play")))
                     .primary()
                     .small()
                     .icon(Lucide::Play)
-                    .label("Play")
+                    .label(t!("common.play"))
                     .disabled(empty)
                     .on_click(move |_, _, cx| {
                         let tracks = tracks.clone();
@@ -178,7 +179,7 @@ impl SongList {
                     .ghost()
                     .small()
                     .icon(Lucide::Shuffle)
-                    .label("Shuffle")
+                    .label(t!("common.shuffle"))
                     .disabled(empty)
                     .on_click(move |_, _, cx| {
                         let tracks = tracks2.clone();
@@ -194,7 +195,11 @@ impl SongList {
                     .ghost()
                     .small()
                     .icon(Lucide::ListChecks)
-                    .label(if selecting { "Done" } else { "Select" })
+                    .label(if selecting {
+                        t!("common.done")
+                    } else {
+                        t!("common.select")
+                    })
                     .disabled(empty)
                     .on_click(cx.listener(move |page: &mut P, _, _, cx| {
                         get(page).toggle_selecting();
@@ -244,13 +249,17 @@ impl SongList {
                     .px_2()
                     .text_sm()
                     .text_color(theme.muted_foreground)
-                    .child(format!("{count} selected")),
+                    .child(tp!("common.selected", count)),
             )
             .child(
                 Button::new(SharedString::from(format!("{id}-all")))
                     .ghost()
                     .small()
-                    .label(if all { "Select none" } else { "Select all" })
+                    .label(if all {
+                        t!("song_list.select_none")
+                    } else {
+                        t!("common.select_all")
+                    })
                     .on_click(cx.listener(move |page: &mut P, _, _, cx| {
                         let list = get(page);
                         let n = list.tracks.len();
@@ -265,38 +274,43 @@ impl SongList {
                     })),
             )
             .child(
-                action("sel-play", Lucide::Play, "Play").on_click(with(|t, _, cx| {
+                action("sel-play", Lucide::Play, t!("common.play")).on_click(with(|t, _, cx| {
                     update_app(cx, |app, cx| app.play_list(Rc::new(t), 0, cx));
                 })),
             )
             .child(
-                action("sel-next", Lucide::ListStart, "Play next").on_click(with(
+                action("sel-next", Lucide::ListStart, t!("common.play_next")).on_click(with(
                     |t, window, cx| {
                         update_app(cx, |app, cx| app.queue_play_next(t, window, cx));
                     },
                 )),
             )
             .child(
-                action("sel-queue", Lucide::ListEnd, "Add to queue").on_click(with(
+                action("sel-queue", Lucide::ListEnd, t!("common.add_to_queue")).on_click(with(
                     |t, window, cx| {
                         update_app(cx, |app, cx| app.queue_add(t, window, cx));
                     },
                 )),
             )
             .child(
-                action("sel-playlist", Lucide::ListPlus, "Add to playlist").on_click(with(
+                action(
+                    "sel-playlist",
+                    Lucide::ListPlus,
+                    t!("common.add_to_playlist"),
+                )
+                .on_click(with(|t, window, cx| {
+                    update_app(cx, |app, cx| app.add_tracks_to_playlist(t, window, cx));
+                })),
+            )
+            .child(
+                action("sel-like", Lucide::Heart, t!("common.like")).on_click(with(
                     |t, window, cx| {
-                        update_app(cx, |app, cx| app.add_tracks_to_playlist(t, window, cx));
+                        update_app(cx, |app, cx| app.set_liked(t, true, window, cx));
                     },
                 )),
             )
             .child(
-                action("sel-like", Lucide::Heart, "Like").on_click(with(|t, window, cx| {
-                    update_app(cx, |app, cx| app.set_liked(t, true, window, cx));
-                })),
-            )
-            .child(
-                action("sel-download", Lucide::Download, "Download").on_click(with(
+                action("sel-download", Lucide::Download, t!("common.download")).on_click(with(
                     |t, window, cx| {
                         update_app(cx, |app, cx| app.download_tracks(t, window, cx));
                     },

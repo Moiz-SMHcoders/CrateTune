@@ -18,6 +18,7 @@ use super::SettingsPanel;
 use super::library_config::CACHE_LIMITS_MB;
 use super::widgets::{group, note, row, status_line};
 use crate::app::{read_app, update_app};
+use crate::i18n::format::number;
 use crate::icons::Lucide;
 use crate::pages::widgets::format_bytes;
 
@@ -27,13 +28,13 @@ pub(super) fn render(
     cx: &mut Context<SettingsPanel>,
 ) -> AnyElement {
     let path_line = match &panel.path {
-        Some(p) => format!("Settings file: {}", p.display()),
-        None => "Settings are not saved (no config directory)".into(),
+        Some(p) => t!("settings.storage.settings_file", path = p.display()),
+        None => t!("settings.storage.settings_not_saved").into(),
     };
     let secrets_line = if panel.secrets_loaded {
-        format!("Secrets: {}", panel.secret_store)
+        t!("settings.storage.secrets", store = panel.secret_store)
     } else {
-        "Secrets: loading…".into()
+        t!("settings.storage.secrets_loading").into()
     };
     let danger = cx.theme().danger;
     struct Info {
@@ -61,7 +62,7 @@ pub(super) fn render(
             .map_or(0, |d| d.total_size(Some(DownloadKind::Cache))),
     });
     let Some(info) = info else {
-        return note("Loading…", cx).into_any_element();
+        return note(t!("common.loading"), cx).into_any_element();
     };
     let prefs = panel.settings.library.clone();
 
@@ -71,9 +72,13 @@ pub(super) fn render(
         .children(CACHE_LIMITS_MB.map(|mb| {
             let selected = prefs.cache_limit_mb == mb;
             let label = if mb >= 1024 {
-                format!("{} GB", mb / 1024)
+                t!(
+                    "units.size",
+                    value = number(mb / 1024),
+                    unit = t!("units.gb")
+                )
             } else {
-                format!("{mb} MB")
+                t!("units.size", value = number(mb), unit = t!("units.mb"))
             };
             Button::new(SharedString::from(format!("cache-limit-{mb}")))
                 .small()
@@ -94,7 +99,7 @@ pub(super) fn render(
         .outline()
         .small()
         .icon(Lucide::Trash)
-        .label("Clear cache")
+        .label(t!("settings.storage.clear_cache"))
         .on_click(|_, window, cx| {
             update_app(cx, |app, cx| app.clear_play_cache(window, cx));
         });
@@ -103,7 +108,7 @@ pub(super) fn render(
         .outline()
         .small()
         .icon(gpui_component::IconName::FolderOpen)
-        .label("Show in Finder")
+        .label(t!("downloads.show_in_finder"))
         .on_click(move |_, _, cx| {
             if let Some(dir) = &downloads_dir {
                 cx.reveal_path(&dir.join("downloads"));
@@ -113,7 +118,7 @@ pub(super) fn render(
         .outline()
         .small()
         .icon(Lucide::Download)
-        .label("Export…")
+        .label(t!("settings.storage.export_button"))
         .on_click(|_, window, cx| {
             update_app(cx, |app, cx| app.export_backup(window, cx));
         });
@@ -121,7 +126,7 @@ pub(super) fn render(
         .outline()
         .small()
         .icon(Lucide::Upload)
-        .label("Restore…")
+        .label(t!("settings.storage.restore_button"))
         .on_click(|_, window, cx| {
             update_app(cx, |app, cx| app.import_backup(window, cx));
         });
@@ -129,13 +134,13 @@ pub(super) fn render(
     v_flex()
         .gap_5()
         .child(
-            group("Files", cx)
+            group(t!("settings.storage.files"), cx)
                 .child(note(path_line, cx))
                 .child(note(secrets_line, cx))
                 .child(note(
                     match &info.library {
-                        Some(p) => format!("Library database: {p}"),
-                        None => "Library database: not available".into(),
+                        Some(p) => t!("settings.storage.library_db", path = p),
+                        None => t!("settings.storage.library_db_unavailable").into(),
                     },
                     cx,
                 ))
@@ -148,55 +153,60 @@ pub(super) fn render(
                 ),
         )
         .child(
-            group("Play cache", cx)
+            group(t!("settings.storage.play_cache"), cx)
                 .child(note(
-                    format!(
-                        "{} used of {}. Least recently played songs are removed first.",
-                        format_bytes(info.cache),
-                        format_bytes(prefs.cache_limit_bytes())
+                    t!(
+                        "settings.storage.cache_usage",
+                        used = format_bytes(info.cache),
+                        limit = format_bytes(prefs.cache_limit_bytes())
                     ),
                     cx,
                 ))
-                .child(row("Cache size limit", None, limits, cx))
+                .child(row(t!("settings.storage.cache_limit"), None, limits, cx))
                 .child(row(
-                    "Cache played songs",
-                    Some("Keeps a copy of what you play (fetched once more in the background)."),
+                    t!("settings.storage.cache_played"),
+                    Some(t!("settings.storage.cache_played_detail")),
                     cache_played,
                     cx,
                 ))
-                .child(row("Clear the play cache", None, clear_cache, cx)),
+                .child(row(
+                    t!("settings.storage.clear_cache_row"),
+                    None,
+                    clear_cache,
+                    cx,
+                )),
         )
         .child(
-            group("Downloads", cx)
+            group(t!("settings.storage.downloads"), cx)
                 .child(note(
                     match &info.downloads_dir {
-                        Some(dir) => format!(
-                            "{} in {}",
-                            format_bytes(info.downloads),
-                            dir.join("downloads").display()
+                        Some(dir) => t!(
+                            "settings.storage.downloads_usage",
+                            size = format_bytes(info.downloads),
+                            path = dir.join("downloads").display()
                         ),
-                        None => "Downloads are not available.".into(),
+                        None => t!("settings.storage.downloads_unavailable").into(),
                     },
                     cx,
                 ))
                 .child(row(
-                    "Download folder",
-                    Some("Downloads are never removed automatically."),
+                    t!("settings.storage.download_folder"),
+                    Some(t!("settings.storage.download_folder_detail")),
                     reveal,
                     cx,
                 )),
         )
         .child(
-            group("Backup & restore", cx)
+            group(t!("settings.storage.backup"), cx)
                 .child(row(
-                    "Export a backup",
-                    Some("Library, playlists, history and settings in one zip (no passwords or cookies)."),
+                    t!("settings.storage.export"),
+                    Some(t!("settings.storage.export_detail")),
                     export,
                     cx,
                 ))
                 .child(row(
-                    "Restore a backup",
-                    Some("Replaces the library and settings; restart afterwards."),
+                    t!("settings.storage.restore"),
+                    Some(t!("settings.storage.restore_detail")),
                     import,
                     cx,
                 )),

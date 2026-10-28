@@ -33,6 +33,7 @@ use super::widgets::{filter_field, filter_input, songs_label, sort_button};
 use crate::app::{MusicApp, read_app, update_app};
 use crate::components::card::{Card, CardKind};
 use crate::components::{empty_state, grid, page_scroll, page_title};
+use crate::i18n::Key;
 use crate::icons::Lucide;
 use crate::router::{LibraryTab, Route};
 
@@ -41,34 +42,48 @@ pub const PODCASTS_CACHE_KEY: &str = "library-podcasts";
 /// Library pages followed for the Podcasts tab.
 const PODCAST_PAGES: usize = 5;
 
-const SONG_SORTS: &[(SongSort, &str)] = &[
-    (SongSort::DateAdded, "Date added"),
-    (SongSort::Title, "Title"),
-    (SongSort::Artist, "Artist"),
-    (SongSort::PlayCount, "Play count"),
-    (SongSort::PlayTime, "Listening time"),
-    (SongSort::LastPlayed, "Last played"),
+const SONG_SORTS: &[(SongSort, Key)] = &[
+    (SongSort::DateAdded, k!("library.sort.date_added")),
+    (SongSort::Title, k!("library.sort.title")),
+    (SongSort::Artist, k!("library.sort.artist")),
+    (SongSort::PlayCount, k!("library.sort.play_count")),
+    (SongSort::PlayTime, k!("library.sort.listening_time")),
+    (SongSort::LastPlayed, k!("library.sort.last_played")),
 ];
-const ALBUM_SORTS: &[(AlbumSort, &str)] = &[
-    (AlbumSort::DateAdded, "Date added"),
-    (AlbumSort::Title, "Title"),
-    (AlbumSort::Artist, "Artist"),
-    (AlbumSort::Year, "Year"),
-    (AlbumSort::SongCount, "Song count"),
-    (AlbumSort::PlayTime, "Listening time"),
+const ALBUM_SORTS: &[(AlbumSort, Key)] = &[
+    (AlbumSort::DateAdded, k!("library.sort.date_added")),
+    (AlbumSort::Title, k!("library.sort.title")),
+    (AlbumSort::Artist, k!("library.sort.artist")),
+    (AlbumSort::Year, k!("library.sort.year")),
+    (AlbumSort::SongCount, k!("library.sort.song_count")),
+    (AlbumSort::PlayTime, k!("library.sort.listening_time")),
 ];
-const ARTIST_SORTS: &[(ArtistSort, &str)] = &[
-    (ArtistSort::DateAdded, "Date added"),
-    (ArtistSort::Name, "Name"),
-    (ArtistSort::SongCount, "Song count"),
-    (ArtistSort::PlayTime, "Listening time"),
+const ARTIST_SORTS: &[(ArtistSort, Key)] = &[
+    (ArtistSort::DateAdded, k!("library.sort.date_added")),
+    (ArtistSort::Name, k!("library.sort.name")),
+    (ArtistSort::SongCount, k!("library.sort.song_count")),
+    (ArtistSort::PlayTime, k!("library.sort.listening_time")),
 ];
-const PLAYLIST_SORTS: &[(PlaylistSort, &str)] = &[
-    (PlaylistSort::Updated, "Last updated"),
-    (PlaylistSort::Created, "Date created"),
-    (PlaylistSort::Name, "Name"),
-    (PlaylistSort::SongCount, "Song count"),
+const PLAYLIST_SORTS: &[(PlaylistSort, Key)] = &[
+    (PlaylistSort::Updated, k!("library.sort.last_updated")),
+    (PlaylistSort::Created, k!("library.sort.date_created")),
+    (PlaylistSort::Name, k!("library.sort.name")),
+    (PlaylistSort::SongCount, k!("library.sort.song_count")),
 ];
+
+/// Tab names (`LibraryTab::title` is the untranslated name used elsewhere).
+fn tab_title(tab: LibraryTab) -> &'static str {
+    match tab {
+        LibraryTab::Songs => t!("library.tab.songs"),
+        LibraryTab::Liked => t!("library.tab.liked"),
+        LibraryTab::Albums => t!("library.tab.albums"),
+        LibraryTab::Artists => t!("library.tab.artists"),
+        LibraryTab::Playlists => t!("library.tab.playlists"),
+        LibraryTab::Podcasts => t!("library.tab.podcasts"),
+        LibraryTab::Downloaded => t!("library.tab.downloaded"),
+        LibraryTab::Local => t!("library.tab.local"),
+    }
+}
 
 pub struct LibraryPage {
     tab: LibraryTab,
@@ -99,9 +114,14 @@ impl LibraryPage {
     pub fn build(tab: LibraryTab, window: &mut Window, cx: &mut Context<MusicApp>) -> PageView {
         let scroll = ScrollHandle::new();
         let page = cx.new(|cx| {
-            let (filter, sub) = filter_input("Filter", window, cx, |p: &mut Self, text, _| {
-                p.filter_text = text;
-            });
+            let (filter, sub) = filter_input(
+                k!("library.filter_placeholder"),
+                window,
+                cx,
+                |p: &mut Self, text, _| {
+                    p.filter_text = text;
+                },
+            );
             Self {
                 tab,
                 filter,
@@ -253,16 +273,15 @@ impl LibraryPage {
         let body = match (&self.podcasts, signed_in) {
             (_, false) => empty_state(
                 Lucide::AudioLines,
-                "Sign in to see your podcasts",
-                "Podcasts you save on YouTube Music show up here. Sign in under Settings → \
-                 Account; shows can be opened from search, Home and Explore without an account.",
+                t!("library.podcasts.signed_out_title"),
+                t!("library.podcasts.signed_out_detail"),
                 cx,
             )
             .into_any_element(),
             (Some(Load::Ready(items)), _) if items.is_empty() => empty_state(
                 Lucide::AudioLines,
-                "No podcasts yet",
-                "Save a show with “Save to library” on its page.",
+                t!("library.podcasts.empty_title"),
+                t!("library.podcasts.empty_detail"),
                 cx,
             )
             .into_any_element(),
@@ -305,7 +324,7 @@ impl LibraryPage {
                     .small()
                     .map(|b| if selected { b.primary() } else { b.ghost() })
                     .selected(selected)
-                    .label(tab.title())
+                    .label(tab_title(tab))
                     .on_click(move |_, window, cx| {
                         update_app(cx, |app, cx| {
                             app.navigate_replace(Route::Library { tab }, window, cx)
@@ -373,9 +392,9 @@ impl LibraryPage {
                     .small()
                     .selected(self.saved_only)
                     .label(if self.tab == LibraryTab::Artists {
-                        "Subscribed only"
+                        t!("library.subscribed_only")
                     } else {
-                        "Saved only"
+                        t!("library.saved_only")
                     })
                     .on_click(cx.listener(|p, _, _, cx| {
                         p.saved_only = !p.saved_only;
@@ -387,7 +406,7 @@ impl LibraryPage {
                 .primary()
                 .small()
                 .icon(Lucide::Plus)
-                .label("New playlist")
+                .label(t!("library.new_playlist"))
                 .on_click(|_, window, cx| {
                     update_app(cx, |app, cx| {
                         app.add_tracks_to_playlist(Vec::new(), window, cx)
@@ -417,29 +436,31 @@ impl LibraryPage {
     fn render_songs(&mut self, cx: &mut Context<Self>) -> gpui::AnyElement {
         if self.list.is_empty() {
             let (icon, title, detail) = match self.tab {
-                _ if !self.have_songs => (Lucide::Music, "Loading…", ""),
-                _ if !self.filter_text.is_empty() => {
-                    (Lucide::Search, "No matches", "Nothing matches the filter.")
-                }
+                _ if !self.have_songs => (Lucide::Music, t!("common.loading"), ""),
+                _ if !self.filter_text.is_empty() => (
+                    Lucide::Search,
+                    t!("library.empty.no_matches_title"),
+                    t!("library.empty.no_matches_detail"),
+                ),
                 LibraryTab::Liked => (
                     Lucide::Heart,
-                    "No liked songs",
-                    "Tap the heart on any song. Signed in, your YouTube Music likes sync here.",
+                    t!("library.empty.liked_title"),
+                    t!("library.empty.liked_detail"),
                 ),
                 LibraryTab::Downloaded => (
                     Lucide::Download,
-                    "Nothing downloaded",
-                    "Choose “Download” in a song's menu to keep it on this computer.",
+                    t!("library.empty.downloaded_title"),
+                    t!("library.empty.downloaded_detail"),
                 ),
                 LibraryTab::Local => (
                     Lucide::FileMusic,
-                    "No local files",
-                    "Add music folders on the Local files page and scan them.",
+                    t!("library.empty.local_title"),
+                    t!("library.empty.local_detail"),
                 ),
                 _ => (
                     Lucide::Music,
-                    "No songs in your library",
-                    "Liked songs, songs you add and local files show up here.",
+                    t!("library.empty.songs_title"),
+                    t!("library.empty.songs_detail"),
                 ),
             };
             return div()
@@ -449,19 +470,19 @@ impl LibraryPage {
         }
         let remove: Option<(&'static str, RemoveHandler<Self>)> = match self.tab {
             LibraryTab::Songs => Some((
-                "Remove from library",
+                t!("library.remove_from_library"),
                 Rc::new(|_: &mut Self, tracks: Vec<Track>, _, window, cx| {
                     update_app(cx, |app, cx| app.remove_from_library(tracks, window, cx));
                 }),
             )),
             LibraryTab::Liked => Some((
-                "Unlike",
+                t!("library.unlike"),
                 Rc::new(|_: &mut Self, tracks: Vec<Track>, _, window, cx| {
                     update_app(cx, |app, cx| app.set_liked(tracks, false, window, cx));
                 }),
             )),
             LibraryTab::Downloaded => Some((
-                "Delete downloads",
+                t!("library.delete_downloads"),
                 Rc::new(|_: &mut Self, tracks: Vec<Track>, _, window, cx| {
                     update_app(cx, |app, cx| {
                         for t in tracks {
@@ -519,26 +540,27 @@ impl LibraryPage {
         };
         let body = match (cards, error) {
             (_, Some(e)) => {
-                empty_state(Lucide::Library, "Couldn't load the library", e, cx).into_any_element()
+                empty_state(Lucide::Library, t!("library.load_failed"), e, cx).into_any_element()
             }
-            (None, None) => empty_state(Lucide::Library, "Loading…", "", cx).into_any_element(),
+            (None, None) => {
+                empty_state(Lucide::Library, t!("common.loading"), "", cx).into_any_element()
+            }
             (Some(cards), None) if cards.is_empty() => {
                 let (icon, title, detail) = match self.tab {
                     LibraryTab::Albums => (
                         Lucide::Disc3,
-                        "No albums yet",
-                        "Albums of your songs, and albums saved on YouTube Music, show up here.",
+                        t!("library.empty.albums_title"),
+                        t!("library.empty.albums_detail"),
                     ),
                     LibraryTab::Artists => (
                         Lucide::MicVocal,
-                        "No artists yet",
-                        "Artists of your songs and your subscriptions show up here.",
+                        t!("library.empty.artists_title"),
+                        t!("library.empty.artists_detail"),
                     ),
                     _ => (
                         Lucide::ListMusic,
-                        "No playlists yet",
-                        "Create one with “New playlist”, or sign in to sync your YouTube Music \
-                         playlists.",
+                        t!("library.empty.playlists_title"),
+                        t!("library.empty.playlists_detail"),
                     ),
                 };
                 empty_state(icon, title, detail, cx).into_any_element()
@@ -577,15 +599,15 @@ fn album_card(ix: usize, a: &LibraryAlbum) -> Card {
             let id = id.clone();
             menu.item(
                 PopupMenuItem::new(if saved {
-                    "Remove from saved albums"
+                    t!("library.album.remove_saved")
                 } else {
-                    "Save album"
+                    t!("library.album.save")
                 })
                 .on_click(move |_, window, cx| {
                     let id = id.clone();
                     update_app(cx, |app, cx| {
                         app.with_library(
-                            "Saving the album",
+                            t!("library.album.saving"),
                             move |lib| lib.set_album_bookmarked(&id, !saved),
                             |_, _, _, _| {},
                             window,
@@ -603,7 +625,7 @@ fn artist_card(ix: usize, a: &LibraryArtist) -> Card {
         name: a.name.clone(),
     };
     let subtitle = if a.bookmarked_at.is_some() {
-        format!("Subscribed · {}", songs_label(a.song_count))
+        tp!("library.artist.subscribed_songs", a.song_count)
     } else {
         songs_label(a.song_count).to_string()
     };
@@ -621,10 +643,11 @@ fn playlist_card(ix: usize, p: &Playlist) -> Card {
         id: p.id.clone(),
         name: p.name.clone(),
     };
-    let mut subtitle = songs_label(p.song_count).to_string();
-    if p.browse_id.is_some() {
-        subtitle.push_str(" · YouTube Music");
-    }
+    let subtitle = if p.browse_id.is_some() {
+        tp!("library.playlist.youtube_songs", p.song_count)
+    } else {
+        songs_label(p.song_count).to_string()
+    };
     Card::new(("library-playlist", ix), CardKind::Playlist, p.name.clone())
         .subtitle(subtitle)
         .artwork(p.thumbnail_url.clone())
@@ -640,28 +663,30 @@ impl Render for LibraryPage {
         let signed_in = read_app(cx, |app, _| app.store.account.is_signed_in()).unwrap_or(false);
         let count: Option<SharedString> = match self.tab {
             _ if is_song_tab(self.tab) => Some(songs_label(self.list.tracks.len() as u64)),
-            LibraryTab::Albums => self.albums.value.as_ref().map(|v| match v.len() {
-                1 => "1 album".into(),
-                n => format!("{n} albums").into(),
-            }),
-            LibraryTab::Artists => self.artists.value.as_ref().map(|v| match v.len() {
-                1 => "1 artist".into(),
-                n => format!("{n} artists").into(),
-            }),
+            LibraryTab::Albums => self
+                .albums
+                .value
+                .as_ref()
+                .map(|v| tp!("library.count.albums", v.len()).into()),
+            LibraryTab::Artists => self
+                .artists
+                .value
+                .as_ref()
+                .map(|v| tp!("library.count.artists", v.len()).into()),
             LibraryTab::Podcasts => match &self.podcasts {
-                Some(crate::browse::Load::Ready(v)) => Some(match v.len() {
-                    1 => "1 show".into(),
-                    n => format!("{n} shows").into(),
-                }),
+                Some(crate::browse::Load::Ready(v)) => {
+                    Some(tp!("library.count.shows", v.len()).into())
+                }
                 _ => None,
             },
-            _ => self.playlists.value.as_ref().map(|v| match v.len() {
-                1 => "1 playlist".into(),
-                n => format!("{n} playlists").into(),
-            }),
+            _ => self
+                .playlists
+                .value
+                .as_ref()
+                .map(|v| tp!("library.count.playlists", v.len()).into()),
         };
         let detail = match (count, signed_in) {
-            (Some(c), true) => Some(format!("{c} · signed in to YouTube Music").into()),
+            (Some(c), true) => Some(t!("library.detail_signed_in", summary = c).into()),
             (c, _) => c,
         };
         let header = v_flex()
@@ -669,7 +694,7 @@ impl Render for LibraryPage {
             .pt_6()
             .pb_3()
             .gap_4()
-            .child(page_title("Library", detail, cx))
+            .child(page_title(t!("nav.library"), detail, cx))
             .child(self.tabs())
             .child(self.toolbar(cx));
         let body = if is_song_tab(self.tab) {

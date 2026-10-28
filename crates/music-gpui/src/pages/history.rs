@@ -23,7 +23,7 @@ use crate::app::{MusicApp, read_app, update_app};
 use crate::components::track_row::TrackRow;
 use crate::components::{empty_state, page_scroll, page_title, section_header};
 use crate::icons::Lucide;
-use crate::util::{local_date, pretty_date};
+use crate::util::local_date;
 
 const PAGE: u32 = 300;
 
@@ -47,13 +47,10 @@ impl HistoryPage {
     fn confirm_clear(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         window.open_alert_dialog(cx, |alert, _, _| {
             alert
-                .title("Clear listening history?")
-                .description(
-                    "Every recorded play is deleted, and play counts and stats start over. \
-                     Your library, likes and playlists stay.",
-                )
+                .title(t!("history.clear.title"))
+                .description(t!("history.clear.detail"))
                 .show_cancel(true)
-                .ok_text("Clear history")
+                .ok_text(t!("history.clear.button"))
                 .on_ok(|_, window, cx| {
                     update_app(cx, |app, cx| app.clear_listen_history(window, cx));
                     true
@@ -66,11 +63,11 @@ impl HistoryPage {
 fn day_title(day: &str) -> String {
     let now = now_ms();
     if local_date(now) == day {
-        "Today".into()
+        t!("date.today").into()
     } else if local_date(now - 86_400_000) == day {
-        "Yesterday".into()
+        t!("date.yesterday").into()
     } else {
-        pretty_date(day)
+        crate::i18n::format::iso_date(day)
     }
 }
 
@@ -85,9 +82,9 @@ impl Render for HistoryPage {
         );
         let paused = read_app(cx, |app, _| app.store.prefs.pause_listen_history).unwrap_or(false);
         let detail = if paused {
-            "Listen history is paused (Settings → Privacy)."
+            t!("history.paused")
         } else {
-            "Songs count once you listened for 30 seconds."
+            t!("history.counting")
         };
         let total: usize = self
             .days
@@ -98,27 +95,36 @@ impl Render for HistoryPage {
             .ghost()
             .small()
             .icon(Lucide::Trash)
-            .label("Clear history")
+            .label(t!("history.clear.button"))
             .disabled(total == 0)
             .on_click(cx.listener(|p, _, window, cx| p.confirm_clear(window, cx)));
         let mut content = v_flex().gap_6().child(
             h_flex()
                 .items_end()
                 .justify_between()
-                .child(page_title("History", Some(detail.into()), cx))
+                .gap_4()
+                .flex_wrap()
+                .child(page_title(t!("nav.history"), Some(detail.into()), cx))
                 .child(clear),
         );
         let muted = cx.theme().muted_foreground;
         match (&self.days.value, &self.days.error) {
             (_, Some(e)) => {
-                content = content.child(empty_state(Lucide::Clock, "Couldn't load", e.clone(), cx))
+                content = content.child(empty_state(
+                    Lucide::Clock,
+                    t!("history.load_failed"),
+                    e.clone(),
+                    cx,
+                ))
             }
-            (None, None) => content = content.child(empty_state(Lucide::Clock, "Loading…", "", cx)),
+            (None, None) => {
+                content = content.child(empty_state(Lucide::Clock, t!("common.loading"), "", cx))
+            }
             (Some(days), None) if days.is_empty() => {
                 content = content.child(empty_state(
                     Lucide::Clock,
-                    "Nothing played yet",
-                    "Songs you listen to show up here, grouped by day.",
+                    t!("history.empty_title"),
+                    t!("history.empty_detail"),
                     cx,
                 ))
             }
@@ -130,7 +136,10 @@ impl Render for HistoryPage {
                     for (ix, entry) in day.entries.iter().enumerate() {
                         let active = is_playing(&entry.song.track.video_id, cx);
                         let id = entry.id;
-                        let played = format!("{} min", (entry.played_ms + 30_000) / 60_000);
+                        let played = t!(
+                            "time.minutes",
+                            minutes = (entry.played_ms + 30_000) / 60_000
+                        );
                         rows.push(
                             h_flex()
                                 .gap_2()
@@ -155,11 +164,11 @@ impl Render for HistoryPage {
                                         .ghost()
                                         .xsmall()
                                         .icon(Lucide::X)
-                                        .tooltip("Remove from history")
+                                        .tooltip(t!("history.remove"))
                                         .on_click(move |_, window, cx| {
                                             update_app(cx, |app, cx| {
                                                 app.with_library(
-                                                    "Removing from history",
+                                                    t!("history.removing"),
                                                     move |lib| lib.delete_history_entries(&[id]),
                                                     |_, _, _, _| {},
                                                     window,
@@ -170,10 +179,7 @@ impl Render for HistoryPage {
                                 ),
                         );
                     }
-                    let plays = match day.entries.len() {
-                        1 => "1 play".to_owned(),
-                        n => format!("{n} plays"),
-                    };
+                    let plays = tp!("common.plays", day.entries.len());
                     content = content.child(
                         v_flex()
                             .gap_2()
@@ -196,7 +202,7 @@ impl Render for HistoryPage {
                     content = content.child(
                         Button::new("history-more")
                             .ghost()
-                            .label("Show more")
+                            .label(t!("common.show_more"))
                             .on_click(cx.listener(|p, _, _, cx| {
                                 p.limit += PAGE;
                                 cx.notify();
@@ -212,9 +218,9 @@ impl Render for HistoryPage {
 impl MusicApp {
     pub fn clear_listen_history(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         self.with_library(
-            "Clearing the history",
+            t!("history.clearing"),
             |lib| lib.clear_history(),
-            |_, _, window, cx| crate::app::notify(window, cx, "Listening history cleared"),
+            |_, _, window, cx| crate::app::notify(window, cx, t!("history.cleared")),
             window,
             cx,
         );

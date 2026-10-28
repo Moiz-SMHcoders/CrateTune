@@ -31,16 +31,14 @@ pub(super) fn render(
         .outline()
         .small()
         .icon(Lucide::Trash)
-        .label("Clear…")
+        .label(t!("settings.privacy.clear_button"))
         .on_click(|_, window, cx| {
             window.open_alert_dialog(cx, |alert, _, _| {
                 alert
-                    .title("Clear listening history?")
-                    .description(
-                        "Every recorded play is deleted; play counts and stats start over.",
-                    )
+                    .title(t!("history.clear.title"))
+                    .description(t!("settings.privacy.clear_listen_confirm"))
                     .show_cancel(true)
-                    .ok_text("Clear")
+                    .ok_text(t!("common.clear"))
                     .on_ok(|_, window, cx| {
                         update_app(cx, |app, cx| app.clear_listen_history(window, cx));
                         true
@@ -51,46 +49,42 @@ pub(super) fn render(
         .outline()
         .small()
         .icon(Lucide::Trash)
-        .label("Clear")
+        .label(t!("common.clear"))
         .on_click(|_, window, cx| {
             update_app(cx, |app, cx| app.clear_search_history(window, cx));
         });
     v_flex()
         .gap_5()
         .child(
-            group("Listen history", cx)
+            group(t!("settings.privacy.listen_history"), cx)
                 .child(row(
-                    "Pause listen history",
-                    Some("Plays aren't recorded; History and Stats stop growing."),
+                    t!("settings.privacy.pause_listen"),
+                    Some(t!("settings.privacy.pause_listen_detail")),
                     pause_listen,
                     cx,
                 ))
                 .child(row(
-                    "Clear listen history",
-                    Some("Deletes every recorded play on this computer."),
+                    t!("settings.privacy.clear_listen"),
+                    Some(t!("settings.privacy.clear_listen_detail")),
                     clear_listen,
                     cx,
                 )),
         )
         .child(
-            group("Search history", cx)
+            group(t!("settings.privacy.search_history"), cx)
                 .child(row(
-                    "Pause search history",
-                    Some("Searches you submit aren't remembered."),
+                    t!("settings.privacy.pause_search"),
+                    Some(t!("settings.privacy.pause_search_detail")),
                     pause_search,
                     cx,
                 ))
                 .child(row(
-                    "Clear search history",
-                    Some("Forgets every remembered search."),
+                    t!("settings.privacy.clear_search"),
+                    Some(t!("settings.privacy.clear_search_detail")),
                     clear_search,
                     cx,
                 )),
         )
-        .child(note(
-            "History stays in the library database on this computer. Plays are never \
-             reported to your YouTube account's history.",
-            cx,
-        ))
+        .child(note(t!("settings.privacy.note"), cx))
         .into_any_element()
 }
