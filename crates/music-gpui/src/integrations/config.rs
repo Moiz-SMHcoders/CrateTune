@@ -193,9 +193,9 @@ impl AiFilterPrefs {
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct CastPrefs {
-    /// Always stream through this app (a local HTTP proxy) instead of letting the
-    /// receiver fetch the audio itself.
-    pub always_proxy: bool,
+    /// Let the device fetch plain YouTube URLs itself instead of streaming them
+    /// through this app (falls back to the app when the device can't).
+    pub direct: bool,
     /// Name of the last device cast to (pre-selected in the picker).
     pub last_device: Option<String>,
 }
@@ -234,6 +234,6 @@ mod tests {
         assert_eq!(core.categories, vec![AiCategory::Holiday]);
         assert_eq!(core.custom, vec!["cars", "boats"]);
         let cast: CastPrefs = serde_json::from_str("{}").unwrap();
-        assert!(!cast.always_proxy);
+        assert!(!cast.direct);
     }
 }

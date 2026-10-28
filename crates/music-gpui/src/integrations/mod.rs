@@ -8,6 +8,7 @@
 //! threads (`util::off_thread`).
 
 pub mod ai_filter;
+pub mod cast;
 pub mod config;
 pub mod import;
 mod script;
@@ -25,6 +26,7 @@ pub struct Integrations {
     pub together: together::TogetherState,
     pub import: import::ImportState,
     pub ai_filter: ai_filter::AiFilterState,
+    pub cast: cast::CastState,
 }
 
 impl MusicApp {
@@ -45,6 +47,7 @@ impl MusicApp {
         let mut chips = Vec::new();
         chips.extend(self.sponsorblock_chip(cx));
         chips.extend(self.together_chip(cx));
+        chips.extend(self.cast_chip(cx));
         chips
     }
 }

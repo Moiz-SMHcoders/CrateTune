@@ -33,6 +33,7 @@
 
 pub mod ai_filter;
 pub mod buffer;
+pub mod cast;
 mod deck;
 mod decode;
 #[cfg(feature = "discord")]

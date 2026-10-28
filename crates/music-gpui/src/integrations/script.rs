@@ -25,6 +25,7 @@
 //! | `@export=PLAYLIST:FORMAT:PATH` | export a library playlist (`csv`, `m3u`, `json`) |
 //! | `@ai-filter=on\|off`, `@ai-category=KEY:on\|off` | AI content filter (`explicit`, `holiday`, …) |
 //! | `@ai-filter-status`, `@ai-filter-clear` | print / forget its verdicts |
+//! | `@cast-scan`, `@cast=NAME\|IP:PORT[:NAME]`, `@cast-stop[=here\|off]`, `@cast-status` | Chromecast |
 
 use std::path::PathBuf;
 use std::time::Instant;
@@ -235,6 +236,58 @@ impl MusicApp {
                 }
             }
             "together-status" => self.print_together_status(),
+            "cast-scan" => self.cast_scan(window, cx),
+            "cast" => {
+                let raw = arg.unwrap_or("");
+                // `IP:PORT[:NAME]` connects to that address (e.g. the fake receiver).
+                let mut parts = raw.splitn(3, ':');
+                let direct = match (parts.next(), parts.next()) {
+                    (Some(ip), Some(port)) => format!("{ip}:{port}").parse().ok().map(|addr| {
+                        music_core::cast::CastDevice {
+                            name: parts.next().unwrap_or(raw).to_owned(),
+                            model: None,
+                            id: None,
+                            addr,
+                        }
+                    }),
+                    _ => None,
+                };
+                let device = direct.or_else(|| {
+                    self.integrations
+                        .cast
+                        .devices
+                        .iter()
+                        .find(|d| d.name.eq_ignore_ascii_case(raw))
+                        .cloned()
+                });
+                match device {
+                    Some(device) => self.cast_to(device, window, cx),
+                    None => eprintln!("music-gpui: no Cast device {raw:?} (try @cast-scan)"),
+                }
+            }
+            "cast-stop" => self.cast_stop(arg != Some("off"), cx),
+            "cast-status" => {
+                let c = &self.integrations.cast;
+                eprintln!(
+                    "music-gpui: cast devices={:?} scanning={} connecting={:?} error={:?} casting={:?}",
+                    c.devices
+                        .iter()
+                        .map(|d| format!("{} ({})", d.name, d.addr))
+                        .collect::<Vec<_>>(),
+                    c.scanning,
+                    c.connecting,
+                    c.error,
+                    self.cast_device().map(|d| d.name.clone())
+                );
+                eprintln!(
+                    "music-gpui: cast   player: {:?} {:?} at {:.1} s / {:?} on {:?}",
+                    self.playback.track.as_ref().map(|t| t.title.as_str()),
+                    self.playback.status,
+                    self.playback.position.as_secs_f64(),
+                    self.playback.duration,
+                    self.playback.output_device
+                );
+            }
             "ai-filter" => panel.update(cx, |p, cx| p.set_ai_filter(|a| a.enabled = on, cx)),
             "ai-category" => {
                 let (key, state) = arg.unwrap_or("").split_once(':').unwrap_or(("", "on"));

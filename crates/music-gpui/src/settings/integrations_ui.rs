@@ -274,6 +274,21 @@ impl SettingsPanel {
         );
     }
 
+    // ---- Chromecast ------------------------------------------------------------------------
+
+    pub fn set_cast(
+        &mut self,
+        f: impl FnOnce(&mut crate::integrations::config::CastPrefs),
+        cx: &mut Context<Self>,
+    ) {
+        let before = self.settings.cast.clone();
+        f(&mut self.settings.cast);
+        if self.settings.cast != before {
+            self.changed(false, cx);
+        }
+        cx.notify();
+    }
+
     // ---- AI content filter ---------------------------------------------------------------
 
     pub fn set_ai_filter(
@@ -884,4 +899,150 @@ pub(super) fn render_ai_filter(
             cx,
         )))
         .into_any_element()
+}
+
+pub(super) fn render_cast(
+    panel: &mut SettingsPanel,
+    _: &mut Window,
+    cx: &mut Context<SettingsPanel>,
+) -> AnyElement {
+    let prefs = panel.settings.cast.clone();
+    let (devices, scanning, connecting, error, casting) = crate::app::read_app(cx, |app, _| {
+        let c = &app.integrations.cast;
+        (
+            c.devices.clone(),
+            c.scanning,
+            c.connecting.clone(),
+            c.error.clone(),
+            app.cast_device().map(|d| d.name.clone()),
+        )
+    })
+    .unwrap_or_default();
+    let theme = cx.theme();
+    let (status, color): (SharedString, gpui::Hsla) = match (&casting, &connecting, &error) {
+        (Some(name), _, _) => (format!("Casting to {name}").into(), theme.success),
+        (None, Some(name), _) => (
+            format!("Connecting to {name}…").into(),
+            theme.muted_foreground,
+        ),
+        (None, None, Some(e)) => (e.clone().into(), theme.danger),
+        (None, None, None) if scanning => {
+            ("Looking for Cast devices…".into(), theme.muted_foreground)
+        }
+        (None, None, None) => (
+            format!(
+                "{} device{} found",
+                devices.len(),
+                if devices.len() == 1 { "" } else { "s" }
+            )
+            .into(),
+            theme.muted_foreground,
+        ),
+    };
+    let mut list = group("Devices", cx).child(
+        h_flex()
+            .justify_between()
+            .child(status_line(status, color))
+            .child(
+                h_flex()
+                    .gap_2()
+                    .child(
+                        Button::new("cast-scan")
+                            .small()
+                            .outline()
+                            .label("Search")
+                            .loading(scanning)
+                            .disabled(scanning)
+                            .on_click(|_, window, cx| {
+                                update_app(cx, |app, cx| app.cast_scan(window, cx));
+                            }),
+                    )
+                    .children(casting.is_some().then(|| {
+                        Button::new("cast-stop")
+                            .small()
+                            .danger()
+                            .label("Stop casting")
+                            .on_click(|_, _, cx| {
+                                update_app(cx, |app, cx| app.cast_stop(true, cx));
+                            })
+                    })),
+            ),
+    );
+    for (ix, device) in devices.into_iter().enumerate() {
+        let current = casting.as_deref() == Some(device.name.as_str());
+        let detail = format!(
+            "{}{}",
+            device
+                .model
+                .as_deref()
+                .map(|m| format!("{m} · "))
+                .unwrap_or_default(),
+            device.addr.ip()
+        );
+        let target = device.clone();
+        list = list.child(
+            h_flex()
+                .gap_3()
+                .justify_between()
+                .child(
+                    v_flex()
+                        .min_w_0()
+                        .child(div().text_sm().child(device.name.clone()))
+                        .child(
+                            div()
+                                .text_xs()
+                                .text_color(theme.muted_foreground)
+                                .child(detail),
+                        ),
+                )
+                .child(
+                    Button::new(("cast-to", ix))
+                        .small()
+                        .when_primary(!current)
+                        .label(if current { "Casting" } else { "Cast" })
+                        .disabled(current || connecting.is_some())
+                        .on_click(move |_, window, cx| {
+                            let device = target.clone();
+                            update_app(cx, |app, cx| app.cast_to(device, window, cx));
+                        }),
+                ),
+        );
+    }
+    v_flex()
+        .gap_5()
+        .child(list)
+        .child(
+            group("Streaming", cx)
+                .child(row(
+                    "Let the device fetch YouTube audio itself",
+                    Some("Off: this app streams it to the device (works with every song)."),
+                    switch(
+                        "cast-direct",
+                        prefs.direct,
+                        |p, on, cx| p.set_cast(|c| c.direct = on, cx),
+                        cx,
+                    ),
+                    cx,
+                ))
+                .child(note(
+                    "Casting plays the queue on a Chromecast, Google TV or Nest speaker on this \
+                     network (Google's Default Media Receiver). The player bar's Cast button \
+                     picks a device; play, pause, seek, skip and volume then control it, and \
+                     Stop casting continues here. YouTube audio and local files are streamed \
+                     from this computer to the device (keep the app open); the device and this \
+                     computer must be on the same network. Changes apply to the next song.",
+                    cx,
+                )),
+        )
+        .into_any_element()
+}
+
+trait WhenPrimary {
+    fn when_primary(self, on: bool) -> Self;
+}
+
+impl WhenPrimary for Button {
+    fn when_primary(self, on: bool) -> Self {
+        if on { self.primary() } else { self.outline() }
+    }
 }

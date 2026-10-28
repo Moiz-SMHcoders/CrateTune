@@ -76,6 +76,8 @@ pub enum SectionId {
     Spotify,
     /// AI content filter (OpenAI-compatible classifier).
     AiFilter,
+    /// Chromecast devices.
+    Cast,
     About,
 }
 
@@ -172,6 +174,12 @@ pub const SECTIONS: &[Section] = &[
         render: integrations_ui::render_ai_filter,
     },
     Section {
+        id: SectionId::Cast,
+        title: "Chromecast",
+        icon: IconName::Cast,
+        render: integrations_ui::render_cast,
+    },
+    Section {
         id: SectionId::About,
         title: "About",
         icon: IconName::Info,
@@ -208,6 +216,7 @@ impl SectionId {
             SectionId::Together => "together",
             SectionId::Spotify => "spotify",
             SectionId::AiFilter => "ai-filter",
+            SectionId::Cast => "cast",
             SectionId::About => "about",
         }
     }

@@ -293,7 +293,7 @@ pub fn parse_response(
                 .map(str::to_owned)
                 .collect(),
             // `"id": "explicit"` or `"id": null`.
-            Value::String(l) if keys.iter().any(|k| *k == l) => vec![l],
+            Value::String(l) if keys.contains(&l) => vec![l],
             _ => Vec::new(),
         };
         out.insert(id, labels);
@@ -610,10 +610,11 @@ mod tests {
         assert!(err.to_string().contains("invalid api key"));
     }
 
+    /// ("path auth", body) of each request the stub saw.
+    type Requests = Arc<StdMutex<Vec<(String, Value)>>>;
+
     /// A local stand-in for the API: records requests, answers from `reply`.
-    fn stub(
-        reply: impl Fn(&Value) -> String + Send + 'static,
-    ) -> (String, Arc<StdMutex<Vec<(String, Value)>>>) {
+    fn stub(reply: impl Fn(&Value) -> String + Send + 'static) -> (String, Requests) {
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let url = format!("http://{}/v1", listener.local_addr().unwrap());
         let seen = Arc::new(StdMutex::new(Vec::new()));
