@@ -784,12 +784,12 @@ impl MusicApp {
         }
     }
 
-    /// From the poll: turns the tap off 2 s after the last visualizer stopped asking.
+    /// From the poll: turns the tap off 1 s after the last visualizer stopped asking.
     pub(crate) fn poll_spectrum(&mut self) {
         let stale = self
             .spectrum_wanted
             .get()
-            .is_some_and(|t| t.elapsed() > Duration::from_secs(2));
+            .is_some_and(|t| t.elapsed() > Duration::from_secs(1));
         if stale {
             self.spectrum_wanted.set(None);
             if let Some(player) = self.audio_player() {

@@ -159,9 +159,8 @@ impl Render for MiniPlayer {
                     Some(crate::now_playing::HiRes::Ready {
                         backdrop,
                         palette,
-                        glows,
                         ..
-                    }) => Some((backdrop.clone(), *palette, glows[0].clone())),
+                    }) => Some((backdrop.clone(), *palette)),
                     _ => None,
                 });
             (
@@ -242,9 +241,9 @@ impl Render for MiniPlayer {
             .progress
             .step(&mut frame, style, playing, wants_spectrum, analyzer, 0.8);
         let surface = bg;
-        let (backdrop_img, palette, glow) = match hires_art {
-            Some((b, p, g)) => (Some(b), Some(p), Some(g)),
-            None => (None, None, None),
+        let (backdrop_img, palette) = match hires_art {
+            Some((b, p)) => (Some(b), Some(p)),
+            None => (None, None),
         };
         let level = self.progress.level();
         let mut look = BackgroundLook::from_config(&bar, playing, level);
@@ -256,13 +255,11 @@ impl Render for MiniPlayer {
                 // The artwork style already shows it; the glow then only tints.
                 backdrop: backdrop_img.filter(|_| backdrop.is_none()),
                 palette,
-                glow,
                 accent,
                 surface,
             },
             BackgroundGeometry {
                 width: SIZE.0,
-                height: SIZE.1,
                 info_end: 96.,
                 center: (96., SIZE.0 - 110.),
             },

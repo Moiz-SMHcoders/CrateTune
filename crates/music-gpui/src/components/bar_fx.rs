@@ -248,7 +248,6 @@ impl SpectrumDump {
 pub struct BackgroundArt {
     pub backdrop: Option<std::sync::Arc<RenderImage>>,
     pub palette: Option<Palette>,
-    pub glow: Option<std::sync::Arc<RenderImage>>,
     /// Theme accent (fallback when the artwork isn't processed yet).
     pub accent: Hsla,
     /// The bar's surface colour (what the effect fades into).
@@ -312,13 +311,12 @@ impl Default for BackgroundFx {
 #[derive(Clone, Copy)]
 pub struct BackgroundGeometry {
     pub width: f32,
-    pub height: f32,
     pub info_end: f32,
     pub center: (f32, f32),
 }
 
 /// Strength of a dimmed (paused) background.
-const PAUSED_MIX: f32 = 0.35;
+const PAUSED_MIX: f32 = 0.5;
 
 impl BackgroundFx {
     /// Layers to put behind the content (bottom to top); empty when the effect
@@ -381,6 +379,24 @@ impl BackgroundFx {
                             .into_any_element(),
                     ),
                 }
+                // The artwork's most vivid colour on top, so dark covers glow too.
+                if let Some([_, _, vivid]) = art.palette {
+                    layers.push(
+                        div()
+                            .absolute()
+                            .top_0()
+                            .left_0()
+                            .h_full()
+                            .w(px(w))
+                            .opacity(mix)
+                            .bg(linear_gradient(
+                                90.,
+                                linear_color_stop(glow_tone(vivid).opacity(0.45), 0.),
+                                linear_color_stop(glow_tone(vivid).opacity(0.), 1.),
+                            ))
+                            .into_any_element(),
+                    );
+                }
                 // Fades the tint out towards the transport.
                 layers.push(
                     div()
@@ -413,7 +429,7 @@ impl BackgroundFx {
                 };
                 let tone = |c: Hsla| {
                     if dimmed {
-                        hsla(c.h, c.s * 0.35, c.l * 0.85, 1.)
+                        hsla(c.h, c.s * 0.45, c.l * 0.9, 1.)
                     } else {
                         c
                     }
@@ -450,51 +466,39 @@ impl BackgroundFx {
                 );
             }
             BarBackground::Pulse => {
+                // A horizontal band of light behind the transport whose width and
+                // strength follow the loudness (quads with gradients: GPUI has no
+                // radial gradients, and scaled glow images show their edges).
                 let (x0, x1) = geo.center;
                 let span = (x1 - x0).max(1.);
-                // Loudness drives size and strength; a floor keeps it visible.
                 let energy = look.level.clamp(0., 1.).powf(1.6);
-                let alpha = mix * (0.18 + 0.7 * energy);
-                let grow = 0.75 + 0.35 * energy;
-                let (w, h) = (span * grow, geo.height * 2.6 * grow);
+                let alpha = mix * (0.25 + 0.6 * energy);
+                let w = span * (0.6 + 0.4 * energy);
                 let left = x0 + (span - w) / 2.;
-                let top = (geo.height - h) / 2.;
-                match &art.glow {
-                    Some(image) => layers.push(
+                let c = match art.palette {
+                    Some([_, _, vivid]) => glow_tone(vivid),
+                    None => art.accent,
+                };
+                let half = w / 2.;
+                for (i, (from, to)) in [(c.opacity(0.), c), (c, c.opacity(0.))]
+                    .into_iter()
+                    .enumerate()
+                {
+                    layers.push(
                         div()
                             .absolute()
-                            .left(px(left))
-                            .top(px(top))
-                            .w(px(w))
-                            .h(px(h))
+                            .top_0()
+                            .h_full()
+                            .left(px(left + half * i as f32))
+                            .w(px(half))
                             .opacity(alpha)
-                            .child(img(image.clone()).size_full())
+                            .bg(linear_gradient(
+                                90.,
+                                linear_color_stop(from, 0.),
+                                linear_color_stop(to, 1.),
+                            ))
                             .into_any_element(),
-                    ),
-                    None => {
-                        let c = art.accent.opacity(0.5);
-                        let half = w / 2.;
-                        for (i, (from, to)) in [(c.opacity(0.), c), (c, c.opacity(0.))]
-                            .into_iter()
-                            .enumerate()
-                        {
-                            layers.push(
-                                div()
-                                    .absolute()
-                                    .top_0()
-                                    .h_full()
-                                    .left(px(left + half * i as f32))
-                                    .w(px(half))
-                                    .opacity(alpha)
-                                    .bg(linear_gradient(
-                                        90.,
-                                        linear_color_stop(from, 0.),
-                                        linear_color_stop(to, 1.),
-                                    ))
-                                    .into_any_element(),
-                            );
-                        }
-                    }
+                    );
                 }
             }
         }
@@ -510,6 +514,11 @@ const DRIFT_RATE: f32 = std::f32::consts::TAU / 12.;
 fn hue_gap(a: Hsla, b: Hsla) -> f32 {
     let d = (a.h - b.h).abs();
     d.min(1. - d) + (a.l - b.l).abs() * 0.5
+}
+
+/// A palette colour as a light: saturated, mid lightness.
+fn glow_tone(c: Hsla) -> Hsla {
+    hsla(c.h, c.s.clamp(0.45, 0.9), c.l.clamp(0.4, 0.55), 1.)
 }
 
 /// A palette colour made dark and saturated enough to sit behind text.

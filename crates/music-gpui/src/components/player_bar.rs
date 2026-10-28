@@ -85,7 +85,7 @@ pub struct BarLayout {
 /// Cast session, an armed sleep timer, the volume slider, lyrics, Cast, sleep
 /// timer, mini player, the sleep timer's label.
 pub fn bar_layout(width: f32, casting: bool, sleep_armed: bool, cast_available: bool) -> BarLayout {
-    let side = (width * 0.25).clamp(200., 360.);
+    let side = (width * 0.27).clamp(200., 380.);
     let center = (width - 4. * PAD - 2. * side).max(0.);
     let step = ICON_BUTTON + 4.;
     let mut free = side - 3. * step;
@@ -104,7 +104,13 @@ pub fn bar_layout(width: f32, casting: bool, sleep_armed: bool, cast_available: 
             false
         }
     };
-    let slider_w = if side >= 300. { 92. } else { 64. };
+    let slider_w = if side >= 370. {
+        92.
+    } else if side >= 300. {
+        80.
+    } else {
+        64.
+    };
     let slider = take(slider_w + 8.)
         .then_some(slider_w)
         .or_else(|| take(64. + 8.).then_some(64.));
@@ -284,14 +290,13 @@ impl Render for PlayerBar {
                     Some(HiRes::Ready {
                         backdrop,
                         palette,
-                        glows,
                         ..
-                    }) => Some((backdrop.clone(), *palette, glows[0].clone())),
+                    }) => Some((backdrop.clone(), *palette)),
                     _ => None,
                 });
-            let (backdrop, palette, glow) = match hires {
-                Some((b, p, g)) => (Some(b), Some(p), Some(g)),
-                None => (None, None, None),
+            let (backdrop, palette) = match hires {
+                Some((b, p)) => (Some(b), Some(p)),
+                None => (None, None),
             };
             BarState {
                 has_track: app.playback.track.is_some() || restored,
@@ -304,7 +309,6 @@ impl Render for PlayerBar {
                 art: BackgroundArt {
                     backdrop,
                     palette,
-                    glow,
                     accent,
                     surface,
                 },
@@ -574,7 +578,6 @@ impl Render for PlayerBar {
             &state.art,
             BackgroundGeometry {
                 width,
-                height: BAR_HEIGHT,
                 info_end: PAD + side,
                 center: (2. * PAD + side, width - 2. * PAD - side),
             },
@@ -1224,6 +1227,8 @@ mod tests {
         assert!(narrow.slider.is_some(), "volume slider at 880 pt");
         assert!(narrow.shuffle_repeat);
         assert!(!narrow.mini && !narrow.source_chip);
+        let common = bar_layout(1280., false, false, true);
+        assert!(common.mini && common.lyrics && common.slider == Some(80.));
         let wide = bar_layout(1600., false, false, true);
         assert!(wide.lyrics && wide.cast && wide.sleep && wide.mini && wide.source_chip);
         assert_eq!(wide.slider, Some(92.));
