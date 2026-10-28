@@ -25,7 +25,7 @@ use gpui::{App, Global, Hsla, Pixels, Rgba, SharedString, hsla, px};
 use gpui_component::{Theme, ThemeColor, ThemeMode};
 use serde::{Deserialize, Serialize};
 
-pub use crate::palette::{ArtColors, DynamicStyle};
+pub use crate::palette::ArtColors;
 use crate::palette::{Lch, TonalPalette, solve, tone_of};
 use crate::settings::theme_prefs::{Contrast, Corners, CustomTheme, Darkness};
 
@@ -624,6 +624,7 @@ pub fn contrast(a: Hsla, b: Hsla) -> f32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::palette::DynamicStyle;
 
     fn look(choice: ThemeChoice) -> Look {
         Look {

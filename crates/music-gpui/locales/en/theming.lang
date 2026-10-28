@@ -166,3 +166,27 @@ downloads.header.cancelled.one = Cancelled {count} download
 downloads.header.cancelled.other = Cancelled {count} downloads
 downloads.header.removed.one = Removed {count} download
 downloads.header.removed.other = Removed {count} downloads
+
+# ---- Profiles (Settings → Appearance, src/settings/profiles_ui.rs)
+profiles.group = Profile
+profiles.builtin.default = Default
+profiles.builtin.minimal = Minimal / Fast
+# {name} = the active profile.
+profiles.status.user = Active: {name}. Changes you make are saved to it.
+profiles.status.builtin = Active: {name} (built in). Changes you make are saved to it; Reset restores it.
+profiles.status.builtin_modified = Active: {name} (built in, modified). Reset restores the original values.
+profiles.new = New…
+profiles.new_title = New profile from the current look
+profiles.rename_title = Rename profile
+profiles.name_placeholder = Profile name
+profiles.duplicate = Duplicate
+profiles.reset = Reset
+profiles.import = Import…
+profiles.export = Export…
+# {name} = the copied profile.
+profiles.copy_name = {name} (copy)
+profiles.delete_title = Delete “{name}”?
+profiles.delete_detail = The profile is removed; the current settings switch to Default if it was active.
+profiles.note = A profile holds the look and resource options: theme, Customize theme, Now Playing, lyrics display and the player bar's style — never accounts, library, downloads or passwords. Minimal / Fast turns off everything that costs extra CPU or memory.
+profiles.toast.exported = Profile exported to {path}
+profiles.toast.imported = Profile “{name}” added

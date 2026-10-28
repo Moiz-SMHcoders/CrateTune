@@ -401,6 +401,17 @@ pub fn plan_settings_import(text: &str, current: &Settings) -> Result<ImportPlan
     if payload.contains_key("secrets") {
         notes.push(ImportNote::SecretsIgnored);
     }
+    // A profile file (`profiles.rs`) holds only its sections: the rest stays.
+    if doc_is_profile(text) {
+        let next = keep_local(current, super::profiles::apply(current, &payload));
+        return Ok(ImportPlan {
+            diff: diff(current, &next),
+            settings: next,
+            notes,
+            theme: false,
+            name: None,
+        });
+    }
     let mut payload_value = Value::Object(std::mem::take(&mut payload));
     strip_local(&mut payload_value);
     let mut unknown = Vec::new();
@@ -441,6 +452,13 @@ pub fn plan_settings_import(text: &str, current: &Settings) -> Result<ImportPlan
         theme: false,
         name: None,
     })
+}
+
+fn doc_is_profile(text: &str) -> bool {
+    serde_json::from_str::<Value>(text)
+        .ok()
+        .and_then(|v| v.get("profile").map(Value::is_object))
+        .unwrap_or(false)
 }
 
 // ---- themes ------------------------------------------------------------------------
@@ -906,6 +924,23 @@ mod tests {
             assert_eq!(others, 1, "{} is distinct", preset.id);
         }
         assert!(ThemePreset::find("nope").is_none());
+    }
+
+    #[test]
+    fn profile_files_only_touch_their_sections() {
+        let mut look = Settings::default();
+        look.custom_theme.corners = Corners::Sharp;
+        let profile = super::super::profiles::Profile {
+            id: "p".into(),
+            name: "Sharp".into(),
+            values: super::super::profiles::snapshot(&look),
+        };
+        let mut current = sample();
+        current.volume = 0.7;
+        let plan = plan_settings_import(&profile.to_document(0), &current).unwrap();
+        assert_eq!(plan.settings.custom_theme.corners, Corners::Sharp);
+        assert_eq!(plan.settings.volume, 0.7, "outside the profile: kept");
+        assert_eq!(plan.settings.appearance.language, "de");
     }
 
     #[test]

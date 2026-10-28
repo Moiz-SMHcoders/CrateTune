@@ -14,6 +14,9 @@
 //! | `@download-all=liked\|library` | "Download all" of a library song list (without opening it) |
 //! | `@download-cancel=liked\|library`, `@download-remove=liked\|library` | cancel / remove the downloads of that list |
 //! | `@download-status` | print the download flags (queued / downloading / done / failed) |
+//! | `@profile=ID` | switch profile (`default`, `minimal`, or a profile's id) |
+//! | `@profile-new=NAME`, `@profile-duplicate`, `@profile-rename=NAME`, `@profile-delete`, `@profile-reset` | manage profiles (the active one) |
+//! | `@profile-export=PATH`, `@profile-import=PATH`, `@profile-status` | profile files; print the profiles |
 
 use std::path::PathBuf;
 
@@ -139,6 +142,41 @@ impl MusicApp {
                     count(|f| f == Some(DownloadFlag::Downloading)),
                     count(|f| f == Some(DownloadFlag::Failed)),
                     count(|f| f.is_none()),
+                );
+            }
+            "profile" => match arg {
+                Some(id) => panel.update(cx, |p, cx| p.switch_profile(id, window, cx)),
+                None => eprintln!("music-gpui: @profile wants an id"),
+            },
+            "profile-new" => {
+                let name = arg.unwrap_or("Profile").to_owned(); // i18n-ignore
+                panel.update(cx, |p, cx| {
+                    p.create_profile(&name, cx);
+                });
+            }
+            "profile-duplicate" | "profile-rename" | "profile-delete" | "profile-reset"
+            | "profile-export" => {
+                let active = panel.read(cx).profile_status().0;
+                panel.update(cx, |p, cx| match name {
+                    "profile-duplicate" => p.duplicate_profile(&active, cx),
+                    "profile-rename" => p.rename_profile(&active, arg.unwrap_or(""), cx),
+                    "profile-delete" => p.delete_profile(&active, window, cx),
+                    "profile-reset" => p.reset_profile(&active, window, cx),
+                    _ => match path() {
+                        Some(path) => p.write_profile_export(&active, path, window, cx),
+                        None => eprintln!("music-gpui: @profile-export wants a path"),
+                    },
+                });
+            }
+            "profile-import" => match path() {
+                Some(path) => panel.update(cx, |p, cx| p.import_profile_from(path, window, cx)),
+                None => eprintln!("music-gpui: @profile-import wants a path"),
+            },
+            "profile-status" => {
+                let (active, list) = panel.read(cx).profile_status();
+                eprintln!(
+                    "music-gpui: profiles (active {active}): {}",
+                    list.join(", ")
                 );
             }
             _ => return false,

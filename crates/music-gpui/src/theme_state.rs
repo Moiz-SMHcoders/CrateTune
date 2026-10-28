@@ -27,6 +27,8 @@ pub struct ThemeState {
     /// The last artwork colours of a playing track (kept for grey artwork).
     pub art: Option<ArtColors>,
     transition: Option<Task<()>>,
+    /// Video id whose artwork colours are being extracted on demand.
+    extracting: Option<String>,
 }
 
 /// Ease-in-out (smoothstep).
@@ -54,6 +56,7 @@ impl MusicApp {
     /// "dynamic") when it differs from what is applied; a new song's colours
     /// fade in when transitions are on.
     pub(crate) fn apply_theme(&mut self, cx: &mut Context<Self>) {
+        self.ensure_art_colors(cx);
         let look = self.current_look(cx);
         let previous = self.theme_state.applied.take();
         if let Some((applied, _)) = &previous
@@ -107,6 +110,48 @@ impl MusicApp {
                 }
             }
         }));
+    }
+
+    /// With the dynamic theme on: extracts the current artwork's colours if they
+    /// weren't (artwork loaded while another theme was active), off the UI thread.
+    fn ensure_art_colors(&mut self, cx: &mut Context<Self>) {
+        if self.settings.read(cx).settings().appearance.theme != ThemeChoice::Dynamic {
+            return;
+        }
+        let Some(track) = self.playback.track.clone() else {
+            return;
+        };
+        let Some(HiRes::Ready {
+            art,
+            art_colors: None,
+            ..
+        }) = self.hires.get(&track.video_id)
+        else {
+            return;
+        };
+        if self.theme_state.extracting.as_deref() == Some(track.video_id.as_str()) {
+            return;
+        }
+        let Some(url) = track.artwork_url(544) else {
+            return;
+        };
+        self.theme_state.extracting = Some(track.video_id.clone());
+        let art = art.clone();
+        let id = track.video_id.clone();
+        cx.spawn(async move |this, cx| {
+            let colors = crate::util::off_thread(move || {
+                crate::palette::cached_art_colors(&url, art.bytes())
+            })
+            .await;
+            this.update(cx, |this, cx| {
+                if let Some(HiRes::Ready { art_colors, .. }) = this.hires.get_mut(&id) {
+                    *art_colors = colors;
+                }
+                this.update_accent(cx);
+            })
+            .ok();
+        })
+        .detach();
     }
 
     /// The current track's artwork colours became known (`now_playing::ensure_hires`).

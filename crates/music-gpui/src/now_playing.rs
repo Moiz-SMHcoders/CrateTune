@@ -258,6 +258,10 @@ impl MusicApp {
         };
         self.hires.insert(id.clone(), HiRes::Loading);
         let art_key = url.clone();
+        // Artwork colours only feed the dynamic theme (`theme_state.rs` extracts them
+        // later if the theme is switched to dynamic).
+        let want_colors = self.settings.read(cx).settings().appearance.theme
+            == crate::theme::ThemeChoice::Dynamic;
         let art = ArtworkCache::global(cx).update(cx, |cache, cx| cache.load(url, cx));
         cx.spawn(async move |this, cx| {
             let entry = match art.await {
@@ -268,7 +272,9 @@ impl MusicApp {
                         let bytes = image.bytes();
                         let started = Instant::now();
                         let backdrop = crate::backdrop::blurred_backdrop(bytes);
-                        let accent = crate::palette::cached_art_colors(&art_key, bytes);
+                        let accent = want_colors
+                            .then(|| crate::palette::cached_art_colors(&art_key, bytes))
+                            .flatten();
                         if std::env::var_os("MUSIC_TIMINGS").is_some() {
                             eprintln!(
                                 "music-gpui: backdrop blur + accent took {:?}",

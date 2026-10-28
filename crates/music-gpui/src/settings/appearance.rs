@@ -298,6 +298,7 @@ pub(super) fn render(
     let language = super::language::language_row(panel, window, cx);
     v_flex()
         .gap_5()
+        .child(super::profiles_ui::render(panel, window, cx))
         .child(group(t!("settings.language.group"), cx).child(language))
         .child(
             group(t!("settings.appearance.theme"), cx)

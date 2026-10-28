@@ -36,6 +36,8 @@ mod portable_ui;
 pub mod prefs;
 mod prefs_ui;
 mod privacy;
+pub mod profiles;
+mod profiles_ui;
 mod storage;
 pub mod theme_prefs;
 mod theme_ui;

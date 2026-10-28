@@ -179,6 +179,8 @@ pub struct SettingsPanel {
     pub(super) extras: super::integrations_ui::ExtrasUi,
     /// Customize theme widgets, pending settings / theme import (`theme_ui.rs`).
     pub(super) theme_ui: super::theme_ui::ThemeUi,
+    /// Appearance / behaviour profiles (`profiles.rs`).
+    pub(super) profiles: super::profiles::ProfileStore,
     _subscriptions: Vec<Subscription>,
 }
 
@@ -301,6 +303,7 @@ impl SettingsPanel {
         let (extras, extras_subscriptions) =
             super::integrations_ui::ExtrasUi::new(&settings, window, cx);
         subscriptions.extend(extras_subscriptions);
+        let profiles = super::profiles_ui::load_store(&settings);
         let (theme_ui, theme_subscriptions) =
             super::theme_ui::ThemeUi::new(&settings.custom_theme, window, cx);
         subscriptions.extend(theme_subscriptions);
@@ -346,6 +349,7 @@ impl SettingsPanel {
             modules,
             extras,
             theme_ui,
+            profiles,
             _subscriptions: subscriptions,
         };
         // Before any page loads (the password, if any, follows once read).
@@ -589,6 +593,8 @@ impl SettingsPanel {
         match self.settings.save(path) {
             Ok(()) => {
                 self.file_error = None;
+                // Edits belong to the active profile.
+                self.profiles.sync(&self.settings);
                 if std::env::var_os("MUSIC_TRACE").is_some() {
                     eprintln!("music-gpui: saved {}", path.display());
                 }
