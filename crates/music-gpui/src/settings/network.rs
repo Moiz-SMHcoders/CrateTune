@@ -56,6 +56,8 @@ pub struct NetworkState {
     dns_mode: DnsMode,
     dns_url: Entity<InputState>,
     dns_fallback: bool,
+    /// Result of "Test DNS" (shown in the DNS group).
+    dns_status: Option<NetStatus>,
     pub(super) status: NetStatus,
 }
 
@@ -92,6 +94,7 @@ impl NetworkState {
                 false,
             ),
             dns_fallback: n.dns.fallback,
+            dns_status: None,
             status: NetStatus::Idle,
         }
     }
@@ -222,13 +225,13 @@ impl SettingsPanel {
 
     /// Resolves music.youtube.com the way requests do now and shows how.
     pub fn network_test_dns(&mut self, cx: &mut Context<Self>) {
-        self.network.status = NetStatus::Testing;
+        self.network.dns_status = Some(NetStatus::Testing);
         cx.spawn(async move |this, cx| {
             let started = Instant::now();
             let result = off_thread(|| music_core::http::lookup("music.youtube.com")).await;
             let ms = started.elapsed().as_millis();
             this.update(cx, |this, cx| {
-                this.network.status = match result {
+                this.network.dns_status = Some(match result {
                     Ok(lookup) => {
                         use music_core::http::LookupSource;
                         let via = match lookup.source {
@@ -248,7 +251,7 @@ impl SettingsPanel {
                         ))
                     }
                     Err(e) => NetStatus::TestFailed(e),
-                };
+                });
                 cx.notify();
             })
             .ok();
@@ -343,6 +346,14 @@ pub(super) fn render(
         NetStatus::TestFailed(e) => (format!("Connection failed: {e}").into(), danger),
     };
     let off = kind == ProxyKind::Off;
+    let dns_status = match &state.dns_status {
+        Some(NetStatus::DnsOk(m)) => Some(status_line(m.clone().into(), success)),
+        Some(NetStatus::TestFailed(e)) => {
+            Some(status_line(format!("Lookup failed: {e}").into(), danger))
+        }
+        Some(NetStatus::Testing) => Some(status_line("Looking up…".into(), muted)),
+        _ => None,
+    };
     let dns_mode = state.dns_mode;
     let dns_modes = h_flex().gap_1().flex_wrap().children(DnsMode::ALL.map(|m| {
         let selected = m == dns_mode;
@@ -441,10 +452,11 @@ pub(super) fn render(
                                 .small()
                                 .outline()
                                 .label("Test DNS")
-                                .loading(matches!(state.status, NetStatus::Testing))
+                                .loading(matches!(state.dns_status, Some(NetStatus::Testing)))
                                 .on_click(cx.listener(|this, _, _, cx| this.network_test_dns(cx))),
                         ),
                 )
+                .children(dns_status)
                 .child(note(
                     "DNS-over-HTTPS (RFC 8484) looks up host names over an encrypted HTTPS \
                      connection instead of plain DNS. Answers are cached for their TTL. With \

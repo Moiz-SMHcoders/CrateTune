@@ -87,6 +87,7 @@ impl RenderOnce for TrackRow {
         let group = self.group.clone();
         let group_heart = self.group.clone();
         let (list, index) = (self.list.clone(), self.index);
+        let list_len = self.list.len();
         let menu_ctx: ListContext = Some((self.list.clone(), self.index));
         let menu_track = track.clone();
         let more_track = track.clone();
@@ -112,7 +113,8 @@ impl RenderOnce for TrackRow {
             .when(self.numbered, |this| {
                 this.child(
                     div()
-                        .w(px(24.))
+                        // Three-digit numbers (long albums) need more room.
+                        .w(px(if list_len >= 100 { 32. } else { 24. }))
                         .flex_none()
                         .text_sm()
                         .text_right()

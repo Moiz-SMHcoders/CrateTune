@@ -60,7 +60,9 @@ file carries a header naming its upstream source.
 | `src/innertube/parse.rs` | `pages/PageHelper.kt`, `pages/SearchPage.kt`, `pages/HomePage.kt`, `pages/RelatedPage.kt`, `pages/NextPage.kt`, `models/{Runs,Thumbnails,Continuation}.kt` | One generic item parser keyed on endpoint page/video types (not localized labels); subtitle runs split into artists/album/year/duration groups. |
 | `src/innertube/pages.rs` | `YouTube.kt` (`home`, `explore`, `moodAndGenres`, `getChartsPage`, `album`, `artist`, `artistItems`, `playlist`, `search*`, `next`, `lyrics`, `related`), `pages/*Page.kt` | Generic `Shelf` model instead of per-page section types; chart countries decoded from the menu's entity keys. |
 | `src/innertube/auth.rs` | `InnerTube.kt` (SAPISIDHASH header), `PlaybackAuthState.kt`, `utils/Utils.kt` (`sha1`, cookie parsing) | `Auth` struct with configurable `X-Goog-AuthUser`; secrets redacted from `Debug`. |
-| `src/innertube/account.rs` | `YouTube.kt` / `InnerTube.kt` (account menu, accounts list, library, history, like, subscribe, playlist create/edit/delete), `pages/{LibraryPage,HistoryPage}.kt`, `models/body/*.kt`, `models/response/AccountMenuResponse.kt` | Library feedback tokens exposed per item; playlist edits as a `PlaylistAction` enum; no playlist cover upload. |
+| `src/innertube/account.rs` | `YouTube.kt` / `InnerTube.kt` (account menu, accounts list, library, history, like, subscribe, playlist create/edit/delete, `startPlaylistCoverUpload` / `uploadPlaylistCover` / `setPlaylistCustomCover`, `uploadCustomPlaylistCover`), `pages/{LibraryPage,HistoryPage}.kt`, `models/body/*.kt` (incl. `EditPlaylistBody.kt` custom-thumbnail actions), `models/response/{AccountMenuResponse,ImageUploadResponse}.kt` | Library feedback tokens exposed per item; playlist edits as a `PlaylistAction` enum; cover upload as one blocking call (request building unit-tested, live-untested). |
+| `src/innertube/pages.rs` (podcasts, long albums) | `pages/PodcastPage.kt` (`fromResponse`, `continuationFromResponse`, `toEpisodeItem`, `episodeDateText`), `YouTube.kt` (`podcast`, `podcastContinuation`, `albumSongs`), `pages/AlbumPage.kt` (song continuations) | Episodes as `Episode` (track + date + description + `MPED` page id); episode pages parsed too; long albums continue through the album playlist page by page (`album_tracks`) or all at once (`album_complete`, 20 pages max). |
+| `src/model.rs` (`MusicVideoType`, `Track::is_video`) | `models/Endpoint.kt` (`MUSIC_VIDEO_TYPE_*`), `models/YTItem.kt` (`filterVideo`) | Video type kept on every track; OMV / UGC count as videos, as in ArchiveTune. |
 
 ## ArchiveTune (feat/lyrics)
 
@@ -184,3 +186,11 @@ MIT), `url` (MIT OR Apache-2.0), `sha2` (MIT OR Apache-2.0), `icu_normalizer` (U
 | `src/youtube/potoken.rs` | ArchiveTune `app/.../utils/potoken/{BotGuardTokenGenerator.kt, ChallengeParser.kt}` | Same flow and page parsing; blocking `ureq`; the browser part behind the `BotGuardVm` trait; a Safari identity matching the WebKit engine it runs in. |
 | `src/youtube/webkit.rs` | ArchiveTune `BotGuardTokenGenerator.kt` (WebView engine) | A hidden WKWebView (`callAsyncJavaScript`) instead of Android's WebView + JS bridge. |
 | `src/youtube/resolver.rs`, `session.rs` | yt-dlp `yt_dlp/extractor/youtube/{_base.py,_video.py}` (The Unlicense) | Client definitions (`tv_samsung`, `mweb`), the player request shape, and the "wait for the pre-roll ad" rule (`_get_available_at_timestamp`); reimplemented in Rust. |
+
+## ArchiveTune (fix/content: playlist covers)
+
+`crates/music-gpui/src/playlist_cover.rs` ports the cover preparation of ArchiveTune's
+`app/src/main/kotlin/moe/rukamori/archivetune/repository/PlaylistCoverRepository.kt`
+(`decodeUploadImage`, `compressWithinLimit`: centre-square crop, 1080 px, JPEG quality 92
+→ 60 in steps of 8 until ≤ 2 MiB), © Rukamori and ArchiveTune contributors, GPL-3.0,
+with the `image` crate instead of Android's `Bitmap`.

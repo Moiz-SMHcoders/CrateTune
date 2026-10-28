@@ -13,9 +13,34 @@ versions follow [SemVer](https://semver.org/). "Music" is a working name.
   Waits out YouTube's pre-roll ad delay while playing the song's start from the iOS
   client, so playback starts in seconds. Settings → Playback → YouTube streams. Downloads
   are now full files. The ~1-minute preview remains as the last fallback.
+* **Podcasts**: show pages (description, episodes with date / length / description,
+  infinite scroll, Play / Shuffle / Add to queue, Save to library when signed in),
+  episode pages, Library → Podcasts (signed in); podcasts and episodes from search, Home
+  and Explore open there.
+* **DNS-over-HTTPS** (Settings → Network → DNS): Cloudflare, Google, Quad9 or a custom
+  RFC 8484 URL, answers cached per TTL, optional fallback to the system resolver, Test DNS.
+  Applies to all requests (YouTube Music, streams, lyrics, modules, …).
+* **Change cover…** for your own YouTube Music playlists (not yet tried against a real
+  account).
+* Search shows YouTube's spelling corrections ("Showing results for … · Search instead
+  for …", "Did you mean …?").
+
+### Changed
+
+* **Hide music videos** now also hides music videos and user videos inside playlists,
+  albums, radio, queues and card actions (each track carries its YouTube video type); an
+  album that YouTube only offers as official-audio videos stays complete.
 
 ### Fixed
 
+* Albums with more than 200 tracks showed only the first 200; the rest now loads (also
+  for Play / Shuffle from cards). Playing a playlist from its card plays up to ~1,100
+  songs instead of the first 100.
+* A saved search could disappear from the search history: saves and removals ran on
+  separate threads in no guaranteed order, and could be lost when quitting while the
+  library was busy. They are now written in order and flushed on quit; searches that
+  differ only in letter case are one entry.
+* Podcast episode lengths ("2 hr 43 min") were missing.
 * A module playback test was sensitive to machine speed (it sampled positions on 100 ms
   ticks while rendering at ~3× real time).
 
