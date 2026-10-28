@@ -212,6 +212,27 @@ impl WebResolver {
         })
     }
 
+    /// Renews the PoToken attestation on a background thread when it ends within
+    /// 30 minutes, so the ~1 s re-attestation never delays a song.
+    fn renew_potoken_in_background(&self) {
+        const RENEW_WITHIN: Duration = Duration::from_secs(30 * 60);
+        let Some(provider) = self.potoken.clone() else {
+            return;
+        };
+        if !self.clients().contains(&WebClient::MobileWeb)
+            || !provider.attestation_expiring(RENEW_WITHIN)
+        {
+            return;
+        }
+        let _ = std::thread::Builder::new()
+            .name("music-core-botguard".into())
+            .spawn(move || {
+                if let Err(e) = provider.renew_if_expiring(RENEW_WITHIN) {
+                    log::warn!("youtube: renewing BotGuard ahead of expiry failed: {e}");
+                }
+            });
+    }
+
     /// Fetches the next session (and preprocesses a new player) on a
     /// background thread once the current one gets old, see [`SessionCache`].
     fn refresh_session_in_background(&self, video_id: &str) {
@@ -440,6 +461,7 @@ impl StreamResolver for WebResolver {
     }
 
     fn resolve_with_quality(&self, video_id: &str, quality: Quality) -> Result<ResolvedStream> {
+        self.renew_potoken_in_background();
         let mut last = None;
         for client in self.clients() {
             match self.resolve_with(client, video_id, quality) {
