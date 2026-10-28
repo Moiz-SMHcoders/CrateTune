@@ -110,7 +110,7 @@ pub struct NowPlaying {
     backdrop_id: Option<String>,
     backdrop_fade: Tween<f32>,
     /// Gradient / solid / glow colours, cross-faded between tracks.
-    colors: [Tween<Hsla>; 3],
+    pub(crate) colors: [Tween<Hsla>; 3],
     colors_id: Option<String>,
     /// Glow background phase; advances only while playing.
     glow_phase: f32,
@@ -154,12 +154,12 @@ impl NowPlaying {
     }
 }
 
-fn white(alpha: f32) -> Hsla {
+pub(crate) fn white(alpha: f32) -> Hsla {
     hsla(0., 0., 1., alpha)
 }
 
 /// `color`'s hue at a fixed (dark) lightness, saturation capped for readability.
-fn deep(color: Hsla, lightness: f32, alpha: f32) -> Hsla {
+pub(crate) fn deep(color: Hsla, lightness: f32, alpha: f32) -> Hsla {
     hsla(color.h, (color.s * 0.9).min(0.75), lightness, alpha)
 }
 
@@ -184,7 +184,12 @@ impl MusicApp {
     }
 
     /// The moment playback reaches `target` (from `position` now, at the current speed).
-    fn when_position(&self, target: Duration, position: Duration, now: Instant) -> Instant {
+    pub(crate) fn when_position(
+        &self,
+        target: Duration,
+        position: Duration,
+        now: Instant,
+    ) -> Instant {
         let speed = self.playback.speed.max(0.1);
         now + target.saturating_sub(position).div_f32(speed)
     }
@@ -321,7 +326,17 @@ impl MusicApp {
             (s.now_playing, s.lyrics.display())
         };
 
-        let backdrop = self.render_backdrop(track.as_ref(), config.background, viewport, frame);
+        // Designs with colours of their own cover the background: keep it cheap
+        // (it still cross-fades the palette they use).
+        let background = if config.layout.own_background() {
+            NowPlayingBackground::Solid
+        } else {
+            config.background
+        };
+        let backdrop = self.render_backdrop(track.as_ref(), background, viewport, frame);
+        // Designs with a backdrop of their own draw it over the regular one.
+        let design_backdrop =
+            self.design_backdrop(config.layout, track.as_ref(), position, viewport, frame, cx);
         let header_state = self.header_snap(config.layout, config.background, cx);
         let header = snapshot::sync(
             &mut self.np.header,
@@ -394,6 +409,21 @@ impl MusicApp {
                     .child(strip)
                     .into_any_element()
             }
+            NowPlayingLayout::Immersive => {
+                self.render_immersive(track.as_ref(), position, viewport, frame, cx)
+            }
+            NowPlayingLayout::Card => {
+                self.render_card(track.as_ref(), position, viewport, frame, cx)
+            }
+            NowPlayingLayout::Minimal => {
+                self.render_minimal(track.as_ref(), position, viewport, frame, cx)
+            }
+            NowPlayingLayout::Editorial => {
+                self.render_editorial(track.as_ref(), position, viewport, frame, cx)
+            }
+            NowPlayingLayout::Queue => {
+                self.render_with_queue(track.as_ref(), position, viewport, frame, cx)
+            }
         };
 
         div()
@@ -410,6 +440,7 @@ impl MusicApp {
             .opacity((reveal * 1.8).min(1.))
             .text_color(gpui::white())
             .child(backdrop)
+            .children(design_backdrop)
             .child(v_flex().absolute().inset_0().child(header).child(body))
             .into_any_element()
     }
@@ -673,16 +704,36 @@ impl MusicApp {
     }
 
     fn artwork_view(&self, track: Option<&Track>, side: Pixels, cx: &mut Context<Self>) -> Div {
-        let playing = self.playback.status == PlaybackStatus::Playing;
-        // Prefer the 544 px art; fall back to the list thumbnail while it loads.
-        let art: Option<Arc<Image>> = track.and_then(|t| match self.hires.get(&t.video_id) {
+        self.artwork_shaped(track, side, Some((side * 0.035).max(px(6.))), cx)
+    }
+
+    /// The 544 px art of `track` (the list thumbnail while it loads).
+    pub(crate) fn art_image(
+        &self,
+        track: Option<&Track>,
+        cx: &mut Context<Self>,
+    ) -> Option<Arc<Image>> {
+        track.and_then(|t| match self.hires.get(&t.video_id) {
             Some(HiRes::Ready { art, .. }) => Some(art.clone()),
             _ => {
                 let url = t.artwork_url(120)?;
                 ArtworkCache::global(cx).update(cx, |cache, cx| cache.get(&url, cx))
             }
-        });
-        let radius = (side * 0.035).max(px(6.));
+        })
+    }
+
+    /// Artwork `side` px square with corner `radius` (`None`: a circle), that
+    /// shrinks a little while paused.
+    pub(crate) fn artwork_shaped(
+        &self,
+        track: Option<&Track>,
+        side: Pixels,
+        radius: Option<Pixels>,
+        cx: &mut Context<Self>,
+    ) -> Div {
+        let playing = self.playback.status == PlaybackStatus::Playing;
+        let art = self.art_image(track, cx);
+        let radius = radius.unwrap_or(side * 0.5);
         div()
             .size(side)
             .flex_none()
@@ -718,15 +769,57 @@ impl MusicApp {
 
     /// Progress bar (click to seek) and elapsed / remaining time.
     fn progress_view(&self, position: Duration, cx: &mut Context<Self>) -> Div {
+        let fill = AppColors::get(cx).np_progress;
+        let bar = self.progress_bar(position, px(4.), white(0.22), fill, cx);
+        v_flex()
+            .w_full()
+            .gap_1()
+            .child(bar)
+            .child(self.times_row(position, white(0.6)))
+    }
+
+    /// Played fraction of the current track at `position`.
+    pub(crate) fn played(&self, position: Duration) -> f32 {
         let total = self.playback.duration.unwrap_or_default();
-        let frac = if total.is_zero() {
+        if total.is_zero() {
             0.
         } else {
             (position.as_secs_f32() / total.as_secs_f32()).clamp(0., 1.)
-        };
-        let progress_fill = AppColors::get(cx).np_progress;
+        }
+    }
+
+    /// Elapsed and remaining time, at the two ends of a row.
+    pub(crate) fn times_row(&self, position: Duration, color: Hsla) -> Div {
+        let total = self.playback.duration.unwrap_or_default();
+        h_flex()
+            .w_full()
+            .justify_between()
+            .text_xs()
+            .text_color(color)
+            .child(format_duration(position.as_secs()))
+            .child(if total.is_zero() {
+                "--:--".to_owned()
+            } else {
+                format!(
+                    "-{}",
+                    format_duration(total.saturating_sub(position).as_secs())
+                )
+            })
+    }
+
+    /// A `thickness` px progress line (thicker on hover), click to seek.
+    pub(crate) fn progress_bar(
+        &self,
+        position: Duration,
+        thickness: Pixels,
+        rail: Hsla,
+        progress_fill: Hsla,
+        cx: &mut Context<Self>,
+    ) -> gpui::Stateful<Div> {
+        let total = self.playback.duration.unwrap_or_default();
+        let frac = self.played(position);
         let bounds_cell = self.np.progress_bounds.clone();
-        let bar = div()
+        div()
             .id("np-progress")
             .group("np-progress")
             .w_full()
@@ -748,10 +841,10 @@ impl MusicApp {
                 div()
                     .relative()
                     .w_full()
-                    .h(px(4.))
-                    .group_hover("np-progress", |s| s.h(px(6.)))
+                    .h(thickness)
+                    .group_hover("np-progress", move |s| s.h(thickness + px(2.)))
                     .rounded_full()
-                    .bg(white(0.22))
+                    .bg(rail)
                     .child(
                         div()
                             .absolute()
@@ -767,26 +860,16 @@ impl MusicApp {
                             .absolute()
                             .size_full(),
                     ),
-            );
-        let times = h_flex()
-            .w_full()
-            .justify_between()
-            .text_xs()
-            .text_color(white(0.6))
-            .child(format_duration(position.as_secs()))
-            .child(if total.is_zero() {
-                "--:--".to_owned()
-            } else {
-                format!(
-                    "-{}",
-                    format_duration(total.saturating_sub(position).as_secs())
-                )
-            });
-        v_flex().w_full().gap_1().child(bar).child(times)
+            )
     }
 
     /// Previous / play-pause / next; `scale` 1 = the full-size buttons.
-    fn transport_view(&mut self, scale: f32, frame: &mut Frame, cx: &mut Context<Self>) -> Div {
+    pub(crate) fn transport_view(
+        &mut self,
+        scale: f32,
+        frame: &mut Frame,
+        cx: &mut Context<Self>,
+    ) -> Div {
         let status = self.playback.status.clone();
         let playing = status == PlaybackStatus::Playing;
         let busy = status == PlaybackStatus::Loading || (playing && self.playback.buffering);
@@ -870,7 +953,7 @@ impl MusicApp {
             )
     }
 
-    fn up_next_view(&self) -> Option<Div> {
+    pub(crate) fn up_next_view(&self) -> Option<Div> {
         self.queue.peek_next().map(|next| {
             h_flex()
                 .w_full()
@@ -888,7 +971,7 @@ impl MusicApp {
         })
     }
 
-    fn titles(track: Option<&Track>) -> (SharedString, SharedString) {
+    pub(crate) fn titles(track: Option<&Track>) -> (SharedString, SharedString) {
         match track {
             Some(t) => (t.title.clone().into(), t.artists.clone().into()),
             None => ("Not playing".into(), "".into()),
@@ -957,21 +1040,7 @@ impl MusicApp {
             .clamp(px(140.), px(520.));
         let (title, artists) = Self::titles(track);
         // The line being sung (or the last one) and the next, as plain text.
-        let mut next_start = None;
-        let current = track.and_then(|t| match self.lyrics.states.get(&t.video_id) {
-            Some(LyricsState::Ready(p)) => p.synced.as_ref().map(|l| {
-                let i = l.lines.partition_point(|line| line.start <= position);
-                let now = i.checked_sub(1).map(|i| l.lines[i].text.clone());
-                let next = l.lines.get(i).map(|line| line.text.clone());
-                next_start = l.lines.get(i).map(|line| line.start);
-                (now, next)
-            }),
-            _ => None,
-        });
-        // The line shown changes when the next one starts.
-        if let Some(start) = next_start.filter(|_| self.clock.is_running()) {
-            frame.wake_at(self.when_position(start, position, frame.now));
-        }
+        let current = self.lyric_snippet(track, position, frame);
         let width = (side * 1.15).min(viewport.width - px(64.));
         v_flex()
             .flex_1()
@@ -1027,6 +1096,31 @@ impl MusicApp {
                         }),
                 )
             })
+    }
+
+    /// The synced line being sung (or the last one) and the next, as plain text;
+    /// wakes the screen when the next one starts.
+    pub(crate) fn lyric_snippet(
+        &self,
+        track: Option<&Track>,
+        position: Duration,
+        frame: &mut Frame,
+    ) -> Option<(Option<String>, Option<String>)> {
+        let mut next_start = None;
+        let current = track.and_then(|t| match self.lyrics.states.get(&t.video_id) {
+            Some(LyricsState::Ready(p)) => p.synced.as_ref().map(|l| {
+                let i = l.lines.partition_point(|line| line.start <= position);
+                let now = i.checked_sub(1).map(|i| l.lines[i].text.clone());
+                let next = l.lines.get(i).map(|line| line.text.clone());
+                next_start = l.lines.get(i).map(|line| line.start);
+                (now, next)
+            }),
+            _ => None,
+        });
+        if let Some(start) = next_start.filter(|_| self.clock.is_running()) {
+            frame.wake_at(self.when_position(start, position, frame.now));
+        }
+        current
     }
 
     /// Lyrics-first layout: small artwork, title, progress and transport in one strip.

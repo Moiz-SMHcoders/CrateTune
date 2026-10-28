@@ -151,9 +151,111 @@ pub(super) fn render(
                             .child(block(60., 3., 0.5)),
                     ),
             ),
+            // Art across the top, fading out; type and controls at the bottom.
+            NowPlayingLayout::Immersive => frame.p_0().overflow_hidden().child(
+                v_flex()
+                    .size_full()
+                    .child(div().h(px(36.)).w_full().bg(gpui::linear_gradient(
+                        180.,
+                        gpui::linear_color_stop(hsla(0.08, 0.5, 0.6, 0.9), 0.),
+                        gpui::linear_color_stop(hsla(0.62, 0.35, 0.22, 1.), 1.),
+                    )))
+                    .child(
+                        v_flex()
+                            .px_2()
+                            .gap(px(3.))
+                            .child(block(60., 5., 0.85))
+                            .child(block(40., 3., 0.5))
+                            .child(block(110., 2., 0.6)),
+                    ),
+            ),
+            NowPlayingLayout::Card => frame.child(
+                h_flex().size_full().justify_center().child(
+                    v_flex()
+                        .h_full()
+                        .w(px(44.))
+                        .p(px(3.))
+                        .gap(px(3.))
+                        .rounded(px(5.))
+                        .bg(hsla(0., 0., 1., 0.12))
+                        .child(block(38., 30., 0.8))
+                        .child(block(30., 3., 0.55))
+                        .child(block(38., 2., 0.4)),
+                ),
+            ),
+            NowPlayingLayout::Minimal => frame.p_0().overflow_hidden().child(
+                div()
+                    .relative()
+                    .size_full()
+                    .child(
+                        div()
+                            .absolute()
+                            .top_0()
+                            .left_0()
+                            .h_full()
+                            .w(px(50.))
+                            .bg(hsla(0., 0., 1., 0.14)),
+                    )
+                    .child(
+                        h_flex()
+                            .absolute()
+                            .bottom(px(8.))
+                            .left(px(8.))
+                            .right(px(8.))
+                            .items_end()
+                            .justify_between()
+                            .child(
+                                v_flex()
+                                    .gap(px(3.))
+                                    .child(block(64., 9., 0.85))
+                                    .child(block(36., 3., 0.5)),
+                            )
+                            .child(block(26., 12., 0.7)),
+                    ),
+            ),
+            NowPlayingLayout::Editorial => frame.bg(hsla(0.62, 0.3, 0.12, 1.)).child(
+                h_flex()
+                    .size_full()
+                    .gap_2()
+                    .child(block(40., 40., 0.8).rounded_full())
+                    .child(
+                        v_flex()
+                            .gap(px(3.))
+                            .child(block(54., 6., 0.85))
+                            .child(
+                                h_flex()
+                                    .gap(px(3.))
+                                    .child(
+                                        block(40., 10., 0.9)
+                                            .rounded_full()
+                                            .bg(hsla(0.1, 0.6, 0.74, 1.)),
+                                    )
+                                    .child(block(10., 10., 0.5).rounded_full()),
+                            )
+                            .child(block(54., 2., 0.5)),
+                    ),
+            ),
+            NowPlayingLayout::Queue => frame.child(
+                h_flex()
+                    .size_full()
+                    .gap_2()
+                    .child(
+                        v_flex()
+                            .gap(px(3.))
+                            .child(block(32., 32., 0.8))
+                            .child(block(32., 3., 0.5)),
+                    )
+                    .child(v_flex().gap(px(4.)).children((0..4).map(|_| {
+                        h_flex()
+                            .gap(px(3.))
+                            .child(block(7., 7., 0.6))
+                            .child(block(44., 3., 0.45))
+                    }))),
+            ),
         }
     };
     let layouts = h_flex()
+        .flex_wrap()
         .gap_3()
         .children(NowPlayingLayout::ALL.map(|layout| {
             let selected = np.layout == layout;

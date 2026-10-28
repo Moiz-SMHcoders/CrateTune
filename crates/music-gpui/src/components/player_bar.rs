@@ -3,9 +3,9 @@
 //! volume, queue panel, mini player and Now Playing toggles.
 
 use gpui::{
-    Context, FontWeight, Hsla, InteractiveElement as _, IntoElement, ParentElement as _,
-    SharedString, StatefulInteractiveElement as _, Styled as _, div, prelude::FluentBuilder as _,
-    px,
+    AnyElement, Context, FontWeight, Hsla, InteractiveElement as _, IntoElement,
+    ParentElement as _, SharedString, StatefulInteractiveElement as _, Styled as _, div,
+    prelude::FluentBuilder as _, px,
 };
 use gpui_component::{
     ActiveTheme as _, Disableable as _, IconName, Selectable as _, Sizable as _,
@@ -114,8 +114,10 @@ impl MusicApp {
             .child(
                 h_flex()
                     .id("np-bar-open")
-                    .w(px(280.))
-                    .flex_none()
+                    // Shrinks before the transport does (the title truncates).
+                    .flex_basis(px(280.))
+                    .flex_shrink(1.)
+                    .min_w(px(150.))
                     .gap_3()
                     .p_1()
                     .rounded(px(8.))
@@ -156,12 +158,15 @@ impl MusicApp {
             .child(
                 v_flex()
                     .flex_1()
-                    .min_w_0()
+                    .min_w(px(210.))
                     .gap_1()
                     .items_center()
                     .child(
                         h_flex()
+                            .w_full()
                             .gap_2()
+                            // Same width on both sides keeps the transport centred.
+                            .child(div().flex_1().min_w_0())
                             .child(
                                 Button::new("shuffle")
                                     .ghost()
@@ -229,23 +234,39 @@ impl MusicApp {
                                     })
                                     .on_click(cx.listener(|this, _, _, cx| this.cycle_repeat(cx))),
                             )
-                            .when(state.preview_only, |this| {
-                                this.child(Tag::warning().small().rounded_full().child("Preview"))
-                            })
-                            .when_some(source, |this, (label, module)| {
-                                // Where the audio comes from: YouTube, a module, a file.
-                                this.child(
-                                    if module {
-                                        Tag::primary()
-                                    } else {
-                                        Tag::secondary()
-                                    }
-                                    .small()
-                                    .rounded_full()
-                                    .child(label),
-                                )
-                            })
-                            .children(chips),
+                            // Tags and integration chips: they shrink and clip
+                            // instead of pushing into the title or the transport.
+                            .child(
+                                h_flex()
+                                    .flex_1()
+                                    .min_w_0()
+                                    .gap_1()
+                                    .overflow_hidden()
+                                    .when(state.preview_only, |this| {
+                                        this.child(chip_slot(
+                                            Tag::warning()
+                                                .small()
+                                                .rounded_full()
+                                                .child("Preview")
+                                                .into_any_element(),
+                                        ))
+                                    })
+                                    .when_some(source, |this, (label, module)| {
+                                        // Where the audio comes from: YouTube, a module, a file.
+                                        this.child(chip_slot(
+                                            if module {
+                                                Tag::primary()
+                                            } else {
+                                                Tag::secondary()
+                                            }
+                                            .small()
+                                            .rounded_full()
+                                            .child(label)
+                                            .into_any_element(),
+                                        ))
+                                    })
+                                    .children(chips.into_iter().map(chip_slot)),
+                            ),
                     )
                     .child(
                         h_flex()
@@ -277,8 +298,9 @@ impl MusicApp {
             // Right: status / errors, volume, panels.
             .child(
                 h_flex()
-                    .w(px(320.))
-                    .flex_none()
+                    .flex_basis(px(320.))
+                    .flex_shrink(1.)
+                    .min_w(px(250.))
                     .gap_1()
                     .child(
                         div()
@@ -356,4 +378,14 @@ impl MusicApp {
                     ),
             )
     }
+}
+
+/// A tag / chip in the bar's transport row: shrinks (clipping its end) when the
+/// row is narrow, down to its first few pixels.
+fn chip_slot(chip: AnyElement) -> gpui::Div {
+    div()
+        .flex_shrink(1.)
+        .min_w(px(28.))
+        .overflow_hidden()
+        .child(chip)
 }
