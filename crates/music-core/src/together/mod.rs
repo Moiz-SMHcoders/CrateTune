@@ -361,19 +361,23 @@ mod tests {
         assert_eq!((moved.host.as_str(), moved.port), ("127.0.0.1", new.port()));
         assert!(!old.transfer_pending());
 
-        // Bob follows on his own, straight in (trusted).
-        let changed = wait_for(|| {
-            bob.poll_events().into_iter().find_map(|e| match e {
-                ClientEvent::HostChanged { name, join } => Some((name, join)),
+        // Bob follows on his own, straight in (trusted). `HostChanged` and
+        // `Reconnected` can arrive in the same poll, so keep every event seen.
+        let mut seen = Vec::new();
+        wait_for(|| {
+            seen.extend(bob.poll_events());
+            seen.iter()
+                .any(|e| matches!(e, ClientEvent::Reconnected))
+                .then_some(())
+        });
+        let changed = seen
+            .iter()
+            .find_map(|e| match e {
+                ClientEvent::HostChanged { name, .. } => Some(name.clone()),
                 _ => None,
             })
-        });
-        assert_eq!(changed.0.as_deref(), Some("Ann"));
-        wait_for(|| {
-            bob.poll_events()
-                .into_iter()
-                .find(|e| matches!(e, ClientEvent::Reconnected))
-        });
+            .expect("HostChanged before Reconnected");
+        assert_eq!(changed.as_deref(), Some("Ann"));
         let joined = wait_for(|| {
             new.poll_events().into_iter().find_map(|e| match e {
                 ServerEvent::Joined(p) => Some(p),
