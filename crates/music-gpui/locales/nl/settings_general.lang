@@ -1,0 +1,122 @@
+# Settings: Account, Network and About sections, the settings panel, the update
+# check and the Google sign-in window.
+
+# ---- Account
+settings.account.cookie_title = Inloggen met een browsercookie
+settings.account.cookie_steps = 1. Open music.youtube.com in je browser en log in.\n2. Open de ontwikkelaarstools (⌥⌘I in Safari / Chrome) → Netwerk en laad de pagina opnieuw.\n3. Klik op een willekeurig verzoek aan music.youtube.com (bijv. ‘browse’), zoek ‘Cookie’ onder Request Headers en kopieer de hele waarde.\n4. Plak die hieronder. Hij wordt opgeslagen in de sleutelhanger van het systeem en alleen naar YouTube gestuurd.
+settings.account.cookie_index = Google-accountindex (als er meerdere zijn ingelogd):
+settings.account.not_signed_in = Niet ingelogd. Alles werkt anoniem; met inloggen worden je leuke nummers, opgeslagen albums, abonnementen en playlists naar de bibliotheek gesynchroniseerd, en likes en playlistwijzigingen gaan terug naar YouTube Music.
+settings.account.sign_in_google = Inloggen met Google…
+settings.account.paste_cookie = Cookie plakken…
+settings.account.google_refused = Als Google het inlogvenster weigert (‘Deze browser of app is mogelijk niet veilig’), gebruik dan ‘Cookie plakken’.
+settings.account.last_synced = Laatst gesynchroniseerd op {date}
+settings.account.not_synced = Nog niet gesynchroniseerd
+settings.account.sync_now = Nu syncen
+settings.account.syncing = Syncen…
+settings.account.sync_group = Bibliotheeksynchronisatie
+settings.account.sync_row = Je YouTube Music-bibliotheek synchroniseren
+settings.account.sync_row_desc = Leuke nummers, bibliotheeknummers, opgeslagen albums, abonnementen, playlists.
+settings.account.accounts_group = Accounts
+settings.account.channels = Kanalen (merkaccounts) van dit Google-account:
+settings.account.google_index = Google-account
+settings.account.google_index_desc = Als de cookie meerdere Google-accounts bevat: welke (0 = eerste).
+settings.account.cookie_note = Inloggen gebruikt de sessiecookie van je browser voor music.youtube.com. Die wordt bewaard in de sleutelhanger van het systeem en alleen naar YouTube gestuurd. Accountfuncties zijn gebouwd op de web-API van YouTube, maar nog niet getest met een echt account.
+
+# ---- About
+settings.about.show_welcome = Welkomstgids tonen
+settings.about.version_summary = Versie {version} · {summary}
+settings.about.summary = Native desktopclient voor YouTube Music
+settings.about.not_affiliated = Niet verbonden aan, goedgekeurd of gesponsord door YouTube of Google.
+settings.about.license = Licentie
+settings.about.license_notice = Dit programma is vrije software: je mag het verder verspreiden en/of aanpassen onder de voorwaarden van de GNU General Public License, versie 3. Het wordt verspreid ZONDER ENIGE GARANTIE; zie de licentie voor details.
+settings.about.credits = Met dank aan
+settings.about.credit.archivetune = Functies en schermen zijn overgenomen van {project} (GPL-3.0), © Rukamori en bijdragers. Dit is een onafhankelijk project.
+settings.about.credit.hummingbird = Equalizer, mediabediening van het systeem, scrobbling en Discord-status zijn overgenomen van Hummingbird (Apache-2.0), © Hummingbird contributors.
+settings.about.credit.recognition_title = Nummerherkenning
+settings.about.credit.recognition = Shazam-compatibele vingerafdrukken, overgenomen van shazamkit van {project} (GPL-3.0), dat het formaat van SongRec volgt. Niet verbonden aan Shazam of Apple.
+settings.about.credit.libraries_title = Bibliotheken
+settings.about.credit.libraries = GPUI en gpui-component (Apache-2.0), Symphonia en rodio, Lucide-iconen (ISC), LRCLIB-songteksten.
+
+# ---- Update check
+update.group = Updates
+update.releases_from = Releases van github.com/{repo}
+update.checking = Controleren…
+update.up_to_date_version = Je hebt de nieuwste versie ({version}).
+update.available_version = Versie {version} is beschikbaar.
+update.check_failed = Kan niet controleren: {error}
+update.check_now = Nu controleren
+update.download = Downloaden…
+update.no_release = geen gepubliceerde release
+update.available_toast = {app} {version} is beschikbaar (Instellingen → Over)
+update.up_to_date_toast = {app} is up-to-date
+
+# ---- Network
+settings.network.proxy = Proxy
+settings.network.proxy_off = Uit
+settings.network.host = Host
+settings.network.port = Poort
+settings.network.user = Gebruiker
+settings.network.password = Wachtwoord
+settings.network.doh_url = DoH-URL
+settings.network.host_placeholder = proxy.example.com of 127.0.0.1
+settings.network.optional = optioneel
+settings.network.test_connection = Verbinding testen
+settings.network.test_dns = DNS testen
+settings.network.using_proxy = Via {url}
+settings.network.direct = Directe verbindingen (geen proxy)
+settings.network.status_with_doh = {proxy} · DNS-over-HTTPS ({server})
+settings.network.testing = Testen…
+settings.network.test_ok = Verbonden met YouTube in {ms} ms
+settings.network.test_failed = Verbinding mislukt: {error}
+settings.network.lookup_failed = Opzoeken mislukt: {error}
+settings.network.looking_up = Opzoeken…
+settings.network.dns_ok = {host} → {addresses} via {via} in {ms} ms
+settings.network.dns_via_doh = DNS-over-HTTPS
+settings.network.dns_via_cache = DNS-over-HTTPS (cache)
+settings.network.dns_via_system = de systeemresolver
+settings.network.proxy_note = Geldt voor alles: YouTube Music, audiostreams, covers, songteksten en scrobbling. SOCKS5h zoekt hostnamen op via de proxy. Het wachtwoord wordt bewaard in de sleutelhanger.
+settings.network.dns = DNS
+settings.network.dns_system = Systeem
+settings.network.dns_custom = Aangepast
+settings.network.dns_fallback = Terugvallen op de systeemresolver als DoH mislukt
+settings.network.dns_note = DNS-over-HTTPS (RFC 8484) zoekt hostnamen op via een versleutelde HTTPS-verbinding in plaats van gewone DNS. Antwoorden worden gecachet voor hun TTL. Met een SOCKS5h-proxy zoekt de proxy namen zelf op. Quad9 wordt bereikt via de HTTP/1.1-poort 5053, die sommige netwerken blokkeren.
+settings.network.error.port_number = De poort moet een getal zijn (1–65535).
+settings.network.error.doh_invalid = De DNS-over-HTTPS-URL is ongeldig.
+settings.network.error.proxy_invalid = Het proxyadres is ongeldig voor dit proxytype.
+settings.network.error.doh_https = De DNS-over-HTTPS-URL moet beginnen met https://.
+settings.network.error.doh_invalid_detail = De DNS-over-HTTPS-URL is ongeldig: {error}.
+settings.network.error.host_missing = Voer de proxyhost in.
+settings.network.error.host_invalid = De host mag alleen een naam of adres zijn (geen schema, pad of spaties).
+settings.network.error.port_missing = Voer een poort in tussen 1 en 65535.
+settings.network.error.socks4_auth = SOCKS4 ondersteunt geen wachtwoorden; laat de gebruikersnaam leeg.
+
+# ---- Settings panel
+settings.panel.placeholder.api_key = API-sleutel
+settings.panel.placeholder.shared_secret = Shared secret
+settings.panel.placeholder.user_token = Gebruikerstoken
+settings.panel.placeholder.application_id = Applicatie-ID
+settings.panel.lastfm_missing = Voer eerst de API-sleutel en het shared secret in.
+settings.panel.lastfm_requesting = Token aanvragen…
+settings.panel.lastfm_finishing = Afronden…
+settings.panel.lb_missing = Plak eerst je gebruikerstoken.
+settings.panel.secrets.backend_and_file = {backend} + instellingenbestand (0600)
+settings.panel.secrets.file_keychain_disabled = instellingenbestand (0600; sleutelhanger uitgeschakeld)
+settings.panel.secrets.file_keychain_read_failed = instellingenbestand (0600; lezen uit sleutelhanger mislukt)
+settings.panel.secrets.file_keychain_unavailable = instellingenbestand (0600; sleutelhanger niet beschikbaar)
+
+# ---- Credential stores
+secrets.backend.macos = macOS-sleutelhanger
+secrets.backend.windows = Windows Referentiebeheer
+secrets.backend.secret_service = Secret Service
+
+# ---- Settings file problems
+settings.file.no_config_dir = geen configuratiemap; instellingen worden niet opgeslagen
+settings.file.save_failed = opslaan mislukt: {error}
+settings.file.read_failed = {path} lezen: {error}
+settings.file.invalid_moved = {path} is ongeldig ({error}); verplaatst naar {backup}
+
+# ---- Google sign-in window
+login.window_title = Inloggen bij YouTube Music
+login.instructions = Log in met je Google-account. Dit venster sluit zodra YouTube Music opent.
+login.webview_failed = De webweergave kan niet worden gemaakt ({error}). Gebruik in plaats daarvan ‘Cookie plakken’.
+login.checking = Ingelogd — account controleren…

@@ -1,0 +1,227 @@
+# App shell and shared components.
+
+# ---- Page titles
+route.search = Suche
+route.search_query = Suche: {query}
+route.library = Mediathek · {tab}
+route.year_in_music = Dein Musikjahr {year}
+route.recognition = Musik erkennen
+route.settings = Einstellungen · {section}
+route.library_tab.songs = Songs
+route.library_tab.liked = Lieblingssongs
+route.library_tab.albums = Alben
+route.library_tab.artists = Künstler
+route.library_tab.playlists = Playlists
+route.library_tab.podcasts = Podcasts
+route.library_tab.downloaded = Geladen
+route.library_tab.local = Lokal
+
+# ---- Themes
+theme.dark = Dunkel
+theme.black = Schwarz
+theme.dynamic = Dynamisch
+
+# ---- Player bar
+player.pick_a_song = Wähle einen Song zum Starten
+player.audio_unavailable = Audio nicht verfügbar: {error}
+player.buffering = Puffern…
+player.play_failed_skipped = „{title}“ konnte nicht abgespielt werden, übersprungen
+player.preview_badge = Vorschau
+player.tooltip.shuffle_on = Zufallswiedergabe: an
+player.tooltip.shuffle_off = Zufallswiedergabe: aus
+player.tooltip.previous = Zurück (⌘←, nach 3 s von vorn)
+player.tooltip.next = Weiter (⌘→)
+player.tooltip.repeat_off = Wiederholen: aus
+player.tooltip.repeat_all = Wiederholen: alle
+player.tooltip.repeat_one = Wiederholen: eins
+player.tooltip.volume = Lautstärke {percent} % (⌘↑ / ⌘↓)
+player.tooltip.queue = Warteschlange (⌥⌘Q)
+player.tooltip.mini_player = Miniplayer (⇧⌘M)
+player.tooltip.now_playing = Läuft gerade & Songtext (⌘L)
+
+# ---- Sleep timer
+player.sleep.title = Sleep-Timer
+player.sleep.minutes.one = {count} Minute
+player.sleep.minutes.other = {count} Minuten
+player.sleep.end_of_track = Titelende
+player.sleep.custom = Eigene: {minutes} Min.
+player.sleep.turn_off = Ausschalten
+player.sleep.left = Noch {time}
+
+# ---- Queue
+queue.toast.play_next_one = „{title}“ wird als Nächstes abgespielt
+queue.toast.play_next_many.one = {count} Song wird als Nächstes abgespielt
+queue.toast.play_next_many.other = {count} Songs werden als Nächstes abgespielt
+queue.toast.added_one = „{title}“ zur Warteschlange hinzugefügt
+queue.toast.added_many.one = {count} Song zur Warteschlange hinzugefügt
+queue.toast.added_many.other = {count} Songs zur Warteschlange hinzugefügt
+queue.section.now_playing = LÄUFT GERADE
+queue.section.up_next = ALS NÄCHSTES · {count}
+queue.section.history = VERLAUF
+queue.nothing_playing = Keine Wiedergabe
+queue.empty.repeat_all = Alle wiederholen: Die Warteschlange beginnt von vorn.
+queue.empty.hint = Füg Songs mit „Als Nächstes abspielen“ oder „Zur Warteschlange“ hinzu.
+queue.tooltip.clear_up_next = „Als Nächstes“ leeren
+queue.tooltip.close = Schließen (Esc)
+queue.tooltip.move_up = Nach oben
+queue.tooltip.move_down = Nach unten
+
+# ---- Song rows and the song context menu
+track.tooltip.more = Mehr
+track.explicit_badge = E
+track.menu.go_to_podcast = Zum Podcast
+track.menu.go_to_named_artist = Zu {artist}
+
+# ---- Item cards, rows, shelves
+items.load_failed = Diese Seite konnte nicht geladen werden
+items.loading_more = Mehr wird geladen…
+
+# ---- "Add to playlist" / "New playlist" dialog
+playlist_dialog.name_placeholder = Name der neuen Playlist
+playlist_dialog.title_new = Neue Playlist
+playlist_dialog.title_add_one = „{title}“ zu einer Playlist hinzufügen
+playlist_dialog.title_add_many.one = {count} Song zu einer Playlist hinzufügen
+playlist_dialog.title_add_many.other = {count} Songs zu einer Playlist hinzufügen
+playlist_dialog.create = Erstellen
+playlist_dialog.also_on_youtube = Auch auf YouTube Music erstellen (privat)
+playlist_dialog.youtube_songs.one = YouTube Music · {count} Song
+playlist_dialog.youtube_songs.other = YouTube Music · {count} Songs
+playlist_dialog.empty = Noch keine Playlists – erstell oben eine.
+
+# ---- Mini player window
+mini.window_title = Miniplayer
+mini.tooltip.show_main = Hauptfenster anzeigen
+
+# ---- Header search field
+app.search_placeholder = Songs, Künstler, Alben suchen
+search_box.recent = Letzte Suchen
+search_box.loading_suggestions = Vorschläge werden geladen…
+
+# ---- Main window
+app.window_title = {page} — {app}
+app.audio_demo_clock = {error} (Demo-Uhr aktiv)
+app.tooltip.back = Zurück (⌘[)
+app.tooltip.forward = Vorwärts (⌘])
+
+# ---- YouTube Music account
+account.cookie_invalid = Dieses Cookie hat keinen SAPISID- / __Secure-3PAPISID-Eintrag; kopiere den ganzen Cookie-Header einer angemeldeten Anfrage an music.youtube.com.
+account.checking = Konto wird geprüft…
+account.toast.signed_in = Angemeldet als {name}
+account.sign_in_failed = Anmeldung fehlgeschlagen: {error}
+account.toast.signed_out = Von YouTube Music abgemeldet
+account.unreachable = Konto nicht erreichbar: {error}
+account.switching = Wird gewechselt…
+account.toast.switched = Jetzt als {name}
+account.switch_failed = Wechsel fehlgeschlagen: {error}
+account.sign_in_first = Melde dich zuerst bei YouTube Music an.
+account.action.subscribing = Abonnieren
+account.toast.subscribed = {artist} abonniert
+account.toast.unsubscribed = Abo von {artist} beendet
+account.sync.starting = Wird gestartet…
+account.sync.step.liked = Lieblingssongs…
+account.sync.step.songs = Mediathek-Songs…
+account.sync.step.albums = Alben…
+account.sync.step.artists = Künstler…
+account.sync.step.playlists = Playlists…
+account.sync.step.playlist = Playlist {current}/{total}: {title}
+account.sync.summary = {liked}, {songs}, {albums}, {artists}, {playlists}
+account.sync.liked.one = {count} Lieblingssong
+account.sync.liked.other = {count} Lieblingssongs
+account.sync.songs.one = {count} Mediathek-Song
+account.sync.songs.other = {count} Mediathek-Songs
+account.sync.albums.one = {count} Album
+account.sync.albums.other = {count} Alben
+account.sync.artists.one = {count} Künstler
+account.sync.artists.other = {count} Künstler
+account.sync.playlists.one = {count} Playlist
+account.sync.playlists.other = {count} Playlists
+account.toast.synced = YouTube Music-Synchronisierung: {summary}
+account.sync.failed = {summary}. Fehler: {errors}
+account.sync.error = {part}: {error}
+account.sync.part.liked = Lieblingssongs
+account.sync.part.songs = Mediathek-Songs
+account.sync.part.albums = Alben
+account.sync.part.artists = Künstler
+account.sync.part.playlists = Playlists
+account.sync.part.playlist = Playlist „{title}“
+account.sync.part.removing_playlist = Entfernen einer Playlist
+
+# ---- Library database, likes, playlists, downloads (toasts)
+store.library_unavailable = Mediathek nicht verfügbar: {error}
+store.no_data_dir = Kein Datenordner; die Mediathek ist nicht verfügbar.
+store.library_db_unavailable = Die Mediathek-Datenbank ist nicht verfügbar.
+store.toast.action_failed = {action} fehlgeschlagen: {error}
+store.action.saving_like = Speichern des Likes
+store.action.removing_from_library = Entfernen aus der Mediathek
+store.action.adding_to_playlist = Hinzufügen zur Playlist
+store.action.creating_playlist = Erstellen der Playlist
+store.toast.liked_one = „{title}“ geliked
+store.toast.unliked_one = „{title}“ aus Lieblingssongs entfernt
+store.toast.liked_many.one = {count} Song geliked
+store.toast.liked_many.other = {count} Songs geliked
+store.toast.unliked_many.one = {count} Song aus Lieblingssongs entfernt
+store.toast.unliked_many.other = {count} Songs aus Lieblingssongs entfernt
+store.toast.only_locally = {message} (nur lokal; YouTube Music: {error})
+store.toast.removed_from_library.one = {count} Song aus der Mediathek entfernt
+store.toast.removed_from_library.other = {count} Songs aus der Mediathek entfernt
+store.toast.added_to_playlist.one = {count} Song zu „{playlist}“ hinzugefügt
+store.toast.added_to_playlist.other = {count} Songs zu „{playlist}“ hinzugefügt
+store.toast.remote_error = {message} (YouTube Music: {error})
+store.playlist_name_missing = Gib der Playlist einen Namen.
+store.toast.playlist_created = „{playlist}“ erstellt
+store.toast.playlist_created_with.one = „{playlist}“ mit {count} Song erstellt
+store.toast.playlist_created_with.other = „{playlist}“ mit {count} Songs erstellt
+store.downloads_unavailable = Downloads sind nicht verfügbar.
+store.toast.downloading_one = „{title}“ wird heruntergeladen
+store.toast.downloading_many.one = {count} Song wird heruntergeladen
+store.toast.downloading_many.other = {count} Songs werden heruntergeladen
+store.toast.delete_download_failed = Löschen des Downloads fehlgeschlagen: {error}
+
+# ---- Local music folder scan
+store.add_music_folder_first = Füg zuerst einen Musikordner hinzu.
+store.scan.summary = {files}: {added} neu, {updated} aktualisiert, {unchanged} unverändert, {removed} entfernt
+store.scan.files.one = {count} Datei
+store.scan.files.other = {count} Dateien
+store.scan.with_extra = {summary}, {extra}
+store.scan.too_short.one = {count} zu kurz
+store.scan.too_short.other = {count} zu kurz
+store.scan.unreadable.one = {count} unlesbar
+store.scan.unreadable.other = {count} unlesbar
+store.toast.scan_finished = Einlesen abgeschlossen: {summary}
+store.toast.scan_failed = Einlesen fehlgeschlagen: {error}
+
+# ---- Playlist cover upload
+playlist_cover.read_failed = Das Bild konnte nicht gelesen werden: {error}
+playlist_cover.not_an_image = Diese Datei ist kein Bild, das die App lesen kann (JPEG, PNG oder WebP).
+playlist_cover.too_large = Das Bild ist zu groß (mehr als 40 Megapixel).
+playlist_cover.decode_failed = Das Bild konnte nicht dekodiert werden: {error}
+playlist_cover.encode_failed = Das Cover konnte nicht kodiert werden: {error}
+playlist_cover.still_too_large = Das Cover ist nach der Komprimierung immer noch größer als 2 MiB.
+playlist_cover.sign_in = Melde dich bei YouTube Music an, um Playlist-Cover zu ändern.
+playlist_cover.pick_prompt = Als Cover nutzen
+playlist_cover.uploading = Cover wird hochgeladen…
+playlist_cover.changed = Playlist-Cover geändert
+playlist_cover.change_failed = Cover konnte nicht geändert werden: {error}
+
+# ---- Radio and collection playback
+radio.toast.starting_from = Radio zu „{title}“ wird gestartet
+radio.toast.starting = Radio wird gestartet: {name}
+radio.playlist_label = Playlist
+radio.nothing_to_play = Hier gibt es nichts abzuspielen.
+radio.load_failed = Laden fehlgeschlagen: {error}
+
+# ---- Lyrics
+lyrics.no_cache_dir = Kein Cache-Ordner
+
+# ---- Playlist editing
+store.action.renaming_playlist = Umbenennen der Playlist
+store.action.deleting_playlist = Löschen der Playlist
+store.action.removing_from_playlist = Entfernen aus der Playlist
+store.action.moving_song = Verschieben des Songs
+store.action.refreshing_playlist = Aktualisieren der Playlist
+store.toast.playlist_renamed = Umbenannt in „{playlist}“
+store.toast.playlist_deleted = „{playlist}“ gelöscht
+store.toast.removed_from_playlist.one = {count} Song aus der Playlist entfernt
+store.toast.removed_from_playlist.other = {count} Songs aus der Playlist entfernt
+store.toast.playlist_refreshed.one = Playlist aktualisiert ({count} Song)
+store.toast.playlist_refreshed.other = Playlist aktualisiert ({count} Songs)

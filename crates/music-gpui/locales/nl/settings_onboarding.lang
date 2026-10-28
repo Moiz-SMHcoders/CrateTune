@@ -1,0 +1,56 @@
+# First-run guide.
+
+# ---- Step titles
+onboarding.step.welcome = Welkom
+onboarding.step.content = Taal & regio
+onboarding.step.theme = Uiterlijk
+onboarding.step.account = YouTube Music-account
+onboarding.step.local_files = Muziek op deze computer
+onboarding.step.privacy = Privacy & beperkingen
+onboarding.welcome_title = Welkom bij {app}
+onboarding.step_of = Stap {step} van {total}
+
+# ---- Step subtitles
+onboarding.subtitle.welcome = Een snelle, native speler voor YouTube Music: bladeren en zoeken, songteksten die met het nummer meelopen, een bibliotheek met geschiedenis en statistieken, je eigen muziekbestanden en nummerherkenning. Een paar keuzes en je bent klaar — alles hier kun je later wijzigen in Instellingen.
+onboarding.subtitle.content = In welke taal YouTube Music titels en aanbevelingen toont, en van welk land je de hitlijsten en releases ziet.
+onboarding.subtitle.theme = Kies een thema en tekstgrootte.
+onboarding.subtitle.account = Optioneel. Inloggen brengt je likes, bibliotheek, playlists en persoonlijke aanbevelingen mee. Al het andere werkt zonder account.
+onboarding.subtitle.local_files = Optioneel. Voeg mappen met muziekbestanden toe; ze worden in je bibliotheek ingelezen en spelen naast YouTube Music.
+onboarding.subtitle.privacy = Wat je moet weten voordat je begint.
+
+# ---- Footer buttons
+onboarding.skip = Instellen overslaan
+onboarding.get_started = Aan de slag
+onboarding.finish = Voltooien
+onboarding.next_or_skip = Volgende (of overslaan)
+
+# ---- Welcome step: feature list
+onboarding.feature.browse.title = Bladeren & zoeken
+onboarding.feature.browse.text = Homefeed, hitlijsten, sferen, nieuwe releases, artiesten, albums en playlists.
+onboarding.feature.lyrics.title = Songteksten
+onboarding.feature.lyrics.text = Per woord gesynchroniseerde songteksten van veel bronnen, met vertaling en romanisering.
+onboarding.feature.library.title = Bibliotheek
+onboarding.feature.library.text = Likes, playlists, luistergeschiedenis, statistieken en downloads — opgeslagen op deze computer.
+onboarding.feature.recognize.title = Muziek herkennen
+onboarding.feature.recognize.text = Herken een nummer dat om je heen speelt (⇧⌘R) en speel het meteen af.
+
+# ---- Look step
+onboarding.theme.group = Thema
+onboarding.theme.dynamic_note = Dynamisch neemt de accentkleur over van de cover van het nummer dat speelt.
+onboarding.theme.text_size = Tekstgrootte
+
+# ---- Music on this computer step
+onboarding.local.group = Muziekmappen
+onboarding.local.empty = Nog geen mappen.
+onboarding.local.add = Map toevoegen…
+onboarding.local.note = Scan de mappen nu of later; beheer ze onder Lokale bestanden.
+
+# ---- Privacy & limitations step
+onboarding.privacy.streaming.title = Hoe nummers worden gestreamd
+onboarding.privacy.streaming.text = Volledige nummers komen van de tv-client van YouTube of de webclient met een PoToken (een token tegen misbruik, gemaakt in een verborgen browserweergave op macOS). YouTube laat nieuwe streams een paar seconden wachten; de app begint intussen met een kort voorbeeld. Als YouTube iets verandert, vallen nummers terug op voorbeelden van ~1 minuut (gemarkeerd in de speler). Onder Instellingen → Afspelen → YouTube-streams kies je de route.
+onboarding.privacy.data.title = Je gegevens blijven hier
+onboarding.privacy.data.text = Bibliotheek, geschiedenis, statistieken en instellingen worden op deze computer opgeslagen. Wachtwoorden, API-sleutels en de YouTube-inlogcookie gaan naar de sleutelhanger van het systeem. Pauzeer of wis luister- en zoekgeschiedenis wanneer je wilt onder Instellingen → Privacy.
+onboarding.privacy.recipients.title = Wie krijgt wat
+onboarding.privacy.recipients.text = YouTube Music ontvangt je zoekopdrachten en afgespeelde nummers (en je accountcookie als je bent ingelogd). Songtekstbronnen ontvangen nummertitels. Nummerherkenning stuurt een audiovingerafdruk — niet de opname — naar Shazam. Scrobbling en Discord werken alleen als je ze instelt.
+onboarding.privacy.independent.title = Onafhankelijk project
+onboarding.privacy.independent.text = Niet verbonden aan YouTube, Google of Shazam. Vrije software onder de GPL-3.0.

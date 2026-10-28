@@ -1,0 +1,104 @@
+# Integrations: SponsorBlock, Chromecast, AI content filter, playlist import / export.
+
+# ---- SponsorBlock: segment categories
+sponsorblock.category.music_offtopic = Geen muziek
+sponsorblock.category.sponsor = Sponsor
+sponsorblock.category.intro = Pauze / intro
+sponsorblock.category.outro = Eindkaarten / aftiteling
+sponsorblock.category.selfpromo = Zelfpromotie
+sponsorblock.category.interaction = Herinnering voor interactie
+sponsorblock.category.preview = Voorproefje / samenvatting
+sponsorblock.category.filler = Opvulling
+sponsorblock.category.hook = Hook / begroeting
+sponsorblock.category_in_chip.music_offtopic = geen muziek
+sponsorblock.category_in_chip.sponsor = sponsor
+sponsorblock.category_in_chip.intro = pauze / intro
+sponsorblock.category_in_chip.outro = aftiteling
+sponsorblock.category_in_chip.selfpromo = zelfpromotie
+sponsorblock.category_in_chip.interaction = herinnering
+sponsorblock.category_in_chip.preview = voorproefje
+sponsorblock.category_in_chip.filler = opvulling
+sponsorblock.category_in_chip.hook = hook / begroeting
+sponsorblock.toast.skipped = Overgeslagen: {category} ({seconds} s)
+sponsorblock.chip.skip = {category} overslaan ({seconds}s)
+sponsorblock.chip.tooltip = SponsorBlock: naar het einde van dit segment springen
+
+# ---- AI content filter: categories
+ai_filter.category.explicit = Expliciete teksten
+ai_filter.category.ai_generated = Door AI gemaakte muziek
+ai_filter.category.holiday = Kerstmuziek
+ai_filter.category.children = Kindermuziek
+ai_filter.category.noise = Slaapgeluiden & witte ruis
+ai_filter.category.sped_up = Sped-up / slowed edits
+ai_filter.category.covers = Covers & karaoke
+ai_filter.category.live = Live-opnames
+
+# ---- Chromecast
+cast.casting_to = Casten naar {device}
+cast.connecting_to = Verbinden met {device}…
+cast.tooltip = Casten naar een apparaat
+cast.menu.title = Casten naar
+cast.menu.searching = Zoeken naar Cast-apparaten…
+cast.menu.none_found = Geen Cast-apparaten gevonden
+cast.menu.search_again = Opnieuw zoeken
+cast.stop = Casten stoppen
+cast.error.disconnected = De verbinding met het Cast-apparaat is verbroken
+cast.error.scan_failed = Kan niet naar apparaten zoeken: {error}
+cast.error.connect_failed = Kan niet verbinden met {device}: {error}
+
+# ---- Import: sources and progress
+import.source.spotify_playlist = Spotify-playlist
+import.source.spotify_liked = Leuke nummers op Spotify
+import.error.connect_spotify = Verbind Spotify via Instellingen → Spotify-import.
+import.error.connect_spotify_first = Verbind eerst Spotify via Instellingen → Spotify-import.
+import.error.not_spotify_link = Dat is geen link of ID van een Spotify-playlist.
+import.stage.reading = Lezen
+import.stage.reading_playlist = Playlist lezen
+import.stage.reading_liked = Leuke nummers lezen
+import.stage.matching = Matchen
+import.liked_playlist_name = Leuk gevonden op Spotify
+import.cancelled = Geannuleerd
+import.nothing_to_save = Niets op te slaan: er is geen nummer gevonden.
+import.exporting = Playlist exporteren
+import.exported.one = {count} nummer geëxporteerd naar {path}
+import.exported.other = {count} nummers geëxporteerd naar {path}
+
+# ---- Import & export page
+import.page.subtitle = Haal playlists van Spotify of uit bestanden naar je bibliotheek, of neem ze mee naar elders.
+import.file.title = Uit een bestand
+import.file.description = Exportify-CSV (Spotify), M3U / M3U8, of een hier geëxporteerde CSV / JSON.
+import.file.choose = Bestand kiezen…
+import.spotify.title = Van Spotify
+import.spotify.connect_hint = Verbind je Spotify-account (met je eigen gratis Client ID voor ontwikkelaars) om je playlists en leuke nummers te importeren.
+import.spotify.set_up = Spotify instellen…
+import.spotify.signed_in = Ingelogd als {user}.
+import.spotify.liked = Leuke nummers
+import.spotify.show_playlists = Mijn playlists tonen
+import.spotify.playlist_meta.one = {owner} · {count} nummer
+import.spotify.playlist_meta.other = {owner} · {count} nummers
+import.spotify.playlist_meta_unknown = {owner} · ? nummers
+import.job.progress = {stage} · {done} van {total}
+import.job.progress_count = {stage} · {done}
+import.job.found.one = {count} gevonden
+import.job.found.other = {count} gevonden
+import.job.not_found.one = {count} niet gevonden
+import.job.not_found.other = {count} niet gevonden
+import.job.saved_as = Opgeslagen als ‘{name}’
+import.job.save.one = {count} nummer opslaan als playlist
+import.job.save.other = {count} nummers opslaan als playlist
+import.job.open_playlists = Playlists openen
+import.job.name_placeholder = Naam van playlist
+import.guess.best = Beste gok: {artists} — {title} ({percent}%)
+import.guess.search_failed = Zoeken mislukt: {error}
+import.guess.no_results = Geen resultaten
+import.guess.using = Gok gebruikt
+import.guess.use = Gok gebruiken
+import.guess.search_tooltip = Zoeken op YouTube Music
+import.not_found.title = Niet gevonden
+import.not_found.subtitle = Accepteer de beste gok, of zoek en voeg het nummer zelf toe.
+import.found.title = Gevonden op YouTube Music
+import.found.first = eerste {shown} van {total}
+import.export.title = Een playlist exporteren
+import.export.subtitle = CSV en M3U openen in andere spelers en spreadsheets; JSON bewaart alles om hier te importeren.
+import.export.empty = Nog geen playlists in de bibliotheek.
+import.export.from_youtube_music = {songs} · YouTube Music

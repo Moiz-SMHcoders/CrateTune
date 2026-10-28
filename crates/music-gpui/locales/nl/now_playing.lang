@@ -1,0 +1,79 @@
+# Now Playing screen, its lyrics pane and the lyrics card dialog.
+
+# ---- Header
+np.close_tooltip = Sluiten (Esc)
+np.header = SPEELT NU
+np.demo_clock = Demoklok
+np.buffering = Bufferen…
+np.preview = Voorbeeld
+np.speed = {speed}×
+np.sleep_tooltip = Slaaptimer
+np.layout_tooltip = Ontwerp en achtergrond
+np.menu.design = Ontwerp
+np.menu.background = Achtergrond
+
+# ---- Player
+np.up_next = Hierna
+np.playing_from = SPEELT AF VANUIT
+np.your_queue = Je wachtrij
+np.of_total = van {total}
+np.editorial.header_album = SPEELT NU  ·  {album}
+np.editorial.play = AFSPELEN
+np.editorial.pause = PAUZE
+np.editorial.loading = LADEN
+np.queue.title = HIERNA
+np.queue.more.one = +{count} meer
+np.queue.more.other = +{count} meer
+np.queue.empty = Niets in de wachtrij. Voeg nummers toe uit een lijst of zet automatisch afspelen aan.
+
+# ---- Lyrics pane
+lyrics.nothing_playing = Er speelt niets
+lyrics.loading = Songtekst laden…
+lyrics.missing_title = Geen songtekst
+lyrics.missing_detail = Geen van de ingeschakelde songtekstbronnen heeft dit nummer.
+lyrics.failed = Kan songtekst niet laden
+lyrics.translating = Vertalen…
+lyrics.translation_failed = Vertalen mislukt: {error}
+lyrics.kind.word = Per woord
+lyrics.kind.line = Per regel
+lyrics.kind.plain = Niet gesynchroniseerd
+lyrics.source = {provider} · {kind}
+lyrics.select_hint.one = Selecteer maximaal {count} regel voor een kaart
+lyrics.select_hint.other = Selecteer maximaal {count} regels voor een kaart
+lyrics.selected.one = {count} regel geselecteerd
+lyrics.selected.other = {count} regels geselecteerd
+lyrics.create_card = Kaart maken…
+lyrics.share_tooltip = Songtekst delen als kaart
+lyrics.translation_on = Vertaling: aan
+lyrics.translation_off = Vertaling: uit
+lyrics.reload_tooltip = Opnieuw zoeken bij de bronnen
+
+# ---- Lyrics card dialog
+card.dialog_title = Songtekstkaart
+card.row.background = Achtergrond
+card.row.text = Tekst
+card.row.size = Grootte
+card.row.shape = Vorm
+card.row.cover = Cover
+card.cover.show = Tonen
+card.cover.hide = Verbergen
+card.save = Afbeelding opslaan…
+card.copy = Afbeelding kopiëren
+card.copying = Kopiëren…
+card.copied = Gekopieerd naar het klembord
+card.saved = Opgeslagen: {path}
+card.save_failed = Kan niet opslaan: {error}
+card.draw_failed = Kan de kaart niet tekenen: {error}
+card.aspect.square = Vierkant
+card.aspect.portrait = Staand
+card.aspect.story = Story
+card.bg.blur = Vervaagde cover
+card.bg.album = Albumkleur
+card.bg.dark = Donker
+card.bg.light = Licht
+card.align.left = Links
+card.align.center = Midden
+card.align.right = Rechts
+card.size.small = Klein
+card.size.medium = Middel
+card.size.large = Groot

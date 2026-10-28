@@ -1,0 +1,144 @@
+# Settings sections of the integrations.
+
+# ---- Shared
+settings.integrations.connected_as = Verbonden als {user}
+
+# ---- Last.fm / ListenBrainz
+settings.integrations.lastfm_approve = Keur de app goed in je browser en klik dan op Voltooien.
+settings.integrations.finish = Voltooien
+settings.integrations.forget_key = Sleutel vergeten
+settings.integrations.api_key = API-sleutel
+settings.integrations.shared_secret = Shared secret
+settings.integrations.checking_token = Token controleren…
+settings.integrations.validate = Valideren
+settings.integrations.user_token = Gebruikerstoken
+
+# ---- Discord
+settings.integrations.discord_title = Discord Rich Presence
+settings.integrations.discord_enter_id = Voer de ID van je Discord-applicatie in.
+settings.integrations.discord_connected = Verbonden met Discord
+settings.integrations.discord_unreachable = Discord niet bereikbaar: {error}
+settings.integrations.discord_waiting = Wachten op afspelen…
+settings.integrations.application_id = Applicatie-ID
+discord.activity.title = Activiteit
+discord.activity.type = Type
+discord.activity.name = Naam
+discord.activity.details = Details
+discord.activity.state = Status
+discord.activity.placeholders_note = Tijdelijke aanduidingen: {title}, {artist}, {album}. Een lege naam gebruikt de naam van de Discord-applicatie.
+discord.activity.large_image = Grote afbeelding
+discord.activity.small_image = Kleine afbeelding
+discord.activity.button = Knop {number}
+discord.activity.label = Label
+discord.activity.url = URL
+discord.activity.show_paused = Tonen tijdens pauze
+discord.activity.show_paused_desc = Houdt de activiteit (zonder speelduur) als het afspelen pauzeert.
+discord.activity.custom_note = Aangepaste afbeeldingen zijn asset-keys van je Discord-applicatie of afbeeldings-URL's. Knoppen zijn zichtbaar voor anderen, niet voor jezelf.
+
+# ---- Scrobble rules
+scrobble.rules.title = Wanneer een nummer telt
+scrobble.rules.played = Afgespeeld
+scrobble.rules.or_at_most = …of maximaal
+scrobble.rules.ignore_under = Nummers negeren korter dan
+scrobble.rules.percent = {percent}%
+scrobble.rules.note = De regel van Last.fm is 50% of 4 minuten, voor nummers langer dan 30 s. Geldt voor Last.fm en ListenBrainz.
+scrobble.errors.one = Scrobblefouten ({count})
+scrobble.errors.other = Scrobblefouten ({count})
+settings.integrations.secrets = Geheimen: {store}
+settings.integrations.secrets_loading = Geheimen: laden…
+settings.integrations.settings_path = Instellingen: {path}
+settings.integrations.not_saved = Instellingen worden niet opgeslagen (geen configuratiemap)
+
+# ---- SponsorBlock
+settings.sponsorblock.categories = Categorieën
+settings.sponsorblock.category_desc.music_offtopic = Praten, sketches en andere delen zonder muziek in muziekvideo's.
+settings.sponsorblock.category_desc.sponsor = Betaalde promotie.
+settings.sponsorblock.category_desc.intro = Pauzes en intro-animaties zonder inhoud.
+settings.sponsorblock.category_desc.outro = Aftiteling en eindkaarten.
+settings.sponsorblock.category_desc.selfpromo = Onbetaalde promotie: merch, donaties, shout-outs.
+settings.sponsorblock.category_desc.interaction = Herinneringen om te liken, abonneren of volgen.
+settings.sponsorblock.category_desc.preview = Samenvattingen en voorproefjes van andere content.
+settings.sponsorblock.category_desc.filler = Uitweidingen die niet de hoofdinhoud zijn.
+settings.sponsorblock.category_desc.hook = Teasers en begroetingen aan het begin.
+settings.sponsorblock.using = Gebruikt {url}
+settings.sponsorblock.url_error = Vereist een https://-adres zonder inloggegevens of query
+settings.sponsorblock.skip_segments = Segmenten overslaan
+settings.sponsorblock.skip_segments_desc = Door de community gemarkeerde segmenten in de video van elk nummer opzoeken en overslaan.
+settings.sponsorblock.when = Als een segment begint
+settings.sponsorblock.when_desc = Meteen overslaan, of een knop Overslaan tonen in de spelerbalk.
+settings.sponsorblock.mode_auto = Automatisch overslaan
+settings.sponsorblock.mode_ask = Vragen
+settings.sponsorblock.notify = Melding na overslaan
+settings.sponsorblock.server = Server
+settings.sponsorblock.api_url = API-URL
+settings.sponsorblock.use_default = Standaardserver gebruiken
+settings.sponsorblock.forget = Opgezochte segmenten vergeten
+settings.sponsorblock.privacy = Privacy: alleen de eerste 4 tekens van de SHA-256-hash van een video-ID worden verstuurd, zodat de server niet weet welk nummer speelt. Segmenten komen van sponsor.ajay.app (SponsorBlock, CC BY-NC-SA), tenzij je een andere server instelt.
+
+# ---- Music Together
+settings.together.you = Jij
+settings.together.display_name = Weergavenaam
+settings.together.name_placeholder = Je naam
+settings.together.display_name_note = Getoond aan de anderen in een sessie.
+settings.together.hosting = Hosten
+settings.together.port = Poort
+settings.together.port_error = Poorten moeten tussen 1024 en 65535 liggen
+settings.together.allow_add_desc = Hun suggesties komen in je wachtrij.
+settings.together.allow_control_desc = Afspelen, pauzeren, spoelen en overslaan voor iedereen.
+settings.together.approval = Gasten goedkeuren voordat ze deelnemen
+settings.together.hosting_note = Sessies draaien op je lokale netwerk: gasten verbinden rechtstreeks met deze computer (sta inkomende verbindingen toe als de firewall erom vraagt). De link bevat een willekeurige sleutel; alleen mensen met de link kunnen deelnemen. Wijzigingen gelden meteen voor een lopende sessie. Op de pagina Samen luisteren geeft ‘Host maken’ de sessie aan een gast: iedereen volgt de nieuwe host.
+settings.together.across_networks = Over netwerken heen
+settings.together.relay = Relayserver
+settings.together.relay_placeholder = wss://relay.example.com (leeg: alleen LAN)
+settings.together.relay_error = Vereist een ws://- of wss://-adres (geen gebruikersnaam of query)
+settings.together.relay_note = ‘Hosten via relay’ laat de sessie lopen via een music-relay-server die je zelf host (zie de README: één klein programma, zet het achter een TLS-reverse-proxy voor wss://). Gasten nemen dan overal vandaan deel met de link. De relay stuurt de berichten van de sessie door (nummer-ID's, titels, namen) maar beslist nooit iets; leeg = alleen LAN.
+settings.together.open = Samen luisteren openen
+
+# ---- Spotify import
+settings.spotify.waiting = Wachten tot je de app goedkeurt in de browser…
+settings.spotify.account = Spotify-account
+settings.spotify.client_id = Client ID
+settings.spotify.redirect_port = Doorverwijspoort
+settings.spotify.redirect_uri = Doorverwijs-URI: {uri}
+settings.spotify.steps = 1. Maak een app aan op developer.spotify.com/dashboard (Web API). 2. Voeg de doorverwijs-URI hierboven eraan toe. 3. Plak de Client ID hier en klik op Verbinden. De toegang is alleen-lezen (je playlists en leuke nummers); de vernieuwingstoken wordt bewaard in de sleutelhanger.
+settings.spotify.without_account = Zonder account
+settings.spotify.without_account_note = Exporteer een playlist met Exportify (exportify.app) en importeer het CSV-bestand via Bibliotheek → Importeren & exporteren. Inloggen met de sp_dc-cookie van de webspeler (zoals {other_app} doet) wordt niet ondersteund: dat hangt af van een geheim dat uit de webspeler van Spotify wordt gehaald.
+settings.spotify.open_import = Importeren & exporteren openen
+settings.spotify.error.no_client = Voer eerst de Client ID van je app in.
+settings.spotify.error.redirect = Kan niet luisteren naar de doorverwijzing: {error}
+
+# ---- AI content filter
+settings.ai_filter.off = Uit: er wordt niets verstuurd
+settings.ai_filter.incomplete = Vereist een endpoint, een model en minstens één categorie
+settings.ai_filter.failed = Laatste verzoek mislukt: {error}
+settings.ai_filter.on.one = Aan · {count} nummer of album geclassificeerd
+settings.ai_filter.on.other = Aan · {count} nummers en albums geclassificeerd
+settings.ai_filter.hide = Verbergen
+settings.ai_filter.also_hide = Ook verbergen
+settings.ai_filter.custom_placeholder = bijv. nummers over auto's, memenummers
+settings.ai_filter.custom_note = Je eigen categorieën, gescheiden door komma's (maximaal 8), in gewone woorden beschreven.
+settings.ai_filter.title = AI-contentfilter
+settings.ai_filter.enable = Nummers filteren met een AI-model
+settings.ai_filter.enable_desc = Zoals ‘Expliciete content verbergen’, voor de categorieën hieronder.
+settings.ai_filter.forget = Classificaties vergeten
+settings.ai_filter.model = Model
+settings.ai_filter.endpoint = Endpoint
+settings.ai_filter.endpoint_placeholder = https://api.openai.com/v1 of http://localhost:11434/v1
+settings.ai_filter.api_key = API-sleutel
+settings.ai_filter.key_placeholder = API-sleutel (niet nodig voor lokale servers)
+settings.ai_filter.api_note = Elke OpenAI-compatibele chat-completions-API: OpenAI, OpenRouter, of een model op deze computer (Ollama, LM Studio, llama.cpp server). De sleutel wordt bewaard in de sleutelhanger.
+settings.ai_filter.privacy = Privacy
+settings.ai_filter.privacy_note = Standaard uit. Als het aan staat, worden de titel, artiesten en het album van de nummers en albums op de pagina's die je opent naar het endpoint hierboven gestuurd (niets over jou, geen luistergeschiedenis); elk oordeel wordt op deze computer gecachet, zodat er per nummer één keer wordt gevraagd. Nummers die het model nog niet heeft beoordeeld, blijven zichtbaar.
+
+# ---- Chromecast
+settings.cast.looking = Zoeken naar Cast-apparaten…
+settings.cast.found.one = {count} apparaat gevonden
+settings.cast.found.other = {count} apparaten gevonden
+settings.cast.devices = Apparaten
+settings.cast.scan = Zoeken
+settings.cast.casting = Cast nu
+settings.cast.cast = Casten
+settings.cast.streaming = Streamt
+settings.cast.direct = Apparaat haalt YouTube-audio zelf op
+settings.cast.direct_desc = Uit: deze app streamt het naar het apparaat (werkt met elk nummer).
+settings.cast.note = Casten speelt de wachtrij af op een Chromecast, Google TV of Nest-speaker in dit netwerk (Default Media Receiver van Google). De Cast-knop in de spelerbalk kiest een apparaat; afspelen, pauzeren, spoelen, overslaan en volume bedienen het dan, en Casten stoppen gaat hier verder. YouTube-audio en lokale bestanden worden van deze computer naar het apparaat gestreamd (houd de app open); het apparaat en deze computer moeten in hetzelfde netwerk zitten. Wijzigingen gelden vanaf het volgende nummer.

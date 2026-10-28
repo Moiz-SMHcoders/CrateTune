@@ -1,0 +1,56 @@
+# Online browse pages (YouTube Music).
+
+# ---- Home
+home.recent.title = Gespeeld tijdens deze sessie
+home.recent.subtitle = Opnieuw luisteren
+
+# ---- Explore
+explore.new_releases_detail = Verse albums en singles
+explore.charts_detail = Wat populair is, per land
+explore.moods_detail = Playlists voor elk moment
+
+# ---- Charts
+charts.country_placeholder = Land
+charts.search_countries = Landen zoeken…
+charts.empty.title = Geen hitlijsten
+charts.empty.detail = YouTube Music heeft geen hitlijsten voor dit land.
+
+# ---- Moods & genres
+moods.empty = YouTube Music gaf geen sferen of genres voor deze regio.
+
+# ---- New releases
+new_releases.subtitle = Nieuwe albums en singles
+new_releases.empty.title = Niets nieuws
+new_releases.empty.detail = YouTube Music gaf geen nieuwe releases voor deze regio.
+
+# ---- Browse pages
+browse.empty = Deze pagina heeft geen playlists of nummers (of ze zijn allemaal weggefilterd).
+
+# ---- Album
+album.empty.title = Geen afspeelbare nummers
+album.empty.detail = Dit album heeft hier geen tracks (of ze zijn allemaal weggefilterd).
+
+# ---- Artist
+artist.subscribed = Geabonneerd
+artist.subscribe = Abonneren
+artist.subscribe_tooltip = Abonneren op YouTube Music (ook opgeslagen in je bibliotheek)
+artist.subscribe_tooltip_signed_out = Opgeslagen in je bibliotheek; log in om je op YouTube Music te abonneren
+artist.items_empty = Geen releases op deze pagina (of ze zijn allemaal weggefilterd).
+
+# ---- Playlist
+playlist.change_cover = Cover wijzigen…
+playlist.empty.title = Geen nummers
+playlist.empty.detail = Deze playlist is leeg (of alle nummers zijn weggefilterd).
+
+# ---- Podcast / episode
+podcast.episodes.one = {count} aflevering
+podcast.episodes.other = {count} afleveringen
+podcast.episodes_more.one = {count}+ afleveringen
+podcast.episodes_more.other = {count}+ afleveringen
+podcast.saved = Opgeslagen
+podcast.save = Opslaan in bibliotheek
+podcast.save_failed = Kan je bibliotheek niet bijwerken: {error}
+podcast.open_episode_page = Afleveringspagina openen
+podcast.go_to_podcast = Naar podcast
+podcast.empty.title = Geen afleveringen
+podcast.empty.detail = Deze show heeft hier nog geen afleveringen.

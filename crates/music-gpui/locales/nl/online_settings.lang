@@ -1,0 +1,19 @@
+# Settings → Content & region.
+settings.content.group_region = Taal & regio
+settings.content.language = Contenttaal
+settings.content.language_description = Taal van titels, rijen en zoeken op YouTube Music.
+settings.content.language_placeholder = Taal
+settings.content.country = Contentland
+settings.content.country_description = Regio van de homefeed, hitlijsten en nieuwe releases.
+settings.content.country_placeholder = Land
+settings.content.region_note = Wijzigingen gelden meteen; geopende pagina's worden opnieuw geladen in de nieuwe taal.
+
+settings.content.group_filters = Filters
+settings.content.hide_explicit = Expliciete content verbergen
+settings.content.hide_explicit_description = Verwijdert nummers en albums die als expliciet zijn gemarkeerd uit pagina's, zoekresultaten en radio.
+settings.content.hide_videos = Muziekvideo's verbergen
+settings.content.hide_videos_description = Alleen nummers: muziekvideo's en video's van gebruikers worden weggelaten uit rijen, zoekresultaten, playlists, albums, radio en wachtrijen (een album dat YouTube alleen als officiële audiovideo's heeft, blijft compleet).
+
+settings.content.group_radio = Radio
+settings.content.autoplay = Vergelijkbare nummers automatisch afspelen
+settings.content.autoplay_description = Als het laatste nummer van de wachtrij begint, worden nummers uit de radio ervan erachter toegevoegd.

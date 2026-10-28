@@ -1,0 +1,136 @@
+# Settings → Modules: provider modules (`.arch` packages).
+
+# ---- Playback source
+modules.source.group = Afspeelbron
+modules.source.youtube = Alleen YouTube
+modules.source.first = Eerst modules, dan YouTube
+modules.source.only = Alleen modules
+modules.source_note.youtube = Nummers spelen af via YouTube; geïnstalleerde modules worden niet gebruikt.
+modules.source_note.first.one = Elk nummer wordt opgezocht in de {count} ingeschakelde module, van boven naar beneden; de eerste geschikte match speelt af, anders YouTube.
+modules.source_note.first.other = Elk nummer wordt opgezocht in de {count} ingeschakelde modules, van boven naar beneden; de eerste geschikte match speelt af, anders YouTube.
+modules.source_note.only.one = Nummers spelen alleen af via de {count} ingeschakelde module; een nummer dat geen enkele module vindt, mislukt (en wordt overgeslagen als ‘Nummers overslaan die niet laden’ aan staat).
+modules.source_note.only.other = Nummers spelen alleen af via de {count} ingeschakelde modules; een nummer dat geen enkele module vindt, mislukt (en wordt overgeslagen als ‘Nummers overslaan die niet laden’ aan staat).
+modules.source.note = Een module levert de audio voor het nummer dat je afspeelt; titel, artiesten en je bibliotheek blijven hetzelfde. De balk en Speelt nu tonen waar de audio vandaan komt. Downloads gebruiken dezelfde volgorde.
+
+# ---- Unavailable
+modules.unavailable = Modules zijn niet beschikbaar.
+modules.no_data_dir = Geen gegevensmap; modules zijn niet beschikbaar.
+modules.unavailable_error = Modules niet beschikbaar: {error}
+
+# ---- Add a module
+modules.add.group = Module toevoegen
+modules.add.from_file = Installeren uit bestand…
+modules.add.from_file_note = Een .arch-pakket van je schijf.
+modules.add.from_url = Installeren via URL
+modules.add.catalog = Catalogus toevoegen
+modules.add.note = Pakketten worden gecontroleerd (formaat, checksum, instellingen, geëxporteerde functies) voordat je bevestigt. Er zijn geen modules of catalogi vooraf geïnstalleerd: modules komen van hun makers en draaien in een sandbox (geen bestanden, netwerk via de proxy van de app).
+modules.url_missing = Voer de URL in van een .arch-pakket, descriptor of catalogus.
+modules.catalog_url_missing = Voer een catalogus-URL in.
+
+# ---- Progress lines
+modules.busy.saving = Opslaan…
+modules.busy.saving_catalog = Catalogus opslaan…
+modules.busy.checking_package = Pakket controleren…
+modules.busy.reading_catalog = Catalogus lezen…
+modules.busy.installing = Installeren…
+modules.busy.removing = Verwijderen…
+modules.busy.checking = Controleren…
+modules.busy.checking_update = Zoeken naar update…
+modules.busy.loading_settings = Instellingen laden…
+modules.busy.saving_settings = Instellingen opslaan…
+modules.busy.refreshing = Vernieuwen…
+
+# ---- Results
+modules.catalog_added.one = Catalogus ‘{name}’ toegevoegd ({count} item).
+modules.catalog_added.other = Catalogus ‘{name}’ toegevoegd ({count} items).
+modules.installed_needs_setup = {name} geïnstalleerd. Vul de instellingen in en klik op Opslaan.
+modules.installed = {name} geïnstalleerd.
+modules.removed = Module verwijderd.
+modules.update_available = Versie {version} is beschikbaar.
+modules.up_to_date = Up-to-date.
+modules.update_from_file = Geïnstalleerd uit een bestand: importeer het nieuwe pakket om bij te werken.
+modules.settings_read_failed = Kan de instellingen van deze module niet lezen.
+modules.settings_saved = Instellingen opgeslagen.
+modules.catalog_refreshed = Catalogus vernieuwd.
+modules.diagnostics_copied = Diagnose gekopieerd.
+
+# ---- Review card
+modules.review.group = Controleren
+modules.review.replaces = Werkt de geïnstalleerde versie {version} bij; de instellingen blijven behouden.
+modules.review.new = Een nieuwe installatie, toegevoegd aan het einde van de afspeelvolgorde.
+modules.review.needs = Vereist: {settings}.
+modules.review.homepage = Website: {url}
+modules.review.license = Licentie: {license}
+modules.review.sha256 = Pakket-SHA-256 {hash}
+
+# ---- Installed modules
+modules.installed_group = Geïnstalleerd ({count})
+modules.nothing_installed = Nog niets geïnstalleerd.
+modules.action.settings = Instellingen
+modules.action.check = Controleren
+modules.action.check_update = Update zoeken
+modules.action.uninstall = Verwijderen
+modules.action.confirm_remove = Zeker verwijderen?
+modules.action.higher = Hogere prioriteit
+modules.action.lower = Lagere prioriteit
+modules.needs_configuration = Moet worden ingesteld: {settings}
+modules.settings_heading = Instellingen
+modules.no_settings = Deze module heeft geen instellingen.
+modules.field.placeholder_required = vereist
+modules.field.placeholder_optional = optioneel
+modules.field.not_a_number = {field} moet een getal zijn.
+modules.field.required = {field} is vereist.
+modules.field.invalid = {field} heeft een ongeldige waarde.
+
+# ---- Diagnostics
+modules.diagnostics = Diagnose
+modules.diagnostic_line = {label} {when}: {summary}
+modules.diagnostic_track = {line} — {track}
+modules.diag.last_song = Laatste nummer
+modules.diag.check = Controle
+modules.diag.playback = Afspelen
+modules.diag.not_checked = Nog niet gecontroleerd.
+modules.diag.not_used = Nog voor geen enkel nummer gebruikt.
+modules.installed_line_file = Geïnstalleerd {when} · pakket {hash} · uit een bestand
+modules.installed_line_url = Geïnstalleerd {when} · pakket {hash} · van {url}
+modules.log_empty = Het logboek is leeg.
+modules.copy_diagnostics = Diagnose kopiëren
+modules.clear_log = Logboek wissen
+
+modules.status.ready = Klaar
+modules.status.configuration = Moet worden ingesteld
+modules.status.unavailable = Dienst niet beschikbaar
+modules.status.failed = Mislukt
+modules.status.no_results = Geen resultaten
+modules.status.no_match = Geen geschikte match ({reason})
+modules.status.resolved = Gevonden
+modules.status.timeout = Time-out
+modules.rejection.metadata = metadata
+modules.rejection.title = titel
+modules.rejection.artist = artiest
+modules.rejection.recording = opname
+modules.rejection.duration = duur
+modules.rejection.explicit = expliciet
+modules.phase.search = bij zoeken
+modules.phase.match = bij matchen
+modules.phase.stream = bij streamen
+modules.candidates.one = {count} kandidaat
+modules.candidates.other = {count} kandidaten
+modules.elapsed_ms = {ms} ms
+
+modules.failure.invalid_document = Ongeldig moduledocument
+modules.failure.unsupported = Niet ondersteund door deze app
+modules.failure.invalid_configuration = Module-instellingen zijn onvolledig of ongeldig
+modules.failure.network = Netwerkfout
+modules.failure.timeout = Time-out
+modules.failure.execution = De module is mislukt
+modules.failure.integrity = Checksum komt niet overeen
+modules.error_with_code = {error} ({code})
+
+# ---- Catalogs
+modules.catalogs = Catalogi
+modules.catalog_line.one = {url} · {count} item · vernieuwd {when}
+modules.catalog_line.other = {url} · {count} items · vernieuwd {when}
+modules.remove_catalog = Catalogus verwijderen
+modules.entry.installed = Geïnstalleerd
+modules.entry.not_a_module = Geen module

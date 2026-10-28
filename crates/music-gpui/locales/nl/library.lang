@@ -1,0 +1,249 @@
+# Library pages, Storage and Privacy settings, backup / restore dialogs.
+
+# ---- Library page
+library.sort.label = Sorteren
+library.sort.date_added = Toegevoegd
+library.sort.title = Titel
+library.sort.artist = Artiest
+library.sort.play_count = Keer afgespeeld
+library.sort.listening_time = Luistertijd
+library.sort.last_played = Laatst gespeeld
+library.sort.year = Jaar
+library.sort.song_count = Aantal nummers
+library.sort.name = Naam
+library.sort.last_updated = Bijgewerkt
+library.sort.date_created = Gemaakt
+
+library.filter_placeholder = Filteren
+library.saved_only = Alleen opgeslagen
+library.subscribed_only = Alleen geabonneerd
+library.new_playlist = Nieuwe playlist
+
+library.detail_signed_in = {summary} · ingelogd bij YouTube Music
+library.count.albums.one = {count} album
+library.count.albums.other = {count} albums
+library.count.artists.one = {count} artiest
+library.count.artists.other = {count} artiesten
+library.count.shows.one = {count} show
+library.count.shows.other = {count} shows
+library.count.playlists.one = {count} playlist
+library.count.playlists.other = {count} playlists
+
+# Empty states
+library.podcasts.signed_out_title = Log in om je podcasts te zien
+library.podcasts.signed_out_detail = Podcasts die je op YouTube Music opslaat, verschijnen hier. Log in via Instellingen → Account; shows kun je zonder account openen via Zoeken, Home en Verkennen.
+library.podcasts.empty_title = Nog geen podcasts
+library.podcasts.empty_detail = Sla een show op met ‘Opslaan in bibliotheek’ op de pagina ervan.
+library.empty.no_matches_title = Geen overeenkomsten
+library.empty.no_matches_detail = Niets komt overeen met het filter.
+library.empty.liked_title = Geen leuke nummers
+library.empty.liked_detail = Tik op het hartje bij een nummer. Als je bent ingelogd, worden je YouTube Music-likes hier gesynchroniseerd.
+library.empty.downloaded_title = Niets gedownload
+library.empty.downloaded_detail = Kies ‘Downloaden’ in het menu van een nummer om het op deze computer te bewaren.
+library.empty.local_title = Geen lokale bestanden
+library.empty.local_detail = Voeg muziekmappen toe op de pagina Lokale bestanden en scan ze.
+library.empty.songs_title = Geen nummers in je bibliotheek
+library.empty.songs_detail = Leuke nummers, nummers die je toevoegt en lokale bestanden verschijnen hier.
+library.empty.albums_title = Nog geen albums
+library.empty.albums_detail = Albums van je nummers en albums die je op YouTube Music hebt opgeslagen, verschijnen hier.
+library.empty.artists_title = Nog geen artiesten
+library.empty.artists_detail = Artiesten van je nummers en je abonnementen verschijnen hier.
+library.empty.playlists_title = Nog geen playlists
+library.empty.playlists_detail = Maak er een met ‘Nieuwe playlist’, of log in om je YouTube Music-playlists te synchroniseren.
+library.load_failed = Kan de bibliotheek niet laden
+library.db_unavailable = De bibliotheekdatabase is niet beschikbaar.
+
+library.remove_from_library = Verwijderen uit bibliotheek
+library.unlike = Niet meer leuk
+library.delete_downloads = Downloads verwijderen
+
+# Album / artist cards and pages
+library.album.save = Album opslaan
+library.album.remove_saved = Verwijderen uit opgeslagen albums
+library.album.saving = Album opslaan
+library.artist.subscribed_songs.one = Geabonneerd · {count} nummer
+library.artist.subscribed_songs.other = Geabonneerd · {count} nummers
+library.playlist.youtube_songs.one = {count} nummer · YouTube Music
+library.playlist.youtube_songs.other = {count} nummers · YouTube Music
+
+library.item.songs_listened.one = {count} nummer · {time} geluisterd
+library.item.songs_listened.other = {count} nummers · {time} geluisterd
+library.item.subscribe = Abonneren
+library.item.unsubscribe = Abonnement opzeggen
+library.item.remove_saved = Verwijderen uit opgeslagen
+library.item.open_online = Openen op YouTube Music
+library.item.empty_detail = Like of voeg nummers van deze artiest / van dit album toe om ze hier te zien.
+
+# Library playlist page
+library.playlist.kind_own = Je YouTube Music-playlist
+library.playlist.kind_saved = Opgeslagen YouTube Music-playlist
+library.playlist.change_cover = Cover wijzigen…
+library.playlist.rename_title = Naam van playlist wijzigen
+library.playlist.delete_title = ‘{name}’ verwijderen?
+library.playlist.delete_remote = Hij wordt ook op YouTube Music verwijderd.
+library.playlist.delete_unsave = Hij wordt verwijderd uit je YouTube Music-bibliotheek.
+library.playlist.delete_local_copy = Alleen de kopie op deze computer wordt verwijderd.
+library.playlist.delete_undo = Dit kan niet ongedaan worden gemaakt.
+library.playlist.move_up = Omhoog
+library.playlist.move_down = Omlaag
+library.playlist.remove_from = Verwijderen uit playlist
+library.playlist.not_found_title = Playlist niet gevonden
+library.playlist.not_found_detail = Misschien is hij verwijderd.
+library.playlist.empty_title = Deze playlist is leeg
+library.playlist.empty_detail = Gebruik ‘Toevoegen aan playlist…’ in het menu van een nummer om nummers toe te voegen.
+
+# ---- Song lists: select mode
+song_list.select_none = Niets selecteren
+
+# ---- Local files page
+local_files.prompt_add = Toevoegen
+local_files.prompt_skip = Overslaan
+local_files.folders_title = Muziekmappen
+local_files.add_folder = Map toevoegen
+local_files.skip_folder = Map overslaan
+local_files.skipped_title = Overgeslagen
+local_files.scan.looking = Bestanden zoeken…
+local_files.scan.progress = {done} / {total} bestanden
+local_files.scanning = Scannen…
+local_files.rescan = Opnieuw scannen
+local_files.detail.one = {count} nummer · bestanden korter dan {seconds} s worden overgeslagen
+local_files.detail.other = {count} nummers · bestanden korter dan {seconds} s worden overgeslagen
+local_files.empty.no_folders_title = Nog geen muziekmappen
+local_files.empty.no_folders_detail = Voeg een map met je muziek toe (MP3, M4A, FLAC, Ogg, Opus, WAV, AIFF…) en klik op Opnieuw scannen.
+local_files.empty.no_tracks_title = Geen lokale nummers
+local_files.empty.no_tracks_detail = Klik op Opnieuw scannen om de mappen hierboven te lezen.
+
+# ---- Downloads page
+downloads.status.queued = In wachtrij
+downloads.status.downloading_size = Downloaden {size}
+downloads.status.done = Klaar · {size}
+downloads.status.preview = Alleen voorbeeld · {size}
+downloads.status.failed = Mislukt: {error}
+downloads.status.cancelled = Geannuleerd
+downloads.detail.one = {count} nummer · {size} · afspeelcache {cache} van {limit}
+downloads.detail.other = {count} nummers · {size} · afspeelcache {cache} van {limit}
+downloads.play_all = Alles afspelen
+downloads.clear_finished = Voltooide wissen
+downloads.show_in_finder = Toon in Finder
+downloads.unavailable_title = Downloads zijn niet beschikbaar
+downloads.unavailable_detail = De downloadmap kan niet worden geopend (zie de terminal).
+downloads.previews_note.one = {count} download is een voorbeeld (alleen de eerste ~1 MiB): hij is gemaakt toen volledige streams niet beschikbaar waren. Verwijder hem en download hem opnieuw.
+downloads.previews_note.other = {count} downloads zijn voorbeelden (alleen de eerste ~1 MiB): ze zijn gemaakt toen volledige streams niet beschikbaar waren. Verwijder ze en download ze opnieuw.
+downloads.section.session = Deze sessie
+downloads.section.downloaded = Gedownload
+downloads.empty_detail = Kies ‘Downloaden’ in het menu van een nummer (of selecteer nummers in de bibliotheek) om ze op deze computer te bewaren.
+downloads.preview_tag = voorbeeld
+downloads.delete = Download verwijderen
+
+# ---- History page
+history.clear.title = Luistergeschiedenis wissen?
+history.clear.detail = Elke vastgelegde keer afspelen wordt verwijderd, en afspeeltellingen en statistieken beginnen opnieuw. Je bibliotheek, likes en playlists blijven.
+history.clear.button = Geschiedenis wissen
+history.paused = Luistergeschiedenis is gepauzeerd (Instellingen → Privacy).
+history.counting = Nummers tellen zodra je 30 seconden hebt geluisterd.
+history.load_failed = Kan niet laden
+history.empty_title = Nog niets afgespeeld
+history.empty_detail = Nummers waar je naar luistert, verschijnen hier, gegroepeerd per dag.
+history.remove = Verwijderen uit geschiedenis
+history.removing = Verwijderen uit geschiedenis
+history.clearing = Geschiedenis wissen
+history.cleared = Luistergeschiedenis gewist
+
+# ---- Stats page
+stats.range.week = 7 dagen
+stats.range.month = 30 dagen
+stats.range.quarter = 90 dagen
+stats.range.year = Dit jaar
+stats.range.all = Altijd
+stats.subtitle = Uit je luistergeschiedenis op deze computer.
+stats.load_failed = Kan statistieken niet laden
+stats.empty_title = Niets geluisterd in deze periode
+stats.empty_detail = Speel wat muziek af — nummers tellen na 30 seconden.
+stats.tile.listened = geluisterd
+stats.tile.plays.one = keer afgespeeld
+stats.tile.plays.other = keer afgespeeld
+stats.tile.songs.one = nummer
+stats.tile.songs.other = nummers
+stats.tile.artists.one = artiest
+stats.tile.artists.other = artiesten
+stats.tile.albums.one = album
+stats.tile.albums.other = albums
+stats.song_plays.one = {count} keer · {time}
+stats.song_plays.other = {count} keer · {time}
+stats.top_songs = Topnummers
+stats.top_artists = Topartiesten
+stats.top_albums = Topalbums
+stats.by_hour = Per uur van de dag
+stats.by_weekday = Per weekdag
+stats.month_by_month = Maand per maand
+stats.year_in_music = Jaar in muziek
+stats.year.title = {year} in muziek
+stats.year.subtitle = Jouw jaar, uit de luistergeschiedenis op deze computer.
+stats.year.load_failed = Kan niet laden
+stats.year.empty_title = Niets afgespeeld dat jaar
+stats.year.empty_detail = Je overzicht vult zich terwijl je luistert.
+stats.year.top_song.one = Je topnummer · {count} keer afgespeeld
+stats.year.top_song.other = Je topnummer · {count} keer afgespeeld
+stats.year.top_artist = Je topartiest · {time}
+stats.year.favourite_hour = Je favoriete uur
+stats.year.busiest_day = Drukste dag · {time}
+
+# ---- Settings → Storage
+settings.storage.files = Bestanden
+settings.storage.settings_file = Instellingenbestand: {path}
+settings.storage.settings_not_saved = Instellingen worden niet opgeslagen (geen configuratiemap)
+settings.storage.secrets = Geheimen: {store}
+settings.storage.secrets_loading = Geheimen: laden…
+settings.storage.library_db = Bibliotheekdatabase: {path}
+settings.storage.library_db_unavailable = Bibliotheekdatabase: niet beschikbaar
+settings.storage.play_cache = Afspeelcache
+settings.storage.cache_usage = {used} van {limit} gebruikt. Nummers die het langst niet zijn afgespeeld, worden eerst verwijderd.
+settings.storage.cache_limit = Maximale cachegrootte
+settings.storage.cache_played = Afgespeelde nummers cachen
+settings.storage.cache_played_detail = Bewaart een kopie van wat je afspeelt (nog een keer opgehaald op de achtergrond).
+settings.storage.clear_cache_row = Afspeelcache wissen
+settings.storage.clear_cache = Cache wissen
+settings.storage.downloads = Downloads
+settings.storage.downloads_usage = {size} in {path}
+settings.storage.downloads_unavailable = Downloads zijn niet beschikbaar.
+settings.storage.download_folder = Downloadmap
+settings.storage.download_folder_detail = Downloads worden nooit automatisch verwijderd.
+settings.storage.backup = Back-up & herstel
+settings.storage.export = Back-up exporteren
+settings.storage.export_detail = Bibliotheek, playlists, geschiedenis en instellingen in één zip (geen wachtwoorden of cookies).
+settings.storage.export_button = Exporteren…
+settings.storage.restore = Back-up herstellen
+settings.storage.restore_detail = Vervangt de bibliotheek en instellingen; start daarna opnieuw op.
+settings.storage.restore_button = Herstellen…
+
+# ---- Settings → Privacy
+settings.privacy.listen_history = Luistergeschiedenis
+settings.privacy.pause_listen = Luistergeschiedenis pauzeren
+settings.privacy.pause_listen_detail = Afgespeelde nummers worden niet vastgelegd; Geschiedenis en Statistieken groeien niet meer.
+settings.privacy.clear_listen = Luistergeschiedenis wissen
+settings.privacy.clear_listen_detail = Verwijdert alles wat op deze computer is vastgelegd als afgespeeld.
+settings.privacy.clear_button = Wissen…
+settings.privacy.clear_listen_confirm = Elke vastgelegde keer afspelen wordt verwijderd; afspeeltellingen en statistieken beginnen opnieuw.
+settings.privacy.search_history = Zoekgeschiedenis
+settings.privacy.pause_search = Zoekgeschiedenis pauzeren
+settings.privacy.pause_search_detail = Zoekopdrachten die je verstuurt, worden niet onthouden.
+settings.privacy.clear_search = Zoekgeschiedenis wissen
+settings.privacy.clear_search_detail = Vergeet alle onthouden zoekopdrachten.
+settings.privacy.note = De geschiedenis blijft in de bibliotheekdatabase op deze computer. Afgespeelde nummers worden nooit doorgegeven aan de geschiedenis van je YouTube-account.
+
+# ---- Backup / restore
+storage.backup_saved = Back-up opgeslagen in {path}
+storage.backup_failed = Back-up mislukt: {error}
+storage.restore = Herstellen
+storage.restore_confirm_title = Deze back-up herstellen?
+storage.restore_confirm_detail = Je bibliotheek, playlists, geschiedenis en instellingen worden vervangen door die van de back-up. De YouTube Music-login en andere geheimen blijven.
+storage.restored_title = Back-up hersteld
+storage.restored_library = Bibliotheek hersteld. Start {app} opnieuw op zodat alle instellingen van kracht worden.
+storage.restored_all = Bibliotheek en instellingen hersteld. Start {app} opnieuw op zodat alle instellingen van kracht worden.
+storage.restored_settings_skipped = Bibliotheek hersteld; instellingen overgeslagen: {error}. Start {app} opnieuw op zodat alle instellingen van kracht worden.
+storage.restart_later = Later
+storage.restart_now = Nu opnieuw starten
+storage.restore_failed = Herstellen mislukt: {error}
+storage.cache_cleared = Afspeelcache gewist
+storage.clearing_search = Zoekgeschiedenis wissen
+storage.search_cleared = Zoekgeschiedenis gewist

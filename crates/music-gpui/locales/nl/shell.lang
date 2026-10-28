@@ -1,0 +1,227 @@
+# App shell and shared components.
+
+# ---- Page titles
+route.search = Zoeken
+route.search_query = Zoeken: {query}
+route.library = Bibliotheek · {tab}
+route.year_in_music = {year} in muziek
+route.recognition = Muziek herkennen
+route.settings = Instellingen · {section}
+route.library_tab.songs = Nummers
+route.library_tab.liked = Leuk
+route.library_tab.albums = Albums
+route.library_tab.artists = Artiesten
+route.library_tab.playlists = Playlists
+route.library_tab.podcasts = Podcasts
+route.library_tab.downloaded = Gedownload
+route.library_tab.local = Lokale bestanden
+
+# ---- Themes
+theme.dark = Donker
+theme.black = Puur zwart
+theme.dynamic = Dynamisch
+
+# ---- Player bar
+player.pick_a_song = Kies een nummer om te beginnen
+player.audio_unavailable = Audio niet beschikbaar: {error}
+player.buffering = Bufferen…
+player.play_failed_skipped = Kan ‘{title}’ niet afspelen, overgeslagen
+player.preview_badge = Voorbeeld
+player.tooltip.shuffle_on = Shuffle: aan
+player.tooltip.shuffle_off = Shuffle: uit
+player.tooltip.previous = Vorige (⌘←, na 3 s opnieuw vanaf begin)
+player.tooltip.next = Volgende (⌘→)
+player.tooltip.repeat_off = Herhalen: uit
+player.tooltip.repeat_all = Herhalen: alles
+player.tooltip.repeat_one = Herhalen: één
+player.tooltip.volume = Volume {percent}% (⌘↑ / ⌘↓)
+player.tooltip.queue = Wachtrij (⌥⌘Q)
+player.tooltip.mini_player = Miniplayer (⇧⌘M)
+player.tooltip.now_playing = Speelt nu & songtekst (⌘L)
+
+# ---- Sleep timer
+player.sleep.title = Slaaptimer
+player.sleep.minutes.one = {count} minuut
+player.sleep.minutes.other = {count} minuten
+player.sleep.end_of_track = Einde van nummer
+player.sleep.custom = Aangepast: {minutes} min
+player.sleep.turn_off = Uitzetten
+player.sleep.left = Nog {time}
+
+# ---- Queue
+queue.toast.play_next_one = ‘{title}’ wordt hierna afgespeeld
+queue.toast.play_next_many.one = {count} nummer wordt hierna afgespeeld
+queue.toast.play_next_many.other = {count} nummers worden hierna afgespeeld
+queue.toast.added_one = ‘{title}’ toegevoegd aan de wachtrij
+queue.toast.added_many.one = {count} nummer toegevoegd aan de wachtrij
+queue.toast.added_many.other = {count} nummers toegevoegd aan de wachtrij
+queue.section.now_playing = SPEELT NU
+queue.section.up_next = HIERNA · {count}
+queue.section.history = GESCHIEDENIS
+queue.nothing_playing = Er speelt niets
+queue.empty.repeat_all = Alles herhalen: de wachtrij begint opnieuw.
+queue.empty.hint = Voeg nummers toe met ‘Hierna afspelen’ of ‘Toevoegen aan wachtrij’.
+queue.tooltip.clear_up_next = Hierna wissen
+queue.tooltip.close = Sluiten (Esc)
+queue.tooltip.move_up = Omhoog
+queue.tooltip.move_down = Omlaag
+
+# ---- Song rows and the song context menu
+track.tooltip.more = Meer
+track.explicit_badge = E
+track.menu.go_to_podcast = Naar podcast
+track.menu.go_to_named_artist = Naar {artist}
+
+# ---- Item cards, rows, shelves
+items.load_failed = Kan deze pagina niet laden
+items.loading_more = Meer laden…
+
+# ---- "Add to playlist" / "New playlist" dialog
+playlist_dialog.name_placeholder = Naam van nieuwe playlist
+playlist_dialog.title_new = Nieuwe playlist
+playlist_dialog.title_add_one = ‘{title}’ toevoegen aan een playlist
+playlist_dialog.title_add_many.one = {count} nummer toevoegen aan een playlist
+playlist_dialog.title_add_many.other = {count} nummers toevoegen aan een playlist
+playlist_dialog.create = Maken
+playlist_dialog.also_on_youtube = Ook maken op YouTube Music (privé)
+playlist_dialog.youtube_songs.one = YouTube Music · {count} nummer
+playlist_dialog.youtube_songs.other = YouTube Music · {count} nummers
+playlist_dialog.empty = Nog geen playlists — maak er hierboven een.
+
+# ---- Mini player window
+mini.window_title = Miniplayer
+mini.tooltip.show_main = Hoofdvenster tonen
+
+# ---- Header search field
+app.search_placeholder = Zoek nummers, artiesten, albums
+search_box.recent = Recente zoekopdrachten
+search_box.loading_suggestions = Suggesties laden…
+
+# ---- Main window
+app.window_title = {page} — {app}
+app.audio_demo_clock = {error} (demoklok actief)
+app.tooltip.back = Terug (⌘[)
+app.tooltip.forward = Vooruit (⌘])
+
+# ---- YouTube Music account
+account.cookie_invalid = Deze cookie heeft geen SAPISID- / __Secure-3PAPISID-item; kopieer de hele cookieheader van een ingelogd verzoek aan music.youtube.com.
+account.checking = Account controleren…
+account.toast.signed_in = Ingelogd als {name}
+account.sign_in_failed = Inloggen mislukt: {error}
+account.toast.signed_out = Uitgelogd bij YouTube Music
+account.unreachable = Kan het account niet bereiken: {error}
+account.switching = Wisselen…
+account.toast.switched = Je gebruikt nu {name}
+account.switch_failed = Wisselen mislukt: {error}
+account.sign_in_first = Log eerst in bij YouTube Music.
+account.action.subscribing = Abonneren
+account.toast.subscribed = Geabonneerd op {artist}
+account.toast.unsubscribed = Abonnement op {artist} opgezegd
+account.sync.starting = Starten…
+account.sync.step.liked = Leuke nummers…
+account.sync.step.songs = Bibliotheeknummers…
+account.sync.step.albums = Albums…
+account.sync.step.artists = Artiesten…
+account.sync.step.playlists = Playlists…
+account.sync.step.playlist = Playlist {current}/{total}: {title}
+account.sync.summary = {liked}, {songs}, {albums}, {artists}, {playlists}
+account.sync.liked.one = {count} leuk nummer
+account.sync.liked.other = {count} leuke nummers
+account.sync.songs.one = {count} bibliotheeknummer
+account.sync.songs.other = {count} bibliotheeknummers
+account.sync.albums.one = {count} album
+account.sync.albums.other = {count} albums
+account.sync.artists.one = {count} artiest
+account.sync.artists.other = {count} artiesten
+account.sync.playlists.one = {count} playlist
+account.sync.playlists.other = {count} playlists
+account.toast.synced = YouTube Music-synchronisatie: {summary}
+account.sync.failed = {summary}. Fouten: {errors}
+account.sync.error = {part}: {error}
+account.sync.part.liked = leuke nummers
+account.sync.part.songs = bibliotheeknummers
+account.sync.part.albums = albums
+account.sync.part.artists = artiesten
+account.sync.part.playlists = playlists
+account.sync.part.playlist = playlist ‘{title}’
+account.sync.part.removing_playlist = een playlist verwijderen
+
+# ---- Library database, likes, playlists, downloads (toasts)
+store.library_unavailable = Bibliotheek niet beschikbaar: {error}
+store.no_data_dir = Geen gegevensmap; de bibliotheek is niet beschikbaar.
+store.library_db_unavailable = De bibliotheekdatabase is niet beschikbaar.
+store.toast.action_failed = {action} mislukt: {error}
+store.action.saving_like = Like opslaan
+store.action.removing_from_library = Verwijderen uit de bibliotheek
+store.action.adding_to_playlist = Toevoegen aan de playlist
+store.action.creating_playlist = Playlist maken
+store.toast.liked_one = ‘{title}’ leuk gevonden
+store.toast.unliked_one = ‘{title}’ verwijderd uit leuke nummers
+store.toast.liked_many.one = {count} nummer leuk gevonden
+store.toast.liked_many.other = {count} nummers leuk gevonden
+store.toast.unliked_many.one = {count} nummer verwijderd uit leuke nummers
+store.toast.unliked_many.other = {count} nummers verwijderd uit leuke nummers
+store.toast.only_locally = {message} (alleen lokaal; YouTube Music: {error})
+store.toast.removed_from_library.one = {count} nummer verwijderd uit de bibliotheek
+store.toast.removed_from_library.other = {count} nummers verwijderd uit de bibliotheek
+store.toast.added_to_playlist.one = {count} nummer toegevoegd aan ‘{playlist}’
+store.toast.added_to_playlist.other = {count} nummers toegevoegd aan ‘{playlist}’
+store.toast.remote_error = {message} (YouTube Music: {error})
+store.playlist_name_missing = Geef de playlist een naam.
+store.toast.playlist_created = ‘{playlist}’ gemaakt
+store.toast.playlist_created_with.one = ‘{playlist}’ gemaakt met {count} nummer
+store.toast.playlist_created_with.other = ‘{playlist}’ gemaakt met {count} nummers
+store.downloads_unavailable = Downloads zijn niet beschikbaar.
+store.toast.downloading_one = ‘{title}’ downloaden
+store.toast.downloading_many.one = {count} nummer downloaden
+store.toast.downloading_many.other = {count} nummers downloaden
+store.toast.delete_download_failed = Download verwijderen mislukt: {error}
+
+# ---- Local music folder scan
+store.add_music_folder_first = Voeg eerst een muziekmap toe.
+store.scan.summary = {files}: {added} nieuw, {updated} bijgewerkt, {unchanged} ongewijzigd, {removed} verwijderd
+store.scan.files.one = {count} bestand
+store.scan.files.other = {count} bestanden
+store.scan.with_extra = {summary}, {extra}
+store.scan.too_short.one = {count} te kort
+store.scan.too_short.other = {count} te kort
+store.scan.unreadable.one = {count} onleesbaar
+store.scan.unreadable.other = {count} onleesbaar
+store.toast.scan_finished = Scan voltooid: {summary}
+store.toast.scan_failed = Scan mislukt: {error}
+
+# ---- Playlist cover upload
+playlist_cover.read_failed = Kan de afbeelding niet lezen: {error}
+playlist_cover.not_an_image = Dit bestand is geen afbeelding die de app kan lezen (JPEG, PNG of WebP).
+playlist_cover.too_large = De afbeelding is te groot (meer dan 40 megapixel).
+playlist_cover.decode_failed = Kan de afbeelding niet decoderen: {error}
+playlist_cover.encode_failed = Kan de cover niet coderen: {error}
+playlist_cover.still_too_large = De cover is na compressie nog steeds groter dan 2 MiB.
+playlist_cover.sign_in = Log in bij YouTube Music om playlistcovers te wijzigen.
+playlist_cover.pick_prompt = Als cover gebruiken
+playlist_cover.uploading = Cover uploaden…
+playlist_cover.changed = Playlistcover gewijzigd
+playlist_cover.change_failed = Kan de cover niet wijzigen: {error}
+
+# ---- Radio and collection playback
+radio.toast.starting_from = Radio starten vanaf ‘{title}’
+radio.toast.starting = Radio starten: {name}
+radio.playlist_label = playlist
+radio.nothing_to_play = Hier is niets om af te spelen.
+radio.load_failed = Kan niet laden: {error}
+
+# ---- Lyrics
+lyrics.no_cache_dir = Geen cachemap
+
+# ---- Playlist editing
+store.action.renaming_playlist = Naam van playlist wijzigen
+store.action.deleting_playlist = Playlist verwijderen
+store.action.removing_from_playlist = Verwijderen uit de playlist
+store.action.moving_song = Nummer verplaatsen
+store.action.refreshing_playlist = Playlist vernieuwen
+store.toast.playlist_renamed = Naam gewijzigd in ‘{playlist}’
+store.toast.playlist_deleted = ‘{playlist}’ verwijderd
+store.toast.removed_from_playlist.one = {count} nummer verwijderd uit de playlist
+store.toast.removed_from_playlist.other = {count} nummers verwijderd uit de playlist
+store.toast.playlist_refreshed.one = Playlist vernieuwd ({count} nummer)
+store.toast.playlist_refreshed.other = Playlist vernieuwd ({count} nummers)
