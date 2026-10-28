@@ -5,6 +5,7 @@
 //! cargo run -p music-core --example lyrics -- "daft punk instant crush"
 //! cargo run -p music-core --example lyrics -- --translate en "yoasobi idol"
 //! cargo run -p music-core --example lyrics -- --raw DIR "yoasobi idol"   # + every raw payload into DIR
+//! cargo run -p music-core --example lyrics -- --ja-dict DIR "yoasobi idol" # download IPADIC into DIR: kanji readings
 //! ```
 //!
 //! Optional environment: `PAXSENIX_API_KEY`, `BETTERLYRICS_API_KEY`,
@@ -14,7 +15,7 @@
 use std::time::{Duration, Instant};
 
 use music_core::InnerTube;
-use music_core::lyrics::romanize::{Script, romanize_result};
+use music_core::lyrics::romanize::{Script, dictionary, romanize_result};
 use music_core::lyrics::translate::{AiTranslator, GoogleTranslator, LyricsTranslator};
 use music_core::lyrics::{
     LyricsQuery, LyricsResult, LyricsService, LyricsServiceConfig, ProviderId, ProviderKeys,
@@ -78,6 +79,33 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         args.remove(i);
         if i < args.len() {
             raw_dir = Some(std::path::PathBuf::from(args.remove(i)));
+        }
+    }
+    if let Some(i) = args.iter().position(|a| a == "--ja-dict") {
+        args.remove(i);
+        if i < args.len() {
+            let dir = std::path::PathBuf::from(args.remove(i));
+            let source = dictionary::DictionarySource::ipadic();
+            let t = Instant::now();
+            let mut last = 0;
+            let path = dictionary::install(
+                &source,
+                &dir,
+                &std::sync::atomic::AtomicBool::new(false),
+                |done, total| {
+                    if done == total || done - last >= 2 << 20 {
+                        last = done;
+                        eprintln!("dictionary: {done} / {total} bytes");
+                    }
+                },
+            )?;
+            dictionary::load(&path)?;
+            println!(
+                "kanji dictionary {} ready in {} ms ({} bytes on disk)\n",
+                path.display(),
+                t.elapsed().as_millis(),
+                dictionary::installed_size(&source, &dir)
+            );
         }
     }
     let track = InnerTube::default()
