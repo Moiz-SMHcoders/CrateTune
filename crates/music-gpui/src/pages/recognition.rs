@@ -68,23 +68,31 @@ impl RecognitionPage {
         };
         let (status, detail): (SharedString, SharedString) = match phase {
             Phase::Idle | Phase::Found { .. } => (
-                "Tap to identify a song".into(),
-                "Play the song near your computer; it listens through the microphone for \
-                 about 10 seconds."
-                    .into(),
+                t!("recognition.idle.title").into(),
+                t!("recognition.idle.detail").into(),
             ),
             Phase::Permission => (
-                "Waiting for microphone access…".into(),
-                "Allow access in the system prompt.".into(),
+                t!("recognition.permission.title").into(),
+                t!("recognition.permission.detail").into(),
             ),
             Phase::Listening {
                 elapsed, length, ..
             } => (
-                "Listening…".into(),
-                format!("{:.0} of {:.0} s", elapsed.floor(), length).into(),
+                t!("recognition.listening").into(),
+                t!(
+                    "recognition.listening_progress",
+                    elapsed = format!("{:.0}", elapsed.floor()),
+                    length = format!("{length:.0}")
+                )
+                .into(),
             ),
-            Phase::Identifying => ("Identifying…".into(), "Matching the recording.".into()),
-            Phase::Failed { message, .. } => ("Couldn't identify".into(), message.clone().into()),
+            Phase::Identifying => (
+                t!("recognition.identifying.title").into(),
+                t!("recognition.identifying.detail").into(),
+            ),
+            Phase::Failed { message, .. } => {
+                (t!("recognition.failed").into(), message.clone().into())
+            }
         };
         let (fraction, level) = match phase {
             Phase::Listening {
@@ -138,7 +146,7 @@ impl RecognitionPage {
             Button::new("recognize-open-privacy")
                 .small()
                 .outline()
-                .label("Open privacy settings")
+                .label(t!("recognition.open_privacy_settings"))
                 .on_click(|_, _, cx| mic_permission::open_settings(cx))
         });
         v_flex()
@@ -204,7 +212,7 @@ impl RecognitionPage {
                     Button::new("recognize-cancel")
                         .small()
                         .ghost()
-                        .label("Cancel")
+                        .label(t!("common.cancel"))
                         .on_click(move |_, _, cx| recognizer.update(cx, |r, cx| r.cancel(cx))),
                 )
             })
@@ -238,7 +246,7 @@ impl RecognitionPage {
             Button::new("recognize-play")
                 .primary()
                 .icon(IconName::Play)
-                .label("Play")
+                .label(t!("common.play"))
                 .disabled(best.is_none())
                 .on_click(move |_, _, cx| {
                     if let Some(track) = best.clone() {
@@ -251,7 +259,7 @@ impl RecognitionPage {
             Button::new("recognize-queue")
                 .outline()
                 .icon(Lucide::ListEnd)
-                .label("Add to queue")
+                .label(t!("common.add_to_queue"))
                 .disabled(best.is_none())
                 .on_click(move |_, window, cx| {
                     if let Some(track) = best.clone() {
@@ -264,7 +272,7 @@ impl RecognitionPage {
             Button::new("recognize-radio")
                 .ghost()
                 .icon(Lucide::Radio)
-                .label("Radio")
+                .label(t!("common.radio"))
                 .disabled(best.is_none())
                 .on_click(move |_, window, cx| {
                     if let Some(track) = best.clone() {
@@ -276,7 +284,7 @@ impl RecognitionPage {
         let search = Button::new("recognize-search")
             .ghost()
             .icon(IconName::Search)
-            .label("Search")
+            .label(t!("common.search"))
             .on_click(move |_, window, cx| {
                 let q = query.clone();
                 update_app(cx, |app, cx| app.search_now(&q, window, cx));
@@ -318,25 +326,28 @@ impl RecognitionPage {
                 .text_sm()
                 .text_color(muted)
                 .child(Spinner::new().small())
-                .child("Searching YouTube Music…")
+                .child(t!("recognition.match.searching"))
                 .into_any_element(),
             Load::Failed(e) => div()
                 .text_sm()
                 .text_color(muted)
-                .child(SharedString::from(format!(
-                    "YouTube Music search failed: {e}"
-                )))
+                .child(t!("recognition.match.failed", error = e))
                 .into_any_element(),
             Load::Ready(list) if list.is_empty() => div()
                 .text_sm()
                 .text_color(muted)
-                .child("Not found on YouTube Music.")
+                .child(t!("recognition.match.none"))
                 .into_any_element(),
             Load::Ready(list) => {
                 let list = Rc::new(list.iter().take(5).cloned().collect::<Vec<_>>());
                 v_flex()
                     .gap_1()
-                    .child(section_header("On YouTube Music", None, None, cx))
+                    .child(section_header(
+                        t!("recognition.match.title"),
+                        None,
+                        None,
+                        cx,
+                    ))
                     .children((0..list.len()).map(|ix| {
                         let active = is_playing(&list[ix].video_id, cx);
                         TrackRow::new("recognize-match", list.clone(), ix).active(active)
@@ -353,9 +364,9 @@ impl RecognitionPage {
                         .min_w_0()
                         .gap_1()
                         .child(div().text_xs().text_color(muted).child(if from_history {
-                            "From your recognition history"
+                            t!("recognition.result.from_history")
                         } else {
-                            "Recognized"
+                            t!("recognition.result.recognized")
                         }))
                         .child(
                             div()
@@ -390,8 +401,8 @@ impl RecognitionPage {
         if entries.is_empty() {
             return empty_state(
                 Lucide::AudioWaveform,
-                "No recognitions yet",
-                "Songs you identify show up here, newest first.",
+                t!("recognition.history.empty.title"),
+                t!("recognition.history.empty.detail"),
                 cx,
             )
             .into_any_element();
@@ -401,16 +412,16 @@ impl RecognitionPage {
             Button::new("recognize-clear")
                 .small()
                 .ghost()
-                .label("Clear")
+                .label(t!("common.clear"))
                 .on_click(move |_, window, cx| {
                     let recognizer = recognizer.clone();
                     window.open_alert_dialog(cx, move |alert, _, _| {
                         let recognizer = recognizer.clone();
                         alert
-                            .title("Clear recognition history?")
-                            .description("The list of identified songs is deleted.")
+                            .title(t!("recognition.history.clear_title"))
+                            .description(t!("recognition.history.clear_detail"))
                             .show_cancel(true)
-                            .ok_text("Clear")
+                            .ok_text(t!("common.clear"))
                             .on_ok(move |_, _, cx| {
                                 recognizer.update(cx, |r, cx| r.clear_history(cx));
                                 true
@@ -426,8 +437,8 @@ impl RecognitionPage {
         v_flex()
             .gap_2()
             .child(section_header(
-                "History",
-                Some(format!("{} songs", entries.len()).into()),
+                t!("recognition.history.title"),
+                Some(tp!("common.songs", entries.len()).into()),
                 Some(clear.into_any_element()),
                 cx,
             ))
@@ -459,7 +470,7 @@ impl RecognitionPage {
                 .ghost()
                 .xsmall()
                 .icon(Lucide::X)
-                .tooltip("Remove from history")
+                .tooltip(t!("recognition.history.remove"))
                 .on_click(move |_, _, cx| recognizer.update(cx, |r, cx| r.remove(&key, cx)))
         };
         let art = artwork(
@@ -517,8 +528,8 @@ impl Render for RecognitionPage {
             v_flex()
                 .gap_8()
                 .child(page_title(
-                    "Recognize music",
-                    Some("Identify a song playing around you (⇧⌘R)".into()),
+                    t!("recognition.title"),
+                    Some(t!("recognition.subtitle").into()),
                     cx,
                 ))
                 .child(hero)

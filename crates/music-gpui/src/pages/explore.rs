@@ -116,27 +116,27 @@ impl Render for ExplorePage {
         };
         let mut content = v_flex()
             .gap_8()
-            .child(page_title("Explore", None, cx))
+            .child(page_title(t!("nav.explore"), None, cx))
             .child(grid(vec![
                 tile(
                     "explore-new",
                     Lucide::Sparkles,
-                    "New releases",
-                    "Fresh albums and singles",
+                    t!("nav.new_releases"),
+                    t!("explore.new_releases_detail"),
                     Route::NewReleases,
                 ),
                 tile(
                     "explore-charts",
                     Lucide::ChartNoAxesColumn,
-                    "Charts",
-                    "What's popular, by country",
+                    t!("nav.charts"),
+                    t!("explore.charts_detail"),
                     Route::Charts,
                 ),
                 tile(
                     "explore-moods",
                     Lucide::Shapes,
-                    "Moods & genres",
-                    "Playlists for every moment",
+                    t!("nav.moods"),
+                    t!("explore.moods_detail"),
                     Route::MoodsAndGenres,
                 ),
             ]));
@@ -146,7 +146,7 @@ impl Render for ExplorePage {
                     let all = Button::new("explore-moods-all")
                         .ghost()
                         .small()
-                        .label("See all")
+                        .label(t!("common.see_all"))
                         .on_click(|_, window, cx| {
                             update_app(cx, |app, cx| {
                                 app.navigate(Route::MoodsAndGenres, window, cx)
@@ -156,7 +156,7 @@ impl Render for ExplorePage {
                     content = content.child(
                         v_flex()
                             .gap_3()
-                            .child(section_header("Moods & genres", None, Some(all), cx))
+                            .child(section_header(t!("nav.moods"), None, Some(all), cx))
                             .child(
                                 div()
                                     .id("explore-moods-scroll")

@@ -18,6 +18,7 @@ use super::SettingsPanel;
 use super::file::{ContentConfig, Settings};
 use super::panel::SettingsEvent;
 use super::widgets::{group, note, row};
+use crate::i18n::Key;
 
 /// Content languages offered (YouTube Music `hl` values).
 pub const LANGUAGES: &[(&str, &str)] = &[
@@ -64,58 +65,59 @@ pub const LANGUAGES: &[(&str, &str)] = &[
     ("zh-TW", "繁體中文"),
 ];
 
-/// Content countries offered (YouTube Music `gl` values).
-pub const COUNTRIES: &[(&str, &str)] = &[
-    ("AE", "United Arab Emirates"),
-    ("AR", "Argentina"),
-    ("AT", "Austria"),
-    ("AU", "Australia"),
-    ("BE", "Belgium"),
-    ("BR", "Brazil"),
-    ("CA", "Canada"),
-    ("CH", "Switzerland"),
-    ("CL", "Chile"),
-    ("CO", "Colombia"),
-    ("CZ", "Czechia"),
-    ("DE", "Germany"),
-    ("DK", "Denmark"),
-    ("EG", "Egypt"),
-    ("ES", "Spain"),
-    ("FI", "Finland"),
-    ("FR", "France"),
-    ("GB", "United Kingdom"),
-    ("GR", "Greece"),
-    ("HK", "Hong Kong"),
-    ("HU", "Hungary"),
-    ("ID", "Indonesia"),
-    ("IE", "Ireland"),
-    ("IL", "Israel"),
-    ("IN", "India"),
-    ("IT", "Italy"),
-    ("JP", "Japan"),
-    ("KR", "South Korea"),
-    ("MX", "Mexico"),
-    ("MY", "Malaysia"),
-    ("NG", "Nigeria"),
-    ("NL", "Netherlands"),
-    ("NO", "Norway"),
-    ("NZ", "New Zealand"),
-    ("PE", "Peru"),
-    ("PH", "Philippines"),
-    ("PL", "Poland"),
-    ("PT", "Portugal"),
-    ("RO", "Romania"),
-    ("RU", "Russia"),
-    ("SA", "Saudi Arabia"),
-    ("SE", "Sweden"),
-    ("SG", "Singapore"),
-    ("TH", "Thailand"),
-    ("TR", "Turkey"),
-    ("TW", "Taiwan"),
-    ("UA", "Ukraine"),
-    ("US", "United States"),
-    ("VN", "Vietnam"),
-    ("ZA", "South Africa"),
+/// Content countries offered (YouTube Music `gl` values) and their names
+/// (`country.<code>`, resolved when the picker is built).
+pub const COUNTRIES: &[(&str, Key)] = &[
+    ("AE", k!("country.AE")),
+    ("AR", k!("country.AR")),
+    ("AT", k!("country.AT")),
+    ("AU", k!("country.AU")),
+    ("BE", k!("country.BE")),
+    ("BR", k!("country.BR")),
+    ("CA", k!("country.CA")),
+    ("CH", k!("country.CH")),
+    ("CL", k!("country.CL")),
+    ("CO", k!("country.CO")),
+    ("CZ", k!("country.CZ")),
+    ("DE", k!("country.DE")),
+    ("DK", k!("country.DK")),
+    ("EG", k!("country.EG")),
+    ("ES", k!("country.ES")),
+    ("FI", k!("country.FI")),
+    ("FR", k!("country.FR")),
+    ("GB", k!("country.GB")),
+    ("GR", k!("country.GR")),
+    ("HK", k!("country.HK")),
+    ("HU", k!("country.HU")),
+    ("ID", k!("country.ID")),
+    ("IE", k!("country.IE")),
+    ("IL", k!("country.IL")),
+    ("IN", k!("country.IN")),
+    ("IT", k!("country.IT")),
+    ("JP", k!("country.JP")),
+    ("KR", k!("country.KR")),
+    ("MX", k!("country.MX")),
+    ("MY", k!("country.MY")),
+    ("NG", k!("country.NG")),
+    ("NL", k!("country.NL")),
+    ("NO", k!("country.NO")),
+    ("NZ", k!("country.NZ")),
+    ("PE", k!("country.PE")),
+    ("PH", k!("country.PH")),
+    ("PL", k!("country.PL")),
+    ("PT", k!("country.PT")),
+    ("RO", k!("country.RO")),
+    ("RU", k!("country.RU")),
+    ("SA", k!("country.SA")),
+    ("SE", k!("country.SE")),
+    ("SG", k!("country.SG")),
+    ("TH", k!("country.TH")),
+    ("TR", k!("country.TR")),
+    ("TW", k!("country.TW")),
+    ("UA", k!("country.UA")),
+    ("US", k!("country.US")),
+    ("VN", k!("country.VN")),
+    ("ZA", k!("country.ZA")),
 ];
 
 /// One entry of a language / country picker.
@@ -144,23 +146,43 @@ impl SelectItem for Choice {
 
 type Picker = Entity<SelectState<SearchableVec<Choice>>>;
 
+fn choice(code: &'static str, name: &str) -> Choice {
+    Choice {
+        code,
+        title: format!("{name} ({code})").into(),
+    }
+}
+
+/// Content languages, each under its own name (not translated).
+fn language_choices() -> Vec<Choice> {
+    LANGUAGES
+        .iter()
+        .map(|(code, name)| choice(code, name))
+        .collect()
+}
+
+/// Content countries, named in the current UI language.
+fn country_choices() -> Vec<Choice> {
+    COUNTRIES
+        .iter()
+        .map(|(code, key)| choice(code, crate::i18n::text(*key)))
+        .collect()
+}
+
+/// The position of the code matching `current` (case-insensitive).
+fn listed_code(items: &[Choice], current: &str) -> Option<usize> {
+    items
+        .iter()
+        .position(|c| c.code.eq_ignore_ascii_case(current))
+}
+
 fn picker(
-    list: &'static [(&'static str, &'static str)],
+    items: Vec<Choice>,
     current: &str,
     window: &mut Window,
     cx: &mut Context<SettingsPanel>,
 ) -> Picker {
-    let selected = list
-        .iter()
-        .position(|(code, _)| code.eq_ignore_ascii_case(current))
-        .map(IndexPath::new);
-    let items: Vec<Choice> = list
-        .iter()
-        .map(|(code, name)| Choice {
-            code,
-            title: format!("{name} ({code})").into(),
-        })
-        .collect();
+    let selected = listed_code(&items, current).map(IndexPath::new);
     cx.new(|cx| SelectState::new(SearchableVec::new(items), selected, window, cx).searchable(true))
 }
 
@@ -168,6 +190,8 @@ fn picker(
 pub struct ContentState {
     language: Picker,
     country: Picker,
+    /// The UI generation the country names were made in.
+    generation: u32,
 }
 
 impl ContentState {
@@ -176,8 +200,8 @@ impl ContentState {
         window: &mut Window,
         cx: &mut Context<SettingsPanel>,
     ) -> (Self, Vec<Subscription>) {
-        let language = picker(LANGUAGES, &settings.content.language, window, cx);
-        let country = picker(COUNTRIES, &settings.content.country, window, cx);
+        let language = picker(language_choices(), &settings.content.language, window, cx);
+        let country = picker(country_choices(), &settings.content.country, window, cx);
         let subscriptions = vec![
             cx.subscribe(
                 &language,
@@ -198,7 +222,36 @@ impl ContentState {
                 },
             ),
         ];
-        (Self { language, country }, subscriptions)
+        (
+            Self {
+                language,
+                country,
+                generation: crate::i18n::generation(),
+            },
+            subscriptions,
+        )
+    }
+
+    /// Renames the countries after a UI language change.
+    fn relabel(
+        &mut self,
+        current_country: &str,
+        window: &mut Window,
+        cx: &mut Context<SettingsPanel>,
+    ) {
+        let generation = crate::i18n::generation();
+        if self.generation == generation {
+            return;
+        }
+        self.generation = generation;
+        let items = country_choices();
+        let selected = listed_code(&items, current_country).map(IndexPath::new);
+        self.country.update(cx, |state, cx| {
+            state.set_items(SearchableVec::new(items), window, cx);
+            if let Some(ix) = selected {
+                state.set_selected_index(Some(ix), window, cx);
+            }
+        });
     }
 }
 
@@ -218,17 +271,17 @@ impl SettingsPanel {
 /// Keeps a picker on the saved value (it can change without the picker, e.g. from a script).
 fn sync_picker(
     picker: &Picker,
-    list: &'static [(&'static str, &'static str)],
+    mut codes: impl Iterator<Item = &'static str>,
     current: &str,
     window: &mut Window,
     cx: &mut Context<SettingsPanel>,
 ) {
-    let Some((code, _)) = list.iter().find(|(c, _)| c.eq_ignore_ascii_case(current)) else {
+    let Some(code) = codes.find(|c| c.eq_ignore_ascii_case(current)) else {
         return;
     };
     picker.update(cx, |state, cx| {
-        if state.selected_value() != Some(code) {
-            state.set_selected_value(code, window, cx);
+        if state.selected_value() != Some(&code) {
+            state.set_selected_value(&code, window, cx);
         }
     });
 }
@@ -239,19 +292,28 @@ pub(super) fn render(
     cx: &mut Context<SettingsPanel>,
 ) -> AnyElement {
     let c = panel.settings.content.clone();
-    sync_picker(&panel.content.language, LANGUAGES, &c.language, window, cx);
-    sync_picker(&panel.content.country, COUNTRIES, &c.country, window, cx);
+    panel.content.relabel(&c.country, window, cx);
+    let languages = LANGUAGES.iter().map(|(code, _)| *code);
+    sync_picker(&panel.content.language, languages, &c.language, window, cx);
+    let countries = COUNTRIES.iter().map(|(code, _)| *code);
+    sync_picker(&panel.content.country, countries, &c.country, window, cx);
     let select = |picker: &Picker, placeholder: &'static str| {
         div().w(px(260.)).child(
             Select::new(picker)
                 .small()
                 .placeholder(placeholder)
-                .search_placeholder("Search…")
+                .search_placeholder(t!("common.search_placeholder"))
                 .menu_max_h(px(320.)),
         )
     };
-    let language = select(&panel.content.language, "Language");
-    let country = select(&panel.content.country, "Country");
+    let language = select(
+        &panel.content.language,
+        t!("settings.content.language_placeholder"),
+    );
+    let country = select(
+        &panel.content.country,
+        t!("settings.content.country_placeholder"),
+    );
     let switch = |id: &'static str,
                   checked: bool,
                   edit: fn(&mut ContentConfig, bool),
@@ -284,47 +346,42 @@ pub(super) fn render(
     v_flex()
         .gap_5()
         .child(
-            group("Language & region", cx)
+            group(t!("settings.content.group_region"), cx)
                 .child(row(
-                    "Content language",
-                    Some("Language of titles, shelves and search on YouTube Music."),
+                    t!("settings.content.language"),
+                    Some(t!("settings.content.language_description")),
                     language,
                     cx,
                 ))
                 .child(row(
-                    "Content country",
-                    Some("Region of the home feed, charts and new releases."),
+                    t!("settings.content.country"),
+                    Some(t!("settings.content.country_description")),
                     country,
                     cx,
                 ))
-                .child(note(
-                    "Changes apply right away; open pages reload in the new language.",
-                    cx,
-                )),
+                .child(note(t!("settings.content.region_note"), cx)),
         )
         .child(
-            group("Filters", cx)
+            group(t!("settings.content.group_filters"), cx)
                 .child(row(
-                    "Hide explicit content",
-                    Some("Removes songs and albums marked explicit from pages, search and radio."),
+                    t!("settings.content.hide_explicit"),
+                    Some(t!("settings.content.hide_explicit_description")),
                     explicit,
                     cx,
                 ))
                 .child(row(
-                    "Hide music videos",
-                    Some("Songs only: music videos and user videos are left out of shelves, search, playlists, albums, radio and queues (an album that YouTube only has as official-audio videos stays complete)."),
+                    t!("settings.content.hide_videos"),
+                    Some(t!("settings.content.hide_videos_description")),
                     videos,
                     cx,
                 )),
         )
-        .child(
-            group("Radio", cx).child(row(
-                "Autoplay similar songs",
-                Some("When the queue's last song starts, songs from its radio are added after it."),
-                autoplay,
-                cx,
-            )),
-        )
+        .child(group(t!("settings.content.group_radio"), cx).child(row(
+            t!("settings.content.autoplay"),
+            Some(t!("settings.content.autoplay_description")),
+            autoplay,
+            cx,
+        )))
         .into_any_element()
 }
 
@@ -334,8 +391,10 @@ mod tests {
 
     #[test]
     fn codes_are_unique_and_defaults_listed() {
-        for list in [LANGUAGES, COUNTRIES] {
-            let mut codes: Vec<_> = list.iter().map(|(c, _)| *c).collect();
+        let languages: Vec<&str> = LANGUAGES.iter().map(|(c, _)| *c).collect();
+        let countries: Vec<&str> = COUNTRIES.iter().map(|(c, _)| *c).collect();
+        for list in [&languages, &countries] {
+            let mut codes = list.clone();
             codes.sort();
             codes.dedup();
             assert_eq!(codes.len(), list.len());
@@ -344,5 +403,11 @@ mod tests {
         assert!(LANGUAGES.iter().any(|(c, _)| *c == d.language));
         assert!(COUNTRIES.iter().any(|(c, _)| *c == d.country));
         assert!(COUNTRIES.iter().all(|(c, _)| c.len() == 2));
+        // Every country's key is its own code.
+        assert!(
+            COUNTRIES
+                .iter()
+                .all(|(c, key)| key.name() == format!("country.{c}"))
+        );
     }
 }

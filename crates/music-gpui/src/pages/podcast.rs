@@ -104,7 +104,7 @@ fn episode_row(
                 Some(id) => {
                     let name = title.clone();
                     menu.separator().item(
-                        gpui_component::menu::PopupMenuItem::new("Open episode page")
+                        gpui_component::menu::PopupMenuItem::new(t!("podcast.open_episode_page"))
                             .icon(Lucide::ScrollText)
                             .on_click(move |_, window, cx| {
                                 let route = Route::Episode {
@@ -314,7 +314,7 @@ impl PodcastPage {
                     if let Some(d) = this.data.ready_mut() {
                         d.saved = Some(!save);
                     }
-                    let message = format!("Couldn't update your library: {e}");
+                    let message = t!("podcast.save_failed", error = e);
                     window_handle
                         .update(cx, |_, window, cx| notify(window, cx, message))
                         .ok();
@@ -337,11 +337,9 @@ impl PodcastPage {
         let count = data.episodes.len();
         lines.push(
             if data.paging.has_more() {
-                format!("{count}+ episodes")
-            } else if count == 1 {
-                "1 episode".to_owned()
+                tp!("podcast.episodes_more", count)
             } else {
-                format!("{count} episodes")
+                tp!("podcast.episodes", count)
             }
             .into_any_element(),
         );
@@ -357,21 +355,21 @@ impl PodcastPage {
         if !data.tracks.is_empty() {
             actions.push(action_button(
                 "podcast-play",
-                "Play",
+                t!("common.play"),
                 Lucide::Play,
                 true,
                 tracks_action(CollectionAction::Play),
             ));
             actions.push(action_button(
                 "podcast-shuffle",
-                "Shuffle",
+                t!("common.shuffle"),
                 Lucide::Shuffle,
                 false,
                 tracks_action(CollectionAction::Shuffle),
             ));
             actions.push(action_button(
                 "podcast-enqueue",
-                "Add to queue",
+                t!("common.add_to_queue"),
                 Lucide::ListEnd,
                 false,
                 tracks_action(CollectionAction::AddToQueue),
@@ -385,7 +383,11 @@ impl PodcastPage {
             });
             actions.push(action_button(
                 "podcast-save",
-                if saved { "Saved" } else { "Save to library" },
+                if saved {
+                    t!("podcast.saved")
+                } else {
+                    t!("podcast.save")
+                },
                 Lucide::Bookmark,
                 false,
                 toggle,
@@ -400,7 +402,7 @@ impl PodcastPage {
                 Hero {
                     art: sized_art(podcast.thumbnail_url.as_deref(), 480),
                     round: false,
-                    kind: "Podcast".into(),
+                    kind: t!("common.podcast").into(),
                     title: podcast.title.clone().into(),
                     lines,
                     actions,
@@ -489,8 +491,8 @@ impl Render for PodcastPage {
                     .child(header)
                     .child(empty_state(
                         Lucide::AudioLines,
-                        "No episodes",
-                        "This show has no episodes here yet.",
+                        t!("podcast.empty.title"),
+                        t!("podcast.empty.detail"),
                         cx,
                     ))
                     .into_any_element()
@@ -501,7 +503,11 @@ impl Render for PodcastPage {
                 &self.plain_scroll,
                 v_flex()
                     .gap_6()
-                    .child(page_title(self.name.clone(), Some("Podcast".into()), cx))
+                    .child(page_title(
+                        self.name.clone(),
+                        Some(t!("common.podcast").into()),
+                        cx,
+                    ))
                     .child(load_state("podcast", None, |_, _| {}, cx)),
             )
             .into_any_element(),
@@ -512,7 +518,11 @@ impl Render for PodcastPage {
                     &self.plain_scroll,
                     v_flex()
                         .gap_6()
-                        .child(page_title(self.name.clone(), Some("Podcast".into()), cx))
+                        .child(page_title(
+                            self.name.clone(),
+                            Some(t!("common.podcast").into()),
+                            cx,
+                        ))
                         .child(load_state("podcast", Some(e), retry, cx)),
                 )
                 .into_any_element()
@@ -585,13 +595,19 @@ impl EpisodePage {
         let track = e.track.clone();
         let (play, enqueue) = (track.clone(), track);
         let mut actions = vec![
-            action_button("episode-play", "Play", Lucide::Play, true, move |_, cx| {
-                let t = play.clone();
-                update_app(cx, |app, cx| app.play_now(t, cx));
-            }),
+            action_button(
+                "episode-play",
+                t!("common.play"),
+                Lucide::Play,
+                true,
+                move |_, cx| {
+                    let t = play.clone();
+                    update_app(cx, |app, cx| app.play_now(t, cx));
+                },
+            ),
             action_button(
                 "episode-enqueue",
-                "Add to queue",
+                t!("common.add_to_queue"),
                 Lucide::ListEnd,
                 false,
                 move |window, cx| {
@@ -605,7 +621,7 @@ impl EpisodePage {
         {
             actions.push(action_button(
                 "episode-show",
-                "Go to podcast",
+                t!("podcast.go_to_podcast"),
                 Lucide::AudioLines,
                 false,
                 move |window, cx| {
@@ -621,7 +637,7 @@ impl EpisodePage {
             Hero {
                 art: sized_art(e.track.thumbnail_url.as_deref(), 480),
                 round: false,
-                kind: "Episode".into(),
+                kind: t!("common.episode").into(),
                 title: e.track.title.clone().into(),
                 lines,
                 actions,
@@ -653,12 +669,20 @@ impl Render for EpisodePage {
             }
             Load::Loading => {
                 content = content
-                    .child(page_title(self.name.clone(), Some("Episode".into()), cx))
+                    .child(page_title(
+                        self.name.clone(),
+                        Some(t!("common.episode").into()),
+                        cx,
+                    ))
                     .child(load_state("episode", None, |_, _| {}, cx));
             }
             Load::Failed(e) => {
                 content = content
-                    .child(page_title(self.name.clone(), Some("Episode".into()), cx))
+                    .child(page_title(
+                        self.name.clone(),
+                        Some(t!("common.episode").into()),
+                        cx,
+                    ))
                     .child(load_state(
                         "episode",
                         Some(e),

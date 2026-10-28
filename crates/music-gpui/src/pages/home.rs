@@ -198,7 +198,7 @@ impl Render for HomePage {
         })
         .unwrap_or_default();
 
-        let mut content = v_flex().gap_8().child(page_title("Home", None, cx));
+        let mut content = v_flex().gap_8().child(page_title(t!("nav.home"), None, cx));
         if !self.chips.is_empty() {
             let entity = cx.entity().downgrade();
             content = content.child(chip_row(
@@ -214,8 +214,8 @@ impl Render for HomePage {
         if !recent.is_empty() && self.params.is_none() {
             content = content.child(shelf(
                 "home-recent",
-                "Played this session",
-                Some("Listen again".into()),
+                t!("home.recent.title"),
+                Some(t!("home.recent.subtitle").into()),
                 song_cards("home-recent", &recent),
                 cx,
             ));

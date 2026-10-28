@@ -198,14 +198,14 @@ impl PlaylistPage {
         if !data.tracks.is_empty() {
             actions.push(action_button(
                 "playlist-play",
-                "Play",
+                t!("common.play"),
                 Lucide::Play,
                 true,
                 tracks_action(CollectionAction::Play),
             ));
             actions.push(action_button(
                 "playlist-shuffle",
-                "Shuffle",
+                t!("common.shuffle"),
                 Lucide::Shuffle,
                 false,
                 tracks_action(CollectionAction::Shuffle),
@@ -218,7 +218,7 @@ impl PlaylistPage {
         let label = playlist.title.clone();
         actions.push(action_button(
             "playlist-radio",
-            "Radio",
+            t!("common.radio"),
             Lucide::Radio,
             false,
             move |window, cx| {
@@ -234,7 +234,7 @@ impl PlaylistPage {
             let id = playlist.playlist_id.clone();
             actions.push(action_button(
                 "playlist-cover",
-                "Change cover…",
+                t!("playlist.change_cover"),
                 Lucide::Upload,
                 false,
                 move |window, cx| {
@@ -248,7 +248,7 @@ impl PlaylistPage {
         if !data.tracks.is_empty() {
             actions.push(action_button(
                 "playlist-enqueue",
-                "Add to queue",
+                t!("common.add_to_queue"),
                 Lucide::ListEnd,
                 false,
                 tracks_action(CollectionAction::AddToQueue),
@@ -263,7 +263,7 @@ impl PlaylistPage {
                 Hero {
                     art: sized_art(playlist.thumbnail_url.as_deref(), 480),
                     round: false,
-                    kind: "Playlist".into(),
+                    kind: t!("common.playlist").into(),
                     title: playlist.title.clone().into(),
                     lines,
                     actions,
@@ -349,8 +349,8 @@ impl Render for PlaylistPage {
                     .child(header)
                     .child(empty_state(
                         Lucide::ListMusic,
-                        "No songs",
-                        "This playlist is empty (or all of its songs are filtered out).",
+                        t!("playlist.empty.title"),
+                        t!("playlist.empty.detail"),
                         cx,
                     ))
                     .into_any_element()
@@ -361,7 +361,11 @@ impl Render for PlaylistPage {
                 &self.plain_scroll,
                 v_flex()
                     .gap_6()
-                    .child(page_title(self.name.clone(), Some("Playlist".into()), cx))
+                    .child(page_title(
+                        self.name.clone(),
+                        Some(t!("common.playlist").into()),
+                        cx,
+                    ))
                     .child(load_state("playlist", None, |_, _| {}, cx)),
             )
             .into_any_element(),
@@ -372,7 +376,11 @@ impl Render for PlaylistPage {
                     &self.plain_scroll,
                     v_flex()
                         .gap_6()
-                        .child(page_title(self.name.clone(), Some("Playlist".into()), cx))
+                        .child(page_title(
+                            self.name.clone(),
+                            Some(t!("common.playlist").into()),
+                            cx,
+                        ))
                         .child(load_state("playlist", Some(e), retry, cx)),
                 )
                 .into_any_element()

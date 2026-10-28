@@ -1,0 +1,46 @@
+# The search page (results of a YouTube Music search).
+
+# Page heading before anything was searched.
+search.title = Search
+# Page heading for a query; {query} is what was searched (keep the quotation marks
+# your language uses).
+search.query_title = “{query}”
+search.searching = Searching…
+
+# Result category tabs (chips in one row; keep short).
+search.tab.all = All
+search.tab.songs = Songs
+search.tab.videos = Videos
+search.tab.albums = Albums
+search.tab.artists = Artists
+search.tab.community_playlists = Community playlists
+search.tab.featured_playlists = Featured playlists
+search.tab.podcasts = Podcasts
+search.tab.episodes = Episodes
+
+# Empty state of a category tab (title).
+search.tab_empty.songs = No songs
+search.tab_empty.videos = No videos
+search.tab_empty.albums = No albums
+search.tab_empty.artists = No artists
+search.tab_empty.community_playlists = No community playlists
+search.tab_empty.featured_playlists = No featured playlists
+search.tab_empty.podcasts = No podcasts
+search.tab_empty.episodes = No episodes
+search.tab_empty.detail = Try another category or search.
+
+# Spelling correction above the results. {corrected} is YouTube's corrected query
+# and {original} what was typed; both are shown as bold links (the sentence may
+# put them in any order). Text between them is shown as plain text.
+search.correction.applied = Showing results for {corrected} · Search instead for {original}
+# YouTube suggests a correction without applying it; {corrected} is a link.
+search.correction.suggested = Did you mean {corrected}?
+
+# Heading of the best match card on the "All" tab.
+search.top_result = Top result
+search.empty.title = No results
+search.empty.detail = Try another search, or check the spelling.
+
+# Shown before anything was searched.
+search.start.title = Search YouTube Music
+search.start.detail = Type a song, artist, album or playlist in the search field (⌘F) and press Enter.

@@ -63,16 +63,16 @@ impl NewReleasesPage {
 impl Render for NewReleasesPage {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let mut content = v_flex().gap_6().child(page_title(
-            "New releases",
-            Some("New albums and singles".into()),
+            t!("nav.new_releases"),
+            Some(t!("new_releases.subtitle").into()),
             cx,
         ));
         match &self.data {
             Load::Ready((items, _)) if items.is_empty() => {
                 content = content.child(empty_state(
                     Lucide::Sparkles,
-                    "Nothing new",
-                    "YouTube Music returned no new releases for this region.",
+                    t!("new_releases.empty.title"),
+                    t!("new_releases.empty.detail"),
                     cx,
                 ))
             }
