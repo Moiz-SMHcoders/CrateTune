@@ -94,22 +94,29 @@ impl DownloadsPage {
         let theme = cx.theme();
         let muted = theme.muted_foreground;
         let (status, busy): (String, bool) = match &job.status {
-            DownloadStatus::Queued => ("Queued".into(), true),
+            DownloadStatus::Queued => (t!("downloads.status.queued").into(), true),
             DownloadStatus::Downloading => (
                 match job.total_bytes {
-                    Some(total) => format!("Downloading {}", format_bytes(total)),
-                    None => "Downloading…".into(),
+                    Some(total) => {
+                        t!(
+                            "downloads.status.downloading_size",
+                            size = format_bytes(total)
+                        )
+                    }
+                    None => t!("common.downloading").into(),
                 },
                 true,
             ),
-            DownloadStatus::Completed if job.complete => {
-                (format!("Done · {}", format_bytes(job.size)), false)
-            }
-            DownloadStatus::Completed => {
-                (format!("Preview only · {}", format_bytes(job.size)), false)
-            }
-            DownloadStatus::Failed(e) => (format!("Failed: {e}"), false),
-            DownloadStatus::Cancelled => ("Cancelled".into(), false),
+            DownloadStatus::Completed if job.complete => (
+                t!("downloads.status.done", size = format_bytes(job.size)),
+                false,
+            ),
+            DownloadStatus::Completed => (
+                t!("downloads.status.preview", size = format_bytes(job.size)),
+                false,
+            ),
+            DownloadStatus::Failed(e) => (t!("downloads.status.failed", error = e), false),
+            DownloadStatus::Cancelled => (t!("downloads.status.cancelled").into(), false),
         };
         let id = job.track.video_id.clone();
         let track = job.track.clone();
@@ -119,7 +126,7 @@ impl DownloadsPage {
                     .ghost()
                     .xsmall()
                     .icon(Lucide::X)
-                    .tooltip("Cancel")
+                    .tooltip(t!("common.cancel"))
                     .on_click(move |_, _, cx| {
                         if let Some(m) = Self::manager(cx) {
                             m.cancel(&id);
@@ -131,7 +138,7 @@ impl DownloadsPage {
                     .ghost()
                     .xsmall()
                     .icon(gpui_component::IconName::RefreshCw)
-                    .tooltip("Retry")
+                    .tooltip(t!("common.retry"))
                     .on_click(move |_, window, cx| {
                         let t = track.clone();
                         update_app(cx, |app, cx| app.download_tracks(vec![t], window, cx));
@@ -179,12 +186,12 @@ impl Render for DownloadsPage {
         let available = Self::manager(cx).is_some();
         let total: u64 = self.records.iter().map(|r| r.size).sum();
         let previews = self.records.iter().filter(|r| !r.complete).count();
-        let detail = format!(
-            "{} songs · {} · play cache {} of {}",
+        let detail = tp!(
+            "downloads.detail",
             self.records.len(),
-            format_bytes(total),
-            format_bytes(self.cache_bytes),
-            format_bytes(self.cache_limit)
+            size = format_bytes(total),
+            cache = format_bytes(self.cache_bytes),
+            limit = format_bytes(self.cache_limit)
         );
         let tracks: Rc<Vec<Track>> =
             Rc::new(self.records.iter().map(|r| r.track.clone()).collect());
@@ -195,12 +202,13 @@ impl Render for DownloadsPage {
         .flatten();
         let buttons = h_flex()
             .gap_1()
+            .flex_wrap()
             .child(
                 Button::new("dl-play")
                     .primary()
                     .small()
                     .icon(Lucide::Play)
-                    .label("Play all")
+                    .label(t!("downloads.play_all"))
                     .disabled(tracks.is_empty())
                     .on_click(move |_, _, cx| {
                         let t = play_tracks.clone();
@@ -211,7 +219,7 @@ impl Render for DownloadsPage {
                 Button::new("dl-clear-finished")
                     .ghost()
                     .small()
-                    .label("Clear finished")
+                    .label(t!("downloads.clear_finished"))
                     .disabled(!self.jobs.iter().any(|j| j.status.is_finished()))
                     .on_click(|_, _, cx| {
                         if let Some(m) = Self::manager(cx) {
@@ -224,7 +232,7 @@ impl Render for DownloadsPage {
                     .ghost()
                     .small()
                     .icon(gpui_component::IconName::FolderOpen)
-                    .label("Show in Finder")
+                    .label(t!("downloads.show_in_finder"))
                     .on_click(move |_, _, cx| cx.reveal_path(&dir.join("downloads")))
             }));
         let mut content = v_flex().gap_6().child(
@@ -233,14 +241,14 @@ impl Render for DownloadsPage {
                 .justify_between()
                 .gap_4()
                 .flex_wrap()
-                .child(page_title("Downloads", Some(detail.into()), cx))
+                .child(page_title(t!("nav.downloads"), Some(detail.into()), cx))
                 .child(buttons),
         );
         if !available {
             content = content.child(empty_state(
                 Lucide::Download,
-                "Downloads are unavailable",
-                "The download folder couldn't be opened (see the terminal).",
+                t!("downloads.unavailable_title"),
+                t!("downloads.unavailable_detail"),
                 cx,
             ));
             return page_scroll("downloads-page", &self.scroll, content);
@@ -250,10 +258,7 @@ impl Render for DownloadsPage {
                 div()
                     .text_sm()
                     .text_color(cx.theme().muted_foreground)
-                    .child(format!(
-                        "{previews} downloads are previews (only the first ~1 MiB): they were \
-                         made while full streams were unavailable. Delete and download them again."
-                    )),
+                    .child(tp!("downloads.previews_note", previews)),
             );
         }
         let jobs: Vec<AnyElement> = self
@@ -268,62 +273,73 @@ impl Render for DownloadsPage {
             content = content.child(
                 v_flex()
                     .gap_2()
-                    .child(section_header("This session", None, None, cx))
+                    .child(section_header(
+                        t!("downloads.section.session"),
+                        None,
+                        None,
+                        cx,
+                    ))
                     .child(v_flex().children(jobs)),
             );
         }
         if self.records.is_empty() {
             content = content.child(empty_state(
                 Lucide::Download,
-                "Nothing downloaded",
-                "Choose “Download” in a song's menu (or select songs in the library) to keep \
-                 them on this computer.",
+                t!("library.empty.downloaded_title"),
+                t!("downloads.empty_detail"),
                 cx,
             ));
         } else {
             let muted = cx.theme().muted_foreground;
-            let rows: Vec<AnyElement> = self
-                .records
-                .iter()
-                .enumerate()
-                .map(|(ix, r)| {
-                    let active = is_playing(&r.track.video_id, cx);
-                    let id = r.track.video_id.clone();
-                    h_flex()
-                        .gap_2()
-                        .child(
-                            div().flex_1().min_w_0().child(
+            let rows: Vec<AnyElement> =
+                self.records
+                    .iter()
+                    .enumerate()
+                    .map(|(ix, r)| {
+                        let active = is_playing(&r.track.video_id, cx);
+                        let id = r.track.video_id.clone();
+                        h_flex()
+                            .gap_2()
+                            .child(div().flex_1().min_w_0().child(
                                 TrackRow::new("download", tracks.clone(), ix).active(active),
-                            ),
-                        )
-                        .children((!r.complete).then(|| Tag::secondary().small().child("preview")))
-                        .child(
-                            div()
-                                .w(px(64.))
-                                .flex_none()
-                                .text_xs()
-                                .text_right()
-                                .text_color(muted)
-                                .child(format_bytes(r.size)),
-                        )
-                        .child(
-                            Button::new(("dl-delete", ix))
-                                .ghost()
-                                .xsmall()
-                                .icon(Lucide::Trash)
-                                .tooltip("Delete download")
-                                .on_click(move |_, window, cx| {
-                                    let id = id.clone();
-                                    update_app(cx, |app, cx| app.delete_download(id, window, cx));
-                                }),
-                        )
-                        .into_any_element()
-                })
-                .collect();
+                            ))
+                            .children((!r.complete).then(|| {
+                                Tag::secondary().small().child(t!("downloads.preview_tag"))
+                            }))
+                            .child(
+                                div()
+                                    .w(px(64.))
+                                    .flex_none()
+                                    .text_xs()
+                                    .text_right()
+                                    .text_color(muted)
+                                    .child(format_bytes(r.size)),
+                            )
+                            .child(
+                                Button::new(("dl-delete", ix))
+                                    .ghost()
+                                    .xsmall()
+                                    .icon(Lucide::Trash)
+                                    .tooltip(t!("downloads.delete"))
+                                    .on_click(move |_, window, cx| {
+                                        let id = id.clone();
+                                        update_app(cx, |app, cx| {
+                                            app.delete_download(id, window, cx)
+                                        });
+                                    }),
+                            )
+                            .into_any_element()
+                    })
+                    .collect();
             content = content.child(
                 v_flex()
                     .gap_2()
-                    .child(section_header("Downloaded", None, None, cx))
+                    .child(section_header(
+                        t!("downloads.section.downloaded"),
+                        None,
+                        None,
+                        cx,
+                    ))
                     .child(v_flex().children(rows)),
             );
         }

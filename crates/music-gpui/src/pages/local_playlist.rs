@@ -95,21 +95,24 @@ impl LocalPlaylistPage {
         window.open_dialog(cx, move |dialog, _, _| {
             let (input, playlist) = (input.clone(), playlist.clone());
             dialog
-                .title(div().child("Rename playlist"))
+                .title(div().child(t!("library.playlist.rename_title")))
                 .w(px(420.))
                 .child(Input::new(&input))
-                .footer(h_flex().justify_end().gap_2().child(
-                    Button::new("rename-ok").primary().label("Rename").on_click(
-                        move |_, window, cx| {
-                            let name = input.read(cx).value().to_string();
-                            let playlist = playlist.clone();
-                            update_app(cx, |app, cx| {
-                                app.rename_playlist(playlist, name, window, cx)
-                            });
-                            window.close_dialog(cx);
-                        },
+                .footer(
+                    h_flex().justify_end().gap_2().child(
+                        Button::new("rename-ok")
+                            .primary()
+                            .label(t!("common.rename"))
+                            .on_click(move |_, window, cx| {
+                                let name = input.read(cx).value().to_string();
+                                let playlist = playlist.clone();
+                                update_app(cx, |app, cx| {
+                                    app.rename_playlist(playlist, name, window, cx)
+                                });
+                                window.close_dialog(cx);
+                            }),
                     ),
-                ))
+                )
         });
     }
 
@@ -119,18 +122,18 @@ impl LocalPlaylistPage {
         };
         let signed_in = read_app(cx, |app, _| app.store.account.is_signed_in()).unwrap_or(false);
         let detail = match (&playlist.browse_id, playlist.editable, signed_in) {
-            (Some(_), true, true) => "It is deleted on YouTube Music too.",
-            (Some(_), false, true) => "It is removed from your YouTube Music library.",
-            (Some(_), _, false) => "Only the copy on this computer is deleted.",
-            (None, _, _) => "This can't be undone.",
+            (Some(_), true, true) => t!("library.playlist.delete_remote"),
+            (Some(_), false, true) => t!("library.playlist.delete_unsave"),
+            (Some(_), _, false) => t!("library.playlist.delete_local_copy"),
+            (None, _, _) => t!("library.playlist.delete_undo"),
         };
         window.open_alert_dialog(cx, move |alert, _, _| {
             let playlist = playlist.clone();
             alert
-                .title(format!("Delete “{}”?", playlist.name))
+                .title(t!("library.playlist.delete_title", name = playlist.name))
                 .description(detail)
                 .show_cancel(true)
-                .ok_text("Delete")
+                .ok_text(t!("common.delete"))
                 .on_ok(move |_, window, cx| {
                     let playlist = playlist.clone();
                     update_app(cx, |app, cx| app.delete_playlist(playlist, window, cx));
@@ -172,7 +175,7 @@ impl LocalPlaylistPage {
                         .ghost()
                         .xsmall()
                         .icon(gpui_component::IconName::ChevronUp)
-                        .tooltip("Move up")
+                        .tooltip(t!("library.playlist.move_up"))
                         .disabled(ix == 0)
                         .on_click(cx.listener(mv(-1))),
                 )
@@ -181,7 +184,7 @@ impl LocalPlaylistPage {
                         .ghost()
                         .xsmall()
                         .icon(gpui_component::IconName::ChevronDown)
-                        .tooltip("Move down")
+                        .tooltip(t!("library.playlist.move_down"))
                         .disabled(ix + 1 >= len)
                         .on_click(cx.listener(mv(1))),
                 )
@@ -190,7 +193,7 @@ impl LocalPlaylistPage {
                         .ghost()
                         .xsmall()
                         .icon(Lucide::X)
-                        .tooltip("Remove from playlist")
+                        .tooltip(t!("library.playlist.remove_from"))
                         .on_click(cx.listener(move |page: &mut Self, _, window, cx| {
                             let (Some(playlist), Some(entry)) =
                                 (page.playlist.clone(), page.entries.get(ix).cloned())
@@ -212,9 +215,9 @@ impl LocalPlaylistPage {
         let playlist = self.playlist.clone();
         let mirror = playlist.as_ref().and_then(|p| p.browse_id.clone());
         let kind = match &playlist {
-            Some(p) if p.browse_id.is_some() && p.editable => "Your YouTube Music playlist",
-            Some(p) if p.browse_id.is_some() => "Saved YouTube Music playlist",
-            _ => "Playlist",
+            Some(p) if p.browse_id.is_some() && p.editable => t!("library.playlist.kind_own"),
+            Some(p) if p.browse_id.is_some() => t!("library.playlist.kind_saved"),
+            _ => t!("common.playlist"),
         };
         let art = match playlist.as_ref().and_then(|p| p.thumbnail_url.clone()) {
             Some(url) => artwork(Some(url), px(128.), px(10.), cx).into_any_element(),
@@ -227,7 +230,7 @@ impl LocalPlaylistPage {
                 .ghost()
                 .small()
                 .icon(gpui_component::IconName::RefreshCw)
-                .label("Refresh")
+                .label(t!("common.refresh"))
                 .on_click(move |_, window, cx| {
                     if let Some(p) = playlist.clone() {
                         update_app(cx, |app, cx| app.refresh_playlist(p, window, cx));
@@ -244,7 +247,7 @@ impl LocalPlaylistPage {
                 .ghost()
                 .small()
                 .icon(Lucide::Upload)
-                .label("Change cover…")
+                .label(t!("library.playlist.change_cover"))
                 .on_click(move |_, window, cx| {
                     let (remote, local) = (remote.clone(), local.clone());
                     update_app(cx, |app, cx| {
@@ -291,7 +294,7 @@ impl LocalPlaylistPage {
                                     .ghost()
                                     .small()
                                     .icon(Lucide::Pencil)
-                                    .label("Rename")
+                                    .label(t!("common.rename"))
                                     .disabled(!editable)
                                     .on_click(
                                         cx.listener(|p, _, window, cx| p.open_rename(window, cx)),
@@ -304,7 +307,7 @@ impl LocalPlaylistPage {
                                     .ghost()
                                     .small()
                                     .icon(Lucide::Trash)
-                                    .label("Delete")
+                                    .label(t!("common.delete"))
                                     .disabled(playlist.is_none())
                                     .on_click(
                                         cx.listener(|p, _, window, cx| {
@@ -336,18 +339,21 @@ impl Render for LocalPlaylistPage {
                         app.remove_playlist_entries(playlist, entries, window, cx)
                     });
                 });
-            ("Remove from playlist", handler)
+            (t!("library.playlist.remove_from"), handler)
         });
         let bar = self
             .list
             .selection_bar("pl", |p: &mut Self| &mut p.list, remove, cx);
         let body = if self.list.is_empty() {
             let (title, detail) = match (&self.playlist, self.loaded) {
-                (_, false) => ("Loading…", ""),
-                (None, true) => ("Playlist not found", "It may have been deleted."),
+                (_, false) => (t!("common.loading"), ""),
+                (None, true) => (
+                    t!("library.playlist.not_found_title"),
+                    t!("library.playlist.not_found_detail"),
+                ),
                 (Some(_), true) => (
-                    "This playlist is empty",
-                    "Use “Add to playlist…” in a song's menu to add songs.",
+                    t!("library.playlist.empty_title"),
+                    t!("library.playlist.empty_detail"),
                 ),
             };
             div()
