@@ -19,7 +19,7 @@ use gpui_component::{
 use music_core::{Quality, SleepTimer};
 
 use super::SettingsPanel;
-use super::prefs::{SLEEP_PRESETS, quality_title};
+use super::prefs::{SLEEP_PRESETS, StreamSourceMode, quality_title};
 use super::prefs_ui::{Devices, choice, slider_row};
 use super::widgets::{group, note, row};
 use crate::app::{read_app, update_app};
@@ -67,6 +67,14 @@ pub(super) fn render(
         a.quality,
         quality_title,
         |this, q, cx| this.set_quality(q, cx),
+        cx,
+    );
+    let stream_source = choice(
+        "settings-stream-source",
+        &StreamSourceMode::ALL,
+        a.stream_source,
+        |m| m.title(),
+        |this, m, cx| this.set_stream_source(m, cx),
         cx,
     );
     let switch = |id: &'static str,
@@ -250,6 +258,12 @@ pub(super) fn render(
         .child(
             group("Audio", cx)
                 .child(row(
+                    "YouTube streams",
+                    Some(stream_source_note(a.stream_source)),
+                    stream_source,
+                    cx,
+                ))
+                .child(row(
                     "Streaming quality",
                     Some("Low saves data; High prefers Opus (~160 kbps) over AAC 128."),
                     quality,
@@ -349,4 +363,18 @@ fn muted_text(text: Option<String>, color: gpui::Hsla) -> impl IntoElement {
         .text_color(color)
         .truncate()
         .children(text)
+}
+
+/// What a stream-source choice means, under the selector.
+fn stream_source_note(mode: StreamSourceMode) -> &'static str {
+    match mode {
+        StreamSourceMode::Auto => {
+            "Full songs: TV client, then the web client with a PoToken, then a ~1 min preview."
+        }
+        StreamSourceMode::Tv => "Full songs via the TV client (no PoToken); a preview if it fails.",
+        StreamSourceMode::WebPoToken => {
+            "Full songs via the web client and a BotGuard PoToken (macOS); a preview if it fails."
+        }
+        StreamSourceMode::Preview => "Only the first ~1 minute of each song (the old behaviour).",
+    }
 }

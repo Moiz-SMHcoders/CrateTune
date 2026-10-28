@@ -242,13 +242,50 @@ cargo run -p music-core --example lyrics -- "daft punk instant crush"     # ever
 cargo run -p music-core --example lyrics -- --translate en "yoasobi idol" # + romanization and translation
 ```
 
-### Known limitation: previews only (PoToken)
+### Full-length YouTube streams (`youtube` module)
 
-Without a PoToken, googlevideo serves only the first 1 MiB of a stream and
-answers 403 afterwards, so every spike plays roughly the first minute of a
-track (`PlaybackState::preview_only` is set). Full playback needs a PoToken
-provider behind `StreamResolver` — ArchiveTune does this with YouTube's
-BotGuard challenge in a hidden WebView. That decision is deliberately left open.
+`youtube::WebResolver` gets complete streams; `IosClientResolver` (the first 1 MiB only,
+`PlaybackState::preview_only`) is kept as the last fallback. What googlevideo requires
+(verified Oct 2026, with controls for each point):
+
+* **TV client** (`WebClient::Tv`, Samsung Tizen `TVHTML5`): the player request carries the
+  visitor id from a watch page (`X-Goog-Visitor-Id`) and the player script's
+  `signatureTimestamp`; the URL's `n` parameter and signature are transformed with that
+  player's own functions. No PoToken.
+* **Mobile web client** (`WebClient::MobileWeb`): the same, plus a **PoToken bound to the
+  video id**, both in the player request (`serviceIntegrityDimensions.poToken`) and as
+  `pot=` on the stream URL. Without it: 403.
+* **Both:** googlevideo answers 403 until the pre-roll ad could have been skipped (5–15 s,
+  from `adPlacements` / `adSlots`). `ResolvedStream::not_before` carries that time and the
+  downloader waits; meanwhile it plays the head of the file from the iOS client's URL when
+  that is provably the same file (`ResolvedStream::prefix`: same itag, size and `lmt`), so
+  playback usually starts in 2–5 s anyway.
+
+Pieces:
+
+* `youtube::jsc` — the JavaScript challenges solved by yt-dlp's solver
+  ([yt-dlp/ejs](https://github.com/yt-dlp/ejs) 0.8.0, public domain; bundles meriyah (ISC)
+  and astring (MIT); vendored in `crates/music-core/js/ejs/`) in the embedded QuickJS. The
+  player script is preprocessed once (a few seconds) and cached per player id in
+  `<config>/cache/youtube/`.
+* `youtube::potoken` — BotGuard attestation, ported from ArchiveTune: the challenge from
+  youtube.com's page, the interpreter, `GenerateIT`, then a minter that makes per-video
+  tokens (cached; the integrity token lasts ~12 h). The browser part is the `BotGuardVm`
+  trait: `WebKitBotGuard` runs `assets/po_token.html` in a hidden WKWebView on macOS (work
+  is dispatched to the main thread, so never call the resolver from it). No PoToken
+  provider on Linux / Windows yet; they use the TV client.
+* `WebResolver::prewarm()` does the slow one-time work at launch; the app calls it.
+* Settings → Playback → **YouTube streams**: Automatic (TV, then web + PoToken, then
+  preview), TV client, Web + PoToken, Previews only.
+
+```sh
+cargo run --release -p music-core --example youtube -- tv  "daft punk instant crush"  # resolve + full download + decode
+cargo run --release -p music-core --example youtube -- web khnokW3Mw24                # same with a PoToken (macOS)
+cargo run --release -p music-core --example youtube_play -- tv "daft punk"            # muted real-device playback
+```
+
+This uses YouTube in ways its terms of service don't allow, as ArchiveTune and yt-dlp do,
+and can break whenever YouTube changes something (then the preview fallback takes over).
 
 ## Spike spec (identical in every UI branch)
 
@@ -580,7 +617,8 @@ src/
   the page polls `DownloadManager::states()` (queued / downloading / done / preview only /
   failed, cancel and retry), lists downloads with size and delete, shows download and cache
   usage. Playback prefers the stored file (`local_file`: downloads always, cached copies when
-  complete). Without a PoToken downloads are the ~1 MiB preview (marked "preview").
+  complete). Downloads are full files; one made while only previews were available is
+  marked "preview".
 * **Local files**: music folders and skipped folders (folder picker), Rescan with progress
   (`local_files::scan_with_progress`, new in music-core), the scanned tracks (filter,
   select); local cover art (`file://`) goes through the artwork cache.

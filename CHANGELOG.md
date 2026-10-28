@@ -5,6 +5,20 @@ versions follow [SemVer](https://semver.org/). "Music" is a working name.
 
 ## [Unreleased]
 
+### Added
+
+* **Full-length YouTube playback** (`youtube::WebResolver`): the TV client with YouTube's
+  JavaScript challenges solved by yt-dlp's public-domain solver in QuickJS, or the mobile
+  web client with a BotGuard PoToken (hidden WKWebView on macOS, ported from ArchiveTune).
+  Waits out YouTube's pre-roll ad delay while playing the song's start from the iOS
+  client, so playback starts in seconds. Settings → Playback → YouTube streams. Downloads
+  are now full files. The ~1-minute preview remains as the last fallback.
+
+### Fixed
+
+* A module playback test was sensitive to machine speed (it sampled positions on 100 ms
+  ticks while rendering at ~3× real time).
+
 ## [0.1.0] — first release
 
 ### Added
@@ -39,6 +53,6 @@ versions follow [SemVer](https://semver.org/). "Music" is a working name.
 
 ### Known limitations
 
-* YouTube songs play as ~1-minute previews without a PoToken (not worked around).
+* YouTube songs play as ~1-minute previews without a PoToken (fixed in Unreleased).
 * Account features and the Linux / Windows builds are not verified on real accounts /
   machines yet; builds are not signed with a Developer ID / Authenticode certificate.

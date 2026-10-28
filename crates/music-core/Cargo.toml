@@ -61,7 +61,17 @@ url = "2.5"
 zip = { version = "9", default-features = false, features = ["deflate-flate2-zlib-rs"] }
 
 [features]
-default = ["media-controls", "discord"]
+default = ["media-controls", "discord", "webkit-potoken"]
+# PoTokens for the web stream client via BotGuard in a hidden WKWebView (macOS only;
+# a no-op elsewhere).
+webkit-potoken = [
+    "dep:block2",
+    "dep:dispatch2",
+    "dep:objc2",
+    "dep:objc2-core-foundation",
+    "dep:objc2-foundation",
+    "dep:objc2-web-kit",
+]
 # Kanji readings for Japanese romanization (lindera + embedded IPADIC). Off by default:
 # adds ~48 MB to the binary and downloads the dictionary (~13 MB) at build time.
 japanese-dict = ["dep:lindera"]
@@ -85,7 +95,19 @@ block2 = { version = "0.6", optional = true }
 objc2 = { version = "0.6", optional = true }
 objc2-app-kit = { version = "0.3", optional = true, default-features = false, features = ["std", "NSImage"] }
 objc2-core-foundation = { version = "0.3", optional = true, default-features = false, features = ["std", "CFCGTypes"] }
-objc2-foundation = { version = "0.3", optional = true, default-features = false, features = ["std", "NSData", "NSDictionary", "NSGeometry", "NSString", "NSValue"] }
+objc2-foundation = { version = "0.3", optional = true, default-features = false, features = ["std", "NSData", "NSDictionary", "NSError", "NSGeometry", "NSString", "NSURL", "NSValue"] }
+dispatch2 = { version = "0.3", optional = true }
+objc2-web-kit = { version = "0.3.2", optional = true, default-features = false, features = [
+    "std",
+    "block2",
+    "objc2-app-kit",
+    "objc2-core-foundation",
+    "WKContentWorld",
+    "WKFrameInfo",
+    "WKNavigation",
+    "WKWebView",
+    "WKWebViewConfiguration",
+] }
 objc2-media-player = { version = "0.3", optional = true, default-features = false, features = [
     "std",
     "block2",
@@ -110,3 +132,7 @@ windows-future = { version = "0.3", optional = true }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 mpris-server = { version = "0.10", optional = true }
+
+[target.'cfg(target_os = "macos")'.dev-dependencies]
+# The `youtube` example runs the main run loop for the PoToken web view.
+objc2-core-foundation = { version = "0.3", features = ["CFRunLoop"] }

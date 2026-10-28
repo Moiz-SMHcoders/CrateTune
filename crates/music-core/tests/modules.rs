@@ -791,8 +791,11 @@ fn search_resolve_and_play_a_module_stream_end_to_end() {
         assert_eq!(source.module_id.as_deref(), Some(id.as_str()));
         assert_eq!(source.quality_label().as_deref(), Some(codec));
         let played = furthest.as_secs_f64();
+        // Positions are only observed on the engine's 100 ms ticks while audio is
+        // rendered at ~3x real time, so the last one seen can trail the end by
+        // ~0.3 s of audio; a preview or early stop would fall far shorter.
         assert!(
-            played >= secs * 0.9,
+            played >= secs - 0.4,
             "{}: played {played:.2} s of {secs} s",
             track.title
         );

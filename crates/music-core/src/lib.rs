@@ -9,7 +9,8 @@
 //! * [`http`] – the shared HTTP agent; [`http::configure`] sets a proxy / user agent.
 //! * [`lyrics`] – lyrics providers (LRCLIB, KuGou, BetterLyrics TTML, …), [`LyricsService`],
 //!   translation and romanization; [`fetch_lyrics`] is the simple LRCLIB-only call.
-//! * [`StreamResolver`] – turns a video id into a playable audio URL.
+//! * [`StreamResolver`] – turns a video id into a playable audio URL; [`youtube::WebResolver`]
+//!   gets full-length streams (TV client, or web client + BotGuard PoToken).
 //! * [`Player`] – background audio engine with a pollable [`PlaybackState`].
 //! * [`equalizer`] – parametric EQ applied live via [`Player::set_equalizer`].
 //! * [`media_controls`] – OS now-playing info + media keys (macOS, Windows, Linux).
@@ -62,6 +63,7 @@ mod stream;
 mod testutil;
 pub mod together;
 mod voice;
+pub mod youtube;
 
 pub use buffer::{BufferEnd, StreamBuffer, StreamReader};
 pub use deck::{HeadlessOutput, MAX_CROSSFADE};
@@ -82,5 +84,6 @@ pub use player::{PlaybackState, PlaybackStatus, Player};
 pub use silence::{SilenceConfig, SkipSilence};
 pub use sleep::{SleepTimer, SleepTimerState};
 pub use stream::{
-    Download, IosClientResolver, Quality, ResolvedStream, SourceKind, StreamResolver, StreamSource,
+    Download, IosClientResolver, Quality, ResolvedStream, SourceKind, StreamPrefix, StreamResolver,
+    StreamSource,
 };

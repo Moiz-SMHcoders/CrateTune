@@ -439,11 +439,12 @@ fn privacy(cx: &mut Context<Onboarding>) -> AnyElement {
     v_flex()
         .gap_3()
         .child(point(
-            "Song previews",
-            "Without a PoToken (a token YouTube's own apps obtain with an anti-abuse \
-             challenge), YouTube serves only the first minute or so of each song. This \
-             app doesn't work around that, so YouTube songs play as previews (marked in \
-             the player); downloads are previews too. Your own music files play in full.",
+            "How songs are streamed",
+            "Full songs come from YouTube's TV client or its web client with a PoToken \
+             (an anti-abuse token, made in a hidden browser view on macOS). YouTube makes \
+             new streams wait a few seconds; the app starts from a short preview meanwhile. \
+             If YouTube changes something, songs fall back to ~1-minute previews (marked in \
+             the player). Settings → Playback → YouTube streams chooses the route.",
         ))
         .child(point(
             "Your data stays here",

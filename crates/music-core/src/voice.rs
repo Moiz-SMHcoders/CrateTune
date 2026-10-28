@@ -19,7 +19,7 @@ use crate::buffer::{BufferEnd, StreamBuffer};
 use crate::dsp::Conform;
 use crate::equalizer::EqControl;
 use crate::silence::{SilenceConfig, SkipSilence};
-use crate::stream::{CHUNK_BYTES, Downloader};
+use crate::stream::Downloader;
 use crate::{
     Error, Quality, Result, SourceKind, StreamResolver, StreamSource, Track, TrackDecoder,
 };
@@ -360,7 +360,7 @@ impl Voice {
         }
         let (resolver, quality) = (config.resolver.clone(), config.quality);
         let track = self.track.clone();
-        let downloader = Downloader::new(stream.clone(), buffer.clone(), CHUNK_BYTES)
+        let downloader = Downloader::new(stream.clone(), buffer.clone(), stream.chunk_bytes())
             .with_refresh(Box::new(move || resolver.resolve_track(&track, quality)));
         thread::Builder::new()
             .name("music-core-download".into())

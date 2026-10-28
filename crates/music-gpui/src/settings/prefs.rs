@@ -11,6 +11,7 @@ use music_core::discord::{
 use music_core::lyrics::ProviderId;
 use music_core::lyrics::romanize::Script;
 use music_core::scrobble::ScrobbleRules;
+use music_core::youtube::WebClient;
 use serde::{Deserialize, Serialize};
 
 use super::file::lenient;
@@ -49,6 +50,9 @@ pub struct AudioConfig {
     pub output_device_name: Option<String>,
     /// Last custom sleep timer length in minutes.
     pub sleep_custom_minutes: u32,
+    /// Where full-length YouTube streams come from.
+    #[serde(deserialize_with = "lenient")]
+    pub stream_source: StreamSourceMode,
 }
 
 impl Default for AudioConfig {
@@ -64,6 +68,7 @@ impl Default for AudioConfig {
             output_device: None,
             output_device_name: None,
             sleep_custom_minutes: 20,
+            stream_source: StreamSourceMode::Auto,
         }
     }
 }
@@ -93,6 +98,41 @@ impl AudioConfig {
 
     pub fn crossfade(&self) -> Duration {
         Duration::from_secs_f32(self.crossfade_secs.max(0.0))
+    }
+}
+
+/// Which YouTube clients the stream resolver tries (see `music_core::youtube`).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub enum StreamSourceMode {
+    /// TV client, then web client + PoToken, then the ~1 min preview.
+    #[default]
+    Auto,
+    Tv,
+    WebPoToken,
+    /// Only the iOS client's first ~1 MiB (the old behaviour).
+    Preview,
+}
+
+impl StreamSourceMode {
+    pub const ALL: [StreamSourceMode; 4] = [Self::Auto, Self::Tv, Self::WebPoToken, Self::Preview];
+
+    pub fn title(self) -> &'static str {
+        match self {
+            Self::Auto => "Automatic",
+            Self::Tv => "TV client",
+            Self::WebPoToken => "Web + PoToken",
+            Self::Preview => "Previews only",
+        }
+    }
+
+    /// Clients for `WebResolver::set_clients` (the preview resolver is always last).
+    pub fn clients(self, has_potoken: bool) -> Vec<WebClient> {
+        match self {
+            Self::Auto if has_potoken => vec![WebClient::Tv, WebClient::MobileWeb],
+            Self::Auto | Self::Tv => vec![WebClient::Tv],
+            Self::WebPoToken if has_potoken => vec![WebClient::MobileWeb],
+            Self::WebPoToken | Self::Preview => vec![],
+        }
     }
 }
 

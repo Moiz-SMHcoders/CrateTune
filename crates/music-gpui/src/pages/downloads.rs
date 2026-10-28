@@ -251,8 +251,8 @@ impl Render for DownloadsPage {
                     .text_sm()
                     .text_color(cx.theme().muted_foreground)
                     .child(format!(
-                        "{previews} downloads are previews: without a PoToken YouTube only serves \
-                         the first ~1 MiB of a song (see the README)."
+                        "{previews} downloads are previews (only the first ~1 MiB): they were \
+                         made while full streams were unavailable. Delete and download them again."
                     )),
             );
         }

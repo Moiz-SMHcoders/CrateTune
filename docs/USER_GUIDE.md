@@ -239,11 +239,13 @@ of this app and the packaging tool.
 
 ## Known limitations
 
-* **Previews only for YouTube songs.** Without a PoToken (which YouTube's own apps obtain
-  through an anti-abuse challenge), YouTube serves only about the first minute of each
-  song; the app doesn't work around this. Songs are marked "preview" in the player, the
-  next song starts when the preview ends, and downloads are previews too. Your own music
-  files, and songs played through a [module](#modules), play in full.
+* **How YouTube songs are streamed.** Full songs come from YouTube's TV client, or its web
+  client with a PoToken (an anti-abuse token the app makes in a hidden browser view on
+  macOS). YouTube makes each new stream wait a few seconds; the app plays the start of the
+  song from a preview meanwhile, so songs usually start within 2–5 seconds. Choose the
+  route in Settings → Playback → **YouTube streams** (Automatic is best). If YouTube changes
+  something, songs fall back to ~1-minute previews (marked "preview") until the app is
+  updated. This isn't allowed by YouTube's terms of service.
 * The YouTube Music account features are new and not yet tested against many accounts.
 * Recognition uses Shazam's public endpoint, which may rate-limit ("Too many requests —
   try again in a minute") or change without notice.

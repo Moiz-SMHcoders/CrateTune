@@ -174,3 +174,13 @@ carries a header naming its upstream source. The manifest `format` string
 
 Libraries used by the module system (not ported code): `rquickjs` (MIT; bundles QuickJS-ng,
 MIT), `url` (MIT OR Apache-2.0), `sha2` (MIT OR Apache-2.0), `icu_normalizer` (Unicode-3.0).
+
+## Full-length YouTube streams (`youtube` module)
+
+| music-core file | Source | Notes |
+|---|---|---|
+| `js/ejs/lib.min.js`, `js/ejs/core.min.js` | [yt-dlp/ejs](https://github.com/yt-dlp/ejs) 0.8.0 (as shipped in the `yt-dlp-ejs` package) | Unmodified. The Unlicense (public domain), see `js/ejs/LICENSE`; `lib.min.js` bundles meriyah (ISC, © KFlash and others) and astring (MIT, © David Bonnet), whose license texts are kept in its header comment. |
+| `assets/po_token.html` | ArchiveTune `app/src/main/assets/po_token.html` | Unmodified BotGuard client page (GPL-3.0, © Rukamori and ArchiveTune contributors). |
+| `src/youtube/potoken.rs` | ArchiveTune `app/.../utils/potoken/{BotGuardTokenGenerator.kt, ChallengeParser.kt}` | Same flow and page parsing; blocking `ureq`; the browser part behind the `BotGuardVm` trait; a Safari identity matching the WebKit engine it runs in. |
+| `src/youtube/webkit.rs` | ArchiveTune `BotGuardTokenGenerator.kt` (WebView engine) | A hidden WKWebView (`callAsyncJavaScript`) instead of Android's WebView + JS bridge. |
+| `src/youtube/resolver.rs`, `session.rs` | yt-dlp `yt_dlp/extractor/youtube/{_base.py,_video.py}` (The Unlicense) | Client definitions (`tv_samsung`, `mweb`), the player request shape, and the "wait for the pre-roll ad" rule (`_get_available_at_timestamp`); reimplemented in Rust. |

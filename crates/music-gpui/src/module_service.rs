@@ -11,9 +11,11 @@ use std::sync::Arc;
 
 use gpui::{App, Global};
 use music_core::modules::{FileSecrets, ModuleResolver, Modules, SecretHook};
+use music_core::youtube::WebResolver;
 use music_core::{IosClientResolver, StreamResolver};
 
 use crate::secrets::{self, Backend};
+use crate::settings::prefs::StreamSourceMode;
 
 /// Secret module settings: the keychain (service `music-macos`, account
 /// `module.<installation>.<key>`), else a 0600 file next to the registry.
@@ -59,6 +61,9 @@ pub struct ModuleService {
     pub modules: Option<Modules>,
     pub error: Option<String>,
     pub resolver: Arc<dyn StreamResolver>,
+    /// Full-length YouTube streams (TV / web + PoToken clients, preview fallback);
+    /// the last resolver in the chain. Its clients follow Settings → Playback.
+    pub youtube: Arc<WebResolver>,
 }
 
 impl Global for ModuleService {}
@@ -66,13 +71,22 @@ impl Global for ModuleService {}
 impl ModuleService {
     /// Opens the module store (fast: one small JSON file). Without a config
     /// directory the app plays from YouTube only.
-    pub fn open() -> Self {
-        let youtube: Arc<dyn StreamResolver> = Arc::new(IosClientResolver);
-        let Some(dir) = crate::settings::file::config_dir().map(|d| d.join("modules")) else {
+    pub fn open(stream_source: StreamSourceMode) -> Self {
+        let config = crate::settings::file::config_dir();
+        let web = Arc::new(WebResolver::new(
+            vec![],
+            music_core::youtube::platform_potoken_provider(),
+            Some(Arc::new(IosClientResolver)),
+            config.as_ref().map(|d| d.join("cache").join("youtube")),
+        ));
+        web.set_clients(stream_source.clients(web.has_potoken()));
+        let youtube: Arc<dyn StreamResolver> = web.clone();
+        let Some(dir) = config.map(|d| d.join("modules")) else {
             return Self {
                 modules: None,
                 error: Some("No data directory; modules are unavailable.".into()),
                 resolver: youtube,
+                youtube: web,
             };
         };
         let hook = KeychainSecrets {
@@ -84,6 +98,7 @@ impl ModuleService {
                 resolver: Arc::new(ModuleResolver::new(modules.clone(), youtube)),
                 modules: Some(modules),
                 error: None,
+                youtube: web,
             },
             Err(e) => {
                 eprintln!("music-gpui: modules unavailable: {e}");
@@ -91,6 +106,7 @@ impl ModuleService {
                     modules: None,
                     error: Some(format!("Modules unavailable: {e}")),
                     resolver: youtube,
+                    youtube: web,
                 }
             }
         }
@@ -102,6 +118,32 @@ impl ModuleService {
 
     pub fn modules(cx: &App) -> Option<Modules> {
         Self::global(cx).and_then(|s| s.modules.clone())
+    }
+
+    /// Applies Settings → Playback → YouTube streams.
+    pub fn set_stream_source(cx: &App, mode: StreamSourceMode) {
+        if let Some(s) = Self::global(cx) {
+            s.youtube.set_clients(mode.clients(s.youtube.has_potoken()));
+        }
+    }
+
+    /// Signed-in playback uses the account cookies (or none after sign-out).
+    pub fn set_youtube_auth(cx: &App, auth: Option<music_core::innertube::Auth>) {
+        if let Some(s) = Self::global(cx) {
+            s.youtube.set_auth(auth);
+        }
+    }
+
+    /// One-time slow work (player script, BotGuard) on a background thread, so the
+    /// first song starts quickly. WebKit work is dispatched to the main thread, which
+    /// must keep running its loop — never call the resolver from the main thread.
+    pub fn prewarm(cx: &App) {
+        if let Some(s) = Self::global(cx) {
+            let web = s.youtube.clone();
+            let _ = std::thread::Builder::new()
+                .name("youtube-prewarm".into())
+                .spawn(move || web.prewarm());
+        }
     }
 }
 

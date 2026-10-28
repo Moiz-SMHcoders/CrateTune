@@ -62,6 +62,26 @@ pub struct ResolvedStream {
     pub progressive: bool,
     /// Where the audio comes from, for display. `None`: YouTube.
     pub source: Option<StreamSource>,
+    /// googlevideo rejects the URL before this time (it waits out the pre-roll
+    /// ad, see [`crate::youtube`]); the downloader sleeps until then.
+    pub not_before: Option<SystemTime>,
+    /// Range size for chunked downloads (`None`: the iOS client's 1 MiB).
+    pub chunk_size: Option<u64>,
+    /// The whole file is served (not a ~1 MiB preview): a 403 after the first
+    /// chunk means the URL expired and is re-resolved, never "preview ended".
+    pub full_access: bool,
+    /// Another URL for the very same file whose first bytes work right away,
+    /// used while waiting for [`Self::not_before`] so playback starts at once.
+    pub prefix: Option<StreamPrefix>,
+}
+
+/// The start of a stream from a URL usable immediately (see [`ResolvedStream::prefix`]).
+#[derive(Debug, Clone, Default)]
+pub struct StreamPrefix {
+    pub url: String,
+    pub user_agent: &'static str,
+    /// How many bytes this URL serves (the iOS client: 1 MiB).
+    pub bytes: u64,
 }
 
 /// What kind of source a track is played from.
@@ -294,7 +314,12 @@ impl ResolvedStream {
     /// ([`BufferEnd::Truncated`] for a preview cut off with 403). Blocking; stops
     /// early when the buffer is cancelled.
     pub fn download_into(&self, buffer: &Arc<StreamBuffer>) {
-        Downloader::new(self.clone(), buffer.clone(), CHUNK_BYTES).run();
+        Downloader::new(self.clone(), buffer.clone(), self.chunk_bytes()).run();
+    }
+
+    /// Range size to fetch this stream in.
+    pub(crate) fn chunk_bytes(&self) -> u64 {
+        self.chunk_size.unwrap_or(CHUNK_BYTES)
     }
 
     /// When the URL stops working (googlevideo's `expire` parameter).
@@ -352,10 +377,68 @@ impl Downloader {
         self.buffer.finish(end);
     }
 
+    /// Sleeps until the stream's `not_before`; false if cancelled meanwhile.
+    fn wait_until_available(&self) -> bool {
+        let Some(at) = self.stream.not_before else {
+            return true;
+        };
+        while let Ok(left) = at.duration_since(SystemTime::now()) {
+            if self.buffer.is_cancelled() {
+                return false;
+            }
+            std::thread::sleep(left.min(Duration::from_millis(100)));
+        }
+        !self.buffer.is_cancelled()
+    }
+
+    /// Fetches the stream's head from [`ResolvedStream::prefix`] while the main
+    /// URL isn't usable yet. Stops quietly on any error (the main URL serves the
+    /// same bytes once available); false if cancelled.
+    fn fill_prefix(&mut self) -> bool {
+        let Some(prefix) = self.stream.prefix.clone() else {
+            return true;
+        };
+        let limit = prefix
+            .bytes
+            .min(self.stream.content_length.unwrap_or(u64::MAX));
+        while self
+            .stream
+            .not_before
+            .is_some_and(|at| SystemTime::now() < at)
+        {
+            if self.buffer.is_cancelled() {
+                return false;
+            }
+            let start = self.buffer.len();
+            if start >= limit {
+                break;
+            }
+            let end = (start + CHUNK_BYTES).min(limit) - 1;
+            match self.fetch_from(&prefix.url, prefix.user_agent, start, end) {
+                Ok(0) => break,
+                Ok(_) => {}
+                Err(ChunkError::Status(code)) => {
+                    log::info!("stream head not available from the preview URL (HTTP {code})");
+                    break;
+                }
+                Err(ChunkError::Other(msg)) => {
+                    log::info!("stream head from the preview URL failed: {msg}");
+                    break;
+                }
+            }
+        }
+        true
+    }
+
     fn download(&mut self) -> BufferEnd {
+        if !self.fill_prefix() || !self.wait_until_available() {
+            return BufferEnd::Cancelled;
+        }
         if self.stream.progressive {
             return self.download_progressive();
         }
+        // A URL that isn't accepted yet (clock skew vs. its ad wait) gets a short grace.
+        let mut early_retries = 0u32;
         let total = self.stream.content_length;
         // Chunks served in full; two or more means this is not a ~1 MiB preview.
         let mut chunks_ok = 0u32;
@@ -378,6 +461,13 @@ impl Downloader {
                         return BufferEnd::Complete;
                     }
                 }
+                Err(ChunkError::Status(403))
+                    if start == 0 && self.stream.full_access && early_retries < 3 =>
+                {
+                    early_retries += 1;
+                    log::info!("stream not accepted yet; retrying ({early_retries})");
+                    std::thread::sleep(Duration::from_millis(1500));
+                }
                 Err(ChunkError::Status(code @ (403 | 410))) if start > 0 => {
                     let expired = self
                         .stream
@@ -385,7 +475,7 @@ impl Downloader {
                         .is_some_and(|at| SystemTime::now() + EXPIRY_MARGIN >= at);
                     // A preview is cut off right after the first chunk and long
                     // before expiry; anything else is an expired URL.
-                    if !(expired || chunks_ok >= 2) {
+                    if !(expired || chunks_ok >= 2 || self.stream.full_access) {
                         return BufferEnd::Truncated;
                     }
                     match self.refreshed() {
@@ -506,14 +596,23 @@ impl Downloader {
         &self,
         range: Option<String>,
     ) -> std::result::Result<ureq::http::Response<ureq::Body>, ChunkError> {
-        let mut req = agent().get(&self.stream.url);
+        self.request_to(&self.stream.url, self.stream.user_agent, range)
+    }
+
+    fn request_to(
+        &self,
+        url: &str,
+        user_agent: &str,
+        range: Option<String>,
+    ) -> std::result::Result<ureq::http::Response<ureq::Body>, ChunkError> {
+        let mut req = agent().get(url);
         let custom_ua = self
             .stream
             .headers
             .iter()
             .any(|(k, _)| k.eq_ignore_ascii_case("user-agent"));
-        if !custom_ua && !self.stream.user_agent.is_empty() {
-            req = req.header("User-Agent", self.stream.user_agent);
+        if !custom_ua && !user_agent.is_empty() {
+            req = req.header("User-Agent", user_agent);
         }
         for (key, value) in &self.stream.headers {
             if key.eq_ignore_ascii_case("range") || key.eq_ignore_ascii_case("host") {
@@ -591,7 +690,18 @@ impl Downloader {
 
     /// Streams `start..=end` into the buffer; returns the bytes received.
     fn fetch(&self, start: u64, end: u64) -> std::result::Result<u64, ChunkError> {
-        let mut resp = self.request(Some(format!("bytes={start}-{end}")))?;
+        let url = self.stream.url.clone();
+        self.fetch_from(&url, self.stream.user_agent, start, end)
+    }
+
+    fn fetch_from(
+        &self,
+        url: &str,
+        user_agent: &str,
+        start: u64,
+        end: u64,
+    ) -> std::result::Result<u64, ChunkError> {
+        let mut resp = self.request_to(url, user_agent, Some(format!("bytes={start}-{end}")))?;
         // A server ignoring the range would resend the file from byte 0.
         if resp.status().as_u16() == 200 && start > 0 {
             return Err(ChunkError::Other("server ignored the byte range".into()));

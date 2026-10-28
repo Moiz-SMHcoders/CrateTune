@@ -247,6 +247,10 @@ impl Selection {
                 channels: None,
                 variant: (!self.stream.variant.is_empty()).then(|| self.stream.variant.clone()),
             }),
+            not_before: None,
+            chunk_size: None,
+            full_access: true,
+            prefix: None,
         }
     }
 }

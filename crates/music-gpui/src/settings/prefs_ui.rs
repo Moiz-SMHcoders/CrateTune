@@ -349,6 +349,14 @@ impl SettingsPanel {
         self.update_audio(cx, |a| a.quality = quality);
     }
 
+    pub fn set_stream_source(
+        &mut self,
+        mode: super::prefs::StreamSourceMode,
+        cx: &mut Context<Self>,
+    ) {
+        self.update_audio(cx, |a| a.stream_source = mode);
+    }
+
     pub fn set_skip_silence(&mut self, on: bool, cx: &mut Context<Self>) {
         self.update_audio(cx, |a| a.skip_silence = on);
     }

@@ -132,6 +132,8 @@ impl MusicApp {
             innertube: self.innertube.clone(),
             filter: self.content_filter,
         });
+        // Playback follows the same account as browsing.
+        crate::module_service::ModuleService::set_youtube_auth(cx, self.innertube.auth.clone());
     }
 
     /// Forgets cached page data and rebuilds the pages (they refetch).
