@@ -1,0 +1,20 @@
+# Settings → Content & region (Hindi).
+
+settings.content.group_region = भाषा और क्षेत्र
+settings.content.language = कॉन्टेंट की भाषा
+settings.content.language_description = YouTube Music पर टाइटल, शेल्फ़ और खोज की भाषा।
+settings.content.language_placeholder = भाषा
+settings.content.country = कॉन्टेंट का देश
+settings.content.country_description = होम फ़ीड, चार्ट और नई रिलीज़ का क्षेत्र।
+settings.content.country_placeholder = देश
+settings.content.region_note = बदलाव तुरंत लागू होते हैं; खुले पेज नई भाषा में फिर से लोड होते हैं।
+
+settings.content.group_filters = फ़िल्टर
+settings.content.hide_explicit = अश्लील कॉन्टेंट छिपाएँ
+settings.content.hide_explicit_description = अश्लील के रूप में चिह्नित गानों और एल्बम को पेजों, खोज और रेडियो से हटा देता है।
+settings.content.hide_videos = म्यूज़िक वीडियो छिपाएँ
+settings.content.hide_videos_description = सिर्फ़ गाने: म्यूज़िक वीडियो और यूज़र वीडियो शेल्फ़, खोज, प्लेलिस्ट, एल्बम, रेडियो और कतारों से हटा दिए जाते हैं (जो एल्बम YouTube पर सिर्फ़ ऑफ़िशियल-ऑडियो वीडियो के रूप में है, वह पूरा रहता है)।
+
+settings.content.group_radio = रेडियो
+settings.content.autoplay = मिलते-जुलते गाने अपने-आप चलाएँ
+settings.content.autoplay_description = कतार का आखिरी गाना शुरू होने पर, उसके रेडियो के गाने उसके बाद जोड़ दिए जाते हैं।

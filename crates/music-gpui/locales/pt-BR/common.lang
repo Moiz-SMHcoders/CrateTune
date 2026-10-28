@@ -1,0 +1,161 @@
+# Shared strings: the language's own name, words used all over the app, and the
+# date / time / number vocabulary used by `src/i18n/format.rs`.
+
+locale.native_name = Português (Brasil)
+
+# ---- Actions
+common.play = Tocar
+common.pause = Pausar
+common.shuffle = Aleatório
+common.radio = Rádio
+common.start_radio = Iniciar rádio
+common.play_next = Tocar a seguir
+common.add_to_queue = Adicionar à fila
+common.add_to_playlist = Adicionar à playlist…
+common.like = Curtir
+common.remove_from_liked = Remover das músicas curtidas
+common.download = Baixar
+common.remove_download = Remover download
+common.go_to_artist = Ir para o artista
+common.go_to_album = Ir para o álbum
+common.open = Abrir
+common.cancel = Cancelar
+common.close = Fechar
+common.retry = Tentar novamente
+common.remove = Remover
+common.delete = Excluir
+common.clear = Limpar
+common.save = Salvar
+common.apply = Aplicar
+common.reset = Redefinir
+common.done = Concluído
+common.copy = Copiar
+common.rename = Renomear
+common.refresh = Atualizar
+common.install = Instalar
+common.update = Atualizar
+common.import = Importar
+common.search = Pesquisar
+common.search_placeholder = Pesquisar…
+common.see_all = Ver tudo
+common.load_more = Carregar mais
+common.show_more = Mostrar mais
+common.back = Voltar
+common.next = Próxima
+common.previous = Anterior
+common.connect = Conectar
+common.disconnect = Desconectar
+common.sign_in = Entrar
+common.sign_out = Sair
+common.select = Selecionar
+common.select_all = Selecionar tudo
+common.settings = Configurações
+
+# ---- States
+common.loading = Carregando…
+common.saving = Salvando…
+common.downloading = Baixando…
+common.off = Desativado
+common.on = Ativado
+common.none = Nenhum
+common.custom = Personalizado
+common.automatic = Automático
+common.not_playing = Nada tocando
+common.not_connected = Não conectado
+common.nothing_here = Nada por aqui
+
+# ---- Things
+common.song = Música
+common.video = Vídeo
+common.artist = Artista
+common.album = Álbum
+common.playlist = Playlist
+common.podcast = Podcast
+common.episode = Episódio
+common.queue = Fila
+common.now_playing = Tocando agora
+common.youtube_music = YouTube Music
+
+# Counts
+common.songs.one = {count} música
+common.songs.other = {count} músicas
+common.plays.one = {count} reprodução
+common.plays.other = {count} reproduções
+common.selected.one = {count} selecionada
+common.selected.other = {count} selecionadas
+
+# ---- Sidebar
+nav.home = Início
+nav.explore = Explorar
+nav.charts = Paradas
+nav.moods = Gêneros e momentos
+nav.new_releases = Lançamentos
+nav.recognize = Reconhecer
+nav.library_group = Biblioteca
+nav.library = Biblioteca
+nav.history = Histórico
+nav.stats = Estatísticas
+nav.downloads = Downloads
+nav.local_files = Arquivos locais
+nav.import = Importar e exportar
+nav.together = Ouvir juntos
+nav.settings = Configurações
+
+# ---- Dates
+date.full = {day} de {month} de {year}
+date.today = Hoje
+date.yesterday = Ontem
+date.month_in_date.1 = janeiro
+date.month_in_date.2 = fevereiro
+date.month_in_date.3 = março
+date.month_in_date.4 = abril
+date.month_in_date.5 = maio
+date.month_in_date.6 = junho
+date.month_in_date.7 = julho
+date.month_in_date.8 = agosto
+date.month_in_date.9 = setembro
+date.month_in_date.10 = outubro
+date.month_in_date.11 = novembro
+date.month_in_date.12 = dezembro
+date.month_short.1 = jan
+date.month_short.2 = fev
+date.month_short.3 = mar
+date.month_short.4 = abr
+date.month_short.5 = mai
+date.month_short.6 = jun
+date.month_short.7 = jul
+date.month_short.8 = ago
+date.month_short.9 = set
+date.month_short.10 = out
+date.month_short.11 = nov
+date.month_short.12 = dez
+# Weekdays, 1 = Monday … 7 = Sunday.
+date.weekday_short.1 = Seg
+date.weekday_short.2 = Ter
+date.weekday_short.3 = Qua
+date.weekday_short.4 = Qui
+date.weekday_short.5 = Sex
+date.weekday_short.6 = Sáb
+date.weekday_short.7 = Dom
+
+# ---- Durations and relative times
+time.just_now = agora mesmo
+time.seconds_ago.one = há {count} s
+time.seconds_ago.other = há {count} s
+time.minutes_ago.one = há {count} min
+time.minutes_ago.other = há {count} min
+time.hours_ago.one = há {count} h
+time.hours_ago.other = há {count} h
+time.days_ago.one = há {count} dia
+time.days_ago.other = há {count} dias
+time.hours_minutes = {hours} h {minutes} min
+time.minutes = {minutes} min
+time.seconds = {seconds} s
+
+# ---- File sizes
+units.size = {value} {unit}
+units.b = B
+units.kb = KB
+units.mb = MB
+units.gb = GB
+units.tb = TB

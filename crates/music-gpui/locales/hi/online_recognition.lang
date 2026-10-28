@@ -1,0 +1,44 @@
+# Music recognition page (Hindi).
+
+recognition.title = संगीत पहचानें
+recognition.subtitle = आपके आस-पास चल रहा गाना पहचानें (⇧⌘R)
+
+recognition.idle.title = गाना पहचानने के लिए टैप करें
+recognition.idle.detail = गाने को अपने कंप्यूटर के पास चलाएँ; यह लगभग 10 सेकंड तक माइक्रोफ़ोन से सुनता है।
+recognition.permission.title = माइक्रोफ़ोन ऐक्सेस का इंतज़ार है…
+recognition.permission.detail = सिस्टम के संकेत में ऐक्सेस की अनुमति दें।
+recognition.listening = सुन रहा है…
+recognition.listening_progress = {length} में से {elapsed} से॰
+recognition.identifying.title = पहचान रहा है…
+recognition.identifying.detail = रिकॉर्डिंग का मिलान हो रहा है।
+recognition.failed = पहचान नहीं हो सकी
+recognition.open_privacy_settings = निजता सेटिंग खोलें
+
+recognition.mic.restricted = इस कंप्यूटर पर माइक्रोफ़ोन ऐक्सेस प्रतिबंधित है।
+recognition.mic.undetermined = माइक्रोफ़ोन ऐक्सेस अभी तक नहीं दिया गया। फिर से कोशिश करें और पूछे जाने पर अनुमति दें।
+recognition.mic.denied = {app} के लिए माइक्रोफ़ोन ऐक्सेस बंद है। सिस्टम सेटिंग्ज़ → गोपनीयता और सुरक्षा → माइक्रोफ़ोन में इसकी अनुमति दें।
+recognition.error.no_microphone = कोई माइक्रोफ़ोन नहीं मिला
+recognition.error.permission_denied = माइक्रोफ़ोन ऐक्सेस नहीं दिया गया
+recognition.error.silent = माइक्रोफ़ोन से सिर्फ़ खामोशी मिली (क्या माइक्रोफ़ोन ऐक्सेस की अनुमति है?)
+recognition.error.capture = रिकॉर्डिंग विफल रही: {error}
+recognition.error.cancelled = रद्द किया गया
+recognition.error.no_signature = कोई संगीत सुनाई नहीं दिया
+recognition.error.no_match = कोई मेल नहीं मिला
+recognition.error.rate_limited = बहुत ज़्यादा अनुरोध — एक मिनट बाद फिर से कोशिश करें
+recognition.error.service = पहचान सेवा में गड़बड़ी (HTTP {status})
+recognition.error.network = नेटवर्क में गड़बड़ी: {error}
+recognition.error.parse = अनपेक्षित जवाब: {error}
+
+recognition.result.recognized = पहचाना गया
+recognition.result.from_history = आपके पहचान इतिहास से
+recognition.match.title = YouTube Music पर
+recognition.match.searching = YouTube Music पर खोजा जा रहा है…
+recognition.match.failed = YouTube Music पर खोज विफल रही: {error}
+recognition.match.none = YouTube Music पर नहीं मिला।
+
+recognition.history.title = इतिहास
+recognition.history.empty.title = अभी तक कुछ नहीं पहचाना गया
+recognition.history.empty.detail = आपके पहचाने गए गाने यहाँ दिखते हैं, सबसे नए पहले।
+recognition.history.clear_title = पहचान का इतिहास साफ़ करें?
+recognition.history.clear_detail = पहचाने गए गानों की सूची मिट जाएगी।
+recognition.history.remove = इतिहास से हटाएँ

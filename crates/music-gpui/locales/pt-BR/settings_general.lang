@@ -1,0 +1,122 @@
+# Settings: Account, Network and About sections, the settings panel, the update
+# check and the Google sign-in window.
+
+# ---- Account
+settings.account.cookie_title = Entrar com um cookie do navegador
+settings.account.cookie_steps = 1. Abra music.youtube.com no navegador e entre na sua conta.\n2. Abra as ferramentas de desenvolvedor (⌥⌘I no Safari / Chrome) → Network (Rede) e recarregue a página.\n3. Clique em qualquer solicitação a music.youtube.com (por ex. “browse”), encontre “Cookie” em Request Headers e copie o valor inteiro.\n4. Cole abaixo. Ele fica guardado no chaveiro do sistema e só é enviado ao YouTube.
+settings.account.cookie_index = Índice da conta Google (se houver várias conectadas):
+settings.account.not_signed_in = Não conectado. Tudo funciona de forma anônima; ao entrar, suas músicas curtidas, álbuns salvos, inscrições e playlists são sincronizados com a biblioteca, e curtidas e edições de playlists voltam para o YouTube Music.
+settings.account.sign_in_google = Entrar com o Google…
+settings.account.paste_cookie = Colar cookie…
+settings.account.google_refused = Se o Google recusar a janela de login (“Este navegador ou app pode não ser seguro”), use “Colar cookie”.
+settings.account.last_synced = Última sincronização: {date}
+settings.account.not_synced = Ainda não sincronizado
+settings.account.sync_now = Sincronizar
+settings.account.syncing = Sincronizando…
+settings.account.sync_group = Sincronização da biblioteca
+settings.account.sync_row = Sincronizar sua biblioteca do YouTube Music
+settings.account.sync_row_desc = Músicas curtidas, músicas da biblioteca, álbuns salvos, inscrições, playlists.
+settings.account.accounts_group = Contas
+settings.account.channels = Canais (contas de marca) desta conta Google:
+settings.account.google_index = Conta Google
+settings.account.google_index_desc = Quando o cookie contém várias contas Google: qual delas (0 = a primeira).
+settings.account.cookie_note = O login usa o cookie de sessão do navegador para music.youtube.com. Ele fica guardado no chaveiro do sistema e só é enviado ao YouTube. Os recursos de conta foram feitos com base na API web do YouTube, mas ainda não foram verificados com uma conta real.
+
+# ---- About
+settings.about.show_welcome = Mostrar guia de boas-vindas
+settings.about.version_summary = Versão {version} · {summary}
+settings.about.summary = Cliente nativo para desktop do YouTube Music
+settings.about.not_affiliated = Sem afiliação, endosso ou patrocínio do YouTube ou do Google.
+settings.about.license = Licença
+settings.about.license_notice = Este programa é software livre: você pode redistribuí-lo e/ou modificá-lo sob os termos da GNU General Public License, versão 3. Ele é distribuído SEM NENHUMA GARANTIA; veja a licença para mais detalhes.
+settings.about.credits = Créditos
+settings.about.credit.archivetune = Recursos e telas portados do {project} (GPL-3.0), © Rukamori e colaboradores. Este é um projeto independente.
+settings.about.credit.hummingbird = Equalizador, controles de mídia do sistema, scrobbling e presença no Discord portados do Hummingbird (Apache-2.0), © Hummingbird contributors.
+settings.about.credit.recognition_title = Reconhecimento de músicas
+settings.about.credit.recognition = Impressão digital de áudio compatível com o Shazam, portada do shazamkit do {project} (GPL-3.0), que segue o formato do SongRec. Sem afiliação com o Shazam ou a Apple.
+settings.about.credit.libraries_title = Bibliotecas
+settings.about.credit.libraries = GPUI e gpui-component (Apache-2.0), Symphonia e rodio, ícones Lucide (ISC), letras do LRCLIB.
+
+# ---- Update check
+update.group = Atualizações
+update.releases_from = Versões de github.com/{repo}
+update.checking = Verificando…
+update.up_to_date_version = Você tem a versão mais recente ({version}).
+update.available_version = A versão {version} está disponível.
+update.check_failed = Não foi possível verificar: {error}
+update.check_now = Verificar agora
+update.download = Baixar…
+update.no_release = nenhuma versão publicada
+update.available_toast = {app} {version} está disponível (Configurações → Sobre)
+update.up_to_date_toast = O {app} está atualizado
+
+# ---- Network
+settings.network.proxy = Proxy
+settings.network.proxy_off = Desativado
+settings.network.host = Host
+settings.network.port = Porta
+settings.network.user = Usuário
+settings.network.password = Senha
+settings.network.doh_url = URL do DoH
+settings.network.host_placeholder = proxy.example.com ou 127.0.0.1
+settings.network.optional = opcional
+settings.network.test_connection = Testar conexão
+settings.network.test_dns = Testar DNS
+settings.network.using_proxy = Usando {url}
+settings.network.direct = Conexões diretas (sem proxy)
+settings.network.status_with_doh = {proxy} · DNS-over-HTTPS ({server})
+settings.network.testing = Testando…
+settings.network.test_ok = Conectado ao YouTube em {ms} ms
+settings.network.test_failed = Falha na conexão: {error}
+settings.network.lookup_failed = Falha na consulta: {error}
+settings.network.looking_up = Consultando…
+settings.network.dns_ok = {host} → {addresses} via {via} em {ms} ms
+settings.network.dns_via_doh = DNS-over-HTTPS
+settings.network.dns_via_cache = DNS-over-HTTPS (em cache)
+settings.network.dns_via_system = o resolvedor do sistema
+settings.network.proxy_note = Vale para tudo: YouTube Music, streams de áudio, capas, letras e scrobbling. O SOCKS5h resolve os nomes de host pelo proxy. A senha fica guardada no chaveiro.
+settings.network.dns = DNS
+settings.network.dns_system = Sistema
+settings.network.dns_custom = Personalizado
+settings.network.dns_fallback = Usar o resolvedor do sistema quando o DoH falhar
+settings.network.dns_note = O DNS-over-HTTPS (RFC 8484) consulta nomes de host por uma conexão HTTPS criptografada em vez do DNS comum. As respostas ficam em cache pelo TTL delas. Com um proxy SOCKS5h, o próprio proxy resolve os nomes. O Quad9 é acessado na porta HTTP/1.1 5053, que algumas redes bloqueiam.
+settings.network.error.port_number = A porta deve ser um número (1–65535).
+settings.network.error.doh_invalid = A URL do DNS-over-HTTPS não é válida.
+settings.network.error.proxy_invalid = O endereço do proxy não é válido para este tipo de proxy.
+settings.network.error.doh_https = A URL do DNS-over-HTTPS deve começar com https://.
+settings.network.error.doh_invalid_detail = A URL do DNS-over-HTTPS não é válida: {error}.
+settings.network.error.host_missing = Digite o host do proxy.
+settings.network.error.host_invalid = O host deve ser só um nome ou endereço (sem esquema, caminho ou espaços).
+settings.network.error.port_missing = Digite uma porta entre 1 e 65535.
+settings.network.error.socks4_auth = O SOCKS4 não aceita senhas; deixe o usuário em branco.
+
+# ---- Settings panel
+settings.panel.placeholder.api_key = Chave da API
+settings.panel.placeholder.shared_secret = Segredo compartilhado
+settings.panel.placeholder.user_token = Token de usuário
+settings.panel.placeholder.application_id = ID do aplicativo
+settings.panel.lastfm_missing = Digite a chave da API e o segredo compartilhado primeiro.
+settings.panel.lastfm_requesting = Solicitando um token…
+settings.panel.lastfm_finishing = Concluindo…
+settings.panel.lb_missing = Cole seu token de usuário primeiro.
+settings.panel.secrets.backend_and_file = {backend} + arquivo de configurações (0600)
+settings.panel.secrets.file_keychain_disabled = arquivo de configurações (0600; chaveiro desativado)
+settings.panel.secrets.file_keychain_read_failed = arquivo de configurações (0600; falha ao ler o chaveiro)
+settings.panel.secrets.file_keychain_unavailable = arquivo de configurações (0600; chaveiro indisponível)
+
+# ---- Credential stores: the OS's own names for them.
+secrets.backend.macos = Chaveiro do macOS
+secrets.backend.windows = Gerenciador de Credenciais do Windows
+secrets.backend.secret_service = Secret Service
+
+# ---- Settings file problems
+settings.file.no_config_dir = sem pasta de configuração; as configurações não são salvas
+settings.file.save_failed = falha ao salvar: {error}
+settings.file.read_failed = ao ler {path}: {error}
+settings.file.invalid_moved = {path} não é válido ({error}); movido para {backup}
+
+# ---- Google sign-in window
+login.window_title = Entrar no YouTube Music
+login.instructions = Entre com sua conta Google. Esta janela fecha assim que o YouTube Music abrir.
+login.webview_failed = Não foi possível criar a visualização web ({error}). Use “Colar cookie”.
+login.checking = Conectado — verificando a conta…

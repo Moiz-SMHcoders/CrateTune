@@ -1,0 +1,144 @@
+# Settings sections of the integrations.
+
+# ---- Shared
+settings.integrations.connected_as = Conectado como {user}
+
+# ---- Last.fm / ListenBrainz
+settings.integrations.lastfm_approve = Aprove o app no navegador e depois clique em Concluir.
+settings.integrations.finish = Concluir
+settings.integrations.forget_key = Esquecer chave
+settings.integrations.api_key = Chave da API
+settings.integrations.shared_secret = Segredo compartilhado
+settings.integrations.checking_token = Verificando o token…
+settings.integrations.validate = Validar
+settings.integrations.user_token = Token de usuário
+
+# ---- Discord
+settings.integrations.discord_title = Discord Rich Presence
+settings.integrations.discord_enter_id = Digite o ID do seu aplicativo do Discord.
+settings.integrations.discord_connected = Conectado ao Discord
+settings.integrations.discord_unreachable = Discord inacessível: {error}
+settings.integrations.discord_waiting = Aguardando a reprodução…
+settings.integrations.application_id = ID do aplicativo
+discord.activity.title = Atividade
+discord.activity.type = Tipo
+discord.activity.name = Nome
+discord.activity.details = Detalhes
+discord.activity.state = Estado
+discord.activity.placeholders_note = Marcadores: {title}, {artist}, {album}. Um nome vazio usa o nome do aplicativo do Discord.
+discord.activity.large_image = Imagem grande
+discord.activity.small_image = Imagem pequena
+discord.activity.button = Botão {number}
+discord.activity.label = Rótulo
+discord.activity.url = URL
+discord.activity.show_paused = Mostrar quando pausado
+discord.activity.show_paused_desc = Mantém a atividade (sem o tempo decorrido) quando a reprodução é pausada.
+discord.activity.custom_note = Imagens personalizadas são chaves de recursos do seu aplicativo do Discord ou URLs de imagens. Os botões ficam visíveis para os outros, não para você.
+
+# ---- Scrobble rules
+scrobble.rules.title = Quando uma música conta
+scrobble.rules.played = Tocada
+scrobble.rules.or_at_most = …ou no máximo
+scrobble.rules.ignore_under = Ignorar músicas com menos de
+scrobble.rules.percent = {percent} %
+scrobble.rules.note = A regra do Last.fm é 50 % ou 4 minutos, para músicas com mais de 30 s. Vale para Last.fm e ListenBrainz.
+scrobble.errors.one = Erros de scrobble ({count})
+scrobble.errors.other = Erros de scrobble ({count})
+settings.integrations.secrets = Segredos: {store}
+settings.integrations.secrets_loading = Segredos: carregando…
+settings.integrations.settings_path = Configurações: {path}
+settings.integrations.not_saved = As configurações não são salvas (sem pasta de configuração)
+
+# ---- SponsorBlock
+settings.sponsorblock.categories = Categorias
+settings.sponsorblock.category_desc.music_offtopic = Falas, esquetes e outras partes sem música de videoclipes.
+settings.sponsorblock.category_desc.sponsor = Promoção paga.
+settings.sponsorblock.category_desc.intro = Intervalos e animações de introdução sem conteúdo.
+settings.sponsorblock.category_desc.outro = Créditos e telas finais.
+settings.sponsorblock.category_desc.selfpromo = Promoção não paga: produtos, doações, agradecimentos.
+settings.sponsorblock.category_desc.interaction = Lembretes para curtir, se inscrever ou seguir.
+settings.sponsorblock.category_desc.preview = Resumos e prévias de outros conteúdos.
+settings.sponsorblock.category_desc.filler = Digressões que não são o conteúdo principal.
+settings.sponsorblock.category_desc.hook = Teasers e saudações no início.
+settings.sponsorblock.using = Usando {url}
+settings.sponsorblock.url_error = Precisa de um endereço https:// sem credenciais nem query
+settings.sponsorblock.skip_segments = Pular segmentos
+settings.sponsorblock.skip_segments_desc = Busca os segmentos marcados pela comunidade no vídeo de cada música e os pula.
+settings.sponsorblock.when = Quando um segmento começa
+settings.sponsorblock.when_desc = Pular na hora ou mostrar um botão Pular na barra do player.
+settings.sponsorblock.mode_auto = Pular automaticamente
+settings.sponsorblock.mode_ask = Perguntar
+settings.sponsorblock.notify = Avisar depois de pular
+settings.sponsorblock.server = Servidor
+settings.sponsorblock.api_url = URL da API
+settings.sponsorblock.use_default = Usar o servidor padrão
+settings.sponsorblock.forget = Esquecer segmentos consultados
+settings.sponsorblock.privacy = Privacidade: só os 4 primeiros caracteres do hash SHA-256 do ID de um vídeo são enviados, então o servidor não sabe qual música está tocando. Os segmentos vêm de sponsor.ajay.app (SponsorBlock, CC BY-NC-SA), a menos que você defina outro servidor.
+
+# ---- Music Together
+settings.together.you = Você
+settings.together.display_name = Nome de exibição
+settings.together.name_placeholder = Seu nome
+settings.together.display_name_note = Mostrado aos outros em uma sessão.
+settings.together.hosting = Hospedagem
+settings.together.port = Porta
+settings.together.port_error = As portas devem estar entre 1024 e 65535
+settings.together.allow_add_desc = As sugestões deles entram na sua fila.
+settings.together.allow_control_desc = Tocar, pausar, avançar/voltar e pular para todos.
+settings.together.approval = Aprovar convidados antes de entrarem
+settings.together.hosting_note = As sessões rodam na sua rede local: os convidados se conectam direto a este computador (permita conexões de entrada se o firewall perguntar). O link contém uma chave aleatória; só quem tem o link pode entrar. As alterações valem na hora para uma sessão em andamento. Na página Ouvir juntos, “Tornar anfitrião” passa a sessão para um convidado: todos seguem o novo anfitrião.
+settings.together.across_networks = Entre redes
+settings.together.relay = Servidor relay
+settings.together.relay_placeholder = wss://relay.example.com (vazio: só LAN)
+settings.together.relay_error = Precisa de um endereço ws:// ou wss:// (sem nome de usuário nem query)
+settings.together.relay_note = “Hospedar via relay” passa a sessão por um servidor music-relay que você mesmo hospeda (veja o README: um binário pequeno; coloque-o atrás de um proxy reverso TLS para wss://). Assim os convidados entram de qualquer lugar com o link. O relay repassa as mensagens da sessão (IDs de músicas, títulos, nomes), mas nunca decide nada; vazio = só LAN.
+settings.together.open = Abrir Ouvir juntos
+
+# ---- Spotify import
+settings.spotify.waiting = Aguardando você aprovar o app no navegador…
+settings.spotify.account = Conta do Spotify
+settings.spotify.client_id = Client ID
+settings.spotify.redirect_port = Porta de redirecionamento
+settings.spotify.redirect_uri = URI de redirecionamento: {uri}
+settings.spotify.steps = 1. Crie um app em developer.spotify.com/dashboard (Web API). 2. Adicione a ele a URI de redirecionamento acima. 3. Cole o Client ID dele aqui e clique em Conectar. O acesso é somente leitura (suas playlists e músicas curtidas); o token de atualização fica guardado no chaveiro.
+settings.spotify.without_account = Sem conta
+settings.spotify.without_account_note = Exporte uma playlist com o Exportify (exportify.app) e importe o arquivo CSV em Biblioteca → Importar e exportar. Entrar com o cookie sp_dc do web player (como faz o {other_app}) não é suportado: depende de um segredo extraído do web player do Spotify.
+settings.spotify.open_import = Abrir Importar e exportar
+settings.spotify.error.no_client = Digite o Client ID do seu app primeiro.
+settings.spotify.error.redirect = Não é possível aguardar o redirecionamento: {error}
+
+# ---- AI content filter
+settings.ai_filter.off = Desativado: nada é enviado a lugar nenhum
+settings.ai_filter.incomplete = Precisa de um endpoint, um modelo e pelo menos uma categoria
+settings.ai_filter.failed = A última solicitação falhou: {error}
+settings.ai_filter.on.one = Ativado · {count} música ou álbum classificado
+settings.ai_filter.on.other = Ativado · {count} músicas e álbuns classificados
+settings.ai_filter.hide = Ocultar
+settings.ai_filter.also_hide = Ocultar também
+settings.ai_filter.custom_placeholder = ex.: músicas sobre carros, músicas de meme
+settings.ai_filter.custom_note = Suas próprias categorias, separadas por vírgula (até 8), descritas em palavras simples.
+settings.ai_filter.title = Filtro de conteúdo por IA
+settings.ai_filter.enable = Filtrar músicas com um modelo de IA
+settings.ai_filter.enable_desc = Como “Ocultar conteúdo explícito”, para as categorias abaixo.
+settings.ai_filter.forget = Esquecer classificações
+settings.ai_filter.model = Modelo
+settings.ai_filter.endpoint = Endpoint
+settings.ai_filter.endpoint_placeholder = https://api.openai.com/v1 ou http://localhost:11434/v1
+settings.ai_filter.api_key = Chave da API
+settings.ai_filter.key_placeholder = Chave da API (não é necessária para servidores locais)
+settings.ai_filter.api_note = Qualquer API de chat completions compatível com OpenAI: OpenAI, OpenRouter ou um modelo neste computador (Ollama, LM Studio, llama.cpp server). A chave fica guardada no chaveiro.
+settings.ai_filter.privacy = Privacidade
+settings.ai_filter.privacy_note = Desativado por padrão. Quando ativado, o título, os artistas e o álbum das músicas e álbuns das páginas que você abre são enviados ao endpoint acima (nada sobre você, nenhum histórico de reprodução); cada veredito fica em cache neste computador, então cada música é consultada uma só vez. As músicas que o modelo ainda não avaliou continuam visíveis.
+
+# ---- Chromecast
+settings.cast.looking = Procurando dispositivos Cast…
+settings.cast.found.one = {count} dispositivo encontrado
+settings.cast.found.other = {count} dispositivos encontrados
+settings.cast.devices = Dispositivos
+settings.cast.scan = Procurar
+settings.cast.casting = Transmitindo
+settings.cast.cast = Transmitir
+settings.cast.streaming = Transmissão
+settings.cast.direct = Deixar o dispositivo buscar o áudio do YouTube
+settings.cast.direct_desc = Desativado: este app transmite o áudio para o dispositivo (funciona com todas as músicas).
+settings.cast.note = A transmissão toca a fila em um Chromecast, Google TV ou alto-falante Nest nesta rede (Default Media Receiver do Google). O botão Transmitir da barra do player escolhe um dispositivo; tocar, pausar, avançar/voltar, pular e volume passam a controlá-lo, e Parar transmissão continua aqui. O áudio do YouTube e os arquivos locais são transmitidos deste computador para o dispositivo (mantenha o app aberto); o dispositivo e este computador precisam estar na mesma rede. As alterações valem a partir da próxima música.

@@ -1,0 +1,56 @@
+# Online browse pages (YouTube Music).
+
+# ---- Home
+home.recent.title = Escuchado en esta sesión
+home.recent.subtitle = Volver a escuchar
+
+# ---- Explore
+explore.new_releases_detail = Álbumes y sencillos recientes
+explore.charts_detail = Lo más popular, por país
+explore.moods_detail = Playlists para cada momento
+
+# ---- Charts
+charts.country_placeholder = País
+charts.search_countries = Buscar países…
+charts.empty.title = Sin listas de éxitos
+charts.empty.detail = YouTube Music no tiene listas de éxitos para este país.
+
+# ---- Moods & genres
+moods.empty = YouTube Music no devolvió estados de ánimo ni géneros para esta región.
+
+# ---- New releases
+new_releases.subtitle = Nuevos álbumes y sencillos
+new_releases.empty.title = Nada nuevo
+new_releases.empty.detail = YouTube Music no devolvió novedades para esta región.
+
+# ---- Browse pages
+browse.empty = Esta página no tiene playlists ni canciones (o todas están filtradas).
+
+# ---- Album
+album.empty.title = No hay canciones reproducibles
+album.empty.detail = Este álbum no tiene canciones aquí (o todas están filtradas).
+
+# ---- Artist
+artist.subscribed = Suscrito
+artist.subscribe = Suscribirse
+artist.subscribe_tooltip = Suscribirse en YouTube Music (también se guarda en tu biblioteca)
+artist.subscribe_tooltip_signed_out = Se guarda en tu biblioteca; inicia sesión para suscribirte en YouTube Music
+artist.items_empty = No hay lanzamientos en esta página (o todos están filtrados).
+
+# ---- Playlist
+playlist.change_cover = Cambiar portada…
+playlist.empty.title = Sin canciones
+playlist.empty.detail = Esta playlist está vacía (o todas sus canciones están filtradas).
+
+# ---- Podcast / episode
+podcast.episodes.one = {count} episodio
+podcast.episodes.other = {count} episodios
+podcast.episodes_more.one = Más de {count} episodios
+podcast.episodes_more.other = Más de {count} episodios
+podcast.saved = Guardado
+podcast.save = Guardar en la biblioteca
+podcast.save_failed = No se pudo actualizar tu biblioteca: {error}
+podcast.open_episode_page = Abrir página del episodio
+podcast.go_to_podcast = Ir al podcast
+podcast.empty.title = Sin episodios
+podcast.empty.detail = Este programa aún no tiene episodios aquí.

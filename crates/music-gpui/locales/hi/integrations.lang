@@ -1,0 +1,104 @@
+# Integrations on top of the player (Hindi).
+
+# ---- SponsorBlock: segment categories
+sponsorblock.category.music_offtopic = गैर-संगीत हिस्सा
+sponsorblock.category.sponsor = स्पॉन्सर
+sponsorblock.category.intro = ब्रेक / इंट्रो
+sponsorblock.category.outro = एंड कार्ड / क्रेडिट
+sponsorblock.category.selfpromo = खुद का प्रमोशन
+sponsorblock.category.interaction = इंटरैक्शन रिमाइंडर
+sponsorblock.category.preview = प्रीव्यू / रीकैप
+sponsorblock.category.filler = फ़िलर
+sponsorblock.category.hook = हुक / अभिवादन
+sponsorblock.category_in_chip.music_offtopic = गैर-संगीत हिस्सा
+sponsorblock.category_in_chip.sponsor = स्पॉन्सर
+sponsorblock.category_in_chip.intro = ब्रेक / इंट्रो
+sponsorblock.category_in_chip.outro = एंड कार्ड / क्रेडिट
+sponsorblock.category_in_chip.selfpromo = खुद का प्रमोशन
+sponsorblock.category_in_chip.interaction = इंटरैक्शन रिमाइंडर
+sponsorblock.category_in_chip.preview = प्रीव्यू / रीकैप
+sponsorblock.category_in_chip.filler = फ़िलर
+sponsorblock.category_in_chip.hook = हुक / अभिवादन
+sponsorblock.toast.skipped = छोड़ा गया: {category} ({seconds} से॰)
+sponsorblock.chip.skip = {category} छोड़ें ({seconds} से॰)
+sponsorblock.chip.tooltip = SponsorBlock: इस सेगमेंट के आखिर तक जाएँ
+
+# ---- AI content filter: categories
+ai_filter.category.explicit = अश्लील बोल
+ai_filter.category.ai_generated = AI से बना संगीत
+ai_filter.category.holiday = त्योहारों का संगीत
+ai_filter.category.children = बच्चों का संगीत
+ai_filter.category.noise = नींद की आवाज़ें और व्हाइट नॉइज़
+ai_filter.category.sped_up = स्पीड-अप / स्लोड एडिट
+ai_filter.category.covers = कवर और कराओके
+ai_filter.category.live = लाइव रिकॉर्डिंग
+
+# ---- Chromecast
+cast.casting_to = {device} पर कास्ट हो रहा है
+cast.connecting_to = {device} से कनेक्ट हो रहा है…
+cast.tooltip = किसी डिवाइस पर कास्ट करें
+cast.menu.title = यहाँ कास्ट करें
+cast.menu.searching = Cast डिवाइस खोजे जा रहे हैं…
+cast.menu.none_found = कोई Cast डिवाइस नहीं मिला
+cast.menu.search_again = फिर से खोजें
+cast.stop = कास्ट करना बंद करें
+cast.error.disconnected = Cast डिवाइस डिस्कनेक्ट हो गया
+cast.error.scan_failed = डिवाइस नहीं खोजे जा सके: {error}
+cast.error.connect_failed = {device} से कनेक्ट नहीं हो सका: {error}
+
+# ---- Import: sources and progress
+import.source.spotify_playlist = Spotify प्लेलिस्ट
+import.source.spotify_liked = Spotify पर पसंद किए गए गाने
+import.error.connect_spotify = सेटिंग → Spotify इंपोर्ट में Spotify कनेक्ट करें।
+import.error.connect_spotify_first = पहले सेटिंग → Spotify इंपोर्ट में Spotify कनेक्ट करें।
+import.error.not_spotify_link = यह Spotify प्लेलिस्ट का लिंक या ID नहीं है।
+import.stage.reading = पढ़ा जा रहा है
+import.stage.reading_playlist = प्लेलिस्ट पढ़ी जा रही है
+import.stage.reading_liked = पसंद किए गए गाने पढ़े जा रहे हैं
+import.stage.matching = मिलान हो रहा है
+import.liked_playlist_name = Spotify पर पसंद किए गए
+import.cancelled = रद्द किया गया
+import.nothing_to_save = सेव करने को कुछ नहीं: कोई गाना नहीं मिला।
+import.exporting = प्लेलिस्ट एक्सपोर्ट करना
+import.exported.one = {count} गाना {path} में एक्सपोर्ट किया गया
+import.exported.other = {count} गाने {path} में एक्सपोर्ट किए गए
+
+# ---- Import & export page
+import.page.subtitle = Spotify या फ़ाइलों से प्लेलिस्ट अपनी लाइब्रेरी में लाएँ, या उन्हें कहीं और ले जाएँ।
+import.file.title = फ़ाइल से
+import.file.description = Exportify CSV (Spotify), M3U / M3U8, या यहाँ से एक्सपोर्ट की गई CSV / JSON।
+import.file.choose = फ़ाइल चुनें…
+import.spotify.title = Spotify से
+import.spotify.connect_hint = अपनी प्लेलिस्ट और पसंद किए गए गाने इंपोर्ट करने के लिए अपना Spotify खाता कनेक्ट करें (अपनी मुफ़्त डेवलपर Client ID के साथ)।
+import.spotify.set_up = Spotify सेट अप करें…
+import.spotify.signed_in = {user} के रूप में साइन इन है।
+import.spotify.liked = पसंद किए गए गाने
+import.spotify.show_playlists = मेरी प्लेलिस्ट दिखाएँ
+import.spotify.playlist_meta.one = {owner} · {count} गाना
+import.spotify.playlist_meta.other = {owner} · {count} गाने
+import.spotify.playlist_meta_unknown = {owner} · ? गाने
+import.job.progress = {stage} · {total} में से {done}
+import.job.progress_count = {stage} · {done}
+import.job.found.one = {count} मिला
+import.job.found.other = {count} मिले
+import.job.not_found.one = {count} नहीं मिला
+import.job.not_found.other = {count} नहीं मिले
+import.job.saved_as = “{name}” के रूप में सेव किया गया
+import.job.save.one = {count} गाना प्लेलिस्ट के रूप में सेव करें
+import.job.save.other = {count} गाने प्लेलिस्ट के रूप में सेव करें
+import.job.open_playlists = प्लेलिस्ट खोलें
+import.job.name_placeholder = प्लेलिस्ट का नाम
+import.guess.best = सबसे अच्छा अनुमान: {artists} — {title} ({percent} %)
+import.guess.search_failed = खोज विफल रही: {error}
+import.guess.no_results = कोई नतीजा नहीं
+import.guess.using = अनुमान लागू
+import.guess.use = अनुमान लें
+import.guess.search_tooltip = YouTube Music पर खोजें
+import.not_found.title = नहीं मिले
+import.not_found.subtitle = सबसे अच्छा अनुमान स्वीकार करें, या खुद खोजकर गाना जोड़ें।
+import.found.title = YouTube Music पर मिले
+import.found.first = {total} में से पहले {shown}
+import.export.title = प्लेलिस्ट एक्सपोर्ट करें
+import.export.subtitle = CSV और M3U दूसरे प्लेयर और स्प्रेडशीट में खुलते हैं; JSON में सब कुछ रहता है, ताकि यहाँ इंपोर्ट किया जा सके।
+import.export.empty = लाइब्रेरी में अभी कोई प्लेलिस्ट नहीं है।
+import.export.from_youtube_music = {songs} · YouTube Music

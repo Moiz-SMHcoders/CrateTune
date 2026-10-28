@@ -1,0 +1,249 @@
+# Library pages, Storage and Privacy settings, backup / restore (Hindi).
+
+# Sort menu
+library.sort.label = क्रम
+library.sort.date_added = जोड़ने की तारीख
+library.sort.title = टाइटल
+library.sort.artist = कलाकार
+library.sort.play_count = कितनी बार चलाया
+library.sort.listening_time = सुनने का समय
+library.sort.last_played = आखिरी बार चलाया
+library.sort.year = साल
+library.sort.song_count = गानों की संख्या
+library.sort.name = नाम
+library.sort.last_updated = आखिरी अपडेट
+library.sort.date_created = बनाने की तारीख
+
+library.filter_placeholder = फ़िल्टर करें
+library.saved_only = सिर्फ़ सेव किए गए
+library.subscribed_only = सिर्फ़ सब्सक्राइब किए गए
+library.new_playlist = नई प्लेलिस्ट
+
+library.detail_signed_in = {summary} · YouTube Music में साइन इन है
+library.count.albums.one = {count} एल्बम
+library.count.albums.other = {count} एल्बम
+library.count.artists.one = {count} कलाकार
+library.count.artists.other = {count} कलाकार
+library.count.shows.one = {count} शो
+library.count.shows.other = {count} शो
+library.count.playlists.one = {count} प्लेलिस्ट
+library.count.playlists.other = {count} प्लेलिस्ट
+
+# Empty states
+library.podcasts.signed_out_title = अपने पॉडकास्ट देखने के लिए साइन इन करें
+library.podcasts.signed_out_detail = YouTube Music पर सेव किए गए पॉडकास्ट यहाँ दिखते हैं। सेटिंग → खाता में साइन इन करें; शो बिना खाते के भी खोज, होम और एक्सप्लोर से खोले जा सकते हैं।
+library.podcasts.empty_title = अभी कोई पॉडकास्ट नहीं
+library.podcasts.empty_detail = किसी शो को उसके पेज पर “लाइब्रेरी में सेव करें” से सेव करें।
+library.empty.no_matches_title = कोई मेल नहीं
+library.empty.no_matches_detail = फ़िल्टर से कुछ मेल नहीं खाता।
+library.empty.liked_title = कोई पसंद किया गया गाना नहीं
+library.empty.liked_detail = किसी भी गाने पर दिल पर टैप करें। साइन इन होने पर YouTube Music की आपकी पसंद यहाँ सिंक होती है।
+library.empty.downloaded_title = कुछ डाउनलोड नहीं हुआ
+library.empty.downloaded_detail = गाने को इस कंप्यूटर पर रखने के लिए उसके मेन्यू में “डाउनलोड करें” चुनें।
+library.empty.local_title = कोई लोकल फ़ाइल नहीं
+library.empty.local_detail = लोकल फ़ाइलें पेज पर संगीत फ़ोल्डर जोड़ें और उन्हें स्कैन करें।
+library.empty.songs_title = आपकी लाइब्रेरी में कोई गाना नहीं
+library.empty.songs_detail = पसंद किए गए गाने, आपके जोड़े गए गाने और लोकल फ़ाइलें यहाँ दिखती हैं।
+library.empty.albums_title = अभी कोई एल्बम नहीं
+library.empty.albums_detail = आपके गानों के एल्बम और YouTube Music पर सेव किए गए एल्बम यहाँ दिखते हैं।
+library.empty.artists_title = अभी कोई कलाकार नहीं
+library.empty.artists_detail = आपके गानों के कलाकार और आपके सब्सक्रिप्शन यहाँ दिखते हैं।
+library.empty.playlists_title = अभी कोई प्लेलिस्ट नहीं
+library.empty.playlists_detail = “नई प्लेलिस्ट” से एक बनाएँ, या अपनी YouTube Music प्लेलिस्ट सिंक करने के लिए साइन इन करें।
+library.load_failed = लाइब्रेरी लोड नहीं हो सकी
+library.db_unavailable = लाइब्रेरी डेटाबेस उपलब्ध नहीं है।
+
+library.remove_from_library = लाइब्रेरी से हटाएँ
+library.unlike = नापसंद करें
+library.delete_downloads = डाउनलोड मिटाएँ
+
+# Album / artist cards and pages
+library.album.save = एल्बम सेव करें
+library.album.remove_saved = सेव किए गए एल्बम से हटाएँ
+library.album.saving = एल्बम सेव करना
+library.artist.subscribed_songs.one = सब्सक्राइब किया · {count} गाना
+library.artist.subscribed_songs.other = सब्सक्राइब किया · {count} गाने
+library.playlist.youtube_songs.one = {count} गाना · YouTube Music
+library.playlist.youtube_songs.other = {count} गाने · YouTube Music
+
+library.item.songs_listened.one = {count} गाना · {time} सुना
+library.item.songs_listened.other = {count} गाने · {time} सुना
+library.item.subscribe = सब्सक्राइब करें
+library.item.unsubscribe = सदस्यता छोड़ें
+library.item.remove_saved = सेव किए गए से हटाएँ
+library.item.open_online = YouTube Music पर खोलें
+library.item.empty_detail = इस कलाकार / इस एल्बम के गाने यहाँ देखने के लिए उन्हें पसंद करें या जोड़ें।
+
+# Library playlist page
+library.playlist.kind_own = आपकी YouTube Music प्लेलिस्ट
+library.playlist.kind_saved = सेव की गई YouTube Music प्लेलिस्ट
+library.playlist.change_cover = कवर बदलें…
+library.playlist.rename_title = प्लेलिस्ट का नाम बदलें
+library.playlist.delete_title = “{name}” मिटाएँ?
+library.playlist.delete_remote = यह YouTube Music पर भी मिट जाएगी।
+library.playlist.delete_unsave = यह आपकी YouTube Music लाइब्रेरी से हट जाएगी।
+library.playlist.delete_local_copy = सिर्फ़ इस कंप्यूटर पर मौजूद कॉपी मिटेगी।
+library.playlist.delete_undo = इसे वापस नहीं लाया जा सकता।
+library.playlist.move_up = ऊपर ले जाएँ
+library.playlist.move_down = नीचे ले जाएँ
+library.playlist.remove_from = प्लेलिस्ट से हटाएँ
+library.playlist.not_found_title = प्लेलिस्ट नहीं मिली
+library.playlist.not_found_detail = हो सकता है इसे मिटा दिया गया हो।
+library.playlist.empty_title = यह प्लेलिस्ट खाली है
+library.playlist.empty_detail = गाने जोड़ने के लिए गाने के मेन्यू में “प्लेलिस्ट में जोड़ें…” इस्तेमाल करें।
+
+# ---- Song lists: select mode
+song_list.select_none = कुछ न चुनें
+
+# ---- Local files page
+local_files.prompt_add = जोड़ें
+local_files.prompt_skip = छोड़ें
+local_files.folders_title = संगीत फ़ोल्डर
+local_files.add_folder = फ़ोल्डर जोड़ें
+local_files.skip_folder = फ़ोल्डर छोड़ें
+local_files.skipped_title = छोड़े गए
+local_files.scan.looking = फ़ाइलें खोजी जा रही हैं…
+local_files.scan.progress = {done} / {total} फ़ाइलें
+local_files.scanning = स्कैन हो रहा है…
+local_files.rescan = फिर से स्कैन करें
+local_files.detail.one = {count} गाना · {seconds} सेकंड से छोटी फ़ाइलें छोड़ दी जाती हैं
+local_files.detail.other = {count} गाने · {seconds} सेकंड से छोटी फ़ाइलें छोड़ दी जाती हैं
+local_files.empty.no_folders_title = अभी कोई संगीत फ़ोल्डर नहीं
+local_files.empty.no_folders_detail = अपने संगीत (MP3, M4A, FLAC, Ogg, Opus, WAV, AIFF…) वाला फ़ोल्डर जोड़ें और “फिर से स्कैन करें” दबाएँ।
+local_files.empty.no_tracks_title = कोई लोकल ट्रैक नहीं
+local_files.empty.no_tracks_detail = ऊपर दिए फ़ोल्डर पढ़ने के लिए “फिर से स्कैन करें” दबाएँ।
+
+# ---- Downloads page
+downloads.status.queued = कतार में
+downloads.status.downloading_size = डाउनलोड हो रहा है {size}
+downloads.status.done = हो गया · {size}
+downloads.status.preview = सिर्फ़ प्रीव्यू · {size}
+downloads.status.failed = विफल: {error}
+downloads.status.cancelled = रद्द किया गया
+downloads.detail.one = {count} गाना · {size} · प्ले कैश {limit} में से {cache}
+downloads.detail.other = {count} गाने · {size} · प्ले कैश {limit} में से {cache}
+downloads.play_all = सभी चलाएँ
+downloads.clear_finished = पूरे हुए हटाएँ
+downloads.show_in_finder = Finder में दिखाएँ
+downloads.unavailable_title = डाउनलोड उपलब्ध नहीं हैं
+downloads.unavailable_detail = डाउनलोड फ़ोल्डर नहीं खुल सका (टर्मिनल देखें)।
+downloads.previews_note.one = {count} डाउनलोड सिर्फ़ प्रीव्यू है (सिर्फ़ पहला ~1 MiB): यह तब बना जब पूरी स्ट्रीम उपलब्ध नहीं थी। इसे मिटाकर फिर से डाउनलोड करें।
+downloads.previews_note.other = {count} डाउनलोड सिर्फ़ प्रीव्यू हैं (सिर्फ़ पहला ~1 MiB): ये तब बने जब पूरी स्ट्रीम उपलब्ध नहीं थी। इन्हें मिटाकर फिर से डाउनलोड करें।
+downloads.section.session = यह सेशन
+downloads.section.downloaded = डाउनलोड किए गए
+downloads.empty_detail = गानों को इस कंप्यूटर पर रखने के लिए गाने के मेन्यू में “डाउनलोड करें” चुनें (या लाइब्रेरी में गाने चुनें)।
+downloads.preview_tag = प्रीव्यू
+downloads.delete = डाउनलोड मिटाएँ
+
+# ---- History page
+history.clear.title = सुनने का इतिहास साफ़ करें?
+history.clear.detail = रिकॉर्ड किया गया हर प्ले मिट जाएगा, और प्ले काउंट और आँकड़े फिर से शुरू होंगे। आपकी लाइब्रेरी, पसंद और प्लेलिस्ट बनी रहेंगी।
+history.clear.button = इतिहास साफ़ करें
+history.paused = सुनने का इतिहास रुका हुआ है (सेटिंग → निजता)।
+history.counting = गाने 30 सेकंड सुनने के बाद गिने जाते हैं।
+history.load_failed = लोड नहीं हो सका
+history.empty_title = अभी तक कुछ नहीं चलाया गया
+history.empty_detail = आपके सुने गए गाने यहाँ दिन के हिसाब से दिखते हैं।
+history.remove = इतिहास से हटाएँ
+history.removing = इतिहास से हटाना
+history.clearing = इतिहास साफ़ करना
+history.cleared = सुनने का इतिहास साफ़ हो गया
+
+# ---- Stats page
+stats.range.week = 7 दिन
+stats.range.month = 30 दिन
+stats.range.quarter = 90 दिन
+stats.range.year = इस साल
+stats.range.all = अब तक
+stats.subtitle = इस कंप्यूटर पर आपके सुनने के इतिहास से।
+stats.load_failed = आँकड़े लोड नहीं हो सके
+stats.empty_title = इस अवधि में कुछ नहीं सुना
+stats.empty_detail = कुछ संगीत चलाएँ — गाने 30 सेकंड के बाद गिने जाते हैं।
+stats.tile.listened = सुना
+stats.tile.plays.one = बार चलाया
+stats.tile.plays.other = बार चलाया
+stats.tile.songs.one = गाना
+stats.tile.songs.other = गाने
+stats.tile.artists.one = कलाकार
+stats.tile.artists.other = कलाकार
+stats.tile.albums.one = एल्बम
+stats.tile.albums.other = एल्बम
+stats.song_plays.one = {count} बार · {time}
+stats.song_plays.other = {count} बार · {time}
+stats.top_songs = टॉप गाने
+stats.top_artists = टॉप कलाकार
+stats.top_albums = टॉप एल्बम
+stats.by_hour = दिन के घंटे के हिसाब से
+stats.by_weekday = हफ़्ते के दिन के हिसाब से
+stats.month_by_month = महीने-दर-महीने
+stats.year_in_music = साल भर का संगीत
+stats.year.title = {year} का संगीत
+stats.year.subtitle = आपका साल, इस कंप्यूटर पर सुनने के इतिहास से।
+stats.year.load_failed = लोड नहीं हो सका
+stats.year.empty_title = उस साल कुछ नहीं चलाया गया
+stats.year.empty_detail = आप जैसे-जैसे सुनेंगे, आपका रीकैप भरता जाएगा।
+stats.year.top_song.one = आपका टॉप गाना · {count} बार
+stats.year.top_song.other = आपका टॉप गाना · {count} बार
+stats.year.top_artist = आपके टॉप कलाकार · {time}
+stats.year.favourite_hour = आपका पसंदीदा घंटा
+stats.year.busiest_day = सबसे व्यस्त दिन · {time}
+
+# ---- Settings → Storage
+settings.storage.files = फ़ाइलें
+settings.storage.settings_file = सेटिंग फ़ाइल: {path}
+settings.storage.settings_not_saved = सेटिंग सेव नहीं होतीं (कोई कॉन्फ़िग डायरेक्टरी नहीं)
+settings.storage.secrets = सीक्रेट: {store}
+settings.storage.secrets_loading = सीक्रेट: लोड हो रहे हैं…
+settings.storage.library_db = लाइब्रेरी डेटाबेस: {path}
+settings.storage.library_db_unavailable = लाइब्रेरी डेटाबेस: उपलब्ध नहीं
+settings.storage.play_cache = प्ले कैश
+settings.storage.cache_usage = {limit} में से {used} इस्तेमाल हुआ। जो गाने सबसे लंबे समय से नहीं चलाए गए, वे पहले हटते हैं।
+settings.storage.cache_limit = कैश साइज़ की सीमा
+settings.storage.cache_played = चलाए गए गाने कैश करें
+settings.storage.cache_played_detail = आप जो चलाते हैं उसकी एक कॉपी रखता है (बैकग्राउंड में एक बार और लाई जाती है)।
+settings.storage.clear_cache_row = प्ले कैश साफ़ करें
+settings.storage.clear_cache = कैश साफ़ करें
+settings.storage.downloads = डाउनलोड
+settings.storage.downloads_usage = {path} में {size}
+settings.storage.downloads_unavailable = डाउनलोड उपलब्ध नहीं हैं।
+settings.storage.download_folder = डाउनलोड फ़ोल्डर
+settings.storage.download_folder_detail = डाउनलोड कभी अपने-आप नहीं हटाए जाते।
+settings.storage.backup = बैकअप और रीस्टोर
+settings.storage.export = बैकअप एक्सपोर्ट करें
+settings.storage.export_detail = लाइब्रेरी, प्लेलिस्ट, इतिहास और सेटिंग एक zip में (कोई पासवर्ड या कुकी नहीं)।
+settings.storage.export_button = एक्सपोर्ट करें…
+settings.storage.restore = बैकअप रीस्टोर करें
+settings.storage.restore_detail = लाइब्रेरी और सेटिंग बदल देता है; बाद में रीस्टार्ट करें।
+settings.storage.restore_button = रीस्टोर करें…
+
+# ---- Settings → Privacy
+settings.privacy.listen_history = सुनने का इतिहास
+settings.privacy.pause_listen = सुनने का इतिहास रोकें
+settings.privacy.pause_listen_detail = प्ले रिकॉर्ड नहीं होते; इतिहास और आँकड़े आगे नहीं बढ़ते।
+settings.privacy.clear_listen = सुनने का इतिहास साफ़ करें
+settings.privacy.clear_listen_detail = इस कंप्यूटर पर रिकॉर्ड किया गया हर प्ले मिटा देता है।
+settings.privacy.clear_button = साफ़ करें…
+settings.privacy.clear_listen_confirm = रिकॉर्ड किया गया हर प्ले मिट जाएगा; प्ले काउंट और आँकड़े फिर से शुरू होंगे।
+settings.privacy.search_history = खोज का इतिहास
+settings.privacy.pause_search = खोज का इतिहास रोकें
+settings.privacy.pause_search_detail = आपकी की गई खोजें याद नहीं रखी जातीं।
+settings.privacy.clear_search = खोज का इतिहास साफ़ करें
+settings.privacy.clear_search_detail = याद रखी गई हर खोज भुला देता है।
+settings.privacy.note = इतिहास इस कंप्यूटर पर लाइब्रेरी डेटाबेस में रहता है। प्ले कभी भी आपके YouTube खाते के इतिहास में नहीं भेजे जाते।
+
+# ---- Backup / restore
+storage.backup_saved = बैकअप {path} में सेव हो गया
+storage.backup_failed = बैकअप विफल रहा: {error}
+storage.restore = रीस्टोर करें
+storage.restore_confirm_title = यह बैकअप रीस्टोर करें?
+storage.restore_confirm_detail = आपकी लाइब्रेरी, प्लेलिस्ट, इतिहास और सेटिंग बैकअप वाली से बदल दी जाएँगी। YouTube Music साइन-इन और दूसरे सीक्रेट बने रहेंगे।
+storage.restored_title = बैकअप रीस्टोर हो गया
+storage.restored_library = लाइब्रेरी रीस्टोर हो गई। हर सेटिंग लागू करने के लिए {app} रीस्टार्ट करें।
+storage.restored_all = लाइब्रेरी और सेटिंग रीस्टोर हो गईं। हर सेटिंग लागू करने के लिए {app} रीस्टार्ट करें।
+storage.restored_settings_skipped = लाइब्रेरी रीस्टोर हो गई; सेटिंग छोड़ दी गईं: {error}। हर सेटिंग लागू करने के लिए {app} रीस्टार्ट करें।
+storage.restart_later = बाद में
+storage.restart_now = अभी रीस्टार्ट करें
+storage.restore_failed = रीस्टोर विफल रहा: {error}
+storage.cache_cleared = प्ले कैश साफ़ हो गया
+storage.clearing_search = खोज का इतिहास साफ़ करना
+storage.search_cleared = खोज का इतिहास साफ़ हो गया

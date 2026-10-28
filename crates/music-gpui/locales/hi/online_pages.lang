@@ -1,0 +1,56 @@
+# Online browse pages (Hindi).
+
+# ---- Home
+home.recent.title = इस सेशन में चलाए गए
+home.recent.subtitle = फिर से सुनें
+
+# ---- Explore
+explore.new_releases_detail = नए एल्बम और सिंगल
+explore.charts_detail = देश के हिसाब से क्या लोकप्रिय है
+explore.moods_detail = हर पल के लिए प्लेलिस्ट
+
+# ---- Charts
+charts.country_placeholder = देश
+charts.search_countries = देश खोजें…
+charts.empty.title = कोई चार्ट नहीं
+charts.empty.detail = YouTube Music के पास इस देश के लिए कोई चार्ट नहीं है।
+
+# ---- Moods & genres
+moods.empty = YouTube Music ने इस क्षेत्र के लिए कोई मूड या शैली नहीं दी।
+
+# ---- New releases
+new_releases.subtitle = नए एल्बम और सिंगल
+new_releases.empty.title = कुछ नया नहीं
+new_releases.empty.detail = YouTube Music ने इस क्षेत्र के लिए कोई नई रिलीज़ नहीं दी।
+
+# ---- Browse pages
+browse.empty = इस पेज पर कोई प्लेलिस्ट या गाना नहीं है (या सभी फ़िल्टर हो गए हैं)।
+
+# ---- Album
+album.empty.title = चलाने लायक कोई गाना नहीं
+album.empty.detail = इस एल्बम के कोई ट्रैक यहाँ नहीं हैं (या सभी फ़िल्टर हो गए हैं)।
+
+# ---- Artist
+artist.subscribed = सब्सक्राइब किया
+artist.subscribe = सब्सक्राइब करें
+artist.subscribe_tooltip = YouTube Music पर सब्सक्राइब करें (आपकी लाइब्रेरी में भी सेव होता है)
+artist.subscribe_tooltip_signed_out = आपकी लाइब्रेरी में सेव होता है; YouTube Music पर सब्सक्राइब करने के लिए साइन इन करें
+artist.items_empty = इस पेज पर कोई रिलीज़ नहीं है (या सभी फ़िल्टर हो गई हैं)।
+
+# ---- Playlist
+playlist.change_cover = कवर बदलें…
+playlist.empty.title = कोई गाना नहीं
+playlist.empty.detail = यह प्लेलिस्ट खाली है (या इसके सभी गाने फ़िल्टर हो गए हैं)।
+
+# ---- Podcast / episode
+podcast.episodes.one = {count} एपिसोड
+podcast.episodes.other = {count} एपिसोड
+podcast.episodes_more.one = {count}+ एपिसोड
+podcast.episodes_more.other = {count}+ एपिसोड
+podcast.saved = सेव किया गया
+podcast.save = लाइब्रेरी में सेव करें
+podcast.save_failed = आपकी लाइब्रेरी अपडेट नहीं हो सकी: {error}
+podcast.open_episode_page = एपिसोड पेज खोलें
+podcast.go_to_podcast = पॉडकास्ट पर जाएँ
+podcast.empty.title = कोई एपिसोड नहीं
+podcast.empty.detail = इस शो का अभी यहाँ कोई एपिसोड नहीं है।

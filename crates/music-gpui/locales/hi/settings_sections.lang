@@ -1,0 +1,18 @@
+# Settings page: section names.
+settings.section.appearance = रूप-रंग
+settings.section.playback = प्लेबैक
+settings.section.modules = मॉड्यूल
+settings.section.equalizer = इक्वलाइज़र
+settings.section.lyrics = बोल
+settings.section.content = कॉन्टेंट और क्षेत्र
+settings.section.network = नेटवर्क
+settings.section.privacy = निजता
+settings.section.storage = स्टोरेज
+settings.section.account = खाता
+settings.section.integrations = स्क्रॉबलिंग और Discord
+settings.section.sponsorblock = SponsorBlock
+settings.section.together = Music Together
+settings.section.spotify = Spotify इंपोर्ट
+settings.section.ai_filter = AI कॉन्टेंट फ़िल्टर
+settings.section.cast = Chromecast
+settings.section.about = जानकारी
