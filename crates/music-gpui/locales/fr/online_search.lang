@@ -1,0 +1,35 @@
+# Search page (French).
+
+search.title = Rechercher
+search.query_title = « {query} »
+search.searching = Recherche…
+
+search.tab.all = Tout
+search.tab.songs = Titres
+search.tab.videos = Vidéos
+search.tab.albums = Albums
+search.tab.artists = Artistes
+search.tab.community_playlists = Playlists de la communauté
+search.tab.featured_playlists = Playlists à la une
+search.tab.podcasts = Podcasts
+search.tab.episodes = Épisodes
+
+search.tab_empty.songs = Aucun titre
+search.tab_empty.videos = Aucune vidéo
+search.tab_empty.albums = Aucun album
+search.tab_empty.artists = Aucun artiste
+search.tab_empty.community_playlists = Aucune playlist de la communauté
+search.tab_empty.featured_playlists = Aucune playlist à la une
+search.tab_empty.podcasts = Aucun podcast
+search.tab_empty.episodes = Aucun épisode
+search.tab_empty.detail = Essayez une autre catégorie ou une autre recherche.
+
+search.correction.applied = Résultats pour {corrected} · Rechercher plutôt {original}
+search.correction.suggested = Vouliez-vous dire {corrected} ?
+
+search.top_result = Meilleur résultat
+search.empty.title = Aucun résultat
+search.empty.detail = Essayez une autre recherche ou vérifiez l'orthographe.
+
+search.start.title = Rechercher sur YouTube Music
+search.start.detail = Saisissez un titre, un artiste, un album ou une playlist dans le champ de recherche (⌘F) puis appuyez sur Entrée.

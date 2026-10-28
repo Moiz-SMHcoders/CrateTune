@@ -1,0 +1,18 @@
+# Settings page: section names (French).
+settings.section.appearance = Apparence
+settings.section.playback = Lecture
+settings.section.modules = Modules
+settings.section.equalizer = Égaliseur
+settings.section.lyrics = Paroles
+settings.section.content = Contenu et région
+settings.section.network = Réseau
+settings.section.privacy = Confidentialité
+settings.section.storage = Stockage
+settings.section.account = Compte
+settings.section.integrations = Scrobbling et Discord
+settings.section.sponsorblock = SponsorBlock
+settings.section.together = Music Together
+settings.section.spotify = Import Spotify
+settings.section.ai_filter = Filtre de contenu IA
+settings.section.cast = Chromecast
+settings.section.about = À propos

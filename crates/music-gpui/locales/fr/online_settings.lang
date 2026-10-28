@@ -1,0 +1,20 @@
+# Settings → Content & region (French).
+
+settings.content.group_region = Langue et région
+settings.content.language = Langue du contenu
+settings.content.language_description = Langue des titres, rubriques et recherches sur YouTube Music.
+settings.content.language_placeholder = Langue
+settings.content.country = Pays du contenu
+settings.content.country_description = Région du fil d'accueil, des classements et des nouveautés.
+settings.content.country_placeholder = Pays
+settings.content.region_note = Les changements s'appliquent immédiatement ; les pages ouvertes se rechargent dans la nouvelle langue.
+
+settings.content.group_filters = Filtres
+settings.content.hide_explicit = Masquer le contenu explicite
+settings.content.hide_explicit_description = Retire les titres et albums marqués explicites des pages, de la recherche et de la radio.
+settings.content.hide_videos = Masquer les clips
+settings.content.hide_videos_description = Titres uniquement : les clips et vidéos d'utilisateurs sont exclus des rubriques, de la recherche, des playlists, des albums, de la radio et des files d'attente (un album que YouTube ne propose qu'en vidéos audio officielles reste complet).
+
+settings.content.group_radio = Radio
+settings.content.autoplay = Lecture automatique de titres similaires
+settings.content.autoplay_description = Lorsque le dernier titre de la file d'attente commence, des titres de sa radio sont ajoutés à la suite.

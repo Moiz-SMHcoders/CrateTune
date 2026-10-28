@@ -1,0 +1,79 @@
+# Now Playing screen, lyrics pane and lyrics card dialog (French).
+
+# ---- Header
+np.close_tooltip = Fermer (Échap)
+np.header = À L'ÉCOUTE
+np.demo_clock = Horloge démo
+np.buffering = Chargement…
+np.preview = Extrait
+np.speed = {speed}×
+np.sleep_tooltip = Minuteur de veille
+np.layout_tooltip = Style et arrière-plan
+np.menu.design = Style
+np.menu.background = Arrière-plan
+
+# ---- Player
+np.up_next = À suivre
+np.playing_from = LECTURE DEPUIS
+np.your_queue = Votre file d'attente
+np.of_total = sur {total}
+np.editorial.header_album = À L'ÉCOUTE  ·  {album}
+np.editorial.play = LIRE
+np.editorial.pause = PAUSE
+np.editorial.loading = CHARGEMENT
+np.queue.title = À SUIVRE
+np.queue.more.one = +{count} autre
+np.queue.more.other = +{count} autres
+np.queue.empty = File d'attente vide. Ajoutez des titres depuis une liste ou activez la lecture automatique.
+
+# ---- Lyrics pane
+lyrics.nothing_playing = Aucune lecture en cours
+lyrics.loading = Chargement des paroles…
+lyrics.missing_title = Pas de paroles
+lyrics.missing_detail = Aucun des fournisseurs de paroles activés ne connaît ce titre.
+lyrics.failed = Impossible de charger les paroles
+lyrics.translating = Traduction…
+lyrics.translation_failed = Échec de la traduction : {error}
+lyrics.kind.word = Synchro par mot
+lyrics.kind.line = Synchro par ligne
+lyrics.kind.plain = Non synchronisées
+lyrics.source = {provider} · {kind}
+lyrics.select_hint.one = Sélectionnez jusqu'à {count} ligne pour une carte
+lyrics.select_hint.other = Sélectionnez jusqu'à {count} lignes pour une carte
+lyrics.selected.one = {count} ligne sélectionnée
+lyrics.selected.other = {count} lignes sélectionnées
+lyrics.create_card = Créer une carte…
+lyrics.share_tooltip = Partager les paroles sous forme de carte
+lyrics.translation_on = Traduction : activée
+lyrics.translation_off = Traduction : désactivée
+lyrics.reload_tooltip = Relancer la recherche chez les fournisseurs
+
+# ---- Lyrics card dialog
+card.dialog_title = Carte de paroles
+card.row.background = Fond
+card.row.text = Texte
+card.row.size = Taille
+card.row.shape = Format
+card.row.cover = Pochette
+card.cover.show = Afficher
+card.cover.hide = Masquer
+card.save = Enregistrer l'image…
+card.copy = Copier l'image
+card.copying = Copie…
+card.copied = Copiée dans le presse-papiers
+card.saved = Enregistrée : {path}
+card.save_failed = Enregistrement impossible : {error}
+card.draw_failed = Impossible de dessiner la carte : {error}
+card.aspect.square = Carré
+card.aspect.portrait = Portrait
+card.aspect.story = Story
+card.bg.blur = Pochette floutée
+card.bg.album = Couleur de l'album
+card.bg.dark = Sombre
+card.bg.light = Clair
+card.align.left = Gauche
+card.align.center = Centre
+card.align.right = Droite
+card.size.small = Petite
+card.size.medium = Moyenne
+card.size.large = Grande

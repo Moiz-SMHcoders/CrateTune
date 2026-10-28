@@ -1,0 +1,157 @@
+# Shared strings (Italian).
+
+locale.native_name = Italiano
+
+# ---- Actions
+common.play = Riproduci
+common.pause = Pausa
+common.shuffle = Casuale
+common.radio = Radio
+common.start_radio = Avvia radio
+common.play_next = Riproduci dopo
+common.add_to_queue = Aggiungi alla coda
+common.add_to_playlist = Aggiungi a playlist…
+common.like = Mi piace
+common.remove_from_liked = Rimuovi dai brani piaciuti
+common.download = Scarica
+common.remove_download = Rimuovi download
+common.go_to_artist = Vai all'artista
+common.go_to_album = Vai all'album
+common.open = Apri
+common.cancel = Annulla
+common.close = Chiudi
+common.retry = Riprova
+common.remove = Rimuovi
+common.delete = Elimina
+common.clear = Cancella
+common.save = Salva
+common.apply = Applica
+common.reset = Ripristina
+common.done = Fine
+common.copy = Copia
+common.rename = Rinomina
+common.refresh = Aggiorna
+common.install = Installa
+common.update = Aggiorna
+common.import = Importa
+common.search = Cerca
+common.search_placeholder = Cerca…
+common.see_all = Mostra tutto
+common.load_more = Carica altro
+common.show_more = Mostra altro
+common.back = Indietro
+common.next = Successivo
+common.connect = Connetti
+common.disconnect = Disconnetti
+common.sign_in = Accedi
+common.sign_out = Esci
+common.select = Seleziona
+common.select_all = Seleziona tutto
+common.settings = Impostazioni
+
+# ---- States
+common.loading = Caricamento…
+common.saving = Salvataggio…
+common.downloading = Download in corso…
+common.off = No
+common.on = Sì
+common.none = Nessuno
+common.custom = Personalizzato
+common.automatic = Automatico
+common.not_playing = Nessuna riproduzione
+common.not_connected = Non connesso
+common.nothing_here = Niente qui
+
+# ---- Things
+common.song = Brano
+common.video = Video
+common.artist = Artista
+common.album = Album
+common.playlist = Playlist
+common.podcast = Podcast
+common.episode = Episodio
+common.queue = Coda
+common.now_playing = In riproduzione
+common.youtube_music = YouTube Music
+
+common.songs.one = {count} brano
+common.songs.other = {count} brani
+common.plays.one = {count} ascolto
+common.plays.other = {count} ascolti
+common.selected.one = {count} selezionato
+common.selected.other = {count} selezionati
+
+# ---- Sidebar
+nav.home = Home
+nav.explore = Esplora
+nav.charts = Classifiche
+nav.moods = Generi e mood
+nav.new_releases = Nuove uscite
+nav.recognize = Riconosci
+nav.library_group = Libreria
+nav.library = Libreria
+nav.history = Cronologia
+nav.stats = Statistiche
+nav.downloads = Download
+nav.local_files = File locali
+nav.import = Importa ed esporta
+nav.together = Ascolta insieme
+nav.settings = Impostazioni
+
+# ---- Dates
+date.full = {day} {month} {year}
+date.today = Oggi
+date.yesterday = Ieri
+date.month_in_date.1 = gennaio
+date.month_in_date.2 = febbraio
+date.month_in_date.3 = marzo
+date.month_in_date.4 = aprile
+date.month_in_date.5 = maggio
+date.month_in_date.6 = giugno
+date.month_in_date.7 = luglio
+date.month_in_date.8 = agosto
+date.month_in_date.9 = settembre
+date.month_in_date.10 = ottobre
+date.month_in_date.11 = novembre
+date.month_in_date.12 = dicembre
+date.month_short.1 = gen
+date.month_short.2 = feb
+date.month_short.3 = mar
+date.month_short.4 = apr
+date.month_short.5 = mag
+date.month_short.6 = giu
+date.month_short.7 = lug
+date.month_short.8 = ago
+date.month_short.9 = set
+date.month_short.10 = ott
+date.month_short.11 = nov
+date.month_short.12 = dic
+date.weekday_short.1 = lun
+date.weekday_short.2 = mar
+date.weekday_short.3 = mer
+date.weekday_short.4 = gio
+date.weekday_short.5 = ven
+date.weekday_short.6 = sab
+date.weekday_short.7 = dom
+
+# ---- Durations and relative times
+time.just_now = proprio ora
+time.seconds_ago.one = {count} s fa
+time.seconds_ago.other = {count} s fa
+time.minutes_ago.one = {count} min fa
+time.minutes_ago.other = {count} min fa
+time.hours_ago.one = {count} h fa
+time.hours_ago.other = {count} h fa
+time.days_ago.one = {count} giorno fa
+time.days_ago.other = {count} giorni fa
+time.hours_minutes = {hours} h {minutes} min
+time.minutes = {minutes} min
+time.seconds = {seconds} s
+
+# ---- File sizes
+units.size = {value} {unit}
+units.b = B
+units.kb = KB
+units.mb = MB
+units.gb = GB
+units.tb = TB

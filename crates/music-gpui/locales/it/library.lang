@@ -1,0 +1,246 @@
+# Library pages, Storage and Privacy settings, backup / restore (Italian).
+
+library.sort.label = Ordina
+library.sort.date_added = Data di aggiunta
+library.sort.title = Titolo
+library.sort.artist = Artista
+library.sort.play_count = N. di ascolti
+library.sort.listening_time = Tempo di ascolto
+library.sort.last_played = Ultimo ascolto
+library.sort.year = Anno
+library.sort.song_count = N. di brani
+library.sort.name = Nome
+library.sort.last_updated = Ultimo aggiornamento
+library.sort.date_created = Data di creazione
+
+library.filter_placeholder = Filtra
+library.saved_only = Solo salvati
+library.subscribed_only = Solo iscrizioni
+library.new_playlist = Nuova playlist
+
+library.detail_signed_in = {summary} · accesso a YouTube Music effettuato
+library.count.albums.one = {count} album
+library.count.albums.other = {count} album
+library.count.artists.one = {count} artista
+library.count.artists.other = {count} artisti
+library.count.shows.one = {count} programma
+library.count.shows.other = {count} programmi
+library.count.playlists.one = {count} playlist
+library.count.playlists.other = {count} playlist
+
+# Empty states
+library.podcasts.signed_out_title = Accedi per vedere i tuoi podcast
+library.podcasts.signed_out_detail = I podcast che salvi su YouTube Music compaiono qui. Accedi in Impostazioni → Account; i programmi si possono aprire anche senza account da Cerca, Home ed Esplora.
+library.podcasts.empty_title = Ancora nessun podcast
+library.podcasts.empty_detail = Salva un programma con “Salva in libreria” nella sua pagina.
+library.empty.no_matches_title = Nessun risultato
+library.empty.no_matches_detail = Niente corrisponde al filtro.
+library.empty.liked_title = Nessun brano piaciuto
+library.empty.liked_detail = Tocca il cuore su un brano qualsiasi. Con l'accesso effettuato, i Mi piace di YouTube Music vengono sincronizzati qui.
+library.empty.downloaded_title = Nessun download
+library.empty.downloaded_detail = Scegli “Scarica” nel menu di un brano per tenerlo su questo computer.
+library.empty.local_title = Nessun file locale
+library.empty.local_detail = Aggiungi cartelle musicali nella pagina File locali ed esegui la scansione.
+library.empty.songs_title = Nessun brano nella libreria
+library.empty.songs_detail = I brani piaciuti, i brani aggiunti e i file locali compaiono qui.
+library.empty.albums_title = Ancora nessun album
+library.empty.albums_detail = Gli album dei tuoi brani e gli album salvati su YouTube Music compaiono qui.
+library.empty.artists_title = Ancora nessun artista
+library.empty.artists_detail = Gli artisti dei tuoi brani e le tue iscrizioni compaiono qui.
+library.empty.playlists_title = Ancora nessuna playlist
+library.empty.playlists_detail = Creane una con “Nuova playlist” o accedi per sincronizzare le playlist di YouTube Music.
+library.load_failed = Impossibile caricare la libreria
+library.db_unavailable = Il database della libreria non è disponibile.
+
+library.remove_from_library = Rimuovi dalla libreria
+library.unlike = Non mi piace più
+library.delete_downloads = Elimina download
+
+library.album.save = Salva album
+library.album.remove_saved = Rimuovi dagli album salvati
+library.album.saving = Salvataggio dell'album
+library.artist.subscribed_songs.one = Iscritto · {count} brano
+library.artist.subscribed_songs.other = Iscritto · {count} brani
+library.playlist.youtube_songs.one = {count} brano · YouTube Music
+library.playlist.youtube_songs.other = {count} brani · YouTube Music
+
+library.item.songs_listened.one = {count} brano · {time} di ascolto
+library.item.songs_listened.other = {count} brani · {time} di ascolto
+library.item.subscribe = Iscriviti
+library.item.unsubscribe = Annulla iscrizione
+library.item.remove_saved = Rimuovi dai salvati
+library.item.open_online = Apri su YouTube Music
+library.item.empty_detail = Metti Mi piace o aggiungi brani di questo artista / di questo album per vederli qui.
+
+library.playlist.kind_own = La tua playlist di YouTube Music
+library.playlist.kind_saved = Playlist di YouTube Music salvata
+library.playlist.change_cover = Cambia copertina…
+library.playlist.rename_title = Rinomina playlist
+library.playlist.delete_title = Eliminare “{name}”?
+library.playlist.delete_remote = Verrà eliminata anche su YouTube Music.
+library.playlist.delete_unsave = Verrà rimossa dalla tua libreria di YouTube Music.
+library.playlist.delete_local_copy = Verrà eliminata solo la copia su questo computer.
+library.playlist.delete_undo = L'operazione non può essere annullata.
+library.playlist.move_up = Sposta su
+library.playlist.move_down = Sposta giù
+library.playlist.remove_from = Rimuovi dalla playlist
+library.playlist.not_found_title = Playlist non trovata
+library.playlist.not_found_detail = Potrebbe essere stata eliminata.
+library.playlist.empty_title = Questa playlist è vuota
+library.playlist.empty_detail = Usa “Aggiungi a playlist…” nel menu di un brano per aggiungere brani.
+
+# ---- Song lists
+song_list.select_none = Deseleziona tutto
+
+# ---- Local files page
+local_files.prompt_add = Aggiungi
+local_files.prompt_skip = Escludi
+local_files.folders_title = Cartelle musicali
+local_files.add_folder = Aggiungi cartella
+local_files.skip_folder = Escludi una cartella
+local_files.skipped_title = Escluse
+local_files.scan.looking = Ricerca dei file…
+local_files.scan.progress = {done} / {total} file
+local_files.scanning = Scansione…
+local_files.rescan = Ripeti scansione
+local_files.detail.one = {count} brano · i file più brevi di {seconds} s vengono ignorati
+local_files.detail.other = {count} brani · i file più brevi di {seconds} s vengono ignorati
+local_files.empty.no_folders_title = Ancora nessuna cartella musicale
+local_files.empty.no_folders_detail = Aggiungi una cartella con la tua musica (MP3, M4A, FLAC, Ogg, Opus, WAV, AIFF…) e premi Ripeti scansione.
+local_files.empty.no_tracks_title = Nessun brano locale
+local_files.empty.no_tracks_detail = Premi Ripeti scansione per leggere le cartelle qui sopra.
+
+# ---- Downloads page
+downloads.status.queued = In coda
+downloads.status.downloading_size = Download {size}
+downloads.status.done = Completato · {size}
+downloads.status.preview = Solo anteprima · {size}
+downloads.status.failed = Errore: {error}
+downloads.status.cancelled = Annullato
+downloads.detail.one = {count} brano · {size} · cache di riproduzione {cache} su {limit}
+downloads.detail.other = {count} brani · {size} · cache di riproduzione {cache} su {limit}
+downloads.play_all = Riproduci tutto
+downloads.clear_finished = Rimuovi completati
+downloads.show_in_finder = Mostra nel Finder
+downloads.unavailable_title = Download non disponibili
+downloads.unavailable_detail = Impossibile aprire la cartella dei download (vedi il terminale).
+downloads.previews_note.one = {count} download è un'anteprima (solo il primo ~1 MiB): è stato eseguito mentre gli stream completi non erano disponibili. Eliminalo e scaricalo di nuovo.
+downloads.previews_note.other = {count} download sono anteprime (solo il primo ~1 MiB): sono stati eseguiti mentre gli stream completi non erano disponibili. Eliminali e scaricali di nuovo.
+downloads.section.session = Questa sessione
+downloads.section.downloaded = Scaricati
+downloads.empty_detail = Scegli “Scarica” nel menu di un brano (o seleziona brani nella libreria) per tenerli su questo computer.
+downloads.preview_tag = anteprima
+downloads.delete = Elimina download
+
+# ---- History page
+history.clear.title = Cancellare la cronologia di ascolto?
+history.clear.detail = Ogni ascolto registrato viene eliminato e i conteggi e le statistiche ripartono da zero. Libreria, Mi piace e playlist restano.
+history.clear.button = Cancella cronologia
+history.paused = La cronologia di ascolto è in pausa (Impostazioni → Privacy).
+history.counting = Un brano viene conteggiato dopo 30 secondi di ascolto.
+history.load_failed = Impossibile caricare
+history.empty_title = Ancora niente ascoltato
+history.empty_detail = I brani che ascolti compaiono qui, raggruppati per giorno.
+history.remove = Rimuovi dalla cronologia
+history.removing = Rimozione dalla cronologia
+history.clearing = Cancellazione della cronologia
+history.cleared = Cronologia di ascolto cancellata
+
+# ---- Stats page
+stats.range.week = 7 giorni
+stats.range.month = 30 giorni
+stats.range.quarter = 90 giorni
+stats.range.year = Quest'anno
+stats.range.all = Sempre
+stats.subtitle = Dalla cronologia di ascolto su questo computer.
+stats.load_failed = Impossibile caricare le statistiche
+stats.empty_title = Nessun ascolto in questo periodo
+stats.empty_detail = Ascolta un po' di musica: i brani contano dopo 30 secondi.
+stats.tile.listened = di ascolto
+stats.tile.plays.one = ascolto
+stats.tile.plays.other = ascolti
+stats.tile.songs.one = brano
+stats.tile.songs.other = brani
+stats.tile.artists.one = artista
+stats.tile.artists.other = artisti
+stats.tile.albums.one = album
+stats.tile.albums.other = album
+stats.song_plays.one = {count} ascolto · {time}
+stats.song_plays.other = {count} ascolti · {time}
+stats.top_songs = Brani più ascoltati
+stats.top_artists = Artisti più ascoltati
+stats.top_albums = Album più ascoltati
+stats.by_hour = Per ora del giorno
+stats.by_weekday = Per giorno della settimana
+stats.month_by_month = Mese per mese
+stats.year_in_music = Il tuo anno in musica
+stats.year.title = Il tuo {year} in musica
+stats.year.subtitle = Il tuo anno, dalla cronologia di ascolto su questo computer.
+stats.year.load_failed = Impossibile caricare
+stats.year.empty_title = Nessun ascolto in quell'anno
+stats.year.empty_detail = Il riepilogo si riempie man mano che ascolti.
+stats.year.top_song.one = Il tuo brano top · {count} ascolto
+stats.year.top_song.other = Il tuo brano top · {count} ascolti
+stats.year.top_artist = Il tuo artista top · {time}
+stats.year.favourite_hour = La tua ora preferita
+stats.year.busiest_day = Giorno più intenso · {time}
+
+# ---- Settings → Storage
+settings.storage.files = File
+settings.storage.settings_file = File delle impostazioni: {path}
+settings.storage.settings_not_saved = Le impostazioni non vengono salvate (nessuna cartella di configurazione)
+settings.storage.secrets = Segreti: {store}
+settings.storage.secrets_loading = Segreti: caricamento…
+settings.storage.library_db = Database della libreria: {path}
+settings.storage.library_db_unavailable = Database della libreria: non disponibile
+settings.storage.play_cache = Cache di riproduzione
+settings.storage.cache_usage = {used} usati su {limit}. I brani ascoltati meno di recente vengono rimossi per primi.
+settings.storage.cache_limit = Dimensione massima della cache
+settings.storage.cache_played = Metti in cache i brani ascoltati
+settings.storage.cache_played_detail = Conserva una copia di ciò che ascolti (scaricata un'altra volta in background).
+settings.storage.clear_cache_row = Svuota la cache di riproduzione
+settings.storage.clear_cache = Svuota cache
+settings.storage.downloads = Download
+settings.storage.downloads_usage = {size} in {path}
+settings.storage.downloads_unavailable = I download non sono disponibili.
+settings.storage.download_folder = Cartella dei download
+settings.storage.download_folder_detail = I download non vengono mai rimossi automaticamente.
+settings.storage.backup = Backup e ripristino
+settings.storage.export = Esporta un backup
+settings.storage.export_detail = Libreria, playlist, cronologia e impostazioni in un unico zip (senza password né cookie).
+settings.storage.export_button = Esporta…
+settings.storage.restore = Ripristina un backup
+settings.storage.restore_detail = Sostituisce libreria e impostazioni; poi riavvia.
+settings.storage.restore_button = Ripristina…
+
+# ---- Settings → Privacy
+settings.privacy.listen_history = Cronologia di ascolto
+settings.privacy.pause_listen = Sospendi la cronologia di ascolto
+settings.privacy.pause_listen_detail = Gli ascolti non vengono registrati; Cronologia e Statistiche non si aggiornano.
+settings.privacy.clear_listen = Cancella la cronologia di ascolto
+settings.privacy.clear_listen_detail = Elimina ogni ascolto registrato su questo computer.
+settings.privacy.clear_button = Cancella…
+settings.privacy.clear_listen_confirm = Ogni ascolto registrato viene eliminato; conteggi e statistiche ripartono da zero.
+settings.privacy.search_history = Cronologia delle ricerche
+settings.privacy.pause_search = Sospendi la cronologia delle ricerche
+settings.privacy.pause_search_detail = Le ricerche che invii non vengono memorizzate.
+settings.privacy.clear_search = Cancella la cronologia delle ricerche
+settings.privacy.clear_search_detail = Dimentica tutte le ricerche memorizzate.
+settings.privacy.note = La cronologia resta nel database della libreria su questo computer. Gli ascolti non vengono mai inviati alla cronologia del tuo account YouTube.
+
+# ---- Backup / restore
+storage.backup_saved = Backup salvato in {path}
+storage.backup_failed = Backup non riuscito: {error}
+storage.restore = Ripristina
+storage.restore_confirm_title = Ripristinare questo backup?
+storage.restore_confirm_detail = Libreria, playlist, cronologia e impostazioni vengono sostituite da quelle del backup. L'accesso a YouTube Music e gli altri segreti restano.
+storage.restored_title = Backup ripristinato
+storage.restored_library = Libreria ripristinata. Riavvia {app} per applicare tutte le impostazioni.
+storage.restored_all = Libreria e impostazioni ripristinate. Riavvia {app} per applicare tutte le impostazioni.
+storage.restored_settings_skipped = Libreria ripristinata; impostazioni saltate: {error}. Riavvia {app} per applicare tutte le impostazioni.
+storage.restart_later = Più tardi
+storage.restart_now = Riavvia ora
+storage.restore_failed = Ripristino non riuscito: {error}
+storage.cache_cleared = Cache di riproduzione svuotata
+storage.clearing_search = Cancellazione della cronologia delle ricerche
+storage.search_cleared = Cronologia delle ricerche cancellata

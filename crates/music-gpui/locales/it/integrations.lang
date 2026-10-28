@@ -1,0 +1,104 @@
+# Integrations: SponsorBlock, Chromecast, AI content filter, import / export (Italian).
+
+# ---- SponsorBlock: segment categories
+sponsorblock.category.music_offtopic = Sezione non musicale
+sponsorblock.category.sponsor = Sponsor
+sponsorblock.category.intro = Intervallo / intro
+sponsorblock.category.outro = Schermate finali / crediti
+sponsorblock.category.selfpromo = Autopromozione
+sponsorblock.category.interaction = Promemoria di interazione
+sponsorblock.category.preview = Anteprima / riepilogo
+sponsorblock.category.filler = Digressione
+sponsorblock.category.hook = Gancio / saluti
+sponsorblock.category_in_chip.music_offtopic = parte non musicale
+sponsorblock.category_in_chip.sponsor = sponsor
+sponsorblock.category_in_chip.intro = intro
+sponsorblock.category_in_chip.outro = crediti
+sponsorblock.category_in_chip.selfpromo = autopromozione
+sponsorblock.category_in_chip.interaction = promemoria
+sponsorblock.category_in_chip.preview = anteprima
+sponsorblock.category_in_chip.filler = digressione
+sponsorblock.category_in_chip.hook = saluti
+sponsorblock.toast.skipped = Saltato: {category} ({seconds} s)
+sponsorblock.chip.skip = Salta {category} ({seconds} s)
+sponsorblock.chip.tooltip = SponsorBlock: salta alla fine di questo segmento
+
+# ---- AI content filter: categories
+ai_filter.category.explicit = Testi espliciti
+ai_filter.category.ai_generated = Musica generata con IA
+ai_filter.category.holiday = Musica natalizia e delle feste
+ai_filter.category.children = Musica per bambini
+ai_filter.category.noise = Suoni per dormire e rumore bianco
+ai_filter.category.sped_up = Versioni accelerate / rallentate
+ai_filter.category.covers = Cover e karaoke
+ai_filter.category.live = Registrazioni dal vivo
+
+# ---- Chromecast
+cast.casting_to = Trasmissione su {device}
+cast.connecting_to = Connessione a {device}…
+cast.tooltip = Trasmetti a un dispositivo
+cast.menu.title = Trasmetti a
+cast.menu.searching = Ricerca di dispositivi Cast…
+cast.menu.none_found = Nessun dispositivo Cast trovato
+cast.menu.search_again = Cerca di nuovo
+cast.stop = Interrompi trasmissione
+cast.error.disconnected = Il dispositivo Cast si è disconnesso
+cast.error.scan_failed = Impossibile cercare dispositivi: {error}
+cast.error.connect_failed = Impossibile connettersi a {device}: {error}
+
+# ---- Import: sources and progress
+import.source.spotify_playlist = Playlist di Spotify
+import.source.spotify_liked = Brani preferiti di Spotify
+import.error.connect_spotify = Connetti Spotify in Impostazioni → Importa da Spotify.
+import.error.connect_spotify_first = Connetti prima Spotify in Impostazioni → Importa da Spotify.
+import.error.not_spotify_link = Non è un link o un ID di una playlist di Spotify.
+import.stage.reading = Lettura
+import.stage.reading_playlist = Lettura della playlist
+import.stage.reading_liked = Lettura dei brani preferiti
+import.stage.matching = Abbinamento
+import.liked_playlist_name = Preferiti su Spotify
+import.cancelled = Annullato
+import.nothing_to_save = Niente da salvare: non è stato trovato alcun brano.
+import.exporting = Esportazione della playlist
+import.exported.one = {count} brano esportato in {path}
+import.exported.other = {count} brani esportati in {path}
+
+# ---- Import & export page
+import.page.subtitle = Porta nella tua libreria le playlist di Spotify o da file, oppure portale altrove.
+import.file.title = Da un file
+import.file.description = CSV di Exportify (Spotify), M3U / M3U8 oppure un CSV / JSON esportato da qui.
+import.file.choose = Scegli un file…
+import.spotify.title = Da Spotify
+import.spotify.connect_hint = Connetti il tuo account Spotify (con un tuo Client ID sviluppatore gratuito) per importare le tue playlist e i brani preferiti.
+import.spotify.set_up = Configura Spotify…
+import.spotify.signed_in = Accesso effettuato come {user}.
+import.spotify.liked = Brani preferiti
+import.spotify.show_playlists = Mostra le mie playlist
+import.spotify.playlist_meta.one = {owner} · {count} brano
+import.spotify.playlist_meta.other = {owner} · {count} brani
+import.spotify.playlist_meta_unknown = {owner} · ? brani
+import.job.progress = {stage} · {done} di {total}
+import.job.progress_count = {stage} · {done}
+import.job.found.one = {count} trovato
+import.job.found.other = {count} trovati
+import.job.not_found.one = {count} non trovato
+import.job.not_found.other = {count} non trovati
+import.job.saved_as = Salvata come “{name}”
+import.job.save.one = Salva {count} brano come playlist
+import.job.save.other = Salva {count} brani come playlist
+import.job.open_playlists = Apri playlist
+import.job.name_placeholder = Nome della playlist
+import.guess.best = Ipotesi migliore: {artists} — {title} ({percent}%)
+import.guess.search_failed = Ricerca non riuscita: {error}
+import.guess.no_results = Nessun risultato
+import.guess.using = Ipotesi in uso
+import.guess.use = Usa ipotesi
+import.guess.search_tooltip = Cerca su YouTube Music
+import.not_found.title = Non trovati
+import.not_found.subtitle = Accetta l'ipotesi migliore oppure cerca e aggiungi tu il brano.
+import.found.title = Trovati su YouTube Music
+import.found.first = primi {shown} di {total}
+import.export.title = Esporta una playlist
+import.export.subtitle = CSV e M3U si aprono in altri player e fogli di calcolo; JSON conserva tutto per importarlo qui.
+import.export.empty = Ancora nessuna playlist nella libreria.
+import.export.from_youtube_music = {songs} · YouTube Music

@@ -1,0 +1,28 @@
+# UI language picker (Italian).
+settings.language.group = Lingua
+settings.language.label = Lingua
+settings.language.description = Lingua dell'interfaccia. I contenuti di YouTube Music hanno un'impostazione a parte (Contenuti e area geografica).
+settings.language.system = Predefinita di sistema ({language})
+settings.language.system_search = predefinita automatica sistema
+
+language.name.en = Inglese
+language.name.es = Spagnolo
+language.name.pt-BR = Portoghese (Brasile)
+language.name.fr = Francese
+language.name.de = Tedesco
+language.name.it = Italiano
+language.name.nl = Olandese
+language.name.pl = Polacco
+language.name.ru = Russo
+language.name.uk = Ucraino
+language.name.tr = Turco
+language.name.id = Indonesiano
+language.name.vi = Vietnamita
+language.name.ja = Giapponese
+language.name.ko = Coreano
+language.name.zh-CN = Cinese (semplificato)
+language.name.zh-TW = Cinese (tradizionale)
+language.name.hi = Hindi
+language.name.ar = Arabo
+language.name.fa = Persiano
+language.name.he = Ebraico

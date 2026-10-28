@@ -1,0 +1,20 @@
+# Settings → Content & region (Italian).
+
+settings.content.group_region = Lingua e area geografica
+settings.content.language = Lingua dei contenuti
+settings.content.language_description = Lingua di titoli, sezioni e ricerche su YouTube Music.
+settings.content.language_placeholder = Lingua
+settings.content.country = Paese dei contenuti
+settings.content.country_description = Area geografica di home, classifiche e nuove uscite.
+settings.content.country_placeholder = Paese
+settings.content.region_note = Le modifiche si applicano subito; le pagine aperte si ricaricano nella nuova lingua.
+
+settings.content.group_filters = Filtri
+settings.content.hide_explicit = Nascondi contenuti espliciti
+settings.content.hide_explicit_description = Rimuove i brani e gli album contrassegnati come espliciti da pagine, ricerca e radio.
+settings.content.hide_videos = Nascondi video musicali
+settings.content.hide_videos_description = Solo brani: i video musicali e i video degli utenti vengono esclusi da sezioni, ricerca, playlist, album, radio e code (un album che YouTube ha solo come video audio ufficiali resta completo).
+
+settings.content.group_radio = Radio
+settings.content.autoplay = Riproduci automaticamente brani simili
+settings.content.autoplay_description = Quando inizia l'ultimo brano della coda, dopo di esso vengono aggiunti brani della sua radio.

@@ -1,0 +1,56 @@
+# First-run guide (French).
+
+# ---- Step titles
+onboarding.step.welcome = Bienvenue
+onboarding.step.content = Langue et région
+onboarding.step.theme = Apparence
+onboarding.step.account = Compte YouTube Music
+onboarding.step.local_files = Musique sur cet ordinateur
+onboarding.step.privacy = Confidentialité et limites
+onboarding.welcome_title = Bienvenue dans {app}
+onboarding.step_of = Étape {step} sur {total}
+
+# ---- Step subtitles
+onboarding.subtitle.welcome = Un lecteur rapide et natif pour YouTube Music : navigation et recherche, paroles qui suivent le titre, bibliothèque avec historique et statistiques, vos propres fichiers musicaux et identification de titres. Quelques choix et c'est prêt — tout peut être modifié plus tard dans les Paramètres.
+onboarding.subtitle.content = La langue utilisée par YouTube Music pour les titres et les recommandations, et le pays dont vous voyez les classements et les nouveautés.
+onboarding.subtitle.theme = Choisissez un thème et une taille de texte.
+onboarding.subtitle.account = Facultatif. La connexion apporte vos « J'aime », votre bibliothèque, vos playlists et des recommandations personnalisées. Tout le reste fonctionne sans compte.
+onboarding.subtitle.local_files = Facultatif. Ajoutez des dossiers de fichiers musicaux ; ils sont analysés, ajoutés à votre bibliothèque et lus aux côtés de YouTube Music.
+onboarding.subtitle.privacy = Ce qu'il faut savoir avant de commencer.
+
+# ---- Footer buttons
+onboarding.skip = Passer la configuration
+onboarding.get_started = Commencer
+onboarding.finish = Terminer
+onboarding.next_or_skip = Suivant (ou passer)
+
+# ---- Welcome step: feature list
+onboarding.feature.browse.title = Navigation et recherche
+onboarding.feature.browse.text = Fil d'accueil, classements, ambiances, nouveautés, artistes, albums et playlists.
+onboarding.feature.lyrics.title = Paroles
+onboarding.feature.lyrics.text = Paroles synchronisées mot à mot depuis de nombreux fournisseurs, avec traduction et romanisation.
+onboarding.feature.library.title = Bibliothèque
+onboarding.feature.library.text = « J'aime », playlists, historique d'écoute, statistiques et téléchargements — stockés sur cet ordinateur.
+onboarding.feature.recognize.title = Identifier un titre
+onboarding.feature.recognize.text = Identifiez un titre diffusé autour de vous (⇧⌘R) et écoutez-le aussitôt.
+
+# ---- Look step
+onboarding.theme.group = Thème
+onboarding.theme.dynamic_note = Dynamique reprend la couleur d'accent de la pochette du titre en cours.
+onboarding.theme.text_size = Taille du texte
+
+# ---- Music on this computer step
+onboarding.local.group = Dossiers de musique
+onboarding.local.empty = Aucun dossier pour l'instant.
+onboarding.local.add = Ajouter un dossier…
+onboarding.local.note = Analysez les dossiers maintenant ou plus tard ; gérez-les dans Fichiers locaux.
+
+# ---- Privacy & limitations step
+onboarding.privacy.streaming.title = Comment les titres sont diffusés
+onboarding.privacy.streaming.text = Les titres complets proviennent du client TV de YouTube ou de son client web avec un PoToken (un jeton anti-abus, généré dans une vue de navigateur masquée sur macOS). YouTube fait patienter les nouveaux flux quelques secondes ; l'app démarre entre-temps avec un court extrait. Si YouTube change quelque chose, les titres se limitent à des extraits d'environ 1 minute (signalés dans le lecteur). Paramètres → Lecture → Flux YouTube permet de choisir la méthode.
+onboarding.privacy.data.title = Vos données restent ici
+onboarding.privacy.data.text = La bibliothèque, l'historique, les statistiques et les paramètres sont stockés sur cet ordinateur. Les mots de passe, clés API et le cookie de connexion YouTube vont dans le trousseau du système. Suspendez ou effacez à tout moment l'historique d'écoute et de recherche dans Paramètres → Confidentialité.
+onboarding.privacy.recipients.title = Qui reçoit quoi
+onboarding.privacy.recipients.text = YouTube Music reçoit vos recherches et vos écoutes (et le cookie de votre compte si vous êtes connecté). Les fournisseurs de paroles reçoivent les titres des morceaux. L'identification de titres envoie une empreinte audio — pas l'enregistrement — à Shazam. Le scrobbling et Discord ne fonctionnent que si vous les configurez.
+onboarding.privacy.independent.title = Projet indépendant
+onboarding.privacy.independent.text = Non affilié à YouTube, Google ni Shazam. Logiciel libre sous licence GPL-3.0.

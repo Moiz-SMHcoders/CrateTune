@@ -1,0 +1,35 @@
+# Menu bar (Italian).
+menu.about = Informazioni su {app}
+menu.settings = Impostazioni…
+menu.services = Servizi
+menu.hide = Nascondi {app}
+menu.hide_others = Nascondi altre
+menu.show_all = Mostra tutte
+menu.quit = Esci da {app}
+menu.edit = Modifica
+menu.undo = Annulla
+menu.redo = Ripeti
+menu.cut = Taglia
+menu.copy = Copia
+menu.paste = Incolla
+menu.select_all = Seleziona tutto
+menu.search = Cerca
+menu.view = Vista
+menu.back = Indietro
+menu.forward = Avanti
+menu.recognize = Riconosci brano
+menu.controls = Controlli
+menu.play_pause = Riproduci / Pausa
+menu.repeat = Ripeti (No / Tutti / Uno)
+menu.volume_up = Alza volume
+menu.volume_down = Abbassa volume
+menu.window = Finestra
+menu.minimize = Contrai
+menu.zoom = Ridimensiona
+
+# Menu-bar item
+tray.next = Successivo
+tray.previous = Precedente
+tray.mini_player = Mini player
+tray.show_window = Mostra {app}
+tray.quit = Esci da {app}
