@@ -1,0 +1,494 @@
+{
+ "contents": {
+  "twoColumnBrowseResultsRenderer": {
+   "secondaryContents": {
+    "sectionListRenderer": {
+     "contents": [
+      {
+       "musicDescriptionShelfRenderer": {
+        "description": {
+         "runs": [
+          {
+           "text": "Kurt Metzger and Duncan Trussell are comedians and co-hosts of the \"Mystery Boys\" podcast. They also host their respective podcasts, \"The Derp with Kurp\" and \"The Duncan Trussell Family Hour.\"\n\n"
+          },
+          {
+           "text": "https://www.ymhstudios.com/mystery-bo...",
+           "navigationEndpoint": {
+            "urlEndpoint": {
+             "url": "https://www.ymhstudios.com/mystery-boys-podcast/",
+             "target": "TARGET_NEW_WINDOW"
+            }
+           }
+          },
+          {
+           "text": "\n"
+          },
+          {
+           "text": "https://www.youtube.com/@duncantrusse...",
+           "navigationEndpoint": {
+            "urlEndpoint": {
+             "url": "https://www.youtube.com/@duncantrussellfamilyhour"
+            }
+           }
+          },
+          {
+           "text": "\n"
+          },
+          {
+           "text": "https://www.duncantrussell.com",
+           "navigationEndpoint": {
+            "urlEndpoint": {
+             "url": "https://www.duncantrussell.com/",
+             "target": "TARGET_NEW_WINDOW"
+            }
+           }
+          },
+          {
+           "text": "\n"
+          },
+          {
+           "text": "https://www.youtube.com/@kurtmetzgerc...",
+           "navigationEndpoint": {
+            "urlEndpoint": {
+             "url": "https://www.youtube.com/@kurtmetzgercomedy"
+            }
+           }
+          },
+          {
+           "text": "\n"
+          },
+          {
+           "text": "https://www.kurtmetzgercomedy.com",
+           "navigationEndpoint": {
+            "urlEndpoint": {
+             "url": "https://www.kurtmetzgercomedy.com/",
+             "target": "TARGET_NEW_WINDOW"
+            }
+           }
+          },
+          {
+           "text": "\n\nPerplexity: Download the app or ask Perplexity anything at "
+          },
+          {
+           "text": "https://pplx.ai/rogan",
+           "navigationEndpoint": {
+            "urlEndpoint": {
+             "url": "https://pplx.ai/rogan",
+             "target": "TARGET_NEW_WINDOW"
+            }
+           }
+          },
+          {
+           "text": ".\n\nGet a free welcome kit with your first subscription of AG1 at "
+          },
+          {
+           "text": "https://drinkag1.com/joerogan",
+           "navigationEndpoint": {
+            "urlEndpoint": {
+             "url": "https://drinkag1.com/joerogan",
+             "target": "TARGET_NEW_WINDOW"
+            }
+           }
+          },
+          {
+           "text": "\n\nUse code JRE for 20% off your membership"
+          }
+         ]
+        },
+        "maxCollapsedLines": 0,
+        "maxExpandedLines": 0
+       }
+      }
+     ]
+    }
+   },
+   "tabs": [
+    {
+     "tabRenderer": {
+      "content": {
+       "sectionListRenderer": {
+        "contents": [
+         {
+          "musicResponsiveHeaderRenderer": {
+           "thumbnail": {
+            "musicThumbnailRenderer": {
+             "thumbnail": {
+              "thumbnails": [
+               {
+                "url": "https://i.ytimg.com/vi/rn6iW7XDEHc/hqdefault.jpg?sqp=-oaymwEWCJADEOEBIAQqCggAEOADGC0guwJIWg&rs=AMzJL3lheVsc_pcYERDrTnsD9-2Dx3ySZw",
+                "width": 400,
+                "height": 225
+               },
+               {
+                "url": "https://i.ytimg.com/vi/rn6iW7XDEHc/hq720.jpg?sqp=-oaymwEKCKAGEMIDIABIWg&rs=AMzJL3mqAPh5i6Hu88yFuygI8ez9Jq75qQ",
+                "width": 800,
+                "height": 450
+               },
+               {
+                "url": "https://i.ytimg.com/vi/rn6iW7XDEHc/hq720.jpg?sqp=-oaymwEKCNUGEN8DIABIWg&rs=AMzJL3mPtq-wGFbrZKyD0dEhTYyX9ua_Kg",
+                "width": 853,
+                "height": 479
+               }
+              ]
+             },
+             "thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+             "thumbnailScale": "MUSIC_THUMBNAIL_SCALE_UNSPECIFIED"
+            }
+           },
+           "buttons": [
+            {
+             "toggleButtonRenderer": {
+              "isToggled": false,
+              "defaultIcon": {
+               "iconType": "ADD_CIRCLE"
+              },
+              "defaultServiceEndpoint": {
+               "modalEndpoint": {
+                "modal": {
+                 "modalWithTitleAndButtonRenderer": {
+                  "title": {
+                   "runs": [
+                    {
+                     "text": "Save this for later"
+                    }
+                   ]
+                  },
+                  "content": {
+                   "runs": [
+                    {
+                     "text": "Save favorites to your library after signing in"
+                    }
+                   ]
+                  },
+                  "button": {
+                   "buttonRenderer": {
+                    "style": "STYLE_BLUE_TEXT",
+                    "isDisabled": false,
+                    "text": {
+                     "runs": [
+                      {
+                       "text": "Sign in"
+                      }
+                     ]
+                    },
+                    "navigationEndpoint": {
+                     "signInEndpoint": {
+                      "hack": true
+                     }
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              },
+              "toggledIcon": {
+               "iconType": "PLAYLIST_ADD_CHECK"
+              },
+              "toggledServiceEndpoint": {
+               "playlistEditEndpoint": {
+                "playlistId": "SE",
+                "actions": [
+                 {
+                  "action": "ACTION_REMOVE_VIDEO_BY_VIDEO_ID",
+                  "removedVideoId": "rn6iW7XDEHc"
+                 },
+                 {
+                  "action": "ACTION_REMOVE_WATCHED_VIDEOS",
+                  "suppressSuccessToast": true
+                 }
+                ],
+                "params": "cGQ%3D"
+               }
+              },
+              "defaultTooltip": "Queue to Episodes for Later",
+              "toggledTooltip": "Remove from Episodes for Later",
+              "toggledAccessibilityData": {},
+              "preventAutoToggle": true
+             }
+            },
+            {
+             "musicPlayButtonRenderer": {
+              "playNavigationEndpoint": {
+               "watchEndpoint": {
+                "videoId": "rn6iW7XDEHc",
+                "params": "8gEDmAEI",
+                "watchEndpointMusicSupportedConfigs": {
+                 "watchEndpointMusicConfig": {
+                  "musicVideoType": "MUSIC_VIDEO_TYPE_PODCAST_EPISODE"
+                 }
+                }
+               }
+              },
+              "playIcon": {
+               "iconType": "PLAY_ARROW"
+              },
+              "pauseIcon": {
+               "iconType": "PAUSE"
+              },
+              "iconColor": 4278387459,
+              "backgroundColor": 0,
+              "activeBackgroundColor": 0,
+              "loadingIndicatorColor": 14745645,
+              "playingIcon": {
+               "iconType": "PAUSE"
+              },
+              "iconLoadingColor": 0,
+              "activeScaleFactor": 1,
+              "accessibilityPlayData": {},
+              "accessibilityPauseData": {},
+              "playbackIdMatchers": [
+               {
+                "videoId": "rn6iW7XDEHc"
+               }
+              ]
+             }
+            },
+            {
+             "menuRenderer": {
+              "items": [
+               {
+                "menuServiceItemRenderer": {
+                 "text": {
+                  "runs": [
+                   {
+                    "text": "Play next"
+                   }
+                  ]
+                 },
+                 "icon": {
+                  "iconType": "QUEUE_PLAY_NEXT"
+                 },
+                 "serviceEndpoint": {
+                  "queueAddEndpoint": {
+                   "queueTarget": {
+                    "videoId": "rn6iW7XDEHc",
+                    "onEmptyQueue": {
+                     "watchEndpoint": {
+                      "videoId": "rn6iW7XDEHc"
+                     }
+                    }
+                   },
+                   "queueInsertPosition": "INSERT_AFTER_CURRENT_VIDEO",
+                   "commands": [
+                    {
+                     "addToToastAction": {
+                      "item": {
+                       "notificationTextRenderer": {
+                        "successResponseText": {
+                         "runs": [
+                          {
+                           "text": "Episode will play next"
+                          }
+                         ]
+                        }
+                       }
+                      }
+                     }
+                    }
+                   ]
+                  }
+                 }
+                }
+               },
+               {
+                "menuServiceItemRenderer": {
+                 "text": {
+                  "runs": [
+                   {
+                    "text": "Add to queue"
+                   }
+                  ]
+                 },
+                 "icon": {
+                  "iconType": "ADD_TO_REMOTE_QUEUE"
+                 },
+                 "serviceEndpoint": {
+                  "queueAddEndpoint": {
+                   "queueTarget": {
+                    "videoId": "rn6iW7XDEHc",
+                    "onEmptyQueue": {
+                     "watchEndpoint": {
+                      "videoId": "rn6iW7XDEHc"
+                     }
+                    }
+                   },
+                   "queueInsertPosition": "INSERT_AT_END",
+                   "commands": [
+                    {
+                     "addToToastAction": {
+                      "item": {
+                       "notificationTextRenderer": {
+                        "successResponseText": {
+                         "runs": [
+                          {
+                           "text": "Episode added to queue"
+                          }
+                         ]
+                        }
+                       }
+                      }
+                     }
+                    }
+                   ]
+                  }
+                 }
+                }
+               },
+               {
+                "menuServiceItemDownloadRenderer": {
+                 "serviceEndpoint": {
+                  "offlineVideoEndpoint": {
+                   "videoId": "rn6iW7XDEHc",
+                   "onAddCommand": {
+                    "getDownloadActionCommand": {
+                     "videoId": "rn6iW7XDEHc",
+                     "params": "CAI%3D"
+                    }
+                   }
+                  }
+                 }
+                }
+               },
+               {
+                "menuNavigationItemRenderer": {
+                 "text": {
+                  "runs": [
+                   {
+                    "text": "Save to playlist"
+                   }
+                  ]
+                 },
+                 "icon": {
+                  "iconType": "ADD_TO_PLAYLIST"
+                 },
+                 "navigationEndpoint": {
+                  "modalEndpoint": {
+                   "modal": {
+                    "modalWithTitleAndButtonRenderer": {
+                     "title": {
+                      "runs": [
+                       {
+                        "text": "Save this for later"
+                       }
+                      ]
+                     },
+                     "content": {
+                      "runs": [
+                       {
+                        "text": "Make playlists and share them after signing in"
+                       }
+                      ]
+                     },
+                     "button": {
+                      "buttonRenderer": {
+                       "style": "STYLE_BLUE_TEXT",
+                       "isDisabled": false,
+                       "text": {
+                        "runs": [
+                         {
+                          "text": "Sign in"
+                         }
+                        ]
+                       },
+                       "navigationEndpoint": {
+                        "signInEndpoint": {
+                         "hack": true
+                        }
+                       }
+                      }
+                     }
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              ]
+             }
+            }
+           ],
+           "title": {
+            "runs": [
+             {
+              "text": "Joe Rogan Experience #2570 - Mystery Boys"
+             }
+            ]
+           },
+           "subtitle": {
+            "runs": [
+             {
+              "text": "1.6M views"
+             },
+             {
+              "text": " • "
+             },
+             {
+              "text": "4d ago"
+             }
+            ]
+           },
+           "progress": {
+            "musicPlaybackProgressRenderer": {
+             "playbackProgressPercentage": 0,
+             "playbackProgressText": {
+              "runs": [
+               {
+                "text": " • "
+               },
+               {
+                "text": "2 hr 43 min"
+               }
+              ]
+             },
+             "durationText": {
+              "runs": [
+               {
+                "text": " • "
+               },
+               {
+                "text": "2 hr 43 min"
+               }
+              ]
+             },
+             "playedText": {
+              "runs": [
+               {
+                "text": " • "
+               },
+               {
+                "text": "Played",
+                "textColor": 4294921797
+               }
+              ]
+             }
+            }
+           },
+           "straplineTextOne": {
+            "runs": [
+             {
+              "text": "The Joe Rogan Experience",
+              "navigationEndpoint": {
+               "browseEndpoint": {
+                "browseId": "MPSPPLk1Sqn_f33KuWf3tW9BBe_4TP7x8l0m3T",
+                "browseEndpointContextSupportedConfigs": {
+                 "browseEndpointContextMusicConfig": {
+                  "pageType": "MUSIC_PAGE_TYPE_PODCAST_SHOW_DETAIL_PAGE"
+                 }
+                }
+               }
+              }
+             }
+            ]
+           }
+          }
+         }
+        ]
+       }
+      }
+     }
+    }
+   ]
+  }
+ }
+}

@@ -305,8 +305,12 @@ impl MusicApp {
                 Ok(Loaded::Radio(target, label)) => {
                     this.start_radio_target(target, &label, window, cx)
                 }
-                Ok(Loaded::Tracks(tracks)) => {
-                    let tracks = filter.tracks(tracks);
+                Ok(loaded @ (Loaded::Tracks(_) | Loaded::AlbumTracks(_))) => {
+                    let tracks = match loaded {
+                        Loaded::AlbumTracks(t) => filter.album_tracks(t),
+                        Loaded::Tracks(t) => filter.tracks(t),
+                        Loaded::Radio(..) => Vec::new(),
+                    };
                     if tracks.is_empty() {
                         notify(window, cx, "Nothing to play here.");
                         return;
@@ -376,8 +380,13 @@ impl MusicApp {
 
 enum Loaded {
     Tracks(Vec<Track>),
+    /// An album's tracks (filtered with `ContentFilter::album_tracks`).
+    AlbumTracks(Vec<Track>),
     Radio(WatchTarget, String),
 }
+
+/// Extra playlist pages (~100 rows each) followed for play / shuffle / enqueue.
+const PLAYLIST_PAGES: usize = 10;
 
 /// Blocking: fetches what `action` needs for `collection`.
 fn load_collection(
@@ -392,14 +401,14 @@ fn load_collection(
             let id = album.album.playlist_id.ok_or_else(no_radio)?;
             Ok(Loaded::Radio(playlist_radio(&id), album.album.title))
         }
-        (Collection::Album { browse_id, .. }, _) => {
-            Ok(Loaded::Tracks(client.album(browse_id)?.tracks))
-        }
+        (Collection::Album { browse_id, .. }, _) => Ok(Loaded::AlbumTracks(
+            client.album_complete(browse_id)?.tracks,
+        )),
         (Collection::Playlist { id }, CollectionAction::Radio) => {
             Ok(Loaded::Radio(playlist_radio(id), "playlist".into()))
         }
         (Collection::Playlist { id }, _) => {
-            let page = client.playlist(id)?;
+            let page = client.playlist_complete(id, PLAYLIST_PAGES)?;
             Ok(Loaded::Tracks(
                 page.tracks.into_iter().map(|e| e.track).collect(),
             ))

@@ -1,16 +1,19 @@
 //! Process-wide HTTP client.
 //!
 //! Every network call in music-core goes through one shared `ureq` agent. [`configure`]
-//! swaps it for one built from an [`HttpConfig`] (proxy, user agent, timeout); requests
-//! already in flight keep the agent they started with.
+//! swaps it for one built from an [`HttpConfig`] (proxy, user agent, timeout,
+//! DNS-over-HTTPS); requests already in flight keep the agent they started with.
 //!
-//! DNS-over-HTTPS is not supported: `ureq` would need a custom resolver plus an HTTPS
-//! client that bootstraps without DNS. Use a `socks5h://` proxy (names are resolved by
-//! the proxy) or a local DoH-capable resolver instead.
+//! With [`HttpConfig::doh`] set, host names are resolved with DNS-over-HTTPS
+//! ([`crate::doh`]: Cloudflare, Google, Quad9 or a custom RFC 8484 URL, cached per TTL,
+//! optional fallback to the system resolver). With a `socks5h://` proxy the proxy
+//! resolves the target names itself; DoH then only resolves the proxy's host.
 
 use std::sync::{OnceLock, PoisonError, RwLock};
 use std::time::Duration;
 
+use crate::doh::DohResolver;
+pub use crate::doh::{DohConfig, DohProvider, Lookup, LookupSource};
 use crate::{Error, Result};
 
 /// Largest single response we buffer (audio files are fetched in ranges below this).
@@ -30,11 +33,15 @@ pub struct HttpConfig {
     pub user_agent: Option<String>,
     /// Whole-request timeout; `None` = 30 s.
     pub timeout: Option<Duration>,
+    /// Resolve host names with DNS-over-HTTPS; `None` = the system resolver.
+    pub doh: Option<DohConfig>,
 }
 
 struct Shared {
     config: HttpConfig,
     agent: ureq::Agent,
+    /// The DoH resolver inside `agent` (shared cache), for [`lookup`] and [`agent_with`].
+    resolver: Option<DohResolver>,
 }
 
 fn shared() -> &'static RwLock<Shared> {
@@ -48,33 +55,98 @@ fn shared() -> &'static RwLock<Shared> {
         RwLock::new(Shared {
             config: HttpConfig::default(),
             agent,
+            resolver: None,
         })
     })
 }
 
-fn build_agent(config: &HttpConfig) -> Result<ureq::Agent> {
-    let proxy = match config.proxy.as_deref().map(str::trim) {
+fn proxy_of(config: &HttpConfig) -> Result<Option<ureq::Proxy>> {
+    Ok(match config.proxy.as_deref().map(str::trim) {
         Some(url) if !url.is_empty() => Some(
             ureq::Proxy::new(url)
                 .map_err(|e| Error::Parse(format!("invalid proxy {url:?}: {e}")))?,
         ),
         _ => None,
+    })
+}
+
+fn build_resolver(config: &HttpConfig) -> Result<Option<DohResolver>> {
+    let Some(doh) = &config.doh else {
+        return Ok(None);
     };
+    DohResolver::new(doh, proxy_of(config)?)
+        .map(Some)
+        .map_err(|e| Error::Parse(format!("DNS-over-HTTPS: {e}")))
+}
+
+fn wrap(config: ureq::config::Config, resolver: Option<&DohResolver>) -> ureq::Agent {
+    match resolver {
+        Some(r) => ureq::Agent::with_parts(
+            config,
+            ureq::unversioned::transport::DefaultConnector::default(),
+            r.clone(),
+        ),
+        None => config.into(),
+    }
+}
+
+fn build_agent(config: &HttpConfig) -> Result<(ureq::Agent, Option<DohResolver>)> {
     let mut builder = ureq::Agent::config_builder()
         .timeout_global(Some(config.timeout.unwrap_or(DEFAULT_TIMEOUT)))
-        .proxy(proxy);
+        .proxy(proxy_of(config)?);
     if let Some(ua) = &config.user_agent {
         builder = builder.user_agent(ua.as_str());
     }
-    Ok(builder.build().into())
+    let resolver = build_resolver(config)?;
+    Ok((wrap(builder.build(), resolver.as_ref()), resolver))
 }
 
 /// Rebuilds the shared HTTP agent from `config`; call again whenever settings change.
-/// On an unparsable proxy URL this fails and the previous agent stays in use.
+/// On an unparsable proxy URL (or DoH URL) this fails and the previous agent stays in use.
 pub fn configure(config: HttpConfig) -> Result<()> {
-    let agent = build_agent(&config)?;
-    *shared().write().unwrap_or_else(PoisonError::into_inner) = Shared { config, agent };
+    let (agent, resolver) = build_agent(&config)?;
+    *shared().write().unwrap_or_else(PoisonError::into_inner) = Shared {
+        config,
+        agent,
+        resolver,
+    };
     Ok(())
+}
+
+/// An agent with its own settings (`config`, e.g. other timeouts or no redirects) that
+/// resolves names like the shared one (DoH when configured).
+pub(crate) fn agent_with(config: ureq::config::Config) -> ureq::Agent {
+    let resolver = shared()
+        .read()
+        .unwrap_or_else(PoisonError::into_inner)
+        .resolver
+        .clone();
+    wrap(config, resolver.as_ref())
+}
+
+/// Resolves `host` the way requests do right now (DoH with its cache, or the system
+/// resolver) and says how. Blocking; for diagnostics ("Test DNS").
+pub fn lookup(host: &str) -> std::result::Result<Lookup, String> {
+    let resolver = shared()
+        .read()
+        .unwrap_or_else(PoisonError::into_inner)
+        .resolver
+        .clone();
+    match resolver {
+        Some(r) => r.lookup(host, ureq::config::IpFamily::Any),
+        None => {
+            use std::net::ToSocketAddrs;
+            let addrs: Vec<_> = (host, 443)
+                .to_socket_addrs()
+                .map_err(|e| format!("{host}: {e}"))?
+                .map(|a| a.ip())
+                .collect();
+            Ok(Lookup {
+                addrs,
+                source: LookupSource::System,
+            })
+        }
+    }
 }
 
 /// The configuration currently in effect.
@@ -134,6 +206,7 @@ mod tests {
                 proxy: Some(proxy.into()),
                 user_agent: Some("test-agent".into()),
                 timeout: Some(Duration::from_secs(5)),
+                doh: Some(DohConfig::new(DohProvider::Quad9)),
             };
             assert!(build_agent(&config).is_ok(), "{proxy}");
         }
@@ -143,5 +216,10 @@ mod tests {
         };
         assert!(build_agent(&bad).is_err());
         assert!(build_agent(&HttpConfig::default()).is_ok());
+        let bad_doh = HttpConfig {
+            doh: Some(DohConfig::new(DohProvider::Custom("dns.example".into()))),
+            ..Default::default()
+        };
+        assert!(build_agent(&bad_doh).is_err());
     }
 }

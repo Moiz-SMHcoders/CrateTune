@@ -132,6 +132,59 @@ pub struct PodcastSummary {
     pub thumbnail_url: Option<String>,
 }
 
+impl PodcastSummary {
+    /// The show's playlist id (`PL…`): the browse id without its `MPSP` prefix. Save /
+    /// unsave a show with [`InnerTube::rate_playlist`](super::InnerTube::rate_playlist).
+    pub fn playlist_id(&self) -> &str {
+        self.browse_id
+            .strip_prefix("MPSP")
+            .unwrap_or(&self.browse_id)
+    }
+}
+
+/// A podcast episode with what an episode row shows besides the [`Track`].
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Episode {
+    /// The playable episode (`artists` = the show, `music_video_type` = podcast episode).
+    pub track: Track,
+    /// Release date as shown ("4d ago", "Oct 3, 2026").
+    pub date: Option<String>,
+    pub description: Option<String>,
+    /// The episode page (`MPED…`), when linked.
+    pub page_id: Option<String>,
+}
+
+/// A podcast show page (`MPSP…`): header, description and the first episodes.
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(default)]
+pub struct PodcastPage {
+    pub podcast: PodcastSummary,
+    pub description: Option<String>,
+    pub episodes: Vec<Episode>,
+    /// Pass to [`InnerTube::podcast_continuation`](super::InnerTube::podcast_continuation).
+    pub continuation: Option<String>,
+    /// Saved to the library (only known when signed in).
+    pub saved: Option<bool>,
+}
+
+/// More episodes of a [`PodcastPage`].
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(default)]
+pub struct PodcastContinuation {
+    pub episodes: Vec<Episode>,
+    pub continuation: Option<String>,
+}
+
+/// An episode page (`MPED…`).
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(default)]
+pub struct EpisodePage {
+    pub episode: Episode,
+    /// The show (`MPSP…`).
+    pub podcast: Option<EntityRef>,
+}
+
 /// Anything that can show up in a shelf, grid or result list.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "kind", content = "data")]
@@ -314,6 +367,32 @@ pub struct AlbumPage {
     pub shelves: Vec<Shelf>,
     /// Library toggle (only with an authenticated, cookie-based client).
     pub in_library: Option<bool>,
+    /// Number of tracks the header announces ("294 songs"). Album pages list at most
+    /// 200 tracks; when `tracks` is shorter, load the rest with
+    /// [`InnerTube::album_tracks`](super::InnerTube::album_tracks).
+    pub track_total: Option<u32>,
+    /// Continuation of the track shelf, if the page has one.
+    pub continuation: Option<String>,
+}
+
+impl AlbumPage {
+    /// More tracks exist than the page listed.
+    pub fn has_more_tracks(&self) -> bool {
+        self.continuation.is_some()
+            || self
+                .track_total
+                .is_some_and(|total| total as usize > self.tracks.len())
+    }
+}
+
+/// More tracks of a long album ([`InnerTube::album_tracks`](super::InnerTube::album_tracks)).
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(default)]
+pub struct AlbumTracks {
+    /// Tracks of this page; may repeat ones the album page already listed.
+    pub tracks: Vec<Track>,
+    /// Pass back to `album_tracks` for the next page.
+    pub continuation: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -430,10 +509,28 @@ impl SearchFilter {
     }
 }
 
+/// A spelling correction YouTube Music applied ("Showing results for …") or suggests
+/// ("Did you mean …").
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(default)]
+pub struct SearchCorrection {
+    /// The corrected query ("justice genesis").
+    pub corrected: String,
+    /// What was searched ("justice genisis").
+    pub original: String,
+    /// `true`: the results are for `corrected` ("Showing results for");
+    /// `false`: they are for `original` and `corrected` is a suggestion ("Did you mean").
+    pub applied: bool,
+}
+
 /// The unfiltered "all results" search page.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(default)]
 pub struct SearchSummary {
+    /// Set when YouTube corrected (or suggests correcting) the query's spelling.
+    /// [`InnerTube::search_summary_exact`](super::InnerTube::search_summary_exact)
+    /// searches the original text instead.
+    pub correction: Option<SearchCorrection>,
     /// The highlighted top result card, if any.
     pub top_result: Option<Item>,
     /// Items shown inside the top-result card (e.g. the artist's top songs).
@@ -449,6 +546,8 @@ pub struct SearchSummary {
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(default)]
 pub struct SearchResults {
+    /// See [`SearchSummary::correction`].
+    pub correction: Option<SearchCorrection>,
     pub items: Vec<Item>,
     /// Pass to [`InnerTube::search_continuation`](super::InnerTube::search_continuation).
     pub continuation: Option<String>,
