@@ -74,7 +74,10 @@ pub fn init(cx: &mut App) {
         KeyBinding::new("cmd-3", GoLibrary, None),
         KeyBinding::new("cmd-y", GoHistory, None),
         KeyBinding::new("cmd-shift-r", RecognizeSong, None),
-        KeyBinding::new("escape", Escape, None),
+        // In the app's own context, not globally: a binding without a context counts
+        // as the deepest match and would beat the Esc of an open menu, popover or
+        // dialog (which then closed together with Now Playing / went back).
+        KeyBinding::new("escape", Escape, Some("MusicApp")),
         KeyBinding::new("cmd-h", Hide, None),
         KeyBinding::new("cmd-alt-h", HideOthers, None),
         KeyBinding::new("cmd-m", Minimize, None),

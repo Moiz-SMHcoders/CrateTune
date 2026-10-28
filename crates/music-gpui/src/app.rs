@@ -534,12 +534,16 @@ impl MusicApp {
         }
     }
 
-    /// Esc: close a dialog, else Now Playing, else the queue panel, else go back.
+    /// Esc (menus and popovers handle it first): close a dialog, else end a lyrics
+    /// card selection, else Now Playing, else the queue panel, else go back.
     pub fn escape(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         if window.has_active_dialog(cx) {
             window.close_dialog(cx);
         } else if self.onboarding.is_some() {
             self.close_onboarding(cx);
+        } else if self.np.open && self.np.list.selecting {
+            // Picking lines for a lyrics card.
+            self.set_lyrics_selecting(false, cx);
         } else if self.np.open {
             self.close_now_playing(window, cx);
         } else if self.queue_open {
@@ -762,9 +766,11 @@ impl Render for MusicApp {
             root = root.child(onboarding.clone());
         }
         if let Some(stats) = &mut self.frame_stats {
-            stats.record(frame.now);
+            stats.record(frame.now, frame.is_animating());
         }
-        frame.finish(window);
+        if let Some(at) = frame.finish(window) {
+            self.schedule_np_wake(at, cx);
+        }
         root
     }
 }
@@ -779,16 +785,20 @@ impl gpui::Focusable for MusicApp {
 struct FrameStats {
     window_start: Option<Instant>,
     last: Option<Instant>,
+    /// The last render asked for the next frame (gaps after idle renders, while
+    /// waiting for a timed wake-up, aren't dropped frames).
+    last_animating: bool,
     frames: u32,
     worst_gap: Duration,
 }
 
 impl FrameStats {
-    fn record(&mut self, now: Instant) {
-        if let Some(last) = self.last {
+    fn record(&mut self, now: Instant, animating: bool) {
+        if let Some(last) = self.last.filter(|_| self.last_animating) {
             self.worst_gap = self.worst_gap.max(now - last);
         }
         self.last = Some(now);
+        self.last_animating = animating;
         self.frames += 1;
         let start = *self.window_start.get_or_insert(now);
         if now - start >= Duration::from_secs(1) {
@@ -799,6 +809,7 @@ impl FrameStats {
             );
             *self = Self {
                 last: Some(now),
+                last_animating: animating,
                 ..Self::default()
             };
         }

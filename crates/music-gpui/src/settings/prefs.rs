@@ -446,16 +446,44 @@ pub enum NowPlayingLayout {
     Centered,
     /// Lyrics across the screen, small artwork and controls in a strip.
     Lyrics,
+    /// Full-bleed artwork fading into the background, large type and icon-only
+    /// controls at the bottom.
+    Immersive,
+    /// A floating card: square artwork, metadata row with round buttons, flat
+    /// progress with the audio format, volume.
+    Card,
+    /// Type only: huge title and time, the window fills with colour as the song
+    /// plays.
+    Minimal,
+    /// Two tones from the artwork, a round cut-out cover, serif headline and a
+    /// "bento" of controls.
+    Editorial,
+    /// Artwork and controls beside the upcoming queue.
+    Queue,
 }
 
 impl NowPlayingLayout {
-    pub const ALL: [Self; 3] = [Self::Split, Self::Centered, Self::Lyrics];
+    pub const ALL: [Self; 8] = [
+        Self::Split,
+        Self::Centered,
+        Self::Lyrics,
+        Self::Immersive,
+        Self::Card,
+        Self::Minimal,
+        Self::Editorial,
+        Self::Queue,
+    ];
 
     pub fn title(self) -> &'static str {
         match self {
             Self::Split => "Split",
             Self::Centered => "Big artwork",
             Self::Lyrics => "Lyrics first",
+            Self::Immersive => "Immersive",
+            Self::Card => "Card",
+            Self::Minimal => "Minimal",
+            Self::Editorial => "Editorial",
+            Self::Queue => "With queue",
         }
     }
 
@@ -464,11 +492,21 @@ impl NowPlayingLayout {
             Self::Split => "split",
             Self::Centered => "centered",
             Self::Lyrics => "lyrics",
+            Self::Immersive => "immersive",
+            Self::Card => "card",
+            Self::Minimal => "minimal",
+            Self::Editorial => "editorial",
+            Self::Queue => "queue",
         }
     }
 
     pub fn parse(s: &str) -> Option<Self> {
         Self::ALL.into_iter().find(|l| l.key() == s)
+    }
+
+    /// Designs with their own colours ignore the background setting.
+    pub fn own_background(self) -> bool {
+        matches!(self, Self::Immersive | Self::Minimal | Self::Editorial)
     }
 }
 
@@ -756,6 +794,24 @@ impl ScrobbleRulesConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn now_playing_designs_round_trip() {
+        for layout in NowPlayingLayout::ALL {
+            assert_eq!(NowPlayingLayout::parse(layout.key()), Some(layout));
+            let json = serde_json::to_string(&NowPlayingConfig {
+                layout,
+                ..NowPlayingConfig::default()
+            })
+            .unwrap();
+            assert!(json.contains(&format!("\"{}\"", layout.key())), "{json}");
+            let back: NowPlayingConfig = serde_json::from_str(&json).unwrap();
+            assert_eq!(back.layout, layout);
+        }
+        // An unknown design (from a newer version) falls back to the default.
+        let back: NowPlayingConfig = serde_json::from_str(r#"{"layout":"vinyl"}"#).unwrap();
+        assert_eq!(back.layout, NowPlayingLayout::Split);
+    }
 
     #[test]
     fn audio_values_are_clamped_and_snapped() {

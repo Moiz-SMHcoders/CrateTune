@@ -10,7 +10,8 @@
 //!   [`gpui::Interpolate`] type (f32, Pixels, Hsla, …) owned by view state.
 //! * [`Frame`] – a per-render sampler: every `Tween` read through it registers
 //!   whether it is still moving, and [`Frame::finish`] requests exactly one more
-//!   animation frame if anything is. When everything settles, rendering stops.
+//!   animation frame if anything is. When everything settles, rendering stops;
+//!   [`Frame::wake_at`] asks for one later render instead (a timer, not frames).
 
 use std::time::{Duration, Instant};
 
@@ -125,6 +126,9 @@ impl<T: Interpolate + Copy + PartialEq> Tween<T> {
 pub struct Frame {
     pub now: Instant,
     animating: bool,
+    /// Earliest moment something changes next without animating until then (the
+    /// next lyric line, a time label, a low-rate background).
+    wake: Option<Instant>,
 }
 
 impl Frame {
@@ -132,7 +136,23 @@ impl Frame {
         Self {
             now: Instant::now(),
             animating: false,
+            wake: None,
         }
+    }
+
+    /// Render again at `at` (unless something keeps frames coming anyway).
+    pub fn wake_at(&mut self, at: Instant) {
+        self.wake = Some(self.wake.map_or(at, |w| w.min(at)));
+    }
+
+    /// Something asked for the next frame so far.
+    pub fn is_animating(&self) -> bool {
+        self.animating
+    }
+
+    /// Render again after `delay`.
+    pub fn wake_in(&mut self, delay: Duration) {
+        self.wake_at(self.now + delay);
     }
 
     pub fn get<T: Interpolate + Copy + PartialEq>(&mut self, tween: &Tween<T>) -> T {
@@ -145,10 +165,15 @@ impl Frame {
         self.animating = true;
     }
 
-    /// Requests the next frame iff something is animating; call at the end of `render`.
-    pub fn finish(self, window: &Window) {
+    /// Requests the next frame iff something is animating; call at the end of
+    /// `render`. Otherwise returns when to render next, if anything asked for it
+    /// (the caller schedules that, e.g. with a timer).
+    pub fn finish(self, window: &Window) -> Option<Instant> {
         if self.animating {
             window.request_animation_frame();
+            None
+        } else {
+            self.wake
         }
     }
 }

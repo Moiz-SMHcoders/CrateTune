@@ -12,13 +12,15 @@
 //! Layout always uses the unscaled font size, so scaling never changes wrapping
 //! or the list's geometry.
 
+use std::cell::RefCell;
 use std::panic::Location;
+use std::rc::Rc;
 use std::sync::Arc;
 
 use gpui::{
     App, AvailableSpace, Bounds, ContentMask, Element, ElementId, Font, FontId, GlobalElementId,
     GlyphId, Hsla, InspectorElementId, Interpolate as _, IntoElement, LayoutId, Pixels,
-    SharedString, Style, TextRun, Window, point, px, relative, size,
+    SharedString, Style, TextRun, Window, WrappedLine, point, px, relative, size,
 };
 
 /// Default feather (soft edge) of the karaoke sweep, as a fraction of the font size.
@@ -45,6 +47,9 @@ pub struct KaraokeLine {
     pub font: Font,
     pub font_size: Pixels,
     pub line_height: Pixels,
+    /// Laid out at this height without measuring (the caller measured the line);
+    /// `None`: measured from the wrapped text.
+    pub height: Option<Pixels>,
     /// Visual scale around the left edge / vertical center.
     pub scale: f32,
     pub lit: Hsla,
@@ -105,8 +110,11 @@ impl IntoElement for KaraokeLine {
     }
 }
 
+/// The line as shaped by the layout pass (wrap width + result), reused by `paint`.
+type Shaped = Rc<RefCell<Option<(Option<Pixels>, WrappedLine)>>>;
+
 impl Element for KaraokeLine {
-    type RequestLayoutState = ();
+    type RequestLayoutState = Shaped;
     type PrepaintState = ();
 
     fn id(&self) -> Option<ElementId> {
@@ -122,23 +130,29 @@ impl Element for KaraokeLine {
         _: Option<&GlobalElementId>,
         _: Option<&InspectorElementId>,
         window: &mut Window,
-        _: &mut App,
-    ) -> (LayoutId, ()) {
+        cx: &mut App,
+    ) -> (LayoutId, Shaped) {
         let mut style = Style::default();
         style.size.width = relative(1.).into();
+        if let Some(height) = self.height {
+            style.size.height = height.into();
+            return (window.request_layout(style, [], cx), Shaped::default());
+        }
         let (text, run, font_size, line_height) = (
             self.text.clone(),
             self.run(),
             self.font_size,
             self.line_height,
         );
+        let shaped = Shaped::default();
+        let slot = shaped.clone();
         let layout_id =
             window.request_measured_layout(style, move |known, available, window, _| {
                 let wrap_width = known.width.or(match available.width {
                     AvailableSpace::Definite(w) => Some(w),
                     _ => None,
                 });
-                let Ok(lines) = window.text_system().shape_text(
+                let Ok(mut lines) = window.text_system().shape_text(
                     text.clone(),
                     font_size,
                     std::slice::from_ref(&run),
@@ -150,9 +164,12 @@ impl Element for KaraokeLine {
                 let rows: usize = lines.iter().map(|l| l.wrap_boundaries.len() + 1).sum();
                 let width = wrap_width
                     .unwrap_or_else(|| lines.iter().map(|l| l.width()).fold(px(0.), Pixels::max));
+                if !lines.is_empty() {
+                    *slot.borrow_mut() = Some((wrap_width, lines.swap_remove(0)));
+                }
                 size(width, line_height * rows as f32)
             });
-        (layout_id, ())
+        (layout_id, shaped)
     }
 
     fn prepaint(
@@ -160,7 +177,7 @@ impl Element for KaraokeLine {
         _: Option<&GlobalElementId>,
         _: Option<&InspectorElementId>,
         _: Bounds<Pixels>,
-        _: &mut (),
+        _: &mut Shaped,
         _: &mut Window,
         _: &mut App,
     ) {
@@ -171,7 +188,7 @@ impl Element for KaraokeLine {
         _: Option<&GlobalElementId>,
         _: Option<&InspectorElementId>,
         bounds: Bounds<Pixels>,
-        _: &mut (),
+        shaped: &mut Shaped,
         _: &mut (),
         window: &mut Window,
         _: &mut App,
@@ -179,23 +196,52 @@ impl Element for KaraokeLine {
         // Cheap culling: the lyrics list paints every line, most are off-screen.
         let reach = self.line_height;
         let painted = Bounds::from_corners(
-            point(bounds.left(), bounds.top() + self.shift - reach),
-            point(bounds.right(), bounds.bottom() + self.shift + reach),
+            point(
+                bounds.left() - self.font_size,
+                bounds.top() + self.shift - reach,
+            ),
+            point(
+                bounds.right() + self.font_size,
+                bounds.bottom() + self.shift + reach,
+            ),
         );
         if !painted.intersects(&window.content_mask().bounds) {
             return;
         }
 
-        let Ok(lines) = window.text_system().shape_text(
-            self.text.clone(),
-            self.font_size,
-            &[self.run()],
-            Some(bounds.size.width),
-            None,
-        ) else {
-            return;
+        // The layout pass shaped the line at this width already (normally).
+        let reused = shaped
+            .borrow_mut()
+            .take()
+            .filter(|(width, _)| *width == Some(bounds.size.width))
+            .map(|(_, line)| line);
+        let line = match reused {
+            Some(line) => line,
+            None => {
+                let Ok(mut lines) = window.text_system().shape_text(
+                    self.text.clone(),
+                    self.font_size,
+                    &[self.run()],
+                    Some(bounds.size.width),
+                    None,
+                ) else {
+                    return;
+                };
+                if lines.is_empty() {
+                    return;
+                }
+                lines.swap_remove(0)
+            }
         };
-        let Some(line) = lines.first() else { return };
+        // One layer for the whole line: its glyphs share a draw order instead of
+        // each being inserted into the scene's bounds tree (the costliest part of
+        // painting dozens of glyphs, some several times, every frame).
+        window.paint_layer(painted, |window| self.paint_glyphs(&line, bounds, window));
+    }
+}
+
+impl KaraokeLine {
+    fn paint_glyphs(&self, line: &WrappedLine, bounds: Bounds<Pixels>, window: &mut Window) {
         let layout = line.unwrapped_layout.clone();
 
         // Flatten glyphs, tagging each with its visual row and word.

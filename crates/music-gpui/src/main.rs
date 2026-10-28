@@ -24,6 +24,7 @@ mod anim;
 mod app;
 mod backdrop;
 mod browse;
+mod card_render;
 mod clock;
 mod components;
 mod icons;
@@ -34,10 +35,14 @@ mod library_script;
 #[cfg(target_os = "macos")]
 mod login_webview;
 mod lyrics;
+mod lyrics_card;
 mod mic_permission;
 mod mini_player;
 mod module_service;
 mod now_playing;
+mod np_designs;
+mod np_lyrics;
+mod np_region;
 mod pages;
 mod playback;
 mod playlist_cover;
@@ -53,6 +58,7 @@ mod search_history;
 mod secrets;
 mod services;
 mod settings;
+mod snapshot;
 mod storage_ops;
 mod store;
 mod theme;
@@ -147,6 +153,9 @@ fn main() {
             // After the Root exists, so pages / notifications can open from startup hooks.
             window
                 .update(cx, |_, window, cx| {
+                    if std::env::var_os("MUSIC_ON_TOP").is_some() {
+                        mini_player::float_above_others(window);
+                    }
                     app.update(cx, |app, cx| app.apply_startup_env(window, cx))
                 })
                 .ok();

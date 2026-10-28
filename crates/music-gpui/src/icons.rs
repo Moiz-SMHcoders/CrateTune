@@ -59,6 +59,9 @@ gpui_kit_assets::icon_assets!(
         RotateCcw,
         LayoutTemplate,
         Gauge,
+        // lyrics cards
+        Share2,
+        ImageDown,
         // settings
         SlidersHorizontal,
         ScrollText,

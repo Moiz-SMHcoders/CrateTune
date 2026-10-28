@@ -479,7 +479,12 @@ src/
   theme.rs           dark / pure black / dynamic accent, font scale, AppColors
   mini_player.rs     always-on-top mini player window
   tray.rs            menu-bar item (macOS)
-  now_playing.rs     Now Playing: layouts, backgrounds, transport, lyrics pane
+  now_playing.rs     Now Playing: screen, header, backgrounds, transport, the first three
+                     designs, lyrics pane; np_designs.rs (the other five designs),
+                     np_lyrics.rs (synced lyrics list: own layout, frame pacing, card
+                     selection), np_region.rs / snapshot.rs (cached sub-views)
+  card_render.rs     lyrics card image (tiny-skia + resvg, pure Rust); lyrics_card.rs its
+                     dialog (preview, options, save / copy)
   lyrics.rs          LyricsService wrapper: fetch, prepare (duets, background vocals,
                      romanization), translation cache, cache hook
   karaoke.rs, anim.rs, backdrop.rs (blur, palette, glow lights), clock.rs (engine +
@@ -551,6 +556,15 @@ src/
 * **Onboarding:** add a `Step` to `settings/onboarding.rs` (`STEPS`, `title`, `subtitle`,
   `icon`, a body arm — any `settings/<section>::render` can be reused via the panel).
   `app.open_onboarding(step, ..)` / `close_onboarding` (sets `settings.onboarded`).
+* **Add a Now Playing design:** add a `NowPlayingLayout` variant (`settings/prefs.rs`:
+  `ALL`, `title`, `key`, and `own_background` if it brings its colours), a
+  `render_<design>` in `np_designs.rs` (reuse `artwork_shaped`, `progress_bar`,
+  `times_row`, `transport_view`, `lyric_snippet`, `like_icon_button`), one arm in
+  `render_now_playing_screen` (and `design_backdrop` for its own background), and a
+  schematic preview in `settings/appearance.rs`. Keep it free of continuous frames: ask
+  for timed renders with `Frame::wake_at` / `wake_in` (the time label already wakes once
+  a second); a part that has to change at display rate belongs in a cached region
+  (`np_region.rs`) or must be cheap.
 * **Renaming the app:** edit `packaging/app.env` only (see Install / build).
 
 ### Features
@@ -668,14 +682,36 @@ src/
 * **Sleep timer**: 5 / 15 / 30 / 45 / 60 min, end of track, a custom length (slider), off —
   in the bar (moon icon, remaining time as its label), the Now Playing header and the
   Playback section. "End of track" moves on to the next song and waits there paused.
-* **Now Playing**: three layouts — split (artwork + controls | lyrics), big artwork
+* **Now Playing**: eight designs — split (artwork + controls | lyrics), big artwork
   (centered, the current and next lyric line below the controls), lyrics first (lyrics
-  across the screen, artwork / title / progress / transport in a bottom strip) — and four
+  across the screen, artwork / title / progress / transport in a bottom strip), and,
+  after ArchiveTune's player designs (`np_designs.rs`): **immersive** (full-bleed artwork
+  fading into black, large type, the current lyric line, icon-only transport), **card**
+  (a floating card: "playing from", square art, round shuffle / like buttons, flat
+  progress with the audio format between the times, volume), **minimal** (type only:
+  huge title and time, the window fills with colour from the left as the song plays),
+  **editorial** (two tones from the artwork, a round cut-out cover, serif headline, a
+  "bento" of PLAY / PAUSE pill, next / previous circles, progress, toggles) and **with
+  queue** (artwork and controls beside the next eight songs, click to jump) — and four
   backgrounds: blurred artwork, gradient between two artwork colours, solid colour,
   animated glow (three soft lights in the artwork's colours that drift only while
-  playing; pre-rendered images, since GPUI has no radial gradients). Colours cross-fade
-  between tracks. Layout and background are also in the header's layout menu. Mini
-  player style: theme or blurred artwork.
+  playing; pre-rendered images, since GPUI has no radial gradients). Immersive, minimal
+  and editorial bring their own colours. Colours cross-fade between tracks. Design and
+  background are also in the header's menu. Mini player style: theme or blurred artwork.
+* **Lyrics cards** (`card_render.rs`, `lyrics_card.rs`; after ArchiveTune's
+  `LyricsImageCard` / `LyricsShareDialog`): the share button in the lyrics toolbar
+  switches the synced lyrics to selection (click up to six lines, the toolbar shows the
+  count, Cancel / Create card…); the dialog previews the card and offers background
+  (blurred artwork, album colour, dark, light), text alignment, size, shape (square
+  1080², portrait 1080×1350, story 1080×1920) and the cover on / off, then **Save
+  image…** (PNG through the system save dialog) or **Copy image** (PNG on the
+  clipboard). The image is drawn offscreen in pure Rust on a worker thread: tiny-skia for
+  the background (blurred / gradient), the glass panel and the rounded cover; the text
+  laid out by the card renderer (word wrapping, characters of CJK text break anywhere,
+  auto-fit from a length-based size down to a minimum, a gap between selected lines) and
+  drawn by resvg/usvg, which shapes it with rustybuzz and falls back across the system
+  fonts (kana / hanzi / hangul come from the system's CJK font). Both crates were already
+  linked through GPUI.
 * **Lyrics** (`lyrics.rs`): `LyricsService` with the provider order, switches and
   Paxsenix / BetterLyrics keys from Settings → Lyrics; results cached in memory; the
   pane shows provider · word-/line-synced/unsynced, a translate toggle and a reload
@@ -1161,7 +1197,7 @@ code, removed by design), physical clicks on the new buttons (script actions ins
 | ⌘[ / ⌘] (also mouse back/forward buttons) | back / forward |
 | ⌘1 / ⌘2 / ⌘3 / ⌘Y | Home / Explore / Library / History |
 | ⇧⌘R | Recognize: open the page and listen (again: stop) |
-| Esc | close Now Playing, else the queue panel, else back |
+| Esc | close an open menu, popover or dialog; else Now Playing, else the queue panel, else back |
 | ⌘H, ⌥⌘H, ⌘M, ⌘Q | hide, hide others, minimize, quit |
 
 The menu bar (Music, Edit, View, Controls, Window) carries the same actions with their
@@ -1213,6 +1249,7 @@ item's ACL is tied to the binary). Secrets are never logged.
 | `MUSIC_UPDATE_REPO=owner/name` | enable the update check against that repo (testing; the default comes from `packaging/app.env`) |
 | `MUSIC_TRACE=1` | log playback transitions, seeks, saves, route changes, artwork downloads; `MUSIC_TIMINGS=1`: renders/s + worst frame gap |
 | `MUSIC_SCRIPT="5:@next,9:@seek=75,30:@quit"` | timed actions (any build) |
+| `MUSIC_ON_TOP=1` | keep the main window above other apps and on every Space (CPU sampling while the machine is in use: macOS sends an occluded or off-Space window no frames) |
 | `MUSIC_GPUI_SCREENSHOT="12:a.png,13:@settings,14:b.png,15:mini:m.png"` | offscreen shots + actions, quits after the last (feature `screenshot`; `mini:` shoots the mini player) |
 
 Actions (`script.rs` has the table): input `@key=cmd-right` (a real keystroke through
@@ -1225,7 +1262,7 @@ playback `@play=N @next @prev @seek=S @toggle @open @close @volume=V`; navigatio
 @font-scale=1.125 @resize=W;H`; settings `@settings[=section] @close-settings
 @eq=Preset|on|off @field=lastfm-key|lastfm-secret|lb-token|discord-id:VALUE
 @lastfm-connect @lastfm-finish @lastfm-disconnect @lastfm-clear @lb-validate
-@lb-disconnect @discord=on|off`; player `@layout=split|centered|lyrics
+@lb-disconnect @discord=on|off`; player `@layout=split|centered|lyrics|immersive|card|minimal|editorial|queue
 @np-bg=blur|gradient|solid|glow @mini-style=theme|artwork
 @lyrics-style=karaoke|apple|slide|glow|fade|none @lyrics-size=40 @lyrics-spacing=1.5
 @lyrics-align=left|center|right @translate=on|off @romanize=SCRIPT:on|off @lyrics-reload
@@ -1249,7 +1286,11 @@ playback `@play=N @next @prev @seek=S @toggle @open @close @volume=V`; navigatio
 @import-save[=NAME] @import-cancel @import-status @export=PLAYLIST:FORMAT:PATH`;
 recognition `@recognize` (microphone), `@recognize-file=PATH`,
 `@recognize-cancel`, `@recognize-history=N`; `@onboarding[=STEP|off]`, `@onboarding-next`,
-`@onboarding-back`, `@update-check` (`release_script.rs`); `@quit`.
+`@onboarding-back`, `@update-check` (`release_script.rs`); lyrics cards (`lyrics_card.rs`)
+`@card-select=3;4;5 @card-open @card-style=aspect:story|bg:blur|album|dark|light|align:left|size:large|art:off
+@card-save=PATH @card-copy @card-close`; measurement `@bench=N[:MS]` (draws the main window N
+times MS ms apart and prints the draw times: the UI's CPU per frame, also with the screen
+locked); `@quit`.
 
 Screenshot builds draw both windows every 200 ms and right before each shot: while the
 screen is locked macOS delivers no display-link frames, so nothing would redraw (and
@@ -1366,6 +1407,83 @@ and verified the real IPADIC in ~1.6 s and loaded it; at the next start it was m
 Settings → Lyrics dictionary row and progress bar on screen (rendered, not looked at),
 in-app cancel of a running download (unit-tested; the real download finished first), a
 successful Google translation, Paxsenix / BetterLyrics keys.
+
+### Now Playing round: CPU, designs, lyrics cards
+
+| ![Split (default)](docs/screenshots/np-split.png) | ![Immersive](docs/screenshots/np-immersive.png) |
+|---|---|
+| ![Card](docs/screenshots/np-card.png) | ![Minimal](docs/screenshots/np-minimal.png) |
+| ![Editorial](docs/screenshots/np-editorial.png) | ![With queue](docs/screenshots/np-queue.png) |
+| ![Big artwork](docs/screenshots/np-centered.png) | ![Lyrics first](docs/screenshots/np-lyrics.png) |
+| ![Split, glow background, Apple style](docs/screenshots/np-split-glow-apple.png) | ![Appearance: eight designs](docs/screenshots/np-settings-appearance.png) |
+| ![Selecting lines for a card](docs/screenshots/np-lyrics-select.png) | ![Card dialog](docs/screenshots/np-card-dialog.png) |
+| ![Saved card, square](docs/screenshots/np-card-square.png) | ![Saved card, story, light, left](docs/screenshots/np-card-story-light.png) |
+| ![Bar at 880 pt: casting + Together](docs/screenshots/np-bar-narrow-cast.png) | |
+
+**CPU while lyrics animate.** Profiled first (`sample` on a release build with line
+tables): of ~2 ms per frame, the lyrics list's per-line layout (every line of the song a
+flex row with a measured text element and its own hitbox, re-shaped twice), per-glyph
+bounds-tree inserts when painting (sweep slices and glow halos paint a glyph up to 12×),
+and the gpui-component buttons of the header / toolbar / like button dominated; frames
+were requested continuously while playing even when nothing moved. Changes:
+
+* the synced list does its own layout (`np_lyrics.rs`): row heights measured once per
+  width / size / spacing, only rows on screen are built, at fixed sizes, one hitbox for
+  the list; `KaraokeLine` paints each line in one layer and reuses its layout-pass shaping;
+* frames only while a word is being swept or a tween runs; otherwise `Frame::wake_at`
+  re-renders at the next word / line boundary, the next second of the time label, at 30
+  fps for the glow background, or per pixel of the Minimal fill;
+* the header and lyrics toolbar are cached `Snapshot` views, the player column / strip
+  cached regions (`np_region.rs`) — rebuilt only when what they show changes.
+
+Real CPU, `ps -o %cpu=` once a second for 12 s, seeked to 1:10 of "Instant Crush"
+(word-synced, singing), release, real audio muted, window 1180×793 kept visible with
+`MUSIC_ON_TOP=1`, before = main at `faca533` + the measurement hooks, measured back to
+back (min / avg / max):
+
+| Design · background · style | before | after |
+|---|---|---|
+| Split · blur · Karaoke (default) | 14.9 / 21.9 / 25.5 | 2.3 / 11.6 / 14.4 (second run 12.3) |
+| Split · glow · Karaoke | 14.7 / 24.0 / 29.6 | 7.5 / 13.8 / 17.0 ¹ |
+| Split · blur · Apple | 22.8 / 27.7 / 31.7 | 7.5 / 13.5 / 19.7 ¹ |
+| Split · blur · Glow | 18.2 / 24.3 / 28.7 | 4.9 / 12.8 / 16.4 ¹ |
+| Lyrics first · glow · Apple (heaviest) | 14.9 / 24.4 / 30.2 | 6.9 / 13.0 / 15.7 |
+| Big artwork | 11.7 / 12.7 / 14.0 at 61 r/s | 1.2 / 1.6 / 2.6 at 6 r/s |
+| Immersive / Card / Minimal / Editorial / With queue | — | 1.8 / 1.5 / 0.4 / 4.5 / 12.3 ² |
+| Now Playing closed, playing (browse page, bar) | 3.9 / 5.2 / 7.0 | 3.7 / 5.8 / 9.0 |
+
+¹ measured before the cached player column (a further ~1–2 points off). ² the With queue
+run included loading the queue's artwork; its frames are as rare as the other designs'
+(16 renders/s in that window, ~6 when settled). Renders while words are swept: 55–60/s,
+worst gap 17.7 ms (unchanged); between words and lines the screen idles. The same
+scenarios measured earlier in the day under heavy machine load gave 26–28 % before.
+Casting to `examples/fake_cast_receiver.rs` with Now Playing closed: 5 renders/s
+(poll-driven), 2–8 % CPU including the stream proxy — the bar doesn't animate.
+
+UI cost per frame without presenting (`@bench=600`, display-independent), before → after:
+split · blur · Karaoke 2.28 → 0.91 ms, split · glow 3.11 → 0.90, Apple 3.20 → 1.07, Glow
+style 3.60 → 1.44, lyrics first · glow · Apple 3.41 → 1.43, big artwork 1.47 → 0.97; the
+new designs 0.88–1.35 ms (drawn only on wake-ups). Physical footprint (`footprint`) was the same in both builds (200–240 MB in these runs).
+
+**Verified** (temporary `MUSIC_CONFIG_DIR`, `MUSIC_VOLUME=0.0`): every design and the
+appearance cards via `@layout` / screenshots; lyrics cards end to end by script —
+`@card-select=10;11;12` selected the expected three lines, the dialog previewed them,
+`@card-style` changed shape / background / alignment, `@card-save` wrote 1080×1080 and
+1080×1920 PNGs, `@card-copy` put a 292 KB PNG on the macOS clipboard
+(`osascript -e 'clipboard info'`); renderer unit tests (sizes per aspect, ink in the text
+band, PNG signature, wrapping keeps every word, auto-fit at all sizes, CJK breaks between
+characters and kana drawn through font fallback, dark text on the light style). Esc via
+`@key=escape`: with the design menu open it closed only the menu (Now Playing stayed),
+the next Esc closed Now Playing; a track row's context menu (`@rclick`) closed on Esc
+without navigating back, the next Esc went back. Player bar at 880 pt while casting and
+hosting Together: title truncated, chips collapsed, Cast icon kept, no overlap.
+
+**Not verified:** "Save image…" through the real file dialog (the same write path ran
+via `@card-save`), pasting the copied card into another app, physical mouse / keyboard,
+Linux / Windows fonts for cards (fallback depends on installed fonts), the cached regions
+under a 120 Hz display, CPU of the final build with the screen awake (the screen locked
+before the last run; the final code equals the measured one plus the bar and Esc
+changes). Not measured: the Lyrics-first strip region separately.
 
 ### Measurements (app shell round)
 

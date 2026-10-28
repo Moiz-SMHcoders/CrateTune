@@ -47,7 +47,11 @@ impl MusicApp {
         let mut chips = Vec::new();
         chips.extend(self.sponsorblock_chip(cx));
         chips.extend(self.together_chip(cx));
-        chips.extend(self.cast_chip(cx));
         chips
+    }
+
+    /// The bar's Cast button (kept visible when the chips beside it collapse).
+    pub(crate) fn integration_cast_button(&mut self, cx: &mut Context<Self>) -> Option<AnyElement> {
+        self.cast_chip(cx)
     }
 }
