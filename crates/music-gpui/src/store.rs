@@ -58,6 +58,8 @@ struct Flags {
     liked: HashSet<String>,
     downloads: HashMap<String, DownloadFlag>,
     library_open: bool,
+    /// Bumped whenever `downloads` is rebuilt (list headers cache on it).
+    generation: u64,
 }
 
 thread_local! {
@@ -72,6 +74,11 @@ pub fn is_liked(video_id: &str) -> bool {
 /// The user download state of a song (`None`: not downloaded).
 pub fn download_flag(video_id: &str) -> Option<DownloadFlag> {
     FLAGS.with(|f| f.borrow().downloads.get(video_id).copied())
+}
+
+/// Changes whenever the download flags change (see `components::download_header`).
+pub fn flags_generation() -> u64 {
+    FLAGS.with(|f| f.borrow().generation)
 }
 
 /// Whether the library database is available (menus disable entries without it).
@@ -134,6 +141,9 @@ pub struct Store {
     pub(crate) resume_at: Option<(String, Duration)>,
     downloads_polled: Option<Instant>,
     downloads_sig: u64,
+    /// Finished jobs at the last flag refresh: library pages reload only when a
+    /// download finished, not on every progress step of a long batch.
+    downloads_finished: usize,
     /// Saves / forgets searches in order (see `search_history.rs`).
     search_writer: Option<crate::search_history::SearchHistoryWriter>,
 }
@@ -204,6 +214,7 @@ impl Store {
             resume_at: None,
             downloads_polled: None,
             downloads_sig: 0,
+            downloads_finished: 0,
         };
         store.refresh_download_flags(true);
         store
@@ -262,8 +273,19 @@ impl Store {
                 flags.insert(s.track.video_id.clone(), flag);
             }
         }
-        FLAGS.with(|f| f.borrow_mut().downloads = flags);
+        FLAGS.with(|f| {
+            let mut f = f.borrow_mut();
+            f.downloads = flags;
+            f.generation += 1;
+        });
         true
+    }
+
+    /// Finished jobs (completed / failed / cancelled) in the manager's list.
+    fn finished_downloads(&self) -> usize {
+        self.downloads.as_ref().map_or(0, |d| {
+            d.states().iter().filter(|s| s.status.is_finished()).count()
+        })
     }
 }
 
@@ -404,6 +426,7 @@ impl MusicApp {
         for t in &tracks {
             set_liked_flag(&t.video_id, like);
         }
+        self.liked_downloads(&tracks, like, window, cx);
         let remote = self.account_client();
         let signed_in = remote.is_signed_in();
         let message = match (tracks.as_slice(), like) {
@@ -648,6 +671,137 @@ impl MusicApp {
         cx.notify();
     }
 
+    /// "Download all" of a list header: queues every YouTube song of `tracks` that
+    /// isn't stored or queued yet (the manager downloads two at a time).
+    pub fn download_collection(
+        &mut self,
+        tracks: Vec<Track>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let Some(downloads) = self.store.downloads.clone() else {
+            notify(window, cx, t!("store.downloads_unavailable"));
+            return;
+        };
+        let todo = crate::components::download_header::missing(&tracks, download_flag);
+        if todo.is_empty() {
+            notify(window, cx, t!("downloads.header.nothing_to_do"));
+            return;
+        }
+        let queued = downloads.download_many(todo);
+        self.store.refresh_download_flags(true);
+        notify(window, cx, tp!("store.toast.downloading_many", queued));
+        cx.notify();
+    }
+
+    /// Cancel of a list header: stops the queued / running downloads of `tracks`.
+    pub fn cancel_collection(
+        &mut self,
+        tracks: Vec<Track>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let Some(downloads) = self.store.downloads.clone() else {
+            return;
+        };
+        let ids = crate::components::download_header::downloadable_ids(&tracks);
+        let active: Vec<&str> = ids
+            .into_iter()
+            .filter(|id| {
+                matches!(
+                    download_flag(id),
+                    Some(DownloadFlag::Queued | DownloadFlag::Downloading)
+                )
+            })
+            .collect();
+        downloads.cancel_many(&active);
+        self.store.refresh_download_flags(true);
+        notify(window, cx, tp!("downloads.header.cancelled", active.len()));
+        cx.notify();
+    }
+
+    /// "Remove downloads" of a list header: deletes the stored files of `tracks`.
+    pub fn remove_collection_downloads(
+        &mut self,
+        tracks: Vec<Track>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let ids: Vec<String> = crate::components::download_header::downloadable_ids(&tracks)
+            .into_iter()
+            .filter(|id| download_flag(id).is_some())
+            .map(str::to_owned)
+            .collect();
+        self.delete_downloads_quietly(ids, true, window, cx);
+    }
+
+    /// Deletes the downloads of `ids` off the UI thread (a toast with the count if `report`).
+    fn delete_downloads_quietly(
+        &mut self,
+        ids: Vec<String>,
+        report: bool,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let Some(downloads) = self.store.downloads.clone() else {
+            return;
+        };
+        if ids.is_empty() {
+            return;
+        }
+        cx.spawn_in(window, async move |this, cx| {
+            let result = off_thread(move || {
+                let refs: Vec<&str> = ids.iter().map(String::as_str).collect();
+                downloads.delete_many(&refs)
+            })
+            .await;
+            this.update_in(cx, |this, window, cx| {
+                let (removed, error) = result;
+                if let Some(e) = error {
+                    notify(
+                        window,
+                        cx,
+                        t!("store.toast.delete_download_failed", error = e),
+                    );
+                } else if report {
+                    notify(window, cx, tp!("downloads.header.removed", removed));
+                }
+                this.store.refresh_download_flags(true);
+                this.library_changed(cx);
+            })
+            .ok();
+        })
+        .detach();
+    }
+
+    /// Storage → Downloads: liking queues a download, unliking may remove it.
+    fn liked_downloads(
+        &mut self,
+        tracks: &[Track],
+        like: bool,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let prefs = self.store.prefs.downloads.clone();
+        let Some(downloads) = self.store.downloads.clone() else {
+            return;
+        };
+        if like && prefs.auto_download_liked {
+            let todo = crate::components::download_header::missing(tracks, download_flag);
+            if !todo.is_empty() {
+                downloads.download_many(todo);
+                self.store.refresh_download_flags(true);
+            }
+        } else if !like && prefs.remove_when_unliked {
+            let ids: Vec<String> = crate::components::download_header::downloadable_ids(tracks)
+                .into_iter()
+                .filter(|id| download_flag(id).is_some())
+                .map(str::to_owned)
+                .collect();
+            self.delete_downloads_quietly(ids, false, window, cx);
+        }
+    }
+
     /// Deletes the stored file (download or cached copy) of `video_id`.
     pub fn delete_download(
         &mut self,
@@ -771,7 +925,15 @@ impl MusicApp {
         if due {
             self.store.downloads_polled = Some(Instant::now());
             if self.store.refresh_download_flags(false) {
-                self.library_changed(cx);
+                // Rows and headers read the flags; the database only changes when a
+                // job finishes (`downloaded_at`), so pages reload only then.
+                let finished = self.store.finished_downloads();
+                if finished != self.store.downloads_finished {
+                    self.store.downloads_finished = finished;
+                    self.library_changed(cx);
+                } else {
+                    cx.notify();
+                }
             }
         }
     }

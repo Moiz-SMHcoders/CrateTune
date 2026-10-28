@@ -11,7 +11,7 @@
 use gpui::{
     AnyElement, App, AppContext as _, Context, Entity, FontWeight, InteractiveElement as _,
     IntoElement, ParentElement as _, Render, SharedString, StatefulInteractiveElement as _,
-    Styled as _, Window, div, hsla, prelude::FluentBuilder as _, px,
+    Styled as _, Window, div, prelude::FluentBuilder as _, px,
 };
 use gpui_component::{
     ActiveTheme as _, Icon, Selectable as _, Sizable as _,
@@ -241,7 +241,7 @@ impl Render for Onboarding {
             .id("onboarding-scrim")
             .absolute()
             .inset_0()
-            .bg(hsla(0., 0., 0., 0.62))
+            .bg(crate::theme::AppPalette::get(cx).scrim)
             .flex()
             .items_center()
             .justify_center()
@@ -327,11 +327,12 @@ fn theme(panel: &mut SettingsPanel, cx: &mut Context<SettingsPanel>) -> AnyEleme
     let (border, ring) = (cx.theme().border, cx.theme().ring);
     let themes = h_flex().gap_3().children(ThemeChoice::ALL.map(|choice| {
         let selected = current == choice;
-        let (surface, dot) = match choice {
-            ThemeChoice::Dark => (hsla(0., 0., 0.08, 1.), hsla(0., 0., 0.98, 1.)),
-            ThemeChoice::Black => (hsla(0., 0., 0., 1.), hsla(0., 0., 0.98, 1.)),
-            ThemeChoice::Dynamic => (hsla(0., 0., 0.08, 1.), hsla(0.93, 0.7, 0.62, 1.)),
-        };
+        let (surface, raised, dot) = crate::theme::preview(&crate::theme::Look {
+            choice,
+            font_scale: 1.0,
+            custom: panel.settings.custom_theme.clone(),
+            art: None,
+        });
         v_flex()
             .id(SharedString::from(format!("onboarding-theme-{choice:?}")))
             .w(px(150.))
@@ -349,13 +350,7 @@ fn theme(panel: &mut SettingsPanel, cx: &mut Context<SettingsPanel>) -> AnyEleme
                     .p_2()
                     .gap_2()
                     .items_end()
-                    .child(
-                        div()
-                            .h(px(12.))
-                            .flex_1()
-                            .rounded(px(3.))
-                            .bg(hsla(0., 0., 0.2, 1.)),
-                    )
+                    .child(div().h(px(12.)).flex_1().rounded(px(3.)).bg(raised))
                     .child(div().size(px(14.)).rounded_full().bg(dot)),
             )
             .child(

@@ -14,6 +14,7 @@ Google or Shazam.
 * [Your own music files](#your-own-music-files)
 * [Signing in](#signing-in)
 * [Settings](#settings)
+* [Themes and profiles](#themes-and-profiles)
 * [Keyboard shortcuts](#keyboard-shortcuts)
 * [Modules](#modules)
 * [Listen together](#listen-together)
@@ -163,6 +164,14 @@ Everything is stored locally (SQLite database in the settings folder):
 * **Stats** — listening time, top songs / artists / albums, by hour and weekday; **Year in
   Music** per year.
 * **Downloads** — downloaded songs play from disk (see the limitation below).
+* **Download all** — Liked songs, library songs, your playlists, YouTube playlists and
+  albums have a **Download all** button in their header. While songs download it shows
+  "Downloading N of M" with **Cancel**; when everything is downloaded it turns into
+  **Remove downloads**. Songs download two at a time, so even long lists don't flood the
+  network. Local files are never downloaded (they are already on your computer).
+* **Download liked songs** — Settings → Storage → Downloads: with **Download liked
+  songs** on, liking a song downloads it. **Remove download when unliked** (off by
+  default) deletes the download again when you unlike the song.
 
 ## Your own music files
 
@@ -192,7 +201,7 @@ copies your YouTube Music library into the local one; **Sign out** forgets the c
 
 | Section | What's there |
 |---|---|
-| Appearance | interface language, theme (dark, pure black, dynamic accent from the artwork), text size, Now Playing design (eight) and background, mini player style |
+| Appearance | profiles, interface language, theme (dark, pure black, dynamic colours from the artwork), **Customize theme** (presets, accent, darkness, surface tint, contrast, corners, density, font, dynamic colour style), text size, Now Playing design (eight) and background, mini player style |
 | Playback | shuffle / repeat, quality, loudness normalization, skip silence, skip failing songs, crossfade, speed and pitch, output device, sleep timer |
 | Modules | provider modules (alternative audio sources) and where songs play from |
 | Equalizer | 10-band equalizer with presets |
@@ -200,7 +209,7 @@ copies your YouTube Music library into the local one; **Sign out** forgets the c
 | Content & region | content language and country, hide explicit, hide videos (also inside playlists, albums, radio and queues), autoplay similar songs |
 | Network | HTTP / HTTPS / SOCKS proxy with test; DNS-over-HTTPS (Cloudflare, Google, Quad9 or your own URL, with optional fallback to the system resolver) and **Test DNS** |
 | Privacy | pause / clear listen and search history |
-| Storage | file locations, play cache, downloads, backup and restore |
+| Storage | file locations, play cache, downloads (download liked songs, remove when unliked), backup and restore of the library |
 | Account | YouTube Music sign-in, channels, sync |
 | Scrobbling & Discord | Last.fm, ListenBrainz, scrobble rules, Discord Rich Presence |
 | SponsorBlock | skip non-music sections and other segments |
@@ -208,11 +217,55 @@ copies your YouTube Music library into the local one; **Sign out** forgets the c
 | Spotify import | your Spotify app's Client ID for importing playlists |
 | AI content filter | endpoint, model, key, categories to hide |
 | Chromecast | devices, stop casting, direct fetch |
+| Backup & sync | export / import settings, export / import themes |
 | About | version, license, credits, welcome guide, update check (when enabled) |
 
 Settings live in `~/Library/Application Support/tunedesk/` (macOS),
 `~/.config/tunedesk/` (Linux) or `%APPDATA%\tunedesk\config\` (Windows); passwords
 and keys in the system keychain.
+
+## Themes and profiles
+
+![Customize theme](screenshots/theme-customize.png)
+
+**Settings → Appearance → Customize theme** changes the look; everything applies at once
+and **Reset to default** brings back the standard look:
+
+* **Presets** — Standard, Midnight, Rosé, Forest, High contrast and Artwork.
+* **Accent colour** — a swatch, a hex value (`#5B8CFF`) or the hue and saturation
+  sliders. An accent that would be too dark to read on the background is lightened
+  automatically (WCAG contrast).
+* **Darkness** (dim, standard, deep, pure black), **surface tint** (backgrounds, cards and
+  menus take the accent's hue), **contrast** (standard, medium, high: brighter text and
+  borders), **corners** (sharp, regular, round), **density** (row heights and spacing),
+  **font** (any installed font).
+* **Dynamic colours** — with the Dynamic theme the colours come from the artwork of the
+  song that is playing: accent, selection, sliders, Now Playing and, with a surface tint,
+  the backgrounds. **Style**: vibrant, muted, monochrome or true to the artwork;
+  **strength** tones the colours down; **smooth transitions** fades between songs.
+
+**Theme files**: **Export theme…** saves the look (theme, Customize theme, Now Playing
+design and background, mini player and player bar style) as a small
+`.tunedesk-theme.json` file; **Import theme…** shows what would change and replaces only
+the look.
+
+**Settings files** (Settings → Backup & sync): **Export settings…** saves every setting
+except passwords, keys, cookies, the signed-in account and window positions as JSON;
+**Import settings…** shows the changes section by section before anything is applied.
+Files from older versions fill in defaults for what they lack; files from newer versions
+are imported with their unknown settings ignored (the preview lists them).
+
+**Profiles** (top of Appearance) are named looks you switch with one click — for
+example a colourful one for the evening and a quiet one for work. A profile holds the
+theme, Customize theme, Now Playing, lyrics display and player bar style (never accounts,
+library, downloads or passwords). Whatever you change is saved to the active profile.
+**New…** makes a profile from the current look; **Duplicate**, **Rename**, **Delete**,
+**Import…** and **Export…** manage them (profile files are settings files, so they can
+also be imported with Import settings). Two profiles are built in and can't be deleted:
+**Default** and **Minimal / Fast**, which switches off everything that costs extra CPU or
+memory (dynamic colours and their artwork analysis, colour transitions, blurred and
+animated Now Playing backgrounds, lyrics animations, translation and romanization). When
+you change a built-in profile it shows a dot and **Reset** restores it.
 
 ## Keyboard shortcuts
 

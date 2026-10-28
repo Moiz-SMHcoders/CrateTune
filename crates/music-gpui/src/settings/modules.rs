@@ -1295,7 +1295,7 @@ pub(super) fn render(
         let mut card = v_flex()
             .gap_2()
             .p_3()
-            .rounded(px(8.))
+            .rounded(crate::theme::radius(8.))
             .border_1()
             .border_color(border)
             .child(header)
@@ -1606,7 +1606,7 @@ fn render_details(
         .child(
             v_flex()
                 .p_2()
-                .rounded(px(6.))
+                .rounded(crate::theme::radius(6.))
                 .bg(theme.muted)
                 .text_xs()
                 .font_family(mono)

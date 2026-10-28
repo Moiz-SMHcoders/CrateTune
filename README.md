@@ -492,7 +492,14 @@ src/
                      persistence, secrets, section list), one file per section, mod.rs
                      (SectionId + SECTIONS registry), widgets.rs
   queue.rs           queue model (pure, tested)
-  theme.rs           dark / pure black / dynamic accent, font scale, AppColors
+  theme.rs           dark / pure black / dynamic, Customize-theme tokens (Look → Resolved →
+                     gpui-component Theme + AppColors / AppPalette), radius / density metrics;
+                     palette.rs (Oklab, tones, quantizer, scorer, schemes), theme_state.rs
+                     (applied look, artwork colours, 400 ms cross-fade), theme_script.rs
+  settings/theme_prefs.rs, theme_ui.rs   Customize theme model + group
+  settings/portable.rs, portable_ui.rs   settings / theme export-import, presets, Backup & sync
+  settings/profiles.rs, profiles_ui.rs   appearance / behaviour profiles
+  components/download_header.rs          "Download all" header (HeaderDownloadState)
   mini_player.rs     always-on-top mini player window
   tray.rs            menu-bar item (macOS)
   now_playing.rs     Now Playing: screen, header, backgrounds, transport, the first three
@@ -587,6 +594,19 @@ locales/<locale>/*.lang  the catalogs (English = source), embedded by build.rs v
   for timed renders with `Frame::wake_at` / `wake_in` (the time label already wakes once
   a second); a part that has to change at display rate belongs in a cached region
   (`np_region.rs`) or must be cheap.
+* **Theme tokens:** colour our views with `cx.theme()` (gpui-component tokens, all
+  derived from the look) or `theme::AppColors::get(cx)` / `theme::AppPalette::get(cx)`
+  (accent, on-accent, secondary, tertiary, surface tint, scrim, text on artwork) — never
+  literal colours outside artwork-coloured Now Playing designs. Corner radii go through
+  `theme::radius(px)`, paddings through `theme::space(px)`, track rows are
+  `theme::row_height()` tall. A new look option belongs in `CustomTheme`
+  (`settings/theme_prefs.rs`, with a default that changes nothing) and `themed_colors`.
+* **Profiles / theme files:** profiles carry whole top-level sections
+  (`settings/profiles.rs::PROFILE_SECTIONS`), theme files `custom_theme`, `now_playing`
+  and `appearance.theme` / `font_scale`; both also carry the player bar's sections listed
+  in `settings/portable.rs::BAR_STYLE_KEYS`. A new field in one of these structs is picked
+  up automatically; a new *section* is one entry in those lists. Minimal / Fast values:
+  `profiles::minimal_settings`.
 * **Renaming the app:** edit `packaging/app.env` only (see Install / build).
 * **UI text** (see [Translations](#translations-ui-languages)): add the English string to
   `locales/en/<area>.lang` and use `t!("key")` / `t!("key", name = value)` /
@@ -682,12 +702,13 @@ locales/<locale>/*.lang  the catalogs (English = source), embedded by build.rs v
   Modules (provider modules, playback source), Lyrics (look, providers, translation,
   romanization), Content & region, Network, Privacy,
   Storage (file locations), Account (YouTube sign-in, planned), Scrobbling & Discord,
-  SponsorBlock, Music Together, Spotify import, About (version, GPL-3.0 notice, ArchiveTune and Hummingbird credits). The old sheet
+  SponsorBlock, Music Together, Spotify import, Backup & sync (settings / theme export and import), About (version, GPL-3.0 notice, ArchiveTune and Hummingbird credits). The old sheet
   is gone; the Now Playing gear opens the page.
-* **Themes** (`theme.rs`): dark (gpui-component's), pure black, dynamic (accent = the most
-  common vibrant hue of the current artwork, lightened to ≥ 4.5:1 against the
-  background, black or white text on it; grey art keeps the previous accent), text size
-  88–138 %. Applied to gpui-component's `Theme` and our `AppColors`.
+* **Themes** (`theme.rs`, see [Theming round](#theming-round-customize-theme-dynamic-colours-profiles-downloads)):
+  dark (gpui-component's), pure black, dynamic (Material-style scheme from the artwork),
+  Customize theme (accent, darkness, surface tint, contrast, corners, density, font), six
+  presets, theme files, profiles, text size 88–138 %. Applied to gpui-component's `Theme`
+  and our `AppColors` / `AppPalette`.
 * **Artwork cache** (`components/artwork.rs`): one cache for every view and both windows,
   48 MiB LRU of encoded bytes (evicting also drops GPUI's decoded copy), 4 dedicated
   fetch threads taking the newest request first, failed URLs retried after 30 s. Now
@@ -814,6 +835,11 @@ locales/<locale>/*.lang  the catalogs (English = source), embedded by build.rs v
   artists / albums, top songs / artists / albums, listening by hour and weekday; **Year in
   Music** (`Route::YearInMusic`) per year with history: totals, top song / artist, favourite
   hour, busiest day, month-by-month and hourly bars.
+* **Download all** (`components/download_header.rs`): Liked / library songs, local
+  playlists, YouTube playlists (loading their remaining pages first) and albums; state
+  none / partial / downloading ("N of M", Cancel) / all ("Remove downloads"); batches
+  go through `DownloadManager::download_many` (one lock, two workers). Storage →
+  Downloads: **Download liked songs** and **Remove download when unliked** (both off).
 * **Downloads**: "Download" / "Remove download" in every song menu and the selection bar;
   the page polls `DownloadManager::states()` (queued / downloading / done / preview only /
   failed, cancel and retry), lists downloads with size and delete, shows download and cache
@@ -1338,8 +1364,8 @@ switch + id + `activity`, theme + text size, shuffle + repeat, `audio`, `lyrics`
 `network` (proxy), `appearance.language` (UI language: a catalog code or `system`),
 main window and mini player frames, and `library`: privacy switches,
 play-cache limit, music folders, the signed-in YouTube account's name / avatar /
-`auth_user` / channel, `sponsorblock`, `together` (incl. `relay_url`), `spotify`, `ai_filter`,
-`cast`) lives in the platform config dir — macOS
+`auth_user` / channel, `library.downloads` (download liked songs), `sponsorblock`, `together`
+(incl. `relay_url`), `spotify`, `ai_filter`, `cast`, `custom_theme`) lives in the platform config dir — macOS
 `~/Library/Application Support/tunedesk/`, Linux `~/.config/tunedesk/`, Windows
 `%APPDATA%\tunedesk\config\` — or `$MUSIC_CONFIG_DIR`. It is written 500 ms after the last
 change and on quit, atomically (temp file + rename), mode 0600 in a 0700 directory. Missing
@@ -1374,6 +1400,7 @@ item's ACL is tied to the binary). Secrets are never logged.
 | `MUSIC_LANG=de` / `MUSIC_SYSTEM_LANG=ja-JP,en` | UI language for this session (not saved) / pretend the system prefers these languages |
 | `MUSIC_ONBOARDING=1\|0` | force / suppress the first-run guide (it is skipped automatically for `MUSIC_SCRIPT` / screenshot runs) |
 | `MUSIC_UPDATE_REPO=owner/name` | enable the update check against that repo (testing; the default comes from `packaging/app.env`) |
+| `MUSIC_NO_TRANSITIONS=1` | switch dynamic colours at once (no 400 ms cross-fade) |
 | `MUSIC_TRACE=1` | log playback transitions, seeks, saves, route changes, artwork downloads; `MUSIC_TIMINGS=1`: renders/s + worst frame gap |
 | `MUSIC_SCRIPT="5:@next,9:@seek=75,30:@quit"` | timed actions (any build) |
 | `MUSIC_ON_TOP=1` | keep the main window above other apps and on every Space (CPU sampling while the machine is in use: macOS sends an occluded or off-Space window no frames) |
@@ -1385,7 +1412,13 @@ GPUI's key dispatch), `@click=X;Y @rclick=X;Y @move=X;Y @mouse-back @mouse-forwa
 playback `@play=N @next @prev @seek=S @toggle @open @close @volume=V`; navigation
 `@nav=ROUTE @back @forward @search=Q`; queue `@play-next=N @enqueue=N @queue[=on|off]
 @queue-move=A:B @queue-remove=N @queue-jump=N @queue-clear @shuffle=on|off
-@repeat=off|all|one`; windows/appearance `@mini[=on|off] @theme=dark|black|dynamic
+@repeat=off|all|one`; theming (`theme_script.rs`) `@custom-theme=FIELD:VALUE @theme-preset=ID
+@theme-reset @theme-status @settings-export=PATH @settings-import=PATH @theme-export=PATH
+@theme-import=PATH @import-confirm @profile=ID @profile-new=NAME @profile-duplicate
+@profile-rename=NAME @profile-delete @profile-reset @profile-export=PATH @profile-import=PATH
+@profile-status @auto-download-liked=on|off @remove-unliked=on|off
+@download-all|download-cancel|download-remove=liked|library @download-status`;
+windows/appearance `@mini[=on|off] @theme=dark|black|dynamic
 @font-scale=1.125 @resize=W;H`; settings `@settings[=section] @close-settings
 @eq=Preset|on|off @field=lastfm-key|lastfm-secret|lb-token|discord-id:VALUE
 @lastfm-connect @lastfm-finish @lastfm-disconnect @lastfm-clear @lb-validate
@@ -1423,6 +1456,122 @@ locked); `@quit`.
 Screenshot builds draw both windows every 200 ms and right before each shot: while the
 screen is locked macOS delivers no display-link frames, so nothing would redraw (and
 lazily started artwork downloads would never begin).
+
+### Theming round: Customize theme, dynamic colours, profiles, downloads
+
+| ![Customize theme](docs/screenshots/theme-customize.png) | ![Accent and surfaces](docs/screenshots/theme-accent.png) |
+|---|---|
+| ![Dynamic colours from the artwork](docs/screenshots/theme-dynamic-np.png) | ![Rosé preset (tint, round corners)](docs/screenshots/theme-rose-home.png) |
+| ![High contrast, sharp, compact](docs/screenshots/theme-high-contrast.png) | ![Profiles](docs/screenshots/theme-profiles.png) |
+| ![Download all: downloading 2 of 5](docs/screenshots/theme-download-all.png) | ![Import preview](docs/screenshots/theme-import-preview.png) |
+| ![Backup & sync](docs/screenshots/theme-backup.png) | ![German layout check](docs/screenshots/theme-de-customize.png) |
+
+* **Colour pipeline** (`theme.rs`, pure up to `apply`): settings + the current artwork's
+  colours form a `Look`; `resolve` turns it into a `Resolved` (accent, secondary,
+  tertiary, surface tint); `themed_colors` derives every gpui-component token from the
+  stock dark theme (surfaces re-lit for darkness and tinted in hue — lightness is kept,
+  so contrast doesn't change —, foreground / border lifts for contrast, accent-derived
+  primary / ring / slider / progress / selection / list-active / link / caret tokens);
+  `apply` sets them in one `Theme::update` plus `AppColors` / `AppPalette` and the radius
+  / density atomics. **Defaults override nothing** (test `defaults_override_nothing`), so
+  the stock look is unchanged until an option is touched.
+* **Contrast**: every accent (custom, preset or from artwork) is raised in tone, hue and
+  chroma kept, until it reaches the level's WCAG ratio against the background (4.5 / 5.5
+  / 7:1); text on it is black or white, whichever contrasts more.
+* **Dynamic colours** (`palette.rs`, after Material Color Utilities as used by ArchiveTune
+  through MaterialKolor): the 544 px artwork is reduced to 64 px, bucketed into a 15-bit
+  histogram and clustered by weighted k-means in Oklab (16 clusters); Material's `Score`
+  ranks them (hue share ± 14° × 0.7 + chroma) and picks up to four seeds with distinct
+  hues. Tonal palettes use OkLCh hue / chroma and **CIE L\* as the tone** (`solve` finds
+  the colour of a hue / chroma at an exact tone, clipping chroma to sRGB), so tone pairs
+  have a known contrast. Styles: vibrant (seed hue, chroma ≥ 0.17), muted, monochrome,
+  true to artwork (seed tone, tertiary from the second seed); strength scales chroma.
+  Runs on the artwork worker thread once per artwork (LRU of 64 by URL), only while the
+  Dynamic theme is selected (switching to it extracts the current artwork's colours on
+  demand). Cost ≈ 1 ms per artwork in release; the 400 ms cross-fade between songs
+  re-applies the theme ~12 times (33 ms steps) in Oklab, then stops
+  (`MUSIC_NO_TRANSITIONS=1` or the switch turns it off).
+* **Customize theme** (Appearance): presets (Standard, Midnight, Rosé, Forest, High
+  contrast, Artwork), Reset to default, theme export / import, live preview, accent
+  swatches + hex + hue / saturation sliders, darkness (dim / standard / deep / pure
+  black), surface tint, contrast, corners (gpui-component radius + `theme::radius` in our
+  views), density (row heights of every song list, sidebar and settings paddings), font
+  (system font list, searchable), dynamic style / strength / transitions.
+* **Hard-coded colours audit**: theme cards (Appearance, welcome guide) render from
+  `theme::preview`, the onboarding scrim from `AppPalette::scrim`, all list / card /
+  dialog / sidebar / queue radii from `theme::radius`. Left on purpose: Now Playing
+  designs and the lyrics card draw white / artwork colours on the blurred artwork, the
+  schematic Now Playing previews in Appearance, and the player bar / mini player (owned
+  by the player-bar round).
+* **Settings export / import** (Settings → Backup & sync, `settings/portable.rs`): a
+  header (`format`, `schema` = `settings::file::VERSION`, `app_version`, `exported_at`)
+  around every setting except `LOCAL_ONLY` (secrets, window frames, the account, the
+  "key is stored" markers). Import parses into a plan — new settings plus a per-section
+  diff and notes (older schema → defaults, newer schema / unknown fields → listed and
+  ignored, sections with wrong types → skipped, plain `settings.json` accepted, secrets in
+  the file ignored) — shown in a preview; nothing changes before **Import**. Applied live
+  (theme, audio, lyrics, content, proxy, EQ, language), then a "Restart now / Later"
+  prompt for the settings page's own fields. **Theme files** (`<name>.tunedesk-theme.json`)
+  carry only the look and replace only it.
+* **Profiles** (`settings/profiles.rs`): see the user guide. Files `profiles/<id>.json`
+  (settings-export format with a `profile` header, so they import as settings and any
+  export imports as a profile) and `profiles/active.json`. Every settings save updates
+  the active profile; built-ins ("Default", "Minimal / Fast") take edits too, show
+  "modified" and have **Reset**, and can't be renamed or deleted (decision: no automatic
+  "Custom" fork — one place to look, one reset). The first launch snapshots the current
+  settings into Default, so nothing changes on screen. Switching applies live.
+* **Downloads** (`components/download_header.rs`, ArchiveTune's `HeaderDownloadState`):
+  state from the UI-thread download flags (cached per list and flag generation, so a
+  5,000-song header costs nothing while scrolling); library pages now reload only when a
+  download *finishes*, not on every progress step of a batch.
+
+**Settings JSON** (new parts, defaults shown):
+
+```json
+"custom_theme": {
+  "accent": "", "surface_tint": 0.0, "darkness": "standard", "contrast": "standard",
+  "corners": "regular", "density": "regular", "font_family": "",
+  "dynamic": { "style": "vibrant", "strength": 1.0, "transitions": true }
+},
+"library": { …, "downloads": { "auto_download_liked": false, "remove_when_unliked": false } }
+```
+
+`darkness`: dim | standard | deep | black; `contrast`: standard | medium | high;
+`corners`: sharp | regular | round; `density`: compact | regular | comfortable;
+`dynamic.style`: vibrant | muted | monochrome | content. Unknown values fall back to the
+default. Profiles: `profiles/<id>.json` = `{"format": "tunedesk-settings", "schema": 1,
+"app_version", "exported_at", "profile": {"id", "name"}, "settings": {"appearance",
+"custom_theme", "now_playing", "lyrics"}}`, `profiles/active.json` = `{"active": "<id>"}`.
+
+**Verified** (release `screenshot` build, temporary `MUSIC_CONFIG_DIR`, muted, display
+awake): presets, accent / tint / darkness / contrast / corners / density / font applied
+live and saved; dynamic theme on "Instant Crush" (accent hue 218°, 9.2:1 against the
+background, tint at 35 %); liking five songs, **Download all** on Liked songs →
+"Downloading 0 of 5" → all five stored, two at a time; settings export → change the look
+→ import preview listing the 4 changes in 2 sections → Import restored them; theme export
+/ import; profiles switch / create / reset; German / Russian / Japanese layouts of the new
+groups. **Not verified**: the macOS save / open panels (the same code paths ran through
+`@settings-export` / `@settings-import` / `@theme-*` / `@profile-*`), the playlist page's
+"load remaining pages, then download" on a > 100-song playlist, Windows / Linux, remove
+when unliked with a song mid-download.
+
+**Measured, Default vs Minimal / Fast profile** (release, macOS arm64, display awake,
+`MUSIC_ON_TOP=1`, "Instant Crush" seeked to 1:10, muted real device, other builds running
+on the machine; seven interleaved runs each, avg of `ps -o %cpu=` over 12 s, `footprint`):
+
+| | Default | Minimal / Fast |
+|---|---|---|
+| CPU, Now Playing open (word-synced lyrics) | 7.1–9.9 %, median 9.2 % | 0.2–1.8 %, median 1.2 % |
+| CPU, Now Playing closed, playing | 1.8–3.3 %, median 2.6 % | 0.2–2.8 %, median 1.3 % |
+| Footprint, Now Playing open | 186–279 MB, median 204 MB | 142–342 MB, median 243 MB |
+| Footprint, closed | 150–213 MB, median 206 MB | 142–268 MB, median 199 MB |
+
+The CPU saving is the lyrics: Minimal shows the big-artwork design (current and next line,
+no per-word animation) on a solid background. Memory does not differ measurably: the
+spread between runs (stream buffers, artwork cache, PoToken web view) is far larger than
+what the switched-off features hold (a 320 px blurred backdrop and three 64 px glow
+images per recent track, the colour seeds); the artwork cache size (48 MiB) is not a
+setting. One Default run without lyrics on screen measured 1.2 %.
 
 ### Release round: recognition, onboarding, packaging
 

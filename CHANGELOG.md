@@ -20,6 +20,30 @@ versions follow [SemVer](https://semver.org/).
 
 ### Added
 
+* **Customize theme** (Settings → Appearance): six presets (Standard, Midnight, Rosé,
+  Forest, High contrast, Artwork), accent colour (swatches, hex, hue / saturation),
+  darkness (dim → pure black), surface tint, contrast (standard / medium / high), corners
+  (sharp / regular / round), density (compact / regular / comfortable), any installed
+  font, a live preview and **Reset to default**. Accents too dark to read are lightened
+  automatically (WCAG contrast). With default settings the look is unchanged.
+* **Better dynamic theme**: a full Material-style palette from the artwork (accent,
+  secondary, tertiary, optional background tint) in four styles — vibrant, muted,
+  monochrome, true to artwork — with a strength slider and ~400 ms colour fades between
+  songs. Artwork colours are only analysed while the dynamic theme is on.
+* **Profiles**: named looks to switch with one click (theme, Customize theme, Now
+  Playing, lyrics display, player bar style); new / duplicate / rename / delete /
+  import / export. Built in: **Default** and **Minimal / Fast** (no artwork colour
+  analysis, no colour fades, plain Now Playing on a solid background, no lyrics
+  animation, translation or romanization — about 1 % CPU with Now Playing open instead
+  of ~9 %).
+* **Backup & sync** (Settings): **Export / Import settings** as JSON with a preview of
+  every change by section, never including passwords, keys, cookies or the account;
+  older and newer files are handled. **Theme files** (`.tunedesk-theme.json`) share just
+  the look.
+* **Download all** on Liked songs, library songs, playlists and albums, with progress
+  ("Downloading 3 of 12", Cancel) and **Remove downloads** once everything is stored.
+  Settings → Storage: **Download liked songs** and **Remove download when unliked**.
+
 * **The app speaks 18 languages**: English, German, Spanish, Brazilian Portuguese,
   French, Italian, Dutch, Polish, Russian, Ukrainian, Turkish, Indonesian, Vietnamese,
   Japanese, Korean, Simplified and Traditional Chinese, and Hindi — every screen, menu,

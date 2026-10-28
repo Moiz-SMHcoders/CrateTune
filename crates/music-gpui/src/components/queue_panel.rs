@@ -40,7 +40,7 @@ impl Render for DraggedItem {
         div()
             .px_3()
             .py_1p5()
-            .rounded(px(6.))
+            .rounded(crate::theme::radius(6.))
             .bg(theme.popover)
             .border_1()
             .border_color(theme.border)
@@ -232,7 +232,12 @@ impl MusicApp {
         kind: Kind,
         cx: &mut Context<Self>,
     ) -> AnyElement {
-        let art = artwork(track.artwork_url(120), px(40.), px(5.), cx);
+        let art = artwork(
+            track.artwork_url(120),
+            px(40.),
+            crate::theme::radius(5.),
+            cx,
+        );
         let theme = cx.theme();
         let colors = AppColors::get(cx);
         let (hover, muted, drop_bg) = (theme.list_hover, theme.muted_foreground, theme.drop_target);
@@ -247,7 +252,7 @@ impl MusicApp {
             .px_2()
             .py_1p5()
             .gap_3()
-            .rounded(px(6.))
+            .rounded(crate::theme::radius(6.))
             .cursor_pointer()
             .when(current, |this| this.bg(colors.accent_soft))
             .hover(move |s| s.bg(hover))

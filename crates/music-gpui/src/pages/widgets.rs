@@ -92,7 +92,7 @@ pub fn placeholder_art(icon: Lucide, side: f32, cx: &gpui::App) -> gpui::Div {
     div()
         .size(px(side))
         .flex_none()
-        .rounded(px(8.))
+        .rounded(crate::theme::radius(8.))
         .bg(theme.muted)
         .flex()
         .items_center()

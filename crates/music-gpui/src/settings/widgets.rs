@@ -8,9 +8,9 @@ use gpui_component::{ActiveTheme as _, h_flex, input::Input, v_flex};
 /// A titled group inside a section.
 pub fn group(title: impl Into<SharedString>, cx: &App) -> gpui::Div {
     v_flex()
-        .gap_2()
-        .p_4()
-        .rounded(px(10.))
+        .gap(crate::theme::space(8.))
+        .p(crate::theme::space(16.))
+        .rounded(crate::theme::radius(10.))
         .border_1()
         .border_color(cx.theme().border)
         .child(section_title(title))

@@ -154,7 +154,7 @@ impl RecognitionPage {
             .items_center()
             .gap(px(if compact { 8. } else { 16. }))
             .py(px(if compact { 16. } else { 24. }))
-            .rounded(px(16.))
+            .rounded(crate::theme::radius(16.))
             .border_1()
             .border_color(border)
             .child(
@@ -228,7 +228,12 @@ impl RecognitionPage {
         cx: &mut Context<Self>,
     ) -> AnyElement {
         let muted = cx.theme().muted_foreground;
-        let art = artwork(song.artwork().map(str::to_owned), px(168.), px(10.), cx);
+        let art = artwork(
+            song.artwork().map(str::to_owned),
+            px(168.),
+            crate::theme::radius(10.),
+            cx,
+        );
         let best = matches.ready().and_then(|m| m.first().cloned());
         let detail = [
             song.album.clone(),
@@ -484,7 +489,7 @@ impl RecognitionPage {
             .px_2()
             .py_1p5()
             .gap_3()
-            .rounded(px(8.))
+            .rounded(crate::theme::radius(8.))
             .cursor_pointer()
             .hover(move |s| s.bg(hover))
             .on_click(open)

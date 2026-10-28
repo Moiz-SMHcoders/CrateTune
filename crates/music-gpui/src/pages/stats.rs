@@ -98,7 +98,7 @@ fn totals_row(totals: &ListeningTotals, cx: &App) -> impl IntoElement + use<> {
             .min_w(px(132.))
             .p_4()
             .gap_1()
-            .rounded(px(10.))
+            .rounded(crate::theme::radius(10.))
             .bg(bg)
             .child(div().text_2xl().font_weight(FontWeight::BOLD).child(value))
             .child(div().text_xs().text_color(muted).child(label))
@@ -151,14 +151,14 @@ fn bars(values: &[u64], labels: &[String], height: f32, cx: &App) -> impl IntoEl
                         .flex()
                         .flex_col()
                         .justify_end()
-                        .rounded(px(3.))
+                        .rounded(crate::theme::radius(3.))
                         .bg(track.opacity(0.35))
                         .when(v > 0, |this| {
                             this.child(
                                 div()
                                     .w_full()
                                     .h(relative(frac.max(0.02)))
-                                    .rounded(px(3.))
+                                    .rounded(crate::theme::radius(3.))
                                     .bg(accent),
                             )
                         }),
@@ -488,7 +488,7 @@ impl Render for YearInMusicPage {
                         .max_w(px(320.))
                         .p_4()
                         .gap_1()
-                        .rounded(px(10.))
+                        .rounded(crate::theme::radius(10.))
                         .bg(bg)
                         .child(div().text_xs().text_color(muted).child(detail))
                         .child(

@@ -93,7 +93,7 @@ impl Render for ExplorePage {
                 .w(px(220.))
                 .p_4()
                 .gap_3()
-                .rounded(px(12.))
+                .rounded(crate::theme::radius(12.))
                 .bg(bg)
                 .cursor_pointer()
                 .hover(move |s| s.bg(hover))

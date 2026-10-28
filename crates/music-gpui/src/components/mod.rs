@@ -14,6 +14,7 @@
 
 pub mod artwork;
 pub mod card;
+pub mod download_header;
 pub mod items;
 pub mod like;
 pub mod player_bar;
