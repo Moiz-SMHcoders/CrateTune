@@ -1,0 +1,41 @@
+# Player bar: progress styles, background effects, tooltips, and the
+# Appearance → Player bar settings group (fr).
+
+bar.style.standard = Standard
+bar.style.thick = Épaisse
+bar.style.simple = Simple
+bar.style.wavy = Ondulée
+bar.style.equalizer = Égaliseur
+bar.background.glow = Halo de la pochette
+bar.background.dynamic_gradient = Dégradé dynamique
+bar.background.pulse = Pulsation
+bar.direction.left_to_right = De gauche à droite
+bar.direction.right_to_left = De droite à gauche
+bar.direction.diagonal = Diagonale
+bar.tooltip.play = Lecture (Espace)
+bar.tooltip.pause = Pause (Espace)
+bar.tooltip.mute = Couper le son
+bar.tooltip.unmute = Rétablir le son
+bar.tooltip.lyrics = Paroles
+bar.tooltip.show_remaining = Afficher le temps restant
+bar.tooltip.show_length = Afficher la durée
+bar.volume_percent = {percent} %
+settings.bar.group = Barre du lecteur
+settings.bar.progress_style = Style de la barre de progression
+settings.bar.peak_caps = Repères de crête
+settings.bar.peak_caps_note = Style égaliseur : petits repères des crêtes récentes.
+settings.bar.background_effect = L'arrière-plan réagit à la lecture
+settings.bar.background_effect_note = Couleur de la pochette derrière la barre.
+settings.bar.background_style = Style de l'arrière-plan
+settings.bar.dim_when_paused = Atténuer en pause
+settings.bar.gradient_direction = Direction du dégradé
+settings.bar.gradient_intensity = Intensité du dégradé
+settings.bar.intensity_value = {percent} %
+settings.bar.animate_gradient = Animer le dégradé
+settings.bar.animate_gradient_note = Une lente dérive pendant la lecture (environ 13 images par seconde).
+settings.bar.show_remaining = Afficher le temps restant
+settings.bar.scroll_volume = Défiler pour changer le volume
+settings.bar.mini_follows = Même apparence dans le mini-lecteur
+settings.bar.np_visualizer = Visualiseur dans À l'écoute
+settings.bar.np_visualizer_note = Une fine bande de spectre en bas de l'écran.
+settings.bar.cpu_note = La barre est statique par défaut. Ondulée, Égaliseur, Pulsation, un dégradé animé et le visualiseur de À l'écoute se redessinent environ 13 à 22 fois par seconde pendant la lecture (quelques pour cent du processeur) et s'arrêtent en pause.

@@ -1,0 +1,41 @@
+# Player bar: progress styles, background effects, tooltips, and the
+# Appearance → Player bar settings group (it).
+
+bar.style.standard = Standard
+bar.style.thick = Spessa
+bar.style.simple = Semplice
+bar.style.wavy = Ondulata
+bar.style.equalizer = Equalizzatore
+bar.background.glow = Alone della copertina
+bar.background.dynamic_gradient = Gradiente dinamico
+bar.background.pulse = Pulsazione
+bar.direction.left_to_right = Da sinistra a destra
+bar.direction.right_to_left = Da destra a sinistra
+bar.direction.diagonal = Diagonale
+bar.tooltip.play = Riproduci (Spazio)
+bar.tooltip.pause = Pausa (Spazio)
+bar.tooltip.mute = Disattiva audio
+bar.tooltip.unmute = Riattiva audio
+bar.tooltip.lyrics = Testo
+bar.tooltip.show_remaining = Mostra tempo rimanente
+bar.tooltip.show_length = Mostra durata
+bar.volume_percent = {percent} %
+settings.bar.group = Barra del lettore
+settings.bar.progress_style = Stile della barra di avanzamento
+settings.bar.peak_caps = Indicatori di picco
+settings.bar.peak_caps_note = Stile equalizzatore: piccoli segni con i picchi recenti.
+settings.bar.background_effect = Lo sfondo reagisce alla riproduzione
+settings.bar.background_effect_note = Colore della copertina dietro la barra.
+settings.bar.background_style = Stile dello sfondo
+settings.bar.dim_when_paused = Attenua in pausa
+settings.bar.gradient_direction = Direzione del gradiente
+settings.bar.gradient_intensity = Intensità del gradiente
+settings.bar.intensity_value = {percent} %
+settings.bar.animate_gradient = Anima il gradiente
+settings.bar.animate_gradient_note = Un lento movimento durante la riproduzione (circa 13 fotogrammi al secondo).
+settings.bar.show_remaining = Mostra tempo rimanente
+settings.bar.scroll_volume = Scorri per cambiare il volume
+settings.bar.mini_follows = Stesso aspetto nel mini lettore
+settings.bar.np_visualizer = Visualizzatore in In riproduzione
+settings.bar.np_visualizer_note = Una sottile striscia di spettro lungo il bordo inferiore.
+settings.bar.cpu_note = La barra è statica per impostazione predefinita. Ondulata, Equalizzatore, Pulsazione, un gradiente animato e il visualizzatore di In riproduzione si ridisegnano circa 13–22 volte al secondo durante la riproduzione (pochi punti percentuali di CPU) e si fermano in pausa.

@@ -1,0 +1,41 @@
+# Player bar: progress styles, background effects, tooltips, and the
+# Appearance → Player bar settings group (zh-CN).
+
+bar.style.standard = 标准
+bar.style.thick = 粗
+bar.style.simple = 简洁
+bar.style.wavy = 波浪
+bar.style.equalizer = 均衡器
+bar.background.glow = 封面光晕
+bar.background.dynamic_gradient = 动态渐变
+bar.background.pulse = 脉动
+bar.direction.left_to_right = 从左到右
+bar.direction.right_to_left = 从右到左
+bar.direction.diagonal = 对角
+bar.tooltip.play = 播放（空格）
+bar.tooltip.pause = 暂停（空格）
+bar.tooltip.mute = 静音
+bar.tooltip.unmute = 取消静音
+bar.tooltip.lyrics = 歌词
+bar.tooltip.show_remaining = 显示剩余时间
+bar.tooltip.show_length = 显示歌曲时长
+bar.volume_percent = {percent}%
+settings.bar.group = 播放栏
+settings.bar.progress_style = 进度条样式
+settings.bar.peak_caps = 峰值标记
+settings.bar.peak_caps_note = 均衡器样式：用小标记显示最近的峰值。
+settings.bar.background_effect = 背景随播放变化
+settings.bar.background_effect_note = 在播放栏后显示封面的颜色。
+settings.bar.background_style = 背景样式
+settings.bar.dim_when_paused = 暂停时变暗
+settings.bar.gradient_direction = 渐变方向
+settings.bar.gradient_intensity = 渐变强度
+settings.bar.intensity_value = {percent}%
+settings.bar.animate_gradient = 渐变动画
+settings.bar.animate_gradient_note = 播放时缓慢流动（约每秒 13 帧）。
+settings.bar.show_remaining = 显示剩余时间
+settings.bar.scroll_volume = 滚动以调节音量
+settings.bar.mini_follows = 迷你播放器使用相同外观
+settings.bar.np_visualizer = 正在播放中的可视化效果
+settings.bar.np_visualizer_note = 沿底部边缘显示一条细细的频谱带。
+settings.bar.cpu_note = 播放栏默认是静态的。波浪、均衡器、脉动、动画渐变以及正在播放的可视化效果在播放时每秒重绘约 13–22 次（占用几个百分点的 CPU），暂停后停止。

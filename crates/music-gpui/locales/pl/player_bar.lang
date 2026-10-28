@@ -1,0 +1,41 @@
+# Player bar: progress styles, background effects, tooltips, and the
+# Appearance → Player bar settings group (pl).
+
+bar.style.standard = Standardowy
+bar.style.thick = Gruby
+bar.style.simple = Prosty
+bar.style.wavy = Falisty
+bar.style.equalizer = Korektor
+bar.background.glow = Poświata okładki
+bar.background.dynamic_gradient = Dynamiczny gradient
+bar.background.pulse = Puls
+bar.direction.left_to_right = Od lewej do prawej
+bar.direction.right_to_left = Od prawej do lewej
+bar.direction.diagonal = Ukośny
+bar.tooltip.play = Odtwórz (Spacja)
+bar.tooltip.pause = Wstrzymaj (Spacja)
+bar.tooltip.mute = Wycisz
+bar.tooltip.unmute = Wyłącz wyciszenie
+bar.tooltip.lyrics = Tekst
+bar.tooltip.show_remaining = Pokaż pozostały czas
+bar.tooltip.show_length = Pokaż długość utworu
+bar.volume_percent = {percent}%
+settings.bar.group = Pasek odtwarzacza
+settings.bar.progress_style = Styl paska postępu
+settings.bar.peak_caps = Znaczniki szczytów
+settings.bar.peak_caps_note = Styl korektora: małe znaczniki ostatnich szczytów.
+settings.bar.background_effect = Tło reaguje na odtwarzanie
+settings.bar.background_effect_note = Kolor z okładki za paskiem.
+settings.bar.background_style = Styl tła
+settings.bar.dim_when_paused = Przyciemnij po wstrzymaniu
+settings.bar.gradient_direction = Kierunek gradientu
+settings.bar.gradient_intensity = Intensywność gradientu
+settings.bar.intensity_value = {percent}%
+settings.bar.animate_gradient = Animuj gradient
+settings.bar.animate_gradient_note = Powolny ruch podczas odtwarzania (około 13 klatek na sekundę).
+settings.bar.show_remaining = Pokaż pozostały czas
+settings.bar.scroll_volume = Przewijanie zmienia głośność
+settings.bar.mini_follows = Taki sam wygląd w miniodtwarzaczu
+settings.bar.np_visualizer = Wizualizacja w Teraz odtwarzane
+settings.bar.np_visualizer_note = Wąski pasek widma przy dolnej krawędzi.
+settings.bar.cpu_note = Pasek jest domyślnie statyczny. Falisty, Korektor, Puls, animowany gradient i wizualizacja w Teraz odtwarzane odświeżają się około 13–22 razy na sekundę podczas odtwarzania (kilka procent CPU) i zatrzymują się po wstrzymaniu.

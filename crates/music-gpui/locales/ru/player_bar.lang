@@ -1,0 +1,41 @@
+# Player bar: progress styles, background effects, tooltips, and the
+# Appearance → Player bar settings group (ru).
+
+bar.style.standard = Стандартный
+bar.style.thick = Толстый
+bar.style.simple = Простой
+bar.style.wavy = Волна
+bar.style.equalizer = Эквалайзер
+bar.background.glow = Свечение обложки
+bar.background.dynamic_gradient = Динамический градиент
+bar.background.pulse = Пульс
+bar.direction.left_to_right = Слева направо
+bar.direction.right_to_left = Справа налево
+bar.direction.diagonal = По диагонали
+bar.tooltip.play = Воспроизвести (Пробел)
+bar.tooltip.pause = Пауза (Пробел)
+bar.tooltip.mute = Выключить звук
+bar.tooltip.unmute = Включить звук
+bar.tooltip.lyrics = Текст
+bar.tooltip.show_remaining = Показывать оставшееся время
+bar.tooltip.show_length = Показывать длительность
+bar.volume_percent = {percent} %
+settings.bar.group = Панель плеера
+settings.bar.progress_style = Стиль полосы прогресса
+settings.bar.peak_caps = Метки пиков
+settings.bar.peak_caps_note = Стиль «Эквалайзер»: маленькие метки недавних пиков.
+settings.bar.background_effect = Фон реагирует на воспроизведение
+settings.bar.background_effect_note = Цвет обложки за панелью.
+settings.bar.background_style = Стиль фона
+settings.bar.dim_when_paused = Приглушать на паузе
+settings.bar.gradient_direction = Направление градиента
+settings.bar.gradient_intensity = Интенсивность градиента
+settings.bar.intensity_value = {percent} %
+settings.bar.animate_gradient = Анимировать градиент
+settings.bar.animate_gradient_note = Медленное движение во время воспроизведения (около 13 кадров в секунду).
+settings.bar.show_remaining = Показывать оставшееся время
+settings.bar.scroll_volume = Менять громкость прокруткой
+settings.bar.mini_follows = Тот же вид в мини-плеере
+settings.bar.np_visualizer = Визуализатор в «Сейчас играет»
+settings.bar.np_visualizer_note = Тонкая полоса спектра вдоль нижнего края.
+settings.bar.cpu_note = По умолчанию панель статична. Волна, Эквалайзер, Пульс, анимированный градиент и визуализатор в «Сейчас играет» перерисовываются примерно 13–22 раза в секунду во время воспроизведения (несколько процентов CPU) и останавливаются на паузе.

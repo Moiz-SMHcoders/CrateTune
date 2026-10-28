@@ -1,0 +1,41 @@
+# Player bar: progress styles, background effects, tooltips, and the
+# Appearance → Player bar settings group (uk).
+
+bar.style.standard = Стандартний
+bar.style.thick = Товстий
+bar.style.simple = Простий
+bar.style.wavy = Хвиля
+bar.style.equalizer = Еквалайзер
+bar.background.glow = Сяйво обкладинки
+bar.background.dynamic_gradient = Динамічний градієнт
+bar.background.pulse = Пульс
+bar.direction.left_to_right = Зліва направо
+bar.direction.right_to_left = Справа наліво
+bar.direction.diagonal = Діагонально
+bar.tooltip.play = Відтворити (Пробіл)
+bar.tooltip.pause = Пауза (Пробіл)
+bar.tooltip.mute = Вимкнути звук
+bar.tooltip.unmute = Увімкнути звук
+bar.tooltip.lyrics = Текст
+bar.tooltip.show_remaining = Показувати залишок часу
+bar.tooltip.show_length = Показувати тривалість
+bar.volume_percent = {percent} %
+settings.bar.group = Панель плеєра
+settings.bar.progress_style = Стиль смуги прогресу
+settings.bar.peak_caps = Мітки піків
+settings.bar.peak_caps_note = Стиль «Еквалайзер»: маленькі мітки нещодавніх піків.
+settings.bar.background_effect = Тло реагує на відтворення
+settings.bar.background_effect_note = Колір обкладинки за панеллю.
+settings.bar.background_style = Стиль тла
+settings.bar.dim_when_paused = Приглушувати на паузі
+settings.bar.gradient_direction = Напрямок градієнта
+settings.bar.gradient_intensity = Інтенсивність градієнта
+settings.bar.intensity_value = {percent} %
+settings.bar.animate_gradient = Анімувати градієнт
+settings.bar.animate_gradient_note = Повільний рух під час відтворення (близько 13 кадрів на секунду).
+settings.bar.show_remaining = Показувати залишок часу
+settings.bar.scroll_volume = Змінювати гучність прокручуванням
+settings.bar.mini_follows = Такий самий вигляд у мініплеєрі
+settings.bar.np_visualizer = Візуалізатор у «Зараз грає»
+settings.bar.np_visualizer_note = Тонка смуга спектра вздовж нижнього краю.
+settings.bar.cpu_note = Типово панель статична. Хвиля, Еквалайзер, Пульс, анімований градієнт і візуалізатор у «Зараз грає» перемальовуються приблизно 13–22 рази на секунду під час відтворення (кілька відсотків CPU) і зупиняються на паузі.

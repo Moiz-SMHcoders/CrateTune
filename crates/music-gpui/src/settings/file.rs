@@ -77,6 +77,8 @@ pub struct Settings {
     pub ai_filter: crate::integrations::config::AiFilterPrefs,
     /// Chromecast.
     pub cast: crate::integrations::config::CastPrefs,
+    /// Player bar look: progress style, background effect, … (`bar_prefs.rs`).
+    pub player_bar: super::bar_prefs::PlayerBarConfig,
     /// The first-run guide was finished or skipped. Missing in files from before the
     /// guide existed: those users count as onboarded; a fresh install starts `false`.
     #[serde(default = "onboarded_default")]
@@ -111,6 +113,7 @@ impl Default for Settings {
             spotify: Default::default(),
             ai_filter: Default::default(),
             cast: Default::default(),
+            player_bar: Default::default(),
             onboarded: true,
             secrets: FileSecrets::default(),
         }
@@ -596,6 +599,7 @@ impl Settings {
         self.audio.normalize();
         self.lyrics.normalize();
         self.scrobble_rules.normalize();
+        self.player_bar.normalize();
     }
 
     pub fn from_json(text: &str) -> serde_json::Result<Self> {

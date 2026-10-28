@@ -1,0 +1,58 @@
+# Player bar: progress styles, background effects, tooltips, and the
+# Appearance → Player bar settings group.
+
+# ---- Progress bar styles (keep short: they are buttons in a row)
+bar.style.standard = Standard
+bar.style.thick = Thick
+bar.style.simple = Simple
+# An animated sine wave on the played part.
+bar.style.wavy = Wavy
+# The progress bar drawn as spectrum bars of the music.
+bar.style.equalizer = Equalizer
+
+# ---- Background effect styles (buttons)
+# A soft tint of the blurred album artwork.
+bar.background.glow = Artwork glow
+# A gradient in the colours of the album artwork.
+bar.background.dynamic_gradient = Dynamic gradient
+# A glow that follows the music's loudness.
+bar.background.pulse = Pulse
+
+# ---- Dynamic gradient direction (buttons)
+bar.direction.left_to_right = Left to right
+bar.direction.right_to_left = Right to left
+bar.direction.diagonal = Diagonal
+
+# ---- Tooltips
+bar.tooltip.play = Play (Space)
+bar.tooltip.pause = Pause (Space)
+bar.tooltip.mute = Mute
+bar.tooltip.unmute = Unmute
+bar.tooltip.lyrics = Lyrics
+# On the time at the right of the progress bar.
+bar.tooltip.show_remaining = Show remaining time
+bar.tooltip.show_length = Show song length
+# Bubble over the volume slider; {percent} is 0–100.
+bar.volume_percent = {percent} %
+
+# ---- Settings → Appearance → Player bar
+settings.bar.group = Player bar
+settings.bar.progress_style = Progress bar style
+settings.bar.peak_caps = Peak markers
+settings.bar.peak_caps_note = Equalizer style: small caps that show recent peaks.
+settings.bar.background_effect = Background reacts to playback
+settings.bar.background_effect_note = Colour from the artwork behind the bar.
+settings.bar.background_style = Background style
+settings.bar.dim_when_paused = Dim when paused
+settings.bar.gradient_direction = Gradient direction
+settings.bar.gradient_intensity = Gradient intensity
+# A button per strength; {percent} is a number.
+settings.bar.intensity_value = {percent} %
+settings.bar.animate_gradient = Animate gradient
+settings.bar.animate_gradient_note = A slow drift while music plays (about 13 frames a second).
+settings.bar.show_remaining = Show remaining time
+settings.bar.scroll_volume = Scroll to change the volume
+settings.bar.mini_follows = Same look in the mini player
+settings.bar.np_visualizer = Visualizer in Now Playing
+settings.bar.np_visualizer_note = A thin spectrum strip along the bottom edge.
+settings.bar.cpu_note = The bar is static by default. Wavy, Equalizer, Pulse, an animated gradient and the Now Playing visualizer redraw about 13–22 times a second while music plays (a few percent of CPU) and stop when it pauses.

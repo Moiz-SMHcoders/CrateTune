@@ -1,0 +1,41 @@
+# Player bar: progress styles, background effects, tooltips, and the
+# Appearance → Player bar settings group (es).
+
+bar.style.standard = Estándar
+bar.style.thick = Gruesa
+bar.style.simple = Simple
+bar.style.wavy = Ondulada
+bar.style.equalizer = Ecualizador
+bar.background.glow = Brillo de la portada
+bar.background.dynamic_gradient = Degradado dinámico
+bar.background.pulse = Pulso
+bar.direction.left_to_right = De izquierda a derecha
+bar.direction.right_to_left = De derecha a izquierda
+bar.direction.diagonal = Diagonal
+bar.tooltip.play = Reproducir (Espacio)
+bar.tooltip.pause = Pausa (Espacio)
+bar.tooltip.mute = Silenciar
+bar.tooltip.unmute = Activar sonido
+bar.tooltip.lyrics = Letra
+bar.tooltip.show_remaining = Mostrar tiempo restante
+bar.tooltip.show_length = Mostrar duración
+bar.volume_percent = {percent} %
+settings.bar.group = Barra del reproductor
+settings.bar.progress_style = Estilo de la barra de progreso
+settings.bar.peak_caps = Marcas de pico
+settings.bar.peak_caps_note = Estilo ecualizador: pequeñas marcas con los picos recientes.
+settings.bar.background_effect = El fondo reacciona a la reproducción
+settings.bar.background_effect_note = Color de la portada detrás de la barra.
+settings.bar.background_style = Estilo del fondo
+settings.bar.dim_when_paused = Atenuar en pausa
+settings.bar.gradient_direction = Dirección del degradado
+settings.bar.gradient_intensity = Intensidad del degradado
+settings.bar.intensity_value = {percent} %
+settings.bar.animate_gradient = Animar degradado
+settings.bar.animate_gradient_note = Un movimiento lento mientras suena la música (unos 13 fotogramas por segundo).
+settings.bar.show_remaining = Mostrar tiempo restante
+settings.bar.scroll_volume = Desplazar para cambiar el volumen
+settings.bar.mini_follows = Mismo aspecto en el minirreproductor
+settings.bar.np_visualizer = Visualizador en Reproduciendo
+settings.bar.np_visualizer_note = Una fina franja de espectro en el borde inferior.
+settings.bar.cpu_note = La barra es estática por defecto. Ondulada, Ecualizador, Pulso, un degradado animado y el visualizador de Reproduciendo se redibujan unas 13–22 veces por segundo mientras suena la música (un pequeño porcentaje de CPU) y se detienen en pausa.
