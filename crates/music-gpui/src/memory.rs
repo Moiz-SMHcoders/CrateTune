@@ -1,20 +1,23 @@
 //! Process-wide memory tuning (macOS).
 //!
-//! The macOS allocator keeps freed memory for reuse instead of handing it
-//! back: freed blocks of 1 KiB and up stay dirty (and count towards the
-//! process footprint that Activity Monitor shows) until the same sizes are
-//! allocated again, and freed blocks of ~128 KiB and up sit in a cache that
-//! is never trimmed. A process that once needed a lot — parsing a 4 MB player
-//! script in the challenge solver, decoding artwork, parsing large InnerTube
-//! responses — keeps that peak for the rest of its life, which made the
-//! footprint vary by 100–150 MB between identical runs.
+//! The macOS allocator (measured on macOS 26) keeps freed memory for reuse
+//! instead of handing it back, and it all counts towards the footprint that
+//! Activity Monitor shows: of 200 MB freed in 1–32 KiB blocks, 80–115 MB
+//! stay dirty; freed blocks of ~128 KiB and more (tested up to 32 MB) stay
+//! completely, in a cache that is not trimmed — not by `malloc_zone_pressure_relief`
+//! either, and destroying a private zone doesn't return what was freed in it.
+//! So the process kept every peak: preprocessing the 4 MB player script in the
+//! challenge solver (QuickJS churns through hundreds of MB), decoding artwork,
+//! parsing InnerTube responses. That is why the footprint varied by 100–150 MB
+//! between identical runs.
 //!
-//! `MallocSpaceEfficient=1` switches libmalloc to returning free pages to the
-//! system promptly. It is read once, when the process starts, so the app
-//! re-executes itself with the variable set (≈5 ms, before any thread exists);
-//! the macOS bundle sets it in `Info.plist` (`LSEnvironment`) so that a normal
-//! launch needs no re-exec. `MUSIC_MALLOC=system` keeps the default allocator
-//! behaviour (for comparisons).
+//! `MallocSpaceEfficient=1` makes libmalloc return free pages to the system
+//! promptly (the same test keeps 2 MB). It is read once, when the process
+//! starts, so the app re-executes itself with the variable set (≈10 ms, before
+//! any thread exists); the macOS bundle sets it in `Info.plist`
+//! (`LSEnvironment`) so that a launch from Finder needs no re-exec. Drawing a
+//! frame got no slower (`@bench`: 0.8 ms instead of 1.2 ms per Now Playing
+//! frame). `MUSIC_MALLOC=system` keeps the default behaviour (comparisons).
 
 /// Re-executes the process with the space-efficient allocator unless it is
 /// already active (or opted out). Call first thing in `main`.

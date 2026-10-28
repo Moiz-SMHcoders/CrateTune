@@ -479,8 +479,11 @@ fn solve_job(
 ///
 /// Parsing a ~3 MB player script churns through hundreds of MB; in the default
 /// zone that leaves ~100 MB of fragmented pages behind that macOS never reclaims.
-/// Destroying a dedicated zone returns all of it at once. Elsewhere the engine
-/// uses the system allocator.
+/// Destroying a dedicated zone returns what is still allocated in it at once.
+/// (On macOS 26 what QuickJS frees *before* the zone is destroyed is kept by the
+/// allocator like any freed memory; the app runs with `MallocSpaceEfficient=1`
+/// for that, see `music-gpui/src/memory.rs`.) Elsewhere the engine uses the
+/// system allocator.
 mod zone {
     #[cfg(target_os = "macos")]
     mod imp {
