@@ -1,0 +1,85 @@
+# Now Playing screen, lyrics pane, lyrics card dialog (Ukrainian).
+
+# ---- Header
+np.close_tooltip = Закрити (Esc)
+np.header = ЗАРАЗ ГРАЄ
+np.demo_clock = Демогодинник
+np.buffering = Буферизація…
+np.preview = Фрагмент
+np.speed = {speed}×
+np.sleep_tooltip = Таймер сну
+np.layout_tooltip = Дизайн і тло
+np.menu.design = Дизайн
+np.menu.background = Тло
+
+# ---- Player
+np.up_next = Далі
+np.playing_from = ВІДТВОРЕННЯ З
+np.your_queue = Ваша черга
+np.of_total = з {total}
+np.editorial.header_album = ЗАРАЗ ГРАЄ  ·  {album}
+np.editorial.play = ГРАТИ
+np.editorial.pause = ПАУЗА
+np.editorial.loading = ЗАВАНТАЖЕННЯ
+np.queue.title = ДАЛІ
+np.queue.more.one = ще +{count}
+np.queue.more.few = ще +{count}
+np.queue.more.many = ще +{count}
+np.queue.more.other = ще +{count}
+np.queue.empty = Черга порожня. Додайте пісні зі списку або ввімкніть автовідтворення.
+
+# ---- Lyrics pane
+lyrics.nothing_playing = Нічого не грає
+lyrics.loading = Завантаження тексту…
+lyrics.missing_title = Немає тексту
+lyrics.missing_detail = Жодне з увімкнених джерел текстів не має цього треку.
+lyrics.failed = Не вдалося завантажити текст
+lyrics.translating = Переклад…
+lyrics.translation_failed = Не вдалося перекласти: {error}
+lyrics.kind.word = Синхронізація за словами
+lyrics.kind.line = Синхронізація за рядками
+lyrics.kind.plain = Без синхронізації
+lyrics.source = {provider} · {kind}
+lyrics.select_hint.one = Виберіть до {count} рядка для картки
+lyrics.select_hint.few = Виберіть до {count} рядків для картки
+lyrics.select_hint.many = Виберіть до {count} рядків для картки
+lyrics.select_hint.other = Виберіть до {count} рядка для картки
+lyrics.selected.one = Вибрано {count} рядок
+lyrics.selected.few = Вибрано {count} рядки
+lyrics.selected.many = Вибрано {count} рядків
+lyrics.selected.other = Вибрано {count} рядка
+lyrics.create_card = Створити картку…
+lyrics.share_tooltip = Поділитися текстом як карткою
+lyrics.translation_on = Переклад: увімк.
+lyrics.translation_off = Переклад: вимк.
+lyrics.reload_tooltip = Шукати в джерелах знову
+
+# ---- Lyrics card dialog
+card.dialog_title = Картка з текстом
+card.row.background = Тло
+card.row.text = Текст
+card.row.size = Розмір
+card.row.shape = Формат
+card.row.cover = Обкладинка
+card.cover.show = Показати
+card.cover.hide = Сховати
+card.save = Зберегти зображення…
+card.copy = Копіювати зображення
+card.copying = Копіювання…
+card.copied = Скопійовано в буфер обміну
+card.saved = Збережено {path}
+card.save_failed = Не вдалося зберегти: {error}
+card.draw_failed = Не вдалося намалювати картку: {error}
+card.aspect.square = Квадрат
+card.aspect.portrait = Портрет
+card.aspect.story = Сторіз
+card.bg.blur = Розмита обкладинка
+card.bg.album = Колір альбому
+card.bg.dark = Темне
+card.bg.light = Світле
+card.align.left = Ліворуч
+card.align.center = По центру
+card.align.right = Праворуч
+card.size.small = Малий
+card.size.medium = Середній
+card.size.large = Великий

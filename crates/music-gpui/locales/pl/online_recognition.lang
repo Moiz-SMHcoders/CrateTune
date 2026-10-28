@@ -1,0 +1,44 @@
+# Music recognition page (Polish).
+
+recognition.title = Rozpoznaj muzykę
+recognition.subtitle = Rozpoznaj utwór, który gra wokół Ciebie (⇧⌘R)
+
+recognition.idle.title = Kliknij, aby rozpoznać utwór
+recognition.idle.detail = Odtwórz utwór w pobliżu komputera; aplikacja słucha przez mikrofon przez około 10 sekund.
+recognition.permission.title = Oczekiwanie na dostęp do mikrofonu…
+recognition.permission.detail = Zezwól na dostęp w oknie systemowym.
+recognition.listening = Słucham…
+recognition.listening_progress = {elapsed} z {length} s
+recognition.identifying.title = Rozpoznawanie…
+recognition.identifying.detail = Dopasowywanie nagrania.
+recognition.failed = Nie udało się rozpoznać
+recognition.open_privacy_settings = Otwórz ustawienia prywatności
+
+recognition.mic.restricted = Dostęp do mikrofonu jest ograniczony na tym komputerze.
+recognition.mic.undetermined = Nie przyznano jeszcze dostępu do mikrofonu. Spróbuj ponownie i zezwól, gdy pojawi się pytanie.
+recognition.mic.denied = Dostęp do mikrofonu dla {app} jest wyłączony. Zezwól na niego w Ustawienia systemowe → Prywatność i ochrona → Mikrofon.
+recognition.error.no_microphone = Nie znaleziono mikrofonu
+recognition.error.permission_denied = Odmówiono dostępu do mikrofonu
+recognition.error.silent = Mikrofon przekazuje tylko ciszę (czy dostęp do mikrofonu jest dozwolony?)
+recognition.error.capture = Nagrywanie nie powiodło się: {error}
+recognition.error.cancelled = Anulowano
+recognition.error.no_signature = Nie słychać żadnej muzyki
+recognition.error.no_match = Nie znaleziono dopasowania
+recognition.error.rate_limited = Zbyt wiele żądań — spróbuj ponownie za minutę
+recognition.error.service = Błąd usługi rozpoznawania (HTTP {status})
+recognition.error.network = Błąd sieci: {error}
+recognition.error.parse = Nieoczekiwana odpowiedź: {error}
+
+recognition.result.recognized = Rozpoznano
+recognition.result.from_history = Z historii rozpoznawania
+recognition.match.title = W YouTube Music
+recognition.match.searching = Szukanie w YouTube Music…
+recognition.match.failed = Wyszukiwanie w YouTube Music nie powiodło się: {error}
+recognition.match.none = Nie znaleziono w YouTube Music.
+
+recognition.history.title = Historia
+recognition.history.empty.title = Nic jeszcze nie rozpoznano
+recognition.history.empty.detail = Tutaj pojawią się rozpoznane utwory, od najnowszych.
+recognition.history.clear_title = Wyczyścić historię rozpoznawania?
+recognition.history.clear_detail = Lista rozpoznanych utworów zostanie usunięta.
+recognition.history.remove = Usuń z historii

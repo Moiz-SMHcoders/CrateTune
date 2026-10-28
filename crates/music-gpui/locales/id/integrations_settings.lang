@@ -1,0 +1,139 @@
+# ---- Shared
+settings.integrations.connected_as = Terhubung sebagai {user}
+
+# ---- Last.fm / ListenBrainz
+settings.integrations.lastfm_approve = Setujui aplikasi di browser Anda, lalu tekan Selesai.
+settings.integrations.finish = Selesai
+settings.integrations.forget_key = Lupakan kunci
+settings.integrations.api_key = Kunci API
+settings.integrations.shared_secret = Rahasia bersama
+settings.integrations.checking_token = Memeriksa token…
+settings.integrations.validate = Validasi
+settings.integrations.user_token = Token pengguna
+
+# ---- Discord
+settings.integrations.discord_title = Discord Rich Presence
+settings.integrations.discord_enter_id = Masukkan ID aplikasi Discord Anda.
+settings.integrations.discord_connected = Terhubung ke Discord
+settings.integrations.discord_unreachable = Discord tidak dapat dijangkau: {error}
+settings.integrations.discord_waiting = Menunggu pemutaran…
+settings.integrations.application_id = ID aplikasi
+discord.activity.title = Aktivitas
+discord.activity.type = Jenis
+discord.activity.name = Nama
+discord.activity.details = Detail
+discord.activity.state = Status
+discord.activity.placeholders_note = Placeholder: {title}, {artist}, {album}. Nama kosong menggunakan nama aplikasi Discord.
+discord.activity.large_image = Gambar besar
+discord.activity.small_image = Gambar kecil
+discord.activity.button = Tombol {number}
+discord.activity.label = Label
+discord.activity.url = URL
+discord.activity.show_paused = Tampilkan saat dijeda
+discord.activity.show_paused_desc = Mempertahankan aktivitas (tanpa waktu berjalan) saat pemutaran dijeda.
+discord.activity.custom_note = Gambar kustom adalah kunci aset aplikasi Discord Anda atau URL gambar. Tombol terlihat oleh orang lain, tidak oleh Anda sendiri.
+
+# ---- Scrobble rules
+scrobble.rules.title = Kapan lagu dihitung
+scrobble.rules.played = Diputar
+scrobble.rules.or_at_most = …atau paling lama
+scrobble.rules.ignore_under = Abaikan lagu di bawah
+scrobble.rules.percent = {percent}%
+scrobble.rules.note = Aturan Last.fm adalah 50% atau 4 menit, untuk lagu lebih dari 30 dtk. Berlaku untuk Last.fm dan ListenBrainz.
+scrobble.errors.other = Kesalahan scrobble ({count})
+settings.integrations.secrets = Rahasia: {store}
+settings.integrations.secrets_loading = Rahasia: memuat…
+settings.integrations.settings_path = Pengaturan: {path}
+settings.integrations.not_saved = Pengaturan tidak disimpan (tidak ada direktori konfigurasi)
+
+# ---- SponsorBlock
+settings.sponsorblock.categories = Kategori
+settings.sponsorblock.category_desc.music_offtopic = Obrolan, sketsa, dan bagian non-musik lainnya dalam video musik.
+settings.sponsorblock.category_desc.sponsor = Promosi berbayar.
+settings.sponsorblock.category_desc.intro = Jeda dan animasi intro tanpa konten.
+settings.sponsorblock.category_desc.outro = Kredit dan kartu akhir.
+settings.sponsorblock.category_desc.selfpromo = Promosi tidak berbayar: merchandise, donasi, shout-out.
+settings.sponsorblock.category_desc.interaction = Pengingat untuk like, subscribe, atau follow.
+settings.sponsorblock.category_desc.preview = Rekap dan pratinjau konten lain.
+settings.sponsorblock.category_desc.filler = Selingan yang bukan konten utama.
+settings.sponsorblock.category_desc.hook = Cuplikan dan sapaan di awal.
+settings.sponsorblock.using = Menggunakan {url}
+settings.sponsorblock.url_error = Memerlukan alamat https:// tanpa kredensial atau query
+settings.sponsorblock.skip_segments = Lewati segmen
+settings.sponsorblock.skip_segments_desc = Cari segmen yang ditandai komunitas di video setiap lagu dan lewati.
+settings.sponsorblock.when = Saat segmen dimulai
+settings.sponsorblock.when_desc = Langsung lewati, atau tampilkan tombol Lewati di bilah pemutar.
+settings.sponsorblock.mode_auto = Lewati otomatis
+settings.sponsorblock.mode_ask = Tanya
+settings.sponsorblock.notify = Beri tahu setelah melewati
+settings.sponsorblock.server = Server
+settings.sponsorblock.api_url = URL API
+settings.sponsorblock.use_default = Gunakan server bawaan
+settings.sponsorblock.forget = Lupakan segmen yang sudah dicari
+settings.sponsorblock.privacy = Privasi: hanya 4 karakter pertama dari hash SHA-256 ID video yang dikirim, sehingga server tidak bisa tahu lagu mana yang diputar. Segmen berasal dari sponsor.ajay.app (SponsorBlock, CC BY-NC-SA) kecuali Anda mengatur server lain.
+
+# ---- Music Together
+settings.together.you = Anda
+settings.together.display_name = Nama tampilan
+settings.together.name_placeholder = Nama Anda
+settings.together.display_name_note = Ditampilkan kepada orang lain dalam sesi.
+settings.together.hosting = Menjadi host
+settings.together.port = Port
+settings.together.port_error = Port harus antara 1024 dan 65535
+settings.together.allow_add_desc = Saran mereka masuk ke antrean Anda.
+settings.together.allow_control_desc = Putar, jeda, lompat, dan lewati untuk semua orang.
+settings.together.approval = Setujui tamu sebelum bergabung
+settings.together.hosting_note = Sesi berjalan di jaringan lokal Anda: tamu terhubung langsung ke komputer ini (izinkan koneksi masuk jika firewall meminta). Tautan berisi kunci acak; hanya orang yang memiliki tautan yang dapat bergabung. Perubahan langsung berlaku pada sesi yang sedang berjalan. Di halaman Dengar bersama, “Jadikan host” menyerahkan sesi ke tamu: semua orang mengikuti host baru.
+settings.together.across_networks = Lintas jaringan
+settings.together.relay = Server relay
+settings.together.relay_placeholder = wss://relay.example.com (kosong: hanya LAN)
+settings.together.relay_error = Memerlukan alamat ws:// atau wss:// (tanpa nama pengguna atau query)
+settings.together.relay_note = “Host melalui relay” menjalankan sesi melalui server music-relay yang Anda host sendiri (lihat README: satu biner kecil, tempatkan di belakang reverse proxy TLS untuk wss://). Tamu lalu dapat bergabung dari mana saja dengan tautan. Relay meneruskan pesan sesi (ID lagu, judul, nama) tetapi tidak pernah memutuskan apa pun; kosong = hanya LAN.
+settings.together.open = Buka Dengar bersama
+
+# ---- Spotify import
+settings.spotify.waiting = Menunggu Anda menyetujui aplikasi di browser…
+settings.spotify.account = Akun Spotify
+settings.spotify.client_id = Client ID
+settings.spotify.redirect_port = Port pengalihan
+settings.spotify.redirect_uri = URI pengalihan: {uri}
+settings.spotify.steps = 1. Buat aplikasi di developer.spotify.com/dashboard (Web API). 2. Tambahkan URI pengalihan di atas ke aplikasi tersebut. 3. Tempel Client ID-nya di sini lalu tekan Hubungkan. Akses hanya-baca (playlist dan lagu yang Anda sukai); token refresh disimpan di rantai kunci.
+settings.spotify.without_account = Tanpa akun
+settings.spotify.without_account_note = Ekspor playlist dengan Exportify (exportify.app) lalu impor file CSV di Pustaka → Impor & ekspor. Masuk dengan cookie sp_dc dari pemutar web (seperti yang dilakukan {other_app}) tidak didukung: cara itu bergantung pada rahasia yang diekstrak dari pemutar web Spotify.
+settings.spotify.open_import = Buka Impor & ekspor
+settings.spotify.error.no_client = Masukkan Client ID aplikasi Anda terlebih dahulu.
+settings.spotify.error.redirect = Tidak dapat menunggu pengalihan: {error}
+
+# ---- AI content filter
+settings.ai_filter.off = Mati: tidak ada yang dikirim ke mana pun
+settings.ai_filter.incomplete = Memerlukan endpoint, model, dan setidaknya satu kategori
+settings.ai_filter.failed = Permintaan terakhir gagal: {error}
+settings.ai_filter.on.other = Nyala · {count} lagu dan album diklasifikasikan
+settings.ai_filter.hide = Sembunyikan
+settings.ai_filter.also_hide = Sembunyikan juga
+settings.ai_filter.custom_placeholder = mis. lagu tentang mobil, lagu meme
+settings.ai_filter.custom_note = Kategori Anda sendiri, dipisahkan koma (hingga 8), dijelaskan dengan kata-kata biasa.
+settings.ai_filter.title = Filter konten AI
+settings.ai_filter.enable = Saring lagu dengan model AI
+settings.ai_filter.enable_desc = Seperti “Sembunyikan konten eksplisit”, untuk kategori di bawah.
+settings.ai_filter.forget = Lupakan klasifikasi
+settings.ai_filter.model = Model
+settings.ai_filter.endpoint = Endpoint
+settings.ai_filter.endpoint_placeholder = https://api.openai.com/v1 atau http://localhost:11434/v1
+settings.ai_filter.api_key = Kunci API
+settings.ai_filter.key_placeholder = Kunci API (tidak perlu untuk server lokal)
+settings.ai_filter.api_note = API chat-completions apa pun yang kompatibel dengan OpenAI: OpenAI, OpenRouter, atau model di komputer ini (Ollama, LM Studio, server llama.cpp). Kunci disimpan di rantai kunci.
+settings.ai_filter.privacy = Privasi
+settings.ai_filter.privacy_note = Mati secara bawaan. Saat aktif, judul, artis, dan album dari lagu dan album di halaman yang Anda buka dikirim ke endpoint di atas (tidak ada data tentang Anda, tanpa riwayat mendengarkan); setiap putusan di-cache di komputer ini, sehingga setiap lagu hanya ditanyakan sekali. Lagu yang belum dinilai model tetap terlihat.
+
+# ---- Chromecast
+settings.cast.looking = Mencari perangkat Cast…
+settings.cast.found.other = {count} perangkat ditemukan
+settings.cast.devices = Perangkat
+settings.cast.scan = Cari
+settings.cast.casting = Mentransmisi
+settings.cast.cast = Transmisikan
+settings.cast.streaming = Streaming
+settings.cast.direct = Biarkan perangkat mengambil audio YouTube sendiri
+settings.cast.direct_desc = Mati: aplikasi ini melakukan streaming ke perangkat (berfungsi untuk semua lagu).
+settings.cast.note = Transmisi memutar antrean di Chromecast, Google TV, atau speaker Nest di jaringan ini (Default Media Receiver dari Google). Tombol Cast di bilah pemutar memilih perangkat; putar, jeda, lompat, lewati, dan volume lalu mengendalikannya, dan Hentikan transmisi melanjutkan pemutaran di sini. Audio YouTube dan file lokal di-streaming dari komputer ini ke perangkat (biarkan aplikasi tetap terbuka); perangkat dan komputer ini harus berada di jaringan yang sama. Perubahan berlaku untuk lagu berikutnya.

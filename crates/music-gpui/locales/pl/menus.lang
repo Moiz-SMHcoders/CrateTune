@@ -1,0 +1,34 @@
+# Menu bar (Polish). {app} is the app's name.
+menu.about = {app} – informacje
+menu.settings = Ustawienia…
+menu.services = Usługi
+menu.hide = Ukryj {app}
+menu.hide_others = Ukryj pozostałe
+menu.show_all = Pokaż wszystkie
+menu.quit = Zakończ {app}
+menu.edit = Edycja
+menu.undo = Cofnij
+menu.redo = Ponów
+menu.cut = Wytnij
+menu.copy = Kopiuj
+menu.paste = Wklej
+menu.select_all = Zaznacz wszystko
+menu.search = Szukaj
+menu.view = Widok
+menu.back = Wstecz
+menu.forward = Dalej
+menu.recognize = Rozpoznaj utwór
+menu.controls = Sterowanie
+menu.play_pause = Odtwórz / wstrzymaj
+menu.repeat = Powtarzanie (wył. / wszystkie / jeden)
+menu.volume_up = Głośniej
+menu.volume_down = Ciszej
+menu.window = Okno
+menu.minimize = Minimalizuj
+menu.zoom = Powiększ
+
+tray.next = Następny
+tray.previous = Poprzedni
+tray.mini_player = Miniodtwarzacz
+tray.show_window = Pokaż {app}
+tray.quit = Zakończ {app}

@@ -1,0 +1,44 @@
+# Music recognition page (ja).
+
+recognition.title = 曲を認識
+recognition.subtitle = 周りで流れている曲を特定します（⇧⌘R）
+
+recognition.idle.title = タップして曲を特定
+recognition.idle.detail = コンピュータの近くで曲を流してください。マイクで約10秒間聴き取ります。
+recognition.permission.title = マイクへのアクセスを待機中…
+recognition.permission.detail = システムのダイアログでアクセスを許可してください。
+recognition.listening = 聴き取り中…
+recognition.listening_progress = {elapsed} / {length}秒
+recognition.identifying.title = 特定中…
+recognition.identifying.detail = 録音を照合しています。
+recognition.failed = 特定できませんでした
+recognition.open_privacy_settings = プライバシー設定を開く
+
+recognition.mic.restricted = このコンピュータではマイクへのアクセスが制限されています。
+recognition.mic.undetermined = マイクへのアクセスがまだ許可されていません。もう一度試して、確認が表示されたら許可してください。
+recognition.mic.denied = {app}のマイクへのアクセスがオフになっています。システム設定 → プライバシーとセキュリティ → マイクで許可してください。
+recognition.error.no_microphone = マイクが見つかりません
+recognition.error.permission_denied = マイクへのアクセスが拒否されました
+recognition.error.silent = マイクから無音しか届きませんでした（マイクへのアクセスは許可されていますか？）
+recognition.error.capture = 録音に失敗しました：{error}
+recognition.error.cancelled = キャンセルしました
+recognition.error.no_signature = 音楽が聞き取れませんでした
+recognition.error.no_match = 一致する曲が見つかりません
+recognition.error.rate_limited = リクエストが多すぎます。1分後にもう一度お試しください
+recognition.error.service = 認識サービスのエラー（HTTP {status}）
+recognition.error.network = ネットワークエラー：{error}
+recognition.error.parse = 予期しない応答：{error}
+
+recognition.result.recognized = 認識結果
+recognition.result.from_history = 認識履歴から
+recognition.match.title = YouTube Music で見る
+recognition.match.searching = YouTube Music を検索中…
+recognition.match.failed = YouTube Music の検索に失敗しました：{error}
+recognition.match.none = YouTube Music に見つかりませんでした。
+
+recognition.history.title = 履歴
+recognition.history.empty.title = 認識した曲はまだありません
+recognition.history.empty.detail = 特定した曲が新しい順にここに表示されます。
+recognition.history.clear_title = 認識履歴を消去しますか？
+recognition.history.clear_detail = 特定した曲のリストが削除されます。
+recognition.history.remove = 履歴から削除

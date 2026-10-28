@@ -1,0 +1,18 @@
+# Settings page: section names (Turkish).
+settings.section.appearance = Görünüm
+settings.section.playback = Çalma
+settings.section.modules = Modüller
+settings.section.equalizer = Ekolayzır
+settings.section.lyrics = Şarkı sözleri
+settings.section.content = İçerik ve bölge
+settings.section.network = Ağ
+settings.section.privacy = Gizlilik
+settings.section.storage = Depolama
+settings.section.account = Hesap
+settings.section.integrations = Scrobble ve Discord
+settings.section.sponsorblock = SponsorBlock
+settings.section.together = Music Together
+settings.section.spotify = Spotify'dan içe aktar
+settings.section.ai_filter = Yapay zekâ içerik filtresi
+settings.section.cast = Chromecast
+settings.section.about = Hakkında

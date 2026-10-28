@@ -1,0 +1,157 @@
+# Shared strings (Dutch). Format: see crates/music-gpui/i18n_parse.rs.
+
+locale.native_name = Nederlands
+
+# ---- Actions
+common.play = Afspelen
+common.pause = Pauzeren
+common.shuffle = Shuffle
+common.radio = Radio
+common.start_radio = Radio starten
+common.play_next = Hierna afspelen
+common.add_to_queue = Toevoegen aan wachtrij
+common.add_to_playlist = Toevoegen aan playlist…
+common.like = Vind ik leuk
+common.remove_from_liked = Verwijderen uit leuke nummers
+common.download = Downloaden
+common.remove_download = Download verwijderen
+common.go_to_artist = Naar artiest
+common.go_to_album = Naar album
+common.open = Openen
+common.cancel = Annuleren
+common.close = Sluiten
+common.retry = Opnieuw proberen
+common.remove = Verwijderen
+common.delete = Verwijderen
+common.clear = Wissen
+common.save = Opslaan
+common.apply = Toepassen
+common.reset = Resetten
+common.done = Klaar
+common.copy = Kopiëren
+common.rename = Naam wijzigen
+common.refresh = Vernieuwen
+common.install = Installeren
+common.update = Bijwerken
+common.import = Importeren
+common.search = Zoeken
+common.search_placeholder = Zoeken…
+common.see_all = Alles bekijken
+common.load_more = Meer laden
+common.show_more = Meer tonen
+common.back = Terug
+common.next = Volgende
+common.connect = Verbinden
+common.disconnect = Verbinding verbreken
+common.sign_in = Inloggen
+common.sign_out = Uitloggen
+common.select = Selecteren
+common.select_all = Alles selecteren
+common.settings = Instellingen
+
+# ---- States
+common.loading = Laden…
+common.saving = Opslaan…
+common.downloading = Downloaden…
+common.off = Uit
+common.on = Aan
+common.none = Geen
+common.custom = Aangepast
+common.automatic = Automatisch
+common.not_playing = Niets wordt afgespeeld
+common.not_connected = Niet verbonden
+common.nothing_here = Niets te zien
+
+# ---- Things
+common.song = Nummer
+common.video = Video
+common.artist = Artiest
+common.album = Album
+common.playlist = Playlist
+common.podcast = Podcast
+common.episode = Aflevering
+common.queue = Wachtrij
+common.now_playing = Speelt nu
+common.youtube_music = YouTube Music
+
+common.songs.one = {count} nummer
+common.songs.other = {count} nummers
+common.plays.one = {count} keer afgespeeld
+common.plays.other = {count} keer afgespeeld
+common.selected.one = {count} geselecteerd
+common.selected.other = {count} geselecteerd
+
+# ---- Sidebar
+nav.home = Home
+nav.explore = Verkennen
+nav.charts = Hitlijsten
+nav.moods = Sferen & genres
+nav.new_releases = Nieuwe releases
+nav.recognize = Herkennen
+nav.library_group = Bibliotheek
+nav.library = Bibliotheek
+nav.history = Geschiedenis
+nav.stats = Statistieken
+nav.downloads = Downloads
+nav.local_files = Lokale bestanden
+nav.import = Importeren & exporteren
+nav.together = Samen luisteren
+nav.settings = Instellingen
+
+# ---- Dates
+date.full = {day} {month} {year}
+date.today = Vandaag
+date.yesterday = Gisteren
+date.month_in_date.1 = januari
+date.month_in_date.2 = februari
+date.month_in_date.3 = maart
+date.month_in_date.4 = april
+date.month_in_date.5 = mei
+date.month_in_date.6 = juni
+date.month_in_date.7 = juli
+date.month_in_date.8 = augustus
+date.month_in_date.9 = september
+date.month_in_date.10 = oktober
+date.month_in_date.11 = november
+date.month_in_date.12 = december
+date.month_short.1 = jan
+date.month_short.2 = feb
+date.month_short.3 = mrt
+date.month_short.4 = apr
+date.month_short.5 = mei
+date.month_short.6 = jun
+date.month_short.7 = jul
+date.month_short.8 = aug
+date.month_short.9 = sep
+date.month_short.10 = okt
+date.month_short.11 = nov
+date.month_short.12 = dec
+date.weekday_short.1 = ma
+date.weekday_short.2 = di
+date.weekday_short.3 = wo
+date.weekday_short.4 = do
+date.weekday_short.5 = vr
+date.weekday_short.6 = za
+date.weekday_short.7 = zo
+
+# ---- Durations and relative times
+time.just_now = zojuist
+time.seconds_ago.one = {count} s geleden
+time.seconds_ago.other = {count} s geleden
+time.minutes_ago.one = {count} min geleden
+time.minutes_ago.other = {count} min geleden
+time.hours_ago.one = {count} u geleden
+time.hours_ago.other = {count} u geleden
+time.days_ago.one = {count} dag geleden
+time.days_ago.other = {count} dagen geleden
+time.hours_minutes = {hours} u {minutes} min
+time.minutes = {minutes} min
+time.seconds = {seconds} s
+
+# ---- File sizes
+units.size = {value} {unit}
+units.b = B
+units.kb = KB
+units.mb = MB
+units.gb = GB
+units.tb = TB

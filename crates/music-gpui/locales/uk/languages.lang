@@ -1,0 +1,28 @@
+# UI language picker (Ukrainian).
+settings.language.group = Мова
+settings.language.label = Мова інтерфейсу
+settings.language.description = Мова інтерфейсу. Для вмісту YouTube Music є окреме налаштування («Вміст і регіон»).
+settings.language.system = Системна ({language})
+settings.language.system_search = типова автоматично системна за замовчуванням
+
+language.name.en = англійська
+language.name.es = іспанська
+language.name.pt-BR = португальська (Бразилія)
+language.name.fr = французька
+language.name.de = німецька
+language.name.it = італійська
+language.name.nl = нідерландська
+language.name.pl = польська
+language.name.ru = російська
+language.name.uk = українська
+language.name.tr = турецька
+language.name.id = індонезійська
+language.name.vi = в'єтнамська
+language.name.ja = японська
+language.name.ko = корейська
+language.name.zh-CN = китайська (спрощена)
+language.name.zh-TW = китайська (традиційна)
+language.name.hi = гінді
+language.name.ar = арабська
+language.name.fa = перська
+language.name.he = іврит

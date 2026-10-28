@@ -1,0 +1,146 @@
+# Settings → Modules (Ukrainian).
+
+# ---- Playback source
+modules.source.group = Джерело відтворення
+modules.source.youtube = Лише YouTube
+modules.source.first = Спершу модулі, потім YouTube
+modules.source.only = Лише модулі
+modules.source_note.youtube = Пісні відтворюються з YouTube; встановлені модулі не використовуються.
+modules.source_note.first.one = Кожна пісня шукається в {count} увімкненому модулі згори донизу; відтворюється перший прийнятний збіг, інакше — YouTube.
+modules.source_note.first.few = Кожна пісня шукається в {count} увімкнених модулях згори донизу; відтворюється перший прийнятний збіг, інакше — YouTube.
+modules.source_note.first.many = Кожна пісня шукається в {count} увімкнених модулях згори донизу; відтворюється перший прийнятний збіг, інакше — YouTube.
+modules.source_note.first.other = Кожна пісня шукається в {count} увімкненого модуля згори донизу; відтворюється перший прийнятний збіг, інакше — YouTube.
+modules.source_note.only.one = Пісні відтворюються лише з {count} увімкненого модуля; пісня, для якої модуль не знайде збігу, не відтвориться (і буде пропущена, якщо ввімкнено «Пропускати пісні, що не завантажуються»).
+modules.source_note.only.few = Пісні відтворюються лише з {count} увімкнених модулів; пісня, для якої жоден модуль не знайде збігу, не відтвориться (і буде пропущена, якщо ввімкнено «Пропускати пісні, що не завантажуються»).
+modules.source_note.only.many = Пісні відтворюються лише з {count} увімкнених модулів; пісня, для якої жоден модуль не знайде збігу, не відтвориться (і буде пропущена, якщо ввімкнено «Пропускати пісні, що не завантажуються»).
+modules.source_note.only.other = Пісні відтворюються лише з {count} увімкненого модуля; пісня, для якої жоден модуль не знайде збігу, не відтвориться (і буде пропущена, якщо ввімкнено «Пропускати пісні, що не завантажуються»).
+modules.source.note = Модуль постачає аудіо для пісні, яку ви відтворюєте; назва, виконавці та ваша бібліотека не змінюються. Панель плеєра й «Зараз грає» показують, звідки надходить аудіо. Завантаження використовують той самий порядок.
+
+# ---- Unavailable
+modules.unavailable = Модулі недоступні.
+modules.no_data_dir = Немає теки даних; модулі недоступні.
+modules.unavailable_error = Модулі недоступні: {error}
+
+# ---- Add a module
+modules.add.group = Додати модуль
+modules.add.from_file = Встановити з файлу…
+modules.add.from_file_note = Пакет .arch з вашого диска.
+modules.add.from_url = Встановити за URL
+modules.add.catalog = Додати каталог
+modules.add.note = Пакети перевіряються (формат, контрольна сума, налаштування, експортовані функції), перш ніж ви підтвердите встановлення. Жоден модуль чи каталог не встановлено заздалегідь: модулі надходять від їхніх авторів і працюють в ізольованому середовищі (без доступу до файлів, мережа — через проксі застосунку).
+modules.url_missing = Введіть URL пакета .arch, дескриптора або каталогу.
+modules.catalog_url_missing = Введіть URL каталогу.
+
+# ---- Progress lines
+modules.busy.saving = Збереження…
+modules.busy.saving_catalog = Збереження каталогу…
+modules.busy.checking_package = Перевірка пакета…
+modules.busy.reading_catalog = Читання каталогу…
+modules.busy.installing = Встановлення…
+modules.busy.removing = Видалення…
+modules.busy.checking = Перевірка…
+modules.busy.checking_update = Перевірка оновлень…
+modules.busy.loading_settings = Завантаження налаштувань…
+modules.busy.saving_settings = Збереження налаштувань…
+modules.busy.refreshing = Оновлення…
+
+# ---- Results
+modules.catalog_added.one = Додано каталог «{name}» ({count} запис).
+modules.catalog_added.few = Додано каталог «{name}» ({count} записи).
+modules.catalog_added.many = Додано каталог «{name}» ({count} записів).
+modules.catalog_added.other = Додано каталог «{name}» ({count} запису).
+modules.installed_needs_setup = Встановлено {name}. Заповніть його налаштування й натисніть «Зберегти».
+modules.installed = Встановлено {name}.
+modules.removed = Модуль видалено.
+modules.update_available = Доступна версія {version}.
+modules.up_to_date = Найновіша версія.
+modules.update_from_file = Встановлено з файлу: щоб оновити, імпортуйте новий пакет.
+modules.settings_read_failed = Не вдалося прочитати налаштування цього модуля.
+modules.settings_saved = Налаштування збережено.
+modules.catalog_refreshed = Каталог оновлено.
+modules.diagnostics_copied = Діагностику скопійовано.
+
+# ---- Review card
+modules.review.group = Перевірка
+modules.review.replaces = Оновлює встановлену версію {version}; її налаштування зберігаються.
+modules.review.new = Нове встановлення, додається в кінець порядку відтворення.
+modules.review.needs = Потрібно: {settings}.
+modules.review.homepage = Домашня сторінка: {url}
+modules.review.license = Ліцензія: {license}
+modules.review.sha256 = SHA-256 пакета {hash}
+
+# ---- Installed modules
+modules.installed_group = Встановлені ({count})
+modules.nothing_installed = Ще нічого не встановлено.
+modules.action.settings = Налаштування
+modules.action.check = Перевірити
+modules.action.check_update = Перевірити оновлення
+modules.action.uninstall = Видалити
+modules.action.confirm_remove = Видалити — точно?
+modules.action.higher = Вищий пріоритет
+modules.action.lower = Нижчий пріоритет
+modules.needs_configuration = Потрібне налаштування: {settings}
+modules.settings_heading = Налаштування
+modules.no_settings = Цей модуль не має налаштувань.
+modules.field.placeholder_required = обов'язково
+modules.field.placeholder_optional = необов'язково
+modules.field.not_a_number = {field}: має бути число.
+modules.field.required = {field}: обов'язкове поле.
+modules.field.invalid = {field}: неправильне значення.
+
+# ---- Diagnostics
+modules.diagnostics = Діагностика
+modules.diagnostic_line = {label} {when}: {summary}
+modules.diagnostic_track = {line} — {track}
+modules.diag.last_song = Остання пісня
+modules.diag.check = Перевірка
+modules.diag.playback = Відтворення
+modules.diag.not_checked = Ще не перевірено.
+modules.diag.not_used = Ще не використовувався для жодної пісні.
+modules.installed_line_file = Встановлено {when} · пакет {hash} · з файлу
+modules.installed_line_url = Встановлено {when} · пакет {hash} · з {url}
+modules.log_empty = Журнал порожній.
+modules.copy_diagnostics = Копіювати діагностику
+modules.clear_log = Очистити журнал
+
+modules.status.ready = Готово
+modules.status.configuration = Потрібне налаштування
+modules.status.unavailable = Служба недоступна
+modules.status.failed = Помилка
+modules.status.no_results = Немає результатів
+modules.status.no_match = Немає прийнятного збігу ({reason})
+modules.status.resolved = Знайдено
+modules.status.timeout = Час очікування минув
+modules.rejection.metadata = метадані
+modules.rejection.title = назва
+modules.rejection.artist = виконавець
+modules.rejection.recording = запис
+modules.rejection.duration = тривалість
+modules.rejection.explicit = відвертий вміст
+modules.phase.search = під час пошуку
+modules.phase.match = під час зіставлення
+modules.phase.stream = під час потокової передачі
+modules.candidates.one = {count} кандидат
+modules.candidates.few = {count} кандидати
+modules.candidates.many = {count} кандидатів
+modules.candidates.other = {count} кандидата
+modules.elapsed_ms = {ms} мс
+
+modules.failure.invalid_document = Недійсний документ модуля
+modules.failure.unsupported = Не підтримується цим застосунком
+modules.failure.invalid_configuration = Налаштування модуля неповні або неправильні
+modules.failure.network = Помилка мережі
+modules.failure.timeout = Час очікування минув
+modules.failure.execution = Збій модуля
+modules.failure.integrity = Контрольна сума не збігається
+modules.error_with_code = {error} ({code})
+
+# ---- Catalogs
+modules.catalogs = Каталоги
+modules.catalog_line.one = {url} · {count} запис · оновлено {when}
+modules.catalog_line.few = {url} · {count} записи · оновлено {when}
+modules.catalog_line.many = {url} · {count} записів · оновлено {when}
+modules.catalog_line.other = {url} · {count} запису · оновлено {when}
+modules.remove_catalog = Видалити каталог
+modules.entry.installed = Встановлено
+modules.entry.not_a_module = Не модуль

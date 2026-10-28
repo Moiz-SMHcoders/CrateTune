@@ -29,32 +29,38 @@ mod imp {
         _icon: TrayIcon,
         now_playing: MenuItem,
         play: MenuItem,
+        /// Items with a fixed label, relabelled when the UI language changes.
+        fixed: Vec<(MenuItem, fn() -> String)>,
         items: Vec<(MenuId, TrayCommand)>,
-        shown: (String, bool),
+        /// Shown title, playing, UI language generation.
+        shown: (String, bool, u32),
     }
 
     impl Tray {
         pub fn new() -> Option<Self> {
-            let now_playing = MenuItem::new("Not playing", false, None);
-            let play = MenuItem::new("Play", true, None);
-            let next = MenuItem::new("Next", true, None);
-            let previous = MenuItem::new("Previous", true, None);
-            let mini = MenuItem::new("Mini Player", true, None);
-            let show = MenuItem::new(format!("Show {}", crate::identity::APP_NAME), true, None);
-            let quit = MenuItem::new(format!("Quit {}", crate::identity::APP_NAME), true, None);
+            let now_playing = MenuItem::new(t!("common.not_playing"), false, None);
+            let play = MenuItem::new(t!("common.play"), true, None);
+            let label = |f: fn() -> String| (MenuItem::new(f(), true, None), f);
+            let (next, previous, mini, show, quit) = (
+                label(|| t!("tray.next").into()),
+                label(|| t!("tray.previous").into()),
+                label(|| t!("tray.mini_player").into()),
+                label(|| t!("tray.show_window").into()),
+                label(|| t!("tray.quit").into()),
+            );
             let menu = Menu::new();
             let separator = PredefinedMenuItem::separator();
             let result = menu.append_items(&[
                 &now_playing,
                 &separator,
                 &play,
-                &next,
-                &previous,
+                &next.0,
+                &previous.0,
                 &PredefinedMenuItem::separator(),
-                &mini,
-                &show,
+                &mini.0,
+                &show.0,
                 &PredefinedMenuItem::separator(),
-                &quit,
+                &quit.0,
             ]);
             if let Err(e) = result {
                 eprintln!("music-gpui: tray menu: {e}");
@@ -84,18 +90,19 @@ mod imp {
             }
             let items = vec![
                 (play.id().clone(), TrayCommand::TogglePlayback),
-                (next.id().clone(), TrayCommand::Next),
-                (previous.id().clone(), TrayCommand::Previous),
-                (mini.id().clone(), TrayCommand::ToggleMiniPlayer),
-                (show.id().clone(), TrayCommand::ShowWindow),
-                (quit.id().clone(), TrayCommand::Quit),
+                (next.0.id().clone(), TrayCommand::Next),
+                (previous.0.id().clone(), TrayCommand::Previous),
+                (mini.0.id().clone(), TrayCommand::ToggleMiniPlayer),
+                (show.0.id().clone(), TrayCommand::ShowWindow),
+                (quit.0.id().clone(), TrayCommand::Quit),
             ];
             Some(Self {
                 _icon: tray,
                 now_playing,
                 play,
+                fixed: vec![next, previous, mini, show, quit],
                 items,
-                shown: (String::new(), false),
+                shown: (String::new(), false, crate::i18n::generation()),
             })
         }
 
@@ -114,8 +121,16 @@ mod imp {
 
         /// Reflects the current track / play state (only touches AppKit on change).
         pub fn update(&mut self, title: Option<&str>, playing: bool) {
-            let label = title.unwrap_or("Not playing").to_owned();
-            if self.shown.0 != label {
+            let generation = crate::i18n::generation();
+            let relabel = self.shown.2 != generation;
+            if relabel {
+                for (item, label) in &self.fixed {
+                    item.set_text(label());
+                }
+                self.shown.2 = generation;
+            }
+            let label = title.unwrap_or(t!("common.not_playing")).to_owned();
+            if relabel || self.shown.0 != label {
                 // Menu items don't ellipsize: keep them short.
                 let short: String = if label.chars().count() > 48 {
                     label.chars().take(47).chain(['…']).collect()
@@ -125,8 +140,12 @@ mod imp {
                 self.now_playing.set_text(short);
                 self.shown.0 = label;
             }
-            if self.shown.1 != playing {
-                self.play.set_text(if playing { "Pause" } else { "Play" });
+            if relabel || self.shown.1 != playing {
+                self.play.set_text(if playing {
+                    t!("common.pause")
+                } else {
+                    t!("common.play")
+                });
                 self.shown.1 = playing;
             }
         }

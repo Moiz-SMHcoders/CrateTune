@@ -204,6 +204,10 @@ pub struct AppearanceConfig {
     pub theme: ThemeChoice,
     /// One of [`FONT_SCALES`] (other values are snapped to the nearest).
     pub font_scale: f32,
+    /// UI language: a catalog code (`de`, `pt-BR`, `zh-CN`) or `system` (the OS's
+    /// preferred languages). An unknown code (e.g. from a newer version) also means
+    /// `system`.
+    pub language: String,
 }
 
 impl Default for AppearanceConfig {
@@ -211,7 +215,20 @@ impl Default for AppearanceConfig {
         Self {
             theme: ThemeChoice::Dark,
             font_scale: 1.0,
+            language: SYSTEM_LANGUAGE.into(),
         }
+    }
+}
+
+/// [`AppearanceConfig::language`] value for "follow the system".
+pub const SYSTEM_LANGUAGE: &str = "system";
+
+impl AppearanceConfig {
+    /// The UI locale this setting means (`MUSIC_LANG` overrides it for a session).
+    pub fn ui_locale(&self) -> crate::i18n::Locale {
+        let forced = std::env::var("MUSIC_LANG").ok().filter(|v| !v.is_empty());
+        let code = forced.as_deref().unwrap_or(&self.language);
+        crate::i18n::Locale::from_code(code).unwrap_or_else(crate::i18n::system_locale)
     }
 }
 
@@ -273,15 +290,21 @@ impl ProxyKind {
         ProxyKind::Socks5h,
     ];
 
+    /// Button label.
     pub fn title(self) -> &'static str {
         match self {
-            ProxyKind::Off => "Off",
+            ProxyKind::Off => t!("settings.network.proxy_off"),
             ProxyKind::Http => "HTTP",
             ProxyKind::Https => "HTTPS",
             ProxyKind::Socks4 => "SOCKS4",
             ProxyKind::Socks5 => "SOCKS5",
             ProxyKind::Socks5h => "SOCKS5h",
         }
+    }
+
+    /// Stable lower-case id (element ids, script arguments).
+    pub fn id(self) -> &'static str {
+        self.scheme().unwrap_or("off")
     }
 
     pub fn scheme(self) -> Option<&'static str> {
@@ -332,13 +355,25 @@ impl DnsMode {
         DnsMode::Custom,
     ];
 
+    /// Button label.
     pub fn title(self) -> &'static str {
         match self {
-            DnsMode::System => "System",
+            DnsMode::System => t!("settings.network.dns_system"),
             DnsMode::Cloudflare => "Cloudflare",
             DnsMode::Google => "Google",
-            DnsMode::Quad9 => "Quad9",
-            DnsMode::Custom => "Custom",
+            DnsMode::Quad9 => "Quad9", // i18n-ignore
+            DnsMode::Custom => t!("settings.network.dns_custom"),
+        }
+    }
+
+    /// Stable lower-case id (element ids, script arguments; the serde name).
+    pub fn id(self) -> &'static str {
+        match self {
+            DnsMode::System => "system",
+            DnsMode::Cloudflare => "cloudflare",
+            DnsMode::Google => "google",
+            DnsMode::Quad9 => "quad9",
+            DnsMode::Custom => "custom",
         }
     }
 }
@@ -372,11 +407,11 @@ impl DnsConfig {
         }
         let url = self.custom_url.trim();
         if !url.starts_with("https://") {
-            return Err("The DNS-over-HTTPS URL must start with https://.".into());
+            return Err(t!("settings.network.error.doh_https").into());
         }
         music_core::http::DohProvider::Custom(url.to_owned())
             .validate()
-            .map_err(|e| format!("The DNS-over-HTTPS URL isn't valid: {e}."))
+            .map_err(|e| t!("settings.network.error.doh_invalid_detail", error = e))
     }
 
     /// The `music_core` setting (`None` = system DNS).
@@ -405,18 +440,16 @@ impl NetworkConfig {
         }
         let host = self.host.trim();
         if host.is_empty() {
-            return Err("Enter the proxy host.".into());
+            return Err(t!("settings.network.error.host_missing").into());
         }
         if host.contains(|c: char| c.is_whitespace() || "/@?#".contains(c)) {
-            return Err(
-                "The host must be a name or address only (no scheme, path or spaces).".into(),
-            );
+            return Err(t!("settings.network.error.host_invalid").into());
         }
         if self.port == 0 {
-            return Err("Enter a port between 1 and 65535.".into());
+            return Err(t!("settings.network.error.port_missing").into());
         }
         if self.proxy == ProxyKind::Socks4 && !self.username.is_empty() {
-            return Err("SOCKS4 doesn't support passwords; leave the user name empty.".into());
+            return Err(t!("settings.network.error.socks4_auth").into());
         }
         Ok(())
     }
@@ -583,7 +616,11 @@ impl Settings {
             Err(e) => {
                 return (
                     Self::default(),
-                    Some(format!("reading {}: {e}", path.display())),
+                    Some(t!(
+                        "settings.file.read_failed",
+                        path = path.display(),
+                        error = e
+                    )),
                 );
             }
         };
@@ -592,10 +629,11 @@ impl Settings {
             Err(e) => {
                 let backup = path.with_extension("json.bad");
                 let _ = std::fs::rename(path, &backup);
-                let message = format!(
-                    "{} is not valid ({e}); moved to {}",
-                    path.display(),
-                    backup.display()
+                let message = t!(
+                    "settings.file.invalid_moved",
+                    path = path.display(),
+                    error = e,
+                    backup = backup.display()
                 );
                 (Self::default(), Some(message))
             }

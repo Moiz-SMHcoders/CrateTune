@@ -1,0 +1,141 @@
+# Settings sections of the integrations (ja).
+
+# ---- Shared
+settings.integrations.connected_as = {user}として接続中
+
+# ---- Last.fm / ListenBrainz
+settings.integrations.lastfm_approve = ブラウザでアプリを承認してから「完了」を押してください。
+settings.integrations.finish = 完了
+settings.integrations.forget_key = キーを削除
+settings.integrations.api_key = API キー
+settings.integrations.shared_secret = 共有シークレット
+settings.integrations.checking_token = トークンを確認中…
+settings.integrations.validate = 検証
+settings.integrations.user_token = ユーザートークン
+
+# ---- Discord
+settings.integrations.discord_title = Discord Rich Presence
+settings.integrations.discord_enter_id = Discord のアプリケーション ID を入力してください。
+settings.integrations.discord_connected = Discord に接続しました
+settings.integrations.discord_unreachable = Discord に接続できません：{error}
+settings.integrations.discord_waiting = 再生を待機中…
+settings.integrations.application_id = アプリケーション ID
+discord.activity.title = アクティビティ
+discord.activity.type = 種類
+discord.activity.name = 名前
+discord.activity.details = 詳細
+discord.activity.state = 状態
+discord.activity.placeholders_note = プレースホルダ：{title}、{artist}、{album}。名前が空の場合は Discord アプリケーションの名前を使用します。
+discord.activity.large_image = 大きい画像
+discord.activity.small_image = 小さい画像
+discord.activity.button = ボタン {number}
+discord.activity.label = ラベル
+discord.activity.url = URL
+discord.activity.show_paused = 一時停止中も表示
+discord.activity.show_paused_desc = 再生を一時停止してもアクティビティを表示し続けます（経過時間なし）。
+discord.activity.custom_note = カスタム画像には Discord アプリケーションのアセットキーまたは画像の URL を指定します。ボタンはほかの人には表示されますが、自分には表示されません。
+
+# ---- Scrobble rules
+scrobble.rules.title = 再生がカウントされる条件
+scrobble.rules.played = 再生済み
+scrobble.rules.or_at_most = …または最大
+scrobble.rules.ignore_under = 無視する曲の長さ（未満）
+scrobble.rules.percent = {percent}%
+scrobble.rules.note = Last.fm のルールは、30秒を超える曲で 50% または4分の再生です。Last.fm と ListenBrainz に適用されます。
+scrobble.errors.other = Scrobble のエラー（{count}）
+settings.integrations.secrets = 認証情報：{store}
+settings.integrations.secrets_loading = 認証情報：読み込み中…
+settings.integrations.settings_path = 設定：{path}
+settings.integrations.not_saved = 設定は保存されません（設定ディレクトリがありません）
+
+# ---- SponsorBlock
+settings.sponsorblock.categories = カテゴリ
+settings.sponsorblock.category_desc.music_offtopic = ミュージックビデオ内のトーク、寸劇など音楽以外の部分。
+settings.sponsorblock.category_desc.sponsor = 有償のプロモーション。
+settings.sponsorblock.category_desc.intro = 内容のない休憩やイントロアニメーション。
+settings.sponsorblock.category_desc.outro = クレジットとエンドカード。
+settings.sponsorblock.category_desc.selfpromo = 無償のプロモーション：グッズ、寄付、紹介など。
+settings.sponsorblock.category_desc.interaction = 高評価、チャンネル登録、フォローを促すリマインダー。
+settings.sponsorblock.category_desc.preview = ほかのコンテンツの要約やプレビュー。
+settings.sponsorblock.category_desc.filler = 本編ではない余談。
+settings.sponsorblock.category_desc.hook = 冒頭の予告や挨拶。
+settings.sponsorblock.using = {url} を使用中
+settings.sponsorblock.url_error = 認証情報やクエリを含まない https:// のアドレスが必要です
+settings.sponsorblock.skip_segments = セグメントをスキップ
+settings.sponsorblock.skip_segments_desc = 各曲の動画でコミュニティがマークしたセグメントを調べてスキップします。
+settings.sponsorblock.when = セグメントの開始時
+settings.sponsorblock.when_desc = すぐにスキップするか、プレーヤーバーにスキップボタンを表示します。
+settings.sponsorblock.mode_auto = 自動でスキップ
+settings.sponsorblock.mode_ask = 確認する
+settings.sponsorblock.notify = スキップ後に通知
+settings.sponsorblock.server = サーバ
+settings.sponsorblock.api_url = API URL
+settings.sponsorblock.use_default = デフォルトのサーバを使用
+settings.sponsorblock.forget = 取得したセグメントを削除
+settings.sponsorblock.privacy = プライバシー：送信されるのは動画 ID の SHA-256 ハッシュの先頭4文字のみなので、サーバは再生中の曲を特定できません。別のサーバを設定しない限り、セグメントは sponsor.ajay.app（SponsorBlock、CC BY-NC-SA）から取得されます。
+
+# ---- Music Together
+settings.together.you = あなた
+settings.together.display_name = 表示名
+settings.together.name_placeholder = あなたの名前
+settings.together.display_name_note = セッションのほかの参加者に表示されます。
+settings.together.hosting = ホスト
+settings.together.port = ポート
+settings.together.port_error = ポートは 1024〜65535 の範囲で指定してください
+settings.together.allow_add_desc = ゲストの提案があなたのキューに追加されます。
+settings.together.allow_control_desc = 全員の再生、一時停止、シーク、スキップを操作できます。
+settings.together.approval = 参加前にゲストを承認
+settings.together.hosting_note = セッションはローカルネットワーク上で動作し、ゲストはこのコンピュータに直接接続します（ファイアウォールで確認された場合は受信接続を許可してください）。リンクにはランダムなキーが含まれ、リンクを知っている人だけが参加できます。変更は実行中のセッションにすぐ適用されます。「一緒に聴く」ページの「ホストにする」でセッションをゲストに引き渡すと、全員が新しいホストに従います。
+settings.together.across_networks = ネットワーク間
+settings.together.relay = リレーサーバ
+settings.together.relay_placeholder = wss://relay.example.com（空欄：LAN のみ）
+settings.together.relay_error = ws:// または wss:// のアドレスが必要です（ユーザー名やクエリは不可）
+settings.together.relay_note = 「リレー経由でホスト」では、自分で運用する music-relay サーバを経由してセッションを実行します（README 参照：小さなバイナリ1つで、wss:// 用に TLS リバースプロキシの背後に配置します）。ゲストはリンクを使ってどこからでも参加できます。リレーはセッションのメッセージ（曲 ID、タイトル、名前）を転送するだけで、何も決定しません。空欄の場合は LAN のみです。
+settings.together.open = 「一緒に聴く」を開く
+
+# ---- Spotify import
+settings.spotify.waiting = ブラウザでアプリが承認されるのを待っています…
+settings.spotify.account = Spotify アカウント
+settings.spotify.client_id = Client ID
+settings.spotify.redirect_port = リダイレクトポート
+settings.spotify.redirect_uri = リダイレクト URI：{uri}
+settings.spotify.steps = 1. developer.spotify.com/dashboard でアプリ（Web API）を作成します。2. 上のリダイレクト URI をアプリに追加します。3. アプリの Client ID をここに貼り付けて「接続」を押します。アクセスは読み取り専用（プレイリストとお気に入りの曲）で、リフレッシュトークンはキーチェーンに保存されます。
+settings.spotify.without_account = アカウントなしで
+settings.spotify.without_account_note = Exportify（exportify.app）でプレイリストを書き出し、ライブラリ → インポートとエクスポートで CSV ファイルをインポートします。Web プレーヤーの sp_dc Cookie によるログイン（{other_app}の方式）には対応していません。Spotify の Web プレーヤーから抽出したシークレットに依存するためです。
+settings.spotify.open_import = インポートとエクスポートを開く
+settings.spotify.error.no_client = 先にアプリの Client ID を入力してください。
+settings.spotify.error.redirect = リダイレクトを待ち受けできません：{error}
+
+# ---- AI content filter
+settings.ai_filter.off = オフ：どこにも何も送信されません
+settings.ai_filter.incomplete = エンドポイント、モデル、1つ以上のカテゴリが必要です
+settings.ai_filter.failed = 前回のリクエストに失敗しました：{error}
+settings.ai_filter.on.other = オン · {count}件の曲とアルバムを分類済み
+settings.ai_filter.hide = 非表示
+settings.ai_filter.also_hide = ほかにも非表示
+settings.ai_filter.custom_placeholder = 例：車についての曲、ネタ曲
+settings.ai_filter.custom_note = 独自のカテゴリをカンマ区切りで指定します（最大8個）。わかりやすい言葉で説明してください。
+settings.ai_filter.title = AI コンテンツフィルタ
+settings.ai_filter.enable = AI モデルで曲をフィルタ
+settings.ai_filter.enable_desc = 「不適切なコンテンツを非表示」と同様に、以下のカテゴリに適用します。
+settings.ai_filter.forget = 分類結果を削除
+settings.ai_filter.model = モデル
+settings.ai_filter.endpoint = エンドポイント
+settings.ai_filter.endpoint_placeholder = https://api.openai.com/v1 または http://localhost:11434/v1
+settings.ai_filter.api_key = API キー
+settings.ai_filter.key_placeholder = API キー（ローカルサーバでは不要）
+settings.ai_filter.api_note = OpenAI 互換の chat-completions API であれば使用できます：OpenAI、OpenRouter、またはこのコンピュータ上のモデル（Ollama、LM Studio、llama.cpp server）。キーはキーチェーンに保存されます。
+settings.ai_filter.privacy = プライバシー
+settings.ai_filter.privacy_note = デフォルトではオフです。オンの間は、開いたページにある曲とアルバムのタイトル、アーティスト、アルバムが上記のエンドポイントに送信されます（あなた自身の情報や再生履歴は送信されません）。判定結果はこのコンピュータにキャッシュされるため、各曲の問い合わせは1回だけです。モデルがまだ判定していない曲は表示されたままです。
+
+# ---- Chromecast
+settings.cast.looking = キャストデバイスを検索中…
+settings.cast.found.other = {count}台のデバイスが見つかりました
+settings.cast.devices = デバイス
+settings.cast.scan = 検索
+settings.cast.casting = キャスト中
+settings.cast.cast = キャスト
+settings.cast.streaming = ストリーミング中
+settings.cast.direct = YouTube のオーディオをデバイスに直接取得させる
+settings.cast.direct_desc = オフ：このアプリがデバイスにストリーミングします（すべての曲で動作）。
+settings.cast.note = キャストすると、同じネットワーク上の Chromecast、Google TV、Nest スピーカー（Google の Default Media Receiver）でキューを再生します。プレーヤーバーのキャストボタンでデバイスを選ぶと、再生、一時停止、シーク、スキップ、音量でデバイスを操作でき、「キャストを停止」でこのコンピュータでの再生に戻ります。YouTube のオーディオとローカルファイルはこのコンピュータからデバイスにストリーミングされます（アプリは開いたままにしてください）。デバイスとこのコンピュータは同じネットワークに接続されている必要があります。変更は次の曲から適用されます。

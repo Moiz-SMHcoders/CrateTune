@@ -73,39 +73,39 @@ pub fn item_subtitle(item: &Item, with_kind: bool) -> String {
     };
     match item {
         Item::Song(t) => {
-            kind("Song", &mut parts);
+            kind(t!("common.song"), &mut parts);
             parts.push(t.artists.clone());
             if with_kind && let Some(album) = &t.album {
                 parts.push(album.clone());
             }
         }
         Item::Video(t) => {
-            kind("Video", &mut parts);
+            kind(t!("common.video"), &mut parts);
             parts.push(t.artists.clone());
         }
         Item::Episode(t) => {
-            kind("Episode", &mut parts);
+            kind(t!("common.episode"), &mut parts);
             parts.push(t.artists.clone());
         }
         Item::Album(a) => {
             match &a.album_type {
                 Some(t) if with_kind => parts.push(t.clone()),
-                _ => kind("Album", &mut parts),
+                _ => kind(t!("common.album"), &mut parts),
             }
             parts.push(join_names(&a.artists));
             parts.extend(a.year.clone());
         }
         Item::Artist(a) => {
-            kind("Artist", &mut parts);
+            kind(t!("common.artist"), &mut parts);
             parts.extend(a.subtitle.clone());
         }
         Item::Playlist(p) => {
-            kind("Playlist", &mut parts);
+            kind(t!("common.playlist"), &mut parts);
             parts.extend(p.author.as_ref().map(|a| a.name.clone()));
             parts.extend(p.subtitle.clone());
         }
         Item::Podcast(p) => {
-            kind("Podcast", &mut parts);
+            kind(t!("common.podcast"), &mut parts);
             parts.extend(p.author.as_ref().map(|a| a.name.clone()));
         }
     }
@@ -238,7 +238,7 @@ pub fn item_menu(menu: PopupMenu, item: &Item, list: ListContext) -> PopupMenu {
         return menu;
     };
     let route = item_route(item);
-    let mut menu = menu.item(menu_item("Open", Lucide::ArrowRight).on_click({
+    let mut menu = menu.item(menu_item(t!("common.open"), Lucide::ArrowRight).on_click({
         move |_, window, cx| {
             if let Some(route) = route.clone() {
                 update_app(cx, |app, cx| app.navigate(route, window, cx));
@@ -257,28 +257,32 @@ pub fn item_menu(menu: PopupMenu, item: &Item, list: ListContext) -> PopupMenu {
     let is_artist = matches!(item, Item::Artist(_));
     menu = menu
         .separator()
-        .item(action("Play", Lucide::Play, CollectionAction::Play))
         .item(action(
-            "Shuffle",
+            t!("common.play"),
+            Lucide::Play,
+            CollectionAction::Play,
+        ))
+        .item(action(
+            t!("common.shuffle"),
             Lucide::Shuffle,
             CollectionAction::Shuffle,
         ));
     if !is_artist {
         menu = menu
             .item(action(
-                "Play next",
+                t!("common.play_next"),
                 Lucide::ListStart,
                 CollectionAction::PlayNext,
             ))
             .item(action(
-                "Add to queue",
+                t!("common.add_to_queue"),
                 Lucide::ListEnd,
                 CollectionAction::AddToQueue,
             ));
     }
     if !matches!(item, Item::Podcast(_)) {
         menu = menu.separator().item(action(
-            "Start radio",
+            t!("common.start_radio"),
             Lucide::Radio,
             CollectionAction::Radio,
         ));
@@ -303,7 +307,11 @@ pub fn item_menu(menu: PopupMenu, item: &Item, list: ListContext) -> PopupMenu {
     }
     for (id, name) in artists {
         menu = menu.item(
-            menu_item(&format!("Go to {name}"), Lucide::MicVocal).on_click(move |_, window, cx| {
+            menu_item(
+                &t!("track.menu.go_to_named_artist", artist = name),
+                Lucide::MicVocal,
+            )
+            .on_click(move |_, window, cx| {
                 let route = Route::Artist {
                     id: id.clone(),
                     name: name.clone(),
@@ -470,7 +478,7 @@ fn see_all(id: SharedString, shelf: &Shelf) -> Option<AnyElement> {
         Button::new(id)
             .ghost()
             .small()
-            .label("See all")
+            .label(t!("common.see_all"))
             .on_click(move |_, window, cx| {
                 let route = target_route(&target, &title);
                 update_app(cx, |app, cx| app.navigate(route, window, cx));
@@ -814,22 +822,17 @@ pub fn load_state(
             .text_sm()
             .text_color(cx.theme().muted_foreground)
             .child(Spinner::new())
-            .child("Loading…")
+            .child(t!("common.loading"))
             .into_any_element(),
-        Some(e) => empty_state(
-            Lucide::CloudOff,
-            "Couldn't load this page",
-            e.to_owned(),
-            cx,
-        )
-        .child(
-            Button::new(SharedString::from(format!("{id}-retry")))
-                .primary()
-                .label("Retry")
-                .icon(Lucide::RefreshCw)
-                .on_click(move |_, window, cx| retry(window, cx)),
-        )
-        .into_any_element(),
+        Some(e) => empty_state(Lucide::CloudOff, t!("items.load_failed"), e.to_owned(), cx)
+            .child(
+                Button::new(SharedString::from(format!("{id}-retry")))
+                    .primary()
+                    .label(t!("common.retry"))
+                    .icon(Lucide::RefreshCw)
+                    .on_click(move |_, window, cx| retry(window, cx)),
+            )
+            .into_any_element(),
     }
 }
 
@@ -850,7 +853,7 @@ pub fn more_footer(
         .text_sm()
         .text_color(muted)
         .when(loading, |this| {
-            this.child(Spinner::new()).child("Loading more…")
+            this.child(Spinner::new()).child(t!("items.loading_more"))
         })
         .when(!loading, |this| {
             this.children(error.map(|e| div().text_color(cx.theme().danger).child(e.to_owned())))
@@ -859,9 +862,9 @@ pub fn more_footer(
                         .small()
                         .outline()
                         .label(if error.is_some() {
-                            "Retry"
+                            t!("common.retry")
                         } else {
-                            "Load more"
+                            t!("common.load_more")
                         })
                         .on_click(move |_, window, cx| load(window, cx)),
                 )

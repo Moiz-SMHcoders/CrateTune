@@ -83,7 +83,7 @@ struct HeaderSnap {
     background: NowPlayingBackground,
     demo: bool,
     buffering: bool,
-    speed: Option<String>,
+    speed: Option<f32>,
     preview: bool,
     source: Option<SharedString>,
     sleep: Option<String>,
@@ -498,7 +498,8 @@ impl MusicApp {
             background,
             demo: self.engine.as_ref().is_some_and(|e| e.is_demo()),
             buffering: state.buffering && state.status == PlaybackStatus::Playing,
-            speed: ((state.speed - 1.).abs() > 0.01).then(|| format!("{:.2}×", state.speed)),
+            // Formatted in `header_view` (only when the snapshot changes).
+            speed: ((state.speed - 1.).abs() > 0.01).then_some(state.speed),
             preview: state.preview_only,
             source: crate::module_service::source_label(state.source.as_ref())
                 .filter(|_| state.track.is_some())
@@ -521,7 +522,7 @@ impl MusicApp {
                     .ghost()
                     .rounded(px(999.))
                     .icon(IconName::ChevronDown)
-                    .tooltip("Close (Esc)")
+                    .tooltip(t!("np.close_tooltip"))
                     .on_click(|_, window, cx| {
                         update_app(cx, |app, cx| app.close_now_playing(window, cx));
                     }),
@@ -532,19 +533,38 @@ impl MusicApp {
                     .text_xs()
                     .font_weight(FontWeight::SEMIBOLD)
                     .text_color(white(0.6))
-                    .child("NOW PLAYING"),
+                    .child(t!("np.header")),
             )
             .when(s.demo, |this| {
-                this.child(Tag::secondary().small().rounded_full().child("Demo clock"))
+                this.child(
+                    Tag::secondary()
+                        .small()
+                        .rounded_full()
+                        .child(t!("np.demo_clock")),
+                )
             })
             .when(s.buffering, |this| {
-                this.child(Tag::secondary().small().rounded_full().child("Buffering…"))
+                this.child(
+                    Tag::secondary()
+                        .small()
+                        .rounded_full()
+                        .child(t!("np.buffering")),
+                )
             })
-            .when_some(s.speed.clone(), |this, speed| {
+            .when_some(s.speed, |this, speed| {
+                let speed = t!(
+                    "np.speed",
+                    speed = crate::i18n::format::decimal(speed.into(), 2)
+                );
                 this.child(Tag::secondary().small().rounded_full().child(speed))
             })
             .when(s.preview, |this| {
-                this.child(Tag::warning().small().rounded_full().child("Preview"))
+                this.child(
+                    Tag::warning()
+                        .small()
+                        .rounded_full()
+                        .child(t!("np.preview")),
+                )
             })
             .when_some(s.source.clone(), |this, label| {
                 this.child(Tag::secondary().small().rounded_full().child(label))
@@ -557,7 +577,7 @@ impl MusicApp {
                     .icon(Lucide::Moon)
                     .selected(armed)
                     .when_some(s.sleep.clone(), |b, label| b.label(label))
-                    .tooltip("Sleep timer")
+                    .tooltip(t!("np.sleep_tooltip"))
                     .dropdown_menu(move |menu, _, _| {
                         MusicApp::sleep_timer_menu(menu, armed, custom)
                     }),
@@ -567,9 +587,9 @@ impl MusicApp {
                     .ghost()
                     .rounded(px(999.))
                     .icon(Lucide::LayoutTemplate)
-                    .tooltip("Design and background")
+                    .tooltip(t!("np.layout_tooltip"))
                     .dropdown_menu(move |mut menu, _, _| {
-                        menu = menu.label("Design");
+                        menu = menu.label(t!("np.menu.design"));
                         for l in NowPlayingLayout::ALL {
                             menu = menu.item(
                                 PopupMenuItem::new(l.title()).checked(l == layout).on_click(
@@ -581,7 +601,7 @@ impl MusicApp {
                                 ),
                             );
                         }
-                        menu = menu.separator().label("Background");
+                        menu = menu.separator().label(t!("np.menu.background"));
                         for b in NowPlayingBackground::ALL {
                             menu = menu.item(
                                 PopupMenuItem::new(b.title())
@@ -602,7 +622,7 @@ impl MusicApp {
                     .ghost()
                     .rounded(px(999.))
                     .icon(IconName::Settings)
-                    .tooltip("Settings")
+                    .tooltip(t!("common.settings"))
                     .on_click(|_, window, cx| {
                         update_app(cx, |app, cx| app.open_settings(None, window, cx));
                     }),
@@ -999,7 +1019,12 @@ impl MusicApp {
                 .justify_center()
                 .gap_1()
                 .text_sm()
-                .child(div().flex_none().text_color(white(0.45)).child("Up next"))
+                .child(
+                    div()
+                        .flex_none()
+                        .text_color(white(0.45))
+                        .child(t!("np.up_next")),
+                )
                 .child(
                     div()
                         .min_w_0()
@@ -1013,7 +1038,7 @@ impl MusicApp {
     pub(crate) fn titles(track: Option<&Track>) -> (SharedString, SharedString) {
         match track {
             Some(t) => (t.title.clone().into(), t.artists.clone().into()),
-            None => ("Not playing".into(), "".into()),
+            None => (t!("common.not_playing").into(), "".into()),
         }
     }
 
@@ -1288,21 +1313,21 @@ impl MusicApp {
                 .into_any_element()
         };
         let Some(track) = track else {
-            return message("Nothing playing", None, false);
+            return message(t!("lyrics.nothing_playing"), None, false);
         };
         let prepared = match self.lyrics.states.get(&track.video_id) {
             None | Some(LyricsState::Loading) => {
-                return message("Loading lyrics…", None, true);
+                return message(t!("lyrics.loading"), None, true);
             }
             Some(LyricsState::Missing { .. }) => {
                 return message(
-                    "No lyrics",
-                    Some("None of the enabled lyrics providers has this track.".into()),
+                    t!("lyrics.missing_title"),
+                    Some(t!("lyrics.missing_detail").into()),
                     false,
                 );
             }
             Some(LyricsState::Failed(e)) => {
-                return message("Couldn't load lyrics", Some(e.clone()), false);
+                return message(t!("lyrics.failed"), Some(e.clone()), false);
             }
             Some(LyricsState::Ready(prepared)) => prepared.clone(),
         };
@@ -1315,8 +1340,8 @@ impl MusicApp {
         };
         let translation_status = match (&translation, display.translate) {
             (_, false) => None,
-            (None, true) => Some(("Translating…".to_owned(), false)),
-            (Some(Err(e)), true) => Some((format!("Translation failed: {e}"), true)),
+            (None, true) => Some((t!("lyrics.translating").to_owned(), false)),
+            (Some(Err(e)), true) => Some((t!("lyrics.translation_failed", error = e), true)),
             (Some(Ok(_)), true) => None,
         };
         let translated = match translation {
@@ -1324,12 +1349,12 @@ impl MusicApp {
             _ => None,
         };
         let kind = match prepared.kind {
-            SyncKind::Word => "Word-synced",
-            SyncKind::Line => "Line-synced",
-            SyncKind::Plain => "Unsynced",
+            SyncKind::Word => t!("lyrics.kind.word"),
+            SyncKind::Line => t!("lyrics.kind.line"),
+            SyncKind::Plain => t!("lyrics.kind.plain"),
         };
         let toolbar_state = ToolbarSnap {
-            label: format!("{} · {kind}", prepared.provider).into(),
+            label: t!("lyrics.source", provider = prepared.provider, kind = kind).into(),
             translate: display.translate,
             status: translation_status,
             can_share: prepared.synced.is_some() || !prepared.plain.is_empty(),
@@ -1381,16 +1406,15 @@ impl MusicApp {
                         .truncate()
                         .text_color(white(0.75))
                         .child(match s.selected {
-                            0 => format!("Select up to {MAX_SELECTED} lines for a card"),
-                            1 => "1 line selected".to_owned(),
-                            n => format!("{n} lines selected"),
+                            0 => tp!("lyrics.select_hint", MAX_SELECTED),
+                            n => tp!("lyrics.selected", n),
                         }),
                 )
                 .child(
                     Button::new("np-share-cancel")
                         .ghost()
                         .xsmall()
-                        .label("Cancel")
+                        .label(t!("common.cancel"))
                         .on_click(|_, _, cx| {
                             update_app(cx, |app, cx| app.set_lyrics_selecting(false, cx));
                         }),
@@ -1399,7 +1423,7 @@ impl MusicApp {
                     Button::new("np-share-create")
                         .primary()
                         .xsmall()
-                        .label("Create card…")
+                        .label(t!("lyrics.create_card"))
                         .disabled(s.selected == 0)
                         .on_click(|_, window, cx| {
                             update_app(cx, |app, cx| app.open_lyrics_card(window, cx));
@@ -1428,7 +1452,7 @@ impl MusicApp {
                         Button::new("np-translate-retry")
                             .ghost()
                             .xsmall()
-                            .label("Retry")
+                            .label(t!("common.retry"))
                             .on_click(|_, _, cx| {
                                 update_app(cx, |app, cx| app.retry_translation(cx));
                             }),
@@ -1442,7 +1466,7 @@ impl MusicApp {
                         .xsmall()
                         .rounded(px(999.))
                         .icon(Lucide::Share2)
-                        .tooltip("Share lyrics as a card")
+                        .tooltip(t!("lyrics.share_tooltip"))
                         .on_click(|_, _, cx| {
                             update_app(cx, |app, cx| app.set_lyrics_selecting(true, cx));
                         }),
@@ -1456,9 +1480,9 @@ impl MusicApp {
                     .icon(Lucide::Languages)
                     .selected(translate)
                     .tooltip(if translate {
-                        "Translation: on"
+                        t!("lyrics.translation_on")
                     } else {
-                        "Translation: off"
+                        t!("lyrics.translation_off")
                     })
                     .on_click(move |_, _, cx| {
                         update_app(cx, |app, cx| {
@@ -1473,7 +1497,7 @@ impl MusicApp {
                     .xsmall()
                     .rounded(px(999.))
                     .icon(Lucide::RotateCcw)
-                    .tooltip("Search the providers again")
+                    .tooltip(t!("lyrics.reload_tooltip"))
                     .on_click(|_, _, cx| {
                         update_app(cx, |app, cx| app.reload_lyrics(cx));
                     }),
@@ -1549,9 +1573,9 @@ pub(crate) fn like_icon_button(
         (Lucide::Heart.path(), white(0.8))
     };
     let tip = if liked {
-        "Remove from liked songs"
+        t!("common.remove_from_liked")
     } else {
-        "Like"
+        t!("common.like")
     };
     let track = track.clone();
     div()

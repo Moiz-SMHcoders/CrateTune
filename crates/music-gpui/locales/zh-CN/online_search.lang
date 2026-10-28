@@ -1,0 +1,35 @@
+# The search page (zh-CN).
+
+search.title = 搜索
+search.query_title = “{query}”
+search.searching = 正在搜索…
+
+search.tab.all = 全部
+search.tab.songs = 歌曲
+search.tab.videos = 视频
+search.tab.albums = 专辑
+search.tab.artists = 艺人
+search.tab.community_playlists = 社区播放列表
+search.tab.featured_playlists = 精选播放列表
+search.tab.podcasts = 播客
+search.tab.episodes = 单集
+
+search.tab_empty.songs = 没有歌曲
+search.tab_empty.videos = 没有视频
+search.tab_empty.albums = 没有专辑
+search.tab_empty.artists = 没有艺人
+search.tab_empty.community_playlists = 没有社区播放列表
+search.tab_empty.featured_playlists = 没有精选播放列表
+search.tab_empty.podcasts = 没有播客
+search.tab_empty.episodes = 没有单集
+search.tab_empty.detail = 试试其他类别或搜索词。
+
+search.correction.applied = 正在显示 {corrected} 的结果 · 仍然搜索 {original}
+search.correction.suggested = 你是不是要找 {corrected}？
+
+search.top_result = 最佳结果
+search.empty.title = 没有结果
+search.empty.detail = 试试其他搜索词，或检查拼写。
+
+search.start.title = 搜索 YouTube Music
+search.start.detail = 在搜索框（⌘F）中输入歌曲、艺人、专辑或播放列表，然后按回车键。

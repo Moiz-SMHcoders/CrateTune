@@ -1,0 +1,18 @@
+settings.content.group_region = Ngôn ngữ & khu vực
+settings.content.language = Ngôn ngữ nội dung
+settings.content.language_description = Ngôn ngữ của tiêu đề, kệ nội dung và tìm kiếm trên YouTube Music.
+settings.content.language_placeholder = Ngôn ngữ
+settings.content.country = Quốc gia nội dung
+settings.content.country_description = Khu vực của trang chủ, bảng xếp hạng và nhạc mới phát hành.
+settings.content.country_placeholder = Quốc gia
+settings.content.region_note = Thay đổi có hiệu lực ngay; các trang đang mở sẽ tải lại bằng ngôn ngữ mới.
+
+settings.content.group_filters = Bộ lọc
+settings.content.hide_explicit = Ẩn nội dung nhạy cảm
+settings.content.hide_explicit_description = Loại bỏ bài hát và album bị gắn nhãn nhạy cảm khỏi các trang, tìm kiếm và radio.
+settings.content.hide_videos = Ẩn video âm nhạc
+settings.content.hide_videos_description = Chỉ bài hát: video âm nhạc và video của người dùng bị loại khỏi kệ nội dung, tìm kiếm, danh sách phát, album, radio và danh sách chờ (album mà YouTube chỉ có dưới dạng video âm thanh chính thức vẫn được giữ đầy đủ).
+
+settings.content.group_radio = Radio
+settings.content.autoplay = Tự động phát bài hát tương tự
+settings.content.autoplay_description = Khi bài cuối cùng trong danh sách chờ bắt đầu, các bài từ radio của nó sẽ được thêm vào phía sau.

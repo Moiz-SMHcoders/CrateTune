@@ -1,0 +1,28 @@
+# UI language picker (French).
+settings.language.group = Langue
+settings.language.label = Langue de l’interface
+settings.language.description = Langue de l'interface. Le contenu YouTube Music a son propre réglage (Contenu et région).
+settings.language.system = Langue du système ({language})
+settings.language.system_search = défaut automatique système par défaut
+
+language.name.en = Anglais
+language.name.es = Espagnol
+language.name.pt-BR = Portugais (Brésil)
+language.name.fr = Français
+language.name.de = Allemand
+language.name.it = Italien
+language.name.nl = Néerlandais
+language.name.pl = Polonais
+language.name.ru = Russe
+language.name.uk = Ukrainien
+language.name.tr = Turc
+language.name.id = Indonésien
+language.name.vi = Vietnamien
+language.name.ja = Japonais
+language.name.ko = Coréen
+language.name.zh-CN = Chinois (simplifié)
+language.name.zh-TW = Chinois (traditionnel)
+language.name.hi = Hindi
+language.name.ar = Arabe
+language.name.fa = Persan
+language.name.he = Hébreu

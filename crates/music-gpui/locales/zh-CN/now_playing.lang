@@ -1,0 +1,76 @@
+# Now Playing screen, lyrics pane and lyrics card dialog (zh-CN).
+
+# ---- Header
+np.close_tooltip = 关闭（Esc）
+np.header = 正在播放
+np.demo_clock = 演示时钟
+np.buffering = 正在缓冲…
+np.preview = 试听
+np.speed = {speed}×
+np.sleep_tooltip = 睡眠定时器
+np.layout_tooltip = 样式与背景
+np.menu.design = 样式
+np.menu.background = 背景
+
+# ---- Player
+np.up_next = 即将播放
+np.playing_from = 播放来源
+np.your_queue = 你的队列
+np.of_total = 共 {total}
+np.editorial.header_album = 正在播放  ·  {album}
+np.editorial.play = 播放
+np.editorial.pause = 暂停
+np.editorial.loading = 加载中
+np.queue.title = 即将播放
+np.queue.more.other = 还有 {count} 首
+np.queue.empty = 队列为空。从列表中添加歌曲，或开启自动播放。
+
+# ---- Lyrics pane
+lyrics.nothing_playing = 未在播放
+lyrics.loading = 正在加载歌词…
+lyrics.missing_title = 暂无歌词
+lyrics.missing_detail = 已启用的歌词来源中都没有这首歌。
+lyrics.failed = 无法加载歌词
+lyrics.translating = 正在翻译…
+lyrics.translation_failed = 翻译失败：{error}
+lyrics.kind.word = 逐字同步
+lyrics.kind.line = 逐行同步
+lyrics.kind.plain = 未同步
+lyrics.source = {provider} · {kind}
+lyrics.select_hint.other = 最多选择 {count} 行制作卡片
+lyrics.selected.other = 已选择 {count} 行
+lyrics.create_card = 制作卡片…
+lyrics.share_tooltip = 将歌词分享为卡片
+lyrics.translation_on = 翻译：开
+lyrics.translation_off = 翻译：关
+lyrics.reload_tooltip = 重新搜索歌词来源
+
+# ---- Lyrics card dialog
+card.dialog_title = 歌词卡片
+card.row.background = 背景
+card.row.text = 文字
+card.row.size = 大小
+card.row.shape = 比例
+card.row.cover = 封面
+card.cover.show = 显示
+card.cover.hide = 隐藏
+card.save = 保存图片…
+card.copy = 复制图片
+card.copying = 正在复制…
+card.copied = 已复制到剪贴板
+card.saved = 已保存 {path}
+card.save_failed = 无法保存：{error}
+card.draw_failed = 无法绘制卡片：{error}
+card.aspect.square = 方形
+card.aspect.portrait = 竖版
+card.aspect.story = 快拍
+card.bg.blur = 模糊封面
+card.bg.album = 专辑配色
+card.bg.dark = 深色
+card.bg.light = 浅色
+card.align.left = 左对齐
+card.align.center = 居中
+card.align.right = 右对齐
+card.size.small = 小
+card.size.medium = 中
+card.size.large = 大

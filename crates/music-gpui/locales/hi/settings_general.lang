@@ -1,0 +1,121 @@
+# Settings: Account, Network, About, settings panel, update check, sign-in window (Hindi).
+
+# ---- Account
+settings.account.cookie_title = ब्राउज़र कुकी से साइन इन करें
+settings.account.cookie_steps = 1. अपने ब्राउज़र में music.youtube.com खोलें और साइन इन करें।\n2. डेवलपर टूल खोलें (Safari / Chrome में ⌥⌘I) → Network, पेज रीलोड करें।\n3. music.youtube.com पर किसी भी अनुरोध (जैसे “browse”) पर क्लिक करें, Request Headers में “Cookie” ढूँढें और उसकी पूरी वैल्यू कॉपी करें।\n4. इसे नीचे पेस्ट करें। यह OS कीचेन में रखी जाती है और सिर्फ़ YouTube को भेजी जाती है।
+settings.account.cookie_index = Google खाता इंडेक्स (अगर कई खातों से साइन इन है):
+settings.account.not_signed_in = साइन इन नहीं है। सब कुछ बिना पहचान के काम करता है; साइन इन करने पर आपके पसंद किए गए गाने, सेव किए गए एल्बम, सब्सक्रिप्शन और प्लेलिस्ट लाइब्रेरी में सिंक होते हैं, और पसंद व प्लेलिस्ट में बदलाव YouTube Music पर वापस जाते हैं।
+settings.account.sign_in_google = Google से साइन इन करें…
+settings.account.paste_cookie = कुकी पेस्ट करें…
+settings.account.google_refused = अगर Google साइन-इन विंडो को मना कर दे (“यह ब्राउज़र या ऐप सुरक्षित नहीं हो सकता”), तो “कुकी पेस्ट करें” इस्तेमाल करें।
+settings.account.last_synced = आखिरी सिंक {date}
+settings.account.not_synced = अभी तक सिंक नहीं हुआ
+settings.account.sync_now = अभी सिंक करें
+settings.account.syncing = सिंक हो रहा है…
+settings.account.sync_group = लाइब्रेरी सिंक
+settings.account.sync_row = अपनी YouTube Music लाइब्रेरी सिंक करें
+settings.account.sync_row_desc = पसंद किए गए गाने, लाइब्रेरी के गाने, सेव किए गए एल्बम, सब्सक्रिप्शन, प्लेलिस्ट।
+settings.account.accounts_group = खाते
+settings.account.channels = इस Google खाते के चैनल (ब्रैंड खाते):
+settings.account.google_index = Google खाता
+settings.account.google_index_desc = जब कुकी में कई Google खाते हों: कौन-सा (0 = पहला)।
+settings.account.cookie_note = साइन इन करने में music.youtube.com के लिए आपके ब्राउज़र की सेशन कुकी इस्तेमाल होती है। यह OS कीचेन में रखी जाती है और सिर्फ़ YouTube को भेजी जाती है। खाते की सुविधाएँ YouTube के वेब API के हिसाब से बनाई गई हैं, लेकिन अभी तक किसी असली खाते से जाँची नहीं गईं।
+
+# ---- About
+settings.about.show_welcome = वेलकम गाइड दिखाएँ
+settings.about.version_summary = वर्शन {version} · {summary}
+settings.about.summary = YouTube Music के लिए नेटिव डेस्कटॉप क्लाइंट
+settings.about.not_affiliated = YouTube या Google से संबद्ध नहीं है, और न ही उनके द्वारा समर्थित या प्रायोजित है।
+settings.about.license = लाइसेंस
+settings.about.license_notice = यह प्रोग्राम मुफ़्त सॉफ़्टवेयर है: आप इसे GNU General Public License, वर्शन 3 की शर्तों के तहत फिर से बाँट सकते हैं और/या बदल सकते हैं। इसे बिना किसी वारंटी के बाँटा जाता है; विवरण के लिए लाइसेंस देखें।
+settings.about.credits = क्रेडिट
+settings.about.credit.archivetune = सुविधाएँ और स्क्रीन {project} (GPL-3.0) से पोर्ट की गई हैं, © Rukamori और योगदानकर्ता। यह एक स्वतंत्र प्रोजेक्ट है।
+settings.about.credit.hummingbird = इक्वलाइज़र, OS मीडिया कंट्रोल, स्क्रॉबलिंग और Discord प्रेज़ेंस Hummingbird (Apache-2.0) से पोर्ट किए गए हैं, © Hummingbird contributors।
+settings.about.credit.recognition_title = गाने की पहचान
+settings.about.credit.recognition = Shazam-संगत फ़िंगरप्रिंटिंग {project} के shazamkit (GPL-3.0) से पोर्ट की गई है, जो SongRec के फ़ॉर्मैट पर चलता है। Shazam या Apple से संबद्ध नहीं है।
+settings.about.credit.libraries_title = लाइब्रेरी
+settings.about.credit.libraries = GPUI और gpui-component (Apache-2.0), Symphonia और rodio, Lucide आइकन (ISC), LRCLIB बोल।
+
+# ---- Update check
+update.group = अपडेट
+update.releases_from = github.com/{repo} से रिलीज़
+update.checking = जाँचा जा रहा है…
+update.up_to_date_version = आपके पास नया वर्शन है ({version})।
+update.available_version = वर्शन {version} उपलब्ध है।
+update.check_failed = जाँच नहीं हो सकी: {error}
+update.check_now = अभी जाँचें
+update.download = डाउनलोड करें…
+update.no_release = कोई रिलीज़ प्रकाशित नहीं है
+update.available_toast = {app} {version} उपलब्ध है (सेटिंग → जानकारी)
+update.up_to_date_toast = {app} अप टू डेट है
+
+# ---- Network
+settings.network.proxy = प्रॉक्सी
+settings.network.proxy_off = बंद
+settings.network.host = होस्ट
+settings.network.port = पोर्ट
+settings.network.user = यूज़र नेम
+settings.network.password = पासवर्ड
+settings.network.doh_url = DoH URL
+settings.network.host_placeholder = proxy.example.com या 127.0.0.1
+settings.network.optional = वैकल्पिक
+settings.network.test_connection = कनेक्शन जाँचें
+settings.network.test_dns = DNS जाँचें
+settings.network.using_proxy = {url} इस्तेमाल हो रहा है
+settings.network.direct = सीधे कनेक्शन (कोई प्रॉक्सी नहीं)
+settings.network.status_with_doh = {proxy} · DNS-over-HTTPS ({server})
+settings.network.testing = जाँचा जा रहा है…
+settings.network.test_ok = {ms} ms में YouTube से कनेक्ट हुआ
+settings.network.test_failed = कनेक्शन विफल रहा: {error}
+settings.network.lookup_failed = लुकअप विफल रहा: {error}
+settings.network.looking_up = लुकअप हो रहा है…
+settings.network.dns_ok = {host} → {addresses}, {via} से, {ms} ms में
+settings.network.dns_via_doh = DNS-over-HTTPS
+settings.network.dns_via_cache = DNS-over-HTTPS (कैश)
+settings.network.dns_via_system = सिस्टम रिज़ॉल्वर
+settings.network.proxy_note = हर चीज़ पर लागू: YouTube Music, ऑडियो स्ट्रीम, आर्टवर्क, बोल और स्क्रॉबलिंग। SOCKS5h होस्ट नेम को प्रॉक्सी के ज़रिए रिज़ॉल्व करता है। पासवर्ड कीचेन में रखा जाता है।
+settings.network.dns = DNS
+settings.network.dns_system = सिस्टम
+settings.network.dns_custom = कस्टम
+settings.network.dns_fallback = DoH विफल होने पर सिस्टम रिज़ॉल्वर इस्तेमाल करें
+settings.network.dns_note = DNS-over-HTTPS (RFC 8484) सामान्य DNS के बजाय एन्क्रिप्ट किए गए HTTPS कनेक्शन पर होस्ट नेम खोजता है। जवाब उनके TTL तक कैश किए जाते हैं। SOCKS5h प्रॉक्सी के साथ, प्रॉक्सी खुद नाम रिज़ॉल्व करता है। Quad9 तक उसके HTTP/1.1 पोर्ट 5053 पर पहुँचा जाता है, जिसे कुछ नेटवर्क ब्लॉक करते हैं।
+settings.network.error.port_number = पोर्ट एक संख्या (1–65535) होना चाहिए।
+settings.network.error.doh_invalid = DNS-over-HTTPS URL मान्य नहीं है।
+settings.network.error.proxy_invalid = इस प्रॉक्सी प्रकार के लिए प्रॉक्सी पता मान्य नहीं है।
+settings.network.error.doh_https = DNS-over-HTTPS URL https:// से शुरू होना चाहिए।
+settings.network.error.doh_invalid_detail = DNS-over-HTTPS URL मान्य नहीं है: {error}।
+settings.network.error.host_missing = प्रॉक्सी होस्ट डालें।
+settings.network.error.host_invalid = होस्ट सिर्फ़ एक नाम या पता होना चाहिए (बिना स्कीम, पाथ या स्पेस के)।
+settings.network.error.port_missing = 1 और 65535 के बीच का पोर्ट डालें।
+settings.network.error.socks4_auth = SOCKS4 पासवर्ड सपोर्ट नहीं करता; यूज़र नेम खाली छोड़ें।
+
+# ---- Settings panel
+settings.panel.placeholder.api_key = API कुंजी
+settings.panel.placeholder.shared_secret = शेयर्ड सीक्रेट
+settings.panel.placeholder.user_token = यूज़र टोकन
+settings.panel.placeholder.application_id = ऐप्लिकेशन ID
+settings.panel.lastfm_missing = पहले API कुंजी और शेयर्ड सीक्रेट डालें।
+settings.panel.lastfm_requesting = टोकन का अनुरोध किया जा रहा है…
+settings.panel.lastfm_finishing = पूरा हो रहा है…
+settings.panel.lb_missing = पहले अपना यूज़र टोकन पेस्ट करें।
+settings.panel.secrets.backend_and_file = {backend} + सेटिंग फ़ाइल (0600)
+settings.panel.secrets.file_keychain_disabled = सेटिंग फ़ाइल (0600; कीचेन बंद है)
+settings.panel.secrets.file_keychain_read_failed = सेटिंग फ़ाइल (0600; कीचेन पढ़ना विफल)
+settings.panel.secrets.file_keychain_unavailable = सेटिंग फ़ाइल (0600; कीचेन उपलब्ध नहीं)
+
+# ---- Credential stores
+secrets.backend.macos = macOS कीचेन
+secrets.backend.windows = Windows क्रेडेंशियल मैनेजर
+secrets.backend.secret_service = Secret Service
+
+# ---- Settings file problems
+settings.file.no_config_dir = कोई कॉन्फ़िग डायरेक्टरी नहीं; सेटिंग सेव नहीं होतीं
+settings.file.save_failed = सेव करना विफल रहा: {error}
+settings.file.read_failed = {path} पढ़ना: {error}
+settings.file.invalid_moved = {path} मान्य नहीं है ({error}); {backup} में ले जाया गया
+
+# ---- Google sign-in window
+login.window_title = YouTube Music में साइन इन करें
+login.instructions = अपने Google खाते से साइन इन करें। YouTube Music खुलते ही यह विंडो बंद हो जाएगी।
+login.webview_failed = वेब व्यू नहीं बन सका ({error})। इसके बजाय “कुकी पेस्ट करें” इस्तेमाल करें।
+login.checking = साइन इन हो गया — खाता जाँचा जा रहा है…

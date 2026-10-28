@@ -1,0 +1,157 @@
+# Shared strings (Turkish).
+
+locale.native_name = Türkçe
+
+# ---- Actions
+common.play = Çal
+common.pause = Duraklat
+common.shuffle = Karıştır
+common.radio = Radyo
+common.start_radio = Radyoyu başlat
+common.play_next = Sonra çal
+common.add_to_queue = Sıraya ekle
+common.add_to_playlist = Çalma listesine ekle…
+common.like = Beğen
+common.remove_from_liked = Beğenilenlerden kaldır
+common.download = İndir
+common.remove_download = İndirmeyi kaldır
+common.go_to_artist = Sanatçıya git
+common.go_to_album = Albüme git
+common.open = Aç
+common.cancel = İptal
+common.close = Kapat
+common.retry = Yeniden dene
+common.remove = Kaldır
+common.delete = Sil
+common.clear = Temizle
+common.save = Kaydet
+common.apply = Uygula
+common.reset = Sıfırla
+common.done = Bitti
+common.copy = Kopyala
+common.rename = Yeniden adlandır
+common.refresh = Yenile
+common.install = Yükle
+common.update = Güncelle
+common.import = İçe aktar
+common.search = Ara
+common.search_placeholder = Ara…
+common.see_all = Tümünü gör
+common.load_more = Daha fazla yükle
+common.show_more = Daha fazla göster
+common.back = Geri
+common.next = Sonraki
+common.connect = Bağlan
+common.disconnect = Bağlantıyı kes
+common.sign_in = Oturum aç
+common.sign_out = Oturumu kapat
+common.select = Seç
+common.select_all = Tümünü seç
+common.settings = Ayarlar
+
+# ---- States
+common.loading = Yükleniyor…
+common.saving = Kaydediliyor…
+common.downloading = İndiriliyor…
+common.off = Kapalı
+common.on = Açık
+common.none = Yok
+common.custom = Özel
+common.automatic = Otomatik
+common.not_playing = Çalmıyor
+common.not_connected = Bağlı değil
+common.nothing_here = Burada bir şey yok
+
+# ---- Things
+common.song = Şarkı
+common.video = Video
+common.artist = Sanatçı
+common.album = Albüm
+common.playlist = Çalma listesi
+common.podcast = Podcast
+common.episode = Bölüm
+common.queue = Sıra
+common.now_playing = Şu an çalıyor
+common.youtube_music = YouTube Music
+
+common.songs.one = {count} şarkı
+common.songs.other = {count} şarkı
+common.plays.one = {count} dinlenme
+common.plays.other = {count} dinlenme
+common.selected.one = {count} seçili
+common.selected.other = {count} seçili
+
+# ---- Sidebar
+nav.home = Ana sayfa
+nav.explore = Keşfet
+nav.charts = Listeler
+nav.moods = Ruh halleri ve türler
+nav.new_releases = Yeni çıkanlar
+nav.recognize = Tanı
+nav.library_group = Kitaplık
+nav.library = Kitaplık
+nav.history = Geçmiş
+nav.stats = İstatistikler
+nav.downloads = İndirilenler
+nav.local_files = Yerel dosyalar
+nav.import = İçe ve dışa aktar
+nav.together = Birlikte dinle
+nav.settings = Ayarlar
+
+# ---- Dates
+date.full = {day} {month} {year}
+date.today = Bugün
+date.yesterday = Dün
+date.month_in_date.1 = Ocak
+date.month_in_date.2 = Şubat
+date.month_in_date.3 = Mart
+date.month_in_date.4 = Nisan
+date.month_in_date.5 = Mayıs
+date.month_in_date.6 = Haziran
+date.month_in_date.7 = Temmuz
+date.month_in_date.8 = Ağustos
+date.month_in_date.9 = Eylül
+date.month_in_date.10 = Ekim
+date.month_in_date.11 = Kasım
+date.month_in_date.12 = Aralık
+date.month_short.1 = Oca
+date.month_short.2 = Şub
+date.month_short.3 = Mar
+date.month_short.4 = Nis
+date.month_short.5 = May
+date.month_short.6 = Haz
+date.month_short.7 = Tem
+date.month_short.8 = Ağu
+date.month_short.9 = Eyl
+date.month_short.10 = Eki
+date.month_short.11 = Kas
+date.month_short.12 = Ara
+date.weekday_short.1 = Pzt
+date.weekday_short.2 = Sal
+date.weekday_short.3 = Çar
+date.weekday_short.4 = Per
+date.weekday_short.5 = Cum
+date.weekday_short.6 = Cmt
+date.weekday_short.7 = Paz
+
+# ---- Durations and relative times
+time.just_now = az önce
+time.seconds_ago.one = {count} sn önce
+time.seconds_ago.other = {count} sn önce
+time.minutes_ago.one = {count} dk önce
+time.minutes_ago.other = {count} dk önce
+time.hours_ago.one = {count} sa önce
+time.hours_ago.other = {count} sa önce
+time.days_ago.one = {count} gün önce
+time.days_ago.other = {count} gün önce
+time.hours_minutes = {hours} sa {minutes} dk
+time.minutes = {minutes} dk
+time.seconds = {seconds} sn
+
+# ---- File sizes
+units.size = {value} {unit}
+units.b = B
+units.kb = KB
+units.mb = MB
+units.gb = GB
+units.tb = TB

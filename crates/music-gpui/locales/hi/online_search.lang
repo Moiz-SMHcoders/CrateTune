@@ -1,0 +1,35 @@
+# The search page (Hindi).
+
+search.title = खोजें
+search.query_title = “{query}”
+search.searching = खोजा जा रहा है…
+
+search.tab.all = सभी
+search.tab.songs = गाने
+search.tab.videos = वीडियो
+search.tab.albums = एल्बम
+search.tab.artists = कलाकार
+search.tab.community_playlists = कम्युनिटी प्लेलिस्ट
+search.tab.featured_playlists = चुनिंदा प्लेलिस्ट
+search.tab.podcasts = पॉडकास्ट
+search.tab.episodes = एपिसोड
+
+search.tab_empty.songs = कोई गाना नहीं
+search.tab_empty.videos = कोई वीडियो नहीं
+search.tab_empty.albums = कोई एल्बम नहीं
+search.tab_empty.artists = कोई कलाकार नहीं
+search.tab_empty.community_playlists = कोई कम्युनिटी प्लेलिस्ट नहीं
+search.tab_empty.featured_playlists = कोई चुनिंदा प्लेलिस्ट नहीं
+search.tab_empty.podcasts = कोई पॉडकास्ट नहीं
+search.tab_empty.episodes = कोई एपिसोड नहीं
+search.tab_empty.detail = कोई दूसरी कैटगरी या खोज आज़माएँ।
+
+search.correction.applied = {corrected} के नतीजे दिखाए जा रहे हैं · इसके बजाय {original} खोजें
+search.correction.suggested = क्या आपका मतलब {corrected} था?
+
+search.top_result = सबसे सटीक नतीजा
+search.empty.title = कोई नतीजा नहीं
+search.empty.detail = कोई दूसरी खोज आज़माएँ, या स्पेलिंग जाँचें।
+
+search.start.title = YouTube Music पर खोजें
+search.start.detail = खोज फ़ील्ड (⌘F) में कोई गाना, कलाकार, एल्बम या प्लेलिस्ट टाइप करें और Enter दबाएँ।

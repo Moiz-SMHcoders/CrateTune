@@ -1,0 +1,79 @@
+# Now Playing screen, its lyrics pane and the lyrics card dialog.
+
+# ---- Header
+np.close_tooltip = Schließen (Esc)
+np.header = LÄUFT GERADE
+np.demo_clock = Demo-Uhr
+np.buffering = Puffern…
+np.preview = Vorschau
+np.speed = {speed}×
+np.sleep_tooltip = Sleep-Timer
+np.layout_tooltip = Design und Hintergrund
+np.menu.design = Design
+np.menu.background = Hintergrund
+
+# ---- Player
+np.up_next = Als Nächstes
+np.playing_from = WIEDERGABE AUS
+np.your_queue = Deine Warteschlange
+np.of_total = von {total}
+np.editorial.header_album = LÄUFT GERADE  ·  {album}
+np.editorial.play = ABSPIELEN
+np.editorial.pause = PAUSE
+np.editorial.loading = LÄDT
+np.queue.title = ALS NÄCHSTES
+np.queue.more.one = +{count} weiterer
+np.queue.more.other = +{count} weitere
+np.queue.empty = Nichts in der Warteschlange. Füg Songs aus einer Liste hinzu oder aktiviere Autoplay.
+
+# ---- Lyrics pane
+lyrics.nothing_playing = Keine Wiedergabe
+lyrics.loading = Songtext wird geladen…
+lyrics.missing_title = Kein Songtext
+lyrics.missing_detail = Keiner der aktivierten Songtext-Anbieter hat diesen Titel.
+lyrics.failed = Songtext konnte nicht geladen werden
+lyrics.translating = Wird übersetzt…
+lyrics.translation_failed = Übersetzung fehlgeschlagen: {error}
+lyrics.kind.word = Wortgenau
+lyrics.kind.line = Zeilengenau
+lyrics.kind.plain = Nicht synchron
+lyrics.source = {provider} · {kind}
+lyrics.select_hint.one = Wähle bis zu {count} Zeile für eine Karte
+lyrics.select_hint.other = Wähle bis zu {count} Zeilen für eine Karte
+lyrics.selected.one = {count} Zeile ausgewählt
+lyrics.selected.other = {count} Zeilen ausgewählt
+lyrics.create_card = Karte erstellen…
+lyrics.share_tooltip = Songtext als Karte teilen
+lyrics.translation_on = Übersetzung: an
+lyrics.translation_off = Übersetzung: aus
+lyrics.reload_tooltip = Anbieter erneut durchsuchen
+
+# ---- Lyrics card dialog
+card.dialog_title = Songtext-Karte
+card.row.background = Hintergrund
+card.row.text = Text
+card.row.size = Größe
+card.row.shape = Format
+card.row.cover = Cover
+card.cover.show = Zeigen
+card.cover.hide = Ausblenden
+card.save = Bild speichern…
+card.copy = Bild kopieren
+card.copying = Wird kopiert…
+card.copied = In die Zwischenablage kopiert
+card.saved = Gespeichert: {path}
+card.save_failed = Speichern fehlgeschlagen: {error}
+card.draw_failed = Karte konnte nicht gezeichnet werden: {error}
+card.aspect.square = Quadrat
+card.aspect.portrait = Hochformat
+card.aspect.story = Story
+card.bg.blur = Unscharfes Cover
+card.bg.album = Albumfarbe
+card.bg.dark = Dunkel
+card.bg.light = Hell
+card.align.left = Links
+card.align.center = Mitte
+card.align.right = Rechts
+card.size.small = Klein
+card.size.medium = Mittel
+card.size.large = Groß

@@ -1,0 +1,150 @@
+# Settings sections of the integrations (Ukrainian).
+
+# ---- Shared
+settings.integrations.connected_as = Підключено як {user}
+
+# ---- Last.fm / ListenBrainz
+settings.integrations.lastfm_approve = Схваліть застосунок у браузері, потім натисніть «Завершити».
+settings.integrations.finish = Завершити
+settings.integrations.forget_key = Забути ключ
+settings.integrations.api_key = Ключ API
+settings.integrations.shared_secret = Спільний секрет
+settings.integrations.checking_token = Перевірка токена…
+settings.integrations.validate = Перевірити
+settings.integrations.user_token = Токен користувача
+
+# ---- Discord
+settings.integrations.discord_title = Discord Rich Presence
+settings.integrations.discord_enter_id = Введіть ID свого застосунку Discord.
+settings.integrations.discord_connected = Підключено до Discord
+settings.integrations.discord_unreachable = Discord недоступний: {error}
+settings.integrations.discord_waiting = Очікування відтворення…
+settings.integrations.application_id = ID застосунку
+discord.activity.title = Активність
+discord.activity.type = Тип
+discord.activity.name = Назва
+discord.activity.details = Подробиці
+discord.activity.state = Стан
+discord.activity.placeholders_note = Заповнювачі: {title}, {artist}, {album}. Якщо назва порожня, використовується назва застосунку Discord.
+discord.activity.large_image = Велике зображення
+discord.activity.small_image = Мале зображення
+discord.activity.button = Кнопка {number}
+discord.activity.label = Підпис
+discord.activity.url = URL
+discord.activity.show_paused = Показувати на паузі
+discord.activity.show_paused_desc = Залишає активність (без часу відтворення), коли відтворення призупинено.
+discord.activity.custom_note = Власні зображення — це ключі ресурсів вашого застосунку Discord або URL зображень. Кнопки бачать інші, але не ви самі.
+
+# ---- Scrobble rules
+scrobble.rules.title = Коли пісня зараховується
+scrobble.rules.played = Відтворено
+scrobble.rules.or_at_most = …або щонайбільше
+scrobble.rules.ignore_under = Ігнорувати пісні коротші за
+scrobble.rules.percent = {percent} %
+scrobble.rules.note = Правило Last.fm: 50 % або 4 хвилини, пісні довші за 30 с. Діє для Last.fm і ListenBrainz.
+scrobble.errors.one = Помилки скроблінгу ({count})
+scrobble.errors.few = Помилки скроблінгу ({count})
+scrobble.errors.many = Помилки скроблінгу ({count})
+scrobble.errors.other = Помилки скроблінгу ({count})
+settings.integrations.secrets = Секрети: {store}
+settings.integrations.secrets_loading = Секрети: завантаження…
+settings.integrations.settings_path = Налаштування: {path}
+settings.integrations.not_saved = Налаштування не зберігаються (немає теки конфігурації)
+
+# ---- SponsorBlock
+settings.sponsorblock.categories = Категорії
+settings.sponsorblock.category_desc.music_offtopic = Розмови, сценки та інші немузичні частини кліпів.
+settings.sponsorblock.category_desc.sponsor = Платна реклама.
+settings.sponsorblock.category_desc.intro = Перерви та вступні анімації без змісту.
+settings.sponsorblock.category_desc.outro = Титри та кінцеві заставки.
+settings.sponsorblock.category_desc.selfpromo = Неоплачувана реклама: мерч, донати, привітання.
+settings.sponsorblock.category_desc.interaction = Нагадування поставити вподобайку, підписатися чи стежити.
+settings.sponsorblock.category_desc.preview = Підсумки та анонси іншого вмісту.
+settings.sponsorblock.category_desc.filler = Відступи, що не є основним змістом.
+settings.sponsorblock.category_desc.hook = Тизери та привітання на початку.
+settings.sponsorblock.using = Використовується {url}
+settings.sponsorblock.url_error = Потрібна адреса https:// без облікових даних і параметрів запиту
+settings.sponsorblock.skip_segments = Пропускати сегменти
+settings.sponsorblock.skip_segments_desc = Шукати позначені спільнотою сегменти у відео кожної пісні та пропускати їх.
+settings.sponsorblock.when = Коли починається сегмент
+settings.sponsorblock.when_desc = Пропустити одразу або показати кнопку «Пропустити» на панелі плеєра.
+settings.sponsorblock.mode_auto = Пропускати автоматично
+settings.sponsorblock.mode_ask = Питати
+settings.sponsorblock.notify = Сповіщати після пропуску
+settings.sponsorblock.server = Сервер
+settings.sponsorblock.api_url = URL API
+settings.sponsorblock.use_default = Використовувати типовий сервер
+settings.sponsorblock.forget = Забути знайдені сегменти
+settings.sponsorblock.privacy = Конфіденційність: надсилаються лише перші 4 символи хешу SHA-256 ID відео, тож сервер не знає, яка пісня грає. Сегменти надходять із sponsor.ajay.app (SponsorBlock, CC BY-NC-SA), якщо ви не вкажете інший сервер.
+
+# ---- Music Together
+settings.together.you = Ви
+settings.together.display_name = Показуване ім'я
+settings.together.name_placeholder = Ваше ім'я
+settings.together.display_name_note = Його бачать інші учасники сеансу.
+settings.together.hosting = Проведення сеансу
+settings.together.port = Порт
+settings.together.port_error = Порт має бути від 1024 до 65535
+settings.together.allow_add_desc = Їхні пропозиції потрапляють у вашу чергу.
+settings.together.allow_control_desc = Відтворення, пауза, перемотування й пропуск для всіх.
+settings.together.approval = Схвалювати гостей перед приєднанням
+settings.together.hosting_note = Сеанси працюють у вашій локальній мережі: гості підключаються безпосередньо до цього комп'ютера (дозвольте вхідні з'єднання, якщо брандмауер запитає). Посилання містить випадковий ключ; приєднатися можуть лише ті, хто має посилання. Зміни одразу застосовуються до запущеного сеансу. На сторінці «Слухати разом» кнопка «Зробити хостом» передає сеанс гостю: усі стежать за новим хостом.
+settings.together.across_networks = Між мережами
+settings.together.relay = Сервер-ретранслятор
+settings.together.relay_placeholder = wss://relay.example.com (порожньо: лише LAN)
+settings.together.relay_error = Потрібна адреса ws:// або wss:// (без імені користувача й параметрів запиту)
+settings.together.relay_note = «Хостити через ретранслятор» проводить сеанс через сервер music-relay, який ви розгортаєте самі (див. README: один невеликий бінарний файл; для wss:// поставте його за зворотний проксі з TLS). Тоді гості приєднуються за посиланням звідусіль. Ретранслятор пересилає повідомлення сеансу (ID пісень, назви, імена), але нічого не вирішує; порожньо = лише LAN.
+settings.together.open = Відкрити «Слухати разом»
+
+# ---- Spotify import
+settings.spotify.waiting = Очікування, поки ви схвалите застосунок у браузері…
+settings.spotify.account = Обліковий запис Spotify
+settings.spotify.client_id = Client ID
+settings.spotify.redirect_port = Порт переспрямування
+settings.spotify.redirect_uri = URI переспрямування: {uri}
+settings.spotify.steps = 1. Створіть застосунок на developer.spotify.com/dashboard (Web API). 2. Додайте до нього URI переспрямування, указаний вище. 3. Вставте сюди його Client ID і натисніть «Підключити». Доступ лише для читання (ваші плейлисти й улюблені пісні); токен оновлення зберігається у сховищі ключів.
+settings.spotify.without_account = Без облікового запису
+settings.spotify.without_account_note = Експортуйте плейлист за допомогою Exportify (exportify.app) та імпортуйте файл CSV у «Бібліотека → Імпорт і експорт». Вхід за допомогою cookie sp_dc вебплеєра (як це робить {other_app}) не підтримується: він залежить від секрету, видобутого з вебплеєра Spotify.
+settings.spotify.open_import = Відкрити «Імпорт і експорт»
+settings.spotify.error.no_client = Спершу введіть Client ID свого застосунку.
+settings.spotify.error.redirect = Не вдається прийняти переспрямування: {error}
+
+# ---- AI content filter
+settings.ai_filter.off = Вимк.: нічого нікуди не надсилається
+settings.ai_filter.incomplete = Потрібні кінцева точка, модель і хоча б одна категорія
+settings.ai_filter.failed = Останній запит не вдався: {error}
+settings.ai_filter.on.one = Увімк. · класифіковано {count} пісню чи альбом
+settings.ai_filter.on.few = Увімк. · класифіковано {count} пісні та альбоми
+settings.ai_filter.on.many = Увімк. · класифіковано {count} пісень і альбомів
+settings.ai_filter.on.other = Увімк. · класифіковано {count} пісні та альбому
+settings.ai_filter.hide = Приховувати
+settings.ai_filter.also_hide = Також приховувати
+settings.ai_filter.custom_placeholder = напр., пісні про автомобілі, мем-пісні
+settings.ai_filter.custom_note = Ваші власні категорії через кому (до 8), описані звичайними словами.
+settings.ai_filter.title = ШІ-фільтр вмісту
+settings.ai_filter.enable = Фільтрувати пісні за допомогою ШІ-моделі
+settings.ai_filter.enable_desc = Як «Приховувати відвертий вміст», але для категорій нижче.
+settings.ai_filter.forget = Забути класифікації
+settings.ai_filter.model = Модель
+settings.ai_filter.endpoint = Кінцева точка
+settings.ai_filter.endpoint_placeholder = https://api.openai.com/v1 або http://localhost:11434/v1
+settings.ai_filter.api_key = Ключ API
+settings.ai_filter.key_placeholder = Ключ API (не потрібен для локальних серверів)
+settings.ai_filter.api_note = Будь-який OpenAI-сумісний API chat-completions: OpenAI, OpenRouter або модель на цьому комп'ютері (Ollama, LM Studio, сервер llama.cpp). Ключ зберігається у сховищі ключів.
+settings.ai_filter.privacy = Конфіденційність
+settings.ai_filter.privacy_note = Типово вимкнено. Коли ввімкнено, назва, виконавці та альбом пісень і альбомів на сторінках, які ви відкриваєте, надсилаються на вказану вище кінцеву точку (нічого про вас, жодної історії прослуховування); кожен вердикт кешується на цьому комп'ютері, тож про пісню запитують лише раз. Пісні, які модель ще не оцінила, залишаються видимими.
+
+# ---- Chromecast
+settings.cast.looking = Пошук пристроїв Cast…
+settings.cast.found.one = Знайдено {count} пристрій
+settings.cast.found.few = Знайдено {count} пристрої
+settings.cast.found.many = Знайдено {count} пристроїв
+settings.cast.found.other = Знайдено {count} пристрою
+settings.cast.devices = Пристрої
+settings.cast.scan = Шукати
+settings.cast.casting = Трансляція
+settings.cast.cast = Транслювати
+settings.cast.streaming = Потокова передача
+settings.cast.direct = Пристрій сам отримує аудіо з YouTube
+settings.cast.direct_desc = Вимк.: цей застосунок передає аудіо на пристрій (працює з усіма піснями).
+settings.cast.note = Трансляція відтворює чергу на Chromecast, Google TV або колонці Nest у цій мережі (Default Media Receiver від Google). Кнопка Cast на панелі плеєра вибирає пристрій; після цього відтворення, пауза, перемотування, пропуск і гучність керують ним, а «Зупинити трансляцію» продовжує відтворення тут. Аудіо з YouTube і локальні файли передаються з цього комп'ютера на пристрій (не закривайте застосунок); пристрій і комп'ютер мають бути в одній мережі. Зміни діють з наступної пісні.

@@ -1,0 +1,28 @@
+# UI language picker (Turkish).
+settings.language.group = Dil
+settings.language.label = Arayüz dili
+settings.language.description = Arayüz dili. YouTube Music içeriğinin kendi ayarı vardır (İçerik ve bölge).
+settings.language.system = Sistem varsayılanı ({language})
+settings.language.system_search = varsayılan otomatik sistem
+
+language.name.en = İngilizce
+language.name.es = İspanyolca
+language.name.pt-BR = Portekizce (Brezilya)
+language.name.fr = Fransızca
+language.name.de = Almanca
+language.name.it = İtalyanca
+language.name.nl = Felemenkçe
+language.name.pl = Lehçe
+language.name.ru = Rusça
+language.name.uk = Ukraynaca
+language.name.tr = Türkçe
+language.name.id = Endonezce
+language.name.vi = Vietnamca
+language.name.ja = Japonca
+language.name.ko = Korece
+language.name.zh-CN = Çince (Basitleştirilmiş)
+language.name.zh-TW = Çince (Geleneksel)
+language.name.hi = Hintçe
+language.name.ar = Arapça
+language.name.fa = Farsça
+language.name.he = İbranice

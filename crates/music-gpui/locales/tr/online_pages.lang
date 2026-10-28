@@ -1,0 +1,56 @@
+# Online browse pages (Turkish).
+
+# ---- Home
+home.recent.title = Bu oturumda çalınanlar
+home.recent.subtitle = Yeniden dinle
+
+# ---- Explore
+explore.new_releases_detail = Yeni albümler ve single'lar
+explore.charts_detail = Ülkelere göre popüler olanlar
+explore.moods_detail = Her ana uygun çalma listeleri
+
+# ---- Charts
+charts.country_placeholder = Ülke
+charts.search_countries = Ülke ara…
+charts.empty.title = Liste yok
+charts.empty.detail = YouTube Music'te bu ülke için liste yok.
+
+# ---- Moods & genres
+moods.empty = YouTube Music bu bölge için ruh hali veya tür döndürmedi.
+
+# ---- New releases
+new_releases.subtitle = Yeni albümler ve single'lar
+new_releases.empty.title = Yeni bir şey yok
+new_releases.empty.detail = YouTube Music bu bölge için yeni çıkan döndürmedi.
+
+# ---- Browse pages
+browse.empty = Bu sayfada çalma listesi veya şarkı yok (ya da hepsi filtrelendi).
+
+# ---- Album
+album.empty.title = Çalınabilir şarkı yok
+album.empty.detail = Bu albümün burada parçası yok (ya da hepsi filtrelendi).
+
+# ---- Artist
+artist.subscribed = Abone olundu
+artist.subscribe = Abone ol
+artist.subscribe_tooltip = YouTube Music'te abone ol (kitaplığınıza da kaydedilir)
+artist.subscribe_tooltip_signed_out = Kitaplığınıza kaydedilir; YouTube Music'te abone olmak için oturum açın
+artist.items_empty = Bu sayfada yayın yok (ya da hepsi filtrelendi).
+
+# ---- Playlist
+playlist.change_cover = Kapağı değiştir…
+playlist.empty.title = Şarkı yok
+playlist.empty.detail = Bu çalma listesi boş (ya da tüm şarkıları filtrelendi).
+
+# ---- Podcast / episode
+podcast.episodes.one = {count} bölüm
+podcast.episodes.other = {count} bölüm
+podcast.episodes_more.one = {count}+ bölüm
+podcast.episodes_more.other = {count}+ bölüm
+podcast.saved = Kaydedildi
+podcast.save = Kitaplığa kaydet
+podcast.save_failed = Kitaplığınız güncellenemedi: {error}
+podcast.open_episode_page = Bölüm sayfasını aç
+podcast.go_to_podcast = Podcast'e git
+podcast.empty.title = Bölüm yok
+podcast.empty.detail = Bu programın burada henüz bölümü yok.

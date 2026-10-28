@@ -1,0 +1,34 @@
+# Menu bar (Ukrainian).
+menu.about = Про {app}
+menu.settings = Налаштування…
+menu.services = Служби
+menu.hide = Сховати {app}
+menu.hide_others = Сховати інші
+menu.show_all = Показати всі
+menu.quit = Вийти з {app}
+menu.edit = Редагування
+menu.undo = Відмінити
+menu.redo = Повторити
+menu.cut = Вирізати
+menu.copy = Копіювати
+menu.paste = Вставити
+menu.select_all = Вибрати все
+menu.search = Пошук
+menu.view = Вигляд
+menu.back = Назад
+menu.forward = Вперед
+menu.recognize = Розпізнати пісню
+menu.controls = Керування
+menu.play_pause = Відтворити / Пауза
+menu.repeat = Повтор (вимк. / усі / одна)
+menu.volume_up = Гучніше
+menu.volume_down = Тихіше
+menu.window = Вікно
+menu.minimize = Згорнути
+menu.zoom = Масштаб
+
+tray.next = Наступна
+tray.previous = Попередня
+tray.mini_player = Мініплеєр
+tray.show_window = Показати {app}
+tray.quit = Вийти з {app}

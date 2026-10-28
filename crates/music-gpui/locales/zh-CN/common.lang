@@ -1,0 +1,150 @@
+# Shared strings (zh-CN).
+
+locale.native_name = 简体中文
+
+# ---- Actions
+common.play = 播放
+common.pause = 暂停
+common.shuffle = 随机播放
+common.radio = 电台
+common.start_radio = 开启电台
+common.play_next = 下一首播放
+common.add_to_queue = 添加到队列
+common.add_to_playlist = 添加到播放列表…
+common.like = 喜欢
+common.remove_from_liked = 从喜欢的歌曲中移除
+common.download = 下载
+common.remove_download = 移除下载
+common.go_to_artist = 前往艺人
+common.go_to_album = 前往专辑
+common.open = 打开
+common.cancel = 取消
+common.close = 关闭
+common.retry = 重试
+common.remove = 移除
+common.delete = 删除
+common.clear = 清除
+common.save = 保存
+common.apply = 应用
+common.reset = 重置
+common.done = 完成
+common.copy = 复制
+common.rename = 重命名
+common.refresh = 刷新
+common.install = 安装
+common.update = 更新
+common.import = 导入
+common.search = 搜索
+common.search_placeholder = 搜索…
+common.see_all = 查看全部
+common.load_more = 加载更多
+common.show_more = 显示更多
+common.back = 返回
+common.next = 下一步
+common.connect = 连接
+common.disconnect = 断开连接
+common.sign_in = 登录
+common.sign_out = 退出登录
+common.select = 选择
+common.select_all = 全选
+common.settings = 设置
+
+# ---- States
+common.loading = 正在加载…
+common.saving = 正在保存…
+common.downloading = 正在下载…
+common.off = 关
+common.on = 开
+common.none = 无
+common.custom = 自定义
+common.automatic = 自动
+common.not_playing = 未在播放
+common.not_connected = 未连接
+common.nothing_here = 这里什么都没有
+
+# ---- Things
+common.song = 歌曲
+common.video = 视频
+common.artist = 艺人
+common.album = 专辑
+common.playlist = 播放列表
+common.podcast = 播客
+common.episode = 单集
+common.queue = 队列
+common.now_playing = 正在播放
+common.youtube_music = YouTube Music
+
+common.songs.other = {count} 首歌曲
+common.plays.other = {count} 次播放
+common.selected.other = 已选择 {count} 项
+
+# ---- Sidebar
+nav.home = 首页
+nav.explore = 探索
+nav.charts = 排行榜
+nav.moods = 心情与流派
+nav.new_releases = 新歌新碟
+nav.recognize = 听歌识曲
+nav.library_group = 媒体库
+nav.library = 媒体库
+nav.history = 历史记录
+nav.stats = 统计
+nav.downloads = 下载
+nav.local_files = 本地文件
+nav.import = 导入与导出
+nav.together = 一起听
+nav.settings = 设置
+
+# ---- Dates
+date.full = {year}年{month_num}月{day}日
+date.today = 今天
+date.yesterday = 昨天
+date.month_in_date.1 = 1月
+date.month_in_date.2 = 2月
+date.month_in_date.3 = 3月
+date.month_in_date.4 = 4月
+date.month_in_date.5 = 5月
+date.month_in_date.6 = 6月
+date.month_in_date.7 = 7月
+date.month_in_date.8 = 8月
+date.month_in_date.9 = 9月
+date.month_in_date.10 = 10月
+date.month_in_date.11 = 11月
+date.month_in_date.12 = 12月
+date.month_short.1 = 1月
+date.month_short.2 = 2月
+date.month_short.3 = 3月
+date.month_short.4 = 4月
+date.month_short.5 = 5月
+date.month_short.6 = 6月
+date.month_short.7 = 7月
+date.month_short.8 = 8月
+date.month_short.9 = 9月
+date.month_short.10 = 10月
+date.month_short.11 = 11月
+date.month_short.12 = 12月
+date.weekday_short.1 = 周一
+date.weekday_short.2 = 周二
+date.weekday_short.3 = 周三
+date.weekday_short.4 = 周四
+date.weekday_short.5 = 周五
+date.weekday_short.6 = 周六
+date.weekday_short.7 = 周日
+
+# ---- Durations and relative times
+time.just_now = 刚刚
+time.seconds_ago.other = {count} 秒前
+time.minutes_ago.other = {count} 分钟前
+time.hours_ago.other = {count} 小时前
+time.days_ago.other = {count} 天前
+time.hours_minutes = {hours} 小时 {minutes} 分钟
+time.minutes = {minutes} 分钟
+time.seconds = {seconds} 秒
+
+# ---- File sizes
+units.size = {value} {unit}
+units.b = B
+units.kb = KB
+units.mb = MB
+units.gb = GB
+units.tb = TB

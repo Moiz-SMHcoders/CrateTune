@@ -52,6 +52,8 @@ pub enum SettingsEvent {
     Integrations,
     /// Theme or font scale changed.
     Appearance,
+    /// The UI language setting changed (`MusicApp::apply_language`).
+    Language,
     /// The user picked another section (the app keeps the route in sync).
     Section(SectionId),
     /// Shuffle / repeat changed on the settings page (apply to the queue).
@@ -89,6 +91,53 @@ pub(super) enum Validation {
     Failed(String),
 }
 
+/// Where secrets go / came from; translated when shown (`Display`).
+#[derive(Clone)]
+pub(super) enum SecretStore {
+    /// The keychain (`file_too`: some secrets are in the settings file as well).
+    Backend {
+        backend: Arc<dyn Backend>,
+        file_too: bool,
+    },
+    /// Only the settings file.
+    File(FileReason),
+}
+
+/// Why secrets are only in the settings file.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum FileReason {
+    KeychainDisabled,
+    ReadFailed,
+    Unavailable,
+}
+
+impl std::fmt::Display for SecretStore {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SecretStore::Backend {
+                backend,
+                file_too: false,
+            } => f.write_str(backend.label()),
+            SecretStore::Backend {
+                backend,
+                file_too: true,
+            } => f.write_str(&t!(
+                "settings.panel.secrets.backend_and_file",
+                backend = backend.label()
+            )),
+            SecretStore::File(FileReason::KeychainDisabled) => {
+                f.write_str(t!("settings.panel.secrets.file_keychain_disabled"))
+            }
+            SecretStore::File(FileReason::ReadFailed) => {
+                f.write_str(t!("settings.panel.secrets.file_keychain_read_failed"))
+            }
+            SecretStore::File(FileReason::Unavailable) => {
+                f.write_str(t!("settings.panel.secrets.file_keychain_unavailable"))
+            }
+        }
+    }
+}
+
 pub struct SettingsPanel {
     pub(super) settings: Settings,
     pub(super) path: Option<PathBuf>,
@@ -103,7 +152,7 @@ pub struct SettingsPanel {
     pub(super) secrets: BTreeMap<Secret, String>,
     pub(super) secrets_loaded: bool,
     /// Where secrets go / came from, for the status line.
-    pub(super) secret_store: SharedString,
+    pub(super) secret_store: SecretStore,
 
     pub section: SectionId,
     scroll: ScrollHandle,
@@ -118,6 +167,8 @@ pub struct SettingsPanel {
     pub(super) scrobble_errors: VecDeque<String>,
     /// Content & region section (language / country pickers).
     pub(super) content: super::content::ContentState,
+    /// UI language picker (Appearance, onboarding).
+    pub(super) language: super::language::LanguagePicker,
     /// Network section (proxy draft fields, status).
     pub(super) network: super::network::NetworkState,
     /// Player / lyrics / Now Playing / activity widgets (`prefs_ui.rs`).
@@ -141,7 +192,7 @@ impl SettingsPanel {
             Some(path) => Settings::load(path),
             None => (
                 Settings::default(),
-                Some("no config directory; settings are not saved".into()),
+                Some(t!("settings.file.no_config_dir").into()),
             ),
         };
         if let Some(e) = &file_error {
@@ -149,6 +200,15 @@ impl SettingsPanel {
         }
         if first_run {
             settings.onboarded = false;
+            // YouTube Music content in the UI language (and the system's region)
+            // until the user picks something else (Content & region).
+            let locale = settings.appearance.ui_locale();
+            settings.content.language = crate::i18n::content_language(locale).to_owned();
+            if let Some(region) = crate::i18n::system_region()
+                && super::content::COUNTRIES.iter().any(|(c, _)| *c == region)
+            {
+                settings.content.country = region;
+            }
         }
 
         let gains = settings.equalizer.gains();
@@ -164,24 +224,43 @@ impl SettingsPanel {
                 })
             })
             .collect();
-        let input = |placeholder: &str,
+        let input = |placeholder: crate::i18n::Key,
                      value: &str,
                      masked: bool,
                      window: &mut Window,
                      cx: &mut Context<Self>| {
-            let (placeholder, value) = (placeholder.to_owned(), value.to_owned());
-            cx.new(|cx| {
+            let value = value.to_owned();
+            let input = cx.new(|cx| {
                 InputState::new(window, cx)
-                    .placeholder(placeholder)
                     .masked(masked)
                     .default_value(value)
-            })
+            });
+            crate::i18n::track_placeholder(&input, placeholder, window, cx);
+            input
         };
-        let lastfm_key = input("API key", &settings.lastfm.api_key, false, window, cx);
-        let lastfm_secret = input("Shared secret", "", true, window, cx);
-        let lb_token = input("User token", "", true, window, cx);
+        let lastfm_key = input(
+            k!("settings.panel.placeholder.api_key"),
+            &settings.lastfm.api_key,
+            false,
+            window,
+            cx,
+        );
+        let lastfm_secret = input(
+            k!("settings.panel.placeholder.shared_secret"),
+            "",
+            true,
+            window,
+            cx,
+        );
+        let lb_token = input(
+            k!("settings.panel.placeholder.user_token"),
+            "",
+            true,
+            window,
+            cx,
+        );
         let discord_id = input(
-            "Application ID",
+            k!("settings.panel.placeholder.application_id"),
             &settings.discord.client_id,
             false,
             window,
@@ -210,6 +289,9 @@ impl SettingsPanel {
         let (content, content_subscriptions) =
             super::content::ContentState::new(&settings, window, cx);
         subscriptions.extend(content_subscriptions);
+        let (language, language_subscription) =
+            super::language::LanguagePicker::new(&settings, window, cx);
+        subscriptions.push(language_subscription);
         let network = super::network::NetworkState::new(&settings, window, cx);
         let modules = super::modules::ModulesState::new(window, cx);
         let (prefs, prefs_subscriptions) = PrefsUi::new(&settings, window, cx);
@@ -224,8 +306,11 @@ impl SettingsPanel {
 
         let backend: Option<Arc<dyn Backend>> = secrets::default_backend().map(Arc::from);
         let secret_store = match &backend {
-            Some(b) => b.name().into(),
-            None => "settings file (0600; keychain disabled)".into(),
+            Some(b) => SecretStore::Backend {
+                backend: b.clone(),
+                file_too: false,
+            },
+            None => SecretStore::File(FileReason::KeychainDisabled),
         };
         let mut this = Self {
             settings,
@@ -250,6 +335,7 @@ impl SettingsPanel {
             discord_status: DiscordStatus::Idle,
             scrobble_errors: VecDeque::new(),
             content,
+            language,
             network,
             prefs,
             modules,
@@ -293,10 +379,11 @@ impl SettingsPanel {
                     eprintln!("music-gpui: keychain read failed ({e}); using the settings file");
                 }
                 if !loaded.errors.is_empty() {
-                    this.secret_store = "settings file (0600; keychain read failed)".into();
-                } else if !this.settings.secrets.is_empty() {
-                    this.secret_store =
-                        format!("{} + settings file (0600)", this.secret_store).into();
+                    this.secret_store = SecretStore::File(FileReason::ReadFailed);
+                } else if !this.settings.secrets.is_empty()
+                    && let SecretStore::Backend { file_too, .. } = &mut this.secret_store
+                {
+                    *file_too = true;
                 }
                 if std::env::var_os("MUSIC_TRACE").is_some() {
                     eprintln!(
@@ -389,6 +476,20 @@ impl SettingsPanel {
             self.settings.appearance.theme = theme;
             cx.emit(SettingsEvent::Appearance);
             self.changed(false, cx);
+        }
+    }
+
+    /// `code` is a catalog code or [`file::SYSTEM_LANGUAGE`].
+    pub fn set_language(&mut self, code: &str, cx: &mut Context<Self>) {
+        if self.settings.appearance.language != code {
+            self.settings.appearance.language = code.to_owned();
+            cx.emit(SettingsEvent::Language);
+            self.changed(false, cx);
+            if !self.settings.onboarded {
+                // First run: YouTube Music content follows the UI language.
+                let hl = crate::i18n::content_language(self.settings.appearance.ui_locale());
+                self.set_content(|c| c.language = hl.to_owned(), cx);
+            }
         }
     }
 
@@ -488,7 +589,7 @@ impl SettingsPanel {
             }
             Err(e) => {
                 eprintln!("music-gpui: saving {} failed: {e}", path.display());
-                self.file_error = Some(format!("saving failed: {e}"));
+                self.file_error = Some(t!("settings.file.save_failed", error = e));
             }
         }
     }
@@ -522,7 +623,7 @@ impl SettingsPanel {
                 if let Stored::File(reason) = &stored {
                     eprintln!("music-gpui: {}: keychain not used ({reason})", secret.key());
                     if value.is_some() && this.backend.is_some() {
-                        this.secret_store = "settings file (0600; keychain unavailable)".into();
+                        this.secret_store = SecretStore::File(FileReason::Unavailable);
                     }
                 }
                 secrets::apply(
@@ -609,7 +710,7 @@ impl SettingsPanel {
         let key = self.lastfm_key.read(cx).value().trim().to_owned();
         let secret = self.lastfm_secret.read(cx).value().trim().to_owned();
         if key.is_empty() || secret.is_empty() {
-            self.lastfm = LastFmFlow::Failed("Enter the API key and shared secret first.".into());
+            self.lastfm = LastFmFlow::Failed(t!("settings.panel.lastfm_missing").into());
             cx.notify();
             return;
         }
@@ -618,7 +719,7 @@ impl SettingsPanel {
             self.put_secret(Secret::LastFmShared, Some(secret.clone()), cx);
         }
         self.changed(false, cx);
-        self.lastfm = LastFmFlow::Busy("Requesting a token…");
+        self.lastfm = LastFmFlow::Busy(t!("settings.panel.lastfm_requesting"));
         cx.spawn(async move |this, cx| {
             let client = LastFm::new(key.clone(), secret.clone());
             let result = off_thread(move || {
@@ -651,7 +752,10 @@ impl SettingsPanel {
     pub fn lastfm_finish(&mut self, cx: &mut Context<Self>) {
         let LastFmFlow::Waiting {
             key, secret, token, ..
-        } = std::mem::replace(&mut self.lastfm, LastFmFlow::Busy("Finishing…"))
+        } = std::mem::replace(
+            &mut self.lastfm,
+            LastFmFlow::Busy(t!("settings.panel.lastfm_finishing")),
+        )
         else {
             return;
         };
@@ -704,7 +808,7 @@ impl SettingsPanel {
     pub fn lb_validate(&mut self, cx: &mut Context<Self>) {
         let token = self.lb_token.read(cx).value().trim().to_owned();
         if token.is_empty() {
-            self.lb = Validation::Failed("Paste your user token first.".into());
+            self.lb = Validation::Failed(t!("settings.panel.lb_missing").into());
             cx.notify();
             return;
         }
@@ -757,7 +861,7 @@ impl SettingsPanel {
         let (active_bg, hover_bg) = (theme.sidebar_accent, theme.list_hover);
         let (fg, muted) = (theme.foreground, theme.muted_foreground);
         v_flex()
-            .w(px(210.))
+            .w(px(232.))
             .flex_none()
             .h_full()
             .py_4()
@@ -771,7 +875,8 @@ impl SettingsPanel {
                     .pb_3()
                     .text_xl()
                     .font_weight(FontWeight::BOLD)
-                    .child("Settings"),
+                    .truncate()
+                    .child(t!("nav.settings")),
             )
             .children(SECTIONS.iter().map(|section| {
                 let id = section.id;
@@ -787,8 +892,14 @@ impl SettingsPanel {
                     .text_color(if active { fg } else { muted })
                     .when(active, |this| this.bg(active_bg))
                     .when(!active, |this| this.hover(move |s| s.bg(hover_bg)))
-                    .child(Icon::new(section.icon).small())
-                    .child(section.title)
+                    .child(div().flex_none().child(Icon::new(section.icon).small()))
+                    .child(
+                        div()
+                            .flex_1()
+                            .min_w_0()
+                            .truncate()
+                            .child(crate::i18n::text(section.title)),
+                    )
                     .on_click(cx.listener(move |this, _, _, cx| {
                         this.show_section(id, cx);
                         cx.emit(SettingsEvent::Section(id));
@@ -825,7 +936,7 @@ impl Render for SettingsPanel {
                                     div()
                                         .text_2xl()
                                         .font_weight(FontWeight::BOLD)
-                                        .child(section.title),
+                                        .child(crate::i18n::text(section.title)),
                                 )
                                 .child(body),
                         ),

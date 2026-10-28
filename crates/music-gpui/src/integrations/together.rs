@@ -129,14 +129,17 @@ impl MusicApp {
                 let link = join.to_link();
                 self.integrations
                     .together
-                    .log(format!("Session started on port {}", join.port));
+                    .log(t!("together.log.started_port", port = join.port));
                 self.together_start_hosting(HostSession::new(server, join), window, cx);
-                notify(window, cx, "Music Together session started");
+                notify(window, cx, t!("together.toast.started"));
                 Some(link)
             }
             Err(e) => {
-                self.integrations.together.error =
-                    Some(format!("Couldn't start on port {}: {e}", prefs.port));
+                self.integrations.together.error = Some(t!(
+                    "together.error.start_failed",
+                    port = prefs.port,
+                    error = e
+                ));
                 cx.notify();
                 None
             }
@@ -153,8 +156,7 @@ impl MusicApp {
     ) {
         let prefs = self.settings.read(cx).settings().together.clone();
         let Some(relay) = prefs.relay() else {
-            self.integrations.together.error =
-                Some("Set a relay server in Settings → Music Together first.".into());
+            self.integrations.together.error = Some(t!("together.error.no_relay").into());
             cx.notify();
             return;
         };
@@ -191,15 +193,15 @@ impl MusicApp {
                         let link = join.to_link();
                         this.integrations
                             .together
-                            .log(format!("Session started through {}", join.host));
+                            .log(t!("together.log.started_relay", relay = join.host));
                         this.together_start_hosting(HostSession::new(server, join), window, cx);
-                        notify(window, cx, "Music Together session started (relay)");
+                        notify(window, cx, t!("together.toast.started_relay"));
                         on_link(&link);
                     }
                     Err(e) => {
                         this.integrations.together.role = Role::Idle;
                         this.integrations.together.error =
-                            Some(format!("Couldn't host through {relay}: {e}"));
+                            Some(t!("together.error.relay_failed", relay = relay, error = e));
                     }
                 }
                 cx.notify();
@@ -252,9 +254,9 @@ impl MusicApp {
         let line = match (&name, ok) {
             (Some(name), true) => {
                 host.transferring = Some(name.clone());
-                format!("Handing the session to {name}…")
+                t!("together.log.handing_over", name = name)
             }
-            _ => "Couldn't hand the session over".to_owned(),
+            _ => t!("together.log.hand_over_failed").to_owned(),
         };
         self.integrations.together.log(line);
         cx.notify();
@@ -392,12 +394,17 @@ impl MusicApp {
             force = true;
             match event {
                 ServerEvent::JoinRequested(p) => {
-                    let line = format!("{} wants to join", p.name);
-                    notify(window, cx, format!("{line} (Listen together)"));
-                    self.integrations.together.log(line);
+                    notify(
+                        window,
+                        cx,
+                        t!("together.toast.wants_to_join", name = p.name),
+                    );
+                    self.integrations
+                        .together
+                        .log(t!("together.log.wants_to_join", name = p.name));
                 }
                 ServerEvent::Joined(p) => {
-                    let line = format!("{} joined", p.name);
+                    let line = t!("together.log.joined", name = p.name);
                     notify(window, cx, line.clone());
                     self.integrations.together.log(line);
                 }
@@ -405,9 +412,11 @@ impl MusicApp {
                     participant,
                     reason,
                 } => {
-                    self.integrations
-                        .together
-                        .log(format!("{} left ({reason})", participant.name));
+                    self.integrations.together.log(t!(
+                        "together.log.left",
+                        name = participant.name,
+                        reason = reason
+                    ));
                 }
                 ServerEvent::Control {
                     participant,
@@ -423,7 +432,11 @@ impl MusicApp {
                     track,
                     mode,
                 } => {
-                    let line = format!("{} suggested “{}”", participant.name, track.title);
+                    let line = t!(
+                        "together.log.suggested",
+                        name = participant.name,
+                        title = track.title
+                    );
                     self.integrations.together.log(line.clone());
                     let tracks = vec![track.to_track()];
                     match mode {
@@ -433,7 +446,7 @@ impl MusicApp {
                     notify(window, cx, line);
                 }
                 ServerEvent::HostTransferred { participant, join } => {
-                    let line = format!("{} is the host now", participant.name);
+                    let line = t!("together.log.new_host", name = participant.name);
                     self.integrations.together.log(line.clone());
                     notify(window, cx, line);
                     // End this server (guests are reconnecting) and follow as a guest.
@@ -448,15 +461,24 @@ impl MusicApp {
                     if let Role::Hosting(host) = &mut self.integrations.together.role {
                         host.transferring = None;
                     }
-                    let who = participant.map_or_else(|| "the guest".to_owned(), |p| p.name);
-                    let line = format!("Couldn't hand the session to {who}: {reason}");
+                    let line = match participant {
+                        Some(p) => {
+                            t!(
+                                "together.log.transfer_failed",
+                                name = p.name,
+                                reason = reason
+                            )
+                        }
+                        None => t!("together.log.transfer_failed_guest", reason = reason),
+                    };
                     self.integrations.together.log(line.clone());
                     notify(window, cx, line);
                 }
                 ServerEvent::Stopped { reason } => {
                     self.together_leave(cx);
-                    self.integrations.together.error = Some(format!("Session ended: {reason}"));
-                    notify(window, cx, format!("Music Together: {reason}"));
+                    self.integrations.together.error =
+                        Some(t!("together.error.session_ended", reason = reason));
+                    notify(window, cx, t!("together.toast.ended", reason = reason));
                     return;
                 }
                 ServerEvent::Error(e) => {
@@ -519,9 +541,7 @@ impl MusicApp {
     /// Connects to a host (link, `ws(s)://` URL or `host|port|sid|key`).
     pub fn together_join(&mut self, link: &str, window: &mut Window, cx: &mut Context<Self>) {
         let Some(join) = JoinInfo::parse(link) else {
-            self.integrations.together.error = Some(
-                "That isn't a Music Together link (it needs host, port, session and key).".into(),
-            );
+            self.integrations.together.error = Some(t!("together.error.bad_link").into());
             cx.notify();
             return;
         };
@@ -561,7 +581,7 @@ impl MusicApp {
                         this.queue.set_shuffle(false);
                         this.integrations
                             .together
-                            .log(format!("Connected to {}", join.host));
+                            .log(t!("together.log.connected", host = join.host));
                         this.integrations.together.role = Role::Guest(Box::new(GuestSession {
                             client,
                             join,
@@ -571,11 +591,12 @@ impl MusicApp {
                             pending_seek: None,
                             taking_over: false,
                         }));
-                        notify(window, cx, "Joined the Music Together session");
+                        notify(window, cx, t!("together.toast.joined"));
                     }
                     Err(e) => {
                         this.integrations.together.role = Role::Idle;
-                        this.integrations.together.error = Some(format!("Couldn't join: {e}"));
+                        this.integrations.together.error =
+                            Some(t!("together.error.join_failed", error = e));
                     }
                 }
                 cx.notify();
@@ -612,7 +633,7 @@ impl MusicApp {
         let port = prefs.port;
         self.integrations
             .together
-            .log("The host is handing the session to you…".into());
+            .log(t!("together.log.handing_to_you").into());
         cx.notify();
         cx.spawn_in(window, async move |this, cx| {
             let target = join.clone();
@@ -660,7 +681,7 @@ impl MusicApp {
             Ok(server) => server,
             Err(e) => {
                 guest.client.answer_host_offer(Err(e.to_string()));
-                let line = format!("Couldn't take over the session: {e}");
+                let line = t!("together.error.take_over_failed", error = e);
                 self.integrations.together.log(line.clone());
                 notify(window, cx, line);
                 return;
@@ -732,13 +753,11 @@ impl MusicApp {
         self.queue.set_shuffle(shuffle);
         let mut host = HostSession::new(server, new_join);
         host.pending_seek = pending_seek;
-        self.integrations.together.log("You're the host now".into());
+        self.integrations
+            .together
+            .log(t!("together.log.you_are_host").into());
         self.together_start_hosting(host, window, cx);
-        notify(
-            window,
-            cx,
-            "You're the host of the Music Together session now",
-        );
+        notify(window, cx, t!("together.toast.you_are_host"));
     }
 
     /// Leaves / ends the session.
@@ -747,14 +766,18 @@ impl MusicApp {
         match role {
             Role::Hosting(mut host) => {
                 host.server.stop();
-                self.integrations.together.log("Session ended".into());
+                self.integrations
+                    .together
+                    .log(t!("together.log.ended").into());
             }
             Role::Guest(guest) => {
                 let client = guest.client;
                 std::thread::spawn(move || client.leave());
                 let shuffle = self.settings.read(cx).settings().playback.shuffle;
                 self.queue.set_shuffle(shuffle);
-                self.integrations.together.log("Left the session".into());
+                self.integrations
+                    .together
+                    .log(t!("together.log.left_session").into());
             }
             Role::Joining(_) | Role::Idle => {}
         }
@@ -778,11 +801,7 @@ impl MusicApp {
             .as_ref()
             .is_none_or(|r| r.settings.allow_guests_to_add_tracks);
         if !allowed {
-            notify(
-                window,
-                cx,
-                "The host doesn't take suggestions in this session",
-            );
+            notify(window, cx, t!("together.toast.no_suggestions"));
             return true;
         }
         let mut sent = 0;
@@ -797,9 +816,9 @@ impl MusicApp {
             window,
             cx,
             match sent {
-                0 => "Only YouTube Music songs can be suggested".to_owned(),
-                1 => format!("Suggested “{}” to the host", tracks[0].title),
-                n => format!("Suggested {n} songs to the host"),
+                0 => t!("together.toast.only_youtube_music").to_owned(),
+                1 => t!("together.toast.suggested_title", title = tracks[0].title),
+                n => tp!("together.toast.suggested", n),
             },
         );
         true
@@ -820,7 +839,7 @@ impl MusicApp {
             .as_ref()
             .is_some_and(|r| !r.settings.allow_guests_to_control_playback)
         {
-            notify(window, cx, "The host doesn't let guests control playback");
+            notify(window, cx, t!("together.toast.no_control"));
             return;
         }
         guest.client.request_control(action);
@@ -840,15 +859,15 @@ impl MusicApp {
                 ClientEvent::Welcome { pending, .. } => {
                     guest.pending = pending;
                     if pending {
-                        lines.push("Waiting for the host to let you in…".to_owned());
+                        lines.push(t!("together.status.waiting_approval").to_owned());
                     }
                 }
                 ClientEvent::JoinDecision { approved } => {
                     guest.pending = !approved;
                     lines.push(if approved {
-                        "The host let you in".into()
+                        t!("together.status.let_in").into()
                     } else {
-                        "The host declined".into()
+                        t!("together.status.declined").into()
                     });
                 }
                 ClientEvent::RoomState(room) => latest = Some(room),
@@ -862,7 +881,9 @@ impl MusicApp {
                 }
                 ClientEvent::Kicked { reason, .. } => ended = Some(reason),
                 ClientEvent::Disconnected { reason } => {
-                    ended = ended.or(reason).or_else(|| Some("Disconnected".into()))
+                    ended = ended
+                        .or(reason)
+                        .or_else(|| Some(t!("together.status.disconnected").into()))
                 }
                 ClientEvent::HostOffer {
                     state,
@@ -885,12 +906,12 @@ impl MusicApp {
                     guest.room = None;
                     guest.pending_seek = None;
                     guest.sync.reset();
-                    lines.push(format!(
-                        "{} is the host now; reconnecting…",
-                        name.unwrap_or_else(|| "Someone else".into())
-                    ));
+                    lines.push(match name {
+                        Some(name) => t!("together.log.host_changed", name = name),
+                        None => t!("together.log.host_changed_unknown").to_owned(),
+                    });
                 }
-                ClientEvent::Reconnected => quiet.push("Reconnected to the new host".to_owned()),
+                ClientEvent::Reconnected => quiet.push(t!("together.log.reconnected").to_owned()),
             }
         }
         if let Some(room) = latest {
@@ -907,9 +928,10 @@ impl MusicApp {
             self.together_take_over(state, options, window, cx);
         }
         if let Some(reason) = ended {
-            self.integrations.together.error = Some(format!("Session ended: {reason}"));
+            self.integrations.together.error =
+                Some(t!("together.error.session_ended", reason = reason));
             self.together_leave(cx);
-            notify(window, cx, format!("Music Together: {reason}"));
+            notify(window, cx, t!("together.toast.ended", reason = reason));
             return;
         }
         self.guest_follow(state, cx);
@@ -1011,19 +1033,15 @@ impl MusicApp {
         let label = match &self.integrations.together.role {
             Role::Hosting(host) => {
                 let n = host.server.participants().len().saturating_sub(1);
-                format!(
-                    "Together · hosting{} · {n} guest{}",
-                    if host.join.is_relay() {
-                        " via relay"
-                    } else {
-                        ""
-                    },
-                    if n == 1 { "" } else { "s" }
-                )
+                if host.join.is_relay() {
+                    tp!("together.chip.hosting_relay", n)
+                } else {
+                    tp!("together.chip.hosting", n)
+                }
             }
-            Role::Guest(guest) if guest.pending => "Together · waiting".into(),
-            Role::Guest(_) => "Together · following the host".into(),
-            Role::Joining(_) => "Together · joining…".into(),
+            Role::Guest(guest) if guest.pending => t!("together.chip.waiting").into(),
+            Role::Guest(_) => t!("together.chip.following").into(),
+            Role::Joining(_) => t!("together.chip.joining").into(),
             Role::Idle => return None,
         };
         Some(

@@ -15,13 +15,13 @@ impl MusicApp {
     /// Asks where to save, then writes the backup.
     pub fn export_backup(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let Some(library) = self.store.library.clone() else {
-            notify(window, cx, "The library database is not available.");
+            notify(window, cx, t!("library.db_unavailable"));
             return;
         };
         let settings_json = self.settings.read(cx).backup_json();
         let dir = std::env::var_os("HOME")
             .map(PathBuf::from)
-            .map(|h| h.join("Downloads"))
+            .map(|h| h.join("Downloads")) // i18n-ignore
             .filter(|d| d.is_dir())
             .or_else(|| self.store.dir.clone())
             .unwrap_or_else(std::env::temp_dir);
@@ -56,8 +56,8 @@ impl MusicApp {
             let result =
                 off_thread(move || library.export_backup(&path, Some(&settings_json))).await;
             cx.update(|window, cx| match result {
-                Ok(_) => notify(window, cx, format!("Backup saved to {shown}")),
-                Err(e) => notify(window, cx, format!("Backup failed: {e}")),
+                Ok(_) => notify(window, cx, t!("storage.backup_saved", path = shown)),
+                Err(e) => notify(window, cx, t!("storage.backup_failed", error = e)),
             })
             .ok();
         })
@@ -70,7 +70,7 @@ impl MusicApp {
             files: true,
             directories: false,
             multiple: false,
-            prompt: Some("Restore".into()),
+            prompt: Some(t!("storage.restore").into()),
         });
         cx.spawn_in(window, async move |this, cx| {
             let Ok(Ok(Some(mut paths))) = picked.await else {
@@ -81,13 +81,10 @@ impl MusicApp {
                 window.open_alert_dialog(cx, move |alert, _, _| {
                     let path = path.clone();
                     alert
-                        .title("Restore this backup?")
-                        .description(
-                            "Your library, playlists, history and settings are replaced by the \
-                             backup's. The YouTube Music sign-in and other secrets stay.",
-                        )
+                        .title(t!("storage.restore_confirm_title"))
+                        .description(t!("storage.restore_confirm_detail"))
                         .show_cancel(true)
-                        .ok_text("Restore")
+                        .ok_text(t!("storage.restore"))
                         .on_ok(move |_, window, cx| {
                             let path = path.clone();
                             crate::app::update_app(cx, |app, cx| {
@@ -109,42 +106,40 @@ impl MusicApp {
         cx: &mut Context<Self>,
     ) {
         let Some(library) = self.store.library.clone() else {
-            notify(window, cx, "The library database is not available.");
+            notify(window, cx, t!("library.db_unavailable"));
             return;
         };
         cx.spawn_in(window, async move |this, cx| {
             let result = off_thread(move || library.restore_backup(&path)).await;
             this.update_in(cx, |this, window, cx| match result {
                 Ok(restored) => {
-                    let mut message = "Library restored.".to_owned();
+                    let mut message = t!("storage.restored_library").to_owned();
                     if let Some(json) = restored.settings_json {
                         let applied = this
                             .settings
                             .update(cx, |panel, cx| panel.restore_from_backup(&json, cx));
-                        match applied {
-                            Ok(()) => message = "Library and settings restored.".into(),
-                            Err(e) => message = format!("Library restored; settings skipped: {e}"),
-                        }
+                        message = match applied {
+                            Ok(()) => t!("storage.restored_all").to_owned(),
+                            Err(e) => t!("storage.restored_settings_skipped", error = e),
+                        };
                     }
                     this.reload_liked_flags();
                     this.load_recent_searches(cx);
                     this.library_changed(cx);
                     window.open_alert_dialog(cx, move |alert, _, _| {
                         alert
-                            .title("Backup restored")
-                            .description(format!(
-                                "{message} Restart the app so every setting takes effect."
-                            ))
+                            .title(t!("storage.restored_title"))
+                            .description(message.clone())
                             .show_cancel(true)
-                            .cancel_text("Later")
-                            .ok_text("Restart now")
+                            .cancel_text(t!("storage.restart_later"))
+                            .ok_text(t!("storage.restart_now"))
                             .on_ok(|_, _, cx| {
                                 cx.restart();
                                 true
                             })
                     });
                 }
-                Err(e) => notify(window, cx, format!("Restore failed: {e}")),
+                Err(e) => notify(window, cx, t!("storage.restore_failed", error = e)),
             })
             .ok();
         })
@@ -158,7 +153,7 @@ impl MusicApp {
         cx.spawn_in(window, async move |this, cx| {
             off_thread(move || downloads.clear_cache()).await;
             this.update_in(cx, |this, window, cx| {
-                notify(window, cx, "Play cache cleared");
+                notify(window, cx, t!("storage.cache_cleared"));
                 this.library_changed(cx);
             })
             .ok();
@@ -170,11 +165,11 @@ impl MusicApp {
         // Saves still queued would otherwise land after the clear.
         self.flush_searches();
         self.with_library(
-            "Clearing the search history",
+            t!("storage.clearing_search"),
             |lib| lib.clear_search_history(),
             |app, _, window, cx| {
                 app.set_recent_searches(Vec::new(), cx);
-                notify(window, cx, "Search history cleared");
+                notify(window, cx, t!("storage.search_cleared"));
             },
             window,
             cx,

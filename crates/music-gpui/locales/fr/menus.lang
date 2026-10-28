@@ -1,0 +1,35 @@
+# Menu bar (French).
+menu.about = À propos de {app}
+menu.settings = Paramètres…
+menu.services = Services
+menu.hide = Masquer {app}
+menu.hide_others = Masquer les autres
+menu.show_all = Tout afficher
+menu.quit = Quitter {app}
+menu.edit = Édition
+menu.undo = Annuler
+menu.redo = Rétablir
+menu.cut = Couper
+menu.copy = Copier
+menu.paste = Coller
+menu.select_all = Tout sélectionner
+menu.search = Rechercher
+menu.view = Présentation
+menu.back = Précédent
+menu.forward = Suivant
+menu.recognize = Identifier le titre
+menu.controls = Commandes
+menu.play_pause = Lecture / Pause
+menu.repeat = Répéter (Non / Tout / Un)
+menu.volume_up = Augmenter le volume
+menu.volume_down = Baisser le volume
+menu.window = Fenêtre
+menu.minimize = Placer dans le Dock
+menu.zoom = Réduire/agrandir
+
+# Menu-bar item
+tray.next = Suivant
+tray.previous = Précédent
+tray.mini_player = Mini-lecteur
+tray.show_window = Afficher {app}
+tray.quit = Quitter {app}

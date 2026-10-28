@@ -1,0 +1,204 @@
+# ---- Page titles
+route.search = Cari
+route.search_query = Cari: {query}
+route.library = Pustaka · {tab}
+route.year_in_music = {year} dalam musik
+route.recognition = Kenali musik
+route.settings = Pengaturan · {section}
+route.library_tab.songs = Lagu
+route.library_tab.liked = Disukai
+route.library_tab.albums = Album
+route.library_tab.artists = Artis
+route.library_tab.playlists = Playlist
+route.library_tab.podcasts = Podcast
+route.library_tab.downloaded = Diunduh
+route.library_tab.local = File lokal
+
+# ---- Themes
+theme.dark = Gelap
+theme.black = Hitam pekat
+theme.dynamic = Dinamis
+
+# ---- Player bar
+player.pick_a_song = Pilih lagu untuk memulai
+player.audio_unavailable = Audio tidak tersedia: {error}
+player.buffering = Buffering…
+player.play_failed_skipped = Tidak dapat memutar “{title}”, dilewati
+player.preview_badge = Pratinjau
+player.tooltip.shuffle_on = Acak: nyala
+player.tooltip.shuffle_off = Acak: mati
+player.tooltip.previous = Sebelumnya (⌘←, ulang dari awal setelah 3 dtk)
+player.tooltip.next = Berikutnya (⌘→)
+player.tooltip.repeat_off = Ulangi: mati
+player.tooltip.repeat_all = Ulangi: semua
+player.tooltip.repeat_one = Ulangi: satu
+player.tooltip.volume = Volume {percent}% (⌘↑ / ⌘↓)
+player.tooltip.queue = Antrean (⌥⌘Q)
+player.tooltip.mini_player = Pemutar mini (⇧⌘M)
+player.tooltip.now_playing = Sedang Diputar & lirik (⌘L)
+
+# ---- Sleep timer
+player.sleep.title = Pengatur waktu tidur
+player.sleep.minutes.other = {count} menit
+player.sleep.end_of_track = Akhir lagu
+player.sleep.custom = Kustom: {minutes} mnt
+player.sleep.turn_off = Matikan
+player.sleep.left = Sisa {time}
+
+# ---- Queue
+queue.toast.play_next_one = “{title}” akan diputar berikutnya
+queue.toast.play_next_many.other = {count} lagu akan diputar berikutnya
+queue.toast.added_one = “{title}” ditambahkan ke antrean
+queue.toast.added_many.other = {count} lagu ditambahkan ke antrean
+queue.section.now_playing = SEDANG DIPUTAR
+queue.section.up_next = BERIKUTNYA · {count}
+queue.section.history = RIWAYAT
+queue.nothing_playing = Tidak ada yang diputar
+queue.empty.repeat_all = Ulangi semua: antrean dimulai dari awal.
+queue.empty.hint = Tambahkan lagu dengan “Putar berikutnya” atau “Tambah ke antrean”.
+queue.tooltip.clear_up_next = Bersihkan berikutnya
+queue.tooltip.close = Tutup (Esc)
+queue.tooltip.move_up = Pindah ke atas
+queue.tooltip.move_down = Pindah ke bawah
+
+# ---- Song rows and the song context menu
+track.tooltip.more = Lainnya
+track.explicit_badge = E
+track.menu.go_to_podcast = Buka podcast
+track.menu.go_to_named_artist = Buka {artist}
+
+# ---- Item cards, rows, shelves
+items.load_failed = Tidak dapat memuat halaman ini
+items.loading_more = Memuat lainnya…
+
+# ---- "Add to playlist" / "New playlist" dialog
+playlist_dialog.name_placeholder = Nama playlist baru
+playlist_dialog.title_new = Playlist baru
+playlist_dialog.title_add_one = Tambahkan “{title}” ke playlist
+playlist_dialog.title_add_many.other = Tambahkan {count} lagu ke playlist
+playlist_dialog.create = Buat
+playlist_dialog.also_on_youtube = Buat juga di YouTube Music (pribadi)
+playlist_dialog.youtube_songs.other = YouTube Music · {count} lagu
+playlist_dialog.empty = Belum ada playlist — buat di atas.
+
+# ---- Mini player window
+mini.window_title = Pemutar mini
+mini.tooltip.show_main = Tampilkan jendela utama
+
+# ---- Header search field
+app.search_placeholder = Cari lagu, artis, album
+search_box.recent = Pencarian terbaru
+search_box.loading_suggestions = Memuat saran…
+
+# ---- Main window
+app.window_title = {page} — {app}
+app.audio_demo_clock = {error} (menggunakan jam demo)
+app.tooltip.back = Kembali (⌘[)
+app.tooltip.forward = Maju (⌘])
+
+# ---- YouTube Music account
+account.cookie_invalid = Cookie itu tidak memiliki entri SAPISID / __Secure-3PAPISID; salin seluruh header cookie dari permintaan music.youtube.com yang sudah masuk.
+account.checking = Memeriksa akun…
+account.toast.signed_in = Masuk sebagai {name}
+account.sign_in_failed = Gagal masuk: {error}
+account.toast.signed_out = Keluar dari YouTube Music
+account.unreachable = Tidak dapat menjangkau akun: {error}
+account.switching = Beralih…
+account.toast.switched = Sekarang menggunakan {name}
+account.switch_failed = Gagal beralih: {error}
+account.sign_in_first = Masuk ke YouTube Music terlebih dahulu.
+account.action.subscribing = Subscribe
+account.toast.subscribed = Berhasil subscribe ke {artist}
+account.toast.unsubscribed = Berhenti subscribe ke {artist}
+account.sync.starting = Memulai…
+account.sync.step.liked = Lagu yang disukai…
+account.sync.step.songs = Lagu pustaka…
+account.sync.step.albums = Album…
+account.sync.step.artists = Artis…
+account.sync.step.playlists = Playlist…
+account.sync.step.playlist = Playlist {current}/{total}: {title}
+account.sync.summary = {liked}, {songs}, {albums}, {artists}, {playlists}
+account.sync.liked.other = {count} lagu yang disukai
+account.sync.songs.other = {count} lagu pustaka
+account.sync.albums.other = {count} album
+account.sync.artists.other = {count} artis
+account.sync.playlists.other = {count} playlist
+account.toast.synced = Sinkronisasi YouTube Music: {summary}
+account.sync.failed = {summary}. Kesalahan: {errors}
+account.sync.error = {part}: {error}
+account.sync.part.liked = lagu yang disukai
+account.sync.part.songs = lagu pustaka
+account.sync.part.albums = album
+account.sync.part.artists = artis
+account.sync.part.playlists = playlist
+account.sync.part.playlist = playlist “{title}”
+account.sync.part.removing_playlist = menghapus playlist
+
+# ---- Library database, likes, playlists, downloads (toasts)
+store.library_unavailable = Pustaka tidak tersedia: {error}
+store.no_data_dir = Tidak ada direktori data; pustaka tidak tersedia.
+store.library_db_unavailable = Database pustaka tidak tersedia.
+store.toast.action_failed = {action} gagal: {error}
+store.action.saving_like = Menyimpan suka
+store.action.removing_from_library = Menghapus dari pustaka
+store.action.adding_to_playlist = Menambahkan ke playlist
+store.action.creating_playlist = Membuat playlist
+store.toast.liked_one = Menyukai “{title}”
+store.toast.unliked_one = “{title}” dihapus dari lagu yang disukai
+store.toast.liked_many.other = Menyukai {count} lagu
+store.toast.unliked_many.other = {count} lagu dihapus dari lagu yang disukai
+store.toast.only_locally = {message} (hanya lokal; YouTube Music: {error})
+store.toast.removed_from_library.other = {count} lagu dihapus dari pustaka
+store.toast.added_to_playlist.other = {count} lagu ditambahkan ke “{playlist}”
+store.toast.remote_error = {message} (YouTube Music: {error})
+store.playlist_name_missing = Beri nama playlist.
+store.toast.playlist_created = “{playlist}” dibuat
+store.toast.playlist_created_with.other = “{playlist}” dibuat dengan {count} lagu
+store.downloads_unavailable = Unduhan tidak tersedia.
+store.toast.downloading_one = Mengunduh “{title}”
+store.toast.downloading_many.other = Mengunduh {count} lagu
+store.toast.delete_download_failed = Gagal menghapus unduhan: {error}
+
+# ---- Local music folder scan
+store.add_music_folder_first = Tambahkan folder musik terlebih dahulu.
+store.scan.summary = {files}: {added} baru, {updated} diperbarui, {unchanged} tidak berubah, {removed} dihapus
+store.scan.files.other = {count} file
+store.scan.with_extra = {summary}, {extra}
+store.scan.too_short.other = {count} terlalu pendek
+store.scan.unreadable.other = {count} tidak terbaca
+store.toast.scan_finished = Pemindaian selesai: {summary}
+store.toast.scan_failed = Pemindaian gagal: {error}
+
+# ---- Playlist cover upload
+playlist_cover.read_failed = Tidak dapat membaca gambar: {error}
+playlist_cover.not_an_image = File ini bukan gambar yang dapat dibaca aplikasi (JPEG, PNG, atau WebP).
+playlist_cover.too_large = Gambar terlalu besar (lebih dari 40 megapiksel).
+playlist_cover.decode_failed = Tidak dapat mendekode gambar: {error}
+playlist_cover.encode_failed = Tidak dapat mengenkode sampul: {error}
+playlist_cover.still_too_large = Sampul masih lebih dari 2 MiB setelah dikompresi.
+playlist_cover.sign_in = Masuk ke YouTube Music untuk mengganti sampul playlist.
+playlist_cover.pick_prompt = Gunakan sebagai sampul
+playlist_cover.uploading = Mengunggah sampul…
+playlist_cover.changed = Sampul playlist diganti
+playlist_cover.change_failed = Tidak dapat mengganti sampul: {error}
+
+# ---- Radio and collection playback
+radio.toast.starting_from = Memulai radio dari “{title}”
+radio.toast.starting = Memulai radio: {name}
+radio.playlist_label = playlist
+radio.nothing_to_play = Tidak ada yang bisa diputar di sini.
+radio.load_failed = Tidak dapat memuat: {error}
+
+# ---- Lyrics
+lyrics.no_cache_dir = Tidak ada direktori cache
+
+# ---- Playlist editing
+store.action.renaming_playlist = Mengganti nama playlist
+store.action.deleting_playlist = Menghapus playlist
+store.action.removing_from_playlist = Menghapus dari playlist
+store.action.moving_song = Memindahkan lagu
+store.action.refreshing_playlist = Menyegarkan playlist
+store.toast.playlist_renamed = Nama diganti menjadi “{playlist}”
+store.toast.playlist_deleted = “{playlist}” dihapus
+store.toast.removed_from_playlist.other = {count} lagu dihapus dari playlist
+store.toast.playlist_refreshed.other = Playlist disegarkan ({count} lagu)

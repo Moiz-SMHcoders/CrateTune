@@ -1,0 +1,27 @@
+settings.language.group = Ngôn ngữ
+settings.language.label = Ngôn ngữ giao diện
+settings.language.description = Ngôn ngữ của giao diện. Nội dung YouTube Music có cài đặt riêng (Nội dung & khu vực).
+settings.language.system = Mặc định hệ thống ({language})
+settings.language.system_search = default automatic mặc định tự động hệ thống
+
+language.name.en = Tiếng Anh
+language.name.es = Tiếng Tây Ban Nha
+language.name.pt-BR = Tiếng Bồ Đào Nha (Brazil)
+language.name.fr = Tiếng Pháp
+language.name.de = Tiếng Đức
+language.name.it = Tiếng Ý
+language.name.nl = Tiếng Hà Lan
+language.name.pl = Tiếng Ba Lan
+language.name.ru = Tiếng Nga
+language.name.uk = Tiếng Ukraina
+language.name.tr = Tiếng Thổ Nhĩ Kỳ
+language.name.id = Tiếng Indonesia
+language.name.vi = Tiếng Việt
+language.name.ja = Tiếng Nhật
+language.name.ko = Tiếng Hàn
+language.name.zh-CN = Tiếng Trung (Giản thể)
+language.name.zh-TW = Tiếng Trung (Phồn thể)
+language.name.hi = Tiếng Hindi
+language.name.ar = Tiếng Ả Rập
+language.name.fa = Tiếng Ba Tư
+language.name.he = Tiếng Do Thái

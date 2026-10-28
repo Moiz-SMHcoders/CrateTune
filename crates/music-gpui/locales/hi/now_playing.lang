@@ -1,0 +1,79 @@
+# Now Playing screen, lyrics pane and lyrics card dialog (Hindi).
+
+# ---- Header
+np.close_tooltip = बंद करें (Esc)
+np.header = अभी चल रहा है
+np.demo_clock = डेमो घड़ी
+np.buffering = बफ़र हो रहा है…
+np.preview = प्रीव्यू
+np.speed = {speed}×
+np.sleep_tooltip = स्लीप टाइमर
+np.layout_tooltip = डिज़ाइन और बैकग्राउंड
+np.menu.design = डिज़ाइन
+np.menu.background = बैकग्राउंड
+
+# ---- Player
+np.up_next = आगे है
+np.playing_from = यहाँ से चल रहा है
+np.your_queue = आपकी कतार
+np.of_total = {total} में से
+np.editorial.header_album = अभी चल रहा है  ·  {album}
+np.editorial.play = चलाएँ
+np.editorial.pause = रोकें
+np.editorial.loading = लोड हो रहा है
+np.queue.title = आगे है
+np.queue.more.one = +{count} और
+np.queue.more.other = +{count} और
+np.queue.empty = कतार में कुछ नहीं है। किसी सूची से गाने जोड़ें, या ऑटोप्ले चालू करें।
+
+# ---- Lyrics pane
+lyrics.nothing_playing = कुछ नहीं चल रहा
+lyrics.loading = बोल लोड हो रहे हैं…
+lyrics.missing_title = बोल नहीं मिले
+lyrics.missing_detail = चालू किए गए किसी भी बोल प्रोवाइडर के पास यह ट्रैक नहीं है।
+lyrics.failed = बोल लोड नहीं हो सके
+lyrics.translating = अनुवाद हो रहा है…
+lyrics.translation_failed = अनुवाद विफल रहा: {error}
+lyrics.kind.word = शब्द-सिंक
+lyrics.kind.line = लाइन-सिंक
+lyrics.kind.plain = बिना सिंक
+lyrics.source = {provider} · {kind}
+lyrics.select_hint.one = कार्ड के लिए ज़्यादा से ज़्यादा {count} लाइन चुनें
+lyrics.select_hint.other = कार्ड के लिए ज़्यादा से ज़्यादा {count} लाइनें चुनें
+lyrics.selected.one = {count} लाइन चुनी गई
+lyrics.selected.other = {count} लाइनें चुनी गईं
+lyrics.create_card = कार्ड बनाएँ…
+lyrics.share_tooltip = बोल को कार्ड के रूप में शेयर करें
+lyrics.translation_on = अनुवाद: चालू
+lyrics.translation_off = अनुवाद: बंद
+lyrics.reload_tooltip = प्रोवाइडर में फिर से खोजें
+
+# ---- Lyrics card dialog
+card.dialog_title = बोल कार्ड
+card.row.background = बैकग्राउंड
+card.row.text = टेक्स्ट
+card.row.size = साइज़
+card.row.shape = आकार
+card.row.cover = कवर
+card.cover.show = दिखाएँ
+card.cover.hide = छिपाएँ
+card.save = इमेज सेव करें…
+card.copy = इमेज कॉपी करें
+card.copying = कॉपी हो रहा है…
+card.copied = क्लिपबोर्ड पर कॉपी हो गया
+card.saved = {path} सेव हो गया
+card.save_failed = सेव नहीं हो सका: {error}
+card.draw_failed = कार्ड नहीं बन सका: {error}
+card.aspect.square = चौकोर
+card.aspect.portrait = पोर्ट्रेट
+card.aspect.story = स्टोरी
+card.bg.blur = धुंधला आर्टवर्क
+card.bg.album = एल्बम का रंग
+card.bg.dark = गहरा
+card.bg.light = हल्का
+card.align.left = बाएँ
+card.align.center = बीच में
+card.align.right = दाएँ
+card.size.small = छोटा
+card.size.medium = मध्यम
+card.size.large = बड़ा

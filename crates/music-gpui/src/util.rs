@@ -106,31 +106,9 @@ pub fn civil_from_days(z: i64) -> (i64, u32, u32) {
     (if m <= 2 { y + 1 } else { y }, m, d)
 }
 
-pub const MONTHS: [&str; 12] = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-];
-
-/// `2026-10-28` → `28 October 2026`.
+/// `2026-10-28` → `28 October 2026` (in the UI language).
 pub fn pretty_date(day: &str) -> String {
-    let mut parts = day.splitn(3, '-');
-    let (Some(y), Some(m), Some(d)) = (parts.next(), parts.next(), parts.next()) else {
-        return day.to_owned();
-    };
-    match (m.parse::<usize>(), d.parse::<u32>()) {
-        (Ok(m @ 1..=12), Ok(d)) => format!("{d} {} {y}", MONTHS[m - 1]),
-        _ => day.to_owned(),
-    }
+    crate::i18n::format::iso_date(day)
 }
 
 #[cfg(test)]

@@ -1,0 +1,43 @@
+# Music recognition page.
+recognition.title = Musik erkennen
+recognition.subtitle = Erkenne einen Song, der gerade um dich herum läuft (⇧⌘R)
+
+recognition.idle.title = Tippen, um einen Song zu erkennen
+recognition.idle.detail = Spiel den Song in der Nähe deines Computers ab; er hört etwa 10 Sekunden lang über das Mikrofon zu.
+recognition.permission.title = Warte auf Mikrofonzugriff…
+recognition.permission.detail = Erlaube den Zugriff in der Systemabfrage.
+recognition.listening = Hört zu…
+recognition.listening_progress = {elapsed} von {length} s
+recognition.identifying.title = Wird erkannt…
+recognition.identifying.detail = Aufnahme wird abgeglichen.
+recognition.failed = Nicht erkannt
+recognition.open_privacy_settings = Datenschutzeinstellungen öffnen
+
+recognition.mic.restricted = Der Mikrofonzugriff ist auf diesem Computer eingeschränkt.
+recognition.mic.undetermined = Der Mikrofonzugriff wurde noch nicht erlaubt. Versuch es erneut und erlaube ihn, wenn du gefragt wirst.
+recognition.mic.denied = Der Mikrofonzugriff ist für {app} deaktiviert. Erlaube ihn unter Systemeinstellungen → Datenschutz & Sicherheit → Mikrofon.
+recognition.error.no_microphone = Kein Mikrofon gefunden
+recognition.error.permission_denied = Mikrofonzugriff wurde verweigert
+recognition.error.silent = Das Mikrofon hat nur Stille geliefert (ist der Mikrofonzugriff erlaubt?)
+recognition.error.capture = Aufnahme fehlgeschlagen: {error}
+recognition.error.cancelled = Abgebrochen
+recognition.error.no_signature = Keine Musik zu hören
+recognition.error.no_match = Kein Treffer gefunden
+recognition.error.rate_limited = Zu viele Anfragen – versuch es in einer Minute erneut
+recognition.error.service = Fehler beim Erkennungsdienst (HTTP {status})
+recognition.error.network = Netzwerkfehler: {error}
+recognition.error.parse = Unerwartete Antwort: {error}
+
+recognition.result.recognized = Erkannt
+recognition.result.from_history = Aus deinem Erkennungsverlauf
+recognition.match.title = Auf YouTube Music
+recognition.match.searching = YouTube Music wird durchsucht…
+recognition.match.failed = Suche auf YouTube Music fehlgeschlagen: {error}
+recognition.match.none = Nicht auf YouTube Music gefunden.
+
+recognition.history.title = Verlauf
+recognition.history.empty.title = Noch nichts erkannt
+recognition.history.empty.detail = Songs, die du erkennst, erscheinen hier – die neuesten zuerst.
+recognition.history.clear_title = Erkennungsverlauf leeren?
+recognition.history.clear_detail = Die Liste der erkannten Songs wird gelöscht.
+recognition.history.remove = Aus dem Verlauf entfernen

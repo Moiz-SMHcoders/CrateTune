@@ -1,0 +1,121 @@
+# Settings: Account, Network, About, panel, update check, sign-in window (Turkish).
+
+# ---- Account
+settings.account.cookie_title = Tarayıcı çereziyle oturum aç
+settings.account.cookie_steps = 1. Tarayıcınızda music.youtube.com adresini açın ve oturum açın.\n2. Geliştirici araçlarını açın (Safari / Chrome'da ⌥⌘I) → Network, sayfayı yeniden yükleyin.\n3. music.youtube.com'a giden herhangi bir isteğe tıklayın (ör. “browse”), Request Headers altında “Cookie” satırını bulun ve değerinin tamamını kopyalayın.\n4. Aşağıya yapıştırın. İşletim sisteminin anahtar zincirinde saklanır ve yalnızca YouTube'a gönderilir.
+settings.account.cookie_index = Google hesabı dizini (birden fazla hesapta oturum açıksa):
+settings.account.not_signed_in = Oturum açılmadı. Her şey anonim olarak çalışır; oturum açmak beğendiğiniz şarkıları, kaydedilen albümleri, abonelikleri ve çalma listelerini kitaplığa eşitler; beğeniler ve çalma listesi düzenlemeleri de YouTube Music'e geri gönderilir.
+settings.account.sign_in_google = Google ile oturum aç…
+settings.account.paste_cookie = Çerez yapıştır…
+settings.account.google_refused = Google oturum açma penceresini reddederse (“Bu tarayıcı veya uygulama güvenli olmayabilir”), “Çerez yapıştır” seçeneğini kullanın.
+settings.account.last_synced = Son eşitleme: {date}
+settings.account.not_synced = Henüz eşitlenmedi
+settings.account.sync_now = Şimdi eşitle
+settings.account.syncing = Eşitleniyor…
+settings.account.sync_group = Kitaplık eşitleme
+settings.account.sync_row = YouTube Music kitaplığınızı eşitleyin
+settings.account.sync_row_desc = Beğenilen şarkılar, kitaplık şarkıları, kaydedilen albümler, abonelikler, çalma listeleri.
+settings.account.accounts_group = Hesaplar
+settings.account.channels = Bu Google hesabının kanalları (marka hesapları):
+settings.account.google_index = Google hesabı
+settings.account.google_index_desc = Çerez birden fazla Google hesabı içerdiğinde hangisinin kullanılacağı (0 = ilki).
+settings.account.cookie_note = Oturum açmak, music.youtube.com için tarayıcı oturum çerezinizi kullanır. Çerez işletim sisteminin anahtar zincirinde saklanır ve yalnızca YouTube'a gönderilir. Hesap özellikleri YouTube'un web API'sine göre geliştirildi ancak henüz gerçek bir hesapla doğrulanmadı.
+
+# ---- About
+settings.about.show_welcome = Hoş geldiniz rehberini göster
+settings.about.version_summary = Sürüm {version} · {summary}
+settings.about.summary = YouTube Music için yerel masaüstü istemcisi
+settings.about.not_affiliated = YouTube veya Google ile bağlantılı değildir; onlar tarafından onaylanmamış veya desteklenmemiştir.
+settings.about.license = Lisans
+settings.about.license_notice = Bu program özgür yazılımdır: GNU Genel Kamu Lisansı sürüm 3 koşulları altında yeniden dağıtabilir ve/veya değiştirebilirsiniz. HİÇBİR GARANTİ OLMADAN dağıtılmaktadır; ayrıntılar için lisansa bakın.
+settings.about.credits = Emeği geçenler
+settings.about.credit.archivetune = Özellikler ve ekranlar {project} (GPL-3.0) projesinden aktarılmıştır, © Rukamori and contributors. Bu bağımsız bir projedir.
+settings.about.credit.hummingbird = Ekolayzır, işletim sistemi medya denetimleri, scrobble ve Discord durumu Hummingbird (Apache-2.0) projesinden aktarılmıştır, © Hummingbird contributors.
+settings.about.credit.recognition_title = Şarkı tanıma
+settings.about.credit.recognition = Shazam uyumlu parmak izi, {project} projesinin SongRec biçimini izleyen shazamkit bileşeninden (GPL-3.0) aktarılmıştır. Shazam veya Apple ile bağlantılı değildir.
+settings.about.credit.libraries_title = Kütüphaneler
+settings.about.credit.libraries = GPUI ve gpui-component (Apache-2.0), Symphonia ve rodio, Lucide simgeleri (ISC), LRCLIB şarkı sözleri.
+
+# ---- Update check
+update.group = Güncellemeler
+update.releases_from = Sürümler: github.com/{repo}
+update.checking = Denetleniyor…
+update.up_to_date_version = En son sürümü kullanıyorsunuz ({version}).
+update.available_version = {version} sürümü kullanılabilir.
+update.check_failed = Denetlenemedi: {error}
+update.check_now = Şimdi denetle
+update.download = İndir…
+update.no_release = yayımlanmış sürüm yok
+update.available_toast = {app} {version} kullanılabilir (Ayarlar → Hakkında)
+update.up_to_date_toast = {app} güncel
+
+# ---- Network
+settings.network.proxy = Proxy
+settings.network.proxy_off = Kapalı
+settings.network.host = Sunucu
+settings.network.port = Port
+settings.network.user = Kullanıcı adı
+settings.network.password = Parola
+settings.network.doh_url = DoH URL'si
+settings.network.host_placeholder = proxy.example.com veya 127.0.0.1
+settings.network.optional = isteğe bağlı
+settings.network.test_connection = Bağlantıyı test et
+settings.network.test_dns = DNS'i test et
+settings.network.using_proxy = Kullanılan: {url}
+settings.network.direct = Doğrudan bağlantı (proxy yok)
+settings.network.status_with_doh = {proxy} · DNS-over-HTTPS ({server})
+settings.network.testing = Test ediliyor…
+settings.network.test_ok = YouTube'a {ms} ms içinde bağlanıldı
+settings.network.test_failed = Bağlantı başarısız: {error}
+settings.network.lookup_failed = Sorgu başarısız: {error}
+settings.network.looking_up = Sorgulanıyor…
+settings.network.dns_ok = {host} → {addresses} · {via} · {ms} ms
+settings.network.dns_via_doh = DNS-over-HTTPS
+settings.network.dns_via_cache = DNS-over-HTTPS (önbellekten)
+settings.network.dns_via_system = sistem çözümleyicisi
+settings.network.proxy_note = Her şeye uygulanır: YouTube Music, ses akışları, kapak resimleri, şarkı sözleri ve scrobble. SOCKS5h ana makine adlarını proxy üzerinden çözümler. Parola anahtar zincirinde saklanır.
+settings.network.dns = DNS
+settings.network.dns_system = Sistem
+settings.network.dns_custom = Özel
+settings.network.dns_fallback = DoH başarısız olursa sistem çözümleyicisine geri dön
+settings.network.dns_note = DNS-over-HTTPS (RFC 8484), ana makine adlarını düz DNS yerine şifreli bir HTTPS bağlantısı üzerinden sorgular. Yanıtlar TTL süreleri boyunca önbellekte tutulur. SOCKS5h proxy ile adları proxy'nin kendisi çözümler. Quad9'a, bazı ağların engellediği HTTP/1.1 portu 5053 üzerinden ulaşılır.
+settings.network.error.port_number = Port bir sayı olmalıdır (1–65535).
+settings.network.error.doh_invalid = DNS-over-HTTPS URL'si geçerli değil.
+settings.network.error.proxy_invalid = Proxy adresi bu proxy türü için geçerli değil.
+settings.network.error.doh_https = DNS-over-HTTPS URL'si https:// ile başlamalıdır.
+settings.network.error.doh_invalid_detail = DNS-over-HTTPS URL'si geçerli değil: {error}.
+settings.network.error.host_missing = Proxy sunucusunu girin.
+settings.network.error.host_invalid = Sunucu yalnızca bir ad veya adres olmalıdır (şema, yol veya boşluk olmadan).
+settings.network.error.port_missing = 1 ile 65535 arasında bir port girin.
+settings.network.error.socks4_auth = SOCKS4 parolaları desteklemez; kullanıcı adını boş bırakın.
+
+# ---- Settings panel
+settings.panel.placeholder.api_key = API anahtarı
+settings.panel.placeholder.shared_secret = Paylaşılan gizli anahtar
+settings.panel.placeholder.user_token = Kullanıcı belirteci
+settings.panel.placeholder.application_id = Uygulama kimliği
+settings.panel.lastfm_missing = Önce API anahtarını ve paylaşılan gizli anahtarı girin.
+settings.panel.lastfm_requesting = Belirteç isteniyor…
+settings.panel.lastfm_finishing = Tamamlanıyor…
+settings.panel.lb_missing = Önce kullanıcı belirtecinizi yapıştırın.
+settings.panel.secrets.backend_and_file = {backend} + ayar dosyası (0600)
+settings.panel.secrets.file_keychain_disabled = ayar dosyası (0600; anahtar zinciri devre dışı)
+settings.panel.secrets.file_keychain_read_failed = ayar dosyası (0600; anahtar zinciri okunamadı)
+settings.panel.secrets.file_keychain_unavailable = ayar dosyası (0600; anahtar zinciri kullanılamıyor)
+
+# ---- Credential stores
+secrets.backend.macos = macOS Anahtar Zinciri
+secrets.backend.windows = Windows Kimlik Bilgisi Yöneticisi
+secrets.backend.secret_service = Secret Service
+
+# ---- Settings file problems
+settings.file.no_config_dir = yapılandırma klasörü yok; ayarlar kaydedilmiyor
+settings.file.save_failed = kaydetme başarısız: {error}
+settings.file.read_failed = okunamadı: {path}: {error}
+settings.file.invalid_moved = {path} geçerli değil ({error}); şuraya taşındı: {backup}
+
+# ---- Google sign-in window
+login.window_title = YouTube Music'te oturum aç
+login.instructions = Google hesabınızla oturum açın. YouTube Music açıldığında bu pencere kapanır.
+login.webview_failed = Web görünümü oluşturulamadı ({error}). Bunun yerine “Çerez yapıştır” seçeneğini kullanın.
+login.checking = Oturum açıldı — hesap denetleniyor…

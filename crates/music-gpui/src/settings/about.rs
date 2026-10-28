@@ -26,7 +26,7 @@ pub(super) fn render(
         Button::new("about-onboarding")
             .small()
             .outline()
-            .label("Show welcome guide")
+            .label(t!("settings.about.show_welcome"))
             .on_click(|_, window, cx| {
                 crate::app::update_app(cx, |app, cx| app.open_onboarding(0, window, cx));
             }),
@@ -35,30 +35,31 @@ pub(super) fn render(
         use crate::update_check::UpdateStatus;
         let status = crate::update_check::status(cx);
         let (text, url): (SharedString, Option<String>) = match &status {
-            UpdateStatus::Unknown => (format!("Releases from github.com/{repo}").into(), None),
-            UpdateStatus::Checking => ("Checking…".into(), None),
+            UpdateStatus::Unknown => (t!("update.releases_from", repo = repo).into(), None),
+            UpdateStatus::Checking => (t!("update.checking").into(), None),
             UpdateStatus::UpToDate => (
-                format!(
-                    "You have the latest version ({}).",
-                    env!("CARGO_PKG_VERSION")
+                t!(
+                    "update.up_to_date_version",
+                    version = env!("CARGO_PKG_VERSION")
                 )
                 .into(),
                 None,
             ),
             UpdateStatus::Available { version, url } => (
-                format!("Version {version} is available.").into(),
+                t!("update.available_version", version = version).into(),
                 Some(url.clone()),
             ),
-            UpdateStatus::Failed(e) => (format!("Couldn't check: {e}").into(), None),
+            UpdateStatus::Failed(e) => (t!("update.check_failed", error = e).into(), None),
         };
-        group("Updates", cx).child(note(text, cx)).child(
+        group(t!("update.group"), cx).child(note(text, cx)).child(
             h_flex()
                 .gap_2()
+                .flex_wrap()
                 .child(
                     Button::new("about-update-check")
                         .small()
                         .outline()
-                        .label("Check now")
+                        .label(t!("update.check_now"))
                         .on_click(|_, _, cx| {
                             crate::app::update_app(cx, |app, cx| app.check_for_updates(true, cx));
                         }),
@@ -67,11 +68,17 @@ pub(super) fn render(
                     Button::new("about-update-open")
                         .small()
                         .primary()
-                        .label("Download…")
+                        .label(t!("update.download"))
                         .on_click(move |_, _, cx| cx.open_url(&url))
                 })),
         )
     });
+    // English: the description from packaging/app.env (the one place to rename).
+    let summary = if crate::i18n::locale() == crate::i18n::Locale::ENGLISH {
+        crate::identity::APP_SUMMARY
+    } else {
+        t!("settings.about.summary")
+    };
     let muted = cx.theme().muted_foreground;
     let link = |id: &'static str, label: &'static str, url: &'static str| {
         Button::new(id)
@@ -80,7 +87,7 @@ pub(super) fn render(
             .label(label)
             .on_click(move |_, _, cx| cx.open_url(url))
     };
-    let credit = |name: &'static str, text: &'static str| {
+    let credit = |name: &'static str, text: SharedString| {
         v_flex()
             .gap_0p5()
             .child(div().text_sm().font_weight(FontWeight::MEDIUM).child(name))
@@ -91,51 +98,39 @@ pub(super) fn render(
         .child(
             group(crate::identity::APP_NAME, cx)
                 .child(note(
-                    SharedString::from(format!(
-                        "Version {} · {}",
-                        env!("CARGO_PKG_VERSION"),
-                        crate::identity::APP_SUMMARY
+                    SharedString::from(t!(
+                        "settings.about.version_summary",
+                        version = env!("CARGO_PKG_VERSION"),
+                        summary = summary
                     )),
                     cx,
                 ))
-                .child(note(
-                    "Not affiliated with, endorsed or sponsored by YouTube or Google.",
-                    cx,
-                ))
+                .child(note(t!("settings.about.not_affiliated"), cx))
                 .child(welcome),
         )
         .children(updates)
         .child(
-            group("License", cx)
-                .child(note(
-                    "This program is free software: you can redistribute it and/or modify it \
-                     under the terms of the GNU General Public License, version 3. It is \
-                     distributed WITHOUT ANY WARRANTY; see the license for details.",
-                    cx,
-                ))
+            group(t!("settings.about.license"), cx)
+                .child(note(t!("settings.about.license_notice"), cx))
                 .child(h_flex().child(link("about-gpl", "GNU GPL v3.0", GPL_URL))),
         )
         .child(
-            group("Credits", cx)
+            group(t!("settings.about.credits"), cx)
                 .child(credit(
                     "ArchiveTune",
-                    "Features and screens are ported from ArchiveTune (GPL-3.0), \
-                     © Rukamori and contributors. This is an independent project.",
+                    t!("settings.about.credit.archivetune", project = "ArchiveTune").into(),
                 ))
                 .child(credit(
                     "Hummingbird",
-                    "Equalizer, OS media controls, scrobbling and Discord presence are \
-                     ported from Hummingbird (Apache-2.0), © Hummingbird contributors.",
+                    t!("settings.about.credit.hummingbird").into(),
                 ))
                 .child(credit(
-                    "Song recognition",
-                    "Shazam-compatible fingerprinting ported from ArchiveTune's shazamkit \
-                     (GPL-3.0), which follows SongRec's format. Not affiliated with Shazam or Apple.",
+                    t!("settings.about.credit.recognition_title"),
+                    t!("settings.about.credit.recognition", project = "ArchiveTune").into(),
                 ))
                 .child(credit(
-                    "Libraries",
-                    "GPUI and gpui-component (Apache-2.0), Symphonia and rodio, \
-                     Lucide icons (ISC), LRCLIB lyrics.",
+                    t!("settings.about.credit.libraries_title"),
+                    t!("settings.about.credit.libraries").into(),
                 ))
                 .child(
                     h_flex()

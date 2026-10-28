@@ -1,0 +1,119 @@
+# ---- Account
+settings.account.cookie_title = Đăng nhập bằng cookie trình duyệt
+settings.account.cookie_steps = 1. Mở music.youtube.com trong trình duyệt và đăng nhập.\n2. Mở công cụ dành cho nhà phát triển (⌥⌘I trong Safari / Chrome) → Network, tải lại trang.\n3. Nhấp vào bất kỳ yêu cầu nào tới music.youtube.com (ví dụ “browse”), tìm “Cookie” trong Request Headers và sao chép toàn bộ giá trị.\n4. Dán vào bên dưới. Cookie được lưu trong chuỗi khóa của hệ điều hành và chỉ được gửi tới YouTube.
+settings.account.cookie_index = Chỉ số tài khoản Google (nếu đăng nhập nhiều tài khoản):
+settings.account.not_signed_in = Chưa đăng nhập. Mọi thứ đều hoạt động ẩn danh; khi đăng nhập, bài hát đã thích, album đã lưu, kênh đã đăng ký và danh sách phát sẽ được đồng bộ vào thư viện, còn lượt thích và chỉnh sửa danh sách phát sẽ được gửi lại YouTube Music.
+settings.account.sign_in_google = Đăng nhập bằng Google…
+settings.account.paste_cookie = Dán cookie…
+settings.account.google_refused = Nếu Google từ chối cửa sổ đăng nhập (“Trình duyệt hoặc ứng dụng này có thể không an toàn”), hãy dùng “Dán cookie”.
+settings.account.last_synced = Đồng bộ lần cuối {date}
+settings.account.not_synced = Chưa đồng bộ
+settings.account.sync_now = Đồng bộ ngay
+settings.account.syncing = Đang đồng bộ…
+settings.account.sync_group = Đồng bộ thư viện
+settings.account.sync_row = Đồng bộ thư viện YouTube Music của bạn
+settings.account.sync_row_desc = Bài hát đã thích, bài hát trong thư viện, album đã lưu, kênh đã đăng ký, danh sách phát.
+settings.account.accounts_group = Tài khoản
+settings.account.channels = Các kênh (tài khoản thương hiệu) của tài khoản Google này:
+settings.account.google_index = Tài khoản Google
+settings.account.google_index_desc = Khi cookie chứa nhiều tài khoản Google: dùng tài khoản nào (0 = đầu tiên).
+settings.account.cookie_note = Việc đăng nhập dùng cookie phiên trình duyệt của bạn cho music.youtube.com. Cookie được giữ trong chuỗi khóa của hệ điều hành và chỉ được gửi tới YouTube. Các tính năng tài khoản được xây dựng dựa trên API web của YouTube nhưng chưa được kiểm chứng với tài khoản thật.
+
+# ---- About
+settings.about.show_welcome = Hiện hướng dẫn chào mừng
+settings.about.version_summary = Phiên bản {version} · {summary}
+settings.about.summary = Ứng dụng máy tính gốc cho YouTube Music
+settings.about.not_affiliated = Không liên kết, không được YouTube hay Google chứng thực hoặc tài trợ.
+settings.about.license = Giấy phép
+settings.about.license_notice = Chương trình này là phần mềm tự do: bạn có thể phân phối lại và/hoặc sửa đổi nó theo các điều khoản của Giấy phép Công cộng GNU (GNU General Public License), phiên bản 3. Chương trình được phân phối KHÔNG KÈM BẤT KỲ BẢO HÀNH NÀO; xem giấy phép để biết chi tiết.
+settings.about.credits = Ghi công
+settings.about.credit.archivetune = Các tính năng và màn hình được chuyển thể từ {project} (GPL-3.0), © Rukamori and contributors. Đây là một dự án độc lập.
+settings.about.credit.hummingbird = Bộ cân bằng, điều khiển phương tiện của hệ điều hành, scrobbling và trạng thái Discord được chuyển thể từ Hummingbird (Apache-2.0), © Hummingbird contributors.
+settings.about.credit.recognition_title = Nhận dạng bài hát
+settings.about.credit.recognition = Tạo dấu vân tay âm thanh tương thích Shazam, chuyển thể từ shazamkit của {project} (GPL-3.0), theo định dạng của SongRec. Không liên kết với Shazam hay Apple.
+settings.about.credit.libraries_title = Thư viện phần mềm
+settings.about.credit.libraries = GPUI và gpui-component (Apache-2.0), Symphonia và rodio, biểu tượng Lucide (ISC), lời bài hát LRCLIB.
+
+# ---- Update check
+update.group = Cập nhật
+update.releases_from = Bản phát hành từ github.com/{repo}
+update.checking = Đang kiểm tra…
+update.up_to_date_version = Bạn đang dùng phiên bản mới nhất ({version}).
+update.available_version = Đã có phiên bản {version}.
+update.check_failed = Không thể kiểm tra: {error}
+update.check_now = Kiểm tra ngay
+update.download = Tải xuống…
+update.no_release = không có bản phát hành nào
+update.available_toast = Đã có {app} {version} (Cài đặt → Giới thiệu)
+update.up_to_date_toast = {app} đã được cập nhật
+
+# ---- Network
+settings.network.proxy = Proxy
+settings.network.proxy_off = Tắt
+settings.network.host = Máy chủ
+settings.network.port = Cổng
+settings.network.user = Tên người dùng
+settings.network.password = Mật khẩu
+settings.network.doh_url = URL DoH
+settings.network.host_placeholder = proxy.example.com hoặc 127.0.0.1
+settings.network.optional = không bắt buộc
+settings.network.test_connection = Kiểm tra kết nối
+settings.network.test_dns = Kiểm tra DNS
+settings.network.using_proxy = Đang dùng {url}
+settings.network.direct = Kết nối trực tiếp (không proxy)
+settings.network.status_with_doh = {proxy} · DNS-over-HTTPS ({server})
+settings.network.testing = Đang kiểm tra…
+settings.network.test_ok = Đã kết nối tới YouTube trong {ms} ms
+settings.network.test_failed = Kết nối thất bại: {error}
+settings.network.lookup_failed = Phân giải thất bại: {error}
+settings.network.looking_up = Đang phân giải…
+settings.network.dns_ok = {host} → {addresses} qua {via} trong {ms} ms
+settings.network.dns_via_doh = DNS-over-HTTPS
+settings.network.dns_via_cache = DNS-over-HTTPS (đã lưu đệm)
+settings.network.dns_via_system = trình phân giải của hệ thống
+settings.network.proxy_note = Áp dụng cho mọi thứ: YouTube Music, luồng âm thanh, ảnh bìa, lời bài hát và scrobbling. SOCKS5h phân giải tên máy chủ qua proxy. Mật khẩu được giữ trong chuỗi khóa.
+settings.network.dns = DNS
+settings.network.dns_system = Hệ thống
+settings.network.dns_custom = Tùy chỉnh
+settings.network.dns_fallback = Dùng trình phân giải của hệ thống khi DoH thất bại
+settings.network.dns_note = DNS-over-HTTPS (RFC 8484) phân giải tên máy chủ qua kết nối HTTPS được mã hóa thay vì DNS thông thường. Kết quả được lưu đệm theo TTL. Với proxy SOCKS5h, proxy tự phân giải tên. Quad9 được kết nối qua cổng HTTP/1.1 5053, cổng này bị chặn ở một số mạng.
+settings.network.error.port_number = Cổng phải là một số (1–65535).
+settings.network.error.doh_invalid = URL DNS-over-HTTPS không hợp lệ.
+settings.network.error.proxy_invalid = Địa chỉ proxy không hợp lệ cho loại proxy này.
+settings.network.error.doh_https = URL DNS-over-HTTPS phải bắt đầu bằng https://.
+settings.network.error.doh_invalid_detail = URL DNS-over-HTTPS không hợp lệ: {error}.
+settings.network.error.host_missing = Hãy nhập máy chủ proxy.
+settings.network.error.host_invalid = Máy chủ chỉ được là tên hoặc địa chỉ (không có giao thức, đường dẫn hay dấu cách).
+settings.network.error.port_missing = Hãy nhập cổng từ 1 đến 65535.
+settings.network.error.socks4_auth = SOCKS4 không hỗ trợ mật khẩu; hãy để trống tên người dùng.
+
+# ---- Settings panel
+settings.panel.placeholder.api_key = Khóa API
+settings.panel.placeholder.shared_secret = Mã bí mật dùng chung
+settings.panel.placeholder.user_token = Token người dùng
+settings.panel.placeholder.application_id = ID ứng dụng
+settings.panel.lastfm_missing = Hãy nhập khóa API và mã bí mật dùng chung trước.
+settings.panel.lastfm_requesting = Đang yêu cầu token…
+settings.panel.lastfm_finishing = Đang hoàn tất…
+settings.panel.lb_missing = Hãy dán token người dùng của bạn trước.
+settings.panel.secrets.backend_and_file = {backend} + tệp cài đặt (0600)
+settings.panel.secrets.file_keychain_disabled = tệp cài đặt (0600; chuỗi khóa bị tắt)
+settings.panel.secrets.file_keychain_read_failed = tệp cài đặt (0600; không đọc được chuỗi khóa)
+settings.panel.secrets.file_keychain_unavailable = tệp cài đặt (0600; chuỗi khóa không khả dụng)
+
+# ---- Credential stores
+secrets.backend.macos = Chuỗi khóa macOS
+secrets.backend.windows = Trình quản lý thông tin xác thực Windows
+secrets.backend.secret_service = Secret Service
+
+# ---- Settings file problems
+settings.file.no_config_dir = không có thư mục cấu hình; cài đặt không được lưu
+settings.file.save_failed = lưu thất bại: {error}
+settings.file.read_failed = đọc {path}: {error}
+settings.file.invalid_moved = {path} không hợp lệ ({error}); đã chuyển sang {backup}
+
+# ---- Google sign-in window
+login.window_title = Đăng nhập YouTube Music
+login.instructions = Đăng nhập bằng tài khoản Google của bạn. Cửa sổ này sẽ đóng khi YouTube Music mở ra.
+login.webview_failed = Không thể tạo chế độ xem web ({error}). Hãy dùng “Dán cookie” thay thế.
+login.checking = Đã đăng nhập — đang kiểm tra tài khoản…

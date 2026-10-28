@@ -159,8 +159,8 @@ impl MusicApp {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         let handle = AppHandle(cx.entity().downgrade());
         cx.set_global(handle);
-        let search_input =
-            cx.new(|cx| InputState::new(window, cx).placeholder("Search songs, artists, albums"));
+        let search_input = cx.new(|cx| InputState::new(window, cx));
+        crate::i18n::track_placeholder(&search_input, k!("app.search_placeholder"), window, cx);
         let progress = cx.new(|_| SliderState::new().min(0.).max(1.).step(0.25));
         let settings = cx.new(|cx| SettingsPanel::new(window, cx));
         let saved = settings.read(cx).settings().clone();
@@ -225,7 +225,7 @@ impl MusicApp {
                 let mut engine = match result {
                     Ok(player) => Engine::Audio(player),
                     Err(e) => {
-                        this.audio_error = e.map(|e| format!("{e} (using a demo clock)"));
+                        this.audio_error = e.map(|e| t!("app.audio_demo_clock", error = e));
                         Engine::Demo(Box::default())
                     }
                 };
@@ -428,6 +428,27 @@ impl MusicApp {
         }
     }
 
+    /// Switches the UI to the language in the settings, live: menus are rebuilt,
+    /// tracked input placeholders reset, every window re-rendered (cached views too)
+    /// and the menu-bar item relabelled on the next poll.
+    pub fn apply_language(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let locale = self.settings.read(cx).settings().appearance.ui_locale();
+        if locale == crate::i18n::locale() {
+            return;
+        }
+        crate::i18n::set_locale(locale);
+        crate::actions::set_menus(cx);
+        crate::i18n::relocalize(window, cx);
+        self.update_window_title(window);
+        cx.refresh_windows();
+        cx.notify();
+    }
+
+    fn update_window_title(&self, window: &mut Window) {
+        let title = self.router.route().title();
+        window.set_window_title(&t!("app.window_title", page = title));
+    }
+
     fn on_route_changed(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         self.ensure_page(window, cx);
         let title = self.router.route().title();
@@ -437,7 +458,7 @@ impl MusicApp {
                 started.elapsed().as_secs_f64()
             );
         }
-        window.set_window_title(&format!("{title} — {}", crate::identity::APP_NAME));
+        self.update_window_title(window);
         match self.router.route().clone() {
             // Keep the search field in sync when going back/forward between searches.
             Route::Search { query } if query != self.search_text => {
@@ -581,6 +602,7 @@ impl MusicApp {
             SettingsEvent::Lyrics => self.rebuild_lyrics_service(cx),
             SettingsEvent::NowPlaying => cx.notify(),
             SettingsEvent::Appearance => self.apply_theme(cx),
+            SettingsEvent::Language => self.apply_language(window, cx),
             SettingsEvent::PlaybackModes => {
                 let modes = self.settings.read(cx).settings().playback.clone();
                 self.queue.set_shuffle(modes.shuffle);
@@ -689,7 +711,7 @@ impl MusicApp {
                     .ghost()
                     .small()
                     .icon(IconName::ChevronLeft)
-                    .tooltip("Back (⌘[)")
+                    .tooltip(t!("app.tooltip.back"))
                     .disabled(!self.router.can_go_back())
                     .on_click(cx.listener(|this, _, window, cx| this.go_back(window, cx))),
             )
@@ -698,7 +720,7 @@ impl MusicApp {
                     .ghost()
                     .small()
                     .icon(IconName::ChevronRight)
-                    .tooltip("Forward (⌘])")
+                    .tooltip(t!("app.tooltip.forward"))
                     .disabled(!self.router.can_go_forward())
                     .on_click(cx.listener(|this, _, window, cx| this.go_forward(window, cx))),
             )

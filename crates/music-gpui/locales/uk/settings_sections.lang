@@ -1,0 +1,18 @@
+# Settings page: section names (Ukrainian).
+settings.section.appearance = Вигляд
+settings.section.playback = Відтворення
+settings.section.modules = Модулі
+settings.section.equalizer = Еквалайзер
+settings.section.lyrics = Тексти пісень
+settings.section.content = Вміст і регіон
+settings.section.network = Мережа
+settings.section.privacy = Конфіденційність
+settings.section.storage = Сховище
+settings.section.account = Обліковий запис
+settings.section.integrations = Скроблінг і Discord
+settings.section.sponsorblock = SponsorBlock
+settings.section.together = Music Together
+settings.section.spotify = Імпорт зі Spotify
+settings.section.ai_filter = ШІ-фільтр вмісту
+settings.section.cast = Chromecast
+settings.section.about = Про застосунок

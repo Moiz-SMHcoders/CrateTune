@@ -43,10 +43,26 @@ fontconfig, ALSA and D-Bus (all standard on desktop distributions).
 
 ## First start
 
-A short guide opens on the first start: content language and country, theme, optional
+A short guide opens on the first start: the app's language, content language and
+country, theme, optional
 YouTube Music sign-in, optional music folders, and a note about privacy and previews.
 Everything can be skipped (**Skip setup**, or Esc) and changed later in Settings. Open
 the guide again from **Settings → About → Show welcome guide**.
+
+## Language
+
+The app is translated into English, Deutsch, Español, Français, Italiano, Nederlands,
+Polski, Português (Brasil), Русский, Українська, Türkçe, Bahasa Indonesia, Tiếng Việt,
+日本語, 한국어, 简体中文, 繁體中文 and हिन्दी. By default it follows your system's
+preferred languages (macOS: System Settings → General → Language & Region; Windows: the
+display language; Linux: `LANGUAGE` / `LANG`), falling back to English. Pick another one
+in **Settings → Appearance → Interface language** (or on the guide's first page); the
+switch is immediate, menus included. Dates, counts ("1 song" / "5 songs") and number
+grouping follow the language; playback times stay `m:ss`.
+
+The language of titles, shelves and search results comes from YouTube Music and is a
+separate setting (**Content & region → Content language**). On a fresh install it starts
+in the app's language and your system's region.
 
 ## Finding music
 
@@ -176,7 +192,7 @@ copies your YouTube Music library into the local one; **Sign out** forgets the c
 
 | Section | What's there |
 |---|---|
-| Appearance | theme (dark, pure black, dynamic accent from the artwork), text size, Now Playing design (eight) and background, mini player style |
+| Appearance | interface language, theme (dark, pure black, dynamic accent from the artwork), text size, Now Playing design (eight) and background, mini player style |
 | Playback | shuffle / repeat, quality, loudness normalization, skip silence, skip failing songs, crossfade, speed and pitch, output device, sleep timer |
 | Modules | provider modules (alternative audio sources) and where songs play from |
 | Equalizer | 10-band equalizer with presets |
@@ -348,6 +364,14 @@ karaoke, live recordings — plus your own ("songs about cars"), like "Hide expl
   connection; try again in N min"); the app then leaves it alone for a while and retries by
   itself. An AI endpoint of your own avoids this.
 * Accessibility (screen readers) is limited by the UI toolkit.
+* Right-to-left languages (Arabic, Persian, Hebrew) are not offered: the UI toolkit
+  shapes their text but can't right-align or mirror the layout.
+* Hindi: the toolkit can break a wrapped line in the middle of a word and may cut a final
+  vowel sign or nasal mark (ं) from a few short button labels.
+* A few texts stay English in every language: messages that come from the music engine
+  or a server (shown inside a translated sentence), the default Discord activity text
+  (other people see it), the input fields' right-click menu in most languages, and
+  third-party module names and settings.
 * Builds are not signed with a Developer ID / Authenticode certificate yet (see Install).
 
 ## Troubleshooting

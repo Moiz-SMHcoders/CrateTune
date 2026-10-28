@@ -1,0 +1,302 @@
+# Library pages (src/pages/library*.rs, local_playlist.rs, local_files.rs,
+# downloads.rs, history.rs, stats.rs, song_list.rs), the Storage and Privacy
+# settings sections and the backup / restore dialogs (src/storage_ops.rs).
+# Format: see crates/music-gpui/i18n_parse.rs ({name} = placeholder, {app} = the
+# app's name, `.one` / `.other` = plural forms).
+
+# ---- Library page: tabs (keep short: a row of tab buttons)
+
+# Sort menu: the button shows the current sort name (keep short).
+library.sort.label = Sort
+library.sort.date_added = Date added
+library.sort.title = Title
+library.sort.artist = Artist
+library.sort.play_count = Play count
+library.sort.listening_time = Listening time
+library.sort.last_played = Last played
+library.sort.year = Year
+library.sort.song_count = Song count
+library.sort.name = Name
+library.sort.last_updated = Last updated
+library.sort.date_created = Date created
+
+# Placeholder of the small filter field above song lists and grids.
+library.filter_placeholder = Filter
+# Toggle buttons in the toolbar (keep short).
+library.saved_only = Saved only
+library.subscribed_only = Subscribed only
+# Button: creates a playlist.
+library.new_playlist = New playlist
+
+# Page subtitle. {summary}: a count such as "12 songs".
+library.detail_signed_in = {summary} · signed in to YouTube Music
+library.count.albums.one = {count} album
+library.count.albums.other = {count} albums
+library.count.artists.one = {count} artist
+library.count.artists.other = {count} artists
+library.count.shows.one = {count} show
+library.count.shows.other = {count} shows
+library.count.playlists.one = {count} playlist
+library.count.playlists.other = {count} playlists
+
+# Empty states (title + detail)
+library.podcasts.signed_out_title = Sign in to see your podcasts
+library.podcasts.signed_out_detail = Podcasts you save on YouTube Music show up here. Sign in under Settings → Account; shows can be opened from search, Home and Explore without an account.
+library.podcasts.empty_title = No podcasts yet
+library.podcasts.empty_detail = Save a show with “Save to library” on its page.
+library.empty.no_matches_title = No matches
+library.empty.no_matches_detail = Nothing matches the filter.
+library.empty.liked_title = No liked songs
+library.empty.liked_detail = Tap the heart on any song. Signed in, your YouTube Music likes sync here.
+library.empty.downloaded_title = Nothing downloaded
+library.empty.downloaded_detail = Choose “Download” in a song's menu to keep it on this computer.
+library.empty.local_title = No local files
+library.empty.local_detail = Add music folders on the Local files page and scan them.
+library.empty.songs_title = No songs in your library
+library.empty.songs_detail = Liked songs, songs you add and local files show up here.
+library.empty.albums_title = No albums yet
+library.empty.albums_detail = Albums of your songs, and albums saved on YouTube Music, show up here.
+library.empty.artists_title = No artists yet
+library.empty.artists_detail = Artists of your songs and your subscriptions show up here.
+library.empty.playlists_title = No playlists yet
+library.empty.playlists_detail = Create one with “New playlist”, or sign in to sync your YouTube Music playlists.
+# Error heading; the error text from the database is shown below it.
+library.load_failed = Couldn't load the library
+library.db_unavailable = The library database is not available.
+
+# Selection bar: page-specific remove action for the selected songs.
+library.remove_from_library = Remove from library
+library.unlike = Unlike
+library.delete_downloads = Delete downloads
+
+# Album / artist cards and pages
+library.album.save = Save album
+library.album.remove_saved = Remove from saved albums
+# Shown in "… failed: {error}" when saving an album fails.
+library.album.saving = Saving the album
+library.artist.subscribed_songs.one = Subscribed · {count} song
+library.artist.subscribed_songs.other = Subscribed · {count} songs
+# Playlist card subtitle for a mirrored YouTube Music playlist.
+library.playlist.youtube_songs.one = {count} song · YouTube Music
+library.playlist.youtube_songs.other = {count} songs · YouTube Music
+
+# Library artist / album page. {time}: listening time such as "3 h 12 min".
+library.item.songs_listened.one = {count} song · {time} listened
+library.item.songs_listened.other = {count} songs · {time} listened
+library.item.subscribe = Subscribe
+library.item.unsubscribe = Unsubscribe
+library.item.remove_saved = Remove from saved
+library.item.open_online = Open on YouTube Music
+library.item.empty_detail = Like or add songs by this artist / from this album to see them here.
+
+# Library playlist page
+library.playlist.kind_own = Your YouTube Music playlist
+library.playlist.kind_saved = Saved YouTube Music playlist
+library.playlist.change_cover = Change cover…
+# Dialog title.
+library.playlist.rename_title = Rename playlist
+# Confirmation dialog. {name}: the playlist's name.
+library.playlist.delete_title = Delete “{name}”?
+library.playlist.delete_remote = It is deleted on YouTube Music too.
+library.playlist.delete_unsave = It is removed from your YouTube Music library.
+library.playlist.delete_local_copy = Only the copy on this computer is deleted.
+library.playlist.delete_undo = This can't be undone.
+# Tooltips of the per-row buttons.
+library.playlist.move_up = Move up
+library.playlist.move_down = Move down
+library.playlist.remove_from = Remove from playlist
+library.playlist.not_found_title = Playlist not found
+library.playlist.not_found_detail = It may have been deleted.
+library.playlist.empty_title = This playlist is empty
+library.playlist.empty_detail = Use “Add to playlist…” in a song's menu to add songs.
+
+# ---- Song lists: select mode
+song_list.select_none = Select none
+
+# ---- Local files page
+# Confirm button of the folder picker (keep short).
+local_files.prompt_add = Add
+local_files.prompt_skip = Skip
+local_files.folders_title = Music folders
+local_files.add_folder = Add folder
+local_files.skip_folder = Skip a folder
+# Heading of the list of folders that are not scanned.
+local_files.skipped_title = Skipped
+local_files.scan.looking = Looking for files…
+# Scan progress. {done}, {total}: numbers of files.
+local_files.scan.progress = {done} / {total} files
+local_files.scanning = Scanning…
+# Button: scan the music folders again.
+local_files.rescan = Rescan
+# Page subtitle. {seconds}: the minimum length of a file.
+local_files.detail.one = {count} song · files shorter than {seconds} s are skipped
+local_files.detail.other = {count} songs · files shorter than {seconds} s are skipped
+local_files.empty.no_folders_title = No music folders yet
+local_files.empty.no_folders_detail = Add a folder with your music (MP3, M4A, FLAC, Ogg, Opus, WAV, AIFF…) and press Rescan.
+local_files.empty.no_tracks_title = No local tracks
+local_files.empty.no_tracks_detail = Press Rescan to read the folders above.
+
+# ---- Downloads page
+# Status of one download (a narrow column). {size}: e.g. "4.2 MB".
+downloads.status.queued = Queued
+downloads.status.downloading_size = Downloading {size}
+downloads.status.done = Done · {size}
+downloads.status.preview = Preview only · {size}
+downloads.status.failed = Failed: {error}
+downloads.status.cancelled = Cancelled
+# Page subtitle. {size}: total size of the downloads; {cache} / {limit}: play cache use and limit.
+downloads.detail.one = {count} song · {size} · play cache {cache} of {limit}
+downloads.detail.other = {count} songs · {size} · play cache {cache} of {limit}
+downloads.play_all = Play all
+downloads.clear_finished = Clear finished
+# Opens the download folder in the macOS Finder.
+downloads.show_in_finder = Show in Finder
+downloads.unavailable_title = Downloads are unavailable
+downloads.unavailable_detail = The download folder couldn't be opened (see the terminal).
+downloads.previews_note.one = {count} download is a preview (only the first ~1 MiB): it was made while full streams were unavailable. Delete and download it again.
+downloads.previews_note.other = {count} downloads are previews (only the first ~1 MiB): they were made while full streams were unavailable. Delete and download them again.
+# Section headings.
+downloads.section.session = This session
+downloads.section.downloaded = Downloaded
+downloads.empty_detail = Choose “Download” in a song's menu (or select songs in the library) to keep them on this computer.
+# Small tag next to a download that is only a preview (keep very short).
+downloads.preview_tag = preview
+# Tooltip.
+downloads.delete = Delete download
+
+# ---- History page
+history.clear.title = Clear listening history?
+history.clear.detail = Every recorded play is deleted, and play counts and stats start over. Your library, likes and playlists stay.
+# Button (and the confirm button of the dialog).
+history.clear.button = Clear history
+history.paused = Listen history is paused (Settings → Privacy).
+history.counting = Songs count once you listened for 30 seconds.
+history.load_failed = Couldn't load
+history.empty_title = Nothing played yet
+history.empty_detail = Songs you listen to show up here, grouped by day.
+# Tooltip.
+history.remove = Remove from history
+# Shown in "… failed: {error}".
+history.removing = Removing from history
+history.clearing = Clearing the history
+history.cleared = Listening history cleared
+
+# ---- Stats page
+# Range buttons (keep short).
+stats.range.week = 7 days
+stats.range.month = 30 days
+stats.range.quarter = 90 days
+stats.range.year = This year
+stats.range.all = All time
+stats.subtitle = From your listening history on this computer.
+stats.load_failed = Couldn't load stats
+stats.empty_title = No listening in this range
+stats.empty_detail = Play some music — songs count after 30 seconds.
+# Labels under a big number in the totals tiles (the number is shown above,
+# so these forms have no {count}).
+stats.tile.listened = listened
+stats.tile.plays.one = play
+stats.tile.plays.other = plays
+stats.tile.songs.one = song
+stats.tile.songs.other = songs
+stats.tile.artists.one = artist
+stats.tile.artists.other = artists
+stats.tile.albums.one = album
+stats.tile.albums.other = albums
+# Next to a top song (narrow column). {time}: listening time.
+stats.song_plays.one = {count} play · {time}
+stats.song_plays.other = {count} plays · {time}
+# Section headings.
+stats.top_songs = Top songs
+stats.top_artists = Top artists
+stats.top_albums = Top albums
+stats.by_hour = By hour of day
+stats.by_weekday = By weekday
+stats.month_by_month = Month by month
+stats.year_in_music = Year in Music
+# Button and page title of a yearly recap. {year}: e.g. 2026.
+stats.year.title = {year} in music
+stats.year.subtitle = Your year, from the listening history on this computer.
+stats.year.load_failed = Couldn't load
+stats.year.empty_title = Nothing played that year
+stats.year.empty_detail = Your recap fills up as you listen.
+# Highlight cards: a small caption above a song / artist / hour / date.
+stats.year.top_song.one = Your top song · {count} play
+stats.year.top_song.other = Your top song · {count} plays
+# {time}: listening time.
+stats.year.top_artist = Your top artist · {time}
+stats.year.favourite_hour = Your favourite hour
+stats.year.busiest_day = Busiest day · {time}
+
+# ---- Settings → Storage
+settings.storage.files = Files
+# {path}: a file path.
+settings.storage.settings_file = Settings file: {path}
+settings.storage.settings_not_saved = Settings are not saved (no config directory)
+# {store}: where secrets are kept, e.g. "macOS Keychain".
+settings.storage.secrets = Secrets: {store}
+settings.storage.secrets_loading = Secrets: loading…
+settings.storage.library_db = Library database: {path}
+settings.storage.library_db_unavailable = Library database: not available
+settings.storage.play_cache = Play cache
+# {used}, {limit}: sizes such as "120 MB".
+settings.storage.cache_usage = {used} used of {limit}. Least recently played songs are removed first.
+settings.storage.cache_limit = Cache size limit
+settings.storage.cache_played = Cache played songs
+settings.storage.cache_played_detail = Keeps a copy of what you play (fetched once more in the background).
+settings.storage.clear_cache_row = Clear the play cache
+# Button.
+settings.storage.clear_cache = Clear cache
+settings.storage.downloads = Downloads
+# {size}: total size; {path}: the download folder.
+settings.storage.downloads_usage = {size} in {path}
+settings.storage.downloads_unavailable = Downloads are not available.
+settings.storage.download_folder = Download folder
+settings.storage.download_folder_detail = Downloads are never removed automatically.
+settings.storage.backup = Backup & restore
+settings.storage.export = Export a backup
+settings.storage.export_detail = Library, playlists, history and settings in one zip (no passwords or cookies).
+# Button: opens a save dialog.
+settings.storage.export_button = Export…
+settings.storage.restore = Restore a backup
+settings.storage.restore_detail = Replaces the library and settings; restart afterwards.
+# Button: opens a file picker.
+settings.storage.restore_button = Restore…
+
+# ---- Settings → Privacy
+settings.privacy.listen_history = Listen history
+settings.privacy.pause_listen = Pause listen history
+settings.privacy.pause_listen_detail = Plays aren't recorded; History and Stats stop growing.
+settings.privacy.clear_listen = Clear listen history
+settings.privacy.clear_listen_detail = Deletes every recorded play on this computer.
+# Button: asks for confirmation first.
+settings.privacy.clear_button = Clear…
+settings.privacy.clear_listen_confirm = Every recorded play is deleted; play counts and stats start over.
+settings.privacy.search_history = Search history
+settings.privacy.pause_search = Pause search history
+settings.privacy.pause_search_detail = Searches you submit aren't remembered.
+settings.privacy.clear_search = Clear search history
+settings.privacy.clear_search_detail = Forgets every remembered search.
+settings.privacy.note = History stays in the library database on this computer. Plays are never reported to your YouTube account's history.
+
+# ---- Backup / restore (src/storage_ops.rs)
+# {path}: where the backup was written.
+storage.backup_saved = Backup saved to {path}
+storage.backup_failed = Backup failed: {error}
+# Confirm button of the file picker and of the dialog.
+storage.restore = Restore
+storage.restore_confirm_title = Restore this backup?
+storage.restore_confirm_detail = Your library, playlists, history and settings are replaced by the backup's. The YouTube Music sign-in and other secrets stay.
+storage.restored_title = Backup restored
+storage.restored_library = Library restored. Restart {app} so every setting takes effect.
+storage.restored_all = Library and settings restored. Restart {app} so every setting takes effect.
+# {error}: why the settings in the backup couldn't be applied.
+storage.restored_settings_skipped = Library restored; settings skipped: {error}. Restart {app} so every setting takes effect.
+# Dialog buttons.
+storage.restart_later = Later
+storage.restart_now = Restart now
+storage.restore_failed = Restore failed: {error}
+storage.cache_cleared = Play cache cleared
+# Shown in "… failed: {error}".
+storage.clearing_search = Clearing the search history
+storage.search_cleared = Search history cleared

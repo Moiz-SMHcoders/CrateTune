@@ -1,0 +1,97 @@
+# ---- SponsorBlock: segment categories
+sponsorblock.category.music_offtopic = Đoạn không phải nhạc
+sponsorblock.category.sponsor = Nhà tài trợ
+sponsorblock.category.intro = Tạm nghỉ / mở đầu
+sponsorblock.category.outro = Màn hình kết thúc / danh đề
+sponsorblock.category.selfpromo = Tự quảng bá
+sponsorblock.category.interaction = Nhắc tương tác
+sponsorblock.category.preview = Xem trước / tóm tắt
+sponsorblock.category.filler = Nội dung lạc đề
+sponsorblock.category.hook = Mồi / lời chào
+sponsorblock.category_in_chip.music_offtopic = đoạn không phải nhạc
+sponsorblock.category_in_chip.sponsor = tài trợ
+sponsorblock.category_in_chip.intro = mở đầu
+sponsorblock.category_in_chip.outro = đoạn kết
+sponsorblock.category_in_chip.selfpromo = tự quảng bá
+sponsorblock.category_in_chip.interaction = nhắc tương tác
+sponsorblock.category_in_chip.preview = xem trước / tóm tắt
+sponsorblock.category_in_chip.filler = đoạn lạc đề
+sponsorblock.category_in_chip.hook = mồi / lời chào
+sponsorblock.toast.skipped = Đã bỏ qua: {category} ({seconds} giây)
+sponsorblock.chip.skip = Bỏ qua {category} ({seconds} giây)
+sponsorblock.chip.tooltip = SponsorBlock: chuyển đến cuối đoạn này
+
+# ---- AI content filter: categories
+ai_filter.category.explicit = Lời nhạy cảm
+ai_filter.category.ai_generated = Nhạc do AI tạo
+ai_filter.category.holiday = Nhạc ngày lễ
+ai_filter.category.children = Nhạc thiếu nhi
+ai_filter.category.noise = Âm thanh ru ngủ & tiếng ồn trắng
+ai_filter.category.sped_up = Bản tăng tốc / làm chậm
+ai_filter.category.covers = Bản cover & karaoke
+ai_filter.category.live = Bản thu trực tiếp
+
+# ---- Chromecast
+cast.casting_to = Đang truyền tới {device}
+cast.connecting_to = Đang kết nối tới {device}…
+cast.tooltip = Truyền tới thiết bị
+cast.menu.title = Truyền tới
+cast.menu.searching = Đang tìm thiết bị Cast…
+cast.menu.none_found = Không tìm thấy thiết bị Cast
+cast.menu.search_again = Tìm lại
+cast.stop = Dừng truyền
+cast.error.disconnected = Thiết bị Cast đã ngắt kết nối
+cast.error.scan_failed = Không thể tìm thiết bị: {error}
+cast.error.connect_failed = Không thể kết nối tới {device}: {error}
+
+# ---- Import: sources and progress
+import.source.spotify_playlist = Danh sách phát Spotify
+import.source.spotify_liked = Bài hát đã thích trên Spotify
+import.error.connect_spotify = Hãy kết nối Spotify trong Cài đặt → Nhập từ Spotify.
+import.error.connect_spotify_first = Hãy kết nối Spotify trong Cài đặt → Nhập từ Spotify trước.
+import.error.not_spotify_link = Đó không phải liên kết hay ID danh sách phát Spotify.
+import.stage.reading = Đang đọc
+import.stage.reading_playlist = Đang đọc danh sách phát
+import.stage.reading_liked = Đang đọc bài hát đã thích
+import.stage.matching = Đang so khớp
+import.liked_playlist_name = Đã thích trên Spotify
+import.cancelled = Đã hủy
+import.nothing_to_save = Không có gì để lưu: không tìm thấy bài hát nào.
+import.exporting = Xuất danh sách phát
+import.exported.other = Đã xuất {count} bài hát vào {path}
+
+# ---- Import & export page
+import.page.subtitle = Đưa danh sách phát từ Spotify hoặc từ tệp vào thư viện, hoặc mang chúng đi nơi khác.
+import.file.title = Từ tệp
+import.file.description = CSV từ Exportify (Spotify), M3U / M3U8, hoặc CSV / JSON đã xuất từ đây.
+import.file.choose = Chọn tệp…
+import.spotify.title = Từ Spotify
+import.spotify.connect_hint = Kết nối tài khoản Spotify (bằng Client ID nhà phát triển miễn phí của riêng bạn) để nhập danh sách phát và bài hát đã thích.
+import.spotify.set_up = Thiết lập Spotify…
+import.spotify.signed_in = Đã đăng nhập với tên {user}.
+import.spotify.liked = Bài hát đã thích
+import.spotify.show_playlists = Hiện danh sách phát của tôi
+import.spotify.playlist_meta.other = {owner} · {count} bài hát
+import.spotify.playlist_meta_unknown = {owner} · ? bài hát
+import.job.progress = {stage} · {done} / {total}
+import.job.progress_count = {stage} · {done}
+import.job.found.other = Đã tìm thấy {count}
+import.job.not_found.other = Không tìm thấy {count}
+import.job.saved_as = Đã lưu thành “{name}”
+import.job.save.other = Lưu {count} bài hát thành danh sách phát
+import.job.open_playlists = Mở danh sách phát
+import.job.name_placeholder = Tên danh sách phát
+import.guess.best = Đoán gần nhất: {artists} — {title} ({percent}%)
+import.guess.search_failed = Tìm kiếm thất bại: {error}
+import.guess.no_results = Không có kết quả
+import.guess.using = Đang dùng
+import.guess.use = Dùng kết quả đoán
+import.guess.search_tooltip = Tìm kiếm trên YouTube Music
+import.not_found.title = Không tìm thấy
+import.not_found.subtitle = Chấp nhận kết quả đoán gần nhất, hoặc tự tìm và thêm bài hát.
+import.found.title = Đã tìm thấy trên YouTube Music
+import.found.first = {shown} đầu tiên trong {total}
+import.export.title = Xuất danh sách phát
+import.export.subtitle = CSV và M3U mở được trong các trình phát và bảng tính khác; JSON giữ mọi thứ để nhập lại ở đây.
+import.export.empty = Thư viện chưa có danh sách phát nào.
+import.export.from_youtube_music = {songs} · YouTube Music

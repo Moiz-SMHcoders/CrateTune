@@ -61,13 +61,13 @@ impl Render for MoodsPage {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let mut content = v_flex()
             .gap_8()
-            .child(page_title("Moods & genres", None, cx));
+            .child(page_title(t!("nav.moods"), None, cx));
         match &self.data {
             Load::Ready(categories) if categories.is_empty() => {
                 content = content.child(empty_state(
                     Lucide::Shapes,
-                    "Nothing here",
-                    "YouTube Music returned no moods or genres for this region.",
+                    t!("common.nothing_here"),
+                    t!("moods.empty"),
                     cx,
                 ))
             }

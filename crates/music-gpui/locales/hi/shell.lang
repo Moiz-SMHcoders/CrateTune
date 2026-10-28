@@ -1,0 +1,227 @@
+# App shell and shared components (Hindi).
+
+# ---- Page titles
+route.search = खोजें
+route.search_query = खोजें: {query}
+route.library = लाइब्रेरी · {tab}
+route.year_in_music = {year} का संगीत
+route.recognition = संगीत पहचानें
+route.settings = सेटिंग · {section}
+route.library_tab.songs = गाने
+route.library_tab.liked = पसंद किए गए
+route.library_tab.albums = एल्बम
+route.library_tab.artists = कलाकार
+route.library_tab.playlists = प्लेलिस्ट
+route.library_tab.podcasts = पॉडकास्ट
+route.library_tab.downloaded = डाउनलोड किए गए
+route.library_tab.local = लोकल फ़ाइलें
+
+# ---- Themes
+theme.dark = गहरा
+theme.black = पूरा काला
+theme.dynamic = डायनैमिक
+
+# ---- Player bar
+player.pick_a_song = शुरू करने के लिए कोई गाना चुनें
+player.audio_unavailable = ऑडियो उपलब्ध नहीं: {error}
+player.buffering = बफ़र हो रहा है…
+player.play_failed_skipped = “{title}” नहीं चल सका, छोड़ दिया गया
+player.preview_badge = प्रीव्यू
+player.tooltip.shuffle_on = शफ़ल: चालू
+player.tooltip.shuffle_off = शफ़ल: बंद
+player.tooltip.previous = पिछला (⌘←, 3 सेकंड के बाद फिर से शुरू)
+player.tooltip.next = अगला (⌘→)
+player.tooltip.repeat_off = दोहराएँ: बंद
+player.tooltip.repeat_all = दोहराएँ: सभी
+player.tooltip.repeat_one = दोहराएँ: एक
+player.tooltip.volume = आवाज़ {percent} % (⌘↑ / ⌘↓)
+player.tooltip.queue = कतार (⌥⌘Q)
+player.tooltip.mini_player = मिनी प्लेयर (⇧⌘M)
+player.tooltip.now_playing = अभी चल रहा है और बोल (⌘L)
+
+# ---- Sleep timer
+player.sleep.title = स्लीप टाइमर
+player.sleep.minutes.one = {count} मिनट
+player.sleep.minutes.other = {count} मिनट
+player.sleep.end_of_track = ट्रैक खत्म होने पर
+player.sleep.custom = कस्टम: {minutes} मि॰
+player.sleep.turn_off = बंद करें
+player.sleep.left = {time} बाकी
+
+# ---- Queue
+queue.toast.play_next_one = “{title}” अगला चलेगा
+queue.toast.play_next_many.one = {count} गाना अगला चलेगा
+queue.toast.play_next_many.other = {count} गाने अगले चलेंगे
+queue.toast.added_one = “{title}” कतार में जोड़ा गया
+queue.toast.added_many.one = {count} गाना कतार में जोड़ा गया
+queue.toast.added_many.other = {count} गाने कतार में जोड़े गए
+queue.section.now_playing = अभी चल रहा है
+queue.section.up_next = आगे है · {count}
+queue.section.history = इतिहास
+queue.nothing_playing = कुछ नहीं चल रहा
+queue.empty.repeat_all = सभी दोहराएँ: कतार फिर से शुरू होगी।
+queue.empty.hint = “अगला चलाएँ” या “कतार में जोड़ें” से गाने जोड़ें।
+queue.tooltip.clear_up_next = आगे वाले गाने साफ़ करें
+queue.tooltip.close = बंद करें (Esc)
+queue.tooltip.move_up = ऊपर ले जाएँ
+queue.tooltip.move_down = नीचे ले जाएँ
+
+# ---- Song rows and the song context menu
+track.tooltip.more = और
+track.explicit_badge = E
+track.menu.go_to_podcast = पॉडकास्ट पर जाएँ
+track.menu.go_to_named_artist = {artist} पर जाएँ
+
+# ---- Item cards, rows, shelves
+items.load_failed = यह पेज लोड नहीं हो सका
+items.loading_more = और लोड हो रहा है…
+
+# ---- "Add to playlist" / "New playlist" dialog
+playlist_dialog.name_placeholder = नई प्लेलिस्ट का नाम
+playlist_dialog.title_new = नई प्लेलिस्ट
+playlist_dialog.title_add_one = “{title}” को किसी प्लेलिस्ट में जोड़ें
+playlist_dialog.title_add_many.one = {count} गाना किसी प्लेलिस्ट में जोड़ें
+playlist_dialog.title_add_many.other = {count} गाने किसी प्लेलिस्ट में जोड़ें
+playlist_dialog.create = बनाएँ
+playlist_dialog.also_on_youtube = इसे YouTube Music पर भी बनाएँ (निजी)
+playlist_dialog.youtube_songs.one = YouTube Music · {count} गाना
+playlist_dialog.youtube_songs.other = YouTube Music · {count} गाने
+playlist_dialog.empty = अभी कोई प्लेलिस्ट नहीं — ऊपर एक बनाएँ।
+
+# ---- Mini player window
+mini.window_title = मिनी प्लेयर
+mini.tooltip.show_main = मुख्य विंडो दिखाएँ
+
+# ---- Header search field
+app.search_placeholder = गाने, कलाकार, एल्बम खोजें
+search_box.recent = हाल की खोजें
+search_box.loading_suggestions = सुझाव लोड हो रहे हैं…
+
+# ---- Main window
+app.window_title = {page} — {app}
+app.audio_demo_clock = {error} (डेमो घड़ी इस्तेमाल हो रही है)
+app.tooltip.back = पीछे (⌘[)
+app.tooltip.forward = आगे (⌘])
+
+# ---- YouTube Music account
+account.cookie_invalid = इस कुकी में SAPISID / __Secure-3PAPISID एंट्री नहीं है; साइन-इन किए गए music.youtube.com अनुरोध का पूरा cookie हेडर कॉपी करें।
+account.checking = खाता जाँचा जा रहा है…
+account.toast.signed_in = {name} के रूप में साइन इन किया
+account.sign_in_failed = साइन इन विफल रहा: {error}
+account.toast.signed_out = YouTube Music से साइन आउट किया
+account.unreachable = खाते तक नहीं पहुँच सके: {error}
+account.switching = बदला जा रहा है…
+account.toast.switched = अब {name} इस्तेमाल हो रहा है
+account.switch_failed = बदलना विफल रहा: {error}
+account.sign_in_first = पहले YouTube Music में साइन इन करें।
+account.action.subscribing = सब्सक्राइब करना
+account.toast.subscribed = {artist} को सब्सक्राइब किया
+account.toast.unsubscribed = {artist} की सदस्यता छोड़ी
+account.sync.starting = शुरू हो रहा है…
+account.sync.step.liked = पसंद किए गए गाने…
+account.sync.step.songs = लाइब्रेरी के गाने…
+account.sync.step.albums = एल्बम…
+account.sync.step.artists = कलाकार…
+account.sync.step.playlists = प्लेलिस्ट…
+account.sync.step.playlist = प्लेलिस्ट {current}/{total}: {title}
+account.sync.summary = {liked}, {songs}, {albums}, {artists}, {playlists}
+account.sync.liked.one = {count} पसंद किया गया गाना
+account.sync.liked.other = {count} पसंद किए गए गाने
+account.sync.songs.one = लाइब्रेरी का {count} गाना
+account.sync.songs.other = लाइब्रेरी के {count} गाने
+account.sync.albums.one = {count} एल्बम
+account.sync.albums.other = {count} एल्बम
+account.sync.artists.one = {count} कलाकार
+account.sync.artists.other = {count} कलाकार
+account.sync.playlists.one = {count} प्लेलिस्ट
+account.sync.playlists.other = {count} प्लेलिस्ट
+account.toast.synced = YouTube Music सिंक: {summary}
+account.sync.failed = {summary}। गड़बड़ियाँ: {errors}
+account.sync.error = {part}: {error}
+account.sync.part.liked = पसंद किए गए गाने
+account.sync.part.songs = लाइब्रेरी के गाने
+account.sync.part.albums = एल्बम
+account.sync.part.artists = कलाकार
+account.sync.part.playlists = प्लेलिस्ट
+account.sync.part.playlist = प्लेलिस्ट “{title}”
+account.sync.part.removing_playlist = प्लेलिस्ट हटाना
+
+# ---- Library database, likes, playlists, downloads (toasts)
+store.library_unavailable = लाइब्रेरी उपलब्ध नहीं: {error}
+store.no_data_dir = कोई डेटा डायरेक्टरी नहीं; लाइब्रेरी उपलब्ध नहीं है।
+store.library_db_unavailable = लाइब्रेरी डेटाबेस उपलब्ध नहीं है।
+store.toast.action_failed = {action} विफल रहा: {error}
+store.action.saving_like = पसंद सेव करना
+store.action.removing_from_library = लाइब्रेरी से हटाना
+store.action.adding_to_playlist = प्लेलिस्ट में जोड़ना
+store.action.creating_playlist = प्लेलिस्ट बनाना
+store.toast.liked_one = “{title}” पसंद किया
+store.toast.unliked_one = “{title}” को पसंद किए गए गानों से हटाया
+store.toast.liked_many.one = {count} गाना पसंद किया
+store.toast.liked_many.other = {count} गाने पसंद किए
+store.toast.unliked_many.one = {count} गाना पसंद किए गए गानों से हटाया
+store.toast.unliked_many.other = {count} गाने पसंद किए गए गानों से हटाए
+store.toast.only_locally = {message} (सिर्फ़ लोकल; YouTube Music: {error})
+store.toast.removed_from_library.one = {count} गाना लाइब्रेरी से हटाया
+store.toast.removed_from_library.other = {count} गाने लाइब्रेरी से हटाए
+store.toast.added_to_playlist.one = {count} गाना “{playlist}” में जोड़ा
+store.toast.added_to_playlist.other = {count} गाने “{playlist}” में जोड़े
+store.toast.remote_error = {message} (YouTube Music: {error})
+store.playlist_name_missing = प्लेलिस्ट को एक नाम दें।
+store.toast.playlist_created = “{playlist}” बनाई गई
+store.toast.playlist_created_with.one = {count} गाने के साथ “{playlist}” बनाई गई
+store.toast.playlist_created_with.other = {count} गानों के साथ “{playlist}” बनाई गई
+store.downloads_unavailable = डाउनलोड उपलब्ध नहीं हैं।
+store.toast.downloading_one = “{title}” डाउनलोड हो रहा है
+store.toast.downloading_many.one = {count} गाना डाउनलोड हो रहा है
+store.toast.downloading_many.other = {count} गाने डाउनलोड हो रहे हैं
+store.toast.delete_download_failed = डाउनलोड मिटाना विफल रहा: {error}
+
+# ---- Local music folder scan
+store.add_music_folder_first = पहले एक संगीत फ़ोल्डर जोड़ें।
+store.scan.summary = {files}: {added} नई, {updated} अपडेट हुईं, {unchanged} बिना बदलाव, {removed} हटाई गईं
+store.scan.files.one = {count} फ़ाइल
+store.scan.files.other = {count} फ़ाइलें
+store.scan.with_extra = {summary}, {extra}
+store.scan.too_short.one = {count} बहुत छोटी
+store.scan.too_short.other = {count} बहुत छोटी
+store.scan.unreadable.one = {count} पढ़ी नहीं जा सकी
+store.scan.unreadable.other = {count} पढ़ी नहीं जा सकीं
+store.toast.scan_finished = स्कैन पूरा हुआ: {summary}
+store.toast.scan_failed = स्कैन विफल रहा: {error}
+
+# ---- Playlist cover upload
+playlist_cover.read_failed = इमेज नहीं पढ़ी जा सकी: {error}
+playlist_cover.not_an_image = यह फ़ाइल ऐसी इमेज नहीं है जिसे ऐप पढ़ सके (JPEG, PNG या WebP)।
+playlist_cover.too_large = इमेज बहुत बड़ी है (40 मेगापिक्सल से ज़्यादा)।
+playlist_cover.decode_failed = इमेज डिकोड नहीं हो सकी: {error}
+playlist_cover.encode_failed = कवर एनकोड नहीं हो सका: {error}
+playlist_cover.still_too_large = कंप्रेस करने के बाद भी कवर 2 MiB से बड़ा है।
+playlist_cover.sign_in = प्लेलिस्ट कवर बदलने के लिए YouTube Music में साइन इन करें।
+playlist_cover.pick_prompt = कवर के रूप में इस्तेमाल करें
+playlist_cover.uploading = कवर अपलोड हो रहा है…
+playlist_cover.changed = प्लेलिस्ट कवर बदल गया
+playlist_cover.change_failed = कवर नहीं बदल सका: {error}
+
+# ---- Radio and collection playback
+radio.toast.starting_from = “{title}” से रेडियो शुरू हो रहा है
+radio.toast.starting = रेडियो शुरू हो रहा है: {name}
+radio.playlist_label = प्लेलिस्ट
+radio.nothing_to_play = यहाँ चलाने को कुछ नहीं है।
+radio.load_failed = लोड नहीं हो सका: {error}
+
+# ---- Lyrics
+lyrics.no_cache_dir = कोई कैश डायरेक्टरी नहीं
+
+# ---- Playlist editing
+store.action.renaming_playlist = प्लेलिस्ट का नाम बदलना
+store.action.deleting_playlist = प्लेलिस्ट मिटाना
+store.action.removing_from_playlist = प्लेलिस्ट से हटाना
+store.action.moving_song = गाना खिसकाना
+store.action.refreshing_playlist = प्लेलिस्ट रीफ़्रेश करना
+store.toast.playlist_renamed = नाम बदलकर “{playlist}” किया
+store.toast.playlist_deleted = “{playlist}” मिटाई गई
+store.toast.removed_from_playlist.one = {count} गाना प्लेलिस्ट से हटाया
+store.toast.removed_from_playlist.other = {count} गाने प्लेलिस्ट से हटाए
+store.toast.playlist_refreshed.one = प्लेलिस्ट रीफ़्रेश हुई ({count} गाना)
+store.toast.playlist_refreshed.other = प्लेलिस्ट रीफ़्रेश हुई ({count} गाने)

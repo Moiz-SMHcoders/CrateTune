@@ -1,0 +1,171 @@
+# Shared strings (Russian). Format: see crates/music-gpui/i18n_parse.rs.
+
+locale.native_name = Русский
+
+# ---- Actions
+common.play = Слушать
+common.pause = Пауза
+common.shuffle = Перемешать
+common.radio = Радио
+common.start_radio = Включить радио
+common.play_next = Включить следующим
+common.add_to_queue = Добавить в очередь
+common.add_to_playlist = Добавить в плейлист…
+common.like = Нравится
+common.remove_from_liked = Удалить из понравившихся
+common.download = Скачать
+common.remove_download = Удалить из скачанных
+common.go_to_artist = Перейти к исполнителю
+common.go_to_album = Перейти к альбому
+common.open = Открыть
+common.cancel = Отмена
+common.close = Закрыть
+common.retry = Повторить
+common.remove = Убрать
+common.delete = Удалить
+common.clear = Очистить
+common.save = Сохранить
+common.apply = Применить
+common.reset = Сбросить
+common.done = Готово
+common.copy = Копировать
+common.rename = Переименовать
+common.refresh = Обновить
+common.install = Установить
+common.update = Обновить
+common.import = Импортировать
+common.search = Поиск
+common.search_placeholder = Поиск…
+common.see_all = Все
+common.load_more = Загрузить ещё
+common.show_more = Показать ещё
+common.back = Назад
+common.next = Далее
+common.connect = Подключить
+common.disconnect = Отключить
+common.sign_in = Войти
+common.sign_out = Выйти
+common.select = Выбрать
+common.select_all = Выбрать все
+common.settings = Настройки
+
+# ---- States
+common.loading = Загрузка…
+common.saving = Сохранение…
+common.downloading = Скачивание…
+common.off = Выкл.
+common.on = Вкл.
+common.none = Нет
+common.custom = Свой
+common.automatic = Автоматически
+common.not_playing = Ничего не играет
+common.not_connected = Не подключено
+common.nothing_here = Здесь пока пусто
+
+# ---- Things
+common.song = Трек
+common.video = Видео
+common.artist = Исполнитель
+common.album = Альбом
+common.playlist = Плейлист
+common.podcast = Подкаст
+common.episode = Выпуск
+common.queue = Очередь
+common.now_playing = Сейчас играет
+common.youtube_music = YouTube Music
+
+common.songs.one = {count} трек
+common.songs.few = {count} трека
+common.songs.many = {count} треков
+common.songs.other = {count} трека
+common.plays.one = {count} прослушивание
+common.plays.few = {count} прослушивания
+common.plays.many = {count} прослушиваний
+common.plays.other = {count} прослушивания
+common.selected.one = Выбран {count}
+common.selected.few = Выбрано {count}
+common.selected.many = Выбрано {count}
+common.selected.other = Выбрано {count}
+
+# ---- Sidebar
+nav.home = Главная
+nav.explore = Навигатор
+nav.charts = Чарты
+nav.moods = Жанры и настроения
+nav.new_releases = Новинки
+nav.recognize = Распознать
+nav.library_group = Библиотека
+nav.library = Библиотека
+nav.history = История
+nav.stats = Статистика
+nav.downloads = Скачанное
+nav.local_files = Локальные файлы
+nav.import = Импорт и экспорт
+nav.together = Слушать вместе
+nav.settings = Настройки
+
+# ---- Dates
+date.full = {day} {month} {year} г.
+date.today = Сегодня
+date.yesterday = Вчера
+date.month_in_date.1 = января
+date.month_in_date.2 = февраля
+date.month_in_date.3 = марта
+date.month_in_date.4 = апреля
+date.month_in_date.5 = мая
+date.month_in_date.6 = июня
+date.month_in_date.7 = июля
+date.month_in_date.8 = августа
+date.month_in_date.9 = сентября
+date.month_in_date.10 = октября
+date.month_in_date.11 = ноября
+date.month_in_date.12 = декабря
+date.month_short.1 = Янв
+date.month_short.2 = Фев
+date.month_short.3 = Мар
+date.month_short.4 = Апр
+date.month_short.5 = Май
+date.month_short.6 = Июн
+date.month_short.7 = Июл
+date.month_short.8 = Авг
+date.month_short.9 = Сен
+date.month_short.10 = Окт
+date.month_short.11 = Ноя
+date.month_short.12 = Дек
+date.weekday_short.1 = Пн
+date.weekday_short.2 = Вт
+date.weekday_short.3 = Ср
+date.weekday_short.4 = Чт
+date.weekday_short.5 = Пт
+date.weekday_short.6 = Сб
+date.weekday_short.7 = Вс
+
+# ---- Durations and relative times
+time.just_now = только что
+time.seconds_ago.one = {count} с назад
+time.seconds_ago.few = {count} с назад
+time.seconds_ago.many = {count} с назад
+time.seconds_ago.other = {count} с назад
+time.minutes_ago.one = {count} мин назад
+time.minutes_ago.few = {count} мин назад
+time.minutes_ago.many = {count} мин назад
+time.minutes_ago.other = {count} мин назад
+time.hours_ago.one = {count} ч назад
+time.hours_ago.few = {count} ч назад
+time.hours_ago.many = {count} ч назад
+time.hours_ago.other = {count} ч назад
+time.days_ago.one = {count} день назад
+time.days_ago.few = {count} дня назад
+time.days_ago.many = {count} дней назад
+time.days_ago.other = {count} дня назад
+time.hours_minutes = {hours} ч {minutes} мин
+time.minutes = {minutes} мин
+time.seconds = {seconds} с
+
+# ---- File sizes
+units.size = {value} {unit}
+units.b = Б
+units.kb = КБ
+units.mb = МБ
+units.gb = ГБ
+units.tb = ТБ

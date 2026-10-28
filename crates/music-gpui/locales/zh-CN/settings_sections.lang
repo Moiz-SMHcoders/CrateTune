@@ -1,0 +1,18 @@
+# Settings page: section names.
+settings.section.appearance = 外观
+settings.section.playback = 播放
+settings.section.modules = 模块
+settings.section.equalizer = 均衡器
+settings.section.lyrics = 歌词
+settings.section.content = 内容与地区
+settings.section.network = 网络
+settings.section.privacy = 隐私
+settings.section.storage = 存储
+settings.section.account = 账号
+settings.section.integrations = 记录收听与 Discord
+settings.section.sponsorblock = SponsorBlock
+settings.section.together = Music Together
+settings.section.spotify = Spotify 导入
+settings.section.ai_filter = AI 内容过滤
+settings.section.cast = Chromecast
+settings.section.about = 关于

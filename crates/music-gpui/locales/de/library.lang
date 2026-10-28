@@ -1,0 +1,249 @@
+# Library pages, Storage and Privacy settings, backup / restore dialogs.
+
+# ---- Library page
+library.sort.label = Sortieren
+library.sort.date_added = Hinzugefügt
+library.sort.title = Titel
+library.sort.artist = Künstler
+library.sort.play_count = Wiedergaben
+library.sort.listening_time = Hörzeit
+library.sort.last_played = Zuletzt gehört
+library.sort.year = Jahr
+library.sort.song_count = Anzahl Songs
+library.sort.name = Name
+library.sort.last_updated = Aktualisiert
+library.sort.date_created = Erstellt
+
+library.filter_placeholder = Filtern
+library.saved_only = Nur gespeicherte
+library.subscribed_only = Nur abonnierte
+library.new_playlist = Neue Playlist
+
+library.detail_signed_in = {summary} · bei YouTube Music angemeldet
+library.count.albums.one = {count} Album
+library.count.albums.other = {count} Alben
+library.count.artists.one = {count} Künstler
+library.count.artists.other = {count} Künstler
+library.count.shows.one = {count} Sendung
+library.count.shows.other = {count} Sendungen
+library.count.playlists.one = {count} Playlist
+library.count.playlists.other = {count} Playlists
+
+# Empty states
+library.podcasts.signed_out_title = Melde dich an, um deine Podcasts zu sehen
+library.podcasts.signed_out_detail = Podcasts, die du auf YouTube Music speicherst, erscheinen hier. Melde dich unter Einstellungen → Konto an; Sendungen lassen sich auch ohne Konto über Suche, Startseite und Entdecken öffnen.
+library.podcasts.empty_title = Noch keine Podcasts
+library.podcasts.empty_detail = Speichere eine Sendung mit „In Mediathek speichern“ auf ihrer Seite.
+library.empty.no_matches_title = Keine Treffer
+library.empty.no_matches_detail = Nichts passt zum Filter.
+library.empty.liked_title = Keine Lieblingssongs
+library.empty.liked_detail = Tipp bei einem Song auf das Herz. Wenn du angemeldet bist, werden deine YouTube Music-Likes hierher synchronisiert.
+library.empty.downloaded_title = Nichts heruntergeladen
+library.empty.downloaded_detail = Wähle „Herunterladen“ im Menü eines Songs, um ihn auf diesem Computer zu behalten.
+library.empty.local_title = Keine lokalen Dateien
+library.empty.local_detail = Füg auf der Seite „Lokale Dateien“ Musikordner hinzu und durchsuche sie.
+library.empty.songs_title = Keine Songs in deiner Mediathek
+library.empty.songs_detail = Lieblingssongs, Songs, die du hinzufügst, und lokale Dateien erscheinen hier.
+library.empty.albums_title = Noch keine Alben
+library.empty.albums_detail = Alben deiner Songs und auf YouTube Music gespeicherte Alben erscheinen hier.
+library.empty.artists_title = Noch keine Künstler
+library.empty.artists_detail = Künstler deiner Songs und deine Abos erscheinen hier.
+library.empty.playlists_title = Noch keine Playlists
+library.empty.playlists_detail = Erstell eine mit „Neue Playlist“ oder melde dich an, um deine YouTube Music-Playlists zu synchronisieren.
+library.load_failed = Mediathek konnte nicht geladen werden
+library.db_unavailable = Die Mediathek-Datenbank ist nicht verfügbar.
+
+library.remove_from_library = Aus Mediathek entfernen
+library.unlike = Gefällt mir nicht mehr
+library.delete_downloads = Downloads löschen
+
+# Album / artist cards and pages
+library.album.save = Album speichern
+library.album.remove_saved = Aus gespeicherten Alben entfernen
+library.album.saving = Speichern des Albums
+library.artist.subscribed_songs.one = Abonniert · {count} Song
+library.artist.subscribed_songs.other = Abonniert · {count} Songs
+library.playlist.youtube_songs.one = {count} Song · YouTube Music
+library.playlist.youtube_songs.other = {count} Songs · YouTube Music
+
+library.item.songs_listened.one = {count} Song · {time} gehört
+library.item.songs_listened.other = {count} Songs · {time} gehört
+library.item.subscribe = Abonnieren
+library.item.unsubscribe = Abo beenden
+library.item.remove_saved = Aus Gespeicherten entfernen
+library.item.open_online = Auf YouTube Music öffnen
+library.item.empty_detail = Like Songs dieses Künstlers / aus diesem Album oder füg sie hinzu, um sie hier zu sehen.
+
+# Library playlist page
+library.playlist.kind_own = Deine YouTube Music-Playlist
+library.playlist.kind_saved = Gespeicherte YouTube Music-Playlist
+library.playlist.change_cover = Cover ändern…
+library.playlist.rename_title = Playlist umbenennen
+library.playlist.delete_title = „{name}“ löschen?
+library.playlist.delete_remote = Sie wird auch auf YouTube Music gelöscht.
+library.playlist.delete_unsave = Sie wird aus deiner YouTube Music-Mediathek entfernt.
+library.playlist.delete_local_copy = Nur die Kopie auf diesem Computer wird gelöscht.
+library.playlist.delete_undo = Das kann nicht rückgängig gemacht werden.
+library.playlist.move_up = Nach oben
+library.playlist.move_down = Nach unten
+library.playlist.remove_from = Aus Playlist entfernen
+library.playlist.not_found_title = Playlist nicht gefunden
+library.playlist.not_found_detail = Sie wurde möglicherweise gelöscht.
+library.playlist.empty_title = Diese Playlist ist leer
+library.playlist.empty_detail = Nutze „Zur Playlist hinzufügen…“ im Menü eines Songs, um Songs hinzuzufügen.
+
+# ---- Song lists: select mode
+song_list.select_none = Auswahl aufheben
+
+# ---- Local files page
+local_files.prompt_add = Hinzufügen
+local_files.prompt_skip = Auslassen
+local_files.folders_title = Musikordner
+local_files.add_folder = Ordner hinzufügen
+local_files.skip_folder = Ordner auslassen
+local_files.skipped_title = Ausgelassen
+local_files.scan.looking = Suche nach Dateien…
+local_files.scan.progress = {done} / {total} Dateien
+local_files.scanning = Wird durchsucht…
+local_files.rescan = Neu einlesen
+local_files.detail.one = {count} Song · Dateien unter {seconds} s werden ausgelassen
+local_files.detail.other = {count} Songs · Dateien unter {seconds} s werden ausgelassen
+local_files.empty.no_folders_title = Noch keine Musikordner
+local_files.empty.no_folders_detail = Füg einen Ordner mit deiner Musik hinzu (MP3, M4A, FLAC, Ogg, Opus, WAV, AIFF…) und klick auf „Neu einlesen“.
+local_files.empty.no_tracks_title = Keine lokalen Titel
+local_files.empty.no_tracks_detail = Klick auf „Neu einlesen“, um die Ordner oben zu lesen.
+
+# ---- Downloads page
+downloads.status.queued = Wartet
+downloads.status.downloading_size = Lädt {size}
+downloads.status.done = Fertig · {size}
+downloads.status.preview = Nur Vorschau · {size}
+downloads.status.failed = Fehler: {error}
+downloads.status.cancelled = Abgebrochen
+downloads.detail.one = {count} Song · {size} · Wiedergabe-Cache {cache} von {limit}
+downloads.detail.other = {count} Songs · {size} · Wiedergabe-Cache {cache} von {limit}
+downloads.play_all = Alle abspielen
+downloads.clear_finished = Fertige entfernen
+downloads.show_in_finder = Im Finder zeigen
+downloads.unavailable_title = Downloads sind nicht verfügbar
+downloads.unavailable_detail = Der Download-Ordner konnte nicht geöffnet werden (siehe Terminal).
+downloads.previews_note.one = {count} Download ist eine Vorschau (nur die ersten ~1 MiB): Er entstand, als ganze Streams nicht verfügbar waren. Lösch ihn und lade ihn erneut herunter.
+downloads.previews_note.other = {count} Downloads sind Vorschauen (nur die ersten ~1 MiB): Sie entstanden, als ganze Streams nicht verfügbar waren. Lösch sie und lade sie erneut herunter.
+downloads.section.session = Diese Sitzung
+downloads.section.downloaded = Heruntergeladen
+downloads.empty_detail = Wähle „Herunterladen“ im Menü eines Songs (oder wähle Songs in der Mediathek aus), um sie auf diesem Computer zu behalten.
+downloads.preview_tag = Vorschau
+downloads.delete = Download löschen
+
+# ---- History page
+history.clear.title = Hörverlauf löschen?
+history.clear.detail = Jede erfasste Wiedergabe wird gelöscht, Wiedergabezahlen und Statistiken beginnen von vorn. Mediathek, Likes und Playlists bleiben erhalten.
+history.clear.button = Verlauf löschen
+history.paused = Der Hörverlauf ist pausiert (Einstellungen → Datenschutz).
+history.counting = Songs zählen, sobald du 30 Sekunden zugehört hast.
+history.load_failed = Laden fehlgeschlagen
+history.empty_title = Noch nichts gehört
+history.empty_detail = Songs, die du hörst, erscheinen hier, nach Tagen gruppiert.
+history.remove = Aus dem Verlauf entfernen
+history.removing = Entfernen aus dem Verlauf
+history.clearing = Löschen des Verlaufs
+history.cleared = Hörverlauf gelöscht
+
+# ---- Stats page
+stats.range.week = 7 Tage
+stats.range.month = 30 Tage
+stats.range.quarter = 90 Tage
+stats.range.year = Dieses Jahr
+stats.range.all = Gesamt
+stats.subtitle = Aus deinem Hörverlauf auf diesem Computer.
+stats.load_failed = Statistiken konnten nicht geladen werden
+stats.empty_title = In diesem Zeitraum nichts gehört
+stats.empty_detail = Spiel etwas Musik ab – Songs zählen nach 30 Sekunden.
+stats.tile.listened = gehört
+stats.tile.plays.one = Wiedergabe
+stats.tile.plays.other = Wiedergaben
+stats.tile.songs.one = Song
+stats.tile.songs.other = Songs
+stats.tile.artists.one = Künstler
+stats.tile.artists.other = Künstler
+stats.tile.albums.one = Album
+stats.tile.albums.other = Alben
+stats.song_plays.one = {count} Wiedergabe · {time}
+stats.song_plays.other = {count} Wiedergaben · {time}
+stats.top_songs = Top-Songs
+stats.top_artists = Top-Künstler
+stats.top_albums = Top-Alben
+stats.by_hour = Nach Tageszeit
+stats.by_weekday = Nach Wochentag
+stats.month_by_month = Monat für Monat
+stats.year_in_music = Dein Musikjahr
+stats.year.title = Dein Musikjahr {year}
+stats.year.subtitle = Dein Jahr, aus dem Hörverlauf auf diesem Computer.
+stats.year.load_failed = Laden fehlgeschlagen
+stats.year.empty_title = In diesem Jahr nichts gehört
+stats.year.empty_detail = Dein Rückblick füllt sich, während du hörst.
+stats.year.top_song.one = Dein Top-Song · {count} Wiedergabe
+stats.year.top_song.other = Dein Top-Song · {count} Wiedergaben
+stats.year.top_artist = Dein Top-Künstler · {time}
+stats.year.favourite_hour = Deine Lieblingsstunde
+stats.year.busiest_day = Aktivster Tag · {time}
+
+# ---- Settings → Storage
+settings.storage.files = Dateien
+settings.storage.settings_file = Einstellungsdatei: {path}
+settings.storage.settings_not_saved = Einstellungen werden nicht gespeichert (kein Konfigurationsordner)
+settings.storage.secrets = Geheimnisse: {store}
+settings.storage.secrets_loading = Geheimnisse: wird geladen…
+settings.storage.library_db = Mediathek-Datenbank: {path}
+settings.storage.library_db_unavailable = Mediathek-Datenbank: nicht verfügbar
+settings.storage.play_cache = Wiedergabe-Cache
+settings.storage.cache_usage = {used} von {limit} belegt. Am längsten nicht gehörte Songs werden zuerst entfernt.
+settings.storage.cache_limit = Maximale Cache-Größe
+settings.storage.cache_played = Gehörte Songs zwischenspeichern
+settings.storage.cache_played_detail = Behält eine Kopie von dem, was du hörst (wird im Hintergrund noch einmal abgerufen).
+settings.storage.clear_cache_row = Wiedergabe-Cache leeren
+settings.storage.clear_cache = Cache leeren
+settings.storage.downloads = Downloads
+settings.storage.downloads_usage = {size} in {path}
+settings.storage.downloads_unavailable = Downloads sind nicht verfügbar.
+settings.storage.download_folder = Download-Ordner
+settings.storage.download_folder_detail = Downloads werden nie automatisch entfernt.
+settings.storage.backup = Sichern & Wiederherstellen
+settings.storage.export = Backup exportieren
+settings.storage.export_detail = Mediathek, Playlists, Verlauf und Einstellungen in einer ZIP-Datei (keine Passwörter oder Cookies).
+settings.storage.export_button = Exportieren…
+settings.storage.restore = Backup wiederherstellen
+settings.storage.restore_detail = Ersetzt Mediathek und Einstellungen; danach neu starten.
+settings.storage.restore_button = Wiederherstellen…
+
+# ---- Settings → Privacy
+settings.privacy.listen_history = Hörverlauf
+settings.privacy.pause_listen = Hörverlauf pausieren
+settings.privacy.pause_listen_detail = Wiedergaben werden nicht erfasst; Verlauf und Statistiken wachsen nicht weiter.
+settings.privacy.clear_listen = Hörverlauf löschen
+settings.privacy.clear_listen_detail = Löscht jede erfasste Wiedergabe auf diesem Computer.
+settings.privacy.clear_button = Löschen…
+settings.privacy.clear_listen_confirm = Jede erfasste Wiedergabe wird gelöscht; Wiedergabezahlen und Statistiken beginnen von vorn.
+settings.privacy.search_history = Suchverlauf
+settings.privacy.pause_search = Suchverlauf pausieren
+settings.privacy.pause_search_detail = Abgeschickte Suchen werden nicht gespeichert.
+settings.privacy.clear_search = Suchverlauf löschen
+settings.privacy.clear_search_detail = Vergisst alle gespeicherten Suchen.
+settings.privacy.note = Der Verlauf bleibt in der Mediathek-Datenbank auf diesem Computer. Wiedergaben werden nie an den Verlauf deines YouTube-Kontos gemeldet.
+
+# ---- Backup / restore
+storage.backup_saved = Backup gespeichert unter {path}
+storage.backup_failed = Backup fehlgeschlagen: {error}
+storage.restore = Wiederherstellen
+storage.restore_confirm_title = Dieses Backup wiederherstellen?
+storage.restore_confirm_detail = Deine Mediathek, Playlists, Verlauf und Einstellungen werden durch die des Backups ersetzt. Die YouTube Music-Anmeldung und andere Geheimnisse bleiben erhalten.
+storage.restored_title = Backup wiederhergestellt
+storage.restored_library = Mediathek wiederhergestellt. Starte {app} neu, damit alle Einstellungen wirksam werden.
+storage.restored_all = Mediathek und Einstellungen wiederhergestellt. Starte {app} neu, damit alle Einstellungen wirksam werden.
+storage.restored_settings_skipped = Mediathek wiederhergestellt; Einstellungen übersprungen: {error}. Starte {app} neu, damit alle Einstellungen wirksam werden.
+storage.restart_later = Später
+storage.restart_now = Jetzt neu starten
+storage.restore_failed = Wiederherstellen fehlgeschlagen: {error}
+storage.cache_cleared = Wiedergabe-Cache geleert
+storage.clearing_search = Löschen des Suchverlaufs
+storage.search_cleared = Suchverlauf gelöscht

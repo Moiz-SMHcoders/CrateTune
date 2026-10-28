@@ -1,0 +1,104 @@
+# Integrations: SponsorBlock, Chromecast, AI content filter, playlist import / export.
+
+# ---- SponsorBlock: segment categories
+sponsorblock.category.music_offtopic = Nicht-Musik-Abschnitt
+sponsorblock.category.sponsor = Sponsor
+sponsorblock.category.intro = Pause / Intro
+sponsorblock.category.outro = Endcards / Abspann
+sponsorblock.category.selfpromo = Eigenwerbung
+sponsorblock.category.interaction = Interaktionserinnerung
+sponsorblock.category.preview = Vorschau / Rückblick
+sponsorblock.category.filler = Abschweifung
+sponsorblock.category.hook = Hook / Begrüßung
+sponsorblock.category_in_chip.music_offtopic = Nicht-Musik
+sponsorblock.category_in_chip.sponsor = Sponsor
+sponsorblock.category_in_chip.intro = Intro
+sponsorblock.category_in_chip.outro = Abspann
+sponsorblock.category_in_chip.selfpromo = Eigenwerbung
+sponsorblock.category_in_chip.interaction = Erinnerung
+sponsorblock.category_in_chip.preview = Vorschau
+sponsorblock.category_in_chip.filler = Abschweifung
+sponsorblock.category_in_chip.hook = Hook
+sponsorblock.toast.skipped = Übersprungen: {category} ({seconds} s)
+sponsorblock.chip.skip = {category} überspringen ({seconds} s)
+sponsorblock.chip.tooltip = SponsorBlock: zum Ende dieses Abschnitts springen
+
+# ---- AI content filter: categories
+ai_filter.category.explicit = Explizite Texte
+ai_filter.category.ai_generated = KI-generierte Musik
+ai_filter.category.holiday = Weihnachtsmusik
+ai_filter.category.children = Kindermusik
+ai_filter.category.noise = Schlafklänge & weißes Rauschen
+ai_filter.category.sped_up = Sped-up- / Slowed-Edits
+ai_filter.category.covers = Cover & Karaoke
+ai_filter.category.live = Liveaufnahmen
+
+# ---- Chromecast
+cast.casting_to = Übertragung an {device}
+cast.connecting_to = Verbindung mit {device}…
+cast.tooltip = An ein Gerät übertragen
+cast.menu.title = Übertragen an
+cast.menu.searching = Suche nach Cast-Geräten…
+cast.menu.none_found = Keine Cast-Geräte gefunden
+cast.menu.search_again = Erneut suchen
+cast.stop = Übertragung beenden
+cast.error.disconnected = Das Cast-Gerät wurde getrennt
+cast.error.scan_failed = Gerätesuche fehlgeschlagen: {error}
+cast.error.connect_failed = Verbindung mit {device} fehlgeschlagen: {error}
+
+# ---- Import: sources and progress
+import.source.spotify_playlist = Spotify-Playlist
+import.source.spotify_liked = Spotify-Lieblingssongs
+import.error.connect_spotify = Verbinde Spotify unter Einstellungen → Spotify-Import.
+import.error.connect_spotify_first = Verbinde zuerst Spotify unter Einstellungen → Spotify-Import.
+import.error.not_spotify_link = Das ist kein Link und keine ID einer Spotify-Playlist.
+import.stage.reading = Lesen
+import.stage.reading_playlist = Playlist wird gelesen
+import.stage.reading_liked = Lieblingssongs werden gelesen
+import.stage.matching = Abgleich
+import.liked_playlist_name = Lieblingssongs von Spotify
+import.cancelled = Abgebrochen
+import.nothing_to_save = Nichts zu speichern: Es wurde kein Song gefunden.
+import.exporting = Export der Playlist
+import.exported.one = {count} Song nach {path} exportiert
+import.exported.other = {count} Songs nach {path} exportiert
+
+# ---- Import & export page
+import.page.subtitle = Hol dir Playlists von Spotify oder aus Dateien in deine Mediathek oder nimm sie woandershin mit.
+import.file.title = Aus einer Datei
+import.file.description = Exportify-CSV (Spotify), M3U / M3U8 oder eine hier exportierte CSV / JSON.
+import.file.choose = Datei auswählen…
+import.spotify.title = Von Spotify
+import.spotify.connect_hint = Verbinde dein Spotify-Konto (mit deiner eigenen kostenlosen Developer-Client-ID), um deine Playlists und Lieblingssongs zu importieren.
+import.spotify.set_up = Spotify einrichten…
+import.spotify.signed_in = Angemeldet als {user}.
+import.spotify.liked = Lieblingssongs
+import.spotify.show_playlists = Meine Playlists zeigen
+import.spotify.playlist_meta.one = {owner} · {count} Song
+import.spotify.playlist_meta.other = {owner} · {count} Songs
+import.spotify.playlist_meta_unknown = {owner} · ? Songs
+import.job.progress = {stage} · {done} von {total}
+import.job.progress_count = {stage} · {done}
+import.job.found.one = {count} gefunden
+import.job.found.other = {count} gefunden
+import.job.not_found.one = {count} fehlt
+import.job.not_found.other = {count} fehlen
+import.job.saved_as = Gespeichert als „{name}“
+import.job.save.one = {count} Song als Playlist speichern
+import.job.save.other = {count} Songs als Playlist speichern
+import.job.open_playlists = Playlists öffnen
+import.job.name_placeholder = Name der Playlist
+import.guess.best = Bester Treffer: {artists} – {title} ({percent} %)
+import.guess.search_failed = Suche fehlgeschlagen: {error}
+import.guess.no_results = Keine Ergebnisse
+import.guess.using = Treffer aktiv
+import.guess.use = Übernehmen
+import.guess.search_tooltip = YouTube Music durchsuchen
+import.not_found.title = Nicht gefunden
+import.not_found.subtitle = Übernimm den besten Treffer oder such selbst und füg den Song hinzu.
+import.found.title = Auf YouTube Music gefunden
+import.found.first = erste {shown} von {total}
+import.export.title = Playlist exportieren
+import.export.subtitle = CSV und M3U lassen sich in anderen Playern und Tabellenprogrammen öffnen; JSON behält alles für den Import hier.
+import.export.empty = Noch keine Playlists in der Mediathek.
+import.export.from_youtube_music = {songs} · YouTube Music

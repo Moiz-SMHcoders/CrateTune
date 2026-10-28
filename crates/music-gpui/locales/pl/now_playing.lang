@@ -1,0 +1,85 @@
+# Now Playing screen, lyrics pane and lyrics card dialog (Polish).
+
+# ---- Header
+np.close_tooltip = Zamknij (Esc)
+np.header = TERAZ ODTWARZANE
+np.demo_clock = Zegar demo
+np.buffering = Buforowanie…
+np.preview = Podgląd
+np.speed = {speed}×
+np.sleep_tooltip = Wyłącznik czasowy
+np.layout_tooltip = Wygląd i tło
+np.menu.design = Wygląd
+np.menu.background = Tło
+
+# ---- Player
+np.up_next = Następny
+np.playing_from = ODTWARZANE Z
+np.your_queue = Twoja kolejka
+np.of_total = z {total}
+np.editorial.header_album = TERAZ ODTWARZANE  ·  {album}
+np.editorial.play = ODTWÓRZ
+np.editorial.pause = PAUZA
+np.editorial.loading = WCZYTYWANIE
+np.queue.title = NASTĘPNE
+np.queue.more.one = +{count} więcej
+np.queue.more.few = +{count} więcej
+np.queue.more.many = +{count} więcej
+np.queue.more.other = +{count} więcej
+np.queue.empty = Kolejka jest pusta. Dodaj utwory z listy lub włącz autoodtwarzanie.
+
+# ---- Lyrics pane
+lyrics.nothing_playing = Nic nie gra
+lyrics.loading = Wczytywanie tekstu…
+lyrics.missing_title = Brak tekstu
+lyrics.missing_detail = Żaden z włączonych dostawców tekstów nie ma tego utworu.
+lyrics.failed = Nie udało się wczytać tekstu
+lyrics.translating = Tłumaczenie…
+lyrics.translation_failed = Tłumaczenie nie powiodło się: {error}
+lyrics.kind.word = Synchronizacja słów
+lyrics.kind.line = Synchronizacja wierszy
+lyrics.kind.plain = Bez synchronizacji
+lyrics.source = {provider} · {kind}
+lyrics.select_hint.one = Zaznacz maksymalnie {count} wiersz na kartę
+lyrics.select_hint.few = Zaznacz maksymalnie {count} wiersze na kartę
+lyrics.select_hint.many = Zaznacz maksymalnie {count} wierszy na kartę
+lyrics.select_hint.other = Zaznacz maksymalnie {count} wiersza na kartę
+lyrics.selected.one = Zaznaczono {count} wiersz
+lyrics.selected.few = Zaznaczono {count} wiersze
+lyrics.selected.many = Zaznaczono {count} wierszy
+lyrics.selected.other = Zaznaczono {count} wiersza
+lyrics.create_card = Utwórz kartę…
+lyrics.share_tooltip = Udostępnij tekst jako kartę
+lyrics.translation_on = Tłumaczenie: wł.
+lyrics.translation_off = Tłumaczenie: wył.
+lyrics.reload_tooltip = Przeszukaj dostawców ponownie
+
+# ---- Lyrics card dialog
+card.dialog_title = Karta z tekstem
+card.row.background = Tło
+card.row.text = Tekst
+card.row.size = Rozmiar
+card.row.shape = Format
+card.row.cover = Okładka
+card.cover.show = Pokaż
+card.cover.hide = Ukryj
+card.save = Zapisz obraz…
+card.copy = Kopiuj obraz
+card.copying = Kopiowanie…
+card.copied = Skopiowano do schowka
+card.saved = Zapisano: {path}
+card.save_failed = Nie udało się zapisać: {error}
+card.draw_failed = Nie udało się narysować karty: {error}
+card.aspect.square = Kwadrat
+card.aspect.portrait = Pionowy
+card.aspect.story = Relacja
+card.bg.blur = Rozmyta okładka
+card.bg.album = Kolor albumu
+card.bg.dark = Ciemne
+card.bg.light = Jasne
+card.align.left = Do lewej
+card.align.center = Do środka
+card.align.right = Do prawej
+card.size.small = Mały
+card.size.medium = Średni
+card.size.large = Duży

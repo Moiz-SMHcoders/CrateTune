@@ -1,0 +1,35 @@
+# The search page (ja).
+
+search.title = 検索
+search.query_title = 「{query}」
+search.searching = 検索中…
+
+search.tab.all = すべて
+search.tab.songs = 曲
+search.tab.videos = 動画
+search.tab.albums = アルバム
+search.tab.artists = アーティスト
+search.tab.community_playlists = コミュニティのプレイリスト
+search.tab.featured_playlists = おすすめのプレイリスト
+search.tab.podcasts = ポッドキャスト
+search.tab.episodes = エピソード
+
+search.tab_empty.songs = 曲はありません
+search.tab_empty.videos = 動画はありません
+search.tab_empty.albums = アルバムはありません
+search.tab_empty.artists = アーティストはいません
+search.tab_empty.community_playlists = コミュニティのプレイリストはありません
+search.tab_empty.featured_playlists = おすすめのプレイリストはありません
+search.tab_empty.podcasts = ポッドキャストはありません
+search.tab_empty.episodes = エピソードはありません
+search.tab_empty.detail = 別のカテゴリや検索語をお試しください。
+
+search.correction.applied = {corrected} の検索結果を表示しています · {original} で検索
+search.correction.suggested = もしかして：{corrected}
+
+search.top_result = 上位の検索結果
+search.empty.title = 結果はありません
+search.empty.detail = 別の検索語を試すか、スペルを確認してください。
+
+search.start.title = YouTube Music を検索
+search.start.detail = 検索フィールド（⌘F）に曲、アーティスト、アルバム、プレイリストを入力して Enter キーを押してください。

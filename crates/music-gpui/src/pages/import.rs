@@ -30,6 +30,7 @@ use super::loader::Loaded;
 use crate::app::{MusicApp, read_app, update_app};
 use crate::components::track_row::TrackRow;
 use crate::components::{page_scroll, page_title, section_header};
+use crate::i18n::format::number;
 use crate::icons::Lucide;
 use crate::integrations::import::{ImportSource, Phase, SpotifyListing};
 use crate::router::Route;
@@ -53,9 +54,10 @@ impl ImportPage {
         let scroll = ScrollHandle::new();
         let page = cx.new(|cx: &mut Context<Self>| {
             let spotify_url = cx.new(|cx| {
-                InputState::new(window, cx).placeholder("https://open.spotify.com/playlist/…")
+                InputState::new(window, cx).placeholder("https://open.spotify.com/playlist/…") // i18n-ignore
             });
-            let name = cx.new(|cx| InputState::new(window, cx).placeholder("Playlist name"));
+            let name = cx.new(|cx| InputState::new(window, cx));
+            crate::i18n::track_placeholder(&name, k!("import.job.name_placeholder"), window, cx);
             let executor = cx.background_executor().clone();
             let tick = cx.spawn(async move |this, cx| {
                 loop {
@@ -93,12 +95,16 @@ impl ImportPage {
             .rounded(px(10.))
             .border_1()
             .border_color(theme.border)
-            .child(div().font_weight(FontWeight::SEMIBOLD).child("From a file"))
+            .child(
+                div()
+                    .font_weight(FontWeight::SEMIBOLD)
+                    .child(t!("import.file.title")),
+            )
             .child(
                 div()
                     .text_sm()
                     .text_color(muted)
-                    .child("Exportify CSV (Spotify), M3U / M3U8, or a CSV / JSON exported here."),
+                    .child(t!("import.file.description")),
             )
             .child(
                 h_flex().child(
@@ -106,7 +112,7 @@ impl ImportPage {
                         .small()
                         .primary()
                         .icon(Lucide::Upload)
-                        .label("Choose a file…")
+                        .label(t!("import.file.choose"))
                         .on_click(|_, window, cx| {
                             update_app(cx, |app, cx| app.import_pick_file(window, cx));
                         }),
@@ -123,21 +129,23 @@ impl ImportPage {
             .child(
                 div()
                     .font_weight(FontWeight::SEMIBOLD)
-                    .child("From Spotify"),
+                    .child(t!("import.spotify.title")),
             );
         match connected {
             None => {
                 spotify = spotify
-                    .child(div().text_sm().text_color(muted).child(
-                        "Connect your Spotify account (with your own free developer Client ID) \
-                         to import your playlists and liked songs.",
-                    ))
+                    .child(
+                        div()
+                            .text_sm()
+                            .text_color(muted)
+                            .child(t!("import.spotify.connect_hint")),
+                    )
                     .child(
                         h_flex().child(
                             Button::new("import-spotify-settings")
                                 .small()
                                 .outline()
-                                .label("Set up Spotify…")
+                                .label(t!("import.spotify.set_up"))
                                 .on_click(|_, window, cx| {
                                     update_app(cx, |app, cx| {
                                         app.navigate(
@@ -159,7 +167,7 @@ impl ImportPage {
                         div()
                             .text_sm()
                             .text_color(muted)
-                            .child(format!("Signed in as {user}.")),
+                            .child(t!("import.spotify.signed_in", user = user)),
                     )
                     .child(
                         h_flex()
@@ -169,7 +177,7 @@ impl ImportPage {
                                 Button::new("import-spotify-url")
                                     .small()
                                     .primary()
-                                    .label("Import")
+                                    .label(t!("common.import"))
                                     .on_click(move |_, window, cx| {
                                         let link = url.read(cx).value().to_string();
                                         update_app(cx, |app, cx| {
@@ -185,12 +193,13 @@ impl ImportPage {
                     .child(
                         h_flex()
                             .gap_2()
+                            .flex_wrap()
                             .child(
                                 Button::new("import-spotify-liked")
                                     .small()
                                     .outline()
                                     .icon(Lucide::Heart)
-                                    .label("Liked songs")
+                                    .label(t!("import.spotify.liked"))
                                     .on_click(|_, window, cx| {
                                         update_app(cx, |app, cx| {
                                             app.import_start(ImportSource::SpotifyLiked, window, cx)
@@ -201,7 +210,7 @@ impl ImportPage {
                                 Button::new("import-spotify-list")
                                     .small()
                                     .ghost()
-                                    .label("Show my playlists")
+                                    .label(t!("import.spotify.show_playlists"))
                                     .loading(matches!(listing, SpotifyListing::Loading))
                                     .on_click(|_, window, cx| {
                                         update_app(cx, |app, cx| {
@@ -226,18 +235,24 @@ impl ImportPage {
                                         .min_w_0()
                                         .child(div().truncate().text_sm().child(p.name.clone()))
                                         .child(div().truncate().text_xs().text_color(muted).child(
-                                            format!(
-                                                "{} · {} songs",
-                                                p.owner,
-                                                p.track_count.map_or("?".into(), |n| n.to_string())
-                                            ),
+                                            match p.track_count {
+                                                Some(n) => tp!(
+                                                    "import.spotify.playlist_meta",
+                                                    n,
+                                                    owner = p.owner
+                                                ),
+                                                None => t!(
+                                                    "import.spotify.playlist_meta_unknown",
+                                                    owner = p.owner
+                                                ),
+                                            },
                                         )),
                                 )
                                 .child(
                                     Button::new(("import-spotify-pl", ix))
                                         .xsmall()
                                         .outline()
-                                        .label("Import")
+                                        .label(t!("common.import"))
                                         .on_click(move |_, window, cx| {
                                             let id = id.clone();
                                             update_app(cx, |app, cx| {
@@ -313,8 +328,10 @@ impl ImportPage {
             .child(
                 h_flex()
                     .justify_between()
+                    .gap_2()
                     .child(
                         v_flex()
+                            .min_w_0()
                             .child(
                                 div()
                                     .text_lg()
@@ -327,7 +344,7 @@ impl ImportPage {
                         Phase::Running => Button::new("import-cancel")
                             .small()
                             .ghost()
-                            .label("Cancel")
+                            .label(t!("common.cancel"))
                             .on_click(|_, _, cx| {
                                 update_app(cx, |app, _| app.import_cancel());
                             }),
@@ -335,7 +352,7 @@ impl ImportPage {
                             .small()
                             .ghost()
                             .icon(Lucide::X)
-                            .tooltip("Close")
+                            .tooltip(t!("common.close"))
                             .on_click(|_, _, cx| {
                                 update_app(cx, |app, cx| app.import_clear(cx));
                             }),
@@ -346,9 +363,21 @@ impl ImportPage {
                 let (value, text) = match progress.total {
                     Some(total) if total > 0 => (
                         progress.done as f32 * 100. / total as f32,
-                        format!("{} · {} of {total}", progress.stage, progress.done),
+                        t!(
+                            "import.job.progress",
+                            stage = progress.stage,
+                            done = number(progress.done as u64),
+                            total = number(total as u64)
+                        ),
                     ),
-                    _ => (0., format!("{} · {}", progress.stage, progress.done)),
+                    _ => (
+                        0.,
+                        t!(
+                            "import.job.progress_count",
+                            stage = progress.stage,
+                            done = number(progress.done as u64)
+                        ),
+                    ),
                 };
                 card = card
                     .child(
@@ -374,26 +403,32 @@ impl ImportPage {
                 .child(
                     h_flex()
                         .gap_2()
-                        .child(Tag::success().small().child(format!("{found} found")))
+                        .flex_wrap()
+                        .child(Tag::success().small().child(tp!("import.job.found", found)))
                         .when_some((missing > 0).then_some(missing), |row, missing| {
-                            row.child(Tag::warning().small().child(format!("{missing} not found")))
+                            row.child(
+                                Tag::warning()
+                                    .small()
+                                    .child(tp!("import.job.not_found", missing)),
+                            )
                         })
-                        .children(
-                            saved
-                                .clone()
-                                .map(|s| Tag::info().small().child(format!("Saved as “{s}”"))),
-                        ),
+                        .children(saved.clone().map(|s| {
+                            Tag::info()
+                                .small()
+                                .child(t!("import.job.saved_as", name = s))
+                        })),
                 )
                 .child(
                     h_flex()
                         .gap_2()
+                        .flex_wrap()
                         .child(div().w(px(280.)).child(Input::new(&self.name).small()))
                         .child(
                             Button::new("import-save")
                                 .small()
                                 .primary()
                                 .icon(Lucide::ListPlus)
-                                .label(format!("Save {to_save} songs as a playlist"))
+                                .label(tp!("import.job.save", to_save))
                                 .disabled(to_save == 0)
                                 .on_click(move |_, window, cx| {
                                     let name = name_input.read(cx).value().to_string();
@@ -406,7 +441,7 @@ impl ImportPage {
                             Button::new("import-open-library")
                                 .small()
                                 .ghost()
-                                .label("Open playlists")
+                                .label(t!("import.job.open_playlists"))
                                 .on_click(move |_, window, cx| {
                                     let _ = &s;
                                     update_app(cx, |app, cx| {
@@ -439,15 +474,15 @@ impl ImportPage {
                     unreachable!()
                 };
                 let guess: SharedString = match (best, error) {
-                    (Some((t, score)), _) => format!(
-                        "Best guess: {} — {} ({:.0} %)",
-                        t.artists,
-                        t.title,
-                        score * 100.
+                    (Some((t, score)), _) => t!(
+                        "import.guess.best",
+                        artists = t.artists,
+                        title = t.title,
+                        percent = number((score * 100.).round() as u64)
                     )
                     .into(),
-                    (None, Some(e)) => format!("Search failed: {e}").into(),
-                    (None, None) => "No results".into(),
+                    (None, Some(e)) => t!("import.guess.search_failed", error = e).into(),
+                    (None, None) => t!("import.guess.no_results").into(),
                 };
                 let is_accepted = accepted.contains(&ix);
                 h_flex()
@@ -465,9 +500,9 @@ impl ImportPage {
                             .xsmall()
                             .map_selected(is_accepted)
                             .label(if is_accepted {
-                                "Using guess"
+                                t!("import.guess.using")
                             } else {
-                                "Use guess"
+                                t!("import.guess.use")
                             })
                             .on_click(move |_, _, cx| {
                                 update_app(cx, |app, cx| app.import_toggle_accept(ix, cx));
@@ -478,7 +513,7 @@ impl ImportPage {
                             .xsmall()
                             .ghost()
                             .icon(gpui_component::IconName::Search)
-                            .tooltip("Search YouTube Music")
+                            .tooltip(t!("import.guess.search_tooltip"))
                             .on_click(move |_, window, cx| {
                                 let q = query.clone();
                                 update_app(cx, |app, cx| app.search_now(&q, window, cx));
@@ -492,8 +527,8 @@ impl ImportPage {
                 v_flex()
                     .gap_1()
                     .child(section_header(
-                        "Not found",
-                        Some("Accept the best guess, or search and add the song yourself.".into()),
+                        t!("import.not_found.title"),
+                        Some(t!("import.not_found.subtitle").into()),
                         None,
                         cx,
                     ))
@@ -517,8 +552,15 @@ impl ImportPage {
                 v_flex()
                     .gap_1()
                     .child(section_header(
-                        "Found on YouTube Music",
-                        (found > MAX_ROWS).then(|| format!("first {MAX_ROWS} of {found}").into()),
+                        t!("import.found.title"),
+                        (found > MAX_ROWS).then(|| {
+                            t!(
+                                "import.found.first",
+                                shown = number(MAX_ROWS as u64),
+                                total = number(found as u64)
+                            )
+                            .into()
+                        }),
                         None,
                         cx,
                     ))
@@ -539,8 +581,8 @@ impl ImportPage {
         let muted = theme.muted_foreground;
         let list = self.playlists.value.clone().unwrap_or_default();
         let mut section = v_flex().gap_1().child(section_header(
-            "Export a playlist",
-            Some("CSV and M3U open in other players and spreadsheets; JSON keeps everything for importing here.".into()),
+            t!("import.export.title"),
+            Some(t!("import.export.subtitle").into()),
             None,
             cx,
         ));
@@ -551,7 +593,7 @@ impl ImportPage {
                 div()
                     .text_sm()
                     .text_color(muted)
-                    .child("No playlists in the library yet."),
+                    .child(t!("import.export.empty")),
             );
         }
         for (ix, p) in list.iter().enumerate() {
@@ -580,15 +622,14 @@ impl ImportPage {
                             .flex_1()
                             .min_w_0()
                             .child(div().truncate().child(p.name.clone()))
-                            .child(div().text_xs().text_color(muted).child(format!(
-                                "{} songs{}",
-                                p.song_count,
+                            .child(div().text_xs().text_color(muted).child({
+                                let songs = tp!("common.songs", p.song_count);
                                 if p.browse_id.is_some() {
-                                    " · YouTube Music"
+                                    t!("import.export.from_youtube_music", songs = songs)
                                 } else {
-                                    ""
+                                    songs
                                 }
-                            ))),
+                            })),
                     )
                     .children(buttons),
             );
@@ -625,11 +666,8 @@ impl Render for ImportPage {
         })
         .unwrap_or_default();
         let mut content = v_flex().gap_6().child(page_title(
-            "Import & export",
-            Some(
-                "Bring playlists from Spotify or files into your library, or take them elsewhere."
-                    .into(),
-            ),
+            t!("nav.import"),
+            Some(t!("import.page.subtitle").into()),
             cx,
         ));
         content = content.child(self.sources(connected, &listing_state, cx));

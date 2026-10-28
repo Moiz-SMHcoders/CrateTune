@@ -1,0 +1,170 @@
+# Settings sections of the integrations: Scrobbling & Discord
+# (src/settings/integrations.rs), SponsorBlock, Music Together, Spotify import, AI
+# content filter and Chromecast (src/settings/integrations_ui.rs).
+# Format: see crates/music-gpui/i18n_parse.rs. Brand names (Last.fm, ListenBrainz,
+# Discord, Spotify, SponsorBlock, OpenAI, Ollama, …) stay as they are.
+
+# ---- Shared
+# {user}: the account's user name.
+settings.integrations.connected_as = Connected as {user}
+
+# ---- Last.fm / ListenBrainz
+settings.integrations.lastfm_approve = Approve the app in your browser, then press Finish.
+# Button (finishes the Last.fm sign-in).
+settings.integrations.finish = Finish
+settings.integrations.forget_key = Forget key
+settings.integrations.api_key = API key
+settings.integrations.shared_secret = Shared secret
+settings.integrations.checking_token = Checking the token…
+# Button: checks the ListenBrainz token.
+settings.integrations.validate = Validate
+settings.integrations.user_token = User token
+
+# ---- Discord
+settings.integrations.discord_title = Discord Rich Presence
+settings.integrations.discord_enter_id = Enter your Discord application ID.
+settings.integrations.discord_connected = Connected to Discord
+settings.integrations.discord_unreachable = Discord not reachable: {error}
+settings.integrations.discord_waiting = Waiting for playback…
+settings.integrations.application_id = Application ID
+# What Discord shows on the profile (sub-section heading).
+discord.activity.title = Activity
+# Row label: the activity type (Listening to / Playing / …).
+discord.activity.type = Type
+discord.activity.name = Name
+discord.activity.details = Details
+discord.activity.state = State
+# Keep {title}, {artist} and {album} exactly as they are: the user types them.
+discord.activity.placeholders_note = Placeholders: {title}, {artist}, {album}. An empty name uses the Discord application's name.
+discord.activity.large_image = Large image
+discord.activity.small_image = Small image
+# {number}: 1 or 2.
+discord.activity.button = Button {number}
+# Field label: the text on a profile button.
+discord.activity.label = Label
+discord.activity.url = URL
+discord.activity.show_paused = Show while paused
+discord.activity.show_paused_desc = Keeps the activity (without the running time) when playback pauses.
+discord.activity.custom_note = Custom images are asset keys of your Discord application or image URLs. Buttons are visible to others, not to yourself.
+
+# ---- Scrobble rules
+scrobble.rules.title = When a song counts
+# Slider labels: "Played 50 %", "…or at most 4 min", "Ignore songs under 30 s".
+scrobble.rules.played = Played
+scrobble.rules.or_at_most = …or at most
+scrobble.rules.ignore_under = Ignore songs under
+scrobble.rules.percent = {percent} %
+scrobble.rules.note = Last.fm's rule is 50 % or 4 minutes, songs over 30 s. Applies to Last.fm and ListenBrainz.
+scrobble.errors.one = Scrobble errors ({count})
+scrobble.errors.other = Scrobble errors ({count})
+# {store}: where secrets are kept (e.g. the macOS keychain).
+settings.integrations.secrets = Secrets: {store}
+settings.integrations.secrets_loading = Secrets: loading…
+# {path}: the settings file.
+settings.integrations.settings_path = Settings: {path}
+settings.integrations.not_saved = Settings are not saved (no config directory)
+
+# ---- SponsorBlock
+settings.sponsorblock.categories = Categories
+settings.sponsorblock.category_desc.music_offtopic = Talking, skits and other non-music parts of music videos.
+settings.sponsorblock.category_desc.sponsor = Paid promotion.
+settings.sponsorblock.category_desc.intro = Intermissions and intro animations without content.
+settings.sponsorblock.category_desc.outro = Credits and end cards.
+settings.sponsorblock.category_desc.selfpromo = Unpaid promotion: merch, donations, shout-outs.
+settings.sponsorblock.category_desc.interaction = Reminders to like, subscribe or follow.
+settings.sponsorblock.category_desc.preview = Recaps and previews of other content.
+settings.sponsorblock.category_desc.filler = Tangents that aren't the main content.
+settings.sponsorblock.category_desc.hook = Teasers and greetings at the start.
+# {url}: the SponsorBlock server.
+settings.sponsorblock.using = Using {url}
+settings.sponsorblock.url_error = Needs an https:// address without credentials or query
+settings.sponsorblock.skip_segments = Skip segments
+settings.sponsorblock.skip_segments_desc = Look up community-marked segments of each song's video and skip them.
+settings.sponsorblock.when = When a segment starts
+settings.sponsorblock.when_desc = Skip right away, or show a Skip button in the player bar.
+# Choice buttons (keep short).
+settings.sponsorblock.mode_auto = Skip automatically
+settings.sponsorblock.mode_ask = Ask
+settings.sponsorblock.notify = Notify after skipping
+settings.sponsorblock.server = Server
+settings.sponsorblock.api_url = API URL
+settings.sponsorblock.use_default = Use the default server
+settings.sponsorblock.forget = Forget looked-up segments
+settings.sponsorblock.privacy = Privacy: only the first 4 characters of the SHA-256 hash of a video id are sent, so the server can't tell which song plays. Segments come from sponsor.ajay.app (SponsorBlock, CC BY-NC-SA) unless you set another server.
+
+# ---- Music Together
+# Group heading: settings about the user.
+settings.together.you = You
+settings.together.display_name = Display name
+settings.together.name_placeholder = Your name
+settings.together.display_name_note = Shown to the others in a session.
+settings.together.hosting = Hosting
+settings.together.port = Port
+settings.together.port_error = Ports must be between 1024 and 65535
+settings.together.allow_add_desc = Their suggestions go into your queue.
+settings.together.allow_control_desc = Play, pause, seek and skip for everyone.
+settings.together.approval = Approve guests before they join
+settings.together.hosting_note = Sessions run on your local network: guests connect straight to this computer (allow incoming connections if the firewall asks). The link contains a random key; only people with the link can join. Changes apply to a running session right away. On the Listen together page, “Make host” hands the session to a guest: everyone follows the new host.
+settings.together.across_networks = Across networks
+settings.together.relay = Relay server
+# Keep the address.
+settings.together.relay_placeholder = wss://relay.example.com (empty: LAN only)
+settings.together.relay_error = Needs a ws:// or wss:// address (no user name or query)
+settings.together.relay_note = “Host via relay” runs the session through a music-relay server you host yourself (see the README: one small binary, put it behind a TLS reverse proxy for wss://). Guests then join from anywhere with the link. The relay forwards the session's messages (song ids, titles, names) but never decides anything; empty = LAN only.
+settings.together.open = Open Listen together
+
+# ---- Spotify import
+settings.spotify.waiting = Waiting for you to approve the app in the browser…
+settings.spotify.account = Spotify account
+# Spotify's name for the app's identifier.
+settings.spotify.client_id = Client ID
+settings.spotify.redirect_port = Redirect port
+settings.spotify.redirect_uri = Redirect URI: {uri}
+settings.spotify.steps = 1. Create an app at developer.spotify.com/dashboard (Web API). 2. Add the redirect URI above to it. 3. Paste its Client ID here and press Connect. Access is read-only (your playlists and liked songs); the refresh token is kept in the keychain.
+settings.spotify.without_account = Without an account
+# {other_app}: the name of another music app.
+settings.spotify.without_account_note = Export a playlist with Exportify (exportify.app) and import the CSV file in Library → Import & export. Signing in with the web player's sp_dc cookie (as {other_app} does) is not supported: it depends on a secret extracted from Spotify's web player.
+settings.spotify.open_import = Open Import & export
+settings.spotify.error.no_client = Enter your app's Client ID first.
+settings.spotify.error.redirect = Can't listen for the redirect: {error}
+
+# ---- AI content filter
+settings.ai_filter.off = Off: nothing is sent anywhere
+settings.ai_filter.incomplete = Needs an endpoint, a model and at least one category
+settings.ai_filter.failed = Last request failed: {error}
+settings.ai_filter.on.one = On · {count} song or album classified
+settings.ai_filter.on.other = On · {count} songs and albums classified
+# Group heading: the categories to hide.
+settings.ai_filter.hide = Hide
+settings.ai_filter.also_hide = Also hide
+settings.ai_filter.custom_placeholder = e.g. songs about cars, meme songs
+settings.ai_filter.custom_note = Your own categories, comma-separated (up to 8), described in plain words.
+settings.ai_filter.title = AI content filter
+settings.ai_filter.enable = Filter songs with an AI model
+settings.ai_filter.enable_desc = Like “Hide explicit content”, for the categories below.
+settings.ai_filter.forget = Forget classifications
+# Group heading and field label: the AI model.
+settings.ai_filter.model = Model
+settings.ai_filter.endpoint = Endpoint
+# Keep both addresses.
+settings.ai_filter.endpoint_placeholder = https://api.openai.com/v1 or http://localhost:11434/v1
+settings.ai_filter.api_key = API key
+settings.ai_filter.key_placeholder = API key (not needed for local servers)
+settings.ai_filter.api_note = Any OpenAI-compatible chat-completions API: OpenAI, OpenRouter, or a model on this computer (Ollama, LM Studio, llama.cpp server). The key is kept in the keychain.
+settings.ai_filter.privacy = Privacy
+settings.ai_filter.privacy_note = Off by default. While on, the title, artists and album of the songs and albums on the pages you open are sent to the endpoint above (nothing about you, no listening history); each verdict is cached on this computer, so a song is asked about once. Songs the model hasn't judged yet stay visible.
+
+# ---- Chromecast
+settings.cast.looking = Looking for Cast devices…
+settings.cast.found.one = {count} device found
+settings.cast.found.other = {count} devices found
+settings.cast.devices = Devices
+# Button: look for Cast devices on the network.
+settings.cast.scan = Search
+# Button on the device being cast to / on the other devices (keep short).
+settings.cast.casting = Casting
+settings.cast.cast = Cast
+settings.cast.streaming = Streaming
+settings.cast.direct = Let the device fetch YouTube audio itself
+settings.cast.direct_desc = Off: this app streams it to the device (works with every song).
+settings.cast.note = Casting plays the queue on a Chromecast, Google TV or Nest speaker on this network (Google's Default Media Receiver). The player bar's Cast button picks a device; play, pause, seek, skip and volume then control it, and Stop casting continues here. YouTube audio and local files are streamed from this computer to the device (keep the app open); the device and this computer must be on the same network. Changes apply to the next song.

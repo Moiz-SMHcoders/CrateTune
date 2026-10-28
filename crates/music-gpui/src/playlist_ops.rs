@@ -43,7 +43,7 @@ impl MusicApp {
             .remote_target(&playlist)
             .map(|id| (id, self.account_client()));
         self.with_library(
-            "Renaming the playlist",
+            t!("store.action.renaming_playlist"),
             move |lib| {
                 if let Some((id, it)) = &remote {
                     it.rename_playlist(id, &name)?;
@@ -51,7 +51,13 @@ impl MusicApp {
                 lib.rename_playlist(&playlist.id, &name)?;
                 Ok(name)
             },
-            |_, name, window, cx| notify(window, cx, format!("Renamed to “{name}”")),
+            |_, name, window, cx| {
+                notify(
+                    window,
+                    cx,
+                    t!("store.toast.playlist_renamed", playlist = name),
+                )
+            },
             window,
             cx,
         );
@@ -66,7 +72,7 @@ impl MusicApp {
         let signed_in = self.store.account.is_signed_in();
         let it = self.account_client();
         self.with_library(
-            "Deleting the playlist",
+            t!("store.action.deleting_playlist"),
             move |lib| {
                 if let Some(id) = playlist.browse_id.as_deref().filter(|_| signed_in) {
                     if playlist.editable {
@@ -79,7 +85,11 @@ impl MusicApp {
                 Ok(playlist.name)
             },
             |app, name, window, cx| {
-                notify(window, cx, format!("Deleted “{name}”"));
+                notify(
+                    window,
+                    cx,
+                    t!("store.toast.playlist_deleted", playlist = name),
+                );
                 if matches!(
                     app.router.route(),
                     crate::router::Route::LocalPlaylist { .. }
@@ -104,7 +114,7 @@ impl MusicApp {
             .map(|id| (id, self.account_client()));
         let count = entries.len();
         self.with_library(
-            "Removing from the playlist",
+            t!("store.action.removing_from_playlist"),
             move |lib| {
                 if let Some((id, it)) = &remote {
                     let rows: Vec<(&str, &str)> = entries
@@ -123,12 +133,7 @@ impl MusicApp {
                 Ok(())
             },
             move |_, _, window, cx| {
-                let what = if count == 1 {
-                    "1 song".to_owned()
-                } else {
-                    format!("{count} songs")
-                };
-                notify(window, cx, format!("Removed {what} from the playlist"));
+                notify(window, cx, tp!("store.toast.removed_from_playlist", count));
             },
             window,
             cx,
@@ -152,7 +157,7 @@ impl MusicApp {
             .remote_target(&playlist)
             .map(|id| (id, self.account_client()));
         self.with_library(
-            "Moving the song",
+            t!("store.action.moving_song"),
             move |lib| {
                 if let (Some((id, it)), Some(moved)) = (&remote, &moved) {
                     it.move_playlist_item(id, moved, before.as_deref())?;
@@ -177,7 +182,7 @@ impl MusicApp {
         };
         let it = self.account_client();
         self.with_library(
-            "Refreshing the playlist",
+            t!("store.action.refreshing_playlist"),
             move |lib| {
                 let mut page = it.playlist(&browse_id)?;
                 let mut rows: Vec<_> = page
@@ -205,7 +210,7 @@ impl MusicApp {
                 lib.replace_playlist_entries(&playlist.id, &rows)?;
                 Ok(rows.len())
             },
-            |_, n, window, cx| notify(window, cx, format!("Playlist refreshed ({n} songs)")),
+            |_, n, window, cx| notify(window, cx, tp!("store.toast.playlist_refreshed", n)),
             window,
             cx,
         );

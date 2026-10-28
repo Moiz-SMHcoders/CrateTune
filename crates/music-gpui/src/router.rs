@@ -47,14 +47,14 @@ impl LibraryTab {
 
     pub fn title(self) -> &'static str {
         match self {
-            LibraryTab::Songs => "Songs",
-            LibraryTab::Liked => "Liked",
-            LibraryTab::Albums => "Albums",
-            LibraryTab::Artists => "Artists",
-            LibraryTab::Playlists => "Playlists",
-            LibraryTab::Podcasts => "Podcasts",
-            LibraryTab::Downloaded => "Downloaded",
-            LibraryTab::Local => "Local files",
+            LibraryTab::Songs => t!("route.library_tab.songs"),
+            LibraryTab::Liked => t!("route.library_tab.liked"),
+            LibraryTab::Albums => t!("route.library_tab.albums"),
+            LibraryTab::Artists => t!("route.library_tab.artists"),
+            LibraryTab::Playlists => t!("route.library_tab.playlists"),
+            LibraryTab::Podcasts => t!("route.library_tab.podcasts"),
+            LibraryTab::Downloaded => t!("route.library_tab.downloaded"),
+            LibraryTab::Local => t!("route.library_tab.local"),
         }
     }
 
@@ -161,14 +161,14 @@ pub enum Route {
 impl Route {
     pub fn title(&self) -> String {
         match self {
-            Route::Home => "Home".into(),
-            Route::Explore => "Explore".into(),
-            Route::Charts => "Charts".into(),
-            Route::MoodsAndGenres => "Moods & genres".into(),
-            Route::NewReleases => "New releases".into(),
-            Route::Search { query } if query.is_empty() => "Search".into(),
-            Route::Search { query } => format!("Search: {query}"),
-            Route::Library { tab } => format!("Library · {}", tab.title()),
+            Route::Home => t!("nav.home").into(),
+            Route::Explore => t!("nav.explore").into(),
+            Route::Charts => t!("nav.charts").into(),
+            Route::MoodsAndGenres => t!("nav.moods").into(),
+            Route::NewReleases => t!("nav.new_releases").into(),
+            Route::Search { query } if query.is_empty() => t!("route.search").into(),
+            Route::Search { query } => t!("route.search_query", query = query),
+            Route::Library { tab } => t!("route.library", tab = tab.title()),
             Route::Artist { name, .. }
             | Route::Album { name, .. }
             | Route::Playlist { name, .. }
@@ -179,15 +179,15 @@ impl Route {
             | Route::LocalPlaylist { name, .. }
             | Route::Browse { name, .. }
             | Route::ArtistItems { name, .. } => name.clone(),
-            Route::History => "History".into(),
-            Route::Stats => "Stats".into(),
-            Route::YearInMusic { year } => format!("{year} in music"),
-            Route::Downloads => "Downloads".into(),
-            Route::LocalFiles => "Local files".into(),
-            Route::Import => "Import & export".into(),
-            Route::Together => "Listen together".into(),
-            Route::Recognition => "Recognize music".into(),
-            Route::Settings { section } => format!("Settings · {}", section.title()),
+            Route::History => t!("nav.history").into(),
+            Route::Stats => t!("nav.stats").into(),
+            Route::YearInMusic { year } => t!("route.year_in_music", year = year),
+            Route::Downloads => t!("nav.downloads").into(),
+            Route::LocalFiles => t!("nav.local_files").into(),
+            Route::Import => t!("nav.import").into(),
+            Route::Together => t!("nav.together").into(),
+            Route::Recognition => t!("route.recognition").into(),
+            Route::Settings { section } => t!("route.settings", section = section.title()),
         }
     }
 

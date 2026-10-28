@@ -1,0 +1,56 @@
+# Online browse pages (YouTube Music).
+
+# ---- Home
+home.recent.title = Tocadas nesta sessão
+home.recent.subtitle = Ouvir de novo
+
+# ---- Explore
+explore.new_releases_detail = Álbuns e singles fresquinhos
+explore.charts_detail = O que está em alta, por país
+explore.moods_detail = Playlists para todos os momentos
+
+# ---- Charts
+charts.country_placeholder = País
+charts.search_countries = Pesquisar países…
+charts.empty.title = Sem paradas
+charts.empty.detail = O YouTube Music não tem paradas para este país.
+
+# ---- Moods & genres
+moods.empty = O YouTube Music não retornou gêneros nem momentos para esta região.
+
+# ---- New releases
+new_releases.subtitle = Novos álbuns e singles
+new_releases.empty.title = Nada de novo
+new_releases.empty.detail = O YouTube Music não retornou lançamentos para esta região.
+
+# ---- Browse pages
+browse.empty = Esta página não tem playlists nem músicas (ou todas foram filtradas).
+
+# ---- Album
+album.empty.title = Nenhuma música tocável
+album.empty.detail = Este álbum não tem faixas aqui (ou todas foram filtradas).
+
+# ---- Artist
+artist.subscribed = Inscrito
+artist.subscribe = Inscrever-se
+artist.subscribe_tooltip = Inscrever-se no YouTube Music (também fica salvo na sua biblioteca)
+artist.subscribe_tooltip_signed_out = Salvo na sua biblioteca; entre para se inscrever no YouTube Music
+artist.items_empty = Nenhum lançamento nesta página (ou todos foram filtrados).
+
+# ---- Playlist
+playlist.change_cover = Alterar capa…
+playlist.empty.title = Nenhuma música
+playlist.empty.detail = Esta playlist está vazia (ou todas as músicas dela foram filtradas).
+
+# ---- Podcast / episode
+podcast.episodes.one = {count} episódio
+podcast.episodes.other = {count} episódios
+podcast.episodes_more.one = {count}+ episódios
+podcast.episodes_more.other = {count}+ episódios
+podcast.saved = Salvo
+podcast.save = Salvar na biblioteca
+podcast.save_failed = Não foi possível atualizar sua biblioteca: {error}
+podcast.open_episode_page = Abrir página do episódio
+podcast.go_to_podcast = Ir para o podcast
+podcast.empty.title = Nenhum episódio
+podcast.empty.detail = Este programa ainda não tem episódios aqui.

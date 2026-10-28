@@ -1,0 +1,60 @@
+# Online browse pages (Russian).
+
+# ---- Home
+home.recent.title = Слушали в этом сеансе
+home.recent.subtitle = Послушать снова
+
+# ---- Explore
+explore.new_releases_detail = Свежие альбомы и синглы
+explore.charts_detail = Популярное по странам
+explore.moods_detail = Плейлисты на любой случай
+
+# ---- Charts
+charts.country_placeholder = Страна
+charts.search_countries = Поиск страны…
+charts.empty.title = Нет чартов
+charts.empty.detail = У YouTube Music нет чартов для этой страны.
+
+# ---- Moods & genres
+moods.empty = YouTube Music не вернул настроений и жанров для этого региона.
+
+# ---- New releases
+new_releases.subtitle = Новые альбомы и синглы
+new_releases.empty.title = Ничего нового
+new_releases.empty.detail = YouTube Music не вернул новинок для этого региона.
+
+# ---- Browse pages
+browse.empty = На этой странице нет плейлистов и треков (или все они отфильтрованы).
+
+# ---- Album
+album.empty.title = Нет доступных треков
+album.empty.detail = У этого альбома здесь нет треков (или все они отфильтрованы).
+
+# ---- Artist
+artist.subscribed = Вы подписаны
+artist.subscribe = Подписаться
+artist.subscribe_tooltip = Подписаться в YouTube Music (также сохраняется в библиотеке)
+artist.subscribe_tooltip_signed_out = Сохраняется в библиотеке; войдите, чтобы подписаться в YouTube Music
+artist.items_empty = На этой странице нет релизов (или все они отфильтрованы).
+
+# ---- Playlist
+playlist.change_cover = Сменить обложку…
+playlist.empty.title = Нет треков
+playlist.empty.detail = Этот плейлист пуст (или все его треки отфильтрованы).
+
+# ---- Podcast / episode
+podcast.episodes.one = {count} выпуск
+podcast.episodes.few = {count} выпуска
+podcast.episodes.many = {count} выпусков
+podcast.episodes.other = {count} выпуска
+podcast.episodes_more.one = {count}+ выпусков
+podcast.episodes_more.few = {count}+ выпусков
+podcast.episodes_more.many = {count}+ выпусков
+podcast.episodes_more.other = {count}+ выпусков
+podcast.saved = Сохранено
+podcast.save = Сохранить в библиотеке
+podcast.save_failed = Не удалось обновить библиотеку: {error}
+podcast.open_episode_page = Открыть страницу выпуска
+podcast.go_to_podcast = Перейти к подкасту
+podcast.empty.title = Нет выпусков
+podcast.empty.detail = У этого подкаста здесь пока нет выпусков.

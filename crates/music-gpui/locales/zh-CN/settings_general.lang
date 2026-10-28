@@ -1,0 +1,121 @@
+# Settings: Account, Network, About, settings panel, update check, Google sign-in (zh-CN).
+
+# ---- Account
+settings.account.cookie_title = 使用浏览器 Cookie 登录
+settings.account.cookie_steps = 1. 在浏览器中打开 music.youtube.com 并登录。\n2. 打开开发者工具（Safari / Chrome 中按 ⌥⌘I）→ 网络（Network），然后重新加载页面。\n3. 点击任意一个发往 music.youtube.com 的请求（例如“browse”），在“请求标头”（Request Headers）中找到“Cookie”，复制其完整的值。\n4. 将其粘贴到下方。它会保存在系统钥匙串中，并且只会发送给 YouTube。
+settings.account.cookie_index = Google 账号序号（如果登录了多个账号）：
+settings.account.not_signed_in = 未登录。所有功能都可以匿名使用；登录后，你喜欢的歌曲、保存的专辑、订阅和播放列表会同步到媒体库，你的喜欢和播放列表编辑也会同步回 YouTube Music。
+settings.account.sign_in_google = 使用 Google 登录…
+settings.account.paste_cookie = 粘贴 Cookie…
+settings.account.google_refused = 如果 Google 拒绝了登录窗口（“此浏览器或应用可能不安全”），请使用“粘贴 Cookie”。
+settings.account.last_synced = 上次同步：{date}
+settings.account.not_synced = 尚未同步
+settings.account.sync_now = 立即同步
+settings.account.syncing = 正在同步…
+settings.account.sync_group = 媒体库同步
+settings.account.sync_row = 同步你的 YouTube Music 媒体库
+settings.account.sync_row_desc = 喜欢的歌曲、媒体库歌曲、保存的专辑、订阅、播放列表。
+settings.account.accounts_group = 账号
+settings.account.channels = 此 Google 账号下的频道（品牌账号）：
+settings.account.google_index = Google 账号
+settings.account.google_index_desc = 当 Cookie 中包含多个 Google 账号时，选择使用哪一个（0 = 第一个）。
+settings.account.cookie_note = 登录会使用你浏览器中 music.youtube.com 的会话 Cookie。它保存在系统钥匙串中，并且只会发送给 YouTube。账号相关功能基于 YouTube 的网页 API 开发，但尚未使用真实账号验证。
+
+# ---- About
+settings.about.show_welcome = 显示欢迎指南
+settings.about.version_summary = 版本 {version} · {summary}
+settings.about.summary = YouTube Music 原生桌面客户端
+settings.about.not_affiliated = 与 YouTube 或 Google 无关，也未获得其认可或赞助。
+settings.about.license = 许可证
+settings.about.license_notice = 本程序是自由软件：你可以依据 GNU 通用公共许可证第 3 版的条款重新分发和/或修改它。本程序不提供任何担保；详情请参阅许可证。
+settings.about.credits = 致谢
+settings.about.credit.archivetune = 功能和界面移植自 {project}（GPL-3.0），© Rukamori and contributors。本项目为独立项目。
+settings.about.credit.hummingbird = 均衡器、系统媒体控制、Scrobble 和 Discord 状态移植自 Hummingbird（Apache-2.0），© Hummingbird contributors。
+settings.about.credit.recognition_title = 歌曲识别
+settings.about.credit.recognition = 兼容 Shazam 的音频指纹功能移植自 {project} 的 shazamkit（GPL-3.0），其遵循 SongRec 的格式。与 Shazam 或 Apple 无关。
+settings.about.credit.libraries_title = 库
+settings.about.credit.libraries = GPUI 和 gpui-component（Apache-2.0）、Symphonia 和 rodio、Lucide 图标（ISC）、LRCLIB 歌词。
+
+# ---- Update check
+update.group = 更新
+update.releases_from = 版本发布来源：github.com/{repo}
+update.checking = 正在检查…
+update.up_to_date_version = 你使用的是最新版本（{version}）。
+update.available_version = 版本 {version} 现已推出。
+update.check_failed = 无法检查：{error}
+update.check_now = 立即检查
+update.download = 下载…
+update.no_release = 没有已发布的版本
+update.available_toast = {app} {version} 现已推出（设置 → 关于）
+update.up_to_date_toast = {app} 已是最新版本
+
+# ---- Network
+settings.network.proxy = 代理
+settings.network.proxy_off = 关
+settings.network.host = 主机
+settings.network.port = 端口
+settings.network.user = 用户名
+settings.network.password = 密码
+settings.network.doh_url = DoH URL
+settings.network.host_placeholder = proxy.example.com 或 127.0.0.1
+settings.network.optional = 可选
+settings.network.test_connection = 测试连接
+settings.network.test_dns = 测试 DNS
+settings.network.using_proxy = 正在使用 {url}
+settings.network.direct = 直接连接（无代理）
+settings.network.status_with_doh = {proxy} · DNS-over-HTTPS（{server}）
+settings.network.testing = 正在测试…
+settings.network.test_ok = 已连接到 YouTube，耗时 {ms} 毫秒
+settings.network.test_failed = 连接失败：{error}
+settings.network.lookup_failed = 查询失败：{error}
+settings.network.looking_up = 正在查询…
+settings.network.dns_ok = {host} → {addresses}，通过{via}，耗时 {ms} 毫秒
+settings.network.dns_via_doh = DNS-over-HTTPS
+settings.network.dns_via_cache = DNS-over-HTTPS（缓存）
+settings.network.dns_via_system = 系统解析器
+settings.network.proxy_note = 适用于所有内容：YouTube Music、音频流、封面图、歌词和 Scrobble。SOCKS5h 会通过代理解析主机名。密码保存在钥匙串中。
+settings.network.dns = DNS
+settings.network.dns_system = 系统
+settings.network.dns_custom = 自定义
+settings.network.dns_fallback = DoH 失败时回退到系统解析器
+settings.network.dns_note = DNS-over-HTTPS（RFC 8484）通过加密的 HTTPS 连接（而非明文 DNS）查询主机名。查询结果会按其 TTL 缓存。使用 SOCKS5h 代理时，由代理自行解析域名。Quad9 通过其 HTTP/1.1 端口 5053 访问，部分网络会屏蔽该端口。
+settings.network.error.port_number = 端口必须是数字（1–65535）。
+settings.network.error.doh_invalid = DNS-over-HTTPS URL 无效。
+settings.network.error.proxy_invalid = 该代理地址不适用于此代理类型。
+settings.network.error.doh_https = DNS-over-HTTPS URL 必须以 https:// 开头。
+settings.network.error.doh_invalid_detail = DNS-over-HTTPS URL 无效：{error}。
+settings.network.error.host_missing = 请输入代理主机。
+settings.network.error.host_invalid = 主机只能是名称或地址（不含协议、路径或空格）。
+settings.network.error.port_missing = 请输入 1 到 65535 之间的端口。
+settings.network.error.socks4_auth = SOCKS4 不支持密码；请将用户名留空。
+
+# ---- Settings panel
+settings.panel.placeholder.api_key = API 密钥
+settings.panel.placeholder.shared_secret = 共享密钥
+settings.panel.placeholder.user_token = 用户令牌
+settings.panel.placeholder.application_id = 应用 ID
+settings.panel.lastfm_missing = 请先输入 API 密钥和共享密钥。
+settings.panel.lastfm_requesting = 正在请求令牌…
+settings.panel.lastfm_finishing = 正在完成…
+settings.panel.lb_missing = 请先粘贴你的用户令牌。
+settings.panel.secrets.backend_and_file = {backend} + 设置文件（0600）
+settings.panel.secrets.file_keychain_disabled = 设置文件（0600；钥匙串已停用）
+settings.panel.secrets.file_keychain_read_failed = 设置文件（0600；读取钥匙串失败）
+settings.panel.secrets.file_keychain_unavailable = 设置文件（0600；钥匙串不可用）
+
+# ---- Credential stores
+secrets.backend.macos = macOS 钥匙串
+secrets.backend.windows = Windows 凭据管理器
+secrets.backend.secret_service = Secret Service
+
+# ---- Settings file problems
+settings.file.no_config_dir = 没有配置目录；设置不会被保存
+settings.file.save_failed = 保存失败：{error}
+settings.file.read_failed = 读取 {path} 时出错：{error}
+settings.file.invalid_moved = {path} 无效（{error}）；已移至 {backup}
+
+# ---- Google sign-in window
+login.window_title = 登录 YouTube Music
+login.instructions = 请使用你的 Google 账号登录。YouTube Music 打开后，此窗口会自动关闭。
+login.webview_failed = 无法创建网页视图（{error}）。请改用“粘贴 Cookie”。
+login.checking = 已登录——正在检查账号…

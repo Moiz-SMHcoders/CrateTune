@@ -1,0 +1,157 @@
+# Shared strings (German). Format: see crates/music-gpui/i18n_parse.rs.
+
+locale.native_name = Deutsch
+
+# ---- Actions
+common.play = Abspielen
+common.pause = Pausieren
+common.shuffle = Zufallswiedergabe
+common.radio = Radio
+common.start_radio = Radio starten
+common.play_next = Als Nächstes abspielen
+common.add_to_queue = Zur Warteschlange
+common.add_to_playlist = Zur Playlist hinzufügen…
+common.like = Gefällt mir
+common.remove_from_liked = Aus Lieblingssongs entfernen
+common.download = Herunterladen
+common.remove_download = Download entfernen
+common.go_to_artist = Zum Künstler
+common.go_to_album = Zum Album
+common.open = Öffnen
+common.cancel = Abbrechen
+common.close = Schließen
+common.retry = Erneut versuchen
+common.remove = Entfernen
+common.delete = Löschen
+common.clear = Leeren
+common.save = Speichern
+common.apply = Anwenden
+common.reset = Zurücksetzen
+common.done = Fertig
+common.copy = Kopieren
+common.rename = Umbenennen
+common.refresh = Aktualisieren
+common.install = Installieren
+common.update = Aktualisieren
+common.import = Importieren
+common.search = Suchen
+common.search_placeholder = Suchen…
+common.see_all = Alle anzeigen
+common.load_more = Mehr laden
+common.show_more = Mehr anzeigen
+common.back = Zurück
+common.next = Weiter
+common.connect = Verbinden
+common.disconnect = Trennen
+common.sign_in = Anmelden
+common.sign_out = Abmelden
+common.select = Auswählen
+common.select_all = Alle auswählen
+common.settings = Einstellungen
+
+# ---- States
+common.loading = Wird geladen…
+common.saving = Wird gespeichert…
+common.downloading = Wird heruntergeladen…
+common.off = Aus
+common.on = An
+common.none = Keine
+common.custom = Benutzerdefiniert
+common.automatic = Automatisch
+common.not_playing = Keine Wiedergabe
+common.not_connected = Nicht verbunden
+common.nothing_here = Hier ist nichts
+
+# ---- Things
+common.song = Song
+common.video = Video
+common.artist = Künstler
+common.album = Album
+common.playlist = Playlist
+common.podcast = Podcast
+common.episode = Folge
+common.queue = Warteschlange
+common.now_playing = Läuft gerade
+common.youtube_music = YouTube Music
+
+common.songs.one = {count} Song
+common.songs.other = {count} Songs
+common.plays.one = {count} Wiedergabe
+common.plays.other = {count} Wiedergaben
+common.selected.one = {count} ausgewählt
+common.selected.other = {count} ausgewählt
+
+# ---- Sidebar
+nav.home = Startseite
+nav.explore = Entdecken
+nav.charts = Charts
+nav.moods = Stimmungen & Genres
+nav.new_releases = Neuerscheinungen
+nav.recognize = Erkennen
+nav.library_group = Mediathek
+nav.library = Mediathek
+nav.history = Verlauf
+nav.stats = Statistiken
+nav.downloads = Downloads
+nav.local_files = Lokale Dateien
+nav.import = Import & Export
+nav.together = Gemeinsam hören
+nav.settings = Einstellungen
+
+# ---- Dates
+date.full = {day}. {month} {year}
+date.today = Heute
+date.yesterday = Gestern
+date.month_in_date.1 = Januar
+date.month_in_date.2 = Februar
+date.month_in_date.3 = März
+date.month_in_date.4 = April
+date.month_in_date.5 = Mai
+date.month_in_date.6 = Juni
+date.month_in_date.7 = Juli
+date.month_in_date.8 = August
+date.month_in_date.9 = September
+date.month_in_date.10 = Oktober
+date.month_in_date.11 = November
+date.month_in_date.12 = Dezember
+date.month_short.1 = Jan.
+date.month_short.2 = Feb.
+date.month_short.3 = März
+date.month_short.4 = Apr.
+date.month_short.5 = Mai
+date.month_short.6 = Juni
+date.month_short.7 = Juli
+date.month_short.8 = Aug.
+date.month_short.9 = Sept.
+date.month_short.10 = Okt.
+date.month_short.11 = Nov.
+date.month_short.12 = Dez.
+date.weekday_short.1 = Mo.
+date.weekday_short.2 = Di.
+date.weekday_short.3 = Mi.
+date.weekday_short.4 = Do.
+date.weekday_short.5 = Fr.
+date.weekday_short.6 = Sa.
+date.weekday_short.7 = So.
+
+# ---- Durations and relative times
+time.just_now = gerade eben
+time.seconds_ago.one = vor {count} s
+time.seconds_ago.other = vor {count} s
+time.minutes_ago.one = vor {count} Min.
+time.minutes_ago.other = vor {count} Min.
+time.hours_ago.one = vor {count} Std.
+time.hours_ago.other = vor {count} Std.
+time.days_ago.one = vor {count} Tag
+time.days_ago.other = vor {count} Tagen
+time.hours_minutes = {hours} Std. {minutes} Min.
+time.minutes = {minutes} Min.
+time.seconds = {seconds} s
+
+# ---- File sizes
+units.size = {value} {unit}
+units.b = B
+units.kb = KB
+units.mb = MB
+units.gb = GB
+units.tb = TB

@@ -1,0 +1,27 @@
+settings.language.group = Bahasa
+settings.language.label = Bahasa antarmuka
+settings.language.description = Bahasa antarmuka. Konten YouTube Music memiliki pengaturannya sendiri (Konten & wilayah).
+settings.language.system = Bawaan sistem ({language})
+settings.language.system_search = default automatic bawaan otomatis sistem
+
+language.name.en = Inggris
+language.name.es = Spanyol
+language.name.pt-BR = Portugis (Brasil)
+language.name.fr = Prancis
+language.name.de = Jerman
+language.name.it = Italia
+language.name.nl = Belanda
+language.name.pl = Polandia
+language.name.ru = Rusia
+language.name.uk = Ukraina
+language.name.tr = Turki
+language.name.id = Indonesia
+language.name.vi = Vietnam
+language.name.ja = Jepang
+language.name.ko = Korea
+language.name.zh-CN = Tionghoa (Sederhana)
+language.name.zh-TW = Tionghoa (Tradisional)
+language.name.hi = Hindi
+language.name.ar = Arab
+language.name.fa = Persia
+language.name.he = Ibrani

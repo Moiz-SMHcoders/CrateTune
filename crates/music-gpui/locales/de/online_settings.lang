@@ -1,0 +1,19 @@
+# Settings → Content & region.
+settings.content.group_region = Sprache & Region
+settings.content.language = Inhaltssprache
+settings.content.language_description = Sprache von Titeln, Bereichen und Suche bei YouTube Music.
+settings.content.language_placeholder = Sprache
+settings.content.country = Inhaltsland
+settings.content.country_description = Region für Startseite, Charts und Neuerscheinungen.
+settings.content.country_placeholder = Land
+settings.content.region_note = Änderungen gelten sofort; geöffnete Seiten werden in der neuen Sprache neu geladen.
+
+settings.content.group_filters = Filter
+settings.content.hide_explicit = Explizite Inhalte ausblenden
+settings.content.hide_explicit_description = Entfernt als explizit markierte Songs und Alben aus Seiten, Suche und Radio.
+settings.content.hide_videos = Musikvideos ausblenden
+settings.content.hide_videos_description = Nur Songs: Musikvideos und Nutzervideos werden aus Bereichen, Suche, Playlists, Alben, Radio und Warteschlangen herausgelassen (ein Album, das YouTube nur als Official-Audio-Videos hat, bleibt vollständig).
+
+settings.content.group_radio = Radio
+settings.content.autoplay = Ähnliche Songs automatisch abspielen
+settings.content.autoplay_description = Wenn der letzte Song der Warteschlange beginnt, werden Songs aus seinem Radio dahinter eingereiht.

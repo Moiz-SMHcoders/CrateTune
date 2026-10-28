@@ -1,0 +1,43 @@
+# Music recognition page.
+recognition.title = Muziek herkennen
+recognition.subtitle = Herken een nummer dat om je heen speelt (⇧⌘R)
+
+recognition.idle.title = Tik om een nummer te herkennen
+recognition.idle.detail = Speel het nummer af in de buurt van je computer; er wordt ongeveer 10 seconden via de microfoon geluisterd.
+recognition.permission.title = Wachten op toegang tot microfoon…
+recognition.permission.detail = Sta toegang toe in de systeemmelding.
+recognition.listening = Luisteren…
+recognition.listening_progress = {elapsed} van {length} s
+recognition.identifying.title = Herkennen…
+recognition.identifying.detail = Opname wordt vergeleken.
+recognition.failed = Niet herkend
+recognition.open_privacy_settings = Privacy-instellingen openen
+
+recognition.mic.restricted = Toegang tot de microfoon is beperkt op deze computer.
+recognition.mic.undetermined = Toegang tot de microfoon is nog niet verleend. Probeer het opnieuw en sta het toe als erom wordt gevraagd.
+recognition.mic.denied = Toegang tot de microfoon staat uit voor {app}. Sta het toe in Systeeminstellingen → Privacy en beveiliging → Microfoon.
+recognition.error.no_microphone = Geen microfoon gevonden
+recognition.error.permission_denied = Toegang tot de microfoon is geweigerd
+recognition.error.silent = De microfoon leverde alleen stilte (is toegang tot de microfoon toegestaan?)
+recognition.error.capture = Opnemen mislukt: {error}
+recognition.error.cancelled = Geannuleerd
+recognition.error.no_signature = Geen muziek gehoord
+recognition.error.no_match = Geen overeenkomst gevonden
+recognition.error.rate_limited = Te veel verzoeken — probeer het over een minuut opnieuw
+recognition.error.service = Fout bij herkenningsdienst (HTTP {status})
+recognition.error.network = Netwerkfout: {error}
+recognition.error.parse = Onverwacht antwoord: {error}
+
+recognition.result.recognized = Herkend
+recognition.result.from_history = Uit je herkenningsgeschiedenis
+recognition.match.title = Op YouTube Music
+recognition.match.searching = Zoeken op YouTube Music…
+recognition.match.failed = Zoeken op YouTube Music mislukt: {error}
+recognition.match.none = Niet gevonden op YouTube Music.
+
+recognition.history.title = Geschiedenis
+recognition.history.empty.title = Nog niets herkend
+recognition.history.empty.detail = Nummers die je herkent, verschijnen hier, nieuwste eerst.
+recognition.history.clear_title = Herkenningsgeschiedenis wissen?
+recognition.history.clear_detail = De lijst met herkende nummers wordt verwijderd.
+recognition.history.remove = Verwijderen uit geschiedenis

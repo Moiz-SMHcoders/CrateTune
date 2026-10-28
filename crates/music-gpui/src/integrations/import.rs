@@ -32,8 +32,8 @@ impl ImportSource {
                 || path.display().to_string(),
                 |n| n.to_string_lossy().into(),
             ),
-            ImportSource::SpotifyPlaylist(_) => "Spotify playlist".into(),
-            ImportSource::SpotifyLiked => "Spotify liked songs".into(),
+            ImportSource::SpotifyPlaylist(_) => t!("import.source.spotify_playlist").into(),
+            ImportSource::SpotifyLiked => t!("import.source.spotify_liked").into(),
         }
     }
 }
@@ -141,7 +141,7 @@ impl MusicApp {
     pub fn spotify_load_playlists(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let Some((client_id, refresh)) = self.spotify_credentials(cx) else {
             self.integrations.import.spotify =
-                SpotifyListing::Failed("Connect Spotify in Settings → Spotify import.".into());
+                SpotifyListing::Failed(t!("import.error.connect_spotify").into());
             cx.notify();
             return;
         };
@@ -174,7 +174,7 @@ impl MusicApp {
             files: true,
             directories: false,
             multiple: false,
-            prompt: Some("Import".into()),
+            prompt: Some(t!("common.import").into()),
         });
         cx.spawn_in(window, async move |this, cx| {
             let Ok(Ok(Some(mut paths))) = picked.await else {
@@ -202,20 +202,22 @@ impl MusicApp {
             _ => match self.spotify_credentials(cx) {
                 Some(credentials) => Some(credentials),
                 None => {
-                    notify(
-                        window,
-                        cx,
-                        "Connect Spotify in Settings → Spotify import first.",
-                    );
+                    notify(window, cx, t!("import.error.connect_spotify_first"));
                     return;
                 }
             },
         };
+        if let ImportSource::SpotifyPlaylist(input) = &source
+            && spotify::parse_playlist_id(input).is_none()
+        {
+            notify(window, cx, t!("import.error.not_spotify_link"));
+            return;
+        }
         let state = &mut self.integrations.import;
         state.next_id += 1;
         let id = state.next_id;
         let progress = Arc::new(Mutex::new(Progress {
-            stage: "Reading",
+            stage: t!("import.stage.reading"),
             done: 0,
             total: None,
         }));
@@ -247,13 +249,14 @@ impl MusicApp {
                     ImportSource::SpotifyPlaylist(input) => {
                         let (client_id, refresh) = spotify.as_ref().expect("checked above");
                         let id = spotify::parse_playlist_id(input).ok_or_else(|| {
-                            Error::Parse("not a Spotify playlist link or id".into())
+                            // Checked above.
+                            Error::Parse("not a Spotify playlist link or id".into()) // i18n-ignore
                         })?;
                         let (client, r) = spotify_client(client_id, refresh)?;
                         rotated = r;
                         let meta = client.playlist(&id).ok();
                         let tracks = client.playlist_tracks(&id, &|done, total| {
-                            set("Reading the playlist", done, total)
+                            set(t!("import.stage.reading_playlist"), done, total)
                         })?;
                         SourcePlaylist {
                             name: meta.map(|m| m.name),
@@ -265,21 +268,21 @@ impl MusicApp {
                         let (client, r) = spotify_client(client_id, refresh)?;
                         rotated = r;
                         SourcePlaylist {
-                            name: Some("Liked on Spotify".into()),
+                            name: Some(t!("import.liked_playlist_name").into()),
                             tracks: client.liked_tracks(&|done, total| {
-                                set("Reading liked songs", done, total)
+                                set(t!("import.stage.reading_liked"), done, total)
                             })?,
                         }
                     }
                 };
                 let total = playlist.tracks.len();
-                set("Matching", 0, Some(total));
+                set(t!("import.stage.matching"), 0, Some(total));
                 let search = |query: &str| innertube.search_songs(query);
                 let results = playlist_import::resolve(
                     &playlist.tracks,
                     &search,
                     ResolveOptions::default(),
-                    &|done, total| set("Matching", done, Some(total)),
+                    &|done, total| set(t!("import.stage.matching"), done, Some(total)),
                     &cancel,
                 );
                 Ok::<_, Error>((playlist, results, rotated))
@@ -297,7 +300,7 @@ impl MusicApp {
                         job.sources = playlist.tracks;
                         job.results = results;
                         job.phase = if job.cancelled() {
-                            Phase::Failed("Cancelled".into())
+                            Phase::Failed(t!("import.cancelled").into())
                         } else {
                             Phase::Done
                         };
@@ -357,7 +360,7 @@ impl MusicApp {
             .unwrap_or_else(|| job.name.clone());
         let tracks = job.tracks();
         if tracks.is_empty() {
-            notify(window, cx, "Nothing to save: no song was found.");
+            notify(window, cx, t!("import.nothing_to_save"));
             return;
         }
         job.saved = Some(name.clone());
@@ -392,7 +395,7 @@ impl MusicApp {
         };
         let shown = path.display().to_string();
         self.with_library(
-            "Exporting the playlist",
+            t!("import.exporting"),
             move |lib| {
                 let tracks: Vec<Track> = lib
                     .playlist_entries(&playlist_id)?
@@ -404,7 +407,7 @@ impl MusicApp {
                 Ok(tracks.len())
             },
             move |_, count, window, cx| {
-                notify(window, cx, format!("Exported {count} songs to {shown}"));
+                notify(window, cx, tp!("import.exported", count, path = shown));
             },
             window,
             cx,
@@ -430,7 +433,8 @@ pub fn sanitize(name: &str) -> String {
         .collect();
     let cleaned = cleaned.trim().trim_start_matches('.');
     if cleaned.is_empty() {
-        "playlist".into()
+        // A file name, not UI text.
+        "playlist".into() // i18n-ignore
     } else {
         cleaned.into()
     }

@@ -1,0 +1,56 @@
+# First-run guide (Hindi).
+
+# ---- Step titles
+onboarding.step.welcome = स्वागत है
+onboarding.step.content = भाषा और क्षेत्र
+onboarding.step.theme = रूप-रंग
+onboarding.step.account = YouTube Music खाता
+onboarding.step.local_files = इस कंप्यूटर पर संगीत
+onboarding.step.privacy = निजता और सीमाएँ
+onboarding.welcome_title = {app} में आपका स्वागत है
+onboarding.step_of = चरण {step} / {total}
+
+# ---- Step subtitles
+onboarding.subtitle.welcome = YouTube Music के लिए एक तेज़, नेटिव प्लेयर: ब्राउज़ करें और खोजें, गाने के साथ चलते बोल, इतिहास और आँकड़ों वाली लाइब्रेरी, आपकी अपनी संगीत फ़ाइलें, और गाने की पहचान। बस कुछ विकल्प चुनें और आप तैयार हैं — यहाँ की हर चीज़ बाद में सेटिंग में बदली जा सकती है।
+onboarding.subtitle.content = YouTube Music टाइटल और सुझावों के लिए कौन-सी भाषा इस्तेमाल करे, और आप किस देश के चार्ट और रिलीज़ देखें।
+onboarding.subtitle.theme = थीम और टेक्स्ट साइज़ चुनें।
+onboarding.subtitle.account = वैकल्पिक। साइन इन करने पर आपकी पसंद, लाइब्रेरी, प्लेलिस्ट और आपके हिसाब से सुझाव आ जाते हैं। बाकी सब कुछ बिना खाते के काम करता है।
+onboarding.subtitle.local_files = वैकल्पिक। संगीत फ़ाइलों वाले फ़ोल्डर जोड़ें; उन्हें स्कैन करके आपकी लाइब्रेरी में जोड़ा जाता है और वे YouTube Music के साथ चलते हैं।
+onboarding.subtitle.privacy = शुरू करने से पहले क्या जानना ज़रूरी है।
+
+# ---- Footer buttons
+onboarding.skip = सेटअप छोड़ें
+onboarding.get_started = शुरू करें
+onboarding.finish = पूरा करें
+onboarding.next_or_skip = अगला (या छोड़ें)
+
+# ---- Welcome step: feature list
+onboarding.feature.browse.title = ब्राउज़ करें और खोजें
+onboarding.feature.browse.text = होम फ़ीड, चार्ट, मूड, नई रिलीज़, कलाकार, एल्बम और प्लेलिस्ट।
+onboarding.feature.lyrics.title = बोल
+onboarding.feature.lyrics.text = कई प्रोवाइडर से शब्द-दर-शब्द सिंक बोल, अनुवाद और रोमनाइज़ेशन के साथ।
+onboarding.feature.library.title = लाइब्रेरी
+onboarding.feature.library.text = पसंद, प्लेलिस्ट, सुनने का इतिहास, आँकड़े और डाउनलोड — इसी कंप्यूटर पर सेव।
+onboarding.feature.recognize.title = संगीत पहचानें
+onboarding.feature.recognize.text = आपके आस-पास चल रहा गाना पहचानें (⇧⌘R) और उसे तुरंत चलाएँ।
+
+# ---- Look step
+onboarding.theme.group = थीम
+onboarding.theme.dynamic_note = डायनैमिक, चल रहे गाने के आर्टवर्क से अपना एक्सेंट रंग लेता है।
+onboarding.theme.text_size = टेक्स्ट साइज़
+
+# ---- Music on this computer step
+onboarding.local.group = संगीत फ़ोल्डर
+onboarding.local.empty = अभी कोई फ़ोल्डर नहीं।
+onboarding.local.add = फ़ोल्डर जोड़ें…
+onboarding.local.note = फ़ोल्डर अभी या बाद में स्कैन करें; इन्हें लोकल फ़ाइलें में मैनेज करें।
+
+# ---- Privacy & limitations step
+onboarding.privacy.streaming.title = गाने कैसे स्ट्रीम होते हैं
+onboarding.privacy.streaming.text = पूरे गाने YouTube के TV क्लाइंट से या PoToken (दुरुपयोग रोकने वाला टोकन, macOS पर एक छिपे ब्राउज़र व्यू में बनता है) के साथ उसके वेब क्लाइंट से आते हैं। YouTube नई स्ट्रीम को कुछ सेकंड इंतज़ार कराता है; तब तक ऐप एक छोटे प्रीव्यू से शुरू करता है। अगर YouTube कुछ बदलता है, तो गाने ~1 मिनट के प्रीव्यू पर आ जाते हैं (प्लेयर में चिह्नित)। सेटिंग → प्लेबैक → YouTube स्ट्रीम में रास्ता चुनें।
+onboarding.privacy.data.title = आपका डेटा यहीं रहता है
+onboarding.privacy.data.text = लाइब्रेरी, इतिहास, आँकड़े और सेटिंग इसी कंप्यूटर पर सेव होते हैं। पासवर्ड, API कुंजियाँ और YouTube साइन-इन कुकी सिस्टम कीचेन में जाती हैं। सुनने और खोज का इतिहास कभी भी सेटिंग → निजता में रोकें या साफ़ करें।
+onboarding.privacy.recipients.title = किसे क्या मिलता है
+onboarding.privacy.recipients.text = YouTube Music को आपकी खोजें और प्ले मिलते हैं (और साइन इन होने पर आपके खाते की कुकी)। बोल प्रोवाइडर को गानों के टाइटल मिलते हैं। गाने की पहचान Shazam को ऑडियो फ़िंगरप्रिंट भेजती है — रिकॉर्डिंग नहीं। स्क्रॉबलिंग और Discord सिर्फ़ तभी चलते हैं जब आप उन्हें सेट अप करें।
+onboarding.privacy.independent.title = स्वतंत्र प्रोजेक्ट
+onboarding.privacy.independent.text = YouTube, Google या Shazam से संबद्ध नहीं है। GPL-3.0 के तहत मुफ़्त सॉफ़्टवेयर।

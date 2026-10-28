@@ -1,0 +1,33 @@
+search.title = Cari
+search.query_title = “{query}”
+search.searching = Mencari…
+
+search.tab.all = Semua
+search.tab.songs = Lagu
+search.tab.videos = Video
+search.tab.albums = Album
+search.tab.artists = Artis
+search.tab.community_playlists = Playlist komunitas
+search.tab.featured_playlists = Playlist unggulan
+search.tab.podcasts = Podcast
+search.tab.episodes = Episode
+
+search.tab_empty.songs = Tidak ada lagu
+search.tab_empty.videos = Tidak ada video
+search.tab_empty.albums = Tidak ada album
+search.tab_empty.artists = Tidak ada artis
+search.tab_empty.community_playlists = Tidak ada playlist komunitas
+search.tab_empty.featured_playlists = Tidak ada playlist unggulan
+search.tab_empty.podcasts = Tidak ada podcast
+search.tab_empty.episodes = Tidak ada episode
+search.tab_empty.detail = Coba kategori atau pencarian lain.
+
+search.correction.applied = Menampilkan hasil untuk {corrected} · Cari {original} saja
+search.correction.suggested = Maksud Anda {corrected}?
+
+search.top_result = Hasil teratas
+search.empty.title = Tidak ada hasil
+search.empty.detail = Coba pencarian lain, atau periksa ejaannya.
+
+search.start.title = Telusuri YouTube Music
+search.start.detail = Ketik lagu, artis, album, atau playlist di kolom pencarian (⌘F) lalu tekan Enter.

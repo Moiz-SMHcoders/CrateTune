@@ -1,0 +1,27 @@
+# UI language picker (Settings → Appearance, first onboarding step).
+settings.language.group = Taal
+settings.language.label = Taal van de interface
+settings.language.description = Taal van de interface. Content van YouTube Music heeft een eigen instelling (Content & regio).
+settings.language.system = Systeemstandaard ({language})
+settings.language.system_search = standaard automatisch systeem
+language.name.en = Engels
+language.name.es = Spaans
+language.name.pt-BR = Portugees (Brazilië)
+language.name.fr = Frans
+language.name.de = Duits
+language.name.it = Italiaans
+language.name.nl = Nederlands
+language.name.pl = Pools
+language.name.ru = Russisch
+language.name.uk = Oekraïens
+language.name.tr = Turks
+language.name.id = Indonesisch
+language.name.vi = Vietnamees
+language.name.ja = Japans
+language.name.ko = Koreaans
+language.name.zh-CN = Chinees (vereenvoudigd)
+language.name.zh-TW = Chinees (traditioneel)
+language.name.hi = Hindi
+language.name.ar = Arabisch
+language.name.fa = Perzisch
+language.name.he = Hebreeuws

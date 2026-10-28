@@ -1,0 +1,35 @@
+# Menu bar (macOS) and the menu-bar item. {app} is the app's name.
+menu.about = Over {app}
+menu.settings = Instellingen…
+menu.services = Voorzieningen
+menu.hide = Verberg {app}
+menu.hide_others = Verberg andere
+menu.show_all = Toon alles
+menu.quit = Stop {app}
+menu.edit = Wijzig
+menu.undo = Herstel
+menu.redo = Opnieuw
+menu.cut = Knip
+menu.copy = Kopieer
+menu.paste = Plak
+menu.select_all = Selecteer alles
+menu.search = Zoek
+menu.view = Weergave
+menu.back = Terug
+menu.forward = Vooruit
+menu.recognize = Herken nummer
+menu.controls = Bediening
+menu.play_pause = Afspelen / pauzeren
+menu.repeat = Herhalen (uit / alles / één)
+menu.volume_up = Volume omhoog
+menu.volume_down = Volume omlaag
+menu.window = Venster
+menu.minimize = Minimaliseer
+menu.zoom = Zoom
+
+# Menu-bar item
+tray.next = Volgende
+tray.previous = Vorige
+tray.mini_player = Miniplayer
+tray.show_window = Toon {app}
+tray.quit = Stop {app}

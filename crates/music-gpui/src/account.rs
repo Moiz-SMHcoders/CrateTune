@@ -140,15 +140,11 @@ impl MusicApp {
             ..Auth::new(cookie.clone())
         };
         if !auth.is_signed_in() {
-            self.store.account.status = Busy::Failed(
-                "That cookie has no SAPISID / __Secure-3PAPISID entry; copy the whole \
-                 cookie header of a signed-in music.youtube.com request."
-                    .into(),
-            );
+            self.store.account.status = Busy::Failed(t!("account.cookie_invalid").into());
             cx.notify();
             return;
         }
-        self.store.account.status = Busy::Working("Checking the account…".into());
+        self.store.account.status = Busy::Working(t!("account.checking").into());
         cx.notify();
         cx.spawn_in(window, async move |this, cx| {
             let result = off_thread(move || fetch_account(auth)).await;
@@ -165,11 +161,12 @@ impl MusicApp {
                     });
                     this.store.account.set_cookie(Some(cookie));
                     this.sync_account_auth(cx);
-                    notify(window, cx, format!("Signed in as {name}"));
+                    notify(window, cx, t!("account.toast.signed_in", name = name));
                     this.sync_youtube_library(window, cx);
                 }
                 Err(e) => {
-                    this.store.account.status = Busy::Failed(format!("Sign-in failed: {e}"));
+                    this.store.account.status =
+                        Busy::Failed(t!("account.sign_in_failed", error = e));
                     cx.notify();
                 }
             })
@@ -189,7 +186,7 @@ impl MusicApp {
             panel.update_library(|l| l.account = None, cx);
             panel.set_youtube_cookie(None, cx);
         });
-        notify(window, cx, "Signed out of YouTube Music");
+        notify(window, cx, t!("account.toast.signed_out"));
         cx.notify();
     }
 
@@ -217,7 +214,7 @@ impl MusicApp {
                     }
                     Err(e) => {
                         this.store.account.status =
-                            Busy::Failed(format!("Couldn't reach the account: {e}"));
+                            Busy::Failed(t!("account.unreachable", error = e));
                     }
                 }
                 cx.notify();
@@ -245,7 +242,7 @@ impl MusicApp {
         self.settings.update(cx, |panel, cx| {
             panel.update_library(|l| l.account = Some(config), cx)
         });
-        self.store.account.status = Busy::Working("Switching…".into());
+        self.store.account.status = Busy::Working(t!("account.switching").into());
         let Some(auth) = self.store.account.auth() else {
             return;
         };
@@ -261,11 +258,12 @@ impl MusicApp {
                     this.settings.update(cx, |panel, cx| {
                         panel.update_library(|l| l.account = Some(config), cx)
                     });
-                    notify(window, cx, format!("Now using {name}"));
+                    notify(window, cx, t!("account.toast.switched", name = name));
                     this.sync_youtube_library(window, cx);
                 }
                 Err(e) => {
-                    this.store.account.status = Busy::Failed(format!("Switching failed: {e}"));
+                    this.store.account.status =
+                        Busy::Failed(t!("account.switch_failed", error = e));
                     cx.notify();
                 }
             })
@@ -282,11 +280,11 @@ impl MusicApp {
         }
         let (Some(auth), Some(library)) = (self.store.account.auth(), self.store.library.clone())
         else {
-            notify(window, cx, "Sign in to YouTube Music first.");
+            notify(window, cx, t!("account.sign_in_first"));
             return;
         };
-        let progress = Arc::new(Mutex::new(String::from("Starting…")));
-        self.store.account.sync = Busy::Working("Starting…".into());
+        let progress = Arc::new(Mutex::new(String::from(t!("account.sync.starting"))));
+        self.store.account.sync = Busy::Working(t!("account.sync.starting").into());
         let shared = progress.clone();
         let executor = cx.background_executor().clone();
         let ticker = cx.spawn(async move |this, cx| {
@@ -323,7 +321,11 @@ impl MusicApp {
                 this.store.account.sync = if report.errors.is_empty() {
                     Busy::Done(summary.clone())
                 } else {
-                    Busy::Failed(format!("{summary}. Errors: {}", report.errors.join("; ")))
+                    Busy::Failed(t!(
+                        "account.sync.failed",
+                        summary = summary,
+                        errors = report.errors.join("; ")
+                    ))
                 };
                 if report.errors.len() < 5 {
                     let now = now_ms();
@@ -343,7 +345,7 @@ impl MusicApp {
                 }
                 // Liked flags for the hearts.
                 this.reload_liked_flags();
-                notify(window, cx, format!("YouTube Music sync: {summary}"));
+                notify(window, cx, t!("account.toast.synced", summary = summary));
                 this.library_changed(cx);
             })
             .ok();
@@ -374,7 +376,7 @@ impl MusicApp {
     ) {
         let remote = self.account_client();
         self.with_library(
-            "Subscribing",
+            t!("account.action.subscribing"),
             move |lib| {
                 lib.upsert_artist(&artist)?;
                 lib.set_artist_bookmarked(&artist.id, subscribed)?;
@@ -390,9 +392,9 @@ impl MusicApp {
             },
             move |_, name, window, cx| {
                 let message = if subscribed {
-                    format!("Subscribed to {name}")
+                    t!("account.toast.subscribed", artist = name)
                 } else {
-                    format!("Unsubscribed from {name}")
+                    t!("account.toast.unsubscribed", artist = name)
                 };
                 notify(window, cx, message);
             },
@@ -414,9 +416,13 @@ struct SyncReport {
 
 impl SyncReport {
     fn summary(&self) -> String {
-        format!(
-            "{} liked songs, {} library songs, {} albums, {} artists, {} playlists",
-            self.liked, self.songs, self.albums, self.artists, self.playlists
+        t!(
+            "account.sync.summary",
+            liked = tp!("account.sync.liked", self.liked),
+            songs = tp!("account.sync.songs", self.songs),
+            albums = tp!("account.sync.albums", self.albums),
+            artists = tp!("account.sync.artists", self.artists),
+            playlists = tp!("account.sync.playlists", self.playlists),
         )
     }
 }
@@ -470,10 +476,12 @@ fn sync_library(lib: &Library, it: &InnerTube, progress: &dyn Fn(&str)) -> SyncR
     let mut report = SyncReport::default();
     let now = now_ms();
     let fail = |what: &str, e: music_core::Error, report: &mut SyncReport| {
-        report.errors.push(format!("{what}: {e}"));
+        report
+            .errors
+            .push(t!("account.sync.error", part = what, error = e));
     };
 
-    progress("Liked songs…");
+    progress(t!("account.sync.step.liked"));
     match it.liked_songs().and_then(|mut page| {
         let mut tracks: Vec<Track> = page.tracks.drain(..).map(|e| e.track).collect();
         let mut continuation = page.continuation.take();
@@ -507,13 +515,13 @@ fn sync_library(lib: &Library, it: &InnerTube, progress: &dyn Fn(&str)) -> SyncR
             })();
             match result {
                 Ok(()) => report.liked = tracks.len(),
-                Err(e) => fail("liked songs", e, &mut report),
+                Err(e) => fail(t!("account.sync.part.liked"), e, &mut report),
             }
         }
-        Err(e) => fail("liked songs", e, &mut report),
+        Err(e) => fail(t!("account.sync.part.liked"), e, &mut report),
     }
 
-    progress("Library songs…");
+    progress(t!("account.sync.step.songs"));
     match all_items(it, || it.library_songs()) {
         Ok(items) => {
             let tracks: Vec<&Track> = items
@@ -529,13 +537,13 @@ fn sync_library(lib: &Library, it: &InnerTube, progress: &dyn Fn(&str)) -> SyncR
                 .try_for_each(|(i, t)| lib.set_in_library_at(t, Some(now - i as i64)));
             match result {
                 Ok(()) => report.songs = tracks.len(),
-                Err(e) => fail("library songs", e, &mut report),
+                Err(e) => fail(t!("account.sync.part.songs"), e, &mut report),
             }
         }
-        Err(e) => fail("library songs", e, &mut report),
+        Err(e) => fail(t!("account.sync.part.songs"), e, &mut report),
     }
 
-    progress("Albums…");
+    progress(t!("account.sync.step.albums"));
     match all_items(it, || it.library_albums()) {
         Ok(items) => {
             let result = (|| {
@@ -574,13 +582,13 @@ fn sync_library(lib: &Library, it: &InnerTube, progress: &dyn Fn(&str)) -> SyncR
             })();
             match result {
                 Ok(n) => report.albums = n,
-                Err(e) => fail("albums", e, &mut report),
+                Err(e) => fail(t!("account.sync.part.albums"), e, &mut report),
             }
         }
-        Err(e) => fail("albums", e, &mut report),
+        Err(e) => fail(t!("account.sync.part.albums"), e, &mut report),
     }
 
-    progress("Artists…");
+    progress(t!("account.sync.step.artists"));
     match all_items(it, || it.library_subscriptions()) {
         Ok(items) => {
             let result = (|| {
@@ -607,13 +615,13 @@ fn sync_library(lib: &Library, it: &InnerTube, progress: &dyn Fn(&str)) -> SyncR
             })();
             match result {
                 Ok(n) => report.artists = n,
-                Err(e) => fail("artists", e, &mut report),
+                Err(e) => fail(t!("account.sync.part.artists"), e, &mut report),
             }
         }
-        Err(e) => fail("artists", e, &mut report),
+        Err(e) => fail(t!("account.sync.part.artists"), e, &mut report),
     }
 
-    progress("Playlists…");
+    progress(t!("account.sync.step.playlists"));
     match all_items(it, || it.library_playlists()) {
         Ok(items) => {
             let mut remote = HashSet::new();
@@ -627,7 +635,12 @@ fn sync_library(lib: &Library, it: &InnerTube, progress: &dyn Fn(&str)) -> SyncR
                 .collect();
             let total = playlists.len();
             for (n, p) in playlists.into_iter().enumerate() {
-                progress(&format!("Playlist {}/{total}: {}", n + 1, p.title));
+                progress(&t!(
+                    "account.sync.step.playlist",
+                    current = n + 1,
+                    total = total,
+                    title = p.title
+                ));
                 remote.insert(p.playlist_id.clone());
                 let result =
                     playlist_rows(it, &p.playlist_id).and_then(|(editable, thumb, rows)| {
@@ -643,7 +656,11 @@ fn sync_library(lib: &Library, it: &InnerTube, progress: &dyn Fn(&str)) -> SyncR
                     });
                 match result {
                     Ok(()) => report.playlists += 1,
-                    Err(e) => fail(&format!("playlist “{}”", p.title), e, &mut report),
+                    Err(e) => fail(
+                        &t!("account.sync.part.playlist", title = p.title),
+                        e,
+                        &mut report,
+                    ),
                 }
             }
             // Mirrors of playlists that left the account.
@@ -653,12 +670,12 @@ fn sync_library(lib: &Library, it: &InnerTube, progress: &dyn Fn(&str)) -> SyncR
                         && !remote.contains(browse_id)
                         && let Err(e) = lib.delete_playlist(&playlist.id)
                     {
-                        fail("removing a playlist", e, &mut report);
+                        fail(t!("account.sync.part.removing_playlist"), e, &mut report);
                     }
                 }
             }
         }
-        Err(e) => fail("playlists", e, &mut report),
+        Err(e) => fail(t!("account.sync.part.playlists"), e, &mut report),
     }
     report
 }

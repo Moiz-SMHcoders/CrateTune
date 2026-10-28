@@ -1,0 +1,64 @@
+# First-run guide (src/settings/onboarding.rs): an overlay card with six steps.
+
+# ---- Step titles (large heading of the card; the first step shows
+# onboarding.welcome_title instead)
+onboarding.step.welcome = Welcome
+onboarding.step.content = Language & region
+# Step about the theme and text size.
+onboarding.step.theme = Look
+onboarding.step.account = YouTube Music account
+onboarding.step.local_files = Music on this computer
+onboarding.step.privacy = Privacy & limitations
+onboarding.welcome_title = Welcome to {app}
+# Small line above the heading. {step} = current step number, {total} = number of steps.
+onboarding.step_of = Step {step} of {total}
+
+# ---- Step subtitles (one paragraph under the heading)
+onboarding.subtitle.welcome = A fast, native player for YouTube Music: browse and search, lyrics that follow the song, a library with history and stats, your own music files, and song recognition. A few choices and you're set — everything here can be changed later in Settings.
+onboarding.subtitle.content = Which language YouTube Music uses for titles and recommendations, and which country's charts and releases you see.
+onboarding.subtitle.theme = Pick a theme and text size.
+onboarding.subtitle.account = Optional. Signing in brings your likes, library, playlists and personalized recommendations. Everything else works without an account.
+onboarding.subtitle.local_files = Optional. Add folders with music files; they are scanned into your library and play alongside YouTube Music.
+onboarding.subtitle.privacy = What to know before you start.
+
+# ---- Footer buttons
+onboarding.skip = Skip setup
+# Button on the first step.
+onboarding.get_started = Get started
+# Button on the last step (closes the guide).
+onboarding.finish = Finish
+# Button on the optional steps (account, music folders).
+onboarding.next_or_skip = Next (or skip)
+
+# ---- Welcome step: feature list (short title + one line)
+onboarding.feature.browse.title = Browse & search
+onboarding.feature.browse.text = Home feed, charts, moods, new releases, artists, albums and playlists.
+onboarding.feature.lyrics.title = Lyrics
+onboarding.feature.lyrics.text = Word-by-word synced lyrics from many providers, with translation and romanization.
+onboarding.feature.library.title = Library
+onboarding.feature.library.text = Likes, playlists, listening history, stats and downloads — stored on this computer.
+onboarding.feature.recognize.title = Recognize music
+# Keep the keyboard shortcut ⇧⌘R as it is.
+onboarding.feature.recognize.text = Identify a song playing around you (⇧⌘R) and play it right away.
+
+# ---- Look step
+onboarding.theme.group = Theme
+onboarding.theme.dynamic_note = Dynamic takes its accent colour from the artwork of the song playing.
+onboarding.theme.text_size = Text size
+
+# ---- Music on this computer step
+onboarding.local.group = Music folders
+onboarding.local.empty = No folders yet.
+# Button (opens a folder picker).
+onboarding.local.add = Add folder…
+onboarding.local.note = Scan the folders now or later; manage them under Local files.
+
+# ---- Privacy & limitations step (title + paragraph each)
+onboarding.privacy.streaming.title = How songs are streamed
+onboarding.privacy.streaming.text = Full songs come from YouTube's TV client or its web client with a PoToken (an anti-abuse token, made in a hidden browser view on macOS). YouTube makes new streams wait a few seconds; the app starts from a short preview meanwhile. If YouTube changes something, songs fall back to ~1-minute previews (marked in the player). Settings → Playback → YouTube streams chooses the route.
+onboarding.privacy.data.title = Your data stays here
+onboarding.privacy.data.text = Library, history, stats and settings are stored on this computer. Passwords, API keys and the YouTube sign-in cookie go to the system keychain. Pause or clear listen and search history any time under Settings → Privacy.
+onboarding.privacy.recipients.title = Who gets what
+onboarding.privacy.recipients.text = YouTube Music receives your searches and plays (and your account cookie when signed in). Lyrics providers receive song titles. Song recognition sends an audio fingerprint — not the recording — to Shazam. Scrobbling and Discord only run if you set them up.
+onboarding.privacy.independent.title = Independent project
+onboarding.privacy.independent.text = Not affiliated with YouTube, Google or Shazam. Free software under the GPL-3.0.

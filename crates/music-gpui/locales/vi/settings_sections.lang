@@ -1,0 +1,17 @@
+settings.section.appearance = Giao diện
+settings.section.playback = Phát lại
+settings.section.modules = Mô-đun
+settings.section.equalizer = Bộ cân bằng
+settings.section.lyrics = Lời bài hát
+settings.section.content = Nội dung & khu vực
+settings.section.network = Mạng
+settings.section.privacy = Quyền riêng tư
+settings.section.storage = Lưu trữ
+settings.section.account = Tài khoản
+settings.section.integrations = Scrobbling & Discord
+settings.section.sponsorblock = SponsorBlock
+settings.section.together = Music Together
+settings.section.spotify = Nhập từ Spotify
+settings.section.ai_filter = Bộ lọc nội dung AI
+settings.section.cast = Chromecast
+settings.section.about = Giới thiệu

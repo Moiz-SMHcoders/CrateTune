@@ -1,0 +1,34 @@
+menu.about = {app} 정보
+menu.settings = 설정…
+menu.services = 서비스
+menu.hide = {app} 가리기
+menu.hide_others = 기타 가리기
+menu.show_all = 모두 보기
+menu.quit = {app} 종료
+menu.edit = 편집
+menu.undo = 실행 취소
+menu.redo = 실행 복귀
+menu.cut = 오려두기
+menu.copy = 복사하기
+menu.paste = 붙여넣기
+menu.select_all = 전체 선택
+menu.search = 검색
+menu.view = 보기
+menu.back = 뒤로
+menu.forward = 앞으로
+menu.recognize = 노래 인식
+menu.controls = 컨트롤
+menu.play_pause = 재생/일시정지
+menu.repeat = 반복(끔/전체/한 곡)
+menu.volume_up = 음량 높이기
+menu.volume_down = 음량 낮추기
+menu.window = 윈도우
+menu.minimize = 최소화
+menu.zoom = 확대/축소
+
+# Menu-bar item
+tray.next = 다음
+tray.previous = 이전
+tray.mini_player = 미니 플레이어
+tray.show_window = {app} 보기
+tray.quit = {app} 종료

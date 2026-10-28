@@ -1,0 +1,121 @@
+# Settings: Account, Network, About, panel, update check, sign-in window (Ukrainian).
+
+# ---- Account
+settings.account.cookie_title = Вхід за допомогою cookie браузера
+settings.account.cookie_steps = 1. Відкрийте music.youtube.com у браузері та ввійдіть.\n2. Відкрийте інструменти розробника (⌥⌘I у Safari / Chrome) → Network і перезавантажте сторінку.\n3. Клацніть будь-який запит до music.youtube.com (напр., «browse»), знайдіть «Cookie» в розділі Request Headers і скопіюйте все значення.\n4. Вставте його нижче. Його буде збережено у сховищі ключів ОС і надіслано лише YouTube.
+settings.account.cookie_index = Індекс облікового запису Google (якщо ви ввійшли в кілька):
+settings.account.not_signed_in = Вхід не виконано. Усе працює анонімно; після входу ваші улюблені пісні, збережені альбоми, підписки та плейлисти синхронізуються в бібліотеку, а вподобання й зміни плейлистів передаються назад у YouTube Music.
+settings.account.sign_in_google = Увійти через Google…
+settings.account.paste_cookie = Вставити cookie…
+settings.account.google_refused = Якщо Google відхиляє вікно входу («Цей браузер або застосунок може бути незахищеним»), скористайтеся кнопкою «Вставити cookie».
+settings.account.last_synced = Остання синхронізація: {date}
+settings.account.not_synced = Ще не синхронізовано
+settings.account.sync_now = Синхронізувати
+settings.account.syncing = Синхронізація…
+settings.account.sync_group = Синхронізація бібліотеки
+settings.account.sync_row = Синхронізувати бібліотеку YouTube Music
+settings.account.sync_row_desc = Улюблені пісні, пісні з бібліотеки, збережені альбоми, підписки, плейлисти.
+settings.account.accounts_group = Облікові записи
+settings.account.channels = Канали (облікові записи брендів) цього облікового запису Google:
+settings.account.google_index = Обліковий запис Google
+settings.account.google_index_desc = Коли cookie містить кілька облікових записів Google: який із них (0 = перший).
+settings.account.cookie_note = Для входу використовується cookie сеансу вашого браузера для music.youtube.com. Він зберігається у сховищі ключів ОС і надсилається лише YouTube. Функції облікового запису створено на основі веб-API YouTube, але ще не перевірено на справжньому обліковому записі.
+
+# ---- About
+settings.about.show_welcome = Показати вітальний посібник
+settings.about.version_summary = Версія {version} · {summary}
+settings.about.summary = Нативний настільний клієнт для YouTube Music
+settings.about.not_affiliated = Не пов'язаний із YouTube чи Google і не схвалений або спонсорований ними.
+settings.about.license = Ліцензія
+settings.about.license_notice = Ця програма є вільним програмним забезпеченням: ви можете поширювати та/або змінювати її на умовах GNU General Public License версії 3. Вона поширюється БЕЗ БУДЬ-ЯКИХ ГАРАНТІЙ; подробиці див. у ліцензії.
+settings.about.credits = Подяки
+settings.about.credit.archivetune = Функції та екрани перенесено з {project} (GPL-3.0), © Rukamori and contributors. Це незалежний проєкт.
+settings.about.credit.hummingbird = Еквалайзер, системне керування медіа, скроблінг і присутність у Discord перенесено з Hummingbird (Apache-2.0), © Hummingbird contributors.
+settings.about.credit.recognition_title = Розпізнавання пісень
+settings.about.credit.recognition = Shazam-сумісні аудіовідбитки перенесено з shazamkit проєкту {project} (GPL-3.0), що використовує формат SongRec. Не пов'язано з Shazam чи Apple.
+settings.about.credit.libraries_title = Бібліотеки
+settings.about.credit.libraries = GPUI і gpui-component (Apache-2.0), Symphonia і rodio, іконки Lucide (ISC), тексти пісень LRCLIB.
+
+# ---- Update check
+update.group = Оновлення
+update.releases_from = Випуски з github.com/{repo}
+update.checking = Перевірка…
+update.up_to_date_version = У вас найновіша версія ({version}).
+update.available_version = Доступна версія {version}.
+update.check_failed = Не вдалося перевірити: {error}
+update.check_now = Перевірити
+update.download = Завантажити…
+update.no_release = немає опублікованого випуску
+update.available_toast = Доступна версія {app} {version} («Налаштування → Про застосунок»)
+update.up_to_date_toast = {app} оновлено до найновішої версії
+
+# ---- Network
+settings.network.proxy = Проксі
+settings.network.proxy_off = Вимк.
+settings.network.host = Хост
+settings.network.port = Порт
+settings.network.user = Користувач
+settings.network.password = Пароль
+settings.network.doh_url = URL DoH
+settings.network.host_placeholder = proxy.example.com або 127.0.0.1
+settings.network.optional = необов'язково
+settings.network.test_connection = Перевірити з'єднання
+settings.network.test_dns = Перевірити DNS
+settings.network.using_proxy = Використовується {url}
+settings.network.direct = Пряме з'єднання (без проксі)
+settings.network.status_with_doh = {proxy} · DNS-over-HTTPS ({server})
+settings.network.testing = Перевірка…
+settings.network.test_ok = Підключено до YouTube за {ms} мс
+settings.network.test_failed = Помилка з'єднання: {error}
+settings.network.lookup_failed = Не вдалося визначити адресу: {error}
+settings.network.looking_up = Визначення адреси…
+settings.network.dns_ok = {host} → {addresses} через {via} за {ms} мс
+settings.network.dns_via_doh = DNS-over-HTTPS
+settings.network.dns_via_cache = DNS-over-HTTPS (з кешу)
+settings.network.dns_via_system = системний резолвер
+settings.network.proxy_note = Застосовується до всього: YouTube Music, аудіопотоків, обкладинок, текстів і скроблінгу. SOCKS5h визначає імена хостів через проксі. Пароль зберігається у сховищі ключів.
+settings.network.dns = DNS
+settings.network.dns_system = Системний
+settings.network.dns_custom = Власний
+settings.network.dns_fallback = Використовувати системний резолвер, якщо DoH не працює
+settings.network.dns_note = DNS-over-HTTPS (RFC 8484) визначає імена хостів через зашифроване з'єднання HTTPS замість звичайного DNS. Відповіді кешуються на час їхнього TTL. З проксі SOCKS5h імена визначає сам проксі. До Quad9 звертаються через порт HTTP/1.1 5053, який деякі мережі блокують.
+settings.network.error.port_number = Порт має бути числом (1–65535).
+settings.network.error.doh_invalid = Неправильний URL DNS-over-HTTPS.
+settings.network.error.proxy_invalid = Адреса проксі неправильна для цього типу проксі.
+settings.network.error.doh_https = URL DNS-over-HTTPS має починатися з https://.
+settings.network.error.doh_invalid_detail = Неправильний URL DNS-over-HTTPS: {error}.
+settings.network.error.host_missing = Введіть хост проксі.
+settings.network.error.host_invalid = Хост має бути лише іменем або адресою (без схеми, шляху й пробілів).
+settings.network.error.port_missing = Введіть порт від 1 до 65535.
+settings.network.error.socks4_auth = SOCKS4 не підтримує паролі; залиште ім'я користувача порожнім.
+
+# ---- Settings panel
+settings.panel.placeholder.api_key = Ключ API
+settings.panel.placeholder.shared_secret = Спільний секрет
+settings.panel.placeholder.user_token = Токен користувача
+settings.panel.placeholder.application_id = ID застосунку
+settings.panel.lastfm_missing = Спершу введіть ключ API і спільний секрет.
+settings.panel.lastfm_requesting = Запит токена…
+settings.panel.lastfm_finishing = Завершення…
+settings.panel.lb_missing = Спершу вставте свій токен користувача.
+settings.panel.secrets.backend_and_file = {backend} + файл налаштувань (0600)
+settings.panel.secrets.file_keychain_disabled = файл налаштувань (0600; сховище ключів вимкнено)
+settings.panel.secrets.file_keychain_read_failed = файл налаштувань (0600; не вдалося прочитати сховище ключів)
+settings.panel.secrets.file_keychain_unavailable = файл налаштувань (0600; сховище ключів недоступне)
+
+# ---- Credential stores
+secrets.backend.macos = В'язка ключів macOS
+secrets.backend.windows = Диспетчер облікових даних Windows
+secrets.backend.secret_service = Secret Service
+
+# ---- Settings file problems
+settings.file.no_config_dir = немає теки конфігурації; налаштування не зберігаються
+settings.file.save_failed = не вдалося зберегти: {error}
+settings.file.read_failed = читання {path}: {error}
+settings.file.invalid_moved = {path} недійсний ({error}); переміщено в {backup}
+
+# ---- Google sign-in window
+login.window_title = Вхід у YouTube Music
+login.instructions = Увійдіть за допомогою облікового запису Google. Це вікно закриється, щойно відкриється YouTube Music.
+login.webview_failed = Не вдалося створити вебперегляд ({error}). Скористайтеся кнопкою «Вставити cookie».
+login.checking = Вхід виконано — перевірка облікового запису…

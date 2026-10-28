@@ -1,0 +1,74 @@
+# ---- Header
+np.close_tooltip = Tutup (Esc)
+np.header = SEDANG DIPUTAR
+np.demo_clock = Jam demo
+np.buffering = Buffering…
+np.preview = Pratinjau
+np.speed = {speed}×
+np.sleep_tooltip = Pengatur waktu tidur
+np.layout_tooltip = Desain dan latar
+np.menu.design = Desain
+np.menu.background = Latar
+
+# ---- Player
+np.up_next = Berikutnya
+np.playing_from = DIPUTAR DARI
+np.your_queue = Antrean Anda
+np.of_total = dari {total}
+np.editorial.header_album = SEDANG DIPUTAR  ·  {album}
+np.editorial.play = PUTAR
+np.editorial.pause = JEDA
+np.editorial.loading = MEMUAT
+np.queue.title = BERIKUTNYA
+np.queue.more.other = +{count} lagi
+np.queue.empty = Antrean kosong. Tambahkan lagu dari daftar, atau nyalakan putar otomatis.
+
+# ---- Lyrics pane
+lyrics.nothing_playing = Tidak ada yang diputar
+lyrics.loading = Memuat lirik…
+lyrics.missing_title = Tidak ada lirik
+lyrics.missing_detail = Tidak ada penyedia lirik aktif yang memiliki lagu ini.
+lyrics.failed = Tidak dapat memuat lirik
+lyrics.translating = Menerjemahkan…
+lyrics.translation_failed = Terjemahan gagal: {error}
+lyrics.kind.word = Sinkron per kata
+lyrics.kind.line = Sinkron per baris
+lyrics.kind.plain = Tidak sinkron
+lyrics.source = {provider} · {kind}
+lyrics.select_hint.other = Pilih hingga {count} baris untuk kartu
+lyrics.selected.other = {count} baris dipilih
+lyrics.create_card = Buat kartu…
+lyrics.share_tooltip = Bagikan lirik sebagai kartu
+lyrics.translation_on = Terjemahan: nyala
+lyrics.translation_off = Terjemahan: mati
+lyrics.reload_tooltip = Cari lagi di penyedia
+
+# ---- Lyrics card dialog
+card.dialog_title = Kartu lirik
+card.row.background = Latar
+card.row.text = Teks
+card.row.size = Ukuran
+card.row.shape = Bentuk
+card.row.cover = Sampul
+card.cover.show = Tampilkan
+card.cover.hide = Sembunyikan
+card.save = Simpan gambar…
+card.copy = Salin gambar
+card.copying = Menyalin…
+card.copied = Disalin ke papan klip
+card.saved = Tersimpan {path}
+card.save_failed = Tidak dapat menyimpan: {error}
+card.draw_failed = Tidak dapat menggambar kartu: {error}
+card.aspect.square = Persegi
+card.aspect.portrait = Potret
+card.aspect.story = Story
+card.bg.blur = Sampul buram
+card.bg.album = Warna album
+card.bg.dark = Gelap
+card.bg.light = Terang
+card.align.left = Kiri
+card.align.center = Tengah
+card.align.right = Kanan
+card.size.small = Kecil
+card.size.medium = Sedang
+card.size.large = Besar

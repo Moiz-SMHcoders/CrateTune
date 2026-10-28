@@ -153,7 +153,11 @@ impl MusicApp {
             watch: self.radio.watch.take(),
             ..RadioState::default()
         };
-        notify(window, cx, format!("Starting radio from “{}”", track.title));
+        notify(
+            window,
+            cx,
+            t!("radio.toast.starting_from", title = track.title),
+        );
         self.fetch_radio(false, cx);
         cx.notify();
     }
@@ -171,7 +175,7 @@ impl MusicApp {
             watch: self.radio.watch.take(),
             ..RadioState::default()
         };
-        notify(window, cx, format!("Starting radio: {label}"));
+        notify(window, cx, t!("radio.toast.starting", name = label));
         self.fetch_radio(true, cx);
     }
 
@@ -312,12 +316,12 @@ impl MusicApp {
                         Loaded::Radio(..) => Vec::new(),
                     };
                     if tracks.is_empty() {
-                        notify(window, cx, "Nothing to play here.");
+                        notify(window, cx, t!("radio.nothing_to_play"));
                         return;
                     }
                     this.play_tracks(tracks, action, window, cx);
                 }
-                Err(e) => notify(window, cx, format!("Couldn't load: {e}")),
+                Err(e) => notify(window, cx, t!("radio.load_failed", error = e)),
             })
             .ok();
         })
@@ -341,8 +345,8 @@ impl MusicApp {
                 Ok(queue) if !queue.tracks.is_empty() => {
                     this.play_tracks(filter.tracks(queue.tracks), action, window, cx)
                 }
-                Ok(_) => notify(window, cx, "Nothing to play here."),
-                Err(e) => notify(window, cx, format!("Couldn't load: {e}")),
+                Ok(_) => notify(window, cx, t!("radio.nothing_to_play")),
+                Err(e) => notify(window, cx, t!("radio.load_failed", error = e)),
             })
             .ok();
         })
@@ -394,7 +398,7 @@ fn load_collection(
     collection: &Collection,
     action: CollectionAction,
 ) -> music_core::Result<Loaded> {
-    let no_radio = || music_core::Error::Parse("no radio for this item".into());
+    let no_radio = || music_core::Error::Parse("no radio for this item".into()); // i18n-ignore
     match (collection, action) {
         (Collection::Album { browse_id, .. }, CollectionAction::Radio) => {
             let album = client.album(browse_id)?;
@@ -404,9 +408,10 @@ fn load_collection(
         (Collection::Album { browse_id, .. }, _) => Ok(Loaded::AlbumTracks(
             client.album_complete(browse_id)?.tracks,
         )),
-        (Collection::Playlist { id }, CollectionAction::Radio) => {
-            Ok(Loaded::Radio(playlist_radio(id), "playlist".into()))
-        }
+        (Collection::Playlist { id }, CollectionAction::Radio) => Ok(Loaded::Radio(
+            playlist_radio(id),
+            t!("radio.playlist_label").into(),
+        )),
         (Collection::Playlist { id }, _) => {
             let page = client.playlist_complete(id, PLAYLIST_PAGES)?;
             Ok(Loaded::Tracks(

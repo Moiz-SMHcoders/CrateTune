@@ -1,0 +1,150 @@
+# Shared strings — Indonesian (Bahasa Indonesia).
+
+locale.native_name = Bahasa Indonesia
+
+# ---- Actions
+common.play = Putar
+common.pause = Jeda
+common.shuffle = Acak
+common.radio = Radio
+common.start_radio = Mulai radio
+common.play_next = Putar berikutnya
+common.add_to_queue = Tambah ke antrean
+common.add_to_playlist = Tambah ke playlist…
+common.like = Suka
+common.remove_from_liked = Hapus dari lagu yang disukai
+common.download = Unduh
+common.remove_download = Hapus unduhan
+common.go_to_artist = Buka artis
+common.go_to_album = Buka album
+common.open = Buka
+common.cancel = Batal
+common.close = Tutup
+common.retry = Coba lagi
+common.remove = Hapus
+common.delete = Hapus
+common.clear = Bersihkan
+common.save = Simpan
+common.apply = Terapkan
+common.reset = Setel ulang
+common.done = Selesai
+common.copy = Salin
+common.rename = Ganti nama
+common.refresh = Segarkan
+common.install = Instal
+common.update = Perbarui
+common.import = Impor
+common.search = Cari
+common.search_placeholder = Cari…
+common.see_all = Lihat semua
+common.load_more = Muat lainnya
+common.show_more = Tampilkan lainnya
+common.back = Kembali
+common.next = Berikutnya
+common.connect = Hubungkan
+common.disconnect = Putuskan
+common.sign_in = Masuk
+common.sign_out = Keluar
+common.select = Pilih
+common.select_all = Pilih semua
+common.settings = Pengaturan
+
+# ---- States
+common.loading = Memuat…
+common.saving = Menyimpan…
+common.downloading = Mengunduh…
+common.off = Mati
+common.on = Nyala
+common.none = Tidak ada
+common.custom = Kustom
+common.automatic = Otomatis
+common.not_playing = Tidak diputar
+common.not_connected = Tidak terhubung
+common.nothing_here = Tidak ada apa-apa di sini
+
+# ---- Things
+common.song = Lagu
+common.video = Video
+common.artist = Artis
+common.album = Album
+common.playlist = Playlist
+common.podcast = Podcast
+common.episode = Episode
+common.queue = Antrean
+common.now_playing = Sedang Diputar
+common.youtube_music = YouTube Music
+
+common.songs.other = {count} lagu
+common.plays.other = {count} pemutaran
+common.selected.other = {count} dipilih
+
+# ---- Sidebar
+nav.home = Beranda
+nav.explore = Jelajahi
+nav.charts = Tangga lagu
+nav.moods = Suasana & genre
+nav.new_releases = Rilis baru
+nav.recognize = Kenali lagu
+nav.library_group = Pustaka
+nav.library = Pustaka
+nav.history = Riwayat
+nav.stats = Statistik
+nav.downloads = Unduhan
+nav.local_files = File lokal
+nav.import = Impor & ekspor
+nav.together = Dengar bersama
+nav.settings = Pengaturan
+
+# ---- Dates
+date.full = {day} {month} {year}
+date.today = Hari ini
+date.yesterday = Kemarin
+date.month_in_date.1 = Januari
+date.month_in_date.2 = Februari
+date.month_in_date.3 = Maret
+date.month_in_date.4 = April
+date.month_in_date.5 = Mei
+date.month_in_date.6 = Juni
+date.month_in_date.7 = Juli
+date.month_in_date.8 = Agustus
+date.month_in_date.9 = September
+date.month_in_date.10 = Oktober
+date.month_in_date.11 = November
+date.month_in_date.12 = Desember
+date.month_short.1 = Jan
+date.month_short.2 = Feb
+date.month_short.3 = Mar
+date.month_short.4 = Apr
+date.month_short.5 = Mei
+date.month_short.6 = Jun
+date.month_short.7 = Jul
+date.month_short.8 = Agu
+date.month_short.9 = Sep
+date.month_short.10 = Okt
+date.month_short.11 = Nov
+date.month_short.12 = Des
+date.weekday_short.1 = Sen
+date.weekday_short.2 = Sel
+date.weekday_short.3 = Rab
+date.weekday_short.4 = Kam
+date.weekday_short.5 = Jum
+date.weekday_short.6 = Sab
+date.weekday_short.7 = Min
+
+# ---- Durations and relative times
+time.just_now = baru saja
+time.seconds_ago.other = {count} dtk lalu
+time.minutes_ago.other = {count} mnt lalu
+time.hours_ago.other = {count} jam lalu
+time.days_ago.other = {count} hari lalu
+time.hours_minutes = {hours} j {minutes} mnt
+time.minutes = {minutes} mnt
+time.seconds = {seconds} dtk
+
+# ---- File sizes
+units.size = {value} {unit}
+units.b = B
+units.kb = KB
+units.mb = MB
+units.gb = GB
+units.tb = TB

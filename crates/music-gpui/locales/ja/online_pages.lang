@@ -1,0 +1,54 @@
+# Online browse pages (ja).
+
+# ---- Home
+home.recent.title = このセッションで再生
+home.recent.subtitle = もう一度聴く
+
+# ---- Explore
+explore.new_releases_detail = 最新のアルバムとシングル
+explore.charts_detail = 国別の人気曲
+explore.moods_detail = あらゆる場面のプレイリスト
+
+# ---- Charts
+charts.country_placeholder = 国
+charts.search_countries = 国を検索…
+charts.empty.title = チャートはありません
+charts.empty.detail = この国の YouTube Music チャートはありません。
+
+# ---- Moods & genres
+moods.empty = この地域のムードやジャンルは YouTube Music から返されませんでした。
+
+# ---- New releases
+new_releases.subtitle = 新しいアルバムとシングル
+new_releases.empty.title = 新着はありません
+new_releases.empty.detail = この地域の新リリースは YouTube Music から返されませんでした。
+
+# ---- Browse pages
+browse.empty = このページにはプレイリストや曲がありません（またはすべて除外されています）。
+
+# ---- Album
+album.empty.title = 再生可能な曲はありません
+album.empty.detail = このアルバムには再生可能なトラックがありません（またはすべて除外されています）。
+
+# ---- Artist
+artist.subscribed = 登録済み
+artist.subscribe = 登録
+artist.subscribe_tooltip = YouTube Music でチャンネル登録（ライブラリにも保存）
+artist.subscribe_tooltip_signed_out = ライブラリに保存されます。YouTube Music で登録するにはログインしてください
+artist.items_empty = このページにリリースはありません（またはすべて除外されています）。
+
+# ---- Playlist
+playlist.change_cover = カバーを変更…
+playlist.empty.title = 曲がありません
+playlist.empty.detail = このプレイリストは空です（またはすべての曲が除外されています）。
+
+# ---- Podcast / episode
+podcast.episodes.other = {count}エピソード
+podcast.episodes_more.other = {count}+エピソード
+podcast.saved = 保存済み
+podcast.save = ライブラリに保存
+podcast.save_failed = ライブラリを更新できませんでした：{error}
+podcast.open_episode_page = エピソードのページを開く
+podcast.go_to_podcast = ポッドキャストへ移動
+podcast.empty.title = エピソードはありません
+podcast.empty.detail = この番組にはまだエピソードがありません。

@@ -1,0 +1,17 @@
+settings.section.appearance = Tampilan
+settings.section.playback = Pemutaran
+settings.section.modules = Modul
+settings.section.equalizer = Ekualiser
+settings.section.lyrics = Lirik
+settings.section.content = Konten & wilayah
+settings.section.network = Jaringan
+settings.section.privacy = Privasi
+settings.section.storage = Penyimpanan
+settings.section.account = Akun
+settings.section.integrations = Scrobbling & Discord
+settings.section.sponsorblock = SponsorBlock
+settings.section.together = Music Together
+settings.section.spotify = Impor Spotify
+settings.section.ai_filter = Filter konten AI
+settings.section.cast = Chromecast
+settings.section.about = Tentang

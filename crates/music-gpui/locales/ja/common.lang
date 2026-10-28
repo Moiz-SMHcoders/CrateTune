@@ -1,0 +1,150 @@
+# Shared strings (ja).
+
+locale.native_name = 日本語
+
+# ---- Actions
+common.play = 再生
+common.pause = 一時停止
+common.shuffle = シャッフル
+common.radio = ラジオ
+common.start_radio = ラジオを開始
+common.play_next = 次に再生
+common.add_to_queue = キューに追加
+common.add_to_playlist = プレイリストに追加…
+common.like = 高評価
+common.remove_from_liked = 高評価した曲から削除
+common.download = ダウンロード
+common.remove_download = ダウンロードを削除
+common.go_to_artist = アーティストへ移動
+common.go_to_album = アルバムへ移動
+common.open = 開く
+common.cancel = キャンセル
+common.close = 閉じる
+common.retry = 再試行
+common.remove = 削除
+common.delete = 削除
+common.clear = クリア
+common.save = 保存
+common.apply = 適用
+common.reset = リセット
+common.done = 完了
+common.copy = コピー
+common.rename = 名前を変更
+common.refresh = 更新
+common.install = インストール
+common.update = アップデート
+common.import = インポート
+common.search = 検索
+common.search_placeholder = 検索…
+common.see_all = すべて表示
+common.load_more = さらに読み込む
+common.show_more = もっと見る
+common.back = 戻る
+common.next = 次へ
+common.connect = 接続
+common.disconnect = 切断
+common.sign_in = ログイン
+common.sign_out = ログアウト
+common.select = 選択
+common.select_all = すべて選択
+common.settings = 設定
+
+# ---- States
+common.loading = 読み込み中…
+common.saving = 保存中…
+common.downloading = ダウンロード中…
+common.off = オフ
+common.on = オン
+common.none = なし
+common.custom = カスタム
+common.automatic = 自動
+common.not_playing = 再生していません
+common.not_connected = 未接続
+common.nothing_here = 何もありません
+
+# ---- Things
+common.song = 曲
+common.video = 動画
+common.artist = アーティスト
+common.album = アルバム
+common.playlist = プレイリスト
+common.podcast = ポッドキャスト
+common.episode = エピソード
+common.queue = キュー
+common.now_playing = 再生中
+common.youtube_music = YouTube Music
+
+common.songs.other = {count}曲
+common.plays.other = {count}回再生
+common.selected.other = {count}件選択中
+
+# ---- Sidebar
+nav.home = ホーム
+nav.explore = 探索
+nav.charts = チャート
+nav.moods = ムードとジャンル
+nav.new_releases = 新リリース
+nav.recognize = 曲を認識
+nav.library_group = ライブラリ
+nav.library = ライブラリ
+nav.history = 履歴
+nav.stats = 統計
+nav.downloads = ダウンロード
+nav.local_files = ローカルファイル
+nav.import = インポートとエクスポート
+nav.together = 一緒に聴く
+nav.settings = 設定
+
+# ---- Dates
+date.full = {year}年{month_num}月{day}日
+date.today = 今日
+date.yesterday = 昨日
+date.month_in_date.1 = 1月
+date.month_in_date.2 = 2月
+date.month_in_date.3 = 3月
+date.month_in_date.4 = 4月
+date.month_in_date.5 = 5月
+date.month_in_date.6 = 6月
+date.month_in_date.7 = 7月
+date.month_in_date.8 = 8月
+date.month_in_date.9 = 9月
+date.month_in_date.10 = 10月
+date.month_in_date.11 = 11月
+date.month_in_date.12 = 12月
+date.month_short.1 = 1月
+date.month_short.2 = 2月
+date.month_short.3 = 3月
+date.month_short.4 = 4月
+date.month_short.5 = 5月
+date.month_short.6 = 6月
+date.month_short.7 = 7月
+date.month_short.8 = 8月
+date.month_short.9 = 9月
+date.month_short.10 = 10月
+date.month_short.11 = 11月
+date.month_short.12 = 12月
+date.weekday_short.1 = 月
+date.weekday_short.2 = 火
+date.weekday_short.3 = 水
+date.weekday_short.4 = 木
+date.weekday_short.5 = 金
+date.weekday_short.6 = 土
+date.weekday_short.7 = 日
+
+# ---- Durations and relative times
+time.just_now = たった今
+time.seconds_ago.other = {count}秒前
+time.minutes_ago.other = {count}分前
+time.hours_ago.other = {count}時間前
+time.days_ago.other = {count}日前
+time.hours_minutes = {hours}時間{minutes}分
+time.minutes = {minutes}分
+time.seconds = {seconds}秒
+
+# ---- File sizes
+units.size = {value} {unit}
+units.b = B
+units.kb = KB
+units.mb = MB
+units.gb = GB
+units.tb = TB

@@ -1,0 +1,150 @@
+# Shared strings — Vietnamese (Tiếng Việt).
+
+locale.native_name = Tiếng Việt
+
+# ---- Actions
+common.play = Phát
+common.pause = Tạm dừng
+common.shuffle = Trộn bài
+common.radio = Radio
+common.start_radio = Bắt đầu radio
+common.play_next = Phát tiếp theo
+common.add_to_queue = Thêm vào danh sách chờ
+common.add_to_playlist = Thêm vào danh sách phát…
+common.like = Thích
+common.remove_from_liked = Xóa khỏi bài hát đã thích
+common.download = Tải xuống
+common.remove_download = Xóa bản tải xuống
+common.go_to_artist = Đến nghệ sĩ
+common.go_to_album = Đến album
+common.open = Mở
+common.cancel = Hủy
+common.close = Đóng
+common.retry = Thử lại
+common.remove = Xóa
+common.delete = Xóa
+common.clear = Xóa sạch
+common.save = Lưu
+common.apply = Áp dụng
+common.reset = Đặt lại
+common.done = Xong
+common.copy = Sao chép
+common.rename = Đổi tên
+common.refresh = Làm mới
+common.install = Cài đặt
+common.update = Cập nhật
+common.import = Nhập
+common.search = Tìm kiếm
+common.search_placeholder = Tìm kiếm…
+common.see_all = Xem tất cả
+common.load_more = Tải thêm
+common.show_more = Hiện thêm
+common.back = Quay lại
+common.next = Tiếp theo
+common.connect = Kết nối
+common.disconnect = Ngắt kết nối
+common.sign_in = Đăng nhập
+common.sign_out = Đăng xuất
+common.select = Chọn
+common.select_all = Chọn tất cả
+common.settings = Cài đặt
+
+# ---- States
+common.loading = Đang tải…
+common.saving = Đang lưu…
+common.downloading = Đang tải xuống…
+common.off = Tắt
+common.on = Bật
+common.none = Không có
+common.custom = Tùy chỉnh
+common.automatic = Tự động
+common.not_playing = Không phát
+common.not_connected = Chưa kết nối
+common.nothing_here = Không có gì ở đây
+
+# ---- Things
+common.song = Bài hát
+common.video = Video
+common.artist = Nghệ sĩ
+common.album = Album
+common.playlist = Danh sách phát
+common.podcast = Podcast
+common.episode = Tập
+common.queue = Danh sách chờ
+common.now_playing = Đang phát
+common.youtube_music = YouTube Music
+
+common.songs.other = {count} bài hát
+common.plays.other = {count} lượt phát
+common.selected.other = Đã chọn {count}
+
+# ---- Sidebar
+nav.home = Trang chủ
+nav.explore = Khám phá
+nav.charts = Bảng xếp hạng
+nav.moods = Tâm trạng & thể loại
+nav.new_releases = Mới phát hành
+nav.recognize = Nhận dạng
+nav.library_group = Thư viện
+nav.library = Thư viện
+nav.history = Lịch sử
+nav.stats = Thống kê
+nav.downloads = Tải xuống
+nav.local_files = Tệp cục bộ
+nav.import = Nhập & xuất
+nav.together = Nghe cùng nhau
+nav.settings = Cài đặt
+
+# ---- Dates
+date.full = {day} {month}, {year}
+date.today = Hôm nay
+date.yesterday = Hôm qua
+date.month_in_date.1 = tháng 1
+date.month_in_date.2 = tháng 2
+date.month_in_date.3 = tháng 3
+date.month_in_date.4 = tháng 4
+date.month_in_date.5 = tháng 5
+date.month_in_date.6 = tháng 6
+date.month_in_date.7 = tháng 7
+date.month_in_date.8 = tháng 8
+date.month_in_date.9 = tháng 9
+date.month_in_date.10 = tháng 10
+date.month_in_date.11 = tháng 11
+date.month_in_date.12 = tháng 12
+date.month_short.1 = Thg 1
+date.month_short.2 = Thg 2
+date.month_short.3 = Thg 3
+date.month_short.4 = Thg 4
+date.month_short.5 = Thg 5
+date.month_short.6 = Thg 6
+date.month_short.7 = Thg 7
+date.month_short.8 = Thg 8
+date.month_short.9 = Thg 9
+date.month_short.10 = Thg 10
+date.month_short.11 = Thg 11
+date.month_short.12 = Thg 12
+date.weekday_short.1 = T2
+date.weekday_short.2 = T3
+date.weekday_short.3 = T4
+date.weekday_short.4 = T5
+date.weekday_short.5 = T6
+date.weekday_short.6 = T7
+date.weekday_short.7 = CN
+
+# ---- Durations and relative times
+time.just_now = vừa xong
+time.seconds_ago.other = {count} giây trước
+time.minutes_ago.other = {count} phút trước
+time.hours_ago.other = {count} giờ trước
+time.days_ago.other = {count} ngày trước
+time.hours_minutes = {hours} giờ {minutes} phút
+time.minutes = {minutes} phút
+time.seconds = {seconds} giây
+
+# ---- File sizes
+units.size = {value} {unit}
+units.b = B
+units.kb = KB
+units.mb = MB
+units.gb = GB
+units.tb = TB

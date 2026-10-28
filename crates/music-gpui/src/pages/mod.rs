@@ -42,6 +42,7 @@ pub mod widgets;
 use gpui::{AnyView, App, Context, Entity, Pixels, Point, ScrollHandle, Window};
 
 use crate::app::MusicApp;
+use crate::i18n::Key;
 use crate::icons::Lucide;
 use crate::router::{LibraryTab, Route};
 use crate::settings::SettingsPanel;
@@ -74,9 +75,9 @@ impl PageView {
 
 /// Sidebar entries, in order.
 pub enum NavItem {
-    Group(&'static str),
+    Group(Key),
     Page {
-        title: &'static str,
+        title: Key,
         icon: Lucide,
         route: fn() -> Route,
     },
@@ -84,70 +85,70 @@ pub enum NavItem {
 
 pub const NAV: &[NavItem] = &[
     NavItem::Page {
-        title: "Home",
+        title: k!("nav.home"),
         icon: Lucide::House,
         route: || Route::Home,
     },
     NavItem::Page {
-        title: "Explore",
+        title: k!("nav.explore"),
         icon: Lucide::Compass,
         route: || Route::Explore,
     },
     NavItem::Page {
-        title: "Charts",
+        title: k!("nav.charts"),
         icon: Lucide::ChartNoAxesColumn,
         route: || Route::Charts,
     },
     NavItem::Page {
-        title: "Moods & genres",
+        title: k!("nav.moods"),
         icon: Lucide::Shapes,
         route: || Route::MoodsAndGenres,
     },
     NavItem::Page {
-        title: "New releases",
+        title: k!("nav.new_releases"),
         icon: Lucide::Sparkles,
         route: || Route::NewReleases,
     },
     NavItem::Page {
-        title: "Recognize",
+        title: k!("nav.recognize"),
         icon: Lucide::AudioWaveform,
         route: || Route::Recognition,
     },
-    NavItem::Group("Library"),
+    NavItem::Group(k!("nav.library_group")),
     NavItem::Page {
-        title: "Library",
+        title: k!("nav.library"),
         icon: Lucide::Library,
         route: || Route::Library {
             tab: LibraryTab::Songs,
         },
     },
     NavItem::Page {
-        title: "History",
+        title: k!("nav.history"),
         icon: Lucide::Clock,
         route: || Route::History,
     },
     NavItem::Page {
-        title: "Stats",
+        title: k!("nav.stats"),
         icon: Lucide::ChartColumn,
         route: || Route::Stats,
     },
     NavItem::Page {
-        title: "Downloads",
+        title: k!("nav.downloads"),
         icon: Lucide::Download,
         route: || Route::Downloads,
     },
     NavItem::Page {
-        title: "Local files",
+        title: k!("nav.local_files"),
         icon: Lucide::FileMusic,
         route: || Route::LocalFiles,
     },
     NavItem::Page {
-        title: "Import & export",
+        title: k!("nav.import"),
         icon: Lucide::Upload,
         route: || Route::Import,
     },
     NavItem::Page {
-        title: "Listen together",
+        title: k!("nav.together"),
         icon: Lucide::UsersRound,
         route: || Route::Together,
     },

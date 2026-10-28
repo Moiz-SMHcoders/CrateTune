@@ -1,0 +1,44 @@
+# Music recognition page (zh-TW).
+
+recognition.title = 辨識歌曲
+recognition.subtitle = 辨識你周圍正在播放的歌曲（⇧⌘R）
+
+recognition.idle.title = 點一下以辨識歌曲
+recognition.idle.detail = 在電腦附近播放歌曲；應用程式會透過麥克風聆聽約 10 秒。
+recognition.permission.title = 正在等待麥克風取用權限…
+recognition.permission.detail = 請在系統提示中允許取用。
+recognition.listening = 正在聆聽…
+recognition.listening_progress = {elapsed} / {length} 秒
+recognition.identifying.title = 正在辨識…
+recognition.identifying.detail = 正在比對錄音。
+recognition.failed = 無法辨識
+recognition.open_privacy_settings = 開啟隱私權設定
+
+recognition.mic.restricted = 這部電腦上的麥克風取用權限受到限制。
+recognition.mic.undetermined = 尚未授予麥克風取用權限。請再試一次，並在系統詢問時允許。
+recognition.mic.denied = {app} 的麥克風取用權限已關閉。請在「系統設定 → 隱私權與安全性 → 麥克風」中允許。
+recognition.error.no_microphone = 找不到麥克風
+recognition.error.permission_denied = 麥克風取用權限遭拒
+recognition.error.silent = 麥克風只收到靜音（是否已允許取用麥克風？）
+recognition.error.capture = 錄音失敗：{error}
+recognition.error.cancelled = 已取消
+recognition.error.no_signature = 沒有聽到任何音樂
+recognition.error.no_match = 找不到相符的結果
+recognition.error.rate_limited = 要求過多——請一分鐘後再試
+recognition.error.service = 辨識服務發生錯誤（HTTP {status}）
+recognition.error.network = 網路錯誤：{error}
+recognition.error.parse = 非預期的回應：{error}
+
+recognition.result.recognized = 已辨識
+recognition.result.from_history = 來自你的辨識記錄
+recognition.match.title = 在 YouTube Music 上
+recognition.match.searching = 正在搜尋 YouTube Music…
+recognition.match.failed = YouTube Music 搜尋失敗：{error}
+recognition.match.none = 在 YouTube Music 上找不到。
+
+recognition.history.title = 記錄
+recognition.history.empty.title = 還沒有辨識記錄
+recognition.history.empty.detail = 你辨識的歌曲會顯示在這裡，最新的排在最前面。
+recognition.history.clear_title = 要清除辨識記錄嗎？
+recognition.history.clear_detail = 已辨識歌曲的清單將被刪除。
+recognition.history.remove = 從記錄中移除

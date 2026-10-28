@@ -1,0 +1,44 @@
+# Music recognition page (zh-CN).
+
+recognition.title = 听歌识曲
+recognition.subtitle = 识别身边正在播放的歌曲（⇧⌘R）
+
+recognition.idle.title = 点按以识别歌曲
+recognition.idle.detail = 在电脑附近播放歌曲；应用会通过麦克风聆听约 10 秒。
+recognition.permission.title = 正在等待麦克风访问权限…
+recognition.permission.detail = 请在系统弹窗中允许访问。
+recognition.listening = 正在聆听…
+recognition.listening_progress = {elapsed} / {length} 秒
+recognition.identifying.title = 正在识别…
+recognition.identifying.detail = 正在匹配录音。
+recognition.failed = 无法识别
+recognition.open_privacy_settings = 打开隐私设置
+
+recognition.mic.restricted = 这台电脑上的麦克风访问受到限制。
+recognition.mic.undetermined = 尚未授予麦克风访问权限。请重试，并在系统询问时允许。
+recognition.mic.denied = {app} 的麦克风访问已关闭。请在“系统设置 → 隐私与安全性 → 麦克风”中允许。
+recognition.error.no_microphone = 未找到麦克风
+recognition.error.permission_denied = 麦克风访问被拒绝
+recognition.error.silent = 麦克风只收到了静音（是否已允许麦克风访问？）
+recognition.error.capture = 录音失败：{error}
+recognition.error.cancelled = 已取消
+recognition.error.no_signature = 没有听到任何音乐
+recognition.error.no_match = 未找到匹配结果
+recognition.error.rate_limited = 请求过多——请一分钟后重试
+recognition.error.service = 识别服务出错（HTTP {status}）
+recognition.error.network = 网络错误：{error}
+recognition.error.parse = 意外的响应：{error}
+
+recognition.result.recognized = 已识别
+recognition.result.from_history = 来自你的识别历史
+recognition.match.title = 在 YouTube Music 上
+recognition.match.searching = 正在搜索 YouTube Music…
+recognition.match.failed = YouTube Music 搜索失败：{error}
+recognition.match.none = 在 YouTube Music 上未找到。
+
+recognition.history.title = 历史记录
+recognition.history.empty.title = 还没有识别记录
+recognition.history.empty.detail = 你识别的歌曲会显示在这里，最新的在最前。
+recognition.history.clear_title = 要清除识别历史吗？
+recognition.history.clear_detail = 已识别歌曲的列表将被删除。
+recognition.history.remove = 从历史记录中移除

@@ -1,0 +1,18 @@
+# Settings page: section names (sidebar of the settings page, window title).
+settings.section.appearance = Aparência
+settings.section.playback = Reprodução
+settings.section.modules = Módulos
+settings.section.equalizer = Equalizador
+settings.section.lyrics = Letras
+settings.section.content = Conteúdo e região
+settings.section.network = Rede
+settings.section.privacy = Privacidade
+settings.section.storage = Armazenamento
+settings.section.account = Conta
+settings.section.integrations = Scrobbling e Discord
+settings.section.sponsorblock = SponsorBlock
+settings.section.together = Music Together
+settings.section.spotify = Importar do Spotify
+settings.section.ai_filter = Filtro de conteúdo por IA
+settings.section.cast = Chromecast
+settings.section.about = Sobre

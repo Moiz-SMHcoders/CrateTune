@@ -1,0 +1,136 @@
+# Settings → Modules (French).
+
+# ---- Playback source
+modules.source.group = Source de lecture
+modules.source.youtube = YouTube uniquement
+modules.source.first = Modules d'abord, puis YouTube
+modules.source.only = Modules uniquement
+modules.source_note.youtube = Les titres sont lus depuis YouTube ; les modules installés ne sont pas utilisés.
+modules.source_note.first.one = Chaque titre est recherché dans le module activé ({count}), de haut en bas ; la première correspondance acceptable est lue, sinon YouTube.
+modules.source_note.first.other = Chaque titre est recherché dans les {count} modules activés, de haut en bas ; la première correspondance acceptable est lue, sinon YouTube.
+modules.source_note.only.one = Les titres sont lus uniquement depuis le module activé ({count}) ; un titre qu'aucun module ne trouve échoue (et est ignoré si « Ignorer les titres qui ne se chargent pas » est activé).
+modules.source_note.only.other = Les titres sont lus uniquement depuis les {count} modules activés ; un titre qu'aucun module ne trouve échoue (et est ignoré si « Ignorer les titres qui ne se chargent pas » est activé).
+modules.source.note = Un module fournit l'audio du titre que vous écoutez ; le titre, les artistes et votre bibliothèque restent inchangés. La barre de lecture et l'écran À l'écoute indiquent la provenance de l'audio. Les téléchargements suivent le même ordre.
+
+# ---- Unavailable
+modules.unavailable = Les modules ne sont pas disponibles.
+modules.no_data_dir = Aucun dossier de données ; les modules ne sont pas disponibles.
+modules.unavailable_error = Modules indisponibles : {error}
+
+# ---- Add a module
+modules.add.group = Ajouter un module
+modules.add.from_file = Installer depuis un fichier…
+modules.add.from_file_note = Un paquet .arch présent sur votre disque.
+modules.add.from_url = Installer depuis une URL
+modules.add.catalog = Ajouter un catalogue
+modules.add.note = Les paquets sont vérifiés (format, somme de contrôle, paramètres, fonctions exportées) avant votre confirmation. Aucun module ni catalogue n'est préinstallé : les modules proviennent de leurs auteurs et s'exécutent dans un bac à sable (pas de fichiers, réseau via le proxy de l'app).
+modules.url_missing = Saisissez l'URL d'un paquet .arch, d'un descripteur ou d'un catalogue.
+modules.catalog_url_missing = Saisissez l'URL d'un catalogue.
+
+# ---- Progress lines
+modules.busy.saving = Enregistrement…
+modules.busy.saving_catalog = Enregistrement du catalogue…
+modules.busy.checking_package = Vérification du paquet…
+modules.busy.reading_catalog = Lecture du catalogue…
+modules.busy.installing = Installation…
+modules.busy.removing = Suppression…
+modules.busy.checking = Vérification…
+modules.busy.checking_update = Recherche d'une mise à jour…
+modules.busy.loading_settings = Chargement des paramètres…
+modules.busy.saving_settings = Enregistrement des paramètres…
+modules.busy.refreshing = Actualisation…
+
+# ---- Results
+modules.catalog_added.one = Catalogue « {name} » ajouté ({count} entrée).
+modules.catalog_added.other = Catalogue « {name} » ajouté ({count} entrées).
+modules.installed_needs_setup = {name} installé. Remplissez ses paramètres et cliquez sur Enregistrer.
+modules.installed = {name} installé.
+modules.removed = Module supprimé.
+modules.update_available = La version {version} est disponible.
+modules.up_to_date = À jour.
+modules.update_from_file = Installé depuis un fichier : importez le nouveau paquet pour le mettre à jour.
+modules.settings_read_failed = Impossible de lire les paramètres de ce module.
+modules.settings_saved = Paramètres enregistrés.
+modules.catalog_refreshed = Catalogue actualisé.
+modules.diagnostics_copied = Diagnostic copié.
+
+# ---- Review card
+modules.review.group = Vérification
+modules.review.replaces = Met à jour la version installée {version} ; ses paramètres sont conservés.
+modules.review.new = Nouvelle installation, ajoutée à la fin de l'ordre de lecture.
+modules.review.needs = Requiert : {settings}.
+modules.review.homepage = Site web : {url}
+modules.review.license = Licence : {license}
+modules.review.sha256 = SHA-256 du paquet {hash}
+
+# ---- Installed modules
+modules.installed_group = Installés ({count})
+modules.nothing_installed = Rien d'installé pour l'instant.
+modules.action.settings = Paramètres
+modules.action.check = Vérifier
+modules.action.check_update = Rechercher une mise à jour
+modules.action.uninstall = Désinstaller
+modules.action.confirm_remove = Supprimer — sûr ?
+modules.action.higher = Priorité plus haute
+modules.action.lower = Priorité plus basse
+modules.needs_configuration = Configuration requise : {settings}
+modules.settings_heading = Paramètres
+modules.no_settings = Ce module n'a pas de paramètres.
+modules.field.placeholder_required = obligatoire
+modules.field.placeholder_optional = facultatif
+modules.field.not_a_number = {field} doit être un nombre.
+modules.field.required = {field} est obligatoire.
+modules.field.invalid = {field} a une valeur non valide.
+
+# ---- Diagnostics
+modules.diagnostics = Diagnostic
+modules.diagnostic_line = {label} {when} : {summary}
+modules.diagnostic_track = {line} — {track}
+modules.diag.last_song = Dernier titre
+modules.diag.check = Vérification
+modules.diag.playback = Lecture
+modules.diag.not_checked = Pas encore vérifié.
+modules.diag.not_used = Pas encore utilisé pour un titre.
+modules.installed_line_file = Installé {when} · paquet {hash} · depuis un fichier
+modules.installed_line_url = Installé {when} · paquet {hash} · depuis {url}
+modules.log_empty = Le journal est vide.
+modules.copy_diagnostics = Copier le diagnostic
+modules.clear_log = Effacer le journal
+
+modules.status.ready = Prêt
+modules.status.configuration = Configuration requise
+modules.status.unavailable = Service indisponible
+modules.status.failed = Échec
+modules.status.no_results = Aucun résultat
+modules.status.no_match = Aucune correspondance acceptable ({reason})
+modules.status.resolved = Trouvé
+modules.status.timeout = Délai dépassé
+modules.rejection.metadata = métadonnées
+modules.rejection.title = titre
+modules.rejection.artist = artiste
+modules.rejection.recording = enregistrement
+modules.rejection.duration = durée
+modules.rejection.explicit = explicite
+modules.phase.search = lors de la recherche
+modules.phase.match = lors de la correspondance
+modules.phase.stream = lors du flux
+modules.candidates.one = {count} candidat
+modules.candidates.other = {count} candidats
+modules.elapsed_ms = {ms} ms
+
+modules.failure.invalid_document = Document de module non valide
+modules.failure.unsupported = Non pris en charge par cette app
+modules.failure.invalid_configuration = Les paramètres du module sont incomplets ou non valides
+modules.failure.network = Erreur réseau
+modules.failure.timeout = Délai dépassé
+modules.failure.execution = Le module a échoué
+modules.failure.integrity = Somme de contrôle incorrecte
+modules.error_with_code = {error} ({code})
+
+# ---- Catalogs
+modules.catalogs = Catalogues
+modules.catalog_line.one = {url} · {count} entrée · actualisé {when}
+modules.catalog_line.other = {url} · {count} entrées · actualisé {when}
+modules.remove_catalog = Supprimer le catalogue
+modules.entry.installed = Installé
+modules.entry.not_a_module = Pas un module

@@ -1,0 +1,56 @@
+# First-run guide (zh-CN).
+
+# ---- Step titles
+onboarding.step.welcome = 欢迎
+onboarding.step.content = 语言与地区
+onboarding.step.theme = 外观
+onboarding.step.account = YouTube Music 账号
+onboarding.step.local_files = 这台电脑上的音乐
+onboarding.step.privacy = 隐私与限制
+onboarding.welcome_title = 欢迎使用 {app}
+onboarding.step_of = 第 {step} 步，共 {total} 步
+
+# ---- Step subtitles
+onboarding.subtitle.welcome = 一款快速的 YouTube Music 原生播放器：浏览和搜索、随歌曲滚动的歌词、带有历史记录和统计的媒体库、你自己的音乐文件，以及听歌识曲。只需做几个选择即可开始——这里的所有选项之后都可以在“设置”中更改。
+onboarding.subtitle.content = YouTube Music 的标题和推荐使用哪种语言，以及显示哪个国家/地区的排行榜和新发行内容。
+onboarding.subtitle.theme = 选择主题和文字大小。
+onboarding.subtitle.account = 可选。登录后可获取你的喜欢、媒体库、播放列表和个性化推荐。其他所有功能无需账号即可使用。
+onboarding.subtitle.local_files = 可选。添加存放音乐文件的文件夹；它们会被扫描到你的媒体库中，并与 YouTube Music 一起播放。
+onboarding.subtitle.privacy = 开始之前需要了解的事项。
+
+# ---- Footer buttons
+onboarding.skip = 跳过设置
+onboarding.get_started = 开始使用
+onboarding.finish = 完成
+onboarding.next_or_skip = 下一步（或跳过）
+
+# ---- Welcome step: feature list
+onboarding.feature.browse.title = 浏览与搜索
+onboarding.feature.browse.text = 首页推荐、排行榜、心情、新发行、艺人、专辑和播放列表。
+onboarding.feature.lyrics.title = 歌词
+onboarding.feature.lyrics.text = 来自多个来源的逐字同步歌词，支持翻译和罗马音。
+onboarding.feature.library.title = 媒体库
+onboarding.feature.library.text = 喜欢、播放列表、收听历史、统计和下载——都保存在这台电脑上。
+onboarding.feature.recognize.title = 听歌识曲
+onboarding.feature.recognize.text = 识别身边正在播放的歌曲（⇧⌘R）并立即播放。
+
+# ---- Look step
+onboarding.theme.group = 主题
+onboarding.theme.dynamic_note = “动态”主题会从正在播放歌曲的封面中提取强调色。
+onboarding.theme.text_size = 文字大小
+
+# ---- Music on this computer step
+onboarding.local.group = 音乐文件夹
+onboarding.local.empty = 还没有文件夹。
+onboarding.local.add = 添加文件夹…
+onboarding.local.note = 现在或稍后扫描文件夹；可在“本地文件”中管理它们。
+
+# ---- Privacy & limitations step
+onboarding.privacy.streaming.title = 歌曲如何串流
+onboarding.privacy.streaming.text = 完整歌曲来自 YouTube 的 TV 客户端，或使用 PoToken（一种防滥用令牌，在 macOS 上由隐藏的浏览器视图生成）的网页客户端。YouTube 会让新的音频流等待几秒钟；在此期间，应用会先播放一段短的试听片段。如果 YouTube 做出了更改，歌曲会退回为约 1 分钟的试听片段（会在播放器中标出）。可在“设置 → 播放 → YouTube 音频流”中选择获取方式。
+onboarding.privacy.data.title = 你的数据保存在本地
+onboarding.privacy.data.text = 媒体库、历史记录、统计和设置都保存在这台电脑上。密码、API 密钥和 YouTube 登录 Cookie 保存在系统钥匙串中。你可以随时在“设置 → 隐私”中暂停或清除收听和搜索历史。
+onboarding.privacy.recipients.title = 谁会获得哪些数据
+onboarding.privacy.recipients.text = YouTube Music 会收到你的搜索和播放记录（登录时还有你的账号 Cookie）。歌词来源会收到歌曲标题。听歌识曲会将音频指纹（而非录音本身）发送给 Shazam。Scrobble 和 Discord 只有在你设置后才会运行。
+onboarding.privacy.independent.title = 独立项目
+onboarding.privacy.independent.text = 与 YouTube、Google 或 Shazam 无关。基于 GPL-3.0 的自由软件。

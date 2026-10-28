@@ -1,0 +1,20 @@
+# Settings → Content & region (Russian).
+
+settings.content.group_region = Язык и регион
+settings.content.language = Язык контента
+settings.content.language_description = Язык названий, подборок и поиска в YouTube Music.
+settings.content.language_placeholder = Язык
+settings.content.country = Страна контента
+settings.content.country_description = Регион для главной ленты, чартов и новинок.
+settings.content.country_placeholder = Страна
+settings.content.region_note = Изменения применяются сразу; открытые страницы перезагружаются на новом языке.
+
+settings.content.group_filters = Фильтры
+settings.content.hide_explicit = Скрывать откровенный контент
+settings.content.hide_explicit_description = Убирает треки и альбомы с пометкой «E» со страниц, из поиска и радио.
+settings.content.hide_videos = Скрывать клипы
+settings.content.hide_videos_description = Только треки: клипы и пользовательские видео не попадают в подборки, поиск, плейлисты, альбомы, радио и очереди (альбом, который есть в YouTube только в виде официальных аудиовидео, остаётся полным).
+
+settings.content.group_radio = Радио
+settings.content.autoplay = Автовоспроизведение похожих треков
+settings.content.autoplay_description = Когда начинается последний трек в очереди, после него добавляются треки из его радио.

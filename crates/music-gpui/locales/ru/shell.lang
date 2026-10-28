@@ -1,0 +1,269 @@
+# App shell and shared components (Russian).
+
+# ---- Page titles
+route.search = Поиск
+route.search_query = Поиск: {query}
+route.library = Библиотека · {tab}
+route.year_in_music = {year} год в музыке
+route.recognition = Распознать музыку
+route.settings = Настройки · {section}
+route.library_tab.songs = Треки
+route.library_tab.liked = Понравившиеся
+route.library_tab.albums = Альбомы
+route.library_tab.artists = Исполнители
+route.library_tab.playlists = Плейлисты
+route.library_tab.podcasts = Подкасты
+route.library_tab.downloaded = Скачанные
+route.library_tab.local = Локальные файлы
+
+# ---- Themes
+theme.dark = Тёмная
+theme.black = Чёрная
+theme.dynamic = Динамическая
+
+# ---- Player bar
+player.pick_a_song = Выберите трек, чтобы начать
+player.audio_unavailable = Звук недоступен: {error}
+player.buffering = Буферизация…
+player.play_failed_skipped = Не удалось воспроизвести «{title}», пропущено
+player.preview_badge = Превью
+player.tooltip.shuffle_on = Перемешивание: вкл.
+player.tooltip.shuffle_off = Перемешивание: выкл.
+player.tooltip.previous = Предыдущий (⌘←, через 3 с — с начала)
+player.tooltip.next = Следующий (⌘→)
+player.tooltip.repeat_off = Повтор: выкл.
+player.tooltip.repeat_all = Повтор: все
+player.tooltip.repeat_one = Повтор: один
+player.tooltip.volume = Громкость {percent} % (⌘↑ / ⌘↓)
+player.tooltip.queue = Очередь (⌥⌘Q)
+player.tooltip.mini_player = Мини-плеер (⇧⌘M)
+player.tooltip.now_playing = Сейчас играет и текст (⌘L)
+
+# ---- Sleep timer
+player.sleep.title = Таймер сна
+player.sleep.minutes.one = {count} минута
+player.sleep.minutes.few = {count} минуты
+player.sleep.minutes.many = {count} минут
+player.sleep.minutes.other = {count} минуты
+player.sleep.end_of_track = В конце трека
+player.sleep.custom = Своё: {minutes} мин
+player.sleep.turn_off = Выключить
+player.sleep.left = Осталось {time}
+
+# ---- Queue
+queue.toast.play_next_one = «{title}» будет следующим
+queue.toast.play_next_many.one = {count} трек будет следующим
+queue.toast.play_next_many.few = {count} трека будут следующими
+queue.toast.play_next_many.many = {count} треков будут следующими
+queue.toast.play_next_many.other = {count} трека будут следующими
+queue.toast.added_one = «{title}» добавлен в очередь
+queue.toast.added_many.one = {count} трек добавлен в очередь
+queue.toast.added_many.few = {count} трека добавлены в очередь
+queue.toast.added_many.many = {count} треков добавлено в очередь
+queue.toast.added_many.other = {count} трека добавлено в очередь
+queue.section.now_playing = СЕЙЧАС ИГРАЕТ
+queue.section.up_next = ДАЛЕЕ · {count}
+queue.section.history = ИСТОРИЯ
+queue.nothing_playing = Ничего не играет
+queue.empty.repeat_all = Повтор всех: очередь начнётся заново.
+queue.empty.hint = Добавляйте треки через «Включить следующим» или «Добавить в очередь».
+queue.tooltip.clear_up_next = Очистить «Далее»
+queue.tooltip.close = Закрыть (Esc)
+queue.tooltip.move_up = Переместить вверх
+queue.tooltip.move_down = Переместить вниз
+
+# ---- Song rows and the song context menu
+track.tooltip.more = Ещё
+track.explicit_badge = E
+track.menu.go_to_podcast = Перейти к подкасту
+track.menu.go_to_named_artist = Перейти: {artist}
+
+# ---- Item cards
+items.load_failed = Не удалось загрузить страницу
+items.loading_more = Загрузка…
+
+# ---- "Add to playlist" / "New playlist" dialog
+playlist_dialog.name_placeholder = Название нового плейлиста
+playlist_dialog.title_new = Новый плейлист
+playlist_dialog.title_add_one = Добавить «{title}» в плейлист
+playlist_dialog.title_add_many.one = Добавить {count} трек в плейлист
+playlist_dialog.title_add_many.few = Добавить {count} трека в плейлист
+playlist_dialog.title_add_many.many = Добавить {count} треков в плейлист
+playlist_dialog.title_add_many.other = Добавить {count} трека в плейлист
+playlist_dialog.create = Создать
+playlist_dialog.also_on_youtube = Также создать в YouTube Music (закрытый)
+playlist_dialog.youtube_songs.one = YouTube Music · {count} трек
+playlist_dialog.youtube_songs.few = YouTube Music · {count} трека
+playlist_dialog.youtube_songs.many = YouTube Music · {count} треков
+playlist_dialog.youtube_songs.other = YouTube Music · {count} трека
+playlist_dialog.empty = Плейлистов пока нет — создайте его выше.
+
+# ---- Mini player window
+mini.window_title = Мини-плеер
+mini.tooltip.show_main = Показать главное окно
+
+# ---- Header search
+app.search_placeholder = Треки, исполнители, альбомы
+search_box.recent = Недавние запросы
+search_box.loading_suggestions = Загрузка подсказок…
+
+# ---- Main window
+app.window_title = {page} — {app}
+app.audio_demo_clock = {error} (используются демо-часы)
+app.tooltip.back = Назад (⌘[)
+app.tooltip.forward = Вперёд (⌘])
+
+# ---- YouTube Music account
+account.cookie_invalid = В этом cookie нет SAPISID / __Secure-3PAPISID; скопируйте весь заголовок Cookie запроса к music.youtube.com, выполненного после входа.
+account.checking = Проверка аккаунта…
+account.toast.signed_in = Вы вошли как {name}
+account.sign_in_failed = Не удалось войти: {error}
+account.toast.signed_out = Вы вышли из YouTube Music
+account.unreachable = Не удалось связаться с аккаунтом: {error}
+account.switching = Переключение…
+account.toast.switched = Используется {name}
+account.switch_failed = Не удалось переключиться: {error}
+account.sign_in_first = Сначала войдите в YouTube Music.
+account.action.subscribing = Оформление подписки
+account.toast.subscribed = Вы подписались на {artist}
+account.toast.unsubscribed = Вы отписались от {artist}
+account.sync.starting = Запуск…
+account.sync.step.liked = Понравившиеся треки…
+account.sync.step.songs = Треки библиотеки…
+account.sync.step.albums = Альбомы…
+account.sync.step.artists = Исполнители…
+account.sync.step.playlists = Плейлисты…
+account.sync.step.playlist = Плейлист {current}/{total}: {title}
+account.sync.summary = {liked}, {songs}, {albums}, {artists}, {playlists}
+account.sync.liked.one = {count} понравившийся трек
+account.sync.liked.few = {count} понравившихся трека
+account.sync.liked.many = {count} понравившихся треков
+account.sync.liked.other = {count} понравившихся трека
+account.sync.songs.one = {count} трек библиотеки
+account.sync.songs.few = {count} трека библиотеки
+account.sync.songs.many = {count} треков библиотеки
+account.sync.songs.other = {count} трека библиотеки
+account.sync.albums.one = {count} альбом
+account.sync.albums.few = {count} альбома
+account.sync.albums.many = {count} альбомов
+account.sync.albums.other = {count} альбома
+account.sync.artists.one = {count} исполнитель
+account.sync.artists.few = {count} исполнителя
+account.sync.artists.many = {count} исполнителей
+account.sync.artists.other = {count} исполнителя
+account.sync.playlists.one = {count} плейлист
+account.sync.playlists.few = {count} плейлиста
+account.sync.playlists.many = {count} плейлистов
+account.sync.playlists.other = {count} плейлиста
+account.toast.synced = Синхронизация YouTube Music: {summary}
+account.sync.failed = {summary}. Ошибки: {errors}
+account.sync.error = {part}: {error}
+account.sync.part.liked = понравившиеся треки
+account.sync.part.songs = треки библиотеки
+account.sync.part.albums = альбомы
+account.sync.part.artists = исполнители
+account.sync.part.playlists = плейлисты
+account.sync.part.playlist = плейлист «{title}»
+account.sync.part.removing_playlist = удаление плейлиста
+
+# ---- Library database, likes, playlists, downloads (toasts)
+store.library_unavailable = Библиотека недоступна: {error}
+store.no_data_dir = Нет папки данных; библиотека недоступна.
+store.library_db_unavailable = База данных библиотеки недоступна.
+store.toast.action_failed = {action}: ошибка — {error}
+store.action.saving_like = Сохранение отметки «Нравится»
+store.action.removing_from_library = Удаление из библиотеки
+store.action.adding_to_playlist = Добавление в плейлист
+store.action.creating_playlist = Создание плейлиста
+store.toast.liked_one = «{title}» добавлен в понравившиеся
+store.toast.unliked_one = «{title}» удалён из понравившихся
+store.toast.liked_many.one = {count} трек добавлен в понравившиеся
+store.toast.liked_many.few = {count} трека добавлены в понравившиеся
+store.toast.liked_many.many = {count} треков добавлено в понравившиеся
+store.toast.liked_many.other = {count} трека добавлено в понравившиеся
+store.toast.unliked_many.one = {count} трек удалён из понравившихся
+store.toast.unliked_many.few = {count} трека удалены из понравившихся
+store.toast.unliked_many.many = {count} треков удалено из понравившихся
+store.toast.unliked_many.other = {count} трека удалено из понравившихся
+store.toast.only_locally = {message} (только локально; YouTube Music: {error})
+store.toast.removed_from_library.one = {count} трек удалён из библиотеки
+store.toast.removed_from_library.few = {count} трека удалены из библиотеки
+store.toast.removed_from_library.many = {count} треков удалено из библиотеки
+store.toast.removed_from_library.other = {count} трека удалено из библиотеки
+store.toast.added_to_playlist.one = {count} трек добавлен в «{playlist}»
+store.toast.added_to_playlist.few = {count} трека добавлены в «{playlist}»
+store.toast.added_to_playlist.many = {count} треков добавлено в «{playlist}»
+store.toast.added_to_playlist.other = {count} трека добавлено в «{playlist}»
+store.toast.remote_error = {message} (YouTube Music: {error})
+store.playlist_name_missing = Дайте плейлисту название.
+store.toast.playlist_created = Плейлист «{playlist}» создан
+store.toast.playlist_created_with.one = Плейлист «{playlist}» создан, {count} трек
+store.toast.playlist_created_with.few = Плейлист «{playlist}» создан, {count} трека
+store.toast.playlist_created_with.many = Плейлист «{playlist}» создан, {count} треков
+store.toast.playlist_created_with.other = Плейлист «{playlist}» создан, {count} трека
+store.downloads_unavailable = Загрузки недоступны.
+store.toast.downloading_one = Скачивание «{title}»
+store.toast.downloading_many.one = Скачивание {count} трека
+store.toast.downloading_many.few = Скачивание {count} треков
+store.toast.downloading_many.many = Скачивание {count} треков
+store.toast.downloading_many.other = Скачивание {count} трека
+store.toast.delete_download_failed = Не удалось удалить загрузку: {error}
+
+# ---- Local music folder scan
+store.add_music_folder_first = Сначала добавьте папку с музыкой.
+store.scan.summary = {files}: новых {added}, обновлено {updated}, без изменений {unchanged}, удалено {removed}
+store.scan.files.one = {count} файл
+store.scan.files.few = {count} файла
+store.scan.files.many = {count} файлов
+store.scan.files.other = {count} файла
+store.scan.with_extra = {summary}, {extra}
+store.scan.too_short.one = слишком коротких {count}
+store.scan.too_short.few = слишком коротких {count}
+store.scan.too_short.many = слишком коротких {count}
+store.scan.too_short.other = слишком коротких {count}
+store.scan.unreadable.one = нечитаемых {count}
+store.scan.unreadable.few = нечитаемых {count}
+store.scan.unreadable.many = нечитаемых {count}
+store.scan.unreadable.other = нечитаемых {count}
+store.toast.scan_finished = Сканирование завершено: {summary}
+store.toast.scan_failed = Ошибка сканирования: {error}
+
+# ---- Playlist cover upload
+playlist_cover.read_failed = Не удалось прочитать изображение: {error}
+playlist_cover.not_an_image = Этот файл не является изображением, которое может прочитать приложение (JPEG, PNG или WebP).
+playlist_cover.too_large = Изображение слишком большое (более 40 мегапикселей).
+playlist_cover.decode_failed = Не удалось декодировать изображение: {error}
+playlist_cover.encode_failed = Не удалось закодировать обложку: {error}
+playlist_cover.still_too_large = Обложка больше 2 МиБ даже после сжатия.
+playlist_cover.sign_in = Войдите в YouTube Music, чтобы менять обложки плейлистов.
+playlist_cover.pick_prompt = Сделать обложкой
+playlist_cover.uploading = Загрузка обложки…
+playlist_cover.changed = Обложка плейлиста изменена
+playlist_cover.change_failed = Не удалось сменить обложку: {error}
+
+# ---- Radio and collection playback
+radio.toast.starting_from = Радио на основе «{title}»
+radio.toast.starting = Запуск радио: {name}
+radio.playlist_label = плейлист
+radio.nothing_to_play = Здесь нечего воспроизводить.
+radio.load_failed = Не удалось загрузить: {error}
+
+# ---- Lyrics
+lyrics.no_cache_dir = Нет папки кеша
+
+# ---- Playlist editing
+store.action.renaming_playlist = Переименование плейлиста
+store.action.deleting_playlist = Удаление плейлиста
+store.action.removing_from_playlist = Удаление из плейлиста
+store.action.moving_song = Перемещение трека
+store.action.refreshing_playlist = Обновление плейлиста
+store.toast.playlist_renamed = Переименовано в «{playlist}»
+store.toast.playlist_deleted = «{playlist}» удалён
+store.toast.removed_from_playlist.one = {count} трек удалён из плейлиста
+store.toast.removed_from_playlist.few = {count} трека удалены из плейлиста
+store.toast.removed_from_playlist.many = {count} треков удалено из плейлиста
+store.toast.removed_from_playlist.other = {count} трека удалено из плейлиста
+store.toast.playlist_refreshed.one = Плейлист обновлён ({count} трек)
+store.toast.playlist_refreshed.few = Плейлист обновлён ({count} трека)
+store.toast.playlist_refreshed.many = Плейлист обновлён ({count} треков)
+store.toast.playlist_refreshed.other = Плейлист обновлён ({count} трека)

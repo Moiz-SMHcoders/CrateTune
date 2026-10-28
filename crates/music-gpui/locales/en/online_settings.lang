@@ -1,0 +1,27 @@
+# Settings → Content & region (the YouTube Music content language / country and
+# content filters). Content languages are listed under their own names and are not
+# translated; country names are in countries.lang.
+
+settings.content.group_region = Language & region
+# Row label: the language YouTube Music answers in (not the app's UI language).
+settings.content.language = Content language
+settings.content.language_description = Language of titles, shelves and search on YouTube Music.
+# Placeholder of the content language picker (shown when nothing is selected).
+settings.content.language_placeholder = Language
+# Row label: the region YouTube Music serves content for.
+settings.content.country = Content country
+settings.content.country_description = Region of the home feed, charts and new releases.
+# Placeholder of the country picker (shown when nothing is selected).
+settings.content.country_placeholder = Country
+settings.content.region_note = Changes apply right away; open pages reload in the new language.
+
+settings.content.group_filters = Filters
+settings.content.hide_explicit = Hide explicit content
+settings.content.hide_explicit_description = Removes songs and albums marked explicit from pages, search and radio.
+settings.content.hide_videos = Hide music videos
+settings.content.hide_videos_description = Songs only: music videos and user videos are left out of shelves, search, playlists, albums, radio and queues (an album that YouTube only has as official-audio videos stays complete).
+
+# Group heading (the "radio" of similar songs that follows a song).
+settings.content.group_radio = Radio
+settings.content.autoplay = Autoplay similar songs
+settings.content.autoplay_description = When the queue's last song starts, songs from its radio are added after it.

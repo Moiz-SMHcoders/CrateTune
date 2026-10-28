@@ -1,0 +1,129 @@
+# ---- Playback source
+modules.source.group = Sumber pemutaran
+modules.source.youtube = Hanya YouTube
+modules.source.first = Modul dulu, lalu YouTube
+modules.source.only = Hanya modul
+modules.source_note.youtube = Lagu diputar dari YouTube; modul yang terinstal tidak digunakan.
+modules.source_note.first.other = Setiap lagu dicari di {count} modul aktif, dari atas ke bawah; kecocokan pertama yang dapat diterima yang diputar, jika tidak ada maka YouTube.
+modules.source_note.only.other = Lagu hanya diputar dari {count} modul aktif; lagu yang tidak cocok dengan modul mana pun gagal (dan dilewati jika “Lewati lagu yang gagal dimuat” aktif).
+modules.source.note = Modul menyediakan audio untuk lagu yang Anda putar; judul, artis, dan pustaka Anda tetap sama. Bilah pemutar dan Sedang Diputar menunjukkan asal audio. Unduhan menggunakan urutan yang sama.
+
+# ---- Unavailable
+modules.unavailable = Modul tidak tersedia.
+modules.no_data_dir = Tidak ada direktori data; modul tidak tersedia.
+modules.unavailable_error = Modul tidak tersedia: {error}
+
+# ---- Add a module
+modules.add.group = Tambah modul
+modules.add.from_file = Instal dari file…
+modules.add.from_file_note = Paket .arch dari disk Anda.
+modules.add.from_url = Instal dari URL
+modules.add.catalog = Tambah katalog
+modules.add.note = Paket diperiksa (format, checksum, pengaturan, fungsi yang diekspor) sebelum Anda mengonfirmasi. Tidak ada modul atau katalog yang terpasang bawaan: modul berasal dari pembuatnya, dan berjalan di sandbox (tanpa akses file, jaringan melalui proxy aplikasi).
+modules.url_missing = Masukkan URL paket .arch, deskriptor, atau katalog.
+modules.catalog_url_missing = Masukkan URL katalog.
+
+# ---- Progress lines
+modules.busy.saving = Menyimpan…
+modules.busy.saving_catalog = Menyimpan katalog…
+modules.busy.checking_package = Memeriksa paket…
+modules.busy.reading_catalog = Membaca katalog…
+modules.busy.installing = Menginstal…
+modules.busy.removing = Menghapus…
+modules.busy.checking = Memeriksa…
+modules.busy.checking_update = Memeriksa pembaruan…
+modules.busy.loading_settings = Memuat pengaturan…
+modules.busy.saving_settings = Menyimpan pengaturan…
+modules.busy.refreshing = Menyegarkan…
+
+# ---- Results
+modules.catalog_added.other = Katalog “{name}” ditambahkan ({count} entri).
+modules.installed_needs_setup = {name} terinstal. Isi pengaturannya lalu tekan Simpan.
+modules.installed = {name} terinstal.
+modules.removed = Modul dihapus.
+modules.update_available = Versi {version} tersedia.
+modules.up_to_date = Sudah terbaru.
+modules.update_from_file = Diinstal dari file: impor paket baru untuk memperbarui.
+modules.settings_read_failed = Tidak dapat membaca pengaturan modul ini.
+modules.settings_saved = Pengaturan disimpan.
+modules.catalog_refreshed = Katalog disegarkan.
+modules.diagnostics_copied = Diagnostik disalin.
+
+# ---- Review card
+modules.review.group = Tinjau
+modules.review.replaces = Memperbarui versi terinstal {version}; pengaturannya dipertahankan.
+modules.review.new = Instalasi baru, ditambahkan di akhir urutan pemutaran.
+modules.review.needs = Memerlukan: {settings}.
+modules.review.homepage = Beranda: {url}
+modules.review.license = Lisensi: {license}
+modules.review.sha256 = SHA-256 paket {hash}
+
+# ---- Installed modules
+modules.installed_group = Terinstal ({count})
+modules.nothing_installed = Belum ada yang terinstal.
+modules.action.settings = Pengaturan
+modules.action.check = Periksa
+modules.action.check_update = Periksa pembaruan
+modules.action.uninstall = Copot
+modules.action.confirm_remove = Hapus — yakin?
+modules.action.higher = Prioritas lebih tinggi
+modules.action.lower = Prioritas lebih rendah
+modules.needs_configuration = Perlu konfigurasi: {settings}
+modules.settings_heading = Pengaturan
+modules.no_settings = Modul ini tidak memiliki pengaturan.
+modules.field.placeholder_required = wajib
+modules.field.placeholder_optional = opsional
+modules.field.not_a_number = {field} harus berupa angka.
+modules.field.required = {field} wajib diisi.
+modules.field.invalid = {field} memiliki nilai yang tidak valid.
+
+# ---- Diagnostics
+modules.diagnostics = Diagnostik
+modules.diagnostic_line = {label} {when}: {summary}
+modules.diagnostic_track = {line} — {track}
+modules.diag.last_song = Lagu terakhir
+modules.diag.check = Pemeriksaan
+modules.diag.playback = Pemutaran
+modules.diag.not_checked = Belum diperiksa.
+modules.diag.not_used = Belum digunakan untuk lagu.
+modules.installed_line_file = Diinstal {when} · paket {hash} · dari file
+modules.installed_line_url = Diinstal {when} · paket {hash} · dari {url}
+modules.log_empty = Log kosong.
+modules.copy_diagnostics = Salin diagnostik
+modules.clear_log = Bersihkan log
+
+modules.status.ready = Siap
+modules.status.configuration = Perlu konfigurasi
+modules.status.unavailable = Layanan tidak tersedia
+modules.status.failed = Gagal
+modules.status.no_results = Tidak ada hasil
+modules.status.no_match = Tidak ada kecocokan yang dapat diterima ({reason})
+modules.status.resolved = Ditemukan
+modules.status.timeout = Waktu habis
+modules.rejection.metadata = metadata
+modules.rejection.title = judul
+modules.rejection.artist = artis
+modules.rejection.recording = rekaman
+modules.rejection.duration = durasi
+modules.rejection.explicit = eksplisit
+modules.phase.search = saat pencarian
+modules.phase.match = saat pencocokan
+modules.phase.stream = saat streaming
+modules.candidates.other = {count} kandidat
+modules.elapsed_ms = {ms} md
+
+modules.failure.invalid_document = Dokumen modul tidak valid
+modules.failure.unsupported = Tidak didukung oleh aplikasi ini
+modules.failure.invalid_configuration = Pengaturan modul tidak lengkap atau tidak valid
+modules.failure.network = Kesalahan jaringan
+modules.failure.timeout = Waktu habis
+modules.failure.execution = Modul gagal
+modules.failure.integrity = Checksum tidak cocok
+modules.error_with_code = {error} ({code})
+
+# ---- Catalogs
+modules.catalogs = Katalog
+modules.catalog_line.other = {url} · {count} entri · disegarkan {when}
+modules.remove_catalog = Hapus katalog
+modules.entry.installed = Terinstal
+modules.entry.not_a_module = Bukan modul

@@ -1,0 +1,150 @@
+# Shared strings (ko).
+
+locale.native_name = 한국어
+
+# ---- Actions
+common.play = 재생
+common.pause = 일시정지
+common.shuffle = 셔플
+common.radio = 라디오
+common.start_radio = 라디오 시작
+common.play_next = 다음에 재생
+common.add_to_queue = 대기열에 추가
+common.add_to_playlist = 재생목록에 추가…
+common.like = 좋아요
+common.remove_from_liked = 좋아요 표시한 음악에서 삭제
+common.download = 다운로드
+common.remove_download = 다운로드 삭제
+common.go_to_artist = 아티스트로 이동
+common.go_to_album = 앨범으로 이동
+common.open = 열기
+common.cancel = 취소
+common.close = 닫기
+common.retry = 다시 시도
+common.remove = 삭제
+common.delete = 삭제
+common.clear = 지우기
+common.save = 저장
+common.apply = 적용
+common.reset = 재설정
+common.done = 완료
+common.copy = 복사
+common.rename = 이름 변경
+common.refresh = 새로고침
+common.install = 설치
+common.update = 업데이트
+common.import = 가져오기
+common.search = 검색
+common.search_placeholder = 검색…
+common.see_all = 모두 보기
+common.load_more = 더 불러오기
+common.show_more = 더보기
+common.back = 뒤로
+common.next = 다음
+common.connect = 연결
+common.disconnect = 연결 해제
+common.sign_in = 로그인
+common.sign_out = 로그아웃
+common.select = 선택
+common.select_all = 모두 선택
+common.settings = 설정
+
+# ---- States
+common.loading = 로드 중…
+common.saving = 저장 중…
+common.downloading = 다운로드 중…
+common.off = 끔
+common.on = 켬
+common.none = 없음
+common.custom = 사용자 지정
+common.automatic = 자동
+common.not_playing = 재생 중인 곡 없음
+common.not_connected = 연결되지 않음
+common.nothing_here = 항목 없음
+
+# ---- Things
+common.song = 노래
+common.video = 동영상
+common.artist = 아티스트
+common.album = 앨범
+common.playlist = 재생목록
+common.podcast = 팟캐스트
+common.episode = 에피소드
+common.queue = 대기열
+common.now_playing = 지금 재생 중
+common.youtube_music = YouTube Music
+
+common.songs.other = {count}곡
+common.plays.other = 재생 {count}회
+common.selected.other = {count}개 선택됨
+
+# ---- Sidebar
+nav.home = 홈
+nav.explore = 둘러보기
+nav.charts = 인기 차트
+nav.moods = 분위기 및 장르
+nav.new_releases = 최신 음악
+nav.recognize = 노래 인식
+nav.library_group = 보관함
+nav.library = 보관함
+nav.history = 감상 기록
+nav.stats = 통계
+nav.downloads = 다운로드
+nav.local_files = 로컬 파일
+nav.import = 가져오기 및 내보내기
+nav.together = 함께 듣기
+nav.settings = 설정
+
+# ---- Dates
+date.full = {year}년 {month_num}월 {day}일
+date.today = 오늘
+date.yesterday = 어제
+date.month_in_date.1 = 1월
+date.month_in_date.2 = 2월
+date.month_in_date.3 = 3월
+date.month_in_date.4 = 4월
+date.month_in_date.5 = 5월
+date.month_in_date.6 = 6월
+date.month_in_date.7 = 7월
+date.month_in_date.8 = 8월
+date.month_in_date.9 = 9월
+date.month_in_date.10 = 10월
+date.month_in_date.11 = 11월
+date.month_in_date.12 = 12월
+date.month_short.1 = 1월
+date.month_short.2 = 2월
+date.month_short.3 = 3월
+date.month_short.4 = 4월
+date.month_short.5 = 5월
+date.month_short.6 = 6월
+date.month_short.7 = 7월
+date.month_short.8 = 8월
+date.month_short.9 = 9월
+date.month_short.10 = 10월
+date.month_short.11 = 11월
+date.month_short.12 = 12월
+date.weekday_short.1 = 월
+date.weekday_short.2 = 화
+date.weekday_short.3 = 수
+date.weekday_short.4 = 목
+date.weekday_short.5 = 금
+date.weekday_short.6 = 토
+date.weekday_short.7 = 일
+
+# ---- Durations and relative times
+time.just_now = 방금
+time.seconds_ago.other = {count}초 전
+time.minutes_ago.other = {count}분 전
+time.hours_ago.other = {count}시간 전
+time.days_ago.other = {count}일 전
+time.hours_minutes = {hours}시간 {minutes}분
+time.minutes = {minutes}분
+time.seconds = {seconds}초
+
+# ---- File sizes
+units.size = {value}{unit}
+units.b = B
+units.kb = KB
+units.mb = MB
+units.gb = GB
+units.tb = TB

@@ -12,13 +12,14 @@ use gpui_component::{
     menu::{DropdownMenu as _, PopupMenuItem},
 };
 
+use crate::i18n::{Key, text, track_placeholder};
 use crate::icons::Lucide;
 
 /// "Sort: Title ↑" button with a menu of `options`; picking one calls `pick`
 /// (picking the current one flips the direction, which the page handles).
 pub fn sort_button<P: Render, S: Copy + PartialEq + 'static>(
     id: &'static str,
-    options: &'static [(S, &'static str)],
+    options: &'static [(S, Key)],
     current: S,
     descending: bool,
     pick: fn(&mut P, S, &mut Context<P>),
@@ -27,7 +28,7 @@ pub fn sort_button<P: Render, S: Copy + PartialEq + 'static>(
     let label = options
         .iter()
         .find(|(s, _)| *s == current)
-        .map_or("Sort", |(_, l)| l);
+        .map_or(t!("library.sort.label"), |&(_, l)| text(l));
     let page = cx.entity().downgrade();
     Button::new(id)
         .ghost()
@@ -42,7 +43,7 @@ pub fn sort_button<P: Render, S: Copy + PartialEq + 'static>(
             for &(option, label) in options {
                 let page = page.clone();
                 menu = menu.item(
-                    PopupMenuItem::new(label)
+                    PopupMenuItem::new(text(label))
                         .checked(option == current)
                         .on_click(move |_, _, cx| {
                             page.update(cx, |p, cx| {
@@ -59,13 +60,13 @@ pub fn sort_button<P: Render, S: Copy + PartialEq + 'static>(
 
 /// A small search field; `on_change` gets the trimmed text on every edit.
 pub fn filter_input<P: 'static>(
-    placeholder: &str,
+    placeholder: Key,
     window: &mut Window,
     cx: &mut Context<P>,
     on_change: fn(&mut P, String, &mut Context<P>),
 ) -> (Entity<InputState>, Subscription) {
-    let placeholder = placeholder.to_owned();
-    let input = cx.new(|cx| InputState::new(window, cx).placeholder(placeholder));
+    let input = cx.new(|cx| InputState::new(window, cx));
+    track_placeholder(&input, placeholder, window, cx);
     let sub = cx.subscribe(&input, move |page, input, event: &InputEvent, cx| {
         if matches!(event, InputEvent::Change) {
             let text = input.read(cx).value().trim().to_owned();
@@ -100,43 +101,19 @@ pub fn placeholder_art(icon: Lucide, side: f32, cx: &gpui::App) -> gpui::Div {
         .child(Icon::new(icon).size(px(side * 0.4)))
 }
 
-/// `1.2 GB`, `640 KB`.
+/// `1.2 GB`, `640 KB` (locale-aware, see [`crate::i18n::format::bytes`]).
 pub fn format_bytes(bytes: u64) -> String {
-    const UNITS: [&str; 5] = ["B", "KB", "MB", "GB", "TB"];
-    let mut value = bytes as f64;
-    let mut unit = 0;
-    while value >= 1024. && unit + 1 < UNITS.len() {
-        value /= 1024.;
-        unit += 1;
-    }
-    if unit == 0 {
-        format!("{bytes} B")
-    } else if value >= 100. {
-        format!("{value:.0} {}", UNITS[unit])
-    } else {
-        format!("{value:.1} {}", UNITS[unit])
-    }
+    crate::i18n::format::bytes(bytes)
 }
 
 /// `3 h 12 min`, `45 min`, `20 s`.
 pub fn format_listening(ms: u64) -> String {
-    let secs = ms / 1000;
-    let (h, m) = (secs / 3600, (secs / 60) % 60);
-    if h > 0 {
-        format!("{h} h {m} min")
-    } else if m > 0 {
-        format!("{m} min")
-    } else {
-        format!("{secs} s")
-    }
+    crate::i18n::format::listening(ms)
 }
 
 /// "1 song" / "12 songs".
 pub fn songs_label(n: impl Into<u64>) -> SharedString {
-    match n.into() {
-        1 => "1 song".into(),
-        n => format!("{n} songs").into(),
-    }
+    tp!("common.songs", n.into()).into()
 }
 
 #[cfg(test)]

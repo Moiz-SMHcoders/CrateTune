@@ -26,10 +26,11 @@ use crate::app::{MusicApp, update_app};
 use crate::components::card::{Card, CardKind};
 use crate::components::track_row::TrackRow;
 use crate::components::{empty_state, page_scroll, page_title, section_header, shelf};
+use crate::i18n::format::number;
 use crate::icons::Lucide;
 use crate::router::Route;
 use crate::theme::AppColors;
-use crate::util::{MONTHS, local_year, pretty_date};
+use crate::util::local_year;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 enum Range {
@@ -51,11 +52,11 @@ impl Range {
 
     fn label(self) -> &'static str {
         match self {
-            Range::Week => "7 days",
-            Range::Month => "30 days",
-            Range::Quarter => "90 days",
-            Range::Year => "This year",
-            Range::All => "All time",
+            Range::Week => t!("stats.range.week"),
+            Range::Month => t!("stats.range.month"),
+            Range::Quarter => t!("stats.range.quarter"),
+            Range::Year => t!("stats.range.year"),
+            Range::All => t!("stats.range.all"),
         }
     }
 }
@@ -92,7 +93,7 @@ impl StatsPage {
 fn totals_row(totals: &ListeningTotals, cx: &App) -> impl IntoElement + use<> {
     let theme = cx.theme();
     let (bg, muted) = (theme.secondary, theme.muted_foreground);
-    let tile = move |value: String, label: &'static str| {
+    let tile = move |value: String, label: SharedString| {
         v_flex()
             .min_w(px(132.))
             .p_4()
@@ -105,11 +106,26 @@ fn totals_row(totals: &ListeningTotals, cx: &App) -> impl IntoElement + use<> {
     h_flex()
         .gap_3()
         .flex_wrap()
-        .child(tile(format_listening(totals.play_ms), "listened"))
-        .child(tile(totals.plays.to_string(), "plays"))
-        .child(tile(totals.unique_songs.to_string(), "songs"))
-        .child(tile(totals.unique_artists.to_string(), "artists"))
-        .child(tile(totals.unique_albums.to_string(), "albums"))
+        .child(tile(
+            format_listening(totals.play_ms),
+            t!("stats.tile.listened").into(),
+        ))
+        .child(tile(
+            number(totals.plays),
+            tp!("stats.tile.plays", totals.plays).into(),
+        ))
+        .child(tile(
+            number(totals.unique_songs),
+            tp!("stats.tile.songs", totals.unique_songs).into(),
+        ))
+        .child(tile(
+            number(totals.unique_artists),
+            tp!("stats.tile.artists", totals.unique_artists).into(),
+        ))
+        .child(tile(
+            number(totals.unique_albums),
+            tp!("stats.tile.albums", totals.unique_albums).into(),
+        ))
 }
 
 /// Simple vertical bars with labels below.
@@ -192,13 +208,14 @@ fn top_songs_list(prefix: &str, songs: &[SongStat], cx: &App) -> impl IntoElemen
                     div()
                         .w(px(128.))
                         .flex_none()
+                        .truncate()
                         .text_xs()
                         .text_right()
                         .text_color(muted)
-                        .child(format!(
-                            "{} plays · {}",
+                        .child(tp!(
+                            "stats.song_plays",
                             s.plays,
-                            format_listening(s.play_ms)
+                            time = format_listening(s.play_ms)
                         )),
                 )
                 .into_any_element()
@@ -296,8 +313,8 @@ impl Render for StatsPage {
         let mut content = v_flex()
             .gap_8()
             .child(page_title(
-                "Stats",
-                Some("From your listening history on this computer.".into()),
+                t!("nav.stats"),
+                Some(t!("stats.subtitle").into()),
                 cx,
             ))
             .child(ranges);
@@ -305,13 +322,18 @@ impl Render for StatsPage {
             (_, Some(e)) => {
                 content = content.child(empty_state(
                     Lucide::ChartColumn,
-                    "Couldn't load stats",
+                    t!("stats.load_failed"),
                     e.clone(),
                     cx,
                 ))
             }
             (None, None) => {
-                content = content.child(empty_state(Lucide::ChartColumn, "Loading…", "", cx))
+                content = content.child(empty_state(
+                    Lucide::ChartColumn,
+                    t!("common.loading"),
+                    "",
+                    cx,
+                ))
             }
             (Some(stats), None) => {
                 let years: Vec<AnyElement> = stats
@@ -321,7 +343,7 @@ impl Render for StatsPage {
                         Button::new(("stats-year", year as u64))
                             .ghost()
                             .icon(Lucide::Trophy)
-                            .label(format!("{year} in music"))
+                            .label(t!("stats.year.title", year = year))
                             .on_click(move |_, window, cx| {
                                 update_app(cx, |app, cx| {
                                     app.navigate(Route::YearInMusic { year }, window, cx)
@@ -333,31 +355,32 @@ impl Render for StatsPage {
                 if stats.totals.plays == 0 {
                     content = content.child(empty_state(
                         Lucide::ChartColumn,
-                        "No listening in this range",
-                        "Play some music — songs count after 30 seconds.",
+                        t!("stats.empty_title"),
+                        t!("stats.empty_detail"),
                         cx,
                     ));
                 } else {
-                    let weekdays =
-                        ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(String::from);
+                    // The library counts weekdays from Sunday; the catalog from Monday.
+                    let weekdays = [7, 1, 2, 3, 4, 5, 6]
+                        .map(|d| crate::i18n::format::weekday_short(d).to_owned());
                     content = content
                         .child(totals_row(&stats.totals, cx))
                         .child(
                             v_flex()
                                 .gap_3()
-                                .child(section_header("Top songs", None, None, cx))
+                                .child(section_header(t!("stats.top_songs"), None, None, cx))
                                 .child(top_songs_list("stats-song", &stats.songs, cx)),
                         )
                         .child(shelf(
                             "stats-artists",
-                            "Top artists",
+                            t!("stats.top_artists"),
                             None,
                             artist_cards("stats-artist", &stats.artists),
                             cx,
                         ))
                         .child(shelf(
                             "stats-albums",
-                            "Top albums",
+                            t!("stats.top_albums"),
                             None,
                             album_cards("stats-album", &stats.albums),
                             cx,
@@ -371,14 +394,19 @@ impl Render for StatsPage {
                                     v_flex()
                                         .flex_1()
                                         .gap_3()
-                                        .child(section_header("By hour of day", None, None, cx))
+                                        .child(section_header(t!("stats.by_hour"), None, None, cx))
                                         .child(bars(&stats.by_hour, &hour_labels(), 96., cx)),
                                 )
                                 .child(
                                     v_flex()
                                         .w(px(280.))
                                         .gap_3()
-                                        .child(section_header("By weekday", None, None, cx))
+                                        .child(section_header(
+                                            t!("stats.by_weekday"),
+                                            None,
+                                            None,
+                                            cx,
+                                        ))
                                         .child(bars(&stats.by_weekday, &weekdays, 96., cx)),
                                 ),
                         );
@@ -387,7 +415,7 @@ impl Render for StatsPage {
                     content = content.child(
                         v_flex()
                             .gap_3()
-                            .child(section_header("Year in Music", None, None, cx))
+                            .child(section_header(t!("stats.year_in_music"), None, None, cx))
                             .child(h_flex().gap_2().flex_wrap().children(years)),
                     );
                 }
@@ -428,22 +456,27 @@ impl Render for YearInMusicPage {
             move |lib| lib.year_in_music(year, TimeZone::Local, 10),
         );
         let mut content = v_flex().gap_8().child(page_title(
-            format!("{year} in music"),
-            Some("Your year, from the listening history on this computer.".into()),
+            t!("stats.year.title", year = year),
+            Some(t!("stats.year.subtitle").into()),
             cx,
         ));
         match (&self.recap.value, &self.recap.error) {
             (_, Some(e)) => {
-                content = content.child(empty_state(Lucide::Trophy, "Couldn't load", e.clone(), cx))
+                content = content.child(empty_state(
+                    Lucide::Trophy,
+                    t!("stats.year.load_failed"),
+                    e.clone(),
+                    cx,
+                ))
             }
             (None, None) => {
-                content = content.child(empty_state(Lucide::Trophy, "Loading…", "", cx))
+                content = content.child(empty_state(Lucide::Trophy, t!("common.loading"), "", cx))
             }
             (Some(recap), None) if recap.totals.plays == 0 => {
                 content = content.child(empty_state(
                     Lucide::Trophy,
-                    "Nothing played that year",
-                    "Your recap fills up as you listen.",
+                    t!("stats.year.empty_title"),
+                    t!("stats.year.empty_detail"),
                     cx,
                 ))
             }
@@ -470,47 +503,55 @@ impl Render for YearInMusicPage {
                 if let Some(top) = recap.top_songs.first() {
                     highlights = highlights.child(highlight(
                         top.song.track.title.clone(),
-                        format!("Your top song · {} plays", top.plays),
+                        tp!("stats.year.top_song", top.plays),
                     ));
                 }
                 if let Some(top) = recap.top_artists.first() {
                     highlights = highlights.child(highlight(
                         top.artist.name.clone(),
-                        format!("Your top artist · {}", format_listening(top.play_ms)),
+                        t!(
+                            "stats.year.top_artist",
+                            time = format_listening(top.play_ms)
+                        ),
                     ));
                 }
                 if let Some(hour) = recap.top_hour {
                     highlights = highlights.child(highlight(
                         format!("{hour}:00 – {}:00", (hour + 1) % 24),
-                        "Your favourite hour".into(),
+                        t!("stats.year.favourite_hour").into(),
                     ));
                 }
                 if let Some(day) = &recap.busiest_day {
                     highlights = highlights.child(highlight(
-                        pretty_date(&day.date),
-                        format!("Busiest day · {}", format_listening(day.play_ms)),
+                        crate::i18n::format::iso_date(&day.date),
+                        t!(
+                            "stats.year.busiest_day",
+                            time = format_listening(day.play_ms)
+                        ),
                     ));
                 }
-                let month_labels: Vec<String> = MONTHS.iter().map(|m| m[..3].to_owned()).collect();
+                let month_labels: Vec<String> = (1..=12)
+                    .map(|m| crate::i18n::format::month_short(m).to_owned())
+                    .collect();
                 content = content
                     .child(totals_row(&recap.totals, cx))
                     .child(highlights)
                     .child(
                         v_flex()
                             .gap_3()
-                            .child(section_header("Top songs", None, None, cx))
+                            .child(section_header(t!("stats.top_songs"), None, None, cx))
                             .child(top_songs_list("year-song", &recap.top_songs, cx)),
                     )
                     .child(shelf(
                         "year-artists",
-                        "Top artists",
+                        t!("stats.top_artists"),
                         None,
                         artist_cards("year-artist", &recap.top_artists),
                         cx,
                     ))
                     .child(shelf(
                         "year-albums",
-                        "Top albums",
+                        t!("stats.top_albums"),
                         None,
                         album_cards("year-album", &recap.top_albums),
                         cx,
@@ -518,13 +559,13 @@ impl Render for YearInMusicPage {
                     .child(
                         v_flex()
                             .gap_3()
-                            .child(section_header("Month by month", None, None, cx))
+                            .child(section_header(t!("stats.month_by_month"), None, None, cx))
                             .child(bars(&recap.by_month, &month_labels, 120., cx)),
                     )
                     .child(
                         v_flex()
                             .gap_3()
-                            .child(section_header("By hour of day", None, None, cx))
+                            .child(section_header(t!("stats.by_hour"), None, None, cx))
                             .child(bars(&recap.by_hour, &hour_labels(), 96., cx)),
                     );
             }

@@ -1,0 +1,35 @@
+# The search page (ko).
+
+search.title = 검색
+search.query_title = “{query}”
+search.searching = 검색 중…
+
+search.tab.all = 전체
+search.tab.songs = 노래
+search.tab.videos = 동영상
+search.tab.albums = 앨범
+search.tab.artists = 아티스트
+search.tab.community_playlists = 커뮤니티 재생목록
+search.tab.featured_playlists = 추천 재생목록
+search.tab.podcasts = 팟캐스트
+search.tab.episodes = 에피소드
+
+search.tab_empty.songs = 노래 없음
+search.tab_empty.videos = 동영상 없음
+search.tab_empty.albums = 앨범 없음
+search.tab_empty.artists = 아티스트 없음
+search.tab_empty.community_playlists = 커뮤니티 재생목록 없음
+search.tab_empty.featured_playlists = 추천 재생목록 없음
+search.tab_empty.podcasts = 팟캐스트 없음
+search.tab_empty.episodes = 에피소드 없음
+search.tab_empty.detail = 다른 카테고리나 검색어를 사용해 보세요.
+
+search.correction.applied = {corrected} 검색 결과 표시 중 · {original}(으)로 검색
+search.correction.suggested = 이것을 찾으셨나요? {corrected}
+
+search.top_result = 인기 검색결과
+search.empty.title = 검색결과 없음
+search.empty.detail = 다른 검색어를 사용하거나 맞춤법을 확인하세요.
+
+search.start.title = YouTube Music 검색
+search.start.detail = 검색창(⌘F)에 노래, 아티스트, 앨범 또는 재생목록을 입력하고 Enter 키를 누르세요.

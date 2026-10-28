@@ -5,7 +5,7 @@
 use std::time::Duration;
 
 use gpui::{
-    AnyElement, Context, IntoElement, ParentElement as _, SharedString, Styled as _, Window,
+    AnyElement, Context, IntoElement, ParentElement as _, SharedString, Styled as _, Window, div,
     prelude::FluentBuilder as _,
 };
 use gpui_component::{
@@ -23,6 +23,7 @@ use super::prefs::{SLEEP_PRESETS, StreamSourceMode, quality_title};
 use super::prefs_ui::{Devices, choice, slider_row};
 use super::widgets::{group, note, row};
 use crate::app::{read_app, update_app};
+use crate::i18n::format::decimal;
 use crate::queue::Repeat;
 
 pub(super) fn render(
@@ -49,9 +50,9 @@ pub(super) fn render(
         &[Repeat::Off, Repeat::All, Repeat::One],
         p.repeat,
         |mode| match mode {
-            Repeat::Off => "Off",
-            Repeat::All => "All",
-            Repeat::One => "One",
+            Repeat::Off => t!("common.off"),
+            Repeat::All => t!("settings.playback.repeat_all"),
+            Repeat::One => t!("settings.playback.repeat_one"),
         },
         |this, mode, cx| {
             let shuffle = this.settings.playback.shuffle;
@@ -106,20 +107,29 @@ pub(super) fn render(
 
     // ---- transitions, speed & pitch
     let crossfade_label = if a.crossfade_secs <= 0. {
-        "Off".to_owned()
+        t!("common.off").to_owned()
     } else {
-        format!("{:.1} s", a.crossfade_secs)
+        t!(
+            "settings.playback.crossfade_value",
+            seconds = decimal(a.crossfade_secs.into(), 1)
+        )
     };
-    let speed_label = format!("{:.2}×", a.speed);
-    let pitch_label = if a.pitch > 0. {
-        format!("+{:.0} st", a.pitch)
-    } else {
-        format!("{:.0} st", a.pitch)
-    };
+    let speed_label = t!(
+        "settings.playback.speed_value",
+        speed = decimal(a.speed.into(), 2)
+    );
+    let pitch_label = t!(
+        "settings.playback.pitch_value",
+        value = if a.pitch > 0. {
+            format!("+{:.0}", a.pitch)
+        } else {
+            format!("{:.0}", a.pitch)
+        }
+    );
     let reset = Button::new("settings-speed-reset")
         .small()
         .outline()
-        .label("Reset")
+        .label(t!("common.reset"))
         .disabled(a.speed == 1. && a.pitch == 0.)
         .on_click(
             cx.listener(|this, _, window, cx| this.set_speed_pitch(Some(1.), Some(0.), window, cx)),
@@ -127,12 +137,12 @@ pub(super) fn render(
 
     // ---- output device
     let device_label: SharedString = match (&a.output_device, &panel.prefs.devices) {
-        (None, _) => "System default".into(),
+        (None, _) => t!("settings.playback.system_default").into(),
         (Some(id), Devices::Ready(list)) => match list.iter().find(|d| &d.id == id) {
             Some(d) => d.name.clone().into(),
-            None => format!(
-                "{} (not connected)",
-                a.output_device_name.clone().unwrap_or_else(|| id.clone())
+            None => t!(
+                "settings.playback.device_missing",
+                device = a.output_device_name.clone().unwrap_or_else(|| id.clone())
             )
             .into(),
         },
@@ -164,7 +174,7 @@ pub(super) fn render(
                 }
             };
             menu = menu.item(
-                PopupMenuItem::new("System default")
+                PopupMenuItem::new(t!("settings.playback.system_default"))
                     .checked(selected_device.is_none())
                     .on_click(pick(None)),
             );
@@ -173,7 +183,7 @@ pub(super) fn render(
             }
             for (id, name, is_default) in &devices {
                 let label = if *is_default {
-                    format!("{name} (current default)")
+                    t!("settings.playback.device_current_default", device = name)
                 } else {
                     name.clone()
                 };
@@ -189,7 +199,7 @@ pub(super) fn render(
     let refresh = Button::new("settings-device-refresh")
         .small()
         .ghost()
-        .label("Refresh")
+        .label(t!("common.refresh"))
         .loading(matches!(panel.prefs.devices, Devices::Loading))
         .on_click(cx.listener(|this, _, _, cx| this.refresh_devices(cx)));
 
@@ -210,18 +220,21 @@ pub(super) fn render(
         .flex_wrap()
         .children(SLEEP_PRESETS.map(|m| {
             arm(
-                format!("{m} min"),
+                t!("time.minutes", minutes = m),
                 format!("sleep-{m}"),
                 Some(SleepTimer::After(Duration::from_secs(u64::from(m) * 60))),
             )
         }))
         .child(arm(
-            "End of track".into(),
+            t!("settings.playback.end_of_track").into(),
             "sleep-eot".into(),
             Some(SleepTimer::EndOfTrack),
         ))
         .child(arm(
-            format!("{} min (custom)", custom.as_secs() / 60),
+            t!(
+                "settings.playback.sleep_custom_button",
+                minutes = custom.as_secs() / 60
+            ),
             "sleep-custom".into(),
             Some(SleepTimer::After(custom)),
         ))
@@ -231,7 +244,7 @@ pub(super) fn render(
                     .small()
                     .primary()
                     .selected(true)
-                    .label("Turn off")
+                    .label(t!("settings.playback.turn_off"))
                     .on_click(|_, _, cx| {
                         update_app(cx, |app, cx| app.set_sleep_timer(None, cx));
                     }),
@@ -241,117 +254,120 @@ pub(super) fn render(
     v_flex()
         .gap_5()
         .child(
-            group("Queue", cx)
+            group(t!("settings.playback.queue"), cx)
                 .child(row(
-                    "Shuffle",
-                    Some("Keeps the current song first; turning it off restores the order."),
+                    t!("settings.playback.shuffle"),
+                    Some(t!("settings.playback.shuffle_desc")),
                     shuffle,
                     cx,
                 ))
                 .child(row(
-                    "Repeat",
-                    Some("Remembered between launches (⌘R cycles it)."),
+                    t!("settings.playback.repeat"),
+                    Some(t!("settings.playback.repeat_desc")),
                     repeat,
                     cx,
                 )),
         )
         .child(
-            group("Audio", cx)
+            group(t!("settings.playback.audio"), cx)
                 .child(row(
-                    "YouTube streams",
+                    t!("settings.playback.streams"),
                     Some(stream_source_note(a.stream_source)),
                     stream_source,
                     cx,
                 ))
                 .child(row(
-                    "Streaming quality",
-                    Some("Low saves data; High prefers Opus (~160 kbps) over AAC 128."),
+                    t!("settings.playback.quality"),
+                    Some(t!("settings.playback.quality_desc")),
                     quality,
                     cx,
                 ))
                 .child(row(
-                    "Loudness normalization",
-                    Some("Evens out volume with YouTube's loudness data and ReplayGain tags."),
+                    t!("settings.playback.normalize"),
+                    Some(t!("settings.playback.normalize_desc")),
                     normalize,
                     cx,
                 ))
                 .child(row(
-                    "Skip silence",
-                    Some("Drops silence at track edges and shortens long silent gaps."),
+                    t!("settings.playback.skip_silence"),
+                    Some(t!("settings.playback.skip_silence_desc")),
                     silence,
                     cx,
                 ))
                 .child(row(
-                    "Skip songs that fail to load",
-                    Some("Moves on instead of stopping (up to 3 in a row)."),
+                    t!("settings.playback.auto_skip"),
+                    Some(t!("settings.playback.auto_skip_desc")),
                     auto_skip,
                     cx,
                 )),
         )
         .child(
-            group("Transitions", cx)
+            group(t!("settings.playback.transitions"), cx)
                 .child(slider_row(
-                    "Crossfade",
+                    t!("settings.playback.crossfade"),
                     crossfade_label,
                     &panel.prefs.crossfade,
                     cx,
                 ))
-                .child(note(
-                    "Playback is gapless: the next song is buffered about 30 s ahead and starts \
-                     on the very next sample. Crossfade blends the two (also before a preview \
-                     ends early).",
-                    cx,
-                )),
+                .child(note(t!("settings.playback.transitions_note"), cx)),
         )
         .child(
-            group("Speed and pitch", cx)
-                .child(slider_row("Speed", speed_label, &panel.prefs.speed, cx))
-                .child(slider_row("Pitch", pitch_label, &panel.prefs.pitch, cx))
+            group(t!("settings.playback.speed_pitch"), cx)
+                .child(slider_row(
+                    t!("settings.playback.speed"),
+                    speed_label,
+                    &panel.prefs.speed,
+                    cx,
+                ))
+                .child(slider_row(
+                    t!("settings.playback.pitch"),
+                    pitch_label,
+                    &panel.prefs.pitch,
+                    cx,
+                ))
                 .child(
                     h_flex()
+                        .gap_2()
                         .justify_between()
-                        .child(note("Speed keeps the pitch; pitch keeps the speed.", cx))
-                        .child(reset),
+                        .child(
+                            div()
+                                .min_w_0()
+                                .child(note(t!("settings.playback.speed_pitch_note"), cx)),
+                        )
+                        .child(div().flex_none().child(reset)),
                 ),
         )
         .child(
-            group("Output device", cx)
+            group(t!("settings.playback.output"), cx)
                 .child(
                     h_flex()
                         .gap_2()
                         .child(device_menu)
                         .child(refresh)
                         .child(muted_text(
-                            in_use.map(|d| format!("Playing through {d}")),
+                            in_use.map(|d| t!("settings.playback.playing_through", device = d)),
                             muted,
                         )),
                 )
-                .child(note(
-                    "A missing device falls back to the system default and is picked up again \
-                     when it comes back.",
-                    cx,
-                )),
+                .child(note(t!("settings.playback.output_note"), cx)),
         )
         .child(
-            group("Sleep timer", cx)
+            group(t!("settings.playback.sleep"), cx)
                 .child(muted_text(
                     Some(match &sleep {
-                        Some(label) => format!("Pauses playback: {label}"),
-                        None => "Off".to_owned(),
+                        Some(label) => t!("settings.playback.sleep_armed", when = label),
+                        None => t!("common.off").to_owned(),
                     }),
                     muted,
                 ))
                 .child(sleep_buttons)
                 .child(slider_row(
-                    "Custom length",
-                    format!("{} min", custom.as_secs() / 60),
+                    t!("settings.playback.custom_length"),
+                    t!("time.minutes", minutes = custom.as_secs() / 60),
                     &panel.prefs.sleep_custom,
                     cx,
                 ))
-                .child(note(
-                    "Also in the player bar and on the Now Playing screen (moon icon).",
-                    cx,
-                )),
+                .child(note(t!("settings.playback.sleep_note"), cx)),
         )
         .into_any_element()
 }
@@ -368,13 +384,9 @@ fn muted_text(text: Option<String>, color: gpui::Hsla) -> impl IntoElement {
 /// What a stream-source choice means, under the selector.
 fn stream_source_note(mode: StreamSourceMode) -> &'static str {
     match mode {
-        StreamSourceMode::Auto => {
-            "Full songs: TV client, then the web client with a PoToken, then a ~1 min preview."
-        }
-        StreamSourceMode::Tv => "Full songs via the TV client (no PoToken); a preview if it fails.",
-        StreamSourceMode::WebPoToken => {
-            "Full songs via the web client and a BotGuard PoToken (macOS); a preview if it fails."
-        }
-        StreamSourceMode::Preview => "Only the first ~1 minute of each song (the old behaviour).",
+        StreamSourceMode::Auto => t!("settings.playback.stream_auto"),
+        StreamSourceMode::Tv => t!("settings.playback.stream_tv"),
+        StreamSourceMode::WebPoToken => t!("settings.playback.stream_web"),
+        StreamSourceMode::Preview => t!("settings.playback.stream_preview"),
     }
 }

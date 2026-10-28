@@ -20,6 +20,15 @@ versions follow [SemVer](https://semver.org/).
 
 ### Added
 
+* **The app speaks 18 languages**: English, German, Spanish, Brazilian Portuguese,
+  French, Italian, Dutch, Polish, Russian, Ukrainian, Turkish, Indonesian, Vietnamese,
+  Japanese, Korean, Simplified and Traditional Chinese, and Hindi — every screen, menu,
+  the menu-bar item, notifications and dialogs. It follows the system's preferred
+  languages; **Settings → Appearance → Interface language** (also on the welcome guide's
+  first page) switches it live. Plural forms, dates, relative times and digit grouping
+  follow the language. On a fresh install the YouTube Music content language and country
+  start from the system's language and region. Some translations come from ArchiveTune's
+  community translations (GPL-3.0).
 * **Spectrum feed for visualizers** (`music-core`): `Player::spectrum(bands)` returns
   smoothed log-spaced bands, peak-hold markers and an RMS level of what is playing (after
   EQ / normalization / crossfade, before the volume), computed on demand from a lock-free

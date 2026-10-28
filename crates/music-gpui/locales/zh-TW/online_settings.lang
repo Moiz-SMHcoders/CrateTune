@@ -1,0 +1,20 @@
+# Settings → Content & region (zh-TW).
+
+settings.content.group_region = 語言與地區
+settings.content.language = 內容語言
+settings.content.language_description = YouTube Music 上標題、區塊和搜尋使用的語言。
+settings.content.language_placeholder = 語言
+settings.content.country = 內容國家/地區
+settings.content.country_description = 首頁動態、排行榜和最新發行對應的地區。
+settings.content.country_placeholder = 國家/地區
+settings.content.region_note = 變更會立即生效；已開啟的頁面會以新語言重新載入。
+
+settings.content.group_filters = 過濾
+settings.content.hide_explicit = 隱藏不雅內容
+settings.content.hide_explicit_description = 從頁面、搜尋和電台中移除標示為不雅內容的歌曲和專輯。
+settings.content.hide_videos = 隱藏音樂影片
+settings.content.hide_videos_description = 僅限歌曲：區塊、搜尋、播放清單、專輯、電台和佇列中不顯示音樂影片和使用者影片（若某張專輯在 YouTube 上只有官方音訊影片，則仍會完整保留）。
+
+settings.content.group_radio = 電台
+settings.content.autoplay = 自動播放類似歌曲
+settings.content.autoplay_description = 佇列中的最後一首歌開始播放時，會在其後加入該歌曲電台中的歌曲。

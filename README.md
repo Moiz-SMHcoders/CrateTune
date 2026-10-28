@@ -521,6 +521,12 @@ src/
   settings/onboarding.rs  first-run guide overlay (reuses the settings sections)
   update_check.rs    optional GitHub release check; identity.rs (name / ids from
                      packaging/app.env via build.rs); release_script.rs (script actions)
+  i18n/              translations: t! / tp! / k! (mod.rs), CLDR plurals (plural.rs),
+                     numbers / dates / relative times (format.rs), system language
+                     (system.rs), live input placeholders (inputs.rs), catalog tests and
+                     the English-literal lint (tests.rs); settings/language.rs: the picker
+locales/<locale>/*.lang  the catalogs (English = source), embedded by build.rs via
+                     i18n_parse.rs
 ```
 
 ### Extension points
@@ -582,9 +588,18 @@ src/
   a second); a part that has to change at display rate belongs in a cached region
   (`np_region.rs`) or must be cheap.
 * **Renaming the app:** edit `packaging/app.env` only (see Install / build).
+* **UI text** (see [Translations](#translations-ui-languages)): add the English string to
+  `locales/en/<area>.lang` and use `t!("key")` / `t!("key", name = value)` /
+  `tp!("key", count)`; an unknown key is a compile error. Never hard-code the app's name
+  (`{app}` in the catalog). **Add a language:** create `locales/<code>/` with the English
+  file names, translate, check with `cargo test -p music-gpui i18n::` (keys,
+  placeholders, plural forms) and add its plural rule to `i18n/plural.rs` if the
+  language isn't listed there.
 
 ### Features
 
+* **Languages:** 18 UI languages, live switching, system default; see
+  [Translations](#translations-ui-languages).
 * **Shell:** sidebar (Home, Explore, Charts, Moods & genres, New releases, Library,
   History, Stats, Downloads, Local files, Import & export, Listen together, Settings), header with back/forward and the
   search field, routed content, player bar, queue panel, Now Playing overlay. Window
@@ -1197,6 +1212,100 @@ upload — the upload's requests are unit-tested only), Quad9 DoH, DoH through a
 original "vanished" report itself (not reproduced; the race above is the cause found in the
 code, removed by design), physical clicks on the new buttons (script actions instead).
 
+### Translations (UI languages)
+
+| ![German: search](docs/screenshots/i18n-de-search.png) | ![German: Appearance with the language picker](docs/screenshots/i18n-de-appearance.png) |
+|---|---|
+| ![German: welcome guide](docs/screenshots/i18n-de-onboarding.png) | ![Russian: Playback settings](docs/screenshots/i18n-ru-playback.png) |
+| ![Russian: Now Playing](docs/screenshots/i18n-ru-np.png) | ![Japanese: search](docs/screenshots/i18n-ja-search.png) |
+| ![Japanese: Appearance](docs/screenshots/i18n-ja-appearance.png) | ![Chinese (Simplified): Now Playing](docs/screenshots/i18n-zh-CN-np.png) |
+| ![Chinese (Simplified): library](docs/screenshots/i18n-zh-CN-library.png) | ![Hindi: library](docs/screenshots/i18n-hi-library.png) |
+| ![Hindi: Content & region](docs/screenshots/i18n-hi-content.png) | ![RTL check: Arabic lyrics (not shipped as a UI language)](docs/screenshots/i18n-rtl-arabic-content.png) |
+
+**18 UI languages**, each 100 % of the 1,522 English keys (1,481 plain + 41 plural
+groups): en, de, es, fr, hi, id, it, ja, ko, nl, pl, pt-BR, ru, tr, uk, vi, zh-CN, zh-TW
+(`cargo test -p music-gpui coverage -- --nocapture` prints the table). Translations are
+partly from ArchiveTune's Weblate project (GPL-3.0, see `crates/music-gpui/THIRD_PARTY.md`;
+a matching English string's translation was reused where the meaning was the same —
+15–160 keys per locale, i.e. 1–10 %), the rest written for this project.
+
+* **Layer** (`src/i18n/`, no new crates — `sys-locale` was already in GPUI's graph):
+  catalogs `locales/<locale>/*.lang` (`key = value`, `{name}` placeholders, `key.one` /
+  `key.other` … plural forms, `{app}` = the app's name, filled in at build time) are
+  embedded by `build.rs` as sorted key tables and one text blob + offsets per locale.
+  `t!("key")` resolves the key in a `const` (unknown key = compile error) and returns a
+  `&'static str` — an atomic load, two array reads, a slice; no allocation, so it is used
+  in render paths at 60 fps. `t!("key", name = value)` and `tp!("key", n)` (CLDR plural
+  rules for every shipped language, `i18n/plural.rs`) allocate a `String`. Missing
+  translations fall back to English. `rust-i18n` (already linked by gpui-component) was
+  considered: runtime string-key hashing, `%{}` replacement and no plurals or compile-time
+  key checks.
+* **Formatting** (`i18n/format.rs`): digit grouping per language (CLDR symbols, Indian
+  grouping for Hindi, no grouping of 4-digit numbers in es / pl), full dates with genitive
+  month names where the language needs them, "5 min ago", listening time, file sizes;
+  playback times stay `m:ss`.
+* **Language setting**: `appearance.language` (`system` or a code). The system's
+  preferred languages (`sys-locale`: macOS `preferredLanguages`, Windows UI languages,
+  Linux `LANGUAGE` / `LC_*` / `LANG`) map to a catalog (`de-AT` → de, `zh-Hant-HK` →
+  zh-TW, `pt-PT` → pt-BR). Settings → Appearance → Interface language and the welcome
+  guide's first page list "System default (…)" and every language by its own name
+  ("Deutsch — German"). Switching is live (`MusicApp::apply_language`): menus rebuilt with
+  `cx.set_menus` (the windows menu re-registered when "Window" is translated), the
+  menu-bar item relabelled, tracked input placeholders reset (`i18n::track_placeholder`),
+  pickers rebuilt, every window refreshed (cached Now Playing views too). gpui-component's
+  own few strings follow where it has them (it, pt-BR, zh). On a fresh install the YouTube
+  Music content language starts from the UI language and the country from the system
+  region; during the welcome guide the content language follows the picker.
+* **Not translated, on purpose**: logs, script actions, env vars, ids; error details from
+  music-core / servers (English, inside a translated sentence); the default Discord
+  activity text and the Together display name / reasons (other people see them); YouTube
+  Music content (its own language setting); module manifests; brand names.
+* **Tests**: `every_locale_matches_english` (keys ⊆ English, placeholders match, every
+  plural category the language uses exists, no hard-coded app name),
+  `lookups_fall_back_and_fill` (every key resolves in every locale), and
+  `english_literals_stay_out_of_ui_code` — a lint over `src/` that fails on string
+  literals that read like English outside `t!` / logging / parsing calls (allowlist:
+  `src/i18n/lint_allowlist_*.txt`, `// i18n-ignore`). Plural, grouping and system-tag
+  mapping have unit tests.
+* **Layout**: checked with screenshots in de, ru, ja, zh-CN, hi (and spot checks of the
+  others): settings section list widened to 232 pt, settings rows wrap their label and
+  keep the control, button rows `flex_wrap`, sidebar / queue / player-bar labels truncate.
+
+**Right-to-left**: GPUI shapes Arabic correctly (joined, each line right to left — see the
+last screenshot, Arabic lyrics), but text stays left-aligned, mixed-direction lines run
+left to right and nothing mirrors; Arabic, Persian and Hebrew are therefore not shipped
+(ArchiveTune has them; adding them is a catalog + `plural.rs` change once GPUI aligns and
+mirrors RTL).
+
+**Hindi caveat (GPUI)**: Devanagari shapes correctly (conjuncts, matras), but gpui-pre
+0.3.10's `LineWrapper::is_word_char` lacks the Devanagari block (U+0900–U+097F), so a
+wrapped Hindi paragraph may break inside a word, and wrapping / truncation sum unshaped
+per-character widths, so a label in a box exactly as wide as its text can lose a final
+mark (ं). Sidebar labels were fixed by giving them the row's width; gpui-component buttons
+whose label ends in such a mark (e.g. "चुनें") can still show it cut. Upstream fix: add
+`'\u{0900}'..='\u{097F}'` (and `'\u{A8E0}'..='\u{A8FF}'`) to `is_word_char`.
+
+**Measured** (release, macOS arm64, display awake, `MUSIC_ON_TOP=1`, 1180×793, "Instant
+Crush" seeked to 1:10, muted real device; three interleaved runs each, avg of
+`ps -o %cpu=` over 12 s):
+
+| | before (main + spectrum merge base) | i18n, English | i18n, German |
+|---|---|---|---|
+| Now Playing, word-synced lyrics | 8.9 / 9.2 / 10.2 % | 9.1 / 9.2 / 9.8 % | 10.1 / 10.2 / 10.7 % |
+| Now Playing closed, playing | 1.1 / 2.4 / 6.1 % | 0.4 / 1.4 / 1.4 % | 1.1 / 1.2 / 1.3 % |
+| UI cost per frame (`@bench=600`, lyrics) | 0.82 / 0.84 ms | 0.84 / 0.74 ms | 0.83 / 0.91 ms |
+
+RSS 453–477 MiB in every variant. Release binary 42,907,472 → 44,592,592 B (+1.6 MiB:
+~1.0 MiB of catalog text for 18 languages, 0.23 MiB of offset tables, the rest code incl.
+the merged spectrum feed). **Verified** by script (`@lang`, `MUSIC_LANG`): live switch
+en → hi with Now Playing open and on the settings page (menus, sidebar, cached header,
+pickers), `appearance.language` saved; first run with `MUSIC_SYSTEM_LANG=de-DE` sets the
+content language to de and the country to DE; `@theme` / `@lyrics-align` / `@layout` still
+match under German (stable keys, saved values checked). **Not verified**: the macOS menu bar and the menu-bar
+item after a switch on screen (built through the same calls; not looked at), Windows /
+Linux system-language detection (only the macOS path ran), native-speaker review of the
+translations, every screen in every language (five locales were looked at).
+
 ### Keyboard shortcuts and menus
 
 | Keys | Action |
@@ -1226,7 +1335,8 @@ bindings (Space, ⌘←/→, ⌘↑/↓ edit text while the search field is focu
 `settings.json` (volume, EQ, Last.fm API key + user name, ListenBrainz user name, Discord
 switch + id + `activity`, theme + text size, shuffle + repeat, `audio`, `lyrics`,
 `now_playing`, `scrobble_rules`, `content` (language / country / filters / autoplay),
-`network` (proxy), main window and mini player frames, and `library`: privacy switches,
+`network` (proxy), `appearance.language` (UI language: a catalog code or `system`),
+main window and mini player frames, and `library`: privacy switches,
 play-cache limit, music folders, the signed-in YouTube account's name / avatar /
 `auth_user` / channel, `sponsorblock`, `together` (incl. `relay_url`), `spotify`, `ai_filter`,
 `cast`) lives in the platform config dir — macOS
@@ -1261,6 +1371,7 @@ item's ACL is tied to the binary). Secrets are never logged.
 | `MUSIC_EQ_PRESET=Bass` | apply an EQ preset at startup (saved like a click) |
 | `MUSIC_CONFIG_DIR=…` / `MUSIC_SECRET_STORE=file` | other settings dir / skip the keychain |
 | `MUSIC_TRAY=0` | no menu-bar item |
+| `MUSIC_LANG=de` / `MUSIC_SYSTEM_LANG=ja-JP,en` | UI language for this session (not saved) / pretend the system prefers these languages |
 | `MUSIC_ONBOARDING=1\|0` | force / suppress the first-run guide (it is skipped automatically for `MUSIC_SCRIPT` / screenshot runs) |
 | `MUSIC_UPDATE_REPO=owner/name` | enable the update check against that repo (testing; the default comes from `packaging/app.env`) |
 | `MUSIC_TRACE=1` | log playback transitions, seeks, saves, route changes, artwork downloads; `MUSIC_TIMINGS=1`: renders/s + worst frame gap |
@@ -1302,7 +1413,8 @@ playback `@play=N @next @prev @seek=S @toggle @open @close @volume=V`; navigatio
 @import-save[=NAME] @import-cancel @import-status @export=PLAYLIST:FORMAT:PATH`;
 recognition `@recognize` (microphone), `@recognize-file=PATH`,
 `@recognize-cancel`, `@recognize-history=N`; `@onboarding[=STEP|off]`, `@onboarding-next`,
-`@onboarding-back`, `@update-check` (`release_script.rs`); lyrics cards (`lyrics_card.rs`)
+`@onboarding-back`, `@update-check` (`release_script.rs`); `@lang=CODE|system` (UI language,
+saved); lyrics cards (`lyrics_card.rs`)
 `@card-select=3;4;5 @card-open @card-style=aspect:story|bg:blur|album|dark|light|align:left|size:large|art:off
 @card-save=PATH @card-copy @card-close`; measurement `@bench=N[:MS]` (draws the main window N
 times MS ms apart and prints the draw times: the UI's CPU per frame, also with the screen

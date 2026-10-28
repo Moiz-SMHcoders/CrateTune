@@ -1,0 +1,173 @@
+# Settings: Account, Network and About sections, the settings panel itself (status
+# lines, storage of secrets and the settings file), the update check and the Google
+# sign-in window.
+
+# ---- Account (src/settings/accounts.rs)
+# Title of the paste-cookie dialog.
+settings.account.cookie_title = Sign in with a browser cookie
+# Numbered instructions in the paste-cookie dialog (\n = line break). Keep ⌥⌘I,
+# “browse” and “Cookie” / Request Headers as the browser shows them.
+settings.account.cookie_steps = 1. Open music.youtube.com in your browser and sign in.\n2. Open the developer tools (⌥⌘I in Safari / Chrome) → Network, reload the page.\n3. Click any request to music.youtube.com (e.g. “browse”), find “Cookie” under Request Headers and copy its whole value.\n4. Paste it below. It is stored in the OS keychain and only sent to YouTube.
+# Label next to a small number field in the paste-cookie dialog.
+settings.account.cookie_index = Google account index (if several are signed in):
+settings.account.not_signed_in = Not signed in. Everything works anonymously; signing in syncs your liked songs, saved albums, subscriptions and playlists into the library, and likes and playlist edits go back to YouTube Music.
+# Button (opens a Google sign-in window).
+settings.account.sign_in_google = Sign in with Google…
+# Button (opens the paste-cookie dialog).
+settings.account.paste_cookie = Paste cookie…
+# “Paste cookie” refers to the button settings.account.paste_cookie.
+settings.account.google_refused = If Google refuses the sign-in window (“This browser or app may not be secure”), use “Paste cookie”.
+# {date} = a formatted date ("28 October 2026").
+settings.account.last_synced = Last synced {date}
+settings.account.not_synced = Not synced yet
+# Button labels (keep short).
+settings.account.sync_now = Sync now
+settings.account.syncing = Syncing…
+settings.account.sync_group = Library sync
+settings.account.sync_row = Sync your YouTube Music library
+settings.account.sync_row_desc = Liked songs, library songs, saved albums, subscriptions, playlists.
+settings.account.accounts_group = Accounts
+settings.account.channels = Channels (brand accounts) of this Google account:
+# Row label; the control is a row of buttons 0 1 2 3.
+settings.account.google_index = Google account
+settings.account.google_index_desc = When the cookie holds several Google accounts: which one (0 = first).
+settings.account.cookie_note = Signing in uses your browser session cookie for music.youtube.com. It is kept in the OS keychain and sent only to YouTube. Account features were built against YouTube's web API but not yet verified with a real account.
+
+# ---- About (src/settings/about.rs)
+settings.about.show_welcome = Show welcome guide
+# {version} = the app's version number, {summary} = settings.about.summary.
+settings.about.version_summary = Version {version} · {summary}
+# The app's one-line description. English shows APP_SUMMARY from packaging/app.env
+# instead (keep them the same).
+settings.about.summary = Native desktop client for YouTube Music
+settings.about.not_affiliated = Not affiliated with, endorsed or sponsored by YouTube or Google.
+settings.about.license = License
+settings.about.license_notice = This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License, version 3. It is distributed WITHOUT ANY WARRANTY; see the license for details.
+settings.about.credits = Credits
+# Credits: keep project names (Hummingbird, shazamkit, SongRec, GPUI …), license
+# names (GPL-3.0, Apache-2.0, ISC) and the © lines exact. {project} = ArchiveTune
+# (the Android app the features come from).
+settings.about.credit.archivetune = Features and screens are ported from {project} (GPL-3.0), © Rukamori and contributors. This is an independent project.
+settings.about.credit.hummingbird = Equalizer, OS media controls, scrobbling and Discord presence are ported from Hummingbird (Apache-2.0), © Hummingbird contributors.
+settings.about.credit.recognition_title = Song recognition
+# {project} = ArchiveTune; shazamkit is its song-recognition component.
+settings.about.credit.recognition = Shazam-compatible fingerprinting ported from {project}'s shazamkit (GPL-3.0), which follows SongRec's format. Not affiliated with Shazam or Apple.
+settings.about.credit.libraries_title = Libraries
+settings.about.credit.libraries = GPUI and gpui-component (Apache-2.0), Symphonia and rodio, Lucide icons (ISC), LRCLIB lyrics.
+
+# ---- Update check (Settings → About and notifications; src/update_check.rs)
+update.group = Updates
+# {repo} = a GitHub repository, "owner/name".
+update.releases_from = Releases from github.com/{repo}
+update.checking = Checking…
+update.up_to_date_version = You have the latest version ({version}).
+update.available_version = Version {version} is available.
+# {error} = an English technical error message.
+update.check_failed = Couldn't check: {error}
+# Button.
+update.check_now = Check now
+# Button (opens the release page in the browser).
+update.download = Download…
+# The update check found no release (shown as {error} in update.check_failed).
+update.no_release = no published release
+# Notifications. "Settings → About" is where the download link is.
+update.available_toast = {app} {version} is available (Settings → About)
+update.up_to_date_toast = {app} is up to date
+
+# ---- Network (src/settings/network.rs, src/settings/file.rs)
+settings.network.proxy = Proxy
+# Proxy type button: no proxy (the others are HTTP, HTTPS, SOCKS4, SOCKS5, SOCKS5h).
+settings.network.proxy_off = Off
+# Field labels (a narrow column left of the text field; keep short).
+settings.network.host = Host
+settings.network.port = Port
+settings.network.user = User name
+settings.network.password = Password
+settings.network.doh_url = DoH URL
+# Placeholder of the proxy host field.
+settings.network.host_placeholder = proxy.example.com or 127.0.0.1
+# Placeholder of the proxy user name / password fields.
+settings.network.optional = optional
+# Buttons.
+settings.network.test_connection = Test connection
+settings.network.test_dns = Test DNS
+# Status line. {url} = the proxy address (socks5h://127.0.0.1:1080).
+settings.network.using_proxy = Using {url}
+settings.network.direct = Direct connections (no proxy)
+# Status line: {proxy} = settings.network.using_proxy or settings.network.direct,
+# {server} = the DNS-over-HTTPS server (Cloudflare, Google, Quad9 or a URL).
+settings.network.status_with_doh = {proxy} · DNS-over-HTTPS ({server})
+settings.network.testing = Testing…
+# {ms} = milliseconds.
+settings.network.test_ok = Connected to YouTube in {ms} ms
+# {error} = an English technical error message.
+settings.network.test_failed = Connection failed: {error}
+settings.network.lookup_failed = Lookup failed: {error}
+settings.network.looking_up = Looking up…
+# Result of "Test DNS": {host} = music.youtube.com, {addresses} = IP addresses,
+# {via} = one of settings.network.dns_via_*, {ms} = milliseconds.
+settings.network.dns_ok = {host} → {addresses} via {via} in {ms} ms
+settings.network.dns_via_doh = DNS-over-HTTPS
+settings.network.dns_via_cache = DNS-over-HTTPS (cached)
+settings.network.dns_via_system = the system resolver
+settings.network.proxy_note = Applies to everything: YouTube Music, audio streams, artwork, lyrics and scrobbling. SOCKS5h resolves host names through the proxy. The password is kept in the keychain.
+settings.network.dns = DNS
+# DNS mode buttons (the others are Cloudflare, Google, Quad9).
+settings.network.dns_system = System
+settings.network.dns_custom = Custom
+# Label of a switch.
+settings.network.dns_fallback = Fall back to the system resolver when DoH fails
+settings.network.dns_note = DNS-over-HTTPS (RFC 8484) looks up host names over an encrypted HTTPS connection instead of plain DNS. Answers are cached for their TTL. With a SOCKS5h proxy the proxy resolves names itself. Quad9 is reached on its HTTP/1.1 port 5053, which some networks block.
+# Errors shown under the proxy / DNS fields.
+settings.network.error.port_number = The port must be a number (1–65535).
+settings.network.error.doh_invalid = The DNS-over-HTTPS URL isn't valid.
+settings.network.error.proxy_invalid = The proxy address isn't valid for this proxy type.
+settings.network.error.doh_https = The DNS-over-HTTPS URL must start with https://.
+# {error} = an English technical error message.
+settings.network.error.doh_invalid_detail = The DNS-over-HTTPS URL isn't valid: {error}.
+settings.network.error.host_missing = Enter the proxy host.
+settings.network.error.host_invalid = The host must be a name or address only (no scheme, path or spaces).
+settings.network.error.port_missing = Enter a port between 1 and 65535.
+settings.network.error.socks4_auth = SOCKS4 doesn't support passwords; leave the user name empty.
+
+# ---- Settings panel (src/settings/panel.rs)
+# Placeholders of the scrobbling / Discord text fields.
+settings.panel.placeholder.api_key = API key
+settings.panel.placeholder.shared_secret = Shared secret
+settings.panel.placeholder.user_token = User token
+settings.panel.placeholder.application_id = Application ID
+# Last.fm / ListenBrainz connection status lines.
+settings.panel.lastfm_missing = Enter the API key and shared secret first.
+settings.panel.lastfm_requesting = Requesting a token…
+settings.panel.lastfm_finishing = Finishing…
+settings.panel.lb_missing = Paste your user token first.
+# Where passwords and tokens are stored (shown after "Secrets:" in Storage and
+# Scrobbling). {backend} = the keychain's name (secrets.backend.*).
+settings.panel.secrets.backend_and_file = {backend} + settings file (0600)
+settings.panel.secrets.file_keychain_disabled = settings file (0600; keychain disabled)
+settings.panel.secrets.file_keychain_read_failed = settings file (0600; keychain read failed)
+settings.panel.secrets.file_keychain_unavailable = settings file (0600; keychain unavailable)
+
+# ---- Credential stores (src/secrets.rs): the OS's own names for them.
+secrets.backend.macos = macOS Keychain
+secrets.backend.windows = Windows Credential Manager
+secrets.backend.secret_service = Secret Service
+
+# ---- Settings file problems (shown in Storage and Scrobbling)
+settings.file.no_config_dir = no config directory; settings are not saved
+# {error} = an English technical error message.
+settings.file.save_failed = saving failed: {error}
+# {path} = the settings file's path.
+settings.file.read_failed = reading {path}: {error}
+# {backup} = the path the broken file was moved to.
+settings.file.invalid_moved = {path} is not valid ({error}); moved to {backup}
+
+# ---- Google sign-in window (macOS; src/login_webview.rs)
+# Window title.
+login.window_title = Sign in to YouTube Music
+# Status bar above the sign-in page.
+login.instructions = Sign in with your Google account. This window closes once YouTube Music opens.
+# {error} = an English technical error message. “Paste cookie” is the button
+# settings.account.paste_cookie.
+login.webview_failed = The web view couldn't be created ({error}). Use “Paste cookie” instead.
+login.checking = Signed in — checking the account…

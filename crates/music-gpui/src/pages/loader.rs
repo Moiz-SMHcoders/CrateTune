@@ -53,7 +53,7 @@ impl<T: Send + 'static> Loaded<T> {
             return;
         }
         let Some(library) = library else {
-            self.error = Some("The library database is not available.".into());
+            self.error = Some(t!("library.db_unavailable").into());
             self.loaded = Some(want);
             return;
         };

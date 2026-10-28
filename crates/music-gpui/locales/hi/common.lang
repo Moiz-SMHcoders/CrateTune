@@ -1,0 +1,158 @@
+# Shared strings (Hindi).
+
+locale.native_name = हिन्दी
+
+# ---- Actions
+common.play = चलाएँ
+common.pause = रोकें
+common.shuffle = शफ़ल करें
+common.radio = रेडियो
+common.start_radio = रेडियो शुरू करें
+common.play_next = अगला चलाएँ
+common.add_to_queue = कतार में जोड़ें
+common.add_to_playlist = प्लेलिस्ट में जोड़ें…
+common.like = पसंद करें
+common.remove_from_liked = पसंद किए गए गानों से हटाएँ
+common.download = डाउनलोड करें
+common.remove_download = डाउनलोड हटाएँ
+common.go_to_artist = कलाकार पर जाएँ
+common.go_to_album = एल्बम पर जाएँ
+common.open = खोलें
+common.cancel = रद्द करें
+common.close = बंद करें
+common.retry = फिर से कोशिश करें
+common.remove = हटाएँ
+common.delete = मिटाएँ
+common.clear = साफ़ करें
+common.save = सेव करें
+common.apply = लागू करें
+common.reset = रीसेट करें
+common.done = हो गया
+common.copy = कॉपी करें
+common.rename = नाम बदलें
+common.refresh = रीफ़्रेश करें
+common.install = इंस्टॉल करें
+common.update = अपडेट करें
+common.import = इंपोर्ट करें
+common.search = खोजें
+common.search_placeholder = खोजें…
+common.see_all = सभी देखें
+common.load_more = और लोड करें
+common.show_more = और दिखाएँ
+common.back = वापस
+common.next = अगला
+common.connect = कनेक्ट करें
+common.disconnect = डिस्कनेक्ट करें
+common.sign_in = साइन इन करें
+common.sign_out = साइन आउट करें
+common.select = चुनें
+common.select_all = सभी चुनें
+common.settings = सेटिंग
+
+# ---- States
+common.loading = लोड हो रहा है…
+common.saving = सेव हो रहा है…
+common.downloading = डाउनलोड हो रहा है…
+common.off = बंद
+common.on = चालू
+common.none = कोई नहीं
+common.custom = कस्टम
+common.automatic = अपने-आप
+common.not_playing = कुछ नहीं चल रहा
+common.not_connected = कनेक्ट नहीं है
+common.nothing_here = यहाँ कुछ नहीं है
+
+# ---- Things
+common.song = गाना
+common.video = वीडियो
+common.artist = कलाकार
+common.album = एल्बम
+common.playlist = प्लेलिस्ट
+common.podcast = पॉडकास्ट
+common.episode = एपिसोड
+common.queue = कतार
+common.now_playing = अभी चल रहा है
+common.youtube_music = YouTube Music
+
+# Counts
+common.songs.one = {count} गाना
+common.songs.other = {count} गाने
+common.plays.one = {count} बार चलाया गया
+common.plays.other = {count} बार चलाया गया
+common.selected.one = {count} चुना गया
+common.selected.other = {count} चुने गए
+
+# ---- Sidebar
+nav.home = होम
+nav.explore = एक्सप्लोर करें
+nav.charts = चार्ट
+nav.moods = मूड और शैलियाँ
+nav.new_releases = नई रिलीज़
+nav.recognize = पहचानें
+nav.library_group = लाइब्रेरी
+nav.library = लाइब्रेरी
+nav.history = इतिहास
+nav.stats = आँकड़े
+nav.downloads = डाउनलोड
+nav.local_files = लोकल फ़ाइलें
+nav.import = इंपोर्ट और एक्सपोर्ट
+nav.together = साथ में सुनें
+nav.settings = सेटिंग
+
+# ---- Dates
+date.full = {day} {month} {year}
+date.today = आज
+date.yesterday = कल
+date.month_in_date.1 = जनवरी
+date.month_in_date.2 = फ़रवरी
+date.month_in_date.3 = मार्च
+date.month_in_date.4 = अप्रैल
+date.month_in_date.5 = मई
+date.month_in_date.6 = जून
+date.month_in_date.7 = जुलाई
+date.month_in_date.8 = अगस्त
+date.month_in_date.9 = सितंबर
+date.month_in_date.10 = अक्तूबर
+date.month_in_date.11 = नवंबर
+date.month_in_date.12 = दिसंबर
+date.month_short.1 = जन॰
+date.month_short.2 = फ़र॰
+date.month_short.3 = मार्च
+date.month_short.4 = अप्रैल
+date.month_short.5 = मई
+date.month_short.6 = जून
+date.month_short.7 = जुल॰
+date.month_short.8 = अग॰
+date.month_short.9 = सित॰
+date.month_short.10 = अक्तू॰
+date.month_short.11 = नव॰
+date.month_short.12 = दिस॰
+date.weekday_short.1 = सोम
+date.weekday_short.2 = मंगल
+date.weekday_short.3 = बुध
+date.weekday_short.4 = गुरु
+date.weekday_short.5 = शुक्र
+date.weekday_short.6 = शनि
+date.weekday_short.7 = रवि
+
+# ---- Durations and relative times
+time.just_now = अभी-अभी
+time.seconds_ago.one = {count} सेकंड पहले
+time.seconds_ago.other = {count} सेकंड पहले
+time.minutes_ago.one = {count} मिनट पहले
+time.minutes_ago.other = {count} मिनट पहले
+time.hours_ago.one = {count} घंटा पहले
+time.hours_ago.other = {count} घंटे पहले
+time.days_ago.one = {count} दिन पहले
+time.days_ago.other = {count} दिन पहले
+time.hours_minutes = {hours} घं॰ {minutes} मि॰
+time.minutes = {minutes} मि॰
+time.seconds = {seconds} से॰
+
+# ---- File sizes
+units.size = {value} {unit}
+units.b = B
+units.kb = KB
+units.mb = MB
+units.gb = GB
+units.tb = TB

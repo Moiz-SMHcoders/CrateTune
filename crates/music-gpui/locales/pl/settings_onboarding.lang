@@ -1,0 +1,56 @@
+# First-run guide (Polish).
+
+# ---- Step titles
+onboarding.step.welcome = Witaj
+onboarding.step.content = Język i region
+onboarding.step.theme = Wygląd
+onboarding.step.account = Konto YouTube Music
+onboarding.step.local_files = Muzyka na tym komputerze
+onboarding.step.privacy = Prywatność i ograniczenia
+onboarding.welcome_title = Witaj w {app}
+onboarding.step_of = Krok {step} z {total}
+
+# ---- Step subtitles
+onboarding.subtitle.welcome = Szybki, natywny odtwarzacz YouTube Music: przeglądanie i wyszukiwanie, teksty podążające za utworem, biblioteka z historią i statystykami, Twoje własne pliki muzyczne i rozpoznawanie utworów. Kilka wyborów i gotowe — wszystko to możesz później zmienić w Ustawieniach.
+onboarding.subtitle.content = W jakim języku YouTube Music pokazuje tytuły i rekomendacje oraz listy przebojów i nowości z którego kraju widzisz.
+onboarding.subtitle.theme = Wybierz motyw i rozmiar tekstu.
+onboarding.subtitle.account = Opcjonalne. Po zalogowaniu pojawią się Twoje polubienia, biblioteka, playlisty i spersonalizowane rekomendacje. Wszystko inne działa bez konta.
+onboarding.subtitle.local_files = Opcjonalne. Dodaj foldery z plikami muzycznymi; zostaną zeskanowane do biblioteki i będą odtwarzane obok YouTube Music.
+onboarding.subtitle.privacy = Co warto wiedzieć na początek.
+
+# ---- Footer buttons
+onboarding.skip = Pomiń konfigurację
+onboarding.get_started = Zaczynamy
+onboarding.finish = Zakończ
+onboarding.next_or_skip = Dalej (lub pomiń)
+
+# ---- Welcome step: feature list
+onboarding.feature.browse.title = Przeglądanie i wyszukiwanie
+onboarding.feature.browse.text = Strona główna, listy przebojów, nastroje, nowości, wykonawcy, albumy i playlisty.
+onboarding.feature.lyrics.title = Teksty
+onboarding.feature.lyrics.text = Teksty synchronizowane słowo po słowie od wielu dostawców, z tłumaczeniem i latynizacją.
+onboarding.feature.library.title = Biblioteka
+onboarding.feature.library.text = Polubienia, playlisty, historia słuchania, statystyki i pobrane pliki — przechowywane na tym komputerze.
+onboarding.feature.recognize.title = Rozpoznawanie muzyki
+onboarding.feature.recognize.text = Rozpoznaj utwór, który gra wokół Ciebie (⇧⌘R), i od razu go odtwórz.
+
+# ---- Look step
+onboarding.theme.group = Motyw
+onboarding.theme.dynamic_note = Motyw dynamiczny bierze kolor akcentu z okładki odtwarzanego utworu.
+onboarding.theme.text_size = Rozmiar tekstu
+
+# ---- Music on this computer step
+onboarding.local.group = Foldery z muzyką
+onboarding.local.empty = Nie ma jeszcze folderów.
+onboarding.local.add = Dodaj folder…
+onboarding.local.note = Przeskanuj foldery teraz lub później; zarządzaj nimi na stronie Pliki lokalne.
+
+# ---- Privacy & limitations step
+onboarding.privacy.streaming.title = Jak przesyłane są utwory
+onboarding.privacy.streaming.text = Pełne utwory pochodzą z klienta TV YouTube lub jego klienta web z PoToken (token zapobiegający nadużyciom, tworzony w ukrytym widoku przeglądarki na macOS). YouTube każe nowym strumieniom czekać kilka sekund; w tym czasie aplikacja zaczyna od krótkiego podglądu. Jeśli YouTube coś zmieni, utwory przełączą się na ~1-minutowe podglądy (oznaczone w odtwarzaczu). Sposób wybierzesz w Ustawienia → Odtwarzanie → Strumienie YouTube.
+onboarding.privacy.data.title = Twoje dane zostają tutaj
+onboarding.privacy.data.text = Biblioteka, historia, statystyki i ustawienia są przechowywane na tym komputerze. Hasła, klucze API i plik cookie logowania do YouTube trafiają do systemowego pęku kluczy. Historię słuchania i wyszukiwania możesz w każdej chwili wstrzymać lub wyczyścić w Ustawienia → Prywatność.
+onboarding.privacy.recipients.title = Kto co otrzymuje
+onboarding.privacy.recipients.text = YouTube Music otrzymuje Twoje wyszukiwania i odtworzenia (oraz plik cookie konta po zalogowaniu). Dostawcy tekstów otrzymują tytuły utworów. Rozpoznawanie utworów wysyła do Shazam odcisk dźwięku — nie nagranie. Scrobbling i Discord działają tylko wtedy, gdy je skonfigurujesz.
+onboarding.privacy.independent.title = Niezależny projekt
+onboarding.privacy.independent.text = Niepowiązany z YouTube, Google ani Shazam. Wolne oprogramowanie na licencji GPL-3.0.

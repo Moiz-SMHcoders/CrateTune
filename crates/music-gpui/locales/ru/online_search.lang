@@ -1,0 +1,35 @@
+# Search page (Russian).
+
+search.title = Поиск
+search.query_title = «{query}»
+search.searching = Поиск…
+
+search.tab.all = Все
+search.tab.songs = Треки
+search.tab.videos = Видео
+search.tab.albums = Альбомы
+search.tab.artists = Исполнители
+search.tab.community_playlists = Плейлисты сообщества
+search.tab.featured_playlists = Избранные плейлисты
+search.tab.podcasts = Подкасты
+search.tab.episodes = Выпуски
+
+search.tab_empty.songs = Нет треков
+search.tab_empty.videos = Нет видео
+search.tab_empty.albums = Нет альбомов
+search.tab_empty.artists = Нет исполнителей
+search.tab_empty.community_playlists = Нет плейлистов сообщества
+search.tab_empty.featured_playlists = Нет избранных плейлистов
+search.tab_empty.podcasts = Нет подкастов
+search.tab_empty.episodes = Нет выпусков
+search.tab_empty.detail = Попробуйте другую категорию или запрос.
+
+search.correction.applied = Показаны результаты для {corrected} · Искать вместо этого {original}
+search.correction.suggested = Возможно, вы имели в виду {corrected}?
+
+search.top_result = Лучший результат
+search.empty.title = Ничего не найдено
+search.empty.detail = Попробуйте другой запрос или проверьте написание.
+
+search.start.title = Поиск в YouTube Music
+search.start.detail = Введите название трека, исполнителя, альбома или плейлиста в поле поиска (⌘F) и нажмите Enter.

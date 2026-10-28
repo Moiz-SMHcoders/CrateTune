@@ -33,21 +33,24 @@ pub fn status_line(text: SharedString, color: Hsla) -> impl IntoElement {
 }
 
 /// A labelled text input row.
-pub fn field(label: &'static str, input: Input, cx: &App) -> impl IntoElement {
+pub fn field(label: impl Into<SharedString>, input: Input, cx: &App) -> impl IntoElement {
     h_flex()
         .gap_3()
         .child(
             div()
                 .w(px(96.))
                 .flex_none()
+                // Long translations wrap onto a second line.
+                .line_clamp(2)
                 .text_sm()
                 .text_color(cx.theme().muted_foreground)
-                .child(label),
+                .child(label.into()),
         )
         .child(div().flex_1().min_w_0().child(input))
 }
 
-/// A label + description on the left, a control on the right.
+/// A label + description on the left, a control on the right. The text column
+/// takes the free width and wraps; the control keeps its size.
 pub fn row(
     label: impl Into<SharedString>,
     description: Option<&'static str>,
@@ -59,6 +62,7 @@ pub fn row(
         .justify_between()
         .child(
             v_flex()
+                .flex_1()
                 .min_w_0()
                 .gap_0p5()
                 .child(div().text_sm().child(label.into()))

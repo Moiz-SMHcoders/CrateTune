@@ -1,0 +1,44 @@
+# Music recognition page (Turkish).
+
+recognition.title = Müzik tanıma
+recognition.subtitle = Çevrenizde çalan bir şarkıyı tanıyın (⇧⌘R)
+
+recognition.idle.title = Şarkıyı tanımak için dokunun
+recognition.idle.detail = Şarkıyı bilgisayarınızın yakınında çalın; uygulama yaklaşık 10 saniye mikrofondan dinler.
+recognition.permission.title = Mikrofon erişimi bekleniyor…
+recognition.permission.detail = Sistem isteminde erişime izin verin.
+recognition.listening = Dinleniyor…
+recognition.listening_progress = {elapsed} / {length} sn
+recognition.identifying.title = Tanımlanıyor…
+recognition.identifying.detail = Kayıt eşleştiriliyor.
+recognition.failed = Tanımlanamadı
+recognition.open_privacy_settings = Gizlilik ayarlarını aç
+
+recognition.mic.restricted = Bu bilgisayarda mikrofon erişimi kısıtlı.
+recognition.mic.undetermined = Mikrofon erişimi henüz verilmedi. Yeniden deneyin ve sorulduğunda izin verin.
+recognition.mic.denied = {app} için mikrofon erişimi kapalı. Sistem Ayarları → Gizlilik ve Güvenlik → Mikrofon bölümünden izin verin.
+recognition.error.no_microphone = Mikrofon bulunamadı
+recognition.error.permission_denied = Mikrofon erişimi reddedildi
+recognition.error.silent = Mikrofondan yalnızca sessizlik geldi (mikrofon erişimine izin verildi mi?)
+recognition.error.capture = Kayıt başarısız: {error}
+recognition.error.cancelled = İptal edildi
+recognition.error.no_signature = Hiç müzik duyulamadı
+recognition.error.no_match = Eşleşme bulunamadı
+recognition.error.rate_limited = Çok fazla istek — bir dakika sonra yeniden deneyin
+recognition.error.service = Tanıma hizmeti hatası (HTTP {status})
+recognition.error.network = Ağ hatası: {error}
+recognition.error.parse = Beklenmeyen yanıt: {error}
+
+recognition.result.recognized = Tanındı
+recognition.result.from_history = Tanıma geçmişinizden
+recognition.match.title = YouTube Music'te
+recognition.match.searching = YouTube Music'te aranıyor…
+recognition.match.failed = YouTube Music araması başarısız: {error}
+recognition.match.none = YouTube Music'te bulunamadı.
+
+recognition.history.title = Geçmiş
+recognition.history.empty.title = Henüz tanıma yok
+recognition.history.empty.detail = Tanıdığınız şarkılar en yenisi üstte olacak şekilde burada görünür.
+recognition.history.clear_title = Tanıma geçmişi temizlensin mi?
+recognition.history.clear_detail = Tanınan şarkıların listesi silinir.
+recognition.history.remove = Geçmişten kaldır

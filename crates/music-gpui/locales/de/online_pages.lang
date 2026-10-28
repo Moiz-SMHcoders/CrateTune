@@ -1,0 +1,56 @@
+# Online browse pages (YouTube Music).
+
+# ---- Home
+home.recent.title = In dieser Sitzung gehört
+home.recent.subtitle = Nochmal hören
+
+# ---- Explore
+explore.new_releases_detail = Neue Alben und Singles
+explore.charts_detail = Was angesagt ist, nach Land
+explore.moods_detail = Playlists für jeden Moment
+
+# ---- Charts
+charts.country_placeholder = Land
+charts.search_countries = Länder suchen…
+charts.empty.title = Keine Charts
+charts.empty.detail = YouTube Music hat keine Charts für dieses Land.
+
+# ---- Moods & genres
+moods.empty = YouTube Music hat für diese Region keine Stimmungen oder Genres geliefert.
+
+# ---- New releases
+new_releases.subtitle = Neue Alben und Singles
+new_releases.empty.title = Nichts Neues
+new_releases.empty.detail = YouTube Music hat für diese Region keine Neuerscheinungen geliefert.
+
+# ---- Browse pages
+browse.empty = Diese Seite hat keine Playlists oder Songs (oder alle wurden herausgefiltert).
+
+# ---- Album
+album.empty.title = Keine abspielbaren Songs
+album.empty.detail = Dieses Album hat hier keine Titel (oder alle wurden herausgefiltert).
+
+# ---- Artist
+artist.subscribed = Abonniert
+artist.subscribe = Abonnieren
+artist.subscribe_tooltip = Auf YouTube Music abonnieren (wird auch in deiner Mediathek gespeichert)
+artist.subscribe_tooltip_signed_out = In deiner Mediathek gespeichert; melde dich an, um auf YouTube Music zu abonnieren
+artist.items_empty = Keine Veröffentlichungen auf dieser Seite (oder alle wurden herausgefiltert).
+
+# ---- Playlist
+playlist.change_cover = Cover ändern…
+playlist.empty.title = Keine Songs
+playlist.empty.detail = Diese Playlist ist leer (oder alle Songs wurden herausgefiltert).
+
+# ---- Podcast / episode
+podcast.episodes.one = {count} Folge
+podcast.episodes.other = {count} Folgen
+podcast.episodes_more.one = {count}+ Folgen
+podcast.episodes_more.other = {count}+ Folgen
+podcast.saved = Gespeichert
+podcast.save = In Mediathek speichern
+podcast.save_failed = Deine Mediathek konnte nicht aktualisiert werden: {error}
+podcast.open_episode_page = Folgenseite öffnen
+podcast.go_to_podcast = Zum Podcast
+podcast.empty.title = Keine Folgen
+podcast.empty.detail = Diese Sendung hat hier noch keine Folgen.

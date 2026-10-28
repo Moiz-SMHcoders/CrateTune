@@ -1,0 +1,131 @@
+# Settings → Modules (ja).
+
+# ---- Playback source
+modules.source.group = 再生ソース
+modules.source.youtube = YouTube のみ
+modules.source.first = モジュール優先、次に YouTube
+modules.source.only = モジュールのみ
+modules.source_note.youtube = 曲は YouTube から再生されます。インストール済みのモジュールは使用されません。
+modules.source_note.first.other = 各曲を有効な {count} 個のモジュールで上から順に検索し、最初に条件を満たした結果を再生します。見つからなければ YouTube から再生します。
+modules.source_note.only.other = 曲は有効な {count} 個のモジュールからのみ再生されます。どのモジュールにも一致しない曲は失敗します（「読み込めない曲をスキップ」がオンならスキップされます）。
+modules.source.note = モジュールは再生する曲のオーディオを提供します。タイトル、アーティスト、ライブラリは変わりません。プレーヤーバーと再生画面にオーディオの取得元が表示されます。ダウンロードにも同じ順序が使われます。
+
+# ---- Unavailable
+modules.unavailable = モジュールを利用できません。
+modules.no_data_dir = データディレクトリがないため、モジュールを利用できません。
+modules.unavailable_error = モジュールを利用できません：{error}
+
+# ---- Add a module
+modules.add.group = モジュールを追加
+modules.add.from_file = ファイルからインストール…
+modules.add.from_file_note = ディスク上の .arch パッケージ。
+modules.add.from_url = URL からインストール
+modules.add.catalog = カタログを追加
+modules.add.note = パッケージは確認の前に検査されます（形式、チェックサム、設定、エクスポートされた関数）。モジュールやカタログはプリインストールされていません。モジュールは作者から提供され、サンドボックス内で実行されます（ファイルアクセスなし、ネットワークはアプリのプロキシ経由）。
+modules.url_missing = .arch パッケージ、記述子、またはカタログの URL を入力してください。
+modules.catalog_url_missing = カタログの URL を入力してください。
+
+# ---- Progress lines
+modules.busy.saving = 保存中…
+modules.busy.saving_catalog = カタログを保存中…
+modules.busy.checking_package = パッケージを確認中…
+modules.busy.reading_catalog = カタログを読み込み中…
+modules.busy.installing = インストール中…
+modules.busy.removing = 削除中…
+modules.busy.checking = 確認中…
+modules.busy.checking_update = アップデートを確認中…
+modules.busy.loading_settings = 設定を読み込み中…
+modules.busy.saving_settings = 設定を保存中…
+modules.busy.refreshing = 更新中…
+
+# ---- Results
+modules.catalog_added.other = カタログ「{name}」を追加しました（{count}件）。
+modules.installed_needs_setup = {name}をインストールしました。設定を入力して「保存」を押してください。
+modules.installed = {name}をインストールしました。
+modules.removed = モジュールを削除しました。
+modules.update_available = バージョン {version} が利用可能です。
+modules.up_to_date = 最新です。
+modules.update_from_file = ファイルからインストールされています。アップデートするには新しいパッケージを読み込んでください。
+modules.settings_read_failed = このモジュールの設定を読み込めませんでした。
+modules.settings_saved = 設定を保存しました。
+modules.catalog_refreshed = カタログを更新しました。
+modules.diagnostics_copied = 診断情報をコピーしました。
+
+# ---- Review card
+modules.review.group = 確認
+modules.review.replaces = インストール済みのバージョン {version} をアップデートします。設定は維持されます。
+modules.review.new = 新規インストール。再生順序の最後に追加されます。
+modules.review.needs = 必要な設定：{settings}。
+modules.review.homepage = ホームページ：{url}
+modules.review.license = ライセンス：{license}
+modules.review.sha256 = パッケージの SHA-256 {hash}
+
+# ---- Installed modules
+modules.installed_group = インストール済み（{count}）
+modules.nothing_installed = まだ何もインストールされていません。
+modules.action.settings = 設定
+modules.action.check = 確認
+modules.action.check_update = アップデートを確認
+modules.action.uninstall = アンインストール
+modules.action.confirm_remove = 削除しますか？
+modules.action.higher = 優先度を上げる
+modules.action.lower = 優先度を下げる
+modules.needs_configuration = 設定が必要：{settings}
+modules.settings_heading = 設定
+modules.no_settings = このモジュールに設定はありません。
+modules.field.placeholder_required = 必須
+modules.field.placeholder_optional = 任意
+modules.field.not_a_number = {field}は数値で入力してください。
+modules.field.required = {field}は必須です。
+modules.field.invalid = {field}の値が無効です。
+
+# ---- Diagnostics
+modules.diagnostics = 診断
+modules.diagnostic_line = {label}（{when}）：{summary}
+modules.diagnostic_track = {line} — {track}
+modules.diag.last_song = 最後の曲
+modules.diag.check = 確認
+modules.diag.playback = 再生
+modules.diag.not_checked = まだ確認していません。
+modules.diag.not_used = まだ曲に使用されていません。
+modules.installed_line_file = インストール：{when} · パッケージ {hash} · ファイルから
+modules.installed_line_url = インストール：{when} · パッケージ {hash} · {url} から
+modules.log_empty = ログは空です。
+modules.copy_diagnostics = 診断情報をコピー
+modules.clear_log = ログをクリア
+
+modules.status.ready = 準備完了
+modules.status.configuration = 設定が必要
+modules.status.unavailable = サービス利用不可
+modules.status.failed = 失敗
+modules.status.no_results = 結果なし
+modules.status.no_match = 条件に合う結果なし（{reason}）
+modules.status.resolved = 解決済み
+modules.status.timeout = タイムアウト
+modules.rejection.metadata = メタデータ
+modules.rejection.title = タイトル
+modules.rejection.artist = アーティスト
+modules.rejection.recording = 録音
+modules.rejection.duration = 長さ
+modules.rejection.explicit = 不適切な表現
+modules.phase.search = 検索時
+modules.phase.match = 照合時
+modules.phase.stream = ストリーム時
+modules.candidates.other = 候補 {count}件
+modules.elapsed_ms = {ms} ms
+
+modules.failure.invalid_document = 無効なモジュール文書
+modules.failure.unsupported = このアプリでは非対応
+modules.failure.invalid_configuration = モジュールの設定が不完全または無効です
+modules.failure.network = ネットワークエラー
+modules.failure.timeout = タイムアウト
+modules.failure.execution = モジュールでエラーが発生しました
+modules.failure.integrity = チェックサムが一致しません
+modules.error_with_code = {error}（{code}）
+
+# ---- Catalogs
+modules.catalogs = カタログ
+modules.catalog_line.other = {url} · {count}件 · {when}に更新
+modules.remove_catalog = カタログを削除
+modules.entry.installed = インストール済み
+modules.entry.not_a_module = モジュールではありません

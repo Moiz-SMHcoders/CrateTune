@@ -93,7 +93,7 @@ impl LibraryItemPage {
         let (title, subtitle, art, saved, online, play_ms) = match &self.meta {
             Some(Meta::Artist(a)) => (
                 a.name.clone(),
-                "Artist".to_owned(),
+                t!("common.artist").to_owned(),
                 a.thumbnail_url.clone(),
                 a.bookmarked_at.is_some(),
                 a.channel_id().map(|id| Route::Artist {
@@ -123,8 +123,8 @@ impl LibraryItemPage {
             None => (
                 self.name.clone(),
                 match self.kind {
-                    Kind::Artist => "Artist".into(),
-                    Kind::Album => "Album".into(),
+                    Kind::Artist => t!("common.artist").into(),
+                    Kind::Album => t!("common.album").into(),
                 },
                 None,
                 false,
@@ -132,10 +132,16 @@ impl LibraryItemPage {
                 0,
             ),
         };
-        let mut detail = songs_label(self.list.tracks.len() as u64).to_string();
-        if play_ms > 0 {
-            detail.push_str(&format!(" · {} listened", format_listening(play_ms)));
-        }
+        let songs = self.list.tracks.len();
+        let detail = if play_ms > 0 {
+            tp!(
+                "library.item.songs_listened",
+                songs,
+                time = format_listening(play_ms)
+            )
+        } else {
+            songs_label(songs as u64).to_string()
+        };
         let art = match art {
             Some(url) => {
                 let radius = if self.kind == Kind::Artist {
@@ -157,10 +163,10 @@ impl LibraryItemPage {
             .into_any_element(),
         };
         let save_label = match (self.kind, saved) {
-            (Kind::Artist, true) => "Unsubscribe",
-            (Kind::Artist, false) => "Subscribe",
-            (Kind::Album, true) => "Remove from saved",
-            (Kind::Album, false) => "Save album",
+            (Kind::Artist, true) => t!("library.item.unsubscribe"),
+            (Kind::Artist, false) => t!("library.item.subscribe"),
+            (Kind::Album, true) => t!("library.item.remove_saved"),
+            (Kind::Album, false) => t!("library.album.save"),
         };
         let (kind, id, name, thumb) = (self.kind, self.id.clone(), title.clone(), {
             match &self.meta {
@@ -188,7 +194,7 @@ impl LibraryItemPage {
                         cx,
                     ),
                     Kind::Album => app.with_library(
-                        "Saving the album",
+                        t!("library.album.saving"),
                         move |lib| lib.set_album_bookmarked(&id, !saved),
                         |_, _, _, _| {},
                         window,
@@ -201,7 +207,7 @@ impl LibraryItemPage {
                 .ghost()
                 .small()
                 .icon(Lucide::Globe)
-                .label("Open on YouTube Music")
+                .label(t!("library.item.open_online"))
                 .on_click(move |_, window, cx| {
                     let route = route.clone();
                     update_app(cx, |app, cx| app.navigate(route, window, cx));
@@ -255,11 +261,11 @@ impl Render for LibraryItemPage {
         let body = if self.list.is_empty() {
             let (title, detail) = if self.loaded {
                 (
-                    "No songs in your library",
-                    "Like or add songs by this artist / from this album to see them here.",
+                    t!("library.empty.songs_title"),
+                    t!("library.item.empty_detail"),
                 )
             } else {
-                ("Loading…", "")
+                (t!("common.loading"), "")
             };
             div()
                 .flex_1()

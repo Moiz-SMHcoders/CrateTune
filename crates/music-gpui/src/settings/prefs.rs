@@ -118,10 +118,10 @@ impl StreamSourceMode {
 
     pub fn title(self) -> &'static str {
         match self {
-            Self::Auto => "Automatic",
-            Self::Tv => "TV client",
-            Self::WebPoToken => "Web + PoToken",
-            Self::Preview => "Previews only",
+            Self::Auto => t!("common.automatic"),
+            Self::Tv => t!("prefs.stream.tv"),
+            Self::WebPoToken => t!("prefs.stream.web_potoken"),
+            Self::Preview => t!("prefs.stream.preview"),
         }
     }
 
@@ -138,9 +138,9 @@ impl StreamSourceMode {
 
 pub fn quality_title(q: Quality) -> &'static str {
     match q {
-        Quality::Low => "Low",
-        Quality::Normal => "Normal",
-        Quality::High => "High",
+        Quality::Low => t!("prefs.quality.low"),
+        Quality::Normal => t!("prefs.quality.normal"),
+        Quality::High => t!("prefs.quality.high"),
     }
 }
 
@@ -177,19 +177,31 @@ impl LyricsAnimation {
 
     pub fn title(self) -> &'static str {
         match self {
-            Self::None => "None",
-            Self::Fade => "Fade",
-            Self::Glow => "Glow",
-            Self::Slide => "Slide",
-            Self::Karaoke => "Karaoke",
-            Self::Apple => "Apple",
+            Self::None => t!("prefs.lyrics_anim.none"),
+            Self::Fade => t!("prefs.lyrics_anim.fade"),
+            Self::Glow => t!("prefs.lyrics_anim.glow"),
+            Self::Slide => t!("prefs.lyrics_anim.slide"),
+            Self::Karaoke => t!("prefs.lyrics_anim.karaoke"),
+            Self::Apple => t!("prefs.lyrics_anim.apple"),
+        }
+    }
+
+    /// Stable, untranslated name (the serde value; script `@lyrics-style=`).
+    pub fn key(self) -> &'static str {
+        match self {
+            Self::None => "none",
+            Self::Fade => "fade",
+            Self::Glow => "glow",
+            Self::Slide => "slide",
+            Self::Karaoke => "karaoke",
+            Self::Apple => "apple",
         }
     }
 
     pub fn parse(s: &str) -> Option<Self> {
         Self::ALL
             .into_iter()
-            .find(|a| a.title().eq_ignore_ascii_case(s))
+            .find(|a| a.key().eq_ignore_ascii_case(s))
     }
 }
 
@@ -207,9 +219,18 @@ impl TextAlign {
 
     pub fn title(self) -> &'static str {
         match self {
-            Self::Left => "Left",
-            Self::Center => "Center",
-            Self::Right => "Right",
+            Self::Left => t!("prefs.align.left"),
+            Self::Center => t!("prefs.align.center"),
+            Self::Right => t!("prefs.align.right"),
+        }
+    }
+
+    /// Stable, untranslated name (the serde value; script `@lyrics-align=`).
+    pub fn key(self) -> &'static str {
+        match self {
+            Self::Left => "left",
+            Self::Center => "center",
+            Self::Right => "right",
         }
     }
 
@@ -260,14 +281,28 @@ impl Default for RomanizeConfig {
 }
 
 impl RomanizeConfig {
+    /// The scripts with a stable English name (matched by script `@romanize=`,
+    /// element ids); the UI shows [`RomanizeConfig::script_title`].
     pub const SCRIPTS: [(Script, &'static str); 6] = [
-        (Script::Japanese, "Japanese"),
-        (Script::Korean, "Korean"),
-        (Script::Chinese, "Chinese (pinyin)"),
-        (Script::Devanagari, "Hindi / Devanagari"),
-        (Script::Cyrillic, "Cyrillic"),
-        (Script::Other, "Other scripts"),
+        (Script::Japanese, "Japanese"),             // i18n-ignore
+        (Script::Korean, "Korean"),                 // i18n-ignore
+        (Script::Chinese, "Chinese (pinyin)"),      // i18n-ignore
+        (Script::Devanagari, "Hindi / Devanagari"), // i18n-ignore
+        (Script::Cyrillic, "Cyrillic"),             // i18n-ignore
+        (Script::Other, "Other scripts"),           // i18n-ignore
     ];
+
+    /// The translated name of a script in [`RomanizeConfig::SCRIPTS`].
+    pub fn script_title(script: Script) -> &'static str {
+        match script {
+            Script::Japanese => t!("prefs.romanize.japanese"),
+            Script::Korean => t!("prefs.romanize.korean"),
+            Script::Chinese => t!("prefs.romanize.chinese"),
+            Script::Devanagari => t!("prefs.romanize.devanagari"),
+            Script::Cyrillic => t!("prefs.romanize.cyrillic"),
+            Script::Other | Script::Auto => t!("prefs.romanize.other_scripts"),
+        }
+    }
 
     pub fn enabled(&self, script: Script) -> bool {
         match script {
@@ -476,14 +511,14 @@ impl NowPlayingLayout {
 
     pub fn title(self) -> &'static str {
         match self {
-            Self::Split => "Split",
-            Self::Centered => "Big artwork",
-            Self::Lyrics => "Lyrics first",
-            Self::Immersive => "Immersive",
-            Self::Card => "Card",
-            Self::Minimal => "Minimal",
-            Self::Editorial => "Editorial",
-            Self::Queue => "With queue",
+            Self::Split => t!("prefs.layout.split"),
+            Self::Centered => t!("prefs.layout.centered"),
+            Self::Lyrics => t!("prefs.layout.lyrics"),
+            Self::Immersive => t!("prefs.layout.immersive"),
+            Self::Card => t!("prefs.layout.card"),
+            Self::Minimal => t!("prefs.layout.minimal"),
+            Self::Editorial => t!("prefs.layout.editorial"),
+            Self::Queue => t!("prefs.layout.queue"),
         }
     }
 
@@ -529,10 +564,10 @@ impl NowPlayingBackground {
 
     pub fn title(self) -> &'static str {
         match self {
-            Self::Blur => "Blurred artwork",
-            Self::Gradient => "Gradient",
-            Self::Solid => "Solid colour",
-            Self::Glow => "Animated glow",
+            Self::Blur => t!("prefs.background.blur"),
+            Self::Gradient => t!("prefs.background.gradient"),
+            Self::Solid => t!("prefs.background.solid"),
+            Self::Glow => t!("prefs.background.glow"),
         }
     }
 
@@ -565,8 +600,8 @@ impl MiniPlayerStyle {
 
     pub fn title(self) -> &'static str {
         match self {
-            Self::Theme => "Theme",
-            Self::Artwork => "Blurred artwork",
+            Self::Theme => t!("prefs.mini.theme"),
+            Self::Artwork => t!("prefs.mini.artwork"),
         }
     }
 }
@@ -604,10 +639,10 @@ impl ActivityType {
 
     pub fn title(self) -> &'static str {
         match self {
-            Self::Listening => "Listening to",
-            Self::Playing => "Playing",
-            Self::Watching => "Watching",
-            Self::Competing => "Competing in",
+            Self::Listening => t!("prefs.discord.kind.listening"),
+            Self::Playing => t!("prefs.discord.kind.playing"),
+            Self::Watching => t!("prefs.discord.kind.watching"),
+            Self::Competing => t!("prefs.discord.kind.competing"),
         }
     }
 }
@@ -627,9 +662,9 @@ impl ImageSource {
 
     pub fn title(self) -> &'static str {
         match self {
-            Self::Artwork => "Artwork",
-            Self::Custom => "Custom",
-            Self::None => "None",
+            Self::Artwork => t!("prefs.discord.image.artwork"),
+            Self::Custom => t!("prefs.discord.image.custom"),
+            Self::None => t!("common.none"),
         }
     }
 }
@@ -649,9 +684,9 @@ impl ButtonTarget {
 
     pub fn title(self) -> &'static str {
         match self {
-            Self::Off => "Off",
-            Self::YoutubeMusic => "YouTube Music",
-            Self::Custom => "Custom URL",
+            Self::Off => t!("common.off"),
+            Self::YoutubeMusic => t!("common.youtube_music"),
+            Self::Custom => t!("prefs.discord.button.custom"),
         }
     }
 }
@@ -690,8 +725,9 @@ impl Default for ActivityConfig {
         Self {
             kind: ActivityType::Listening,
             name: String::new(),
+            // Stored defaults (Discord shows them to others); kept in English.
             details: "{title}".into(),
-            state: "by {artist}".into(),
+            state: "by {artist}".into(), // i18n-ignore
             large_image: ImageSource::Artwork,
             large_image_custom: String::new(),
             small_image: ImageSource::None,
@@ -699,7 +735,7 @@ impl Default for ActivityConfig {
             buttons: [
                 ButtonConfig {
                     target: ButtonTarget::YoutubeMusic,
-                    label: "Listen on YouTube Music".into(),
+                    label: "Listen on YouTube Music".into(), // i18n-ignore
                     url: String::new(),
                 },
                 ButtonConfig::default(),
@@ -811,6 +847,27 @@ mod tests {
         // An unknown design (from a newer version) falls back to the default.
         let back: NowPlayingConfig = serde_json::from_str(r#"{"layout":"vinyl"}"#).unwrap();
         assert_eq!(back.layout, NowPlayingLayout::Split);
+    }
+
+    #[test]
+    fn stable_keys_are_the_serde_values() {
+        for a in LyricsAnimation::ALL {
+            assert_eq!(
+                serde_json::to_string(&a).unwrap(),
+                format!("\"{}\"", a.key())
+            );
+            assert_eq!(LyricsAnimation::parse(a.key()), Some(a));
+        }
+        for a in TextAlign::ALL {
+            assert_eq!(
+                serde_json::to_string(&a).unwrap(),
+                format!("\"{}\"", a.key())
+            );
+        }
+        assert_eq!(
+            LyricsAnimation::parse("Karaoke"),
+            Some(LyricsAnimation::Karaoke)
+        );
     }
 
     #[test]

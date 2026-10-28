@@ -1,0 +1,44 @@
+# Music recognition page (French).
+
+recognition.title = Identifier un titre
+recognition.subtitle = Identifiez un titre diffusé autour de vous (⇧⌘R)
+
+recognition.idle.title = Touchez pour identifier un titre
+recognition.idle.detail = Diffusez le titre près de votre ordinateur ; l'écoute se fait par le micro pendant environ 10 secondes.
+recognition.permission.title = En attente de l'accès au micro…
+recognition.permission.detail = Autorisez l'accès dans la fenêtre du système.
+recognition.listening = Écoute…
+recognition.listening_progress = {elapsed} sur {length} s
+recognition.identifying.title = Identification…
+recognition.identifying.detail = Comparaison de l'enregistrement.
+recognition.failed = Identification impossible
+recognition.open_privacy_settings = Ouvrir les réglages de confidentialité
+
+recognition.mic.restricted = L'accès au micro est restreint sur cet ordinateur.
+recognition.mic.undetermined = L'accès au micro n'a pas encore été accordé. Réessayez et autorisez-le lorsque cela vous est demandé.
+recognition.mic.denied = L'accès au micro est désactivé pour {app}. Autorisez-le dans Réglages Système → Confidentialité et sécurité → Micro.
+recognition.error.no_microphone = Aucun micro détecté
+recognition.error.permission_denied = L'accès au micro a été refusé
+recognition.error.silent = Le micro n'a capté que du silence (l'accès au micro est-il autorisé ?)
+recognition.error.capture = Échec de l'enregistrement : {error}
+recognition.error.cancelled = Annulé
+recognition.error.no_signature = Aucune musique entendue
+recognition.error.no_match = Aucune correspondance
+recognition.error.rate_limited = Trop de requêtes — réessayez dans une minute
+recognition.error.service = Erreur du service de reconnaissance (HTTP {status})
+recognition.error.network = Erreur réseau : {error}
+recognition.error.parse = Réponse inattendue : {error}
+
+recognition.result.recognized = Identifié
+recognition.result.from_history = Dans votre historique d'identifications
+recognition.match.title = Sur YouTube Music
+recognition.match.searching = Recherche sur YouTube Music…
+recognition.match.failed = Échec de la recherche YouTube Music : {error}
+recognition.match.none = Introuvable sur YouTube Music.
+
+recognition.history.title = Historique
+recognition.history.empty.title = Aucune identification pour l'instant
+recognition.history.empty.detail = Les titres identifiés apparaissent ici, du plus récent au plus ancien.
+recognition.history.clear_title = Effacer l'historique d'identifications ?
+recognition.history.clear_detail = La liste des titres identifiés sera supprimée.
+recognition.history.remove = Supprimer de l'historique

@@ -1,0 +1,167 @@
+# Settings → Modules (src/settings/modules.rs): provider modules (`.arch` packages)
+# that supply audio from other sources. Module names, descriptions and setting
+# labels come from the modules themselves and are not translated here.
+
+# ---- Playback source
+modules.source.group = Playback source
+# Choice buttons.
+modules.source.youtube = YouTube only
+modules.source.first = Modules first, then YouTube
+modules.source.only = Modules only
+modules.source_note.youtube = Songs play from YouTube; installed modules are not used.
+# {count} = number of enabled modules.
+modules.source_note.first.one = Each song is looked up in the {count} enabled module, top to bottom; the first acceptable match plays, otherwise YouTube.
+modules.source_note.first.other = Each song is looked up in the {count} enabled modules, top to bottom; the first acceptable match plays, otherwise YouTube.
+# “Skip songs that fail to load” is the setting settings.playback.auto_skip (Playback).
+modules.source_note.only.one = Songs play only from the {count} enabled module; a song no module can match fails (and is skipped when “Skip songs that fail to load” is on).
+modules.source_note.only.other = Songs play only from the {count} enabled modules; a song no module can match fails (and is skipped when “Skip songs that fail to load” is on).
+modules.source.note = A module supplies audio for the song you play; title, artists and your library stay the same. The bar and Now Playing show where the audio comes from. Downloads use the same order.
+
+# ---- Unavailable
+modules.unavailable = Modules are unavailable.
+modules.no_data_dir = No data directory; modules are unavailable.
+# {error} = an English technical error message.
+modules.unavailable_error = Modules unavailable: {error}
+
+# ---- Add a module
+modules.add.group = Add a module
+# Buttons.
+modules.add.from_file = Install from file…
+modules.add.from_file_note = An .arch package from your disk.
+modules.add.from_url = Install from URL
+modules.add.catalog = Add catalog
+modules.add.note = Packages are checked (format, checksum, settings, exported functions) before you confirm. No module or catalog is preinstalled: modules come from their authors, and run sandboxed (no files, network through the app's proxy).
+modules.url_missing = Enter the URL of an .arch package, descriptor or catalog.
+modules.catalog_url_missing = Enter a catalog URL.
+
+# ---- Progress lines while something runs
+modules.busy.saving = Saving…
+modules.busy.saving_catalog = Saving catalog…
+modules.busy.checking_package = Checking the package…
+modules.busy.reading_catalog = Reading the catalog…
+modules.busy.installing = Installing…
+modules.busy.removing = Removing…
+modules.busy.checking = Checking…
+modules.busy.checking_update = Checking for an update…
+modules.busy.loading_settings = Loading settings…
+modules.busy.saving_settings = Saving settings…
+modules.busy.refreshing = Refreshing…
+
+# ---- Results
+# {name} = the catalog's name, {count} = its number of entries.
+modules.catalog_added.one = Added catalog “{name}” ({count} entry).
+modules.catalog_added.other = Added catalog “{name}” ({count} entries).
+# {name} = the module's name. “Save” is the button under its settings.
+modules.installed_needs_setup = Installed {name}. Fill in its settings and press Save.
+modules.installed = Installed {name}.
+modules.removed = Module removed.
+modules.update_available = Version {version} is available.
+modules.up_to_date = Up to date.
+modules.update_from_file = Installed from a file: import the new package to update.
+modules.settings_read_failed = Couldn't read this module's settings.
+modules.settings_saved = Settings saved.
+modules.catalog_refreshed = Catalog refreshed.
+modules.diagnostics_copied = Diagnostics copied.
+
+# ---- Review card (before installing)
+modules.review.group = Review
+modules.review.replaces = Updates the installed version {version}; its settings are kept.
+modules.review.new = A new installation, added at the end of the playback order.
+# {settings} = a list of the module's setting names.
+modules.review.needs = Needs: {settings}.
+modules.review.homepage = Homepage: {url}
+modules.review.license = License: {license}
+# {hash} = a long hex checksum.
+modules.review.sha256 = Package SHA-256 {hash}
+
+# ---- Installed modules
+# Group heading; {count} = number of installed modules.
+modules.installed_group = Installed ({count})
+modules.nothing_installed = Nothing installed yet.
+# Small buttons on each module card (keep short).
+modules.action.settings = Settings
+modules.action.check = Check
+modules.action.check_update = Check for update
+modules.action.uninstall = Uninstall
+# The same button after one press: press again to remove.
+modules.action.confirm_remove = Remove — sure?
+# Tooltips of the up / down arrow buttons (order in which modules are tried).
+modules.action.higher = Higher priority
+modules.action.lower = Lower priority
+# {settings} = a list of the module's setting names.
+modules.needs_configuration = Needs configuration: {settings}
+modules.settings_heading = Settings
+modules.no_settings = This module has no settings.
+# Text-field placeholders in a module's settings form.
+modules.field.placeholder_required = required
+modules.field.placeholder_optional = optional
+# Form errors; {field} = the setting's name (from the module).
+modules.field.not_a_number = {field} must be a number.
+modules.field.required = {field} is required.
+modules.field.invalid = {field} has an invalid value.
+
+# ---- Diagnostics
+modules.diagnostics = Diagnostics
+# A diagnostics line: {label} = modules.diag.*, {when} = "5 min ago",
+# {summary} = the outcome (modules.status.* · details).
+modules.diagnostic_line = {label} {when}: {summary}
+# The same line followed by the song it was about ({track} = "Title — Artist").
+modules.diagnostic_track = {line} — {track}
+modules.diag.last_song = Last song
+modules.diag.check = Check
+modules.diag.playback = Playback
+modules.diag.not_checked = Not checked yet.
+modules.diag.not_used = Not used for a song yet.
+# {when} = "5 min ago", {hash} = the start of a hex checksum, {url} = an update URL.
+modules.installed_line_file = Installed {when} · package {hash} · from a file
+modules.installed_line_url = Installed {when} · package {hash} · from {url}
+modules.log_empty = The log is empty.
+# Buttons.
+modules.copy_diagnostics = Copy diagnostics
+modules.clear_log = Clear log
+
+# Outcome of a check or of finding a song in a module (first part of a summary).
+modules.status.ready = Ready
+modules.status.configuration = Needs configuration
+modules.status.unavailable = Service unavailable
+modules.status.failed = Failed
+modules.status.no_results = No results
+# {reason} = one of modules.rejection.*: what didn't match.
+modules.status.no_match = No acceptable match ({reason})
+modules.status.resolved = Resolved
+modules.status.timeout = Timed out
+modules.rejection.metadata = metadata
+modules.rejection.title = title
+modules.rejection.artist = artist
+modules.rejection.recording = recording
+modules.rejection.duration = duration
+modules.rejection.explicit = explicit
+# Where it stopped.
+modules.phase.search = in search
+modules.phase.match = in match
+modules.phase.stream = in stream
+modules.candidates.one = {count} candidate
+modules.candidates.other = {count} candidates
+modules.elapsed_ms = {ms} ms
+
+# What failed (the diagnostic code such as DECODE/ARCH_CHECKSUM follows).
+modules.failure.invalid_document = Invalid module document
+modules.failure.unsupported = Not supported by this app
+modules.failure.invalid_configuration = Module settings are incomplete or invalid
+modules.failure.network = Network error
+modules.failure.timeout = Timed out
+modules.failure.execution = The module failed
+modules.failure.integrity = Checksum mismatch
+# {error} = one of modules.failure.*, {code} = a diagnostic code (keep as is).
+modules.error_with_code = {error} ({code})
+
+# ---- Catalogs
+modules.catalogs = Catalogs
+# {url} = the catalog's address, {count} = number of entries, {when} = "5 min ago".
+modules.catalog_line.one = {url} · {count} entry · refreshed {when}
+modules.catalog_line.other = {url} · {count} entries · refreshed {when}
+# Tooltip.
+modules.remove_catalog = Remove catalog
+# Disabled button labels on catalog entries.
+modules.entry.installed = Installed
+modules.entry.not_a_module = Not a module

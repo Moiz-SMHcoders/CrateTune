@@ -36,14 +36,16 @@ pub(super) fn render(
     // ---- Last.fm
     let lastfm_status: (SharedString, gpui::Hsla) = match (&s.lastfm.user, &panel.lastfm) {
         (_, LastFmFlow::Busy(what)) => ((*what).into(), muted),
-        (_, LastFmFlow::Waiting { error: None, .. }) => (
-            "Approve the app in your browser, then press Finish.".into(),
-            muted,
-        ),
+        (_, LastFmFlow::Waiting { error: None, .. }) => {
+            (t!("settings.integrations.lastfm_approve").into(), muted)
+        }
         (_, LastFmFlow::Waiting { error: Some(e), .. }) => (e.clone().into(), danger),
         (_, LastFmFlow::Failed(e)) => (e.clone().into(), danger),
-        (Some(user), LastFmFlow::Idle) => (format!("Connected as {user}").into(), success),
-        (None, LastFmFlow::Idle) => ("Not connected".into(), muted),
+        (Some(user), LastFmFlow::Idle) => (
+            t!("settings.integrations.connected_as", user = user).into(),
+            success,
+        ),
+        (None, LastFmFlow::Idle) => (t!("common.not_connected").into(), muted),
     };
     let lastfm_buttons = match (&s.lastfm.user, &panel.lastfm) {
         (_, LastFmFlow::Waiting { .. }) => h_flex()
@@ -52,14 +54,14 @@ pub(super) fn render(
                 Button::new("lastfm-finish")
                     .small()
                     .primary()
-                    .label("Finish")
+                    .label(t!("settings.integrations.finish"))
                     .on_click(cx.listener(|this, _, _, cx| this.lastfm_finish(cx))),
             )
             .child(
                 Button::new("lastfm-cancel")
                     .small()
                     .ghost()
-                    .label("Cancel")
+                    .label(t!("common.cancel"))
                     .on_click(cx.listener(|this, _, _, cx| {
                         this.lastfm = LastFmFlow::Idle;
                         cx.notify();
@@ -69,7 +71,7 @@ pub(super) fn render(
             Button::new("lastfm-disconnect")
                 .small()
                 .outline()
-                .label("Disconnect")
+                .label(t!("common.disconnect"))
                 .on_click(cx.listener(|this, _, _, cx| this.lastfm_disconnect(cx))),
         ),
         (None, flow) => h_flex()
@@ -78,7 +80,7 @@ pub(super) fn render(
                 Button::new("lastfm-connect")
                     .small()
                     .primary()
-                    .label("Connect")
+                    .label(t!("common.connect"))
                     .loading(matches!(flow, LastFmFlow::Busy(_)))
                     .on_click(cx.listener(|this, _, _, cx| this.lastfm_connect(cx))),
             )
@@ -87,7 +89,7 @@ pub(super) fn render(
                     Button::new("lastfm-clear")
                         .small()
                         .ghost()
-                        .label("Forget key")
+                        .label(t!("settings.integrations.forget_key"))
                         .on_click(cx.listener(|this, _, window, cx| this.lastfm_clear(window, cx))),
                 )
             }),
@@ -97,12 +99,16 @@ pub(super) fn render(
         .child(
             h_flex()
                 .justify_between()
-                .child(section_title("Last.fm"))
+                .child(section_title("Last.fm")) // i18n-ignore
                 .child(lastfm_buttons),
         )
-        .child(field("API key", Input::new(&panel.lastfm_key).small(), cx))
         .child(field(
-            "Shared secret",
+            t!("settings.integrations.api_key"),
+            Input::new(&panel.lastfm_key).small(),
+            cx,
+        ))
+        .child(field(
+            t!("settings.integrations.shared_secret"),
             Input::new(&panel.lastfm_secret).small().mask_toggle(),
             cx,
         ))
@@ -110,22 +116,25 @@ pub(super) fn render(
 
     // ---- ListenBrainz
     let lb_status: (SharedString, gpui::Hsla) = match (&s.listenbrainz.user, &panel.lb) {
-        (_, Validation::Busy) => ("Checking the token…".into(), muted),
+        (_, Validation::Busy) => (t!("settings.integrations.checking_token").into(), muted),
         (_, Validation::Failed(e)) => (e.clone().into(), danger),
-        (Some(user), Validation::Idle) => (format!("Connected as {user}").into(), success),
-        (None, Validation::Idle) => ("Not connected".into(), muted),
+        (Some(user), Validation::Idle) => (
+            t!("settings.integrations.connected_as", user = user).into(),
+            success,
+        ),
+        (None, Validation::Idle) => (t!("common.not_connected").into(), muted),
     };
     let lb_button = if s.listenbrainz.user.is_some() {
         Button::new("lb-disconnect")
             .small()
             .outline()
-            .label("Disconnect")
+            .label(t!("common.disconnect"))
             .on_click(cx.listener(|this, _, window, cx| this.lb_disconnect(window, cx)))
     } else {
         Button::new("lb-validate")
             .small()
             .primary()
-            .label("Validate")
+            .label(t!("settings.integrations.validate"))
             .loading(matches!(panel.lb, Validation::Busy))
             .on_click(cx.listener(|this, _, _, cx| this.lb_validate(cx)))
     };
@@ -134,11 +143,11 @@ pub(super) fn render(
         .child(
             h_flex()
                 .justify_between()
-                .child(section_title("ListenBrainz"))
+                .child(section_title("ListenBrainz")) // i18n-ignore
                 .child(lb_button),
         )
         .child(field(
-            "User token",
+            t!("settings.integrations.user_token"),
             Input::new(&panel.lb_token).small().mask_toggle(),
             cx,
         ))
@@ -147,22 +156,26 @@ pub(super) fn render(
     // ---- Discord
     let enabled = s.discord.enabled;
     let discord_status: (SharedString, gpui::Hsla) = match (&panel.discord_status, enabled) {
-        (_, false) => ("Off".into(), muted),
+        (_, false) => (t!("common.off").into(), muted),
         (_, true) if s.discord.client_id.is_empty() => {
-            ("Enter your Discord application ID.".into(), muted)
+            (t!("settings.integrations.discord_enter_id").into(), muted)
         }
-        (DiscordStatus::Connected, true) => ("Connected to Discord".into(), success),
-        (DiscordStatus::Disconnected { error }, true) => {
-            (format!("Discord not reachable: {error}").into(), danger)
-        }
-        (DiscordStatus::Idle, true) => ("Waiting for playback…".into(), muted),
+        (DiscordStatus::Connected, true) => (
+            t!("settings.integrations.discord_connected").into(),
+            success,
+        ),
+        (DiscordStatus::Disconnected { error }, true) => (
+            t!("settings.integrations.discord_unreachable", error = error).into(),
+            danger,
+        ),
+        (DiscordStatus::Idle, true) => (t!("settings.integrations.discord_waiting").into(), muted),
     };
     let discord = v_flex()
         .gap_2()
         .child(
             h_flex()
                 .justify_between()
-                .child(section_title("Discord Rich Presence"))
+                .child(section_title(t!("settings.integrations.discord_title")))
                 .child(
                     Switch::new("discord-enabled")
                         .checked(enabled)
@@ -172,7 +185,7 @@ pub(super) fn render(
                 ),
         )
         .child(field(
-            "Application ID",
+            t!("settings.integrations.application_id"),
             Input::new(&panel.discord_id).small(),
             cx,
         ))
@@ -245,80 +258,96 @@ pub(super) fn render(
         .pl_3()
         .border_l_2()
         .border_color(theme.border)
-        .child(section_title("Activity"))
-        .child(row("Type", None, kind, cx))
-        .child(field("Name", input(ActivityField::Name), cx))
-        .child(field("Details", input(ActivityField::Details), cx))
-        .child(field("State", input(ActivityField::State), cx))
-        .child(note(
-            "Placeholders: {title}, {artist}, {album}. An empty name uses the Discord \
-             application's name.",
+        .child(section_title(t!("discord.activity.title")))
+        .child(row(t!("discord.activity.type"), None, kind, cx))
+        .child(field(
+            t!("discord.activity.name"),
+            input(ActivityField::Name),
             cx,
         ))
-        .child(row("Large image", None, large, cx));
+        .child(field(
+            t!("discord.activity.details"),
+            input(ActivityField::Details),
+            cx,
+        ))
+        .child(field(
+            t!("discord.activity.state"),
+            input(ActivityField::State),
+            cx,
+        ))
+        .child(note(t!("discord.activity.placeholders_note"), cx))
+        .child(row(t!("discord.activity.large_image"), None, large, cx));
     if act.large_image == ImageSource::Custom {
-        activity = activity.child(field("Large image", input(ActivityField::LargeImage), cx));
+        activity = activity.child(field(
+            t!("discord.activity.large_image"),
+            input(ActivityField::LargeImage),
+            cx,
+        ));
     }
-    activity = activity.child(row("Small image", None, small, cx));
+    activity = activity.child(row(t!("discord.activity.small_image"), None, small, cx));
     if act.small_image == ImageSource::Custom {
-        activity = activity.child(field("Small image", input(ActivityField::SmallImage), cx));
+        activity = activity.child(field(
+            t!("discord.activity.small_image"),
+            input(ActivityField::SmallImage),
+            cx,
+        ));
     }
     for (index, target) in [(0, button0), (1, button1)] {
         activity = activity.child(row(
-            if index == 0 { "Button 1" } else { "Button 2" },
+            t!("discord.activity.button", number = index + 1),
             None,
             target,
             cx,
         ));
         if act.buttons[index].target != ButtonTarget::Off {
-            activity = activity.child(field("Label", input(ActivityField::ButtonLabel(index)), cx));
+            activity = activity.child(field(
+                t!("discord.activity.label"),
+                input(ActivityField::ButtonLabel(index)),
+                cx,
+            ));
         }
         if act.buttons[index].target == ButtonTarget::Custom {
-            activity = activity.child(field("URL", input(ActivityField::ButtonUrl(index)), cx));
+            activity = activity.child(field(
+                t!("discord.activity.url"),
+                input(ActivityField::ButtonUrl(index)),
+                cx,
+            ));
         }
     }
     let activity = activity
         .child(row(
-            "Show while paused",
-            Some("Keeps the activity (without the running time) when playback pauses."),
+            t!("discord.activity.show_paused"),
+            Some(t!("discord.activity.show_paused_desc")),
             paused,
             cx,
         ))
-        .child(note(
-            "Custom images are asset keys of your Discord application or image URLs. \
-             Buttons are visible to others, not to yourself.",
-            cx,
-        ));
+        .child(note(t!("discord.activity.custom_note"), cx));
     let discord = discord.child(activity);
 
     // ---- scrobble rules
     let r = s.scrobble_rules;
     let rules = v_flex()
         .gap_2()
-        .child(section_title("When a song counts"))
+        .child(section_title(t!("scrobble.rules.title")))
         .child(slider_row(
-            "Played",
-            format!("{} %", r.percent),
+            t!("scrobble.rules.played"),
+            t!("scrobble.rules.percent", percent = r.percent),
             &panel.prefs.scrobble_percent,
             cx,
         ))
         .child(slider_row(
-            "…or at most",
+            t!("scrobble.rules.or_at_most"),
             format_secs(r.max_delay_secs),
             &panel.prefs.scrobble_delay,
             cx,
         ))
         .child(slider_row(
-            "Ignore songs under",
+            t!("scrobble.rules.ignore_under"),
             format_secs(r.min_track_secs),
             &panel.prefs.scrobble_min,
             cx,
         ))
-        .child(note(
-            "Last.fm's rule is 50 % or 4 minutes, songs over 30 s. Applies to Last.fm and \
-             ListenBrainz.",
-            cx,
-        ));
+        .child(note(t!("scrobble.rules.note"), cx));
 
     // ---- footer: errors + where things are stored
     let errors = (!panel.scrobble_errors.is_empty()).then(|| {
@@ -332,13 +361,13 @@ pub(super) fn render(
                             .text_xs()
                             .font_weight(FontWeight::SEMIBOLD)
                             .text_color(danger)
-                            .child(format!("Scrobble errors ({})", panel.scrobble_errors.len())),
+                            .child(tp!("scrobble.errors", panel.scrobble_errors.len())),
                     )
                     .child(
                         Button::new("errors-clear")
                             .xsmall()
                             .ghost()
-                            .label("Clear")
+                            .label(t!("common.clear"))
                             .on_click(cx.listener(|this, _, _, cx| this.clear_errors(cx))),
                     ),
             )
@@ -351,13 +380,13 @@ pub(super) fn render(
             }))
     });
     let secrets_line = if panel.secrets_loaded {
-        format!("Secrets: {}", panel.secret_store)
+        t!("settings.integrations.secrets", store = panel.secret_store)
     } else {
-        "Secrets: loading…".into()
+        t!("settings.integrations.secrets_loading").into()
     };
     let path_line = match &panel.path {
-        Some(p) => format!("Settings: {}", p.display()),
-        None => "Settings are not saved (no config directory)".into(),
+        Some(p) => t!("settings.integrations.settings_path", path = p.display()),
+        None => t!("settings.integrations.not_saved").into(),
     };
     let footer = v_flex()
         .gap_1()
@@ -383,10 +412,13 @@ pub(super) fn render(
 
 fn format_secs(secs: u32) -> String {
     if secs >= 60 && secs.is_multiple_of(60) {
-        format!("{} min", secs / 60)
+        t!("time.minutes", minutes = secs / 60)
     } else if secs >= 60 {
-        format!("{}:{:02} min", secs / 60, secs % 60)
+        t!(
+            "time.minutes",
+            minutes = format!("{}:{:02}", secs / 60, secs % 60)
+        )
     } else {
-        format!("{secs} s")
+        t!("time.seconds", seconds = secs)
     }
 }

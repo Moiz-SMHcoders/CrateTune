@@ -140,63 +140,102 @@ pub fn init(cx: &mut App) {
     cx.on_action(|_: &ShowAll, cx| cx.unhide_other_apps());
     cx.on_action(|_: &Quit, cx| cx.quit());
 
+    set_menus(cx);
+}
+
+/// Builds (or rebuilds, after a language change) the menu bar.
+pub fn set_menus(cx: &mut App) {
     cx.set_menus(menus());
+    #[cfg(target_os = "macos")]
+    register_windows_menu();
+}
+
+/// GPUI hands AppKit the menu titled exactly "Window" as the windows menu (window
+/// list, "Bring All to Front"); with a translated title that's the last menu.
+#[cfg(target_os = "macos")]
+fn register_windows_menu() {
+    use objc2::runtime::AnyObject;
+    use objc2::{class, msg_send};
+    // SAFETY: plain AppKit getters / setters on the main thread (menus are only set
+    // from GPUI's main-thread app context); every pointer is checked for nil.
+    unsafe {
+        let app: *mut AnyObject = msg_send![class!(NSApplication), sharedApplication];
+        if app.is_null() {
+            return;
+        }
+        let main: *mut AnyObject = msg_send![app, mainMenu];
+        if main.is_null() {
+            return;
+        }
+        let count: isize = msg_send![main, numberOfItems];
+        if count == 0 {
+            return;
+        }
+        let item: *mut AnyObject = msg_send![main, itemAtIndex: count - 1];
+        if item.is_null() {
+            return;
+        }
+        let submenu: *mut AnyObject = msg_send![item, submenu];
+        if !submenu.is_null() {
+            let _: () = msg_send![app, setWindowsMenu: submenu];
+        }
+    }
 }
 
 fn menus() -> Vec<Menu> {
     vec![
         Menu::new(APP_NAME).items([
-            MenuItem::action(format!("About {APP_NAME}"), About),
+            MenuItem::action(t!("menu.about"), About),
             MenuItem::separator(),
-            MenuItem::action("Settings…", OpenSettings),
+            MenuItem::action(t!("menu.settings"), OpenSettings),
             MenuItem::separator(),
-            MenuItem::os_submenu("Services", SystemMenuType::Services),
+            MenuItem::os_submenu(t!("menu.services"), SystemMenuType::Services),
             MenuItem::separator(),
-            MenuItem::action(format!("Hide {APP_NAME}"), Hide),
-            MenuItem::action("Hide Others", HideOthers),
-            MenuItem::action("Show All", ShowAll),
+            MenuItem::action(t!("menu.hide"), Hide),
+            MenuItem::action(t!("menu.hide_others"), HideOthers),
+            MenuItem::action(t!("menu.show_all"), ShowAll),
             MenuItem::separator(),
-            MenuItem::action(format!("Quit {APP_NAME}"), Quit),
+            MenuItem::action(t!("menu.quit"), Quit),
         ]),
-        Menu::new("Edit").items([
-            MenuItem::os_action("Undo", input::Undo, OsAction::Undo),
-            MenuItem::os_action("Redo", input::Redo, OsAction::Redo),
+        Menu::new(t!("menu.edit")).items([
+            MenuItem::os_action(t!("menu.undo"), input::Undo, OsAction::Undo),
+            MenuItem::os_action(t!("menu.redo"), input::Redo, OsAction::Redo),
             MenuItem::separator(),
-            MenuItem::os_action("Cut", input::Cut, OsAction::Cut),
-            MenuItem::os_action("Copy", input::Copy, OsAction::Copy),
-            MenuItem::os_action("Paste", input::Paste, OsAction::Paste),
-            MenuItem::os_action("Select All", input::SelectAll, OsAction::SelectAll),
+            MenuItem::os_action(t!("menu.cut"), input::Cut, OsAction::Cut),
+            MenuItem::os_action(t!("menu.copy"), input::Copy, OsAction::Copy),
+            MenuItem::os_action(t!("menu.paste"), input::Paste, OsAction::Paste),
+            MenuItem::os_action(t!("menu.select_all"), input::SelectAll, OsAction::SelectAll),
             MenuItem::separator(),
-            MenuItem::action("Search", FocusSearch),
+            MenuItem::action(t!("menu.search"), FocusSearch),
         ]),
-        Menu::new("View").items([
-            MenuItem::action("Back", GoBack),
-            MenuItem::action("Forward", GoForward),
+        Menu::new(t!("menu.view")).items([
+            MenuItem::action(t!("menu.back"), GoBack),
+            MenuItem::action(t!("menu.forward"), GoForward),
             MenuItem::separator(),
-            MenuItem::action("Home", GoHome),
-            MenuItem::action("Explore", GoExplore),
-            MenuItem::action("Library", GoLibrary),
-            MenuItem::action("History", GoHistory),
-            MenuItem::action("Recognize Song", RecognizeSong),
+            MenuItem::action(t!("nav.home"), GoHome),
+            MenuItem::action(t!("nav.explore"), GoExplore),
+            MenuItem::action(t!("nav.library"), GoLibrary),
+            MenuItem::action(t!("nav.history"), GoHistory),
+            MenuItem::action(t!("menu.recognize"), RecognizeSong),
             MenuItem::separator(),
-            MenuItem::action("Now Playing", ToggleNowPlaying),
-            MenuItem::action("Queue", ToggleQueue),
-            MenuItem::action("Mini Player", ToggleMiniPlayer),
+            MenuItem::action(t!("common.now_playing"), ToggleNowPlaying),
+            MenuItem::action(t!("common.queue"), ToggleQueue),
+            MenuItem::action(t!("tray.mini_player"), ToggleMiniPlayer),
         ]),
-        Menu::new("Controls").items([
-            MenuItem::action("Play / Pause", TogglePlayback),
-            MenuItem::action("Next", NextTrack),
-            MenuItem::action("Previous", PreviousTrack),
+        Menu::new(t!("menu.controls")).items([
+            MenuItem::action(t!("menu.play_pause"), TogglePlayback),
+            MenuItem::action(t!("tray.next"), NextTrack),
+            MenuItem::action(t!("tray.previous"), PreviousTrack),
             MenuItem::separator(),
-            MenuItem::action("Shuffle", ToggleShuffle),
-            MenuItem::action("Repeat (Off / All / One)", CycleRepeat),
+            MenuItem::action(t!("common.shuffle"), ToggleShuffle),
+            MenuItem::action(t!("menu.repeat"), CycleRepeat),
             MenuItem::separator(),
-            MenuItem::action("Volume Up", VolumeUp),
-            MenuItem::action("Volume Down", VolumeDown),
+            MenuItem::action(t!("menu.volume_up"), VolumeUp),
+            MenuItem::action(t!("menu.volume_down"), VolumeDown),
         ]),
-        Menu::new("Window").items([
-            MenuItem::action("Minimize", Minimize),
-            MenuItem::action("Zoom", Zoom),
+        Menu::new(t!("menu.window")).items([
+            MenuItem::action(t!("menu.minimize"), Minimize),
+            MenuItem::action(t!("menu.zoom"), Zoom),
         ]),
     ]
 }

@@ -1,0 +1,79 @@
+# Now Playing screen, lyrics pane and lyrics card dialog (Italian).
+
+# ---- Header
+np.close_tooltip = Chiudi (Esc)
+np.header = IN RIPRODUZIONE
+np.demo_clock = Orologio demo
+np.buffering = Buffering…
+np.preview = Anteprima
+np.speed = {speed}×
+np.sleep_tooltip = Timer di spegnimento
+np.layout_tooltip = Stile e sfondo
+np.menu.design = Stile
+np.menu.background = Sfondo
+
+# ---- Player
+np.up_next = A seguire
+np.playing_from = IN RIPRODUZIONE DA
+np.your_queue = La tua coda
+np.of_total = di {total}
+np.editorial.header_album = IN RIPRODUZIONE  ·  {album}
+np.editorial.play = PLAY
+np.editorial.pause = PAUSA
+np.editorial.loading = CARICAMENTO
+np.queue.title = A SEGUIRE
+np.queue.more.one = +{count} altro
+np.queue.more.other = +{count} altri
+np.queue.empty = Coda vuota. Aggiungi brani da un elenco o attiva la riproduzione automatica.
+
+# ---- Lyrics pane
+lyrics.nothing_playing = Nessuna riproduzione
+lyrics.loading = Caricamento testo…
+lyrics.missing_title = Nessun testo
+lyrics.missing_detail = Nessuno dei fornitori di testi attivi ha questo brano.
+lyrics.failed = Impossibile caricare il testo
+lyrics.translating = Traduzione…
+lyrics.translation_failed = Traduzione non riuscita: {error}
+lyrics.kind.word = Sincronizzato per parola
+lyrics.kind.line = Sincronizzato per riga
+lyrics.kind.plain = Non sincronizzato
+lyrics.source = {provider} · {kind}
+lyrics.select_hint.one = Seleziona fino a {count} riga per una card
+lyrics.select_hint.other = Seleziona fino a {count} righe per una card
+lyrics.selected.one = {count} riga selezionata
+lyrics.selected.other = {count} righe selezionate
+lyrics.create_card = Crea card…
+lyrics.share_tooltip = Condividi il testo come card
+lyrics.translation_on = Traduzione: sì
+lyrics.translation_off = Traduzione: no
+lyrics.reload_tooltip = Cerca di nuovo nei fornitori
+
+# ---- Lyrics card dialog
+card.dialog_title = Card del testo
+card.row.background = Sfondo
+card.row.text = Testo
+card.row.size = Dimensione
+card.row.shape = Formato
+card.row.cover = Copertina
+card.cover.show = Mostra
+card.cover.hide = Nascondi
+card.save = Salva immagine…
+card.copy = Copia immagine
+card.copying = Copia in corso…
+card.copied = Copiata negli appunti
+card.saved = Salvata: {path}
+card.save_failed = Impossibile salvare: {error}
+card.draw_failed = Impossibile disegnare la card: {error}
+card.aspect.square = Quadrato
+card.aspect.portrait = Verticale
+card.aspect.story = Storia
+card.bg.blur = Copertina sfocata
+card.bg.album = Colore dell'album
+card.bg.dark = Scuro
+card.bg.light = Chiaro
+card.align.left = Sinistra
+card.align.center = Centro
+card.align.right = Destra
+card.size.small = Piccolo
+card.size.medium = Medio
+card.size.large = Grande

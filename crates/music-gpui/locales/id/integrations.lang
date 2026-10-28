@@ -1,0 +1,97 @@
+# ---- SponsorBlock: segment categories
+sponsorblock.category.music_offtopic = Bagian non-musik
+sponsorblock.category.sponsor = Sponsor
+sponsorblock.category.intro = Jeda / intro
+sponsorblock.category.outro = Kartu akhir / kredit
+sponsorblock.category.selfpromo = Promosi diri
+sponsorblock.category.interaction = Pengingat interaksi
+sponsorblock.category.preview = Pratinjau / rekap
+sponsorblock.category.filler = Selingan
+sponsorblock.category.hook = Hook / sapaan
+sponsorblock.category_in_chip.music_offtopic = bagian non-musik
+sponsorblock.category_in_chip.sponsor = sponsor
+sponsorblock.category_in_chip.intro = jeda / intro
+sponsorblock.category_in_chip.outro = kartu akhir / kredit
+sponsorblock.category_in_chip.selfpromo = promosi diri
+sponsorblock.category_in_chip.interaction = pengingat interaksi
+sponsorblock.category_in_chip.preview = pratinjau / rekap
+sponsorblock.category_in_chip.filler = selingan
+sponsorblock.category_in_chip.hook = hook / sapaan
+sponsorblock.toast.skipped = Dilewati: {category} ({seconds} dtk)
+sponsorblock.chip.skip = Lewati {category} ({seconds} dtk)
+sponsorblock.chip.tooltip = SponsorBlock: lompat ke akhir segmen ini
+
+# ---- AI content filter: categories
+ai_filter.category.explicit = Lirik eksplisit
+ai_filter.category.ai_generated = Musik buatan AI
+ai_filter.category.holiday = Musik hari raya
+ai_filter.category.children = Musik anak-anak
+ai_filter.category.noise = Suara tidur & white noise
+ai_filter.category.sped_up = Versi sped-up / slowed
+ai_filter.category.covers = Cover & karaoke
+ai_filter.category.live = Rekaman live
+
+# ---- Chromecast
+cast.casting_to = Mentransmisikan ke {device}
+cast.connecting_to = Menghubungkan ke {device}…
+cast.tooltip = Transmisikan ke perangkat
+cast.menu.title = Transmisikan ke
+cast.menu.searching = Mencari perangkat Cast…
+cast.menu.none_found = Tidak ada perangkat Cast yang ditemukan
+cast.menu.search_again = Cari lagi
+cast.stop = Hentikan transmisi
+cast.error.disconnected = Perangkat Cast terputus
+cast.error.scan_failed = Tidak dapat mencari perangkat: {error}
+cast.error.connect_failed = Tidak dapat terhubung ke {device}: {error}
+
+# ---- Import: sources and progress
+import.source.spotify_playlist = Playlist Spotify
+import.source.spotify_liked = Lagu yang disukai di Spotify
+import.error.connect_spotify = Hubungkan Spotify di Pengaturan → Impor Spotify.
+import.error.connect_spotify_first = Hubungkan Spotify di Pengaturan → Impor Spotify terlebih dahulu.
+import.error.not_spotify_link = Itu bukan tautan atau ID playlist Spotify.
+import.stage.reading = Membaca
+import.stage.reading_playlist = Membaca playlist
+import.stage.reading_liked = Membaca lagu yang disukai
+import.stage.matching = Mencocokkan
+import.liked_playlist_name = Disukai di Spotify
+import.cancelled = Dibatalkan
+import.nothing_to_save = Tidak ada yang bisa disimpan: tidak ada lagu yang ditemukan.
+import.exporting = Mengekspor playlist
+import.exported.other = {count} lagu diekspor ke {path}
+
+# ---- Import & export page
+import.page.subtitle = Bawa playlist dari Spotify atau file ke pustaka Anda, atau bawa ke tempat lain.
+import.file.title = Dari file
+import.file.description = CSV Exportify (Spotify), M3U / M3U8, atau CSV / JSON yang diekspor dari sini.
+import.file.choose = Pilih file…
+import.spotify.title = Dari Spotify
+import.spotify.connect_hint = Hubungkan akun Spotify Anda (dengan Client ID developer gratis milik Anda sendiri) untuk mengimpor playlist dan lagu yang disukai.
+import.spotify.set_up = Siapkan Spotify…
+import.spotify.signed_in = Masuk sebagai {user}.
+import.spotify.liked = Lagu yang disukai
+import.spotify.show_playlists = Tampilkan playlist saya
+import.spotify.playlist_meta.other = {owner} · {count} lagu
+import.spotify.playlist_meta_unknown = {owner} · ? lagu
+import.job.progress = {stage} · {done} dari {total}
+import.job.progress_count = {stage} · {done}
+import.job.found.other = {count} ditemukan
+import.job.not_found.other = {count} tidak ditemukan
+import.job.saved_as = Disimpan sebagai “{name}”
+import.job.save.other = Simpan {count} lagu sebagai playlist
+import.job.open_playlists = Buka playlist
+import.job.name_placeholder = Nama playlist
+import.guess.best = Tebakan terbaik: {artists} — {title} ({percent}%)
+import.guess.search_failed = Pencarian gagal: {error}
+import.guess.no_results = Tidak ada hasil
+import.guess.using = Tebakan dipakai
+import.guess.use = Pakai tebakan
+import.guess.search_tooltip = Telusuri YouTube Music
+import.not_found.title = Tidak ditemukan
+import.not_found.subtitle = Terima tebakan terbaik, atau cari dan tambahkan lagunya sendiri.
+import.found.title = Ditemukan di YouTube Music
+import.found.first = {shown} pertama dari {total}
+import.export.title = Ekspor playlist
+import.export.subtitle = CSV dan M3U dapat dibuka di pemutar dan spreadsheet lain; JSON menyimpan semuanya untuk diimpor di sini.
+import.export.empty = Belum ada playlist di pustaka.
+import.export.from_youtube_music = {songs} · YouTube Music

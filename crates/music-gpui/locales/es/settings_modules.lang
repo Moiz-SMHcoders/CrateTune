@@ -1,0 +1,137 @@
+# Settings → Modules: provider modules (`.arch` packages) that supply audio from other
+# sources.
+
+# ---- Playback source
+modules.source.group = Fuente de reproducción
+modules.source.youtube = Solo YouTube
+modules.source.first = Primero módulos, luego YouTube
+modules.source.only = Solo módulos
+modules.source_note.youtube = Las canciones se reproducen desde YouTube; los módulos instalados no se usan.
+modules.source_note.first.one = Cada canción se busca en el {count} módulo activado, de arriba abajo; se reproduce la primera coincidencia aceptable o, si no hay, YouTube.
+modules.source_note.first.other = Cada canción se busca en los {count} módulos activados, de arriba abajo; se reproduce la primera coincidencia aceptable o, si no hay, YouTube.
+modules.source_note.only.one = Las canciones solo se reproducen desde el {count} módulo activado; una canción que ningún módulo encuentra falla (y se omite si “Omitir canciones que fallan” está activado).
+modules.source_note.only.other = Las canciones solo se reproducen desde los {count} módulos activados; una canción que ningún módulo encuentra falla (y se omite si “Omitir canciones que fallan” está activado).
+modules.source.note = Un módulo proporciona el audio de la canción que reproduces; el título, los artistas y tu biblioteca no cambian. La barra y Reproduciendo muestran de dónde viene el audio. Las descargas usan el mismo orden.
+
+# ---- Unavailable
+modules.unavailable = Los módulos no están disponibles.
+modules.no_data_dir = No hay carpeta de datos; los módulos no están disponibles.
+modules.unavailable_error = Módulos no disponibles: {error}
+
+# ---- Add a module
+modules.add.group = Añadir un módulo
+modules.add.from_file = Instalar desde archivo…
+modules.add.from_file_note = Un paquete .arch de tu disco.
+modules.add.from_url = Instalar desde URL
+modules.add.catalog = Añadir catálogo
+modules.add.note = Los paquetes se verifican (formato, suma de comprobación, ajustes, funciones exportadas) antes de que confirmes. No hay módulos ni catálogos preinstalados: los módulos vienen de sus autores y se ejecutan en un entorno aislado (sin archivos; red a través del proxy de la app).
+modules.url_missing = Escribe la URL de un paquete .arch, un descriptor o un catálogo.
+modules.catalog_url_missing = Escribe la URL de un catálogo.
+
+# ---- Progress lines
+modules.busy.saving = Guardando…
+modules.busy.saving_catalog = Guardando el catálogo…
+modules.busy.checking_package = Verificando el paquete…
+modules.busy.reading_catalog = Leyendo el catálogo…
+modules.busy.installing = Instalando…
+modules.busy.removing = Quitando…
+modules.busy.checking = Comprobando…
+modules.busy.checking_update = Buscando actualizaciones…
+modules.busy.loading_settings = Cargando ajustes…
+modules.busy.saving_settings = Guardando ajustes…
+modules.busy.refreshing = Actualizando…
+
+# ---- Results
+modules.catalog_added.one = Se añadió el catálogo “{name}” ({count} entrada).
+modules.catalog_added.other = Se añadió el catálogo “{name}” ({count} entradas).
+modules.installed_needs_setup = Se instaló {name}. Completa sus ajustes y haz clic en Guardar.
+modules.installed = Se instaló {name}.
+modules.removed = Módulo quitado.
+modules.update_available = La versión {version} está disponible.
+modules.up_to_date = Actualizado.
+modules.update_from_file = Instalado desde un archivo: importa el nuevo paquete para actualizarlo.
+modules.settings_read_failed = No se pudieron leer los ajustes de este módulo.
+modules.settings_saved = Ajustes guardados.
+modules.catalog_refreshed = Catálogo actualizado.
+modules.diagnostics_copied = Diagnóstico copiado.
+
+# ---- Review card
+modules.review.group = Revisión
+modules.review.replaces = Actualiza la versión instalada {version}; se conservan sus ajustes.
+modules.review.new = Una instalación nueva, añadida al final del orden de reproducción.
+modules.review.needs = Necesita: {settings}.
+modules.review.homepage = Página web: {url}
+modules.review.license = Licencia: {license}
+modules.review.sha256 = SHA-256 del paquete {hash}
+
+# ---- Installed modules
+modules.installed_group = Instalados ({count})
+modules.nothing_installed = Aún no hay nada instalado.
+modules.action.settings = Ajustes
+modules.action.check = Comprobar
+modules.action.check_update = Buscar actualización
+modules.action.uninstall = Desinstalar
+modules.action.confirm_remove = Quitar: ¿seguro?
+modules.action.higher = Más prioridad
+modules.action.lower = Menos prioridad
+modules.needs_configuration = Necesita configuración: {settings}
+modules.settings_heading = Ajustes
+modules.no_settings = Este módulo no tiene ajustes.
+modules.field.placeholder_required = obligatorio
+modules.field.placeholder_optional = opcional
+modules.field.not_a_number = {field} debe ser un número.
+modules.field.required = {field} es obligatorio.
+modules.field.invalid = {field} tiene un valor no válido.
+
+# ---- Diagnostics
+modules.diagnostics = Diagnóstico
+modules.diagnostic_line = {label} {when}: {summary}
+modules.diagnostic_track = {line} — {track}
+modules.diag.last_song = Última canción
+modules.diag.check = Comprobación
+modules.diag.playback = Reproducción
+modules.diag.not_checked = Aún sin comprobar.
+modules.diag.not_used = Aún no se usó para ninguna canción.
+modules.installed_line_file = Instalado {when} · paquete {hash} · desde un archivo
+modules.installed_line_url = Instalado {when} · paquete {hash} · desde {url}
+modules.log_empty = El registro está vacío.
+modules.copy_diagnostics = Copiar diagnóstico
+modules.clear_log = Borrar registro
+
+modules.status.ready = Listo
+modules.status.configuration = Necesita configuración
+modules.status.unavailable = Servicio no disponible
+modules.status.failed = Error
+modules.status.no_results = Sin resultados
+modules.status.no_match = Ninguna coincidencia aceptable ({reason})
+modules.status.resolved = Resuelto
+modules.status.timeout = Tiempo de espera agotado
+modules.rejection.metadata = metadatos
+modules.rejection.title = título
+modules.rejection.artist = artista
+modules.rejection.recording = grabación
+modules.rejection.duration = duración
+modules.rejection.explicit = explícito
+modules.phase.search = en la búsqueda
+modules.phase.match = en la comparación
+modules.phase.stream = en la transmisión
+modules.candidates.one = {count} candidato
+modules.candidates.other = {count} candidatos
+modules.elapsed_ms = {ms} ms
+
+modules.failure.invalid_document = Documento de módulo no válido
+modules.failure.unsupported = No compatible con esta app
+modules.failure.invalid_configuration = Los ajustes del módulo están incompletos o no son válidos
+modules.failure.network = Error de red
+modules.failure.timeout = Tiempo de espera agotado
+modules.failure.execution = El módulo falló
+modules.failure.integrity = La suma de comprobación no coincide
+modules.error_with_code = {error} ({code})
+
+# ---- Catalogs
+modules.catalogs = Catálogos
+modules.catalog_line.one = {url} · {count} entrada · actualizado {when}
+modules.catalog_line.other = {url} · {count} entradas · actualizado {when}
+modules.remove_catalog = Quitar catálogo
+modules.entry.installed = Instalado
+modules.entry.not_a_module = No es un módulo

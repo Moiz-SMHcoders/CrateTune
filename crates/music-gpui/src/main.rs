@@ -18,6 +18,9 @@
 //!   resolver used by the player and downloads, keychain-backed secret settings.
 //! * `script.rs` – timed actions / screenshots for verification.
 
+// First, so `t!` / `tp!` / `k!` are visible in every module.
+#[macro_use]
+mod i18n;
 mod account;
 mod actions;
 mod anim;
@@ -119,13 +122,17 @@ fn main() {
         .run(|cx: &mut App| {
             gpui_component::init(cx);
             ArtworkCache::init(cx);
-            actions::init(cx);
 
-            // Only the window frame is needed before the window exists; the
-            // settings panel loads (and owns) the full file.
-            let saved = settings::file::settings_path()
-                .map(|p| Settings::load(&p).0)
-                .and_then(|s| s.window);
+            // Only the UI language and the window frame are needed before the window
+            // exists; the settings panel loads (and owns) the full file.
+            let saved = settings::file::settings_path().map(|p| Settings::load(&p).0);
+            i18n::set_locale(
+                saved
+                    .as_ref()
+                    .map_or_else(i18n::system_locale, |s| s.appearance.ui_locale()),
+            );
+            actions::init(cx);
+            let saved = saved.and_then(|s| s.window);
             let options = WindowOptions {
                 window_bounds: Some(initial_bounds(saved, cx)),
                 window_min_size: Some(size(px(860.), px(540.))),

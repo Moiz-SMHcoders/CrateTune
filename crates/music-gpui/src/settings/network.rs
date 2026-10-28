@@ -73,26 +73,34 @@ impl NetworkState {
                     .default_value(value)
             })
         };
+        let host = input("", n.host.clone(), false);
+        let port = input(
+            "1080",
+            if n.port == 0 {
+                String::new()
+            } else {
+                n.port.to_string()
+            },
+            false,
+        );
+        let user = input("", n.username.clone(), false);
+        let password = input("", String::new(), true);
+        let dns_url = input(
+            "https://dns.example/dns-query",
+            n.dns.custom_url.clone(),
+            false,
+        );
+        crate::i18n::track_placeholder(&host, k!("settings.network.host_placeholder"), window, cx);
+        crate::i18n::track_placeholder(&user, k!("settings.network.optional"), window, cx);
+        crate::i18n::track_placeholder(&password, k!("settings.network.optional"), window, cx);
         Self {
             kind: n.proxy,
-            host: input("proxy.example.com or 127.0.0.1", n.host.clone(), false),
-            port: input(
-                "1080",
-                if n.port == 0 {
-                    String::new()
-                } else {
-                    n.port.to_string()
-                },
-                false,
-            ),
-            user: input("optional", n.username.clone(), false),
-            password: input("optional", String::new(), true),
+            host,
+            port,
+            user,
+            password,
             dns_mode: n.dns.mode,
-            dns_url: input(
-                "https://dns.example/dns-query",
-                n.dns.custom_url.clone(),
-                false,
-            ),
+            dns_url,
             dns_fallback: n.dns.fallback,
             dns_status: None,
             status: NetStatus::Idle,
@@ -120,9 +128,9 @@ impl SettingsPanel {
         };
         music_core::http::configure(config).map_err(|e| {
             if e.to_string().contains("DNS-over-HTTPS") {
-                "The DNS-over-HTTPS URL isn't valid.".to_owned()
+                t!("settings.network.error.doh_invalid").to_owned()
             } else {
-                "The proxy address isn't valid for this proxy type.".to_owned()
+                t!("settings.network.error.proxy_invalid").to_owned()
             }
         })?;
         Ok(status_text(network))
@@ -140,7 +148,7 @@ impl SettingsPanel {
             Err(_) if port_text.is_empty() => 0,
             Err(_) => {
                 self.network.status =
-                    NetStatus::Failed("The port must be a number (1–65535).".into());
+                    NetStatus::Failed(t!("settings.network.error.port_number").into());
                 cx.notify();
                 return;
             }
@@ -235,9 +243,9 @@ impl SettingsPanel {
                     Ok(lookup) => {
                         use music_core::http::LookupSource;
                         let via = match lookup.source {
-                            LookupSource::Doh => "DNS-over-HTTPS",
-                            LookupSource::Cached => "DNS-over-HTTPS (cached)",
-                            LookupSource::System => "the system resolver",
+                            LookupSource::Doh => t!("settings.network.dns_via_doh"),
+                            LookupSource::Cached => t!("settings.network.dns_via_cache"),
+                            LookupSource::System => t!("settings.network.dns_via_system"),
                         };
                         let first: Vec<String> = lookup
                             .addrs
@@ -245,9 +253,12 @@ impl SettingsPanel {
                             .take(2)
                             .map(ToString::to_string)
                             .collect();
-                        NetStatus::DnsOk(format!(
-                            "music.youtube.com → {} via {via} in {ms} ms",
-                            first.join(", ")
+                        NetStatus::DnsOk(t!(
+                            "settings.network.dns_ok",
+                            host = "music.youtube.com",
+                            addresses = first.join(", "),
+                            via = via,
+                            ms = crate::i18n::format::number(ms as u64)
                         ))
                     }
                     Err(e) => NetStatus::TestFailed(e),
@@ -266,7 +277,7 @@ impl SettingsPanel {
         self.network.dns_fallback = rest != "nofallback";
         self.network.dns_mode = DnsMode::ALL
             .into_iter()
-            .find(|m| m.title().eq_ignore_ascii_case(mode))
+            .find(|m| m.id().eq_ignore_ascii_case(mode))
             .unwrap_or(DnsMode::Custom);
         if self.network.dns_mode == DnsMode::Custom {
             let url = mode.to_owned();
@@ -283,7 +294,7 @@ impl SettingsPanel {
         let kind = parts.next().unwrap_or("off");
         self.network.kind = ProxyKind::ALL
             .into_iter()
-            .find(|k| k.title().eq_ignore_ascii_case(kind))
+            .find(|k| k.id().eq_ignore_ascii_case(kind))
             .unwrap_or(ProxyKind::Off);
         for (input, value) in [
             (self.network.host.clone(), parts.next().unwrap_or("")),
@@ -299,17 +310,19 @@ impl SettingsPanel {
 /// "Using …" line for the applied settings.
 fn status_text(network: &NetworkConfig) -> String {
     let proxy = match network.display_url() {
-        Some(url) => format!("Using {url}"),
-        None => "Direct connections (no proxy)".into(),
+        Some(url) => t!("settings.network.using_proxy", url = url),
+        None => t!("settings.network.direct").into(),
     };
-    match network.dns.mode {
-        DnsMode::System => proxy,
-        DnsMode::Custom => format!(
-            "{proxy} · DNS-over-HTTPS ({})",
-            network.dns.custom_url.trim()
-        ),
-        mode => format!("{proxy} · DNS-over-HTTPS ({})", mode.title()),
-    }
+    let server = match network.dns.mode {
+        DnsMode::System => return proxy,
+        DnsMode::Custom => network.dns.custom_url.trim(),
+        mode => mode.title(),
+    };
+    t!(
+        "settings.network.status_with_doh",
+        proxy = proxy,
+        server = server
+    )
 }
 
 pub(super) fn render(
@@ -326,7 +339,7 @@ pub(super) fn render(
         .flex_wrap()
         .children(ProxyKind::ALL.map(|k| {
             let selected = k == kind;
-            Button::new(SharedString::from(format!("proxy-kind-{}", k.title())))
+            Button::new(SharedString::from(format!("proxy-kind-{}", k.id())))
                 .small()
                 .map(|b| if selected { b.primary() } else { b.outline() })
                 .selected(selected)
@@ -341,23 +354,33 @@ pub(super) fn render(
         NetStatus::DnsOk(m) => (m.clone().into(), success),
         NetStatus::Applied(m) => (m.clone().into(), success),
         NetStatus::Failed(e) => (e.clone().into(), danger),
-        NetStatus::Testing => ("Testing…".into(), muted),
-        NetStatus::TestOk(ms) => (format!("Connected to YouTube in {ms} ms").into(), success),
-        NetStatus::TestFailed(e) => (format!("Connection failed: {e}").into(), danger),
+        NetStatus::Testing => (t!("settings.network.testing").into(), muted),
+        NetStatus::TestOk(ms) => (
+            t!(
+                "settings.network.test_ok",
+                ms = crate::i18n::format::number(*ms as u64)
+            )
+            .into(),
+            success,
+        ),
+        NetStatus::TestFailed(e) => (t!("settings.network.test_failed", error = e).into(), danger),
     };
     let off = kind == ProxyKind::Off;
     let dns_status = match &state.dns_status {
         Some(NetStatus::DnsOk(m)) => Some(status_line(m.clone().into(), success)),
-        Some(NetStatus::TestFailed(e)) => {
-            Some(status_line(format!("Lookup failed: {e}").into(), danger))
+        Some(NetStatus::TestFailed(e)) => Some(status_line(
+            t!("settings.network.lookup_failed", error = e).into(),
+            danger,
+        )),
+        Some(NetStatus::Testing) => {
+            Some(status_line(t!("settings.network.looking_up").into(), muted))
         }
-        Some(NetStatus::Testing) => Some(status_line("Looking up…".into(), muted)),
         _ => None,
     };
     let dns_mode = state.dns_mode;
     let dns_modes = h_flex().gap_1().flex_wrap().children(DnsMode::ALL.map(|m| {
         let selected = m == dns_mode;
-        Button::new(SharedString::from(format!("dns-mode-{}", m.title())))
+        Button::new(SharedString::from(format!("dns-mode-{}", m.id())))
             .small()
             .map(|b| if selected { b.primary() } else { b.outline() })
             .selected(selected)
@@ -370,52 +393,64 @@ pub(super) fn render(
     v_flex()
         .gap_5()
         .child(
-            group("Proxy", cx)
+            group(t!("settings.network.proxy"), cx)
                 .child(kinds)
                 .when(!off, |this| {
-                    this.child(field("Host", Input::new(&state.host).small(), cx))
-                        .child(field("Port", Input::new(&state.port).small(), cx))
-                        .when(kind != ProxyKind::Socks4, |this| {
-                            this.child(field("User name", Input::new(&state.user).small(), cx))
-                                .child(field(
-                                    "Password",
-                                    Input::new(&state.password).small().mask_toggle(),
-                                    cx,
-                                ))
-                        })
+                    this.child(field(
+                        t!("settings.network.host"),
+                        Input::new(&state.host).small(),
+                        cx,
+                    ))
+                    .child(field(
+                        t!("settings.network.port"),
+                        Input::new(&state.port).small(),
+                        cx,
+                    ))
+                    .when(kind != ProxyKind::Socks4, |this| {
+                        this.child(field(
+                            t!("settings.network.user"),
+                            Input::new(&state.user).small(),
+                            cx,
+                        ))
+                        .child(field(
+                            t!("settings.network.password"),
+                            Input::new(&state.password).small().mask_toggle(),
+                            cx,
+                        ))
+                    })
                 })
                 .child(
                     h_flex()
                         .gap_2()
+                        .flex_wrap()
                         .child(
                             Button::new("proxy-apply")
                                 .small()
                                 .primary()
-                                .label("Apply")
+                                .label(t!("common.apply"))
                                 .on_click(cx.listener(|this, _, _, cx| this.network_apply(cx))),
                         )
                         .child(
                             Button::new("proxy-test")
                                 .small()
                                 .outline()
-                                .label("Test connection")
+                                .label(t!("settings.network.test_connection"))
                                 .loading(matches!(state.status, NetStatus::Testing))
                                 .on_click(cx.listener(|this, _, _, cx| this.network_test(cx))),
                         ),
                 )
                 .child(status_line(status, color))
-                .child(note(
-                    "Applies to everything: YouTube Music, audio streams, artwork, lyrics and \
-                     scrobbling. SOCKS5h resolves host names through the proxy. The password \
-                     is kept in the keychain.",
-                    cx,
-                )),
+                .child(note(t!("settings.network.proxy_note"), cx)),
         )
         .child(
-            group("DNS", cx)
+            group(t!("settings.network.dns"), cx)
                 .child(dns_modes)
                 .when(dns_mode == DnsMode::Custom, |this| {
-                    this.child(field("DoH URL", Input::new(&state.dns_url).small(), cx))
+                    this.child(field(
+                        t!("settings.network.doh_url"),
+                        Input::new(&state.dns_url).small(),
+                        cx,
+                    ))
                 })
                 .when(dns_mode != DnsMode::System, |this| {
                     this.child(
@@ -433,37 +468,33 @@ pub(super) fn render(
                             .child(
                                 div()
                                     .text_sm()
-                                    .child("Fall back to the system resolver when DoH fails"),
+                                    .min_w_0()
+                                    .child(t!("settings.network.dns_fallback")),
                             ),
                     )
                 })
                 .child(
                     h_flex()
                         .gap_2()
+                        .flex_wrap()
                         .child(
                             Button::new("dns-apply")
                                 .small()
                                 .primary()
-                                .label("Apply")
+                                .label(t!("common.apply"))
                                 .on_click(cx.listener(|this, _, _, cx| this.network_apply(cx))),
                         )
                         .child(
                             Button::new("dns-test")
                                 .small()
                                 .outline()
-                                .label("Test DNS")
+                                .label(t!("settings.network.test_dns"))
                                 .loading(matches!(state.dns_status, Some(NetStatus::Testing)))
                                 .on_click(cx.listener(|this, _, _, cx| this.network_test_dns(cx))),
                         ),
                 )
                 .children(dns_status)
-                .child(note(
-                    "DNS-over-HTTPS (RFC 8484) looks up host names over an encrypted HTTPS \
-                     connection instead of plain DNS. Answers are cached for their TTL. With \
-                     a SOCKS5h proxy the proxy resolves names itself. Quad9 is reached on its \
-                     HTTP/1.1 port 5053, which some networks block.",
-                    cx,
-                )),
+                .child(note(t!("settings.network.dns_note"), cx)),
         )
         .into_any_element()
 }

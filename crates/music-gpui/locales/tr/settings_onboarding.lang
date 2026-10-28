@@ -1,0 +1,56 @@
+# First-run guide (Turkish).
+
+# ---- Step titles
+onboarding.step.welcome = Hoş geldiniz
+onboarding.step.content = Dil ve bölge
+onboarding.step.theme = Görünüm
+onboarding.step.account = YouTube Music hesabı
+onboarding.step.local_files = Bu bilgisayardaki müzikler
+onboarding.step.privacy = Gizlilik ve sınırlamalar
+onboarding.welcome_title = Hoş geldiniz · {app}
+onboarding.step_of = Adım {step} / {total}
+
+# ---- Step subtitles
+onboarding.subtitle.welcome = YouTube Music için hızlı, yerel bir oynatıcı: göz atma ve arama, şarkıyı takip eden sözler, geçmiş ve istatistikler içeren bir kitaplık, kendi müzik dosyalarınız ve şarkı tanıma. Birkaç seçim yapın ve hazırsınız — buradaki her şey daha sonra Ayarlar'dan değiştirilebilir.
+onboarding.subtitle.content = YouTube Music'in başlıklar ve öneriler için hangi dili kullanacağı ve hangi ülkenin listelerini ve yeni çıkanlarını göreceğiniz.
+onboarding.subtitle.theme = Bir tema ve metin boyutu seçin.
+onboarding.subtitle.account = İsteğe bağlı. Oturum açmak beğenilerinizi, kitaplığınızı, çalma listelerinizi ve kişiselleştirilmiş önerileri getirir. Geri kalan her şey hesap olmadan çalışır.
+onboarding.subtitle.local_files = İsteğe bağlı. Müzik dosyalarının bulunduğu klasörleri ekleyin; taranarak kitaplığınıza eklenir ve YouTube Music ile birlikte çalınır.
+onboarding.subtitle.privacy = Başlamadan önce bilmeniz gerekenler.
+
+# ---- Footer buttons
+onboarding.skip = Kurulumu atla
+onboarding.get_started = Başlayın
+onboarding.finish = Bitir
+onboarding.next_or_skip = İleri (veya atla)
+
+# ---- Welcome step: feature list
+onboarding.feature.browse.title = Göz atma ve arama
+onboarding.feature.browse.text = Ana sayfa akışı, listeler, ruh halleri, yeni çıkanlar, sanatçılar, albümler ve çalma listeleri.
+onboarding.feature.lyrics.title = Şarkı sözleri
+onboarding.feature.lyrics.text = Birçok sağlayıcıdan kelime kelime eşzamanlı sözler; çeviri ve Latin harflerine aktarma ile.
+onboarding.feature.library.title = Kitaplık
+onboarding.feature.library.text = Beğeniler, çalma listeleri, dinleme geçmişi, istatistikler ve indirilenler — bu bilgisayarda saklanır.
+onboarding.feature.recognize.title = Müzik tanıma
+onboarding.feature.recognize.text = Çevrenizde çalan bir şarkıyı tanıyın (⇧⌘R) ve hemen çalın.
+
+# ---- Look step
+onboarding.theme.group = Tema
+onboarding.theme.dynamic_note = Dinamik tema, vurgu rengini çalan şarkının kapak resminden alır.
+onboarding.theme.text_size = Metin boyutu
+
+# ---- Music on this computer step
+onboarding.local.group = Müzik klasörleri
+onboarding.local.empty = Henüz klasör yok.
+onboarding.local.add = Klasör ekle…
+onboarding.local.note = Klasörleri şimdi veya daha sonra tarayın; Yerel dosyalar bölümünden yönetebilirsiniz.
+
+# ---- Privacy & limitations step
+onboarding.privacy.streaming.title = Şarkılar nasıl aktarılır
+onboarding.privacy.streaming.text = Tam şarkılar YouTube'un TV istemcisinden ya da PoToken ile web istemcisinden gelir (kötüye kullanımı önleyen bir belirteç; macOS'ta gizli bir tarayıcı görünümünde oluşturulur). YouTube yeni akışları birkaç saniye bekletir; uygulama bu sırada kısa bir önizlemeyle başlar. YouTube bir şeyi değiştirirse şarkılar ~1 dakikalık önizlemelere geri döner (oynatıcıda işaretlenir). Yol, Ayarlar → Çalma → YouTube akışları bölümünden seçilir.
+onboarding.privacy.data.title = Verileriniz burada kalır
+onboarding.privacy.data.text = Kitaplık, geçmiş, istatistikler ve ayarlar bu bilgisayarda saklanır. Parolalar, API anahtarları ve YouTube oturum çerezi sistem anahtar zincirine gider. Dinleme ve arama geçmişini istediğiniz zaman Ayarlar → Gizlilik bölümünden duraklatabilir veya temizleyebilirsiniz.
+onboarding.privacy.recipients.title = Kim neyi alır
+onboarding.privacy.recipients.text = YouTube Music aramalarınızı ve dinlemelerinizi alır (oturum açıksa hesap çerezinizi de). Şarkı sözü sağlayıcıları şarkı başlıklarını alır. Şarkı tanıma, Shazam'a kaydın kendisini değil, bir ses parmak izini gönderir. Scrobble ve Discord yalnızca siz ayarlarsanız çalışır.
+onboarding.privacy.independent.title = Bağımsız proje
+onboarding.privacy.independent.text = YouTube, Google veya Shazam ile bağlantılı değildir. GPL-3.0 lisanslı özgür yazılım.

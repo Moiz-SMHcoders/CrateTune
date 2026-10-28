@@ -147,8 +147,8 @@ impl Render for BrowsePage {
             Load::Ready(data) if data.shelves.is_empty() => {
                 content = content.child(empty_state(
                     Lucide::Shapes,
-                    "Nothing here",
-                    "This page has no playlists or songs (or all of them are filtered out).",
+                    t!("common.nothing_here"),
+                    t!("browse.empty"),
                     cx,
                 ))
             }

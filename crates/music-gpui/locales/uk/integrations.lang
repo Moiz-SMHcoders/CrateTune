@@ -1,0 +1,114 @@
+# Integrations on top of the player (Ukrainian).
+
+# ---- SponsorBlock: segment categories
+sponsorblock.category.music_offtopic = Немузична частина
+sponsorblock.category.sponsor = Спонсор
+sponsorblock.category.intro = Перерва / вступ
+sponsorblock.category.outro = Кінцеві заставки / титри
+sponsorblock.category.selfpromo = Самореклама
+sponsorblock.category.interaction = Нагадування про взаємодію
+sponsorblock.category.preview = Анонс / підсумок
+sponsorblock.category.filler = Відступ від теми
+sponsorblock.category.hook = Тизер / привітання
+sponsorblock.category_in_chip.music_offtopic = немузична частина
+sponsorblock.category_in_chip.sponsor = спонсор
+sponsorblock.category_in_chip.intro = перерва / вступ
+sponsorblock.category_in_chip.outro = заставки / титри
+sponsorblock.category_in_chip.selfpromo = самореклама
+sponsorblock.category_in_chip.interaction = нагадування
+sponsorblock.category_in_chip.preview = анонс / підсумок
+sponsorblock.category_in_chip.filler = відступ
+sponsorblock.category_in_chip.hook = тизер / привітання
+sponsorblock.toast.skipped = Пропущено: {category} ({seconds} с)
+sponsorblock.chip.skip = Пропустити: {category} ({seconds} с)
+sponsorblock.chip.tooltip = SponsorBlock: перейти до кінця цього сегмента
+
+# ---- AI content filter: categories
+ai_filter.category.explicit = Відверті тексти
+ai_filter.category.ai_generated = Музика, згенерована ШІ
+ai_filter.category.holiday = Святкова музика
+ai_filter.category.children = Дитяча музика
+ai_filter.category.noise = Звуки для сну й білий шум
+ai_filter.category.sped_up = Прискорені / уповільнені версії
+ai_filter.category.covers = Кавери й караоке
+ai_filter.category.live = Концертні записи
+
+# ---- Chromecast
+cast.casting_to = Трансляція на {device}
+cast.connecting_to = Підключення до {device}…
+cast.tooltip = Транслювати на пристрій
+cast.menu.title = Транслювати на
+cast.menu.searching = Пошук пристроїв Cast…
+cast.menu.none_found = Пристроїв Cast не знайдено
+cast.menu.search_again = Шукати знову
+cast.stop = Зупинити трансляцію
+cast.error.disconnected = Пристрій Cast відключився
+cast.error.scan_failed = Не вдалося знайти пристрої: {error}
+cast.error.connect_failed = Не вдалося підключитися до {device}: {error}
+
+# ---- Import: sources and progress
+import.source.spotify_playlist = Плейлист Spotify
+import.source.spotify_liked = Улюблені пісні Spotify
+import.error.connect_spotify = Підключіть Spotify у «Налаштування → Імпорт зі Spotify».
+import.error.connect_spotify_first = Спершу підключіть Spotify у «Налаштування → Імпорт зі Spotify».
+import.error.not_spotify_link = Це не посилання чи ID плейлиста Spotify.
+import.stage.reading = Читання
+import.stage.reading_playlist = Читання плейлиста
+import.stage.reading_liked = Читання улюблених пісень
+import.stage.matching = Зіставлення
+import.liked_playlist_name = Улюблене в Spotify
+import.cancelled = Скасовано
+import.nothing_to_save = Нічого зберігати: жодної пісні не знайдено.
+import.exporting = Експорт плейлиста
+import.exported.one = Експортовано {count} пісню в {path}
+import.exported.few = Експортовано {count} пісні в {path}
+import.exported.many = Експортовано {count} пісень у {path}
+import.exported.other = Експортовано {count} пісні в {path}
+
+# ---- Import & export page
+import.page.subtitle = Перенесіть плейлисти зі Spotify чи файлів у свою бібліотеку або експортуйте їх деінде.
+import.file.title = З файлу
+import.file.description = CSV з Exportify (Spotify), M3U / M3U8 або CSV / JSON, експортований тут.
+import.file.choose = Вибрати файл…
+import.spotify.title = Зі Spotify
+import.spotify.connect_hint = Підключіть обліковий запис Spotify (з власним безкоштовним Client ID розробника), щоб імпортувати плейлисти й улюблені пісні.
+import.spotify.set_up = Налаштувати Spotify…
+import.spotify.signed_in = Ви увійшли як {user}.
+import.spotify.liked = Улюблені пісні
+import.spotify.show_playlists = Показати мої плейлисти
+import.spotify.playlist_meta.one = {owner} · {count} пісня
+import.spotify.playlist_meta.few = {owner} · {count} пісні
+import.spotify.playlist_meta.many = {owner} · {count} пісень
+import.spotify.playlist_meta.other = {owner} · {count} пісні
+import.spotify.playlist_meta_unknown = {owner} · ? пісень
+import.job.progress = {stage} · {done} з {total}
+import.job.progress_count = {stage} · {done}
+import.job.found.one = Знайдено: {count}
+import.job.found.few = Знайдено: {count}
+import.job.found.many = Знайдено: {count}
+import.job.found.other = Знайдено: {count}
+import.job.not_found.one = Не знайдено: {count}
+import.job.not_found.few = Не знайдено: {count}
+import.job.not_found.many = Не знайдено: {count}
+import.job.not_found.other = Не знайдено: {count}
+import.job.saved_as = Збережено як «{name}»
+import.job.save.one = Зберегти {count} пісню як плейлист
+import.job.save.few = Зберегти {count} пісні як плейлист
+import.job.save.many = Зберегти {count} пісень як плейлист
+import.job.save.other = Зберегти {count} пісні як плейлист
+import.job.open_playlists = Відкрити плейлисти
+import.job.name_placeholder = Назва плейлиста
+import.guess.best = Найкращий варіант: {artists} — {title} ({percent} %)
+import.guess.search_failed = Пошук не вдався: {error}
+import.guess.no_results = Немає результатів
+import.guess.using = Вибрано
+import.guess.use = Вибрати
+import.guess.search_tooltip = Шукати в YouTube Music
+import.not_found.title = Не знайдено
+import.not_found.subtitle = Прийміть найкращий варіант або знайдіть і додайте пісню самі.
+import.found.title = Знайдено в YouTube Music
+import.found.first = перші {shown} з {total}
+import.export.title = Експорт плейлиста
+import.export.subtitle = CSV і M3U відкриваються в інших плеєрах і таблицях; JSON зберігає все для імпорту сюди.
+import.export.empty = У бібліотеці ще немає плейлистів.
+import.export.from_youtube_music = {songs} · YouTube Music

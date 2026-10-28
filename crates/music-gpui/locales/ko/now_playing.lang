@@ -1,0 +1,76 @@
+# Now Playing screen, lyrics pane, lyrics card dialog (ko).
+
+# ---- Header
+np.close_tooltip = 닫기(Esc)
+np.header = 지금 재생 중
+np.demo_clock = 데모 시계
+np.buffering = 버퍼링 중…
+np.preview = 미리보기
+np.speed = {speed}×
+np.sleep_tooltip = 취침 타이머
+np.layout_tooltip = 디자인 및 배경
+np.menu.design = 디자인
+np.menu.background = 배경
+
+# ---- Player
+np.up_next = 다음 트랙
+np.playing_from = 재생 출처
+np.your_queue = 내 대기열
+np.of_total = / {total}
+np.editorial.header_album = 지금 재생 중  ·  {album}
+np.editorial.play = 재생
+np.editorial.pause = 일시정지
+np.editorial.loading = 로드 중
+np.queue.title = 다음 트랙
+np.queue.more.other = +{count}곡 더
+np.queue.empty = 대기열이 비어 있습니다. 목록에서 노래를 추가하거나 자동재생을 켜세요.
+
+# ---- Lyrics pane
+lyrics.nothing_playing = 재생 중인 곡 없음
+lyrics.loading = 가사 로드 중…
+lyrics.missing_title = 가사 없음
+lyrics.missing_detail = 사용 설정된 가사 제공업체 중 이 트랙의 가사를 가진 곳이 없습니다.
+lyrics.failed = 가사를 로드할 수 없음
+lyrics.translating = 번역 중…
+lyrics.translation_failed = 번역 실패: {error}
+lyrics.kind.word = 단어 동기화
+lyrics.kind.line = 줄 동기화
+lyrics.kind.plain = 동기화 안 됨
+lyrics.source = {provider} · {kind}
+lyrics.select_hint.other = 카드에 넣을 줄을 최대 {count}개 선택
+lyrics.selected.other = {count}줄 선택됨
+lyrics.create_card = 카드 만들기…
+lyrics.share_tooltip = 가사를 카드로 공유
+lyrics.translation_on = 번역: 켬
+lyrics.translation_off = 번역: 끔
+lyrics.reload_tooltip = 제공업체에서 다시 검색
+
+# ---- Lyrics card dialog
+card.dialog_title = 가사 카드
+card.row.background = 배경
+card.row.text = 텍스트
+card.row.size = 크기
+card.row.shape = 모양
+card.row.cover = 커버
+card.cover.show = 표시
+card.cover.hide = 숨기기
+card.save = 이미지 저장…
+card.copy = 이미지 복사
+card.copying = 복사 중…
+card.copied = 클립보드에 복사됨
+card.saved = {path}에 저장됨
+card.save_failed = 저장할 수 없음: {error}
+card.draw_failed = 카드를 그릴 수 없음: {error}
+card.aspect.square = 정사각형
+card.aspect.portrait = 세로
+card.aspect.story = 스토리
+card.bg.blur = 흐린 아트워크
+card.bg.album = 앨범 색상
+card.bg.dark = 다크
+card.bg.light = 라이트
+card.align.left = 왼쪽
+card.align.center = 가운데
+card.align.right = 오른쪽
+card.size.small = 작게
+card.size.medium = 보통
+card.size.large = 크게

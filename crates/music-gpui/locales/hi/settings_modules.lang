@@ -1,0 +1,138 @@
+# Settings → Modules (Hindi).
+
+# ---- Playback source
+modules.source.group = प्लेबैक का स्रोत
+modules.source.youtube = सिर्फ़ YouTube
+modules.source.first = पहले मॉड्यूल, फिर YouTube
+modules.source.only = सिर्फ़ मॉड्यूल
+modules.source_note.youtube = गाने YouTube से चलते हैं; इंस्टॉल किए गए मॉड्यूल इस्तेमाल नहीं होते।
+modules.source_note.first.one = हर गाना {count} चालू मॉड्यूल में ऊपर से नीचे के क्रम में खोजा जाता है; पहला सही मेल चलता है, नहीं तो YouTube।
+modules.source_note.first.other = हर गाना {count} चालू मॉड्यूल में ऊपर से नीचे के क्रम में खोजा जाता है; पहला सही मेल चलता है, नहीं तो YouTube।
+modules.source_note.only.one = गाने सिर्फ़ {count} चालू मॉड्यूल से चलते हैं; जिस गाने का कोई मॉड्यूल मेल नहीं ढूँढ पाता, वह विफल होता है (और “लोड न होने वाले गाने छोड़ें” चालू होने पर छोड़ दिया जाता है)।
+modules.source_note.only.other = गाने सिर्फ़ {count} चालू मॉड्यूल से चलते हैं; जिस गाने का कोई मॉड्यूल मेल नहीं ढूँढ पाता, वह विफल होता है (और “लोड न होने वाले गाने छोड़ें” चालू होने पर छोड़ दिया जाता है)।
+modules.source.note = मॉड्यूल आपके चलाए गए गाने का ऑडियो देता है; टाइटल, कलाकार और आपकी लाइब्रेरी वही रहते हैं। प्लेयर बार और “अभी चल रहा है” दिखाते हैं कि ऑडियो कहाँ से आ रहा है। डाउनलोड भी इसी क्रम का इस्तेमाल करते हैं।
+
+# ---- Unavailable
+modules.unavailable = मॉड्यूल उपलब्ध नहीं हैं।
+modules.no_data_dir = कोई डेटा डायरेक्टरी नहीं; मॉड्यूल उपलब्ध नहीं हैं।
+modules.unavailable_error = मॉड्यूल उपलब्ध नहीं: {error}
+
+# ---- Add a module
+modules.add.group = मॉड्यूल जोड़ें
+modules.add.from_file = फ़ाइल से इंस्टॉल करें…
+modules.add.from_file_note = आपकी डिस्क से एक .arch पैकेज।
+modules.add.from_url = URL से इंस्टॉल करें
+modules.add.catalog = कैटलॉग जोड़ें
+modules.add.note = आपके पुष्टि करने से पहले पैकेज जाँचे जाते हैं (फ़ॉर्मैट, चेकसम, सेटिंग, एक्सपोर्ट किए गए फ़ंक्शन)। कोई मॉड्यूल या कैटलॉग पहले से इंस्टॉल नहीं होता: मॉड्यूल उनके लेखकों से आते हैं, और सैंडबॉक्स में चलते हैं (कोई फ़ाइल नहीं, नेटवर्क सिर्फ़ ऐप के प्रॉक्सी से)।
+modules.url_missing = किसी .arch पैकेज, डिस्क्रिप्टर या कैटलॉग का URL डालें।
+modules.catalog_url_missing = कैटलॉग URL डालें।
+
+# ---- Progress lines
+modules.busy.saving = सेव हो रहा है…
+modules.busy.saving_catalog = कैटलॉग सेव हो रहा है…
+modules.busy.checking_package = पैकेज जाँचा जा रहा है…
+modules.busy.reading_catalog = कैटलॉग पढ़ा जा रहा है…
+modules.busy.installing = इंस्टॉल हो रहा है…
+modules.busy.removing = हटाया जा रहा है…
+modules.busy.checking = जाँचा जा रहा है…
+modules.busy.checking_update = अपडेट जाँचा जा रहा है…
+modules.busy.loading_settings = सेटिंग लोड हो रही हैं…
+modules.busy.saving_settings = सेटिंग सेव हो रही हैं…
+modules.busy.refreshing = रीफ़्रेश हो रहा है…
+
+# ---- Results
+modules.catalog_added.one = कैटलॉग “{name}” जोड़ा गया ({count} एंट्री)।
+modules.catalog_added.other = कैटलॉग “{name}” जोड़ा गया ({count} एंट्री)।
+modules.installed_needs_setup = {name} इंस्टॉल हो गया। इसकी सेटिंग भरें और “सेव करें” दबाएँ।
+modules.installed = {name} इंस्टॉल हो गया।
+modules.removed = मॉड्यूल हटा दिया गया।
+modules.update_available = वर्शन {version} उपलब्ध है।
+modules.up_to_date = अप टू डेट है।
+modules.update_from_file = फ़ाइल से इंस्टॉल किया गया: अपडेट करने के लिए नया पैकेज इंपोर्ट करें।
+modules.settings_read_failed = इस मॉड्यूल की सेटिंग नहीं पढ़ी जा सकीं।
+modules.settings_saved = सेटिंग सेव हो गईं।
+modules.catalog_refreshed = कैटलॉग रीफ़्रेश हो गया।
+modules.diagnostics_copied = डायग्नोस्टिक्स कॉपी हो गए।
+
+# ---- Review card
+modules.review.group = समीक्षा
+modules.review.replaces = इंस्टॉल किए गए वर्शन {version} को अपडेट करता है; उसकी सेटिंग बनी रहती हैं।
+modules.review.new = नया इंस्टॉलेशन, प्लेबैक क्रम के आखिर में जोड़ा जाएगा।
+modules.review.needs = ज़रूरी: {settings}।
+modules.review.homepage = होमपेज: {url}
+modules.review.license = लाइसेंस: {license}
+modules.review.sha256 = पैकेज SHA-256 {hash}
+
+# ---- Installed modules
+modules.installed_group = इंस्टॉल किए गए ({count})
+modules.nothing_installed = अभी कुछ इंस्टॉल नहीं है।
+modules.action.settings = सेटिंग
+modules.action.check = जाँचें
+modules.action.check_update = अपडेट जाँचें
+modules.action.uninstall = अनइंस्टॉल करें
+modules.action.confirm_remove = हटाएँ — पक्का?
+modules.action.higher = ज़्यादा प्राथमिकता
+modules.action.lower = कम प्राथमिकता
+modules.needs_configuration = कॉन्फ़िगरेशन ज़रूरी: {settings}
+modules.settings_heading = सेटिंग
+modules.no_settings = इस मॉड्यूल की कोई सेटिंग नहीं है।
+modules.field.placeholder_required = ज़रूरी
+modules.field.placeholder_optional = वैकल्पिक
+modules.field.not_a_number = {field} एक संख्या होनी चाहिए।
+modules.field.required = {field} ज़रूरी है।
+modules.field.invalid = {field} की वैल्यू अमान्य है।
+
+# ---- Diagnostics
+modules.diagnostics = डायग्नोस्टिक्स
+modules.diagnostic_line = {label} {when}: {summary}
+modules.diagnostic_track = {line} — {track}
+modules.diag.last_song = आखिरी गाना
+modules.diag.check = जाँच
+modules.diag.playback = प्लेबैक
+modules.diag.not_checked = अभी तक जाँचा नहीं गया।
+modules.diag.not_used = अभी तक किसी गाने के लिए इस्तेमाल नहीं हुआ।
+modules.installed_line_file = {when} इंस्टॉल किया गया · पैकेज {hash} · फ़ाइल से
+modules.installed_line_url = {when} इंस्टॉल किया गया · पैकेज {hash} · {url} से
+modules.log_empty = लॉग खाली है।
+modules.copy_diagnostics = डायग्नोस्टिक्स कॉपी करें
+modules.clear_log = लॉग साफ़ करें
+
+# Outcome
+modules.status.ready = तैयार
+modules.status.configuration = कॉन्फ़िगरेशन ज़रूरी
+modules.status.unavailable = सेवा उपलब्ध नहीं
+modules.status.failed = विफल
+modules.status.no_results = कोई नतीजा नहीं
+modules.status.no_match = कोई सही मेल नहीं ({reason})
+modules.status.resolved = मिल गया
+modules.status.timeout = समय खत्म
+modules.rejection.metadata = मेटाडेटा
+modules.rejection.title = टाइटल
+modules.rejection.artist = कलाकार
+modules.rejection.recording = रिकॉर्डिंग
+modules.rejection.duration = अवधि
+modules.rejection.explicit = अश्लील
+modules.phase.search = खोज में
+modules.phase.match = मिलान में
+modules.phase.stream = स्ट्रीम में
+modules.candidates.one = {count} विकल्प
+modules.candidates.other = {count} विकल्प
+modules.elapsed_ms = {ms} ms
+
+# What failed
+modules.failure.invalid_document = अमान्य मॉड्यूल दस्तावेज़
+modules.failure.unsupported = यह ऐप इसे सपोर्ट नहीं करता
+modules.failure.invalid_configuration = मॉड्यूल की सेटिंग अधूरी या अमान्य हैं
+modules.failure.network = नेटवर्क में गड़बड़ी
+modules.failure.timeout = समय खत्म
+modules.failure.execution = मॉड्यूल विफल रहा
+modules.failure.integrity = चेकसम मेल नहीं खाता
+modules.error_with_code = {error} ({code})
+
+# ---- Catalogs
+modules.catalogs = कैटलॉग
+modules.catalog_line.one = {url} · {count} एंट्री · {when} रीफ़्रेश हुआ
+modules.catalog_line.other = {url} · {count} एंट्री · {when} रीफ़्रेश हुआ
+modules.remove_catalog = कैटलॉग हटाएँ
+modules.entry.installed = इंस्टॉल है
+modules.entry.not_a_module = मॉड्यूल नहीं है

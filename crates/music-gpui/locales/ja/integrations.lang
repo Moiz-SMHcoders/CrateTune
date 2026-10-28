@@ -1,0 +1,99 @@
+# SponsorBlock, Chromecast, AI content filter, import / export (ja).
+
+# ---- SponsorBlock
+sponsorblock.category.music_offtopic = 音楽以外の部分
+sponsorblock.category.sponsor = スポンサー
+sponsorblock.category.intro = 休憩／イントロ
+sponsorblock.category.outro = エンドカード／クレジット
+sponsorblock.category.selfpromo = 自己宣伝
+sponsorblock.category.interaction = 操作のリマインダー
+sponsorblock.category.preview = プレビュー／要約
+sponsorblock.category.filler = 余談
+sponsorblock.category.hook = フック／挨拶
+sponsorblock.category_in_chip.music_offtopic = 音楽以外の部分
+sponsorblock.category_in_chip.sponsor = スポンサー
+sponsorblock.category_in_chip.intro = 休憩／イントロ
+sponsorblock.category_in_chip.outro = エンドカード
+sponsorblock.category_in_chip.selfpromo = 自己宣伝
+sponsorblock.category_in_chip.interaction = リマインダー
+sponsorblock.category_in_chip.preview = プレビュー／要約
+sponsorblock.category_in_chip.filler = 余談
+sponsorblock.category_in_chip.hook = フック／挨拶
+sponsorblock.toast.skipped = スキップしました：{category}（{seconds}秒）
+sponsorblock.chip.skip = {category}をスキップ（{seconds}秒）
+sponsorblock.chip.tooltip = SponsorBlock：このセグメントの最後までスキップ
+
+# ---- AI content filter
+ai_filter.category.explicit = 不適切な歌詞
+ai_filter.category.ai_generated = AI 生成の音楽
+ai_filter.category.holiday = ホリデーミュージック
+ai_filter.category.children = 子ども向けの音楽
+ai_filter.category.noise = 睡眠用サウンドとホワイトノイズ
+ai_filter.category.sped_up = スピードアップ／スロー版
+ai_filter.category.covers = カバーとカラオケ
+ai_filter.category.live = ライブ録音
+
+# ---- Chromecast
+cast.casting_to = {device}にキャスト中
+cast.connecting_to = {device}に接続中…
+cast.tooltip = デバイスにキャスト
+cast.menu.title = キャスト先
+cast.menu.searching = キャストデバイスを検索中…
+cast.menu.none_found = キャストデバイスが見つかりません
+cast.menu.search_again = 再検索
+cast.stop = キャストを停止
+cast.error.disconnected = キャストデバイスとの接続が切れました
+cast.error.scan_failed = デバイスを検索できませんでした：{error}
+cast.error.connect_failed = {device}に接続できませんでした：{error}
+
+# ---- Import: sources and progress
+import.source.spotify_playlist = Spotify のプレイリスト
+import.source.spotify_liked = Spotify のお気に入りの曲
+import.error.connect_spotify = 設定 → Spotify のインポートで Spotify に接続してください。
+import.error.connect_spotify_first = 先に設定 → Spotify のインポートで Spotify に接続してください。
+import.error.not_spotify_link = Spotify のプレイリストのリンクまたは ID ではありません。
+import.stage.reading = 読み込み中
+import.stage.reading_playlist = プレイリストを読み込み中
+import.stage.reading_liked = お気に入りの曲を読み込み中
+import.stage.matching = 照合中
+import.liked_playlist_name = Spotify のお気に入り
+import.cancelled = キャンセルしました
+import.nothing_to_save = 保存するものがありません：曲が見つかりませんでした。
+import.exporting = プレイリストの書き出し
+import.exported.other = {count}曲を {path} に書き出しました
+
+# ---- Import & export page
+import.page.subtitle = Spotify やファイルからプレイリストをライブラリに取り込んだり、ほかの場所へ持ち出したりできます。
+import.file.title = ファイルから
+import.file.description = Exportify の CSV（Spotify）、M3U／M3U8、またはここで書き出した CSV／JSON。
+import.file.choose = ファイルを選択…
+import.spotify.title = Spotify から
+import.spotify.connect_hint = Spotify アカウントを接続すると（無料の開発者用 Client ID が必要）、プレイリストとお気に入りの曲をインポートできます。
+import.spotify.set_up = Spotify を設定…
+import.spotify.signed_in = {user}としてログイン中。
+import.spotify.liked = お気に入りの曲
+import.spotify.show_playlists = プレイリストを表示
+import.spotify.playlist_meta.other = {owner} · {count}曲
+import.spotify.playlist_meta_unknown = {owner} · ?曲
+import.job.progress = {stage} · {done}／{total}
+import.job.progress_count = {stage} · {done}
+import.job.found.other = {count}件 見つかった
+import.job.not_found.other = {count}件 見つからない
+import.job.saved_as = 「{name}」として保存しました
+import.job.save.other = {count}曲をプレイリストとして保存
+import.job.open_playlists = プレイリストを開く
+import.job.name_placeholder = プレイリスト名
+import.guess.best = 最有力候補：{artists} — {title}（{percent}%）
+import.guess.search_failed = 検索に失敗しました：{error}
+import.guess.no_results = 結果なし
+import.guess.using = 候補を使用中
+import.guess.use = 候補を使用
+import.guess.search_tooltip = YouTube Music を検索
+import.not_found.title = 見つからなかった曲
+import.not_found.subtitle = 最有力候補を採用するか、検索して自分で曲を追加してください。
+import.found.title = YouTube Music で見つかった曲
+import.found.first = {total}件中 最初の{shown}件
+import.export.title = プレイリストを書き出す
+import.export.subtitle = CSV と M3U はほかのプレーヤーや表計算ソフトで開けます。JSON はここでインポートするためにすべての情報を保持します。
+import.export.empty = ライブラリにはまだプレイリストがありません。
+import.export.from_youtube_music = {songs} · YouTube Music

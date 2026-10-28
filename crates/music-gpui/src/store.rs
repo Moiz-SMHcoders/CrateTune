@@ -150,12 +150,12 @@ impl Store {
                     Ok(lib) => Some(lib),
                     Err(e) => {
                         eprintln!("music-gpui: library unavailable: {e}");
-                        error = Some(format!("Library unavailable: {e}"));
+                        error = Some(t!("store.library_unavailable", error = e));
                         None
                     }
                 });
         if dir.is_none() {
-            error = Some("No data directory; the library is not available.".into());
+            error = Some(t!("store.no_data_dir").into());
         }
         let downloads = dir.as_ref().and_then(|dir| {
             match DownloadManager::new(dir.join("media"), resolver, library.clone()) {
@@ -310,7 +310,7 @@ impl MusicApp {
         cx: &mut Context<Self>,
     ) {
         let Some(library) = self.store.library.clone() else {
-            notify(window, cx, "The library database is not available.");
+            notify(window, cx, t!("store.library_db_unavailable"));
             return;
         };
         cx.spawn_in(window, async move |this, cx| {
@@ -320,7 +320,11 @@ impl MusicApp {
                     this.library_changed(cx);
                     done(this, value, window, cx);
                 }
-                Err(e) => notify(window, cx, format!("{what} failed: {e}")),
+                Err(e) => notify(
+                    window,
+                    cx,
+                    t!("store.toast.action_failed", action = what, error = e),
+                ),
             })
             .ok();
         })
@@ -394,7 +398,7 @@ impl MusicApp {
         cx: &mut Context<Self>,
     ) {
         if self.store.library.is_none() {
-            notify(window, cx, "The library database is not available.");
+            notify(window, cx, t!("store.library_db_unavailable"));
             return;
         }
         for t in &tracks {
@@ -403,13 +407,13 @@ impl MusicApp {
         let remote = self.account_client();
         let signed_in = remote.is_signed_in();
         let message = match (tracks.as_slice(), like) {
-            ([one], true) => format!("Liked “{}”", one.title),
-            ([one], false) => format!("Removed “{}” from liked songs", one.title),
-            (many, true) => format!("Liked {} songs", many.len()),
-            (many, false) => format!("Removed {} songs from liked songs", many.len()),
+            ([one], true) => t!("store.toast.liked_one", title = one.title),
+            ([one], false) => t!("store.toast.unliked_one", title = one.title),
+            (many, true) => tp!("store.toast.liked_many", many.len()),
+            (many, false) => tp!("store.toast.unliked_many", many.len()),
         };
         self.with_library(
-            "Saving the like",
+            t!("store.action.saving_like"),
             move |lib| {
                 let mut remote_errors = Vec::new();
                 for t in &tracks {
@@ -436,7 +440,7 @@ impl MusicApp {
                     Some(e) => notify(
                         window,
                         cx,
-                        format!("{message} (only locally; YouTube Music: {e})"),
+                        t!("store.toast.only_locally", message = message, error = e),
                     ),
                     None => notify(window, cx, message),
                 };
@@ -459,7 +463,7 @@ impl MusicApp {
         }
         let count = tracks.len();
         self.with_library(
-            "Removing from the library",
+            t!("store.action.removing_from_library"),
             move |lib| {
                 for t in &tracks {
                     lib.remove_from_library(&t.video_id)?;
@@ -467,12 +471,7 @@ impl MusicApp {
                 Ok(())
             },
             move |_, _, window, cx| {
-                let what = if count == 1 {
-                    "1 song".to_owned()
-                } else {
-                    format!("{count} songs")
-                };
-                notify(window, cx, format!("Removed {what} from the library"));
+                notify(window, cx, tp!("store.toast.removed_from_library", count));
             },
             window,
             cx,
@@ -493,7 +492,7 @@ impl MusicApp {
         cx: &mut Context<Self>,
     ) {
         let Some(library) = &self.store.library else {
-            notify(window, cx, "The library database is not available.");
+            notify(window, cx, t!("store.library_db_unavailable"));
             return;
         };
         let playlists = library
@@ -520,11 +519,11 @@ impl MusicApp {
         let remote = self.account_client();
         let count = tracks.len();
         self.with_library(
-            "Adding to the playlist",
+            t!("store.action.adding_to_playlist"),
             move |lib| {
                 let playlist = lib
                     .playlist(&id)?
-                    .ok_or_else(|| music_core::Error::Storage("playlist not found".into()))?;
+                    .ok_or_else(|| music_core::Error::Storage("playlist not found".into()))?; // i18n-ignore
                 let entries = lib.add_to_playlist(&id, &tracks)?;
                 let mut remote_error = None;
                 if let Some(browse_id) = playlist.browse_id.as_deref().filter(|_| playlist.editable)
@@ -547,14 +546,9 @@ impl MusicApp {
                 Ok((playlist.name, remote_error))
             },
             move |_, (name, remote_error), window, cx| {
-                let what = if count == 1 {
-                    "1 song".to_owned()
-                } else {
-                    format!("{count} songs")
-                };
-                let mut message = format!("Added {what} to “{name}”");
+                let mut message = tp!("store.toast.added_to_playlist", count, playlist = name);
                 if let Some(e) = remote_error {
-                    message.push_str(&format!(" (YouTube Music: {e})"));
+                    message = t!("store.toast.remote_error", message = message, error = e);
                 }
                 notify(window, cx, message);
             },
@@ -574,13 +568,13 @@ impl MusicApp {
     ) {
         let name = name.trim().to_owned();
         if name.is_empty() {
-            notify(window, cx, "Give the playlist a name.");
+            notify(window, cx, t!("store.playlist_name_missing"));
             return;
         }
         let remote = self.account_client();
         let on_youtube = on_youtube && remote.is_signed_in();
         self.with_library(
-            "Creating the playlist",
+            t!("store.action.creating_playlist"),
             move |lib| {
                 let playlist = if on_youtube {
                     let ids: Vec<&str> = tracks
@@ -613,9 +607,13 @@ impl MusicApp {
             },
             move |_, (playlist, count), window, cx| {
                 let message = if count == 0 {
-                    format!("Created “{}”", playlist.name)
+                    t!("store.toast.playlist_created", playlist = playlist.name)
                 } else {
-                    format!("Created “{}” with {count} songs", playlist.name)
+                    tp!(
+                        "store.toast.playlist_created_with",
+                        count,
+                        playlist = playlist.name
+                    )
                 };
                 notify(window, cx, message);
             },
@@ -633,14 +631,14 @@ impl MusicApp {
         cx: &mut Context<Self>,
     ) {
         let Some(downloads) = self.store.downloads.clone() else {
-            notify(window, cx, "Downloads are not available.");
+            notify(window, cx, t!("store.downloads_unavailable"));
             return;
         };
         let tracks: Vec<Track> = tracks.into_iter().filter(|t| !t.is_local()).collect();
         let message = match tracks.as_slice() {
             [] => return,
-            [one] => format!("Downloading “{}”", one.title),
-            many => format!("Downloading {} songs", many.len()),
+            [one] => t!("store.toast.downloading_one", title = one.title),
+            many => tp!("store.toast.downloading_many", many.len()),
         };
         for track in tracks {
             downloads.download(track);
@@ -664,7 +662,11 @@ impl MusicApp {
             let result = off_thread(move || downloads.delete(&video_id)).await;
             this.update_in(cx, |this, window, cx| {
                 if let Err(e) = result {
-                    notify(window, cx, format!("Deleting the download failed: {e}"));
+                    notify(
+                        window,
+                        cx,
+                        t!("store.toast.delete_download_failed", error = e),
+                    );
                 }
                 this.store.refresh_download_flags(true);
                 this.library_changed(cx);
@@ -1029,7 +1031,7 @@ impl MusicApp {
     /// Scans the configured music folders into the library.
     pub fn rescan_local_files(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let Some(library) = self.store.library.clone() else {
-            notify(window, cx, "The library database is not available.");
+            notify(window, cx, t!("store.library_db_unavailable"));
             return;
         };
         if matches!(*self.store.scan.borrow(), ScanState::Running { .. }) {
@@ -1037,7 +1039,7 @@ impl MusicApp {
         }
         let prefs = &self.store.prefs;
         if prefs.local_folders.is_empty() {
-            notify(window, cx, "Add a music folder first.");
+            notify(window, cx, t!("store.add_music_folder_first"));
             return;
         }
         let Some(artwork_dir) = self.store.artwork_dir() else {
@@ -1084,21 +1086,28 @@ impl MusicApp {
             this.update_in(cx, |this, window, cx| {
                 let state = match result {
                     Ok(s) => {
-                        let mut line = format!(
-                            "{} files: {} new, {} updated, {} unchanged, {} removed",
-                            s.found, s.added, s.updated, s.unchanged, s.removed
+                        use crate::i18n::format::number;
+                        let mut line = t!(
+                            "store.scan.summary",
+                            files = tp!("store.scan.files", s.found),
+                            added = number(s.added as u64),
+                            updated = number(s.updated as u64),
+                            unchanged = number(s.unchanged as u64),
+                            removed = number(s.removed as u64),
                         );
                         if s.skipped_short > 0 {
-                            line.push_str(&format!(", {} too short", s.skipped_short));
+                            let extra = tp!("store.scan.too_short", s.skipped_short);
+                            line = t!("store.scan.with_extra", summary = line, extra = extra);
                         }
                         if !s.failed.is_empty() {
-                            line.push_str(&format!(", {} unreadable", s.failed.len()));
+                            let extra = tp!("store.scan.unreadable", s.failed.len());
+                            line = t!("store.scan.with_extra", summary = line, extra = extra);
                         }
-                        notify(window, cx, format!("Scan finished: {line}"));
+                        notify(window, cx, t!("store.toast.scan_finished", summary = line));
                         ScanState::Done(line)
                     }
                     Err(e) => {
-                        notify(window, cx, format!("Scan failed: {e}"));
+                        notify(window, cx, t!("store.toast.scan_failed", error = e));
                         ScanState::Failed(e.to_string())
                     }
                 };

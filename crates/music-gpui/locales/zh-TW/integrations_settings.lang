@@ -1,0 +1,141 @@
+# Settings sections of the integrations (zh-TW).
+
+# ---- Shared
+settings.integrations.connected_as = 已連結為 {user}
+
+# ---- Last.fm / ListenBrainz
+settings.integrations.lastfm_approve = 請在瀏覽器中核准本應用程式，然後按「完成」。
+settings.integrations.finish = 完成
+settings.integrations.forget_key = 忘記金鑰
+settings.integrations.api_key = API 金鑰
+settings.integrations.shared_secret = 共用密鑰（Shared secret）
+settings.integrations.checking_token = 正在檢查權杖…
+settings.integrations.validate = 驗證
+settings.integrations.user_token = 使用者權杖
+
+# ---- Discord
+settings.integrations.discord_title = Discord Rich Presence
+settings.integrations.discord_enter_id = 請輸入你的 Discord 應用程式 ID。
+settings.integrations.discord_connected = 已連線到 Discord
+settings.integrations.discord_unreachable = 無法連線到 Discord：{error}
+settings.integrations.discord_waiting = 正在等待播放…
+settings.integrations.application_id = 應用程式 ID
+discord.activity.title = 動態
+discord.activity.type = 類型
+discord.activity.name = 名稱
+discord.activity.details = 詳細資訊
+discord.activity.state = 狀態
+discord.activity.placeholders_note = 預留位置：{title}、{artist}、{album}。名稱留空時使用 Discord 應用程式的名稱。
+discord.activity.large_image = 大圖
+discord.activity.small_image = 小圖
+discord.activity.button = 按鈕 {number}
+discord.activity.label = 標籤
+discord.activity.url = URL
+discord.activity.show_paused = 暫停時也顯示
+discord.activity.show_paused_desc = 播放暫停時保留動態（不顯示播放時間）。
+discord.activity.custom_note = 自訂圖片可以是你的 Discord 應用程式的素材鍵或圖片 URL。按鈕只有其他人看得到，你自己看不到。
+
+# ---- Scrobble rules
+scrobble.rules.title = 歌曲何時列入計算
+scrobble.rules.played = 已播放
+scrobble.rules.or_at_most = …或最多
+scrobble.rules.ignore_under = 忽略短於以下長度的歌曲
+scrobble.rules.percent = {percent}%
+scrobble.rules.note = Last.fm 的規則是播放 50% 或 4 分鐘，且歌曲長於 30 秒。適用於 Last.fm 和 ListenBrainz。
+scrobble.errors.other = Scrobble 錯誤（{count}）
+settings.integrations.secrets = 機密資料：{store}
+settings.integrations.secrets_loading = 機密資料：載入中…
+settings.integrations.settings_path = 設定：{path}
+settings.integrations.not_saved = 設定不會被儲存（沒有設定目錄）
+
+# ---- SponsorBlock
+settings.sponsorblock.categories = 類別
+settings.sponsorblock.category_desc.music_offtopic = 音樂影片中的談話、短劇和其他非音樂部分。
+settings.sponsorblock.category_desc.sponsor = 付費宣傳。
+settings.sponsorblock.category_desc.intro = 沒有實際內容的過場和開場動畫。
+settings.sponsorblock.category_desc.outro = 片尾名單和結束畫面。
+settings.sponsorblock.category_desc.selfpromo = 無償宣傳：周邊商品、贊助捐款、感謝喊話。
+settings.sponsorblock.category_desc.interaction = 提醒按讚、訂閱或追蹤。
+settings.sponsorblock.category_desc.preview = 回顧以及其他內容的預告。
+settings.sponsorblock.category_desc.filler = 與主要內容無關的離題片段。
+settings.sponsorblock.category_desc.hook = 開頭的預告片段和問候。
+settings.sponsorblock.using = 正在使用 {url}
+settings.sponsorblock.url_error = 必須是不含憑證或查詢參數的 https:// 位址
+settings.sponsorblock.skip_segments = 略過片段
+settings.sponsorblock.skip_segments_desc = 查詢每首歌曲對應影片中由社群標記的片段並略過。
+settings.sponsorblock.when = 片段開始時
+settings.sponsorblock.when_desc = 立即略過，或在播放列中顯示「略過」按鈕。
+settings.sponsorblock.mode_auto = 自動略過
+settings.sponsorblock.mode_ask = 詢問
+settings.sponsorblock.notify = 略過後通知
+settings.sponsorblock.server = 伺服器
+settings.sponsorblock.api_url = API URL
+settings.sponsorblock.use_default = 使用預設伺服器
+settings.sponsorblock.forget = 忘記已查詢的片段
+settings.sponsorblock.privacy = 隱私權：只會傳送影片 ID 的 SHA-256 雜湊值前 4 個字元，因此伺服器無法得知正在播放哪首歌。除非你設定了其他伺服器，片段資料來自 sponsor.ajay.app（SponsorBlock，CC BY-NC-SA）。
+
+# ---- Music Together
+settings.together.you = 你
+settings.together.display_name = 顯示名稱
+settings.together.name_placeholder = 你的名字
+settings.together.display_name_note = 在工作階段中向其他人顯示。
+settings.together.hosting = 主持
+settings.together.port = 連接埠
+settings.together.port_error = 連接埠必須介於 1024 到 65535 之間
+settings.together.allow_add_desc = 他們推薦的歌曲會加入你的佇列。
+settings.together.allow_control_desc = 為所有人播放、暫停、跳轉和切換歌曲。
+settings.together.approval = 來賓加入前需經核准
+settings.together.hosting_note = 工作階段在你的區域網路上執行：來賓會直接連線到這部電腦（如果防火牆詢問，請允許傳入連線）。連結中包含隨機金鑰，只有取得連結的人才能加入。變更會立即套用到進行中的工作階段。在「一起聽」頁面中，「設為主持人」可將工作階段移交給某位來賓：所有人都會跟隨新的主持人。
+settings.together.across_networks = 跨網路
+settings.together.relay = 中繼伺服器
+settings.together.relay_placeholder = wss://relay.example.com（留空：僅限區域網路）
+settings.together.relay_error = 必須是 ws:// 或 wss:// 位址（不含使用者名稱或查詢參數）
+settings.together.relay_note = 「透過中繼主持」會讓工作階段經由你自己架設的 music-relay 伺服器執行（請參閱 README：只需一個小型執行檔，若要使用 wss://，請將其置於 TLS 反向代理伺服器之後）。之後來賓就能透過連結從任何地方加入。中繼只會轉送工作階段的訊息（歌曲 ID、標題、名稱），從不做任何決定；留空 = 僅限區域網路。
+settings.together.open = 開啟「一起聽」
+
+# ---- Spotify import
+settings.spotify.waiting = 正在等待你在瀏覽器中核准本應用程式…
+settings.spotify.account = Spotify 帳號
+settings.spotify.client_id = Client ID
+settings.spotify.redirect_port = 重新導向連接埠
+settings.spotify.redirect_uri = 重新導向 URI：{uri}
+settings.spotify.steps = 1. 在 developer.spotify.com/dashboard 建立一個應用程式（Web API）。2. 將上方的重新導向 URI 加入該應用程式。3. 將它的 Client ID 貼到這裡並按「連線」。存取權限為唯讀（你的播放清單和喜歡的歌曲）；更新權杖會保存在鑰匙圈中。
+settings.spotify.without_account = 不使用帳號
+settings.spotify.without_account_note = 使用 Exportify（exportify.app）匯出播放清單，然後在「媒體庫 → 匯入與匯出」中匯入 CSV 檔。不支援（像 {other_app} 那樣）使用網頁播放器的 sp_dc Cookie 登入：這種方式仰賴從 Spotify 網頁播放器中擷取的密鑰。
+settings.spotify.open_import = 開啟「匯入與匯出」
+settings.spotify.error.no_client = 請先輸入你的應用程式的 Client ID。
+settings.spotify.error.redirect = 無法監聽重新導向：{error}
+
+# ---- AI content filter
+settings.ai_filter.off = 關閉：不會傳送任何資料
+settings.ai_filter.incomplete = 必須填寫端點、模型，並至少選擇一個類別
+settings.ai_filter.failed = 上次要求失敗：{error}
+settings.ai_filter.on.other = 開啟 · 已分類 {count} 首歌曲和專輯
+settings.ai_filter.hide = 隱藏
+settings.ai_filter.also_hide = 同時隱藏
+settings.ai_filter.custom_placeholder = 例如：關於汽車的歌、迷因歌曲
+settings.ai_filter.custom_note = 你自己的類別，以逗號分隔（最多 8 個），用淺白的文字描述。
+settings.ai_filter.title = AI 內容過濾
+settings.ai_filter.enable = 使用 AI 模型過濾歌曲
+settings.ai_filter.enable_desc = 類似「隱藏不雅內容」，適用於下方的類別。
+settings.ai_filter.forget = 忘記分類結果
+settings.ai_filter.model = 模型
+settings.ai_filter.endpoint = 端點
+settings.ai_filter.endpoint_placeholder = https://api.openai.com/v1 或 http://localhost:11434/v1
+settings.ai_filter.api_key = API 金鑰
+settings.ai_filter.key_placeholder = API 金鑰（本機伺服器不需要）
+settings.ai_filter.api_note = 任何與 OpenAI 相容的 chat-completions API：OpenAI、OpenRouter，或這部電腦上的模型（Ollama、LM Studio、llama.cpp server）。金鑰會保存在鑰匙圈中。
+settings.ai_filter.privacy = 隱私權
+settings.ai_filter.privacy_note = 預設為關閉。開啟後，你開啟的頁面上歌曲和專輯的標題、藝人和專輯名稱會傳送到上方的端點（不包含任何關於你的資訊，也不包含收聽記錄）；每個判斷結果都會快取在這部電腦上，因此每首歌只會詢問一次。模型尚未判斷的歌曲會保持顯示。
+
+# ---- Chromecast
+settings.cast.looking = 正在尋找 Cast 裝置…
+settings.cast.found.other = 找到 {count} 部裝置
+settings.cast.devices = 裝置
+settings.cast.scan = 搜尋
+settings.cast.casting = 投放中
+settings.cast.cast = 投放
+settings.cast.streaming = 串流中
+settings.cast.direct = 讓裝置自行取得 YouTube 音訊
+settings.cast.direct_desc = 關閉時：由本應用程式將音訊串流到裝置（適用於所有歌曲）。
+settings.cast.note = 投放會在此網路上的 Chromecast、Google TV 或 Nest 喇叭上播放佇列（使用 Google 的 Default Media Receiver）。透過播放列中的 Cast 按鈕選擇裝置；之後播放、暫停、跳轉、切換歌曲和音量都會控制該裝置，選擇「停止投放」則會改回在這裡繼續播放。YouTube 音訊和本機檔案會從這部電腦串流到裝置（請保持應用程式開啟）；裝置和這部電腦必須位於同一個網路。變更會從下一首歌開始生效。

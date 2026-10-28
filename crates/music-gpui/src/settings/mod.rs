@@ -22,6 +22,7 @@ mod equalizer;
 pub mod file;
 mod integrations;
 mod integrations_ui;
+mod language;
 pub mod library_config;
 mod library_glue;
 mod lyrics;
@@ -36,6 +37,7 @@ mod privacy;
 mod storage;
 mod widgets;
 
+use crate::i18n::Key;
 use crate::icons::Lucide as IconName;
 use gpui::{AnyElement, Context, Window};
 
@@ -46,7 +48,7 @@ pub use panel::{SettingsEvent, SettingsPanel};
 /// One entry of the settings page's section list.
 pub struct Section {
     pub id: SectionId,
-    pub title: &'static str,
+    pub title: Key,
     pub icon: IconName,
     pub render: fn(&mut SettingsPanel, &mut Window, &mut Context<SettingsPanel>) -> AnyElement,
 }
@@ -85,103 +87,103 @@ pub enum SectionId {
 pub const SECTIONS: &[Section] = &[
     Section {
         id: SectionId::Appearance,
-        title: "Appearance",
+        title: k!("settings.section.appearance"),
         icon: IconName::Palette,
         render: appearance::render,
     },
     Section {
         id: SectionId::Playback,
-        title: "Playback",
+        title: k!("settings.section.playback"),
         icon: IconName::Play,
         render: playback::render,
     },
     Section {
         id: SectionId::Modules,
-        title: "Modules",
+        title: k!("settings.section.modules"),
         icon: IconName::Puzzle,
         render: modules::render,
     },
     Section {
         id: SectionId::Equalizer,
-        title: "Equalizer",
+        title: k!("settings.section.equalizer"),
         icon: IconName::SlidersHorizontal,
         render: equalizer::render,
     },
     Section {
         id: SectionId::Lyrics,
-        title: "Lyrics",
+        title: k!("settings.section.lyrics"),
         icon: IconName::ScrollText,
         render: lyrics::render,
     },
     Section {
         id: SectionId::Content,
-        title: "Content & region",
+        title: k!("settings.section.content"),
         icon: IconName::Languages,
         render: content::render,
     },
     Section {
         id: SectionId::Network,
-        title: "Network",
+        title: k!("settings.section.network"),
         icon: IconName::Wifi,
         render: network::render,
     },
     Section {
         id: SectionId::Privacy,
-        title: "Privacy",
+        title: k!("settings.section.privacy"),
         icon: IconName::Shield,
         render: privacy::render,
     },
     Section {
         id: SectionId::Storage,
-        title: "Storage",
+        title: k!("settings.section.storage"),
         icon: IconName::HardDrive,
         render: storage::render,
     },
     Section {
         id: SectionId::Account,
-        title: "Account",
+        title: k!("settings.section.account"),
         icon: IconName::CircleUser,
         render: accounts::render,
     },
     Section {
         id: SectionId::Integrations,
-        title: "Scrobbling & Discord",
+        title: k!("settings.section.integrations"),
         icon: IconName::Radio,
         render: integrations::render,
     },
     Section {
         id: SectionId::SponsorBlock,
-        title: "SponsorBlock",
+        title: k!("settings.section.sponsorblock"),
         icon: IconName::SkipForward,
         render: integrations_ui::render_sponsorblock,
     },
     Section {
         id: SectionId::Together,
-        title: "Music Together",
+        title: k!("settings.section.together"),
         icon: IconName::UsersRound,
         render: integrations_ui::render_together,
     },
     Section {
         id: SectionId::Spotify,
-        title: "Spotify import",
+        title: k!("settings.section.spotify"),
         icon: IconName::ListMusic,
         render: integrations_ui::render_spotify,
     },
     Section {
         id: SectionId::AiFilter,
-        title: "AI content filter",
+        title: k!("settings.section.ai_filter"),
         icon: IconName::Bot,
         render: integrations_ui::render_ai_filter,
     },
     Section {
         id: SectionId::Cast,
-        title: "Chromecast",
+        title: k!("settings.section.cast"),
         icon: IconName::Cast,
         render: integrations_ui::render_cast,
     },
     Section {
         id: SectionId::About,
-        title: "About",
+        title: k!("settings.section.about"),
         icon: IconName::Info,
         render: about::render,
     },
@@ -196,7 +198,7 @@ impl SectionId {
     }
 
     pub fn title(self) -> &'static str {
-        self.section().title
+        crate::i18n::text(self.section().title)
     }
 
     pub fn key(self) -> &'static str {

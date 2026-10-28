@@ -1,0 +1,20 @@
+# Settings → Content & region (Ukrainian).
+
+settings.content.group_region = Мова й регіон
+settings.content.language = Мова вмісту
+settings.content.language_description = Мова назв, добірок і пошуку в YouTube Music.
+settings.content.language_placeholder = Мова
+settings.content.country = Країна вмісту
+settings.content.country_description = Регіон головної стрічки, чартів і новинок.
+settings.content.country_placeholder = Країна
+settings.content.region_note = Зміни діють одразу; відкриті сторінки перезавантажуються новою мовою.
+
+settings.content.group_filters = Фільтри
+settings.content.hide_explicit = Приховувати відвертий вміст
+settings.content.hide_explicit_description = Прибирає пісні й альбоми з позначкою «відвертий вміст» зі сторінок, пошуку та радіо.
+settings.content.hide_videos = Приховувати музичні кліпи
+settings.content.hide_videos_description = Лише пісні: музичні кліпи й відео користувачів не потрапляють у добірки, пошук, плейлисти, альбоми, радіо й черги (альбом, який є на YouTube лише як офіційні аудіовідео, залишається повним).
+
+settings.content.group_radio = Радіо
+settings.content.autoplay = Автовідтворення схожих пісень
+settings.content.autoplay_description = Коли починається остання пісня в черзі, після неї додаються пісні з її радіо.

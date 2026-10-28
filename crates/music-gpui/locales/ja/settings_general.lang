@@ -1,0 +1,121 @@
+# Settings: Account, Network, About, settings panel, update check, sign-in (ja).
+
+# ---- Account
+settings.account.cookie_title = ブラウザの Cookie でログイン
+settings.account.cookie_steps = 1. ブラウザで music.youtube.com を開いてログインします。\n2. デベロッパーツール（Safari／Chrome では ⌥⌘I）→ ネットワークを開き、ページを再読み込みします。\n3. music.youtube.com へのリクエスト（例：“browse”）をクリックし、Request Headers の “Cookie” を探して値全体をコピーします。\n4. 下に貼り付けます。OS のキーチェーンに保存され、YouTube にのみ送信されます。
+settings.account.cookie_index = Google アカウントの番号（複数ログインしている場合）：
+settings.account.not_signed_in = ログインしていません。すべての機能を匿名で利用できます。ログインすると、高評価した曲、保存したアルバム、登録チャンネル、プレイリストがライブラリに同期され、高評価やプレイリストの編集が YouTube Music に反映されます。
+settings.account.sign_in_google = Google でログイン…
+settings.account.paste_cookie = Cookie を貼り付け…
+settings.account.google_refused = Google にログインウインドウを拒否された場合（「このブラウザまたはアプリは安全でない可能性があります」）は、「Cookie を貼り付け」を使用してください。
+settings.account.last_synced = 最終同期：{date}
+settings.account.not_synced = 未同期
+settings.account.sync_now = 今すぐ同期
+settings.account.syncing = 同期中…
+settings.account.sync_group = ライブラリの同期
+settings.account.sync_row = YouTube Music のライブラリを同期
+settings.account.sync_row_desc = 高評価した曲、ライブラリの曲、保存したアルバム、登録チャンネル、プレイリスト。
+settings.account.accounts_group = アカウント
+settings.account.channels = この Google アカウントのチャンネル（ブランドアカウント）：
+settings.account.google_index = Google アカウント
+settings.account.google_index_desc = Cookie に複数の Google アカウントが含まれる場合に使用するアカウント（0 = 1番目）。
+settings.account.cookie_note = ログインには music.youtube.com のブラウザセッション Cookie を使用します。Cookie は OS のキーチェーンに保存され、YouTube にのみ送信されます。アカウント機能は YouTube の Web API に基づいて作られていますが、実際のアカウントではまだ検証されていません。
+
+# ---- About
+settings.about.show_welcome = ようこそガイドを表示
+settings.about.version_summary = バージョン {version} · {summary}
+settings.about.summary = YouTube Music 用ネイティブデスクトップクライアント
+settings.about.not_affiliated = YouTube および Google とは提携しておらず、承認や後援も受けていません。
+settings.about.license = ライセンス
+settings.about.license_notice = このプログラムはフリーソフトウェアです。GNU General Public License バージョン3の条件に従って再頒布および改変できます。本プログラムは一切の保証なしに頒布されます。詳しくはライセンスをご覧ください。
+settings.about.credits = クレジット
+settings.about.credit.archivetune = 機能と画面は {project}（GPL-3.0、© Rukamori and contributors）から移植されています。本プロジェクトは独立したプロジェクトです。
+settings.about.credit.hummingbird = イコライザ、OS のメディアコントロール、Scrobble、Discord プレゼンスは Hummingbird（Apache-2.0、© Hummingbird contributors）から移植されています。
+settings.about.credit.recognition_title = 曲の認識
+settings.about.credit.recognition = Shazam 互換のフィンガープリントは {project} の shazamkit（GPL-3.0）から移植されており、SongRec の形式に準拠しています。Shazam および Apple とは提携していません。
+settings.about.credit.libraries_title = ライブラリ
+settings.about.credit.libraries = GPUI と gpui-component（Apache-2.0）、Symphonia と rodio、Lucide アイコン（ISC）、LRCLIB の歌詞。
+
+# ---- Update check
+update.group = アップデート
+update.releases_from = github.com/{repo} のリリース
+update.checking = 確認中…
+update.up_to_date_version = 最新バージョン（{version}）です。
+update.available_version = バージョン {version} が利用可能です。
+update.check_failed = 確認できませんでした：{error}
+update.check_now = 今すぐ確認
+update.download = ダウンロード…
+update.no_release = 公開されたリリースがありません
+update.available_toast = {app} {version} が利用可能です（設定 → 情報）
+update.up_to_date_toast = {app}は最新です
+
+# ---- Network
+settings.network.proxy = プロキシ
+settings.network.proxy_off = オフ
+settings.network.host = ホスト
+settings.network.port = ポート
+settings.network.user = ユーザー名
+settings.network.password = パスワード
+settings.network.doh_url = DoH URL
+settings.network.host_placeholder = proxy.example.com または 127.0.0.1
+settings.network.optional = 任意
+settings.network.test_connection = 接続をテスト
+settings.network.test_dns = DNS をテスト
+settings.network.using_proxy = {url} を使用中
+settings.network.direct = 直接接続（プロキシなし）
+settings.network.status_with_doh = {proxy} · DNS-over-HTTPS（{server}）
+settings.network.testing = テスト中…
+settings.network.test_ok = {ms} ms で YouTube に接続しました
+settings.network.test_failed = 接続に失敗しました：{error}
+settings.network.lookup_failed = 名前解決に失敗しました：{error}
+settings.network.looking_up = 名前解決中…
+settings.network.dns_ok = {host} → {addresses}（{via}、{ms} ms）
+settings.network.dns_via_doh = DNS-over-HTTPS
+settings.network.dns_via_cache = DNS-over-HTTPS（キャッシュ）
+settings.network.dns_via_system = システムのリゾルバ
+settings.network.proxy_note = YouTube Music、オーディオストリーム、アートワーク、歌詞、Scrobble のすべてに適用されます。SOCKS5h ではホスト名をプロキシ経由で解決します。パスワードはキーチェーンに保存されます。
+settings.network.dns = DNS
+settings.network.dns_system = システム
+settings.network.dns_custom = カスタム
+settings.network.dns_fallback = DoH が失敗したらシステムのリゾルバを使用
+settings.network.dns_note = DNS-over-HTTPS（RFC 8484）は、通常の DNS の代わりに暗号化された HTTPS 接続でホスト名を解決します。応答は TTL の間キャッシュされます。SOCKS5h プロキシを使用している場合は、プロキシ自身が名前を解決します。Quad9 には HTTP/1.1 のポート 5053 で接続しますが、一部のネットワークではブロックされています。
+settings.network.error.port_number = ポートは数値（1〜65535）で指定してください。
+settings.network.error.doh_invalid = DNS-over-HTTPS の URL が無効です。
+settings.network.error.proxy_invalid = このプロキシの種類では無効なプロキシアドレスです。
+settings.network.error.doh_https = DNS-over-HTTPS の URL は https:// で始まる必要があります。
+settings.network.error.doh_invalid_detail = DNS-over-HTTPS の URL が無効です：{error}。
+settings.network.error.host_missing = プロキシのホストを入力してください。
+settings.network.error.host_invalid = ホストには名前またはアドレスのみを入力してください（スキーム、パス、スペースは不可）。
+settings.network.error.port_missing = 1〜65535 のポートを入力してください。
+settings.network.error.socks4_auth = SOCKS4 はパスワードに対応していません。ユーザー名は空欄にしてください。
+
+# ---- Settings panel
+settings.panel.placeholder.api_key = API キー
+settings.panel.placeholder.shared_secret = 共有シークレット
+settings.panel.placeholder.user_token = ユーザートークン
+settings.panel.placeholder.application_id = アプリケーション ID
+settings.panel.lastfm_missing = 先に API キーと共有シークレットを入力してください。
+settings.panel.lastfm_requesting = トークンをリクエスト中…
+settings.panel.lastfm_finishing = 完了処理中…
+settings.panel.lb_missing = 先にユーザートークンを貼り付けてください。
+settings.panel.secrets.backend_and_file = {backend} + 設定ファイル（0600）
+settings.panel.secrets.file_keychain_disabled = 設定ファイル（0600、キーチェーン無効）
+settings.panel.secrets.file_keychain_read_failed = 設定ファイル（0600、キーチェーンの読み込みに失敗）
+settings.panel.secrets.file_keychain_unavailable = 設定ファイル（0600、キーチェーン利用不可）
+
+# ---- Credential stores
+secrets.backend.macos = macOS キーチェーン
+secrets.backend.windows = Windows 資格情報マネージャー
+secrets.backend.secret_service = Secret Service
+
+# ---- Settings file problems
+settings.file.no_config_dir = 設定ディレクトリがないため、設定は保存されません
+settings.file.save_failed = 保存に失敗しました：{error}
+settings.file.read_failed = {path} の読み込み：{error}
+settings.file.invalid_moved = {path} は無効です（{error}）。{backup} に移動しました
+
+# ---- Google sign-in window
+login.window_title = YouTube Music にログイン
+login.instructions = Google アカウントでログインしてください。YouTube Music が開くとこのウインドウは閉じます。
+login.webview_failed = Web ビューを作成できませんでした（{error}）。代わりに「Cookie を貼り付け」を使用してください。
+login.checking = ログインしました。アカウントを確認中…

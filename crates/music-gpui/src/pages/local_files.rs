@@ -22,9 +22,10 @@ use music_core::library::{SongQuery, SongScope, SongSort};
 use super::PageView;
 use super::loader::{Loaded, key_of};
 use super::song_list::SongList;
-use super::widgets::{filter_field, filter_input, songs_label};
+use super::widgets::{filter_field, filter_input};
 use crate::app::{MusicApp, read_app, update_app};
 use crate::components::{empty_state, page_title};
+use crate::i18n::format::number;
 use crate::icons::Lucide;
 use crate::settings::library_config::LibraryConfig;
 use crate::store::ScanState;
@@ -41,9 +42,14 @@ pub struct LocalFilesPage {
 impl LocalFilesPage {
     pub fn build(window: &mut Window, cx: &mut Context<MusicApp>) -> PageView {
         let page = cx.new(|cx| {
-            let (filter, sub) = filter_input("Filter", window, cx, |p: &mut Self, text, _| {
-                p.filter_text = text;
-            });
+            let (filter, sub) = filter_input(
+                k!("library.filter_placeholder"),
+                window,
+                cx,
+                |p: &mut Self, text, _| {
+                    p.filter_text = text;
+                },
+            );
             Self {
                 filter,
                 filter_text: String::new(),
@@ -72,7 +78,11 @@ pub fn pick_folders(exclude: bool, cx: &mut gpui::App) {
         files: false,
         directories: true,
         multiple: true,
-        prompt: Some(if exclude { "Skip".into() } else { "Add".into() }),
+        prompt: Some(if exclude {
+            t!("local_files.prompt_skip").into()
+        } else {
+            t!("local_files.prompt_add").into()
+        }),
     });
     cx.spawn(async move |cx| {
         let Ok(Ok(Some(paths))) = paths.await else {
@@ -129,7 +139,7 @@ pub fn folder_list(
                         .ghost()
                         .xsmall()
                         .icon(Lucide::X)
-                        .tooltip("Remove")
+                        .tooltip(t!("common.remove"))
                         .on_click(move |_, _, cx| {
                             let p = p.clone();
                             update_prefs(cx, move |prefs| {
@@ -174,9 +184,13 @@ pub fn scan_controls(cx: &gpui::App) -> impl IntoElement + use<> {
                         })),
                 )
                 .child(div().text_sm().text_color(muted).child(if *total == 0 {
-                    "Looking for files…".to_owned()
+                    t!("local_files.scan.looking").to_owned()
                 } else {
-                    format!("{done} / {total} files")
+                    t!(
+                        "local_files.scan.progress",
+                        done = number(*done as u64),
+                        total = number(*total as u64)
+                    )
                 }))
                 .into_any_element(),
         ),
@@ -196,7 +210,11 @@ pub fn scan_controls(cx: &gpui::App) -> impl IntoElement + use<> {
                 .primary()
                 .small()
                 .icon(gpui_component::IconName::RefreshCw)
-                .label(if running { "Scanning…" } else { "Rescan" })
+                .label(if running {
+                    t!("local_files.scanning")
+                } else {
+                    t!("local_files.rescan")
+                })
                 .disabled(running || !has_folders)
                 .on_click(|_, window, cx| {
                     update_app(cx, |app, cx| app.rescan_local_files(window, cx));
@@ -232,18 +250,19 @@ impl Render for LocalFilesPage {
             .child(
                 h_flex()
                     .gap_2()
+                    .flex_wrap()
                     .child(
                         div()
                             .text_sm()
                             .font_weight(gpui::FontWeight::SEMIBOLD)
-                            .child("Music folders"),
+                            .child(t!("local_files.folders_title")),
                     )
                     .child(
                         Button::new("local-add")
                             .ghost()
                             .xsmall()
                             .icon(Lucide::FolderPlus)
-                            .label("Add folder")
+                            .label(t!("local_files.add_folder"))
                             .on_click(|_, _, cx| pick_folders(false, cx)),
                     )
                     .child(
@@ -251,7 +270,7 @@ impl Render for LocalFilesPage {
                             .ghost()
                             .xsmall()
                             .icon(Lucide::FolderPlus)
-                            .label("Skip a folder")
+                            .label(t!("local_files.skip_folder"))
                             .on_click(|_, _, cx| pick_folders(true, cx)),
                     ),
             )
@@ -263,7 +282,7 @@ impl Render for LocalFilesPage {
                         div()
                             .text_xs()
                             .text_color(cx.theme().muted_foreground)
-                            .child("Skipped"),
+                            .child(t!("local_files.skipped_title")),
                     )
                     .child(folder_list("local-skip", &prefs.excluded_folders, true, cx))
             }));
@@ -273,12 +292,12 @@ impl Render for LocalFilesPage {
             .pb_3()
             .gap_4()
             .child(page_title(
-                "Local files",
+                t!("nav.local_files"),
                 Some(
-                    format!(
-                        "{} · files shorter than {} s are skipped",
-                        songs_label(self.list.tracks.len() as u64),
-                        prefs.local_min_secs
+                    tp!(
+                        "local_files.detail",
+                        self.list.tracks.len(),
+                        seconds = prefs.local_min_secs
                     )
                     .into(),
                 ),
@@ -289,6 +308,7 @@ impl Render for LocalFilesPage {
             .child(
                 h_flex()
                     .gap_2()
+                    .flex_wrap()
                     .child(
                         self.list
                             .header_buttons("local", |p: &mut Self| &mut p.list, cx),
@@ -301,16 +321,19 @@ impl Render for LocalFilesPage {
             .selection_bar("local", |p: &mut Self| &mut p.list, None, cx);
         let body = if self.list.is_empty() {
             let (title, detail) = match (self.loaded, prefs.local_folders.is_empty()) {
-                (false, _) => ("Loading…", ""),
+                (false, _) => (t!("common.loading"), ""),
                 (true, true) => (
-                    "No music folders yet",
-                    "Add a folder with your music (MP3, M4A, FLAC, Ogg, Opus, WAV, AIFF…) and \
-                     press Rescan.",
+                    t!("local_files.empty.no_folders_title"),
+                    t!("local_files.empty.no_folders_detail"),
                 ),
-                (true, false) if !self.filter_text.is_empty() => {
-                    ("No matches", "Nothing matches the filter.")
-                }
-                (true, false) => ("No local tracks", "Press Rescan to read the folders above."),
+                (true, false) if !self.filter_text.is_empty() => (
+                    t!("library.empty.no_matches_title"),
+                    t!("library.empty.no_matches_detail"),
+                ),
+                (true, false) => (
+                    t!("local_files.empty.no_tracks_title"),
+                    t!("local_files.empty.no_tracks_detail"),
+                ),
             };
             div()
                 .flex_1()

@@ -1,0 +1,79 @@
+# Now Playing screen (all designs), its lyrics pane and the lyrics card dialog.
+
+# ---- Header
+np.close_tooltip = Fechar (Esc)
+np.header = TOCANDO AGORA
+np.demo_clock = Relógio demo
+np.buffering = Carregando…
+np.preview = Prévia
+np.speed = {speed}×
+np.sleep_tooltip = Timer de suspensão
+np.layout_tooltip = Visual e fundo
+np.menu.design = Visual
+np.menu.background = Fundo
+
+# ---- Player
+np.up_next = A seguir
+np.playing_from = TOCANDO DE
+np.your_queue = Sua fila
+np.of_total = de {total}
+np.editorial.header_album = TOCANDO AGORA  ·  {album}
+np.editorial.play = TOCAR
+np.editorial.pause = PAUSAR
+np.editorial.loading = CARREGANDO
+np.queue.title = A SEGUIR
+np.queue.more.one = +{count} outra
+np.queue.more.other = +{count} outras
+np.queue.empty = Nada na fila. Adicione músicas de uma lista ou ative a reprodução automática.
+
+# ---- Lyrics pane
+lyrics.nothing_playing = Nada tocando
+lyrics.loading = Carregando letra…
+lyrics.missing_title = Sem letra
+lyrics.missing_detail = Nenhum dos provedores de letras ativados tem esta faixa.
+lyrics.failed = Não foi possível carregar a letra
+lyrics.translating = Traduzindo…
+lyrics.translation_failed = Falha na tradução: {error}
+lyrics.kind.word = Sincronizada por palavra
+lyrics.kind.line = Sincronizada por linha
+lyrics.kind.plain = Não sincronizada
+lyrics.source = {provider} · {kind}
+lyrics.select_hint.one = Selecione até {count} linha para um card
+lyrics.select_hint.other = Selecione até {count} linhas para um card
+lyrics.selected.one = {count} linha selecionada
+lyrics.selected.other = {count} linhas selecionadas
+lyrics.create_card = Criar card…
+lyrics.share_tooltip = Compartilhar letra como card
+lyrics.translation_on = Tradução: ativada
+lyrics.translation_off = Tradução: desativada
+lyrics.reload_tooltip = Pesquisar nos provedores de novo
+
+# ---- Lyrics card dialog
+card.dialog_title = Card de letra
+card.row.background = Fundo
+card.row.text = Texto
+card.row.size = Tamanho
+card.row.shape = Formato
+card.row.cover = Capa
+card.cover.show = Mostrar
+card.cover.hide = Ocultar
+card.save = Salvar imagem…
+card.copy = Copiar imagem
+card.copying = Copiando…
+card.copied = Copiado para a área de transferência
+card.saved = {path} salvo
+card.save_failed = Não foi possível salvar: {error}
+card.draw_failed = Não foi possível desenhar o card: {error}
+card.aspect.square = Quadrado
+card.aspect.portrait = Retrato
+card.aspect.story = Story
+card.bg.blur = Capa desfocada
+card.bg.album = Cor do álbum
+card.bg.dark = Escuro
+card.bg.light = Claro
+card.align.left = Esquerda
+card.align.center = Centro
+card.align.right = Direita
+card.size.small = Pequeno
+card.size.medium = Médio
+card.size.large = Grande

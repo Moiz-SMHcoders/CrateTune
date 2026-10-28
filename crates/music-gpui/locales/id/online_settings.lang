@@ -1,0 +1,18 @@
+settings.content.group_region = Bahasa & wilayah
+settings.content.language = Bahasa konten
+settings.content.language_description = Bahasa judul, rak, dan pencarian di YouTube Music.
+settings.content.language_placeholder = Bahasa
+settings.content.country = Negara konten
+settings.content.country_description = Wilayah untuk beranda, tangga lagu, dan rilis baru.
+settings.content.country_placeholder = Negara
+settings.content.region_note = Perubahan langsung berlaku; halaman yang terbuka dimuat ulang dalam bahasa baru.
+
+settings.content.group_filters = Filter
+settings.content.hide_explicit = Sembunyikan konten eksplisit
+settings.content.hide_explicit_description = Menghapus lagu dan album bertanda eksplisit dari halaman, pencarian, dan radio.
+settings.content.hide_videos = Sembunyikan video musik
+settings.content.hide_videos_description = Hanya lagu: video musik dan video pengguna tidak ditampilkan di rak, pencarian, playlist, album, radio, dan antrean (album yang di YouTube hanya tersedia sebagai video audio resmi tetap lengkap).
+
+settings.content.group_radio = Radio
+settings.content.autoplay = Putar otomatis lagu serupa
+settings.content.autoplay_description = Saat lagu terakhir di antrean dimulai, lagu dari radionya ditambahkan setelahnya.

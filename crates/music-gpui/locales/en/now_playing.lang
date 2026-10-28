@@ -1,0 +1,110 @@
+# Now Playing screen (all designs), its lyrics pane and the lyrics card dialog.
+# Format: see crates/music-gpui/i18n_parse.rs ({name} = placeholder, {app} = the
+# app's name, `.one` / `.other` = plural forms).
+
+# ---- Header (top bar of the Now Playing screen)
+np.close_tooltip = Close (Esc)
+# Small heading at the top left, written in capitals (scripts without case: write it normally).
+np.header = NOW PLAYING
+# Tag: the playback clock is simulated (developer demo mode). Keep short.
+np.demo_clock = Demo clock
+# Tag. Keep short.
+np.buffering = Buffering…
+# Tag: only a ~1 minute preview of the song can be played. Keep short.
+np.preview = Preview
+# Tag with the playback speed, e.g. "1,25×". {speed} is a decimal number.
+np.speed = {speed}×
+np.sleep_tooltip = Sleep timer
+np.layout_tooltip = Design and background
+# Headings inside the layout menu.
+np.menu.design = Design
+np.menu.background = Background
+
+# ---- Player
+# Label before the next song's title and artist.
+np.up_next = Up next
+# Card design: small capitals above the album name.
+np.playing_from = PLAYING FROM
+# Card design: shown instead of the album name when the track has none.
+np.your_queue = Your queue
+# Minimal design, under the elapsed time: "of 3:45" ({total} is the song length).
+np.of_total = of {total}
+# Editorial design: heading in capitals; {album} is the album name in capitals.
+np.editorial.header_album = NOW PLAYING  ·  {album}
+# Editorial design: the label of the big play / pause button (capitals).
+np.editorial.play = PLAY
+np.editorial.pause = PAUSE
+np.editorial.loading = LOADING
+# "With queue" design: heading of the upcoming songs (capitals).
+np.queue.title = UP NEXT
+# "With queue" design: how many more songs follow the listed ones.
+np.queue.more.one = +{count} more
+np.queue.more.other = +{count} more
+np.queue.empty = Nothing queued. Add songs from a list, or turn on autoplay.
+
+# ---- Lyrics pane
+lyrics.nothing_playing = Nothing playing
+lyrics.loading = Loading lyrics…
+lyrics.missing_title = No lyrics
+lyrics.missing_detail = None of the enabled lyrics providers has this track.
+lyrics.failed = Couldn't load lyrics
+lyrics.translating = Translating…
+# {error} is an English error message.
+lyrics.translation_failed = Translation failed: {error}
+# How the lyrics are timed (shown after the provider name).
+lyrics.kind.word = Word-synced
+lyrics.kind.line = Line-synced
+lyrics.kind.plain = Unsynced
+# Lyrics toolbar: {provider} is a provider name (LRCLIB, …), {kind} one of lyrics.kind.*.
+lyrics.source = {provider} · {kind}
+# Selecting lines for a lyrics card; {count} is the maximum number of lines.
+lyrics.select_hint.one = Select up to {count} line for a card
+lyrics.select_hint.other = Select up to {count} lines for a card
+lyrics.selected.one = {count} line selected
+lyrics.selected.other = {count} lines selected
+# Button (opens the lyrics card dialog).
+lyrics.create_card = Create card…
+lyrics.share_tooltip = Share lyrics as a card
+lyrics.translation_on = Translation: on
+lyrics.translation_off = Translation: off
+lyrics.reload_tooltip = Search the providers again
+
+# ---- Lyrics card dialog
+card.dialog_title = Lyrics card
+# Row labels next to the choice buttons (narrow column).
+card.row.background = Background
+# Row label: the alignment of the text.
+card.row.text = Text
+card.row.size = Size
+# Row label: the card's proportions (square / portrait / story).
+card.row.shape = Shape
+# Row label: whether the album cover is on the card.
+card.row.cover = Cover
+card.cover.show = Show
+card.cover.hide = Hide
+card.save = Save image…
+card.copy = Copy image
+card.copying = Copying…
+card.copied = Copied to the clipboard
+# {path} is the saved file.
+card.saved = Saved {path}
+# {error} is an English error message.
+card.save_failed = Couldn't save: {error}
+card.draw_failed = Couldn't draw the card: {error}
+# Card proportions: 1:1, 4:5, 9:16 (like an Instagram story).
+card.aspect.square = Square
+card.aspect.portrait = Portrait
+card.aspect.story = Story
+# Card backgrounds.
+card.bg.blur = Blurred artwork
+card.bg.album = Album colour
+card.bg.dark = Dark
+card.bg.light = Light
+# Text alignment.
+card.align.left = Left
+card.align.center = Center
+card.align.right = Right
+# Text size.
+card.size.small = Small
+card.size.medium = Medium
+card.size.large = Large

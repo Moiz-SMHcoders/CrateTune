@@ -1,0 +1,28 @@
+# Online area (search, browse pages, recognition, Content & region settings).
+# YouTube Music content languages are listed under their own (native) names, not translated.
+settings/content.rs: English (US)
+settings/content.rs: English (UK)
+settings/content.rs: English (India)
+settings/content.rs: Dansk
+settings/content.rs: Deutsch
+settings/content.rs: Español
+settings/content.rs: Español (Latinoamérica)
+settings/content.rs: Eesti
+settings/content.rs: Suomi
+settings/content.rs: Français
+settings/content.rs: Hrvatski
+settings/content.rs: Magyar
+settings/content.rs: Bahasa Indonesia
+settings/content.rs: Italiano
+settings/content.rs: Lietuvių
+settings/content.rs: Latviešu
+settings/content.rs: Bahasa Melayu
+settings/content.rs: Nederlands
+settings/content.rs: Norsk
+settings/content.rs: Polski
+settings/content.rs: Português
+settings/content.rs: Português (Brasil)
+settings/content.rs: Română
+settings/content.rs: Slovenčina
+settings/content.rs: Svenska
+settings/content.rs: Tiếng Việt

@@ -1,0 +1,35 @@
+# Search page (Turkish).
+
+search.title = Ara
+search.query_title = “{query}”
+search.searching = Aranıyor…
+
+search.tab.all = Tümü
+search.tab.songs = Şarkılar
+search.tab.videos = Videolar
+search.tab.albums = Albümler
+search.tab.artists = Sanatçılar
+search.tab.community_playlists = Topluluk listeleri
+search.tab.featured_playlists = Öne çıkan listeler
+search.tab.podcasts = Podcast'ler
+search.tab.episodes = Bölümler
+
+search.tab_empty.songs = Şarkı yok
+search.tab_empty.videos = Video yok
+search.tab_empty.albums = Albüm yok
+search.tab_empty.artists = Sanatçı yok
+search.tab_empty.community_playlists = Topluluk çalma listesi yok
+search.tab_empty.featured_playlists = Öne çıkan çalma listesi yok
+search.tab_empty.podcasts = Podcast yok
+search.tab_empty.episodes = Bölüm yok
+search.tab_empty.detail = Başka bir kategori veya arama deneyin.
+
+search.correction.applied = Gösterilen sonuçlar: {corrected} · Bunun yerine şunu ara: {original}
+search.correction.suggested = Bunu mu demek istediniz: {corrected}?
+
+search.top_result = En iyi sonuç
+search.empty.title = Sonuç yok
+search.empty.detail = Başka bir arama deneyin veya yazımı kontrol edin.
+
+search.start.title = YouTube Music'te ara
+search.start.detail = Arama alanına (⌘F) bir şarkı, sanatçı, albüm veya çalma listesi yazıp Enter'a basın.

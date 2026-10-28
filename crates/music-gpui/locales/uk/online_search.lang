@@ -1,0 +1,35 @@
+# Search page (Ukrainian).
+
+search.title = Пошук
+search.query_title = «{query}»
+search.searching = Пошук…
+
+search.tab.all = Усе
+search.tab.songs = Пісні
+search.tab.videos = Відео
+search.tab.albums = Альбоми
+search.tab.artists = Виконавці
+search.tab.community_playlists = Плейлисти спільноти
+search.tab.featured_playlists = Добірки
+search.tab.podcasts = Подкасти
+search.tab.episodes = Епізоди
+
+search.tab_empty.songs = Немає пісень
+search.tab_empty.videos = Немає відео
+search.tab_empty.albums = Немає альбомів
+search.tab_empty.artists = Немає виконавців
+search.tab_empty.community_playlists = Немає плейлистів спільноти
+search.tab_empty.featured_playlists = Немає добірок
+search.tab_empty.podcasts = Немає подкастів
+search.tab_empty.episodes = Немає епізодів
+search.tab_empty.detail = Спробуйте іншу категорію або інший запит.
+
+search.correction.applied = Показано результати для {corrected} · Шукати натомість {original}
+search.correction.suggested = Можливо, ви мали на увазі {corrected}?
+
+search.top_result = Найкращий результат
+search.empty.title = Немає результатів
+search.empty.detail = Спробуйте інший запит або перевірте написання.
+
+search.start.title = Пошук у YouTube Music
+search.start.detail = Введіть пісню, виконавця, альбом чи плейлист у поле пошуку (⌘F) і натисніть Enter.

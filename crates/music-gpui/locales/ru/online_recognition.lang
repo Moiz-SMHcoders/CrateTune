@@ -1,0 +1,44 @@
+# Music recognition page (Russian).
+
+recognition.title = Распознать музыку
+recognition.subtitle = Узнайте, какой трек звучит рядом (⇧⌘R)
+
+recognition.idle.title = Нажмите, чтобы распознать трек
+recognition.idle.detail = Включите трек рядом с компьютером: приложение слушает через микрофон около 10 секунд.
+recognition.permission.title = Ожидание доступа к микрофону…
+recognition.permission.detail = Разрешите доступ в системном запросе.
+recognition.listening = Слушаю…
+recognition.listening_progress = {elapsed} из {length} с
+recognition.identifying.title = Распознавание…
+recognition.identifying.detail = Сопоставление записи.
+recognition.failed = Не удалось распознать
+recognition.open_privacy_settings = Открыть настройки конфиденциальности
+
+recognition.mic.restricted = Доступ к микрофону на этом компьютере ограничен.
+recognition.mic.undetermined = Доступ к микрофону ещё не предоставлен. Попробуйте снова и разрешите его, когда появится запрос.
+recognition.mic.denied = Доступ к микрофону для {app} выключен. Разрешите его в разделе «Системные настройки → Конфиденциальность и безопасность → Микрофон».
+recognition.error.no_microphone = Микрофон не найден
+recognition.error.permission_denied = В доступе к микрофону отказано
+recognition.error.silent = Микрофон передаёт только тишину (разрешён ли доступ к микрофону?)
+recognition.error.capture = Ошибка записи: {error}
+recognition.error.cancelled = Отменено
+recognition.error.no_signature = Музыка не слышна
+recognition.error.no_match = Совпадений не найдено
+recognition.error.rate_limited = Слишком много запросов — попробуйте через минуту
+recognition.error.service = Ошибка сервиса распознавания (HTTP {status})
+recognition.error.network = Ошибка сети: {error}
+recognition.error.parse = Неожиданный ответ: {error}
+
+recognition.result.recognized = Распознано
+recognition.result.from_history = Из истории распознавания
+recognition.match.title = В YouTube Music
+recognition.match.searching = Поиск в YouTube Music…
+recognition.match.failed = Ошибка поиска в YouTube Music: {error}
+recognition.match.none = Не найдено в YouTube Music.
+
+recognition.history.title = История
+recognition.history.empty.title = Пока ничего не распознано
+recognition.history.empty.detail = Здесь появятся распознанные треки, новые сверху.
+recognition.history.clear_title = Очистить историю распознавания?
+recognition.history.clear_detail = Список распознанных треков будет удалён.
+recognition.history.remove = Удалить из истории
