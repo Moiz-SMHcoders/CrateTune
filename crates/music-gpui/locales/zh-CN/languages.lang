@@ -1,0 +1,28 @@
+# UI language picker (Settings → Appearance, first onboarding step).
+settings.language.group = 语言
+settings.language.label = 语言
+settings.language.description = 界面语言。YouTube Music 内容的语言另有单独设置（内容与地区）。
+settings.language.system = 跟随系统（{language}）
+settings.language.system_search = default automatic 默认 自动 系统
+
+language.name.en = 英语
+language.name.es = 西班牙语
+language.name.pt-BR = 葡萄牙语（巴西）
+language.name.fr = 法语
+language.name.de = 德语
+language.name.it = 意大利语
+language.name.nl = 荷兰语
+language.name.pl = 波兰语
+language.name.ru = 俄语
+language.name.uk = 乌克兰语
+language.name.tr = 土耳其语
+language.name.id = 印度尼西亚语
+language.name.vi = 越南语
+language.name.ja = 日语
+language.name.ko = 韩语
+language.name.zh-CN = 中文（简体）
+language.name.zh-TW = 中文（繁体）
+language.name.hi = 印地语
+language.name.ar = 阿拉伯语
+language.name.fa = 波斯语
+language.name.he = 希伯来语

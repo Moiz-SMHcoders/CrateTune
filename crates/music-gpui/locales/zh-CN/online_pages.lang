@@ -1,0 +1,54 @@
+# Online browse pages (zh-CN).
+
+# ---- Home
+home.recent.title = 本次播放
+home.recent.subtitle = 再听一次
+
+# ---- Explore
+explore.new_releases_detail = 新鲜出炉的专辑和单曲
+explore.charts_detail = 各国家/地区的热门内容
+explore.moods_detail = 适合每个时刻的播放列表
+
+# ---- Charts
+charts.country_placeholder = 国家/地区
+charts.search_countries = 搜索国家/地区…
+charts.empty.title = 没有排行榜
+charts.empty.detail = YouTube Music 没有该国家/地区的排行榜。
+
+# ---- Moods & genres
+moods.empty = YouTube Music 没有返回该地区的心情或流派。
+
+# ---- New releases
+new_releases.subtitle = 新专辑和单曲
+new_releases.empty.title = 暂无新内容
+new_releases.empty.detail = YouTube Music 没有返回该地区的新发行内容。
+
+# ---- Browse pages
+browse.empty = 此页面没有播放列表或歌曲（或已全部被过滤）。
+
+# ---- Album
+album.empty.title = 没有可播放的歌曲
+album.empty.detail = 此专辑在这里没有曲目（或已全部被过滤）。
+
+# ---- Artist
+artist.subscribed = 已订阅
+artist.subscribe = 订阅
+artist.subscribe_tooltip = 在 YouTube Music 上订阅（同时保存到你的媒体库）
+artist.subscribe_tooltip_signed_out = 保存到你的媒体库；登录后可在 YouTube Music 上订阅
+artist.items_empty = 此页面没有发行作品（或已全部被过滤）。
+
+# ---- Playlist
+playlist.change_cover = 更改封面…
+playlist.empty.title = 没有歌曲
+playlist.empty.detail = 此播放列表为空（或其中的歌曲已全部被过滤）。
+
+# ---- Podcast / episode
+podcast.episodes.other = {count} 集
+podcast.episodes_more.other = {count}+ 集
+podcast.saved = 已保存
+podcast.save = 保存到媒体库
+podcast.save_failed = 无法更新你的媒体库：{error}
+podcast.open_episode_page = 打开单集页面
+podcast.go_to_podcast = 前往播客
+podcast.empty.title = 没有单集
+podcast.empty.detail = 此节目在这里还没有单集。

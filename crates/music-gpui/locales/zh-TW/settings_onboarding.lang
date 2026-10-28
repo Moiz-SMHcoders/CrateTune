@@ -1,0 +1,56 @@
+# First-run guide (zh-TW).
+
+# ---- Step titles
+onboarding.step.welcome = 歡迎
+onboarding.step.content = 語言與地區
+onboarding.step.theme = 外觀
+onboarding.step.account = YouTube Music 帳號
+onboarding.step.local_files = 這部電腦上的音樂
+onboarding.step.privacy = 隱私權與限制
+onboarding.welcome_title = 歡迎使用 {app}
+onboarding.step_of = 第 {step} 步，共 {total} 步
+
+# ---- Step subtitles
+onboarding.subtitle.welcome = 快速的 YouTube Music 原生播放器：瀏覽和搜尋、跟著歌曲走的歌詞、具備播放記錄和統計資料的媒體庫、你自己的音樂檔案，以及歌曲辨識。只要做幾個選擇就能開始——這裡的所有選項之後都能在「設定」中變更。
+onboarding.subtitle.content = YouTube Music 的標題和推薦要使用哪種語言，以及要顯示哪個國家/地區的排行榜和最新發行。
+onboarding.subtitle.theme = 選擇主題和文字大小。
+onboarding.subtitle.account = 選用。登入後即可取得你的喜歡、媒體庫、播放清單和個人化推薦。其他所有功能不需要帳號也能使用。
+onboarding.subtitle.local_files = 選用。加入存放音樂檔案的資料夾；它們會被掃描到你的媒體庫中，並與 YouTube Music 一起播放。
+onboarding.subtitle.privacy = 開始之前需要了解的事項。
+
+# ---- Footer buttons
+onboarding.skip = 略過設定
+onboarding.get_started = 開始使用
+onboarding.finish = 完成
+onboarding.next_or_skip = 下一步（或略過）
+
+# ---- Welcome step: feature list
+onboarding.feature.browse.title = 瀏覽與搜尋
+onboarding.feature.browse.text = 首頁動態、排行榜、心情、最新發行、藝人、專輯和播放清單。
+onboarding.feature.lyrics.title = 歌詞
+onboarding.feature.lyrics.text = 來自多個來源的逐字同步歌詞，支援翻譯和羅馬拼音。
+onboarding.feature.library.title = 媒體庫
+onboarding.feature.library.text = 喜歡、播放清單、收聽記錄、統計資料和下載項目——全都保存在這部電腦上。
+onboarding.feature.recognize.title = 辨識歌曲
+onboarding.feature.recognize.text = 辨識你周圍正在播放的歌曲（⇧⌘R）並立即播放。
+
+# ---- Look step
+onboarding.theme.group = 主題
+onboarding.theme.dynamic_note = 「動態」主題會從正在播放歌曲的封面中擷取強調色。
+onboarding.theme.text_size = 文字大小
+
+# ---- Music on this computer step
+onboarding.local.group = 音樂資料夾
+onboarding.local.empty = 還沒有資料夾。
+onboarding.local.add = 加入資料夾…
+onboarding.local.note = 現在或稍後掃描資料夾；可在「本機檔案」中管理它們。
+
+# ---- Privacy & limitations step
+onboarding.privacy.streaming.title = 歌曲如何串流
+onboarding.privacy.streaming.text = 完整歌曲來自 YouTube 的 TV 用戶端，或使用 PoToken（一種防濫用權杖，在 macOS 上由隱藏的瀏覽器檢視產生）的網頁用戶端。YouTube 會讓新的串流等待幾秒鐘；在此期間，應用程式會先播放一小段試聽片段。如果 YouTube 做了變更，歌曲會改為約 1 分鐘的試聽片段（會在播放器中標示）。可在「設定 → 播放 → YouTube 串流」中選擇取得方式。
+onboarding.privacy.data.title = 你的資料留在這裡
+onboarding.privacy.data.text = 媒體庫、播放記錄、統計資料和設定都保存在這部電腦上。密碼、API 金鑰和 YouTube 登入 Cookie 會存放在系統鑰匙圈中。你隨時可以在「設定 → 隱私權」中暫停或清除收聽記錄和搜尋記錄。
+onboarding.privacy.recipients.title = 誰會收到哪些資料
+onboarding.privacy.recipients.text = YouTube Music 會收到你的搜尋和播放內容（登入時還有你的帳號 Cookie）。歌詞來源會收到歌曲標題。歌曲辨識會將音訊指紋（而非錄音本身）傳送給 Shazam。Scrobble 和 Discord 只有在你設定後才會執行。
+onboarding.privacy.independent.title = 獨立專案
+onboarding.privacy.independent.text = 與 YouTube、Google 或 Shazam 無關。採用 GPL-3.0 授權的自由軟體。

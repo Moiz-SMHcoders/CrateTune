@@ -1,0 +1,35 @@
+# Menu bar (macOS) and the menu-bar item. {app} is the app's name.
+menu.about = 关于 {app}
+menu.settings = 设置…
+menu.services = 服务
+menu.hide = 隐藏 {app}
+menu.hide_others = 隐藏其他
+menu.show_all = 全部显示
+menu.quit = 退出 {app}
+menu.edit = 编辑
+menu.undo = 撤销
+menu.redo = 重做
+menu.cut = 剪切
+menu.copy = 拷贝
+menu.paste = 粘贴
+menu.select_all = 全选
+menu.search = 搜索
+menu.view = 显示
+menu.back = 后退
+menu.forward = 前进
+menu.recognize = 识别歌曲
+menu.controls = 控制
+menu.play_pause = 播放 / 暂停
+menu.repeat = 循环播放（关 / 全部 / 单曲）
+menu.volume_up = 增大音量
+menu.volume_down = 减小音量
+menu.window = 窗口
+menu.minimize = 最小化
+menu.zoom = 缩放
+
+# Menu-bar item
+tray.next = 下一首
+tray.previous = 上一首
+tray.mini_player = 迷你播放器
+tray.show_window = 显示 {app}
+tray.quit = 退出 {app}

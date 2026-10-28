@@ -1,0 +1,234 @@
+# Library pages, Storage and Privacy settings, backup / restore (zh-TW).
+
+# ---- Library page
+library.sort.label = 排序
+library.sort.date_added = 加入日期
+library.sort.title = 標題
+library.sort.artist = 藝人
+library.sort.play_count = 播放次數
+library.sort.listening_time = 收聽時間
+library.sort.last_played = 上次播放
+library.sort.year = 年份
+library.sort.song_count = 歌曲數
+library.sort.name = 名稱
+library.sort.last_updated = 上次更新
+library.sort.date_created = 建立日期
+
+library.filter_placeholder = 篩選
+library.saved_only = 僅已儲存
+library.subscribed_only = 僅已訂閱
+library.new_playlist = 新增播放清單
+
+library.detail_signed_in = {summary} · 已登入 YouTube Music
+library.count.albums.other = {count} 張專輯
+library.count.artists.other = {count} 位藝人
+library.count.shows.other = {count} 個節目
+library.count.playlists.other = {count} 個播放清單
+
+# Empty states
+library.podcasts.signed_out_title = 登入以查看你的 Podcast
+library.podcasts.signed_out_detail = 你在 YouTube Music 上儲存的 Podcast 會顯示在這裡。請在「設定 → 帳號」中登入；不需要帳號也能從搜尋、首頁和探索開啟節目。
+library.podcasts.empty_title = 還沒有 Podcast
+library.podcasts.empty_detail = 在節目頁面點選「儲存到媒體庫」即可儲存。
+library.empty.no_matches_title = 沒有相符的結果
+library.empty.no_matches_detail = 沒有符合篩選條件的內容。
+library.empty.liked_title = 沒有喜歡的歌曲
+library.empty.liked_detail = 點選任一歌曲上的愛心。登入後，你在 YouTube Music 上的喜歡會同步到這裡。
+library.empty.downloaded_title = 沒有下載項目
+library.empty.downloaded_detail = 在歌曲選單中選擇「下載」，即可將歌曲保存在這部電腦上。
+library.empty.local_title = 沒有本機檔案
+library.empty.local_detail = 在「本機檔案」頁面加入音樂資料夾並進行掃描。
+library.empty.songs_title = 媒體庫中沒有歌曲
+library.empty.songs_detail = 喜歡的歌曲、你加入的歌曲和本機檔案會顯示在這裡。
+library.empty.albums_title = 還沒有專輯
+library.empty.albums_detail = 你的歌曲所屬的專輯，以及在 YouTube Music 上儲存的專輯，會顯示在這裡。
+library.empty.artists_title = 還沒有藝人
+library.empty.artists_detail = 你的歌曲的藝人以及你訂閱的藝人會顯示在這裡。
+library.empty.playlists_title = 還沒有播放清單
+library.empty.playlists_detail = 使用「新增播放清單」建立一個，或登入以同步你的 YouTube Music 播放清單。
+library.load_failed = 無法載入媒體庫
+library.db_unavailable = 無法使用媒體庫資料庫。
+
+# Selection bar
+library.remove_from_library = 從媒體庫移除
+library.unlike = 取消喜歡
+library.delete_downloads = 刪除下載項目
+
+# Album / artist cards and pages
+library.album.save = 儲存專輯
+library.album.remove_saved = 從已儲存的專輯中移除
+library.album.saving = 儲存專輯
+library.artist.subscribed_songs.other = 已訂閱 · {count} 首歌曲
+library.playlist.youtube_songs.other = {count} 首歌曲 · YouTube Music
+
+library.item.songs_listened.other = {count} 首歌曲 · 已收聽 {time}
+library.item.subscribe = 訂閱
+library.item.unsubscribe = 取消訂閱
+library.item.remove_saved = 從已儲存項目中移除
+library.item.open_online = 在 YouTube Music 中開啟
+library.item.empty_detail = 喜歡或加入這位藝人／這張專輯的歌曲，就能在這裡看到。
+
+# Library playlist page
+library.playlist.kind_own = 你的 YouTube Music 播放清單
+library.playlist.kind_saved = 已儲存的 YouTube Music 播放清單
+library.playlist.change_cover = 變更封面…
+library.playlist.rename_title = 重新命名播放清單
+library.playlist.delete_title = 要刪除「{name}」嗎？
+library.playlist.delete_remote = 它也會在 YouTube Music 上被刪除。
+library.playlist.delete_unsave = 它會從你的 YouTube Music 媒體庫中移除。
+library.playlist.delete_local_copy = 僅刪除這部電腦上的副本。
+library.playlist.delete_undo = 此動作無法復原。
+library.playlist.move_up = 上移
+library.playlist.move_down = 下移
+library.playlist.remove_from = 從播放清單移除
+library.playlist.not_found_title = 找不到播放清單
+library.playlist.not_found_detail = 它可能已被刪除。
+library.playlist.empty_title = 此播放清單是空的
+library.playlist.empty_detail = 使用歌曲選單中的「加入播放清單…」來加入歌曲。
+
+# ---- Song lists: select mode
+song_list.select_none = 全部不選
+
+# ---- Local files page
+local_files.prompt_add = 加入
+local_files.prompt_skip = 略過
+local_files.folders_title = 音樂資料夾
+local_files.add_folder = 加入資料夾
+local_files.skip_folder = 略過資料夾
+local_files.skipped_title = 已略過
+local_files.scan.looking = 正在尋找檔案…
+local_files.scan.progress = {done} / {total} 個檔案
+local_files.scanning = 正在掃描…
+local_files.rescan = 重新掃描
+local_files.detail.other = {count} 首歌曲 · 短於 {seconds} 秒的檔案會被略過
+local_files.empty.no_folders_title = 還沒有音樂資料夾
+local_files.empty.no_folders_detail = 加入存放音樂的資料夾（MP3、M4A、FLAC、Ogg、Opus、WAV、AIFF…），然後按「重新掃描」。
+local_files.empty.no_tracks_title = 沒有本機曲目
+local_files.empty.no_tracks_detail = 按「重新掃描」以讀取上方的資料夾。
+
+# ---- Downloads page
+downloads.status.queued = 等待中
+downloads.status.downloading_size = 正在下載 {size}
+downloads.status.done = 完成 · {size}
+downloads.status.preview = 僅試聽片段 · {size}
+downloads.status.failed = 失敗：{error}
+downloads.status.cancelled = 已取消
+downloads.detail.other = {count} 首歌曲 · {size} · 播放快取 {cache} / {limit}
+downloads.play_all = 全部播放
+downloads.clear_finished = 清除已完成
+downloads.show_in_finder = 在 Finder 中顯示
+downloads.unavailable_title = 無法使用下載功能
+downloads.unavailable_detail = 無法開啟下載資料夾（請查看終端機）。
+downloads.previews_note.other = {count} 個下載項目只是試聽片段（僅前約 1 MiB）：它們是在無法取得完整音訊串流時下載的。請刪除後重新下載。
+downloads.section.session = 本次工作階段
+downloads.section.downloaded = 已下載
+downloads.empty_detail = 在歌曲選單中選擇「下載」（或在媒體庫中選取歌曲），即可將歌曲保存在這部電腦上。
+downloads.preview_tag = 試聽
+downloads.delete = 刪除下載項目
+
+# ---- History page
+history.clear.title = 要清除收聽記錄嗎？
+history.clear.detail = 所有播放記錄都會被刪除，播放次數和統計資料將重新計算。你的媒體庫、喜歡和播放清單會保留。
+history.clear.button = 清除記錄
+history.paused = 已暫停收聽記錄（設定 → 隱私權）。
+history.counting = 歌曲收聽滿 30 秒後才會列入計算。
+history.load_failed = 無法載入
+history.empty_title = 還沒有播放記錄
+history.empty_detail = 你收聽的歌曲會依日期分組顯示在這裡。
+history.remove = 從記錄中移除
+history.removing = 從記錄中移除
+history.clearing = 清除記錄
+history.cleared = 已清除收聽記錄
+
+# ---- Stats page
+stats.range.week = 7 天
+stats.range.month = 30 天
+stats.range.quarter = 90 天
+stats.range.year = 今年
+stats.range.all = 所有時間
+stats.subtitle = 根據這部電腦上的收聽記錄。
+stats.load_failed = 無法載入統計資料
+stats.empty_title = 此期間沒有收聽記錄
+stats.empty_detail = 放點音樂吧——歌曲收聽滿 30 秒後才會列入計算。
+stats.tile.listened = 收聽時間
+stats.tile.plays.other = 次播放
+stats.tile.songs.other = 首歌曲
+stats.tile.artists.other = 位藝人
+stats.tile.albums.other = 張專輯
+stats.song_plays.other = {count} 次播放 · {time}
+stats.top_songs = 熱門歌曲
+stats.top_artists = 熱門藝人
+stats.top_albums = 熱門專輯
+stats.by_hour = 依時段
+stats.by_weekday = 依星期
+stats.month_by_month = 依月份
+stats.year_in_music = 年度音樂回顧
+stats.year.title = {year} 年度音樂回顧
+stats.year.subtitle = 你的這一年，根據這部電腦上的收聽記錄。
+stats.year.load_failed = 無法載入
+stats.year.empty_title = 那一年沒有播放記錄
+stats.year.empty_detail = 隨著你的收聽，年度回顧會越來越豐富。
+stats.year.top_song.other = 你最常聽的歌曲 · {count} 次播放
+stats.year.top_artist = 你最常聽的藝人 · {time}
+stats.year.favourite_hour = 你最愛的時段
+stats.year.busiest_day = 收聽最多的一天 · {time}
+
+# ---- Settings → Storage
+settings.storage.files = 檔案
+settings.storage.settings_file = 設定檔：{path}
+settings.storage.settings_not_saved = 設定不會被儲存（沒有設定目錄）
+settings.storage.secrets = 機密資料：{store}
+settings.storage.secrets_loading = 機密資料：載入中…
+settings.storage.library_db = 媒體庫資料庫：{path}
+settings.storage.library_db_unavailable = 媒體庫資料庫：無法使用
+settings.storage.play_cache = 播放快取
+settings.storage.cache_usage = 已使用 {used}，上限 {limit}。最久沒播放的歌曲會最先被移除。
+settings.storage.cache_limit = 快取大小上限
+settings.storage.cache_played = 快取已播放的歌曲
+settings.storage.cache_played_detail = 保留你播放過的內容的副本（會在背景再取得一次）。
+settings.storage.clear_cache_row = 清除播放快取
+settings.storage.clear_cache = 清除快取
+settings.storage.downloads = 下載項目
+settings.storage.downloads_usage = {size}，位於 {path}
+settings.storage.downloads_unavailable = 無法使用下載功能。
+settings.storage.download_folder = 下載資料夾
+settings.storage.download_folder_detail = 下載項目永遠不會被自動移除。
+settings.storage.backup = 備份與回復
+settings.storage.export = 匯出備份
+settings.storage.export_detail = 將媒體庫、播放清單、記錄和設定打包成一個 zip 檔（不含密碼或 Cookie）。
+settings.storage.export_button = 匯出…
+settings.storage.restore = 回復備份
+settings.storage.restore_detail = 取代媒體庫和設定；完成後需要重新啟動。
+settings.storage.restore_button = 回復…
+
+# ---- Settings → Privacy
+settings.privacy.listen_history = 收聽記錄
+settings.privacy.pause_listen = 暫停收聽記錄
+settings.privacy.pause_listen_detail = 不記錄播放；播放記錄和統計資料將停止更新。
+settings.privacy.clear_listen = 清除收聽記錄
+settings.privacy.clear_listen_detail = 刪除這部電腦上的所有播放記錄。
+settings.privacy.clear_button = 清除…
+settings.privacy.clear_listen_confirm = 所有播放記錄都會被刪除；播放次數和統計資料將重新計算。
+settings.privacy.search_history = 搜尋記錄
+settings.privacy.pause_search = 暫停搜尋記錄
+settings.privacy.pause_search_detail = 不記住你送出的搜尋。
+settings.privacy.clear_search = 清除搜尋記錄
+settings.privacy.clear_search_detail = 清除所有已記住的搜尋。
+settings.privacy.note = 記錄保存在這部電腦上的媒體庫資料庫中。播放記錄絕不會回報到你的 YouTube 帳號記錄。
+
+# ---- Backup / restore
+storage.backup_saved = 備份已儲存至 {path}
+storage.backup_failed = 備份失敗：{error}
+storage.restore = 回復
+storage.restore_confirm_title = 要回復此備份嗎？
+storage.restore_confirm_detail = 你的媒體庫、播放清單、記錄和設定將被備份中的內容取代。YouTube Music 登入資訊和其他機密資料會保留。
+storage.restored_title = 已回復備份
+storage.restored_library = 已回復媒體庫。請重新啟動 {app}，讓所有設定生效。
+storage.restored_all = 已回復媒體庫和設定。請重新啟動 {app}，讓所有設定生效。
+storage.restored_settings_skipped = 已回復媒體庫；已略過設定：{error}。請重新啟動 {app}，讓所有設定生效。
+storage.restart_later = 稍後
+storage.restart_now = 立即重新啟動
+storage.restore_failed = 回復失敗：{error}
+storage.cache_cleared = 已清除播放快取
+storage.clearing_search = 清除搜尋記錄
+storage.search_cleared = 已清除搜尋記錄

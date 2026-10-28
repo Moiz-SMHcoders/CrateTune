@@ -1,0 +1,131 @@
+# Settings → Modules (zh-TW).
+
+# ---- Playback source
+modules.source.group = 播放來源
+modules.source.youtube = 僅 YouTube
+modules.source.first = 先模組，再 YouTube
+modules.source.only = 僅模組
+modules.source_note.youtube = 歌曲從 YouTube 播放；不使用已安裝的模組。
+modules.source_note.first.other = 每首歌曲會依由上而下的順序在 {count} 個已啟用的模組中查詢；播放第一個合格的相符結果，否則改用 YouTube。
+modules.source_note.only.other = 歌曲只會從 {count} 個已啟用的模組播放；沒有模組能比對到的歌曲會播放失敗（開啟「略過無法載入的歌曲」時會被略過）。
+modules.source.note = 模組會為你播放的歌曲提供音訊；標題、藝人和你的媒體庫維持不變。播放列和「正在播放」會顯示音訊來源。下載也會使用相同的順序。
+
+# ---- Unavailable
+modules.unavailable = 無法使用模組。
+modules.no_data_dir = 沒有資料目錄；無法使用模組。
+modules.unavailable_error = 無法使用模組：{error}
+
+# ---- Add a module
+modules.add.group = 加入模組
+modules.add.from_file = 從檔案安裝…
+modules.add.from_file_note = 磁碟上的 .arch 套件。
+modules.add.from_url = 從 URL 安裝
+modules.add.catalog = 加入目錄
+modules.add.note = 在你確認之前，會先檢查套件（格式、總和檢查碼、設定、匯出的函式）。沒有預先安裝任何模組或目錄：模組來自其作者，並在沙箱中執行（無法存取檔案，網路經由本應用程式的代理伺服器）。
+modules.url_missing = 請輸入 .arch 套件、描述檔或目錄的 URL。
+modules.catalog_url_missing = 請輸入目錄 URL。
+
+# ---- Progress lines
+modules.busy.saving = 儲存中…
+modules.busy.saving_catalog = 正在儲存目錄…
+modules.busy.checking_package = 正在檢查套件…
+modules.busy.reading_catalog = 正在讀取目錄…
+modules.busy.installing = 安裝中…
+modules.busy.removing = 移除中…
+modules.busy.checking = 檢查中…
+modules.busy.checking_update = 正在檢查更新…
+modules.busy.loading_settings = 正在載入設定…
+modules.busy.saving_settings = 正在儲存設定…
+modules.busy.refreshing = 重新整理中…
+
+# ---- Results
+modules.catalog_added.other = 已加入目錄「{name}」（{count} 個項目）。
+modules.installed_needs_setup = 已安裝 {name}。請填寫它的設定並按「儲存」。
+modules.installed = 已安裝 {name}。
+modules.removed = 已移除模組。
+modules.update_available = 已推出版本 {version}。
+modules.up_to_date = 已是最新版本。
+modules.update_from_file = 從檔案安裝：匯入新套件即可更新。
+modules.settings_read_failed = 無法讀取此模組的設定。
+modules.settings_saved = 已儲存設定。
+modules.catalog_refreshed = 已重新整理目錄。
+modules.diagnostics_copied = 已複製診斷資訊。
+
+# ---- Review card
+modules.review.group = 檢閱
+modules.review.replaces = 將更新已安裝的版本 {version}；其設定會保留。
+modules.review.new = 全新安裝，會加到播放順序的最後。
+modules.review.needs = 需要：{settings}。
+modules.review.homepage = 首頁：{url}
+modules.review.license = 授權條款：{license}
+modules.review.sha256 = 套件 SHA-256 {hash}
+
+# ---- Installed modules
+modules.installed_group = 已安裝（{count}）
+modules.nothing_installed = 尚未安裝任何模組。
+modules.action.settings = 設定
+modules.action.check = 檢查
+modules.action.check_update = 檢查更新
+modules.action.uninstall = 解除安裝
+modules.action.confirm_remove = 確定移除？
+modules.action.higher = 提高優先順序
+modules.action.lower = 降低優先順序
+modules.needs_configuration = 需要設定：{settings}
+modules.settings_heading = 設定
+modules.no_settings = 此模組沒有設定項目。
+modules.field.placeholder_required = 必填
+modules.field.placeholder_optional = 選填
+modules.field.not_a_number = {field} 必須是數字。
+modules.field.required = {field} 為必填。
+modules.field.invalid = {field} 的值無效。
+
+# ---- Diagnostics
+modules.diagnostics = 診斷
+modules.diagnostic_line = {label}（{when}）：{summary}
+modules.diagnostic_track = {line} — {track}
+modules.diag.last_song = 上一首歌曲
+modules.diag.check = 檢查
+modules.diag.playback = 播放
+modules.diag.not_checked = 尚未檢查。
+modules.diag.not_used = 尚未用於任何歌曲。
+modules.installed_line_file = 安裝於 {when} · 套件 {hash} · 來自檔案
+modules.installed_line_url = 安裝於 {when} · 套件 {hash} · 來自 {url}
+modules.log_empty = 記錄檔是空的。
+modules.copy_diagnostics = 複製診斷資訊
+modules.clear_log = 清除記錄檔
+
+modules.status.ready = 就緒
+modules.status.configuration = 需要設定
+modules.status.unavailable = 無法使用服務
+modules.status.failed = 失敗
+modules.status.no_results = 沒有結果
+modules.status.no_match = 沒有合格的相符結果（{reason}）
+modules.status.resolved = 已解析
+modules.status.timeout = 逾時
+modules.rejection.metadata = 中繼資料
+modules.rejection.title = 標題
+modules.rejection.artist = 藝人
+modules.rejection.recording = 錄音版本
+modules.rejection.duration = 長度
+modules.rejection.explicit = 不雅內容
+modules.phase.search = 於搜尋階段
+modules.phase.match = 於比對階段
+modules.phase.stream = 於串流階段
+modules.candidates.other = {count} 個候選
+modules.elapsed_ms = {ms} 毫秒
+
+modules.failure.invalid_document = 模組文件無效
+modules.failure.unsupported = 本應用程式不支援
+modules.failure.invalid_configuration = 模組設定不完整或無效
+modules.failure.network = 網路錯誤
+modules.failure.timeout = 逾時
+modules.failure.execution = 模組執行失敗
+modules.failure.integrity = 總和檢查碼不符
+modules.error_with_code = {error}（{code}）
+
+# ---- Catalogs
+modules.catalogs = 目錄
+modules.catalog_line.other = {url} · {count} 個項目 · 重新整理於 {when}
+modules.remove_catalog = 移除目錄
+modules.entry.installed = 已安裝
+modules.entry.not_a_module = 不是模組

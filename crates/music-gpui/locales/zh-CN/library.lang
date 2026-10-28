@@ -1,0 +1,234 @@
+# Library pages, Storage and Privacy settings, backup / restore (zh-CN).
+
+# ---- Library page
+library.sort.label = 排序
+library.sort.date_added = 添加日期
+library.sort.title = 标题
+library.sort.artist = 艺人
+library.sort.play_count = 播放次数
+library.sort.listening_time = 收听时长
+library.sort.last_played = 上次播放
+library.sort.year = 年份
+library.sort.song_count = 歌曲数
+library.sort.name = 名称
+library.sort.last_updated = 上次更新
+library.sort.date_created = 创建日期
+
+library.filter_placeholder = 筛选
+library.saved_only = 仅已保存
+library.subscribed_only = 仅已订阅
+library.new_playlist = 新建播放列表
+
+library.detail_signed_in = {summary} · 已登录 YouTube Music
+library.count.albums.other = {count} 张专辑
+library.count.artists.other = {count} 位艺人
+library.count.shows.other = {count} 个节目
+library.count.playlists.other = {count} 个播放列表
+
+# Empty states
+library.podcasts.signed_out_title = 登录后查看你的播客
+library.podcasts.signed_out_detail = 你在 YouTube Music 上保存的播客会显示在这里。请在“设置 → 账号”中登录；无需账号也可以从搜索、首页和探索中打开节目。
+library.podcasts.empty_title = 还没有播客
+library.podcasts.empty_detail = 在节目页面点按“保存到媒体库”即可保存。
+library.empty.no_matches_title = 无匹配结果
+library.empty.no_matches_detail = 没有符合筛选条件的内容。
+library.empty.liked_title = 没有喜欢的歌曲
+library.empty.liked_detail = 点按任意歌曲上的爱心。登录后，你在 YouTube Music 上的喜欢会同步到这里。
+library.empty.downloaded_title = 没有已下载的内容
+library.empty.downloaded_detail = 在歌曲菜单中选择“下载”，即可将其保存在这台电脑上。
+library.empty.local_title = 没有本地文件
+library.empty.local_detail = 在“本地文件”页面添加音乐文件夹并进行扫描。
+library.empty.songs_title = 媒体库中没有歌曲
+library.empty.songs_detail = 喜欢的歌曲、你添加的歌曲和本地文件会显示在这里。
+library.empty.albums_title = 还没有专辑
+library.empty.albums_detail = 你的歌曲所属的专辑，以及在 YouTube Music 上保存的专辑，会显示在这里。
+library.empty.artists_title = 还没有艺人
+library.empty.artists_detail = 你的歌曲的艺人以及你订阅的艺人会显示在这里。
+library.empty.playlists_title = 还没有播放列表
+library.empty.playlists_detail = 使用“新建播放列表”创建一个，或登录以同步你的 YouTube Music 播放列表。
+library.load_failed = 无法加载媒体库
+library.db_unavailable = 媒体库数据库不可用。
+
+# Selection bar
+library.remove_from_library = 从媒体库移除
+library.unlike = 取消喜欢
+library.delete_downloads = 删除下载
+
+# Album / artist cards and pages
+library.album.save = 保存专辑
+library.album.remove_saved = 从已保存的专辑中移除
+library.album.saving = 保存专辑
+library.artist.subscribed_songs.other = 已订阅 · {count} 首歌曲
+library.playlist.youtube_songs.other = {count} 首歌曲 · YouTube Music
+
+library.item.songs_listened.other = {count} 首歌曲 · 已收听 {time}
+library.item.subscribe = 订阅
+library.item.unsubscribe = 取消订阅
+library.item.remove_saved = 从已保存中移除
+library.item.open_online = 在 YouTube Music 中打开
+library.item.empty_detail = 喜欢或添加该艺人 / 该专辑的歌曲，即可在这里看到它们。
+
+# Library playlist page
+library.playlist.kind_own = 你的 YouTube Music 播放列表
+library.playlist.kind_saved = 已保存的 YouTube Music 播放列表
+library.playlist.change_cover = 更改封面…
+library.playlist.rename_title = 重命名播放列表
+library.playlist.delete_title = 要删除“{name}”吗？
+library.playlist.delete_remote = 它也会在 YouTube Music 上被删除。
+library.playlist.delete_unsave = 它会从你的 YouTube Music 媒体库中移除。
+library.playlist.delete_local_copy = 仅删除这台电脑上的副本。
+library.playlist.delete_undo = 此操作无法撤销。
+library.playlist.move_up = 上移
+library.playlist.move_down = 下移
+library.playlist.remove_from = 从播放列表移除
+library.playlist.not_found_title = 找不到播放列表
+library.playlist.not_found_detail = 它可能已被删除。
+library.playlist.empty_title = 此播放列表为空
+library.playlist.empty_detail = 使用歌曲菜单中的“添加到播放列表…”来添加歌曲。
+
+# ---- Song lists: select mode
+song_list.select_none = 全不选
+
+# ---- Local files page
+local_files.prompt_add = 添加
+local_files.prompt_skip = 跳过
+local_files.folders_title = 音乐文件夹
+local_files.add_folder = 添加文件夹
+local_files.skip_folder = 跳过文件夹
+local_files.skipped_title = 已跳过
+local_files.scan.looking = 正在查找文件…
+local_files.scan.progress = {done} / {total} 个文件
+local_files.scanning = 正在扫描…
+local_files.rescan = 重新扫描
+local_files.detail.other = {count} 首歌曲 · 短于 {seconds} 秒的文件会被跳过
+local_files.empty.no_folders_title = 还没有音乐文件夹
+local_files.empty.no_folders_detail = 添加存放音乐的文件夹（MP3、M4A、FLAC、Ogg、Opus、WAV、AIFF…），然后点按“重新扫描”。
+local_files.empty.no_tracks_title = 没有本地曲目
+local_files.empty.no_tracks_detail = 点按“重新扫描”以读取上方的文件夹。
+
+# ---- Downloads page
+downloads.status.queued = 排队中
+downloads.status.downloading_size = 正在下载 {size}
+downloads.status.done = 完成 · {size}
+downloads.status.preview = 仅试听片段 · {size}
+downloads.status.failed = 失败：{error}
+downloads.status.cancelled = 已取消
+downloads.detail.other = {count} 首歌曲 · {size} · 播放缓存 {cache} / {limit}
+downloads.play_all = 全部播放
+downloads.clear_finished = 清除已完成
+downloads.show_in_finder = 在访达中显示
+downloads.unavailable_title = 下载不可用
+downloads.unavailable_detail = 无法打开下载文件夹（请查看终端）。
+downloads.previews_note.other = {count} 个下载只是试听片段（仅前约 1 MiB）：它们是在完整音频流不可用时下载的。请删除后重新下载。
+downloads.section.session = 本次会话
+downloads.section.downloaded = 已下载
+downloads.empty_detail = 在歌曲菜单中选择“下载”（或在媒体库中选择歌曲），即可将其保存在这台电脑上。
+downloads.preview_tag = 试听
+downloads.delete = 删除下载
+
+# ---- History page
+history.clear.title = 要清除收听历史吗？
+history.clear.detail = 所有播放记录都将被删除，播放次数和统计数据将重新开始。你的媒体库、喜欢和播放列表会保留。
+history.clear.button = 清除历史记录
+history.paused = 收听历史已暂停（设置 → 隐私）。
+history.counting = 歌曲收听满 30 秒后才会计入。
+history.load_failed = 无法加载
+history.empty_title = 还没有播放记录
+history.empty_detail = 你收听的歌曲会按日期分组显示在这里。
+history.remove = 从历史记录中移除
+history.removing = 从历史记录中移除
+history.clearing = 清除历史记录
+history.cleared = 收听历史已清除
+
+# ---- Stats page
+stats.range.week = 7 天
+stats.range.month = 30 天
+stats.range.quarter = 90 天
+stats.range.year = 今年
+stats.range.all = 全部时间
+stats.subtitle = 基于这台电脑上的收听历史。
+stats.load_failed = 无法加载统计数据
+stats.empty_title = 此时间范围内没有收听记录
+stats.empty_detail = 放点音乐吧——歌曲收听满 30 秒后才会计入。
+stats.tile.listened = 收听时长
+stats.tile.plays.other = 次播放
+stats.tile.songs.other = 首歌曲
+stats.tile.artists.other = 位艺人
+stats.tile.albums.other = 张专辑
+stats.song_plays.other = {count} 次播放 · {time}
+stats.top_songs = 热门歌曲
+stats.top_artists = 热门艺人
+stats.top_albums = 热门专辑
+stats.by_hour = 按时段
+stats.by_weekday = 按星期
+stats.month_by_month = 按月
+stats.year_in_music = 年度音乐回顾
+stats.year.title = {year} 年度音乐回顾
+stats.year.subtitle = 你的这一年，基于这台电脑上的收听历史。
+stats.year.load_failed = 无法加载
+stats.year.empty_title = 那一年没有播放记录
+stats.year.empty_detail = 随着你的收听，年度回顾会逐渐丰富起来。
+stats.year.top_song.other = 你最常听的歌曲 · {count} 次播放
+stats.year.top_artist = 你最常听的艺人 · {time}
+stats.year.favourite_hour = 你最爱的时段
+stats.year.busiest_day = 收听最多的一天 · {time}
+
+# ---- Settings → Storage
+settings.storage.files = 文件
+settings.storage.settings_file = 设置文件：{path}
+settings.storage.settings_not_saved = 设置不会被保存（没有配置目录）
+settings.storage.secrets = 密钥：{store}
+settings.storage.secrets_loading = 密钥：正在加载…
+settings.storage.library_db = 媒体库数据库：{path}
+settings.storage.library_db_unavailable = 媒体库数据库：不可用
+settings.storage.play_cache = 播放缓存
+settings.storage.cache_usage = 已使用 {used}，上限 {limit}。最久未播放的歌曲会最先被移除。
+settings.storage.cache_limit = 缓存大小上限
+settings.storage.cache_played = 缓存已播放的歌曲
+settings.storage.cache_played_detail = 保留你播放过的内容的副本（会在后台再获取一次）。
+settings.storage.clear_cache_row = 清除播放缓存
+settings.storage.clear_cache = 清除缓存
+settings.storage.downloads = 下载
+settings.storage.downloads_usage = {size}，位于 {path}
+settings.storage.downloads_unavailable = 下载功能不可用。
+settings.storage.download_folder = 下载文件夹
+settings.storage.download_folder_detail = 下载内容永远不会被自动移除。
+settings.storage.backup = 备份与恢复
+settings.storage.export = 导出备份
+settings.storage.export_detail = 将媒体库、播放列表、历史记录和设置打包为一个 zip 文件（不含密码或 Cookie）。
+settings.storage.export_button = 导出…
+settings.storage.restore = 恢复备份
+settings.storage.restore_detail = 替换媒体库和设置；完成后需要重启。
+settings.storage.restore_button = 恢复…
+
+# ---- Settings → Privacy
+settings.privacy.listen_history = 收听历史
+settings.privacy.pause_listen = 暂停收听历史
+settings.privacy.pause_listen_detail = 不记录播放；历史记录和统计将停止更新。
+settings.privacy.clear_listen = 清除收听历史
+settings.privacy.clear_listen_detail = 删除这台电脑上的所有播放记录。
+settings.privacy.clear_button = 清除…
+settings.privacy.clear_listen_confirm = 所有播放记录都将被删除；播放次数和统计数据将重新开始。
+settings.privacy.search_history = 搜索历史
+settings.privacy.pause_search = 暂停搜索历史
+settings.privacy.pause_search_detail = 不记住你提交的搜索。
+settings.privacy.clear_search = 清除搜索历史
+settings.privacy.clear_search_detail = 清除所有已记住的搜索。
+settings.privacy.note = 历史记录保存在这台电脑上的媒体库数据库中。播放记录永远不会上报到你的 YouTube 账号历史记录。
+
+# ---- Backup / restore
+storage.backup_saved = 备份已保存到 {path}
+storage.backup_failed = 备份失败：{error}
+storage.restore = 恢复
+storage.restore_confirm_title = 要恢复此备份吗？
+storage.restore_confirm_detail = 你的媒体库、播放列表、历史记录和设置将被备份中的内容替换。YouTube Music 登录信息和其他密钥会保留。
+storage.restored_title = 备份已恢复
+storage.restored_library = 媒体库已恢复。请重启 {app} 以使所有设置生效。
+storage.restored_all = 媒体库和设置已恢复。请重启 {app} 以使所有设置生效。
+storage.restored_settings_skipped = 媒体库已恢复；已跳过设置：{error}。请重启 {app} 以使所有设置生效。
+storage.restart_later = 稍后
+storage.restart_now = 立即重启
+storage.restore_failed = 恢复失败：{error}
+storage.cache_cleared = 播放缓存已清除
+storage.clearing_search = 清除搜索历史
+storage.search_cleared = 搜索历史已清除

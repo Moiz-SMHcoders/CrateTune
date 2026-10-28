@@ -1,0 +1,131 @@
+# Settings → Modules (zh-CN).
+
+# ---- Playback source
+modules.source.group = 播放来源
+modules.source.youtube = 仅 YouTube
+modules.source.first = 优先模块，其次 YouTube
+modules.source.only = 仅模块
+modules.source_note.youtube = 歌曲从 YouTube 播放；不使用已安装的模块。
+modules.source_note.first.other = 每首歌曲会按从上到下的顺序在 {count} 个已启用的模块中查找；播放第一个合格的匹配结果，否则使用 YouTube。
+modules.source_note.only.other = 歌曲只从 {count} 个已启用的模块播放；没有模块能匹配的歌曲会播放失败（开启“跳过播放失败的歌曲”时会被跳过）。
+modules.source.note = 模块为你播放的歌曲提供音频；标题、艺人和你的媒体库保持不变。播放栏和“正在播放”会显示音频来源。下载也使用相同的顺序。
+
+# ---- Unavailable
+modules.unavailable = 模块不可用。
+modules.no_data_dir = 没有数据目录；模块不可用。
+modules.unavailable_error = 模块不可用：{error}
+
+# ---- Add a module
+modules.add.group = 添加模块
+modules.add.from_file = 从文件安装…
+modules.add.from_file_note = 磁盘上的 .arch 包。
+modules.add.from_url = 从 URL 安装
+modules.add.catalog = 添加目录
+modules.add.note = 在你确认之前，会先检查包（格式、校验和、设置、导出函数）。没有预装任何模块或目录：模块来自其作者，并在沙盒中运行（无法访问文件，网络经由本应用的代理）。
+modules.url_missing = 请输入 .arch 包、描述文件或目录的 URL。
+modules.catalog_url_missing = 请输入目录 URL。
+
+# ---- Progress lines
+modules.busy.saving = 正在保存…
+modules.busy.saving_catalog = 正在保存目录…
+modules.busy.checking_package = 正在检查包…
+modules.busy.reading_catalog = 正在读取目录…
+modules.busy.installing = 正在安装…
+modules.busy.removing = 正在移除…
+modules.busy.checking = 正在检查…
+modules.busy.checking_update = 正在检查更新…
+modules.busy.loading_settings = 正在加载设置…
+modules.busy.saving_settings = 正在保存设置…
+modules.busy.refreshing = 正在刷新…
+
+# ---- Results
+modules.catalog_added.other = 已添加目录“{name}”（{count} 个条目）。
+modules.installed_needs_setup = 已安装 {name}。请填写其设置并点按“保存”。
+modules.installed = 已安装 {name}。
+modules.removed = 模块已移除。
+modules.update_available = 版本 {version} 现已推出。
+modules.up_to_date = 已是最新版本。
+modules.update_from_file = 从文件安装：导入新包即可更新。
+modules.settings_read_failed = 无法读取此模块的设置。
+modules.settings_saved = 设置已保存。
+modules.catalog_refreshed = 目录已刷新。
+modules.diagnostics_copied = 诊断信息已复制。
+
+# ---- Review card
+modules.review.group = 检查
+modules.review.replaces = 将更新已安装的版本 {version}；其设置会保留。
+modules.review.new = 全新安装，将添加到播放顺序的末尾。
+modules.review.needs = 需要：{settings}。
+modules.review.homepage = 主页：{url}
+modules.review.license = 许可证：{license}
+modules.review.sha256 = 包 SHA-256 {hash}
+
+# ---- Installed modules
+modules.installed_group = 已安装（{count}）
+modules.nothing_installed = 尚未安装任何模块。
+modules.action.settings = 设置
+modules.action.check = 检查
+modules.action.check_update = 检查更新
+modules.action.uninstall = 卸载
+modules.action.confirm_remove = 确定移除？
+modules.action.higher = 提高优先级
+modules.action.lower = 降低优先级
+modules.needs_configuration = 需要配置：{settings}
+modules.settings_heading = 设置
+modules.no_settings = 此模块没有设置项。
+modules.field.placeholder_required = 必填
+modules.field.placeholder_optional = 可选
+modules.field.not_a_number = {field} 必须是数字。
+modules.field.required = {field} 为必填项。
+modules.field.invalid = {field} 的值无效。
+
+# ---- Diagnostics
+modules.diagnostics = 诊断
+modules.diagnostic_line = {label}（{when}）：{summary}
+modules.diagnostic_track = {line} — {track}
+modules.diag.last_song = 上一首歌曲
+modules.diag.check = 检查
+modules.diag.playback = 播放
+modules.diag.not_checked = 尚未检查。
+modules.diag.not_used = 尚未用于任何歌曲。
+modules.installed_line_file = 安装于 {when} · 包 {hash} · 来自文件
+modules.installed_line_url = 安装于 {when} · 包 {hash} · 来自 {url}
+modules.log_empty = 日志为空。
+modules.copy_diagnostics = 复制诊断信息
+modules.clear_log = 清除日志
+
+modules.status.ready = 就绪
+modules.status.configuration = 需要配置
+modules.status.unavailable = 服务不可用
+modules.status.failed = 失败
+modules.status.no_results = 没有结果
+modules.status.no_match = 没有合格的匹配结果（{reason}）
+modules.status.resolved = 已解析
+modules.status.timeout = 超时
+modules.rejection.metadata = 元数据
+modules.rejection.title = 标题
+modules.rejection.artist = 艺人
+modules.rejection.recording = 录音版本
+modules.rejection.duration = 时长
+modules.rejection.explicit = 露骨内容
+modules.phase.search = 在搜索阶段
+modules.phase.match = 在匹配阶段
+modules.phase.stream = 在串流阶段
+modules.candidates.other = {count} 个候选
+modules.elapsed_ms = {ms} 毫秒
+
+modules.failure.invalid_document = 模块文档无效
+modules.failure.unsupported = 本应用不支持
+modules.failure.invalid_configuration = 模块设置不完整或无效
+modules.failure.network = 网络错误
+modules.failure.timeout = 超时
+modules.failure.execution = 模块运行失败
+modules.failure.integrity = 校验和不匹配
+modules.error_with_code = {error}（{code}）
+
+# ---- Catalogs
+modules.catalogs = 目录
+modules.catalog_line.other = {url} · {count} 个条目 · 刷新于 {when}
+modules.remove_catalog = 移除目录
+modules.entry.installed = 已安装
+modules.entry.not_a_module = 不是模块

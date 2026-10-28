@@ -1,0 +1,151 @@
+# Shared strings (zh-TW).
+
+locale.native_name = 繁體中文
+
+# ---- Actions
+common.play = 播放
+common.pause = 暫停
+common.shuffle = 隨機播放
+common.radio = 電台
+common.start_radio = 開啟電台
+common.play_next = 下一首播放
+common.add_to_queue = 加入佇列
+common.add_to_playlist = 加入播放清單…
+common.like = 喜歡
+common.remove_from_liked = 從喜歡的歌曲中移除
+common.download = 下載
+common.remove_download = 移除下載項目
+common.go_to_artist = 前往藝人
+common.go_to_album = 前往專輯
+common.open = 開啟
+common.cancel = 取消
+common.close = 關閉
+common.retry = 重試
+common.remove = 移除
+common.delete = 刪除
+common.clear = 清除
+common.save = 儲存
+common.apply = 套用
+common.reset = 重設
+common.done = 完成
+common.copy = 複製
+common.rename = 重新命名
+common.refresh = 重新整理
+common.install = 安裝
+common.update = 更新
+common.import = 匯入
+common.search = 搜尋
+common.search_placeholder = 搜尋…
+common.see_all = 查看全部
+common.load_more = 載入更多
+common.show_more = 顯示更多
+common.back = 返回
+common.next = 下一步
+common.previous = 上一首
+common.connect = 連線
+common.disconnect = 中斷連線
+common.sign_in = 登入
+common.sign_out = 登出
+common.select = 選取
+common.select_all = 全選
+common.settings = 設定
+
+# ---- States
+common.loading = 載入中…
+common.saving = 儲存中…
+common.downloading = 下載中…
+common.off = 關閉
+common.on = 開啟
+common.none = 無
+common.custom = 自訂
+common.automatic = 自動
+common.not_playing = 未在播放
+common.not_connected = 未連線
+common.nothing_here = 這裡什麼都沒有
+
+# ---- Things
+common.song = 歌曲
+common.video = 影片
+common.artist = 藝人
+common.album = 專輯
+common.playlist = 播放清單
+common.podcast = Podcast
+common.episode = 單集
+common.queue = 佇列
+common.now_playing = 正在播放
+common.youtube_music = YouTube Music
+
+common.songs.other = {count} 首歌曲
+common.plays.other = {count} 次播放
+common.selected.other = 已選取 {count} 項
+
+# ---- Sidebar
+nav.home = 首頁
+nav.explore = 探索
+nav.charts = 排行榜
+nav.moods = 心情與曲風
+nav.new_releases = 最新發行
+nav.recognize = 辨識歌曲
+nav.library_group = 媒體庫
+nav.library = 媒體庫
+nav.history = 播放記錄
+nav.stats = 統計資料
+nav.downloads = 下載項目
+nav.local_files = 本機檔案
+nav.import = 匯入與匯出
+nav.together = 一起聽
+nav.settings = 設定
+
+# ---- Dates
+date.full = {year}年{month_num}月{day}日
+date.today = 今天
+date.yesterday = 昨天
+date.month_in_date.1 = 1月
+date.month_in_date.2 = 2月
+date.month_in_date.3 = 3月
+date.month_in_date.4 = 4月
+date.month_in_date.5 = 5月
+date.month_in_date.6 = 6月
+date.month_in_date.7 = 7月
+date.month_in_date.8 = 8月
+date.month_in_date.9 = 9月
+date.month_in_date.10 = 10月
+date.month_in_date.11 = 11月
+date.month_in_date.12 = 12月
+date.month_short.1 = 1月
+date.month_short.2 = 2月
+date.month_short.3 = 3月
+date.month_short.4 = 4月
+date.month_short.5 = 5月
+date.month_short.6 = 6月
+date.month_short.7 = 7月
+date.month_short.8 = 8月
+date.month_short.9 = 9月
+date.month_short.10 = 10月
+date.month_short.11 = 11月
+date.month_short.12 = 12月
+date.weekday_short.1 = 週一
+date.weekday_short.2 = 週二
+date.weekday_short.3 = 週三
+date.weekday_short.4 = 週四
+date.weekday_short.5 = 週五
+date.weekday_short.6 = 週六
+date.weekday_short.7 = 週日
+
+# ---- Durations and relative times
+time.just_now = 剛剛
+time.seconds_ago.other = {count} 秒前
+time.minutes_ago.other = {count} 分鐘前
+time.hours_ago.other = {count} 小時前
+time.days_ago.other = {count} 天前
+time.hours_minutes = {hours} 小時 {minutes} 分鐘
+time.minutes = {minutes} 分鐘
+time.seconds = {seconds} 秒
+
+# ---- File sizes
+units.size = {value} {unit}
+units.b = B
+units.kb = KB
+units.mb = MB
+units.gb = GB
+units.tb = TB

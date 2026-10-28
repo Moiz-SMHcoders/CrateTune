@@ -1,0 +1,99 @@
+# Integrations: SponsorBlock, Chromecast, AI content filter, import / export (zh-CN).
+
+# ---- SponsorBlock: segment categories
+sponsorblock.category.music_offtopic = 非音乐部分
+sponsorblock.category.sponsor = 赞助广告
+sponsorblock.category.intro = 过场 / 开场
+sponsorblock.category.outro = 片尾 / 鸣谢
+sponsorblock.category.selfpromo = 自我推广
+sponsorblock.category.interaction = 互动提醒
+sponsorblock.category.preview = 预览 / 回顾
+sponsorblock.category.filler = 无关闲聊
+sponsorblock.category.hook = 引子 / 问候
+sponsorblock.category_in_chip.music_offtopic = 非音乐部分
+sponsorblock.category_in_chip.sponsor = 赞助广告
+sponsorblock.category_in_chip.intro = 过场 / 开场
+sponsorblock.category_in_chip.outro = 片尾 / 鸣谢
+sponsorblock.category_in_chip.selfpromo = 自我推广
+sponsorblock.category_in_chip.interaction = 互动提醒
+sponsorblock.category_in_chip.preview = 预览 / 回顾
+sponsorblock.category_in_chip.filler = 无关闲聊
+sponsorblock.category_in_chip.hook = 引子 / 问候
+sponsorblock.toast.skipped = 已跳过：{category}（{seconds} 秒）
+sponsorblock.chip.skip = 跳过{category}（{seconds} 秒）
+sponsorblock.chip.tooltip = SponsorBlock：跳到此片段的结尾
+
+# ---- AI content filter: categories
+ai_filter.category.explicit = 露骨歌词
+ai_filter.category.ai_generated = AI 生成的音乐
+ai_filter.category.holiday = 节日音乐
+ai_filter.category.children = 儿童音乐
+ai_filter.category.noise = 助眠音效与白噪音
+ai_filter.category.sped_up = 加速 / 降速版
+ai_filter.category.covers = 翻唱与卡拉 OK
+ai_filter.category.live = 现场录音
+
+# ---- Chromecast
+cast.casting_to = 正在投放到 {device}
+cast.connecting_to = 正在连接 {device}…
+cast.tooltip = 投放到设备
+cast.menu.title = 投放到
+cast.menu.searching = 正在搜索 Cast 设备…
+cast.menu.none_found = 未找到 Cast 设备
+cast.menu.search_again = 重新搜索
+cast.stop = 停止投放
+cast.error.disconnected = Cast 设备已断开连接
+cast.error.scan_failed = 无法搜索设备：{error}
+cast.error.connect_failed = 无法连接到 {device}：{error}
+
+# ---- Import: sources and progress
+import.source.spotify_playlist = Spotify 播放列表
+import.source.spotify_liked = Spotify 喜欢的歌曲
+import.error.connect_spotify = 请在“设置 → Spotify 导入”中连接 Spotify。
+import.error.connect_spotify_first = 请先在“设置 → Spotify 导入”中连接 Spotify。
+import.error.not_spotify_link = 这不是 Spotify 播放列表链接或 ID。
+import.stage.reading = 正在读取
+import.stage.reading_playlist = 正在读取播放列表
+import.stage.reading_liked = 正在读取喜欢的歌曲
+import.stage.matching = 正在匹配
+import.liked_playlist_name = Spotify 上喜欢的歌曲
+import.cancelled = 已取消
+import.nothing_to_save = 没有可保存的内容：未找到任何歌曲。
+import.exporting = 导出播放列表
+import.exported.other = 已将 {count} 首歌曲导出到 {path}
+
+# ---- Import & export page
+import.page.subtitle = 将 Spotify 或文件中的播放列表导入媒体库，或将它们导出到别处。
+import.file.title = 从文件导入
+import.file.description = Exportify CSV（Spotify）、M3U / M3U8，或从这里导出的 CSV / JSON。
+import.file.choose = 选择文件…
+import.spotify.title = 从 Spotify 导入
+import.spotify.connect_hint = 连接你的 Spotify 账号（使用你自己的免费开发者 Client ID），即可导入你的播放列表和喜欢的歌曲。
+import.spotify.set_up = 设置 Spotify…
+import.spotify.signed_in = 已登录为 {user}。
+import.spotify.liked = 喜欢的歌曲
+import.spotify.show_playlists = 显示我的播放列表
+import.spotify.playlist_meta.other = {owner} · {count} 首歌曲
+import.spotify.playlist_meta_unknown = {owner} · ? 首歌曲
+import.job.progress = {stage} · {done} / {total}
+import.job.progress_count = {stage} · {done}
+import.job.found.other = 已找到 {count} 首
+import.job.not_found.other = 未找到 {count} 首
+import.job.saved_as = 已保存为“{name}”
+import.job.save.other = 将 {count} 首歌曲保存为播放列表
+import.job.open_playlists = 打开播放列表
+import.job.name_placeholder = 播放列表名称
+import.guess.best = 最佳猜测：{artists} — {title}（{percent}%）
+import.guess.search_failed = 搜索失败：{error}
+import.guess.no_results = 没有结果
+import.guess.using = 已采用猜测
+import.guess.use = 采用猜测
+import.guess.search_tooltip = 搜索 YouTube Music
+import.not_found.title = 未找到
+import.not_found.subtitle = 接受最佳猜测，或自行搜索并添加歌曲。
+import.found.title = 在 YouTube Music 上找到
+import.found.first = 前 {shown} 首，共 {total} 首
+import.export.title = 导出播放列表
+import.export.subtitle = CSV 和 M3U 可在其他播放器和电子表格中打开；JSON 会保留全部信息，便于在这里重新导入。
+import.export.empty = 媒体库中还没有播放列表。
+import.export.from_youtube_music = {songs} · YouTube Music

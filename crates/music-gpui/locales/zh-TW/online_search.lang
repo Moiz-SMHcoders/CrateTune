@@ -1,0 +1,35 @@
+# The search page (zh-TW).
+
+search.title = 搜尋
+search.query_title = 「{query}」
+search.searching = 搜尋中…
+
+search.tab.all = 全部
+search.tab.songs = 歌曲
+search.tab.videos = 影片
+search.tab.albums = 專輯
+search.tab.artists = 藝人
+search.tab.community_playlists = 社群播放清單
+search.tab.featured_playlists = 精選播放清單
+search.tab.podcasts = Podcast
+search.tab.episodes = 單集
+
+search.tab_empty.songs = 沒有歌曲
+search.tab_empty.videos = 沒有影片
+search.tab_empty.albums = 沒有專輯
+search.tab_empty.artists = 沒有藝人
+search.tab_empty.community_playlists = 沒有社群播放清單
+search.tab_empty.featured_playlists = 沒有精選播放清單
+search.tab_empty.podcasts = 沒有 Podcast
+search.tab_empty.episodes = 沒有單集
+search.tab_empty.detail = 試試其他類別或搜尋字詞。
+
+search.correction.applied = 顯示 {corrected} 的結果 · 改為搜尋 {original}
+search.correction.suggested = 你要找的是不是 {corrected}？
+
+search.top_result = 最佳結果
+search.empty.title = 沒有結果
+search.empty.detail = 試試其他搜尋字詞，或檢查拼字。
+
+search.start.title = 搜尋 YouTube Music
+search.start.detail = 在搜尋欄位（⌘F）中輸入歌曲、藝人、專輯或播放清單，然後按 Enter 鍵。

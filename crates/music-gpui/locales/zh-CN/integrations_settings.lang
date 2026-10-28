@@ -1,0 +1,141 @@
+# Settings sections of the integrations (zh-CN).
+
+# ---- Shared
+settings.integrations.connected_as = 已连接为 {user}
+
+# ---- Last.fm / ListenBrainz
+settings.integrations.lastfm_approve = 请在浏览器中批准本应用，然后点按“完成”。
+settings.integrations.finish = 完成
+settings.integrations.forget_key = 忘记密钥
+settings.integrations.api_key = API 密钥
+settings.integrations.shared_secret = 共享密钥（Shared secret）
+settings.integrations.checking_token = 正在检查令牌…
+settings.integrations.validate = 验证
+settings.integrations.user_token = 用户令牌
+
+# ---- Discord
+settings.integrations.discord_title = Discord Rich Presence
+settings.integrations.discord_enter_id = 请输入你的 Discord 应用 ID。
+settings.integrations.discord_connected = 已连接到 Discord
+settings.integrations.discord_unreachable = 无法连接 Discord：{error}
+settings.integrations.discord_waiting = 正在等待播放…
+settings.integrations.application_id = 应用 ID
+discord.activity.title = 活动
+discord.activity.type = 类型
+discord.activity.name = 名称
+discord.activity.details = 详情
+discord.activity.state = 状态
+discord.activity.placeholders_note = 占位符：{title}、{artist}、{album}。名称留空时使用 Discord 应用的名称。
+discord.activity.large_image = 大图
+discord.activity.small_image = 小图
+discord.activity.button = 按钮 {number}
+discord.activity.label = 标签
+discord.activity.url = URL
+discord.activity.show_paused = 暂停时也显示
+discord.activity.show_paused_desc = 播放暂停时保留活动状态（不显示播放时间）。
+discord.activity.custom_note = 自定义图片可以是你的 Discord 应用的资源键或图片 URL。按钮仅对他人可见，你自己看不到。
+
+# ---- Scrobble rules
+scrobble.rules.title = 歌曲何时计入
+scrobble.rules.played = 已播放
+scrobble.rules.or_at_most = …或最多
+scrobble.rules.ignore_under = 忽略短于以下时长的歌曲
+scrobble.rules.percent = {percent}%
+scrobble.rules.note = Last.fm 的规则是播放 50% 或 4 分钟，且歌曲长于 30 秒。适用于 Last.fm 和 ListenBrainz。
+scrobble.errors.other = Scrobble 错误（{count}）
+settings.integrations.secrets = 密钥：{store}
+settings.integrations.secrets_loading = 密钥：正在加载…
+settings.integrations.settings_path = 设置：{path}
+settings.integrations.not_saved = 设置不会被保存（没有配置目录）
+
+# ---- SponsorBlock
+settings.sponsorblock.categories = 类别
+settings.sponsorblock.category_desc.music_offtopic = 音乐视频中的讲话、短剧和其他非音乐部分。
+settings.sponsorblock.category_desc.sponsor = 付费推广。
+settings.sponsorblock.category_desc.intro = 没有实际内容的过场和开场动画。
+settings.sponsorblock.category_desc.outro = 片尾字幕和结束画面。
+settings.sponsorblock.category_desc.selfpromo = 无偿推广：周边商品、捐赠、致谢。
+settings.sponsorblock.category_desc.interaction = 提醒点赞、订阅或关注。
+settings.sponsorblock.category_desc.preview = 回顾以及其他内容的预告。
+settings.sponsorblock.category_desc.filler = 与主要内容无关的闲聊。
+settings.sponsorblock.category_desc.hook = 开头的预告片段和问候。
+settings.sponsorblock.using = 正在使用 {url}
+settings.sponsorblock.url_error = 需要一个不含凭据或查询参数的 https:// 地址
+settings.sponsorblock.skip_segments = 跳过片段
+settings.sponsorblock.skip_segments_desc = 查询每首歌曲对应视频中由社区标记的片段并跳过。
+settings.sponsorblock.when = 片段开始时
+settings.sponsorblock.when_desc = 立即跳过，或在播放栏中显示“跳过”按钮。
+settings.sponsorblock.mode_auto = 自动跳过
+settings.sponsorblock.mode_ask = 询问
+settings.sponsorblock.notify = 跳过后通知
+settings.sponsorblock.server = 服务器
+settings.sponsorblock.api_url = API URL
+settings.sponsorblock.use_default = 使用默认服务器
+settings.sponsorblock.forget = 忘记已查询的片段
+settings.sponsorblock.privacy = 隐私：只发送视频 ID 的 SHA-256 哈希值的前 4 个字符，因此服务器无法得知正在播放哪首歌。除非你设置了其他服务器，片段数据来自 sponsor.ajay.app（SponsorBlock，CC BY-NC-SA）。
+
+# ---- Music Together
+settings.together.you = 你
+settings.together.display_name = 显示名称
+settings.together.name_placeholder = 你的名字
+settings.together.display_name_note = 在会话中向其他人显示。
+settings.together.hosting = 主持
+settings.together.port = 端口
+settings.together.port_error = 端口必须在 1024 到 65535 之间
+settings.together.allow_add_desc = 他们推荐的歌曲会加入你的队列。
+settings.together.allow_control_desc = 为所有人播放、暂停、跳转和切歌。
+settings.together.approval = 访客加入前需要批准
+settings.together.hosting_note = 会话在你的局域网中运行：访客直接连接到这台电脑（如果防火墙询问，请允许传入连接）。链接中包含随机密钥，只有拥有链接的人才能加入。更改会立即应用到正在进行的会话。在“一起听”页面中，“设为房主”可将会话移交给某位访客：所有人都会跟随新房主。
+settings.together.across_networks = 跨网络
+settings.together.relay = 中继服务器
+settings.together.relay_placeholder = wss://relay.example.com（留空：仅限局域网）
+settings.together.relay_error = 需要一个 ws:// 或 wss:// 地址（不含用户名或查询参数）
+settings.together.relay_note = “通过中继主持”会让会话经由你自己搭建的 music-relay 服务器运行（参见 README：只需一个小型可执行文件，如需 wss:// 请将其置于 TLS 反向代理之后）。之后访客可以通过链接从任何地方加入。中继只转发会话消息（歌曲 ID、标题、名称），从不做任何决定；留空 = 仅限局域网。
+settings.together.open = 打开“一起听”
+
+# ---- Spotify import
+settings.spotify.waiting = 正在等待你在浏览器中批准本应用…
+settings.spotify.account = Spotify 账号
+settings.spotify.client_id = Client ID
+settings.spotify.redirect_port = 重定向端口
+settings.spotify.redirect_uri = 重定向 URI：{uri}
+settings.spotify.steps = 1. 在 developer.spotify.com/dashboard 创建一个应用（Web API）。2. 将上方的重定向 URI 添加到该应用。3. 将其 Client ID 粘贴到这里并点按“连接”。访问权限为只读（你的播放列表和喜欢的歌曲）；刷新令牌保存在钥匙串中。
+settings.spotify.without_account = 不使用账号
+settings.spotify.without_account_note = 使用 Exportify（exportify.app）导出播放列表，然后在“媒体库 → 导入与导出”中导入 CSV 文件。不支持（像 {other_app} 那样）使用网页播放器的 sp_dc Cookie 登录：该方式依赖从 Spotify 网页播放器中提取的密钥。
+settings.spotify.open_import = 打开“导入与导出”
+settings.spotify.error.no_client = 请先输入你的应用的 Client ID。
+settings.spotify.error.redirect = 无法监听重定向：{error}
+
+# ---- AI content filter
+settings.ai_filter.off = 关：不会向任何地方发送数据
+settings.ai_filter.incomplete = 需要填写端点、模型，并至少选择一个类别
+settings.ai_filter.failed = 上次请求失败：{error}
+settings.ai_filter.on.other = 开 · 已分类 {count} 首歌曲和专辑
+settings.ai_filter.hide = 隐藏
+settings.ai_filter.also_hide = 同时隐藏
+settings.ai_filter.custom_placeholder = 例如：关于汽车的歌、梗曲
+settings.ai_filter.custom_note = 你自己的类别，用逗号分隔（最多 8 个），用通俗的语言描述。
+settings.ai_filter.title = AI 内容过滤
+settings.ai_filter.enable = 使用 AI 模型过滤歌曲
+settings.ai_filter.enable_desc = 类似“隐藏露骨内容”，适用于下方的类别。
+settings.ai_filter.forget = 忘记分类结果
+settings.ai_filter.model = 模型
+settings.ai_filter.endpoint = 端点
+settings.ai_filter.endpoint_placeholder = https://api.openai.com/v1 或 http://localhost:11434/v1
+settings.ai_filter.api_key = API 密钥
+settings.ai_filter.key_placeholder = API 密钥（本地服务器无需填写）
+settings.ai_filter.api_note = 任何兼容 OpenAI 的 chat-completions API：OpenAI、OpenRouter，或这台电脑上的模型（Ollama、LM Studio、llama.cpp server）。密钥保存在钥匙串中。
+settings.ai_filter.privacy = 隐私
+settings.ai_filter.privacy_note = 默认关闭。开启后，你打开的页面上歌曲和专辑的标题、艺人和专辑名会被发送到上方的端点（不包含任何关于你的信息，也不包含收听历史）；每个判断结果都会缓存在这台电脑上，因此每首歌只会询问一次。模型尚未判断的歌曲会保持可见。
+
+# ---- Chromecast
+settings.cast.looking = 正在查找 Cast 设备…
+settings.cast.found.other = 找到 {count} 台设备
+settings.cast.devices = 设备
+settings.cast.scan = 搜索
+settings.cast.casting = 投放中
+settings.cast.cast = 投放
+settings.cast.streaming = 正在串流
+settings.cast.direct = 让设备自行获取 YouTube 音频
+settings.cast.direct_desc = 关闭时：由本应用将音频串流到设备（适用于所有歌曲）。
+settings.cast.note = 投放会在此网络中的 Chromecast、Google TV 或 Nest 音箱上播放队列（使用 Google 的 Default Media Receiver）。通过播放栏中的 Cast 按钮选择设备；之后播放、暂停、跳转、切歌和音量都会控制该设备，选择“停止投放”则会在这里继续播放。YouTube 音频和本地文件会从这台电脑串流到设备（请保持应用打开）；设备和这台电脑必须位于同一网络。更改将从下一首歌开始生效。

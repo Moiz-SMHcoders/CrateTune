@@ -1,0 +1,121 @@
+# Settings: Account, Network, About, settings panel, update check, Google sign-in (zh-TW).
+
+# ---- Account
+settings.account.cookie_title = 使用瀏覽器 Cookie 登入
+settings.account.cookie_steps = 1. 在瀏覽器中開啟 music.youtube.com 並登入。\n2. 開啟開發者工具（在 Safari / Chrome 中按 ⌥⌘I）→ 網路（Network），然後重新載入頁面。\n3. 點選任一傳送至 music.youtube.com 的要求（例如「browse」），在「要求標頭」（Request Headers）中找到「Cookie」，複製它的完整值。\n4. 將它貼到下方。它會保存在系統鑰匙圈中，而且只會傳送給 YouTube。
+settings.account.cookie_index = Google 帳號索引（如果登入了多個帳號）：
+settings.account.not_signed_in = 尚未登入。所有功能都能以匿名方式使用；登入後，你喜歡的歌曲、儲存的專輯、訂閱和播放清單會同步到媒體庫，你的喜歡和播放清單編輯也會同步回 YouTube Music。
+settings.account.sign_in_google = 使用 Google 登入…
+settings.account.paste_cookie = 貼上 Cookie…
+settings.account.google_refused = 如果 Google 拒絕登入視窗（「這個瀏覽器或應用程式可能不安全」），請使用「貼上 Cookie」。
+settings.account.last_synced = 上次同步：{date}
+settings.account.not_synced = 尚未同步
+settings.account.sync_now = 立即同步
+settings.account.syncing = 同步中…
+settings.account.sync_group = 媒體庫同步
+settings.account.sync_row = 同步你的 YouTube Music 媒體庫
+settings.account.sync_row_desc = 喜歡的歌曲、媒體庫歌曲、儲存的專輯、訂閱、播放清單。
+settings.account.accounts_group = 帳號
+settings.account.channels = 此 Google 帳號的頻道（品牌帳戶）：
+settings.account.google_index = Google 帳號
+settings.account.google_index_desc = 當 Cookie 中包含多個 Google 帳號時，選擇要使用哪一個（0 = 第一個）。
+settings.account.cookie_note = 登入時會使用你瀏覽器中 music.youtube.com 的工作階段 Cookie。它會保存在系統鑰匙圈中，而且只會傳送給 YouTube。帳號相關功能是依據 YouTube 的網頁 API 開發的，但尚未以真實帳號驗證。
+
+# ---- About
+settings.about.show_welcome = 顯示歡迎導覽
+settings.about.version_summary = 版本 {version} · {summary}
+settings.about.summary = YouTube Music 原生桌面用戶端
+settings.about.not_affiliated = 與 YouTube 或 Google 無關，亦未獲其認可或贊助。
+settings.about.license = 授權條款
+settings.about.license_notice = 本程式為自由軟體：你可以依據 GNU 通用公共授權條款第 3 版重新散布及／或修改本程式。本程式不提供任何擔保；詳情請參閱授權條款。
+settings.about.credits = 致謝
+settings.about.credit.archivetune = 功能和畫面移植自 {project}（GPL-3.0），© Rukamori and contributors。本專案為獨立專案。
+settings.about.credit.hummingbird = 等化器、系統媒體控制、Scrobble 和 Discord 狀態移植自 Hummingbird（Apache-2.0），© Hummingbird contributors。
+settings.about.credit.recognition_title = 歌曲辨識
+settings.about.credit.recognition = 與 Shazam 相容的音訊指紋功能移植自 {project} 的 shazamkit（GPL-3.0），其採用 SongRec 的格式。與 Shazam 或 Apple 無關。
+settings.about.credit.libraries_title = 函式庫
+settings.about.credit.libraries = GPUI 和 gpui-component（Apache-2.0）、Symphonia 和 rodio、Lucide 圖示（ISC）、LRCLIB 歌詞。
+
+# ---- Update check
+update.group = 更新
+update.releases_from = 版本發布來源：github.com/{repo}
+update.checking = 正在檢查…
+update.up_to_date_version = 你使用的是最新版本（{version}）。
+update.available_version = 已推出版本 {version}。
+update.check_failed = 無法檢查：{error}
+update.check_now = 立即檢查
+update.download = 下載…
+update.no_release = 沒有已發布的版本
+update.available_toast = 已推出 {app} {version}（設定 → 關於）
+update.up_to_date_toast = {app} 已是最新版本
+
+# ---- Network
+settings.network.proxy = 代理伺服器
+settings.network.proxy_off = 關閉
+settings.network.host = 主機
+settings.network.port = 連接埠
+settings.network.user = 使用者名稱
+settings.network.password = 密碼
+settings.network.doh_url = DoH URL
+settings.network.host_placeholder = proxy.example.com 或 127.0.0.1
+settings.network.optional = 選填
+settings.network.test_connection = 測試連線
+settings.network.test_dns = 測試 DNS
+settings.network.using_proxy = 正在使用 {url}
+settings.network.direct = 直接連線（不使用代理伺服器）
+settings.network.status_with_doh = {proxy} · DNS-over-HTTPS（{server}）
+settings.network.testing = 測試中…
+settings.network.test_ok = 已連線到 YouTube，耗時 {ms} 毫秒
+settings.network.test_failed = 連線失敗：{error}
+settings.network.lookup_failed = 查詢失敗：{error}
+settings.network.looking_up = 查詢中…
+settings.network.dns_ok = {host} → {addresses}，透過{via}，耗時 {ms} 毫秒
+settings.network.dns_via_doh = DNS-over-HTTPS
+settings.network.dns_via_cache = DNS-over-HTTPS（快取）
+settings.network.dns_via_system = 系統解析器
+settings.network.proxy_note = 適用於所有連線：YouTube Music、音訊串流、封面圖片、歌詞和 Scrobble。SOCKS5h 會透過代理伺服器解析主機名稱。密碼會保存在鑰匙圈中。
+settings.network.dns = DNS
+settings.network.dns_system = 系統
+settings.network.dns_custom = 自訂
+settings.network.dns_fallback = DoH 失敗時改用系統解析器
+settings.network.dns_note = DNS-over-HTTPS（RFC 8484）會透過加密的 HTTPS 連線（而非未加密的 DNS）查詢主機名稱。查詢結果會依其 TTL 快取。使用 SOCKS5h 代理伺服器時，由代理伺服器自行解析名稱。Quad9 是透過其 HTTP/1.1 連接埠 5053 連線，部分網路會封鎖此連接埠。
+settings.network.error.port_number = 連接埠必須是數字（1–65535）。
+settings.network.error.doh_invalid = DNS-over-HTTPS URL 無效。
+settings.network.error.proxy_invalid = 這個代理伺服器位址不適用於此代理類型。
+settings.network.error.doh_https = DNS-over-HTTPS URL 必須以 https:// 開頭。
+settings.network.error.doh_invalid_detail = DNS-over-HTTPS URL 無效：{error}。
+settings.network.error.host_missing = 請輸入代理伺服器主機。
+settings.network.error.host_invalid = 主機只能是名稱或位址（不含通訊協定、路徑或空格）。
+settings.network.error.port_missing = 請輸入介於 1 到 65535 之間的連接埠。
+settings.network.error.socks4_auth = SOCKS4 不支援密碼；請將使用者名稱留空。
+
+# ---- Settings panel
+settings.panel.placeholder.api_key = API 金鑰
+settings.panel.placeholder.shared_secret = 共用密鑰
+settings.panel.placeholder.user_token = 使用者權杖
+settings.panel.placeholder.application_id = 應用程式 ID
+settings.panel.lastfm_missing = 請先輸入 API 金鑰和共用密鑰。
+settings.panel.lastfm_requesting = 正在要求權杖…
+settings.panel.lastfm_finishing = 正在完成…
+settings.panel.lb_missing = 請先貼上你的使用者權杖。
+settings.panel.secrets.backend_and_file = {backend} + 設定檔（0600）
+settings.panel.secrets.file_keychain_disabled = 設定檔（0600；鑰匙圈已停用）
+settings.panel.secrets.file_keychain_read_failed = 設定檔（0600；讀取鑰匙圈失敗）
+settings.panel.secrets.file_keychain_unavailable = 設定檔（0600；無法使用鑰匙圈）
+
+# ---- Credential stores
+secrets.backend.macos = macOS 鑰匙圈
+secrets.backend.windows = Windows 認證管理員
+secrets.backend.secret_service = Secret Service
+
+# ---- Settings file problems
+settings.file.no_config_dir = 沒有設定目錄；設定不會被儲存
+settings.file.save_failed = 儲存失敗：{error}
+settings.file.read_failed = 讀取 {path} 時發生錯誤：{error}
+settings.file.invalid_moved = {path} 無效（{error}）；已移至 {backup}
+
+# ---- Google sign-in window
+login.window_title = 登入 YouTube Music
+login.instructions = 請使用你的 Google 帳號登入。YouTube Music 開啟後，這個視窗會自動關閉。
+login.webview_failed = 無法建立網頁檢視（{error}）。請改用「貼上 Cookie」。
+login.checking = 已登入——正在檢查帳號…

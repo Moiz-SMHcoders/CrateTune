@@ -1,0 +1,206 @@
+# App shell and shared components (zh-TW).
+
+# ---- Page titles
+route.search = 搜尋
+route.search_query = 搜尋：{query}
+route.library = 媒體庫 · {tab}
+route.year_in_music = {year} 年度音樂回顧
+route.recognition = 辨識歌曲
+route.settings = 設定 · {section}
+route.library_tab.songs = 歌曲
+route.library_tab.liked = 喜歡
+route.library_tab.albums = 專輯
+route.library_tab.artists = 藝人
+route.library_tab.playlists = 播放清單
+route.library_tab.podcasts = Podcast
+route.library_tab.downloaded = 已下載
+route.library_tab.local = 本機檔案
+
+# ---- Themes
+theme.dark = 深色
+theme.black = 純黑
+theme.dynamic = 動態
+
+# ---- Player bar
+player.pick_a_song = 選一首歌開始播放
+player.audio_unavailable = 無法使用音訊：{error}
+player.buffering = 緩衝中…
+player.play_failed_skipped = 無法播放「{title}」，已略過
+player.preview_badge = 試聽
+player.tooltip.shuffle_on = 隨機播放：開啟
+player.tooltip.shuffle_off = 隨機播放：關閉
+player.tooltip.previous = 上一首（⌘←，播放超過 3 秒時從頭開始）
+player.tooltip.next = 下一首（⌘→）
+player.tooltip.repeat_off = 重複播放：關閉
+player.tooltip.repeat_all = 重複播放：全部
+player.tooltip.repeat_one = 重複播放：單曲
+player.tooltip.volume = 音量 {percent}%（⌘↑ / ⌘↓）
+player.tooltip.queue = 佇列（⌥⌘Q）
+player.tooltip.mini_player = 迷你播放器（⇧⌘M）
+player.tooltip.now_playing = 正在播放與歌詞（⌘L）
+
+# ---- Sleep timer
+player.sleep.title = 睡眠計時器
+player.sleep.minutes.other = {count} 分鐘
+player.sleep.end_of_track = 本曲結束時
+player.sleep.custom = 自訂：{minutes} 分鐘
+player.sleep.turn_off = 關閉
+player.sleep.left = 剩餘 {time}
+
+# ---- Queue
+queue.toast.play_next_one = 「{title}」將在下一首播放
+queue.toast.play_next_many.other = {count} 首歌曲將在接下來播放
+queue.toast.added_one = 已將「{title}」加入佇列
+queue.toast.added_many.other = 已將 {count} 首歌曲加入佇列
+queue.section.now_playing = 正在播放
+queue.section.up_next = 即將播放 · {count}
+queue.section.history = 播放記錄
+queue.nothing_playing = 未在播放
+queue.empty.repeat_all = 全部重複播放：佇列將從頭開始。
+queue.empty.hint = 使用「下一首播放」或「加入佇列」來加入歌曲。
+queue.tooltip.clear_up_next = 清除即將播放
+queue.tooltip.close = 關閉（Esc）
+queue.tooltip.move_up = 上移
+queue.tooltip.move_down = 下移
+
+# ---- Song rows and the song context menu
+track.tooltip.more = 更多
+track.explicit_badge = E
+track.menu.go_to_podcast = 前往 Podcast
+track.menu.go_to_named_artist = 前往 {artist}
+
+# ---- Item cards, rows, shelves
+items.load_failed = 無法載入此頁面
+items.loading_more = 正在載入更多…
+
+# ---- "Add to playlist" / "New playlist" dialog
+playlist_dialog.name_placeholder = 新播放清單名稱
+playlist_dialog.title_new = 新增播放清單
+playlist_dialog.title_add_one = 將「{title}」加入播放清單
+playlist_dialog.title_add_many.other = 將 {count} 首歌曲加入播放清單
+playlist_dialog.create = 建立
+playlist_dialog.also_on_youtube = 同時在 YouTube Music 上建立（私人）
+playlist_dialog.youtube_songs.other = YouTube Music · {count} 首歌曲
+playlist_dialog.empty = 還沒有播放清單——請在上方建立一個。
+
+# ---- Mini player window
+mini.window_title = 迷你播放器
+mini.tooltip.show_main = 顯示主視窗
+
+# ---- Header search field
+app.search_placeholder = 搜尋歌曲、藝人、專輯
+search_box.recent = 最近的搜尋
+search_box.loading_suggestions = 正在載入建議…
+
+# ---- Main window
+app.window_title = {page} — {app}
+app.audio_demo_clock = {error}（使用示範時鐘）
+app.tooltip.back = 上一頁（⌘[）
+app.tooltip.forward = 下一頁（⌘]）
+
+# ---- YouTube Music account
+account.cookie_invalid = 此 Cookie 中沒有 SAPISID / __Secure-3PAPISID 項目；請複製已登入的 music.youtube.com 要求的完整 Cookie 標頭。
+account.checking = 正在檢查帳號…
+account.toast.signed_in = 已登入為 {name}
+account.sign_in_failed = 登入失敗：{error}
+account.toast.signed_out = 已登出 YouTube Music
+account.unreachable = 無法連線至帳號：{error}
+account.switching = 正在切換…
+account.toast.switched = 目前使用 {name}
+account.switch_failed = 切換失敗：{error}
+account.sign_in_first = 請先登入 YouTube Music。
+account.action.subscribing = 訂閱
+account.toast.subscribed = 已訂閱 {artist}
+account.toast.unsubscribed = 已取消訂閱 {artist}
+account.sync.starting = 正在開始…
+account.sync.step.liked = 喜歡的歌曲…
+account.sync.step.songs = 媒體庫歌曲…
+account.sync.step.albums = 專輯…
+account.sync.step.artists = 藝人…
+account.sync.step.playlists = 播放清單…
+account.sync.step.playlist = 播放清單 {current}/{total}：{title}
+account.sync.summary = {liked}、{songs}、{albums}、{artists}、{playlists}
+account.sync.liked.other = {count} 首喜歡的歌曲
+account.sync.songs.other = {count} 首媒體庫歌曲
+account.sync.albums.other = {count} 張專輯
+account.sync.artists.other = {count} 位藝人
+account.sync.playlists.other = {count} 個播放清單
+account.toast.synced = YouTube Music 同步完成：{summary}
+account.sync.failed = {summary}。錯誤：{errors}
+account.sync.error = {part}：{error}
+account.sync.part.liked = 喜歡的歌曲
+account.sync.part.songs = 媒體庫歌曲
+account.sync.part.albums = 專輯
+account.sync.part.artists = 藝人
+account.sync.part.playlists = 播放清單
+account.sync.part.playlist = 播放清單「{title}」
+account.sync.part.removing_playlist = 移除播放清單
+
+# ---- Library database, likes, playlists, downloads (toasts)
+store.library_unavailable = 無法使用媒體庫：{error}
+store.no_data_dir = 沒有資料目錄，無法使用媒體庫。
+store.library_db_unavailable = 無法使用媒體庫資料庫。
+store.toast.action_failed = {action}失敗：{error}
+store.action.saving_like = 儲存喜歡
+store.action.removing_from_library = 從媒體庫移除
+store.action.adding_to_playlist = 加入播放清單
+store.action.creating_playlist = 建立播放清單
+store.toast.liked_one = 已喜歡「{title}」
+store.toast.unliked_one = 已將「{title}」從喜歡的歌曲中移除
+store.toast.liked_many.other = 已喜歡 {count} 首歌曲
+store.toast.unliked_many.other = 已將 {count} 首歌曲從喜歡的歌曲中移除
+store.toast.only_locally = {message}（僅儲存在本機；YouTube Music：{error}）
+store.toast.removed_from_library.other = 已從媒體庫移除 {count} 首歌曲
+store.toast.added_to_playlist.other = 已將 {count} 首歌曲加入「{playlist}」
+store.toast.remote_error = {message}（YouTube Music：{error}）
+store.playlist_name_missing = 請為播放清單命名。
+store.toast.playlist_created = 已建立「{playlist}」
+store.toast.playlist_created_with.other = 已建立「{playlist}」，包含 {count} 首歌曲
+store.downloads_unavailable = 無法使用下載功能。
+store.toast.downloading_one = 正在下載「{title}」
+store.toast.downloading_many.other = 正在下載 {count} 首歌曲
+store.toast.delete_download_failed = 刪除下載項目失敗：{error}
+
+# ---- Local music folder scan
+store.add_music_folder_first = 請先加入音樂資料夾。
+store.scan.summary = {files}：新增 {added}、更新 {updated}、未變更 {unchanged}、移除 {removed}
+store.scan.files.other = {count} 個檔案
+store.scan.with_extra = {summary}、{extra}
+store.scan.too_short.other = {count} 個過短
+store.scan.unreadable.other = {count} 個無法讀取
+store.toast.scan_finished = 掃描完成：{summary}
+store.toast.scan_failed = 掃描失敗：{error}
+
+# ---- Playlist cover upload
+playlist_cover.read_failed = 無法讀取圖片：{error}
+playlist_cover.not_an_image = 此檔案不是本應用程式可讀取的圖片（JPEG、PNG 或 WebP）。
+playlist_cover.too_large = 圖片太大（超過 4,000 萬像素）。
+playlist_cover.decode_failed = 無法解碼圖片：{error}
+playlist_cover.encode_failed = 無法編碼封面：{error}
+playlist_cover.still_too_large = 壓縮後封面仍大於 2 MiB。
+playlist_cover.sign_in = 登入 YouTube Music 後才能變更播放清單封面。
+playlist_cover.pick_prompt = 用作封面
+playlist_cover.uploading = 正在上傳封面…
+playlist_cover.changed = 已變更播放清單封面
+playlist_cover.change_failed = 無法變更封面：{error}
+
+# ---- Radio and collection playback
+radio.toast.starting_from = 正在根據「{title}」開啟電台
+radio.toast.starting = 正在開啟電台：{name}
+radio.playlist_label = 播放清單
+radio.nothing_to_play = 這裡沒有可播放的內容。
+radio.load_failed = 無法載入：{error}
+
+# ---- Lyrics
+lyrics.no_cache_dir = 沒有快取目錄
+
+# ---- Playlist editing
+store.action.renaming_playlist = 重新命名播放清單
+store.action.deleting_playlist = 刪除播放清單
+store.action.removing_from_playlist = 從播放清單移除
+store.action.moving_song = 移動歌曲
+store.action.refreshing_playlist = 重新整理播放清單
+store.toast.playlist_renamed = 已重新命名為「{playlist}」
+store.toast.playlist_deleted = 已刪除「{playlist}」
+store.toast.removed_from_playlist.other = 已從播放清單移除 {count} 首歌曲
+store.toast.playlist_refreshed.other = 已重新整理播放清單（{count} 首歌曲）
