@@ -1,8 +1,11 @@
 //! Compact always-on-top player window (⇧⌘M, View menu, bar button): artwork,
-//! title / artist, previous / play / next, progress. It reads everything from
-//! `MusicApp` (re-rendering when the app or the artwork cache notifies, i.e. at
-//! the 250 ms poll rate — no animation frames) and sends commands back through
-//! [`update_app`]. Its position is saved in the settings file.
+//! title / artist, previous / play / next, progress (click / drag to seek). It
+//! reads everything from `MusicApp` (re-rendering when the app or the artwork
+//! cache notifies, i.e. at the 250 ms poll rate) and sends commands back through
+//! [`update_app`]. With "Same look in the mini player" it draws the bar's
+//! progress style and play / pause background (`components/bar_fx.rs`), asking
+//! for its own frames only while those animate. Its position is saved in the
+//! settings file.
 //!
 //! macOS: a floating `NSPanel` (GPUI `WindowKind::Floating`) whose
 //! `hidesOnDeactivate` is turned off, so it stays visible over other apps.
@@ -12,7 +15,7 @@ use gpui::{
     AnyWindowHandle, App, AppContext as _, Bounds, Context, FocusHandle, FontWeight,
     InteractiveElement as _, IntoElement, ParentElement as _, Render, Styled as _,
     StyledImage as _, Subscription, TitlebarOptions, Window, WindowBounds, WindowKind,
-    WindowOptions, div, point, px, relative, size,
+    WindowOptions, div, point, px, size,
 };
 use gpui_component::{
     ActiveTheme as _, Disableable as _, IconName, Root, Sizable as _,
@@ -22,15 +25,24 @@ use gpui_component::{
 use music_core::{PlaybackStatus, format_duration};
 
 use crate::actions::with_main_window;
+use crate::anim::Frame;
 use crate::app::{MusicApp, read_app, update_app};
 use crate::components::artwork::{ArtworkCache, artwork};
+use crate::components::bar_fx::{
+    BackgroundArt, BackgroundFx, BackgroundGeometry, BackgroundLook, TrackFx,
+};
+use crate::components::progress::{ProgressTrack, TrackEvent, TrackLook, TrackParams};
 use crate::icons::AppIcon;
 use crate::settings::WindowGeometry;
+use crate::settings::bar_prefs::ProgressStyle;
 
 pub const SIZE: (f32, f32) = (400., 124.);
 
 pub struct MiniPlayer {
     focus: FocusHandle,
+    progress: TrackFx,
+    background: BackgroundFx,
+    wake: Option<(std::time::Instant, gpui::Task<()>)>,
     _subscriptions: Vec<Subscription>,
 }
 
@@ -127,26 +139,49 @@ impl MiniPlayer {
         }
         Self {
             focus: cx.focus_handle(),
+            progress: TrackFx::default(),
+            background: BackgroundFx::default(),
+            wake: None,
             _subscriptions: subscriptions,
         }
     }
 }
 
 impl Render for MiniPlayer {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let info = read_app(cx, |app, _| {
-            let now = std::time::Instant::now();
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let mut frame = Frame::new();
+        let now = frame.now;
+        let info = read_app(cx, |app, cx| {
+            let bar = app.settings.read(cx).settings().player_bar;
+            let hires_art = app
+                .current_video_id()
+                .and_then(|id| match app.hires.get(id) {
+                    Some(crate::now_playing::HiRes::Ready {
+                        backdrop,
+                        palette,
+                        glows,
+                        ..
+                    }) => Some((backdrop.clone(), *palette, glows[0].clone())),
+                    _ => None,
+                });
             (
-                app.playback.track.clone(),
-                app.playback.status.clone(),
-                app.clock.position(now),
-                app.playback.duration,
-                app.queue.has_next(),
-                app.engine.is_some(),
-                app.mini_backdrop(cx),
+                (
+                    app.playback.track.clone(),
+                    app.playback.status.clone(),
+                    app.clock.position(now),
+                    app.playback.duration,
+                    app.queue.has_next(),
+                    app.engine.is_some(),
+                    app.mini_backdrop(cx),
+                ),
+                (bar, hires_art, app.scrub),
             )
         });
-        let Some((track, status, position, duration, has_next, has_engine, backdrop)) = info else {
+        let Some((
+            (track, status, position, duration, has_next, has_engine, backdrop),
+            (bar, hires_art, scrub),
+        )) = info
+        else {
             return div().size_full().into_any_element();
         };
         let art = artwork(
@@ -176,11 +211,122 @@ impl Render for MiniPlayer {
                 PlaybackStatus::Playing | PlaybackStatus::Paused | PlaybackStatus::Ended
             );
         let total = duration.unwrap_or_default();
+        let shown = scrub.unwrap_or(position.as_secs_f32()).max(0.);
         let frac = if total.is_zero() {
             0.
         } else {
-            (position.as_secs_f32() / total.as_secs_f32()).clamp(0., 1.)
+            (shown / total.as_secs_f32()).clamp(0., 1.)
         };
+        // The bar's look, or the plain line when the mini player doesn't follow it.
+        let (style, effect) = if bar.mini_follows_bar {
+            (
+                bar.progress_style,
+                bar.background_effect.then_some(bar.background),
+            )
+        } else {
+            (ProgressStyle::Standard, None)
+        };
+        let wants_spectrum = (style == ProgressStyle::Equalizer
+            || effect == Some(crate::settings::bar_prefs::BarBackground::Pulse))
+            && (playing || self.progress.level() > 0.);
+        if wants_spectrum {
+            read_app(cx, |app, _| app.want_spectrum());
+        }
+        let analyzer = || {
+            read_app(cx, |app, _| {
+                app.audio_player().map(|p| p.spectrum_analyzer())
+            })
+            .flatten()
+        };
+        let fx = self
+            .progress
+            .step(&mut frame, style, playing, wants_spectrum, analyzer, 0.8);
+        let surface = bg;
+        let (backdrop_img, palette, glow) = match hires_art {
+            Some((b, p, g)) => (Some(b), Some(p), Some(g)),
+            None => (None, None, None),
+        };
+        let level = self.progress.level();
+        let mut look = BackgroundLook::from_config(&bar, playing, level);
+        look.style = effect;
+        let layers = self.background.layers(
+            &mut frame,
+            look,
+            &BackgroundArt {
+                // The artwork style already shows it; the glow then only tints.
+                backdrop: backdrop_img.filter(|_| backdrop.is_none()),
+                palette,
+                glow,
+                accent,
+                surface,
+            },
+            BackgroundGeometry {
+                width: SIZE.0,
+                height: SIZE.1,
+                info_end: 96.,
+                center: (96., SIZE.0 - 110.),
+            },
+        );
+        let total_secs = total.as_secs_f32();
+        let enabled = track.is_some() && !total.is_zero();
+        let track_el = ProgressTrack::new(
+            "mini-progress",
+            TrackParams {
+                style,
+                frac,
+                hover: self.progress.hover.filter(|_| !self.progress.dragging()),
+                reveal: fx.reveal,
+                amplitude: fx.amplitude,
+                phase: fx.phase,
+                spectrum: fx.spectrum,
+                peak_caps: bar.peak_caps,
+                enabled,
+                look: TrackLook {
+                    played: accent,
+                    rail: track_bg,
+                    thumb: fg,
+                    ghost: accent.opacity(0.45),
+                },
+                height: px(14.),
+                scale: 0.8,
+            },
+            self.progress.input.clone(),
+        )
+        .bounds_into(self.progress.bounds.clone())
+        .on_event(std::rc::Rc::new({
+            let this = cx.entity().downgrade();
+            move |event, _, cx| {
+                let seconds = |f: f32| (f * total_secs).clamp(0., total_secs);
+                match event {
+                    TrackEvent::Hover(at) => {
+                        this.update(cx, |this, cx| {
+                            this.progress.hover = at;
+                            cx.notify();
+                        })
+                        .ok();
+                    }
+                    TrackEvent::Press(f) | TrackEvent::Drag(f) => {
+                        update_app(cx, |app, cx| {
+                            app.scrub = Some(seconds(f));
+                            cx.notify();
+                        });
+                    }
+                    TrackEvent::Release(f) => {
+                        update_app(cx, |app, cx| {
+                            app.scrub = None;
+                            app.seek_to(std::time::Duration::from_secs_f32(seconds(f)), cx);
+                        });
+                    }
+                    TrackEvent::Scroll(_) => {}
+                }
+            }
+        }));
+        let animating = frame.is_animating();
+        if let Some(at) = frame.finish(window) {
+            self.schedule(at, cx);
+        } else if !animating {
+            self.wake = None;
+        }
         let (title, artists) = match &track {
             Some(t) => (t.title.clone(), t.artists.clone()),
             None => (
@@ -209,6 +355,7 @@ impl Render for MiniPlayer {
                         .child(div().absolute().inset_0().bg(gpui::hsla(0., 0., 0., 0.35))),
                 )
             })
+            .children(layers)
             .child(
                 // Title-bar strip (draggable natively; the close button sits at its left).
                 h_flex().h(px(28.)).pl(px(72.)).pr_1().justify_end().child(
@@ -246,16 +393,9 @@ impl Render for MiniPlayer {
                                     .gap_2()
                                     .text_xs()
                                     .text_color(muted)
-                                    .child(format_duration(position.as_secs()))
-                                    .child(
-                                        div().flex_1().h(px(4.)).rounded_full().bg(track_bg).child(
-                                            div()
-                                                .h_full()
-                                                .w(relative(frac))
-                                                .rounded_full()
-                                                .bg(accent),
-                                        ),
-                                    )
+                                    .items_center()
+                                    .child(format_duration(shown as u64))
+                                    .child(div().flex_1().min_w_0().child(track_el))
                                     .child(if total.is_zero() {
                                         "--:--".to_owned()
                                     } else {
@@ -365,6 +505,31 @@ pub fn float_above_others(window: &Window) {
 
 #[cfg(not(target_os = "macos"))]
 pub fn float_above_others(_: &Window) {}
+
+impl MiniPlayer {
+    fn schedule(&mut self, at: std::time::Instant, cx: &mut Context<Self>) {
+        let now = std::time::Instant::now();
+        if self
+            .wake
+            .as_ref()
+            .is_some_and(|(t, _)| *t <= at && *t > now)
+        {
+            return;
+        }
+        let delay = at.saturating_duration_since(now);
+        let task = cx.spawn(async move |this, cx| {
+            cx.background_executor()
+                .timer(delay.max(std::time::Duration::from_millis(1)))
+                .await;
+            this.update(cx, |this, cx| {
+                this.wake = None;
+                cx.notify();
+            })
+            .ok();
+        });
+        self.wake = Some((at, task));
+    }
+}
 
 impl MusicApp {
     /// The blurred artwork behind the mini player ("Blurred artwork" style), once ready.

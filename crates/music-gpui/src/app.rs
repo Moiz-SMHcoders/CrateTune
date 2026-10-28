@@ -150,6 +150,15 @@ pub struct MusicApp {
     pub(crate) integrations: crate::integrations::Integrations,
     /// First-run guide overlay (`settings/onboarding.rs`).
     pub(crate) onboarding: Option<Entity<crate::settings::onboarding::Onboarding>>,
+    /// The player bar view (`components/player_bar.rs`).
+    pub(crate) bar: Option<Entity<crate::components::player_bar::PlayerBar>>,
+    /// Everything above the bar as one region: cached while the bar animates.
+    shell: Option<Entity<crate::components::player_bar::AppRegion>>,
+    /// Last time a visualizer asked for the live spectrum (the tap is turned
+    /// off by the poll a while after nobody does).
+    pub(crate) spectrum_wanted: std::cell::Cell<Option<Instant>>,
+    /// Now Playing's spectrum strip (`components/np_visualizer.rs`).
+    pub(crate) np_viz: Option<Entity<crate::components::np_visualizer::NpVisualizer>>,
 
     _poll: Task<()>,
     _subscriptions: Vec<Subscription>,
@@ -318,6 +327,10 @@ impl MusicApp {
             store: crate::store::Store::open(saved.library.clone(), downloads_resolver),
             integrations: Default::default(),
             onboarding: None,
+            bar: None,
+            shell: None,
+            spectrum_wanted: std::cell::Cell::new(None),
+            np_viz: None,
             _poll: poll,
             _subscriptions: subscriptions,
         };
@@ -729,6 +742,63 @@ impl MusicApp {
     }
 }
 
+impl MusicApp {
+    /// Sidebar | header + page | queue panel: everything above the player bar.
+    fn render_shell(&mut self, window: &mut Window, cx: &mut Context<Self>) -> gpui::AnyElement {
+        self.ensure_page(window, cx);
+        let page = self.router.current().page.as_ref().map(|p| p.view.clone());
+        let sidebar = self.render_sidebar(cx);
+        let header = self.render_header(cx);
+        let queue_panel = self.queue_open.then(|| self.render_queue_panel(cx));
+        h_flex()
+            .size_full()
+            .items_start()
+            .child(sidebar)
+            .child(
+                v_flex()
+                    .flex_1()
+                    .min_w_0()
+                    .h_full()
+                    .child(header)
+                    .child(div().flex_1().min_h_0().children(page)),
+            )
+            .children(queue_panel)
+            .into_any_element()
+    }
+
+    /// The audio engine's player (not the demo clock; not while casting).
+    pub(crate) fn audio_player(&self) -> Option<&Player> {
+        match &self.engine {
+            Some(Engine::Audio(player)) => Some(player),
+            _ => None,
+        }
+    }
+
+    /// A visualizer is on screen: keep the spectrum tap on (see `poll_spectrum`).
+    pub(crate) fn want_spectrum(&self) {
+        self.spectrum_wanted.set(Some(Instant::now()));
+        if let Some(player) = self.audio_player()
+            && !player.spectrum_enabled()
+        {
+            player.set_spectrum_enabled(true);
+        }
+    }
+
+    /// From the poll: turns the tap off 2 s after the last visualizer stopped asking.
+    pub(crate) fn poll_spectrum(&mut self) {
+        let stale = self
+            .spectrum_wanted
+            .get()
+            .is_some_and(|t| t.elapsed() > Duration::from_secs(2));
+        if stale {
+            self.spectrum_wanted.set(None);
+            if let Some(player) = self.audio_player() {
+                player.set_spectrum_enabled(false);
+            }
+        }
+    }
+}
+
 impl Render for MusicApp {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let mut frame = Frame::new();
@@ -753,31 +823,20 @@ impl Render for MusicApp {
                 cx.listener(|this, _, window, cx| this.go_forward(window, cx)),
             );
         if !covered {
-            self.ensure_page(window, cx);
-            let page = self.router.current().page.as_ref().map(|p| p.view.clone());
-            let sidebar = self.render_sidebar(cx);
-            let header = self.render_header(cx);
-            let queue_panel = self.queue_open.then(|| self.render_queue_panel(cx));
-            let bar = self.render_player_bar(cx);
+            // While the bar animates (or the pointer is on one of its tracks) the
+            // shell is a cached view: a bar frame then doesn't rebuild the page.
+            let cached = self.bar_is_live(cx);
+            let shell = crate::components::player_bar::region(
+                &mut self.shell,
+                Self::render_shell,
+                cached,
+                cx,
+            );
+            let bar = self.player_bar_view(cx);
             root = root.child(
                 v_flex()
                     .size_full()
-                    .child(
-                        h_flex()
-                            .flex_1()
-                            .min_h_0()
-                            .items_start()
-                            .child(sidebar)
-                            .child(
-                                v_flex()
-                                    .flex_1()
-                                    .min_w_0()
-                                    .h_full()
-                                    .child(header)
-                                    .child(div().flex_1().min_h_0().children(page)),
-                            )
-                            .children(queue_panel),
-                    )
+                    .child(div().flex_1().min_h_0().w_full().child(shell))
                     .child(bar),
             );
         }

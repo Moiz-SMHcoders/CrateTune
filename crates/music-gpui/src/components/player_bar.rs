@@ -1,54 +1,797 @@
-//! The player bar at the bottom: artwork + title (opens Now Playing), shuffle /
-//! previous / play / next / repeat with the progress slider, and status,
-//! volume, queue panel, mini player and Now Playing toggles.
+//! The player bar at the bottom, in three zones: track info (artwork, title,
+//! artists, status; click opens Now Playing; like), transport + progress
+//! (shuffle / previous / play / next / repeat, tags and integration chips, the
+//! progress track with elapsed / remaining time and a time tooltip), and
+//! secondary controls (lyrics, queue, sleep timer, Cast, mini player, Now
+//! Playing, volume with mute, scroll and a percentage tooltip). Narrow windows
+//! drop secondary controls by priority ([`bar_layout`]) instead of overlapping.
+//!
+//! Rendering cost: the bar is its own view ([`PlayerBar`]). Its static parts —
+//! the three zones' buttons — are [`AppRegion`]s, rendered from the app and
+//! re-rendered whenever the app notifies. The progress / volume tracks and the
+//! background effect are drawn inline by the bar view, which is the only thing
+//! that asks for frames while a style animates (Wavy, Equalizer, Pulse,
+//! Gradient) or the pointer is on a track. While the bar is "live" like that the
+//! app embeds its regions (and the rest of the window, see `app.rs`) as cached
+//! views, so a bar frame redraws the bar, not the page above it.
+
+use std::cell::Cell;
+use std::rc::Rc;
+use std::time::{Duration, Instant};
 
 use gpui::{
-    AnyElement, Context, FontWeight, Hsla, InteractiveElement as _, IntoElement,
-    ParentElement as _, SharedString, StatefulInteractiveElement as _, Styled as _, div,
-    prelude::FluentBuilder as _, px,
+    AnyElement, App, AppContext as _, Context, Entity, FontWeight, Hsla, InteractiveElement as _,
+    IntoElement, ObjectFit, ParentElement as _, Render, ScrollEvent, SharedString,
+    StatefulInteractiveElement as _, StyleRefinement, Styled as _, StyledImage as _, Subscription,
+    Task, WeakEntity, Window, div, img, prelude::FluentBuilder as _, px,
 };
 use gpui_component::{
-    ActiveTheme as _, Disableable as _, IconName, Selectable as _, Sizable as _,
+    ActiveTheme as _, Disableable as _, Icon, IconName, Selectable as _, Sizable as _, Size,
     button::{Button, ButtonVariants as _},
     h_flex,
     menu::DropdownMenu as _,
-    slider::Slider,
     tag::Tag,
     v_flex,
 };
 use music_core::{PlaybackStatus, format_duration};
 
-use super::artwork::artwork;
-use crate::app::MusicApp;
+use super::bar_fx::{BackgroundArt, BackgroundFx, BackgroundGeometry, BackgroundLook, TrackFx};
+use super::progress::{ProgressTrack, TrackEvent, TrackLook, TrackParams};
+use crate::anim::{Frame, Spec, Tween, ease_out_cubic};
+use crate::app::{MusicApp, app_entity, read_app, update_app};
+use crate::components::artwork::ArtworkCache;
 use crate::icons::{AppIcon, Lucide};
+use crate::now_playing::HiRes;
 use crate::queue::Repeat;
+use crate::settings::bar_prefs::{PlayerBarConfig, ProgressStyle};
+use crate::theme::AppColors;
 
 pub const BAR_HEIGHT: f32 = 88.;
+/// Horizontal padding of the bar and the gap between its zones.
+const PAD: f32 = 16.;
+/// Secondary icon buttons (≥ 28 pt hit targets).
+const ICON_BUTTON: f32 = 32.;
+/// Transport row: previous / next and play.
+const SKIP_BUTTON: f32 = 36.;
+const PLAY_BUTTON: f32 = 40.;
+const TRANSPORT_WIDTH: f32 = 2. * ICON_BUTTON + 2. * SKIP_BUTTON + PLAY_BUTTON + 4. * 8.;
+/// Width of the time labels beside the progress track.
+const TIME_WIDTH: f32 = 46.;
+/// Volume change per scroll line.
+const SCROLL_VOLUME_STEP: f32 = 0.04;
+
+// ---- layout -------------------------------------------------------------------
+
+/// What fits at a window width; the zones never overlap, controls are dropped
+/// in priority order instead.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct BarLayout {
+    /// Width of each side zone (equal, so the transport is centred in the window).
+    pub side: f32,
+    pub center: f32,
+    /// Volume slider width; `None`: icon only (scroll / click still work).
+    pub slider: Option<f32>,
+    pub lyrics: bool,
+    pub cast: bool,
+    pub sleep: bool,
+    pub sleep_label: bool,
+    pub mini: bool,
+    /// The "YouTube · AAC 128 kbps" source tag beside the transport.
+    pub source_chip: bool,
+    pub shuffle_repeat: bool,
+}
+
+/// Priority, highest first: Now Playing, queue, mute (always); then an active
+/// Cast session, an armed sleep timer, the volume slider, lyrics, Cast, sleep
+/// timer, mini player, the sleep timer's label.
+pub fn bar_layout(width: f32, casting: bool, sleep_armed: bool, cast_available: bool) -> BarLayout {
+    let side = (width * 0.25).clamp(200., 360.);
+    let center = (width - 4. * PAD - 2. * side).max(0.);
+    let step = ICON_BUTTON + 4.;
+    let mut free = side - 3. * step;
+    // An active Cast session and an armed sleep timer always show (their labels clip).
+    if casting {
+        free -= step + 96.;
+    }
+    if sleep_armed {
+        free -= step;
+    }
+    let mut take = |w: f32| {
+        if free >= w {
+            free -= w;
+            true
+        } else {
+            false
+        }
+    };
+    let slider_w = if side >= 300. { 92. } else { 64. };
+    let slider = take(slider_w + 8.)
+        .then_some(slider_w)
+        .or_else(|| take(64. + 8.).then_some(64.));
+    let lyrics = take(step);
+    let cast = casting || (cast_available && take(step));
+    let sleep = sleep_armed || take(step);
+    let mini = take(step);
+    let sleep_label = sleep_armed && sleep && take(64.);
+    BarLayout {
+        side,
+        center,
+        slider,
+        lyrics,
+        cast,
+        sleep,
+        sleep_label,
+        mini,
+        source_chip: (center - TRANSPORT_WIDTH) / 2. >= 150.,
+        shuffle_repeat: center >= TRANSPORT_WIDTH + 40.,
+    }
+}
+
+// ---- regions ------------------------------------------------------------------
+
+pub type RegionFn = fn(&mut MusicApp, &mut Window, &mut Context<MusicApp>) -> AnyElement;
+
+/// A part of the window rendered from the app (its state and listeners) that
+/// can be embedded as a cached view: re-rendered whenever the app notifies (or
+/// something inside it does), reused otherwise.
+pub struct AppRegion {
+    render: RegionFn,
+    _observe: Option<Subscription>,
+}
+
+impl AppRegion {
+    pub fn new(render: RegionFn, cx: &mut Context<Self>) -> Self {
+        let observe = app_entity(cx).map(|app| cx.observe(&app, |_, _, cx| cx.notify()));
+        Self {
+            render,
+            _observe: observe,
+        }
+    }
+}
+
+impl Render for AppRegion {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let render = self.render;
+        match app_entity(cx) {
+            Some(app) => app.update(cx, |app, cx| render(app, window, cx)),
+            None => div().into_any_element(),
+        }
+    }
+}
+
+/// `slot`'s region (created on first use) as an element filling its parent:
+/// a cached view while `cached`, else drawn with every frame like inline code.
+pub fn region(
+    slot: &mut Option<Entity<AppRegion>>,
+    render: RegionFn,
+    cached: bool,
+    cx: &mut App,
+) -> AnyElement {
+    let region = slot
+        .get_or_insert_with(|| cx.new(|cx| AppRegion::new(render, cx)))
+        .clone();
+    if cached {
+        region
+            .cached(StyleRefinement::default().size_full())
+            .into_any_element()
+    } else {
+        div().size_full().child(region).into_any_element()
+    }
+}
+
+// ---- the bar view --------------------------------------------------------------
+
+pub struct PlayerBar {
+    progress: TrackFx,
+    volume: TrackFx,
+    background: BackgroundFx,
+    /// Volume bubble shown briefly after scrolling.
+    volume_bubble_until: Option<Instant>,
+    /// Time tooltip fade.
+    tip: Tween<f32>,
+    left: Option<Entity<AppRegion>>,
+    transport: Option<Entity<AppRegion>>,
+    right: Option<Entity<AppRegion>>,
+    /// The last render asked for more frames soon (an animation or a fade runs).
+    animating: Cell<bool>,
+    wake: Option<(Instant, Task<()>)>,
+    _observe: Option<Subscription>,
+}
+
+impl PlayerBar {
+    pub fn new(cx: &mut Context<Self>) -> Self {
+        let observe = app_entity(cx).map(|app| cx.observe(&app, |_, _, cx| cx.notify()));
+        Self {
+            progress: TrackFx::default(),
+            volume: TrackFx::default(),
+            background: BackgroundFx::default(),
+            volume_bubble_until: None,
+            tip: Tween::new(0.),
+            left: None,
+            transport: None,
+            right: None,
+            animating: Cell::new(false),
+            wake: None,
+            _observe: observe,
+        }
+    }
+
+    /// The bar redraws often right now (animation, fade, pointer on a track):
+    /// the app then embeds the rest of the window as cached views.
+    pub fn is_live(&self) -> bool {
+        self.animating.get()
+            || self.progress.engaged()
+            || self.volume.engaged()
+            || self.volume_bubble_until.is_some_and(|t| t > Instant::now())
+    }
+
+    /// Where the progress and volume tracks were last drawn (window coordinates).
+    pub fn track_bounds(&self) -> (gpui::Bounds<gpui::Pixels>, gpui::Bounds<gpui::Pixels>) {
+        (self.progress.bounds.get(), self.volume.bounds.get())
+    }
+
+    fn schedule(&mut self, at: Instant, cx: &mut Context<Self>) {
+        let now = Instant::now();
+        if self
+            .wake
+            .as_ref()
+            .is_some_and(|(t, _)| *t <= at && *t > now)
+        {
+            return;
+        }
+        let delay = at.saturating_duration_since(now);
+        let task = cx.spawn(async move |this, cx| {
+            cx.background_executor()
+                .timer(delay.max(Duration::from_millis(1)))
+                .await;
+            this.update(cx, |this, cx| {
+                this.wake = None;
+                cx.notify();
+            })
+            .ok();
+        });
+        self.wake = Some((at, task));
+    }
+}
+
+/// What the bar view needs from the app for one frame.
+struct BarState {
+    has_track: bool,
+    total: f32,
+    position: f32,
+    playing: bool,
+    scrub: Option<f32>,
+    volume: f32,
+    config: PlayerBarConfig,
+    art: BackgroundArt,
+    casting: bool,
+    sleep_armed: bool,
+}
+
+impl Render for PlayerBar {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let mut frame = Frame::new();
+        let now = frame.now;
+        let theme = cx.theme().clone();
+        let surface = theme.secondary;
+        let accent = AppColors::get(cx).accent;
+        let Some(state) = read_app(cx, |app, cx| {
+            let config = app.settings.read(cx).settings().player_bar;
+            let restored = app.playback.track.is_none() && app.store.resume_at.is_some();
+            let hires = app
+                .current_video_id()
+                .and_then(|id| match app.hires.get(id) {
+                    Some(HiRes::Ready {
+                        backdrop,
+                        palette,
+                        glows,
+                        ..
+                    }) => Some((backdrop.clone(), *palette, glows[0].clone())),
+                    _ => None,
+                });
+            let (backdrop, palette, glow) = match hires {
+                Some((b, p, g)) => (Some(b), Some(p), Some(g)),
+                None => (None, None, None),
+            };
+            BarState {
+                has_track: app.playback.track.is_some() || restored,
+                total: app.playback.duration.map_or(0., |d| d.as_secs_f32()),
+                position: app.clock.position(now).as_secs_f32(),
+                playing: app.playback.status == PlaybackStatus::Playing,
+                scrub: app.scrub,
+                volume: app.volume,
+                config,
+                art: BackgroundArt {
+                    backdrop,
+                    palette,
+                    glow,
+                    accent,
+                    surface,
+                },
+                casting: app.cast_device().is_some(),
+                sleep_armed: app.playback.sleep_timer.is_some(),
+            }
+        }) else {
+            return div().into_any_element();
+        };
+        let width = f32::from(window.viewport_size().width);
+        let layout = bar_layout(width, state.casting, state.sleep_armed, true);
+        let live = self.is_live();
+        let config = state.config;
+
+        // ---- progress
+        // The spectrum while playing, and after a pause until the bars have fallen.
+        let spectrum_wanted =
+            config.wants_spectrum() && (state.playing || self.progress.level() > 0.);
+        if spectrum_wanted {
+            read_app(cx, |app, _| app.want_spectrum());
+        }
+        let analyzer = || {
+            read_app(cx, |app, _| {
+                app.audio_player().map(|p| p.spectrum_analyzer())
+            })
+            .flatten()
+        };
+        let track_frame = self.progress.step(
+            &mut frame,
+            config.progress_style,
+            state.playing,
+            spectrum_wanted,
+            analyzer,
+            1.,
+        );
+        let enabled = state.has_track && state.total > 0.;
+        let shown = state.scrub.unwrap_or(state.position).clamp(0., state.total);
+        let frac = if state.total > 0. {
+            shown / state.total
+        } else {
+            0.
+        };
+        let look = TrackLook {
+            played: theme.slider_bar,
+            rail: theme.slider_bar.opacity(0.18),
+            thumb: theme.foreground,
+            ghost: theme.slider_bar.opacity(0.34),
+        };
+        let hover = self.progress.hover.filter(|_| !self.progress.dragging());
+        let weak = cx.entity().downgrade();
+        let total = state.total;
+        let progress_track = ProgressTrack::new(
+            "bar-progress",
+            TrackParams {
+                style: config.progress_style,
+                frac,
+                hover,
+                reveal: track_frame.reveal,
+                amplitude: track_frame.amplitude,
+                phase: track_frame.phase,
+                spectrum: track_frame.spectrum,
+                peak_caps: config.peak_caps,
+                enabled,
+                look,
+                height: px(20.),
+                scale: 1.,
+            },
+            self.progress.input.clone(),
+        )
+        .bounds_into(self.progress.bounds.clone())
+        .on_event(Rc::new(move |event, _, cx| {
+            on_progress(&weak, event, total, cx)
+        }));
+
+        // Time tooltip over the track (hover or scrub).
+        let tip_at = if self.progress.dragging() {
+            Some(frac)
+        } else {
+            hover
+        };
+        self.tip.animate_to(
+            if tip_at.is_some() && enabled { 1. } else { 0. },
+            Spec::ms(120, ease_out_cubic),
+            now,
+        );
+        let tip_alpha = frame.get(&self.tip);
+        let track_w = f32::from(self.progress.bounds.get().size.width);
+        let tooltip = tip_at.filter(|_| tip_alpha > 0.01 && enabled).map(|f| {
+            bubble(
+                format_duration((f * state.total) as u64),
+                (f * track_w).clamp(0., track_w),
+                tip_alpha,
+                &theme,
+            )
+        });
+
+        let elapsed = format_duration(shown as u64);
+        let right_time = if !enabled {
+            "--:--".to_owned()
+        } else if config.show_remaining {
+            format!(
+                "-{}",
+                format_duration((state.total - shown).max(0.).ceil() as u64)
+            )
+        } else {
+            format_duration(state.total as u64)
+        };
+        // Static styles never ask for frames of their own: the time labels and the
+        // fill follow the app's once-a-second update (it notifies this view).
+        let show_remaining = config.show_remaining;
+        let fg = theme.foreground;
+        let progress_row = h_flex()
+            .w_full()
+            .max_w(px(680.))
+            .gap_2()
+            .text_xs()
+            .text_color(theme.muted_foreground)
+            .child(
+                div()
+                    .w(px(TIME_WIDTH))
+                    .flex_none()
+                    .text_right()
+                    .child(elapsed),
+            )
+            .child(
+                div()
+                    .relative()
+                    .flex_1()
+                    .min_w_0()
+                    .h(px(20.))
+                    .child(progress_track)
+                    .children(tooltip),
+            )
+            .child(
+                div()
+                    .id("bar-time-right")
+                    .w(px(TIME_WIDTH))
+                    .flex_none()
+                    .cursor_pointer()
+                    .hover(move |s| s.text_color(fg))
+                    .tooltip(move |window, cx| {
+                        gpui_component::tooltip::Tooltip::new(if show_remaining {
+                            t!("bar.tooltip.show_length")
+                        } else {
+                            t!("bar.tooltip.show_remaining")
+                        })
+                        .build(window, cx)
+                    })
+                    .on_click(move |_, _, cx| {
+                        update_app(cx, |app, cx| {
+                            app.settings
+                                .update(cx, |p, cx| p.set_show_remaining(!show_remaining, cx))
+                        });
+                    })
+                    .child(right_time),
+            );
+
+        // ---- volume
+        let vol_frame = self.volume.step(
+            &mut frame,
+            ProgressStyle::Standard,
+            false,
+            false,
+            || None,
+            0.85,
+        );
+        let bubble_scroll = self.volume_bubble_until.is_some_and(|t| t > now);
+        if let Some(t) = self.volume_bubble_until.filter(|&t| t > now) {
+            frame.wake_at(t);
+        }
+        let volume = state.volume;
+        let vol_tip = (self.volume.engaged() || bubble_scroll).then(|| {
+            let w = f32::from(self.volume.bounds.get().size.width);
+            let f = if self.volume.dragging() || bubble_scroll {
+                volume
+            } else {
+                self.volume.hover.unwrap_or(volume)
+            };
+            bubble(
+                t!(
+                    "bar.volume_percent",
+                    percent = crate::i18n::format::number((f * 100.).round() as u64)
+                ),
+                f * w,
+                1.,
+                &theme,
+            )
+        });
+        let weak = cx.entity().downgrade();
+        let scroll_volume = config.scroll_volume;
+        let volume_group = h_flex()
+            .id("bar-volume")
+            .flex_none()
+            .h_full()
+            .items_center()
+            .gap_1()
+            .when(scroll_volume, |this| {
+                let weak = weak.clone();
+                this.on_scroll(move |e: &ScrollEvent, window, cx| {
+                    scroll_volume_by(&weak, scroll_lines(e), window, cx);
+                })
+            })
+            .child(
+                Button::new("mute")
+                    .ghost()
+                    .with_size(Size::Medium)
+                    .icon(if volume <= 0. {
+                        AppIcon::Muted
+                    } else if volume < 0.5 {
+                        AppIcon::VolumeLow
+                    } else {
+                        AppIcon::Volume
+                    })
+                    .tooltip(if volume <= 0. {
+                        t!("bar.tooltip.unmute")
+                    } else {
+                        t!("bar.tooltip.mute")
+                    })
+                    .on_click(|_, window, cx| {
+                        update_app(cx, |app, cx| app.mute_toggle(window, cx));
+                    }),
+            )
+            .when_some(layout.slider, |this, w| {
+                let weak = weak.clone();
+                this.child(
+                    div()
+                        .relative()
+                        .w(px(w))
+                        .h(px(20.))
+                        .flex_none()
+                        .child(
+                            ProgressTrack::new(
+                                "bar-volume-track",
+                                TrackParams {
+                                    style: ProgressStyle::Standard,
+                                    frac: volume,
+                                    hover: None,
+                                    reveal: vol_frame.reveal.max(0.35),
+                                    amplitude: 0.,
+                                    phase: 0.,
+                                    spectrum: None,
+                                    peak_caps: false,
+                                    enabled: true,
+                                    look,
+                                    height: px(20.),
+                                    scale: 0.85,
+                                },
+                                self.volume.input.clone(),
+                            )
+                            .bounds_into(self.volume.bounds.clone())
+                            .on_event(Rc::new(
+                                move |event, window, cx| {
+                                    on_volume(&weak, event, scroll_volume, window, cx)
+                                },
+                            )),
+                        )
+                        .children(vol_tip),
+                )
+            });
+
+        // ---- background
+        let side = layout.side;
+        let level = self.progress.level();
+        let layers = self.background.layers(
+            &mut frame,
+            BackgroundLook::from_config(&config, state.playing, level),
+            &state.art,
+            BackgroundGeometry {
+                width,
+                height: BAR_HEIGHT,
+                info_end: PAD + side,
+                center: (2. * PAD + side, width - 2. * PAD - side),
+            },
+        );
+
+        // ---- zones
+        let left = region(&mut self.left, MusicApp::bar_info_zone, live, cx);
+        let transport = region(&mut self.transport, MusicApp::bar_transport_zone, live, cx);
+        let right = region(&mut self.right, MusicApp::bar_secondary_zone, live, cx);
+
+        let element = div()
+            .id("player-bar")
+            .relative()
+            .h(px(BAR_HEIGHT))
+            .w_full()
+            .flex_none()
+            .overflow_hidden()
+            .border_t_1()
+            .border_color(theme.border)
+            .bg(surface)
+            .children(layers)
+            .child(
+                h_flex()
+                    .absolute()
+                    .inset_0()
+                    .px(px(PAD))
+                    .gap(px(PAD))
+                    .child(div().w(px(side)).h_full().flex_none().child(left))
+                    .child(
+                        v_flex()
+                            .flex_1()
+                            .min_w_0()
+                            .h_full()
+                            .justify_center()
+                            .items_center()
+                            .gap(px(2.))
+                            .child(div().w_full().h(px(PLAY_BUTTON + 2.)).child(transport))
+                            .child(progress_row),
+                    )
+                    .child(
+                        h_flex()
+                            .w(px(side))
+                            .h_full()
+                            .flex_none()
+                            .gap_1()
+                            .child(div().flex_1().min_w_0().h_full().child(right))
+                            .child(volume_group),
+                    ),
+            )
+            .into_any_element();
+
+        let animating = frame.is_animating();
+        let wake = frame.finish(window);
+        // Continuous styles wake on a timer (~30 fps) instead of every display frame.
+        self.animating.set(
+            animating
+                || wake.is_some_and(|at| {
+                    at.saturating_duration_since(now) < Duration::from_millis(100)
+                }),
+        );
+        if let Some(at) = wake {
+            self.schedule(at, cx);
+        }
+        element
+    }
+}
+
+fn scroll_lines(e: &ScrollEvent) -> f32 {
+    match e.delta {
+        gpui::ScrollDelta::Lines(p) => p.y,
+        gpui::ScrollDelta::Pixels(p) => f32::from(p.y) / 20.,
+    }
+}
+
+/// A small tooltip bubble centred above `x` (px from the track's left).
+fn bubble(
+    text: impl Into<SharedString>,
+    x: f32,
+    alpha: f32,
+    theme: &gpui_component::Theme,
+) -> AnyElement {
+    const W: f32 = 64.;
+    div()
+        .absolute()
+        .bottom(px(20.))
+        .left(px(x - W / 2.))
+        .w(px(W))
+        .flex()
+        .justify_center()
+        .opacity(alpha)
+        .child(
+            div()
+                .px_1p5()
+                .py_0p5()
+                .rounded(px(6.))
+                .bg(theme.popover)
+                .border_1()
+                .border_color(theme.border)
+                .text_xs()
+                .text_color(theme.popover_foreground)
+                .shadow_sm()
+                .whitespace_nowrap()
+                .child(text.into()),
+        )
+        .into_any_element()
+}
+
+fn on_progress(bar: &WeakEntity<PlayerBar>, event: TrackEvent, total: f32, cx: &mut App) {
+    let seconds = |f: f32| (f * total).clamp(0., total);
+    match event {
+        TrackEvent::Hover(at) => {
+            bar.update(cx, |bar, cx| {
+                bar.progress.hover = at;
+                cx.notify();
+            })
+            .ok();
+        }
+        TrackEvent::Press(f) | TrackEvent::Drag(f) => {
+            update_app(cx, |app, _| app.scrub = Some(seconds(f)));
+            bar.update(cx, |_, cx| cx.notify()).ok();
+        }
+        TrackEvent::Release(f) => {
+            update_app(cx, |app, cx| {
+                app.scrub = None;
+                app.seek_to(Duration::from_secs_f32(seconds(f)), cx);
+            });
+            bar.update(cx, |_, cx| cx.notify()).ok();
+        }
+        TrackEvent::Scroll(_) => {}
+    }
+}
+
+fn on_volume(
+    bar: &WeakEntity<PlayerBar>,
+    event: TrackEvent,
+    scroll: bool,
+    window: &mut Window,
+    cx: &mut App,
+) {
+    match event {
+        TrackEvent::Hover(at) => {
+            bar.update(cx, |bar, cx| {
+                bar.volume.hover = at;
+                cx.notify();
+            })
+            .ok();
+        }
+        TrackEvent::Press(f) | TrackEvent::Drag(f) | TrackEvent::Release(f) => {
+            update_app(cx, |app, cx| {
+                app.set_volume((f * 100.).round() / 100., window, cx)
+            });
+            bar.update(cx, |_, cx| cx.notify()).ok();
+        }
+        TrackEvent::Scroll(lines) if scroll => scroll_volume_by(bar, lines, window, cx),
+        TrackEvent::Scroll(_) => {}
+    }
+}
+
+fn scroll_volume_by(bar: &WeakEntity<PlayerBar>, lines: f32, window: &mut Window, cx: &mut App) {
+    if lines == 0. {
+        return;
+    }
+    update_app(cx, |app, cx| {
+        let target = (app.volume + lines * SCROLL_VOLUME_STEP).clamp(0., 1.);
+        app.set_volume((target * 100.).round() / 100., window, cx);
+    });
+    bar.update(cx, |bar, cx| {
+        bar.volume_bubble_until = Some(Instant::now() + Duration::from_millis(900));
+        cx.notify();
+    })
+    .ok();
+}
+
+// ---- zones (rendered from the app) ----------------------------------------------
 
 impl MusicApp {
-    pub(crate) fn render_player_bar(&mut self, cx: &mut Context<Self>) -> impl IntoElement + use<> {
-        // SponsorBlock "Skip", Music Together status.
-        let chips = self.integration_chips(cx);
-        let cast = self.integration_cast_button(cx);
-        // Last session's queue (restored, not loaded yet) shows its current track.
+    /// The bar view (created on first use).
+    pub(crate) fn player_bar_view(&mut self, cx: &mut Context<Self>) -> Entity<PlayerBar> {
+        self.bar
+            .get_or_insert_with(|| cx.new(PlayerBar::new))
+            .clone()
+    }
+
+    /// The bar redraws often right now (see [`PlayerBar::is_live`]).
+    pub(crate) fn bar_is_live(&self, cx: &App) -> bool {
+        self.bar.as_ref().is_some_and(|b| b.read(cx).is_live())
+    }
+
+    fn bar_layout_now(&self, window: &Window) -> BarLayout {
+        bar_layout(
+            f32::from(window.viewport_size().width),
+            self.cast_device().is_some(),
+            self.playback.sleep_timer.is_some(),
+            true,
+        )
+    }
+
+    /// The track the bar shows: the playing one, or last session's restored one.
+    fn bar_track(&self) -> (Option<music_core::Track>, bool) {
         let restored = self.playback.track.is_none() && self.store.resume_at.is_some();
         let track = self
             .playback
             .track
             .clone()
             .or_else(|| restored.then(|| self.queue.current().cloned()).flatten());
-        let art = artwork(
-            track.as_ref().and_then(|t| t.artwork_url(120)),
-            px(56.),
-            px(6.),
-            cx,
-        );
-        let has_next = self.queue.has_next();
-        let (shuffle, repeat) = (self.queue.shuffle(), self.queue.repeat());
-        let heart_track = track.clone();
-        let theme = cx.theme();
-        let state = &self.playback;
+        (track, restored)
+    }
 
+    /// Left zone: artwork, title, artists, a status line; like.
+    pub(crate) fn bar_info_zone(&mut self, _: &mut Window, cx: &mut Context<Self>) -> AnyElement {
+        let (track, _) = self.bar_track();
+        let image = track
+            .as_ref()
+            .and_then(|t| t.artwork_url(120))
+            .and_then(|url| ArtworkCache::global(cx).update(cx, |cache, cx| cache.get(&url, cx)));
+        let message = self.bar_message(cx);
+        let theme = cx.theme();
         let (title, artists): (SharedString, SharedString) = match &track {
             Some(t) => (t.title.clone().into(), t.artists.clone().into()),
             None => (
@@ -56,80 +799,37 @@ impl MusicApp {
                 t!("player.pick_a_song").into(),
             ),
         };
-
-        let is_playing = state.status == PlaybackStatus::Playing;
-        let can_toggle = self.engine.is_some()
-            && (restored
-                || matches!(
-                    state.status,
-                    PlaybackStatus::Playing | PlaybackStatus::Paused | PlaybackStatus::Ended
-                ));
-        let loading = state.status == PlaybackStatus::Loading;
-
-        let total = state.duration.map(|d| d.as_secs()).unwrap_or(0);
-        let elapsed = self
-            .scrub
-            .map(|s| s as u64)
-            .unwrap_or_else(|| state.position.as_secs());
-
-        let recent_failure = self
-            .last_failure
-            .as_ref()
-            .filter(|(_, at)| at.elapsed() < std::time::Duration::from_secs(8))
-            .map(|(title, _)| title.clone());
-        let sleep = self.sleep_timer_label();
-        let message: Option<(SharedString, Hsla)> = if let Some(err) = &self.audio_error {
-            Some((
-                t!("player.audio_unavailable", error = err).into(),
-                theme.danger,
-            ))
-        } else if let PlaybackStatus::Error(err) = &state.status {
-            Some((err.clone().into(), theme.danger))
-        } else if loading {
-            Some((t!("common.loading").into(), theme.muted_foreground))
-        } else if state.buffering && is_playing {
-            Some((t!("player.buffering").into(), theme.muted_foreground))
-        } else {
-            recent_failure.map(|title| {
-                (
-                    t!("player.play_failed_skipped", title = title).into(),
-                    theme.warning,
-                )
-            })
-        };
-        let sleep_armed = sleep.is_some();
-        let source = crate::module_service::source_label(state.source.as_ref())
-            .filter(|_| track.is_some() && state.status != PlaybackStatus::Idle)
-            .map(|label| {
-                let module = state
-                    .source
-                    .as_ref()
-                    .is_some_and(|s| s.kind == music_core::SourceKind::Module);
-                (label, module)
-            });
-        let sleep_custom = self.settings.read(cx).sleep_custom();
-
-        h_flex()
-            .h(px(BAR_HEIGHT))
+        let art = div()
+            .size(px(56.))
             .flex_none()
-            .px_4()
-            .gap_4()
-            .border_t_1()
-            .border_color(theme.border)
-            .bg(theme.secondary)
-            // Left: artwork + title; click to expand into Now Playing.
+            .rounded(px(6.))
+            .overflow_hidden()
+            .bg(theme.muted)
+            .flex()
+            .items_center()
+            .justify_center()
+            .map(|this| match image {
+                Some(image) => this.child(img(image).size_full().object_fit(ObjectFit::Cover)),
+                None => this.child(
+                    Icon::new(Lucide::Music)
+                        .size(px(22.))
+                        .text_color(theme.muted_foreground),
+                ),
+            });
+        let hover = theme.list_hover;
+        let has_track = track.is_some();
+        h_flex()
+            .size_full()
+            .gap_1()
             .child(
                 h_flex()
                     .id("np-bar-open")
-                    // Shrinks before the transport does (the title truncates).
-                    .flex_basis(px(280.))
-                    .flex_shrink(1.)
-                    .min_w(px(150.))
+                    .flex_1()
+                    .min_w_0()
                     .gap_3()
                     .p_1()
                     .rounded(px(8.))
-                    .when(track.is_some(), |this| {
-                        let hover = theme.list_hover;
+                    .when(has_track, |this| {
                         this.cursor_pointer().hover(move |s| s.bg(hover)).on_click(
                             cx.listener(|this, _, window, cx| this.open_now_playing(window, cx)),
                         )
@@ -139,7 +839,6 @@ impl MusicApp {
                         v_flex()
                             .flex_1()
                             .min_w_0()
-                            .gap_0p5()
                             .child(
                                 div()
                                     .truncate()
@@ -153,270 +852,380 @@ impl MusicApp {
                                     .text_sm()
                                     .text_color(theme.muted_foreground)
                                     .child(artists),
-                            ),
-                    )
-                    .children(
-                        heart_track
-                            .as_ref()
-                            .map(|t| crate::components::like::like_button("bar-like", t, None, cx)),
+                            )
+                            .when_some(message, |this, (text, color)| {
+                                this.child(div().truncate().text_xs().text_color(color).child(text))
+                            }),
                     ),
             )
-            // Centre: transport + progress.
-            .child(
-                v_flex()
-                    .flex_1()
-                    .min_w(px(210.))
-                    .gap_1()
-                    .items_center()
-                    .child(
-                        h_flex()
-                            .w_full()
-                            .gap_2()
-                            // Same width on both sides keeps the transport centred.
-                            .child(div().flex_1().min_w_0())
-                            // Balances the Cast button on the right.
-                            .when(cast.is_some(), |this| {
-                                this.child(div().flex_none().w(px(28.)))
-                            })
-                            .child(
-                                Button::new("shuffle")
-                                    .ghost()
-                                    .small()
-                                    .rounded(px(999.))
-                                    .icon(Lucide::Shuffle)
-                                    .selected(shuffle)
-                                    .tooltip(if shuffle {
-                                        t!("player.tooltip.shuffle_on")
-                                    } else {
-                                        t!("player.tooltip.shuffle_off")
-                                    })
-                                    .on_click(
-                                        cx.listener(|this, _, _, cx| this.toggle_shuffle(cx)),
-                                    ),
-                            )
-                            .child(
-                                Button::new("previous")
-                                    .ghost()
-                                    .rounded(px(999.))
-                                    .icon(AppIcon::Previous)
-                                    .tooltip(t!("player.tooltip.previous"))
-                                    .disabled(track.is_none())
-                                    .on_click(
-                                        cx.listener(|this, _, _, cx| this.previous_track(cx)),
-                                    ),
-                            )
-                            .child(
-                                Button::new("play-pause")
-                                    .primary()
-                                    .rounded(px(999.))
-                                    .icon(if is_playing {
-                                        IconName::Pause
-                                    } else {
-                                        IconName::Play
-                                    })
-                                    .loading(loading)
-                                    .disabled(!can_toggle)
-                                    .on_click(cx.listener(Self::toggle_pause)),
-                            )
-                            .child(
-                                Button::new("next")
-                                    .ghost()
-                                    .rounded(px(999.))
-                                    .icon(AppIcon::Next)
-                                    .tooltip(t!("player.tooltip.next"))
-                                    .disabled(!has_next)
-                                    .on_click(cx.listener(|this, _, _, cx| this.next_track(cx))),
-                            )
-                            .child(
-                                Button::new("repeat")
-                                    .ghost()
-                                    .small()
-                                    .rounded(px(999.))
-                                    .icon(if repeat == Repeat::One {
-                                        Lucide::Repeat1
-                                    } else {
-                                        Lucide::Repeat
-                                    })
-                                    .selected(repeat != Repeat::Off)
-                                    .tooltip(match repeat {
-                                        Repeat::Off => t!("player.tooltip.repeat_off"),
-                                        Repeat::All => t!("player.tooltip.repeat_all"),
-                                        Repeat::One => t!("player.tooltip.repeat_one"),
-                                    })
-                                    .on_click(cx.listener(|this, _, _, cx| this.cycle_repeat(cx))),
-                            )
-                            // Tags and integration chips: they shrink and clip
-                            // instead of pushing into the title or the transport.
-                            .child(
-                                h_flex()
-                                    .flex_1()
-                                    .min_w_0()
-                                    .gap_1()
-                                    .overflow_hidden()
-                                    .when(state.preview_only, |this| {
-                                        this.child(chip_slot(
-                                            Tag::warning()
-                                                .small()
-                                                .rounded_full()
-                                                .child(t!("player.preview_badge"))
-                                                .into_any_element(),
-                                        ))
-                                    })
-                                    .when_some(source, |this, (label, module)| {
-                                        // Where the audio comes from: YouTube, a module, a file.
-                                        this.child(chip_slot(
-                                            if module {
-                                                Tag::primary()
-                                            } else {
-                                                Tag::secondary()
-                                            }
-                                            .small()
-                                            .rounded_full()
-                                            .child(label)
-                                            .into_any_element(),
-                                        ))
-                                    })
-                                    .children(chips.into_iter().map(chip_slot)),
-                            )
-                            // Its icon stays; a "Casting to …" label clips.
-                            .children(cast.map(|cast| {
-                                div()
-                                    .flex_shrink(1.)
-                                    .min_w(px(28.))
-                                    .overflow_hidden()
-                                    .child(cast)
-                            })),
-                    )
-                    .child(
-                        h_flex()
-                            .w_full()
-                            .max_w(px(560.))
-                            .gap_3()
-                            .text_xs()
-                            .text_color(theme.muted_foreground)
-                            .child(
-                                div()
-                                    .w(px(40.))
-                                    .text_right()
-                                    .child(format_duration(elapsed)),
-                            )
-                            .child(
-                                div().flex_1().child(
-                                    Slider::new(&self.progress)
-                                        .horizontal()
-                                        .disabled(track.is_none() || total == 0),
-                                ),
-                            )
-                            .child(div().w(px(40.)).child(if total > 0 {
-                                format_duration(total)
-                            } else {
-                                "--:--".into()
-                            })),
-                    ),
-            )
-            // Right: status / errors, volume, panels.
+            .children(track.as_ref().map(|t| {
+                crate::components::like::like_button("bar-like", t, None, cx)
+                    .with_size(Size::Medium)
+            }))
+            .into_any_element()
+    }
+
+    /// Errors, loading, buffering, a skipped song.
+    fn bar_message(&self, cx: &App) -> Option<(SharedString, Hsla)> {
+        let theme = cx.theme();
+        let state = &self.playback;
+        let recent_failure = self
+            .last_failure
+            .as_ref()
+            .filter(|(_, at)| at.elapsed() < Duration::from_secs(8))
+            .map(|(title, _)| title.clone());
+        if let Some(err) = &self.audio_error {
+            Some((
+                t!("player.audio_unavailable", error = err).into(),
+                theme.danger,
+            ))
+        } else if let PlaybackStatus::Error(err) = &state.status {
+            Some((err.clone().into(), theme.danger))
+        } else if state.status == PlaybackStatus::Loading {
+            Some((t!("common.loading").into(), theme.muted_foreground))
+        } else if state.buffering && state.status == PlaybackStatus::Playing {
+            Some((t!("player.buffering").into(), theme.muted_foreground))
+        } else {
+            recent_failure.map(|title| {
+                (
+                    t!("player.play_failed_skipped", title = title).into(),
+                    theme.warning,
+                )
+            })
+        }
+    }
+
+    /// Centre: tags · shuffle / previous / play / next / repeat · chips.
+    pub(crate) fn bar_transport_zone(
+        &mut self,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> AnyElement {
+        let layout = self.bar_layout_now(window);
+        let chips = self.integration_chips(cx);
+        let (track, restored) = self.bar_track();
+        let state = &self.playback;
+        let has_next = self.queue.has_next();
+        let (shuffle, repeat) = (self.queue.shuffle(), self.queue.repeat());
+        let is_playing = state.status == PlaybackStatus::Playing;
+        let can_toggle = self.engine.is_some()
+            && (restored
+                || matches!(
+                    state.status,
+                    PlaybackStatus::Playing | PlaybackStatus::Paused | PlaybackStatus::Ended
+                ));
+        let loading = state.status == PlaybackStatus::Loading;
+        let preview = state.preview_only && track.is_some();
+        let source = crate::module_service::source_label(state.source.as_ref())
+            .filter(|_| {
+                track.is_some() && state.status != PlaybackStatus::Idle && layout.source_chip
+            })
+            .map(|label| {
+                let module = state
+                    .source
+                    .as_ref()
+                    .is_some_and(|s| s.kind == music_core::SourceKind::Module);
+                (label, module)
+            });
+        let accent = AppColors::get(cx).accent;
+        let toggle_icon = |icon: Lucide, on: bool| {
+            let icon = Icon::new(icon);
+            if on { icon.text_color(accent) } else { icon }
+        };
+        h_flex()
+            .size_full()
+            .gap_2()
             .child(
                 h_flex()
-                    .flex_basis(px(320.))
-                    .flex_shrink(1.)
-                    .min_w(px(250.))
+                    .flex_1()
+                    .min_w_0()
+                    .justify_end()
                     .gap_1()
-                    .child(
-                        div()
-                            .flex_1()
-                            .min_w_0()
-                            .text_xs()
-                            .text_right()
-                            .line_clamp(3)
-                            .when_some(message, |this, (text, color)| {
-                                this.text_color(color).child(text)
-                            }),
-                    )
-                    // A long "… left" / "End of track" label clips; the moon icon stays.
-                    .child(
-                        div()
-                            .flex_shrink(1.)
-                            .min_w(px(28.))
-                            .overflow_hidden()
-                            .child(
-                                Button::new("sleep-timer")
-                                    .ghost()
-                                    .small()
-                                    .icon(Lucide::Moon)
-                                    .selected(sleep_armed)
-                                    .when_some(sleep, |b, label| b.label(label))
-                                    .tooltip(t!("player.sleep.title"))
-                                    .dropdown_menu(move |menu, _, _| {
-                                        MusicApp::sleep_timer_menu(menu, sleep_armed, sleep_custom)
-                                    }),
-                            ),
-                    )
-                    .child(
-                        Button::new("mute")
-                            .ghost()
-                            .small()
-                            .icon(if self.volume <= 0. {
-                                AppIcon::Muted
-                            } else if self.volume < 0.5 {
-                                AppIcon::VolumeLow
+                    .overflow_hidden()
+                    .when(preview, |this| {
+                        this.child(chip_slot(
+                            Tag::warning()
+                                .small()
+                                .rounded_full()
+                                .child(t!("player.preview_badge"))
+                                .into_any_element(),
+                        ))
+                    })
+                    .when_some(source, |this, (label, module)| {
+                        this.child(chip_slot(
+                            if module {
+                                Tag::primary()
                             } else {
-                                AppIcon::Volume
-                            })
-                            .tooltip(t!(
-                                "player.tooltip.volume",
-                                percent = crate::i18n::format::number(
-                                    (self.volume * 100.).round() as u64
-                                )
-                            ))
-                            .on_click(cx.listener(Self::toggle_mute)),
-                    )
-                    .child(
-                        div()
-                            .w(px(84.))
-                            .flex_none()
-                            .child(Slider::new(&self.volume_slider).horizontal()),
-                    )
-                    .child(
-                        Button::new("queue-toggle")
-                            .ghost()
+                                Tag::secondary()
+                            }
                             .small()
-                            .icon(Lucide::ListMusic)
-                            .selected(self.queue_open)
-                            .tooltip(t!("player.tooltip.queue"))
-                            .on_click(cx.listener(|this, _, _, cx| this.toggle_queue_panel(cx))),
-                    )
-                    .child(
-                        Button::new("mini-toggle")
-                            .ghost()
-                            .small()
-                            .icon(Lucide::PictureInPicture2)
-                            .selected(self.mini.is_some())
-                            .tooltip(t!("player.tooltip.mini_player"))
-                            .on_click(cx.listener(|this, _, _, cx| this.toggle_mini_player(cx))),
-                    )
-                    .child(
-                        Button::new("np-expand")
-                            .ghost()
-                            .small()
-                            .icon(IconName::ChevronUp)
-                            .tooltip(t!("player.tooltip.now_playing"))
-                            .disabled(track.is_none())
-                            .on_click(
-                                cx.listener(|this, _, window, cx| {
-                                    this.open_now_playing(window, cx)
-                                }),
-                            ),
-                    ),
+                            .rounded_full()
+                            .child(label)
+                            .into_any_element(),
+                        ))
+                    }),
             )
+            .when(layout.shuffle_repeat, |this| {
+                this.child(
+                    Button::new("shuffle")
+                        .ghost()
+                        .with_size(Size::Medium)
+                        .rounded(px(999.))
+                        .icon(toggle_icon(Lucide::Shuffle, shuffle))
+                        .selected(shuffle)
+                        .tooltip(if shuffle {
+                            t!("player.tooltip.shuffle_on")
+                        } else {
+                            t!("player.tooltip.shuffle_off")
+                        })
+                        .on_click(cx.listener(|this, _, _, cx| this.toggle_shuffle(cx))),
+                )
+            })
+            .child(
+                Button::new("previous")
+                    .ghost()
+                    .with_size(px(26.))
+                    .w(px(SKIP_BUTTON))
+                    .h(px(SKIP_BUTTON))
+                    .rounded(px(999.))
+                    .icon(AppIcon::Previous)
+                    .tooltip(t!("player.tooltip.previous"))
+                    .disabled(track.is_none())
+                    .on_click(cx.listener(|this, _, _, cx| this.previous_track(cx))),
+            )
+            .child(
+                Button::new("play-pause")
+                    .primary()
+                    .with_size(px(28.))
+                    .w(px(PLAY_BUTTON))
+                    .h(px(PLAY_BUTTON))
+                    .rounded(px(999.))
+                    .icon(if is_playing {
+                        IconName::Pause
+                    } else {
+                        IconName::Play
+                    })
+                    .tooltip(if is_playing {
+                        t!("bar.tooltip.pause")
+                    } else {
+                        t!("bar.tooltip.play")
+                    })
+                    .loading(loading)
+                    .disabled(!can_toggle)
+                    .on_click(cx.listener(Self::toggle_pause)),
+            )
+            .child(
+                Button::new("next")
+                    .ghost()
+                    .with_size(px(26.))
+                    .w(px(SKIP_BUTTON))
+                    .h(px(SKIP_BUTTON))
+                    .rounded(px(999.))
+                    .icon(AppIcon::Next)
+                    .tooltip(t!("player.tooltip.next"))
+                    .disabled(!has_next)
+                    .on_click(cx.listener(|this, _, _, cx| this.next_track(cx))),
+            )
+            .when(layout.shuffle_repeat, |this| {
+                this.child(
+                    Button::new("repeat")
+                        .ghost()
+                        .with_size(Size::Medium)
+                        .rounded(px(999.))
+                        .icon(toggle_icon(
+                            if repeat == Repeat::One {
+                                Lucide::Repeat1
+                            } else {
+                                Lucide::Repeat
+                            },
+                            repeat != Repeat::Off,
+                        ))
+                        .selected(repeat != Repeat::Off)
+                        .tooltip(match repeat {
+                            Repeat::Off => t!("player.tooltip.repeat_off"),
+                            Repeat::All => t!("player.tooltip.repeat_all"),
+                            Repeat::One => t!("player.tooltip.repeat_one"),
+                        })
+                        .on_click(cx.listener(|this, _, _, cx| this.cycle_repeat(cx))),
+                )
+            })
+            // SponsorBlock "Skip", Music Together: shrink and clip, never overlap.
+            .child(
+                h_flex()
+                    .flex_1()
+                    .min_w_0()
+                    .gap_1()
+                    .overflow_hidden()
+                    .children(chips.into_iter().map(chip_slot)),
+            )
+            .into_any_element()
+    }
+
+    /// Right zone (before the volume): lyrics, queue, sleep timer, Cast, mini
+    /// player, Now Playing — in priority order when the window is narrow.
+    pub(crate) fn bar_secondary_zone(
+        &mut self,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> AnyElement {
+        let layout = self.bar_layout_now(window);
+        let cast = layout
+            .cast
+            .then(|| self.integration_cast_button(cx))
+            .flatten();
+        let (track, _) = self.bar_track();
+        let sleep = self.sleep_timer_label();
+        let sleep_armed = sleep.is_some();
+        let sleep_custom = self.settings.read(cx).sleep_custom();
+        let np_open = self.np.open;
+        let lyrics_open = np_open && self.np.lyrics_view;
+        let accent = AppColors::get(cx).accent;
+        let toggle = |id: &'static str, icon: Lucide, on: bool| {
+            Button::new(id)
+                .ghost()
+                .with_size(Size::Medium)
+                .icon(if on {
+                    Icon::new(icon).text_color(accent)
+                } else {
+                    Icon::new(icon)
+                })
+                .selected(on)
+        };
+        h_flex()
+            .size_full()
+            .justify_end()
+            .gap_1()
+            .when(layout.lyrics, |this| {
+                this.child(
+                    toggle("lyrics-toggle", Lucide::MicVocal, lyrics_open)
+                        .tooltip(t!("bar.tooltip.lyrics"))
+                        .disabled(track.is_none())
+                        .on_click(
+                            cx.listener(|this, _, window, cx| this.toggle_lyrics_view(window, cx)),
+                        ),
+                )
+            })
+            .child(
+                toggle("queue-toggle", Lucide::ListMusic, self.queue_open)
+                    .tooltip(t!("player.tooltip.queue"))
+                    .on_click(cx.listener(|this, _, _, cx| this.toggle_queue_panel(cx))),
+            )
+            .when(layout.sleep, |this| {
+                this.child(
+                    div()
+                        .flex_shrink(1.)
+                        .min_w(px(ICON_BUTTON))
+                        .overflow_hidden()
+                        .child(
+                            toggle("sleep-timer", Lucide::Moon, sleep_armed)
+                                .when_some(sleep.filter(|_| layout.sleep_label), |b, label| {
+                                    b.label(label)
+                                })
+                                .tooltip(t!("player.sleep.title"))
+                                .dropdown_menu(move |menu, _, _| {
+                                    MusicApp::sleep_timer_menu(menu, sleep_armed, sleep_custom)
+                                }),
+                        ),
+                )
+            })
+            // "Casting to …" clips at its end; the icon stays.
+            .children(cast.map(|cast| {
+                div()
+                    .flex_shrink(1.)
+                    .min_w(px(ICON_BUTTON))
+                    .max_w(px(160.))
+                    .h(px(ICON_BUTTON))
+                    .flex()
+                    .items_center()
+                    .overflow_hidden()
+                    .child(cast)
+            }))
+            .when(layout.mini, |this| {
+                this.child(
+                    toggle(
+                        "mini-toggle",
+                        Lucide::PictureInPicture2,
+                        self.mini.is_some(),
+                    )
+                    .tooltip(t!("player.tooltip.mini_player"))
+                    .on_click(cx.listener(|this, _, _, cx| this.toggle_mini_player(cx))),
+                )
+            })
+            .child(
+                Button::new("np-expand")
+                    .ghost()
+                    .with_size(Size::Medium)
+                    .icon(IconName::ChevronUp)
+                    .selected(np_open && !lyrics_open)
+                    .tooltip(t!("player.tooltip.now_playing"))
+                    .disabled(track.is_none())
+                    .on_click(cx.listener(|this, _, window, cx| this.open_now_playing(window, cx))),
+            )
+            .into_any_element()
+    }
+
+    /// Mute button: silence, or back to the volume before muting.
+    pub(crate) fn mute_toggle(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let target = if self.volume > 0. {
+            0.
+        } else {
+            self.unmuted_volume
+        };
+        self.set_volume(target, window, cx);
+    }
+
+    /// Lyrics button: Now Playing with the lyrics in view (a design without a
+    /// lyrics pane shows the lyrics-first layout until it closes); again closes it.
+    pub(crate) fn toggle_lyrics_view(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        if self.np.open && self.np.lyrics_view {
+            self.close_now_playing(window, cx);
+            return;
+        }
+        self.np.lyrics_view = true;
+        if self.np.open {
+            cx.notify();
+        } else {
+            self.open_now_playing(window, cx);
+        }
     }
 }
 
-/// A tag / chip in the bar's transport row: shrinks (clipping its end) when the
-/// row is narrow, down to nothing.
+/// A tag / chip beside the transport: shrinks (clipping its end), down to nothing.
 fn chip_slot(chip: AnyElement) -> gpui::Div {
     div()
         .flex_shrink(1.)
         .min_w_0()
         .overflow_hidden()
         .child(chip)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn narrow_bars_drop_controls_by_priority_without_overlap() {
+        for width in [700., 880., 1000., 1180., 1280., 1600., 2400.] {
+            for casting in [false, true] {
+                for sleep in [false, true] {
+                    let l = bar_layout(width, casting, sleep, true);
+                    // The zones and their padding add up to the window width.
+                    assert!(2. * l.side + l.center + 4. * PAD <= width + 0.5, "{width}");
+                    if casting {
+                        assert!(l.cast, "an active Cast session stays visible at {width}");
+                    }
+                    if sleep {
+                        assert!(l.sleep, "an armed sleep timer stays visible at {width}");
+                    }
+                }
+            }
+        }
+        let narrow = bar_layout(880., false, false, true);
+        assert!(narrow.slider.is_some(), "volume slider at 880 pt");
+        assert!(narrow.shuffle_repeat);
+        assert!(!narrow.mini && !narrow.source_chip);
+        let wide = bar_layout(1600., false, false, true);
+        assert!(wide.lyrics && wide.cast && wide.sleep && wide.mini && wide.source_chip);
+        assert_eq!(wide.slider, Some(92.));
+    }
 }
