@@ -1,4 +1,4 @@
-//! `music-relay`: a relay server for Music Together sessions across networks.
+//! `music-relay`: a relay server for the app's Music Together sessions across networks.
 //!
 //! ```sh
 //! music-relay --listen 0.0.0.0:42118 --max-rooms 100 --max-guests 20 -v
@@ -12,7 +12,10 @@ use std::time::Duration;
 
 use music_relay::{Config, Relay};
 
-const USAGE: &str = "music-relay — relay for Music Together sessions
+const USAGE: &str = concat!(
+    "music-relay — relay for ",
+    env!("MUSIC_APP_NAME"),
+    "'s Music Together sessions
 
 USAGE: music-relay [OPTIONS]
 
@@ -27,7 +30,8 @@ USAGE: music-relay [OPTIONS]
   -h, --help             this text
 
 Health check: GET /health → {\"status\":\"ok\",\"rooms\":…,\"guests\":…,\"connections\":…}
-TLS: run it behind a reverse proxy (Caddy, nginx) and give the app the wss:// URL.";
+TLS: run it behind a reverse proxy (Caddy, nginx) and give the app the wss:// URL."
+);
 
 fn parse(args: &[String]) -> Result<Config, String> {
     let mut config = Config::default();
@@ -90,7 +94,8 @@ fn main() -> ExitCode {
     match Relay::start(config.clone()) {
         Ok(relay) => {
             eprintln!(
-                "music-relay: listening on {} (max {} rooms × {} guests)",
+                "music-relay ({}): listening on {} (max {} rooms × {} guests)",
+                music_relay::APP_NAME,
                 relay.addr(),
                 config.max_rooms,
                 config.max_guests_per_room

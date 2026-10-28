@@ -1,4 +1,5 @@
-//! A small self-hostable relay for Music Together sessions across networks.
+//! A small self-hostable relay for the app's (TuneDesk's) Music Together sessions
+//! across networks.
 //!
 //! Guests speak the normal session protocol to the relay's URL; the relay checks
 //! the first frame (`client_hello`: session id + key against the room's key hash)
@@ -36,6 +37,8 @@ use tungstenite::protocol::frame::coding::CloseCode;
 use tungstenite::protocol::{CloseFrame, WebSocketConfig};
 use tungstenite::{Message as WsMessage, WebSocket};
 
+/// The app this relay serves (`APP_NAME` in `packaging/app.env`).
+pub const APP_NAME: &str = env!("MUSIC_APP_NAME");
 /// The session protocol version the relay understands (`relay_host.protocolVersion`).
 pub const PROTOCOL_VERSION: u32 = 1;
 pub const DEFAULT_PORT: u16 = 42118;
@@ -328,7 +331,7 @@ fn serve(stream: TcpStream, shared: &Shared) -> std::io::Result<()> {
         let _ = (&stream).read_exact(&mut sink);
         let _ = stream.shutdown(std::net::Shutdown::Read);
         return if head.starts_with("GET ") && matches!(path, "/health" | "/healthz") {
-            let body = json!({ "status": "ok" });
+            let body = json!({ "status": "ok", "app": APP_NAME });
             let mut body = body.as_object().cloned().unwrap_or_default();
             if let Value::Object(stats) = serde_json::to_value(shared.stats()).unwrap_or_default() {
                 body.extend(stats);

@@ -1061,7 +1061,7 @@ session and wrong key), then forwards text frames between the host and its guest
 ```sh
 cargo build --release -p music-relay
 ./target/release/music-relay --listen 0.0.0.0:42118 -v
-curl http://localhost:42118/health   # {"status":"ok","rooms":0,"guests":0,"connections":1}
+curl http://localhost:42118/health   # {"app":"TuneDesk","connections":1,"guests":0,"rooms":0,"status":"ok"}
 ```
 
 Options: `--max-rooms 100`, `--max-guests 20` (per room), `--max-connections 1000`,
