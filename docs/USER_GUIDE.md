@@ -260,7 +260,7 @@ Play the same music in sync with others (sidebar → **Listen together**).
 * **Stop casting** (in the same menu or Settings → Chromecast) continues the song on this
   computer.
 * The audio is streamed from this app to the device, so keep the app running and both on
-  the same network. The sleep timer, equalizer and speed don't apply while casting.
+  the same network; if the system asks whether to accept incoming connections, allow it. The sleep timer, equalizer and speed don't apply while casting.
 * Not yet tested with real devices; please report problems.
 
 ## AI content filter

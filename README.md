@@ -848,6 +848,7 @@ progress bar by a guest (it is overridden by the host's state), physical input.
 |---|---|
 | ![Settings: Music Together (relay)](docs/screenshots/integrations2-settings-together.png) | ![Settings: AI content filter](docs/screenshots/integrations2-settings-ai-filter.png) |
 | ![Casting (player bar)](docs/screenshots/integrations2-casting.png) | ![Settings: Chromecast](docs/screenshots/integrations2-settings-cast.png) |
+| ![AI filter: "christmas songs" with holiday music hidden](docs/screenshots/integrations2-ai-filter-search.png) | |
 
 * **Host transfer** (Listen together → a guest's **Make host**): the host sends that guest
   `host_transfer` with the room (queue, position stamped with its clock, repeat, room
