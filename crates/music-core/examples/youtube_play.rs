@@ -7,15 +7,112 @@
 //! Plays the first search result at volume 0, reports time to first audio,
 //! confirms playback continues past the old ~60 s preview limit (by seeking),
 //! then seeks near the end and checks the engine moves on to the next result.
+//!
+//! `--first-audio [N]` instead measures time to first audio for the first N
+//! (default 4) results, one after another (after `prewarm`, as the app does;
+//! `--cold` skips it; `--expire-potoken` expires the PoToken attestation before
+//! every song after the first, to check its renewal with `web`). `MUSIC_LOG=1`
+//! (or `debug`) prints the core's log with timestamps.
 
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use music_core::youtube::{WebClient, WebResolver, platform_potoken_provider};
+use music_core::youtube::{PoTokenProvider, WebClient, WebResolver, platform_potoken_provider};
 use music_core::{InnerTube, IosClientResolver, PlaybackStatus, Player};
 
+/// Minimal stderr logger (`MUSIC_LOG=1`): milliseconds since start + message.
+struct Logger(Instant, log::Level);
+
+impl log::Log for Logger {
+    fn enabled(&self, m: &log::Metadata) -> bool {
+        m.level() <= self.1
+            && (m.target().starts_with("music_core") || m.target().starts_with("youtube_play"))
+    }
+    fn log(&self, r: &log::Record) {
+        if self.enabled(r.metadata()) {
+            eprintln!("[{:>6} ms] {}", self.0.elapsed().as_millis(), r.args());
+        }
+    }
+    fn flush(&self) {}
+}
+
+/// Plays the first `n` results one after another; returns time to first audio for each.
+fn first_audio(
+    player: &Player,
+    tracks: &[music_core::Track],
+    expire: Option<&dyn PoTokenProvider>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let mut times = Vec::new();
+    for (i, track) in tracks.iter().enumerate() {
+        if let Some(provider) = expire.filter(|_| i > 0) {
+            log::info!("expiring the PoToken attestation");
+            provider.expire_attestation();
+        }
+        let started = Instant::now();
+        log::info!("play {}", track.video_id);
+        player.play(track.clone());
+        let deadline = started + Duration::from_secs(30);
+        loop {
+            std::thread::sleep(Duration::from_millis(10));
+            let s = player.state();
+            if let PlaybackStatus::Error(e) = &s.status {
+                return Err(format!("{}: {e}", track.title).into());
+            }
+            if s.status == PlaybackStatus::Playing && s.position > Duration::ZERO {
+                let t = started.elapsed();
+                log::info!("first audio");
+                println!(
+                    "{:<40} first audio after {:>5} ms (preview_only: {}, {:?})",
+                    track.title.chars().take(40).collect::<String>(),
+                    t.as_millis(),
+                    s.preview_only,
+                    s.source.as_ref().and_then(|s| s.quality_label())
+                );
+                times.push(t);
+                break;
+            }
+            if Instant::now() > deadline {
+                return Err(format!("{}: no audio after 30 s", track.title).into());
+            }
+        }
+        // Let it play a little (the download keeps going), then move on.
+        std::thread::sleep(Duration::from_secs(3));
+    }
+    let ms: Vec<u128> = times.iter().map(Duration::as_millis).collect();
+    let mean = ms.iter().sum::<u128>() / ms.len().max(1) as u128;
+    println!("first audio (ms): {ms:?}, mean {mean}");
+    Ok(())
+}
+
 fn run() -> Result<(), Box<dyn std::error::Error>> {
-    let mut args = std::env::args().skip(1);
+    if std::env::var_os("MUSIC_LOG").is_some() {
+        let debug = std::env::var("MUSIC_LOG").as_deref() == Ok("debug");
+        let level = if debug {
+            log::Level::Debug
+        } else {
+            log::Level::Info
+        };
+        let _ = log::set_logger(Box::leak(Box::new(Logger(Instant::now(), level))));
+        log::set_max_level(level.to_level_filter());
+    }
+    let mut args: Vec<String> = std::env::args().skip(1).collect();
+    let take_flag = |args: &mut Vec<String>, flag: &str| {
+        let i = args.iter().position(|a| a == flag)?;
+        args.remove(i);
+        Some(i)
+    };
+    let measure = take_flag(&mut args, "--first-audio").map(|i| {
+        match args.get(i).and_then(|n| n.parse::<usize>().ok()) {
+            Some(n) => {
+                args.remove(i);
+                n
+            }
+            None => 4,
+        }
+    });
+    let cold = take_flag(&mut args, "--cold").is_some();
+    let expire_potoken = take_flag(&mut args, "--expire-potoken").is_some();
+    let mut args = args.into_iter();
     let client = match args.next().as_deref() {
         Some("web") => WebClient::MobileWeb,
         _ => WebClient::Tv,
@@ -33,12 +130,24 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let cache = std::env::temp_dir().join("music-core-youtube-example");
+    let potoken = platform_potoken_provider();
     let resolver = Arc::new(WebResolver::new(
         vec![client],
-        platform_potoken_provider(),
+        potoken.clone(),
         Some(Arc::new(IosClientResolver)),
         Some(cache),
     ));
+    if let Some(n) = measure {
+        if !cold {
+            let t = Instant::now();
+            resolver.prewarm();
+            println!("prewarm took {:?}", t.elapsed());
+        }
+        let player = Player::new(resolver)?;
+        player.set_volume(0.0);
+        let expire = potoken.as_deref().filter(|_| expire_potoken);
+        return first_audio(&player, &tracks[..n.min(tracks.len())], expire);
+    }
     let player = Player::new(resolver)?;
     player.set_volume(0.0);
     let started = Instant::now();

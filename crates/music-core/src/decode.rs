@@ -21,7 +21,7 @@ use std::time::Duration;
 
 use rodio::source::SeekError;
 use rodio::{ChannelCount, SampleRate, Source};
-use symphonia::core::codecs::audio::well_known::CODEC_ID_OPUS;
+use symphonia::core::codecs::audio::well_known::{CODEC_ID_AAC, CODEC_ID_OPUS};
 use symphonia::core::codecs::audio::{AudioDecoder, AudioDecoderOptions};
 use symphonia::core::errors::Error as SymphoniaError;
 use symphonia::core::formats::probe::Hint;
@@ -32,8 +32,14 @@ use symphonia::core::units::{Time, TimeBase, Timestamp};
 
 use crate::buffer::StreamBuffer;
 use crate::equalizer::{EqControl, EqStage};
+use crate::mp4_gapless::{self, Mp4Gapless};
 use crate::opus::{OPUS_PREROLL_FRAMES, OpusPacketDecoder};
 use crate::{Error, Result};
+
+/// AAC frames are 1024 samples; after a reset the decoder needs one frame
+/// (the `roll` distance) before its output is valid. Seeks decode this much
+/// before the target (two frames, to be safe with HE-AAC's doubled output).
+const AAC_PREROLL_FRAMES: u64 = 2048;
 
 /// Where the encoded bytes come from; reopened after a failed seek.
 #[derive(Clone)]
@@ -221,10 +227,18 @@ pub struct TrackDecoder {
     buffer: Vec<f32>,
     /// Next sample of `buffer` to yield.
     offset: usize,
-    /// Position of `buffer[0]`, in frames at `rate`.
+    /// Position of `buffer[0]`, in frames at `rate` (presentation time: after
+    /// the encoder delay is trimmed).
     buffer_start: u64,
-    /// Frames still to drop after an accurate seek landed before the target.
-    skip_frames: u64,
+    /// After a seek, frames before this position are dropped (the demuxer
+    /// lands on a packet at or before the target, or before it on purpose to
+    /// pre-roll the codec).
+    skip_to: Option<u64>,
+    /// MP4 edit list / iTunSMPB: encoder delay and real length (AAC priming
+    /// and padding), which Symphonia leaves in.
+    gapless: Option<Mp4Gapless>,
+    /// Frames to decode before a seek target so the codec has converged.
+    preroll_frames: u64,
     finished: bool,
     /// Why decoding stopped early (an I/O error other than end of data).
     end_error: Option<String>,
@@ -271,11 +285,32 @@ impl TrackDecoder {
         let (track_id, time_base) = (track.id, track.time_base);
         let codec_name = codec_name(params.codec);
         let bits_per_sample = params.bits_per_sample.filter(|b| *b > 0);
-        let total_duration = track
+        let media_duration = track
             .num_frames
             .zip(time_base)
             .and_then(|(frames, tb)| tb.calc_time(Timestamp::new(frames as i64)))
             .map(time_to_duration);
+        let is_aac = params.codec == CODEC_ID_AAC;
+        // Opus carries its own pre-skip (handled below), so only other codecs in
+        // MP4 use the container's edit list.
+        let gapless = if params.codec == CODEC_ID_OPUS {
+            None
+        } else {
+            input
+                .media_source()
+                .ok()
+                .and_then(|mut source| mp4_gapless::read(&mut source))
+                .filter(|g| !g.is_trivial())
+        };
+        let total_duration = match gapless {
+            Some(g) => match g.duration {
+                Some(ticks) => Some(Duration::from_secs_f64(ticks as f64 / g.timescale as f64)),
+                None => media_duration.map(|d| {
+                    d.saturating_sub(Duration::from_secs_f64(g.start as f64 / g.timescale as f64))
+                }),
+            },
+            None => media_duration,
+        };
         let (codec, rate, channels) = if params.codec == CODEC_ID_OPUS {
             let opus = OpusPacketDecoder::new(&params)?;
             let channels = opus.channels();
@@ -321,7 +356,9 @@ impl TrackDecoder {
             buffer: Vec::new(),
             offset: 0,
             buffer_start: 0,
-            skip_frames: 0,
+            skip_to: None,
+            gapless,
+            preroll_frames: if is_aac { AAC_PREROLL_FRAMES } else { 0 },
             finished: false,
             end_error: None,
             eq: None,
@@ -388,7 +425,7 @@ impl TrackDecoder {
     /// when the input is a finished download.
     pub(crate) fn scan_end(&self) -> Option<Duration> {
         let mut format = self.input.open_format().ok()?;
-        let tb = self.time_base?;
+        self.time_base?;
         let mut end: Option<Timestamp> = None;
         loop {
             match format.next_packet() {
@@ -400,13 +437,31 @@ impl TrackDecoder {
                 Ok(None) | Err(_) => break,
             }
         }
-        tb.calc_time(end?).map(time_to_duration)
+        let mut frames = self.pts_to_frame(end?);
+        if let Some((start, stop)) = self.trim_frames() {
+            frames = stop
+                .map_or(frames, |stop| frames.min(stop))
+                .saturating_sub(start);
+        }
+        Some(Duration::from_secs_f64(frames as f64 / self.rate as f64))
+    }
+
+    /// The real audio's `(start, end)` on the media timeline, in frames at
+    /// the current rate (MP4 priming and padding).
+    fn trim_frames(&self) -> Option<(u64, Option<u64>)> {
+        let g = self.gapless?;
+        Some((
+            g.to_frames(g.start, self.rate),
+            g.duration.map(|d| g.to_frames(g.start + d, self.rate)),
+        ))
     }
 
     /// Decodes the next packet of our track into `buffer`. False at end of stream.
     fn refill(&mut self) -> bool {
         loop {
             if self.finished {
+                // `pos()` ends up at the end of the last packet.
+                self.buffer_start += (self.buffer.len() / self.channels.max(1) as usize) as u64;
                 self.buffer.clear();
                 self.offset = 0;
                 return false;
@@ -453,6 +508,25 @@ impl TrackDecoder {
                     self.rate = spec.rate();
                     self.channels = spec.channels().count().max(1) as u16;
                     decoded.copy_to_vec_interleaved(&mut self.buffer);
+                    let media_start = self.pts_to_frame(packet.pts);
+                    self.buffer_start = media_start;
+                    if let Some((start, end)) = self.trim_frames() {
+                        // Keep only the real audio: drop priming, stop at the padding.
+                        if end.is_some_and(|end| media_start >= end) {
+                            self.finished = true;
+                            continue;
+                        }
+                        let ch = self.channels as usize;
+                        let frames = (self.buffer.len() / ch) as u64;
+                        let head = start.saturating_sub(media_start).min(frames);
+                        let keep = end.map_or(frames, |end| (end - media_start).min(frames));
+                        self.buffer.truncate(keep as usize * ch);
+                        self.buffer.drain(..(head.min(keep) as usize) * ch);
+                        if self.buffer.is_empty() {
+                            continue;
+                        }
+                        self.buffer_start = media_start + head - start;
+                    }
                 }
                 Codec::Opus(decoder) => {
                     let frames = match decoder.decode(&packet.data, &mut self.buffer) {
@@ -486,19 +560,19 @@ impl TrackDecoder {
                     if self.buffer.is_empty() {
                         continue;
                     }
+                    self.buffer_start = self.pts_to_frame(packet.pts);
                 }
             }
             self.offset = 0;
-            self.buffer_start = self.pts_to_frame(packet.pts);
 
-            if self.skip_frames > 0 {
+            if let Some(skip_to) = self.skip_to {
                 let frames = (self.buffer.len() / self.channels as usize) as u64;
-                let skip = self.skip_frames.min(frames);
-                self.skip_frames -= skip;
-                self.offset = skip as usize * self.channels as usize;
-                if self.offset >= self.buffer.len() {
+                let skip = skip_to.saturating_sub(self.buffer_start);
+                if skip >= frames {
                     continue;
                 }
+                self.skip_to = None;
+                self.offset = skip as usize * self.channels as usize;
             }
             if let Some(eq) = &mut self.eq {
                 eq.set_format(self.rate, self.channels);
@@ -528,14 +602,17 @@ impl TrackDecoder {
     /// Seeks the demuxer and decodes the first packet at `pos`.
     fn seek_to(&mut self, pos: Duration) -> std::result::Result<(), SymphoniaError> {
         let opus = matches!(self.codec, Codec::Opus(_));
-        // Opus needs ~80 ms of pre-roll before the target to converge.
-        let demux_to = if opus {
-            pos.saturating_sub(Duration::from_secs_f64(
-                OPUS_PREROLL_FRAMES as f64 / self.rate as f64,
-            ))
+        // Opus needs ~80 ms of pre-roll before the target to converge, AAC a frame.
+        let preroll = if opus {
+            OPUS_PREROLL_FRAMES
         } else {
-            pos
+            self.preroll_frames
         };
+        let target = (pos.as_secs_f64() * self.rate as f64).round() as u64;
+        // The demuxer's timeline still includes the encoder delay.
+        let media_target = target + self.trim_frames().map_or(0, |(start, _)| start);
+        let demux_to =
+            Duration::from_secs_f64(media_target.saturating_sub(preroll) as f64 / self.rate as f64);
         let time = Time::try_from_secs_f64(demux_to.as_secs_f64()).unwrap_or(Time::ZERO);
         let seeked = self.format.seek(
             SeekMode::Accurate,
@@ -550,12 +627,11 @@ impl TrackDecoder {
         }
         self.finished = false;
         self.end_error = None;
-        let target = if opus {
-            (pos.as_secs_f64() * self.rate as f64).round() as u64
+        self.skip_to = Some(if opus || preroll > 0 || self.gapless.is_some() {
+            target
         } else {
             self.pts_to_frame(seeked.required_ts)
-        };
-        self.skip_frames = target.saturating_sub(self.pts_to_frame(seeked.actual_ts));
+        });
         if self.refill() {
             Ok(())
         } else {
@@ -649,7 +725,7 @@ fn audio_err(e: SymphoniaError) -> Error {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
 
     const FIXTURE: &[u8] = include_bytes!("../tests/fixtures/chirp_frag.m4a");
@@ -845,7 +921,8 @@ mod tests {
             let (rate, channels) = (d.rate, d.channels as usize);
             let samples: Vec<f32> = d.by_ref().collect();
             let decoded = samples.len() as f64 / channels as f64 / rate as f64;
-            // AAC carries ~2k frames of priming that Symphonia does not trim.
+            // MP3 / Vorbis / Opus trim their encoder delay from the stream; AAC in
+            // MP4 from the edit list (`mp4_gapless`).
             assert!(
                 (decoded - secs).abs() < 0.06,
                 "{name}: decoded {decoded} s, expected {secs}"
@@ -856,6 +933,190 @@ mod tests {
             assert!((hz - 440.0).abs() < 10.0, "{name}: {hz} Hz");
             let peak = mid.iter().fold(0.0f32, |m, s| m.max(s.abs()));
             assert!(peak > 0.05, "{name}: silent ({peak})");
+        }
+    }
+
+    /// The signal in the `chirp_gapless*.m4a` / `gapless_*.m4a` fixtures
+    /// (ffmpeg `aevalsrc`, 44.1 kHz mono): 200 Hz rising by 1440 Hz per second.
+    ///
+    /// ```sh
+    /// C="0.5*sin(2*PI*(200*t+720*t*t))"; S="sample_rate=44100"
+    /// ffmpeg -f lavfi -i "aevalsrc=exprs='$C':$S:duration=1.25" -c:a aac -b:a 128k \
+    ///     -movie_timescale 44100 chirp_gapless.m4a
+    /// ffmpeg -f lavfi -i "aevalsrc=exprs='$C':$S:duration=1.25" -c:a aac -b:a 128k -use_editlist 1 \
+    ///     -movflags frag_keyframe+default_base_moof -frag_duration 300000 chirp_gapless_frag.m4a
+    /// ffmpeg -f lavfi -i "aevalsrc=exprs='$C':$S:duration=0.6" -c:a aac -b:a 128k \
+    ///     -movie_timescale 44100 gapless_a.m4a
+    /// # gapless_b.m4a: the same with t+0.6 for t and duration=0.7
+    /// ```
+    pub(crate) fn reference_chirp(frame: u64) -> f32 {
+        let t = frame as f64 / 44_100.0;
+        (0.5 * (2.0 * std::f64::consts::PI * (200.0 * t + 720.0 * t * t)).sin()) as f32
+    }
+
+    /// The lag (in frames, `decoded[i]` ≈ `reference(i - lag)`) with the highest
+    /// normalized correlation over `-max..=max`, and that correlation.
+    pub(crate) fn best_lag(
+        decoded: &[f32],
+        reference: impl Fn(i64) -> f32,
+        max: i64,
+    ) -> (i64, f64) {
+        let mut best = (0, f64::MIN);
+        for lag in -max..=max {
+            let (mut xy, mut xx, mut yy) = (0.0, 0.0, 0.0);
+            for (i, &x) in decoded.iter().enumerate() {
+                let y = reference(i as i64 - lag) as f64;
+                xy += x as f64 * y;
+                xx += x as f64 * x as f64;
+                yy += y * y;
+            }
+            let c = xy / (xx * yy).sqrt().max(1e-12);
+            if c > best.1 {
+                best = (lag, c);
+            }
+        }
+        best
+    }
+
+    fn chirp_at(offset: i64) -> impl Fn(i64) -> f32 {
+        move |i| {
+            let frame = i + offset;
+            if frame < 0 {
+                0.0
+            } else {
+                reference_chirp(frame as u64)
+            }
+        }
+    }
+
+    #[test]
+    fn aac_priming_and_padding_are_trimmed() {
+        let mut d = TrackDecoder::open_file(fixture("chirp_gapless.m4a")).unwrap();
+        assert_eq!((d.rate, d.channels), (44_100, 1));
+        // The edit list says 1024 frames of priming and 55125 frames (1.25 s) of audio.
+        assert_eq!(d.total_duration(), Some(Duration::from_millis(1250)));
+        let samples: Vec<f32> = d.by_ref().collect();
+        assert_eq!(samples.len(), 55_125, "exactly the encoded length");
+        assert_eq!(d.pos(), Duration::from_millis(1250));
+        // Sample-aligned with the source signal, from the very first frame on.
+        let (lag, corr) = best_lag(&samples[..8192], chirp_at(0), 64);
+        assert_eq!(lag, 0, "correlation {corr}");
+        assert!(corr > 0.99, "{corr}");
+        let (lag, corr) = best_lag(
+            &samples[samples.len() - 4096..],
+            chirp_at(55_125 - 4096),
+            64,
+        );
+        assert_eq!(lag, 0, "end: correlation {corr}");
+        assert!(corr > 0.99, "{corr}");
+        // Without the trim the first 1024 frames would be encoder warm-up.
+        // (ffmpeg's encoder smears frames ~450-700; ffmpeg's own decoder
+        // returns the same samples there.)
+        let head_error = samples[..400]
+            .iter()
+            .enumerate()
+            .map(|(i, s)| (s - reference_chirp(i as u64)).abs())
+            .fold(0.0, f32::max);
+        assert!(head_error < 0.01, "{head_error}");
+    }
+
+    #[test]
+    fn aac_priming_is_trimmed_in_fragmented_mp4() {
+        // Like YouTube's DASH .m4a: an edit list with the priming but no length.
+        let bytes: Arc<[u8]> = std::fs::read(fixture("chirp_gapless_frag.m4a"))
+            .unwrap()
+            .into();
+        let mut d = TrackDecoder::new(bytes.clone()).unwrap();
+        let samples: Vec<f32> = d.by_ref().collect();
+        let (lag, corr) = best_lag(&samples[..8192], chirp_at(0), 64);
+        assert_eq!(lag, 0, "correlation {corr}");
+        assert!(corr > 0.99, "{corr}");
+        // No length in the edit list: only the final frame's padding remains.
+        assert!(
+            (55_125..55_125 + 1024).contains(&samples.len()),
+            "{}",
+            samples.len()
+        );
+
+        // The same while streaming.
+        let buffer = StreamBuffer::from_bytes(bytes.to_vec());
+        let mut streamed = TrackDecoder::from_stream(buffer, "audio/mp4").unwrap();
+        let again: Vec<f32> = streamed.by_ref().collect();
+        assert_eq!(again, samples);
+    }
+
+    #[test]
+    fn aac_seeks_are_sample_accurate_after_trimming() {
+        let sequential: Vec<f32> = TrackDecoder::open_file(fixture("chirp_gapless.m4a"))
+            .unwrap()
+            .collect();
+        for target_ms in [0u64, 1, 500, 777, 1200] {
+            let mut d = TrackDecoder::open_file(fixture("chirp_gapless.m4a")).unwrap();
+            let _ = d.by_ref().take(30_000).count();
+            d.try_seek(Duration::from_millis(target_ms)).unwrap();
+            let frame = ((target_ms * 44_100 + 500) / 1000) as usize;
+            assert_eq!(d.pos(), Duration::from_secs_f64(frame as f64 / 44_100.0));
+            let after: Vec<f32> = d.by_ref().take(2048).collect();
+            let expected = &sequential[frame..(frame + 2048).min(sequential.len())];
+            assert_eq!(after.len(), expected.len());
+            // The pre-roll makes the decoder state identical to sequential decoding.
+            let max_diff = after
+                .iter()
+                .zip(expected)
+                .map(|(a, b)| (a - b).abs())
+                .fold(0.0, f32::max);
+            assert!(
+                max_diff < 1e-3,
+                "seek to {target_ms} ms differs by {max_diff}"
+            );
+        }
+    }
+
+    /// Amplitude of the `hz` component of `mono` (Goertzel).
+    fn tone_level(mono: &[f32], hz: f64, rate: u32) -> f64 {
+        let w = 2.0 * std::f64::consts::PI * hz / rate as f64;
+        let (mut s1, mut s2) = (0.0f64, 0.0f64);
+        for &x in mono {
+            let s0 = x as f64 + 2.0 * w.cos() * s1 - s2;
+            s2 = s1;
+            s1 = s0;
+        }
+        let power = s1 * s1 + s2 * s2 - 2.0 * w.cos() * s1 * s2;
+        2.0 * power.sqrt() / mono.len() as f64
+    }
+
+    #[test]
+    fn multichannel_opus_is_mixed_down_to_stereo() {
+        // 5.1 (mapping family 1, 4 streams of which 2 coupled), one tone per
+        // channel: FL 500, FR 700, C 300, LFE 100, BL 1100, BR 1300 Hz, as
+        // ffmpeg's own decoder reports them (`sine` sources joined as 5.1,
+        // libopus 96 kbps, then copied to WebM).
+        for name in ["surround51.opus", "surround51.webm"] {
+            let mut d =
+                TrackDecoder::open_file(fixture(name)).unwrap_or_else(|e| panic!("{name}: {e}"));
+            assert_eq!((d.rate, d.channels), (48_000, 2), "{name}");
+            let samples: Vec<f32> = d.by_ref().collect();
+            let secs = samples.len() as f64 / 2.0 / 48_000.0;
+            assert!((secs - 0.5).abs() < 0.03, "{name}: {secs} s");
+            let mid = &samples[samples.len() / 4..samples.len() * 3 / 4];
+            let left: Vec<f32> = mid.iter().step_by(2).copied().collect();
+            let right: Vec<f32> = mid.iter().skip(1).step_by(2).copied().collect();
+            let level = |side: &[f32], hz| tone_level(side, hz, 48_000);
+            // Front and back left only on the left, right ones only on the right.
+            for (hz, on_left, on_right) in [
+                (500.0, true, false),
+                (1100.0, true, false),
+                (700.0, false, true),
+                (1300.0, false, true),
+                (300.0, true, true),
+                (100.0, true, true),
+            ] {
+                let (l, r) = (level(&left, hz), level(&right, hz));
+                assert_eq!(l > 0.02, on_left, "{name}: {hz} Hz on the left: {l}");
+                assert_eq!(r > 0.02, on_right, "{name}: {hz} Hz on the right: {r}");
+            }
+            let peak = samples.iter().fold(0.0f32, |m, s| m.max(s.abs()));
+            assert!(peak <= 1.0, "{name}: clipped ({peak})");
         }
     }
 
