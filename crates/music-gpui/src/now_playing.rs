@@ -40,6 +40,7 @@ use crate::components::artwork::ArtworkCache;
 use crate::icons::{AppIcon, Lucide};
 use crate::lyrics::{LyricsState, PreparedLyrics};
 use crate::np_lyrics::{LyricsList, MAX_SELECTED};
+use crate::np_region::{self, RegionKey};
 use crate::settings::prefs::{LyricsDisplay, NowPlayingBackground, NowPlayingLayout, TextAlign};
 use crate::snapshot::{self, Snapshot};
 use crate::theme::AppColors;
@@ -121,6 +122,9 @@ pub struct NowPlaying {
     /// The synced lyrics list (`np_lyrics.rs`).
     pub list: LyricsList,
     header: Option<Entity<Snapshot<HeaderSnap>>>,
+    /// Cached regions: the split layout's player column, the lyrics-first strip.
+    column: Option<Entity<np_region::Region>>,
+    strip: Option<Entity<np_region::Region>>,
     /// The open lyrics card dialog (`lyrics_card.rs`).
     pub card: Option<Entity<crate::lyrics_card::LyricsCard>>,
     toolbar: Option<Entity<Snapshot<ToolbarSnap>>>,
@@ -149,6 +153,8 @@ impl NowPlaying {
             plain_scroll: ScrollHandle::new(),
             list: LyricsList::new(),
             header: None,
+            column: None,
+            strip: None,
             card: None,
             toolbar: None,
             progress_bounds: Rc::default(),
@@ -351,7 +357,24 @@ impl MusicApp {
         .cached(StyleRefinement::default().w_full().h(px(56.)).flex_none());
         let body: AnyElement = match config.layout {
             NowPlayingLayout::Split => {
-                let left = self.render_player_column(track.as_ref(), position, viewport, frame, cx);
+                // A cached region: rebuilt when what it shows changes, not with
+                // every lyrics frame.
+                let side = Self::player_column_side(viewport);
+                let key = self.region_key(track.as_ref(), position, viewport, side);
+                let left = np_region::sync(
+                    &mut self.np.column,
+                    key,
+                    |app, frame, window, cx| {
+                        let track = app.playback.track.clone();
+                        let position = app.clock.position(frame.now);
+                        let viewport = window.viewport_size();
+                        app.render_player_column(track.as_ref(), position, viewport, frame, cx)
+                            .into_any_element()
+                    },
+                    frame,
+                    cx,
+                )
+                .cached(StyleRefinement::default().w(side).h_full().flex_none());
                 let lyrics = self.render_lyrics(
                     track.as_ref(),
                     position,
@@ -397,7 +420,20 @@ impl MusicApp {
                     window,
                     cx,
                 );
-                let strip = self.render_strip(track.as_ref(), position, frame, cx);
+                let key = self.region_key(track.as_ref(), position, viewport, px(0.));
+                let strip = np_region::sync(
+                    &mut self.np.strip,
+                    key,
+                    |app, frame, _, cx| {
+                        let track = app.playback.track.clone();
+                        let position = app.clock.position(frame.now);
+                        app.render_strip(track.as_ref(), position, frame, cx)
+                            .into_any_element()
+                    },
+                    frame,
+                    cx,
+                )
+                .cached(StyleRefinement::default().w_full().h(px(104.)).flex_none());
                 v_flex()
                     .flex_1()
                     .min_h_0()
@@ -981,8 +1017,51 @@ impl MusicApp {
         }
     }
 
+    /// Width of the split layout's player column.
+    fn player_column_side(viewport: gpui::Size<Pixels>) -> Pixels {
+        // Half the content row (minus padding/gap), and leave room for text below.
+        let half_width = (viewport.width - px(144.)) * 0.5;
+        (viewport.height * 0.46)
+            .min(half_width * 0.9)
+            .clamp(px(120.), px(400.))
+    }
+
+    /// What the player column / strip region shows (see `np_region.rs`).
+    fn region_key(
+        &self,
+        track: Option<&Track>,
+        position: Duration,
+        viewport: gpui::Size<Pixels>,
+        side: Pixels,
+    ) -> RegionKey {
+        let state = &self.playback;
+        RegionKey {
+            track: track.map(|t| t.video_id.clone()),
+            status: match state.status {
+                PlaybackStatus::Idle => 0,
+                PlaybackStatus::Loading => 1,
+                PlaybackStatus::Playing => 2,
+                PlaybackStatus::Paused => 3,
+                PlaybackStatus::Ended => 4,
+                PlaybackStatus::Error(_) => 5,
+            },
+            buffering: state.buffering,
+            second: position.as_secs(),
+            progress: (self.played(position) * 1000.) as u32,
+            liked: track.is_some_and(|t| crate::store::is_liked(&t.video_id)),
+            next: self.queue.peek_next().map(|t| t.video_id.clone()),
+            has_art: track
+                .is_some_and(|t| matches!(self.hires.get(&t.video_id), Some(HiRes::Ready { .. }))),
+            width: viewport.width.as_f32() as i32,
+            height: viewport.height.as_f32() as i32,
+            extra: side.as_f32() as u64
+                | u64::from(self.engine.is_some()) << 32
+                | u64::from(self.queue.has_next()) << 33,
+        }
+    }
+
     /// Split layout: artwork, title, progress, transport, up next.
-    fn render_player_column(
+    pub(crate) fn render_player_column(
         &mut self,
         track: Option<&Track>,
         position: Duration,
@@ -990,14 +1069,11 @@ impl MusicApp {
         frame: &mut Frame,
         cx: &mut Context<Self>,
     ) -> impl IntoElement + use<> {
-        // Half the content row (minus padding/gap), and leave room for text below.
-        let half_width = (viewport.width - px(144.)) * 0.5;
-        let side = (viewport.height * 0.46)
-            .min(half_width * 0.9)
-            .clamp(px(120.), px(400.));
+        let side = Self::player_column_side(viewport);
         let (title, artists) = Self::titles(track);
         v_flex()
             .w(side)
+            .h_full()
             .flex_none()
             .justify_center()
             .gap_4()
@@ -1127,7 +1203,7 @@ impl MusicApp {
     }
 
     /// Lyrics-first layout: small artwork, title, progress and transport in one strip.
-    fn render_strip(
+    pub(crate) fn render_strip(
         &mut self,
         track: Option<&Track>,
         position: Duration,

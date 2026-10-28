@@ -145,6 +145,11 @@ impl Frame {
         self.wake = Some(self.wake.map_or(at, |w| w.min(at)));
     }
 
+    /// Something asked for the next frame so far.
+    pub fn is_animating(&self) -> bool {
+        self.animating
+    }
+
     /// Render again after `delay`.
     pub fn wake_in(&mut self, delay: Duration) {
         self.wake_at(self.now + delay);

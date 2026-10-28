@@ -281,6 +281,7 @@ fn measure(texts: &[&str], weight: u16) -> Vec<f32> {
 
 /// Wraps `lines` (each a paragraph) at `max_width` for font size `size`; a blank
 /// line stays a blank row.
+#[cfg(test)]
 fn wrap(lines: &[String], weight: u16, size: f32, max_width: f32) -> Vec<String> {
     wrap_rows(lines, weight, size, max_width)
         .into_iter()

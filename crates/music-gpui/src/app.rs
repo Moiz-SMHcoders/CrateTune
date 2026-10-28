@@ -762,7 +762,7 @@ impl Render for MusicApp {
             root = root.child(onboarding.clone());
         }
         if let Some(stats) = &mut self.frame_stats {
-            stats.record(frame.now);
+            stats.record(frame.now, frame.is_animating());
         }
         if let Some(at) = frame.finish(window) {
             self.schedule_np_wake(at, cx);
@@ -781,16 +781,20 @@ impl gpui::Focusable for MusicApp {
 struct FrameStats {
     window_start: Option<Instant>,
     last: Option<Instant>,
+    /// The last render asked for the next frame (gaps after idle renders, while
+    /// waiting for a timed wake-up, aren't dropped frames).
+    last_animating: bool,
     frames: u32,
     worst_gap: Duration,
 }
 
 impl FrameStats {
-    fn record(&mut self, now: Instant) {
-        if let Some(last) = self.last {
+    fn record(&mut self, now: Instant, animating: bool) {
+        if let Some(last) = self.last.filter(|_| self.last_animating) {
             self.worst_gap = self.worst_gap.max(now - last);
         }
         self.last = Some(now);
+        self.last_animating = animating;
         self.frames += 1;
         let start = *self.window_start.get_or_insert(now);
         if now - start >= Duration::from_secs(1) {
@@ -801,6 +805,7 @@ impl FrameStats {
             );
             *self = Self {
                 last: Some(now),
+                last_animating: animating,
                 ..Self::default()
             };
         }

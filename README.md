@@ -668,14 +668,36 @@ src/
 * **Sleep timer**: 5 / 15 / 30 / 45 / 60 min, end of track, a custom length (slider), off —
   in the bar (moon icon, remaining time as its label), the Now Playing header and the
   Playback section. "End of track" moves on to the next song and waits there paused.
-* **Now Playing**: three layouts — split (artwork + controls | lyrics), big artwork
+* **Now Playing**: eight designs — split (artwork + controls | lyrics), big artwork
   (centered, the current and next lyric line below the controls), lyrics first (lyrics
-  across the screen, artwork / title / progress / transport in a bottom strip) — and four
+  across the screen, artwork / title / progress / transport in a bottom strip), and,
+  after ArchiveTune's player designs (`np_designs.rs`): **immersive** (full-bleed artwork
+  fading into black, large type, the current lyric line, icon-only transport), **card**
+  (a floating card: "playing from", square art, round shuffle / like buttons, flat
+  progress with the audio format between the times, volume), **minimal** (type only:
+  huge title and time, the window fills with colour from the left as the song plays),
+  **editorial** (two tones from the artwork, a round cut-out cover, serif headline, a
+  "bento" of PLAY / PAUSE pill, next / previous circles, progress, toggles) and **with
+  queue** (artwork and controls beside the next eight songs, click to jump) — and four
   backgrounds: blurred artwork, gradient between two artwork colours, solid colour,
   animated glow (three soft lights in the artwork's colours that drift only while
-  playing; pre-rendered images, since GPUI has no radial gradients). Colours cross-fade
-  between tracks. Layout and background are also in the header's layout menu. Mini
-  player style: theme or blurred artwork.
+  playing; pre-rendered images, since GPUI has no radial gradients). Immersive, minimal
+  and editorial bring their own colours. Colours cross-fade between tracks. Design and
+  background are also in the header's menu. Mini player style: theme or blurred artwork.
+* **Lyrics cards** (`card_render.rs`, `lyrics_card.rs`; after ArchiveTune's
+  `LyricsImageCard` / `LyricsShareDialog`): the share button in the lyrics toolbar
+  switches the synced lyrics to selection (click up to six lines, the toolbar shows the
+  count, Cancel / Create card…); the dialog previews the card and offers background
+  (blurred artwork, album colour, dark, light), text alignment, size, shape (square
+  1080², portrait 1080×1350, story 1080×1920) and the cover on / off, then **Save
+  image…** (PNG through the system save dialog) or **Copy image** (PNG on the
+  clipboard). The image is drawn offscreen in pure Rust on a worker thread: tiny-skia for
+  the background (blurred / gradient), the glass panel and the rounded cover; the text
+  laid out by the card renderer (word wrapping, characters of CJK text break anywhere,
+  auto-fit from a length-based size down to a minimum, a gap between selected lines) and
+  drawn by resvg/usvg, which shapes it with rustybuzz and falls back across the system
+  fonts (kana / hanzi / hangul come from the system's CJK font). Both crates were already
+  linked through GPUI.
 * **Lyrics** (`lyrics.rs`): `LyricsService` with the provider order, switches and
   Paxsenix / BetterLyrics keys from Settings → Lyrics; results cached in memory; the
   pane shows provider · word-/line-synced/unsynced, a translate toggle and a reload
@@ -1161,7 +1183,7 @@ code, removed by design), physical clicks on the new buttons (script actions ins
 | ⌘[ / ⌘] (also mouse back/forward buttons) | back / forward |
 | ⌘1 / ⌘2 / ⌘3 / ⌘Y | Home / Explore / Library / History |
 | ⇧⌘R | Recognize: open the page and listen (again: stop) |
-| Esc | close Now Playing, else the queue panel, else back |
+| Esc | close an open menu, popover or dialog; else Now Playing, else the queue panel, else back |
 | ⌘H, ⌥⌘H, ⌘M, ⌘Q | hide, hide others, minimize, quit |
 
 The menu bar (Music, Edit, View, Controls, Window) carries the same actions with their
@@ -1213,6 +1235,7 @@ item's ACL is tied to the binary). Secrets are never logged.
 | `MUSIC_UPDATE_REPO=owner/name` | enable the update check against that repo (testing; the default comes from `packaging/app.env`) |
 | `MUSIC_TRACE=1` | log playback transitions, seeks, saves, route changes, artwork downloads; `MUSIC_TIMINGS=1`: renders/s + worst frame gap |
 | `MUSIC_SCRIPT="5:@next,9:@seek=75,30:@quit"` | timed actions (any build) |
+| `MUSIC_ON_TOP=1` | keep the main window above other apps and on every Space (CPU sampling while the machine is in use: macOS sends an occluded or off-Space window no frames) |
 | `MUSIC_GPUI_SCREENSHOT="12:a.png,13:@settings,14:b.png,15:mini:m.png"` | offscreen shots + actions, quits after the last (feature `screenshot`; `mini:` shoots the mini player) |
 
 Actions (`script.rs` has the table): input `@key=cmd-right` (a real keystroke through
@@ -1225,7 +1248,7 @@ playback `@play=N @next @prev @seek=S @toggle @open @close @volume=V`; navigatio
 @font-scale=1.125 @resize=W;H`; settings `@settings[=section] @close-settings
 @eq=Preset|on|off @field=lastfm-key|lastfm-secret|lb-token|discord-id:VALUE
 @lastfm-connect @lastfm-finish @lastfm-disconnect @lastfm-clear @lb-validate
-@lb-disconnect @discord=on|off`; player `@layout=split|centered|lyrics
+@lb-disconnect @discord=on|off`; player `@layout=split|centered|lyrics|immersive|card|minimal|editorial|queue
 @np-bg=blur|gradient|solid|glow @mini-style=theme|artwork
 @lyrics-style=karaoke|apple|slide|glow|fade|none @lyrics-size=40 @lyrics-spacing=1.5
 @lyrics-align=left|center|right @translate=on|off @romanize=SCRIPT:on|off @lyrics-reload
@@ -1249,7 +1272,11 @@ playback `@play=N @next @prev @seek=S @toggle @open @close @volume=V`; navigatio
 @import-save[=NAME] @import-cancel @import-status @export=PLAYLIST:FORMAT:PATH`;
 recognition `@recognize` (microphone), `@recognize-file=PATH`,
 `@recognize-cancel`, `@recognize-history=N`; `@onboarding[=STEP|off]`, `@onboarding-next`,
-`@onboarding-back`, `@update-check` (`release_script.rs`); `@quit`.
+`@onboarding-back`, `@update-check` (`release_script.rs`); lyrics cards (`lyrics_card.rs`)
+`@card-select=3;4;5 @card-open @card-style=aspect:story|bg:blur|album|dark|light|align:left|size:large|art:off
+@card-save=PATH @card-copy @card-close`; measurement `@bench=N[:MS]` (draws the main window N
+times MS ms apart and prints the draw times: the UI's CPU per frame, also with the screen
+locked); `@quit`.
 
 Screenshot builds draw both windows every 200 ms and right before each shot: while the
 screen is locked macOS delivers no display-link frames, so nothing would redraw (and

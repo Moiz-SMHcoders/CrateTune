@@ -29,6 +29,7 @@ impl MusicApp {
     pub(crate) fn render_player_bar(&mut self, cx: &mut Context<Self>) -> impl IntoElement + use<> {
         // SponsorBlock "Skip", Music Together status.
         let chips = self.integration_chips(cx);
+        let cast = self.integration_cast_button(cx);
         // Last session's queue (restored, not loaded yet) shows its current track.
         let restored = self.playback.track.is_none() && self.store.resume_at.is_some();
         let track = self
@@ -167,6 +168,10 @@ impl MusicApp {
                             .gap_2()
                             // Same width on both sides keeps the transport centred.
                             .child(div().flex_1().min_w_0())
+                            // Balances the Cast button on the right.
+                            .when(cast.is_some(), |this| {
+                                this.child(div().flex_none().w(px(28.)))
+                            })
                             .child(
                                 Button::new("shuffle")
                                     .ghost()
@@ -266,7 +271,15 @@ impl MusicApp {
                                         ))
                                     })
                                     .children(chips.into_iter().map(chip_slot)),
-                            ),
+                            )
+                            // Its icon stays; a "Casting to …" label clips.
+                            .children(cast.map(|cast| {
+                                div()
+                                    .flex_shrink(1.)
+                                    .min_w(px(28.))
+                                    .overflow_hidden()
+                                    .child(cast)
+                            })),
                     )
                     .child(
                         h_flex()
@@ -381,11 +394,11 @@ impl MusicApp {
 }
 
 /// A tag / chip in the bar's transport row: shrinks (clipping its end) when the
-/// row is narrow, down to its first few pixels.
+/// row is narrow, down to nothing.
 fn chip_slot(chip: AnyElement) -> gpui::Div {
     div()
         .flex_shrink(1.)
-        .min_w(px(28.))
+        .min_w_0()
         .overflow_hidden()
         .child(chip)
 }
