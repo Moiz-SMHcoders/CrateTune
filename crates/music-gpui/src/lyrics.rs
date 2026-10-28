@@ -416,7 +416,11 @@ impl MusicApp {
                         retry_at: is_rate_limited(&e).then(|| {
                             Instant::now() + retry_after.unwrap_or(Duration::from_secs(120))
                         }),
-                        message: e.to_string(),
+                        // Without the generic "unexpected response:" prefix.
+                        message: match e {
+                            music_core::Error::Parse(m) => m,
+                            e => e.to_string(),
+                        },
                     },
                 };
                 this.lyrics.translations.insert(slot, state);
