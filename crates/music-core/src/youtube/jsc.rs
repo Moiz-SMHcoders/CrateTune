@@ -113,19 +113,24 @@ impl ChallengeSolver {
             .name("music-core-jsc".into())
             .stack_size(THREAD_STACK)
             .spawn(move || {
-                let mut engine = None;
+                // Preprocessed players outlive the engine, which is dropped after every
+                // job: parsing a full player script leaves ~300 MB in QuickJS's heap,
+                // and recreating the engine for the next song takes only milliseconds.
+                let mut preprocessed = HashMap::new();
                 for job in rx {
-                    let result = solve_job(&mut engine, cache_dir.as_deref(), &job);
+                    let mut engine = None;
+                    let result =
+                        solve_job(&mut engine, &mut preprocessed, cache_dir.as_deref(), &job);
                     if result.is_ok() {
                         known
                             .lock()
                             .unwrap_or_else(PoisonError::into_inner)
                             .insert(job.player_id.clone());
                     }
-                    if result.is_err() {
-                        // A failed run may leave the runtime half-initialized.
-                        engine = None;
+                    if let Some(engine) = &engine {
+                        engine._runtime.run_gc();
                     }
+                    drop(engine);
                     let _ = job.reply.send(result);
                 }
             })
@@ -136,16 +141,21 @@ impl ChallengeSolver {
 }
 
 struct Engine {
-    // Field order matters: the context must drop before its runtime.
+    // Field order matters: the context drops before its runtime, and the runtime
+    // before the memory zone it allocates from.
     context: Context,
     _runtime: Runtime,
-    /// Preprocessed players already in memory, by player id.
-    preprocessed: HashMap<String, String>,
+    _zone: zone::Zone,
 }
 
 fn new_engine() -> Result<Engine> {
     let fail = |what: &str| Error::Audio(format!("challenge solver: {what}"));
-    let runtime = Runtime::new().map_err(|_| fail("runtime"))?;
+    let zone = zone::Zone::new();
+    let runtime = match zone.allocator() {
+        Some(allocator) => Runtime::new_with_alloc(allocator),
+        None => Runtime::new(),
+    }
+    .map_err(|_| fail("runtime"))?;
     runtime.set_memory_limit(MEMORY_LIMIT);
     runtime.set_max_stack_size(JS_STACK);
     let context = Context::full(&runtime).map_err(|_| fail("context"))?;
@@ -158,7 +168,7 @@ fn new_engine() -> Result<Engine> {
     Ok(Engine {
         context,
         _runtime: runtime,
-        preprocessed: HashMap::new(),
+        _zone: zone,
     })
 }
 
@@ -180,6 +190,7 @@ fn cache_path(dir: &std::path::Path, player_id: &str) -> PathBuf {
 
 fn solve_job(
     engine: &mut Option<Engine>,
+    preprocessed: &mut HashMap<String, String>,
     cache_dir: Option<&std::path::Path>,
     job: &Job,
 ) -> Result<Solutions> {
@@ -188,14 +199,10 @@ fn solve_job(
     }
     let engine = engine.as_mut().expect("engine was just created");
 
-    let cached = engine
-        .preprocessed
-        .get(&job.player_id)
-        .cloned()
-        .or_else(|| {
-            let path = cache_path(cache_dir?, &job.player_id);
-            std::fs::read_to_string(path).ok()
-        });
+    let cached = preprocessed.get(&job.player_id).cloned().or_else(|| {
+        let path = cache_path(cache_dir?, &job.player_id);
+        std::fs::read_to_string(path).ok()
+    });
     let mut requests = Vec::new();
     if !job.n.is_empty() {
         requests.push(json!({ "type": "n", "challenges": job.n }));
@@ -247,9 +254,7 @@ fn solve_job(
             let _ = std::fs::create_dir_all(dir);
             let _ = std::fs::write(cache_path(dir, &job.player_id), pre);
         }
-        engine
-            .preprocessed
-            .insert(job.player_id.clone(), pre.to_owned());
+        preprocessed.insert(job.player_id.clone(), pre.to_owned());
     }
 
     let mut solutions = Solutions::default();
@@ -273,4 +278,102 @@ fn solve_job(
         }
     }
     Ok(solutions)
+}
+
+/// A private malloc zone for one QuickJS engine (macOS), destroyed with it.
+///
+/// Parsing a ~3 MB player script churns through hundreds of MB; in the default
+/// zone that leaves ~100 MB of fragmented pages behind that macOS never reclaims.
+/// Destroying a dedicated zone returns all of it at once. Elsewhere the engine
+/// uses the system allocator.
+mod zone {
+    #[cfg(target_os = "macos")]
+    mod imp {
+        use std::ffi::c_void;
+
+        use rquickjs::allocator::Allocator;
+
+        unsafe extern "C" {
+            fn malloc_create_zone(start_size: usize, flags: u32) -> *mut c_void;
+            fn malloc_destroy_zone(zone: *mut c_void);
+            fn malloc_zone_malloc(zone: *mut c_void, size: usize) -> *mut c_void;
+            fn malloc_zone_calloc(zone: *mut c_void, count: usize, size: usize) -> *mut c_void;
+            fn malloc_zone_realloc(zone: *mut c_void, ptr: *mut c_void, size: usize)
+            -> *mut c_void;
+            fn malloc_zone_free(zone: *mut c_void, ptr: *mut c_void);
+            fn malloc_size(ptr: *const c_void) -> usize;
+        }
+
+        /// Owns the zone; must outlive every runtime using its [`ZoneAllocator`].
+        pub struct Zone(*mut c_void);
+
+        impl Zone {
+            pub fn new() -> Self {
+                // SAFETY: plain zone creation; null on failure (then the system allocator is used).
+                Self(unsafe { malloc_create_zone(0, 0) })
+            }
+
+            pub fn allocator(&self) -> Option<ZoneAllocator> {
+                (!self.0.is_null()).then_some(ZoneAllocator(self.0))
+            }
+        }
+
+        impl Drop for Zone {
+            fn drop(&mut self) {
+                if !self.0.is_null() {
+                    // SAFETY: the runtime that used this zone has been dropped
+                    // (field order in `Engine`), so nothing points into it.
+                    unsafe { malloc_destroy_zone(self.0) };
+                }
+            }
+        }
+
+        pub struct ZoneAllocator(*mut c_void);
+
+        // SAFETY: plain malloc-zone calls; QuickJS frees only what it allocated here.
+        unsafe impl Allocator for ZoneAllocator {
+            fn alloc(&mut self, size: usize) -> *mut u8 {
+                unsafe { malloc_zone_malloc(self.0, size.max(1)).cast() }
+            }
+
+            fn calloc(&mut self, count: usize, size: usize) -> *mut u8 {
+                unsafe { malloc_zone_calloc(self.0, count.max(1), size.max(1)).cast() }
+            }
+
+            unsafe fn dealloc(&mut self, ptr: *mut u8) {
+                if !ptr.is_null() {
+                    unsafe { malloc_zone_free(self.0, ptr.cast()) }
+                }
+            }
+
+            unsafe fn realloc(&mut self, ptr: *mut u8, new_size: usize) -> *mut u8 {
+                unsafe { malloc_zone_realloc(self.0, ptr.cast(), new_size.max(1)).cast() }
+            }
+
+            unsafe fn usable_size(ptr: *mut u8) -> usize {
+                if ptr.is_null() {
+                    0
+                } else {
+                    unsafe { malloc_size(ptr.cast()) }
+                }
+            }
+        }
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    mod imp {
+        pub struct Zone;
+
+        impl Zone {
+            pub fn new() -> Self {
+                Self
+            }
+
+            pub fn allocator(&self) -> Option<rquickjs::allocator::RustAllocator> {
+                None
+            }
+        }
+    }
+
+    pub use imp::Zone;
 }

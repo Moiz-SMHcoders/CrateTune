@@ -21,7 +21,7 @@ regex = "1.13"
 roxmltree = "0.21"
 rodio = { version = "0.23", default-features = false, features = ["playback"] }
 # QuickJS for provider modules (`modules`): sandboxed, no async runtime, no cmake.
-rquickjs = "0.14"
+rquickjs = { version = "0.14", features = ["allocator"] }
 rusqlite = { version = "0.41", features = ["bundled", "backup"] }
 serde = { version = "1.0.229", features = ["derive", "rc"] }
 serde_json = "1.0.154"
