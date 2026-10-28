@@ -32,8 +32,10 @@ pub(crate) const SOLVER_VERSION: &str = "ejs-0.8.0";
 const MEMORY_LIMIT: usize = 768 * 1024 * 1024;
 const JS_STACK: usize = 16 * 1024 * 1024;
 const THREAD_STACK: usize = 64 * 1024 * 1024;
-/// A prepared engine nobody used within this time is dropped (memory).
-const PREPARED_IDLE: std::time::Duration = std::time::Duration::from_secs(30);
+/// A prepared engine nobody used within this time is dropped (memory: the
+/// loaded player holds tens of MB). The solve it is for normally follows
+/// within a second (it is prepared while the player request is in flight).
+const PREPARED_IDLE: std::time::Duration = std::time::Duration::from_secs(10);
 
 /// Solutions for one player, keyed by challenge.
 #[derive(Debug, Default, Clone)]
@@ -149,10 +151,17 @@ impl ChallengeSolver {
                 let mut preprocessed = HashMap::new();
                 let mut prepared: Option<Prepared> = None;
                 loop {
-                    let message = match rx.recv_timeout(PREPARED_IDLE) {
+                    // An unused prepared engine goes once it is PREPARED_IDLE old
+                    // (not up to twice that); without one, just wait.
+                    let received = match &prepared {
+                        Some(p) => rx.recv_timeout(PREPARED_IDLE.saturating_sub(p.at.elapsed())),
+                        None => rx.recv().map_err(|_| RecvTimeoutError::Disconnected),
+                    };
+                    let message = match received {
                         Ok(message) => message,
                         Err(RecvTimeoutError::Timeout) => {
-                            prepared = prepared.filter(|p| p.at.elapsed() < PREPARED_IDLE);
+                            log::debug!("jsc: dropping an unused prepared engine");
+                            prepared = None;
                             continue;
                         }
                         Err(RecvTimeoutError::Disconnected) => return,

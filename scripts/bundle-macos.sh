@@ -43,6 +43,8 @@ cp "$BIN" "$APP/Contents/MacOS/$APP_EXECUTABLE"
 cp packaging/macos/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 printf 'APPL????' > "$APP/Contents/PkgInfo"
 
+# LSEnvironment: the space-efficient allocator (see crates/music-gpui/src/memory.rs);
+# set here, a launch from Finder needs no re-exec.
 YEAR="$(date +%Y)"
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -66,6 +68,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <key>NSMicrophoneUsageDescription</key><string>${APP_NAME} listens for about 10 seconds when you ask it to recognize a song. Only an audio fingerprint is sent, never the recording.</string>
   <key>NSHumanReadableCopyright</key><string>© ${YEAR} ${APP_NAME} contributors · GPL-3.0</string>
   <key>CFBundleGetInfoString</key><string>${APP_SUMMARY}</string>
+  <key>LSEnvironment</key><dict><key>MallocSpaceEfficient</key><string>1</string></dict>
 </dict>
 </plist>
 PLIST

@@ -42,6 +42,9 @@ pub const BUDGETS_MB: [u32; 5] = [16, 32, 48, 96, 192];
 pub const RETRY_AFTER: Duration = Duration::from_secs(30);
 /// Images looked up this recently are on screen (or just were): never evicted.
 pub const KEEP_RECENT: Duration = Duration::from_secs(3);
+/// While over budget, lookups re-check this often whether images went off
+/// screen (after leaving a page, nothing new may be downloaded for a while).
+const EVICT_EVERY: Duration = Duration::from_secs(2);
 
 type Waiter = oneshot::Sender<Option<Arc<Image>>>;
 /// A download: the encoded bytes and the decoded size in bytes.
@@ -175,6 +178,8 @@ impl Slots {
 
 pub struct ArtworkCache {
     slots: Slots,
+    /// Last over-budget check from [`Self::get`] (see [`EVICT_EVERY`]).
+    checked_at: Instant,
 }
 
 struct Store(Entity<ArtworkCache>);
@@ -187,6 +192,7 @@ impl ArtworkCache {
                 budget: mib(DEFAULT_BUDGET_MB),
                 ..Slots::default()
             },
+            checked_at: Instant::now(),
         });
         cx.set_global(Store(cache));
     }
@@ -222,6 +228,10 @@ impl ArtworkCache {
 
     /// The cached image for `url`, or `None` while it loads (or failed).
     pub fn get(&mut self, url: &str, cx: &mut Context<Self>) -> Option<Arc<Image>> {
+        if self.slots.bytes > self.slots.budget && self.checked_at.elapsed() >= EVICT_EVERY {
+            self.checked_at = Instant::now();
+            self.evict(cx);
+        }
         match self.slots.lookup(url) {
             Lookup::Ready(image) => Some(image),
             Lookup::Pending => None,
