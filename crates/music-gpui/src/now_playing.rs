@@ -121,6 +121,8 @@ pub struct NowPlaying {
     /// The synced lyrics list (`np_lyrics.rs`).
     pub list: LyricsList,
     header: Option<Entity<Snapshot<HeaderSnap>>>,
+    /// The open lyrics card dialog (`lyrics_card.rs`).
+    pub card: Option<Entity<crate::lyrics_card::LyricsCard>>,
     toolbar: Option<Entity<Snapshot<ToolbarSnap>>>,
     progress_bounds: Rc<Cell<Bounds<Pixels>>>,
     /// A pending timed re-render (`Frame::wake_at`) while nothing animates.
@@ -147,6 +149,7 @@ impl NowPlaying {
             plain_scroll: ScrollHandle::new(),
             list: LyricsList::new(),
             header: None,
+            card: None,
             toolbar: None,
             progress_bounds: Rc::default(),
             wake: None,

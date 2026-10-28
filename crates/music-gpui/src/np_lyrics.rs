@@ -285,11 +285,6 @@ impl MusicApp {
         cx.notify();
     }
 
-    /// Opens the card dialog for the selected lines (`lyrics_card.rs`).
-    pub fn open_lyrics_card(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        let _ = (window, cx);
-    }
-
     /// Synced lyrics: staggered auto-scroll, karaoke lines, click to seek (or to
     /// select lines for a card).
     #[allow(clippy::too_many_arguments)]

@@ -24,6 +24,7 @@ mod anim;
 mod app;
 mod backdrop;
 mod browse;
+mod card_render;
 mod clock;
 mod components;
 mod icons;
@@ -34,6 +35,7 @@ mod library_script;
 #[cfg(target_os = "macos")]
 mod login_webview;
 mod lyrics;
+mod lyrics_card;
 mod mic_permission;
 mod mini_player;
 mod module_service;
