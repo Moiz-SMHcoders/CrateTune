@@ -1,6 +1,6 @@
 # UI language picker (Settings → Appearance, first onboarding step).
 settings.language.group = 语言
-settings.language.label = 语言
+settings.language.label = 界面语言
 settings.language.description = 界面语言。YouTube Music 内容的语言另有单独设置（内容与地区）。
 settings.language.system = 跟随系统（{language}）
 settings.language.system_search = default automatic 默认 自动 系统

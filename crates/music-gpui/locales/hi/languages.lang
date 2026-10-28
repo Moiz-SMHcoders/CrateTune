@@ -1,6 +1,6 @@
 # UI language picker (Settings → Appearance, first onboarding step).
 settings.language.group = भाषा
-settings.language.label = भाषा
+settings.language.label = इंटरफ़ेस की भाषा
 settings.language.description = इंटरफ़ेस की भाषा। YouTube Music कॉन्टेंट की अपनी अलग सेटिंग है (कॉन्टेंट और क्षेत्र)।
 settings.language.system = सिस्टम डिफ़ॉल्ट ({language})
 settings.language.system_search = डिफ़ॉल्ट अपने-आप सिस्टम default automatic

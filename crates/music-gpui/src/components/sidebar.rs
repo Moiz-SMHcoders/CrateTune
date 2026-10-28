@@ -54,7 +54,11 @@ impl MusicApp {
                             .text_color(if active { colors.accent } else { muted })
                             .child(Icon::new(icon).small()),
                     )
-                    .child(text(title))
+                    // One line in the row's remaining width: GPUI wraps / truncates
+                    // by summing unshaped per-character widths, which overestimates
+                    // Devanagari; in a box exactly as wide as the shaped text a final
+                    // vowel sign would wrap or be cut off.
+                    .child(div().flex_1().min_w_0().truncate().child(text(title)))
                     .on_click(cx.listener(move |this, _, window, cx| {
                         this.navigate(route.clone(), window, cx)
                     }))
@@ -67,6 +71,7 @@ impl MusicApp {
                 .text_xs()
                 .font_weight(FontWeight::SEMIBOLD)
                 .text_color(muted)
+                .truncate()
                 .child(text(label))
         };
 

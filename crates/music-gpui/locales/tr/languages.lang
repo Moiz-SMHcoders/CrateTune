@@ -1,6 +1,6 @@
 # UI language picker (Turkish).
 settings.language.group = Dil
-settings.language.label = Dil
+settings.language.label = Arayüz dili
 settings.language.description = Arayüz dili. YouTube Music içeriğinin kendi ayarı vardır (İçerik ve bölge).
 settings.language.system = Sistem varsayılanı ({language})
 settings.language.system_search = varsayılan otomatik sistem

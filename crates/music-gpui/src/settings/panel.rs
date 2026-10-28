@@ -861,7 +861,7 @@ impl SettingsPanel {
         let (active_bg, hover_bg) = (theme.sidebar_accent, theme.list_hover);
         let (fg, muted) = (theme.foreground, theme.muted_foreground);
         v_flex()
-            .w(px(210.))
+            .w(px(232.))
             .flex_none()
             .h_full()
             .py_4()

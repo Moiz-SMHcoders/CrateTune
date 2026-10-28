@@ -1,6 +1,6 @@
 # UI language picker (Polish).
 settings.language.group = Język
-settings.language.label = Język
+settings.language.label = Język interfejsu
 settings.language.description = Język interfejsu. Treści YouTube Music mają osobne ustawienie („Treści i region”).
 settings.language.system = Domyślny systemu ({language})
 settings.language.system_search = domyślny automatyczny systemowy default automatic

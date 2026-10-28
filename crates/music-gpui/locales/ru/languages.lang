@@ -1,6 +1,6 @@
 # UI language picker (Russian).
 settings.language.group = Язык
-settings.language.label = Язык
+settings.language.label = Язык интерфейса
 settings.language.description = Язык интерфейса. Для контента YouTube Music есть отдельная настройка («Контент и регион»).
 settings.language.system = Как в системе ({language})
 settings.language.system_search = по умолчанию автоматически системный default automatic

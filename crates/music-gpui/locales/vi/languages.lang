@@ -1,5 +1,5 @@
 settings.language.group = Ngôn ngữ
-settings.language.label = Ngôn ngữ
+settings.language.label = Ngôn ngữ giao diện
 settings.language.description = Ngôn ngữ của giao diện. Nội dung YouTube Music có cài đặt riêng (Nội dung & khu vực).
 settings.language.system = Mặc định hệ thống ({language})
 settings.language.system_search = default automatic mặc định tự động hệ thống

@@ -1,6 +1,6 @@
 # UI language picker (Settings → Appearance, first onboarding step).
 settings.language.group = Idioma
-settings.language.label = Idioma
+settings.language.label = Idioma da interface
 settings.language.description = Idioma da interface. O conteúdo do YouTube Music tem uma configuração própria (Conteúdo e região).
 settings.language.system = Padrão do sistema ({language})
 settings.language.system_search = padrão automático sistema

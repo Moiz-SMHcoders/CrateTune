@@ -1,5 +1,5 @@
 settings.language.group = 언어
-settings.language.label = 언어
+settings.language.label = 표시 언어
 settings.language.description = 인터페이스 언어입니다. YouTube Music 콘텐츠는 별도로 설정합니다(콘텐츠 및 지역).
 settings.language.system = 시스템 기본값({language})
 settings.language.system_search = default automatic 기본값 자동 시스템

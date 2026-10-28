@@ -1,5 +1,5 @@
 settings.language.group = 言語
-settings.language.label = 言語
+settings.language.label = 表示言語
 settings.language.description = インターフェースの言語です。YouTube Music のコンテンツには別の設定があります（コンテンツと地域）。
 settings.language.system = システムのデフォルト（{language}）
 settings.language.system_search = default automatic デフォルト 自動 システム

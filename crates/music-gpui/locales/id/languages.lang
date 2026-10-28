@@ -1,5 +1,5 @@
 settings.language.group = Bahasa
-settings.language.label = Bahasa
+settings.language.label = Bahasa antarmuka
 settings.language.description = Bahasa antarmuka. Konten YouTube Music memiliki pengaturannya sendiri (Konten & wilayah).
 settings.language.system = Bawaan sistem ({language})
 settings.language.system_search = default automatic bawaan otomatis sistem
