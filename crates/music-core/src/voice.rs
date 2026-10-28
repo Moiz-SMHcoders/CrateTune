@@ -339,6 +339,7 @@ impl Voice {
             return Ok(decoder);
         }
         let stream = config.resolver.resolve_track(&self.track, config.quality)?;
+        log::debug!("{}: resolved", self.track.video_id);
         *lock(&self.source) = Some(
             stream
                 .source
@@ -361,17 +362,25 @@ impl Voice {
         let (resolver, quality) = (config.resolver.clone(), config.quality);
         let track = self.track.clone();
         let downloader = Downloader::new(stream.clone(), buffer.clone(), stream.chunk_bytes())
-            .with_refresh(Box::new(move || resolver.resolve_track(&track, quality)));
+            .with_refresh(Box::new(move |stale| {
+                resolver.refresh_track(&track, quality, stale)
+            }));
         thread::Builder::new()
             .name("music-core-download".into())
             .spawn(move || downloader.run())
             .map_err(|e| Error::Audio(e.to_string()))?;
-        TrackDecoder::from_stream(buffer.clone(), &stream.mime_type).map_err(|e| {
-            match buffer.end() {
+        let decoder = TrackDecoder::from_stream(buffer.clone(), &stream.mime_type).map_err(
+            |e| match buffer.end() {
                 Some(BufferEnd::Failed(msg)) => Error::Audio(msg),
                 _ => e,
-            }
-        })
+            },
+        )?;
+        log::debug!(
+            "{}: decoder open with {} bytes downloaded",
+            self.track.video_id,
+            buffer.len()
+        );
+        Ok(decoder)
     }
 
     fn run(self: Arc<Self>, config: VoiceConfig) {

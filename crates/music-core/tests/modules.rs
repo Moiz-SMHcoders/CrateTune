@@ -1109,3 +1109,123 @@ fn installs_from_urls_descriptors_and_catalogs_with_updates() {
     );
     assert!(modules.check_update(&file_id).unwrap().is_none());
 }
+
+#[test]
+fn expired_module_urls_are_renewed_through_the_module() {
+    use std::sync::atomic::AtomicBool;
+    // A 7 s WAV (> 1 MiB). The server drops the first connection after 300 kB
+    // and refuses to resume it until the module was asked again (as if the
+    // module handed out a new, signed URL): the cached resolution must not do.
+    let long_wav = wav(7, 44_100);
+    let entries = json!([catalog_entry(
+        "t2",
+        "Long Tone",
+        "Test Artist",
+        7.0,
+        json!([{"quality": "lossless", "file": "long.wav", "mimeType": "audio/wav", "codec": "pcm"}])
+    )]);
+    let catalog_fetches = Arc::new(AtomicUsize::new(0));
+    let dropped_at = Arc::new(AtomicUsize::new(usize::MAX));
+    let armed = Arc::new(AtomicBool::new(true));
+    let server = {
+        let (fetches, dropped_at, armed, data) = (
+            catalog_fetches.clone(),
+            dropped_at.clone(),
+            armed.clone(),
+            long_wav.clone(),
+        );
+        Server::start(move |req: &Req| {
+            if req.path == "/catalog.json" {
+                fetches.fetch_add(1, Ordering::SeqCst);
+                return Resp::json(&entries);
+            }
+            if req.path != "/audio/long.wav" {
+                return Resp::status(404);
+            }
+            let resumed = req.headers.contains_key("range");
+            if !resumed && armed.swap(false, Ordering::SeqCst) {
+                dropped_at.store(fetches.load(Ordering::SeqCst), Ordering::SeqCst);
+                return Resp::ok("audio/wav", data.clone()).truncated(300_000);
+            }
+            if resumed && fetches.load(Ordering::SeqCst) <= dropped_at.load(Ordering::SeqCst) {
+                return Resp::status(403);
+            }
+            file_response(req, &data, "audio/wav")
+        })
+    };
+    let dir = temp_dir("modules-expiry");
+    let modules = open(&dir);
+    install_echo(&modules, &server.base, None);
+    let resolver: Arc<dyn StreamResolver> =
+        Arc::new(ModuleResolver::new(modules.clone(), Arc::new(NoYouTube)));
+    let track = song("yt-long", "Long Tone", "Test Artist", 7);
+
+    // The resolution is cached; refresh_track goes past the cache.
+    let stale = resolver.resolve_track(&track, Quality::High).unwrap();
+    assert!(stale.valid_until.is_some(), "the module's expiry is kept");
+    let before = catalog_fetches.load(Ordering::SeqCst);
+    resolver.resolve_track(&track, Quality::High).unwrap();
+    assert_eq!(catalog_fetches.load(Ordering::SeqCst), before, "cached");
+    let fresh = resolver
+        .refresh_track(&track, Quality::High, &stale)
+        .unwrap();
+    assert!(
+        catalog_fetches.load(Ordering::SeqCst) > before,
+        "asked the module again"
+    );
+    assert_eq!(fresh.source, stale.source);
+
+    // A download cut off mid-file resumes on the renewed URL.
+    let downloads =
+        music_core::downloads::DownloadManager::new(dir.join("media"), resolver.clone(), None)
+            .unwrap();
+    downloads.download(track.clone());
+    let deadline = Instant::now() + Duration::from_secs(20);
+    let path = loop {
+        if let Some(path) = downloads.local_file("yt-long") {
+            break path;
+        }
+        assert!(
+            Instant::now() < deadline,
+            "download never finished: {:?}",
+            downloads.states()
+        );
+        std::thread::sleep(Duration::from_millis(50));
+    };
+    assert_eq!(std::fs::read(&path).unwrap(), long_wav);
+    let resumes: Vec<String> = server
+        .requests("/audio/")
+        .iter()
+        .filter_map(|r| r.headers.get("range").cloned())
+        .collect();
+    assert!(resumes.iter().all(|r| r == "bytes=300000-"), "{resumes:?}");
+    assert_eq!(
+        resumes.len(),
+        2,
+        "one refused on the old URL, one on the new"
+    );
+
+    // The same while playing.
+    armed.store(true, Ordering::SeqCst);
+    let (player, mut output) = Player::headless(resolver.clone(), 48_000).unwrap();
+    player.set_volume(0.0);
+    player.play(track.clone());
+    let deadline = Instant::now() + Duration::from_secs(30);
+    let mut furthest = Duration::ZERO;
+    loop {
+        for _ in 0..4800 {
+            output.next();
+        }
+        std::thread::sleep(Duration::from_millis(3));
+        let state = player.state();
+        if let PlaybackStatus::Error(e) = &state.status {
+            panic!("{e}");
+        }
+        furthest = furthest.max(state.position);
+        if state.status == PlaybackStatus::Ended {
+            break;
+        }
+        assert!(Instant::now() < deadline, "never ended: {state:?}");
+    }
+    assert!(furthest.as_secs_f64() > 6.0, "played {furthest:?} of 7 s");
+}

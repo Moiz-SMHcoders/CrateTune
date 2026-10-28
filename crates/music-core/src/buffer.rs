@@ -136,6 +136,12 @@ impl StreamBuffer {
         }
     }
 
+    /// Corrects a size that was declared wrongly (before any data arrived).
+    pub(crate) fn replace_total_len(&self, total: u64) {
+        self.lock().total_len = Some(total);
+        self.grew.notify_all();
+    }
+
     /// `None` while the download is still running.
     pub fn end(&self) -> Option<BufferEnd> {
         self.lock().end.clone()
@@ -171,6 +177,18 @@ impl StreamBuffer {
                 .unwrap_or_else(|e| e.into_inner())
                 .0;
         }
+    }
+
+    /// Copy of up to `max` downloaded bytes from `start` (fewer, or none, if
+    /// they haven't arrived). Never blocks.
+    pub(crate) fn copy_range(&self, start: u64, max: u64) -> Vec<u8> {
+        let state = self.lock();
+        let len = state.data.len() as u64;
+        if start >= len {
+            return Vec::new();
+        }
+        let end = len.min(start.saturating_add(max));
+        state.data[start as usize..end as usize].to_vec()
     }
 
     /// Copy of the bytes downloaded so far.

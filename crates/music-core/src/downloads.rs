@@ -305,7 +305,11 @@ impl Inner {
                     if let Some(job) = self.lock().jobs.iter_mut().find(|j| j.id == job_id) {
                         job.state.total_bytes = stream.content_length;
                     }
-                    let download = stream.download()?;
+                    let download = stream.download_refreshing(
+                        self.resolver.clone(),
+                        &track,
+                        Quality::default(),
+                    )?;
                     Ok((stream, download))
                 });
 

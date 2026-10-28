@@ -315,7 +315,8 @@ karaoke, live recordings — plus your own ("songs about cars"), like "Hide expl
 * **How YouTube songs are streamed.** Full songs come from YouTube's TV client, or its web
   client with a PoToken (an anti-abuse token the app makes in a hidden browser view on
   macOS). YouTube makes each new stream wait a few seconds; the app plays the start of the
-  song from a preview meanwhile, so songs usually start within 2–5 seconds. Choose the
+  song from a preview meanwhile, so songs usually start within a second (two or three for
+  the first song after launch). Choose the
   route in Settings → Playback → **YouTube streams** (Automatic is best). Windows makes the
   PoToken with the built-in WebView2 (new, untested); Linux builds can opt in with
   WebKitGTK; otherwise they use the TV client. If YouTube changes

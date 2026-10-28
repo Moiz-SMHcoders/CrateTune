@@ -28,9 +28,14 @@ versions follow [SemVer](https://semver.org/). "Music" is a working name.
   the Japanese dictionary on demand (10.5 MB, checksum-verified, 45 MB on disk) with
   progress, cancel and remove; until then romanization is kana-only.
 * **Translations are kept** in the library: reopening a song doesn't translate it again.
+* **Multichannel Opus** (5.1 / 7.1, mapping family 1 and 255) plays, mixed down to stereo.
 
 ### Changed
 
+* **YouTube songs start faster**: about 0.5–0.8 s from click to sound instead of
+  1.2–2.3 s (the start of the file downloads while the stream is still being resolved,
+  the challenge solver loads during the player request, the session renews in the
+  background).
 * **Hide music videos** now also hides music videos and user videos inside playlists,
   albums, radio, queues and card actions (each track carries its YouTube video type); an
   album that YouTube only offers as official-audio videos stays complete.
@@ -53,6 +58,14 @@ versions follow [SemVer](https://semver.org/). "Music" is a working name.
 
 ### Fixed
 
+* **Gapless AAC**: the encoder delay (~25–50 ms of warm-up) and the end padding of AAC
+  files (local M4A, YouTube, modules) are trimmed, so gapless albums no longer get a gap
+  or click between tracks; seeks in AAC are sample-accurate.
+* **Expiring module streams** are renewed through their module shortly before they
+  expire or when the server rejects them, and continue at the same byte (also for a
+  preloaded next song and for downloads).
+* Age-restricted YouTube videos no longer throw away the shared session (they were taken
+  for YouTube's bot check), so they fail and get skipped in well under a second.
 * Albums with more than 200 tracks showed only the first 200; the rest now loads (also
   for Play / Shuffle from cards). Playing a playlist from its card plays up to ~1,100
   songs instead of the first 100.
