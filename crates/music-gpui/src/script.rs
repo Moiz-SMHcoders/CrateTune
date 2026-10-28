@@ -48,6 +48,7 @@
 //! | `@module-install=PATH\|URL`, `@module-catalog=URL`, `@module-confirm`, `@module-cancel` | add a module / catalog (review, then install) |
 //! | `@module-open=N\|ID`, `@module-field=KEY:VALUE`, `@module-save` | a module's settings form (index in playback order or manifest id) |
 //! | `@module-check=N`, `@module-update=N`, `@module-enable=N:on\|off`, `@module-remove=N` (twice: confirm) | module actions |
+//! | `@bench=N` | draw the main window N times ~16 ms apart and print the draw times (UI CPU per frame) |
 //! | `@quit` | quit |
 //!
 //! Library / account / storage actions (`@like`, `@download`, `@backup`, …) are listed
@@ -126,6 +127,10 @@ pub fn schedule(window: AnyWindowHandle, app: Entity<MusicApp>, cx: &mut App) {
                 },
                 None => (window, item),
             };
+            if let Some(frames) = item.strip_prefix("@bench=") {
+                bench_frames(window, &app, frames.parse().unwrap_or(300), &executor, cx).await;
+                continue;
+            }
             let ok = cx.update_window(target, |_, window, cx| match item.strip_prefix('@') {
                 Some(action) => {
                     let (name, arg) = match action.split_once('=') {
@@ -149,6 +154,49 @@ pub fn schedule(window: AnyWindowHandle, app: Entity<MusicApp>, cx: &mut App) {
         }
     })
     .detach();
+}
+
+/// `@bench=N`: draws the main window N times ~16 ms apart (marking the app dirty
+/// first, as an animation frame does) and prints how long the draws took: the UI's
+/// CPU cost per frame (layout, prepaint, paint, scene) without presenting it, and
+/// independent of whether macOS delivers display-link frames (locked screen,
+/// hidden window).
+async fn bench_frames(
+    window: AnyWindowHandle,
+    app: &Entity<MusicApp>,
+    frames: usize,
+    executor: &gpui::BackgroundExecutor,
+    cx: &mut gpui::AsyncApp,
+) {
+    let mut times = Vec::with_capacity(frames);
+    for _ in 0..frames {
+        executor.timer(Duration::from_millis(16)).await;
+        let drawn = cx.update_window(window, |_, window, cx| {
+            app.update(cx, |_, cx| cx.notify());
+            let started = Instant::now();
+            window.draw(cx).clear(cx);
+            started.elapsed()
+        });
+        match drawn {
+            Ok(time) => times.push(time.as_secs_f64() * 1e3),
+            Err(_) => return,
+        }
+    }
+    if times.is_empty() {
+        return;
+    }
+    let avg = times.iter().sum::<f64>() / times.len() as f64;
+    times.sort_by(f64::total_cmp);
+    let at = |q: f64| times[((times.len() - 1) as f64 * q).round() as usize];
+    eprintln!(
+        "music-gpui: bench {} draws: avg {avg:.2} ms, p50 {:.2}, p95 {:.2}, max {:.2} \
+         (≈ {:.1} % of a core at 60 fps)",
+        times.len(),
+        at(0.5),
+        at(0.95),
+        at(1.0),
+        avg * 6.0
+    );
 }
 
 /// Synthetic keyboard / mouse input through GPUI's regular dispatch. Returns

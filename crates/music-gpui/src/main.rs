@@ -145,6 +145,9 @@ fn main() {
             // After the Root exists, so pages / notifications can open from startup hooks.
             window
                 .update(cx, |_, window, cx| {
+                    if std::env::var_os("MUSIC_ON_TOP").is_some() {
+                        mini_player::float_above_others(window);
+                    }
                     app.update(cx, |app, cx| app.apply_startup_env(window, cx))
                 })
                 .ok();

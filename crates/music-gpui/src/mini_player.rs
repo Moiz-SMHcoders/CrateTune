@@ -331,6 +331,38 @@ fn keep_visible_when_inactive(window: &Window) {
 #[cfg(not(target_os = "macos"))]
 fn keep_visible_when_inactive(_: &Window) {}
 
+/// `MUSIC_ON_TOP=1` (measurements): keeps the main window above other apps' windows
+/// and on every Space (also over a full-screen app), so macOS keeps delivering
+/// display-link frames while the machine is in use (an occluded or off-Space window
+/// gets none, which makes CPU samples meaningless).
+#[cfg(target_os = "macos")]
+pub fn float_above_others(window: &Window) {
+    use objc2::msg_send;
+    use objc2::runtime::AnyObject;
+    use raw_window_handle::{HasWindowHandle, RawWindowHandle};
+    let Ok(handle) = HasWindowHandle::window_handle(window) else {
+        return;
+    };
+    if let RawWindowHandle::AppKit(appkit) = handle.as_raw() {
+        let view = appkit.ns_view.as_ptr().cast::<AnyObject>();
+        // SAFETY: as in `keep_visible_when_inactive`; `setLevel:` takes an NSInteger
+        // (3 = NSFloatingWindowLevel), `setCollectionBehavior:` an NSUInteger
+        // (canJoinAllSpaces | fullScreenAuxiliary).
+        unsafe {
+            let ns_window: *mut AnyObject = msg_send![view, window];
+            if !ns_window.is_null() {
+                let _: () = msg_send![ns_window, setLevel: 3isize];
+                let _: () =
+                    msg_send![ns_window, setCollectionBehavior: (1usize << 0) | (1usize << 8)];
+                let _: () = msg_send![ns_window, orderFrontRegardless];
+            }
+        }
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
+pub fn float_above_others(_: &Window) {}
+
 impl MusicApp {
     /// The blurred artwork behind the mini player ("Blurred artwork" style), once ready.
     fn mini_backdrop(&self, cx: &App) -> Option<std::sync::Arc<gpui::RenderImage>> {
