@@ -242,7 +242,7 @@ mod tests {
             assert_eq!(SECTIONS.iter().filter(|s| s.id == section.id).count(), 1);
             assert_eq!(SectionId::from_key(section.id.key()), Some(section.id));
         }
-        assert_eq!(SECTIONS.len(), 15);
+        assert_eq!(SECTIONS.len(), 17);
         assert_eq!(
             SectionId::from_key("accounts"),
             Some(SectionId::Integrations)
