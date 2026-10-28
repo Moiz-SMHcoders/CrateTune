@@ -398,8 +398,8 @@ pub(crate) fn is_title_line(text: &str, ctx: &CreditContext) -> bool {
         })
 }
 
-/// "周杰伦 - 晴天", "Daft Punk - Instant Crush" without knowing the track: two short
-/// parts around a dash, both without sentence punctuation.
+/// "周杰伦 - 晴天", "Instant Crush (feat. X) - Daft Punk/X" without knowing the track:
+/// two short parts around a dash, neither ending a sentence (weak: needs support).
 fn looks_like_title_line(text: &str) -> bool {
     let Some((a, b)) = text.split_once(" - ") else {
         return false;
@@ -407,11 +407,11 @@ fn looks_like_title_line(text: &str) -> bool {
     let short = |p: &str| {
         let p = p.trim();
         !p.is_empty()
-            && p.chars().count() <= 40
+            && p.chars().count() <= 60
             && !p.contains(" - ")
             && !p
                 .chars()
-                .any(|c| matches!(c, ',' | '，' | '.' | '!' | '?' | '！' | '？' | '。'))
+                .any(|c| matches!(c, '!' | '?' | '！' | '？' | '。'))
     };
     short(a) && short(b)
 }
@@ -633,6 +633,8 @@ mod tests {
             "MALAMENTE (Cap.1: Augurio) (Cap.1: Augurio) - ROSALÍA",
             &c
         ));
+        // KuGou's variant: artist first, full-width colon, no space before the bracket.
+        assert!(is_title_line("Rosalia - MALAMENTE(Cap.1：Augurio)", &c));
         // A chorus line that starts with the title is not a title line.
         let c = ctx("Hello", "Adele");
         assert_eq!(head(&["Hello, it's me", "I was wondering"], &c), 0);
