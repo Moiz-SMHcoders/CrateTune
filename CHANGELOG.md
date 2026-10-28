@@ -117,6 +117,7 @@ versions follow [SemVer](https://semver.org/).
 
 ### Fixed
 
+* **Shortcuts on Windows and Linux** use Ctrl (they were bound to the Windows / Super key).
 * **Esc with a menu or popover open** only closes it (it also closed Now Playing or went
   back).
 * The player bar's title no longer runs into the transport buttons when the Together
