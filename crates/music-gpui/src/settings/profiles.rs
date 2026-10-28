@@ -146,6 +146,8 @@ pub fn minimal_settings() -> Settings {
     s.lyrics.romanize.cyrillic = false;
     s.lyrics.romanize.other = false;
     s.lyrics.show_background_vocals = false;
+    // Fewer decoded covers kept around (re-fetched when scrolled back to).
+    s.appearance.artwork_memory_mb = 16;
     s
 }
 

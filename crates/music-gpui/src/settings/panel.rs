@@ -512,6 +512,16 @@ impl SettingsPanel {
         }
     }
 
+    /// Settings → Storage → "Artwork in memory" (MiB of decoded covers).
+    pub fn set_artwork_memory(&mut self, mb: u32, cx: &mut Context<Self>) {
+        if self.settings.appearance.artwork_memory_mb != mb {
+            self.settings.appearance.artwork_memory_mb = mb;
+            self.settings.normalize();
+            cx.emit(SettingsEvent::Appearance);
+            self.changed(false, cx);
+        }
+    }
+
     /// From the settings page: store and tell the app to apply.
     pub fn choose_playback_modes(&mut self, shuffle: bool, repeat: Repeat, cx: &mut Context<Self>) {
         self.set_playback_modes(shuffle, repeat, cx);

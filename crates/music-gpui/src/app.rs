@@ -319,6 +319,7 @@ impl MusicApp {
             _subscriptions: subscriptions,
         };
         this.apply_theme(cx);
+        this.apply_artwork_budget(cx);
         this.sync_browse_client(cx);
         this.start_radio_watch(window, cx);
         this.rebuild_lyrics_service(cx);
@@ -598,7 +599,10 @@ impl MusicApp {
             }
             SettingsEvent::Lyrics => self.rebuild_lyrics_service(cx),
             SettingsEvent::NowPlaying => cx.notify(),
-            SettingsEvent::Appearance => self.apply_theme(cx),
+            SettingsEvent::Appearance => {
+                self.apply_theme(cx);
+                self.apply_artwork_budget(cx);
+            }
             SettingsEvent::Language => self.apply_language(window, cx),
             SettingsEvent::PlaybackModes => {
                 let modes = self.settings.read(cx).settings().playback.clone();
@@ -622,6 +626,18 @@ impl MusicApp {
     }
 
     /// (Re)builds the scrobbler and Discord presence from the current settings.
+    /// Settings → Storage → "Artwork in memory" (part of the appearance profile).
+    pub(crate) fn apply_artwork_budget(&mut self, cx: &mut Context<Self>) {
+        let mb = self
+            .settings
+            .read(cx)
+            .settings()
+            .appearance
+            .artwork_memory_mb;
+        crate::components::artwork::ArtworkCache::global(cx)
+            .update(cx, |cache, cx| cache.set_budget_mb(mb, cx));
+    }
+
     pub(crate) fn apply_integrations(&mut self, cx: &mut Context<Self>) {
         let panel = self.settings.read(cx);
         let scrobble = panel.scrobble_config();

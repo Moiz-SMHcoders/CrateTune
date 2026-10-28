@@ -39,6 +39,7 @@ mod library_script;
 mod login_webview;
 mod lyrics;
 mod lyrics_card;
+mod memory;
 mod mic_permission;
 mod mini_player;
 mod module_service;
@@ -120,6 +121,8 @@ fn initial_bounds(saved: Option<WindowGeometry>, cx: &App) -> WindowBounds {
 }
 
 fn main() {
+    // Before anything else: may re-execute the process (see `memory.rs`).
+    memory::tune_allocator();
     gpui_platform::application()
         .with_assets(icons::Assets)
         .run(|cx: &mut App| {

@@ -1,5 +1,6 @@
 //! Storage section: where files live, the play cache (limit, usage, clear),
-//! downloads (location, usage), and backup / restore of library + settings.
+//! artwork kept in memory, downloads (location, usage), and backup / restore of
+//! library + settings.
 
 use gpui::{
     AnyElement, Context, IntoElement, ParentElement as _, SharedString, Styled as _, Window,
@@ -89,6 +90,24 @@ pub(super) fn render(
                     this.update_library(|l| l.cache_limit_mb = mb, cx)
                 }))
         }));
+    let artwork_mb = panel.settings.appearance.artwork_memory_mb;
+    let artwork_budgets =
+        h_flex()
+            .gap_1()
+            .flex_wrap()
+            .children(crate::components::artwork::BUDGETS_MB.map(|mb| {
+                let selected = artwork_mb == mb;
+                Button::new(SharedString::from(format!("artwork-memory-{mb}")))
+                    .small()
+                    .map(|b| if selected { b.primary() } else { b.outline() })
+                    .selected(selected)
+                    .label(t!(
+                        "units.size",
+                        value = number(u64::from(mb)),
+                        unit = t!("units.mb")
+                    ))
+                    .on_click(cx.listener(move |this, _, _, cx| this.set_artwork_memory(mb, cx)))
+            }));
     let cache_played = Switch::new("cache-played")
         .checked(prefs.cache_played)
         .on_click(cx.listener(|this, checked: &bool, _, cx| {
@@ -188,6 +207,12 @@ pub(super) fn render(
                     cx,
                 )),
         )
+        .child(group(t!("settings.storage.memory"), cx).child(row(
+            t!("settings.storage.artwork_memory"),
+            Some(t!("settings.storage.artwork_memory_detail")),
+            artwork_budgets,
+            cx,
+        )))
         .child(
             group(t!("settings.storage.downloads"), cx)
                 .child(note(

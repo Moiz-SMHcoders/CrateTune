@@ -163,7 +163,7 @@ impl ChallengeSolver {
                                 prepared = None;
                                 let started = std::time::Instant::now();
                                 match prepare_engine(
-                                    &mut preprocessed,
+                                    &preprocessed,
                                     cache_dir.as_deref(),
                                     &player_id,
                                 ) {
@@ -239,10 +239,13 @@ struct Engine {
 /// solver runs one (`Function("_result", player)(result)` → `result.n` / `.sig`),
 /// without loading the solver itself.
 fn prepare_engine(
-    preprocessed: &mut HashMap<String, String>,
+    preprocessed: &HashMap<String, String>,
     cache_dir: Option<&std::path::Path>,
     player_id: &str,
 ) -> Result<Engine> {
+    // Read from the cache file each time (a few ms) rather than keeping ~4 MB
+    // of script text in memory; only players that couldn't be cached stay in
+    // `preprocessed`.
     let source = match preprocessed.get(player_id) {
         Some(source) => source.clone(),
         None => {
@@ -250,10 +253,8 @@ fn prepare_engine(
                 cache_dir.ok_or_else(|| Error::Parse("no solver cache".into()))?,
                 player_id,
             );
-            let source = std::fs::read_to_string(path)
-                .map_err(|e| Error::Parse(format!("preprocessed player: {e}")))?;
-            preprocessed.insert(player_id.to_owned(), source.clone());
-            source
+            std::fs::read_to_string(path)
+                .map_err(|e| Error::Parse(format!("preprocessed player: {e}")))?
         }
     };
     let engine = bare_engine()?;
@@ -432,11 +433,14 @@ fn solve_job(
     if cached.is_none()
         && let Some(pre) = output["preprocessed_player"].as_str()
     {
-        if let Some(dir) = cache_dir {
+        // Kept in memory only if it can't be cached on disk (see `prepare_engine`).
+        let stored = cache_dir.is_some_and(|dir| {
             let _ = std::fs::create_dir_all(dir);
-            let _ = std::fs::write(cache_path(dir, &job.player_id), pre);
+            std::fs::write(cache_path(dir, &job.player_id), pre).is_ok()
+        });
+        if !stored {
+            preprocessed.insert(job.player_id.clone(), pre.to_owned());
         }
-        preprocessed.insert(job.player_id.clone(), pre.to_owned());
     }
 
     let mut solutions = Solutions::default();
@@ -590,8 +594,7 @@ mod tests {
         let prepared = solve();
         assert_eq!((prepared.n, prepared.sig), (fresh.n, fresh.sig));
         // The prepared path on its own.
-        let mut cache = HashMap::new();
-        let engine = prepare_engine(&mut cache, Some(&dir), "test").unwrap();
+        let engine = prepare_engine(&HashMap::new(), Some(&dir), "test").unwrap();
         let (reply, _rx) = mpsc::channel();
         let job = Job {
             player_id: "test".into(),

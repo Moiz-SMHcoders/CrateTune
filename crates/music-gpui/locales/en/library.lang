@@ -247,6 +247,9 @@ settings.storage.cache_played_detail = Keeps a copy of what you play (fetched on
 settings.storage.clear_cache_row = Clear the play cache
 # Button.
 settings.storage.clear_cache = Clear cache
+settings.storage.memory = Memory
+settings.storage.artwork_memory = Artwork in memory
+settings.storage.artwork_memory_detail = Decoded covers kept for quick redraws. Less uses less RAM; covers scrolled back into view are loaded again.
 settings.storage.downloads = Downloads
 # {size}: total size; {path}: the download folder.
 settings.storage.downloads_usage = {size} in {path}
