@@ -530,7 +530,7 @@ pub(super) fn render(
                 theme::preview(&look_of(preset.choice, preset.custom(&custom)));
             v_flex()
                 .id(SharedString::from(format!("theme-preset-{}", preset.id)))
-                .w(px(104.))
+                .w(px(96.))
                 .p_1p5()
                 .gap_1p5()
                 .rounded(theme::radius(9.))
@@ -823,7 +823,7 @@ pub(super) fn render(
                     },
                     cx,
                 ))
-                .children(use_dynamic)
+                .children(use_dynamic.map(|b| h_flex().child(b)))
                 .child(row(t!("theme.dynamic.style"), None, styles, cx))
                 .child(slider_row(
                     t!("theme.dynamic.strength"),

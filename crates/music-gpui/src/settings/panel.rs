@@ -873,9 +873,12 @@ impl SettingsPanel {
         let (active_bg, hover_bg) = (theme.sidebar_accent, theme.list_hover);
         let (fg, muted) = (theme.foreground, theme.muted_foreground);
         v_flex()
+            .id("settings-nav")
             .w(px(232.))
             .flex_none()
             .h_full()
+            // 18 sections don't fit a short window.
+            .overflow_y_scroll()
             .py_4()
             .px_2()
             .gap_0p5()

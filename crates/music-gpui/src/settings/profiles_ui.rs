@@ -311,7 +311,6 @@ pub(super) fn render(
             Button::new(SharedString::from(format!("profile-{}", p.id)))
                 .small()
                 .map(|b| if selected { b.primary() } else { b.outline() })
-                .when_builtin(p.builtin())
                 .label(label)
                 .on_click(
                     cx.listener(move |this, _, window, cx| this.switch_profile(&id, window, cx)),
@@ -429,19 +428,4 @@ pub(super) fn render(
         .child(actions)
         .child(note(t!("profiles.note"), cx))
         .into_any_element()
-}
-
-trait BuiltinStyle {
-    fn when_builtin(self, builtin: bool) -> Self;
-}
-
-impl BuiltinStyle for Button {
-    /// Built-ins carry an icon so they read as fixed entries.
-    fn when_builtin(self, builtin: bool) -> Self {
-        if builtin {
-            self.icon(Lucide::Lock)
-        } else {
-            self
-        }
-    }
 }
