@@ -408,6 +408,17 @@ impl MusicApp {
             })
             .await;
             this.update(cx, |this, cx| {
+                if let Some(started) = this.trace {
+                    let what = match &result {
+                        Ok(lines) => format!("{} lines", lines.iter().flatten().count()),
+                        Err((e, _)) => format!("failed: {e}"),
+                    };
+                    eprintln!(
+                        "music-gpui: [{:6.2}s] translation {}: {what}",
+                        started.elapsed().as_secs_f64(),
+                        slot.0
+                    );
+                }
                 let state = match result {
                     Ok(lines) => TranslationState::Ready(Arc::new(
                         lines.into_iter().map(|l| l.map(Into::into)).collect(),
