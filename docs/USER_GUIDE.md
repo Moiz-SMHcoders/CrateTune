@@ -242,7 +242,8 @@ of this app and the packaging tool.
 * **How YouTube songs are streamed.** Full songs come from YouTube's TV client, or its web
   client with a PoToken (an anti-abuse token the app makes in a hidden browser view on
   macOS). YouTube makes each new stream wait a few seconds; the app plays the start of the
-  song from a preview meanwhile, so songs usually start within 2–5 seconds. Choose the
+  song from a preview meanwhile, so songs usually start within a second (two or three for
+  the first song after launch). Choose the
   route in Settings → Playback → **YouTube streams** (Automatic is best). If YouTube changes
   something, songs fall back to ~1-minute previews (marked "preview") until the app is
   updated. This isn't allowed by YouTube's terms of service.

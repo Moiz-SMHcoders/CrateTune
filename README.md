@@ -96,10 +96,30 @@ its own executor.
 * `Player` — audio thread with a pollable `PlaybackState`, `pause`/`resume`/`toggle_pause`/`seek`.
   Decoding is Symphonia 0.6 plus the pure-Rust `opus-decoder` (`TrackDecoder`, a seekable
   `rodio::Source`): MP4/M4A (AAC, ALAC), MP3, FLAC, Ogg Vorbis/Opus, WAV, AIFF, WebM/MKV.
-  rodio/cpal only mix and output. Engine features:
+  rodio/cpal only mix and output. Gapless details the libraries leave out:
+  * AAC in MP4 (files, YouTube's fragmented DASH `.m4a`): the encoder delay ("priming",
+    ~1–2k frames) and the last frame's padding are trimmed from the edit list
+    (`moov/trak/edts/elst`; iTunes' `iTunSMPB` when there is none) by a small box parser
+    (`mp4_gapless`), since Symphonia ignores edit lists. Durations, positions and seeks
+    use the trimmed timeline; AAC seeks pre-roll two frames, so audio after a seek is
+    identical to sequential decoding. Two halves of one signal play back without a gap
+    (`player::tests::gapless_aac_tracks_join_without_priming_or_padding`).
+  * Opus: mono / stereo (mapping family 0, everything YouTube serves) and multichannel
+    (family 1 up to 7.1, family 255): multistream packets are split per RFC 6716 App. B
+    (`opus-decoder` 0.1's own multistream splitter misreads them) and mixed down to
+    stereo (ITU-style matrix normalized like opusfile's; family 255 keeps its first two
+    channels). Ambisonics (families 2 / 3) are rejected.
+
+  Engine features:
   * plays `Track::local_path` files (ReplayGain / R128 track gain from tags) or streams
     YouTube progressively (`StreamBuffer`: playback starts with the first bytes, seeks
-    into the undownloaded part wait up to 10 s; an expired URL is re-resolved once);
+    into the undownloaded part wait up to 10 s). Expiring URLs (googlevideo's `expire`,
+    a module's `expiresAt` → `ResolvedStream::valid_until`) are re-resolved through
+    `StreamResolver::refresh_track` 30 s before they expire (also before first use, e.g.
+    a preloaded next track) and when rejected (401/403/410), and the download resumes at
+    the same byte — only if it is provably the same file (format, size, module + variant;
+    a server-reported size change fails instead of splicing two files); up to 3 times per
+    download, each after progress. Downloads do the same (`download_refreshing`);
     loudness normalization from YouTube's `loudnessDb` (`set_normalization(false)` turns
     it off, ReplayGain included);
   * `set_next` → preload ~30 s ahead, gapless switch, optional crossfade
@@ -259,7 +279,7 @@ cargo run -p music-core --example lyrics -- --translate en "yoasobi idol" # + ro
   from `adPlacements` / `adSlots`). `ResolvedStream::not_before` carries that time and the
   downloader waits; meanwhile it plays the head of the file from the iOS client's URL when
   that is provably the same file (`ResolvedStream::prefix`: same itag, size and `lmt`), so
-  playback usually starts in 2–5 s anyway.
+  playback starts long before that (see first audio below).
 
 Pieces:
 
@@ -275,6 +295,26 @@ Pieces:
   is dispatched to the main thread, so never call the resolver from it). No PoToken
   provider on Linux / Windows yet; they use the TV client.
 * `WebResolver::prewarm()` does the slow one-time work at launch; the app calls it.
+* **First audio** (time from `play` to audible output) after `prewarm`: one player request
+  plus ~70 ms. The iOS client's head starts downloading as soon as that client answers
+  (`PrefetchedHead`, in parallel with the web client's player request), so the decoder
+  opens on bytes that are already there once the web URL confirms the same file; the
+  solver loads the ~4 MB preprocessed player while the player request is in flight
+  (`ChallengeSolver::prepare`), so solving `n` takes ~15 ms instead of 200–500 ms; a
+  session older than 40 min (TTL 45) is renewed on a background thread. Measured with
+  `youtube_play --first-audio` (muted real device, Oct 2026, other builds running):
+
+  | | before | after |
+  |---|---|---|
+  | TV, 4 songs × 2 searches | 1478 1358 2286 1464 / 1573 1158 2005 1161 ms (mean 1.56 s) | 729 841 841 835 / 626 532 528 526 ms (mean 0.68 s) |
+  | Web + PoToken, 3 songs | 2806 2170 1055 ms | 726 728 636 ms |
+  | TV, cold (no prewarm), first / second song | 3329 / 1439 ms | 2604 / 838 ms |
+
+* The PoToken attestation is renewed when its integrity token runs out (~12 h, minus
+  10 min): `PoTokenProvider::expire_attestation` forces that (unit test without network;
+  `youtube_play --first-audio 3 --expire-potoken web` live: ~1 s BotGuard renewal, then
+  full streams again). Age-restricted and unavailable videos fail with a clean error after
+  the client chain and the fallback (~0.4 s warm), and the player auto-skips them.
 * Settings → Playback → **YouTube streams**: Automatic (TV, then web + PoToken, then
   preview), TV client, Web + PoToken, Previews only.
 
@@ -282,6 +322,7 @@ Pieces:
 cargo run --release -p music-core --example youtube -- tv  "daft punk instant crush"  # resolve + full download + decode
 cargo run --release -p music-core --example youtube -- web khnokW3Mw24                # same with a PoToken (macOS)
 cargo run --release -p music-core --example youtube_play -- tv "daft punk"            # muted real-device playback
+cargo run --release -p music-core --example youtube_play -- --first-audio 4 tv "daft punk"  # time to first audio, 4 songs (MUSIC_LOG=debug: timings)
 ```
 
 This uses YouTube in ways its terms of service don't allow, as ArchiveTune and yt-dlp do,
@@ -665,7 +706,10 @@ bundled or preconfigured.**
   live / remix / remaster / … markers, explicit flag, duration within max(5 s, 5 %)) picks the
   best acceptable result, and its stream URL plays. 15 s per module, 30 s for the sequence;
   results are cached until a minute before the URL expires (misses 30 s, failures 10 s). Then
-  YouTube, unless the source is "Modules only". Local files never go through modules. Streams
+  YouTube, unless the source is "Modules only". A module URL that expires (its declared
+  `expiresAt`, or 401/403/410 mid-stream) is resolved again through the same module, past
+  this cache (`ModuleResolver::refresh_track`), and the download resumes at the same byte.
+  Local files never go through modules. Streams
   are any HTTP(S) URL with the module's headers, played while they download (FLAC, ALAC,
   MP3, AAC/M4A, Ogg Vorbis/Opus, WAV, AIFF); HLS / DASH results are rejected. Downloads use
   the same resolver, so a module source is downloaded as the full file.

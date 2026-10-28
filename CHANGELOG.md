@@ -13,9 +13,25 @@ versions follow [SemVer](https://semver.org/). "Music" is a working name.
   Waits out YouTube's pre-roll ad delay while playing the song's start from the iOS
   client, so playback starts in seconds. Settings → Playback → YouTube streams. Downloads
   are now full files. The ~1-minute preview remains as the last fallback.
+* **Multichannel Opus** (5.1 / 7.1, mapping family 1 and 255) plays, mixed down to stereo.
+
+### Changed
+
+* **YouTube songs start faster**: about 0.5–0.8 s from click to sound instead of
+  1.2–2.3 s (the start of the file downloads while the stream is still being resolved,
+  the challenge solver loads during the player request, the session renews in the
+  background).
 
 ### Fixed
 
+* **Gapless AAC**: the encoder delay (~25–50 ms of warm-up) and the end padding of AAC
+  files (local M4A, YouTube, modules) are trimmed, so gapless albums no longer get a gap
+  or click between tracks; seeks in AAC are sample-accurate.
+* **Expiring module streams** are renewed through their module shortly before they
+  expire or when the server rejects them, and continue at the same byte (also for a
+  preloaded next song and for downloads).
+* Age-restricted YouTube videos no longer throw away the shared session (they were taken
+  for YouTube's bot check), so they fail and get skipped in well under a second.
 * A module playback test was sensitive to machine speed (it sampled positions on 100 ms
   ticks while rendering at ~3× real time).
 
