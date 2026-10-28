@@ -1,0 +1,58 @@
+# Music recognition page ("Recognize": identify a song through the microphone).
+
+recognition.title = Recognize music
+recognition.subtitle = Identify a song playing around you (⇧⌘R)
+
+# Status (large) and detail (small) under the listen button.
+recognition.idle.title = Tap to identify a song
+recognition.idle.detail = Play the song near your computer; it listens through the microphone for about 10 seconds.
+recognition.permission.title = Waiting for microphone access…
+recognition.permission.detail = Allow access in the system prompt.
+recognition.listening = Listening…
+# Recording progress in seconds: {elapsed} and {length} are numbers ("4 of 10 s").
+recognition.listening_progress = {elapsed} of {length} s
+recognition.identifying.title = Identifying…
+recognition.identifying.detail = Matching the recording.
+# Status when recognition failed (the reason is shown below it).
+recognition.failed = Couldn't identify
+# Button shown when microphone access is missing.
+recognition.open_privacy_settings = Open privacy settings
+
+# Why recognition failed.
+recognition.mic.restricted = Microphone access is restricted on this computer.
+recognition.mic.undetermined = Microphone access wasn't granted yet. Try again and allow it when asked.
+# Use the names of the macOS System Settings panes in your language.
+recognition.mic.denied = Microphone access is off for {app}. Allow it in System Settings → Privacy & Security → Microphone.
+recognition.error.no_microphone = No microphone found
+recognition.error.permission_denied = Microphone access was denied
+recognition.error.silent = The microphone delivered only silence (is microphone access allowed?)
+# {error} is a technical error message (English).
+recognition.error.capture = Recording failed: {error}
+recognition.error.cancelled = Cancelled
+recognition.error.no_signature = Couldn't hear any music
+recognition.error.no_match = No match found
+recognition.error.rate_limited = Too many requests — try again in a minute
+# {status} is an HTTP status code.
+recognition.error.service = Recognition service error (HTTP {status})
+recognition.error.network = Network error: {error}
+recognition.error.parse = Unexpected response: {error}
+
+# The identified song (small label above its title).
+recognition.result.recognized = Recognized
+recognition.result.from_history = From your recognition history
+# Matching songs found on YouTube Music for the identified song.
+recognition.match.title = On YouTube Music
+recognition.match.searching = Searching YouTube Music…
+# {error} is a technical error message (English).
+recognition.match.failed = YouTube Music search failed: {error}
+recognition.match.none = Not found on YouTube Music.
+
+# History of identified songs.
+recognition.history.title = History
+recognition.history.empty.title = No recognitions yet
+recognition.history.empty.detail = Songs you identify show up here, newest first.
+# Confirmation dialog of the "Clear" button.
+recognition.history.clear_title = Clear recognition history?
+recognition.history.clear_detail = The list of identified songs is deleted.
+# Tooltip of the × button on a history row.
+recognition.history.remove = Remove from history

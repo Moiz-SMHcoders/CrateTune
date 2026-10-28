@@ -161,8 +161,8 @@ impl Render for ArtistItemsPage {
             Load::Ready(data) if data.items.is_empty() => {
                 content = content.child(empty_state(
                     Lucide::Disc3,
-                    "Nothing here",
-                    "No releases on this page (or all of them are filtered out).",
+                    t!("common.nothing_here"),
+                    t!("artist.items_empty"),
                     cx,
                 ))
             }

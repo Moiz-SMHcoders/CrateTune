@@ -202,7 +202,10 @@ impl AlbumPage {
 
     fn header(&self, data: &Data, cx: &mut Context<Self>) -> AnyElement {
         let album = &data.page.album;
-        let kind = album.album_type.clone().unwrap_or_else(|| "Album".into());
+        let kind = album
+            .album_type
+            .clone()
+            .unwrap_or_else(|| t!("common.album").into());
         let kind = match &album.year {
             Some(year) => format!("{kind} · {year}"),
             None => kind,
@@ -226,14 +229,14 @@ impl AlbumPage {
         if !data.tracks.is_empty() {
             actions.push(action_button(
                 "album-play",
-                "Play",
+                t!("common.play"),
                 Lucide::Play,
                 true,
                 tracks_action(CollectionAction::Play),
             ));
             actions.push(action_button(
                 "album-shuffle",
-                "Shuffle",
+                t!("common.shuffle"),
                 Lucide::Shuffle,
                 false,
                 tracks_action(CollectionAction::Shuffle),
@@ -243,7 +246,7 @@ impl AlbumPage {
             let label = album.title.clone();
             actions.push(action_button(
                 "album-radio",
-                "Radio",
+                t!("common.radio"),
                 Lucide::Radio,
                 false,
                 move |window, cx| {
@@ -257,7 +260,7 @@ impl AlbumPage {
         if !data.tracks.is_empty() {
             actions.push(action_button(
                 "album-enqueue",
-                "Add to queue",
+                t!("common.add_to_queue"),
                 Lucide::ListEnd,
                 false,
                 tracks_action(CollectionAction::AddToQueue),
@@ -288,8 +291,8 @@ impl Render for AlbumPage {
                 if data.tracks.is_empty() {
                     content = content.child(empty_state(
                         Lucide::Disc3,
-                        "No playable songs",
-                        "This album has no tracks here (or all of them are filtered out).",
+                        t!("album.empty.title"),
+                        t!("album.empty.detail"),
                         cx,
                     ));
                 } else {
@@ -327,12 +330,20 @@ impl Render for AlbumPage {
             }
             Load::Loading => {
                 content = content
-                    .child(page_title(self.name.clone(), Some("Album".into()), cx))
+                    .child(page_title(
+                        self.name.clone(),
+                        Some(t!("common.album").into()),
+                        cx,
+                    ))
                     .child(load_state("album", None, |_, _| {}, cx))
             }
             Load::Failed(e) => {
                 content = content
-                    .child(page_title(self.name.clone(), Some("Album".into()), cx))
+                    .child(page_title(
+                        self.name.clone(),
+                        Some(t!("common.album").into()),
+                        cx,
+                    ))
                     .child(load_state(
                         "album",
                         Some(e),

@@ -1,0 +1,73 @@
+# Online browse pages (YouTube Music): home, explore, charts, moods & genres, new
+# releases, album / artist / playlist / podcast / episode pages. Shelf titles and
+# subtitles come from YouTube Music itself (already in the content language) and are
+# not in this file.
+
+# ---- Home
+# Shelf of songs played since the app started (title / small subtitle above it).
+home.recent.title = Played this session
+home.recent.subtitle = Listen again
+
+# ---- Explore (tiles linking to the other pages; the tile title is the page name)
+explore.new_releases_detail = Fresh albums and singles
+explore.charts_detail = What's popular, by country
+explore.moods_detail = Playlists for every moment
+
+# ---- Charts
+# Placeholder of the chart country picker.
+charts.country_placeholder = Country
+charts.search_countries = Search countries…
+charts.empty.title = No charts
+charts.empty.detail = YouTube Music has no charts for this country.
+
+# ---- Moods & genres
+moods.empty = YouTube Music returned no moods or genres for this region.
+
+# ---- New releases
+# Page subtitle.
+new_releases.subtitle = New albums and singles
+new_releases.empty.title = Nothing new
+new_releases.empty.detail = YouTube Music returned no new releases for this region.
+
+# ---- Browse pages (a mood / genre and other YouTube Music pages)
+browse.empty = This page has no playlists or songs (or all of them are filtered out).
+
+# ---- Album
+album.empty.title = No playable songs
+album.empty.detail = This album has no tracks here (or all of them are filtered out).
+
+# ---- Artist
+# Button (state): the artist is subscribed.
+artist.subscribed = Subscribed
+# Button (action).
+artist.subscribe = Subscribe
+artist.subscribe_tooltip = Subscribe on YouTube Music (also saved in your library)
+artist.subscribe_tooltip_signed_out = Saved in your library; sign in to subscribe on YouTube Music
+# An artist's full list of albums / singles is empty.
+artist.items_empty = No releases on this page (or all of them are filtered out).
+
+# ---- Playlist
+# Button: pick a new cover image for the user's own playlist.
+playlist.change_cover = Change cover…
+playlist.empty.title = No songs
+playlist.empty.detail = This playlist is empty (or all of its songs are filtered out).
+
+# ---- Podcast / episode
+# Episode count in the podcast header.
+podcast.episodes.one = {count} episode
+podcast.episodes.other = {count} episodes
+# Episode count when more episodes are still to be loaded ("40+ episodes").
+podcast.episodes_more.one = {count}+ episodes
+podcast.episodes_more.other = {count}+ episodes
+# Button (state): the podcast is in the library.
+podcast.saved = Saved
+# Button (action).
+podcast.save = Save to library
+# Notification; {error} is a technical error message (English).
+podcast.save_failed = Couldn't update your library: {error}
+# Context menu item on an episode.
+podcast.open_episode_page = Open episode page
+# Button on an episode page: open the episode's show.
+podcast.go_to_podcast = Go to podcast
+podcast.empty.title = No episodes
+podcast.empty.detail = This show has no episodes here yet.

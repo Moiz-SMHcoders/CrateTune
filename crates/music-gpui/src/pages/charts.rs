@@ -158,13 +158,13 @@ impl Render for ChartsPage {
             .justify_between()
             .items_end()
             .gap_4()
-            .child(page_title("Charts", None, cx))
+            .child(page_title(t!("nav.charts"), None, cx))
             .children(self.picker.as_ref().map(|picker| {
                 div().w(px(240.)).child(
                     Select::new(picker)
                         .small()
-                        .placeholder("Country")
-                        .search_placeholder("Search countries…")
+                        .placeholder(t!("charts.country_placeholder"))
+                        .search_placeholder(t!("charts.search_countries"))
                         .menu_max_h(px(360.)),
                 )
             }));
@@ -173,8 +173,8 @@ impl Render for ChartsPage {
             Load::Ready(data) if data.shelves.is_empty() => {
                 content = content.child(empty_state(
                     Lucide::ChartNoAxesColumn,
-                    "No charts",
-                    "YouTube Music has no charts for this country.",
+                    t!("charts.empty.title"),
+                    t!("charts.empty.detail"),
                     cx,
                 ))
             }

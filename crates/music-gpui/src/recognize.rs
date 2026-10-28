@@ -182,18 +182,12 @@ impl Recognizer {
                         this.fail(
                             match permission {
                                 MicPermission::Restricted => {
-                                    "Microphone access is restricted on this computer.".into()
+                                    t!("recognition.mic.restricted").to_owned()
                                 }
                                 MicPermission::Undetermined => {
-                                    "Microphone access wasn't granted yet. Try again and allow \
-                                     it when asked."
-                                        .into()
+                                    t!("recognition.mic.undetermined").to_owned()
                                 }
-                                _ => format!(
-                                    "Microphone access is off for {}. Allow it in System \
-                                     Settings → Privacy & Security → Microphone.",
-                                    crate::identity::APP_NAME
-                                ),
+                                _ => t!("recognition.mic.denied").to_owned(),
                             },
                             true,
                             cx,
@@ -250,7 +244,7 @@ impl Recognizer {
                             e,
                             RecognitionError::PermissionDenied | RecognitionError::Silent
                         );
-                        this.fail(e.to_string(), permission, cx);
+                        this.fail(error_message(&e), permission, cx);
                     }
                 }
             })
@@ -315,5 +309,21 @@ impl Recognizer {
             })
             .ok();
         }));
+    }
+}
+/// What went wrong, for the recognition page.
+fn error_message(e: &RecognitionError) -> String {
+    match e {
+        RecognitionError::NoMicrophone => t!("recognition.error.no_microphone").to_owned(),
+        RecognitionError::PermissionDenied => t!("recognition.error.permission_denied").to_owned(),
+        RecognitionError::Silent => t!("recognition.error.silent").to_owned(),
+        RecognitionError::Capture(error) => t!("recognition.error.capture", error = error),
+        RecognitionError::Cancelled => t!("recognition.error.cancelled").to_owned(),
+        RecognitionError::NoSignature => t!("recognition.error.no_signature").to_owned(),
+        RecognitionError::NoMatch => t!("recognition.error.no_match").to_owned(),
+        RecognitionError::RateLimited => t!("recognition.error.rate_limited").to_owned(),
+        RecognitionError::Service(status) => t!("recognition.error.service", status = status),
+        RecognitionError::Network(error) => t!("recognition.error.network", error = error),
+        RecognitionError::Parse(error) => t!("recognition.error.parse", error = error),
     }
 }

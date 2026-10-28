@@ -114,7 +114,7 @@ impl ArtistPage {
             let tracks = songs.songs.tracks.clone();
             actions.push(action_button(
                 "artist-play",
-                "Play",
+                t!("common.play"),
                 Lucide::Play,
                 true,
                 move |_, cx| {
@@ -126,7 +126,7 @@ impl ArtistPage {
         if let Some(target) = page.shuffle.clone() {
             actions.push(action_button(
                 "artist-shuffle",
-                "Shuffle",
+                t!("common.shuffle"),
                 Lucide::Shuffle,
                 actions.is_empty(),
                 move |window, cx| {
@@ -141,7 +141,7 @@ impl ArtistPage {
             let label = artist.name.clone();
             actions.push(action_button(
                 "artist-radio",
-                "Radio",
+                t!("common.radio"),
                 Lucide::Radio,
                 false,
                 move |window, cx| {
@@ -175,14 +175,14 @@ impl ArtistPage {
                     IconName::Bell
                 })
                 .label(if subscribed {
-                    "Subscribed"
+                    t!("artist.subscribed")
                 } else {
-                    "Subscribe"
+                    t!("artist.subscribe")
                 })
                 .tooltip(if signed_in {
-                    "Subscribe on YouTube Music (also saved in your library)"
+                    t!("artist.subscribe_tooltip")
                 } else {
-                    "Saved in your library; sign in to subscribe on YouTube Music"
+                    t!("artist.subscribe_tooltip_signed_out")
                 })
                 .on_click(cx.listener(move |this, _, window, cx| {
                     let meta = meta.clone();
@@ -198,7 +198,7 @@ impl ArtistPage {
             Hero {
                 art: crate::components::items::sized_art(artist.thumbnail_url.as_deref(), 480),
                 round: true,
-                kind: "Artist".into(),
+                kind: t!("common.artist").into(),
                 title: artist.name.clone().into(),
                 lines,
                 actions,
@@ -227,12 +227,20 @@ impl Render for ArtistPage {
             }
             Load::Loading => {
                 content = content
-                    .child(page_title(self.name.clone(), Some("Artist".into()), cx))
+                    .child(page_title(
+                        self.name.clone(),
+                        Some(t!("common.artist").into()),
+                        cx,
+                    ))
                     .child(load_state("artist", None, |_, _| {}, cx))
             }
             Load::Failed(e) => {
                 content = content
-                    .child(page_title(self.name.clone(), Some("Artist".into()), cx))
+                    .child(page_title(
+                        self.name.clone(),
+                        Some(t!("common.artist").into()),
+                        cx,
+                    ))
                     .child(load_state(
                         "artist",
                         Some(e),

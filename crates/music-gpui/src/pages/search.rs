@@ -58,16 +58,64 @@ const TABS: [Option<SearchFilter>; 9] = [
 
 pub fn filter_title(filter: Option<SearchFilter>) -> &'static str {
     match filter {
-        None => "All",
-        Some(SearchFilter::Songs) => "Songs",
-        Some(SearchFilter::Videos) => "Videos",
-        Some(SearchFilter::Albums) => "Albums",
-        Some(SearchFilter::Artists) => "Artists",
-        Some(SearchFilter::CommunityPlaylists) => "Community playlists",
-        Some(SearchFilter::FeaturedPlaylists) => "Featured playlists",
-        Some(SearchFilter::Podcasts) => "Podcasts",
-        Some(SearchFilter::Episodes) => "Episodes",
+        None => t!("search.tab.all"),
+        Some(SearchFilter::Songs) => t!("search.tab.songs"),
+        Some(SearchFilter::Videos) => t!("search.tab.videos"),
+        Some(SearchFilter::Albums) => t!("search.tab.albums"),
+        Some(SearchFilter::Artists) => t!("search.tab.artists"),
+        Some(SearchFilter::CommunityPlaylists) => t!("search.tab.community_playlists"),
+        Some(SearchFilter::FeaturedPlaylists) => t!("search.tab.featured_playlists"),
+        Some(SearchFilter::Podcasts) => t!("search.tab.podcasts"),
+        Some(SearchFilter::Episodes) => t!("search.tab.episodes"),
     }
+}
+
+/// The empty-state title of a category tab ("No songs").
+fn filter_empty_title(filter: SearchFilter) -> &'static str {
+    match filter {
+        SearchFilter::Songs => t!("search.tab_empty.songs"),
+        SearchFilter::Videos => t!("search.tab_empty.videos"),
+        SearchFilter::Albums => t!("search.tab_empty.albums"),
+        SearchFilter::Artists => t!("search.tab_empty.artists"),
+        SearchFilter::CommunityPlaylists => t!("search.tab_empty.community_playlists"),
+        SearchFilter::FeaturedPlaylists => t!("search.tab_empty.featured_playlists"),
+        SearchFilter::Podcasts => t!("search.tab_empty.podcasts"),
+        SearchFilter::Episodes => t!("search.tab_empty.episodes"),
+    }
+}
+
+/// A piece of a translated sentence split at its placeholders.
+#[derive(Debug, PartialEq)]
+enum Part<'a> {
+    Text(&'a str),
+    /// The placeholder `names[i]`.
+    Slot(usize),
+}
+
+/// Splits `template` at the `{name}` placeholders in `names`, so styled elements can
+/// sit inside a translated sentence in whatever order the language puts them.
+fn sentence_parts<'a>(template: &'a str, names: &[&str]) -> Vec<Part<'a>> {
+    let mut parts = Vec::new();
+    let mut rest = template;
+    loop {
+        let next = names
+            .iter()
+            .enumerate()
+            .filter_map(|(i, name)| rest.find(&format!("{{{name}}}")).map(|at| (at, i)))
+            .min();
+        let Some((at, i)) = next else {
+            break;
+        };
+        if at > 0 {
+            parts.push(Part::Text(&rest[..at]));
+        }
+        parts.push(Part::Slot(i));
+        rest = &rest[at + names[i].len() + 2..];
+    }
+    if !rest.is_empty() {
+        parts.push(Part::Text(rest));
+    }
+    parts
 }
 
 /// The category a summary shelf belongs to (by its items; titles are localized).
@@ -352,9 +400,9 @@ impl SearchPage {
                             .font_weight(FontWeight::BOLD)
                             .truncate()
                             .child(if self.query.is_empty() {
-                                "Search".to_owned()
+                                t!("search.title").to_owned()
                             } else {
-                                format!("“{}”", self.query)
+                                t!("search.query_title", query = self.query)
                             }),
                     )
                     .when(busy, |this| {
@@ -365,7 +413,7 @@ impl SearchPage {
                                 .text_sm()
                                 .text_color(theme.muted_foreground)
                                 .child(Spinner::new().small())
-                                .child("Searching…"),
+                                .child(t!("search.searching")),
                         )
                     }),
             )
@@ -411,16 +459,18 @@ impl SearchPage {
                     cx.notify();
                 },
             ));
-            row.child("Showing results for")
-                .child(pick)
-                .child(" · Search instead for")
-                .child(instead)
-                .into_any_element()
+            let template = t!("search.correction.applied");
+            sentence_row(
+                row,
+                template,
+                [pick.into_any_element(), instead.into_any_element()],
+            )
         } else {
-            row.child("Did you mean")
-                .child(pick)
-                .child("?")
-                .into_any_element()
+            sentence_row(
+                row,
+                t!("search.correction.suggested"),
+                [pick.into_any_element()],
+            )
         }
     }
 
@@ -439,7 +489,7 @@ impl SearchPage {
             let (play, radio) = (track.clone(), track);
             actions.push(action_button(
                 "top-play",
-                "Play",
+                t!("common.play"),
                 Lucide::Play,
                 true,
                 move |_, cx| {
@@ -449,7 +499,7 @@ impl SearchPage {
             ));
             actions.push(action_button(
                 "top-radio",
-                "Radio",
+                t!("common.radio"),
                 Lucide::Radio,
                 false,
                 move |window, cx| {
@@ -467,7 +517,11 @@ impl SearchPage {
             let c = collection.clone();
             actions.push(action_button(
                 "top-play",
-                if is_artist { "Shuffle" } else { "Play" },
+                if is_artist {
+                    t!("common.shuffle")
+                } else {
+                    t!("common.play")
+                },
                 if is_artist {
                     Lucide::Shuffle
                 } else {
@@ -482,7 +536,7 @@ impl SearchPage {
             if !matches!(top, Item::Podcast(_)) {
                 actions.push(action_button(
                     "top-radio",
-                    "Radio",
+                    t!("common.radio"),
                     Lucide::Radio,
                     false,
                     move |window, cx| {
@@ -548,7 +602,7 @@ impl SearchPage {
         Some(
             v_flex()
                 .gap_3()
-                .child(section_header("Top result", None, None, cx))
+                .child(section_header(t!("search.top_result"), None, None, cx))
                 .child(
                     h_flex()
                         .w_full()
@@ -592,8 +646,8 @@ impl SearchPage {
         if empty {
             content = content.child(empty_state(
                 Lucide::Search,
-                "No results",
-                "Try another search, or check the spelling.",
+                t!("search.empty.title"),
+                t!("search.empty.detail"),
                 cx,
             ));
         }
@@ -608,7 +662,7 @@ impl SearchPage {
                 });
                 gpui_component::button::Button::new(SharedString::from(format!("search-all-{s}")))
                     .small()
-                    .label("See all")
+                    .label(t!("common.see_all"))
                     .on_click(move |_, window, cx| pick(window, cx))
                     .into_any_element()
             });
@@ -672,8 +726,8 @@ impl SearchPage {
                 .px_8()
                 .child(empty_state(
                     Lucide::Search,
-                    format!("No {}", filter_title(Some(filter)).to_lowercase()),
-                    "Try another category or search.",
+                    filter_empty_title(filter),
+                    t!("search.tab_empty.detail"),
                     cx,
                 ))
                 .into_any_element(),
@@ -762,6 +816,33 @@ impl SearchPage {
     }
 }
 
+/// `template`'s text with `slots` in place of `{corrected}` / `{original}` (in that
+/// order), as children of `row`.
+fn sentence_row<const N: usize>(
+    mut row: gpui::Div,
+    template: &'static str,
+    slots: [AnyElement; N],
+) -> AnyElement {
+    const NAMES: [&str; 2] = ["corrected", "original"];
+    let mut slots = slots.map(Some);
+    for part in sentence_parts(template, &NAMES[..N]) {
+        match part {
+            Part::Text(text) => {
+                let text = text.trim();
+                if !text.is_empty() {
+                    row = row.child(text);
+                }
+            }
+            Part::Slot(i) => {
+                if let Some(slot) = slots[i].take() {
+                    row = row.child(slot);
+                }
+            }
+        }
+    }
+    row.into_any_element()
+}
+
 impl Render for SearchPage {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let header = self.render_header(cx);
@@ -770,8 +851,8 @@ impl Render for SearchPage {
                 .flex_1()
                 .child(empty_state(
                     Lucide::Search,
-                    "Search YouTube Music",
-                    "Type a song, artist, album or playlist in the search field (⌘F) and press Enter.",
+                    t!("search.start.title"),
+                    t!("search.start.detail"),
                     cx,
                 ))
                 .into_any_element()
@@ -812,5 +893,32 @@ mod tests {
         assert_eq!(shelf_filter(&shelf(vec![song, album])), None);
         assert_eq!(shelf_filter(&shelf(vec![])), None);
         assert_eq!(filter_title(None), "All");
+    }
+
+    #[test]
+    fn sentences_split_at_placeholders() {
+        let names = ["corrected", "original"];
+        assert_eq!(
+            sentence_parts("Showing {corrected} · instead {original}", &names),
+            vec![
+                Part::Text("Showing "),
+                Part::Slot(0),
+                Part::Text(" · instead "),
+                Part::Slot(1),
+            ]
+        );
+        assert_eq!(
+            sentence_parts("{original} → {corrected}?", &names),
+            vec![
+                Part::Slot(1),
+                Part::Text(" → "),
+                Part::Slot(0),
+                Part::Text("?"),
+            ]
+        );
+        assert_eq!(
+            sentence_parts("no slots", &names),
+            vec![Part::Text("no slots")]
+        );
     }
 }
