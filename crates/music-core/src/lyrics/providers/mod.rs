@@ -222,6 +222,8 @@ pub struct ProviderKeys {
 pub(crate) struct HttpResponse {
     pub status: u16,
     pub body: String,
+    /// `Retry-After` (seconds or an HTTP date), when the server sent one.
+    pub retry_after: Option<Duration>,
 }
 
 impl HttpResponse {
@@ -298,12 +300,60 @@ pub(crate) fn http_post_form(
 
 fn read(mut resp: ureq::http::Response<ureq::Body>) -> Result<HttpResponse> {
     let status = resp.status().as_u16();
+    let retry_after = resp
+        .headers()
+        .get("retry-after")
+        .and_then(|v| v.to_str().ok())
+        .and_then(parse_retry_after);
     let body = resp
         .body_mut()
         .with_config()
         .limit(MAX_LYRICS_BODY)
         .read_to_string()?;
-    Ok(HttpResponse { status, body })
+    Ok(HttpResponse {
+        status,
+        body,
+        retry_after,
+    })
+}
+
+/// `Retry-After: 120` or `Retry-After: Wed, 21 Oct 2026 07:28:00 GMT`.
+pub(crate) fn parse_retry_after(value: &str) -> Option<Duration> {
+    let v = value.trim();
+    if let Ok(secs) = v.parse::<u64>() {
+        return Some(Duration::from_secs(secs));
+    }
+    // IMF-fixdate: "Wed, 21 Oct 2026 07:28:00 GMT".
+    let parts: Vec<&str> = v.split_whitespace().collect();
+    let [_, day, month, year, time, "GMT"] = parts.as_slice() else {
+        return None;
+    };
+    const MONTHS: [&str; 12] = [
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    ];
+    let month = MONTHS.iter().position(|m| m == month)? as i64 + 1;
+    let (day, year): (i64, i64) = (day.parse().ok()?, year.parse().ok()?);
+    let hms: Vec<i64> = time.split(':').filter_map(|p| p.parse().ok()).collect();
+    let [h, m, s] = hms.as_slice() else {
+        return None;
+    };
+    // Days from the civil date (Howard Hinnant's algorithm).
+    let (y, mo) = if month <= 2 {
+        (year - 1, month + 9)
+    } else {
+        (year, month - 3)
+    };
+    let era = y.div_euclid(400);
+    let yoe = y - era * 400;
+    let doy = (153 * mo + 2) / 5 + day - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    let days = era * 146_097 + doe - 719_468;
+    let at = days * 86_400 + h * 3600 + m * 60 + s;
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .ok()?
+        .as_secs() as i64;
+    Some(Duration::from_secs((at - now).max(0) as u64))
 }
 
 /// Fails with a readable error for a non-2xx response.
