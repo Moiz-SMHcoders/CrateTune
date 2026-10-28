@@ -13,6 +13,21 @@ versions follow [SemVer](https://semver.org/). "Music" is a working name.
   Waits out YouTube's pre-roll ad delay while playing the song's start from the iOS
   client, so playback starts in seconds. Settings → Playback → YouTube streams. Downloads
   are now full files. The ~1-minute preview remains as the last fallback.
+* **Podcasts**: show pages (description, episodes with date / length / description,
+  infinite scroll, Play / Shuffle / Add to queue, Save to library when signed in),
+  episode pages, Library → Podcasts (signed in); podcasts and episodes from search, Home
+  and Explore open there.
+* **DNS-over-HTTPS** (Settings → Network → DNS): Cloudflare, Google, Quad9 or a custom
+  RFC 8484 URL, answers cached per TTL, optional fallback to the system resolver, Test DNS.
+  Applies to all requests (YouTube Music, streams, lyrics, modules, …).
+* **Change cover…** for your own YouTube Music playlists (not yet tried against a real
+  account).
+* Search shows YouTube's spelling corrections ("Showing results for … · Search instead
+  for …", "Did you mean …?").
+* **Kanji readings without the 48 MB build**: Settings → Lyrics → Romanization downloads
+  the Japanese dictionary on demand (10.5 MB, checksum-verified, 45 MB on disk) with
+  progress, cancel and remove; until then romanization is kana-only.
+* **Translations are kept** in the library: reopening a song doesn't translate it again.
 * **Multichannel Opus** (5.1 / 7.1, mapping family 1 and 255) plays, mixed down to stereo.
 
 ### Changed
@@ -21,10 +36,9 @@ versions follow [SemVer](https://semver.org/). "Music" is a working name.
   1.2–2.3 s (the start of the file downloads while the stream is still being resolved,
   the challenge solver loads during the player request, the session renews in the
   background).
-* **Kanji readings without the 48 MB build**: Settings → Lyrics → Romanization downloads
-  the Japanese dictionary on demand (10.5 MB, checksum-verified, 45 MB on disk) with
-  progress, cancel and remove; until then romanization is kana-only.
-* **Translations are kept** in the library: reopening a song doesn't translate it again.
+* **Hide music videos** now also hides music videos and user videos inside playlists,
+  albums, radio, queues and card actions (each track carries its YouTube video type); an
+  album that YouTube only offers as official-audio videos stays complete.
 
 ### Fixed
 
@@ -36,6 +50,14 @@ versions follow [SemVer](https://semver.org/). "Music" is a working name.
   preloaded next song and for downloads).
 * Age-restricted YouTube videos no longer throw away the shared session (they were taken
   for YouTube's bot check), so they fail and get skipped in well under a second.
+* Albums with more than 200 tracks showed only the first 200; the rest now loads (also
+  for Play / Shuffle from cards). Playing a playlist from its card plays up to ~1,100
+  songs instead of the first 100.
+* A saved search could disappear from the search history: saves and removals ran on
+  separate threads in no guaranteed order, and could be lost when quitting while the
+  library was busy. They are now written in order and flushed on quit; searches that
+  differ only in letter case are one entry.
+* Podcast episode lengths ("2 hr 43 min") were missing.
 * **Credit lines** before the lyrics ("Julian Casablancas/Thomas Bangalter/…", "作词：…",
   "Written by: …", "Title - Artist") are filtered for every provider and format, without
   touching lyrics that contain "/" or ":".

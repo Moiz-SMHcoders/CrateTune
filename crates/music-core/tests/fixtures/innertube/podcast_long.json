@@ -1,0 +1,1000 @@
+{
+ "contents": {
+  "twoColumnBrowseResultsRenderer": {
+   "secondaryContents": {
+    "sectionListRenderer": {
+     "contents": [
+      {
+       "musicShelfRenderer": {
+        "contents": [
+         {
+          "musicMultiRowListItemRenderer": {
+           "thumbnail": {
+            "musicThumbnailRenderer": {
+             "thumbnail": {
+              "thumbnails": [
+               {
+                "url": "https://i.ytimg.com/vi/rn6iW7XDEHc/hqdefault.jpg?sqp=-oaymwEWCJADEOEBIAQqCggAEOADGC0guwJIWg&rs=AMzJL3lheVsc_pcYERDrTnsD9-2Dx3ySZw",
+                "width": 400,
+                "height": 225
+               },
+               {
+                "url": "https://i.ytimg.com/vi/rn6iW7XDEHc/hq720.jpg?sqp=-oaymwEKCKAGEMIDIABIWg&rs=AMzJL3mqAPh5i6Hu88yFuygI8ez9Jq75qQ",
+                "width": 800,
+                "height": 450
+               },
+               {
+                "url": "https://i.ytimg.com/vi/rn6iW7XDEHc/hq720.jpg?sqp=-oaymwEKCNUGEN8DIABIWg&rs=AMzJL3mPtq-wGFbrZKyD0dEhTYyX9ua_Kg",
+                "width": 853,
+                "height": 479
+               }
+              ]
+             },
+             "thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+             "thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FIT"
+            }
+           },
+           "overlay": {
+            "musicItemThumbnailOverlayRenderer": {
+             "content": {
+              "musicPlayButtonRenderer": {
+               "playNavigationEndpoint": {
+                "watchEndpoint": {
+                 "videoId": "rn6iW7XDEHc",
+                 "params": "8gEDmAEI",
+                 "watchEndpointMusicSupportedConfigs": {
+                  "watchEndpointMusicConfig": {
+                   "musicVideoType": "MUSIC_VIDEO_TYPE_PODCAST_EPISODE"
+                  }
+                 }
+                }
+               },
+               "playIcon": {
+                "iconType": "PLAY_ARROW"
+               },
+               "pauseIcon": {
+                "iconType": "PAUSE"
+               },
+               "iconColor": 4294967295,
+               "backgroundColor": 0,
+               "activeBackgroundColor": 0,
+               "loadingIndicatorColor": 14745645,
+               "playingIcon": {
+                "iconType": "VOLUME_UP"
+               },
+               "iconLoadingColor": 0,
+               "activeScaleFactor": 1,
+               "buttonSize": "MUSIC_PLAY_BUTTON_SIZE_SMALL",
+               "rippleTarget": "MUSIC_PLAY_BUTTON_RIPPLE_TARGET_SELF",
+               "accessibilityPlayData": {},
+               "accessibilityPauseData": {}
+              }
+             },
+             "contentPosition": "MUSIC_ITEM_THUMBNAIL_OVERLAY_CONTENT_POSITION_CENTERED",
+             "displayStyle": "MUSIC_ITEM_THUMBNAIL_OVERLAY_DISPLAY_STYLE_PERSISTENT"
+            }
+           },
+           "onTap": {
+            "watchEndpoint": {
+             "videoId": "rn6iW7XDEHc",
+             "params": "8gEDmAEI",
+             "watchEndpointMusicSupportedConfigs": {
+              "watchEndpointMusicConfig": {
+               "musicVideoType": "MUSIC_VIDEO_TYPE_PODCAST_EPISODE"
+              }
+             }
+            }
+           },
+           "menu": {
+            "menuRenderer": {
+             "items": [
+              {
+               "menuServiceItemRenderer": {
+                "text": {
+                 "runs": [
+                  {
+                   "text": "Play next"
+                  }
+                 ]
+                },
+                "icon": {
+                 "iconType": "QUEUE_PLAY_NEXT"
+                },
+                "serviceEndpoint": {
+                 "queueAddEndpoint": {
+                  "queueTarget": {
+                   "videoId": "rn6iW7XDEHc",
+                   "onEmptyQueue": {
+                    "watchEndpoint": {
+                     "videoId": "rn6iW7XDEHc"
+                    }
+                   }
+                  },
+                  "queueInsertPosition": "INSERT_AFTER_CURRENT_VIDEO",
+                  "commands": [
+                   {
+                    "addToToastAction": {
+                     "item": {
+                      "notificationTextRenderer": {
+                       "successResponseText": {
+                        "runs": [
+                         {
+                          "text": "Episode will play next"
+                         }
+                        ]
+                       }
+                      }
+                     }
+                    }
+                   }
+                  ]
+                 }
+                }
+               }
+              },
+              {
+               "menuServiceItemRenderer": {
+                "text": {
+                 "runs": [
+                  {
+                   "text": "Add to queue"
+                  }
+                 ]
+                },
+                "icon": {
+                 "iconType": "ADD_TO_REMOTE_QUEUE"
+                },
+                "serviceEndpoint": {
+                 "queueAddEndpoint": {
+                  "queueTarget": {
+                   "videoId": "rn6iW7XDEHc",
+                   "onEmptyQueue": {
+                    "watchEndpoint": {
+                     "videoId": "rn6iW7XDEHc"
+                    }
+                   }
+                  },
+                  "queueInsertPosition": "INSERT_AT_END",
+                  "commands": [
+                   {
+                    "addToToastAction": {
+                     "item": {
+                      "notificationTextRenderer": {
+                       "successResponseText": {
+                        "runs": [
+                         {
+                          "text": "Episode added to queue"
+                         }
+                        ]
+                       }
+                      }
+                     }
+                    }
+                   }
+                  ]
+                 }
+                }
+               }
+              }
+             ]
+            }
+           },
+           "subtitle": {
+            "runs": [
+             {
+              "text": "1.6M views"
+             },
+             {
+              "text": " • "
+             },
+             {
+              "text": "4d ago"
+             }
+            ]
+           },
+           "playbackProgress": {
+            "musicPlaybackProgressRenderer": {
+             "playbackProgressPercentage": 0,
+             "playbackProgressText": {
+              "runs": [
+               {
+                "text": " • "
+               },
+               {
+                "text": "2 hr 43 min"
+               }
+              ]
+             },
+             "durationText": {
+              "runs": [
+               {
+                "text": " • "
+               },
+               {
+                "text": "2 hr 43 min"
+               }
+              ]
+             },
+             "playedText": {
+              "runs": [
+               {
+                "text": " • "
+               },
+               {
+                "text": "Played",
+                "textColor": 4294921797
+               }
+              ]
+             }
+            }
+           },
+           "title": {
+            "runs": [
+             {
+              "text": "Joe Rogan Experience #2570 - Mystery Boys",
+              "navigationEndpoint": {
+               "browseEndpoint": {
+                "browseId": "MPEDrn6iW7XDEHc",
+                "browseEndpointContextSupportedConfigs": {
+                 "browseEndpointContextMusicConfig": {
+                  "pageType": "MUSIC_PAGE_TYPE_NON_MUSIC_AUDIO_TRACK_PAGE"
+                 }
+                }
+               }
+              }
+             }
+            ]
+           },
+           "description": {
+            "runs": [
+             {
+              "text": "Kurt Metzger and Duncan Trussell are comedians and co-hosts of the \"Mystery Boys\" podcast. They also host their respective podcasts, \"The Derp with Kurp\" and \"The Duncan Trussell Family Hour.\"\n\nhttps://www.ymhstudios.com/mystery-boys-podcast/\nhttps://www.youtube.com/@duncantrussellfamilyhour\nhttps:/"
+             }
+            ]
+           },
+           "displayStyle": "MUSIC_MULTI_ROW_LIST_ITEM_DISPLAY_STYLE_DETAILED"
+          }
+         },
+         {
+          "musicMultiRowListItemRenderer": {
+           "thumbnail": {
+            "musicThumbnailRenderer": {
+             "thumbnail": {
+              "thumbnails": [
+               {
+                "url": "https://i.ytimg.com/vi/n4x-n8bNYhA/hqdefault.jpg?sqp=-oaymwEWCJADEOEBIAQqCggAEOADGC0guwJIWg&rs=AMzJL3lGx0yiPbfUkcEDPfi5231HNCtgnw",
+                "width": 400,
+                "height": 225
+               },
+               {
+                "url": "https://i.ytimg.com/vi/n4x-n8bNYhA/hq720.jpg?sqp=-oaymwEKCKAGEMIDIABIWg&rs=AMzJL3kill1W8egButFYsDNk4RuG5IbUhg",
+                "width": 800,
+                "height": 450
+               },
+               {
+                "url": "https://i.ytimg.com/vi/n4x-n8bNYhA/hq720.jpg?sqp=-oaymwEKCNUGEN8DIABIWg&rs=AMzJL3nFxc9bAPALb8eT2RXAG9dSKH7XqA",
+                "width": 853,
+                "height": 479
+               }
+              ]
+             },
+             "thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+             "thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FIT"
+            }
+           },
+           "overlay": {
+            "musicItemThumbnailOverlayRenderer": {
+             "content": {
+              "musicPlayButtonRenderer": {
+               "playNavigationEndpoint": {
+                "watchEndpoint": {
+                 "videoId": "n4x-n8bNYhA",
+                 "params": "8gEDmAEI",
+                 "watchEndpointMusicSupportedConfigs": {
+                  "watchEndpointMusicConfig": {
+                   "musicVideoType": "MUSIC_VIDEO_TYPE_PODCAST_EPISODE"
+                  }
+                 }
+                }
+               },
+               "playIcon": {
+                "iconType": "PLAY_ARROW"
+               },
+               "pauseIcon": {
+                "iconType": "PAUSE"
+               },
+               "iconColor": 4294967295,
+               "backgroundColor": 0,
+               "activeBackgroundColor": 0,
+               "loadingIndicatorColor": 14745645,
+               "playingIcon": {
+                "iconType": "VOLUME_UP"
+               },
+               "iconLoadingColor": 0,
+               "activeScaleFactor": 1,
+               "buttonSize": "MUSIC_PLAY_BUTTON_SIZE_SMALL",
+               "rippleTarget": "MUSIC_PLAY_BUTTON_RIPPLE_TARGET_SELF",
+               "accessibilityPlayData": {},
+               "accessibilityPauseData": {}
+              }
+             },
+             "contentPosition": "MUSIC_ITEM_THUMBNAIL_OVERLAY_CONTENT_POSITION_CENTERED",
+             "displayStyle": "MUSIC_ITEM_THUMBNAIL_OVERLAY_DISPLAY_STYLE_PERSISTENT"
+            }
+           },
+           "onTap": {
+            "watchEndpoint": {
+             "videoId": "n4x-n8bNYhA",
+             "params": "8gEDmAEI",
+             "watchEndpointMusicSupportedConfigs": {
+              "watchEndpointMusicConfig": {
+               "musicVideoType": "MUSIC_VIDEO_TYPE_PODCAST_EPISODE"
+              }
+             }
+            }
+           },
+           "menu": {
+            "menuRenderer": {
+             "items": [
+              {
+               "menuServiceItemRenderer": {
+                "text": {
+                 "runs": [
+                  {
+                   "text": "Play next"
+                  }
+                 ]
+                },
+                "icon": {
+                 "iconType": "QUEUE_PLAY_NEXT"
+                },
+                "serviceEndpoint": {
+                 "queueAddEndpoint": {
+                  "queueTarget": {
+                   "videoId": "n4x-n8bNYhA",
+                   "onEmptyQueue": {
+                    "watchEndpoint": {
+                     "videoId": "n4x-n8bNYhA"
+                    }
+                   }
+                  },
+                  "queueInsertPosition": "INSERT_AFTER_CURRENT_VIDEO",
+                  "commands": [
+                   {
+                    "addToToastAction": {
+                     "item": {
+                      "notificationTextRenderer": {
+                       "successResponseText": {
+                        "runs": [
+                         {
+                          "text": "Episode will play next"
+                         }
+                        ]
+                       }
+                      }
+                     }
+                    }
+                   }
+                  ]
+                 }
+                }
+               }
+              },
+              {
+               "menuServiceItemRenderer": {
+                "text": {
+                 "runs": [
+                  {
+                   "text": "Add to queue"
+                  }
+                 ]
+                },
+                "icon": {
+                 "iconType": "ADD_TO_REMOTE_QUEUE"
+                },
+                "serviceEndpoint": {
+                 "queueAddEndpoint": {
+                  "queueTarget": {
+                   "videoId": "n4x-n8bNYhA",
+                   "onEmptyQueue": {
+                    "watchEndpoint": {
+                     "videoId": "n4x-n8bNYhA"
+                    }
+                   }
+                  },
+                  "queueInsertPosition": "INSERT_AT_END",
+                  "commands": [
+                   {
+                    "addToToastAction": {
+                     "item": {
+                      "notificationTextRenderer": {
+                       "successResponseText": {
+                        "runs": [
+                         {
+                          "text": "Episode added to queue"
+                         }
+                        ]
+                       }
+                      }
+                     }
+                    }
+                   }
+                  ]
+                 }
+                }
+               }
+              }
+             ]
+            }
+           },
+           "subtitle": {
+            "runs": [
+             {
+              "text": "883K views"
+             },
+             {
+              "text": " • "
+             },
+             {
+              "text": "5d ago"
+             }
+            ]
+           },
+           "playbackProgress": {
+            "musicPlaybackProgressRenderer": {
+             "playbackProgressPercentage": 0,
+             "playbackProgressText": {
+              "runs": [
+               {
+                "text": " • "
+               },
+               {
+                "text": "2 hr 48 min"
+               }
+              ]
+             },
+             "durationText": {
+              "runs": [
+               {
+                "text": " • "
+               },
+               {
+                "text": "2 hr 48 min"
+               }
+              ]
+             },
+             "playedText": {
+              "runs": [
+               {
+                "text": " • "
+               },
+               {
+                "text": "Played",
+                "textColor": 4294921797
+               }
+              ]
+             }
+            }
+           },
+           "title": {
+            "runs": [
+             {
+              "text": "JRE MMA Show #187 with Robert Whittaker",
+              "navigationEndpoint": {
+               "browseEndpoint": {
+                "browseId": "MPEDn4x-n8bNYhA",
+                "browseEndpointContextSupportedConfigs": {
+                 "browseEndpointContextMusicConfig": {
+                  "pageType": "MUSIC_PAGE_TYPE_NON_MUSIC_AUDIO_TRACK_PAGE"
+                 }
+                }
+               }
+              }
+             }
+            ]
+           },
+           "description": {
+            "runs": [
+             {
+              "text": "Joe sits down with Robert Whittaker, a professional mixed martial artist currently competing in the UFC's light heavyweight division and host of the \"MMArcade\" podcast.\n\nhttps://www.ascendfitnessbyrob.com/\nhttps://www.musashi.com/pages/reaper-range\nhttps://www.patreon.com/cw/MMArcadePodcast\nhttps://"
+             }
+            ]
+           },
+           "displayStyle": "MUSIC_MULTI_ROW_LIST_ITEM_DISPLAY_STYLE_DETAILED"
+          }
+         }
+        ],
+        "continuations": [
+         {
+          "nextContinuationData": {
+           "continuation": "4qmFsgJmEiZNUFNQUExrMVNxbl9mMzNLdVdmM3RXOUJCZV80VFA3eDhsMG0zVBo8ZWg1UVZEcERRbEZwUlVWRmVVNUZVWGROYWtrMFVWUldRMDVFVlRCT1JHZVNBUU1JMlFqYUNBUUlBaEFC",
+           "autoloadEnabled": true,
+           "autoloadImmediately": true
+          }
+         }
+        ],
+        "shelfDivider": {
+         "musicShelfDividerRenderer": {
+          "hidden": true
+         }
+        }
+       }
+      }
+     ],
+     "header": {
+      "chipCloudRenderer": {
+       "chips": [
+        {
+         "chipCloudChipRenderer": {
+          "style": {
+           "styleType": "STYLE_ICON_SECOND"
+          },
+          "text": {
+           "runs": [
+            {
+             "text": "Latest"
+            }
+           ]
+          },
+          "navigationEndpoint": {
+           "openPopupAction": {
+            "popup": {
+             "menuPopupRenderer": {
+              "items": [
+               {
+                "menuNavigationItemRenderer": {
+                 "text": {
+                  "simpleText": "Latest"
+                 },
+                 "icon": {
+                  "iconType": "CHECK"
+                 },
+                 "navigationEndpoint": {
+                  "browseSectionListReloadEndpoint": {
+                   "continuation": {
+                    "reloadContinuationData": {
+                     "continuation": "4qmFsgJGEiZNUFNQUExrMVNxbl9mMzNLdVdmM3RXOUJCZV80VFA3eDhsMG0zVBoca2dFRENOa0lvQVlCMmdnRUNBSVFBUSUzRCUzRA%3D%3D",
+                     "showSpinnerOverlay": true
+                    }
+                   },
+                   "targetId": "browse-feedMPSPPLk1Sqn_f33KuWf3tW9BBe_4TP7x8l0m3T"
+                  }
+                 }
+                }
+               },
+               {
+                "menuNavigationItemRenderer": {
+                 "text": {
+                  "simpleText": "Oldest"
+                 },
+                 "navigationEndpoint": {
+                  "browseSectionListReloadEndpoint": {
+                   "continuation": {
+                    "reloadContinuationData": {
+                     "continuation": "4qmFsgJGEiZNUFNQUExrMVNxbl9mMzNLdVdmM3RXOUJCZV80VFA3eDhsMG0zVBoca2dFRENOa0lvQVlCMmdnRUNBRVFBUSUzRCUzRA%3D%3D",
+                     "showSpinnerOverlay": true
+                    }
+                   },
+                   "targetId": "browse-feedMPSPPLk1Sqn_f33KuWf3tW9BBe_4TP7x8l0m3T"
+                  }
+                 }
+                }
+               }
+              ]
+             }
+            },
+            "popupType": "DIALOG",
+            "reusePopup": true
+           }
+          },
+          "icon": {
+           "iconType": "EXPAND"
+          },
+          "uniqueId": "YTM SDP Sort Chip",
+          "notSelectable": true
+         }
+        },
+        {
+         "chipCloudChipRenderer": {
+          "text": {
+           "simpleText": "In progress"
+          },
+          "navigationEndpoint": {
+           "browseSectionListReloadEndpoint": {
+            "continuation": {
+             "reloadContinuationData": {
+              "continuation": "4qmFsgJKEiZNUFNQUExrMVNxbl9mMzNLdVdmM3RXOUJCZV80VFA3eDhsMG0zVBoga2dFRENOa0lvQVlCMmdnRUNBSVFBWWdKQXclM0QlM0Q%3D",
+              "showSpinnerOverlay": true
+             }
+            },
+            "targetId": "browse-feedMPSPPLk1Sqn_f33KuWf3tW9BBe_4TP7x8l0m3T"
+           }
+          },
+          "isSelected": false,
+          "onDeselectedCommand": {
+           "browseSectionListReloadEndpoint": {
+            "continuation": {
+             "reloadContinuationData": {
+              "continuation": "4qmFsgJGEiZNUFNQUExrMVNxbl9mMzNLdVdmM3RXOUJCZV80VFA3eDhsMG0zVBoca2dFRENOa0lvQVlCMmdnRUNBSVFBUSUzRCUzRA%3D%3D",
+              "showSpinnerOverlay": true
+             }
+            },
+            "targetId": "browse-feedMPSPPLk1Sqn_f33KuWf3tW9BBe_4TP7x8l0m3T"
+           }
+          },
+          "uniqueId": "YTM SDP In progress Chip"
+         }
+        },
+        {
+         "chipCloudChipRenderer": {
+          "text": {
+           "simpleText": "Unplayed"
+          },
+          "navigationEndpoint": {
+           "browseSectionListReloadEndpoint": {
+            "continuation": {
+             "reloadContinuationData": {
+              "continuation": "4qmFsgJKEiZNUFNQUExrMVNxbl9mMzNLdVdmM3RXOUJCZV80VFA3eDhsMG0zVBoga2dFRENOa0lvQVlCMmdnRUNBSVFBWWdKQVElM0QlM0Q%3D",
+              "showSpinnerOverlay": true
+             }
+            },
+            "targetId": "browse-feedMPSPPLk1Sqn_f33KuWf3tW9BBe_4TP7x8l0m3T"
+           }
+          },
+          "isSelected": false,
+          "onDeselectedCommand": {
+           "browseSectionListReloadEndpoint": {
+            "continuation": {
+             "reloadContinuationData": {
+              "continuation": "4qmFsgJGEiZNUFNQUExrMVNxbl9mMzNLdVdmM3RXOUJCZV80VFA3eDhsMG0zVBoca2dFRENOa0lvQVlCMmdnRUNBSVFBUSUzRCUzRA%3D%3D",
+              "showSpinnerOverlay": true
+             }
+            },
+            "targetId": "browse-feedMPSPPLk1Sqn_f33KuWf3tW9BBe_4TP7x8l0m3T"
+           }
+          },
+          "uniqueId": "YTM SDP Unplayed Chip"
+         }
+        },
+        {
+         "chipCloudChipRenderer": {
+          "text": {
+           "simpleText": "Played"
+          },
+          "navigationEndpoint": {
+           "browseSectionListReloadEndpoint": {
+            "continuation": {
+             "reloadContinuationData": {
+              "continuation": "4qmFsgJKEiZNUFNQUExrMVNxbl9mMzNLdVdmM3RXOUJCZV80VFA3eDhsMG0zVBoga2dFRENOa0lvQVlCMmdnRUNBSVFBWWdKQWclM0QlM0Q%3D",
+              "showSpinnerOverlay": true
+             }
+            },
+            "targetId": "browse-feedMPSPPLk1Sqn_f33KuWf3tW9BBe_4TP7x8l0m3T"
+           }
+          },
+          "isSelected": false,
+          "onDeselectedCommand": {
+           "browseSectionListReloadEndpoint": {
+            "continuation": {
+             "reloadContinuationData": {
+              "continuation": "4qmFsgJGEiZNUFNQUExrMVNxbl9mMzNLdVdmM3RXOUJCZV80VFA3eDhsMG0zVBoca2dFRENOa0lvQVlCMmdnRUNBSVFBUSUzRCUzRA%3D%3D",
+              "showSpinnerOverlay": true
+             }
+            },
+            "targetId": "browse-feedMPSPPLk1Sqn_f33KuWf3tW9BBe_4TP7x8l0m3T"
+           }
+          },
+          "uniqueId": "YTM SDP Played Chip"
+         }
+        }
+       ],
+       "horizontalScrollable": true,
+       "selectionBehavior": "CHIP_CLOUD_SELECTION_BEHAVIOR_SINGLE_SELECT"
+      }
+     },
+     "targetId": "browse-feedMPSPPLk1Sqn_f33KuWf3tW9BBe_4TP7x8l0m3T"
+    }
+   },
+   "tabs": [
+    {
+     "tabRenderer": {
+      "content": {
+       "sectionListRenderer": {
+        "contents": [
+         {
+          "musicResponsiveHeaderRenderer": {
+           "thumbnail": {
+            "musicThumbnailRenderer": {
+             "thumbnail": {
+              "thumbnails": [
+               {
+                "url": "https://i.ytimg.com/pl_c/PLk1Sqn_f33KuWf3tW9BBe_4TP7x8l0m3T/studio_square_thumbnail.jpg?sqp=CL3Th9cG-oaymwEICDwQPCAASFqi85f_AwYIp_bxswY&rs=AMzJL3mv4zR2cxqF2WY9AxkWVB5ewxHAhQ",
+                "width": 60,
+                "height": 60
+               },
+               {
+                "url": "https://i.ytimg.com/pl_c/PLk1Sqn_f33KuWf3tW9BBe_4TP7x8l0m3T/studio_square_thumbnail.jpg?sqp=CL3Th9cG-oaymwEICHgQeCAASFqi85f_AwYIp_bxswY&rs=AMzJL3kf2yfSRidGp8NJPV9sgjYsLUaKEA",
+                "width": 120,
+                "height": 120
+               },
+               {
+                "url": "https://i.ytimg.com/pl_c/PLk1Sqn_f33KuWf3tW9BBe_4TP7x8l0m3T/studio_square_thumbnail.jpg?sqp=CL3Th9cG-oaymwEKCOIBEOIBIABIWqLzl_8DBgin9vGzBg&rs=AMzJL3kE4xYFIGFR-NPHlBszDIkJT80LZw",
+                "width": 226,
+                "height": 226
+               },
+               {
+                "url": "https://i.ytimg.com/pl_c/PLk1Sqn_f33KuWf3tW9BBe_4TP7x8l0m3T/studio_square_thumbnail.jpg?sqp=CL3Th9cG-oaymwEKCKAEEKAEIABIWqLzl_8DBgin9vGzBg&rs=AMzJL3lqZgbhRMf2sEIsmBbQz0mgQzuepA",
+                "width": 544,
+                "height": 544
+               }
+              ]
+             },
+             "thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+             "thumbnailScale": "MUSIC_THUMBNAIL_SCALE_UNSPECIFIED"
+            }
+           },
+           "buttons": [
+            {
+             "buttonRenderer": {
+              "style": "STYLE_DARK_ON_WHITE",
+              "icon": {
+               "iconType": "SHARE"
+              },
+              "command": {
+               "shareEntityEndpoint": {
+                "serializedShareEntity": "EiJQTGsxU3FuX2YzM0t1V2YzdFc5QkJlXzRUUDd4OGwwbTNU",
+                "sharePanelType": "SHARE_PANEL_TYPE_UNIFIED_SHARE_PANEL"
+               }
+              }
+             }
+            },
+            {
+             "toggleButtonRenderer": {
+              "isToggled": false,
+              "isDisabled": false,
+              "defaultIcon": {
+               "iconType": "BOOKMARK_BORDER"
+              },
+              "defaultText": {
+               "runs": [
+                {
+                 "text": "Save to library"
+                }
+               ]
+              },
+              "toggledIcon": {
+               "iconType": "BOOKMARK"
+              },
+              "toggledText": {
+               "runs": [
+                {
+                 "text": "Saved to library"
+                }
+               ]
+              },
+              "defaultNavigationEndpoint": {
+               "modalEndpoint": {
+                "modal": {
+                 "modalWithTitleAndButtonRenderer": {
+                  "title": {
+                   "runs": [
+                    {
+                     "text": "Save this for later"
+                    }
+                   ]
+                  },
+                  "content": {
+                   "runs": [
+                    {
+                     "text": "Save favorites to your library after signing in"
+                    }
+                   ]
+                  },
+                  "button": {
+                   "buttonRenderer": {
+                    "style": "STYLE_BLUE_TEXT",
+                    "isDisabled": false,
+                    "text": {
+                     "runs": [
+                      {
+                       "text": "Sign in"
+                      }
+                     ]
+                    },
+                    "navigationEndpoint": {
+                     "signInEndpoint": {
+                      "hack": true
+                     }
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            },
+            {
+             "menuRenderer": {
+              "items": [
+               {
+                "menuServiceItemRenderer": {
+                 "text": {
+                  "runs": [
+                   {
+                    "text": "Find in show"
+                   }
+                  ]
+                 },
+                 "icon": {
+                  "iconType": "SEARCH"
+                 },
+                 "serviceEndpoint": {
+                  "playlistFilterSearchEndpoint": {
+                   "playlistId": "PLk1Sqn_f33KuWf3tW9BBe_4TP7x8l0m3T"
+                  }
+                 }
+                }
+               },
+               {
+                "toggleMenuServiceItemRenderer": {
+                 "defaultText": {
+                  "runs": [
+                   {
+                    "text": "Save to library"
+                   }
+                  ]
+                 },
+                 "defaultIcon": {
+                  "iconType": "BOOKMARK_BORDER"
+                 },
+                 "defaultServiceEndpoint": {
+                  "modalEndpoint": {
+                   "modal": {
+                    "modalWithTitleAndButtonRenderer": {
+                     "title": {
+                      "runs": [
+                       {
+                        "text": "Save this for later"
+                       }
+                      ]
+                     },
+                     "content": {
+                      "runs": [
+                       {
+                        "text": "Save favorites to your library after signing in"
+                       }
+                      ]
+                     },
+                     "button": {
+                      "buttonRenderer": {
+                       "style": "STYLE_BLUE_TEXT",
+                       "isDisabled": false,
+                       "text": {
+                        "runs": [
+                         {
+                          "text": "Sign in"
+                         }
+                        ]
+                       },
+                       "navigationEndpoint": {
+                        "signInEndpoint": {
+                         "hack": true
+                        }
+                       }
+                      }
+                     }
+                    }
+                   }
+                  }
+                 },
+                 "toggledText": {
+                  "runs": [
+                   {
+                    "text": "Remove from library"
+                   }
+                  ]
+                 },
+                 "toggledIcon": {
+                  "iconType": "BOOKMARK"
+                 },
+                 "toggledServiceEndpoint": {
+                  "likeEndpoint": {
+                   "status": "INDIFFERENT",
+                   "target": {
+                    "playlistId": "PLk1Sqn_f33KuWf3tW9BBe_4TP7x8l0m3T"
+                   }
+                  }
+                 },
+                 "isToggled": false
+                }
+               }
+              ]
+             }
+            }
+           ],
+           "title": {
+            "runs": [
+             {
+              "text": "The Joe Rogan Experience"
+             }
+            ]
+           },
+           "subtitle": {},
+           "straplineTextOne": {
+            "runs": [
+             {
+              "text": "PowerfulJRE",
+              "navigationEndpoint": {
+               "browseEndpoint": {
+                "browseId": "UCzQUP1qoWDoEbmsQxvdjxgQ",
+                "browseEndpointContextSupportedConfigs": {
+                 "browseEndpointContextMusicConfig": {
+                  "pageType": "MUSIC_PAGE_TYPE_USER_CHANNEL"
+                 }
+                }
+               }
+              }
+             }
+            ]
+           },
+           "straplineThumbnail": {
+            "musicThumbnailRenderer": {
+             "thumbnail": {
+              "thumbnails": [
+               {
+                "url": "https://yt3.ggpht.com/ytc/AIdro_kIOv8XSayB3mVzdmGH6r6nOuncclc_QxWr7TYTXM4dFrs=s48-c-k-c0x00000000-no-cc-rj-rp",
+                "width": 48,
+                "height": 48
+               },
+               {
+                "url": "https://yt3.ggpht.com/ytc/AIdro_kIOv8XSayB3mVzdmGH6r6nOuncclc_QxWr7TYTXM4dFrs=s96-c-k-c0x00000000-no-cc-rj-rp",
+                "width": 96,
+                "height": 96
+               }
+              ]
+             },
+             "thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+             "thumbnailScale": "MUSIC_THUMBNAIL_SCALE_UNSPECIFIED"
+            }
+           }
+          }
+         }
+        ],
+        "targetId": "browse-feedMPSPPLk1Sqn_f33KuWf3tW9BBe_4TP7x8l0m3T_header"
+       }
+      }
+     }
+    }
+   ]
+  }
+ },
+ "microformat": {
+  "microformatDataRenderer": {
+   "urlCanonical": "https://music.youtube.com/playlist?list=PLk1Sqn_f33KuWf3tW9BBe_4TP7x8l0m3T",
+   "title": "The Joe Rogan Experience",
+   "description": "Podcast • PowerfulJRE",
+   "thumbnail": {
+    "thumbnails": [
+     {
+      "url": "https://i.ytimg.com/pl_c/PLk1Sqn_f33KuWf3tW9BBe_4TP7x8l0m3T/studio_square_thumbnail.jpg?sqp=CL3Th9cG-oaymwEKCKAEEKAEIABIWqLzl_8DBgin9vGzBg&rs=AMzJL3lqZgbhRMf2sEIsmBbQz0mgQzuepA",
+      "width": 544,
+      "height": 544
+     }
+    ]
+   },
+   "siteName": "YouTube Music",
+   "appName": "YouTube Music",
+   "androidPackage": "com.google.android.apps.youtube.music",
+   "iosAppStoreId": "1017492454",
+   "ogType": "video.other",
+   "urlApplinksWeb": "https://music.youtube.com/playlist?list=PLk1Sqn_f33KuWf3tW9BBe_4TP7x8l0m3T&feature=applinks",
+   "urlApplinksIos": "vnd.youtube.music://music.youtube.com/playlist?list=PLk1Sqn_f33KuWf3tW9BBe_4TP7x8l0m3T&feature=applinks",
+   "urlApplinksAndroid": "vnd.youtube.music://music.youtube.com/playlist?list=PLk1Sqn_f33KuWf3tW9BBe_4TP7x8l0m3T&feature=applinks",
+   "urlTwitterIos": "vnd.youtube.music://music.youtube.com/playlist?list=PLk1Sqn_f33KuWf3tW9BBe_4TP7x8l0m3T&feature=twitter-deep-link",
+   "urlTwitterAndroid": "vnd.youtube.music://music.youtube.com/playlist?list=PLk1Sqn_f33KuWf3tW9BBe_4TP7x8l0m3T&feature=twitter-deep-link",
+   "twitterCardType": "summary",
+   "twitterSiteHandle": "@youtubemusic"
+  }
+ }
+}

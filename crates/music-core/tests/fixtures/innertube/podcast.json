@@ -1,0 +1,1865 @@
+{
+ "contents": {
+  "twoColumnBrowseResultsRenderer": {
+   "secondaryContents": {
+    "sectionListRenderer": {
+     "contents": [
+      {
+       "musicShelfRenderer": {
+        "contents": [
+         {
+          "musicMultiRowListItemRenderer": {
+           "thumbnail": {
+            "musicThumbnailRenderer": {
+             "thumbnail": {
+              "thumbnails": [
+               {
+                "url": "https://i.ytimg.com/vi/uY1AL3zZ9gs/hqdefault.jpg?sqp=-oaymwEWCJADEOEBIAQqCggAEOADGC0guwJIWg&rs=AMzJL3mJtIKz2v5p7NDDVcLqOA9zv6eyag",
+                "width": 400,
+                "height": 225
+               },
+               {
+                "url": "https://i.ytimg.com/vi/uY1AL3zZ9gs/hq720.jpg?sqp=-oaymwEKCKAGEMIDIABIWg&rs=AMzJL3lVrIhRtJq-_TVQXt6qzzGNQWR1Bg",
+                "width": 800,
+                "height": 450
+               },
+               {
+                "url": "https://i.ytimg.com/vi/uY1AL3zZ9gs/hq720.jpg?sqp=-oaymwEKCNUGEN8DIABIWg&rs=AMzJL3lDRWwql5Ye0Mj6Iok3Ot42nU3o8Q",
+                "width": 853,
+                "height": 479
+               }
+              ]
+             },
+             "thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+             "thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FIT"
+            }
+           },
+           "overlay": {
+            "musicItemThumbnailOverlayRenderer": {
+             "content": {
+              "musicPlayButtonRenderer": {
+               "playNavigationEndpoint": {
+                "watchEndpoint": {
+                 "videoId": "uY1AL3zZ9gs",
+                 "params": "8gEDmAEI",
+                 "watchEndpointMusicSupportedConfigs": {
+                  "watchEndpointMusicConfig": {
+                   "musicVideoType": "MUSIC_VIDEO_TYPE_PODCAST_EPISODE"
+                  }
+                 }
+                }
+               },
+               "playIcon": {
+                "iconType": "PLAY_ARROW"
+               },
+               "pauseIcon": {
+                "iconType": "PAUSE"
+               },
+               "iconColor": 4294967295,
+               "backgroundColor": 0,
+               "activeBackgroundColor": 0,
+               "loadingIndicatorColor": 14745645,
+               "playingIcon": {
+                "iconType": "VOLUME_UP"
+               },
+               "iconLoadingColor": 0,
+               "activeScaleFactor": 1,
+               "buttonSize": "MUSIC_PLAY_BUTTON_SIZE_SMALL",
+               "rippleTarget": "MUSIC_PLAY_BUTTON_RIPPLE_TARGET_SELF",
+               "accessibilityPlayData": {},
+               "accessibilityPauseData": {}
+              }
+             },
+             "contentPosition": "MUSIC_ITEM_THUMBNAIL_OVERLAY_CONTENT_POSITION_CENTERED",
+             "displayStyle": "MUSIC_ITEM_THUMBNAIL_OVERLAY_DISPLAY_STYLE_PERSISTENT"
+            }
+           },
+           "onTap": {
+            "watchEndpoint": {
+             "videoId": "uY1AL3zZ9gs",
+             "params": "8gEDmAEI",
+             "watchEndpointMusicSupportedConfigs": {
+              "watchEndpointMusicConfig": {
+               "musicVideoType": "MUSIC_VIDEO_TYPE_PODCAST_EPISODE"
+              }
+             }
+            }
+           },
+           "menu": {
+            "menuRenderer": {
+             "items": [
+              {
+               "menuServiceItemRenderer": {
+                "text": {
+                 "runs": [
+                  {
+                   "text": "Play next"
+                  }
+                 ]
+                },
+                "icon": {
+                 "iconType": "QUEUE_PLAY_NEXT"
+                },
+                "serviceEndpoint": {
+                 "queueAddEndpoint": {
+                  "queueTarget": {
+                   "videoId": "uY1AL3zZ9gs",
+                   "onEmptyQueue": {
+                    "watchEndpoint": {
+                     "videoId": "uY1AL3zZ9gs"
+                    }
+                   }
+                  },
+                  "queueInsertPosition": "INSERT_AFTER_CURRENT_VIDEO",
+                  "commands": [
+                   {
+                    "addToToastAction": {
+                     "item": {
+                      "notificationTextRenderer": {
+                       "successResponseText": {
+                        "runs": [
+                         {
+                          "text": "Episode will play next"
+                         }
+                        ]
+                       }
+                      }
+                     }
+                    }
+                   }
+                  ]
+                 }
+                }
+               }
+              },
+              {
+               "menuServiceItemRenderer": {
+                "text": {
+                 "runs": [
+                  {
+                   "text": "Add to queue"
+                  }
+                 ]
+                },
+                "icon": {
+                 "iconType": "ADD_TO_REMOTE_QUEUE"
+                },
+                "serviceEndpoint": {
+                 "queueAddEndpoint": {
+                  "queueTarget": {
+                   "videoId": "uY1AL3zZ9gs",
+                   "onEmptyQueue": {
+                    "watchEndpoint": {
+                     "videoId": "uY1AL3zZ9gs"
+                    }
+                   }
+                  },
+                  "queueInsertPosition": "INSERT_AT_END",
+                  "commands": [
+                   {
+                    "addToToastAction": {
+                     "item": {
+                      "notificationTextRenderer": {
+                       "successResponseText": {
+                        "runs": [
+                         {
+                          "text": "Episode added to queue"
+                         }
+                        ]
+                       }
+                      }
+                     }
+                    }
+                   }
+                  ]
+                 }
+                }
+               }
+              },
+              {
+               "menuServiceItemDownloadRenderer": {
+                "serviceEndpoint": {
+                 "offlineVideoEndpoint": {
+                  "videoId": "uY1AL3zZ9gs",
+                  "onAddCommand": {
+                   "getDownloadActionCommand": {
+                    "videoId": "uY1AL3zZ9gs",
+                    "params": "CAI%3D"
+                   }
+                  }
+                 }
+                }
+               }
+              },
+              {
+               "menuNavigationItemRenderer": {
+                "text": {
+                 "runs": [
+                  {
+                   "text": "Save to playlist"
+                  }
+                 ]
+                },
+                "icon": {
+                 "iconType": "ADD_TO_PLAYLIST"
+                },
+                "navigationEndpoint": {
+                 "modalEndpoint": {
+                  "modal": {
+                   "modalWithTitleAndButtonRenderer": {
+                    "title": {
+                     "runs": [
+                      {
+                       "text": "Save this for later"
+                      }
+                     ]
+                    },
+                    "content": {
+                     "runs": [
+                      {
+                       "text": "Make playlists and share them after signing in"
+                      }
+                     ]
+                    },
+                    "button": {
+                     "buttonRenderer": {
+                      "style": "STYLE_BLUE_TEXT",
+                      "isDisabled": false,
+                      "text": {
+                       "runs": [
+                        {
+                         "text": "Sign in"
+                        }
+                       ]
+                      },
+                      "navigationEndpoint": {
+                       "signInEndpoint": {
+                        "hack": true
+                       }
+                      }
+                     }
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             ]
+            }
+           },
+           "subtitle": {
+            "runs": [
+             {
+              "text": "144K views"
+             },
+             {
+              "text": " • "
+             },
+             {
+              "text": "May 5, 2023"
+             }
+            ]
+           },
+           "playbackProgress": {
+            "musicPlaybackProgressRenderer": {
+             "playbackProgressPercentage": 0,
+             "playbackProgressText": {
+              "runs": [
+               {
+                "text": " • "
+               },
+               {
+                "text": "11 min 34 sec"
+               }
+              ]
+             },
+             "durationText": {
+              "runs": [
+               {
+                "text": " • "
+               },
+               {
+                "text": "11 min 34 sec"
+               }
+              ]
+             },
+             "playedText": {
+              "runs": [
+               {
+                "text": " • "
+               },
+               {
+                "text": "Played",
+                "textColor": 4294921797
+               }
+              ]
+             }
+            }
+           },
+           "title": {
+            "runs": [
+             {
+              "text": "Why UFC Fighters HATE Joe Rogan! (THE TRUTH)",
+              "navigationEndpoint": {
+               "browseEndpoint": {
+                "browseId": "MPEDuY1AL3zZ9gs",
+                "browseEndpointContextSupportedConfigs": {
+                 "browseEndpointContextMusicConfig": {
+                  "pageType": "MUSIC_PAGE_TYPE_NON_MUSIC_AUDIO_TRACK_PAGE"
+                 }
+                }
+               }
+              }
+             }
+            ]
+           },
+           "description": {
+            "runs": [
+             {
+              "text": "Here is a list of UFC fighters who hate Joe Rogan and we share the truth. Don’t miss out on all the action this week at DraftKings!  Download the DraftKings app today! Sign-up using https://dkng.co/watchmma or through my promo code WATCHMMA #ad #sponsored \n\n#JoeRogan #UFC #MMA \n\nUFC Reporters ASKING"
+             }
+            ]
+           },
+           "displayStyle": "MUSIC_MULTI_ROW_LIST_ITEM_DISPLAY_STYLE_DETAILED"
+          }
+         },
+         {
+          "musicMultiRowListItemRenderer": {
+           "thumbnail": {
+            "musicThumbnailRenderer": {
+             "thumbnail": {
+              "thumbnails": [
+               {
+                "url": "https://i.ytimg.com/vi/DwLMRFP8dlM/hqdefault.jpg?sqp=-oaymwEWCJADEOEBIAQqCggAEOADGC0guwJIWg&rs=AMzJL3mpGuFMdl_Rgc5zti_K60kl9b0yFQ",
+                "width": 400,
+                "height": 225
+               },
+               {
+                "url": "https://i.ytimg.com/vi/DwLMRFP8dlM/hq720.jpg?sqp=-oaymwEKCKAGEMIDIABIWg&rs=AMzJL3nD2yB-RbPqje0LPtaak-WNaO4qlQ",
+                "width": 800,
+                "height": 450
+               },
+               {
+                "url": "https://i.ytimg.com/vi/DwLMRFP8dlM/hq720.jpg?sqp=-oaymwEKCNUGEN8DIABIWg&rs=AMzJL3nYYIIt-U-wJfiPeJQePmq9FiO7NQ",
+                "width": 853,
+                "height": 479
+               }
+              ]
+             },
+             "thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+             "thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FIT"
+            }
+           },
+           "overlay": {
+            "musicItemThumbnailOverlayRenderer": {
+             "content": {
+              "musicPlayButtonRenderer": {
+               "playNavigationEndpoint": {
+                "watchEndpoint": {
+                 "videoId": "DwLMRFP8dlM",
+                 "params": "8gEDmAEI",
+                 "watchEndpointMusicSupportedConfigs": {
+                  "watchEndpointMusicConfig": {
+                   "musicVideoType": "MUSIC_VIDEO_TYPE_PODCAST_EPISODE"
+                  }
+                 }
+                }
+               },
+               "playIcon": {
+                "iconType": "PLAY_ARROW"
+               },
+               "pauseIcon": {
+                "iconType": "PAUSE"
+               },
+               "iconColor": 4294967295,
+               "backgroundColor": 0,
+               "activeBackgroundColor": 0,
+               "loadingIndicatorColor": 14745645,
+               "playingIcon": {
+                "iconType": "VOLUME_UP"
+               },
+               "iconLoadingColor": 0,
+               "activeScaleFactor": 1,
+               "buttonSize": "MUSIC_PLAY_BUTTON_SIZE_SMALL",
+               "rippleTarget": "MUSIC_PLAY_BUTTON_RIPPLE_TARGET_SELF",
+               "accessibilityPlayData": {},
+               "accessibilityPauseData": {}
+              }
+             },
+             "contentPosition": "MUSIC_ITEM_THUMBNAIL_OVERLAY_CONTENT_POSITION_CENTERED",
+             "displayStyle": "MUSIC_ITEM_THUMBNAIL_OVERLAY_DISPLAY_STYLE_PERSISTENT"
+            }
+           },
+           "onTap": {
+            "watchEndpoint": {
+             "videoId": "DwLMRFP8dlM",
+             "params": "8gEDmAEI",
+             "watchEndpointMusicSupportedConfigs": {
+              "watchEndpointMusicConfig": {
+               "musicVideoType": "MUSIC_VIDEO_TYPE_PODCAST_EPISODE"
+              }
+             }
+            }
+           },
+           "menu": {
+            "menuRenderer": {
+             "items": [
+              {
+               "menuServiceItemRenderer": {
+                "text": {
+                 "runs": [
+                  {
+                   "text": "Play next"
+                  }
+                 ]
+                },
+                "icon": {
+                 "iconType": "QUEUE_PLAY_NEXT"
+                },
+                "serviceEndpoint": {
+                 "queueAddEndpoint": {
+                  "queueTarget": {
+                   "videoId": "DwLMRFP8dlM",
+                   "onEmptyQueue": {
+                    "watchEndpoint": {
+                     "videoId": "DwLMRFP8dlM"
+                    }
+                   }
+                  },
+                  "queueInsertPosition": "INSERT_AFTER_CURRENT_VIDEO",
+                  "commands": [
+                   {
+                    "addToToastAction": {
+                     "item": {
+                      "notificationTextRenderer": {
+                       "successResponseText": {
+                        "runs": [
+                         {
+                          "text": "Episode will play next"
+                         }
+                        ]
+                       }
+                      }
+                     }
+                    }
+                   }
+                  ]
+                 }
+                }
+               }
+              },
+              {
+               "menuServiceItemRenderer": {
+                "text": {
+                 "runs": [
+                  {
+                   "text": "Add to queue"
+                  }
+                 ]
+                },
+                "icon": {
+                 "iconType": "ADD_TO_REMOTE_QUEUE"
+                },
+                "serviceEndpoint": {
+                 "queueAddEndpoint": {
+                  "queueTarget": {
+                   "videoId": "DwLMRFP8dlM",
+                   "onEmptyQueue": {
+                    "watchEndpoint": {
+                     "videoId": "DwLMRFP8dlM"
+                    }
+                   }
+                  },
+                  "queueInsertPosition": "INSERT_AT_END",
+                  "commands": [
+                   {
+                    "addToToastAction": {
+                     "item": {
+                      "notificationTextRenderer": {
+                       "successResponseText": {
+                        "runs": [
+                         {
+                          "text": "Episode added to queue"
+                         }
+                        ]
+                       }
+                      }
+                     }
+                    }
+                   }
+                  ]
+                 }
+                }
+               }
+              },
+              {
+               "menuServiceItemDownloadRenderer": {
+                "serviceEndpoint": {
+                 "offlineVideoEndpoint": {
+                  "videoId": "DwLMRFP8dlM",
+                  "onAddCommand": {
+                   "getDownloadActionCommand": {
+                    "videoId": "DwLMRFP8dlM",
+                    "params": "CAI%3D"
+                   }
+                  }
+                 }
+                }
+               }
+              },
+              {
+               "menuNavigationItemRenderer": {
+                "text": {
+                 "runs": [
+                  {
+                   "text": "Save to playlist"
+                  }
+                 ]
+                },
+                "icon": {
+                 "iconType": "ADD_TO_PLAYLIST"
+                },
+                "navigationEndpoint": {
+                 "modalEndpoint": {
+                  "modal": {
+                   "modalWithTitleAndButtonRenderer": {
+                    "title": {
+                     "runs": [
+                      {
+                       "text": "Save this for later"
+                      }
+                     ]
+                    },
+                    "content": {
+                     "runs": [
+                      {
+                       "text": "Make playlists and share them after signing in"
+                      }
+                     ]
+                    },
+                    "button": {
+                     "buttonRenderer": {
+                      "style": "STYLE_BLUE_TEXT",
+                      "isDisabled": false,
+                      "text": {
+                       "runs": [
+                        {
+                         "text": "Sign in"
+                        }
+                       ]
+                      },
+                      "navigationEndpoint": {
+                       "signInEndpoint": {
+                        "hack": true
+                       }
+                      }
+                     }
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             ]
+            }
+           },
+           "subtitle": {
+            "runs": [
+             {
+              "text": "277K views"
+             },
+             {
+              "text": " • "
+             },
+             {
+              "text": "Dec 9, 2022"
+             }
+            ]
+           },
+           "playbackProgress": {
+            "musicPlaybackProgressRenderer": {
+             "playbackProgressPercentage": 0,
+             "playbackProgressText": {
+              "runs": [
+               {
+                "text": " • "
+               },
+               {
+                "text": "10 min 26 sec"
+               }
+              ]
+             },
+             "durationText": {
+              "runs": [
+               {
+                "text": " • "
+               },
+               {
+                "text": "10 min 26 sec"
+               }
+              ]
+             },
+             "playedText": {
+              "runs": [
+               {
+                "text": " • "
+               },
+               {
+                "text": "Played",
+                "textColor": 4294921797
+               }
+              ]
+             }
+            }
+           },
+           "title": {
+            "runs": [
+             {
+              "text": "Why UFC Fighters HATE Joe Rogan! (THE TRUTH)",
+              "navigationEndpoint": {
+               "browseEndpoint": {
+                "browseId": "MPEDDwLMRFP8dlM",
+                "browseEndpointContextSupportedConfigs": {
+                 "browseEndpointContextMusicConfig": {
+                  "pageType": "MUSIC_PAGE_TYPE_NON_MUSIC_AUDIO_TRACK_PAGE"
+                 }
+                }
+               }
+              }
+             }
+            ]
+           },
+           "description": {
+            "runs": [
+             {
+              "text": "Here is a list of why UFC fighters like Conor McGregor, and more hate Joe Rogan. Don’t miss out on all the action this week at DraftKings!  Download the DraftKings Sportsbook app today! Sign-up using https://dkng.co/watchmma or through my promo code WATCHMMA\n\nMore #UFC #MMA content...\nUFC Fighters W"
+             }
+            ]
+           },
+           "displayStyle": "MUSIC_MULTI_ROW_LIST_ITEM_DISPLAY_STYLE_DETAILED"
+          }
+         },
+         {
+          "musicMultiRowListItemRenderer": {
+           "thumbnail": {
+            "musicThumbnailRenderer": {
+             "thumbnail": {
+              "thumbnails": [
+               {
+                "url": "https://i.ytimg.com/vi/9XgZld74pag/hqdefault.jpg?sqp=-oaymwEWCJADEOEBIAQqCggAEOADGC0guwJIWg&rs=AMzJL3mTFT6OHf8E8AmmznfB1LjCW7MAtg",
+                "width": 400,
+                "height": 225
+               },
+               {
+                "url": "https://i.ytimg.com/vi/9XgZld74pag/hq720.jpg?sqp=-oaymwEKCKAGEMIDIABIWg&rs=AMzJL3mZoG_b9hS0mTFhTbkFOiXM3WGP6g",
+                "width": 800,
+                "height": 450
+               },
+               {
+                "url": "https://i.ytimg.com/vi/9XgZld74pag/hq720.jpg?sqp=-oaymwEKCNUGEN8DIABIWg&rs=AMzJL3npI4USBsxJjlRyaOhnC_RcoDrUOw",
+                "width": 853,
+                "height": 479
+               }
+              ]
+             },
+             "thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+             "thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FIT"
+            }
+           },
+           "overlay": {
+            "musicItemThumbnailOverlayRenderer": {
+             "content": {
+              "musicPlayButtonRenderer": {
+               "playNavigationEndpoint": {
+                "watchEndpoint": {
+                 "videoId": "9XgZld74pag",
+                 "params": "8gEDmAEI",
+                 "watchEndpointMusicSupportedConfigs": {
+                  "watchEndpointMusicConfig": {
+                   "musicVideoType": "MUSIC_VIDEO_TYPE_PODCAST_EPISODE"
+                  }
+                 }
+                }
+               },
+               "playIcon": {
+                "iconType": "PLAY_ARROW"
+               },
+               "pauseIcon": {
+                "iconType": "PAUSE"
+               },
+               "iconColor": 4294967295,
+               "backgroundColor": 0,
+               "activeBackgroundColor": 0,
+               "loadingIndicatorColor": 14745645,
+               "playingIcon": {
+                "iconType": "VOLUME_UP"
+               },
+               "iconLoadingColor": 0,
+               "activeScaleFactor": 1,
+               "buttonSize": "MUSIC_PLAY_BUTTON_SIZE_SMALL",
+               "rippleTarget": "MUSIC_PLAY_BUTTON_RIPPLE_TARGET_SELF",
+               "accessibilityPlayData": {},
+               "accessibilityPauseData": {}
+              }
+             },
+             "contentPosition": "MUSIC_ITEM_THUMBNAIL_OVERLAY_CONTENT_POSITION_CENTERED",
+             "displayStyle": "MUSIC_ITEM_THUMBNAIL_OVERLAY_DISPLAY_STYLE_PERSISTENT"
+            }
+           },
+           "onTap": {
+            "watchEndpoint": {
+             "videoId": "9XgZld74pag",
+             "params": "8gEDmAEI",
+             "watchEndpointMusicSupportedConfigs": {
+              "watchEndpointMusicConfig": {
+               "musicVideoType": "MUSIC_VIDEO_TYPE_PODCAST_EPISODE"
+              }
+             }
+            }
+           },
+           "menu": {
+            "menuRenderer": {
+             "items": [
+              {
+               "menuServiceItemRenderer": {
+                "text": {
+                 "runs": [
+                  {
+                   "text": "Play next"
+                  }
+                 ]
+                },
+                "icon": {
+                 "iconType": "QUEUE_PLAY_NEXT"
+                },
+                "serviceEndpoint": {
+                 "queueAddEndpoint": {
+                  "queueTarget": {
+                   "videoId": "9XgZld74pag",
+                   "onEmptyQueue": {
+                    "watchEndpoint": {
+                     "videoId": "9XgZld74pag"
+                    }
+                   }
+                  },
+                  "queueInsertPosition": "INSERT_AFTER_CURRENT_VIDEO",
+                  "commands": [
+                   {
+                    "addToToastAction": {
+                     "item": {
+                      "notificationTextRenderer": {
+                       "successResponseText": {
+                        "runs": [
+                         {
+                          "text": "Episode will play next"
+                         }
+                        ]
+                       }
+                      }
+                     }
+                    }
+                   }
+                  ]
+                 }
+                }
+               }
+              },
+              {
+               "menuServiceItemRenderer": {
+                "text": {
+                 "runs": [
+                  {
+                   "text": "Add to queue"
+                  }
+                 ]
+                },
+                "icon": {
+                 "iconType": "ADD_TO_REMOTE_QUEUE"
+                },
+                "serviceEndpoint": {
+                 "queueAddEndpoint": {
+                  "queueTarget": {
+                   "videoId": "9XgZld74pag",
+                   "onEmptyQueue": {
+                    "watchEndpoint": {
+                     "videoId": "9XgZld74pag",
+                     "playerParams": "0gcJCb8KYeQlTpbE"
+                    }
+                   }
+                  },
+                  "queueInsertPosition": "INSERT_AT_END",
+                  "commands": [
+                   {
+                    "addToToastAction": {
+                     "item": {
+                      "notificationTextRenderer": {
+                       "successResponseText": {
+                        "runs": [
+                         {
+                          "text": "Episode added to queue"
+                         }
+                        ]
+                       }
+                      }
+                     }
+                    }
+                   }
+                  ]
+                 }
+                }
+               }
+              },
+              {
+               "menuServiceItemDownloadRenderer": {
+                "serviceEndpoint": {
+                 "offlineVideoEndpoint": {
+                  "videoId": "9XgZld74pag",
+                  "onAddCommand": {
+                   "getDownloadActionCommand": {
+                    "videoId": "9XgZld74pag",
+                    "params": "CAI%3D"
+                   }
+                  }
+                 }
+                }
+               }
+              },
+              {
+               "menuNavigationItemRenderer": {
+                "text": {
+                 "runs": [
+                  {
+                   "text": "Save to playlist"
+                  }
+                 ]
+                },
+                "icon": {
+                 "iconType": "ADD_TO_PLAYLIST"
+                },
+                "navigationEndpoint": {
+                 "modalEndpoint": {
+                  "modal": {
+                   "modalWithTitleAndButtonRenderer": {
+                    "title": {
+                     "runs": [
+                      {
+                       "text": "Save this for later"
+                      }
+                     ]
+                    },
+                    "content": {
+                     "runs": [
+                      {
+                       "text": "Make playlists and share them after signing in"
+                      }
+                     ]
+                    },
+                    "button": {
+                     "buttonRenderer": {
+                      "style": "STYLE_BLUE_TEXT",
+                      "isDisabled": false,
+                      "text": {
+                       "runs": [
+                        {
+                         "text": "Sign in"
+                        }
+                       ]
+                      },
+                      "navigationEndpoint": {
+                       "signInEndpoint": {
+                        "hack": true
+                       }
+                      }
+                     }
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             ]
+            }
+           },
+           "subtitle": {
+            "runs": [
+             {
+              "text": "240K views"
+             },
+             {
+              "text": " • "
+             },
+             {
+              "text": "Sep 24, 2022"
+             }
+            ]
+           },
+           "playbackProgress": {
+            "musicPlaybackProgressRenderer": {
+             "playbackProgressPercentage": 0,
+             "playbackProgressText": {
+              "runs": [
+               {
+                "text": " • "
+               },
+               {
+                "text": "8 min 56 sec"
+               }
+              ]
+             },
+             "durationText": {
+              "runs": [
+               {
+                "text": " • "
+               },
+               {
+                "text": "8 min 56 sec"
+               }
+              ]
+             },
+             "playedText": {
+              "runs": [
+               {
+                "text": " • "
+               },
+               {
+                "text": "Played",
+                "textColor": 4294921797
+               }
+              ]
+             }
+            }
+           },
+           "title": {
+            "runs": [
+             {
+              "text": "10 Deleted Moments Joe Rogan Doesn't Want Fans To See!",
+              "navigationEndpoint": {
+               "browseEndpoint": {
+                "browseId": "MPED9XgZld74pag",
+                "browseEndpointContextSupportedConfigs": {
+                 "browseEndpointContextMusicConfig": {
+                  "pageType": "MUSIC_PAGE_TYPE_NON_MUSIC_AUDIO_TRACK_PAGE"
+                 }
+                }
+               }
+              }
+             }
+            ]
+           },
+           "description": {
+            "runs": [
+             {
+              "text": "Here is a list of deleted moments UFC commentator, Joe Rogan doesn’t want his fans to see. This #UFC video includes heated moments from the Joe Rogan MMA podcast, interviews, and much more. Make sure to LIKE and SUBSCRIBE for more content.\n\n#UFC #MMA #JoeRogan content\n\n10 Times Joe Rogan SHOCKED The"
+             }
+            ]
+           },
+           "displayStyle": "MUSIC_MULTI_ROW_LIST_ITEM_DISPLAY_STYLE_DETAILED"
+          }
+         },
+         {
+          "musicMultiRowListItemRenderer": {
+           "thumbnail": {
+            "musicThumbnailRenderer": {
+             "thumbnail": {
+              "thumbnails": [
+               {
+                "url": "https://i.ytimg.com/vi/jjxaA4oIEUk/hqdefault.jpg?sqp=-oaymwEWCJADEOEBIAQqCggAEOADGC0guwJIWg&rs=AMzJL3mdswtODlxXeWd_t7O3tCKYpO9O6g",
+                "width": 400,
+                "height": 225
+               },
+               {
+                "url": "https://i.ytimg.com/vi/jjxaA4oIEUk/hq720.jpg?sqp=-oaymwEKCKAGEMIDIABIWg&rs=AMzJL3mOrbGyNtzXPU38SDqyBAKE4MFx7A",
+                "width": 800,
+                "height": 450
+               },
+               {
+                "url": "https://i.ytimg.com/vi/jjxaA4oIEUk/hq720.jpg?sqp=-oaymwEKCNUGEN8DIABIWg&rs=AMzJL3lwnGbbGVFHlVoAxQREp9sDRzG0Pg",
+                "width": 853,
+                "height": 479
+               }
+              ]
+             },
+             "thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+             "thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FIT"
+            }
+           },
+           "overlay": {
+            "musicItemThumbnailOverlayRenderer": {
+             "content": {
+              "musicPlayButtonRenderer": {
+               "playNavigationEndpoint": {
+                "watchEndpoint": {
+                 "videoId": "jjxaA4oIEUk",
+                 "params": "8gEDmAEI",
+                 "watchEndpointMusicSupportedConfigs": {
+                  "watchEndpointMusicConfig": {
+                   "musicVideoType": "MUSIC_VIDEO_TYPE_PODCAST_EPISODE"
+                  }
+                 }
+                }
+               },
+               "playIcon": {
+                "iconType": "PLAY_ARROW"
+               },
+               "pauseIcon": {
+                "iconType": "PAUSE"
+               },
+               "iconColor": 4294967295,
+               "backgroundColor": 0,
+               "activeBackgroundColor": 0,
+               "loadingIndicatorColor": 14745645,
+               "playingIcon": {
+                "iconType": "VOLUME_UP"
+               },
+               "iconLoadingColor": 0,
+               "activeScaleFactor": 1,
+               "buttonSize": "MUSIC_PLAY_BUTTON_SIZE_SMALL",
+               "rippleTarget": "MUSIC_PLAY_BUTTON_RIPPLE_TARGET_SELF",
+               "accessibilityPlayData": {},
+               "accessibilityPauseData": {}
+              }
+             },
+             "contentPosition": "MUSIC_ITEM_THUMBNAIL_OVERLAY_CONTENT_POSITION_CENTERED",
+             "displayStyle": "MUSIC_ITEM_THUMBNAIL_OVERLAY_DISPLAY_STYLE_PERSISTENT"
+            }
+           },
+           "onTap": {
+            "watchEndpoint": {
+             "videoId": "jjxaA4oIEUk",
+             "params": "8gEDmAEI",
+             "watchEndpointMusicSupportedConfigs": {
+              "watchEndpointMusicConfig": {
+               "musicVideoType": "MUSIC_VIDEO_TYPE_PODCAST_EPISODE"
+              }
+             }
+            }
+           },
+           "menu": {
+            "menuRenderer": {
+             "items": [
+              {
+               "menuServiceItemRenderer": {
+                "text": {
+                 "runs": [
+                  {
+                   "text": "Play next"
+                  }
+                 ]
+                },
+                "icon": {
+                 "iconType": "QUEUE_PLAY_NEXT"
+                },
+                "serviceEndpoint": {
+                 "queueAddEndpoint": {
+                  "queueTarget": {
+                   "videoId": "jjxaA4oIEUk",
+                   "onEmptyQueue": {
+                    "watchEndpoint": {
+                     "videoId": "jjxaA4oIEUk"
+                    }
+                   }
+                  },
+                  "queueInsertPosition": "INSERT_AFTER_CURRENT_VIDEO",
+                  "commands": [
+                   {
+                    "addToToastAction": {
+                     "item": {
+                      "notificationTextRenderer": {
+                       "successResponseText": {
+                        "runs": [
+                         {
+                          "text": "Episode will play next"
+                         }
+                        ]
+                       }
+                      }
+                     }
+                    }
+                   }
+                  ]
+                 }
+                }
+               }
+              },
+              {
+               "menuServiceItemRenderer": {
+                "text": {
+                 "runs": [
+                  {
+                   "text": "Add to queue"
+                  }
+                 ]
+                },
+                "icon": {
+                 "iconType": "ADD_TO_REMOTE_QUEUE"
+                },
+                "serviceEndpoint": {
+                 "queueAddEndpoint": {
+                  "queueTarget": {
+                   "videoId": "jjxaA4oIEUk",
+                   "onEmptyQueue": {
+                    "watchEndpoint": {
+                     "videoId": "jjxaA4oIEUk"
+                    }
+                   }
+                  },
+                  "queueInsertPosition": "INSERT_AT_END",
+                  "commands": [
+                   {
+                    "addToToastAction": {
+                     "item": {
+                      "notificationTextRenderer": {
+                       "successResponseText": {
+                        "runs": [
+                         {
+                          "text": "Episode added to queue"
+                         }
+                        ]
+                       }
+                      }
+                     }
+                    }
+                   }
+                  ]
+                 }
+                }
+               }
+              },
+              {
+               "menuServiceItemDownloadRenderer": {
+                "serviceEndpoint": {
+                 "offlineVideoEndpoint": {
+                  "videoId": "jjxaA4oIEUk",
+                  "onAddCommand": {
+                   "getDownloadActionCommand": {
+                    "videoId": "jjxaA4oIEUk",
+                    "params": "CAI%3D"
+                   }
+                  }
+                 }
+                }
+               }
+              },
+              {
+               "menuNavigationItemRenderer": {
+                "text": {
+                 "runs": [
+                  {
+                   "text": "Save to playlist"
+                  }
+                 ]
+                },
+                "icon": {
+                 "iconType": "ADD_TO_PLAYLIST"
+                },
+                "navigationEndpoint": {
+                 "modalEndpoint": {
+                  "modal": {
+                   "modalWithTitleAndButtonRenderer": {
+                    "title": {
+                     "runs": [
+                      {
+                       "text": "Save this for later"
+                      }
+                     ]
+                    },
+                    "content": {
+                     "runs": [
+                      {
+                       "text": "Make playlists and share them after signing in"
+                      }
+                     ]
+                    },
+                    "button": {
+                     "buttonRenderer": {
+                      "style": "STYLE_BLUE_TEXT",
+                      "isDisabled": false,
+                      "text": {
+                       "runs": [
+                        {
+                         "text": "Sign in"
+                        }
+                       ]
+                      },
+                      "navigationEndpoint": {
+                       "signInEndpoint": {
+                        "hack": true
+                       }
+                      }
+                     }
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             ]
+            }
+           },
+           "subtitle": {
+            "runs": [
+             {
+              "text": "85K views"
+             },
+             {
+              "text": " • "
+             },
+             {
+              "text": "Jul 7, 2022"
+             }
+            ]
+           },
+           "playbackProgress": {
+            "musicPlaybackProgressRenderer": {
+             "playbackProgressPercentage": 0,
+             "playbackProgressText": {
+              "runs": [
+               {
+                "text": " • "
+               },
+               {
+                "text": "10 min 28 sec"
+               }
+              ]
+             },
+             "durationText": {
+              "runs": [
+               {
+                "text": " • "
+               },
+               {
+                "text": "10 min 28 sec"
+               }
+              ]
+             },
+             "playedText": {
+              "runs": [
+               {
+                "text": " • "
+               },
+               {
+                "text": "Played",
+                "textColor": 4294921797
+               }
+              ]
+             }
+            }
+           },
+           "title": {
+            "runs": [
+             {
+              "text": "Why UFC Fighters HATE Joe Rogan! (THE TRUTH)",
+              "navigationEndpoint": {
+               "browseEndpoint": {
+                "browseId": "MPEDjjxaA4oIEUk",
+                "browseEndpointContextSupportedConfigs": {
+                 "browseEndpointContextMusicConfig": {
+                  "pageType": "MUSIC_PAGE_TYPE_NON_MUSIC_AUDIO_TRACK_PAGE"
+                 }
+                }
+               }
+              }
+             }
+            ]
+           },
+           "description": {
+            "runs": [
+             {
+              "text": "Here is a list of why UFC fighters like Khabib, Conor McGregor, and more hate Joe Rogan. This #UFC video includes heated moments from the Joe Rogan MMA podcast, interviews, and much more. Make sure to LIKE and SUBSCRIBE for more content.\n\n#UFC #MMA #JoeRogan content\n10 Times Joe Rogan SHOCKED The MM"
+             }
+            ]
+           },
+           "displayStyle": "MUSIC_MULTI_ROW_LIST_ITEM_DISPLAY_STYLE_DETAILED"
+          }
+         }
+        ],
+        "shelfDivider": {
+         "musicShelfDividerRenderer": {
+          "hidden": true
+         }
+        }
+       }
+      }
+     ],
+     "header": {
+      "chipCloudRenderer": {
+       "chips": [
+        {
+         "chipCloudChipRenderer": {
+          "style": {
+           "styleType": "STYLE_ICON_SECOND"
+          },
+          "text": {
+           "runs": [
+            {
+             "text": "Latest"
+            }
+           ]
+          },
+          "navigationEndpoint": {
+           "openPopupAction": {
+            "popup": {
+             "menuPopupRenderer": {
+              "items": [
+               {
+                "menuNavigationItemRenderer": {
+                 "text": {
+                  "simpleText": "Latest"
+                 },
+                 "icon": {
+                  "iconType": "CHECK"
+                 },
+                 "navigationEndpoint": {
+                  "browseSectionListReloadEndpoint": {
+                   "continuation": {
+                    "reloadContinuationData": {
+                     "continuation": "4qmFsgJGEiZNUFNQUEw3Tk45ekJXaGl4cTdhSjJPWEtobUkySzFCNG5CZDRkdxoca2dFRENOa0lvQVlCMmdnRUNBSVFBUSUzRCUzRA%3D%3D",
+                     "showSpinnerOverlay": true
+                    }
+                   },
+                   "targetId": "browse-feedMPSPPL7NN9zBWhixq7aJ2OXKhmI2K1B4nBd4dw"
+                  }
+                 }
+                }
+               },
+               {
+                "menuNavigationItemRenderer": {
+                 "text": {
+                  "simpleText": "Oldest"
+                 },
+                 "navigationEndpoint": {
+                  "browseSectionListReloadEndpoint": {
+                   "continuation": {
+                    "reloadContinuationData": {
+                     "continuation": "4qmFsgJGEiZNUFNQUEw3Tk45ekJXaGl4cTdhSjJPWEtobUkySzFCNG5CZDRkdxoca2dFRENOa0lvQVlCMmdnRUNBRVFBUSUzRCUzRA%3D%3D",
+                     "showSpinnerOverlay": true
+                    }
+                   },
+                   "targetId": "browse-feedMPSPPL7NN9zBWhixq7aJ2OXKhmI2K1B4nBd4dw"
+                  }
+                 }
+                }
+               },
+               {
+                "menuNavigationItemRenderer": {
+                 "text": {
+                  "simpleText": "Popular"
+                 },
+                 "navigationEndpoint": {
+                  "browseSectionListReloadEndpoint": {
+                   "continuation": {
+                    "reloadContinuationData": {
+                     "continuation": "4qmFsgJGEiZNUFNQUEw3Tk45ekJXaGl4cTdhSjJPWEtobUkySzFCNG5CZDRkdxoca2dFRENOa0lvQVlCMmdnRUNBSVFBZyUzRCUzRA%3D%3D",
+                     "showSpinnerOverlay": true
+                    }
+                   },
+                   "targetId": "browse-feedMPSPPL7NN9zBWhixq7aJ2OXKhmI2K1B4nBd4dw"
+                  }
+                 }
+                }
+               },
+               {
+                "menuNavigationItemRenderer": {
+                 "text": {
+                  "simpleText": "Creator provided"
+                 },
+                 "navigationEndpoint": {
+                  "browseSectionListReloadEndpoint": {
+                   "continuation": {
+                    "reloadContinuationData": {
+                     "continuation": "4qmFsgI2EiZNUFNQUEw3Tk45ekJXaGl4cTdhSjJPWEtobUkySzFCNG5CZDRkdxoMa2dFRENOa0lvQVlC",
+                     "showSpinnerOverlay": true
+                    }
+                   },
+                   "targetId": "browse-feedMPSPPL7NN9zBWhixq7aJ2OXKhmI2K1B4nBd4dw"
+                  }
+                 }
+                }
+               }
+              ]
+             }
+            },
+            "popupType": "DIALOG",
+            "reusePopup": true
+           }
+          },
+          "icon": {
+           "iconType": "EXPAND"
+          },
+          "uniqueId": "YTM SDP Sort Chip",
+          "notSelectable": true
+         }
+        },
+        {
+         "chipCloudChipRenderer": {
+          "text": {
+           "simpleText": "In progress"
+          },
+          "navigationEndpoint": {
+           "browseSectionListReloadEndpoint": {
+            "continuation": {
+             "reloadContinuationData": {
+              "continuation": "4qmFsgJKEiZNUFNQUEw3Tk45ekJXaGl4cTdhSjJPWEtobUkySzFCNG5CZDRkdxoga2dFRENOa0lvQVlCMmdnRUNBSVFBWWdKQXclM0QlM0Q%3D",
+              "showSpinnerOverlay": true
+             }
+            },
+            "targetId": "browse-feedMPSPPL7NN9zBWhixq7aJ2OXKhmI2K1B4nBd4dw"
+           }
+          },
+          "isSelected": false,
+          "onDeselectedCommand": {
+           "browseSectionListReloadEndpoint": {
+            "continuation": {
+             "reloadContinuationData": {
+              "continuation": "4qmFsgJGEiZNUFNQUEw3Tk45ekJXaGl4cTdhSjJPWEtobUkySzFCNG5CZDRkdxoca2dFRENOa0lvQVlCMmdnRUNBSVFBUSUzRCUzRA%3D%3D",
+              "showSpinnerOverlay": true
+             }
+            },
+            "targetId": "browse-feedMPSPPL7NN9zBWhixq7aJ2OXKhmI2K1B4nBd4dw"
+           }
+          },
+          "uniqueId": "YTM SDP In progress Chip"
+         }
+        },
+        {
+         "chipCloudChipRenderer": {
+          "text": {
+           "simpleText": "Unplayed"
+          },
+          "navigationEndpoint": {
+           "browseSectionListReloadEndpoint": {
+            "continuation": {
+             "reloadContinuationData": {
+              "continuation": "4qmFsgJKEiZNUFNQUEw3Tk45ekJXaGl4cTdhSjJPWEtobUkySzFCNG5CZDRkdxoga2dFRENOa0lvQVlCMmdnRUNBSVFBWWdKQVElM0QlM0Q%3D",
+              "showSpinnerOverlay": true
+             }
+            },
+            "targetId": "browse-feedMPSPPL7NN9zBWhixq7aJ2OXKhmI2K1B4nBd4dw"
+           }
+          },
+          "isSelected": false,
+          "onDeselectedCommand": {
+           "browseSectionListReloadEndpoint": {
+            "continuation": {
+             "reloadContinuationData": {
+              "continuation": "4qmFsgJGEiZNUFNQUEw3Tk45ekJXaGl4cTdhSjJPWEtobUkySzFCNG5CZDRkdxoca2dFRENOa0lvQVlCMmdnRUNBSVFBUSUzRCUzRA%3D%3D",
+              "showSpinnerOverlay": true
+             }
+            },
+            "targetId": "browse-feedMPSPPL7NN9zBWhixq7aJ2OXKhmI2K1B4nBd4dw"
+           }
+          },
+          "uniqueId": "YTM SDP Unplayed Chip"
+         }
+        },
+        {
+         "chipCloudChipRenderer": {
+          "text": {
+           "simpleText": "Played"
+          },
+          "navigationEndpoint": {
+           "browseSectionListReloadEndpoint": {
+            "continuation": {
+             "reloadContinuationData": {
+              "continuation": "4qmFsgJKEiZNUFNQUEw3Tk45ekJXaGl4cTdhSjJPWEtobUkySzFCNG5CZDRkdxoga2dFRENOa0lvQVlCMmdnRUNBSVFBWWdKQWclM0QlM0Q%3D",
+              "showSpinnerOverlay": true
+             }
+            },
+            "targetId": "browse-feedMPSPPL7NN9zBWhixq7aJ2OXKhmI2K1B4nBd4dw"
+           }
+          },
+          "isSelected": false,
+          "onDeselectedCommand": {
+           "browseSectionListReloadEndpoint": {
+            "continuation": {
+             "reloadContinuationData": {
+              "continuation": "4qmFsgJGEiZNUFNQUEw3Tk45ekJXaGl4cTdhSjJPWEtobUkySzFCNG5CZDRkdxoca2dFRENOa0lvQVlCMmdnRUNBSVFBUSUzRCUzRA%3D%3D",
+              "showSpinnerOverlay": true
+             }
+            },
+            "targetId": "browse-feedMPSPPL7NN9zBWhixq7aJ2OXKhmI2K1B4nBd4dw"
+           }
+          },
+          "uniqueId": "YTM SDP Played Chip"
+         }
+        }
+       ],
+       "horizontalScrollable": true,
+       "selectionBehavior": "CHIP_CLOUD_SELECTION_BEHAVIOR_SINGLE_SELECT"
+      }
+     },
+     "targetId": "browse-feedMPSPPL7NN9zBWhixq7aJ2OXKhmI2K1B4nBd4dw"
+    }
+   },
+   "tabs": [
+    {
+     "tabRenderer": {
+      "content": {
+       "sectionListRenderer": {
+        "contents": [
+         {
+          "musicResponsiveHeaderRenderer": {
+           "thumbnail": {
+            "musicThumbnailRenderer": {
+             "thumbnail": {
+              "thumbnails": [
+               {
+                "url": "https://yt3.googleusercontent.com/ytc/AIdro_mEJZsZYqoF5mgOOa5Y9AwuqmCCp8W29DBOu5iTW360I9s=w60-c-h60-k-c0x00ffffff-no-l90-rj",
+                "width": 60,
+                "height": 60
+               },
+               {
+                "url": "https://yt3.googleusercontent.com/ytc/AIdro_mEJZsZYqoF5mgOOa5Y9AwuqmCCp8W29DBOu5iTW360I9s=w120-c-h120-k-c0x00ffffff-no-l90-rj",
+                "width": 120,
+                "height": 120
+               },
+               {
+                "url": "https://yt3.googleusercontent.com/ytc/AIdro_mEJZsZYqoF5mgOOa5Y9AwuqmCCp8W29DBOu5iTW360I9s=w226-c-h226-k-c0x00ffffff-no-l90-rj",
+                "width": 226,
+                "height": 226
+               },
+               {
+                "url": "https://yt3.googleusercontent.com/ytc/AIdro_mEJZsZYqoF5mgOOa5Y9AwuqmCCp8W29DBOu5iTW360I9s=w544-c-h544-k-c0x00ffffff-no-l90-rj",
+                "width": 544,
+                "height": 544
+               }
+              ]
+             },
+             "thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+             "thumbnailScale": "MUSIC_THUMBNAIL_SCALE_UNSPECIFIED"
+            }
+           },
+           "buttons": [
+            {
+             "buttonRenderer": {
+              "style": "STYLE_DARK_ON_WHITE",
+              "icon": {
+               "iconType": "SHARE"
+              },
+              "command": {
+               "shareEntityEndpoint": {
+                "serializedShareEntity": "EiJQTDdOTjl6QldoaXhxN2FKMk9YS2htSTJLMUI0bkJkNGR3",
+                "sharePanelType": "SHARE_PANEL_TYPE_UNIFIED_SHARE_PANEL"
+               }
+              }
+             }
+            },
+            {
+             "toggleButtonRenderer": {
+              "isToggled": false,
+              "isDisabled": false,
+              "defaultIcon": {
+               "iconType": "BOOKMARK_BORDER"
+              },
+              "defaultText": {
+               "runs": [
+                {
+                 "text": "Save to library"
+                }
+               ]
+              },
+              "toggledIcon": {
+               "iconType": "BOOKMARK"
+              },
+              "toggledText": {
+               "runs": [
+                {
+                 "text": "Saved to library"
+                }
+               ]
+              },
+              "defaultNavigationEndpoint": {
+               "modalEndpoint": {
+                "modal": {
+                 "modalWithTitleAndButtonRenderer": {
+                  "title": {
+                   "runs": [
+                    {
+                     "text": "Save this for later"
+                    }
+                   ]
+                  },
+                  "content": {
+                   "runs": [
+                    {
+                     "text": "Save favorites to your library after signing in"
+                    }
+                   ]
+                  },
+                  "button": {
+                   "buttonRenderer": {
+                    "style": "STYLE_BLUE_TEXT",
+                    "isDisabled": false,
+                    "text": {
+                     "runs": [
+                      {
+                       "text": "Sign in"
+                      }
+                     ]
+                    },
+                    "navigationEndpoint": {
+                     "signInEndpoint": {
+                      "hack": true
+                     }
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            },
+            {
+             "menuRenderer": {
+              "items": [
+               {
+                "menuServiceItemRenderer": {
+                 "text": {
+                  "runs": [
+                   {
+                    "text": "Find in show"
+                   }
+                  ]
+                 },
+                 "icon": {
+                  "iconType": "SEARCH"
+                 },
+                 "serviceEndpoint": {
+                  "playlistFilterSearchEndpoint": {
+                   "playlistId": "PL7NN9zBWhixq7aJ2OXKhmI2K1B4nBd4dw"
+                  }
+                 }
+                }
+               },
+               {
+                "toggleMenuServiceItemRenderer": {
+                 "defaultText": {
+                  "runs": [
+                   {
+                    "text": "Save to library"
+                   }
+                  ]
+                 },
+                 "defaultIcon": {
+                  "iconType": "BOOKMARK_BORDER"
+                 },
+                 "defaultServiceEndpoint": {
+                  "modalEndpoint": {
+                   "modal": {
+                    "modalWithTitleAndButtonRenderer": {
+                     "title": {
+                      "runs": [
+                       {
+                        "text": "Save this for later"
+                       }
+                      ]
+                     },
+                     "content": {
+                      "runs": [
+                       {
+                        "text": "Save favorites to your library after signing in"
+                       }
+                      ]
+                     },
+                     "button": {
+                      "buttonRenderer": {
+                       "style": "STYLE_BLUE_TEXT",
+                       "isDisabled": false,
+                       "text": {
+                        "runs": [
+                         {
+                          "text": "Sign in"
+                         }
+                        ]
+                       },
+                       "navigationEndpoint": {
+                        "signInEndpoint": {
+                         "hack": true
+                        }
+                       }
+                      }
+                     }
+                    }
+                   }
+                  }
+                 },
+                 "toggledText": {
+                  "runs": [
+                   {
+                    "text": "Remove from library"
+                   }
+                  ]
+                 },
+                 "toggledIcon": {
+                  "iconType": "BOOKMARK"
+                 },
+                 "toggledServiceEndpoint": {
+                  "likeEndpoint": {
+                   "status": "INDIFFERENT",
+                   "target": {
+                    "playlistId": "PL7NN9zBWhixq7aJ2OXKhmI2K1B4nBd4dw"
+                   }
+                  }
+                 },
+                 "isToggled": false
+                }
+               },
+               {
+                "menuNavigationItemRenderer": {
+                 "text": {
+                  "runs": [
+                   {
+                    "text": "Share"
+                   }
+                  ]
+                 },
+                 "icon": {
+                  "iconType": "SHARE"
+                 },
+                 "navigationEndpoint": {
+                  "shareEntityEndpoint": {
+                   "serializedShareEntity": "EiJQTDdOTjl6QldoaXhxN2FKMk9YS2htSTJLMUI0bkJkNGR3",
+                   "sharePanelType": "SHARE_PANEL_TYPE_UNIFIED_SHARE_PANEL"
+                  }
+                 }
+                }
+               }
+              ]
+             }
+            }
+           ],
+           "title": {
+            "runs": [
+             {
+              "text": "Joe Rogan Content"
+             }
+            ]
+           },
+           "subtitle": {},
+           "straplineTextOne": {
+            "runs": [
+             {
+              "text": "Watch MMA",
+              "navigationEndpoint": {
+               "browseEndpoint": {
+                "browseId": "UCNxIH_iATJ8CjsXx3m7jXvg",
+                "browseEndpointContextSupportedConfigs": {
+                 "browseEndpointContextMusicConfig": {
+                  "pageType": "MUSIC_PAGE_TYPE_USER_CHANNEL"
+                 }
+                }
+               }
+              }
+             }
+            ]
+           },
+           "straplineThumbnail": {
+            "musicThumbnailRenderer": {
+             "thumbnail": {
+              "thumbnails": [
+               {
+                "url": "https://yt3.ggpht.com/ytc/AIdro_mEJZsZYqoF5mgOOa5Y9AwuqmCCp8W29DBOu5iTW360I9s=s48-c-k-c0x00000000-no-cc-rj-rp",
+                "width": 48,
+                "height": 48
+               },
+               {
+                "url": "https://yt3.ggpht.com/ytc/AIdro_mEJZsZYqoF5mgOOa5Y9AwuqmCCp8W29DBOu5iTW360I9s=s96-c-k-c0x00000000-no-cc-rj-rp",
+                "width": 96,
+                "height": 96
+               }
+              ]
+             },
+             "thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+             "thumbnailScale": "MUSIC_THUMBNAIL_SCALE_UNSPECIFIED"
+            }
+           },
+           "description": {
+            "musicDescriptionShelfRenderer": {
+             "header": {
+              "runs": [
+               {
+                "text": "Joe Rogan Content"
+               }
+              ]
+             },
+             "description": {
+              "runs": [
+               {
+                "text": "Here is our playlist on UFC commentator Joe Rogan. This playlist includes moments from Joe Rogan's Podcast, and much more."
+               }
+              ]
+             },
+             "moreButton": {
+              "toggleButtonRenderer": {
+               "isToggled": false,
+               "isDisabled": false,
+               "defaultIcon": {
+                "iconType": "EXPAND"
+               },
+               "defaultText": {
+                "runs": [
+                 {
+                  "text": "More"
+                 }
+                ]
+               },
+               "toggledIcon": {
+                "iconType": "COLLAPSE"
+               },
+               "toggledText": {
+                "runs": [
+                 {
+                  "text": "Less"
+                 }
+                ]
+               }
+              }
+             },
+             "shelfStyle": "MUSIC_SHELF_STYLE_OPEN_DIALOG_ON_CLICK"
+            }
+           }
+          }
+         }
+        ],
+        "targetId": "browse-feedMPSPPL7NN9zBWhixq7aJ2OXKhmI2K1B4nBd4dw_header"
+       }
+      }
+     }
+    }
+   ]
+  }
+ },
+ "microformat": {
+  "microformatDataRenderer": {
+   "urlCanonical": "https://music.youtube.com/playlist?list=PL7NN9zBWhixq7aJ2OXKhmI2K1B4nBd4dw",
+   "title": "Joe Rogan Content",
+   "description": "Podcast • Watch MMA",
+   "thumbnail": {
+    "thumbnails": [
+     {
+      "url": "https://yt3.googleusercontent.com/ytc/AIdro_mEJZsZYqoF5mgOOa5Y9AwuqmCCp8W29DBOu5iTW360I9s=w544-c-h544-k-c0x00ffffff-no-l90-rj",
+      "width": 544,
+      "height": 544
+     }
+    ]
+   },
+   "siteName": "YouTube Music",
+   "appName": "YouTube Music",
+   "androidPackage": "com.google.android.apps.youtube.music",
+   "iosAppStoreId": "1017492454",
+   "ogType": "video.other",
+   "urlApplinksWeb": "https://music.youtube.com/playlist?list=PL7NN9zBWhixq7aJ2OXKhmI2K1B4nBd4dw&feature=applinks",
+   "urlApplinksIos": "vnd.youtube.music://music.youtube.com/playlist?list=PL7NN9zBWhixq7aJ2OXKhmI2K1B4nBd4dw&feature=applinks",
+   "urlApplinksAndroid": "vnd.youtube.music://music.youtube.com/playlist?list=PL7NN9zBWhixq7aJ2OXKhmI2K1B4nBd4dw&feature=applinks",
+   "urlTwitterIos": "vnd.youtube.music://music.youtube.com/playlist?list=PL7NN9zBWhixq7aJ2OXKhmI2K1B4nBd4dw&feature=twitter-deep-link",
+   "urlTwitterAndroid": "vnd.youtube.music://music.youtube.com/playlist?list=PL7NN9zBWhixq7aJ2OXKhmI2K1B4nBd4dw&feature=twitter-deep-link",
+   "twitterCardType": "summary",
+   "twitterSiteHandle": "@youtubemusic"
+  }
+ }
+}

@@ -289,6 +289,7 @@ pub fn read_local_file(path: &Path, artwork_dir: &Path) -> Result<LocalTrack> {
             album_id: None,
             explicit: false,
             local_path: Some(path.to_owned()),
+            ..Track::default()
         },
         extras: SongExtras {
             album_artist,

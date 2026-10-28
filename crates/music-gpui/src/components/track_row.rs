@@ -87,6 +87,7 @@ impl RenderOnce for TrackRow {
         let group = self.group.clone();
         let group_heart = self.group.clone();
         let (list, index) = (self.list.clone(), self.index);
+        let list_len = self.list.len();
         let menu_ctx: ListContext = Some((self.list.clone(), self.index));
         let menu_track = track.clone();
         let more_track = track.clone();
@@ -112,7 +113,8 @@ impl RenderOnce for TrackRow {
             .when(self.numbered, |this| {
                 this.child(
                     div()
-                        .w(px(24.))
+                        // Three-digit numbers (long albums) need more room.
+                        .w(px(if list_len >= 100 { 32. } else { 24. }))
                         .flex_none()
                         .text_sm()
                         .text_right()
@@ -294,16 +296,20 @@ pub fn track_menu(menu: PopupMenu, track: &Track, list: ListContext) -> PopupMen
     }
     let single = artists.len() == 1;
     for (id, name) in artists {
-        let label = if single {
-            "Go to artist".to_owned()
-        } else {
-            format!("Go to {name}")
+        // Episodes name their show (`MPSP…`) where songs name an artist.
+        let podcast = id.starts_with("MPSP");
+        let label = match (podcast, single) {
+            (true, _) => "Go to podcast".to_owned(),
+            (false, true) => "Go to artist".to_owned(),
+            (false, false) => format!("Go to {name}"),
         };
         menu = menu.item(
             item(&label, Lucide::MicVocal).on_click(move |_, window, cx| {
-                let route = Route::Artist {
-                    id: id.clone(),
-                    name: name.clone(),
+                let (id, name) = (id.clone(), name.clone());
+                let route = if podcast {
+                    Route::Podcast { id, name }
+                } else {
+                    Route::Artist { id, name }
                 };
                 update_app(cx, |app, cx| app.navigate(route, window, cx));
             }),

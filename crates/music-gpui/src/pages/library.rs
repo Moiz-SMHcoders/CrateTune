@@ -1,5 +1,6 @@
 //! Library with tabs: Songs, Liked, Albums, Artists, Playlists (local and
-//! YouTube mirrors), Downloaded and Local files, all from the SQLite library.
+//! YouTube mirrors), Podcasts (the signed-in account's saved shows, fetched from
+//! YouTube Music), Downloaded and Local files, the others from the SQLite library.
 //! Song tabs are virtualized lists with filter, sort and multi-select; the
 //! others are card grids. Switching tabs replaces the route, so back leaves
 //! the library.
@@ -8,7 +9,7 @@ use std::rc::Rc;
 
 use gpui::{
     AppContext as _, Context, Entity, IntoElement, ParentElement as _, Render, ScrollHandle,
-    SharedString, Styled as _, Subscription, Window, div, prelude::FluentBuilder as _,
+    SharedString, Styled as _, Subscription, Task, Window, div, prelude::FluentBuilder as _,
 };
 use gpui_component::{
     Selectable as _, Sizable as _,
@@ -19,6 +20,7 @@ use gpui_component::{
     v_flex,
 };
 use music_core::Track;
+use music_core::innertube::Item;
 use music_core::library::{
     AlbumQuery, AlbumSort, ArtistQuery, ArtistSort, LibraryAlbum, LibraryArtist, Playlist,
     PlaylistSort, SongQuery, SongScope, SongSort,
@@ -33,6 +35,11 @@ use crate::components::card::{Card, CardKind};
 use crate::components::{empty_state, grid, page_scroll, page_title};
 use crate::icons::Lucide;
 use crate::router::{LibraryTab, Route};
+
+/// Page cache key of the Podcasts tab (dropped when a show is saved / unsaved).
+pub const PODCASTS_CACHE_KEY: &str = "library-podcasts";
+/// Library pages followed for the Podcasts tab.
+const PODCAST_PAGES: usize = 5;
 
 const SONG_SORTS: &[(SongSort, &str)] = &[
     (SongSort::DateAdded, "Date added"),
@@ -81,6 +88,9 @@ pub struct LibraryPage {
     albums: Loaded<Vec<LibraryAlbum>>,
     artists: Loaded<Vec<LibraryArtist>>,
     playlists: Loaded<Vec<Playlist>>,
+    /// The Podcasts tab (`None` until first shown).
+    podcasts: Option<crate::browse::Load<Rc<Vec<Item>>>>,
+    _podcast_task: Option<Task<()>>,
     scroll: ScrollHandle,
     _subs: Vec<Subscription>,
 }
@@ -108,6 +118,8 @@ impl LibraryPage {
                 albums: Loaded::default(),
                 artists: Loaded::default(),
                 playlists: Loaded::default(),
+                podcasts: None,
+                _podcast_task: None,
                 scroll: scroll.clone(),
                 _subs: vec![sub],
             }
@@ -190,8 +202,96 @@ impl LibraryPage {
                     move |lib| lib.playlists(sort, desc),
                 );
             }
+            LibraryTab::Podcasts => self.load_podcasts(false, cx),
             _ => {}
         }
+    }
+
+    /// The account's saved podcasts (library tab `FEmusic_library_non_music_audio_list`).
+    fn load_podcasts(&mut self, force: bool, cx: &mut Context<Self>) {
+        use crate::browse::{Load, PageCache, fetch};
+        if self.podcasts.is_some() && !force {
+            return;
+        }
+        let signed_in = read_app(cx, |app, _| app.store.account.is_signed_in()).unwrap_or(false);
+        if !signed_in {
+            return;
+        }
+        if !force && let Some(items) = PageCache::get::<Rc<Vec<Item>>>(PODCASTS_CACHE_KEY, cx) {
+            self.podcasts = Some(Load::Ready(items));
+            return;
+        }
+        self.podcasts = Some(Load::Loading);
+        self._podcast_task = Some(fetch(
+            cx,
+            |client, filter| {
+                let mut page = client.library_podcasts()?;
+                let mut items = std::mem::take(&mut page.items);
+                for _ in 0..PODCAST_PAGES {
+                    let Some(token) = page.continuation.take() else {
+                        break;
+                    };
+                    page = client.library_continuation(&token)?;
+                    items.append(&mut page.items);
+                }
+                Ok(filter.items(items))
+            },
+            |this: &mut Self, result, cx| {
+                let result = result.map(Rc::new);
+                if let Ok(items) = &result {
+                    PageCache::put(PODCASTS_CACHE_KEY, items.clone(), cx);
+                }
+                this.podcasts = Some(Load::from_result(result));
+            },
+        ));
+    }
+
+    fn render_podcasts(&mut self, cx: &mut Context<Self>) -> gpui::AnyElement {
+        use crate::browse::{Load, on_view};
+        use crate::components::items::{Playable, item_card, load_state};
+        let signed_in = read_app(cx, |app, _| app.store.account.is_signed_in()).unwrap_or(false);
+        let body = match (&self.podcasts, signed_in) {
+            (_, false) => empty_state(
+                Lucide::AudioLines,
+                "Sign in to see your podcasts",
+                "Podcasts you save on YouTube Music show up here. Sign in under Settings → \
+                 Account; shows can be opened from search, Home and Explore without an account.",
+                cx,
+            )
+            .into_any_element(),
+            (Some(Load::Ready(items)), _) if items.is_empty() => empty_state(
+                Lucide::AudioLines,
+                "No podcasts yet",
+                "Save a show with “Save to library” on its page.",
+                cx,
+            )
+            .into_any_element(),
+            (Some(Load::Ready(items)), _) => {
+                let songs = Playable::new(items);
+                grid(
+                    items
+                        .iter()
+                        .enumerate()
+                        .map(|(i, item)| {
+                            item_card(("library-podcast", i), item, songs.context(i))
+                                .into_any_element()
+                        })
+                        .collect(),
+                )
+                .into_any_element()
+            }
+            (Some(Load::Failed(e)), _) => {
+                let e = e.clone();
+                load_state(
+                    "library-podcasts",
+                    Some(&e),
+                    on_view(cx, |this: &mut Self, _, cx| this.load_podcasts(true, cx)),
+                    cx,
+                )
+            }
+            (Some(Load::Loading) | None, _) => load_state("library-podcasts", None, |_, _| {}, cx),
+        };
+        page_scroll("library-podcasts", &self.scroll, body).into_any_element()
     }
 
     fn tabs(&self) -> impl IntoElement + use<> {
@@ -298,6 +398,7 @@ impl LibraryPage {
             self.list
                 .header_buttons("library", |p: &mut Self| &mut p.list, cx)
         });
+        let podcasts = self.tab == LibraryTab::Podcasts;
         h_flex()
             .w_full()
             .gap_2()
@@ -306,10 +407,11 @@ impl LibraryPage {
             .children(new_playlist)
             .child(div().flex_1())
             .children(saved_toggle)
-            .child(sort)
-            .when(self.tab != LibraryTab::Playlists, |this| {
-                this.child(filter_field(&self.filter))
-            })
+            .when(!podcasts, |this| this.child(sort))
+            .when(
+                !matches!(self.tab, LibraryTab::Playlists | LibraryTab::Podcasts),
+                |this| this.child(filter_field(&self.filter)),
+            )
     }
 
     fn render_songs(&mut self, cx: &mut Context<Self>) -> gpui::AnyElement {
@@ -546,6 +648,13 @@ impl Render for LibraryPage {
                 1 => "1 artist".into(),
                 n => format!("{n} artists").into(),
             }),
+            LibraryTab::Podcasts => match &self.podcasts {
+                Some(crate::browse::Load::Ready(v)) => Some(match v.len() {
+                    1 => "1 show".into(),
+                    n => format!("{n} shows").into(),
+                }),
+                _ => None,
+            },
             _ => self.playlists.value.as_ref().map(|v| match v.len() {
                 1 => "1 playlist".into(),
                 n => format!("{n} playlists").into(),
@@ -565,6 +674,8 @@ impl Render for LibraryPage {
             .child(self.toolbar(cx));
         let body = if is_song_tab(self.tab) {
             self.render_songs(cx)
+        } else if self.tab == LibraryTab::Podcasts {
+            self.render_podcasts(cx)
         } else {
             self.render_grid(cx)
         };

@@ -134,6 +134,8 @@ pub struct Store {
     pub(crate) resume_at: Option<(String, Duration)>,
     downloads_polled: Option<Instant>,
     downloads_sig: u64,
+    /// Saves / forgets searches in order (see `search_history.rs`).
+    search_writer: Option<crate::search_history::SearchHistoryWriter>,
 }
 
 impl Store {
@@ -183,7 +185,11 @@ impl Store {
             f.liked = liked;
             f.library_open = library.is_some();
         });
+        let search_writer = library
+            .clone()
+            .map(crate::search_history::SearchHistoryWriter::spawn);
         let mut store = Self {
+            search_writer,
             library,
             downloads,
             error,
@@ -705,35 +711,37 @@ impl MusicApp {
 
     /// Saves a submitted search in the library (called by `record_search`, which also
     /// keeps the search field's in-memory list). Nothing while search history is paused.
+    /// Writes go through one ordered worker, flushed on quit ([`Self::flush_searches`]).
     pub(crate) fn persist_search(&self, query: &str) {
-        let query = query.trim().to_owned();
+        let query = query.trim();
         if query.is_empty() || self.store.prefs.pause_search_history {
             return;
         }
-        let Some(library) = self.store.library.clone() else {
-            return;
-        };
-        std::thread::spawn(move || {
-            if let Err(e) = library.add_search_query(&query) {
-                eprintln!("music-gpui: saving the search failed: {e}");
-            }
-        });
+        if let Some(writer) = &self.store.search_writer {
+            writer.add(query);
+        }
     }
 
     /// Forgets one saved search (removed from the search field's list).
     pub(crate) fn forget_search(&self, query: &str) {
-        let Some(library) = self.store.library.clone() else {
-            return;
-        };
-        let query = query.to_owned();
-        std::thread::spawn(move || {
-            let _ = library.remove_search_query(&query);
-        });
+        if let Some(writer) = &self.store.search_writer {
+            writer.remove(query);
+        }
+    }
+
+    /// Waits (briefly) for pending search-history writes: quit, before a reload.
+    pub(crate) fn flush_searches(&self) {
+        if let Some(writer) = &self.store.search_writer
+            && !writer.flush(Duration::from_secs(2))
+        {
+            eprintln!("music-gpui: search history: pending writes not flushed");
+        }
     }
 
     /// Fills the search field's recent searches from the library (startup, after
     /// clearing or a restore).
     pub(crate) fn load_recent_searches(&mut self, cx: &mut Context<Self>) {
+        self.flush_searches();
         let recent = if self.store.prefs.pause_search_history {
             Vec::new()
         } else {

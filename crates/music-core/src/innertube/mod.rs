@@ -12,8 +12,11 @@
 //!   [`artist`](InnerTube::artist), [`artist_items`](InnerTube::artist_items),
 //!   [`playlist`](InnerTube::playlist), search ([`search_summary`](InnerTube::search_summary),
 //!   [`search`](InnerTube::search), [`search_suggestions`](InnerTube::search_suggestions)),
-//!   play queues ([`next`](InnerTube::next)), [`related`](InnerTube::related) and
-//!   [`lyrics`](InnerTube::lyrics).
+//!   play queues ([`next`](InnerTube::next)), [`related`](InnerTube::related),
+//!   [`lyrics`](InnerTube::lyrics), podcasts ([`podcast`](InnerTube::podcast),
+//!   [`podcast_continuation`](InnerTube::podcast_continuation),
+//!   [`episode`](InnerTube::episode)) and long albums
+//!   ([`album_tracks`](InnerTube::album_tracks), [`album_complete`](InnerTube::album_complete)).
 //! * Account (cookie) layer: [`InnerTube::account_info`], library pages, likes,
 //!   subscriptions and playlist editing. With [`InnerTube::auth`] set, the anonymous
 //!   pages are fetched signed-in too (personalized home, editable playlists).
@@ -30,8 +33,8 @@ mod parse;
 use serde_json::{Value, json};
 
 pub use account::{
-    AccountChannel, AccountInfo, HistorySection, LibraryPage, PlaylistAction, PlaylistPrivacy,
-    Rating,
+    AccountChannel, AccountInfo, HistorySection, LibraryPage, MAX_COVER_BYTES, PlaylistAction,
+    PlaylistPrivacy, Rating,
 };
 pub use auth::{Auth, sapisid_hash};
 pub use models::*;
@@ -45,6 +48,10 @@ const BROWSE_EXPLORE: &str = "FEmusic_explore";
 const BROWSE_CHARTS: &str = "FEmusic_charts";
 const BROWSE_MOODS: &str = "FEmusic_moods_and_genres";
 const BROWSE_NEW_RELEASE_ALBUMS: &str = "FEmusic_new_releases_albums";
+/// `searchEndpoint.params` of "Search instead for …" (no spelling correction).
+const NO_CORRECTION_PARAMS: &str = "QgIIAQ%3D%3D";
+/// Most extra requests [`InnerTube::album_complete`] makes (100 tracks each).
+const ALBUM_MAX_PAGES: usize = 20;
 
 /// YouTube Music (`WEB_REMIX`) client configuration. Cheap to clone; thread-safe.
 #[derive(Debug, Clone)]
@@ -116,10 +123,20 @@ impl InnerTube {
             .collect())
     }
 
-    /// The unfiltered search page: top result card plus mixed results.
+    /// The unfiltered search page: top result card plus mixed results. YouTube may
+    /// correct the spelling ([`SearchSummary::correction`]).
     pub fn search_summary(&self, query: &str) -> Result<SearchSummary> {
         let resp = self.post("search", json!({ "query": query }))?;
-        Ok(pages::search_summary(&resp))
+        Ok(with_original(pages::search_summary(&resp), query))
+    }
+
+    /// [`InnerTube::search_summary`] without spelling correction ("Search instead for").
+    pub fn search_summary_exact(&self, query: &str) -> Result<SearchSummary> {
+        let resp = self.post(
+            "search",
+            json!({ "query": query, "params": NO_CORRECTION_PARAMS }),
+        )?;
+        Ok(with_original(pages::search_summary(&resp), query))
     }
 
     /// One category of results; follow `continuation` with [`InnerTube::search_continuation`].
@@ -211,6 +228,58 @@ impl InnerTube {
         pages::album(&self.browse_raw(browse_id, None)?, browse_id)
     }
 
+    /// More tracks of a long album: `continuation = None` loads the first page of the
+    /// album's playlist (`VL<audioPlaylistId>`), later calls pass the previous
+    /// [`AlbumTracks::continuation`] (or [`AlbumPage::continuation`]). Pages may repeat
+    /// tracks the album page already listed; skip known video ids.
+    pub fn album_tracks(
+        &self,
+        album: &AlbumSummary,
+        continuation: Option<&str>,
+    ) -> Result<AlbumTracks> {
+        let resp = match continuation {
+            Some(token) => self.browse_continuation_raw(token, client::Login::IfAvailable)?,
+            None => {
+                let id = album.playlist_id.as_deref().ok_or_else(|| {
+                    Error::Parse(format!("album {}: no playlist id", album.browse_id))
+                })?;
+                self.browse_raw(&format!("VL{}", id.strip_prefix("VL").unwrap_or(id)), None)?
+            }
+        };
+        Ok(pages::album_tracks(&resp, album))
+    }
+
+    /// [`InnerTube::album`] with every track, following [`InnerTube::album_tracks`] for
+    /// albums longer than the page lists (at most 20 extra requests).
+    pub fn album_complete(&self, browse_id: &str) -> Result<AlbumPage> {
+        let mut page = self.album(browse_id)?;
+        if !page.has_more_tracks() {
+            return Ok(page);
+        }
+        let mut seen: std::collections::HashSet<String> =
+            page.tracks.iter().map(|t| t.video_id.clone()).collect();
+        // The playlist starts from the first track, so its first pages repeat what the
+        // album page listed; keep going until the total is reached or it ends.
+        let mut token = page.continuation.take();
+        for _ in 0..ALBUM_MAX_PAGES {
+            let more = self.album_tracks(&page.album, token.as_deref())?;
+            page.tracks.extend(
+                more.tracks
+                    .into_iter()
+                    .filter(|t| seen.insert(t.video_id.clone())),
+            );
+            token = more.continuation;
+            let done = page
+                .track_total
+                .is_some_and(|total| page.tracks.len() >= total as usize);
+            if token.is_none() || done {
+                break;
+            }
+        }
+        page.continuation = None;
+        Ok(page)
+    }
+
     /// Artist page (`UC…`): header, subscribe info and the section shelves.
     pub fn artist(&self, browse_id: &str) -> Result<ArtistPage> {
         pages::artist(&self.browse_raw(browse_id, None)?, browse_id)
@@ -242,6 +311,60 @@ impl InnerTube {
         ))
     }
 
+    /// Every row of a playlist, following continuations (at most `max_pages` extra
+    /// requests of ~100 rows).
+    pub fn playlist_complete(&self, playlist_id: &str, max_pages: usize) -> Result<PlaylistPage> {
+        let mut page = self.playlist(playlist_id)?;
+        let mut token = page.continuation.take();
+        for _ in 0..max_pages {
+            let Some(t) = token.take() else { break };
+            let more = self.playlist_continuation(&t)?;
+            page.tracks.extend(more.tracks);
+            token = more.continuation;
+        }
+        page.continuation = token;
+        Ok(page)
+    }
+
+    // ------------------------------------------------------------ podcasts
+
+    /// A podcast show (`MPSP…`, or its `PL…` playlist id): header, description, the
+    /// first episodes and a continuation for more.
+    pub fn podcast(&self, browse_id: &str) -> Result<PodcastPage> {
+        let id = if browse_id.starts_with("MPSP") {
+            browse_id.to_owned()
+        } else {
+            format!("MPSP{browse_id}")
+        };
+        pages::podcast(&self.browse_raw(&id, None)?, &id)
+    }
+
+    /// More episodes of a show; `podcast` names the show on the episodes.
+    pub fn podcast_continuation(
+        &self,
+        podcast: &PodcastSummary,
+        continuation: &str,
+    ) -> Result<PodcastContinuation> {
+        let show = crate::EntityRef {
+            name: podcast.title.clone(),
+            id: Some(podcast.browse_id.clone()),
+        };
+        Ok(pages::podcast_continuation(
+            &self.browse_continuation_raw(continuation, client::Login::IfAvailable)?,
+            Some(&show),
+        ))
+    }
+
+    /// An episode page (`MPED…`, or the episode's video id).
+    pub fn episode(&self, browse_id: &str) -> Result<EpisodePage> {
+        let id = if browse_id.starts_with("MPED") {
+            browse_id.to_owned()
+        } else {
+            format!("MPED{browse_id}")
+        };
+        pages::episode_page(&self.browse_raw(&id, None)?, &id)
+    }
+
     // ------------------------------------------------------------ player tabs
 
     /// Play queue for a video / playlist (up next, radio, album queue).
@@ -270,6 +393,16 @@ impl InnerTube {
         let resp = self.browse_raw(&target.browse_id, target.params.as_deref())?;
         Ok(pages::lyrics(&resp))
     }
+}
+
+/// "Did you mean" carries no original query; it is the one sent.
+fn with_original(mut summary: SearchSummary, query: &str) -> SearchSummary {
+    if let Some(c) = &mut summary.correction
+        && c.original.is_empty()
+    {
+        c.original = query.to_owned();
+    }
+    summary
 }
 
 pub(crate) fn next_body(target: &WatchTarget, continuation: Option<&str>) -> Value {

@@ -50,10 +50,18 @@ the guide again from **Settings → About → Show welcome guide**.
 * **Search** (⌘F): type to get suggestions (songs, artists, albums) and recent searches;
   ↑/↓ and Enter pick one. The search page has an **All** overview and tabs for songs,
   videos, albums, artists, playlists, podcasts and episodes; more results load as you
-  scroll.
+  scroll. When YouTube corrects a typo, the page says **Showing results for …** with a
+  **Search instead for …** link (or **Did you mean …?**); recent searches keep what you
+  typed.
 * **Home** shows YouTube Music's personalized feed (mood chips at the top), **Explore**,
   **Charts** (pick a country), **Moods & genres** and **New releases** the rest.
-* Artist, album and playlist pages have Play, Shuffle, Radio and Add to queue.
+* Artist, album and playlist pages have Play, Shuffle, Radio and Add to queue. Long
+  albums (over 200 tracks) load the rest of their tracks automatically.
+* **Podcasts**: a show's page (from search, Home or Explore) has its description, Play /
+  Shuffle / Add to queue, **Save to library** (signed in) and the episodes with date,
+  length and description — more load as you scroll. Click an episode to play it;
+  right-click → **Open episode page** for its full description. Saved shows are in
+  Library → **Podcasts** (signed in).
 * Right-click any song (or use "…") for play next, add to queue, start radio, add to
   playlist, like, download, go to artist / album.
 
@@ -114,7 +122,8 @@ Everything is stored locally (SQLite database in the settings folder):
 * **Library** — songs you added, liked songs, albums, artists, playlists, downloads and
   local files, with filters, sorting and multi-select (**Select**).
 * **Playlists** — create local playlists (and, when signed in, YouTube Music playlists),
-  rename, reorder, delete.
+  rename, reorder, delete. Your own YouTube Music playlists get **Change cover…** (any
+  JPEG / PNG / WebP; cropped to a square and uploaded).
 * **History** — every song you listened to for at least 30 s, by day.
 * **Stats** — listening time, top songs / artists / albums, by hour and weekday; **Year in
   Music** per year.
@@ -153,8 +162,8 @@ copies your YouTube Music library into the local one; **Sign out** forgets the c
 | Modules | provider modules (alternative audio sources) and where songs play from |
 | Equalizer | 10-band equalizer with presets |
 | Lyrics | look, animation style, providers and their order, translation, romanization |
-| Content & region | content language and country, hide explicit, hide videos, autoplay similar songs |
-| Network | HTTP / HTTPS / SOCKS proxy with test |
+| Content & region | content language and country, hide explicit, hide videos (also inside playlists, albums, radio and queues), autoplay similar songs |
+| Network | HTTP / HTTPS / SOCKS proxy with test; DNS-over-HTTPS (Cloudflare, Google, Quad9 or your own URL, with optional fallback to the system resolver) and **Test DNS** |
 | Privacy | pause / clear listen and search history |
 | Storage | file locations, play cache, downloads, backup and restore |
 | Account | YouTube Music sign-in, channels, sync |
@@ -256,7 +265,10 @@ of this app and the packaging tool.
   route in Settings → Playback → **YouTube streams** (Automatic is best). If YouTube changes
   something, songs fall back to ~1-minute previews (marked "preview") until the app is
   updated. This isn't allowed by YouTube's terms of service.
-* The YouTube Music account features are new and not yet tested against many accounts.
+* The YouTube Music account features are new and not yet tested against many accounts
+  (playlist cover upload has not been tried against a real account at all).
+* Quad9's DNS-over-HTTPS is reached on port 5053 (its port-443 server only speaks
+  HTTP/2); some networks block that port.
 * Recognition uses Shazam's public endpoint, which may rate-limit ("Too many requests —
   try again in a minute") or change without notice.
 * Google Translate's free endpoint rate-limits busy connections ("rate-limited this
@@ -272,5 +284,7 @@ of this app and the packaging tool.
   turn off "Skip failing songs" in Settings → Playback to stop on errors instead.
 * **Recognition hears only silence:** allow microphone access (see above); check that the
   right input device is selected in the system's sound settings.
-* **Nothing loads:** check Settings → Network (proxy) → **Test connection**.
+* **Nothing loads:** check Settings → Network (proxy) → **Test connection**; with
+  DNS-over-HTTPS on, **Test DNS** shows whether names resolve (turn on the fallback, or
+  pick another provider, if the DoH server is blocked on your network).
 * **Start over:** quit and remove (or rename) the settings folder listed under Settings.
