@@ -14,7 +14,8 @@ name or branding.
 
 **Users:** download the DMG (macOS), the AppImage / tarball (Linux) or the installer / zip
 (Windows) from the releases, see [docs/USER_GUIDE.md](docs/USER_GUIDE.md) (features,
-shortcuts, settings, sign-in, limitations) and [CHANGELOG.md](CHANGELOG.md).
+shortcuts, settings, sign-in, limitations) and [CHANGELOG.md](CHANGELOG.md). Testers: see
+[docs/TESTING.md](docs/TESTING.md) (Windows build, .exe / installer, manual checklist).
 
 **From source** (Rust 1.99 via `rust-toolchain.toml`; no Xcode needed on macOS — the
 Command Line Tools suffice, GPUI's shaders are compiled at runtime):

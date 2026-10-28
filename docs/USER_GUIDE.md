@@ -284,8 +284,7 @@ you change a built-in profile it shows a dot and **Reset** restores it.
 
 ## Keyboard shortcuts
 
-macOS keys shown. On Windows and Linux the same bindings currently use the Windows /
-Super key in place of ⌘ and Alt for ⌥.
+macOS keys shown. On Windows and Linux use **Ctrl** in place of ⌘ and Alt for ⌥.
 
 | Keys | Action |
 |---|---|
