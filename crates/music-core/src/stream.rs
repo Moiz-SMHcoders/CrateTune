@@ -87,6 +87,61 @@ pub struct StreamPrefix {
     pub user_agent: &'static str,
     /// How many bytes this URL serves (the iOS client: 1 MiB).
     pub bytes: u64,
+    /// The same bytes, already being fetched since before the stream was
+    /// resolved (see [`PrefetchedHead`]); the downloader starts from them.
+    pub head: Option<Arc<PrefetchedHead>>,
+}
+
+/// The first bytes of a URL, fetched speculatively on a background thread
+/// while a resolver is still working out whether it is the right file.
+/// Dropping the last handle cancels the fetch.
+pub struct PrefetchedHead {
+    buffer: Arc<StreamBuffer>,
+}
+
+impl PrefetchedHead {
+    /// Starts fetching the first `bytes` of `url` (one range request).
+    pub fn start(url: &str, user_agent: &'static str, bytes: u64) -> Arc<Self> {
+        let buffer = StreamBuffer::new(Some(bytes));
+        let stream = ResolvedStream {
+            url: url.to_owned(),
+            user_agent,
+            content_length: Some(bytes),
+            ..Default::default()
+        };
+        let downloader = Downloader::new(stream, buffer.clone(), bytes.max(1));
+        let spawned = std::thread::Builder::new()
+            .name("music-core-prefetch".into())
+            .spawn(move || downloader.run());
+        if spawned.is_err() {
+            buffer.finish(BufferEnd::Failed("could not start the prefetch".into()));
+        }
+        Arc::new(Self { buffer })
+    }
+
+    /// Bytes fetched so far.
+    pub fn len(&self) -> u64 {
+        self.buffer.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.buffer.is_empty()
+    }
+}
+
+impl Drop for PrefetchedHead {
+    fn drop(&mut self) {
+        // No effect once the fetch is over.
+        self.buffer.cancel();
+    }
+}
+
+impl std::fmt::Debug for PrefetchedHead {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PrefetchedHead")
+            .field("buffer", &self.buffer)
+            .finish()
+    }
 }
 
 /// What kind of source a track is played from.
@@ -492,6 +547,11 @@ impl Downloader {
         let limit = prefix
             .bytes
             .min(self.stream.content_length.unwrap_or(u64::MAX));
+        if let Some(head) = &prefix.head
+            && !self.copy_head(head, limit)
+        {
+            return false;
+        }
         while self
             .stream
             .not_before
@@ -550,6 +610,28 @@ impl Downloader {
             ..stream
         };
         self.wait_until_available()
+    }
+
+    /// Moves the speculatively fetched head into the buffer as it arrives,
+    /// until it ends (complete or not: the rest comes from the URLs). False
+    /// if cancelled.
+    fn copy_head(&mut self, head: &PrefetchedHead, limit: u64) -> bool {
+        loop {
+            if self.buffer.is_cancelled() {
+                return false;
+            }
+            let pos = self.buffer.len();
+            if pos >= limit {
+                return true;
+            }
+            head.buffer.wait_for(pos + 1, Duration::from_millis(100));
+            let bytes = head.buffer.copy_range(pos, (limit - pos).min(256 * 1024));
+            if !bytes.is_empty() {
+                self.buffer.append(&bytes);
+            } else if head.buffer.end().is_some() {
+                return true;
+            }
+        }
     }
 
     fn download(&mut self) -> BufferEnd {
@@ -1270,6 +1352,53 @@ mod tests {
             assert!(matches!(buffer.end(), Some(BufferEnd::Failed(_))));
             assert!(requests(&server).iter().all(|(p, _)| p == "/old"));
         }
+    }
+
+    #[test]
+    fn a_prefetched_head_is_used_while_the_main_url_is_not_usable_yet() {
+        let bytes = data(10_000);
+        let ios = TestServer::file(bytes.clone());
+        let main = TestServer::file(bytes.clone());
+        // Fetched speculatively, before the stream was even resolved.
+        let head = PrefetchedHead::start(&format!("{}/head", ios.base), "test", 4000);
+        let deadline = std::time::Instant::now() + Duration::from_secs(5);
+        while head.len() < 4000 {
+            assert!(std::time::Instant::now() < deadline);
+            std::thread::sleep(Duration::from_millis(5));
+        }
+        let mut s = stream(format!("{}/main", main.base), bytes.len());
+        s.full_access = true;
+        s.not_before = Some(SystemTime::now() + Duration::from_millis(300));
+        s.prefix = Some(StreamPrefix {
+            url: format!("{}/head", ios.base),
+            user_agent: "test",
+            bytes: 4000,
+            head: Some(head),
+        });
+        let started = std::time::Instant::now();
+        let buffer = run(s, 3000, None);
+        assert_eq!(buffer.end(), Some(BufferEnd::Complete));
+        assert_eq!(buffer.to_vec(), &*bytes);
+        assert!(
+            started.elapsed() >= Duration::from_millis(250),
+            "waited for not_before"
+        );
+        // The head was fetched once; the main URL only served the rest.
+        assert_eq!(requests(&ios), [("/head".into(), 0)]);
+        assert_eq!(
+            requests(&main),
+            [("/main".into(), 4000), ("/main".into(), 7000)]
+        );
+
+        // Dropping an unused head cancels its fetch.
+        let slow = TestServer::start(|_, _, _| {
+            std::thread::sleep(Duration::from_millis(200));
+            Reply::Status(500)
+        });
+        let head = PrefetchedHead::start(&format!("{}/x", slow.base), "test", 4000);
+        let buffer = head.buffer.clone();
+        drop(head);
+        assert_eq!(buffer.end(), Some(BufferEnd::Cancelled));
     }
 
     #[test]

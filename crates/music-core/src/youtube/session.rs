@@ -5,6 +5,7 @@
 //! `VISITOR_DATA` there, and the page names the player script its stream URLs are
 //! built for. They are cached for a while and shared by every video.
 
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, PoisonError};
 use std::time::{Duration, Instant};
 
@@ -20,6 +21,9 @@ pub(crate) const BROWSER_UA: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) A
 const PAGE_COOKIES: &str = "PREF=hl=en&tz=UTC; SOCS=CAI";
 /// Refetch the page (new visitor id, maybe a new player) after this long.
 const SESSION_TTL: Duration = Duration::from_secs(45 * 60);
+/// From this age on, a resolve that uses the session also starts fetching its
+/// successor in the background, so no song has to wait for the watch page.
+const REFRESH_AFTER: Duration = Duration::from_secs(40 * 60);
 
 /// A visitor id plus the player script it goes with.
 #[derive(Clone)]
@@ -38,6 +42,8 @@ pub(crate) struct SessionCache {
     current: Mutex<Option<WebSession>>,
     /// Directory holding `player-<id>.sts` next to the solver's preprocessed players.
     dir: Option<std::path::PathBuf>,
+    /// A background refresh is running.
+    refreshing: AtomicBool,
 }
 
 impl SessionCache {
@@ -45,7 +51,34 @@ impl SessionCache {
         Self {
             current: Mutex::new(None),
             dir,
+            refreshing: AtomicBool::new(false),
         }
+    }
+
+    /// Claims the background refresh if the cached session is old enough
+    /// (see `REFRESH_AFTER`) and no refresh is running; then the caller must
+    /// fetch a session and call [`Self::finish_refresh`].
+    pub(crate) fn claim_refresh(&self) -> bool {
+        let due = self
+            .current
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .as_ref()
+            .is_some_and(|s| s.fetched.elapsed() >= REFRESH_AFTER);
+        due && !self.refreshing.swap(true, Ordering::AcqRel)
+    }
+
+    /// Ends a claimed refresh, installing its session if it succeeded.
+    pub(crate) fn finish_refresh(&self, session: Option<WebSession>) {
+        if let Some(session) = session {
+            *self.current.lock().unwrap_or_else(PoisonError::into_inner) = Some(session);
+        }
+        self.refreshing.store(false, Ordering::Release);
+    }
+
+    /// A new session from `video_id`'s watch page, not cached yet.
+    pub(crate) fn fetch_fresh(&self, video_id: &str) -> Result<WebSession> {
+        self.fetch(video_id)
     }
 
     /// The cached session, or a fresh one built from `video_id`'s watch page.
@@ -192,6 +225,39 @@ pub(crate) fn signature_timestamp(script: &str) -> Option<u32> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn session(age: Duration) -> WebSession {
+        WebSession {
+            visitor_data: "v".into(),
+            player_id: "p".into(),
+            sts: 1,
+            script: None,
+            fetched: Instant::now() - age,
+        }
+    }
+
+    #[test]
+    fn an_old_session_is_refreshed_once_in_the_background() {
+        let cache = SessionCache::new(None);
+        assert!(!cache.claim_refresh(), "nothing cached");
+        cache.finish_refresh(Some(session(Duration::from_secs(60))));
+        assert!(!cache.claim_refresh(), "fresh enough");
+        cache.finish_refresh(Some(session(REFRESH_AFTER + Duration::from_secs(1))));
+        // Still served (no network) while its successor is fetched.
+        assert_eq!(cache.get("x").unwrap().player_id, "p");
+        assert!(cache.claim_refresh());
+        assert!(!cache.claim_refresh(), "only one refresh at a time");
+        let mut next = session(Duration::ZERO);
+        next.player_id = "q".into();
+        cache.finish_refresh(Some(next));
+        assert_eq!(cache.get("x").unwrap().player_id, "q");
+        assert!(!cache.claim_refresh());
+        // A failed refresh leaves the old session and can be retried.
+        cache.finish_refresh(Some(session(REFRESH_AFTER + Duration::from_secs(1))));
+        assert!(cache.claim_refresh());
+        cache.finish_refresh(None);
+        assert!(cache.claim_refresh());
+    }
 
     #[test]
     fn watch_page_fields() {

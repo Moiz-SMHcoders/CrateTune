@@ -24,7 +24,8 @@ use super::session::{BROWSER_UA, SessionCache, WebSession};
 use crate::http::agent;
 use crate::innertube::Auth;
 use crate::stream::{
-    IosClientResolver, Quality, ResolvedStream, StreamPrefix, StreamResolver, StreamSource,
+    CHUNK_BYTES, IosClientResolver, PrefetchedHead, Quality, ResolvedStream, StreamPrefix,
+    StreamResolver, StreamSource,
 };
 use crate::{Error, Result};
 
@@ -98,8 +99,8 @@ pub struct WebResolver {
     potoken: Option<Arc<dyn PoTokenProvider>>,
     fallback: Option<Arc<dyn StreamResolver>>,
     auth: RwLock<Option<Auth>>,
-    session: SessionCache,
-    solver: ChallengeSolver,
+    session: Arc<SessionCache>,
+    solver: Arc<ChallengeSolver>,
 }
 
 impl WebResolver {
@@ -115,8 +116,8 @@ impl WebResolver {
             potoken,
             fallback,
             auth: RwLock::new(None),
-            session: SessionCache::new(cache_dir.clone()),
-            solver: ChallengeSolver::new(cache_dir),
+            session: Arc::new(SessionCache::new(cache_dir.clone())),
+            solver: Arc::new(ChallengeSolver::new(cache_dir)),
         }
     }
 
@@ -156,16 +157,7 @@ impl WebResolver {
         }
         let warm = || -> Result<()> {
             let mut session = self.session.get(ANY_VIDEO)?;
-            if !self.solver.has_preprocessed(&session.player_id) {
-                let script = self.session.script(&mut session)?;
-                // Any challenge makes the solver preprocess (and cache) the player.
-                self.solver.solve(
-                    &session.player_id,
-                    Some(script),
-                    vec!["AAAAAAAAAAAAAAAA".into()],
-                    vec![],
-                )?;
-            }
+            preprocess(&self.session, &self.solver, &mut session)?;
             if clients.contains(&WebClient::MobileWeb)
                 && let Some(provider) = &self.potoken
             {
@@ -188,14 +180,66 @@ impl WebResolver {
     ) -> Result<ResolvedStream> {
         // The iOS client's preview URL is fetched meanwhile: if it's the same file,
         // its first MiB lets playback start before the web URL becomes usable.
+        // Its head starts downloading as soon as the iOS client answers, while
+        // the web client is still busy (player request, challenges), so the
+        // first bytes are usually in by the time the web URL is confirmed.
         std::thread::scope(|scope| {
-            let preview = scope.spawn(|| IosClientResolver.resolve_with_quality(video_id, quality));
+            let started = std::time::Instant::now();
+            let preview = scope.spawn(move || {
+                let ios = IosClientResolver.resolve_with_quality(video_id, quality)?;
+                log::debug!(
+                    "youtube: {video_id}: iOS client after {:?}",
+                    started.elapsed()
+                );
+                let bytes = CHUNK_BYTES.min(ios.content_length.unwrap_or(CHUNK_BYTES));
+                let head = PrefetchedHead::start(&ios.url, ios.user_agent, bytes);
+                Ok::<_, Error>((ios, head))
+            });
             let mut stream = self.resolve_web(client, video_id, quality)?;
-            if let Ok(Ok(ios)) = preview.join() {
-                stream.prefix = same_file_prefix(&stream, &ios);
+            if let Ok(Ok((ios, head))) = preview.join() {
+                stream.prefix = same_file_prefix(&stream, &ios).map(|prefix| {
+                    log::debug!(
+                        "youtube: {video_id}: same file as the iOS head ({} bytes prefetched)",
+                        head.len()
+                    );
+                    StreamPrefix {
+                        head: Some(head),
+                        ..prefix
+                    }
+                });
             }
             Ok(stream)
         })
+    }
+
+    /// Fetches the next session (and preprocesses a new player) on a
+    /// background thread once the current one gets old, see [`SessionCache`].
+    fn refresh_session_in_background(&self, video_id: &str) {
+        if !self.session.claim_refresh() {
+            return;
+        }
+        let (cache, solver, video_id) = (
+            self.session.clone(),
+            self.solver.clone(),
+            video_id.to_owned(),
+        );
+        let spawned = std::thread::Builder::new()
+            .name("music-core-session".into())
+            .spawn(move || {
+                let started = std::time::Instant::now();
+                let fresh = cache.fetch_fresh(&video_id).and_then(|mut session| {
+                    preprocess(&cache, &solver, &mut session)?;
+                    Ok(session)
+                });
+                match &fresh {
+                    Ok(_) => log::info!("youtube: session renewed in {:?}", started.elapsed()),
+                    Err(e) => log::warn!("youtube: renewing the session failed: {e}"),
+                }
+                cache.finish_refresh(fresh.ok());
+            });
+        if spawned.is_err() {
+            self.session.finish_refresh(None);
+        }
     }
 
     fn resolve_web(
@@ -204,7 +248,12 @@ impl WebResolver {
         video_id: &str,
         quality: Quality,
     ) -> Result<ResolvedStream> {
+        let started = std::time::Instant::now();
         let mut session = self.session.get(video_id)?;
+        // Load the player into the solver while the player request is in flight.
+        self.solver.prepare(&session.player_id);
+        self.refresh_session_in_background(video_id);
+        log::debug!("youtube: {video_id}: session after {:?}", started.elapsed());
         let pot = match client {
             WebClient::MobileWeb => Some(
                 self.potoken
@@ -224,6 +273,10 @@ impl WebResolver {
             other => other?,
         };
         let requested_at = SystemTime::now();
+        log::debug!(
+            "youtube: {video_id}: player response after {:?}",
+            started.elapsed()
+        );
         let format = select_format(&player, quality)?;
         let (url, n, sig) = format.cipher_parts()?;
 
@@ -238,6 +291,10 @@ impl WebResolver {
             n.iter().cloned().collect(),
             sig.iter().map(|(s, _)| s.clone()).collect(),
         )?;
+        log::debug!(
+            "youtube: {video_id}: challenges solved after {:?}",
+            started.elapsed()
+        );
         let mut url =
             url::Url::parse(&url).map_err(|e| Error::Parse(format!("stream URL: {e}")))?;
         let pairs: Vec<(String, String)> = url
@@ -415,6 +472,25 @@ impl StreamResolver for WebResolver {
     }
 }
 
+/// Makes sure the solver has `session`'s player preprocessed (seconds, once per player).
+fn preprocess(
+    cache: &SessionCache,
+    solver: &ChallengeSolver,
+    session: &mut WebSession,
+) -> Result<()> {
+    if !solver.has_preprocessed(&session.player_id) {
+        let script = cache.script(session)?;
+        // Any challenge makes the solver preprocess (and cache) the player.
+        solver.solve(
+            &session.player_id,
+            Some(script),
+            vec!["AAAAAAAAAAAAAAAA".into()],
+            vec![],
+        )?;
+    }
+    Ok(())
+}
+
 /// `ios` as a [`StreamPrefix`] of `web`, if both are provably the same file
 /// (format, size and last-modified time).
 fn same_file_prefix(web: &ResolvedStream, ios: &ResolvedStream) -> Option<StreamPrefix> {
@@ -433,7 +509,8 @@ fn same_file_prefix(web: &ResolvedStream, ios: &ResolvedStream) -> Option<Stream
     same.then(|| StreamPrefix {
         url: ios.url.clone(),
         user_agent: ios.user_agent,
-        bytes: crate::stream::CHUNK_BYTES,
+        bytes: CHUNK_BYTES,
+        head: None,
     })
 }
 

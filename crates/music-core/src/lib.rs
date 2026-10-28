@@ -85,6 +85,6 @@ pub use player::{PlaybackState, PlaybackStatus, Player};
 pub use silence::{SilenceConfig, SkipSilence};
 pub use sleep::{SleepTimer, SleepTimerState};
 pub use stream::{
-    Download, IosClientResolver, Quality, ResolvedStream, SourceKind, StreamPrefix, StreamResolver,
-    StreamSource,
+    Download, IosClientResolver, PrefetchedHead, Quality, ResolvedStream, SourceKind, StreamPrefix,
+    StreamResolver, StreamSource,
 };
