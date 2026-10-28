@@ -763,7 +763,9 @@ impl Render for MusicApp {
         if let Some(stats) = &mut self.frame_stats {
             stats.record(frame.now);
         }
-        frame.finish(window);
+        if let Some(at) = frame.finish(window) {
+            self.schedule_np_wake(at, cx);
+        }
         root
     }
 }

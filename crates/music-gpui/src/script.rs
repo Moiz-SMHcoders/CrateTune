@@ -48,7 +48,7 @@
 //! | `@module-install=PATH\|URL`, `@module-catalog=URL`, `@module-confirm`, `@module-cancel` | add a module / catalog (review, then install) |
 //! | `@module-open=N\|ID`, `@module-field=KEY:VALUE`, `@module-save` | a module's settings form (index in playback order or manifest id) |
 //! | `@module-check=N`, `@module-update=N`, `@module-enable=N:on\|off`, `@module-remove=N` (twice: confirm) | module actions |
-//! | `@bench=N` | draw the main window N times ~16 ms apart and print the draw times (UI CPU per frame) |
+//! | `@bench=N[:MS]` | draw the main window N times MS (16) ms apart and print the draw times (UI CPU per frame) |
 //! | `@quit` | quit |
 //!
 //! Library / account / storage actions (`@like`, `@download`, `@backup`, …) are listed
@@ -127,8 +127,18 @@ pub fn schedule(window: AnyWindowHandle, app: Entity<MusicApp>, cx: &mut App) {
                 },
                 None => (window, item),
             };
-            if let Some(frames) = item.strip_prefix("@bench=") {
-                bench_frames(window, &app, frames.parse().unwrap_or(300), &executor, cx).await;
+            if let Some(spec) = item.strip_prefix("@bench=") {
+                let (frames, gap) = spec.split_once(':').unwrap_or((spec, "16"));
+                let gap = Duration::from_millis(gap.parse().unwrap_or(16));
+                bench_frames(
+                    window,
+                    &app,
+                    frames.parse().unwrap_or(300),
+                    gap,
+                    &executor,
+                    cx,
+                )
+                .await;
                 continue;
             }
             let ok = cx.update_window(target, |_, window, cx| match item.strip_prefix('@') {
@@ -156,7 +166,7 @@ pub fn schedule(window: AnyWindowHandle, app: Entity<MusicApp>, cx: &mut App) {
     .detach();
 }
 
-/// `@bench=N`: draws the main window N times ~16 ms apart (marking the app dirty
+/// `@bench=N[:MS]`: draws the main window N times MS (16) ms apart (marking the app dirty
 /// first, as an animation frame does) and prints how long the draws took: the UI's
 /// CPU cost per frame (layout, prepaint, paint, scene) without presenting it, and
 /// independent of whether macOS delivers display-link frames (locked screen,
@@ -165,12 +175,13 @@ async fn bench_frames(
     window: AnyWindowHandle,
     app: &Entity<MusicApp>,
     frames: usize,
+    gap: Duration,
     executor: &gpui::BackgroundExecutor,
     cx: &mut gpui::AsyncApp,
 ) {
     let mut times = Vec::with_capacity(frames);
     for _ in 0..frames {
-        executor.timer(Duration::from_millis(16)).await;
+        executor.timer(gap).await;
         let drawn = cx.update_window(window, |_, window, cx| {
             app.update(cx, |_, cx| cx.notify());
             let started = Instant::now();

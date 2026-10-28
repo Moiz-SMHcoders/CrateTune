@@ -155,7 +155,7 @@ impl MusicApp {
         if let Some(engine) = &mut self.engine {
             engine.restart();
             self.clock.seek(Duration::ZERO, Instant::now());
-            self.np.manual_until = None;
+            self.np.list.manual_until = None;
             self.refresh_soon(cx);
         }
     }
