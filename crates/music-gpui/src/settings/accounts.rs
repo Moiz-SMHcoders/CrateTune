@@ -26,12 +26,6 @@ use crate::components::artwork::artwork;
 use crate::icons::Lucide;
 use crate::util::{local_date, pretty_date};
 
-const COOKIE_STEPS: &str = "1. Open music.youtube.com in your browser and sign in.\n\
-     2. Open the developer tools (⌥⌘I in Safari / Chrome) → Network, reload the page.\n\
-     3. Click any request to music.youtube.com (e.g. “browse”), find “Cookie” under \
-        Request Headers and copy its whole value.\n\
-     4. Paste it below. It is stored in the OS keychain and only sent to YouTube.";
-
 /// Opens the paste-cookie dialog.
 pub fn open_cookie_dialog(window: &mut Window, cx: &mut App) {
     let input = cx.new(|cx| {
@@ -49,7 +43,7 @@ pub fn open_cookie_dialog(window: &mut Window, cx: &mut App) {
         let muted = cx.theme().muted_foreground;
         let (input2, auth2) = (input.clone(), auth_user.clone());
         dialog
-            .title(div().child("Sign in with a browser cookie"))
+            .title(div().child(t!("settings.account.cookie_title")))
             .w(px(560.))
             .child(
                 v_flex()
@@ -59,7 +53,7 @@ pub fn open_cookie_dialog(window: &mut Window, cx: &mut App) {
                             .text_sm()
                             .text_color(muted)
                             .whitespace_normal()
-                            .child(COOKIE_STEPS),
+                            .child(t!("settings.account.cookie_steps")),
                     )
                     .child(Input::new(&input))
                     .child(
@@ -67,18 +61,25 @@ pub fn open_cookie_dialog(window: &mut Window, cx: &mut App) {
                             .gap_2()
                             .child(
                                 div()
+                                    .flex_1()
+                                    .min_w_0()
                                     .text_sm()
                                     .text_color(muted)
-                                    .child("Google account index (if several are signed in):"),
+                                    .child(t!("settings.account.cookie_index")),
                             )
-                            .child(div().w(px(56.)).child(Input::new(&auth_user).small())),
+                            .child(
+                                div()
+                                    .w(px(56.))
+                                    .flex_none()
+                                    .child(Input::new(&auth_user).small()),
+                            ),
                     ),
             )
             .footer(
                 h_flex().justify_end().gap_2().child(
                     Button::new("cookie-sign-in")
                         .primary()
-                        .label("Sign in")
+                        .label(t!("common.sign_in"))
                         .on_click(move |_, window, cx| {
                             let cookie = input2.read(cx).value().to_string();
                             let index = auth2.read(cx).value().trim().parse().unwrap_or(0);
@@ -134,7 +135,7 @@ pub(super) fn render(
             a.channels.clone(),
         )
     }) else {
-        return note("Loading…", cx).into_any_element();
+        return note(t!("common.loading"), cx).into_any_element();
     };
     let config = panel.settings.library.account.clone();
     let loading_secret = config.is_some() && !panel.secrets_loaded;
@@ -142,23 +143,19 @@ pub(super) fn render(
 
     match config.filter(|_| signed_in || loading_secret) {
         None => {
-            let mut sign_in = group("YouTube Music", cx)
-                .child(note(
-                    "Not signed in. Everything works anonymously; signing in syncs your liked \
-                     songs, saved albums, subscriptions and playlists into the library, and \
-                     likes and playlist edits go back to YouTube Music.",
-                    cx,
-                ))
+            let mut sign_in = group(t!("common.youtube_music"), cx)
+                .child(note(t!("settings.account.not_signed_in"), cx))
                 .child(
                     h_flex()
                         .gap_2()
+                        .flex_wrap()
                         .pt_1()
                         .children(cfg!(target_os = "macos").then(|| {
                             Button::new("account-google")
                                 .primary()
                                 .small()
                                 .icon(gpui_component::IconName::Globe)
-                                .label("Sign in with Google…")
+                                .label(t!("settings.account.sign_in_google"))
                                 .on_click(|_, _, cx| {
                                     #[cfg(target_os = "macos")]
                                     crate::login_webview::open(cx);
@@ -171,16 +168,12 @@ pub(super) fn render(
                                 .outline()
                                 .small()
                                 .icon(Lucide::Cookie)
-                                .label("Paste cookie…")
+                                .label(t!("settings.account.paste_cookie"))
                                 .on_click(|_, window, cx| open_cookie_dialog(window, cx)),
                         ),
                 );
             if cfg!(target_os = "macos") {
-                sign_in = sign_in.child(note(
-                    "If Google refuses the sign-in window (“This browser or app may not be \
-                     secure”), use “Paste cookie”.",
-                    cx,
-                ));
+                sign_in = sign_in.child(note(t!("settings.account.google_refused"), cx));
             }
             content = content.child(sign_in.children(busy_line(&status, cx)));
         }
@@ -195,8 +188,13 @@ pub(super) fn render(
                 .join(" · ");
             let last_sync = account
                 .last_sync_at
-                .map(|t| format!("Last synced {}", pretty_date(&local_date(t))))
-                .unwrap_or_else(|| "Not synced yet".into());
+                .map(|t| {
+                    t!(
+                        "settings.account.last_synced",
+                        date = pretty_date(&local_date(t))
+                    )
+                })
+                .unwrap_or_else(|| t!("settings.account.not_synced").into());
             let syncing = matches!(sync, Busy::Working(_));
             let auth_user = account.auth_user;
             let selected_channel = account.data_sync_id.clone();
@@ -219,13 +217,13 @@ pub(super) fn render(
                         .outline()
                         .small()
                         .icon(Lucide::LogOut)
-                        .label("Sign out")
+                        .label(t!("common.sign_out"))
                         .on_click(|_, window, cx| {
                             update_app(cx, |app, cx| app.sign_out(window, cx));
                         }),
                 );
             content = content.child(
-                group("YouTube Music", cx)
+                group(t!("common.youtube_music"), cx)
                     .child(header)
                     .children(busy_line(&status, cx)),
             );
@@ -234,16 +232,20 @@ pub(super) fn render(
                 .primary()
                 .small()
                 .icon(gpui_component::IconName::RefreshCw)
-                .label(if syncing { "Syncing…" } else { "Sync now" })
+                .label(if syncing {
+                    t!("settings.account.syncing")
+                } else {
+                    t!("settings.account.sync_now")
+                })
                 .disabled(syncing || !signed_in)
                 .on_click(|_, window, cx| {
                     update_app(cx, |app, cx| app.sync_youtube_library(window, cx));
                 });
             content = content.child(
-                group("Library sync", cx)
+                group(t!("settings.account.sync_group"), cx)
                     .child(row(
-                        "Sync your YouTube Music library",
-                        Some("Liked songs, library songs, saved albums, subscriptions, playlists."),
+                        t!("settings.account.sync_row"),
+                        Some(t!("settings.account.sync_row_desc")),
                         sync_button,
                         cx,
                     ))
@@ -288,18 +290,15 @@ pub(super) fn render(
                         update_app(cx, |app, cx| app.switch_account(channel, n, window, cx));
                     })
             }));
-            let mut accounts = group("Accounts", cx);
+            let mut accounts = group(t!("settings.account.accounts_group"), cx);
             if channel_rows.len() > 1 {
                 accounts = accounts
-                    .child(note(
-                        "Channels (brand accounts) of this Google account:",
-                        cx,
-                    ))
+                    .child(note(t!("settings.account.channels"), cx))
                     .child(h_flex().gap_1().flex_wrap().children(channel_rows));
             }
             accounts = accounts.child(row(
-                "Google account",
-                Some("When the cookie holds several Google accounts: which one (0 = first)."),
+                t!("settings.account.google_index"),
+                Some(t!("settings.account.google_index_desc")),
                 index_buttons,
                 cx,
             ));
@@ -307,11 +306,6 @@ pub(super) fn render(
         }
     }
     content
-        .child(note(
-            "Signing in uses your browser session cookie for music.youtube.com. It is kept in \
-             the OS keychain and sent only to YouTube. Account features were built against \
-             YouTube's web API but not yet verified with a real account.",
-            cx,
-        ))
+        .child(note(t!("settings.account.cookie_note"), cx))
         .into_any_element()
 }

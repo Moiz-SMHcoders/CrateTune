@@ -64,7 +64,7 @@ pub fn open(cx: &mut App) {
             cx,
         ))),
         titlebar: Some(TitlebarOptions {
-            title: Some("Sign in to YouTube Music".into()),
+            title: Some(t!("login.window_title").into()),
             ..Default::default()
         }),
         ..Default::default()
@@ -87,15 +87,8 @@ impl LoginWindow {
             .with_bounds(bounds(w, h))
             .build_as_child(&*window);
         let (webview, status) = match built {
-            Ok(webview) => (
-                Some(webview),
-                "Sign in with your Google account. This window closes once YouTube Music opens."
-                    .to_owned(),
-            ),
-            Err(e) => (
-                None,
-                format!("The web view couldn't be created ({e}). Use “Paste cookie” instead."),
-            ),
+            Ok(webview) => (Some(webview), t!("login.instructions").to_owned()),
+            Err(e) => (None, t!("login.webview_failed", error = e)),
         };
         let executor = cx.background_executor().clone();
         let poll = cx.spawn_in(window, async move |this, cx| {
@@ -178,7 +171,7 @@ impl LoginWindow {
             self.cookies = None;
             if let Some(cookie) = youtube_cookie(&cookies) {
                 self.done = true;
-                self.status = "Signed in — checking the account…".into();
+                self.status = t!("login.checking").into();
                 cx.notify();
                 hand_over(cookie, cx);
                 window.remove_window();
@@ -271,7 +264,7 @@ impl Render for LoginWindow {
                         Button::new("login-cancel")
                             .ghost()
                             .small()
-                            .label("Cancel")
+                            .label(t!("common.cancel"))
                             .on_click(|_, window, _| window.remove_window()),
                     ),
             )
