@@ -9,9 +9,6 @@ versions follow [SemVer](https://semver.org/).
 
 * The PoToken attestation is renewed on a background thread 30 minutes before it
   expires, so songs no longer wait ~1 s for it every ~12 h.
-
-### Changed
-
 * The app is now called **TuneDesk** (app id `tunedesk`): settings live in
   `~/Library/Application Support/tunedesk` (macOS), `~/.config/tunedesk` (Linux),
   `%APPDATA%\tunedesk\config` (Windows), and keychain entries use the service `tunedesk`.
