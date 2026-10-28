@@ -40,6 +40,7 @@ mod module_service;
 mod now_playing;
 mod pages;
 mod playback;
+mod playlist_cover;
 mod playlist_ops;
 mod queue;
 mod radio;

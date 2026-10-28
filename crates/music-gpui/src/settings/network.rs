@@ -1,5 +1,7 @@
-//! Network section: an HTTP(S) / SOCKS proxy for every request (InnerTube,
-//! streams, artwork, lyrics, scrobbling) through `music_core::http::configure`.
+//! Network section: an HTTP(S) / SOCKS proxy and DNS-over-HTTPS (Cloudflare,
+//! Google, Quad9 or a custom URL, optional fallback to the system resolver) for
+//! every request (InnerTube, streams, artwork, lyrics, scrobbling) through
+//! `music_core::http::configure`.
 //!
 //! The fields are a draft until "Apply": it validates them, rebuilds the shared
 //! HTTP agent (an invalid proxy keeps the previous one), saves the settings and
@@ -12,19 +14,20 @@ use std::time::Instant;
 
 use gpui::{
     AnyElement, AppContext as _, Context, Entity, IntoElement, ParentElement as _, SharedString,
-    Styled as _, Window, prelude::FluentBuilder as _,
+    Styled as _, Window, div, prelude::FluentBuilder as _,
 };
 use gpui_component::{
     ActiveTheme as _, Selectable as _, Sizable as _,
     button::{Button, ButtonVariants as _},
     h_flex,
     input::{Input, InputState},
+    switch::Switch,
     v_flex,
 };
 use music_core::HttpConfig;
 
 use super::SettingsPanel;
-use super::file::{NetworkConfig, ProxyKind, Settings};
+use super::file::{DnsConfig, DnsMode, NetworkConfig, ProxyKind, Settings};
 use super::panel::SettingsEvent;
 use super::widgets::{field, group, note, status_line};
 use crate::secrets::Secret;
@@ -40,6 +43,7 @@ pub(super) enum NetStatus {
     Testing,
     TestOk(u128),
     TestFailed(String),
+    DnsOk(String),
 }
 
 /// The section's draft fields, owned by the panel.
@@ -49,6 +53,9 @@ pub struct NetworkState {
     port: Entity<InputState>,
     user: Entity<InputState>,
     password: Entity<InputState>,
+    dns_mode: DnsMode,
+    dns_url: Entity<InputState>,
+    dns_fallback: bool,
     pub(super) status: NetStatus,
 }
 
@@ -78,6 +85,13 @@ impl NetworkState {
             ),
             user: input("optional", n.username.clone(), false),
             password: input("optional", String::new(), true),
+            dns_mode: n.dns.mode,
+            dns_url: input(
+                "https://dns.example/dns-query",
+                n.dns.custom_url.clone(),
+                false,
+            ),
+            dns_fallback: n.dns.fallback,
             status: NetStatus::Idle,
         }
     }
@@ -98,14 +112,17 @@ impl SettingsPanel {
         let url = network.proxy_url(password.as_deref())?;
         let config = HttpConfig {
             proxy: url,
+            doh: network.dns.doh(),
             ..music_core::http::http_config()
         };
-        music_core::http::configure(config)
-            .map_err(|_| "The proxy address isn't valid for this proxy type.".to_owned())?;
-        Ok(match network.display_url() {
-            Some(url) => format!("Using {url}"),
-            None => "Direct connections (no proxy)".into(),
-        })
+        music_core::http::configure(config).map_err(|e| {
+            if e.to_string().contains("DNS-over-HTTPS") {
+                "The DNS-over-HTTPS URL isn't valid.".to_owned()
+            } else {
+                "The proxy address isn't valid for this proxy type.".to_owned()
+            }
+        })?;
+        Ok(status_text(network))
     }
 
     /// "Apply": validate the draft, save, apply, store the password.
@@ -142,6 +159,11 @@ impl SettingsPanel {
                 read(&state.user, cx)
             },
             has_password: !password.is_empty(),
+            dns: DnsConfig {
+                mode: state.dns_mode,
+                custom_url: read(&state.dns_url, cx),
+                fallback: state.dns_fallback,
+            },
         };
         if let Err(e) = draft.validate() {
             self.network.status = NetStatus::Failed(e);
@@ -198,6 +220,60 @@ impl SettingsPanel {
         cx.notify();
     }
 
+    /// Resolves music.youtube.com the way requests do now and shows how.
+    pub fn network_test_dns(&mut self, cx: &mut Context<Self>) {
+        self.network.status = NetStatus::Testing;
+        cx.spawn(async move |this, cx| {
+            let started = Instant::now();
+            let result = off_thread(|| music_core::http::lookup("music.youtube.com")).await;
+            let ms = started.elapsed().as_millis();
+            this.update(cx, |this, cx| {
+                this.network.status = match result {
+                    Ok(lookup) => {
+                        use music_core::http::LookupSource;
+                        let via = match lookup.source {
+                            LookupSource::Doh => "DNS-over-HTTPS",
+                            LookupSource::Cached => "DNS-over-HTTPS (cached)",
+                            LookupSource::System => "the system resolver",
+                        };
+                        let first: Vec<String> = lookup
+                            .addrs
+                            .iter()
+                            .take(2)
+                            .map(ToString::to_string)
+                            .collect();
+                        NetStatus::DnsOk(format!(
+                            "music.youtube.com → {} via {via} in {ms} ms",
+                            first.join(", ")
+                        ))
+                    }
+                    Err(e) => NetStatus::TestFailed(e),
+                };
+                cx.notify();
+            })
+            .ok();
+        })
+        .detach();
+        cx.notify();
+    }
+
+    /// Script hook: `system|cloudflare|google|quad9|https://…[;nofallback]`, applied.
+    pub fn set_dns_draft(&mut self, spec: &str, window: &mut Window, cx: &mut Context<Self>) {
+        let (mode, rest) = spec.split_once(';').unwrap_or((spec, ""));
+        self.network.dns_fallback = rest != "nofallback";
+        self.network.dns_mode = DnsMode::ALL
+            .into_iter()
+            .find(|m| m.title().eq_ignore_ascii_case(mode))
+            .unwrap_or(DnsMode::Custom);
+        if self.network.dns_mode == DnsMode::Custom {
+            let url = mode.to_owned();
+            self.network
+                .dns_url
+                .update(cx, |input, cx| input.set_value(url, window, cx));
+        }
+        self.network_apply(cx);
+    }
+
     /// Script hook: `KIND:HOST:PORT` (or `off`), applied like the Apply button.
     pub fn set_proxy_draft(&mut self, spec: &str, window: &mut Window, cx: &mut Context<Self>) {
         let mut parts = spec.splitn(3, ':');
@@ -214,6 +290,22 @@ impl SettingsPanel {
             input.update(cx, |input, cx| input.set_value(value, window, cx));
         }
         self.network_apply(cx);
+    }
+}
+
+/// "Using …" line for the applied settings.
+fn status_text(network: &NetworkConfig) -> String {
+    let proxy = match network.display_url() {
+        Some(url) => format!("Using {url}"),
+        None => "Direct connections (no proxy)".into(),
+    };
+    match network.dns.mode {
+        DnsMode::System => proxy,
+        DnsMode::Custom => format!(
+            "{proxy} · DNS-over-HTTPS ({})",
+            network.dns.custom_url.trim()
+        ),
+        mode => format!("{proxy} · DNS-over-HTTPS ({})", mode.title()),
     }
 }
 
@@ -242,10 +334,8 @@ pub(super) fn render(
                 }))
         }));
     let (status, color): (SharedString, gpui::Hsla) = match &state.status {
-        NetStatus::Idle => match panel.settings.network.display_url() {
-            Some(url) => (format!("Using {url}").into(), muted),
-            None => ("Direct connections (no proxy)".into(), muted),
-        },
+        NetStatus::Idle => (status_text(&panel.settings.network).into(), muted),
+        NetStatus::DnsOk(m) => (m.clone().into(), success),
         NetStatus::Applied(m) => (m.clone().into(), success),
         NetStatus::Failed(e) => (e.clone().into(), danger),
         NetStatus::Testing => ("Testing…".into(), muted),
@@ -253,6 +343,19 @@ pub(super) fn render(
         NetStatus::TestFailed(e) => (format!("Connection failed: {e}").into(), danger),
     };
     let off = kind == ProxyKind::Off;
+    let dns_mode = state.dns_mode;
+    let dns_modes = h_flex().gap_1().flex_wrap().children(DnsMode::ALL.map(|m| {
+        let selected = m == dns_mode;
+        Button::new(SharedString::from(format!("dns-mode-{}", m.title())))
+            .small()
+            .map(|b| if selected { b.primary() } else { b.outline() })
+            .selected(selected)
+            .label(m.title())
+            .on_click(cx.listener(move |this, _, _, cx| {
+                this.network.dns_mode = m;
+                cx.notify();
+            }))
+    }));
     v_flex()
         .gap_5()
         .child(
@@ -292,8 +395,61 @@ pub(super) fn render(
                 .child(status_line(status, color))
                 .child(note(
                     "Applies to everything: YouTube Music, audio streams, artwork, lyrics and \
-                     scrobbling. SOCKS5h resolves host names through the proxy (DNS-over-HTTPS \
-                     isn't supported). The password is kept in the keychain.",
+                     scrobbling. SOCKS5h resolves host names through the proxy. The password \
+                     is kept in the keychain.",
+                    cx,
+                )),
+        )
+        .child(
+            group("DNS", cx)
+                .child(dns_modes)
+                .when(dns_mode == DnsMode::Custom, |this| {
+                    this.child(field("DoH URL", Input::new(&state.dns_url).small(), cx))
+                })
+                .when(dns_mode != DnsMode::System, |this| {
+                    this.child(
+                        h_flex()
+                            .gap_2()
+                            .child(
+                                Switch::new("dns-fallback")
+                                    .checked(state.dns_fallback)
+                                    .small()
+                                    .on_click(cx.listener(|this, on: &bool, _, cx| {
+                                        this.network.dns_fallback = *on;
+                                        cx.notify();
+                                    })),
+                            )
+                            .child(
+                                div()
+                                    .text_sm()
+                                    .child("Fall back to the system resolver when DoH fails"),
+                            ),
+                    )
+                })
+                .child(
+                    h_flex()
+                        .gap_2()
+                        .child(
+                            Button::new("dns-apply")
+                                .small()
+                                .primary()
+                                .label("Apply")
+                                .on_click(cx.listener(|this, _, _, cx| this.network_apply(cx))),
+                        )
+                        .child(
+                            Button::new("dns-test")
+                                .small()
+                                .outline()
+                                .label("Test DNS")
+                                .loading(matches!(state.status, NetStatus::Testing))
+                                .on_click(cx.listener(|this, _, _, cx| this.network_test_dns(cx))),
+                        ),
+                )
+                .child(note(
+                    "DNS-over-HTTPS (RFC 8484) looks up host names over an encrypted HTTPS \
+                     connection instead of plain DNS. Answers are cached for their TTL. With \
+                     a SOCKS5h proxy the proxy resolves names itself. Quad9 is reached on its \
+                     HTTP/1.1 port 5053, which some networks block.",
                     cx,
                 )),
         )

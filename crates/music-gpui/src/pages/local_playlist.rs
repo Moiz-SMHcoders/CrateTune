@@ -234,6 +234,24 @@ impl LocalPlaylistPage {
                     }
                 })
         });
+        // The account's own YouTube playlists can get a custom cover.
+        let own_remote = playlist
+            .as_ref()
+            .filter(|p| p.editable)
+            .and_then(|p| Some((p.browse_id.clone()?, p.id.clone())));
+        let cover = own_remote.map(|(remote, local)| {
+            Button::new("pl-cover")
+                .ghost()
+                .small()
+                .icon(Lucide::Upload)
+                .label("Change cover…")
+                .on_click(move |_, window, cx| {
+                    let (remote, local) = (remote.clone(), local.clone());
+                    update_app(cx, |app, cx| {
+                        app.change_playlist_cover(remote, Some(local), window, cx)
+                    });
+                })
+        });
         h_flex()
             .px_8()
             .pt_6()
@@ -280,6 +298,7 @@ impl LocalPlaylistPage {
                                     ),
                             )
                             .children(refresh)
+                            .children(cover)
                             .child(
                                 Button::new("pl-delete")
                                     .ghost()

@@ -33,8 +33,8 @@ mod parse;
 use serde_json::{Value, json};
 
 pub use account::{
-    AccountChannel, AccountInfo, HistorySection, LibraryPage, PlaylistAction, PlaylistPrivacy,
-    Rating,
+    AccountChannel, AccountInfo, HistorySection, LibraryPage, MAX_COVER_BYTES, PlaylistAction,
+    PlaylistPrivacy, Rating,
 };
 pub use auth::{Auth, sapisid_hash};
 pub use models::*;
