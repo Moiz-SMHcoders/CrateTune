@@ -227,19 +227,59 @@ if let Some(result) = service.fetch(&LyricsQuery::from_track(&track))? {
 
 * `LyricsResult` keeps the raw payload (`to_raw()` / `RawLyrics::parse`) so a library database
   can implement `LyricsCache` and store what was fetched.
+* Credit lines (`lyrics/credits.rs`, one heuristic for TTML, QRC, LRC and plain text): the
+  leading (and a short trailing) block is checked for credit labels in English, Romance
+  languages, Chinese, Japanese and Korean (`Written by:`, `Keyboard by：`, `作词 :`, `작곡 :`,
+  `Letra:` …), "Written by X" lines, songwriter lists that name one of the track's artists
+  (`Julian Casablancas/Thomas Bangalter/…`), a `Title - Artist` header, copyright notices.
+  Weak signals (an ambiguous `Music:` label, a plain list of names, a lone Chinese name) only
+  count with support: the line spans 0 s, its words are evenly timed (synthesized by the
+  provider), or the line next to it is a credit. Names are compared transliterated
+  (`ROSALÍA` = `Rosalia`, `周杰倫` = `周杰伦`). `parse` uses the payload's own `[ti:]`/`[ar:]`;
+  `LyricsResult::without_credits(&query)` adds the track's title and artists (the service
+  applies it to every result and cache hit). Lines in the middle of a song are never touched.
+* "Instrumental" answers (`纯音乐，请欣赏`, `Instrumental`, `♪`) are not lyrics
+  (`LyricsResult::is_instrumental`); one such answer vetoes line-synced / plain results from
+  other providers (for an instrumental they are another song or a fan-written poem), while
+  word-synced lyrics still win.
 * Selection: providers run concurrently (`max_concurrent`, 1 = one after another); with
   `prefer_word_synced` a word-synced result beats a line-synced one from a higher-priority
   provider; otherwise the highest-priority synced result wins; plain text is the fallback.
-* Translation: `GoogleTranslator` (free endpoint, batched) or `AiTranslator` (any
-  OpenAI-compatible chat-completions endpoint; key, model and custom prompt from the caller).
-* Romanization: Japanese kana (kanji readings only with the off-by-default `japanese-dict`
-  feature: lindera + IPADIC adds ~48 MB and downloads the dictionary at build time), Korean
-  (Revised Romanization), Chinese (pinyin with tones), Hindi/Devanagari, Cyrillic, other scripts
-  via `deunicode`.
+* Translation: `GoogleTranslator` (free endpoint, batched; requests of one translation are
+  spaced 400 ms and capped at 12) or `AiTranslator` (any OpenAI-compatible chat-completions
+  endpoint; key, model and custom prompt from the caller). A 429 / 503 blocks that endpoint
+  for its `Retry-After`, else 2 min doubling up to 30 min; calls meanwhile fail at once with
+  "… rate-limited this connection; try again in N min" (`translate::is_rate_limited`,
+  `LyricsTranslator::retry_after`); a `Retry-After` ≤ 10 s is waited out once. Google answers
+  a burst with a redirect to its "sorry" page (a 429 without `Retry-After`).
+  `CachedTranslator` + `TranslationCache` (`MemoryTranslationCache`, or `Library`: rows in the
+  lyrics table) keep finished translations per translator settings, language and lyrics text.
+* Romanization: Japanese (kana table; kanji readings with lindera + IPADIC), Korean (Revised
+  Romanization), Chinese (pinyin with tones), Hindi/Devanagari, Cyrillic, other scripts via
+  `deunicode`. Kanji: `romanize::dictionary` downloads lindera's prebuilt IPADIC on demand
+  (`DictionarySource::ipadic()`: 10.5 MB zip from lindera's v6.2.0 release, SHA-256 pinned,
+  45 MB unpacked — UniDic would be 46 MB zipped), unpacks it into a cache directory and
+  `load`s it memory-mapped (~9 ms); without it only kana are romanized. The off-by-default
+  `japanese-dict` feature embeds the same dictionary instead (+~48 MB binary, downloaded at
+  build time). lindera without a dictionary adds ~0.23 MB to the release binary. The pinned
+  zip must match the lindera version in `Cargo.toml` (its dictionary format); update both
+  together.
+
+```rust
+use music_core::lyrics::romanize::dictionary::{self, DictionarySource};
+let source = DictionarySource::ipadic();
+let path = match dictionary::installed(&source, &cache_dir) {
+    Some(path) => path,
+    None => dictionary::install(&source, &cache_dir, &cancel, |done, total| { /* progress */ })?,
+};
+dictionary::load(&path)?;   // romanize_line / romanize_result read kanji from now on
+```
 
 ```sh
 cargo run -p music-core --example lyrics -- "daft punk instant crush"     # every provider, then the service pick
 cargo run -p music-core --example lyrics -- --translate en "yoasobi idol" # + romanization and translation
+cargo run -p music-core --example lyrics -- --ja-dict /tmp/ja "yoasobi idol" # download IPADIC: kanji readings
+cargo run -p music-core --example lyrics -- --raw /tmp/raw "rosalia malamente" # + every provider's raw payload
 ```
 
 ### Full-length YouTube streams (`youtube` module)
@@ -553,11 +593,15 @@ src/
   button (searches again, skipping the cache). Real word timings drive the per-word
   fill; line-synced lyrics light the whole line. Background vocals (smaller, italic,
   their own word timings) and duet singers (other side) when the provider has them.
-  Romanization line per script (Japanese kana — kanji readings need music-core's
-  `japanese-dict` feature —, Korean, Chinese pinyin, Devanagari, Cyrillic, others).
-  Translation (Google or any OpenAI-compatible endpoint, target language, off by
-  default) is requested once per song and translator settings and cached for the
-  session; failures show with a Retry button. Text size, line spacing, left / center /
+  Romanization line per script (Japanese — kanji readings once the dictionary is
+  downloaded: Settings → Lyrics → Romanization shows its size, a progress bar with Cancel,
+  Remove; turning Japanese on fetches it the first time; it lives in the platform cache dir,
+  `$MUSIC_CONFIG_DIR/cache/ja-dict` with that variable —, Korean, Chinese pinyin, Devanagari,
+  Cyrillic, others). Translation (Google or any OpenAI-compatible endpoint, target
+  language, off by default) is requested once per song and translator settings and kept in
+  the library database (`CachedTranslator`), so reopening a song or restarting doesn't ask
+  again; failures show with a Retry button, and a rate-limited one ("rate-limited this
+  connection; try again in 2 min") retries by itself after the back-off. Text size, line spacing, left / center /
   right alignment, and six animation styles (None, Fade, Glow, Slide, Karaoke — the
   original renderer —, Apple) as variants of `KaraokeLine` (sweep vs. per-word fade,
   feather width, lift, scale, glyph halo). Click a line to seek; unsynced lyrics show as
@@ -901,6 +945,7 @@ playback `@play=N @next @prev @seek=S @toggle @open @close @volume=V`; navigatio
 @np-bg=blur|gradient|solid|glow @mini-style=theme|artwork
 @lyrics-style=karaoke|apple|slide|glow|fade|none @lyrics-size=40 @lyrics-spacing=1.5
 @lyrics-align=left|center|right @translate=on|off @romanize=SCRIPT:on|off @lyrics-reload
+@kanji-dict[=remove|cancel]
 @sleep=MIN|eot|off|5s @speed=1.25 @pitch=-2 @crossfade=6 @quality=low|normal|high
 @normalize=on|off @skip-silence=on|off`; browse `@radio=N` (radio from search result N),
 `@suggest` (print the search dropdown), `@proxy=KIND:HOST:PORT|off`, `@locale=de:DE`,
@@ -1001,6 +1046,38 @@ macOS delivers no display-link frames (`MUSIC_TIMINGS` prints nothing; 0 % CPU s
 Frames are still only requested while Now Playing is visible and something moves; the
 glow background adds no frames while paused, the mini player none at all. Backdrop blur
 + palette + glow lights: ~9.5 ms per track on a worker thread.
+
+### Lyrics round: verification
+
+`examples/lyrics.rs` against the live providers (no API keys; Paxsenix skipped), after the
+fixes. Cells: sync kind, format, lines; "credits" = credit lines the filter removed.
+
+| Provider | Instant Crush (EN) | Hype Boy (KR) | アイドル (JP) | MALAMENTE (ES) | Time (instrumental) | 晴天 (ZH) | Double Talk (obscure) |
+|---|---|---|---|---|---|---|---|
+| BetterLyrics | Line TTML 82 | Word TTML 66, 1 bg | Line LRC 75 | Word TTML 57, 25 bg | Line LRC 20 (a fan poem) | Line LRC 50 | — |
+| BetterLyrics Portato | Word QRC 76 (credits) | Word QRC 68 (title + credits) | Word QRC 75 | Word QRC 60 (title line was a "singer") | "纯音乐" → instrumental | Word QRC 50 | — |
+| YouLyPlus | Word TTML 76 (songwriter line) | Word LRC 66 | Word TTML 76 | Word LRC 57 | — | — | — (11.5 s → stops at the 404) |
+| Binimum | Word TTML 84 | Word TTML 66, 1 bg | Word TTML 74 | Word TTML 57, 25 bg | — | — | Line TTML 12 |
+| LRCLIB | Line 80 | Line 49 | Line 76 | Line 57 (≈ 7 s early) | — | Line 50 (header + 词/曲) | Line 12 |
+| KuGou | Line 76 (credits) | Line 68 | Line 75 | Line 60 (title line, with the query) | "纯音乐" → instrumental | Line 50 | — |
+| Megalobiz | — | — | — | — | — | — | — (site rebuilt: search 301 → 404/410) |
+| SimpMusic | Word LRC 82 | Word LRC 66 | Word LRC 76 | Word LRC 57 | Line 42: another song | Word LRC 56 → 50 (producer names, with the query) | — |
+| Unison | Word TTML 78 | — | Word TTML 74 | — | — | Word TTML 49 | — |
+| YouTube Music | Plain 100 | Plain 68 | Plain 88 | Plain 65 | — | Plain 48 | Plain 15 |
+| **Service pick** | Portato (Word) | BetterLyrics (Word) | Portato / YouLyPlus (Word) | BetterLyrics (Word) | **no lyrics** (was the poem) | Portato (Word) | Binimum (Line) |
+
+Google Translate (one live request, spaced): still refused for this IP — a 302 to
+`google.com/sorry` that answers 429 without `Retry-After`; the translator now reports
+"Google Translate rate-limited this connection; try again in 2 min" and sends nothing until
+then. In the app (release build, temp `MUSIC_CONFIG_DIR`, demo clock — no audio): an
+OpenAI-compatible fake server got one request for アイドル's 74 lines; after a restart the
+translation came from the library (still one request in total). `@kanji-dict` downloaded
+and verified the real IPADIC in ~1.6 s and loaded it; at the next start it was mapped in
+0.45 s after launch; `@kanji-dict=remove` deleted it. Release binary 40,020,928 B
+(+236,192 B for lindera without a dictionary and this round's code). **Not verified:** the
+Settings → Lyrics dictionary row and progress bar on screen (rendered, not looked at),
+in-app cancel of a running download (unit-tested; the real download finished first), a
+successful Google translation, Paxsenix / BetterLyrics keys.
 
 ### Measurements (app shell round)
 

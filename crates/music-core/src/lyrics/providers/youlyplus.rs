@@ -101,6 +101,9 @@ impl YouLyPlus {
                         return Ok(Some(raw));
                     }
                 }
+                // A working mirror's "no lyrics": the others (mostly down, ~0.5–3 s
+                // each) would only say the same.
+                Ok(resp) if resp.status == 404 => return Ok(None),
                 Ok(resp) => log::debug!("YouLyPlus {base}{path}: HTTP {}", resp.status),
                 Err(e) => {
                     log::debug!("YouLyPlus {base}{path}: {e}");
@@ -220,6 +223,42 @@ mod tests {
         let l = r.synced.unwrap();
         assert_eq!(l.lines[0].text, "無敵の笑顔で荒らすメディア");
         assert_eq!(l.lines[0].words.len(), 12);
+    }
+
+    #[test]
+    fn mirrors_fail_over_but_stop_at_not_found() {
+        use crate::testutil::{Reply, TestServer};
+        let server = TestServer::start(|path, _, _| {
+            if path.starts_with("/down/") {
+                Reply::Status(502)
+            } else if path.starts_with("/v1/ttml/get") || path.starts_with("/lyrics/v1/ttml") {
+                Reply::Status(404)
+            } else {
+                Reply::Status(500)
+            }
+        });
+        let p = YouLyPlus {
+            mirrors: vec![
+                format!("{}/down/", server.base),
+                format!("{}/", server.base),
+                format!("{}/never/", server.base),
+            ],
+        };
+        let q = LyricsQuery::new("Double Talk", "Jaakko Eino Kalevi");
+        assert!(
+            p.query_mirrors(TTML_PATH, &q, decode_ttml)
+                .unwrap()
+                .is_none()
+        );
+        let paths: Vec<String> = server
+            .requests
+            .lock()
+            .unwrap()
+            .iter()
+            .map(|r| r.0.clone())
+            .collect();
+        assert_eq!(paths.len(), 2, "{paths:?}");
+        assert!(paths.iter().all(|p| !p.starts_with("/never/")));
     }
 
     #[test]

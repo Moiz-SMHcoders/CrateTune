@@ -41,7 +41,7 @@
 //! | `@proxy=KIND:HOST:PORT`, `@proxy=off` | Network section: apply a proxy (no credentials) |
 //! | `@layout=split\|centered\|lyrics`, `@np-bg=blur\|gradient\|solid\|glow`, `@mini-style=theme\|artwork` | Now Playing / mini player look (saved) |
 //! | `@lyrics-style=karaoke\|apple\|slide\|glow\|fade\|none`, `@lyrics-size=40`, `@lyrics-spacing=1.5`, `@lyrics-align=left\|center\|right` | lyrics look (saved) |
-//! | `@translate=on\|off`, `@romanize=SCRIPT:on\|off` (`japanese`, `korean`, `chinese`, `devanagari`, `cyrillic`, `other`), `@lyrics-reload` | lyrics extras |
+//! | `@translate=on\|off`, `@romanize=SCRIPT:on\|off` (`japanese`, `korean`, `chinese`, `devanagari`, `cyrillic`, `other`), `@lyrics-reload`, `@kanji-dict[=remove\|cancel]` (download the kanji dictionary) | lyrics extras |
 //! | `@sleep=MIN\|eot\|off` (`@sleep=5s`: seconds, for tests) | sleep timer |
 //! | `@speed=1.25`, `@pitch=-2`, `@crossfade=6`, `@quality=low\|normal\|high`, `@normalize=on\|off`, `@skip-silence=on\|off` | engine options (saved) |
 //! | `@modules=youtube\|first\|only` | playback source (Settings → Modules) |
@@ -499,6 +499,11 @@ impl MusicApp {
                 }
             }
             "lyrics-reload" => self.reload_lyrics(cx),
+            "kanji-dict" => match arg.unwrap_or("download") {
+                "remove" => self.remove_kanji_dictionary(cx),
+                "cancel" => self.cancel_kanji_dictionary(cx),
+                _ => self.download_kanji_dictionary(cx),
+            },
             "sleep" => {
                 let timer = match arg.unwrap_or("off") {
                     "off" => None,

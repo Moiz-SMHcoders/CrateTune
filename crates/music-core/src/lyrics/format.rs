@@ -2,12 +2,16 @@
 //! Normalization follows ArchiveTune's `LyricsUtils` (BOM/zero-width removal,
 //! code fences, HTML-escaped TTML).
 
+use std::sync::LazyLock;
 use std::time::Duration;
 
+use regex::Regex;
+
+use super::credits::{CreditContext, CreditLine, credit_block, is_instrumental_marker};
 use super::lrc::{is_line_synced, parse_lrc_detailed, strip_word_tags};
 use super::qrc::{is_qrc, parse_qrc, unescape_xml};
 use super::ttml::{is_ttml, parse_ttml};
-use super::types::{LyricsFormat, LyricsResult, collapse_spaces};
+use super::types::{LyricsFormat, LyricsQuery, LyricsResult, collapse_spaces};
 
 impl LyricsResult {
     /// Parses a raw payload from `provider`. Returns `None` when it holds no
@@ -40,21 +44,24 @@ impl LyricsResult {
             return None;
         } else {
             let plain = plain_text(&normalized);
-            return (!plain.is_empty()).then(|| LyricsResult {
-                provider,
-                synced: None,
-                plain: Some(plain),
-                word_synced: false,
-                extras: Vec::new(),
-                agents: Vec::new(),
-                raw,
-                format: LyricsFormat::Plain,
-            });
+            return (!plain.is_empty())
+                .then(|| LyricsResult {
+                    provider,
+                    synced: None,
+                    plain: Some(plain),
+                    word_synced: false,
+                    extras: Vec::new(),
+                    agents: Vec::new(),
+                    raw,
+                    format: LyricsFormat::Plain,
+                })
+                .and_then(|r| r.strip_credits(&CreditContext::default()));
         };
         if synced.lines.is_empty() {
             return None;
         }
-        Some(LyricsResult {
+        let metadata = metadata_context(&normalized);
+        LyricsResult {
             provider,
             plain: Some(synced.plain_text()),
             word_synced: synced.word_synced,
@@ -63,8 +70,101 @@ impl LyricsResult {
             agents,
             raw,
             format,
-        })
+        }
+        .strip_credits(&metadata)
     }
+
+    /// Drops credit lines around the lyrics ("Written by: …", "作词：…", songwriter
+    /// lists naming the track's artists, a "Title - Artist" header), using what the
+    /// query knows about the track. [`parse`](Self::parse) already removes the ones it
+    /// can recognize without it; [`crate::lyrics::LyricsService`] calls this for every
+    /// result. `None` when nothing is left.
+    pub fn without_credits(self, query: &LyricsQuery) -> Option<Self> {
+        let ctx = CreditContext::from_query(query).merge(&metadata_context(&self.raw));
+        self.strip_credits(&ctx)
+    }
+
+    /// The provider says the song has no lyrics ("纯音乐，请欣赏", "Instrumental"):
+    /// at most three lines, all of them such markers.
+    pub fn is_instrumental(&self) -> bool {
+        let texts: Vec<&str> = match &self.synced {
+            Some(l) => l.lines.iter().map(|l| l.text.as_str()).collect(),
+            None => self.plain.as_deref().unwrap_or_default().lines().collect(),
+        };
+        let texts: Vec<&str> = texts.into_iter().filter(|t| !t.trim().is_empty()).collect();
+        !texts.is_empty() && texts.len() <= 3 && texts.iter().all(|t| is_instrumental_marker(t))
+    }
+
+    pub(crate) fn strip_credits(mut self, ctx: &CreditContext) -> Option<Self> {
+        if let Some(lyrics) = &mut self.synced {
+            let lines: Vec<CreditLine> = lyrics
+                .lines
+                .iter()
+                .map(|l| CreditLine::synced(l, lyrics.word_synced))
+                .collect();
+            let (head, tail) = credit_block(&lines, ctx);
+            if head + tail == 0 {
+                return Some(self);
+            }
+            let n = lyrics.lines.len();
+            if head + tail >= n {
+                return None;
+            }
+            lyrics.lines.truncate(n - tail);
+            lyrics.lines.drain(..head);
+            if self.extras.len() == n {
+                self.extras.truncate(n - tail);
+                self.extras.drain(..head);
+            }
+            self.plain = Some(lyrics.plain_text());
+            return Some(self);
+        }
+        let plain = self.plain.take().unwrap_or_default();
+        let all: Vec<&str> = plain.lines().collect();
+        let texts: Vec<(usize, &str)> = all
+            .iter()
+            .enumerate()
+            .filter(|(_, t)| !t.trim().is_empty())
+            .map(|(i, t)| (i, *t))
+            .collect();
+        let lines: Vec<CreditLine> = texts.iter().map(|(_, t)| CreditLine::plain(t)).collect();
+        let (head, tail) = credit_block(&lines, ctx);
+        if head + tail >= texts.len() {
+            return None;
+        }
+        let from = if head == 0 { 0 } else { texts[head - 1].0 + 1 };
+        let to = if tail == 0 {
+            all.len()
+        } else {
+            texts[texts.len() - tail].0
+        };
+        let kept = all[from..to].join("\n");
+        let kept = kept.trim_matches('\n');
+        if kept.trim().is_empty() {
+            return None;
+        }
+        self.plain = Some(kept.to_owned());
+        Some(self)
+    }
+}
+
+/// `[ti:]` / `[ar:]` tags (LRC, QRC) as credit context.
+fn metadata_context(src: &str) -> CreditContext {
+    static TAG: LazyLock<Regex> =
+        LazyLock::new(|| Regex::new(r"(?mi)^\s*\[(ti|ar):([^\]\n]*)\]").unwrap());
+    let (mut title, mut artist) = (None, None);
+    for c in TAG.captures_iter(src) {
+        let value = c
+            .get(2)
+            .map(|m| m.as_str().trim())
+            .filter(|v| !v.is_empty());
+        if c[1].eq_ignore_ascii_case("ti") {
+            title = title.or(value);
+        } else {
+            artist = artist.or(value);
+        }
+    }
+    CreditContext::from_metadata(title, artist)
 }
 
 /// Strips BOM / zero-width characters, code fences and HTML-escaped TTML.
