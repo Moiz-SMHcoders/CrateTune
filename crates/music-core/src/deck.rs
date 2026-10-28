@@ -7,6 +7,9 @@
 //! when it runs out (gapless), or overlaps the two with equal-power gains
 //! (crossfade). Runs in the audio callback, so it never blocks on anything
 //! but short mutex sections; all decoding happens on voice threads.
+//!
+//! Each block is mixed at unity volume, ramped for pause/resume, copied into
+//! the [`SpectrumTap`] (when enabled), and only then scaled by the user volume.
 
 use std::num::NonZero;
 use std::sync::{Arc, Mutex, MutexGuard};
@@ -14,6 +17,7 @@ use std::time::Duration;
 
 use rodio::{ChannelCount, SampleRate, Source};
 
+use crate::spectrum::SpectrumTap;
 use crate::voice::{Chunk, Voice};
 
 /// Fade applied when a track is replaced or stopped by the user (avoids clicks).
@@ -28,6 +32,8 @@ pub(crate) const CROSSFADE_END_GUARD: Duration = Duration::from_millis(150);
 pub const MAX_CROSSFADE: Duration = Duration::from_secs(12);
 /// Frames rendered per lock of the deck.
 const RENDER_FRAMES: usize = 512;
+/// Per-frame smoothing of gain changes (volume, normalization): ~10 ms at 48 kHz.
+const GAIN_SMOOTH: f32 = 0.002;
 
 /// Equal-power crossfade gains `(outgoing, incoming)` at `progress` 0..=1.
 pub(crate) fn equal_power_gains(progress: f32) -> (f32, f32) {
@@ -102,16 +108,15 @@ impl Active {
         }
     }
 
-    /// Adds up to `out.len() / 2` frames into `out`.
-    fn mix(&mut self, out: &mut [f32], volume: f32, normalize: bool) -> MixEnd {
+    /// Adds up to `out.len() / 2` frames into `out` (at unity volume).
+    fn mix(&mut self, out: &mut [f32], normalize: bool) -> MixEnd {
         let frames = out.len() / 2;
-        let gain = if normalize { self.voice.gain() } else { 1.0 };
-        let target = gain * volume;
+        let target = if normalize { self.voice.gain() } else { 1.0 };
         if self.gain.is_nan() {
             self.gain = target;
         }
-        // ~10 ms smoothing of volume / normalization changes.
-        let smooth = 0.002f32;
+        // Smoothed normalization changes.
+        let smooth = GAIN_SMOOTH;
         let epoch = self.voice.epoch();
         if self.chunk.as_ref().is_some_and(|c| c.epoch != epoch) {
             self.chunk = None;
@@ -171,6 +176,8 @@ impl Active {
 struct DeckState {
     paused: bool,
     volume: f32,
+    /// Volume gain applied right now, smoothed towards `volume`.
+    out_gain: f32,
     /// Apply each voice's loudness normalization gain (on by default).
     normalize: bool,
     crossfade: Duration,
@@ -199,6 +206,7 @@ pub(crate) struct DeckSnapshot {
 pub(crate) struct Deck {
     rate: u32,
     state: Mutex<DeckState>,
+    tap: Arc<SpectrumTap>,
 }
 
 impl Deck {
@@ -207,15 +215,22 @@ impl Deck {
             rate,
             state: Mutex::new(DeckState {
                 volume: 1.0,
+                out_gain: 1.0,
                 normalize: true,
                 master: 1.0,
                 ..Default::default()
             }),
+            tap: SpectrumTap::new(rate),
         })
     }
 
     pub(crate) fn rate(&self) -> u32 {
         self.rate
+    }
+
+    /// The tap on this deck's output (pre-volume).
+    pub(crate) fn spectrum_tap(&self) -> Arc<SpectrumTap> {
+        self.tap.clone()
     }
 
     fn lock(&self) -> MutexGuard<'_, DeckState> {
@@ -314,10 +329,24 @@ impl Deck {
         out.fill(0.0);
         let mut guard = self.lock();
         let st = &mut *guard;
-        let target_master = if st.paused { 0.0 } else { 1.0 };
-        if st.master == 0.0 && target_master == 0.0 {
-            return;
+        // Paused and ramped out: silence, nothing consumed.
+        let silent = st.paused && st.master == 0.0;
+        if !silent {
+            self.mix_block(st, out);
         }
+        // What the listener hears, before the volume (muted playback still
+        // animates a visualizer). Paused blocks feed zeros so bars fall at once.
+        if self.tap.is_enabled() {
+            self.tap.push_stereo(out);
+        }
+        if !silent {
+            apply_volume(st, out);
+        }
+    }
+
+    /// Mixes the voices into `out` at unity volume, with the pause ramp.
+    fn mix_block(&self, st: &mut DeckState, out: &mut [f32]) {
+        let target_master = if st.paused { 0.0 } else { 1.0 };
         let ramp_step = 1.0 / (PAUSE_RAMP.as_secs_f32() * self.rate as f32).max(1.0);
         self.maybe_start_crossfade(st);
 
@@ -327,7 +356,7 @@ impl Deck {
             let Some(cur) = st.current.as_mut() else {
                 break;
             };
-            match cur.mix(&mut out[done * 2..], st.volume, st.normalize) {
+            match cur.mix(&mut out[done * 2..], st.normalize) {
                 MixEnd::Filled => break,
                 MixEnd::Exhausted(n) => {
                     done += n;
@@ -356,7 +385,7 @@ impl Deck {
         scratch.resize(out.len(), 0.0);
         st.fading.retain_mut(|f| {
             scratch.fill(0.0);
-            let end = f.mix(&mut scratch, st.volume, st.normalize);
+            let end = f.mix(&mut scratch, st.normalize);
             for (o, s) in out.iter_mut().zip(&scratch) {
                 *o += s;
             }
@@ -387,6 +416,11 @@ impl Deck {
         }
     }
 
+    #[cfg(test)]
+    pub(crate) fn test_out_gain(&self) -> f32 {
+        self.lock().out_gain
+    }
+
     fn maybe_start_crossfade(&self, st: &mut DeckState) {
         if st.crossfade.is_zero() || st.hold_at_end || !st.fading.is_empty() {
             return;
@@ -411,6 +445,25 @@ impl Deck {
         st.fading.push(old);
         st.current = Some(Active::new(next, Some(Fade::new(len, self.rate, true))));
         st.advances += 1;
+    }
+}
+
+/// Scales `out` by the user volume, smoothing changes.
+fn apply_volume(st: &mut DeckState, out: &mut [f32]) {
+    let target = st.volume;
+    if st.out_gain == target {
+        if target != 1.0 {
+            out.iter_mut().for_each(|s| *s *= target);
+        }
+        return;
+    }
+    for frame in out.as_chunks_mut::<2>().0 {
+        st.out_gain += (target - st.out_gain) * GAIN_SMOOTH;
+        frame[0] *= st.out_gain;
+        frame[1] *= st.out_gain;
+    }
+    if (st.out_gain - target).abs() < 1e-4 {
+        st.out_gain = target;
     }
 }
 
@@ -658,6 +711,44 @@ mod tests {
         assert!(out[64..].iter().all(|&s| s == 0.0));
         assert!(v.is_underrun() && !v.is_exhausted());
         assert_eq!(deck.snapshot().current, Some(1));
+    }
+
+    #[test]
+    fn volume_changes_are_smoothed_and_settle_exactly() {
+        let deck = Deck::new(RATE);
+        deck.set_current(Some(voice(1, 1.0, 10_000)));
+        render(&deck, 100);
+        deck.set_volume(0.5);
+        let out = render(&deck, 5000);
+        assert!(out[0] > 0.99, "no jump: {}", out[0]);
+        assert!(out[1000] < out[10] && out[1000] > 0.5);
+        assert_eq!(deck.test_out_gain(), 0.5, "snapped to the target");
+        assert!(out[4900..].iter().all(|&s| s == 0.5));
+    }
+
+    #[test]
+    fn spectrum_tap_sees_the_mix_before_the_volume() {
+        let deck = Deck::new(RATE);
+        let tap = deck.spectrum_tap();
+        deck.set_current(Some(voice(1, 0.5, 10_000)));
+        render(&deck, 500);
+        assert_eq!(tap.written(), 0, "disabled: nothing written");
+
+        tap.set_enabled(true);
+        deck.set_volume(0.0);
+        let out = render(&deck, 6000);
+        assert!(out[5900..].iter().all(|&s| s == 0.0), "muted output");
+        assert_eq!(tap.written(), 6000);
+        let mut latest = vec![0.0; 1000];
+        tap.read_latest(&mut latest);
+        assert!(latest.iter().all(|&s| (s - 0.5).abs() < 1e-6), "pre-volume");
+
+        // Paused: zeros keep flowing so a visualizer falls right away.
+        deck.set_paused(true);
+        render(&deck, 1000);
+        assert_eq!(tap.written(), 7000);
+        tap.read_latest(&mut latest[..900]);
+        assert!(latest[..900].iter().all(|&s| s == 0.0));
     }
 
     #[test]

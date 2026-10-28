@@ -4813,6 +4813,7 @@ dependencies = [
  "roxmltree 0.21.2",
  "rquickjs",
  "rusqlite",
+ "rustfft",
  "rustls",
  "serde",
  "serde_json",

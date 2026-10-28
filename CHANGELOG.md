@@ -20,6 +20,11 @@ versions follow [SemVer](https://semver.org/).
 
 ### Added
 
+* **Spectrum feed for visualizers** (`music-core`): `Player::spectrum(bands)` returns
+  smoothed log-spaced bands, peak-hold markers and an RMS level of what is playing (after
+  EQ / normalization / crossfade, before the volume), computed on demand from a lock-free
+  tap on the output; `Player::set_spectrum_enabled` makes it free while no visualizer is
+  shown. Groundwork for a spectrum-bar progress bar and Now Playing visualizers.
 * **Full-length YouTube playback** (`youtube::WebResolver`): the TV client with YouTube's
   JavaScript challenges solved by yt-dlp's public-domain solver in QuickJS, or the mobile
   web client with a BotGuard PoToken (hidden WKWebView on macOS, ported from ArchiveTune).

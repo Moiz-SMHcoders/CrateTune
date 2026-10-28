@@ -9,7 +9,7 @@
 //! speed/pitch → resample) fills a short queue; the deck, running inside the
 //! output callback, mixes the current voice, the preloaded next one for
 //! gapless switches and crossfades, and fades. UIs only ever poll
-//! [`Player::state`].
+//! [`Player::state`] (and, for visualizers, [`Player::spectrum`]).
 
 use std::sync::mpsc::{self, Receiver, RecvTimeoutError, Sender};
 use std::sync::{Arc, Mutex, MutexGuard};
@@ -23,6 +23,7 @@ use crate::equalizer::EqControl;
 use crate::output::{self, OutputDevice};
 use crate::silence::SilenceConfig;
 use crate::sleep::{SleepClock, SleepTimer, SleepTimerState};
+use crate::spectrum::{Spectrum, SpectrumAnalyzer, SpectrumConfig, SpectrumTap};
 use crate::voice::{Phase, Settings, Voice, VoiceConfig};
 use crate::{EqualizerSettings, Error, Quality, Result, StreamResolver, StreamSource, Track};
 
@@ -149,6 +150,9 @@ pub struct Player {
     tx: Sender<Command>,
     state: Arc<Mutex<PlaybackState>>,
     eq: Arc<EqControl>,
+    tap: Arc<SpectrumTap>,
+    /// Shared analyzer behind [`Player::spectrum`], created on first use.
+    analyzer: Arc<Mutex<Option<SpectrumAnalyzer>>>,
 }
 
 impl Player {
@@ -195,16 +199,23 @@ impl Player {
                         }
                     },
                 };
+                let tap = deck.spectrum_tap();
                 let mut engine = Engine::new(engine_state, engine_eq, resolver, deck, output);
                 engine.attach_output();
-                let _ = ready_tx.send(Ok(()));
+                let _ = ready_tx.send(Ok(tap));
                 engine.run(rx);
             })
             .map_err(|e| Error::Audio(e.to_string()))?;
-        ready_rx
+        let tap = ready_rx
             .recv()
             .map_err(|_| Error::Audio("audio thread died".into()))??;
-        Ok(Self { tx, state, eq })
+        Ok(Self {
+            tx,
+            state,
+            eq,
+            tap,
+            analyzer: Arc::default(),
+        })
     }
 
     fn send(&self, cmd: Command) {
@@ -331,6 +342,55 @@ impl Player {
     /// The settings last passed to [`Self::set_equalizer`] (disabled by default).
     pub fn equalizer(&self) -> EqualizerSettings {
         self.eq.get()
+    }
+
+    /// Feeds the output into the spectrum analyzer (off by default). While
+    /// off, the audio callback skips the tap entirely (one atomic load per
+    /// block) and [`Self::spectrum`] decays to zeros. Turn it on while a
+    /// visualizer is visible.
+    pub fn set_spectrum_enabled(&self, enabled: bool) {
+        self.tap.set_enabled(enabled);
+    }
+
+    pub fn spectrum_enabled(&self) -> bool {
+        self.tap.is_enabled()
+    }
+
+    /// The current spectrum in `bands` log-spaced bands (see
+    /// [`SpectrumConfig`]), for a visualizer polling at display rate (≤ 60 Hz).
+    /// Reflects the final mix the listener hears (after EQ, normalization and
+    /// crossfades) before the volume, so muted playback still moves; decays to
+    /// zero when paused, stopped or silent. Needs
+    /// [`Self::set_spectrum_enabled`].
+    ///
+    /// All clones of the player share this analyzer and its smoothing; views
+    /// with different band counts should each own a [`Self::spectrum_analyzer`].
+    pub fn spectrum(&self, bands: usize) -> Spectrum {
+        let mut out = Spectrum::default();
+        self.spectrum_into(bands, &mut out);
+        out
+    }
+
+    /// [`Self::spectrum`] into `out`, reusing its buffers (no allocation per frame).
+    pub fn spectrum_into(&self, bands: usize, out: &mut Spectrum) {
+        let mut analyzer = self.analyzer.lock().unwrap_or_else(|e| e.into_inner());
+        analyzer
+            .get_or_insert_with(|| self.spectrum_analyzer())
+            .analyze(bands, out);
+    }
+
+    /// Changes the band mapping and smoothing of [`Self::spectrum`].
+    pub fn set_spectrum_config(&self, config: SpectrumConfig) {
+        let mut analyzer = self.analyzer.lock().unwrap_or_else(|e| e.into_inner());
+        analyzer
+            .get_or_insert_with(|| self.spectrum_analyzer())
+            .set_config(config);
+    }
+
+    /// A separate analyzer on the same output, with its own band count,
+    /// configuration and smoothing (e.g. one per visualizer).
+    pub fn spectrum_analyzer(&self) -> SpectrumAnalyzer {
+        SpectrumAnalyzer::new(self.tap.clone(), SpectrumConfig::default())
     }
 }
 
