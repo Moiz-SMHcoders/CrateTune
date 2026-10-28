@@ -558,7 +558,7 @@ impl MusicApp {
             "lyrics-align" => {
                 let align = TextAlign::ALL
                     .into_iter()
-                    .find(|a| Some(a.title().to_lowercase().as_str()) == arg);
+                    .find(|a| Some(a.key()) == arg);
                 if let Some(align) = align {
                     panel.update(cx, |p, cx| p.set_lyrics_align(align, cx));
                 }

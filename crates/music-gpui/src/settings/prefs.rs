@@ -226,7 +226,6 @@ impl TextAlign {
     }
 
     /// Stable, untranslated name (the serde value; script `@lyrics-align=`).
-    #[allow(dead_code)] // TEMP(i18n): until script.rs matches on it instead of `title()`.
     pub fn key(self) -> &'static str {
         match self {
             Self::Left => "left",
