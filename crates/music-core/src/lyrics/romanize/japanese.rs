@@ -1,8 +1,9 @@
 // Ported from ArchiveTune app/src/main/kotlin/moe/rukamori/archivetune/lyrics/LyricsUtils.kt (KANA_ROMAJI_MAP, katakanaToRomaji, romanizeJapanese) — © Rukamori and ArchiveTune contributors, GPL-3.0
 //! Japanese → Hepburn-style romaji. Kana is converted with a table (sokuon,
-//! yōon, long vowels). Kanji need a dictionary: with the `japanese-dict` cargo
-//! feature, text is tokenized with lindera + IPADIC (embedded, ~48 MB) and the
-//! readings are romanized; without it kanji are left as they are.
+//! yōon, long vowels). Kanji need a dictionary: text is tokenized with lindera +
+//! IPADIC (embedded with the `japanese-dict` feature, or downloaded at runtime, see
+//! [`super::dictionary`]) and the readings are romanized; without one kanji are
+//! left as they are.
 
 /// Two-kana combinations first, then single kana (katakana; hiragana is mapped up).
 #[rustfmt::skip]
@@ -139,10 +140,10 @@ pub(crate) fn kana_to_romaji(text: &str, next: Option<&str>) -> String {
     out
 }
 
-/// Japanese line → romaji. Kanji are kept unless the `japanese-dict` feature is on.
+/// Japanese line → romaji. Kanji are kept unless a dictionary is embedded
+/// (`japanese-dict`) or was loaded at runtime ([`super::dictionary`]).
 pub(crate) fn romanize_japanese(text: &str) -> String {
-    #[cfg(feature = "japanese-dict")]
-    if let Some(r) = dict::romanize(text) {
+    if let Some(r) = super::dictionary::romanize(text) {
         return r;
     }
     romanize_by_script_runs(text)
@@ -191,66 +192,6 @@ fn romanize_by_script_runs(text: &str) -> String {
     out
 }
 
-#[cfg(feature = "japanese-dict")]
-mod dict {
-    use std::borrow::Cow;
-    use std::sync::{Mutex, OnceLock};
-
-    use lindera::dictionary::load_dictionary;
-    use lindera::mode::Mode;
-    use lindera::segmenter::Segmenter;
-
-    use super::kana_to_romaji;
-
-    fn segmenter() -> Option<&'static Mutex<Segmenter>> {
-        static SEG: OnceLock<Option<Mutex<Segmenter>>> = OnceLock::new();
-        SEG.get_or_init(|| {
-            let dictionary = load_dictionary("embedded://ipadic")
-                .map_err(|e| log::warn!("lindera ipadic: {e}"))
-                .ok()?;
-            Some(Mutex::new(Segmenter::new(Mode::Normal, dictionary, None)))
-        })
-        .as_ref()
-    }
-
-    /// Tokenizes with IPADIC and romanizes each token's reading (detail 7);
-    /// the particles は/へ/を read wa/e/o.
-    pub(super) fn romanize(text: &str) -> Option<String> {
-        let seg = segmenter()?.lock().ok()?;
-        let mut tokens = seg.segment(Cow::Borrowed(text)).ok()?;
-        let mut parts: Vec<(String, String, bool)> = Vec::with_capacity(tokens.len());
-        for token in tokens.iter_mut() {
-            let surface = token.surface.to_string();
-            let details: Vec<String> = token.details().iter().map(|s| s.to_string()).collect();
-            let particle = details.first().is_some_and(|p| p == "助詞");
-            let reading = details
-                .get(7)
-                .filter(|r| !r.is_empty() && *r != "*")
-                .cloned()
-                .unwrap_or_else(|| surface.clone());
-            parts.push((surface, reading, particle));
-        }
-        let mut out = String::new();
-        for (i, (surface, reading, particle)) in parts.iter().enumerate() {
-            if surface.trim().is_empty() {
-                continue;
-            }
-            let romaji = match (particle, surface.as_str()) {
-                (true, "は") => "wa".to_owned(),
-                (true, "へ") => "e".to_owned(),
-                (true, "を") => "o".to_owned(),
-                _ => kana_to_romaji(reading, parts.get(i + 1).map(|p| p.1.as_str())),
-            };
-            let is_punct = romaji.chars().all(|c| !c.is_alphanumeric());
-            if !out.is_empty() && !is_punct {
-                out.push(' ');
-            }
-            out.push_str(&romaji);
-        }
-        Some(out)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -268,14 +209,13 @@ mod tests {
         assert_eq!(kana_to_romaji("ok!", None), "ok!");
     }
 
-    #[cfg(not(feature = "japanese-dict"))]
     #[test]
     fn line_without_dictionary() {
         assert_eq!(
-            romanize_japanese("知りたいその秘密ミステリアス"),
+            romanize_by_script_runs("知りたいその秘密ミステリアス"),
             "知 ritaisono 秘密 misuteriasu"
         );
-        assert_eq!(romanize_japanese("君の名は。"), "君 no 名 ha。");
+        assert_eq!(romanize_by_script_runs("君の名は。"), "君 no 名 ha。");
     }
 
     #[cfg(feature = "japanese-dict")]

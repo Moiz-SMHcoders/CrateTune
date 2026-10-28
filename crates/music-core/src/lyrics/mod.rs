@@ -13,6 +13,7 @@
 //! # Ok::<(), music_core::Error>(())
 //! ```
 
+mod credits;
 mod format;
 mod lrc;
 pub mod providers;

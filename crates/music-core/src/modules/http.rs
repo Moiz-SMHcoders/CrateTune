@@ -218,7 +218,8 @@ fn agent() -> ureq::Agent {
     if let Some(ua) = &config.user_agent {
         builder = builder.user_agent(ua.as_str());
     }
-    let agent: ureq::Agent = builder.build().into();
+    // Same name resolution as the shared agent (DNS-over-HTTPS when configured).
+    let agent = crate::http::agent_with(builder.build());
     *slot = Some((config, agent.clone()));
     agent
 }

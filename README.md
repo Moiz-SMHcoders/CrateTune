@@ -87,13 +87,23 @@ its own executor.
 
 * `InnerTube` — YouTube Music (`WEB_REMIX`) metadata: home (+ mood chips, continuation),
   explore, charts (per country), moods & genres, new releases, album / artist / playlist
-  pages, search (summary, per-category filters, suggestions, continuations), play queues
-  (`next`, `RDAMVM<id>` radio), related and lyrics tabs; locale via `hl`/`gl`. A cookie-based
-  account layer (`innertube::Auth`, SAPISIDHASH) adds account info, library, history, likes,
-  subscriptions and playlist editing (request bodies unit-tested; not yet verified live).
-  Ported from ArchiveTune, see `THIRD_PARTY.md`.
-* `http::configure(HttpConfig { proxy, user_agent, timeout })` — process-wide HTTP agent
-  (http/https/socks4/socks5 proxies; no DNS-over-HTTPS).
+  pages (long albums: `album_tracks` / `album_complete` load past the page's 200 tracks
+  through the album playlist; `playlist_complete`), podcasts (`podcast` show pages with
+  `Episode`s, `podcast_continuation`, `episode` pages), search (summary, per-category
+  filters, suggestions, continuations, spelling `correction` + `search_summary_exact`),
+  play queues (`next`, `RDAMVM<id>` radio), related and lyrics tabs; locale via `hl`/`gl`.
+  Every parsed `Track` carries `music_video_type` (`MusicVideoType::{Atv, Omv, Ugc,
+  PodcastEpisode, Uploaded, Other}`; `Track::is_video` = OMV or UGC). A cookie-based
+  account layer (`innertube::Auth`, SAPISIDHASH) adds account info, library (incl.
+  podcasts), history, likes, subscriptions, playlist editing and custom playlist covers
+  (`upload_playlist_cover`; request bodies unit-tested; not yet verified live). Ported from
+  ArchiveTune, see `THIRD_PARTY.md`.
+* `http::configure(HttpConfig { proxy, user_agent, timeout, doh })` — process-wide HTTP agent
+  (http/https/socks4/socks5 proxies) with optional DNS-over-HTTPS (`doh` module: RFC 8484
+  wire format over ureq's resolver hook, `DohProvider::{Cloudflare, Google, Quad9,
+  Custom(url)}` reached through bootstrap IPs, A + AAAA in parallel, TTL cache 30 s – 1 h,
+  `fallback_to_system`); `http::lookup(host)` reports how a name resolves. The modules'
+  agent shares the resolver. ureq speaks HTTP/1.1 only, so Quad9 uses its port-5053 endpoint.
 * `StreamResolver` trait + `IosClientResolver` — video id → audio URL; `Quality`
   (`Low`/`Normal`/`High`) picks among the itags it returns (AAC 139/140, Opus 249/250/251).
 * `Player` — audio thread with a pollable `PlaybackState`, `pause`/`resume`/`toggle_pause`/`seek`.
@@ -240,19 +250,59 @@ if let Some(result) = service.fetch(&LyricsQuery::from_track(&track))? {
 
 * `LyricsResult` keeps the raw payload (`to_raw()` / `RawLyrics::parse`) so a library database
   can implement `LyricsCache` and store what was fetched.
+* Credit lines (`lyrics/credits.rs`, one heuristic for TTML, QRC, LRC and plain text): the
+  leading (and a short trailing) block is checked for credit labels in English, Romance
+  languages, Chinese, Japanese and Korean (`Written by:`, `Keyboard by：`, `作词 :`, `작곡 :`,
+  `Letra:` …), "Written by X" lines, songwriter lists that name one of the track's artists
+  (`Julian Casablancas/Thomas Bangalter/…`), a `Title - Artist` header, copyright notices.
+  Weak signals (an ambiguous `Music:` label, a plain list of names, a lone Chinese name) only
+  count with support: the line spans 0 s, its words are evenly timed (synthesized by the
+  provider), or the line next to it is a credit. Names are compared transliterated
+  (`ROSALÍA` = `Rosalia`, `周杰倫` = `周杰伦`). `parse` uses the payload's own `[ti:]`/`[ar:]`;
+  `LyricsResult::without_credits(&query)` adds the track's title and artists (the service
+  applies it to every result and cache hit). Lines in the middle of a song are never touched.
+* "Instrumental" answers (`纯音乐，请欣赏`, `Instrumental`, `♪`) are not lyrics
+  (`LyricsResult::is_instrumental`); one such answer vetoes line-synced / plain results from
+  other providers (for an instrumental they are another song or a fan-written poem), while
+  word-synced lyrics still win.
 * Selection: providers run concurrently (`max_concurrent`, 1 = one after another); with
   `prefer_word_synced` a word-synced result beats a line-synced one from a higher-priority
   provider; otherwise the highest-priority synced result wins; plain text is the fallback.
-* Translation: `GoogleTranslator` (free endpoint, batched) or `AiTranslator` (any
-  OpenAI-compatible chat-completions endpoint; key, model and custom prompt from the caller).
-* Romanization: Japanese kana (kanji readings only with the off-by-default `japanese-dict`
-  feature: lindera + IPADIC adds ~48 MB and downloads the dictionary at build time), Korean
-  (Revised Romanization), Chinese (pinyin with tones), Hindi/Devanagari, Cyrillic, other scripts
-  via `deunicode`.
+* Translation: `GoogleTranslator` (free endpoint, batched; requests of one translation are
+  spaced 400 ms and capped at 12) or `AiTranslator` (any OpenAI-compatible chat-completions
+  endpoint; key, model and custom prompt from the caller). A 429 / 503 blocks that endpoint
+  for its `Retry-After`, else 2 min doubling up to 30 min; calls meanwhile fail at once with
+  "… rate-limited this connection; try again in N min" (`translate::is_rate_limited`,
+  `LyricsTranslator::retry_after`); a `Retry-After` ≤ 10 s is waited out once. Google answers
+  a burst with a redirect to its "sorry" page (a 429 without `Retry-After`).
+  `CachedTranslator` + `TranslationCache` (`MemoryTranslationCache`, or `Library`: rows in the
+  lyrics table) keep finished translations per translator settings, language and lyrics text.
+* Romanization: Japanese (kana table; kanji readings with lindera + IPADIC), Korean (Revised
+  Romanization), Chinese (pinyin with tones), Hindi/Devanagari, Cyrillic, other scripts via
+  `deunicode`. Kanji: `romanize::dictionary` downloads lindera's prebuilt IPADIC on demand
+  (`DictionarySource::ipadic()`: 10.5 MB zip from lindera's v6.2.0 release, SHA-256 pinned,
+  45 MB unpacked — UniDic would be 46 MB zipped), unpacks it into a cache directory and
+  `load`s it memory-mapped (~9 ms); without it only kana are romanized. The off-by-default
+  `japanese-dict` feature embeds the same dictionary instead (+~48 MB binary, downloaded at
+  build time). lindera without a dictionary adds ~0.23 MB to the release binary. The pinned
+  zip must match the lindera version in `Cargo.toml` (its dictionary format); update both
+  together.
+
+```rust
+use music_core::lyrics::romanize::dictionary::{self, DictionarySource};
+let source = DictionarySource::ipadic();
+let path = match dictionary::installed(&source, &cache_dir) {
+    Some(path) => path,
+    None => dictionary::install(&source, &cache_dir, &cancel, |done, total| { /* progress */ })?,
+};
+dictionary::load(&path)?;   // romanize_line / romanize_result read kanji from now on
+```
 
 ```sh
 cargo run -p music-core --example lyrics -- "daft punk instant crush"     # every provider, then the service pick
 cargo run -p music-core --example lyrics -- --translate en "yoasobi idol" # + romanization and translation
+cargo run -p music-core --example lyrics -- --ja-dict /tmp/ja "yoasobi idol" # download IPADIC: kanji readings
+cargo run -p music-core --example lyrics -- --raw /tmp/raw "rosalia malamente" # + every provider's raw payload
 ```
 
 ### Full-length YouTube streams (`youtube` module)
@@ -377,7 +427,9 @@ src/
                      artwork (shared cache), sidebar, player_bar, queue_panel
   browse.rs          online pages: Load state, fetch (worker thread, app's InnerTube),
                      PageCache, Paging (infinite scroll), content filters, locale
-  search_box.rs      header search: suggestions + recent searches dropdown
+  search_box.rs      header search: suggestions + recent searches dropdown;
+                     search_history.rs: ordered, flushable history writes
+  playlist_cover.rs  "Change cover…": image → square JPEG ≤ 2 MiB → upload
   radio.rs           radio / autoplay / play-an-album-or-playlist (InnerTube `next`)
   settings/          file.rs (settings.json model), panel.rs (SettingsPanel entity: state,
                      persistence, secrets, section list), one file per section, mod.rs
@@ -433,7 +485,9 @@ src/
   search (in-memory list of 30 feeding the "Recent searches" dropdown) and also saves it in
   the library (`Library::add_search_query`, unless Privacy → "Pause search history");
   `set_recent_searches(..)` is seeded from the library at launch, `remove_recent_search`
-  deletes one from both. `Track::artist_refs` / `album_id` drive "Go to artist / album".
+  deletes one from both. Database writes go through one ordered worker
+  (`search_history.rs`), flushed on quit, before reloading and before clearing; entries
+  differing only in letter case are one entry in both lists. `Track::artist_refs` / `album_id` drive "Go to artist / album".
 * **Persistent lyrics cache:** `MusicApp::set_lyrics_cache(Arc<dyn LyricsCache>)` swaps
   the in-memory cache (e.g. for the library database's lyrics table); the service is
   rebuilt around it and every later fetch reads / writes it.
@@ -476,7 +530,9 @@ src/
   then one block per category with "See all") and tabs for Songs, Videos, Albums,
   Artists, Community playlists, Featured playlists, Podcasts and Episodes (fetched when
   first opened; virtualized rows; more results load as you scroll). Each query is its
-  own history entry (replaced while you stay on search).
+  own history entry (replaced while you stay on search). A spelling correction shows as
+  "Showing results for *X* · Search instead for *Y*" (the latter reloads All without
+  correction) or "Did you mean *X*?"; the history keeps the typed query.
   Song rows: click plays the list from that row; hover shows play next / add to queue /
   more; right click (or "…") opens play, play next, add to queue, start radio, add to
   playlist, like, go to artist (one entry per artist with an id), go to album.
@@ -495,9 +551,16 @@ src/
   singles / videos / playlists / related artists as cards; "See all" opens the artist's
   items page (discography grid or song list, more as you scroll) or the playlist.
   **Album page:** art, type · year, linked artists, track count, Play / Shuffle / Radio /
-  Add to queue, numbered tracks, other versions. **Playlist page** (also podcasts):
-  author, track count, description, Play / Shuffle / Radio / Add to queue, tracks in a
-  virtualized list that loads more rows as you scroll.
+  Add to queue, numbered tracks (albums over 200 tracks load the rest right away, with a
+  Retry footer), other versions. **Playlist page**: author, track count, description,
+  Play / Shuffle / Radio / Add to queue (/ Change cover… for your own playlists when
+  signed in), tracks in a virtualized list that loads more rows as you scroll.
+  **Podcast page** (`Route::Podcast`, `MPSP…`): art, publisher, episode count,
+  description, Play / Shuffle / Add to queue / Save to library (signed in), episodes
+  (art, title, date · length, two lines of description) virtualized with infinite scroll;
+  click plays from that episode, the menu adds "Open episode page" (`Route::Episode`:
+  Play, Add to queue, Go to podcast, full description). Episodes are videos and play
+  through the normal resolver; "Go to podcast" replaces "Go to artist" in their menus.
 * **Radio:** "Start radio" (track menus, song suggestions, top result, header buttons of
   artists / albums / playlists) replaces the queue with the radio mix (`InnerTube::next`
   with `RDAMVM…` / `RDAMPL…` / the artist's radio); while it plays, the next batch loads
@@ -509,14 +572,18 @@ src/
   content language / country, filters or the proxy clears it and reloads the page.
 * **Content & region** settings: content language (41) and country (50) as searchable
   pickers (InnerTube `hl` / `gl`, applied live: pages reload, suggestions too), hide
-  explicit (songs, albums, tracks, radio), hide music videos (shelves, search, the Videos
-  tab), autoplay similar songs.
+  explicit (songs, albums, tracks, radio), hide music videos (OMV / UGC by video type:
+  shelves, search, the Videos tab, playlists, albums — unless every track of the album is
+  a video —, radio, queues, card actions), autoplay similar songs.
 * **Network** settings: proxy Off / HTTP / HTTPS / SOCKS4 / SOCKS5 / SOCKS5h, host, port,
   user name, password (masked; kept in the keychain). Apply validates (host without
   scheme, port 1–65535, no credentials for SOCKS4), rebuilds music-core's HTTP agent
   (`http::configure`; an invalid proxy keeps the previous one) and reloads pages; "Test
   connection" fetches `youtube.com/generate_204` through it. Applied at launch before the
-  first request (again with the password once the keychain has been read).
+  first request (again with the password once the keychain has been read). **DNS**:
+  System / Cloudflare / Google / Quad9 / Custom (https URL), "fall back to the system
+  resolver", Apply, **Test DNS** (addresses of music.youtube.com and whether DoH, its cache
+  or the system answered); `network.dns` in settings.json.
 * **Queue** (`queue.rs`): play next, add to queue, remove, move (up/down buttons or drag
   and drop in the panel), clear, shuffle (current track first; turning it off restores
   the original order including tracks added meanwhile), repeat off / all / one (repeat-one
@@ -574,11 +641,15 @@ src/
   button (searches again, skipping the cache). Real word timings drive the per-word
   fill; line-synced lyrics light the whole line. Background vocals (smaller, italic,
   their own word timings) and duet singers (other side) when the provider has them.
-  Romanization line per script (Japanese kana — kanji readings need music-core's
-  `japanese-dict` feature —, Korean, Chinese pinyin, Devanagari, Cyrillic, others).
-  Translation (Google or any OpenAI-compatible endpoint, target language, off by
-  default) is requested once per song and translator settings and cached for the
-  session; failures show with a Retry button. Text size, line spacing, left / center /
+  Romanization line per script (Japanese — kanji readings once the dictionary is
+  downloaded: Settings → Lyrics → Romanization shows its size, a progress bar with Cancel,
+  Remove; turning Japanese on fetches it the first time; it lives in the platform cache dir,
+  `$MUSIC_CONFIG_DIR/cache/ja-dict` with that variable —, Korean, Chinese pinyin, Devanagari,
+  Cyrillic, others). Translation (Google or any OpenAI-compatible endpoint, target
+  language, off by default) is requested once per song and translator settings and kept in
+  the library database (`CachedTranslator`), so reopening a song or restarting doesn't ask
+  again; failures show with a Retry button, and a rate-limited one ("rate-limited this
+  connection; try again in 2 min") retries by itself after the back-off. Text size, line spacing, left / center /
   right alignment, and six animation styles (None, Fade, Glow, Slide, Karaoke — the
   original renderer —, Apple) as variants of `KaraokeLine` (sweep vs. per-word fade,
   feather width, lift, scale, glyph halo). Click a line to seek; unsynced lyrics show as
@@ -614,7 +685,8 @@ src/
   Playing; "Like / Remove from liked songs" in menus. Local DB, plus `rate_song` on YouTube
   Music when signed in.
 * **Library page** (tabs replace the route): Songs (library = added, liked or local), Liked,
-  Albums, Artists, Playlists (local and YouTube mirrors), Downloaded, Local files. Song tabs:
+  Albums, Artists, Playlists (local and YouTube mirrors), Podcasts (the account's saved
+  shows, fetched from YouTube Music when signed in), Downloaded, Local files. Song tabs:
   virtualized list, filter, sort (date added, title, artist, plays, listening time, last
   played; picking the current sort flips the direction), Play / Shuffle, and **Select**:
   checkboxes + action bar (play, play next, add to queue, add to playlist, like, download,
@@ -977,6 +1049,58 @@ location / {
 The relay sees what the session sends (song ids and titles, display names, the session
 key in each guest's hello), like any host would; run your own.
 
+### Content round: video types, podcasts, long albums, DNS-over-HTTPS, covers
+
+| ![Podcast show](docs/screenshots/content-podcast.png) | ![Episode page](docs/screenshots/content-episode.png) |
+|---|---|
+| ![Album of 294 tracks, all loaded](docs/screenshots/content-album-long.png) | ![Hide videos: playlist without its music videos](docs/screenshots/content-playlist-hide-videos.png) |
+| ![Spelling correction](docs/screenshots/content-search-corrected.png) | ![Settings: Network → DNS](docs/screenshots/content-settings-network-dns.png) |
+| ![Settings: Content & region](docs/screenshots/content-settings-content.png) | ![Library → Podcasts (signed out)](docs/screenshots/content-library-podcasts.png) |
+
+* **Video types.** Every InnerTube track keeps `musicVideoType` (`Track::music_video_type`),
+  so **Hide music videos** works inside lists, not only on shelves: `ContentFilter::tracks`
+  drops OMV / UGC tracks from playlists (online pages and card actions), radio batches,
+  queues built from watch targets and search tabs; `ContentFilter::album_tracks` does the
+  same for albums, except that an album YouTube only has as official-audio videos (all
+  OMV, e.g. *Random Access Memories*) stays complete instead of turning up empty.
+* **Podcasts**: show and episode pages, the library tab and routing (`MPSP…` →
+  `Route::Podcast`, `MPED…` → `Route::Episode`, episode menus "Go to podcast"); see
+  Features above.
+* **Long albums**: album pages list at most 200 tracks (a 294-track box set had no
+  continuation); the rest comes from the album's playlist (`VL<audioPlaylistId>`, whose first
+  pages repeat the 200 and are deduplicated). Card actions use `album_complete`; playlist
+  card actions follow up to 10 continuations.
+* **DNS-over-HTTPS**: Settings → Network → DNS (see Features).
+* **Playlist covers**: "Change cover…" on your own playlists (online page when editable,
+  library mirror page) → `playlist_cover::prepare_cover` (ArchiveTune's crop / scale / JPEG
+  steps) → `InnerTube::upload_playlist_cover` (resumable upload to
+  `playlist_image_upload/playlist_custom_thumbnail`, then `ACTION_SET_CUSTOM_THUMBNAIL`).
+* **Search history fix**: see Extension points → Search history; the corrected-query banner
+  never rewrites history.
+
+**Verified:** fixture tests on trimmed live responses (video types on search / album /
+playlist / next / artist rows, podcast page with and without continuation, episode
+continuation, episode page, 294-track album + its playlist pages, corrected search, a
+synthetic library-podcasts page); the live `browse` example (48 calls ok, incl. a
+podcast with continuation and episode page, `album_complete` → 294 of 294, correction and
+exact search) also with `MUSIC_DOH=cloudflare`; DoH unit tests against a local RFC 8484
+stub server (resolution, A + AAAA, TTL cache, IP literals / local names, fallback on/off,
+unreachable server) and the live providers (`cargo test -p music-core doh -- --ignored`:
+Cloudflare and Google answer, Quad9's port 5053 is unreachable from this network). In the
+app (screenshot build, temporary config): the screens above; the 294-track album loaded
+in 3 extra requests; `@dns=cloudflare` + `@dns-test` → "music.youtube.com → … via
+DNS-over-HTTPS in 52 ms" and `network.dns` saved; with Hide videos on, *Indie Disco* starts
+at "Last Nite" (its OMV opener "Feel Good Inc." gone); a JRE episode (2 h 43 min) played
+through the normal resolver on the real device (muted): full 9821 s length, seek to 1 h.
+Search history: `@submit` "justice genesis", "justice genisis" (YouTube shows results for
+"justice genesis"), "Daft Punk", "daft punk", "queen", `@quit` 0.1 s later → the
+database holds queen, daft punk, justice genisis, justice genesis and the next launch lists
+them in that order; unit tests for the ordered writer and case-insensitive dedupe.
+**Not verified:** anything signed in (library Podcasts tab, Save to library, cover
+upload — the upload's requests are unit-tested only), Quad9 DoH, DoH through a proxy, the
+original "vanished" report itself (not reproduced; the race above is the cause found in the
+code, removed by design), physical clicks on the new buttons (script actions instead).
+
 ### Keyboard shortcuts and menus
 
 | Keys | Action |
@@ -1034,7 +1158,7 @@ item's ACL is tied to the binary). Secrets are never logged.
 |---|---|
 | `MUSIC_QUERY=…` | pre-fill and run a search (`MUSIC_GPUI_QUERY` still works) |
 | `MUSIC_AUTOOPEN=1` | play the first hit and open Now Playing (`MUSIC_GPUI_AUTOPLAY=1`: play only) |
-| `MUSIC_ROUTE=library:albums` | open a page at startup (`home`, `explore`, `search:q`, `settings:eq`, `artist:ID`, `album:ID`, `playlist:ID`, `browse:ID\|PARAMS`, `artist-items:ID\|PARAMS`, …) |
+| `MUSIC_ROUTE=library:albums` | open a page at startup (`home`, `explore`, `search:q`, `settings:eq`, `artist:ID`, `album:ID`, `playlist:ID`, `podcast:MPSP…`, `episode:MPED…`, `library:podcasts`, `browse:ID\|PARAMS`, `artist-items:ID\|PARAMS`, …) |
 | `MUSIC_OPEN_SETTINGS=1\|<section>` | open the settings page (`eq`, `integrations`/`accounts`, `appearance`, `about`, …) |
 | `MUSIC_DEMO_CLOCK=1` | demo clock instead of audio (also used automatically when `Player::new` fails) |
 | `MUSIC_VOLUME=0.0` | volume for this session (muted real-device tests; ⌘↑/↓ and `@volume` still save) |
@@ -1061,10 +1185,12 @@ playback `@play=N @next @prev @seek=S @toggle @open @close @volume=V`; navigatio
 @np-bg=blur|gradient|solid|glow @mini-style=theme|artwork
 @lyrics-style=karaoke|apple|slide|glow|fade|none @lyrics-size=40 @lyrics-spacing=1.5
 @lyrics-align=left|center|right @translate=on|off @romanize=SCRIPT:on|off @lyrics-reload
+@kanji-dict[=remove|cancel]
 @sleep=MIN|eot|off|5s @speed=1.25 @pitch=-2 @crossfade=6 @quality=low|normal|high
 @normalize=on|off @skip-silence=on|off`; browse `@radio=N` (radio from search result N),
 `@suggest` (print the search dropdown), `@proxy=KIND:HOST:PORT|off`, `@locale=de:DE`,
-`@scroll=X;Y;DY`; modules `@modules=youtube|first|only`, `@module-install=PATH|URL`,
+`@scroll=X;Y;DY`, `@dns=system|cloudflare|google|quad9|URL[;nofallback]`, `@dns-test`,
+`@hide-videos[=off]`; modules `@modules=youtube|first|only`, `@module-install=PATH|URL`,
 `@module-catalog=URL`, `@module-confirm`, `@module-cancel`, `@module-open=N|ID`,
 `@module-field=KEY:VALUE`, `@module-save`, `@module-check=N`, `@module-update=N`,
 `@module-enable=N:on|off`, `@module-remove=N`; integrations (`integrations/script.rs`) `@sb=on|off @sb-mode=auto|ask
@@ -1164,6 +1290,38 @@ macOS delivers no display-link frames (`MUSIC_TIMINGS` prints nothing; 0 % CPU s
 Frames are still only requested while Now Playing is visible and something moves; the
 glow background adds no frames while paused, the mini player none at all. Backdrop blur
 + palette + glow lights: ~9.5 ms per track on a worker thread.
+
+### Lyrics round: verification
+
+`examples/lyrics.rs` against the live providers (no API keys; Paxsenix skipped), after the
+fixes. Cells: sync kind, format, lines; "credits" = credit lines the filter removed.
+
+| Provider | Instant Crush (EN) | Hype Boy (KR) | アイドル (JP) | MALAMENTE (ES) | Time (instrumental) | 晴天 (ZH) | Double Talk (obscure) |
+|---|---|---|---|---|---|---|---|
+| BetterLyrics | Line TTML 82 | Word TTML 66, 1 bg | Line LRC 75 | Word TTML 57, 25 bg | Line LRC 20 (a fan poem) | Line LRC 50 | — |
+| BetterLyrics Portato | Word QRC 76 (credits) | Word QRC 68 (title + credits) | Word QRC 75 | Word QRC 60 (title line was a "singer") | "纯音乐" → instrumental | Word QRC 50 | — |
+| YouLyPlus | Word TTML 76 (songwriter line) | Word LRC 66 | Word TTML 76 | Word LRC 57 | — | — | — (11.5 s → stops at the 404) |
+| Binimum | Word TTML 84 | Word TTML 66, 1 bg | Word TTML 74 | Word TTML 57, 25 bg | — | — | Line TTML 12 |
+| LRCLIB | Line 80 | Line 49 | Line 76 | Line 57 (≈ 7 s early) | — | Line 50 (header + 词/曲) | Line 12 |
+| KuGou | Line 76 (credits) | Line 68 | Line 75 | Line 60 (title line, with the query) | "纯音乐" → instrumental | Line 50 | — |
+| Megalobiz | — | — | — | — | — | — | — (site rebuilt: search 301 → 404/410) |
+| SimpMusic | Word LRC 82 | Word LRC 66 | Word LRC 76 | Word LRC 57 | Line 42: another song | Word LRC 56 → 50 (producer names, with the query) | — |
+| Unison | Word TTML 78 | — | Word TTML 74 | — | — | Word TTML 49 | — |
+| YouTube Music | Plain 100 | Plain 68 | Plain 88 | Plain 65 | — | Plain 48 | Plain 15 |
+| **Service pick** | Portato (Word) | BetterLyrics (Word) | Portato / YouLyPlus (Word) | BetterLyrics (Word) | **no lyrics** (was the poem) | Portato (Word) | Binimum (Line) |
+
+Google Translate (one live request, spaced): still refused for this IP — a 302 to
+`google.com/sorry` that answers 429 without `Retry-After`; the translator now reports
+"Google Translate rate-limited this connection; try again in 2 min" and sends nothing until
+then. In the app (release build, temp `MUSIC_CONFIG_DIR`, demo clock — no audio): an
+OpenAI-compatible fake server got one request for アイドル's 74 lines; after a restart the
+translation came from the library (still one request in total). `@kanji-dict` downloaded
+and verified the real IPADIC in ~1.6 s and loaded it; at the next start it was mapped in
+0.45 s after launch; `@kanji-dict=remove` deleted it. Release binary 40,020,928 B
+(+236,192 B for lindera without a dictionary and this round's code). **Not verified:** the
+Settings → Lyrics dictionary row and progress bar on screen (rendered, not looked at),
+in-app cancel of a running download (unit-tested; the real download finished first), a
+successful Google translation, Paxsenix / BetterLyrics keys.
 
 ### Measurements (app shell round)
 

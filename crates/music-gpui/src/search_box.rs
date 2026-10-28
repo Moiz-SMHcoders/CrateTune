@@ -96,7 +96,10 @@ impl MusicApp {
 
     pub fn remove_recent_search(&mut self, query: &str, cx: &mut Context<Self>) {
         self.forget_search(query);
-        self.search_box.recent.retain(|q| q != query);
+        // Like the database: every letter-case variant goes.
+        self.search_box
+            .recent
+            .retain(|q| !q.eq_ignore_ascii_case(query));
         self.search_box.highlight = None;
         cx.notify();
     }

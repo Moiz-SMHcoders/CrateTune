@@ -10,8 +10,8 @@ use super::models::{
     AlbumSummary, ArtistSummary, BrowseTarget, Chip, FeedbackTokens, Item, NavButton,
     PlaylistEntry, PlaylistSummary, PodcastSummary, Shelf, WatchTarget,
 };
-use crate::model::parse_duration;
-use crate::{EntityRef, Track};
+use crate::model::{parse_duration, parse_spoken_duration};
+use crate::{EntityRef, MusicVideoType, Track};
 
 pub(crate) const PAGE_ARTIST: &str = "MUSIC_PAGE_TYPE_ARTIST";
 pub(crate) const PAGE_USER_CHANNEL: &str = "MUSIC_PAGE_TYPE_USER_CHANNEL";
@@ -160,7 +160,7 @@ pub(crate) fn watch_target(endpoint: Option<&Value>) -> Option<WatchTarget> {
     (target.video_id.is_some() || target.playlist_id.is_some()).then_some(target)
 }
 
-fn video_type(endpoint: Option<&Value>) -> Option<&str> {
+pub(crate) fn video_type(endpoint: Option<&Value>) -> Option<&str> {
     str_at(
         endpoint?,
         "/watchEndpoint/watchEndpointMusicSupportedConfigs/watchEndpointMusicConfig/musicVideoType",
@@ -353,6 +353,7 @@ pub(crate) fn make_track(
         album_id,
         explicit,
         local_path: None,
+        music_video_type: None,
     }
 }
 
@@ -505,7 +506,7 @@ fn track_item(
             artists = unlinked_artists(&group);
         }
     }
-    let track = make_track(
+    let mut track = make_track(
         video_id,
         title,
         artists,
@@ -514,6 +515,11 @@ fn track_item(
         thumbnail,
         explicit,
     );
+    track.music_video_type = match vtype {
+        Some(v) => Some(MusicVideoType::from_innertube(v)),
+        None if episode => Some(MusicVideoType::PodcastEpisode),
+        None => None,
+    };
     if episode {
         Item::Episode(track)
     } else if vtype == Some(VIDEO_TYPE_ATV) || (vtype.is_none() && label != Some("Video")) {
@@ -711,9 +717,10 @@ pub(crate) fn parse_multi_row(r: &Value) -> Option<Item> {
     let subtitle_runs: Vec<&Value> = runs(r.get("subtitle")).iter().collect();
     let mut meta = analyze_runs(&subtitle_runs);
     meta.label = Some("Episode".into());
-    let duration = text(r.get("playbackProgress"))
+    let duration = text(r.pointer("/playbackProgress/musicPlaybackProgressRenderer/durationText"))
+        .or_else(|| text(r.get("playbackProgress")))
         .as_deref()
-        .and_then(parse_duration);
+        .and_then(spoken_or_clock_duration);
     Some(track_item(
         video_id,
         title,
@@ -723,6 +730,12 @@ pub(crate) fn parse_multi_row(r: &Value) -> Option<Item> {
         has_explicit_badge(r),
         Some(VIDEO_TYPE_EPISODE),
     ))
+}
+
+/// "• 2 hr 43 min" / "1:02:03" → seconds.
+pub(crate) fn spoken_or_clock_duration(text: &str) -> Option<u32> {
+    let text = text.trim_start_matches(|c: char| c == '•' || c.is_whitespace());
+    parse_duration(text).or_else(|| parse_spoken_duration(text))
 }
 
 /// A queue row from `next`; also returns its `playlistSetVideoId`.

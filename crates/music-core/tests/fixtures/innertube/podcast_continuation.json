@@ -1,0 +1,811 @@
+{
+ "continuationContents": {
+  "musicShelfContinuation": {
+   "contents": [
+    {
+     "musicMultiRowListItemRenderer": {
+      "thumbnail": {
+       "musicThumbnailRenderer": {
+        "thumbnail": {
+         "thumbnails": [
+          {
+           "url": "https://i.ytimg.com/vi/hSQ1iVqEZO4/hqdefault.jpg?sqp=-oaymwEWCJADEOEBIAQqCggAEOADGC0guwJIWg&rs=AMzJL3lywuvutSCiphoIJUmiCTWmSLjcUw",
+           "width": 400,
+           "height": 225
+          },
+          {
+           "url": "https://i.ytimg.com/vi/hSQ1iVqEZO4/hq720.jpg?sqp=-oaymwEKCKAGEMIDIABIWg&rs=AMzJL3knHh5uxi0EMC0MlrEKL3B30CR0PA",
+           "width": 800,
+           "height": 450
+          },
+          {
+           "url": "https://i.ytimg.com/vi/hSQ1iVqEZO4/hq720.jpg?sqp=-oaymwEKCNUGEN8DIABIWg&rs=AMzJL3n6mv0HrXZGmQdNoigFjCvnjlKc2A",
+           "width": 853,
+           "height": 479
+          }
+         ]
+        },
+        "thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+        "thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FIT"
+       }
+      },
+      "overlay": {
+       "musicItemThumbnailOverlayRenderer": {
+        "content": {
+         "musicPlayButtonRenderer": {
+          "playNavigationEndpoint": {
+           "watchEndpoint": {
+            "videoId": "hSQ1iVqEZO4",
+            "params": "8gEDmAEI",
+            "watchEndpointMusicSupportedConfigs": {
+             "watchEndpointMusicConfig": {
+              "musicVideoType": "MUSIC_VIDEO_TYPE_PODCAST_EPISODE"
+             }
+            }
+           }
+          },
+          "playIcon": {
+           "iconType": "PLAY_ARROW"
+          },
+          "pauseIcon": {
+           "iconType": "PAUSE"
+          },
+          "iconColor": 4294967295,
+          "backgroundColor": 0,
+          "activeBackgroundColor": 0,
+          "loadingIndicatorColor": 14745645,
+          "playingIcon": {
+           "iconType": "VOLUME_UP"
+          },
+          "iconLoadingColor": 0,
+          "activeScaleFactor": 1,
+          "buttonSize": "MUSIC_PLAY_BUTTON_SIZE_SMALL",
+          "rippleTarget": "MUSIC_PLAY_BUTTON_RIPPLE_TARGET_SELF",
+          "accessibilityPlayData": {},
+          "accessibilityPauseData": {}
+         }
+        },
+        "contentPosition": "MUSIC_ITEM_THUMBNAIL_OVERLAY_CONTENT_POSITION_CENTERED",
+        "displayStyle": "MUSIC_ITEM_THUMBNAIL_OVERLAY_DISPLAY_STYLE_PERSISTENT"
+       }
+      },
+      "onTap": {
+       "watchEndpoint": {
+        "videoId": "hSQ1iVqEZO4",
+        "params": "8gEDmAEI",
+        "watchEndpointMusicSupportedConfigs": {
+         "watchEndpointMusicConfig": {
+          "musicVideoType": "MUSIC_VIDEO_TYPE_PODCAST_EPISODE"
+         }
+        }
+       }
+      },
+      "menu": {
+       "menuRenderer": {
+        "items": [
+         {
+          "menuServiceItemRenderer": {
+           "text": {
+            "runs": [
+             {
+              "text": "Play next"
+             }
+            ]
+           },
+           "icon": {
+            "iconType": "QUEUE_PLAY_NEXT"
+           },
+           "serviceEndpoint": {
+            "queueAddEndpoint": {
+             "queueTarget": {
+              "videoId": "hSQ1iVqEZO4",
+              "onEmptyQueue": {
+               "watchEndpoint": {
+                "videoId": "hSQ1iVqEZO4"
+               }
+              }
+             },
+             "queueInsertPosition": "INSERT_AFTER_CURRENT_VIDEO",
+             "commands": [
+              {
+               "addToToastAction": {
+                "item": {
+                 "notificationTextRenderer": {
+                  "successResponseText": {
+                   "runs": [
+                    {
+                     "text": "Episode will play next"
+                    }
+                   ]
+                  }
+                 }
+                }
+               }
+              }
+             ]
+            }
+           }
+          }
+         },
+         {
+          "menuServiceItemRenderer": {
+           "text": {
+            "runs": [
+             {
+              "text": "Add to queue"
+             }
+            ]
+           },
+           "icon": {
+            "iconType": "ADD_TO_REMOTE_QUEUE"
+           },
+           "serviceEndpoint": {
+            "queueAddEndpoint": {
+             "queueTarget": {
+              "videoId": "hSQ1iVqEZO4",
+              "onEmptyQueue": {
+               "watchEndpoint": {
+                "videoId": "hSQ1iVqEZO4"
+               }
+              }
+             },
+             "queueInsertPosition": "INSERT_AT_END",
+             "commands": [
+              {
+               "addToToastAction": {
+                "item": {
+                 "notificationTextRenderer": {
+                  "successResponseText": {
+                   "runs": [
+                    {
+                     "text": "Episode added to queue"
+                    }
+                   ]
+                  }
+                 }
+                }
+               }
+              }
+             ]
+            }
+           }
+          }
+         },
+         {
+          "menuServiceItemDownloadRenderer": {
+           "serviceEndpoint": {
+            "offlineVideoEndpoint": {
+             "videoId": "hSQ1iVqEZO4",
+             "onAddCommand": {
+              "getDownloadActionCommand": {
+               "videoId": "hSQ1iVqEZO4",
+               "params": "CAI%3D"
+              }
+             }
+            }
+           }
+          }
+         }
+        ]
+       }
+      },
+      "subtitle": {
+       "runs": [
+        {
+         "text": "2.3M views"
+        },
+        {
+         "text": " • "
+        },
+        {
+         "text": "Sep 9"
+        }
+       ]
+      },
+      "playbackProgress": {
+       "musicPlaybackProgressRenderer": {
+        "playbackProgressPercentage": 0,
+        "playbackProgressText": {
+         "runs": [
+          {
+           "text": " • "
+          },
+          {
+           "text": "2 hr 18 min"
+          }
+         ]
+        },
+        "durationText": {
+         "runs": [
+          {
+           "text": " • "
+          },
+          {
+           "text": "2 hr 18 min"
+          }
+         ]
+        },
+        "playedText": {
+         "runs": [
+          {
+           "text": " • "
+          },
+          {
+           "text": "Played",
+           "textColor": 4294921797
+          }
+         ]
+        }
+       }
+      },
+      "title": {
+       "runs": [
+        {
+         "text": "Joe Rogan Experience #2551 - Daniel Kokotajlo",
+         "navigationEndpoint": {
+          "browseEndpoint": {
+           "browseId": "MPEDhSQ1iVqEZO4",
+           "browseEndpointContextSupportedConfigs": {
+            "browseEndpointContextMusicConfig": {
+             "pageType": "MUSIC_PAGE_TYPE_NON_MUSIC_AUDIO_TRACK_PAGE"
+            }
+           }
+          }
+         }
+        }
+       ]
+      },
+      "description": {
+       "runs": [
+        {
+         "text": "Daniel Kokotajlo is the executive director of the AI Futures Project and a former governance researcher at OpenAI, where he focused on scenario planning.\n\nhttps://www.aifuturesmodel.com\nhttps://ai-2040.com\nhttps://ai-2027.com\nhttps://www.aifutures.org\n\nPerplexity: Download the app or ask Perplexity "
+        }
+       ]
+      },
+      "displayStyle": "MUSIC_MULTI_ROW_LIST_ITEM_DISPLAY_STYLE_DETAILED"
+     }
+    },
+    {
+     "musicMultiRowListItemRenderer": {
+      "thumbnail": {
+       "musicThumbnailRenderer": {
+        "thumbnail": {
+         "thumbnails": [
+          {
+           "url": "https://i.ytimg.com/vi/BAhcDwMGKYU/hqdefault.jpg?sqp=-oaymwEWCJADEOEBIAQqCggAEOADGC0guwJIWg&rs=AMzJL3lPMaicWAAYLvABWo8YeJENUUYSAQ",
+           "width": 400,
+           "height": 225
+          },
+          {
+           "url": "https://i.ytimg.com/vi/BAhcDwMGKYU/hq720.jpg?sqp=-oaymwEKCKAGEMIDIABIWg&rs=AMzJL3kzfbObai4DyUu9-PVfWJ5yfMcaFQ",
+           "width": 800,
+           "height": 450
+          },
+          {
+           "url": "https://i.ytimg.com/vi/BAhcDwMGKYU/hq720.jpg?sqp=-oaymwEKCNUGEN8DIABIWg&rs=AMzJL3mcuc-oZSTLouJLvv9-K5cEfxziDA",
+           "width": 853,
+           "height": 479
+          }
+         ]
+        },
+        "thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+        "thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FIT"
+       }
+      },
+      "overlay": {
+       "musicItemThumbnailOverlayRenderer": {
+        "content": {
+         "musicPlayButtonRenderer": {
+          "playNavigationEndpoint": {
+           "watchEndpoint": {
+            "videoId": "BAhcDwMGKYU",
+            "params": "8gEDmAEI",
+            "watchEndpointMusicSupportedConfigs": {
+             "watchEndpointMusicConfig": {
+              "musicVideoType": "MUSIC_VIDEO_TYPE_PODCAST_EPISODE"
+             }
+            }
+           }
+          },
+          "playIcon": {
+           "iconType": "PLAY_ARROW"
+          },
+          "pauseIcon": {
+           "iconType": "PAUSE"
+          },
+          "iconColor": 4294967295,
+          "backgroundColor": 0,
+          "activeBackgroundColor": 0,
+          "loadingIndicatorColor": 14745645,
+          "playingIcon": {
+           "iconType": "VOLUME_UP"
+          },
+          "iconLoadingColor": 0,
+          "activeScaleFactor": 1,
+          "buttonSize": "MUSIC_PLAY_BUTTON_SIZE_SMALL",
+          "rippleTarget": "MUSIC_PLAY_BUTTON_RIPPLE_TARGET_SELF",
+          "accessibilityPlayData": {},
+          "accessibilityPauseData": {}
+         }
+        },
+        "contentPosition": "MUSIC_ITEM_THUMBNAIL_OVERLAY_CONTENT_POSITION_CENTERED",
+        "displayStyle": "MUSIC_ITEM_THUMBNAIL_OVERLAY_DISPLAY_STYLE_PERSISTENT"
+       }
+      },
+      "onTap": {
+       "watchEndpoint": {
+        "videoId": "BAhcDwMGKYU",
+        "params": "8gEDmAEI",
+        "watchEndpointMusicSupportedConfigs": {
+         "watchEndpointMusicConfig": {
+          "musicVideoType": "MUSIC_VIDEO_TYPE_PODCAST_EPISODE"
+         }
+        }
+       }
+      },
+      "menu": {
+       "menuRenderer": {
+        "items": [
+         {
+          "menuServiceItemRenderer": {
+           "text": {
+            "runs": [
+             {
+              "text": "Play next"
+             }
+            ]
+           },
+           "icon": {
+            "iconType": "QUEUE_PLAY_NEXT"
+           },
+           "serviceEndpoint": {
+            "queueAddEndpoint": {
+             "queueTarget": {
+              "videoId": "BAhcDwMGKYU",
+              "onEmptyQueue": {
+               "watchEndpoint": {
+                "videoId": "BAhcDwMGKYU"
+               }
+              }
+             },
+             "queueInsertPosition": "INSERT_AFTER_CURRENT_VIDEO",
+             "commands": [
+              {
+               "addToToastAction": {
+                "item": {
+                 "notificationTextRenderer": {
+                  "successResponseText": {
+                   "runs": [
+                    {
+                     "text": "Episode will play next"
+                    }
+                   ]
+                  }
+                 }
+                }
+               }
+              }
+             ]
+            }
+           }
+          }
+         },
+         {
+          "menuServiceItemRenderer": {
+           "text": {
+            "runs": [
+             {
+              "text": "Add to queue"
+             }
+            ]
+           },
+           "icon": {
+            "iconType": "ADD_TO_REMOTE_QUEUE"
+           },
+           "serviceEndpoint": {
+            "queueAddEndpoint": {
+             "queueTarget": {
+              "videoId": "BAhcDwMGKYU",
+              "onEmptyQueue": {
+               "watchEndpoint": {
+                "videoId": "BAhcDwMGKYU"
+               }
+              }
+             },
+             "queueInsertPosition": "INSERT_AT_END",
+             "commands": [
+              {
+               "addToToastAction": {
+                "item": {
+                 "notificationTextRenderer": {
+                  "successResponseText": {
+                   "runs": [
+                    {
+                     "text": "Episode added to queue"
+                    }
+                   ]
+                  }
+                 }
+                }
+               }
+              }
+             ]
+            }
+           }
+          }
+         },
+         {
+          "menuServiceItemDownloadRenderer": {
+           "serviceEndpoint": {
+            "offlineVideoEndpoint": {
+             "videoId": "BAhcDwMGKYU",
+             "onAddCommand": {
+              "getDownloadActionCommand": {
+               "videoId": "BAhcDwMGKYU",
+               "params": "CAI%3D"
+              }
+             }
+            }
+           }
+          }
+         }
+        ]
+       }
+      },
+      "subtitle": {
+       "runs": [
+        {
+         "text": "1M views"
+        },
+        {
+         "text": " • "
+        },
+        {
+         "text": "Sep 8"
+        }
+       ]
+      },
+      "playbackProgress": {
+       "musicPlaybackProgressRenderer": {
+        "playbackProgressPercentage": 0,
+        "playbackProgressText": {
+         "runs": [
+          {
+           "text": " • "
+          },
+          {
+           "text": "2 hr 19 min"
+          }
+         ]
+        },
+        "durationText": {
+         "runs": [
+          {
+           "text": " • "
+          },
+          {
+           "text": "2 hr 19 min"
+          }
+         ]
+        },
+        "playedText": {
+         "runs": [
+          {
+           "text": " • "
+          },
+          {
+           "text": "Played",
+           "textColor": 4294921797
+          }
+         ]
+        }
+       }
+      },
+      "title": {
+       "runs": [
+        {
+         "text": "Joe Rogan Experience #2550 - Rick Springfield",
+         "navigationEndpoint": {
+          "browseEndpoint": {
+           "browseId": "MPEDBAhcDwMGKYU",
+           "browseEndpointContextSupportedConfigs": {
+            "browseEndpointContextMusicConfig": {
+             "pageType": "MUSIC_PAGE_TYPE_NON_MUSIC_AUDIO_TRACK_PAGE"
+            }
+           }
+          }
+         }
+        }
+       ]
+      },
+      "description": {
+       "runs": [
+        {
+         "text": "Rick Springfield is a Grammy Award-winning musician, actor, and author. In addition to his work as a solo artist, Springfield fronts the rock supergroup The Locustz. Their most recent album, “Buzzkill,” is available now.\n\nhttps://www.youtube.com/@RickSpringfieldOfficial\nlocustzbuzzkill.bandcamp.com/"
+        }
+       ]
+      },
+      "displayStyle": "MUSIC_MULTI_ROW_LIST_ITEM_DISPLAY_STYLE_DETAILED"
+     }
+    },
+    {
+     "musicMultiRowListItemRenderer": {
+      "thumbnail": {
+       "musicThumbnailRenderer": {
+        "thumbnail": {
+         "thumbnails": [
+          {
+           "url": "https://i.ytimg.com/vi/t6Jrww8kG24/hqdefault.jpg?sqp=-oaymwEWCJADEOEBIAQqCggAEOADGC0guwJIWg&rs=AMzJL3nsuS6UYWUkKfX16pDgKoqvuHu0SA",
+           "width": 400,
+           "height": 225
+          },
+          {
+           "url": "https://i.ytimg.com/vi/t6Jrww8kG24/hq720.jpg?sqp=-oaymwEKCKAGEMIDIABIWg&rs=AMzJL3lIMxFJNjZSkFM6xlDXi_cbRnTAAQ",
+           "width": 800,
+           "height": 450
+          },
+          {
+           "url": "https://i.ytimg.com/vi/t6Jrww8kG24/hq720.jpg?sqp=-oaymwEKCNUGEN8DIABIWg&rs=AMzJL3keef7m9YT-ZePo3TtUNmVxmED_mA",
+           "width": 853,
+           "height": 479
+          }
+         ]
+        },
+        "thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+        "thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FIT"
+       }
+      },
+      "overlay": {
+       "musicItemThumbnailOverlayRenderer": {
+        "content": {
+         "musicPlayButtonRenderer": {
+          "playNavigationEndpoint": {
+           "watchEndpoint": {
+            "videoId": "t6Jrww8kG24",
+            "params": "8gEDmAEI",
+            "playerParams": "0gcJCQkB-iE-y48-",
+            "watchEndpointMusicSupportedConfigs": {
+             "watchEndpointMusicConfig": {
+              "musicVideoType": "MUSIC_VIDEO_TYPE_PODCAST_EPISODE"
+             }
+            }
+           }
+          },
+          "playIcon": {
+           "iconType": "PLAY_ARROW"
+          },
+          "pauseIcon": {
+           "iconType": "PAUSE"
+          },
+          "iconColor": 4294967295,
+          "backgroundColor": 0,
+          "activeBackgroundColor": 0,
+          "loadingIndicatorColor": 14745645,
+          "playingIcon": {
+           "iconType": "VOLUME_UP"
+          },
+          "iconLoadingColor": 0,
+          "activeScaleFactor": 1,
+          "buttonSize": "MUSIC_PLAY_BUTTON_SIZE_SMALL",
+          "rippleTarget": "MUSIC_PLAY_BUTTON_RIPPLE_TARGET_SELF",
+          "accessibilityPlayData": {},
+          "accessibilityPauseData": {}
+         }
+        },
+        "contentPosition": "MUSIC_ITEM_THUMBNAIL_OVERLAY_CONTENT_POSITION_CENTERED",
+        "displayStyle": "MUSIC_ITEM_THUMBNAIL_OVERLAY_DISPLAY_STYLE_PERSISTENT"
+       }
+      },
+      "onTap": {
+       "watchEndpoint": {
+        "videoId": "t6Jrww8kG24",
+        "params": "8gEDmAEI",
+        "playerParams": "0gcJCacBs75h_Tjp",
+        "watchEndpointMusicSupportedConfigs": {
+         "watchEndpointMusicConfig": {
+          "musicVideoType": "MUSIC_VIDEO_TYPE_PODCAST_EPISODE"
+         }
+        }
+       }
+      },
+      "menu": {
+       "menuRenderer": {
+        "items": [
+         {
+          "menuServiceItemRenderer": {
+           "text": {
+            "runs": [
+             {
+              "text": "Play next"
+             }
+            ]
+           },
+           "icon": {
+            "iconType": "QUEUE_PLAY_NEXT"
+           },
+           "serviceEndpoint": {
+            "queueAddEndpoint": {
+             "queueTarget": {
+              "videoId": "t6Jrww8kG24",
+              "onEmptyQueue": {
+               "watchEndpoint": {
+                "videoId": "t6Jrww8kG24"
+               }
+              }
+             },
+             "queueInsertPosition": "INSERT_AFTER_CURRENT_VIDEO",
+             "commands": [
+              {
+               "addToToastAction": {
+                "item": {
+                 "notificationTextRenderer": {
+                  "successResponseText": {
+                   "runs": [
+                    {
+                     "text": "Episode will play next"
+                    }
+                   ]
+                  }
+                 }
+                }
+               }
+              }
+             ]
+            }
+           }
+          }
+         },
+         {
+          "menuServiceItemRenderer": {
+           "text": {
+            "runs": [
+             {
+              "text": "Add to queue"
+             }
+            ]
+           },
+           "icon": {
+            "iconType": "ADD_TO_REMOTE_QUEUE"
+           },
+           "serviceEndpoint": {
+            "queueAddEndpoint": {
+             "queueTarget": {
+              "videoId": "t6Jrww8kG24",
+              "onEmptyQueue": {
+               "watchEndpoint": {
+                "videoId": "t6Jrww8kG24"
+               }
+              }
+             },
+             "queueInsertPosition": "INSERT_AT_END",
+             "commands": [
+              {
+               "addToToastAction": {
+                "item": {
+                 "notificationTextRenderer": {
+                  "successResponseText": {
+                   "runs": [
+                    {
+                     "text": "Episode added to queue"
+                    }
+                   ]
+                  }
+                 }
+                }
+               }
+              }
+             ]
+            }
+           }
+          }
+         },
+         {
+          "menuServiceItemDownloadRenderer": {
+           "serviceEndpoint": {
+            "offlineVideoEndpoint": {
+             "videoId": "t6Jrww8kG24",
+             "onAddCommand": {
+              "getDownloadActionCommand": {
+               "videoId": "t6Jrww8kG24",
+               "params": "CAI%3D"
+              }
+             }
+            }
+           }
+          }
+         }
+        ]
+       }
+      },
+      "subtitle": {
+       "runs": [
+        {
+         "text": "1.3M views"
+        },
+        {
+         "text": " • "
+        },
+        {
+         "text": "Sep 3"
+        }
+       ]
+      },
+      "playbackProgress": {
+       "musicPlaybackProgressRenderer": {
+        "playbackProgressPercentage": 0,
+        "playbackProgressText": {
+         "runs": [
+          {
+           "text": " • "
+          },
+          {
+           "text": "2 hr 28 min"
+          }
+         ]
+        },
+        "durationText": {
+         "runs": [
+          {
+           "text": " • "
+          },
+          {
+           "text": "2 hr 28 min"
+          }
+         ]
+        },
+        "playedText": {
+         "runs": [
+          {
+           "text": " • "
+          },
+          {
+           "text": "Played",
+           "textColor": 4294921797
+          }
+         ]
+        }
+       }
+      },
+      "title": {
+       "runs": [
+        {
+         "text": "Joe Rogan Experience #2549 - Jared Diamond",
+         "navigationEndpoint": {
+          "browseEndpoint": {
+           "browseId": "MPEDt6Jrww8kG24",
+           "browseEndpointContextSupportedConfigs": {
+            "browseEndpointContextMusicConfig": {
+             "pageType": "MUSIC_PAGE_TYPE_NON_MUSIC_AUDIO_TRACK_PAGE"
+            }
+           }
+          }
+         }
+        }
+       ]
+      },
+      "description": {
+       "runs": [
+        {
+         "text": "Jared Diamond, PhD, is a professor, scientist, historian, and author of several books, including “Guns, Germs, and Steel,” “Collapse,” and “Why Is Sex Fun?” His latest book, “Profits, Prophets, Coaches, and Kings,” is available now.\n\nhttps://www.harpercollins.com/products/profits-prophets-coaches-an"
+        }
+       ]
+      },
+      "displayStyle": "MUSIC_MULTI_ROW_LIST_ITEM_DISPLAY_STYLE_DETAILED"
+     }
+    }
+   ],
+   "continuations": [
+    {
+     "nextContinuationData": {
+      "continuation": "4qmFsgJmEiZNUFNQUExrMVNxbl9mMzNLdVdmM3RXOUJCZV80VFA3eDhsMG0zVBo8ZWg1UVZEcERTR2RwUlVScmQwNUVXWGhOYW1Nd1VXcEpkMUpWU1hsUFJWR1NBUU1JMlFqYUNBUUlBaEFC"
+     }
+    }
+   ],
+   "shelfDivider": {
+    "musicShelfDividerRenderer": {
+     "hidden": true
+    }
+   }
+  }
+ }
+}

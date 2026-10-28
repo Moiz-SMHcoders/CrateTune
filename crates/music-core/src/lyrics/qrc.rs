@@ -7,6 +7,7 @@ use std::sync::LazyLock;
 
 use regex::Regex;
 
+use super::credits::{self, CreditContext};
 use super::types::{LineExtras, LyricWord, Lyrics, LyricsAgent, line_from_words, ms};
 
 static LINE_TIMING: LazyLock<Regex> =
@@ -319,9 +320,14 @@ fn normalize_for_comparison(value: &str) -> String {
 }
 
 fn is_metadata_line(line: &ParsedLine, title: Option<&str>, artist: Option<&str>) -> bool {
-    let text = normalize_for_comparison(&line.text);
-    let title = title.map(normalize_for_comparison).unwrap_or_default();
-    let artist = artist.map(normalize_for_comparison).unwrap_or_default();
+    // "Title (Part: X) - Artist": checked before the colon is taken for a singer prefix.
+    if credits::is_title_line(&line.text, &CreditContext::from_metadata(title, artist)) {
+        return true;
+    }
+    // Accent- and script-variant-insensitive ("ROSALÍA" = "Rosalia").
+    let text = credits::fold(&line.text);
+    let title = title.map(credits::fold).unwrap_or_default();
+    let artist = artist.map(credits::fold).unwrap_or_default();
     if !title.is_empty() && text.contains(&title) && (artist.is_empty() || text.contains(&artist)) {
         return true;
     }

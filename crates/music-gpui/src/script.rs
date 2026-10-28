@@ -39,9 +39,11 @@
 //! | `@locale=de:DE` | Content & region: content language and country |
 //! | `@suggest` | print the search dropdown's entries and the recent searches |
 //! | `@proxy=KIND:HOST:PORT`, `@proxy=off` | Network section: apply a proxy (no credentials) |
+//! | `@dns=system\|cloudflare\|google\|quad9\|URL[;nofallback]`, `@dns-test` | Network section: DNS-over-HTTPS, test lookup |
+//! | `@hide-videos[=off]` | Content & region: hide music videos |
 //! | `@layout=split\|centered\|lyrics`, `@np-bg=blur\|gradient\|solid\|glow`, `@mini-style=theme\|artwork` | Now Playing / mini player look (saved) |
 //! | `@lyrics-style=karaoke\|apple\|slide\|glow\|fade\|none`, `@lyrics-size=40`, `@lyrics-spacing=1.5`, `@lyrics-align=left\|center\|right` | lyrics look (saved) |
-//! | `@translate=on\|off`, `@romanize=SCRIPT:on\|off` (`japanese`, `korean`, `chinese`, `devanagari`, `cyrillic`, `other`), `@lyrics-reload` | lyrics extras |
+//! | `@translate=on\|off`, `@romanize=SCRIPT:on\|off` (`japanese`, `korean`, `chinese`, `devanagari`, `cyrillic`, `other`), `@lyrics-reload`, `@kanji-dict[=remove\|cancel]` (download the kanji dictionary) | lyrics extras |
 //! | `@sleep=MIN\|eot\|off` (`@sleep=5s`: seconds, for tests) | sleep timer |
 //! | `@speed=1.25`, `@pitch=-2`, `@crossfade=6`, `@quality=low\|normal\|high`, `@normalize=on\|off`, `@skip-silence=on\|off` | engine options (saved) |
 //! | `@modules=youtube\|first\|only` | playback source (Settings → Modules) |
@@ -443,6 +445,15 @@ impl MusicApp {
                 let spec = arg.unwrap_or("off").to_owned();
                 panel.update(cx, |p, cx| p.set_proxy_draft(&spec, window, cx));
             }
+            "dns" => {
+                let spec = arg.unwrap_or("system").to_owned();
+                panel.update(cx, |p, cx| p.set_dns_draft(&spec, window, cx));
+            }
+            "dns-test" => panel.update(cx, |p, cx| p.network_test_dns(cx)),
+            "hide-videos" => {
+                let on = arg != Some("off");
+                panel.update(cx, |p, cx| p.set_content(|c| c.hide_videos = on, cx));
+            }
             "layout" => match arg.and_then(NowPlayingLayout::parse) {
                 Some(l) => panel.update(cx, |p, cx| p.set_np_layout(l, cx)),
                 None => eprintln!("music-gpui: @layout wants split|centered|lyrics"),
@@ -499,6 +510,11 @@ impl MusicApp {
                 }
             }
             "lyrics-reload" => self.reload_lyrics(cx),
+            "kanji-dict" => match arg.unwrap_or("download") {
+                "remove" => self.remove_kanji_dictionary(cx),
+                "cancel" => self.cancel_kanji_dictionary(cx),
+                _ => self.download_kanji_dictionary(cx),
+            },
             "sleep" => {
                 let timer = match arg.unwrap_or("off") {
                     "off" => None,

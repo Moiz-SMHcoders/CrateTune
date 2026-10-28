@@ -27,17 +27,20 @@ pub enum LibraryTab {
     Albums,
     Artists,
     Playlists,
+    /// Podcasts saved on YouTube Music (signed in).
+    Podcasts,
     Downloaded,
     Local,
 }
 
 impl LibraryTab {
-    pub const ALL: [LibraryTab; 7] = [
+    pub const ALL: [LibraryTab; 8] = [
         LibraryTab::Songs,
         LibraryTab::Liked,
         LibraryTab::Albums,
         LibraryTab::Artists,
         LibraryTab::Playlists,
+        LibraryTab::Podcasts,
         LibraryTab::Downloaded,
         LibraryTab::Local,
     ];
@@ -49,6 +52,7 @@ impl LibraryTab {
             LibraryTab::Albums => "Albums",
             LibraryTab::Artists => "Artists",
             LibraryTab::Playlists => "Playlists",
+            LibraryTab::Podcasts => "Podcasts",
             LibraryTab::Downloaded => "Downloaded",
             LibraryTab::Local => "Local files",
         }
@@ -61,6 +65,7 @@ impl LibraryTab {
             LibraryTab::Albums => "albums",
             LibraryTab::Artists => "artists",
             LibraryTab::Playlists => "playlists",
+            LibraryTab::Podcasts => "podcasts",
             LibraryTab::Downloaded => "downloaded",
             LibraryTab::Local => "local",
         }
@@ -96,6 +101,16 @@ pub enum Route {
         name: String,
     },
     Playlist {
+        id: String,
+        name: String,
+    },
+    /// A podcast show (`MPSP…` browse id).
+    Podcast {
+        id: String,
+        name: String,
+    },
+    /// A podcast episode page (`MPED…` browse id).
+    Episode {
         id: String,
         name: String,
     },
@@ -157,6 +172,8 @@ impl Route {
             Route::Artist { name, .. }
             | Route::Album { name, .. }
             | Route::Playlist { name, .. }
+            | Route::Podcast { name, .. }
+            | Route::Episode { name, .. }
             | Route::LibraryArtist { name, .. }
             | Route::LibraryAlbum { name, .. }
             | Route::LocalPlaylist { name, .. }
@@ -184,6 +201,8 @@ impl Route {
                 Route::Artist { .. }
                     | Route::Album { .. }
                     | Route::Playlist { .. }
+                    | Route::Podcast { .. }
+                    | Route::Episode { .. }
                     | Route::LibraryArtist { .. }
                     | Route::LibraryAlbum { .. }
                     | Route::LocalPlaylist { .. }
@@ -220,6 +239,8 @@ impl Route {
             "artist" => entity(arg).map(|(id, name)| Route::Artist { id, name })?,
             "album" => entity(arg).map(|(id, name)| Route::Album { id, name })?,
             "playlist" => entity(arg).map(|(id, name)| Route::Playlist { id, name })?,
+            "podcast" => entity(arg).map(|(id, name)| Route::Podcast { id, name })?,
+            "episode" => entity(arg).map(|(id, name)| Route::Episode { id, name })?,
             "library-artist" => entity(arg).map(|(id, name)| Route::LibraryArtist { id, name })?,
             "library-album" => entity(arg).map(|(id, name)| Route::LibraryAlbum { id, name })?,
             "local-playlist" => entity(arg).map(|(id, name)| Route::LocalPlaylist { id, name })?,
@@ -488,6 +509,23 @@ mod tests {
             Some(Route::ArtistItems { params: None, .. })
         ));
         assert_eq!(Route::parse("nope"), None);
+        assert_eq!(
+            Route::parse("podcast:MPSPPLx"),
+            Some(Route::Podcast {
+                id: "MPSPPLx".into(),
+                name: "MPSPPLx".into()
+            })
+        );
+        assert!(matches!(
+            Route::parse("episode:MPEDabc"),
+            Some(Route::Episode { .. })
+        ));
+        assert_eq!(
+            Route::parse("library:podcasts"),
+            Some(Route::Library {
+                tab: LibraryTab::Podcasts
+            })
+        );
     }
 
     #[test]

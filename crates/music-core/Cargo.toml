@@ -10,7 +10,9 @@ base64 = "0.22"
 crc32fast = "1.5"
 deunicode = "1.6"
 discord-rich-presence = { version = "1", optional = true }
-lindera = { version = "6.2", optional = true, features = ["embed-ipadic"] }
+# Japanese tokenizer for kanji readings; the dictionary is downloaded at runtime
+# (`lyrics::romanize::dictionary`) unless `japanese-dict` embeds it.
+lindera = "6.2"
 # NFKD normalization for the module track matcher (already in the graph via url/idna).
 icu_normalizer = "2"
 lofty = "0.25"
@@ -85,9 +87,11 @@ webview2-potoken = ["dep:webview2-com", "dep:windows"]
 # PoTokens via BotGuard in WebKitGTK (Linux only; off by default): needs
 # libwebkit2gtk-4.1-dev (>= 2.40) to build and libwebkit2gtk-4.1 to run. Untested.
 webkitgtk-potoken = ["dep:webkit2gtk", "dep:gtk", "dep:javascriptcore-rs"]
-# Kanji readings for Japanese romanization (lindera + embedded IPADIC). Off by default:
+# Embeds IPADIC for kanji readings (no runtime download needed). Off by default:
 # adds ~48 MB to the binary and downloads the dictionary (~13 MB) at build time.
-japanese-dict = ["dep:lindera"]
+# Without it the app downloads the same dictionary on demand (10.5 MB, see
+# `lyrics::romanize::dictionary`).
+japanese-dict = ["lindera/embed-ipadic"]
 # Discord Rich Presence (`discord` module).
 discord = ["dep:discord-rich-presence"]
 # OS media controls (`media_controls` module): MediaPlayer on macOS, SMTC on Windows, MPRIS on Linux.

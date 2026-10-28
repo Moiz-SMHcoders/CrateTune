@@ -9,6 +9,10 @@
 //!
 //! The header's search field submits queries (see `search_box.rs`); each query
 //! gets its own page (a history entry, replaced while staying on search).
+//!
+//! When YouTube corrects the spelling, the All tab says "Showing results for
+//! *corrected* · Search instead for *typed*" (or "Did you mean …?"). The search
+//! history keeps what was typed; picking the correction submits it as a new search.
 
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -24,7 +28,7 @@ use gpui_component::{
     scroll::ScrollableElement as _, spinner::Spinner, v_flex, v_virtual_list,
 };
 use music_core::Track;
-use music_core::innertube::{Item, SearchFilter, Shelf};
+use music_core::innertube::{Item, SearchCorrection, SearchFilter, Shelf};
 
 use super::{PageView, is_playing};
 use crate::app::{MusicApp, update_app};
@@ -86,6 +90,7 @@ fn shelf_filter(shelf: &Shelf) -> Option<SearchFilter> {
 
 /// The "All" tab.
 struct Summary {
+    correction: Option<SearchCorrection>,
     top: Option<Item>,
     top_songs: Playable,
     top_items: Vec<Item>,
@@ -149,6 +154,8 @@ pub struct SearchPage {
     scroll: ScrollHandle,
     list_scroll: VirtualListScrollHandle,
     hide_videos: bool,
+    /// "Search instead for": the All tab without spelling correction.
+    exact: bool,
     _summary_task: Option<Task<()>>,
     tab_tasks: HashMap<SearchFilter, Task<()>>,
 }
@@ -166,6 +173,7 @@ impl SearchPage {
                 scroll: scroll.clone(),
                 list_scroll: VirtualListScrollHandle::new(),
                 hide_videos,
+                exact: false,
                 _summary_task: None,
                 tab_tasks: HashMap::new(),
             };
@@ -176,7 +184,12 @@ impl SearchPage {
     }
 
     fn key(&self, filter: Option<SearchFilter>) -> String {
-        format!("search:{filter:?}:{}", self.query)
+        let exact = if self.exact && filter.is_none() {
+            "exact:"
+        } else {
+            ""
+        };
+        format!("search:{filter:?}:{exact}{}", self.query)
     }
 
     fn load_summary(&mut self, cx: &mut Context<Self>) {
@@ -189,10 +202,15 @@ impl SearchPage {
         }
         self.summary = Load::Loading;
         let query = self.query.clone();
+        let exact = self.exact;
         self._summary_task = Some(fetch(
             cx,
             move |client, filter| {
-                let mut s = client.search_summary(&query)?;
+                let mut s = if exact {
+                    client.search_summary_exact(&query)?
+                } else {
+                    client.search_summary(&query)?
+                };
                 s.top_result = s.top_result.filter(|i| filter.keep_item(i));
                 s.top_result_items = filter.items(s.top_result_items);
                 s.items = filter.items(s.items);
@@ -202,6 +220,7 @@ impl SearchPage {
             |this: &mut Self, result, cx| {
                 let result = result.map(|s| {
                     Rc::new(Summary {
+                        correction: s.correction,
                         top: s.top_result,
                         top_songs: Playable::new(&s.top_result_items),
                         top_items: s.top_result_items,
@@ -365,6 +384,46 @@ impl SearchPage {
             .into_any_element()
     }
 
+    /// "Showing results for X · Search instead for Y" / "Did you mean X?".
+    fn render_correction(&self, c: SearchCorrection, cx: &mut Context<Self>) -> AnyElement {
+        let theme = cx.theme();
+        let (muted, fg, accent) = (theme.muted_foreground, theme.foreground, theme.primary);
+        let link = |id: &'static str, text: String| {
+            div()
+                .id(id)
+                .cursor_pointer()
+                .font_weight(FontWeight::SEMIBOLD)
+                .text_color(fg)
+                .hover(move |s| s.text_color(accent).underline())
+                .child(text)
+        };
+        let corrected = c.corrected.clone();
+        let pick = link("search-corrected", c.corrected.clone()).on_click(move |_, window, cx| {
+            let q = corrected.clone();
+            update_app(cx, |app, cx| app.submit_search(q, window, cx));
+        });
+        let row = h_flex().gap_1().flex_wrap().text_sm().text_color(muted);
+        if c.applied && !self.exact {
+            let instead = link("search-instead", c.original.clone()).on_click(cx.listener(
+                |this, _, _, cx| {
+                    this.exact = true;
+                    this.load_summary(cx);
+                    cx.notify();
+                },
+            ));
+            row.child("Showing results for")
+                .child(pick)
+                .child(" · Search instead for")
+                .child(instead)
+                .into_any_element()
+        } else {
+            row.child("Did you mean")
+                .child(pick)
+                .child("?")
+                .into_any_element()
+        }
+    }
+
     /// The top result card plus its songs.
     fn render_top(&self, summary: &Summary, cx: &mut Context<Self>) -> Option<AnyElement> {
         let top = summary.top.clone()?;
@@ -526,6 +585,9 @@ impl SearchPage {
                 .into_any_element();
             }
         };
+        if let Some(c) = summary.correction.clone() {
+            content = content.child(self.render_correction(c, cx));
+        }
         let empty = summary.top.is_none() && summary.shelves.is_empty() && summary.items.is_empty();
         if empty {
             content = content.child(empty_state(
