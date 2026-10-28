@@ -22,6 +22,8 @@ const RESYNC_THRESHOLD: Duration = Duration::from_millis(400);
 pub enum Engine {
     Audio(Player),
     Demo(Box<DemoPlayer>),
+    /// Casting to a Chromecast (the local engine waits inside, paused).
+    Cast(Box<crate::integrations::cast::CastEngine>),
 }
 
 impl Engine {
@@ -29,6 +31,7 @@ impl Engine {
         match self {
             Engine::Audio(player) => player.play(track),
             Engine::Demo(demo) => demo.play(track),
+            Engine::Cast(cast) => cast.play(track),
         }
     }
 
@@ -36,6 +39,7 @@ impl Engine {
         match self {
             Engine::Audio(player) => player.toggle_pause(),
             Engine::Demo(demo) => demo.toggle_pause(),
+            Engine::Cast(cast) => cast.toggle_pause(),
         }
     }
 
@@ -43,6 +47,7 @@ impl Engine {
         match self {
             Engine::Audio(player) => player.seek(position),
             Engine::Demo(demo) => demo.seek(position),
+            Engine::Cast(cast) => cast.seek(position),
         }
     }
 
@@ -53,6 +58,7 @@ impl Engine {
             Engine::Audio(player) if ended => player.resume(),
             Engine::Audio(player) => player.seek(Duration::ZERO),
             Engine::Demo(demo) => demo.seek(Duration::ZERO),
+            Engine::Cast(cast) => cast.restart(),
         }
     }
 
@@ -60,12 +66,15 @@ impl Engine {
         match self {
             Engine::Audio(player) => player.set_volume(volume),
             Engine::Demo(demo) => demo.volume = volume.clamp(0., 1.),
+            Engine::Cast(cast) => cast.set_volume(volume.clamp(0., 1.)),
         }
     }
 
     /// `None` turns the equalizer off. The demo clock has no audio to equalize.
     pub fn set_equalizer(&mut self, settings: Option<EqualizerSettings>) {
-        if let Engine::Audio(player) = self {
+        if let Engine::Cast(cast) = self {
+            cast.local_mut().set_equalizer(settings);
+        } else if let Engine::Audio(player) = self {
             match settings {
                 Some(settings) => player.set_equalizer(settings),
                 None => player.clear_equalizer(),
@@ -79,6 +88,7 @@ impl Engine {
         match self {
             Engine::Audio(player) => player.set_next(track),
             Engine::Demo(demo) => demo.next = track,
+            Engine::Cast(cast) => cast.set_next(track),
         }
     }
 
@@ -101,6 +111,7 @@ impl Engine {
                 demo.rebase(now);
                 demo.speed = audio.speed;
             }
+            Engine::Cast(cast) => cast.local_mut().apply_audio(audio),
         }
     }
 
@@ -109,6 +120,8 @@ impl Engine {
         match self {
             Engine::Audio(player) => player.set_sleep_timer(timer),
             Engine::Demo(demo) => demo.set_sleep_timer(timer, Instant::now()),
+            // Not while casting (the local engine keeps it for later).
+            Engine::Cast(cast) => cast.local_mut().set_sleep_timer(timer),
         }
     }
 
@@ -120,6 +133,7 @@ impl Engine {
                 demo.tick(now);
                 demo.state(now)
             }
+            Engine::Cast(cast) => cast.state(),
         }
     }
 

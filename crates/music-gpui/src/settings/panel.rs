@@ -280,6 +280,7 @@ impl SettingsPanel {
             (Secret::BetterLyricsKey, s.lyrics.betterlyrics_key_set),
             (Secret::AiTranslateKey, s.lyrics.ai_key_set),
             (Secret::SpotifyRefreshToken, s.spotify.user.is_some()),
+            (Secret::AiFilterKey, s.ai_filter.key_set),
         ]
         .into_iter()
         .filter_map(|(secret, wanted)| wanted.then_some(secret))

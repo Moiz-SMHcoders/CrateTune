@@ -16,6 +16,9 @@ Google or Shazam.
 * [Settings](#settings)
 * [Keyboard shortcuts](#keyboard-shortcuts)
 * [Modules](#modules)
+* [Listen together](#listen-together)
+* [Cast to a TV or speaker](#cast-to-a-tv-or-speaker)
+* [AI content filter](#ai-content-filter)
 * [Privacy](#privacy)
 * [Known limitations](#known-limitations)
 * [Troubleshooting](#troubleshooting)
@@ -168,6 +171,11 @@ copies your YouTube Music library into the local one; **Sign out** forgets the c
 | Storage | file locations, play cache, downloads, backup and restore |
 | Account | YouTube Music sign-in, channels, sync |
 | Scrobbling & Discord | Last.fm, ListenBrainz, scrobble rules, Discord Rich Presence |
+| SponsorBlock | skip non-music sections and other segments |
+| Music Together | your name, port, guest permissions, relay server |
+| Spotify import | your Spotify app's Client ID for importing playlists |
+| AI content filter | endpoint, model, key, categories to hide |
+| Chromecast | devices, stop casting, direct fetch |
 | About | version, license, credits, welcome guide, update check (when enabled) |
 
 Settings live in `~/Library/Application Support/tunedesk/` (macOS),
@@ -244,6 +252,47 @@ diagnostics** copies a report without your settings or tokens, for the module's 
 "Provider modules" in the [README](../README.md#provider-modules-arch) for the APIs and limits
 of this app and the packaging tool.
 
+## Listen together
+
+Play the same music in sync with others (sidebar → **Listen together**).
+
+* **Start session** hosts on your network; **Host via relay** hosts through a relay server
+  (set one in Settings → Music Together → *Relay server*, e.g. `wss://relay.example.com`),
+  so people on other networks can join. Share the link; it contains a random key.
+* Guests paste the link and press **Join**. Their player follows yours; "Play next" /
+  "Add to queue" become suggestions to the host, and, if you allow it, they can play,
+  pause, seek and skip.
+* In the people list you can let people in (with approval on), remove or ban them, or
+  **Make host**: that guest takes over the session with your queue and position, and
+  everyone, including you, follows them from then on.
+* The relay server is a small program you run yourself (see the README, "Relay server");
+  this app doesn't come with a public one.
+
+## Cast to a TV or speaker
+
+* The **Cast** button in the player bar lists Chromecasts, Google TVs and Nest speakers on
+  your network (it looks for them when you open it; "Search again" if yours is missing).
+  Pick one: the current song continues there. Play / pause, seeking, next / previous and
+  the volume slider now control the device; the bar says "Casting to …".
+* **Stop casting** (in the same menu or Settings → Chromecast) continues the song on this
+  computer.
+* The audio is streamed from this app to the device, so keep the app running and both on
+  the same network; if the system asks whether to accept incoming connections, allow it. The sleep timer, equalizer and speed don't apply while casting.
+* Not yet tested with real devices; please report problems.
+
+## AI content filter
+
+Optional and off by default (Settings → **AI content filter**). It hides songs and albums
+that a language model puts into categories you pick — explicit lyrics, AI-generated music,
+holiday songs, children's music, sleep sounds and noise, sped-up / slowed edits, covers and
+karaoke, live recordings — plus your own ("songs about cars"), like "Hide explicit content".
+
+* You need an OpenAI-compatible service: OpenAI, OpenRouter, or a model on your own
+  computer (Ollama: endpoint `http://localhost:11434/v1`, LM Studio, llama.cpp server).
+  Enter the endpoint, the model name and, if the service needs one, an API key.
+* Each song is asked about once; the answers are remembered on your computer ("Forget
+  classifications" clears them). Songs the model hasn't judged yet stay visible.
+
 ## Privacy
 
 * Your library, history, stats and settings stay on your computer; nothing is sent to the
@@ -254,6 +303,12 @@ of this app and the packaging tool.
   fingerprint to Shazam. Last.fm / ListenBrainz / Discord only get data if you set them up.
 * When an update repository is configured, the app asks GitHub once per launch for the
   latest release (Settings → About); nothing is downloaded automatically.
+* The **AI content filter** (off by default) sends the titles, artists and albums of the
+  songs on the pages you open to the service you configured, and nothing while it is off.
+* A **relay server** (only if you set one) forwards your Listen together session: song
+  titles, names in the session, the session key.
+* **Casting** looks for devices on your network only when you open the Cast menu or the
+  Chromecast settings.
 
 ## Known limitations
 
@@ -262,7 +317,9 @@ of this app and the packaging tool.
   macOS). YouTube makes each new stream wait a few seconds; the app plays the start of the
   song from a preview meanwhile, so songs usually start within a second (two or three for
   the first song after launch). Choose the
-  route in Settings → Playback → **YouTube streams** (Automatic is best). If YouTube changes
+  route in Settings → Playback → **YouTube streams** (Automatic is best). Windows makes the
+  PoToken with the built-in WebView2 (new, untested); Linux builds can opt in with
+  WebKitGTK; otherwise they use the TV client. If YouTube changes
   something, songs fall back to ~1-minute previews (marked "preview") until the app is
   updated. This isn't allowed by YouTube's terms of service.
 * The YouTube Music account features are new and not yet tested against many accounts

@@ -57,13 +57,19 @@ getrandom = "0.3"
 sha2 = "0.10"
 # Music Together: blocking WebSockets over std TCP on worker threads (no async runtime).
 tungstenite = { version = "0.28", default-features = false, features = ["handshake"] }
+# `wss://` relays for Music Together and the Cast channel (TLS 1.2+ on port 8009):
+# the rustls + ring + Mozilla roots already in the graph through ureq.
+rustls = { version = "0.23", default-features = false, features = ["std", "tls12", "ring"] }
+webpki-roots = "1"
+# Chromecast discovery (`cast`): mDNS-SD on std threads (no async runtime).
+mdns-sd = { version = "0.21", default-features = false }
 unicode-normalization = "0.1"
 ureq = { version = "3", features = ["json", "socks-proxy"] }
 url = "2.5"
 zip = { version = "9", default-features = false, features = ["deflate-flate2-zlib-rs"] }
 
 [features]
-default = ["media-controls", "discord", "webkit-potoken"]
+default = ["media-controls", "discord", "webkit-potoken", "webview2-potoken"]
 # PoTokens for the web stream client via BotGuard in a hidden WKWebView (macOS only;
 # a no-op elsewhere).
 webkit-potoken = [
@@ -74,6 +80,13 @@ webkit-potoken = [
     "dep:objc2-foundation",
     "dep:objc2-web-kit",
 ]
+# PoTokens via BotGuard in a hidden WebView2 (Windows only; a no-op elsewhere). Uses
+# the WebView2 runtime that ships with Windows 10/11 (the loader is linked statically
+# with MSVC). Untested on Windows.
+webview2-potoken = ["dep:webview2-com", "dep:windows"]
+# PoTokens via BotGuard in WebKitGTK (Linux only; off by default): needs
+# libwebkit2gtk-4.1-dev (>= 2.40) to build and libwebkit2gtk-4.1 to run. Untested.
+webkitgtk-potoken = ["dep:webkit2gtk", "dep:gtk", "dep:javascriptcore-rs"]
 # Embeds IPADIC for kanji readings (no runtime download needed). Off by default:
 # adds ~48 MB to the binary and downloads the dictionary (~13 MB) at build time.
 # Without it the app downloads the same dictionary on demand (10.5 MB, see
@@ -131,11 +144,20 @@ windows = { version = "0.62", optional = true, features = [
     "Storage_Streams",
     "Win32_Foundation",
     "Win32_System_WinRT",
+    # webview2-potoken
+    "Win32_System_Com",
+    "Win32_System_Threading",
+    "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
 ] }
+webview2-com = { version = "0.39", optional = true }
 windows-future = { version = "0.3", optional = true }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 mpris-server = { version = "0.10", optional = true }
+webkit2gtk = { version = "2.0", optional = true, features = ["v2_40"] }
+gtk = { version = "0.18", optional = true }
+javascriptcore-rs = { version = "1.1", optional = true }
 
 [target.'cfg(target_os = "macos")'.dev-dependencies]
 # The `youtube` example runs the main run loop for the PoToken web view.

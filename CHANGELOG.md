@@ -46,6 +46,22 @@ versions follow [SemVer](https://semver.org/).
   albums, radio, queues and card actions (each track carries its YouTube video type); an
   album that YouTube only offers as official-audio videos stays complete.
 
+* **Music Together across networks**: a self-hostable relay server (`music-relay`, one
+  small binary; TLS through a reverse proxy) — set it in Settings → Music Together and
+  press **Host via relay**; the link works from anywhere.
+* **Hand the host role to a guest** (Listen together → **Make host**): the queue, position,
+  repeat and room settings move to them, everyone follows the new host automatically.
+* **Chromecast**: cast the queue to a Chromecast, Google TV or Nest speaker from the
+  player bar's Cast button (Settings → Chromecast); play / pause / seek / skip / volume
+  control the device, Stop casting continues on this computer. Not yet tested with a real
+  device.
+* **AI content filter** (optional, off by default): hide songs in categories you choose
+  (explicit lyrics, AI-generated music, holiday songs, …, or your own) using an
+  OpenAI-compatible model you configure (OpenAI, OpenRouter, or a local Ollama / LM
+  Studio). Settings → AI content filter.
+* **PoTokens on Windows** (WebView2) and, optionally, **Linux** (WebKitGTK, build
+  feature `webkitgtk-potoken`) for the web stream client. Not yet tested on those systems.
+
 ### Fixed
 
 * **Gapless AAC**: the encoder delay (~25–50 ms of warm-up) and the end padding of AAC

@@ -10,8 +10,9 @@
 //! 4. create the minter once, then mint a token per identifier — the video id
 //!    ("content-bound"), which is what googlevideo checks for web clients.
 //!
-//! Step 2 needs a browser JS environment, so it is behind [`BotGuardVm`];
-//! [`super::webkit::WebKitBotGuard`] implements it with a hidden WKWebView on macOS.
+//! Step 2 needs a browser JS environment, so it is behind [`BotGuardVm`]:
+//! a hidden WKWebView on macOS (`webkit.rs`), WebView2 on Windows
+//! (`webview2.rs`), WebKitGTK on Linux (`webkitgtk.rs`, opt-in feature).
 
 use std::collections::{HashMap, VecDeque};
 use std::sync::{Mutex, PoisonError};
@@ -52,6 +53,11 @@ pub trait BotGuardVm: Send + Sync {
     fn mint(&self, identifier: &[u8]) -> Result<Vec<u8>>;
     /// Release the page (memory); the next [`Self::run_challenge`] starts over.
     fn release(&self) {}
+    /// The User-Agent of the engine BotGuard runs in; the challenge page and
+    /// `GenerateIT` are fetched with it so both sides look like one browser.
+    fn user_agent(&self) -> &'static str {
+        ATTESTATION_UA
+    }
 }
 
 /// The page BotGuard runs in.
@@ -103,10 +109,11 @@ impl<V: BotGuardVm> BotGuardTokenProvider<V> {
             return fake(&self.vm);
         }
         let started = Instant::now();
-        let page = fetch_text(CHALLENGE_PAGE, None)?;
+        let ua = self.vm.user_agent();
+        let page = fetch_text(CHALLENGE_PAGE, None, ua)?;
         let challenge = parse_page_challenge(&page)?;
         let interpreter_url = challenge.interpreter_url()?;
-        let interpreter = fetch_text(&interpreter_url, None)?;
+        let interpreter = fetch_text(&interpreter_url, None, ua)?;
         if interpreter.trim().is_empty() {
             return Err(Error::Parse("BotGuard: empty interpreter".into()));
         }
@@ -120,7 +127,7 @@ impl<V: BotGuardVm> BotGuardTokenProvider<V> {
             &Value::Object(bg).to_string(),
         )?;
         let body = json!([REQUEST_KEY, response]).to_string();
-        let raw = fetch_text(GENERATE_IT, Some(&body))?;
+        let raw = fetch_text(GENERATE_IT, Some(&body), ua)?;
         let (token, lifetime) = parse_integrity_token(&raw)?;
         self.vm.create_minter(&token)?;
         log::info!(
@@ -183,17 +190,17 @@ impl<V: BotGuardVm> PoTokenProvider for BotGuardTokenProvider<V> {
     }
 }
 
-fn fetch_text(url: &str, json_body: Option<&str>) -> Result<String> {
+fn fetch_text(url: &str, json_body: Option<&str>, user_agent: &str) -> Result<String> {
     let mut resp = match json_body {
         None => agent()
             .get(url)
-            .header("User-Agent", ATTESTATION_UA)
+            .header("User-Agent", user_agent)
             .header("Accept", "*/*")
             .header("Accept-Language", "en-US,en;q=0.7")
             .call()?,
         Some(body) => agent()
             .post(url)
-            .header("User-Agent", ATTESTATION_UA)
+            .header("User-Agent", user_agent)
             .header("Accept", "*/*")
             .header("Accept-Language", "en-US,en;q=0.7")
             .header("Content-Type", "application/json+protobuf")

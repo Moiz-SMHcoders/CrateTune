@@ -65,6 +65,12 @@ impl ContentFilter {
     }
 
     pub fn keep_item(&self, item: &Item) -> bool {
+        // AI content filter (off by default): its cached verdicts.
+        if crate::integrations::ai_filter::item_id(item)
+            .is_some_and(crate::integrations::ai_filter::hidden)
+        {
+            return false;
+        }
         match item {
             Item::Song(t) | Item::Episode(t) => !(self.hide_explicit && t.explicit),
             Item::Video(t) => !self.hide_videos && !(self.hide_explicit && t.explicit),
@@ -74,16 +80,20 @@ impl ContentFilter {
     }
 
     pub fn items(&self, items: Vec<Item>) -> Vec<Item> {
+        crate::integrations::ai_filter::prepare_items(&items);
         items.into_iter().filter(|i| self.keep_item(i)).collect()
     }
 
     /// Hide explicit, and hide music / user videos (`Track::is_video`: OMV / UGC) in
     /// playlists, queues, radio and search.
     pub fn keep_track(&self, track: &Track) -> bool {
-        !(self.hide_explicit && track.explicit) && !(self.hide_videos && track.is_video())
+        !(self.hide_explicit && track.explicit)
+            && !(self.hide_videos && track.is_video())
+            && !crate::integrations::ai_filter::hidden(&track.video_id)
     }
 
     pub fn tracks(&self, tracks: Vec<Track>) -> Vec<Track> {
+        crate::integrations::ai_filter::prepare_tracks(&tracks);
         tracks.into_iter().filter(|t| self.keep_track(t)).collect()
     }
 
@@ -106,6 +116,8 @@ impl ContentFilter {
         &self,
         shelves: Vec<music_core::innertube::Shelf>,
     ) -> Vec<music_core::innertube::Shelf> {
+        // One classification for every shelf (then `items` finds them cached).
+        crate::integrations::ai_filter::prepare_items(shelves.iter().flat_map(|s| &s.items));
         shelves
             .into_iter()
             .filter_map(|mut s| {

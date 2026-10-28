@@ -31,7 +31,9 @@
 //! * [`spotify`] – Spotify Web API (PKCE sign-in, playlists, liked songs) for imports.
 //! * [`together`] – Music Together: synced listening on the LAN over WebSockets.
 
+pub mod ai_filter;
 pub mod buffer;
+pub mod cast;
 mod deck;
 mod decode;
 #[cfg(feature = "discord")]

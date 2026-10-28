@@ -1,6 +1,8 @@
 //! Persisted preferences of the integrations (`settings.json` → `sponsorblock`,
-//! `together`, `spotify`). Every field has a default so older files keep loading.
+//! `together`, `spotify`, `ai_filter`, `cast`). Every field has a default so older
+//! files keep loading.
 
+use music_core::ai_filter::{AiCategory, AiFilterConfig};
 use music_core::sponsorblock::{Category, DEFAULT_API_URL, SponsorBlockConfig};
 use music_core::together::{DEFAULT_PORT, RoomSettings};
 use serde::{Deserialize, Serialize};
@@ -63,6 +65,8 @@ pub struct TogetherPrefs {
     pub last_join: String,
     /// Random id that identifies this app to hosts (bans stick to it).
     pub client_id: String,
+    /// A self-hosted `music-relay` server (`wss://…`); empty = LAN only.
+    pub relay_url: String,
 }
 
 impl Default for TogetherPrefs {
@@ -75,6 +79,7 @@ impl Default for TogetherPrefs {
             require_host_approval: false,
             last_join: String::new(),
             client_id: String::new(),
+            relay_url: String::new(),
         }
     }
 }
@@ -86,6 +91,11 @@ impl TogetherPrefs {
             allow_guests_to_control_playback: self.allow_guests_to_control_playback,
             require_host_approval_to_join: self.require_host_approval,
         }
+    }
+
+    /// The relay's WebSocket URL, if one is set and valid.
+    pub fn relay(&self) -> Option<String> {
+        music_core::together::relay_url(&self.relay_url)
     }
 
     pub fn name(&self) -> String {
@@ -132,6 +142,64 @@ impl Default for SpotifyPrefs {
     }
 }
 
+/// AI content filter (off by default; nothing is sent while it is off).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct AiFilterPrefs {
+    pub enabled: bool,
+    /// OpenAI-compatible endpoint (`https://api.openai.com/v1`, `http://localhost:11434/v1`).
+    pub endpoint: String,
+    pub model: String,
+    pub categories: Vec<AiCategory>,
+    /// Extra categories in the user's words, comma-separated.
+    pub custom: String,
+    /// The API key is in the keychain (`Secret::AiFilterKey`).
+    pub key_set: bool,
+}
+
+impl Default for AiFilterPrefs {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            endpoint: String::new(),
+            model: String::new(),
+            categories: vec![AiCategory::Explicit, AiCategory::AiGenerated],
+            custom: String::new(),
+            key_set: false,
+        }
+    }
+}
+
+impl AiFilterPrefs {
+    pub fn core(&self, api_key: String) -> AiFilterConfig {
+        AiFilterConfig {
+            endpoint: self.endpoint.trim().to_owned(),
+            api_key,
+            model: self.model.trim().to_owned(),
+            categories: self.categories.clone(),
+            custom: self
+                .custom
+                .split([',', '\n'])
+                .map(|c| c.trim().to_owned())
+                .filter(|c| !c.is_empty())
+                .take(8)
+                .collect(),
+            ..AiFilterConfig::default()
+        }
+    }
+}
+
+/// Chromecast (Google Cast).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct CastPrefs {
+    /// Let the device fetch plain YouTube URLs itself instead of streaming them
+    /// through this app (falls back to the app when the device can't).
+    pub direct: bool,
+    /// Name of the last device cast to (pre-selected in the picker).
+    pub last_device: Option<String>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -149,7 +217,23 @@ mod tests {
         assert_eq!(t.port, 5000);
         assert!(t.allow_guests_to_add_tracks && !t.allow_guests_to_control_playback);
         assert!(!t.name().is_empty());
+        assert_eq!(t.relay(), None);
+        let t: TogetherPrefs =
+            serde_json::from_str(r#"{"relay_url":"https://relay.example.com"}"#).unwrap();
+        assert_eq!(t.relay().as_deref(), Some("wss://relay.example.com/"));
         let s: SpotifyPrefs = serde_json::from_str("{}").unwrap();
         assert_eq!(s.redirect_port, 43819);
+        let ai: AiFilterPrefs = serde_json::from_str("{}").unwrap();
+        assert!(!ai.enabled, "off by default");
+        let ai: AiFilterPrefs = serde_json::from_str(
+            r#"{"enabled":true,"model":" m ","categories":["holiday"],"custom":"cars, ,boats"}"#,
+        )
+        .unwrap();
+        let core = ai.core(String::new());
+        assert_eq!(core.model, "m");
+        assert_eq!(core.categories, vec![AiCategory::Holiday]);
+        assert_eq!(core.custom, vec!["cars", "boats"]);
+        let cast: CastPrefs = serde_json::from_str("{}").unwrap();
+        assert!(!cast.direct);
     }
 }

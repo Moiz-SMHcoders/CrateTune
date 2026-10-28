@@ -272,6 +272,46 @@ pub enum Message {
         #[serde(default)]
         reason: Option<String>,
     },
+    /// Host → the guest that should take over (ArchiveTune's `host_transfer`, plus
+    /// the hand-over: the room as the host has it, who may rejoin without approval,
+    /// who stays banned, and for relayed sessions the secret that lets the new host
+    /// claim the room on the relay).
+    HostTransfer {
+        session_id: String,
+        participant_id: String,
+        #[serde(default)]
+        state: Option<Box<RoomState>>,
+        #[serde(default)]
+        trusted_client_ids: Vec<String>,
+        #[serde(default)]
+        banned_client_ids: Vec<String>,
+        #[serde(default)]
+        relay_secret: Option<String>,
+    },
+    /// New host → old host: its session is up (where guests reach it on the LAN;
+    /// nothing for a relayed session), or why it couldn't take over.
+    HostTransferReady {
+        session_id: String,
+        participant_id: String,
+        #[serde(default)]
+        host: Option<String>,
+        #[serde(default)]
+        port: Option<u16>,
+        #[serde(default)]
+        error: Option<String>,
+    },
+    /// Host → everyone: `participant_id` is the new host; reconnect to it (`host` /
+    /// `port` on the LAN, the same relay URL when both are absent).
+    HostTransferred {
+        session_id: String,
+        participant_id: String,
+        #[serde(default)]
+        participant_name: Option<String>,
+        #[serde(default)]
+        host: Option<String>,
+        #[serde(default)]
+        port: Option<u16>,
+    },
 }
 
 impl Message {
@@ -339,6 +379,21 @@ mod tests {
         assert!(state.is_playing && state.queue[0].duration_sec == 0);
         assert!(state.settings.allow_guests_to_add_tracks);
         assert_eq!(Message::decode(r#"{"type":"nope"}"#), None);
+        // ArchiveTune's bare host-transfer messages still decode.
+        assert_eq!(
+            Message::decode(r#"{"type":"host_transferred","sessionId":"s","participantId":"p"}"#),
+            Some(Message::HostTransferred {
+                session_id: "s".into(),
+                participant_id: "p".into(),
+                participant_name: None,
+                host: None,
+                port: None,
+            })
+        );
+        assert!(matches!(
+            Message::decode(r#"{"type":"host_transfer","sessionId":"s","participantId":"p"}"#),
+            Some(Message::HostTransfer { state: None, .. })
+        ));
         assert_eq!(
             Message::decode(r#"{"type":"kick","sessionId":"s","participantId":"p"}"#),
             Some(Message::Kick {
