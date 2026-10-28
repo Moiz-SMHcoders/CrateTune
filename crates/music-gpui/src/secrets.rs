@@ -73,7 +73,12 @@ impl Secret {
 
 /// A credential store that may be unavailable at runtime.
 pub trait Backend: Send + Sync {
+    /// English name (logs).
     fn name(&self) -> &'static str;
+    /// The name in the UI language (Settings status lines).
+    fn label(&self) -> &'static str {
+        self.name()
+    }
     /// `Ok(None)` = no such entry. `Err` = the store itself failed.
     fn get(&self, key: &str) -> Result<Option<String>, String>;
     fn set(&self, key: &str, value: &str) -> Result<(), String>;
@@ -98,6 +103,16 @@ impl Backend for Keychain {
             "Windows Credential Manager"
         } else {
             "Secret Service"
+        }
+    }
+
+    fn label(&self) -> &'static str {
+        if cfg!(target_os = "macos") {
+            t!("secrets.backend.macos")
+        } else if cfg!(windows) {
+            t!("secrets.backend.windows")
+        } else {
+            t!("secrets.backend.secret_service")
         }
     }
 

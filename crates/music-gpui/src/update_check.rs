@@ -96,7 +96,7 @@ impl MusicApp {
             let result = off_thread(move || -> Result<(String, String), String> {
                 let bytes = music_core::fetch_bytes(&url).map_err(|e| e.to_string())?;
                 let json: Value = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
-                parse_release(&json).ok_or_else(|| "no published release".to_owned())
+                parse_release(&json).ok_or_else(|| t!("update.no_release").to_owned())
             })
             .await;
             this.update(cx, |this, cx| {
@@ -112,18 +112,12 @@ impl MusicApp {
                 };
                 let status = match result {
                     Ok((version, url)) if is_newer(&version, identity::VERSION) => {
-                        notify_app(
-                            cx,
-                            format!(
-                                "{} {version} is available (Settings → About)",
-                                identity::APP_NAME
-                            ),
-                        );
+                        notify_app(cx, t!("update.available_toast", version = version));
                         UpdateStatus::Available { version, url }
                     }
                     Ok(_) => {
                         if manual {
-                            notify_app(cx, format!("{} is up to date", identity::APP_NAME));
+                            notify_app(cx, t!("update.up_to_date_toast").to_owned());
                         }
                         UpdateStatus::UpToDate
                     }

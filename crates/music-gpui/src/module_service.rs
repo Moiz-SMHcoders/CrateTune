@@ -59,6 +59,8 @@ impl SecretHook for KeychainSecrets {
 #[derive(Clone)]
 pub struct ModuleService {
     pub modules: Option<Modules>,
+    /// Why `modules` is `None`: the (English, technical) error opening the store;
+    /// `None` with no modules = there is no data directory.
     pub error: Option<String>,
     pub resolver: Arc<dyn StreamResolver>,
     /// Full-length YouTube streams (TV / web + PoToken clients, preview fallback);
@@ -84,7 +86,7 @@ impl ModuleService {
         let Some(dir) = config.map(|d| d.join("modules")) else {
             return Self {
                 modules: None,
-                error: Some("No data directory; modules are unavailable.".into()),
+                error: None,
                 resolver: youtube,
                 youtube: web,
             };
@@ -104,7 +106,7 @@ impl ModuleService {
                 eprintln!("music-gpui: modules unavailable: {e}");
                 Self {
                     modules: None,
-                    error: Some(format!("Modules unavailable: {e}")),
+                    error: Some(e.to_string()),
                     resolver: youtube,
                     youtube: web,
                 }

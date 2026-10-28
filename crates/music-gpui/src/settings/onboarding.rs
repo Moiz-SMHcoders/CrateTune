@@ -25,7 +25,6 @@ use super::SettingsPanel;
 use super::widgets::group;
 use crate::app::{MusicApp, read_app};
 use crate::icons::Lucide;
-use crate::identity::APP_NAME;
 use crate::pages::local_files::{folder_list, pick_folders, scan_controls};
 use crate::theme::{FONT_SCALES, ThemeChoice};
 
@@ -51,12 +50,12 @@ pub const STEPS: [Step; 6] = [
 impl Step {
     fn title(self) -> &'static str {
         match self {
-            Step::Welcome => "Welcome",
-            Step::Content => "Language & region",
-            Step::Theme => "Look",
-            Step::Account => "YouTube Music account",
-            Step::LocalFiles => "Music on this computer",
-            Step::Privacy => "Privacy & limitations",
+            Step::Welcome => t!("onboarding.step.welcome"),
+            Step::Content => t!("onboarding.step.content"),
+            Step::Theme => t!("onboarding.step.theme"),
+            Step::Account => t!("onboarding.step.account"),
+            Step::LocalFiles => t!("onboarding.step.local_files"),
+            Step::Privacy => t!("onboarding.step.privacy"),
         }
     }
 
@@ -73,26 +72,12 @@ impl Step {
 
     fn subtitle(self) -> &'static str {
         match self {
-            Step::Welcome => {
-                "A fast, native player for YouTube Music: browse and search, lyrics that \
-                 follow the song, a library with history and stats, your own music files, \
-                 and song recognition. A few choices and you're set — everything here can \
-                 be changed later in Settings."
-            }
-            Step::Content => {
-                "Which language YouTube Music uses for titles and recommendations, and \
-                 which country's charts and releases you see."
-            }
-            Step::Theme => "Pick a theme and text size.",
-            Step::Account => {
-                "Optional. Signing in brings your likes, library, playlists and \
-                 personalized recommendations. Everything else works without an account."
-            }
-            Step::LocalFiles => {
-                "Optional. Add folders with music files; they are scanned into your \
-                 library and play alongside YouTube Music."
-            }
-            Step::Privacy => "What to know before you start.",
+            Step::Welcome => t!("onboarding.subtitle.welcome"),
+            Step::Content => t!("onboarding.subtitle.content"),
+            Step::Theme => t!("onboarding.subtitle.theme"),
+            Step::Account => t!("onboarding.subtitle.account"),
+            Step::LocalFiles => t!("onboarding.subtitle.local_files"),
+            Step::Privacy => t!("onboarding.subtitle.privacy"),
         }
     }
 }
@@ -181,34 +166,40 @@ impl Render for Onboarding {
                     cx.theme().muted
                 })
         }));
-        let header =
-            h_flex()
-                .gap_3()
-                .child(
-                    div()
-                        .size(px(40.))
-                        .rounded(px(10.))
-                        .bg(cx.theme().muted)
-                        .flex()
-                        .items_center()
-                        .justify_center()
-                        .child(Icon::new(step.icon()).size(px(20.))),
-                )
-                .child(
-                    v_flex()
-                        .flex_1()
-                        .min_w_0()
-                        .child(div().text_xs().text_color(muted).child(SharedString::from(
-                            format!("Step {} of {}", self.step + 1, STEPS.len()),
-                        )))
-                        .child(div().text_2xl().font_weight(FontWeight::BOLD).child(
-                            if step == Step::Welcome {
-                                SharedString::from(format!("Welcome to {APP_NAME}"))
-                            } else {
-                                step.title().into()
-                            },
-                        )),
-                );
+        let header = h_flex()
+            .gap_3()
+            .child(
+                div()
+                    .size(px(40.))
+                    .rounded(px(10.))
+                    .bg(cx.theme().muted)
+                    .flex()
+                    .items_center()
+                    .justify_center()
+                    .child(Icon::new(step.icon()).size(px(20.))),
+            )
+            .child(
+                v_flex()
+                    .flex_1()
+                    .min_w_0()
+                    .child(
+                        div()
+                            .text_xs()
+                            .text_color(muted)
+                            .child(SharedString::from(t!(
+                                "onboarding.step_of",
+                                step = self.step + 1,
+                                total = STEPS.len()
+                            ))),
+                    )
+                    .child(div().text_2xl().font_weight(FontWeight::BOLD).child(
+                        if step == Step::Welcome {
+                            SharedString::from(t!("onboarding.welcome_title"))
+                        } else {
+                            step.title().into()
+                        },
+                    )),
+            );
         let footer = h_flex()
             .gap_2()
             .items_center()
@@ -219,7 +210,7 @@ impl Render for Onboarding {
                     Button::new("onboarding-skip")
                         .ghost()
                         .small()
-                        .label("Skip setup")
+                        .label(t!("onboarding.skip"))
                         .on_click(|_, _, cx| finish(cx)),
                 )
             })
@@ -228,7 +219,7 @@ impl Render for Onboarding {
                     Button::new("onboarding-back")
                         .outline()
                         .small()
-                        .label("Back")
+                        .label(t!("common.back"))
                         .on_click(cx.listener(|this, _, _, cx| this.go(-1, cx))),
                 )
             })
@@ -237,10 +228,10 @@ impl Render for Onboarding {
                     .primary()
                     .small()
                     .label(match step {
-                        Step::Welcome => "Get started",
-                        Step::Privacy => "Finish",
-                        Step::Account | Step::LocalFiles => "Next (or skip)",
-                        _ => "Next",
+                        Step::Welcome => t!("onboarding.get_started"),
+                        Step::Privacy => t!("onboarding.finish"),
+                        Step::Account | Step::LocalFiles => t!("onboarding.next_or_skip"),
+                        _ => t!("common.next"),
                     })
                     .on_click(cx.listener(|this, _, _, cx| this.go(1, cx))),
             );
@@ -309,23 +300,23 @@ fn welcome(cx: &mut Context<Onboarding>) -> AnyElement {
         .pt_2()
         .child(feature(
             Lucide::Compass,
-            "Browse & search",
-            "Home feed, charts, moods, new releases, artists, albums and playlists.",
+            t!("onboarding.feature.browse.title"),
+            t!("onboarding.feature.browse.text"),
         ))
         .child(feature(
             Lucide::MicVocal,
-            "Lyrics",
-            "Word-by-word synced lyrics from many providers, with translation and romanization.",
+            t!("onboarding.feature.lyrics.title"),
+            t!("onboarding.feature.lyrics.text"),
         ))
         .child(feature(
             Lucide::Library,
-            "Library",
-            "Likes, playlists, listening history, stats and downloads — stored on this computer.",
+            t!("onboarding.feature.library.title"),
+            t!("onboarding.feature.library.text"),
         ))
         .child(feature(
             Lucide::AudioWaveform,
-            "Recognize music",
-            "Identify a song playing around you (⇧⌘R) and play it right away.",
+            t!("onboarding.feature.recognize.title"),
+            t!("onboarding.feature.recognize.text"),
         ))
         .into_any_element()
 }
@@ -387,26 +378,26 @@ fn theme(panel: &mut SettingsPanel, cx: &mut Context<SettingsPanel>) -> AnyEleme
     v_flex()
         .gap_4()
         .child(
-            group("Theme", cx).child(themes).child(
+            group(t!("onboarding.theme.group"), cx).child(themes).child(
                 div()
                     .text_xs()
                     .text_color(cx.theme().muted_foreground)
-                    .child("Dynamic takes its accent colour from the artwork of the song playing."),
+                    .child(t!("onboarding.theme.dynamic_note")),
             ),
         )
-        .child(group("Text size", cx).child(scales))
+        .child(group(t!("onboarding.theme.text_size"), cx).child(scales))
         .into_any_element()
 }
 
 fn local_files(cx: &mut Context<Onboarding>) -> AnyElement {
     let folders = read_app(cx, |app, _| app.store.prefs.local_folders.clone()).unwrap_or_default();
     let muted = cx.theme().muted_foreground;
-    group("Music folders", cx)
+    group(t!("onboarding.local.group"), cx)
         .child(if folders.is_empty() {
             div()
                 .text_sm()
                 .text_color(muted)
-                .child("No folders yet.")
+                .child(t!("onboarding.local.empty"))
                 .into_any_element()
         } else {
             folder_list("onboarding-folder-remove", &folders, false, cx).into_any_element()
@@ -417,7 +408,7 @@ fn local_files(cx: &mut Context<Onboarding>) -> AnyElement {
                     .small()
                     .outline()
                     .icon(Lucide::FolderPlus)
-                    .label("Add folder…")
+                    .label(t!("onboarding.local.add"))
                     .on_click(|_, _, cx| pick_folders(false, cx)),
             ),
         )
@@ -426,7 +417,7 @@ fn local_files(cx: &mut Context<Onboarding>) -> AnyElement {
             div()
                 .text_xs()
                 .text_color(muted)
-                .child("Scan the folders now or later; manage them under Local files."),
+                .child(t!("onboarding.local.note")),
         )
         .into_any_element()
 }
@@ -448,29 +439,20 @@ fn privacy(cx: &mut Context<Onboarding>) -> AnyElement {
     v_flex()
         .gap_3()
         .child(point(
-            "How songs are streamed",
-            "Full songs come from YouTube's TV client or its web client with a PoToken \
-             (an anti-abuse token, made in a hidden browser view on macOS). YouTube makes \
-             new streams wait a few seconds; the app starts from a short preview meanwhile. \
-             If YouTube changes something, songs fall back to ~1-minute previews (marked in \
-             the player). Settings → Playback → YouTube streams chooses the route.",
+            t!("onboarding.privacy.streaming.title"),
+            t!("onboarding.privacy.streaming.text"),
         ))
         .child(point(
-            "Your data stays here",
-            "Library, history, stats and settings are stored on this computer. Passwords, \
-             API keys and the YouTube sign-in cookie go to the system keychain. Pause or \
-             clear listen and search history any time under Settings → Privacy.",
+            t!("onboarding.privacy.data.title"),
+            t!("onboarding.privacy.data.text"),
         ))
         .child(point(
-            "Who gets what",
-            "YouTube Music receives your searches and plays (and your account cookie when \
-             signed in). Lyrics providers receive song titles. Song recognition sends an \
-             audio fingerprint — not the recording — to Shazam. Scrobbling and Discord \
-             only run if you set them up.",
+            t!("onboarding.privacy.recipients.title"),
+            t!("onboarding.privacy.recipients.text"),
         ))
         .child(point(
-            "Independent project",
-            "Not affiliated with YouTube, Google or Shazam. Free software under the GPL-3.0.",
+            t!("onboarding.privacy.independent.title"),
+            t!("onboarding.privacy.independent.text"),
         ))
         .into_any_element()
 }

@@ -36,8 +36,8 @@ use gpui_component::{
     v_flex,
 };
 use music_core::modules::{
-    CatalogEntry, Diagnostic, Import, InstalledModule, ModuleError, ModuleHealth, ModuleManifest,
-    Modules, PendingModule, Registry, SettingField, SettingKind,
+    CatalogEntry, Diagnostic, Failure, Import, InstalledModule, ModuleError, ModuleHealth,
+    ModuleManifest, Modules, PendingModule, Registry, SettingField, SettingKind,
 };
 use serde_json::Value;
 
@@ -60,9 +60,9 @@ impl SourcePreference {
 
     fn title(self) -> &'static str {
         match self {
-            Self::YouTube => "YouTube only",
-            Self::ModulesFirst => "Modules first, then YouTube",
-            Self::ModulesOnly => "Modules only",
+            Self::YouTube => t!("modules.source.youtube"),
+            Self::ModulesFirst => t!("modules.source.first"),
+            Self::ModulesOnly => t!("modules.source.only"),
         }
     }
 
@@ -176,20 +176,91 @@ impl ModulesState {
     }
 }
 
-fn error_text(e: &ModuleError) -> SharedString {
-    e.describe().into()
+/// What failed, in the UI language (music-core's `ModuleError::describe` is English).
+fn failure_text(failure: Failure) -> &'static str {
+    match failure {
+        Failure::InvalidDocument => t!("modules.failure.invalid_document"),
+        Failure::Unsupported => t!("modules.failure.unsupported"),
+        Failure::InvalidConfiguration => t!("modules.failure.invalid_configuration"),
+        Failure::Network => t!("modules.failure.network"),
+        Failure::Timeout => t!("modules.failure.timeout"),
+        Failure::Execution => t!("modules.failure.execution"),
+        Failure::Integrity => t!("modules.failure.integrity"),
+    }
 }
 
+/// The failure plus its diagnostic code (`DECODE/ARCH_CHECKSUM`, kept as is).
+fn error_text(e: &ModuleError) -> SharedString {
+    let what = failure_text(e.failure);
+    let code = e.diagnostic();
+    if code.is_empty() {
+        what.into()
+    } else {
+        t!("modules.error_with_code", error = what, code = code).into()
+    }
+}
+
+/// A one-line summary of a check / playback outcome, like music-core's
+/// `Diagnostic::summary` (which stays English for copied reports).
+fn summary(d: &Diagnostic) -> String {
+    use music_core::modules::{CheckStatus, MatchRejection, ResolutionPhase};
+    let status = match d.status {
+        CheckStatus::Ready => t!("modules.status.ready").to_owned(),
+        CheckStatus::Configuration => t!("modules.status.configuration").to_owned(),
+        CheckStatus::Unavailable => t!("modules.status.unavailable").to_owned(),
+        CheckStatus::Failed => t!("modules.status.failed").to_owned(),
+        CheckStatus::NoMatch => match d.rejection {
+            Some(MatchRejection::NoResults) | None => t!("modules.status.no_results").to_owned(),
+            Some(r) => {
+                let reason = match r {
+                    MatchRejection::NoResults | MatchRejection::Metadata => {
+                        t!("modules.rejection.metadata")
+                    }
+                    MatchRejection::Title => t!("modules.rejection.title"),
+                    MatchRejection::Artist => t!("modules.rejection.artist"),
+                    MatchRejection::Recording => t!("modules.rejection.recording"),
+                    MatchRejection::Duration => t!("modules.rejection.duration"),
+                    MatchRejection::Explicit => t!("modules.rejection.explicit"),
+                };
+                t!("modules.status.no_match", reason = reason)
+            }
+        },
+        CheckStatus::Resolved => t!("modules.status.resolved").to_owned(),
+        CheckStatus::Timeout => t!("modules.status.timeout").to_owned(),
+    };
+    let mut parts = vec![status];
+    if let Some(phase) = d.phase {
+        parts.push(
+            match phase {
+                ResolutionPhase::Search => t!("modules.phase.search"),
+                ResolutionPhase::Match => t!("modules.phase.match"),
+                ResolutionPhase::Stream => t!("modules.phase.stream"),
+            }
+            .to_owned(),
+        );
+    }
+    if d.candidates > 0 {
+        parts.push(tp!("modules.candidates", d.candidates));
+    }
+    if !d.variant.is_empty() {
+        parts.push(d.variant.clone());
+    }
+    if !d.code.is_empty() {
+        parts.push(d.code.clone());
+    }
+    parts.push(t!(
+        "modules.elapsed_ms",
+        ms = crate::i18n::format::number(d.elapsed_ms)
+    ));
+    parts.join(" · ")
+}
+
+/// "5 min ago" for a Unix-milliseconds time.
 fn ago(ms: u64) -> String {
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map_or(0, |d| d.as_millis() as u64);
-    let secs = now.saturating_sub(ms) / 1000;
-    match secs {
-        0..=59 => format!("{secs} s ago"),
-        60..=3599 => format!("{} min ago", secs / 60),
-        _ => format!("{} h ago", secs / 3600),
-    }
+    crate::i18n::format::ago(now.saturating_sub(ms) / 1000)
 }
 
 impl SettingsPanel {
@@ -203,7 +274,7 @@ impl SettingsPanel {
         cx: &mut Context<Self>,
     ) {
         let Some(modules) = ModuleService::modules(cx) else {
-            self.modules.status = Some((true, "Modules are unavailable.".into()));
+            self.modules.status = Some((true, t!("modules.unavailable").into()));
             cx.notify();
             return;
         };
@@ -241,12 +312,12 @@ impl SettingsPanel {
                 let name = catalog.name.clone();
                 let count = catalog.entries.len();
                 self.modules_run(
-                    "Saving catalog…",
+                    t!("modules.busy.saving_catalog"),
                     move |m| m.commit(Import::Catalog(catalog)),
                     move |this, r, _, _| match r {
                         Ok(_) => this.modules_report(
                             false,
-                            format!("Added catalog “{name}” ({count} entries)."),
+                            tp!("modules.catalog_added", count, name = name),
                         ),
                         Err(e) => this.modules_report(true, error_text(&e)),
                     },
@@ -265,7 +336,7 @@ impl SettingsPanel {
         cx: &mut Context<Self>,
     ) {
         self.modules_run(
-            "Saving…",
+            t!("modules.busy.saving"),
             move |m| {
                 m.set_enabled(preference != SourcePreference::YouTube)?;
                 m.set_fallback_to_youtube(preference != SourcePreference::ModulesOnly)
@@ -285,7 +356,7 @@ impl SettingsPanel {
             files: true,
             directories: false,
             multiple: false,
-            prompt: Some("Install".into()),
+            prompt: Some(t!("common.install").into()),
         });
         cx.spawn_in(window, async move |this, cx| {
             let Ok(Ok(Some(mut paths))) = picked.await else {
@@ -308,7 +379,7 @@ impl SettingsPanel {
         cx: &mut Context<Self>,
     ) {
         self.modules_run(
-            "Checking the package…",
+            t!("modules.busy.checking_package"),
             move |m| m.import_file(&path),
             |this, r, window, cx| this.modules_imported(r, window, cx),
             window,
@@ -324,15 +395,12 @@ impl SettingsPanel {
     ) {
         let url = url.unwrap_or_else(|| self.modules.url.read(cx).value().trim().to_owned());
         if url.is_empty() {
-            self.modules_report(
-                true,
-                "Enter the URL of an .arch package, descriptor or catalog.",
-            );
+            self.modules_report(true, t!("modules.url_missing"));
             cx.notify();
             return;
         }
         self.modules_run(
-            "Downloading…",
+            t!("common.downloading"),
             move |m| m.import_url(&url),
             |this, r, window, cx| this.modules_imported(r, window, cx),
             window,
@@ -349,12 +417,12 @@ impl SettingsPanel {
         let url =
             url.unwrap_or_else(|| self.modules.catalog_url.read(cx).value().trim().to_owned());
         if url.is_empty() {
-            self.modules_report(true, "Enter a catalog URL.");
+            self.modules_report(true, t!("modules.catalog_url_missing"));
             cx.notify();
             return;
         }
         self.modules_run(
-            "Reading the catalog…",
+            t!("modules.busy.reading_catalog"),
             move |m| m.fetch_catalog(&url),
             |this, r, window, cx| this.modules_imported(r.map(Import::Catalog), window, cx),
             window,
@@ -374,16 +442,16 @@ impl SettingsPanel {
             .iter()
             .any(|f| f.required && f.default.is_null());
         self.modules_run(
-            "Installing…",
+            t!("modules.busy.installing"),
             move |m| m.commit(Import::Module(pending)),
             move |this, r, window, cx| match r {
                 Ok(id) => {
                     this.modules_report(
                         false,
                         if needs_setup {
-                            format!("Installed {name}. Fill in its settings and press Save.")
+                            t!("modules.installed_needs_setup", name = name)
                         } else {
-                            format!("Installed {name}.")
+                            t!("modules.installed", name = name)
                         },
                     );
                     if needs_setup {
@@ -410,7 +478,7 @@ impl SettingsPanel {
         cx: &mut Context<Self>,
     ) {
         self.modules_run(
-            "Saving…",
+            t!("modules.busy.saving"),
             move |m| m.set_module_enabled(&id, on),
             |this, r, _, _| {
                 if let Err(e) = r {
@@ -430,7 +498,7 @@ impl SettingsPanel {
         cx: &mut Context<Self>,
     ) {
         self.modules_run(
-            "Saving…",
+            t!("modules.busy.saving"),
             move |m| m.move_module(&id, delta),
             |_, _, _, _| {},
             window,
@@ -450,10 +518,10 @@ impl SettingsPanel {
             self.modules.form = None;
         }
         self.modules_run(
-            "Removing…",
+            t!("modules.busy.removing"),
             move |m| m.remove(&id),
             |this, r, _, _| match r {
-                Ok(()) => this.modules_report(false, "Module removed."),
+                Ok(()) => this.modules_report(false, t!("modules.removed")),
                 Err(e) => this.modules_report(true, error_text(&e)),
             },
             window,
@@ -464,11 +532,11 @@ impl SettingsPanel {
     pub fn modules_check(&mut self, id: String, window: &mut Window, cx: &mut Context<Self>) {
         let key = id.clone();
         self.modules_run(
-            "Checking…",
+            t!("modules.busy.checking"),
             move |m| m.check(&id),
             move |this, d: Diagnostic, _, _| {
                 let ok = d.status == music_core::modules::CheckStatus::Ready;
-                this.modules.notes.insert(key, (!ok, d.summary().into()));
+                this.modules.notes.insert(key, (!ok, summary(&d).into()));
             },
             window,
             cx,
@@ -478,7 +546,7 @@ impl SettingsPanel {
     pub fn modules_update(&mut self, id: String, window: &mut Window, cx: &mut Context<Self>) {
         let key = id.clone();
         self.modules_run(
-            "Checking for an update…",
+            t!("modules.busy.checking_update"),
             move |m| m.check_update(&id),
             move |this, r, _, _| match r {
                 Ok(Some(pending)) => {
@@ -486,7 +554,11 @@ impl SettingsPanel {
                         key,
                         (
                             false,
-                            format!("Version {} is available.", pending.manifest.version).into(),
+                            t!(
+                                "modules.update_available",
+                                version = pending.manifest.version
+                            )
+                            .into(),
                         ),
                     );
                     this.modules.pending = Some(Box::new(pending));
@@ -499,9 +571,9 @@ impl SettingsPanel {
                         .iter()
                         .any(|m| m.id == key && !m.update_url.is_empty());
                     let text = if has_url {
-                        "Up to date."
+                        t!("modules.up_to_date")
                     } else {
-                        "Installed from a file: import the new package to update."
+                        t!("modules.update_from_file")
                     };
                     this.modules.notes.insert(key, (false, text.into()));
                 }
@@ -526,7 +598,7 @@ impl SettingsPanel {
         self.modules.form = None;
         let key = id.clone();
         self.modules_run(
-            "Loading settings…",
+            t!("modules.busy.loading_settings"),
             move |m| {
                 let module = m.module(&id);
                 let values = m.settings(&id);
@@ -534,7 +606,7 @@ impl SettingsPanel {
             },
             move |this, (module, values), window, cx| {
                 let (Some(module), Ok(values)) = (module, values) else {
-                    this.modules_report(true, "Couldn't read this module's settings.");
+                    this.modules_report(true, t!("modules.settings_read_failed"));
                     return;
                 };
                 if this.modules.expanded.as_deref() == Some(key.as_str()) {
@@ -602,8 +674,9 @@ impl SettingsPanel {
                                 serde_json::Number::from_f64(n).map_or(Value::Null, Value::Number)
                             }
                             Err(_) => {
-                                form.error =
-                                    Some(format!("{} must be a number.", f.field.label).into());
+                                form.error = Some(
+                                    t!("modules.field.not_a_number", field = f.field.label).into(),
+                                );
                                 cx.notify();
                                 return;
                             }
@@ -616,9 +689,9 @@ impl SettingsPanel {
             if !f.field.accepts(&value) {
                 form.error = Some(
                     if value.is_null() {
-                        format!("{} is required.", f.field.label)
+                        t!("modules.field.required", field = f.field.label)
                     } else {
-                        format!("{} has an invalid value.", f.field.label)
+                        t!("modules.field.invalid", field = f.field.label)
                     }
                     .into(),
                 );
@@ -630,10 +703,10 @@ impl SettingsPanel {
         form.error = None;
         let id = form.id.clone();
         self.modules_run(
-            "Saving settings…",
+            t!("modules.busy.saving_settings"),
             move |m| m.save_settings(&id, &values),
             |this, r, _, _| match r {
-                Ok(()) => this.modules_report(false, "Settings saved."),
+                Ok(()) => this.modules_report(false, t!("modules.settings_saved")),
                 Err(e) => {
                     if let Some(form) = &mut this.modules.form {
                         form.error = Some(error_text(&e));
@@ -652,7 +725,7 @@ impl SettingsPanel {
         cx: &mut Context<Self>,
     ) {
         self.modules_run(
-            "Downloading…",
+            t!("common.downloading"),
             move |m| m.import_catalog_entry(&entry),
             |this, r, window, cx| this.modules_imported(r, window, cx),
             window,
@@ -662,10 +735,10 @@ impl SettingsPanel {
 
     fn modules_refresh_catalog(&mut self, id: String, window: &mut Window, cx: &mut Context<Self>) {
         self.modules_run(
-            "Refreshing…",
+            t!("modules.busy.refreshing"),
             move |m| m.refresh_catalog(&id),
             |this, r, _, _| match r {
-                Ok(()) => this.modules_report(false, "Catalog refreshed."),
+                Ok(()) => this.modules_report(false, t!("modules.catalog_refreshed")),
                 Err(e) => this.modules_report(true, error_text(&e)),
             },
             window,
@@ -675,7 +748,7 @@ impl SettingsPanel {
 
     fn modules_remove_catalog(&mut self, id: String, window: &mut Window, cx: &mut Context<Self>) {
         self.modules_run(
-            "Removing…",
+            t!("modules.busy.removing"),
             move |m| m.remove_catalog(&id),
             |_, _, _, _| {},
             window,
@@ -760,8 +833,8 @@ fn build_form(
                     let masked = field.kind == SettingKind::Password;
                     let placeholder = match (field.kind, field.min, field.max) {
                         (SettingKind::Number, Some(a), Some(b)) => format!("{a} – {b}"),
-                        _ if field.required => "required".into(),
-                        _ => "optional".into(),
+                        _ if field.required => t!("modules.field.placeholder_required").into(),
+                        _ => t!("modules.field.placeholder_optional").into(),
                     };
                     FormValue::Input(cx.new(|cx| {
                         InputState::new(window, cx)
@@ -823,9 +896,14 @@ fn identity_line(manifest: &ModuleManifest) -> String {
 }
 
 fn diagnostic_line(label: &str, d: &Diagnostic, color: Hsla) -> impl IntoElement {
-    let mut text = format!("{label} {}: {}", ago(d.at), d.summary());
+    let mut text = t!(
+        "modules.diagnostic_line",
+        label = label,
+        when = ago(d.at),
+        summary = summary(d)
+    );
     if !d.track.is_empty() {
-        text.push_str(&format!(" — {}", d.track));
+        text = t!("modules.diagnostic_track", line = text, track = d.track);
     }
     status_line(text.into(), color)
 }
@@ -837,9 +915,11 @@ pub(super) fn render(
 ) -> AnyElement {
     let service = ModuleService::global(cx).cloned();
     let Some(modules) = service.as_ref().and_then(|s| s.modules.clone()) else {
-        let error = service
-            .and_then(|s| s.error)
-            .unwrap_or_else(|| "Modules are unavailable.".into());
+        let error: SharedString = match service.map(|s| s.error) {
+            Some(Some(e)) => t!("modules.unavailable_error", error = e).into(),
+            Some(None) => t!("modules.no_data_dir").into(),
+            None => t!("modules.unavailable").into(),
+        };
         return note(error, cx).into_any_element();
     };
     panel.modules_poll(cx);
@@ -878,17 +958,9 @@ pub(super) fn render(
         .filter(|m| m.enabled)
         .count();
     let source_note = match preference {
-        SourcePreference::YouTube => {
-            "Songs play from YouTube; installed modules are not used.".to_owned()
-        }
-        SourcePreference::ModulesFirst => format!(
-            "Each song is looked up in the {enabled_count} enabled module(s), top to bottom; the \
-             first acceptable match plays, otherwise YouTube."
-        ),
-        SourcePreference::ModulesOnly => format!(
-            "Songs play only from the {enabled_count} enabled module(s); a song no module can \
-             match fails (and is skipped when “Skip failing songs” is on)."
-        ),
+        SourcePreference::YouTube => t!("modules.source_note.youtube").to_owned(),
+        SourcePreference::ModulesFirst => tp!("modules.source_note.first", enabled_count),
+        SourcePreference::ModulesOnly => tp!("modules.source_note.only", enabled_count),
     };
 
     // ---- add ----
@@ -899,7 +971,7 @@ pub(super) fn render(
         .map(|b| (false, b))
         .or(panel.modules.status.clone());
     let add =
-        group("Add a module", cx)
+        group(t!("modules.add.group"), cx)
             .child(
                 h_flex()
                     .gap_2()
@@ -908,13 +980,18 @@ pub(super) fn render(
                             .small()
                             .outline()
                             .icon(Lucide::FolderOpen)
-                            .label("Install from file…")
+                            .label(t!("modules.add.from_file"))
                             .disabled(busy)
                             .on_click(cx.listener(|this, _, window, cx| {
                                 this.modules_install_file(window, cx)
                             })),
                     )
-                    .child(note("An .arch package from your disk.", cx)),
+                    .child(
+                        div()
+                            .flex_1()
+                            .min_w_0()
+                            .child(note(t!("modules.add.from_file_note"), cx)),
+                    ),
             )
             .child(
                 h_flex()
@@ -930,7 +1007,7 @@ pub(super) fn render(
                             .small()
                             .outline()
                             .icon(Lucide::Link)
-                            .label("Install from URL")
+                            .label(t!("modules.add.from_url"))
                             .disabled(busy)
                             .on_click(cx.listener(|this, _, window, cx| {
                                 this.modules_install_url(None, window, cx)
@@ -951,7 +1028,7 @@ pub(super) fn render(
                             .small()
                             .outline()
                             .icon(Lucide::LibraryBig)
-                            .label("Add catalog")
+                            .label(t!("modules.add.catalog"))
                             .disabled(busy)
                             .on_click(cx.listener(|this, _, window, cx| {
                                 this.modules_add_catalog(None, window, cx)
@@ -970,12 +1047,7 @@ pub(super) fn render(
                     },
                 ))
             })
-            .child(note(
-                "Packages are checked (format, checksum, settings, exported functions) before you \
-             confirm. No module or catalog is preinstalled: modules come from their authors, \
-             and run sandboxed (no files, network through the app's proxy).",
-                cx,
-            ));
+            .child(note(t!("modules.add.note"), cx));
 
     // ---- review ----
     let review = panel.modules.pending.as_ref().map(|pending| {
@@ -999,7 +1071,7 @@ pub(super) fn render(
             .filter(|f| f.required)
             .map(|f| f.label.clone())
             .collect();
-        group("Review", cx)
+        group(t!("modules.review.group"), cx)
             .child(
                 h_flex()
                     .gap_3()
@@ -1026,21 +1098,30 @@ pub(super) fn render(
             )
             .child(note(
                 match &replaces {
-                    Some(v) => format!("Updates the installed version {v}; its settings are kept."),
-                    None => "A new installation, added at the end of the playback order.".into(),
+                    Some(v) => t!("modules.review.replaces", version = v),
+                    None => t!("modules.review.new").into(),
                 },
                 cx,
             ))
             .when(!required.is_empty(), |this| {
-                this.child(note(format!("Needs: {}.", required.join(", ")), cx))
+                this.child(note(
+                    t!("modules.review.needs", settings = required.join(", ")),
+                    cx,
+                ))
             })
             .when(!manifest.homepage.is_empty(), |this| {
-                this.child(note(format!("Homepage: {}", manifest.homepage), cx))
+                this.child(note(
+                    t!("modules.review.homepage", url = manifest.homepage),
+                    cx,
+                ))
             })
             .when(!manifest.license.is_empty(), |this| {
-                this.child(note(format!("License: {}", manifest.license), cx))
+                this.child(note(
+                    t!("modules.review.license", license = manifest.license),
+                    cx,
+                ))
             })
-            .child(note(format!("Package SHA-256 {}", pending.sha256), cx))
+            .child(note(t!("modules.review.sha256", hash = pending.sha256), cx))
             .child(
                 h_flex()
                     .gap_2()
@@ -1049,9 +1130,9 @@ pub(super) fn render(
                             .small()
                             .primary()
                             .label(if replaces.is_some() {
-                                "Update"
+                                t!("common.update")
                             } else {
-                                "Install"
+                                t!("common.install")
                             })
                             .disabled(busy)
                             .on_click(
@@ -1062,7 +1143,7 @@ pub(super) fn render(
                         Button::new("module-cancel")
                             .small()
                             .outline()
-                            .label("Cancel")
+                            .label(t!("common.cancel"))
                             .on_click(cx.listener(|this, _, _, cx| this.modules_cancel(cx))),
                     ),
             )
@@ -1071,9 +1152,9 @@ pub(super) fn render(
     // ---- installed ----
     let installed: Vec<InstalledModule> = panel.modules.snapshot.modules.clone();
     let count = installed.len();
-    let mut list = group(format!("Installed ({count})"), cx);
+    let mut list = group(t!("modules.installed_group", count = count), cx);
     if installed.is_empty() {
-        list = list.child(note("Nothing installed yet.", cx));
+        list = list.child(note(t!("modules.nothing_installed"), cx));
     }
     for (index, module) in installed.iter().enumerate() {
         let id = module.id.clone();
@@ -1148,7 +1229,7 @@ pub(super) fn render(
                 small(
                     format!("module-settings-{index}"),
                     Lucide::Settings2,
-                    "Settings",
+                    t!("modules.action.settings"),
                 )
                 .selected(expanded)
                 .on_click(cx.listener(move |this, _, window, cx| {
@@ -1159,7 +1240,7 @@ pub(super) fn render(
                 small(
                     format!("module-check-{index}"),
                     Lucide::Stethoscope,
-                    "Check",
+                    t!("modules.action.check"),
                 )
                 .on_click(cx.listener(move |this, _, window, cx| {
                     this.modules_check(check_id.clone(), window, cx)
@@ -1169,7 +1250,7 @@ pub(super) fn render(
                 small(
                     format!("module-update-{index}"),
                     Lucide::RefreshCw,
-                    "Check for update",
+                    t!("modules.action.check_update"),
                 )
                 .on_click(cx.listener(move |this, _, window, cx| {
                     this.modules_update(update_id.clone(), window, cx)
@@ -1180,7 +1261,7 @@ pub(super) fn render(
                     .small()
                     .ghost()
                     .icon(Lucide::ArrowUp)
-                    .tooltip("Higher priority")
+                    .tooltip(t!("modules.action.higher"))
                     .disabled(index == 0)
                     .on_click(cx.listener(move |this, _, window, cx| {
                         this.modules_move(up_id.clone(), -1, window, cx)
@@ -1191,7 +1272,7 @@ pub(super) fn render(
                     .small()
                     .ghost()
                     .icon(Lucide::ArrowDown)
-                    .tooltip("Lower priority")
+                    .tooltip(t!("modules.action.lower"))
                     .disabled(index + 1 == count)
                     .on_click(cx.listener(move |this, _, window, cx| {
                         this.modules_move(down_id.clone(), 1, window, cx)
@@ -1203,9 +1284,9 @@ pub(super) fn render(
                     .map(|b| if confirming { b.danger() } else { b.ghost() })
                     .icon(Lucide::Trash)
                     .label(if confirming {
-                        "Remove — sure?"
+                        t!("modules.action.confirm_remove")
                     } else {
-                        "Uninstall"
+                        t!("modules.action.uninstall")
                     })
                     .on_click(cx.listener(move |this, _, window, cx| {
                         this.modules_remove(remove_id.clone(), window, cx)
@@ -1220,7 +1301,7 @@ pub(super) fn render(
             .child(header)
             .when(!missing.is_empty(), |this| {
                 this.child(status_line(
-                    format!("Needs configuration: {}", missing.join(", ")).into(),
+                    t!("modules.needs_configuration", settings = missing.join(", ")).into(),
                     warning,
                 ))
             })
@@ -1230,7 +1311,7 @@ pub(super) fn render(
                     music_core::modules::CheckStatus::NoMatch => muted,
                     _ => danger,
                 };
-                this.child(diagnostic_line("Last song", &d, color))
+                this.child(diagnostic_line(t!("modules.diag.last_song"), &d, color))
             })
             .when_some(note_line, |this, (error, text)| {
                 this.child(status_line(text, if error { danger } else { muted }))
@@ -1249,7 +1330,7 @@ pub(super) fn render(
         .map(|m| (m.manifest.id.clone(), m.manifest.version.clone()))
         .collect();
     let catalog_group = (!catalogs.is_empty()).then(|| {
-        let mut g = group("Catalogs", cx);
+        let mut g = group(t!("modules.catalogs"), cx);
         for (ci, catalog) in catalogs.iter().enumerate() {
             let (refresh_id, remove_id) = (catalog.id.clone(), catalog.id.clone());
             g = g.child(
@@ -1265,11 +1346,11 @@ pub(super) fn render(
                                     .child(catalog.name.clone()),
                             )
                             .child(note(
-                                format!(
-                                    "{} · {} entries · refreshed {}",
-                                    catalog.url,
+                                tp!(
+                                    "modules.catalog_line",
                                     catalog.entries.len(),
-                                    ago(catalog.refreshed_at)
+                                    url = catalog.url,
+                                    when = ago(catalog.refreshed_at)
                                 ),
                                 cx,
                             )),
@@ -1279,7 +1360,7 @@ pub(super) fn render(
                             .small()
                             .ghost()
                             .icon(Lucide::RefreshCw)
-                            .tooltip("Refresh")
+                            .tooltip(t!("common.refresh"))
                             .on_click(cx.listener(move |this, _, window, cx| {
                                 this.modules_refresh_catalog(refresh_id.clone(), window, cx)
                             })),
@@ -1289,7 +1370,7 @@ pub(super) fn render(
                             .small()
                             .ghost()
                             .icon(Lucide::Trash)
-                            .tooltip("Remove catalog")
+                            .tooltip(t!("modules.remove_catalog"))
                             .on_click(cx.listener(move |this, _, window, cx| {
                                 this.modules_remove_catalog(remove_id.clone(), window, cx)
                             })),
@@ -1298,10 +1379,12 @@ pub(super) fn render(
             for (ei, entry) in catalog.entries.iter().enumerate() {
                 let installed_version = installed_ids.get(&entry.id);
                 let (label, enabled) = match installed_version {
-                    Some(v) if !entry.version.is_empty() && *v != entry.version => ("Update", true),
-                    Some(_) => ("Installed", false),
-                    None if entry.supported => ("Install", true),
-                    None => ("Not a module", false),
+                    Some(v) if !entry.version.is_empty() && *v != entry.version => {
+                        (t!("common.update"), true)
+                    }
+                    Some(_) => (t!("modules.entry.installed"), false),
+                    None if entry.supported => (t!("common.install"), true),
+                    None => (t!("modules.entry.not_a_module"), false),
                 };
                 let e = entry.clone();
                 g = g.child(
@@ -1354,15 +1437,10 @@ pub(super) fn render(
     v_flex()
         .gap_5()
         .child(
-            group("Playback source", cx)
+            group(t!("modules.source.group"), cx)
                 .child(source_buttons)
                 .child(note(source_note, cx))
-                .child(note(
-                    "A module supplies audio for the song you play; title, artists and your \
-                     library stay the same. The bar and Now Playing show where the audio comes \
-                     from. Downloads use the same order.",
-                    cx,
-                )),
+                .child(note(t!("modules.source.note"), cx)),
         )
         .children(review)
         // Installed modules first once there are any; the add form below them.
@@ -1391,7 +1469,7 @@ fn render_details(
     match &panel.modules.form {
         Some(form) if form.id == module.id => {
             if form.fields.is_empty() {
-                settings = settings.child(note("This module has no settings.", cx));
+                settings = settings.child(note(t!("modules.no_settings"), cx));
             }
             for (fi, f) in form.fields.iter().enumerate() {
                 let key = f.field.key.clone();
@@ -1466,7 +1544,7 @@ fn render_details(
                                 Button::new("module-save")
                                     .small()
                                     .primary()
-                                    .label("Save")
+                                    .label(t!("common.save"))
                                     .on_click(cx.listener(|this, _, window, cx| {
                                         this.modules_save(window, cx)
                                     })),
@@ -1477,7 +1555,7 @@ fn render_details(
                     );
             }
         }
-        _ => settings = settings.child(note("Loading settings…", cx)),
+        _ => settings = settings.child(note(t!("modules.busy.loading_settings"), cx)),
     }
 
     let id = module.id.clone();
@@ -1489,11 +1567,11 @@ fn render_details(
             div()
                 .text_sm()
                 .font_weight(FontWeight::SEMIBOLD)
-                .child("Diagnostics"),
+                .child(t!("modules.diagnostics")),
         )
         .child(match &health.check {
             Some(d) => diagnostic_line(
-                "Check",
+                t!("modules.diag.check"),
                 d,
                 if d.status == music_core::modules::CheckStatus::Ready {
                     success
@@ -1502,23 +1580,27 @@ fn render_details(
                 },
             )
             .into_any_element(),
-            None => note("Not checked yet.", cx).into_any_element(),
+            None => note(t!("modules.diag.not_checked"), cx).into_any_element(),
         })
         .child(match &health.playback {
-            Some(d) => diagnostic_line("Playback", d, muted).into_any_element(),
-            None => note("Not used for a song yet.", cx).into_any_element(),
+            Some(d) => diagnostic_line(t!("modules.diag.playback"), d, muted).into_any_element(),
+            None => note(t!("modules.diag.not_used"), cx).into_any_element(),
         })
         .child(note(
-            format!(
-                "Installed {} · package {} · {}",
-                ago(module.installed_at),
-                module.package_sha256.get(..12).unwrap_or(""),
-                if module.update_url.is_empty() {
-                    "from a file".to_owned()
-                } else {
-                    format!("from {}", module.update_url)
-                }
-            ),
+            if module.update_url.is_empty() {
+                t!(
+                    "modules.installed_line_file",
+                    when = ago(module.installed_at),
+                    hash = module.package_sha256.get(..12).unwrap_or("")
+                )
+            } else {
+                t!(
+                    "modules.installed_line_url",
+                    when = ago(module.installed_at),
+                    hash = module.package_sha256.get(..12).unwrap_or(""),
+                    url = module.update_url
+                )
+            },
             cx,
         ))
         .child(
@@ -1529,7 +1611,7 @@ fn render_details(
                 .text_xs()
                 .font_family(mono)
                 .when(log_lines.is_empty(), |this| {
-                    this.child(div().text_color(muted).child("The log is empty."))
+                    this.child(div().text_color(muted).child(t!("modules.log_empty")))
                 })
                 .children(log_lines.into_iter().rev().map(|l| {
                     let color = match l.level.as_str() {
@@ -1553,7 +1635,7 @@ fn render_details(
                         .small()
                         .ghost()
                         .icon(Lucide::ClipboardCopy)
-                        .label("Copy diagnostics")
+                        .label(t!("modules.copy_diagnostics"))
                         .on_click(cx.listener(move |this, _, _, cx| {
                             if let Some(m) = ModuleService::modules(cx) {
                                 let mut text = m.diagnostics_report(&copy_id);
@@ -1561,7 +1643,7 @@ fn render_details(
                                     text.push_str(&format!("{} {}\n", line.level, line.text));
                                 }
                                 cx.write_to_clipboard(ClipboardItem::new_string(text));
-                                this.modules_report(false, "Diagnostics copied.");
+                                this.modules_report(false, t!("modules.diagnostics_copied"));
                                 cx.notify();
                             }
                         })),
@@ -1570,7 +1652,7 @@ fn render_details(
                     Button::new("module-clear-log")
                         .small()
                         .ghost()
-                        .label("Clear log")
+                        .label(t!("modules.clear_log"))
                         .on_click(cx.listener(move |_, _, _, cx| {
                             if let Some(m) = ModuleService::modules(cx) {
                                 m.clear_log(&clear_id);
@@ -1588,7 +1670,7 @@ fn render_details(
             div()
                 .text_sm()
                 .font_weight(FontWeight::SEMIBOLD)
-                .child("Settings"),
+                .child(t!("modules.settings_heading")),
         )
         .child(settings)
         .child(diagnostics)
