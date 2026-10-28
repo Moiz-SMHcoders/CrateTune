@@ -14,6 +14,14 @@ pub(crate) enum Reply {
         total: u64,
     },
     Status(u16),
+    /// Like [`Reply::Bytes`], but the connection drops after `sent` bytes of
+    /// the body (a stream cut off mid-download).
+    Partial {
+        body: Vec<u8>,
+        start: u64,
+        total: u64,
+        sent: usize,
+    },
 }
 
 type Handler = dyn Fn(&str, u64, Option<u64>) -> Reply + Send + Sync;
@@ -85,7 +93,30 @@ fn serve(stream: TcpStream, handler: &Handler, log: &Mutex<Vec<(String, u64)>>) 
     }
     log.lock().unwrap().push((path.clone(), start));
     let mut stream = stream;
-    let response = match handler(&path, start, end) {
+    let reply = match handler(&path, start, end) {
+        Reply::Partial {
+            body,
+            start,
+            total,
+            sent,
+        } => {
+            let head = format!(
+                "HTTP/1.1 206 Partial Content\r\nContent-Length: {}\r\nContent-Range: bytes {}-{}/{}\r\nConnection: close\r\n\r\n",
+                body.len(),
+                start,
+                start + body.len() as u64 - 1,
+                total
+            );
+            let _ = stream.write_all(head.as_bytes());
+            let _ = stream.write_all(&body[..sent.min(body.len())]);
+            let _ = stream.flush();
+            let _ = stream.shutdown(std::net::Shutdown::Both);
+            return;
+        }
+        other => other,
+    };
+    let response = match reply {
+        Reply::Partial { .. } => unreachable!(),
         Reply::Bytes { body, start, total } => {
             let mut head = format!(
                 "HTTP/1.1 206 Partial Content\r\nContent-Length: {}\r\nContent-Range: bytes {}-{}/{}\r\nConnection: close\r\n\r\n",

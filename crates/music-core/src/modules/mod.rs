@@ -38,7 +38,7 @@ use std::collections::{BTreeMap, HashMap};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
-use std::time::{Duration, Instant};
+use std::time::{Duration, Instant, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -251,6 +251,8 @@ impl Selection {
             chunk_size: None,
             full_access: true,
             prefix: None,
+            valid_until: (self.stream.expires_at_ms > 0)
+                .then(|| UNIX_EPOCH + Duration::from_millis(self.stream.expires_at_ms)),
         }
     }
 }
@@ -1139,6 +1141,12 @@ impl Modules {
         })
     }
 
+    /// Drops the cached resolution of `video_id` by `installation` (its URL
+    /// stopped working), so the next [`Self::resolve`] asks the module again.
+    pub fn forget_resolution(&self, video_id: &str, installation: &str) {
+        lock(&self.inner.cache).remove(&(video_id.to_owned(), installation.to_owned()));
+    }
+
     /// Resolves a song through the enabled modules in priority order: search
     /// with its title and primary artist, pick the best acceptable match,
     /// resolve its stream. `None` when modules are off, the song isn't
@@ -1279,6 +1287,31 @@ impl StreamResolver for ModuleResolver {
         quality: Quality,
     ) -> crate::Result<ResolvedStream> {
         self.fallback.resolve_with_quality(video_id, quality)
+    }
+
+    /// A module stream is resolved again through the same module, past the
+    /// cache (its URL stopped working); anything else goes to the fallback.
+    fn refresh_track(
+        &self,
+        track: &Track,
+        quality: Quality,
+        stale: &ResolvedStream,
+    ) -> crate::Result<ResolvedStream> {
+        let module = stale
+            .source
+            .as_ref()
+            .filter(|s| s.kind == SourceKind::Module)
+            .and_then(|s| s.module_id.clone());
+        let Some(module) = module else {
+            return self.fallback.refresh_track(track, quality, stale);
+        };
+        self.modules.forget_resolution(&track.video_id, &module);
+        match self.modules.resolve(track) {
+            Some(selection) => Ok(selection.to_resolved()),
+            None => Err(crate::Error::Unplayable(
+                "the module no longer resolves this song".into(),
+            )),
+        }
     }
 
     fn resolve_track(&self, track: &Track, quality: Quality) -> crate::Result<ResolvedStream> {

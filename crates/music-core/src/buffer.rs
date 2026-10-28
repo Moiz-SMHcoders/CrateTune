@@ -136,6 +136,12 @@ impl StreamBuffer {
         }
     }
 
+    /// Corrects a size that was declared wrongly (before any data arrived).
+    pub(crate) fn replace_total_len(&self, total: u64) {
+        self.lock().total_len = Some(total);
+        self.grew.notify_all();
+    }
+
     /// `None` while the download is still running.
     pub fn end(&self) -> Option<BufferEnd> {
         self.lock().end.clone()
