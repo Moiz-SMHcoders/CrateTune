@@ -289,15 +289,19 @@ impl Render for PlayerBar {
                 .and_then(|id| match app.hires.get(id) {
                     Some(HiRes::Ready {
                         backdrop,
-                        palette,
+                        art_colors,
                         ..
-                    }) => Some((backdrop.clone(), *palette)),
+                    }) => Some((backdrop.clone(), *art_colors)),
                     _ => None,
                 });
-            let (backdrop, palette) = match hires {
-                Some((b, p)) => (Some(b), Some(p)),
+            let (backdrop, art_colors) = match hires {
+                Some((b, c)) => (Some(b), c),
                 None => (None, None),
             };
+            let tones = super::bar_fx::ArtTones::new(
+                art_colors.as_ref(),
+                &crate::theme::AppPalette::get(cx),
+            );
             BarState {
                 has_track: app.playback.track.is_some() || restored,
                 total: app.playback.duration.map_or(0., |d| d.as_secs_f32()),
@@ -308,7 +312,7 @@ impl Render for PlayerBar {
                 config,
                 art: BackgroundArt {
                     backdrop,
-                    palette,
+                    tones,
                     accent,
                     surface,
                 },

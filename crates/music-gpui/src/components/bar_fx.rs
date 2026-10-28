@@ -18,7 +18,6 @@ use gpui::{
 use music_core::{Spectrum, SpectrumAnalyzer, SpectrumConfig};
 
 use crate::anim::{Frame, Spec, Tween, ease_in_out_cubic, ease_out_cubic};
-use crate::backdrop::Palette;
 use crate::components::progress::{TrackInput, eq_bar_count};
 use crate::settings::bar_prefs::{BarBackground, GradientDirection, ProgressStyle};
 
@@ -247,7 +246,8 @@ impl SpectrumDump {
 #[derive(Clone)]
 pub struct BackgroundArt {
     pub backdrop: Option<std::sync::Arc<RenderImage>>,
-    pub palette: Option<Palette>,
+    /// The gradient / glow colours (see [`ArtTones::new`]).
+    pub tones: ArtTones,
     /// Theme accent (fallback when the artwork isn't processed yet).
     pub accent: Hsla,
     /// The bar's surface colour (what the effect fades into).
@@ -380,7 +380,8 @@ impl BackgroundFx {
                     ),
                 }
                 // The artwork's most vivid colour on top, so dark covers glow too.
-                if let Some([_, _, vivid]) = art.palette {
+                {
+                    let vivid = art.tones.light;
                     layers.push(
                         div()
                             .absolute()
@@ -391,8 +392,8 @@ impl BackgroundFx {
                             .opacity(mix)
                             .bg(linear_gradient(
                                 90.,
-                                linear_color_stop(glow_tone(vivid).opacity(0.45), 0.),
-                                linear_color_stop(glow_tone(vivid).opacity(0.), 1.),
+                                linear_color_stop(vivid.opacity(0.45), 0.),
+                                linear_color_stop(vivid.opacity(0.), 1.),
                             ))
                             .into_any_element(),
                     );
@@ -414,19 +415,7 @@ impl BackgroundFx {
                 );
             }
             BarBackground::Gradient => {
-                let (a, b) = match art.palette {
-                    Some([first, second, vivid]) => {
-                        // Two distinct colours: the vivid one and whichever corner
-                        // colour differs more from it.
-                        let other = if hue_gap(vivid, first) >= hue_gap(vivid, second) {
-                            first
-                        } else {
-                            second
-                        };
-                        (deep(vivid), deep(other))
-                    }
-                    None => (deep(art.accent), art.surface),
-                };
+                let (a, b) = (art.tones.start, art.tones.end);
                 let tone = |c: Hsla| {
                     if dimmed {
                         hsla(c.h, c.s * 0.45, c.l * 0.9, 1.)
@@ -475,10 +464,7 @@ impl BackgroundFx {
                 let alpha = mix * (0.25 + 0.6 * energy);
                 let w = span * (0.6 + 0.4 * energy);
                 let left = x0 + (span - w) / 2.;
-                let c = match art.palette {
-                    Some([_, _, vivid]) => glow_tone(vivid),
-                    None => art.accent,
-                };
+                let c = art.tones.light;
                 let half = w / 2.;
                 for (i, (from, to)) in [(c.opacity(0.), c), (c, c.opacity(0.))]
                     .into_iter()
@@ -511,17 +497,46 @@ const PALETTE_FADE: Spec = Spec::ms(350, ease_in_out_cubic);
 /// Animated gradient: radians per second of the drift cycle (~12 s per cycle).
 const DRIFT_RATE: f32 = std::f32::consts::TAU / 12.;
 
-fn hue_gap(a: Hsla, b: Hsla) -> f32 {
-    let d = (a.h - b.h).abs();
-    d.min(1. - d) + (a.l - b.l).abs() * 0.5
+/// The background colours of the current track, from the dynamic theme's own
+/// artwork analysis (`palette.rs` seeds, computed once per track on the artwork
+/// worker — nothing is extracted again here), or the theme palette when the art
+/// has no colour.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct ArtTones {
+    /// Gradient ends: dark tones (white text stays readable on them).
+    pub start: Hsla,
+    pub end: Hsla,
+    /// A mid tone of the main colour for lights (glow, pulse).
+    pub light: Hsla,
 }
 
-/// A palette colour as a light: saturated, mid lightness.
-fn glow_tone(c: Hsla) -> Hsla {
-    hsla(c.h, c.s.clamp(0.45, 0.9), c.l.clamp(0.4, 0.55), 1.)
-}
-
-/// A palette colour made dark and saturated enough to sit behind text.
-fn deep(c: Hsla) -> Hsla {
-    hsla(c.h, c.s.clamp(0.35, 0.8), c.l.clamp(0.22, 0.4), 1.)
+impl ArtTones {
+    pub fn new(art: Option<&crate::theme::ArtColors>, theme: &crate::theme::AppPalette) -> Self {
+        use crate::palette::{Lch, TonalPalette};
+        let tonal = |c: Lch| TonalPalette::new(c.h, c.c.max(0.04));
+        match art {
+            Some(art) => {
+                let first = art.primary();
+                // The second seed, or a neighbour hue when the art has one colour.
+                let second = art.seeds().get(1).copied().unwrap_or(Lch {
+                    h: first.h + 50.,
+                    ..first
+                });
+                ArtTones {
+                    start: tonal(first).tone(32.),
+                    end: tonal(second).tone(24.),
+                    light: tonal(first).tone(58.),
+                }
+            }
+            None => {
+                let a = Lch::from_hsla(theme.accent);
+                let b = Lch::from_hsla(theme.tertiary);
+                ArtTones {
+                    start: TonalPalette::new(a.h, a.c).tone(32.),
+                    end: TonalPalette::new(b.h, b.c).tone(22.),
+                    light: TonalPalette::new(a.h, a.c).tone(58.),
+                }
+            }
+        }
+    }
 }

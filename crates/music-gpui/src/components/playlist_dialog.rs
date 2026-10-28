@@ -111,16 +111,17 @@ pub fn open(
                     .id(("playlist-pick", ix))
                     .gap_3()
                     .p_1p5()
-                    .rounded(px(6.))
+                    .rounded(crate::theme::radius(6.))
                     .cursor_pointer()
                     .hover(move |s| s.bg(hover))
                     .child(match &p.thumbnail_url {
                         Some(url) => {
-                            artwork(Some(url.clone()), px(36.), px(4.), cx).into_any_element()
+                            artwork(Some(url.clone()), px(36.), crate::theme::radius(4.), cx)
+                                .into_any_element()
                         }
                         None => div()
                             .size(px(36.))
-                            .rounded(px(4.))
+                            .rounded(crate::theme::radius(4.))
                             .bg(muted_bg)
                             .flex()
                             .items_center()

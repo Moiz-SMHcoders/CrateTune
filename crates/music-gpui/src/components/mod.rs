@@ -17,6 +17,7 @@
 pub mod artwork;
 pub mod bar_fx;
 pub mod card;
+pub mod download_header;
 pub mod items;
 pub mod like;
 pub mod np_visualizer;

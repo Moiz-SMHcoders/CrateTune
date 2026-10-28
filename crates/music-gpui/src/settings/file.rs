@@ -83,6 +83,9 @@ pub struct Settings {
     /// guide existed: those users count as onboarded; a fresh install starts `false`.
     #[serde(default = "onboarded_default")]
     pub onboarded: bool,
+    /// Accent, surfaces, contrast, corners, density, font, dynamic colours
+    /// (Appearance → Customize theme, `theme_prefs.rs`).
+    pub custom_theme: super::theme_prefs::CustomTheme,
     /// Secrets that could not go to the OS keychain (see `secrets.rs`).
     #[serde(skip_serializing_if = "FileSecrets::is_empty")]
     pub secrets: FileSecrets,
@@ -115,6 +118,7 @@ impl Default for Settings {
             cast: Default::default(),
             player_bar: Default::default(),
             onboarded: true,
+            custom_theme: Default::default(),
             secrets: FileSecrets::default(),
         }
     }
@@ -600,6 +604,7 @@ impl Settings {
         self.lyrics.normalize();
         self.scrobble_rules.normalize();
         self.player_bar.normalize();
+        self.custom_theme.normalize();
     }
 
     pub fn from_json(text: &str) -> serde_json::Result<Self> {

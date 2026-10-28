@@ -434,33 +434,112 @@ impl DownloadManager {
     }
 
     fn enqueue(&self, track: Track, kind: DownloadKind) {
+        self.enqueue_many(vec![track], kind);
+    }
+
+    /// Queues jobs for `tracks` under one lock, skipping songs that already have a
+    /// running job of the same kind (or a user download). Returns how many were queued.
+    fn enqueue_many(&self, tracks: Vec<Track>, kind: DownloadKind) -> usize {
         let mut state = self.inner.lock();
-        let busy = state.jobs.iter().any(|j| {
-            j.state.track.video_id == track.video_id
-                && !j.state.status.is_finished()
-                && !j.cancelled
-                && (j.state.kind == kind || j.state.kind == DownloadKind::Download)
-        });
-        if busy {
-            return;
+        let mut busy: std::collections::HashSet<String> = state
+            .jobs
+            .iter()
+            .filter(|j| {
+                !j.state.status.is_finished()
+                    && !j.cancelled
+                    && (j.state.kind == kind || j.state.kind == DownloadKind::Download)
+            })
+            .map(|j| j.state.track.video_id.clone())
+            .collect();
+        let mut queued = 0;
+        for track in tracks {
+            if !busy.insert(track.video_id.clone()) {
+                continue;
+            }
+            state.next_job += 1;
+            let id = state.next_job;
+            state.jobs.push(Job {
+                id,
+                state: DownloadState {
+                    track,
+                    kind,
+                    status: DownloadStatus::Queued,
+                    total_bytes: None,
+                    size: 0,
+                    complete: false,
+                },
+                cancelled: false,
+            });
+            state.queue.push_back(id);
+            queued += 1;
         }
-        state.next_job += 1;
-        let id = state.next_job;
-        state.jobs.push(Job {
-            id,
-            state: DownloadState {
-                track,
-                kind,
-                status: DownloadStatus::Queued,
-                total_bytes: None,
-                size: 0,
-                complete: false,
-            },
-            cancelled: false,
-        });
-        state.queue.push_back(id);
         drop(state);
-        self.inner.wake.notify_one();
+        if queued > 0 {
+            self.inner.wake.notify_all();
+        }
+        queued
+    }
+
+    /// Queues user downloads for many songs at once (a whole playlist / album): one lock,
+    /// one pass, and the songs wait in the queue for the [`CONCURRENCY`] workers, so a long
+    /// list never fires more than two requests at a time. Downloaded songs are skipped and
+    /// cached copies promoted (as [`Self::download`]). Returns how many jobs were queued.
+    pub fn download_many(&self, tracks: Vec<Track>) -> usize {
+        let mut seen = std::collections::HashSet::new();
+        let mut fetch = Vec::new();
+        for track in tracks {
+            if !seen.insert(track.video_id.clone()) {
+                continue;
+            }
+            let cached = {
+                let state = self.inner.lock();
+                match state.records.get(&track.video_id).map(|r| r.kind) {
+                    Some(DownloadKind::Download) => continue,
+                    Some(DownloadKind::Cache) => true,
+                    None => false,
+                }
+            };
+            if cached {
+                // Rare (only songs in the play cache): promote one by one.
+                self.download(track);
+            } else {
+                fetch.push(track);
+            }
+        }
+        self.enqueue_many(fetch, DownloadKind::Download)
+    }
+
+    /// Cancels queued / running jobs of every id in `video_ids` (stored files are kept).
+    pub fn cancel_many(&self, video_ids: &[&str]) {
+        let ids: std::collections::HashSet<&str> = video_ids.iter().copied().collect();
+        let mut state = self.inner.lock();
+        for job in state.jobs.iter_mut().filter(|j| {
+            ids.contains(j.state.track.video_id.as_str()) && !j.state.status.is_finished()
+        }) {
+            job.cancelled = true;
+            if job.state.status == DownloadStatus::Queued {
+                job.state.status = DownloadStatus::Cancelled;
+            }
+        }
+    }
+
+    /// [`Self::delete`] for many songs; returns how many stored files were removed and
+    /// the first error.
+    pub fn delete_many(&self, video_ids: &[&str]) -> (usize, Option<Error>) {
+        self.cancel_many(video_ids);
+        let mut removed = 0;
+        let mut first_error = None;
+        for id in video_ids {
+            let had = self.inner.lock().records.contains_key(*id);
+            match self.delete(id) {
+                Ok(()) if had => removed += 1,
+                Ok(()) => {}
+                Err(e) => {
+                    first_error.get_or_insert(e);
+                }
+            }
+        }
+        (removed, first_error)
     }
 
     /// Queues a user download. No-op if it is already downloaded or queued; a cached copy is
@@ -966,6 +1045,43 @@ mod tests {
         m.cache(t("full-300"));
         wait_finished(&m);
         assert_eq!(m.record("full-300").unwrap().kind, DownloadKind::Cache);
+        drop(m);
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn batches_queue_once_and_respect_concurrency() {
+        let dir = tempdir();
+        let (m, server) = manager(&dir, None);
+        let tracks: Vec<Track> = (0..12).map(|i| t(&format!("slow-{}", 3000 + i))).collect();
+        let mut with_dupes = tracks.clone();
+        with_dupes.extend(tracks[..4].iter().cloned());
+        assert_eq!(m.download_many(with_dupes), 12, "duplicates queue once");
+        assert_eq!(m.download_many(tracks.clone()), 0, "already queued");
+        // Cancel the second half while the first jobs run.
+        let late: Vec<&str> = tracks[6..].iter().map(|t| t.video_id.as_str()).collect();
+        m.cancel_many(&late);
+        let states = wait_finished(&m);
+        assert_eq!(states.len(), 12);
+        let completed = states
+            .iter()
+            .filter(|s| s.status == DownloadStatus::Completed)
+            .count();
+        let cancelled = states
+            .iter()
+            .filter(|s| s.status == DownloadStatus::Cancelled)
+            .count();
+        assert_eq!((completed, cancelled), (6, 6));
+        assert!(
+            server.max_in_flight.load(Ordering::SeqCst) <= CONCURRENCY,
+            "never more than {CONCURRENCY} requests at once"
+        );
+        // Everything stored is skipped by the next batch, and can be removed at once.
+        assert_eq!(m.download_many(tracks[..6].to_vec()), 0);
+        let ids: Vec<&str> = tracks.iter().map(|t| t.video_id.as_str()).collect();
+        let (removed, error) = m.delete_many(&ids);
+        assert_eq!((removed, error.is_none()), (completed, true));
+        assert!(m.list(Some(DownloadKind::Download)).is_empty());
         drop(m);
         std::fs::remove_dir_all(dir).unwrap();
     }

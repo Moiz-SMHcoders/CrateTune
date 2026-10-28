@@ -29,8 +29,6 @@ use crate::icons::Lucide;
 use crate::router::Route;
 use crate::theme::AppColors;
 
-pub const ROW_HEIGHT: f32 = 60.;
-
 /// Where a track sits, so "Play" can use the surrounding list as the queue.
 pub type ListContext = Option<(Rc<Vec<Track>>, usize)>;
 
@@ -72,7 +70,12 @@ impl TrackRow {
 impl RenderOnce for TrackRow {
     fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
         let track = self.list[self.index].clone();
-        let art = artwork(track.artwork_url(120), px(44.), px(6.), cx);
+        let art = artwork(
+            track.artwork_url(120),
+            px(44.),
+            crate::theme::radius(6.),
+            cx,
+        );
         let theme = cx.theme();
         let accent = AppColors::get(cx);
         let subtitle = match &track.album {
@@ -100,10 +103,10 @@ impl RenderOnce for TrackRow {
             .id(self.id)
             .group(group.clone())
             .w_full()
-            .h(px(ROW_HEIGHT))
+            .h(px(crate::theme::row_height()))
             .px_4()
             .gap_4()
-            .rounded(px(8.))
+            .rounded(crate::theme::radius(8.))
             .cursor_pointer()
             .when(self.active, |this| this.bg(accent.accent_soft))
             .hover(move |style| style.bg(hover_bg))
@@ -212,7 +215,7 @@ pub fn explicit_badge(cx: &App) -> impl IntoElement + use<> {
     div()
         .flex_none()
         .px(px(4.))
-        .rounded(px(3.))
+        .rounded(crate::theme::radius(3.))
         .bg(theme.muted)
         .text_color(theme.muted_foreground)
         .text_xs()

@@ -158,9 +158,9 @@ impl Render for MiniPlayer {
                 .and_then(|id| match app.hires.get(id) {
                     Some(crate::now_playing::HiRes::Ready {
                         backdrop,
-                        palette,
+                        art_colors,
                         ..
-                    }) => Some((backdrop.clone(), *palette)),
+                    }) => Some((backdrop.clone(), *art_colors)),
                     _ => None,
                 });
             (
@@ -197,10 +197,11 @@ impl Render for MiniPlayer {
             theme.muted,
         );
         if backdrop.is_some() {
-            // White text on the darkened artwork, like Now Playing.
-            fg = gpui::white();
-            muted = gpui::hsla(0., 0., 1., 0.7);
-            track_bg = gpui::hsla(0., 0., 1., 0.22);
+            // Text on the darkened artwork, like Now Playing (theme palette).
+            let palette = crate::theme::AppPalette::get(cx);
+            fg = palette.on_artwork;
+            muted = palette.on_artwork_muted;
+            track_bg = palette.on_artwork.opacity(0.22);
         }
         let accent = crate::theme::AppColors::get(cx).accent;
         let playing = status == PlaybackStatus::Playing;
@@ -241,10 +242,14 @@ impl Render for MiniPlayer {
             .progress
             .step(&mut frame, style, playing, wants_spectrum, analyzer, 0.8);
         let surface = bg;
-        let (backdrop_img, palette) = match hires_art {
-            Some((b, p)) => (Some(b), Some(p)),
+        let (backdrop_img, art_colors) = match hires_art {
+            Some((b, c)) => (Some(b), c),
             None => (None, None),
         };
+        let tones = crate::components::bar_fx::ArtTones::new(
+            art_colors.as_ref(),
+            &crate::theme::AppPalette::get(cx),
+        );
         let level = self.progress.level();
         let mut look = BackgroundLook::from_config(&bar, playing, level);
         look.style = effect;
@@ -254,7 +259,7 @@ impl Render for MiniPlayer {
             &BackgroundArt {
                 // The artwork style already shows it; the glow then only tints.
                 backdrop: backdrop_img.filter(|_| backdrop.is_none()),
-                palette,
+                tones,
                 accent,
                 surface,
             },

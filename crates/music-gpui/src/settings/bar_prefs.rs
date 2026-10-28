@@ -194,6 +194,20 @@ impl Default for PlayerBarConfig {
 }
 
 impl PlayerBarConfig {
+    /// The cheapest look (Minimal / Fast profile): a static Simple line, no
+    /// background effect, no gradient drift, no visualizer, no spectrum tap.
+    /// Conveniences that cost nothing (times, scroll volume) stay as they are.
+    pub fn least_resources() -> Self {
+        Self {
+            progress_style: ProgressStyle::Simple,
+            peak_caps: false,
+            background_effect: false,
+            animate_gradient: false,
+            np_visualizer: false,
+            ..Self::default()
+        }
+    }
+
     /// Clamps values from the file (called by `Settings::normalize`).
     pub fn normalize(&mut self) {
         self.gradient_intensity = if self.gradient_intensity.is_finite() {
@@ -264,6 +278,10 @@ mod tests {
             );
         }
         assert!(!PlayerBarConfig::default().animates(), "static by default");
+        let least = PlayerBarConfig::least_resources();
+        assert!(!least.animates() && !least.wants_spectrum() && !least.background_effect);
+        assert_eq!(super::super::profiles::minimal_settings().player_bar, least);
+        assert!(super::super::portable::BAR_STYLE_KEYS.contains(&"player_bar"));
         let mut c: PlayerBarConfig =
             serde_json::from_str(r#"{"gradient_intensity": 7.0}"#).unwrap();
         c.normalize();

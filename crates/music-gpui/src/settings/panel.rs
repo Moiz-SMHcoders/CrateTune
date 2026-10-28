@@ -177,6 +177,10 @@ pub struct SettingsPanel {
     pub(super) modules: super::modules::ModulesState,
     /// SponsorBlock / Music Together / Spotify inputs (`integrations_ui.rs`).
     pub(super) extras: super::integrations_ui::ExtrasUi,
+    /// Customize theme widgets, pending settings / theme import (`theme_ui.rs`).
+    pub(super) theme_ui: super::theme_ui::ThemeUi,
+    /// Appearance / behaviour profiles (`profiles.rs`).
+    pub(super) profiles: super::profiles::ProfileStore,
     _subscriptions: Vec<Subscription>,
 }
 
@@ -299,6 +303,10 @@ impl SettingsPanel {
         let (extras, extras_subscriptions) =
             super::integrations_ui::ExtrasUi::new(&settings, window, cx);
         subscriptions.extend(extras_subscriptions);
+        let profiles = super::profiles_ui::load_store(&settings);
+        let (theme_ui, theme_subscriptions) =
+            super::theme_ui::ThemeUi::new(&settings.custom_theme, window, cx);
+        subscriptions.extend(theme_subscriptions);
         subscriptions.push(cx.on_app_quit(|this, _| {
             this.flush();
             async {}
@@ -340,6 +348,8 @@ impl SettingsPanel {
             prefs,
             modules,
             extras,
+            theme_ui,
+            profiles,
             _subscriptions: subscriptions,
         };
         // Before any page loads (the password, if any, follows once read).
@@ -583,6 +593,8 @@ impl SettingsPanel {
         match self.settings.save(path) {
             Ok(()) => {
                 self.file_error = None;
+                // Edits belong to the active profile.
+                self.profiles.sync(&self.settings);
                 if std::env::var_os("MUSIC_TRACE").is_some() {
                     eprintln!("music-gpui: saved {}", path.display());
                 }
@@ -861,9 +873,12 @@ impl SettingsPanel {
         let (active_bg, hover_bg) = (theme.sidebar_accent, theme.list_hover);
         let (fg, muted) = (theme.foreground, theme.muted_foreground);
         v_flex()
+            .id("settings-nav")
             .w(px(232.))
             .flex_none()
             .h_full()
+            // 18 sections don't fit a short window.
+            .overflow_y_scroll()
             .py_4()
             .px_2()
             .gap_0p5()
@@ -871,6 +886,8 @@ impl SettingsPanel {
             .border_color(theme.border)
             .child(
                 div()
+                    // Items keep their height (the list scrolls instead of shrinking).
+                    .flex_none()
                     .px_3()
                     .pb_3()
                     .text_xl()
@@ -883,10 +900,11 @@ impl SettingsPanel {
                 let active = self.section == id;
                 h_flex()
                     .id(SharedString::from(format!("settings-nav-{}", id.key())))
+                    .flex_none()
                     .px_3()
                     .py_1p5()
                     .gap_2p5()
-                    .rounded(px(6.))
+                    .rounded(crate::theme::radius(6.))
                     .text_sm()
                     .cursor_pointer()
                     .text_color(if active { fg } else { muted })

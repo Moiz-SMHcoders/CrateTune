@@ -91,7 +91,7 @@ fn episode_row(
         .h(px(EPISODE_ROW))
         .px_2()
         .gap_4()
-        .rounded(px(8.))
+        .rounded(crate::theme::radius(8.))
         .cursor_pointer()
         .hover(move |s| s.bg(hover))
         .on_click(move |_, _, cx| {

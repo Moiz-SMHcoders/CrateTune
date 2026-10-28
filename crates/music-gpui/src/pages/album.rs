@@ -266,6 +266,12 @@ impl AlbumPage {
                 tracks_action(CollectionAction::AddToQueue),
             ));
         }
+        actions.extend(crate::components::download_header::download_button(
+            "album",
+            &data.tracks,
+            None,
+            cx,
+        ));
         hero(
             Hero {
                 art: sized_art(album.thumbnail_url.as_deref(), 480),

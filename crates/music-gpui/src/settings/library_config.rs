@@ -28,6 +28,18 @@ pub struct LibraryConfig {
     pub local_min_secs: u32,
     /// The signed-in YouTube Music account (the cookie itself is a secret).
     pub account: Option<AccountConfig>,
+    /// Downloading liked songs (Storage → Downloads).
+    pub downloads: DownloadPrefs,
+}
+
+/// Automatic downloads of liked songs (ArchiveTune's "auto download on like").
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct DownloadPrefs {
+    /// Liking a YouTube song queues a download (local files are never downloaded).
+    pub auto_download_liked: bool,
+    /// Unliking a song deletes its download (off: downloads stay).
+    pub remove_when_unliked: bool,
 }
 
 impl Default for LibraryConfig {
@@ -41,6 +53,7 @@ impl Default for LibraryConfig {
             excluded_folders: Vec::new(),
             local_min_secs: 30,
             account: None,
+            downloads: DownloadPrefs::default(),
         }
     }
 }
@@ -86,6 +99,11 @@ mod tests {
         assert_eq!(c.cache_limit_mb, 32);
         assert_eq!(c.local_min_secs, 30);
         assert!(c.account.is_none());
+        assert_eq!(c.downloads, DownloadPrefs::default());
+        assert!(!c.downloads.auto_download_liked && !c.downloads.remove_when_unliked);
+        let c: LibraryConfig =
+            serde_json::from_str(r#"{"downloads": {"auto_download_liked": true}}"#).unwrap();
+        assert!(c.downloads.auto_download_liked && !c.downloads.remove_when_unliked);
         let c: LibraryConfig = serde_json::from_str("{}").unwrap();
         assert_eq!(c, LibraryConfig::default());
         assert_eq!(c.cache_limit_bytes(), 512 * 1024 * 1024);

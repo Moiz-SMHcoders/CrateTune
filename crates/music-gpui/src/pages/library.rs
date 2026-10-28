@@ -403,12 +403,23 @@ impl LibraryPage {
             self.list
                 .header_buttons("library", |p: &mut Self| &mut p.list, cx)
         });
+        let download = is_song_tab(self.tab)
+            .then(|| {
+                crate::components::download_header::download_button(
+                    "library",
+                    &self.list.tracks,
+                    None,
+                    cx,
+                )
+            })
+            .flatten();
         let podcasts = self.tab == LibraryTab::Podcasts;
         h_flex()
             .w_full()
             .gap_2()
             .flex_wrap()
             .children(list_buttons)
+            .children(download)
             .children(new_playlist)
             .child(div().flex_1())
             .children(saved_toggle)
