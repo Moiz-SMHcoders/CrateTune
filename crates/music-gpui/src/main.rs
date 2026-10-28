@@ -26,6 +26,7 @@ mod actions;
 mod anim;
 mod app;
 mod backdrop;
+mod bar_script;
 mod browse;
 mod card_render;
 mod clock;

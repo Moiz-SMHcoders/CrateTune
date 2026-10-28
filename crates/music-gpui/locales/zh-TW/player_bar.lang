@@ -1,0 +1,41 @@
+# Player bar: progress styles, background effects, tooltips, and the
+# Appearance → Player bar settings group (zh-TW).
+
+bar.style.standard = 標準
+bar.style.thick = 粗
+bar.style.simple = 簡潔
+bar.style.wavy = 波浪
+bar.style.equalizer = 等化器
+bar.background.glow = 封面光暈
+bar.background.dynamic_gradient = 動態漸層
+bar.background.pulse = 脈動
+bar.direction.left_to_right = 從左到右
+bar.direction.right_to_left = 從右到左
+bar.direction.diagonal = 對角
+bar.tooltip.play = 播放（空白鍵）
+bar.tooltip.pause = 暫停（空白鍵）
+bar.tooltip.mute = 靜音
+bar.tooltip.unmute = 取消靜音
+bar.tooltip.lyrics = 歌詞
+bar.tooltip.show_remaining = 顯示剩餘時間
+bar.tooltip.show_length = 顯示歌曲長度
+bar.volume_percent = {percent}%
+settings.bar.group = 播放列
+settings.bar.progress_style = 進度列樣式
+settings.bar.peak_caps = 峰值標記
+settings.bar.peak_caps_note = 等化器樣式：以小標記顯示最近的峰值。
+settings.bar.background_effect = 背景隨播放變化
+settings.bar.background_effect_note = 在播放列後方顯示封面的顏色。
+settings.bar.background_style = 背景樣式
+settings.bar.dim_when_paused = 暫停時變暗
+settings.bar.gradient_direction = 漸層方向
+settings.bar.gradient_intensity = 漸層強度
+settings.bar.intensity_value = {percent}%
+settings.bar.animate_gradient = 漸層動畫
+settings.bar.animate_gradient_note = 播放時緩慢流動（約每秒 13 格）。
+settings.bar.show_remaining = 顯示剩餘時間
+settings.bar.scroll_volume = 捲動以調整音量
+settings.bar.mini_follows = 迷你播放器使用相同外觀
+settings.bar.np_visualizer = 正在播放中的視覺效果
+settings.bar.np_visualizer_note = 沿底部邊緣顯示一條細細的頻譜帶。
+settings.bar.cpu_note = 播放列預設為靜態。波浪、等化器、脈動、動畫漸層以及正在播放的視覺效果在播放時每秒重繪約 13–22 次（佔用幾個百分點的 CPU），暫停後停止。

@@ -112,10 +112,14 @@ impl MusicApp {
         }));
     }
 
-    /// With the dynamic theme on: extracts the current artwork's colours if they
-    /// weren't (artwork loaded while another theme was active), off the UI thread.
-    fn ensure_art_colors(&mut self, cx: &mut Context<Self>) {
-        if self.settings.read(cx).settings().appearance.theme != ThemeChoice::Dynamic {
+    /// With the dynamic theme (or the player bar's background effect) on:
+    /// extracts the current artwork's colours if they weren't (artwork loaded
+    /// while neither was on), off the UI thread.
+    pub(crate) fn ensure_art_colors(&mut self, cx: &mut Context<Self>) {
+        let settings = self.settings.read(cx).settings();
+        if settings.appearance.theme != ThemeChoice::Dynamic
+            && !settings.player_bar.background_effect
+        {
             return;
         }
         let Some(track) = self.playback.track.clone() else {
@@ -148,6 +152,8 @@ impl MusicApp {
                     *art_colors = colors;
                 }
                 this.update_accent(cx);
+                // The player bar's background uses them too.
+                cx.notify();
             })
             .ok();
         })

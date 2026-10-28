@@ -1,0 +1,41 @@
+# Player bar: progress styles, background effects, tooltips, and the
+# Appearance → Player bar settings group (pt-BR).
+
+bar.style.standard = Padrão
+bar.style.thick = Grossa
+bar.style.simple = Simples
+bar.style.wavy = Ondulada
+bar.style.equalizer = Equalizador
+bar.background.glow = Brilho da capa
+bar.background.dynamic_gradient = Gradiente dinâmico
+bar.background.pulse = Pulso
+bar.direction.left_to_right = Da esquerda para a direita
+bar.direction.right_to_left = Da direita para a esquerda
+bar.direction.diagonal = Diagonal
+bar.tooltip.play = Reproduzir (Espaço)
+bar.tooltip.pause = Pausar (Espaço)
+bar.tooltip.mute = Silenciar
+bar.tooltip.unmute = Ativar som
+bar.tooltip.lyrics = Letra
+bar.tooltip.show_remaining = Mostrar tempo restante
+bar.tooltip.show_length = Mostrar duração
+bar.volume_percent = {percent} %
+settings.bar.group = Barra do player
+settings.bar.progress_style = Estilo da barra de progresso
+settings.bar.peak_caps = Marcas de pico
+settings.bar.peak_caps_note = Estilo equalizador: pequenas marcas dos picos recentes.
+settings.bar.background_effect = O fundo reage à reprodução
+settings.bar.background_effect_note = Cor da capa atrás da barra.
+settings.bar.background_style = Estilo do fundo
+settings.bar.dim_when_paused = Escurecer ao pausar
+settings.bar.gradient_direction = Direção do gradiente
+settings.bar.gradient_intensity = Intensidade do gradiente
+settings.bar.intensity_value = {percent} %
+settings.bar.animate_gradient = Animar gradiente
+settings.bar.animate_gradient_note = Um movimento lento enquanto a música toca (cerca de 13 quadros por segundo).
+settings.bar.show_remaining = Mostrar tempo restante
+settings.bar.scroll_volume = Rolar para mudar o volume
+settings.bar.mini_follows = Mesmo visual no miniplayer
+settings.bar.np_visualizer = Visualizador em Tocando agora
+settings.bar.np_visualizer_note = Uma faixa fina de espectro na borda inferior.
+settings.bar.cpu_note = A barra é estática por padrão. Ondulada, Equalizador, Pulso, um gradiente animado e o visualizador de Tocando agora são redesenhados cerca de 13 a 22 vezes por segundo enquanto a música toca (poucos por cento de CPU) e param ao pausar.

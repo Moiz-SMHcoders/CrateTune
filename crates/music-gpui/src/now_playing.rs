@@ -104,6 +104,9 @@ struct ToolbarSnap {
 
 pub struct NowPlaying {
     pub open: bool,
+    /// Opened from the bar's lyrics button: a design without a lyrics pane shows
+    /// the lyrics-first layout until Now Playing closes.
+    pub lyrics_view: bool,
     pub reveal: Tween<f32>,
     pub focus: FocusHandle,
     backdrop_prev: Option<Arc<RenderImage>>,
@@ -138,6 +141,7 @@ impl NowPlaying {
         let grey = Tween::new(hsla(0., 0., 0.12, 1.));
         Self {
             open: false,
+            lyrics_view: false,
             reveal: Tween::new(0.),
             focus,
             backdrop_prev: None,
@@ -187,6 +191,7 @@ impl MusicApp {
 
     pub fn close_now_playing(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         self.np.open = false;
+        self.np.lyrics_view = false;
         self.np.reveal.animate_to(0., CLOSE, Instant::now());
         window.focus(&self.focus, cx);
         cx.notify();
@@ -259,9 +264,13 @@ impl MusicApp {
         self.hires.insert(id.clone(), HiRes::Loading);
         let art_key = url.clone();
         // Artwork colours only feed the dynamic theme (`theme_state.rs` extracts them
-        // later if the theme is switched to dynamic).
-        let want_colors = self.settings.read(cx).settings().appearance.theme
-            == crate::theme::ThemeChoice::Dynamic;
+        // later if the theme is switched to dynamic) and the player bar's
+        // background effect (glow / dynamic gradient / pulse colours).
+        let want_colors = {
+            let s = self.settings.read(cx).settings();
+            s.appearance.theme == crate::theme::ThemeChoice::Dynamic
+                || s.player_bar.background_effect
+        };
         let art = ArtworkCache::global(cx).update(cx, |cache, cx| cache.load(url, cx));
         cx.spawn(async move |this, cx| {
             let entry = match art.await {
@@ -337,10 +346,18 @@ impl MusicApp {
             let next_second = Duration::from_secs(position.as_secs() + 1);
             frame.wake_at(self.when_position(next_second, position, frame.now));
         }
-        let (config, display) = {
+        let (mut config, display) = {
             let s = self.settings.read(cx).settings();
             (s.now_playing, s.lyrics.display())
         };
+        if self.np.lyrics_view
+            && !matches!(
+                config.layout,
+                NowPlayingLayout::Split | NowPlayingLayout::Lyrics
+            )
+        {
+            config.layout = NowPlayingLayout::Lyrics;
+        }
 
         // Designs with colours of their own cover the background: keep it cheap
         // (it still cross-fades the palette they use).
@@ -488,6 +505,7 @@ impl MusicApp {
             .child(backdrop)
             .children(design_backdrop)
             .child(v_flex().absolute().inset_0().child(header).child(body))
+            .children(self.np_visualizer_view(cx))
             .into_any_element()
     }
 

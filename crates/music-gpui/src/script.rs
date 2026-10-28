@@ -52,6 +52,9 @@
 //! | `@module-check=N`, `@module-update=N`, `@module-enable=N:on\|off`, `@module-remove=N` (twice: confirm) | module actions |
 //! | `@card-select=3;4`, `@card-open`, `@card-style=bg:light`, `@card-save=PATH`, `@card-copy`, `@card-close` | lyrics cards (`lyrics_card.rs`) |
 //! | `@bench=N[:MS]` | draw the main window N times MS (16) ms apart and print the draw times (UI CPU per frame) |
+//! | `@bench-bar=N[:MS]` | the same, marking only the player bar dirty (the cost of one bar animation frame) |
+//! | `@bar-style=standard\|thick\|simple\|wavy\|equalizer`, `@bar-bg=glow\|gradient\|pulse\|off`, `@bar-peaks=on\|off`, `@bar-remaining=on\|off`, `@bar-scroll-volume=on\|off`, `@mini-follow=on\|off`, `@np-viz=on\|off`, `@bar-gradient=dir:…\|intensity:…\|animate:on\|dim:off`, `@bar-status` | player bar look (saved; `bar_script.rs`) |
+//! | `@bar-hover=F`, `@bar-hover=off` | hover the progress bar at fraction F (tooltip, thumb) |
 //! | `@quit` | quit |
 //!
 //! Library / account / storage actions (`@like`, `@download`, `@backup`, …) are listed
@@ -132,7 +135,11 @@ pub fn schedule(window: AnyWindowHandle, app: Entity<MusicApp>, cx: &mut App) {
                 },
                 None => (window, item),
             };
-            if let Some(spec) = item.strip_prefix("@bench=") {
+            let bench = item
+                .strip_prefix("@bench=")
+                .map(|spec| (spec, false))
+                .or_else(|| item.strip_prefix("@bench-bar=").map(|spec| (spec, true)));
+            if let Some((spec, bar_only)) = bench {
                 let (frames, gap) = spec.split_once(':').unwrap_or((spec, "16"));
                 let gap = Duration::from_millis(gap.parse().unwrap_or(16));
                 bench_frames(
@@ -140,6 +147,7 @@ pub fn schedule(window: AnyWindowHandle, app: Entity<MusicApp>, cx: &mut App) {
                     &app,
                     frames.parse().unwrap_or(300),
                     gap,
+                    bar_only,
                     &executor,
                     cx,
                 )
@@ -181,6 +189,7 @@ async fn bench_frames(
     app: &Entity<MusicApp>,
     frames: usize,
     gap: Duration,
+    bar_only: bool,
     executor: &gpui::BackgroundExecutor,
     cx: &mut gpui::AsyncApp,
 ) {
@@ -188,7 +197,11 @@ async fn bench_frames(
     for _ in 0..frames {
         executor.timer(gap).await;
         let drawn = cx.update_window(window, |_, window, cx| {
-            app.update(cx, |_, cx| cx.notify());
+            // `@bench-bar`: only the player bar view, as its own animation frames do.
+            match app.read(cx).bar.clone().filter(|_| bar_only) {
+                Some(bar) => bar.update(cx, |_, cx| cx.notify()),
+                None => app.update(cx, |_, cx| cx.notify()),
+            }
             let started = Instant::now();
             window.draw(cx).clear(cx);
             started.elapsed()
@@ -633,7 +646,8 @@ impl MusicApp {
             "quit" => cx.quit(),
             // Library, downloads, account, storage (`library_script.rs`).
             other => {
-                if !self.module_script_action(other, arg, window, cx)
+                if !self.bar_script_action(other, arg, window, cx)
+                    && !self.module_script_action(other, arg, window, cx)
                     && !self.library_script_action(other, arg, window, cx)
                     && !self.integrations_script_action(other, arg, window, cx)
                     && !self.release_script_action(other, arg, window, cx)

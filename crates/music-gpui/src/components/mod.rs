@@ -9,16 +9,21 @@
 //!   (quick picks or cards), chips, loading + error states with retry.
 //! * [`empty_state`] – centred icon + title + detail.
 //! * [`artwork`] – the shared image cache and the artwork element.
-//! * [`sidebar`], [`player_bar`], [`queue_panel`] – the shell's fixed parts.
+//! * [`sidebar`], [`player_bar`], [`queue_panel`] – the shell's fixed parts;
+//!   [`progress`] draws the progress / volume tracks (every bar style), [`bar_fx`]
+//!   animates them and the bar's play / pause background.
 //! * [`like::like_button`] – the heart; [`playlist_dialog`] – "Add to playlist".
 
 pub mod artwork;
+pub mod bar_fx;
 pub mod card;
 pub mod download_header;
 pub mod items;
 pub mod like;
+pub mod np_visualizer;
 pub mod player_bar;
 pub mod playlist_dialog;
+pub mod progress;
 pub mod queue_panel;
 pub mod sidebar;
 pub mod track_row;

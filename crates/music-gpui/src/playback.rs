@@ -396,6 +396,7 @@ impl MusicApp {
             window.focus(&self.focus, cx);
         }
         self.poll_tray(window, cx);
+        self.poll_spectrum();
         self.sync_engine_next();
         let Some(engine) = &mut self.engine else {
             return;
@@ -572,15 +573,6 @@ impl MusicApp {
         self.settings
             .update(cx, |panel, cx| panel.set_volume(volume, cx));
         cx.notify();
-    }
-
-    pub fn toggle_mute(&mut self, _: &ClickEvent, window: &mut Window, cx: &mut Context<Self>) {
-        let target = if self.volume > 0. {
-            0.
-        } else {
-            self.unmuted_volume
-        };
-        self.set_volume(target, window, cx);
     }
 }
 

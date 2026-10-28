@@ -1,0 +1,41 @@
+# Player bar: progress styles, background effects, tooltips, and the
+# Appearance → Player bar settings group (vi).
+
+bar.style.standard = Tiêu chuẩn
+bar.style.thick = Dày
+bar.style.simple = Đơn giản
+bar.style.wavy = Gợn sóng
+bar.style.equalizer = Bộ cân bằng
+bar.background.glow = Ánh sáng ảnh bìa
+bar.background.dynamic_gradient = Dải màu động
+bar.background.pulse = Nhịp đập
+bar.direction.left_to_right = Trái sang phải
+bar.direction.right_to_left = Phải sang trái
+bar.direction.diagonal = Chéo
+bar.tooltip.play = Phát (Dấu cách)
+bar.tooltip.pause = Tạm dừng (Dấu cách)
+bar.tooltip.mute = Tắt tiếng
+bar.tooltip.unmute = Bật tiếng
+bar.tooltip.lyrics = Lời bài hát
+bar.tooltip.show_remaining = Hiện thời gian còn lại
+bar.tooltip.show_length = Hiện độ dài bài hát
+bar.volume_percent = {percent}%
+settings.bar.group = Thanh trình phát
+settings.bar.progress_style = Kiểu thanh tiến trình
+settings.bar.peak_caps = Dấu đỉnh
+settings.bar.peak_caps_note = Kiểu bộ cân bằng: vạch nhỏ cho các đỉnh gần đây.
+settings.bar.background_effect = Nền phản ứng theo phát nhạc
+settings.bar.background_effect_note = Màu từ ảnh bìa phía sau thanh.
+settings.bar.background_style = Kiểu nền
+settings.bar.dim_when_paused = Làm tối khi tạm dừng
+settings.bar.gradient_direction = Hướng dải màu
+settings.bar.gradient_intensity = Cường độ dải màu
+settings.bar.intensity_value = {percent}%
+settings.bar.animate_gradient = Tạo chuyển động cho dải màu
+settings.bar.animate_gradient_note = Chuyển động chậm khi nhạc đang phát (khoảng 13 khung hình mỗi giây).
+settings.bar.show_remaining = Hiện thời gian còn lại
+settings.bar.scroll_volume = Cuộn để đổi âm lượng
+settings.bar.mini_follows = Giao diện giống nhau trong trình phát mini
+settings.bar.np_visualizer = Hiệu ứng phổ trong Đang phát
+settings.bar.np_visualizer_note = Một dải phổ mỏng dọc cạnh dưới.
+settings.bar.cpu_note = Thanh mặc định là tĩnh. Gợn sóng, Bộ cân bằng, Nhịp đập, dải màu chuyển động và hiệu ứng phổ trong Đang phát vẽ lại khoảng 13–22 lần mỗi giây khi nhạc phát (vài phần trăm CPU) và dừng khi tạm dừng.

@@ -1,0 +1,41 @@
+# Player bar: progress styles, background effects, tooltips, and the
+# Appearance → Player bar settings group (id).
+
+bar.style.standard = Standar
+bar.style.thick = Tebal
+bar.style.simple = Sederhana
+bar.style.wavy = Bergelombang
+bar.style.equalizer = Ekualiser
+bar.background.glow = Pendar sampul
+bar.background.dynamic_gradient = Gradien dinamis
+bar.background.pulse = Denyut
+bar.direction.left_to_right = Kiri ke kanan
+bar.direction.right_to_left = Kanan ke kiri
+bar.direction.diagonal = Diagonal
+bar.tooltip.play = Putar (Spasi)
+bar.tooltip.pause = Jeda (Spasi)
+bar.tooltip.mute = Bisukan
+bar.tooltip.unmute = Bunyikan
+bar.tooltip.lyrics = Lirik
+bar.tooltip.show_remaining = Tampilkan sisa waktu
+bar.tooltip.show_length = Tampilkan durasi lagu
+bar.volume_percent = {percent}%
+settings.bar.group = Bilah pemutar
+settings.bar.progress_style = Gaya bilah progres
+settings.bar.peak_caps = Penanda puncak
+settings.bar.peak_caps_note = Gaya ekualiser: tanda kecil untuk puncak terbaru.
+settings.bar.background_effect = Latar bereaksi terhadap pemutaran
+settings.bar.background_effect_note = Warna dari sampul di belakang bilah.
+settings.bar.background_style = Gaya latar
+settings.bar.dim_when_paused = Redupkan saat dijeda
+settings.bar.gradient_direction = Arah gradien
+settings.bar.gradient_intensity = Intensitas gradien
+settings.bar.intensity_value = {percent}%
+settings.bar.animate_gradient = Animasikan gradien
+settings.bar.animate_gradient_note = Gerakan lambat saat musik diputar (sekitar 13 bingkai per detik).
+settings.bar.show_remaining = Tampilkan sisa waktu
+settings.bar.scroll_volume = Gulir untuk mengubah volume
+settings.bar.mini_follows = Tampilan sama di pemutar mini
+settings.bar.np_visualizer = Visualizer di Sedang Diputar
+settings.bar.np_visualizer_note = Strip spektrum tipis di tepi bawah.
+settings.bar.cpu_note = Bilah statis secara bawaan. Bergelombang, Ekualiser, Denyut, gradien beranimasi, dan visualizer Sedang Diputar digambar ulang sekitar 13–22 kali per detik saat musik diputar (beberapa persen CPU) dan berhenti saat dijeda.

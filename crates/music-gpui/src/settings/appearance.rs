@@ -296,6 +296,7 @@ pub(super) fn render(
     );
 
     let language = super::language::language_row(panel, window, cx);
+    let player_bar = super::bar_ui::render(panel, cx);
     v_flex()
         .gap_5()
         .child(super::profiles_ui::render(panel, window, cx))
@@ -333,5 +334,6 @@ pub(super) fn render(
             mini,
             cx,
         )))
+        .child(player_bar)
         .into_any_element()
 }

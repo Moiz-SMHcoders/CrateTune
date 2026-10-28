@@ -7,6 +7,11 @@ versions follow [SemVer](https://semver.org/).
 
 ### Changed
 
+* The player bar draws nothing on its own by default (the progress follows the
+  once-a-second update); the animated styles cap their frame rate (13–22 fps), only run
+  while music plays and the bar is visible, and use the spectrum tap only then. The
+  Minimal / Fast profile sets every player-bar option to its cheapest value.
+
 * **Now Playing uses about half the CPU while lyrics animate** (≈ 12 % instead of
   22–28 % on an M-series Mac with word-synced lyrics; designs without the lyrics list
   1–5 %): only the lyrics on screen are laid out, lines keep their measured layout,
@@ -19,6 +24,20 @@ versions follow [SemVer](https://semver.org/).
   `%APPDATA%\tunedesk\config` (Windows), and keychain entries use the service `tunedesk`.
 
 ### Added
+
+* **Redesigned player bar**: track info · transport + progress · secondary controls, the
+  transport centred in the window; elapsed and remaining time (click to switch), a
+  thumb and time bubble on hover, a lyrics button, active states for queue / lyrics /
+  mini player / Now Playing, a status line under the artist, 32–40 pt buttons, volume
+  with mute, scroll-to-change and a percentage bubble. Narrow windows hide buttons by
+  priority instead of squeezing them.
+* **Progress bar styles** (Settings → Appearance → Player bar): Standard, Thick, Simple,
+  Wavy and Equalizer (live spectrum bars, peak markers optional; still click / drag to
+  seek). Also in the mini player, which can now seek.
+* **Bar background that reacts to playback** (off by default): artwork glow, dynamic
+  gradient in the artwork's colours (direction, intensity, optional slow drift) or a
+  pulse that follows the loudness; dims when paused (switchable).
+* **Visualizer in Now Playing** (off by default): a thin spectrum strip at the bottom.
 
 * **Customize theme** (Settings → Appearance): six presets (Standard, Midnight, Rosé,
   Forest, High contrast, Artwork), accent colour (swatches, hex, hue / saturation),
@@ -117,6 +136,7 @@ versions follow [SemVer](https://semver.org/).
 
 ### Fixed
 
+* **Shortcuts on Windows and Linux** use Ctrl (they were bound to the Windows / Super key).
 * **Esc with a menu or popover open** only closes it (it also closed Now Playing or went
   back).
 * The player bar's title no longer runs into the transport buttons when the Together

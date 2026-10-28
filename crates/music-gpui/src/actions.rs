@@ -48,40 +48,55 @@ gpui::actions!(
     ]
 );
 
+/// The shortcut modifier: ⌘ on macOS, Ctrl on Windows / Linux. (GPUI reads `cmd-` as
+/// the Windows / Super key elsewhere, and `KeyBinding::new` can't resolve `secondary-`.)
+#[cfg(target_os = "macos")]
+macro_rules! primary {
+    ($key:literal) => {
+        concat!("cmd-", $key)
+    };
+}
+#[cfg(not(target_os = "macos"))]
+macro_rules! primary {
+    ($key:literal) => {
+        concat!("ctrl-", $key)
+    };
+}
+
 pub fn init(cx: &mut App) {
     cx.bind_keys([
         KeyBinding::new("space", TogglePlayback, None),
         // Typing a space into the search field must not toggle playback.
         KeyBinding::new("space", NoAction, Some("Input")),
-        KeyBinding::new("cmd-right", NextTrack, None),
-        KeyBinding::new("cmd-left", PreviousTrack, None),
-        KeyBinding::new("cmd-up", VolumeUp, None),
-        KeyBinding::new("cmd-down", VolumeDown, None),
-        KeyBinding::new("cmd-f", FocusSearch, None),
-        KeyBinding::new("cmd-,", OpenSettings, None),
-        KeyBinding::new("cmd-l", ToggleNowPlaying, None),
-        KeyBinding::new("cmd-alt-q", ToggleQueue, None),
-        KeyBinding::new("cmd-shift-m", ToggleMiniPlayer, None),
-        KeyBinding::new("cmd-s", ToggleShuffle, None),
-        KeyBinding::new("cmd-r", CycleRepeat, None),
-        KeyBinding::new("cmd-[", GoBack, None),
-        KeyBinding::new("cmd-]", GoForward, None),
+        KeyBinding::new(primary!("right"), NextTrack, None),
+        KeyBinding::new(primary!("left"), PreviousTrack, None),
+        KeyBinding::new(primary!("up"), VolumeUp, None),
+        KeyBinding::new(primary!("down"), VolumeDown, None),
+        KeyBinding::new(primary!("f"), FocusSearch, None),
+        KeyBinding::new(primary!(","), OpenSettings, None),
+        KeyBinding::new(primary!("l"), ToggleNowPlaying, None),
+        KeyBinding::new(primary!("alt-q"), ToggleQueue, None),
+        KeyBinding::new(primary!("shift-m"), ToggleMiniPlayer, None),
+        KeyBinding::new(primary!("s"), ToggleShuffle, None),
+        KeyBinding::new(primary!("r"), CycleRepeat, None),
+        KeyBinding::new(primary!("["), GoBack, None),
+        KeyBinding::new(primary!("]"), GoForward, None),
         // ...also while the search field has focus (it binds ⌘[ / ⌘] to indent).
-        KeyBinding::new("cmd-[", GoBack, Some("Input")),
-        KeyBinding::new("cmd-]", GoForward, Some("Input")),
-        KeyBinding::new("cmd-1", GoHome, None),
-        KeyBinding::new("cmd-2", GoExplore, None),
-        KeyBinding::new("cmd-3", GoLibrary, None),
-        KeyBinding::new("cmd-y", GoHistory, None),
-        KeyBinding::new("cmd-shift-r", RecognizeSong, None),
+        KeyBinding::new(primary!("["), GoBack, Some("Input")),
+        KeyBinding::new(primary!("]"), GoForward, Some("Input")),
+        KeyBinding::new(primary!("1"), GoHome, None),
+        KeyBinding::new(primary!("2"), GoExplore, None),
+        KeyBinding::new(primary!("3"), GoLibrary, None),
+        KeyBinding::new(primary!("y"), GoHistory, None),
+        KeyBinding::new(primary!("shift-r"), RecognizeSong, None),
         // In the app's own context, not globally: a binding without a context counts
         // as the deepest match and would beat the Esc of an open menu, popover or
         // dialog (which then closed together with Now Playing / went back).
         KeyBinding::new("escape", Escape, Some("MusicApp")),
-        KeyBinding::new("cmd-h", Hide, None),
-        KeyBinding::new("cmd-alt-h", HideOthers, None),
-        KeyBinding::new("cmd-m", Minimize, None),
-        KeyBinding::new("cmd-q", Quit, None),
+        KeyBinding::new(primary!("h"), Hide, None),
+        KeyBinding::new(primary!("alt-h"), HideOthers, None),
+        KeyBinding::new(primary!("m"), Minimize, None),
+        KeyBinding::new(primary!("q"), Quit, None),
     ]);
 
     on::<TogglePlayback>(cx, |app, _, cx| app.toggle_playback(cx));
