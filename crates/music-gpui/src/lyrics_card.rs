@@ -117,7 +117,7 @@ impl LyricsCard {
                         card.preview =
                             Some(Arc::new(RenderImage::new(vec![image::Frame::new(image)])));
                     }
-                    Err(e) => card.status = Some(format!("Couldn't draw the card: {e}")),
+                    Err(e) => card.status = Some(t!("card.draw_failed", error = e)),
                 }
                 cx.notify();
             })
@@ -153,7 +153,7 @@ impl LyricsCard {
                 card.busy = None;
                 match png {
                     Ok(png) => done(card, png, cx),
-                    Err(e) => card.status = Some(format!("Couldn't draw the card: {e}")),
+                    Err(e) => card.status = Some(t!("card.draw_failed", error = e)),
                 }
                 cx.notify();
             })
@@ -163,19 +163,20 @@ impl LyricsCard {
     }
 
     pub fn copy(&mut self, cx: &mut Context<Self>) {
-        self.full_png("Copying…", cx, |card, png, cx| {
+        self.full_png(t!("card.copying"), cx, |card, png, cx| {
             cx.write_to_clipboard(ClipboardItem::new_image(&Image::from_bytes(
                 ImageFormat::Png,
                 png,
             )));
-            card.status = Some("Copied to the clipboard".into());
+            card.status = Some(t!("card.copied").into());
         });
     }
 
     /// Asks where to save (or saves to `path` directly).
     pub fn save(&mut self, path: Option<PathBuf>, cx: &mut Context<Self>) {
+        // A file name: stays English.
         let name = format!("{} - lyrics.png", sanitize(&self.content.title));
-        self.full_png("Saving…", cx, move |_, png, cx| {
+        self.full_png(t!("common.saving"), cx, move |_, png, cx| {
             let target = match path {
                 Some(path) => {
                     write_card(&path, &png);
@@ -196,8 +197,8 @@ impl LyricsCard {
                     return;
                 };
                 let message = match std::fs::write(&path, &png) {
-                    Ok(()) => format!("Saved {}", path.display()),
-                    Err(e) => format!("Couldn't save: {e}"),
+                    Ok(()) => t!("card.saved", path = path.display()),
+                    Err(e) => t!("card.save_failed", error = e),
                 };
                 this.update(cx, |card, cx| {
                     card.status = Some(message);
@@ -231,7 +232,8 @@ fn sanitize(title: &str) -> String {
         .collect();
     let name = name.trim();
     if name.is_empty() {
-        "Lyrics".into()
+        // A file name: stays English.
+        "Lyrics".into() // i18n-ignore
     } else {
         name.chars().take(80).collect()
     }
@@ -258,15 +260,23 @@ impl Render for LyricsCard {
         let row = |label: &'static str, buttons: Vec<AnyElement>| {
             h_flex()
                 .gap_2()
-                .child(div().w(px(84.)).text_xs().text_color(muted).child(label))
+                .child(
+                    div()
+                        .w(px(84.))
+                        .flex_none()
+                        .text_xs()
+                        .text_color(muted)
+                        .child(label),
+                )
                 .child(h_flex().gap_1().flex_wrap().children(buttons))
         };
         let choice = |id: &'static str,
+                      key: &'static str,
                       label: &'static str,
                       selected: bool,
                       apply: Box<dyn Fn(&mut CardStyle)>| {
             let entity = entity.clone();
-            Button::new(SharedString::from(format!("{id}-{label}")))
+            Button::new(SharedString::from(format!("{id}-{key}")))
                 .xsmall()
                 .map(|b| if selected { b.primary() } else { b.outline() })
                 .selected(selected)
@@ -284,6 +294,7 @@ impl Render for LyricsCard {
             .map(|b| {
                 choice(
                     "card-bg",
+                    b.key(),
                     b.title(),
                     style.background == b,
                     Box::new(move |s| s.background = b),
@@ -294,6 +305,7 @@ impl Render for LyricsCard {
             .map(|a| {
                 choice(
                     "card-align",
+                    a.key(),
                     a.title(),
                     style.align == a,
                     Box::new(move |s| s.align = a),
@@ -304,6 +316,7 @@ impl Render for LyricsCard {
             .map(|t| {
                 choice(
                     "card-size",
+                    t.key(),
                     t.title(),
                     style.size == t,
                     Box::new(move |s| s.size = t),
@@ -314,6 +327,7 @@ impl Render for LyricsCard {
             .map(|a| {
                 choice(
                     "card-aspect",
+                    a.key(),
                     a.title(),
                     style.aspect == a,
                     Box::new(move |s| s.aspect = a),
@@ -323,13 +337,15 @@ impl Render for LyricsCard {
         let covers = vec![
             choice(
                 "card-art",
-                "Show",
+                "show",
+                t!("card.cover.show"),
                 style.show_art,
                 Box::new(|s| s.show_art = true),
             ),
             choice(
                 "card-art",
-                "Hide",
+                "hide",
+                t!("card.cover.hide"),
                 !style.show_art,
                 Box::new(|s| s.show_art = false),
             ),
@@ -366,21 +382,22 @@ impl Render for LyricsCard {
                             .font_weight(FontWeight::SEMIBOLD)
                             .child(format!("{} · {}", self.content.title, self.content.artist)),
                     )
-                    .child(row("Background", backgrounds))
-                    .child(row("Text", aligns))
-                    .child(row("Size", sizes))
-                    .child(row("Shape", aspects))
-                    .child(row("Cover", covers))
+                    .child(row(t!("card.row.background"), backgrounds))
+                    .child(row(t!("card.row.text"), aligns))
+                    .child(row(t!("card.row.size"), sizes))
+                    .child(row(t!("card.row.shape"), aspects))
+                    .child(row(t!("card.row.cover"), covers))
                     .child(
                         h_flex()
                             .pt_2()
                             .gap_2()
+                            .flex_wrap()
                             .child(
                                 Button::new("card-save")
                                     .primary()
                                     .small()
                                     .icon(Lucide::ImageDown)
-                                    .label("Save image…")
+                                    .label(t!("card.save"))
                                     .disabled(busy.is_some())
                                     .on_click(move |_, _, cx| {
                                         save.update(cx, |card, cx| card.save(None, cx));
@@ -391,7 +408,7 @@ impl Render for LyricsCard {
                                     .outline()
                                     .small()
                                     .icon(Lucide::Copy)
-                                    .label("Copy image")
+                                    .label(t!("card.copy"))
                                     .disabled(busy.is_some())
                                     .on_click(move |_, _, cx| {
                                         copy.update(cx, |card, cx| card.copy(cx));
@@ -453,7 +470,10 @@ impl MusicApp {
         let card = cx.new(|cx| LyricsCard::new(content, art_bytes, cx));
         self.np.card = Some(card.clone());
         window.open_dialog(cx, move |dialog, _, _| {
-            dialog.title("Lyrics card").w(px(860.)).child(card.clone())
+            dialog
+                .title(t!("card.dialog_title"))
+                .w(px(860.))
+                .child(card.clone())
         });
         cx.notify();
     }
@@ -490,7 +510,7 @@ impl MusicApp {
                         ("aspect", v) => {
                             s.aspect = Aspect::ALL
                                 .into_iter()
-                                .find(|a| a.title().eq_ignore_ascii_case(v))
+                                .find(|a| a.key().eq_ignore_ascii_case(v))
                                 .unwrap_or(s.aspect)
                         }
                         ("bg", "blur") => s.background = Background::Blur,
@@ -500,13 +520,13 @@ impl MusicApp {
                         ("align", v) => {
                             s.align = Align::ALL
                                 .into_iter()
-                                .find(|a| a.title().eq_ignore_ascii_case(v))
+                                .find(|a| a.key().eq_ignore_ascii_case(v))
                                 .unwrap_or(s.align)
                         }
                         ("size", v) => {
                             s.size = TextSize::ALL
                                 .into_iter()
-                                .find(|t| t.title().eq_ignore_ascii_case(v))
+                                .find(|t| t.key().eq_ignore_ascii_case(v))
                                 .unwrap_or(s.size)
                         }
                         ("art", v) => s.show_art = v != "off",

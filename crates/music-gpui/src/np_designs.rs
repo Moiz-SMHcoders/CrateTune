@@ -387,14 +387,14 @@ impl MusicApp {
                                 div()
                                     .text_xs()
                                     .text_color(white(0.55))
-                                    .child("PLAYING FROM"),
+                                    .child(t!("np.playing_from")),
                             )
                             .child(
                                 div()
                                     .text_sm()
                                     .font_weight(FontWeight::SEMIBOLD)
                                     .truncate()
-                                    .child(album.unwrap_or_else(|| "Your queue".into())),
+                                    .child(album.unwrap_or_else(|| t!("np.your_queue").into())),
                             ),
                     )
                     .child(self.artwork_shaped(track, side, Some(px(10.)), cx))
@@ -567,9 +567,9 @@ impl MusicApp {
                             )
                             .child(div().text_lg().text_color(white(0.6)).child(
                                 if total.is_zero() {
-                                    "of --:--".to_owned()
+                                    t!("np.of_total", total = "--:--")
                                 } else {
-                                    format!("of {}", format_duration(total.as_secs()))
+                                    t!("np.of_total", total = format_duration(total.as_secs()))
                                 },
                             )),
                     ),
@@ -578,18 +578,25 @@ impl MusicApp {
                 h_flex()
                     .gap_2()
                     .child(
-                        text_button("np-min-prev", "Previous")
+                        text_button("np-min-prev", t!("common.previous"))
                             .on_click(cx.listener(|this, _, _, cx| this.previous_track(cx))),
                     )
                     .child(
-                        text_button("np-min-play", if playing { "Pause" } else { "Play" })
-                            .bg(white(0.92))
-                            .text_color(hsla(0., 0., 0.08, 1.))
-                            .hover(|s| s.bg(white(0.8)))
-                            .on_click(cx.listener(|this, _, _, cx| this.toggle_playback(cx))),
+                        text_button(
+                            "np-min-play",
+                            if playing {
+                                t!("common.pause")
+                            } else {
+                                t!("common.play")
+                            },
+                        )
+                        .bg(white(0.92))
+                        .text_color(hsla(0., 0., 0.08, 1.))
+                        .hover(|s| s.bg(white(0.8)))
+                        .on_click(cx.listener(|this, _, _, cx| this.toggle_playback(cx))),
                     )
                     .child(
-                        text_button("np-min-next", "Next")
+                        text_button("np-min-next", t!("common.next"))
                             .on_click(cx.listener(|this, _, _, cx| this.next_track(cx))),
                     )
                     .child(div().flex_1())
@@ -665,8 +672,10 @@ impl MusicApp {
                             .font_weight(FontWeight::SEMIBOLD)
                             .text_color(accent)
                             .child(match album {
-                                Some(album) => format!("NOW PLAYING  ·  {}", album.to_uppercase()),
-                                None => "NOW PLAYING".to_owned(),
+                                Some(album) => {
+                                    t!("np.editorial.header_album", album = album.to_uppercase())
+                                }
+                                None => t!("np.header").to_owned(),
                             }),
                     )
                     .child(
@@ -720,11 +729,11 @@ impl MusicApp {
                                             .text_color(ink),
                                     )
                                     .child(if busy {
-                                        "LOADING"
+                                        t!("np.editorial.loading")
                                     } else if playing {
-                                        "PAUSE"
+                                        t!("np.editorial.pause")
                                     } else {
-                                        "PLAY"
+                                        t!("np.editorial.play")
                                     })
                                     .on_click(
                                         cx.listener(|this, _, _, cx| this.toggle_playback(cx)),
@@ -886,14 +895,14 @@ impl MusicApp {
                             .text_xs()
                             .font_weight(FontWeight::SEMIBOLD)
                             .text_color(white(0.6))
-                            .child("UP NEXT"),
+                            .child(t!("np.queue.title")),
                     )
                     .when(more > 0, |this| {
                         this.child(
                             div()
                                 .text_xs()
                                 .text_color(white(0.45))
-                                .child(format!("+{more} more")),
+                                .child(tp!("np.queue.more", more)),
                         )
                     }),
             )
@@ -904,7 +913,7 @@ impl MusicApp {
                         .px_2()
                         .text_sm()
                         .text_color(white(0.5))
-                        .child("Nothing queued. Add songs from a list, or turn on autoplay."),
+                        .child(t!("np.queue.empty")),
                 )
             });
         h_flex()

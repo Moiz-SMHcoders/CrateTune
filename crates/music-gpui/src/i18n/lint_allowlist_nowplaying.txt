@@ -1,0 +1,3 @@
+# Now Playing / lyrics / player settings: literals that are not UI text.
+# The lyrics card's font family list (CSS font-family value).
+card_render.rs: 'Helvetica Neue', 'SF Pro Display', 'Segoe UI', Inter, 'Noto Sans', \

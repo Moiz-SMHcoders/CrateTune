@@ -37,7 +37,7 @@ pub(super) fn render(
             Button::new(SharedString::from(format!("preset-{}", preset.name())))
                 .small()
                 .map(|b| if selected { b.primary() } else { b.outline() })
-                .label(preset.name())
+                .label(preset_title(preset))
                 .selected(selected)
                 .on_click(
                     cx.listener(move |this, _, window, cx| this.apply_preset(preset, window, cx)),
@@ -89,11 +89,15 @@ pub(super) fn render(
         .child(
             h_flex()
                 .justify_between()
-                .child(section_title("Equalizer"))
+                .child(section_title(t!("settings.section.equalizer")))
                 .child(
                     Switch::new("eq-enabled")
                         .checked(eq.enabled)
-                        .label(if eq.enabled { "On" } else { "Off" })
+                        .label(if eq.enabled {
+                            t!("common.on")
+                        } else {
+                            t!("common.off")
+                        })
                         .on_click(cx.listener(|this, checked: &bool, _, cx| {
                             this.set_eq_enabled(*checked, cx)
                         })),
@@ -104,7 +108,7 @@ pub(super) fn render(
                 .gap_2()
                 .child(presets)
                 .when(current.is_none(), |this| {
-                    this.child(Tag::secondary().small().child("Custom"))
+                    this.child(Tag::secondary().small().child(t!("common.custom")))
                 }),
         )
         .child(
@@ -124,9 +128,17 @@ pub(super) fn render(
                 )
                 .child(bands),
         )
-        .child(note(
-            "Applied live. Boosts are compensated so the output never clips.",
-            cx,
-        ))
+        .child(note(t!("settings.eq.note"), cx))
         .into_any_element()
+}
+
+/// A preset's name in the UI language (`EqPreset::name` is the English id).
+fn preset_title(preset: EqPreset) -> &'static str {
+    match preset {
+        EqPreset::Flat => t!("settings.eq.preset.flat"),
+        EqPreset::Bass => t!("settings.eq.preset.bass"),
+        EqPreset::Vocal => t!("settings.eq.preset.vocal"),
+        EqPreset::Treble => t!("settings.eq.preset.treble"),
+        EqPreset::Loudness => t!("settings.eq.preset.loudness"),
+    }
 }
