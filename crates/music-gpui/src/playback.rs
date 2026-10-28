@@ -418,7 +418,21 @@ impl MusicApp {
         // SponsorBlock, Music Together.
         self.poll_integrations(&state, window, cx);
 
+        let prev_second = self.playback.position.as_secs();
+        let position_only = same_except_position(&self.playback, &state);
         if !self.ingest(state, cx) {
+            return;
+        }
+        // The progress bar moves < 1 px per 250 ms and the time label changes once a
+        // second, but every notify re-lays out the whole window (page included). So
+        // ticks that only advance the position within the same second wait for the
+        // next second — unless Now Playing is up (it paces its own frames) or the
+        // user is scrubbing. Anything else that changed this tick shows ≤ 1 s later.
+        if position_only
+            && !self.np.open
+            && self.scrub.is_none()
+            && self.playback.position.as_secs() == prev_second
+        {
             return;
         }
         let state = &self.playback;
@@ -571,8 +585,12 @@ fn enqueue_message(what: &str, tracks: &[Track]) -> String {
 
 /// Field-wise comparison (`PlaybackState` has no `PartialEq`); avoids redundant re-renders.
 fn same_snapshot(a: &PlaybackState, b: &PlaybackState) -> bool {
+    a.position == b.position && same_except_position(a, b)
+}
+
+/// Everything the UI shows from a snapshot, except the position.
+fn same_except_position(a: &PlaybackState, b: &PlaybackState) -> bool {
     a.status == b.status
-        && a.position == b.position
         && a.advance_count == b.advance_count
         && a.error_count == b.error_count
         && a.buffering == b.buffering
