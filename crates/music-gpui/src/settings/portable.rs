@@ -206,6 +206,12 @@ fn compact(v: Option<&Value>) -> String {
     let text = match v {
         None | Some(Value::Null) => "—".to_owned(),
         Some(Value::String(s)) => format!("\"{s}\""),
+        // f32 settings come back as 0.44999998807907104: show 0.45.
+        Some(Value::Number(n)) if n.is_f64() => {
+            let v = n.as_f64().unwrap_or_default();
+            let text = format!("{v:.3}");
+            text.trim_end_matches('0').trim_end_matches('.').to_owned()
+        }
         Some(v) => v.to_string(),
     };
     if text.chars().count() > 48 {
@@ -963,5 +969,8 @@ mod tests {
         assert_eq!(d[0].changes[0].old, "false");
         assert_eq!(d[1].changes[0].path, "custom_theme.dynamic.strength");
         assert_eq!(compact(Some(&json!("x".repeat(100)))).chars().count(), 46);
+        assert_eq!(compact(Some(&json!(0.44999998807907104))), "0.45");
+        assert_eq!(compact(Some(&json!(2.0))), "2");
+        assert_eq!(compact(Some(&json!(7))), "7");
     }
 }
