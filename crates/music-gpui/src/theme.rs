@@ -32,9 +32,9 @@ impl ThemeChoice {
 
     pub fn title(self) -> &'static str {
         match self {
-            ThemeChoice::Dark => "Dark",
-            ThemeChoice::Black => "Pure black",
-            ThemeChoice::Dynamic => "Dynamic",
+            ThemeChoice::Dark => t!("theme.dark"),
+            ThemeChoice::Black => t!("theme.black"),
+            ThemeChoice::Dynamic => t!("theme.dynamic"),
         }
     }
 

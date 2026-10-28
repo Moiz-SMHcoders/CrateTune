@@ -86,7 +86,7 @@ impl MusicApp {
                 .child(text)
         };
         let mut list = v_flex().pb_4();
-        list = list.child(label("NOW PLAYING".into()));
+        list = list.child(label(t!("queue.section.now_playing").into()));
         match &current {
             Some(track) => {
                 list = list.child(self.queue_row("q-current".into(), track, Kind::Current, cx))
@@ -98,17 +98,20 @@ impl MusicApp {
                         .py_2()
                         .text_sm()
                         .text_color(muted)
-                        .child("Nothing playing"),
+                        .child(t!("queue.nothing_playing")),
                 )
             }
         }
-        list = list.child(label(format!("UP NEXT · {}", upcoming.len())));
+        list = list.child(label(t!(
+            "queue.section.up_next",
+            count = crate::i18n::format::number(upcoming.len() as u64)
+        )));
         if upcoming.is_empty() {
             list = list.child(div().px_3().py_2().text_sm().text_color(muted).child(
                 if repeat == Repeat::All && current.is_some() {
-                    "Repeat all: the queue starts over."
+                    t!("queue.empty.repeat_all")
                 } else {
-                    "Add songs with “Play next” or “Add to queue”."
+                    t!("queue.empty.hint")
                 },
             ));
         }
@@ -122,7 +125,7 @@ impl MusicApp {
             list = list.child(self.queue_row(format!("q-up-{uid}").into(), track, kind, cx));
         }
         if !history.is_empty() {
-            list = list.child(label("HISTORY".into()));
+            list = list.child(label(t!("queue.section.history").into()));
             for (i, track) in history.iter().enumerate() {
                 list = list.child(self.queue_row(
                     format!("q-hist-{i}").into(),
@@ -148,7 +151,14 @@ impl MusicApp {
                     .gap_1()
                     .border_b_1()
                     .border_color(border)
-                    .child(div().flex_1().font_weight(FontWeight::BOLD).child("Queue"))
+                    .child(
+                        div()
+                            .flex_1()
+                            .min_w_0()
+                            .truncate()
+                            .font_weight(FontWeight::BOLD)
+                            .child(t!("common.queue")),
+                    )
                     .child(
                         Button::new("queue-shuffle")
                             .ghost()
@@ -156,9 +166,9 @@ impl MusicApp {
                             .icon(Lucide::Shuffle)
                             .selected(shuffle)
                             .tooltip(if shuffle {
-                                "Shuffle: on"
+                                t!("player.tooltip.shuffle_on")
                             } else {
-                                "Shuffle: off"
+                                t!("player.tooltip.shuffle_off")
                             })
                             .on_click(cx.listener(|this, _, _, cx| this.toggle_shuffle(cx))),
                     )
@@ -173,9 +183,9 @@ impl MusicApp {
                             })
                             .selected(repeat != Repeat::Off)
                             .tooltip(match repeat {
-                                Repeat::Off => "Repeat: off",
-                                Repeat::All => "Repeat: all",
-                                Repeat::One => "Repeat: one",
+                                Repeat::Off => t!("player.tooltip.repeat_off"),
+                                Repeat::All => t!("player.tooltip.repeat_all"),
+                                Repeat::One => t!("player.tooltip.repeat_one"),
                             })
                             .on_click(cx.listener(|this, _, _, cx| this.cycle_repeat(cx))),
                     )
@@ -184,7 +194,7 @@ impl MusicApp {
                             .ghost()
                             .small()
                             .icon(Lucide::ListX)
-                            .tooltip("Clear up next")
+                            .tooltip(t!("queue.tooltip.clear_up_next"))
                             .disabled(count == 0)
                             .on_click(cx.listener(|this, _, _, cx| this.queue_clear(cx))),
                     )
@@ -193,7 +203,7 @@ impl MusicApp {
                             .ghost()
                             .small()
                             .icon(IconName::Close)
-                            .tooltip("Close (Esc)")
+                            .tooltip(t!("queue.tooltip.close"))
                             .on_click(cx.listener(|this, _, _, cx| this.toggle_queue_panel(cx))),
                     ),
             )
@@ -286,7 +296,7 @@ impl MusicApp {
                                     .ghost()
                                     .xsmall()
                                     .icon(IconName::ArrowUp)
-                                    .tooltip("Move up")
+                                    .tooltip(t!("queue.tooltip.move_up"))
                                     .disabled(first)
                                     .on_click(cx.listener(move |this, _, _, cx| {
                                         this.queue_nudge(uid, -1, cx)
@@ -297,7 +307,7 @@ impl MusicApp {
                                     .ghost()
                                     .xsmall()
                                     .icon(IconName::ArrowDown)
-                                    .tooltip("Move down")
+                                    .tooltip(t!("queue.tooltip.move_down"))
                                     .disabled(last)
                                     .on_click(cx.listener(move |this, _, _, cx| {
                                         this.queue_nudge(uid, 1, cx)
@@ -308,7 +318,7 @@ impl MusicApp {
                                     .ghost()
                                     .xsmall()
                                     .icon(Lucide::X)
-                                    .tooltip("Remove")
+                                    .tooltip(t!("common.remove"))
                                     .on_click(cx.listener(move |this, _, _, cx| {
                                         this.queue_remove(uid, cx)
                                     })),

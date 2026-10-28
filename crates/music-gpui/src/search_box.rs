@@ -338,7 +338,7 @@ impl MusicApp {
         let recent_header = entries
             .iter()
             .all(|e| matches!(e, Entry::Recent(_)))
-            .then_some("Recent searches");
+            .then_some(t!("search_box.recent"));
         let rows: Vec<AnyElement> = entries
             .into_iter()
             .enumerate()
@@ -464,7 +464,7 @@ impl MusicApp {
                         .py_1()
                         .text_xs()
                         .text_color(muted)
-                        .child("Loading suggestions…"),
+                        .child(t!("search_box.loading_suggestions")),
                 )
             })
     }

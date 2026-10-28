@@ -1,0 +1,290 @@
+# App shell and shared components: window / page titles, player bar, queue,
+# track rows, item cards, mini player, header search, toasts from shared code.
+# Format: see crates/music-gpui/i18n_parse.rs ({name} = placeholder, {app} = the
+# app's name, `.one` / `.other` = plural forms).
+
+# ---- Page titles (window title, back/forward history)
+route.search = Search
+# {query} is what the user typed.
+route.search_query = Search: {query}
+# {tab} is one of route.library_tab.*.
+route.library = Library · {tab}
+# {year} is a year such as 2025.
+route.year_in_music = {year} in music
+route.recognition = Recognize music
+# {section} is a settings section name.
+route.settings = Settings · {section}
+# Library tabs (keep short: tab labels).
+route.library_tab.songs = Songs
+route.library_tab.liked = Liked
+route.library_tab.albums = Albums
+route.library_tab.artists = Artists
+route.library_tab.playlists = Playlists
+route.library_tab.podcasts = Podcasts
+route.library_tab.downloaded = Downloaded
+route.library_tab.local = Local files
+
+# ---- Themes (Appearance settings)
+theme.dark = Dark
+theme.black = Pure black
+# Dark theme with an accent colour taken from the current track's artwork.
+theme.dynamic = Dynamic
+
+# ---- Player bar
+# Shown under "Not playing" when nothing is loaded.
+player.pick_a_song = Pick a song to start
+# {error} is a technical message (English).
+player.audio_unavailable = Audio unavailable: {error}
+player.buffering = Buffering…
+# {title} is the song that failed; the player moved on to the next one.
+player.play_failed_skipped = Couldn't play “{title}”, skipped
+# Badge (keep short): only a preview clip of the song is available.
+player.preview_badge = Preview
+# Tooltips. Keep the shortcut glyphs (⌘ ⌥ ⇧ ← → ↑ ↓) as they are.
+player.tooltip.shuffle_on = Shuffle: on
+player.tooltip.shuffle_off = Shuffle: off
+player.tooltip.previous = Previous (⌘←, restarts after 3 s)
+player.tooltip.next = Next (⌘→)
+player.tooltip.repeat_off = Repeat: off
+player.tooltip.repeat_all = Repeat: all
+player.tooltip.repeat_one = Repeat: one
+# {percent} is 0–100.
+player.tooltip.volume = Volume {percent} % (⌘↑ / ⌘↓)
+player.tooltip.queue = Queue (⌥⌘Q)
+player.tooltip.mini_player = Mini player (⇧⌘M)
+player.tooltip.now_playing = Now Playing & lyrics (⌘L)
+
+# ---- Sleep timer (player bar button and its menu)
+player.sleep.title = Sleep timer
+# Menu item: stop after this many minutes.
+player.sleep.minutes.one = {count} minute
+player.sleep.minutes.other = {count} minutes
+# Menu item and button label (keep short): stop when the current song ends.
+player.sleep.end_of_track = End of track
+# Menu item: the user's saved custom length.
+player.sleep.custom = Custom: {minutes} min
+player.sleep.turn_off = Turn off
+# Button label (keep short); {time} is the remaining time such as 23:41.
+player.sleep.left = {time} left
+
+# ---- Queue
+# Toasts after "Play next" / "Add to queue"; {title} is a song title.
+queue.toast.play_next_one = “{title}” will play next
+queue.toast.play_next_many.one = {count} song will play next
+queue.toast.play_next_many.other = {count} songs will play next
+queue.toast.added_one = “{title}” added to the queue
+queue.toast.added_many.one = {count} song added to the queue
+queue.toast.added_many.other = {count} songs added to the queue
+# Queue panel section headers (small caps style; write them in capitals where
+# the script has capitals).
+queue.section.now_playing = NOW PLAYING
+# {count} is the number of upcoming songs.
+queue.section.up_next = UP NEXT · {count}
+queue.section.history = HISTORY
+queue.nothing_playing = Nothing playing
+queue.empty.repeat_all = Repeat all: the queue starts over.
+queue.empty.hint = Add songs with “Play next” or “Add to queue”.
+queue.tooltip.clear_up_next = Clear up next
+queue.tooltip.close = Close (Esc)
+queue.tooltip.move_up = Move up
+queue.tooltip.move_down = Move down
+
+# ---- Song rows and the song context menu
+# Tooltip of the "…" button that opens the song menu.
+track.tooltip.more = More
+# Badge for explicit songs (one letter or a very short word).
+track.explicit_badge = E
+track.menu.go_to_podcast = Go to podcast
+# One entry per artist when a song has several; {artist} is the artist's name.
+track.menu.go_to_named_artist = Go to {artist}
+
+# ---- Item cards, rows, shelves (shared by every page)
+# Empty-state title when a page fails to load (the technical error is shown below it).
+items.load_failed = Couldn't load this page
+# Footer of paged lists while the next page loads.
+items.loading_more = Loading more…
+
+# ---- "Add to playlist" / "New playlist" dialog
+playlist_dialog.name_placeholder = New playlist name
+# Dialog title when creating an empty playlist.
+playlist_dialog.title_new = New playlist
+# Dialog title; {title} is a song title.
+playlist_dialog.title_add_one = Add “{title}” to a playlist
+playlist_dialog.title_add_many.one = Add {count} song to a playlist
+playlist_dialog.title_add_many.other = Add {count} songs to a playlist
+# Button next to the name field.
+playlist_dialog.create = Create
+playlist_dialog.also_on_youtube = Also create it on YouTube Music (private)
+# Under a playlist that is synced with YouTube Music.
+playlist_dialog.youtube_songs.one = YouTube Music · {count} song
+playlist_dialog.youtube_songs.other = YouTube Music · {count} songs
+playlist_dialog.empty = No playlists yet — create one above.
+
+# ---- Mini player window
+mini.window_title = Mini player
+mini.tooltip.show_main = Show the main window
+
+# ---- Header search field and its suggestion popup
+app.search_placeholder = Search songs, artists, albums
+search_box.recent = Recent searches
+search_box.loading_suggestions = Loading suggestions…
+
+# ---- Main window
+# Window title; {page} is the current page's title.
+app.window_title = {page} — {app}
+# {error} is a technical message (English): no audio output, a silent clock runs instead.
+app.audio_demo_clock = {error} (using a demo clock)
+app.tooltip.back = Back (⌘[)
+app.tooltip.forward = Forward (⌘])
+
+# ---- YouTube Music account (sign-in, account switching, library sync)
+account.cookie_invalid = That cookie has no SAPISID / __Secure-3PAPISID entry; copy the whole cookie header of a signed-in music.youtube.com request.
+account.checking = Checking the account…
+# {name} is the account / channel name.
+account.toast.signed_in = Signed in as {name}
+# {error} is a technical message (English).
+account.sign_in_failed = Sign-in failed: {error}
+account.toast.signed_out = Signed out of YouTube Music
+account.unreachable = Couldn't reach the account: {error}
+account.switching = Switching…
+# After switching to another channel / brand account of the same Google account.
+account.toast.switched = Now using {name}
+account.switch_failed = Switching failed: {error}
+account.sign_in_first = Sign in to YouTube Music first.
+# Used in "{action} failed: {error}" (see store.toast.action_failed).
+account.action.subscribing = Subscribing
+# {artist} is an artist's name.
+account.toast.subscribed = Subscribed to {artist}
+account.toast.unsubscribed = Unsubscribed from {artist}
+# Library sync progress (shown in Settings while syncing).
+account.sync.starting = Starting…
+account.sync.step.liked = Liked songs…
+account.sync.step.songs = Library songs…
+account.sync.step.albums = Albums…
+account.sync.step.artists = Artists…
+account.sync.step.playlists = Playlists…
+# {current} of {total} playlists; {title} is the playlist's name.
+account.sync.step.playlist = Playlist {current}/{total}: {title}
+# Sync result: each placeholder is one of the account.sync.<part> counts below.
+account.sync.summary = {liked}, {songs}, {albums}, {artists}, {playlists}
+account.sync.liked.one = {count} liked song
+account.sync.liked.other = {count} liked songs
+account.sync.songs.one = {count} library song
+account.sync.songs.other = {count} library songs
+account.sync.albums.one = {count} album
+account.sync.albums.other = {count} albums
+account.sync.artists.one = {count} artist
+account.sync.artists.other = {count} artists
+account.sync.playlists.one = {count} playlist
+account.sync.playlists.other = {count} playlists
+# Toast when the sync is done; {summary} is account.sync.summary.
+account.toast.synced = YouTube Music sync: {summary}
+# {summary} is account.sync.summary; {errors} lists what failed (account.sync.error, joined with "; ").
+account.sync.failed = {summary}. Errors: {errors}
+# {part} is one of account.sync.part.*; {error} is a technical message (English).
+account.sync.error = {part}: {error}
+account.sync.part.liked = liked songs
+account.sync.part.songs = library songs
+account.sync.part.albums = albums
+account.sync.part.artists = artists
+account.sync.part.playlists = playlists
+# {title} is a playlist's name.
+account.sync.part.playlist = playlist “{title}”
+account.sync.part.removing_playlist = removing a playlist
+
+# ---- Library database, likes, playlists, downloads (toasts)
+# {error} is a technical message (English).
+store.library_unavailable = Library unavailable: {error}
+store.no_data_dir = No data directory; the library is not available.
+store.library_db_unavailable = The library database is not available.
+# Toast when a library operation fails. {action} is a phrase such as “Saving the
+# like” (the *.action.* keys); {error} is a technical message (English).
+store.toast.action_failed = {action} failed: {error}
+store.action.saving_like = Saving the like
+store.action.removing_from_library = Removing from the library
+store.action.adding_to_playlist = Adding to the playlist
+store.action.creating_playlist = Creating the playlist
+# {title} is a song title.
+store.toast.liked_one = Liked “{title}”
+store.toast.unliked_one = Removed “{title}” from liked songs
+store.toast.liked_many.one = Liked {count} song
+store.toast.liked_many.other = Liked {count} songs
+store.toast.unliked_many.one = Removed {count} song from liked songs
+store.toast.unliked_many.other = Removed {count} songs from liked songs
+# Saved in the local library but YouTube Music refused. {message} is one of the toasts above.
+store.toast.only_locally = {message} (only locally; YouTube Music: {error})
+store.toast.removed_from_library.one = Removed {count} song from the library
+store.toast.removed_from_library.other = Removed {count} songs from the library
+# {playlist} is the playlist's name.
+store.toast.added_to_playlist.one = Added {count} song to “{playlist}”
+store.toast.added_to_playlist.other = Added {count} songs to “{playlist}”
+# Added locally, but YouTube Music failed. {message} is store.toast.added_to_playlist.
+store.toast.remote_error = {message} (YouTube Music: {error})
+store.playlist_name_missing = Give the playlist a name.
+store.toast.playlist_created = Created “{playlist}”
+store.toast.playlist_created_with.one = Created “{playlist}” with {count} song
+store.toast.playlist_created_with.other = Created “{playlist}” with {count} songs
+store.downloads_unavailable = Downloads are not available.
+store.toast.downloading_one = Downloading “{title}”
+store.toast.downloading_many.one = Downloading {count} song
+store.toast.downloading_many.other = Downloading {count} songs
+store.toast.delete_download_failed = Deleting the download failed: {error}
+
+# ---- Local music folder scan
+store.add_music_folder_first = Add a music folder first.
+# Scan result. {files} is store.scan.files; the others are numbers.
+store.scan.summary = {files}: {added} new, {updated} updated, {unchanged} unchanged, {removed} removed
+store.scan.files.one = {count} file
+store.scan.files.other = {count} files
+# Appends one more count to the scan result.
+store.scan.with_extra = {summary}, {extra}
+store.scan.too_short.one = {count} too short
+store.scan.too_short.other = {count} too short
+store.scan.unreadable.one = {count} unreadable
+store.scan.unreadable.other = {count} unreadable
+store.toast.scan_finished = Scan finished: {summary}
+# {error} is a technical message (English).
+store.toast.scan_failed = Scan failed: {error}
+
+# ---- Playlist cover upload
+# {error} is a technical message (English).
+playlist_cover.read_failed = Couldn't read the image: {error}
+playlist_cover.not_an_image = This file isn't an image the app can read (JPEG, PNG or WebP).
+playlist_cover.too_large = The image is too large (more than 40 megapixels).
+playlist_cover.decode_failed = Couldn't decode the image: {error}
+playlist_cover.encode_failed = Couldn't encode the cover: {error}
+playlist_cover.still_too_large = The cover is still larger than 2 MiB after compression.
+playlist_cover.sign_in = Sign in to YouTube Music to change playlist covers.
+# Confirm button of the file picker.
+playlist_cover.pick_prompt = Use as cover
+playlist_cover.uploading = Uploading the cover…
+playlist_cover.changed = Playlist cover changed
+playlist_cover.change_failed = Couldn't change the cover: {error}
+
+# ---- Radio and collection playback
+# {title} is a song title.
+radio.toast.starting_from = Starting radio from “{title}”
+# {name} is an artist / album name, or radio.playlist_label.
+radio.toast.starting = Starting radio: {name}
+# Used in radio.toast.starting when the radio is based on a playlist.
+radio.playlist_label = playlist
+radio.nothing_to_play = Nothing to play here.
+# {error} is a technical message (English).
+radio.load_failed = Couldn't load: {error}
+
+# ---- Lyrics (Japanese romanization dictionary status, shown in Settings)
+lyrics.no_cache_dir = No cache directory
+
+# ---- Playlist editing (rename, delete, remove / move songs, refresh)
+store.action.renaming_playlist = Renaming the playlist
+store.action.deleting_playlist = Deleting the playlist
+store.action.removing_from_playlist = Removing from the playlist
+store.action.moving_song = Moving the song
+store.action.refreshing_playlist = Refreshing the playlist
+# {playlist} is the playlist's (new) name.
+store.toast.playlist_renamed = Renamed to “{playlist}”
+store.toast.playlist_deleted = Deleted “{playlist}”
+store.toast.removed_from_playlist.one = Removed {count} song from the playlist
+store.toast.removed_from_playlist.other = Removed {count} songs from the playlist
+store.toast.playlist_refreshed.one = Playlist refreshed ({count} song)
+store.toast.playlist_refreshed.other = Playlist refreshed ({count} songs)

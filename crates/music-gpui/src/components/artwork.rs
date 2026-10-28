@@ -181,7 +181,7 @@ impl ArtworkCache {
         let (tx, rx) = oneshot::channel();
         pool().push(url.clone(), tx);
         cx.spawn(async move |this, cx| {
-            let result = rx.await.unwrap_or_else(|_| Err("fetch thread gone".into()));
+            let result = rx.await.unwrap_or_else(|_| Err("fetch thread gone".into())); // i18n-ignore
             this.update(cx, |this, cx| {
                 if std::env::var_os("MUSIC_TRACE").is_some() {
                     eprintln!(

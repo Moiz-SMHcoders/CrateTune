@@ -50,7 +50,7 @@ impl MusicApp {
         if self.together_intercept_enqueue(&tracks, mode, window, cx) {
             return; // a Together guest suggests to the host instead
         }
-        let message = enqueue_message("will play next", &tracks);
+        let message = enqueue_message(true, &tracks);
         match self.queue.play_next(tracks) {
             Some(track) => self.play(track, cx),
             None => notify(window, cx, message),
@@ -63,7 +63,7 @@ impl MusicApp {
         if self.together_intercept_enqueue(&tracks, mode, window, cx) {
             return;
         }
-        let message = enqueue_message("added to the queue", &tracks);
+        let message = enqueue_message(false, &tracks);
         match self.queue.add(tracks) {
             Some(track) => self.play(track, cx),
             None => notify(window, cx, message),
@@ -263,23 +263,28 @@ impl MusicApp {
                 update_app(cx, |app, cx| app.set_sleep_timer(timer, cx));
             })
         };
-        let mut menu = menu.label("Sleep timer");
+        let mut menu = menu.label(t!("player.sleep.title"));
         for minutes in SLEEP_PRESETS {
             menu = menu.item(item(
-                format!("{minutes} minutes"),
+                tp!("player.sleep.minutes", minutes),
                 Some(SleepTimer::After(Duration::from_secs(
                     u64::from(minutes) * 60,
                 ))),
             ));
         }
         menu = menu
-            .item(item("End of track".into(), Some(SleepTimer::EndOfTrack)))
             .item(item(
-                format!("Custom: {} min", custom.as_secs() / 60),
+                t!("player.sleep.end_of_track").into(),
+                Some(SleepTimer::EndOfTrack),
+            ))
+            .item(item(
+                t!("player.sleep.custom", minutes = custom.as_secs() / 60),
                 Some(SleepTimer::After(custom)),
             ));
         if armed {
-            menu = menu.separator().item(item("Turn off".into(), None));
+            menu = menu
+                .separator()
+                .item(item(t!("player.sleep.turn_off").into(), None));
         }
         menu
     }
@@ -289,9 +294,12 @@ impl MusicApp {
         let timer = self.playback.sleep_timer?;
         Some(match timer.remaining {
             Some(left) if !timer.end_of_track => {
-                format!("{} left", format_duration(left.as_secs() + 1))
+                t!(
+                    "player.sleep.left",
+                    time = format_duration(left.as_secs() + 1)
+                )
             }
-            _ => "End of track".into(),
+            _ => t!("player.sleep.end_of_track").into(),
         })
     }
 
@@ -576,10 +584,13 @@ impl MusicApp {
     }
 }
 
-fn enqueue_message(what: &str, tracks: &[Track]) -> String {
-    match tracks {
-        [one] => format!("“{}” {what}", one.title),
-        many => format!("{} songs {what}", many.len()),
+/// "“Title” will play next" / "3 songs added to the queue".
+fn enqueue_message(play_next: bool, tracks: &[Track]) -> String {
+    match (tracks, play_next) {
+        ([one], true) => t!("queue.toast.play_next_one", title = one.title),
+        ([one], false) => t!("queue.toast.added_one", title = one.title),
+        (many, true) => tp!("queue.toast.play_next_many", many.len()),
+        (many, false) => tp!("queue.toast.added_many", many.len()),
     }
 }
 

@@ -483,7 +483,7 @@ impl MusicApp {
             return;
         }
         let Some(dir) = kanji_dictionary_dir() else {
-            self.lyrics.kanji = KanjiDictionary::Failed("no cache directory".into());
+            self.lyrics.kanji = KanjiDictionary::Failed(t!("lyrics.no_cache_dir").into());
             cx.notify();
             return;
         };
@@ -564,7 +564,7 @@ impl MusicApp {
             let what = match &state {
                 KanjiDictionary::Ready(bytes) => format!("ready ({bytes} bytes)"),
                 KanjiDictionary::Failed(e) => format!("failed: {e}"),
-                KanjiDictionary::Missing => "not installed".into(),
+                KanjiDictionary::Missing => "not installed".into(), // i18n-ignore
                 _ => "…".into(),
             };
             eprintln!(

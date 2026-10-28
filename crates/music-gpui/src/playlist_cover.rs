@@ -23,15 +23,15 @@ const MAX_DECODE_PIXELS: u64 = 40_000_000;
 pub fn prepare_cover(bytes: &[u8]) -> Result<Vec<u8>, String> {
     let reader = image::ImageReader::new(Cursor::new(bytes))
         .with_guessed_format()
-        .map_err(|e| format!("Couldn't read the image: {e}"))?;
+        .map_err(|e| t!("playlist_cover.read_failed", error = e))?;
     let (w, h) = reader
         .into_dimensions()
-        .map_err(|_| "This file isn't an image the app can read (JPEG, PNG or WebP).".to_owned())?;
+        .map_err(|_| t!("playlist_cover.not_an_image").to_owned())?;
     if u64::from(w) * u64::from(h) > MAX_DECODE_PIXELS {
-        return Err("The image is too large (more than 40 megapixels).".into());
+        return Err(t!("playlist_cover.too_large").into());
     }
-    let img =
-        image::load_from_memory(bytes).map_err(|e| format!("Couldn't decode the image: {e}"))?;
+    let img = image::load_from_memory(bytes)
+        .map_err(|e| t!("playlist_cover.decode_failed", error = e))?;
     let side = w.min(h);
     let square = img.crop_imm((w - side) / 2, (h - side) / 2, side, side);
     let square = if side > UPLOAD_SIDE {
@@ -45,12 +45,12 @@ pub fn prepare_cover(bytes: &[u8]) -> Result<Vec<u8>, String> {
         let mut out = Vec::new();
         image::codecs::jpeg::JpegEncoder::new_with_quality(&mut out, quality)
             .encode_image(&rgb)
-            .map_err(|e| format!("Couldn't encode the cover: {e}"))?;
+            .map_err(|e| t!("playlist_cover.encode_failed", error = e))?;
         if out.len() <= MAX_COVER_BYTES {
             return Ok(out);
         }
         if quality <= 60 {
-            return Err("The cover is still larger than 2 MiB after compression.".into());
+            return Err(t!("playlist_cover.still_too_large").into());
         }
         quality -= 8;
     }
@@ -67,18 +67,14 @@ impl MusicApp {
         cx: &mut Context<Self>,
     ) {
         if !self.store.account.is_signed_in() {
-            notify(
-                window,
-                cx,
-                "Sign in to YouTube Music to change playlist covers.",
-            );
+            notify(window, cx, t!("playlist_cover.sign_in"));
             return;
         }
         let picked = cx.prompt_for_paths(PathPromptOptions {
             files: true,
             directories: false,
             multiple: false,
-            prompt: Some("Use as cover".into()),
+            prompt: Some(t!("playlist_cover.pick_prompt").into()),
         });
         cx.spawn_in(window, async move |this, cx| {
             let Ok(Ok(Some(mut paths))) = picked.await else {
@@ -104,7 +100,7 @@ impl MusicApp {
     ) {
         let client = self.account_client();
         let library = self.store.library.clone();
-        notify(window, cx, "Uploading the cover…");
+        notify(window, cx, t!("playlist_cover.uploading"));
         cx.spawn_in(window, async move |this, cx| {
             let id = playlist_id.clone();
             let result = off_thread(move || {
@@ -125,9 +121,9 @@ impl MusicApp {
                     crate::browse::PageCache::remove(&format!("playlist:{id}"), cx);
                     this.library_changed(cx);
                     this.refresh_pages(window, cx);
-                    notify(window, cx, "Playlist cover changed");
+                    notify(window, cx, t!("playlist_cover.changed"));
                 }
-                Err(e) => notify(window, cx, format!("Couldn't change the cover: {e}")),
+                Err(e) => notify(window, cx, t!("playlist_cover.change_failed", error = e)),
             })
             .ok();
         })

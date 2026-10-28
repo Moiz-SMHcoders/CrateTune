@@ -81,7 +81,7 @@ fn open(geometry: Option<WindowGeometry>, cx: &mut App) -> Option<AnyWindowHandl
     let options = WindowOptions {
         window_bounds: Some(WindowBounds::Windowed(bounds)),
         titlebar: Some(TitlebarOptions {
-            title: Some("Mini player".into()),
+            title: Some(t!("mini.window_title").into()),
             appears_transparent: true,
             traffic_light_position: Some(point(px(10.), px(9.))),
         }),
@@ -183,7 +183,10 @@ impl Render for MiniPlayer {
         };
         let (title, artists) = match &track {
             Some(t) => (t.title.clone(), t.artists.clone()),
-            None => ("Not playing".into(), crate::identity::APP_NAME.into()),
+            None => (
+                t!("common.not_playing").into(),
+                crate::identity::APP_NAME.into(),
+            ),
         };
 
         div()
@@ -213,7 +216,7 @@ impl Render for MiniPlayer {
                         .ghost()
                         .xsmall()
                         .icon(IconName::Maximize)
-                        .tooltip("Show the main window")
+                        .tooltip(t!("mini.tooltip.show_main"))
                         .on_click(|_, _, cx| {
                             cx.activate(true);
                             with_main_window(cx, |_, window, _| window.activate_window());

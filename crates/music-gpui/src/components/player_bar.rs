@@ -51,7 +51,10 @@ impl MusicApp {
 
         let (title, artists): (SharedString, SharedString) = match &track {
             Some(t) => (t.title.clone().into(), t.artists.clone().into()),
-            None => ("Not playing".into(), "Pick a song to start".into()),
+            None => (
+                t!("common.not_playing").into(),
+                t!("player.pick_a_song").into(),
+            ),
         };
 
         let is_playing = state.status == PlaybackStatus::Playing;
@@ -76,17 +79,20 @@ impl MusicApp {
             .map(|(title, _)| title.clone());
         let sleep = self.sleep_timer_label();
         let message: Option<(SharedString, Hsla)> = if let Some(err) = &self.audio_error {
-            Some((format!("Audio unavailable: {err}").into(), theme.danger))
+            Some((
+                t!("player.audio_unavailable", error = err).into(),
+                theme.danger,
+            ))
         } else if let PlaybackStatus::Error(err) = &state.status {
             Some((err.clone().into(), theme.danger))
         } else if loading {
-            Some(("Loading…".into(), theme.muted_foreground))
+            Some((t!("common.loading").into(), theme.muted_foreground))
         } else if state.buffering && is_playing {
-            Some(("Buffering…".into(), theme.muted_foreground))
+            Some((t!("player.buffering").into(), theme.muted_foreground))
         } else {
             recent_failure.map(|title| {
                 (
-                    format!("Couldn't play “{title}”, skipped").into(),
+                    t!("player.play_failed_skipped", title = title).into(),
                     theme.warning,
                 )
             })
@@ -180,9 +186,9 @@ impl MusicApp {
                                     .icon(Lucide::Shuffle)
                                     .selected(shuffle)
                                     .tooltip(if shuffle {
-                                        "Shuffle: on"
+                                        t!("player.tooltip.shuffle_on")
                                     } else {
-                                        "Shuffle: off"
+                                        t!("player.tooltip.shuffle_off")
                                     })
                                     .on_click(
                                         cx.listener(|this, _, _, cx| this.toggle_shuffle(cx)),
@@ -193,7 +199,7 @@ impl MusicApp {
                                     .ghost()
                                     .rounded(px(999.))
                                     .icon(AppIcon::Previous)
-                                    .tooltip("Previous (⌘←, restarts after 3 s)")
+                                    .tooltip(t!("player.tooltip.previous"))
                                     .disabled(track.is_none())
                                     .on_click(
                                         cx.listener(|this, _, _, cx| this.previous_track(cx)),
@@ -217,7 +223,7 @@ impl MusicApp {
                                     .ghost()
                                     .rounded(px(999.))
                                     .icon(AppIcon::Next)
-                                    .tooltip("Next (⌘→)")
+                                    .tooltip(t!("player.tooltip.next"))
                                     .disabled(!has_next)
                                     .on_click(cx.listener(|this, _, _, cx| this.next_track(cx))),
                             )
@@ -233,9 +239,9 @@ impl MusicApp {
                                     })
                                     .selected(repeat != Repeat::Off)
                                     .tooltip(match repeat {
-                                        Repeat::Off => "Repeat: off",
-                                        Repeat::All => "Repeat: all",
-                                        Repeat::One => "Repeat: one",
+                                        Repeat::Off => t!("player.tooltip.repeat_off"),
+                                        Repeat::All => t!("player.tooltip.repeat_all"),
+                                        Repeat::One => t!("player.tooltip.repeat_one"),
                                     })
                                     .on_click(cx.listener(|this, _, _, cx| this.cycle_repeat(cx))),
                             )
@@ -252,7 +258,7 @@ impl MusicApp {
                                             Tag::warning()
                                                 .small()
                                                 .rounded_full()
-                                                .child("Preview")
+                                                .child(t!("player.preview_badge"))
                                                 .into_any_element(),
                                         ))
                                     })
@@ -326,17 +332,24 @@ impl MusicApp {
                                 this.text_color(color).child(text)
                             }),
                     )
+                    // A long "… left" / "End of track" label clips; the moon icon stays.
                     .child(
-                        Button::new("sleep-timer")
-                            .ghost()
-                            .small()
-                            .icon(Lucide::Moon)
-                            .selected(sleep_armed)
-                            .when_some(sleep, |b, label| b.label(label))
-                            .tooltip("Sleep timer")
-                            .dropdown_menu(move |menu, _, _| {
-                                MusicApp::sleep_timer_menu(menu, sleep_armed, sleep_custom)
-                            }),
+                        div()
+                            .flex_shrink(1.)
+                            .min_w(px(28.))
+                            .overflow_hidden()
+                            .child(
+                                Button::new("sleep-timer")
+                                    .ghost()
+                                    .small()
+                                    .icon(Lucide::Moon)
+                                    .selected(sleep_armed)
+                                    .when_some(sleep, |b, label| b.label(label))
+                                    .tooltip(t!("player.sleep.title"))
+                                    .dropdown_menu(move |menu, _, _| {
+                                        MusicApp::sleep_timer_menu(menu, sleep_armed, sleep_custom)
+                                    }),
+                            ),
                     )
                     .child(
                         Button::new("mute")
@@ -349,7 +362,12 @@ impl MusicApp {
                             } else {
                                 AppIcon::Volume
                             })
-                            .tooltip(format!("Volume {:.0} % (⌘↑ / ⌘↓)", self.volume * 100.))
+                            .tooltip(t!(
+                                "player.tooltip.volume",
+                                percent = crate::i18n::format::number(
+                                    (self.volume * 100.).round() as u64
+                                )
+                            ))
                             .on_click(cx.listener(Self::toggle_mute)),
                     )
                     .child(
@@ -364,7 +382,7 @@ impl MusicApp {
                             .small()
                             .icon(Lucide::ListMusic)
                             .selected(self.queue_open)
-                            .tooltip("Queue (⌥⌘Q)")
+                            .tooltip(t!("player.tooltip.queue"))
                             .on_click(cx.listener(|this, _, _, cx| this.toggle_queue_panel(cx))),
                     )
                     .child(
@@ -373,7 +391,7 @@ impl MusicApp {
                             .small()
                             .icon(Lucide::PictureInPicture2)
                             .selected(self.mini.is_some())
-                            .tooltip("Mini player (⇧⌘M)")
+                            .tooltip(t!("player.tooltip.mini_player"))
                             .on_click(cx.listener(|this, _, _, cx| this.toggle_mini_player(cx))),
                     )
                     .child(
@@ -381,7 +399,7 @@ impl MusicApp {
                             .ghost()
                             .small()
                             .icon(IconName::ChevronUp)
-                            .tooltip("Now Playing & lyrics (⌘L)")
+                            .tooltip(t!("player.tooltip.now_playing"))
                             .disabled(track.is_none())
                             .on_click(
                                 cx.listener(|this, _, window, cx| {

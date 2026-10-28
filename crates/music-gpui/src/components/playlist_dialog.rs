@@ -32,7 +32,8 @@ pub fn open(
     window: &mut Window,
     cx: &mut Context<MusicApp>,
 ) {
-    let name = cx.new(|cx| InputState::new(window, cx).placeholder("New playlist name"));
+    let name = cx.new(|cx| InputState::new(window, cx));
+    crate::i18n::track_placeholder(&name, k!("playlist_dialog.name_placeholder"), window, cx);
     let on_youtube = Rc::new(Cell::new(false));
     let tracks = Rc::new(tracks);
     // Synced playlists of other people can't be edited.
@@ -51,9 +52,9 @@ pub fn open(
         let theme = cx.theme();
         let (muted, hover, muted_bg) = (theme.muted_foreground, theme.list_hover, theme.muted);
         let title = match tracks.len() {
-            0 => "New playlist".to_owned(),
-            1 => format!("Add “{}” to a playlist", tracks[0].title),
-            n => format!("Add {n} songs to a playlist"),
+            0 => t!("playlist_dialog.title_new").to_owned(),
+            1 => t!("playlist_dialog.title_add_one", title = tracks[0].title),
+            n => tp!("playlist_dialog.title_add_many", n),
         };
         let create = {
             let (name, tracks, on_youtube) = (name.clone(), tracks.clone(), on_youtube.clone());
@@ -81,7 +82,7 @@ pub fn open(
                             .primary()
                             .small()
                             .icon(Lucide::Plus)
-                            .label("Create")
+                            .label(t!("playlist_dialog.create"))
                             .on_click(move |_, window, cx| create(window, cx)),
                     ),
             )
@@ -89,7 +90,7 @@ pub fn open(
                 let on_youtube = on_youtube.clone();
                 Checkbox::new("playlist-on-youtube")
                     .checked(on_youtube.get())
-                    .label("Also create it on YouTube Music (private)")
+                    .label(t!("playlist_dialog.also_on_youtube"))
                     .on_click(move |checked, window, _| {
                         on_youtube.set(*checked);
                         window.refresh();
@@ -103,10 +104,8 @@ pub fn open(
             .children(playlists.iter().enumerate().map(|(ix, p)| {
                 let (id, tracks) = (p.id.clone(), tracks.clone());
                 let detail = match (&p.browse_id, p.song_count) {
-                    (Some(_), 1) => "YouTube Music · 1 song".to_owned(),
-                    (Some(_), n) => format!("YouTube Music · {n} songs"),
-                    (None, 1) => "1 song".to_owned(),
-                    (None, n) => format!("{n} songs"),
+                    (Some(_), n) => tp!("playlist_dialog.youtube_songs", n),
+                    (None, n) => tp!("common.songs", n),
                 };
                 h_flex()
                     .id(("playlist-pick", ix))
@@ -152,7 +151,7 @@ pub fn open(
             div()
                 .text_sm()
                 .text_color(muted)
-                .child("No playlists yet — create one above.")
+                .child(t!("playlist_dialog.empty"))
         });
         dialog.title(div().child(title)).w(px(460.)).child(
             v_flex()
