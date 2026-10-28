@@ -76,33 +76,6 @@ pub fn row(
         .child(div().flex_none().child(control))
 }
 
-/// [`row`] with a description that isn't a `&'static str` (e.g. `t!` with arguments).
-#[allow(dead_code)] // TEMP(i18n)
-pub fn row_detail(
-    label: impl Into<SharedString>,
-    description: impl Into<SharedString>,
-    control: impl IntoElement,
-    cx: &App,
-) -> impl IntoElement {
-    h_flex()
-        .gap_4()
-        .justify_between()
-        .child(
-            v_flex()
-                .flex_1()
-                .min_w_0()
-                .gap_0p5()
-                .child(div().text_sm().child(label.into()))
-                .child(
-                    div()
-                        .text_xs()
-                        .text_color(cx.theme().muted_foreground)
-                        .child(description.into()),
-                ),
-        )
-        .child(div().flex_none().child(control))
-}
-
 pub fn band_label(hz: f64) -> String {
     if hz >= 1000. {
         format!("{}k", hz / 1000.)

@@ -556,9 +556,7 @@ impl MusicApp {
                 panel.update(cx, |p, cx| p.set_lyrics_metrics(size, spacing, window, cx));
             }
             "lyrics-align" => {
-                let align = TextAlign::ALL
-                    .into_iter()
-                    .find(|a| Some(a.key()) == arg);
+                let align = TextAlign::ALL.into_iter().find(|a| Some(a.key()) == arg);
                 if let Some(align) = align {
                     panel.update(cx, |p, cx| p.set_lyrics_align(align, cx));
                 }

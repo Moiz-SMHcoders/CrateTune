@@ -71,20 +71,6 @@ const PLAYLIST_SORTS: &[(PlaylistSort, Key)] = &[
     (PlaylistSort::SongCount, k!("library.sort.song_count")),
 ];
 
-/// Tab names (`LibraryTab::title` is the untranslated name used elsewhere).
-fn tab_title(tab: LibraryTab) -> &'static str {
-    match tab {
-        LibraryTab::Songs => t!("library.tab.songs"),
-        LibraryTab::Liked => t!("library.tab.liked"),
-        LibraryTab::Albums => t!("library.tab.albums"),
-        LibraryTab::Artists => t!("library.tab.artists"),
-        LibraryTab::Playlists => t!("library.tab.playlists"),
-        LibraryTab::Podcasts => t!("library.tab.podcasts"),
-        LibraryTab::Downloaded => t!("library.tab.downloaded"),
-        LibraryTab::Local => t!("library.tab.local"),
-    }
-}
-
 pub struct LibraryPage {
     tab: LibraryTab,
     filter: Entity<InputState>,
@@ -324,7 +310,7 @@ impl LibraryPage {
                     .small()
                     .map(|b| if selected { b.primary() } else { b.ghost() })
                     .selected(selected)
-                    .label(tab_title(tab))
+                    .label(tab.title())
                     .on_click(move |_, window, cx| {
                         update_app(cx, |app, cx| {
                             app.navigate_replace(Route::Library { tab }, window, cx)

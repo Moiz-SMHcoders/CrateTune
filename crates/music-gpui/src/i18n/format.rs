@@ -87,20 +87,6 @@ pub fn decimal(value: f64, decimals: usize) -> String {
     out
 }
 
-const MONTHS: [super::Key; 12] = [
-    k!("date.month.1"),
-    k!("date.month.2"),
-    k!("date.month.3"),
-    k!("date.month.4"),
-    k!("date.month.5"),
-    k!("date.month.6"),
-    k!("date.month.7"),
-    k!("date.month.8"),
-    k!("date.month.9"),
-    k!("date.month.10"),
-    k!("date.month.11"),
-    k!("date.month.12"),
-];
 const MONTHS_IN_DATE: [super::Key; 12] = [
     k!("date.month_in_date.1"),
     k!("date.month_in_date.2"),
@@ -139,11 +125,6 @@ const WEEKDAYS_SHORT: [super::Key; 7] = [
     k!("date.weekday_short.6"),
     k!("date.weekday_short.7"),
 ];
-
-/// Standalone month name, `month` 1–12 ("October", "Oktober", "октябрь").
-pub fn month_name(month: u32) -> &'static str {
-    text(MONTHS[(month.clamp(1, 12) - 1) as usize])
-}
 
 /// Abbreviated month name for chart labels ("Oct").
 pub fn month_short(month: u32) -> &'static str {

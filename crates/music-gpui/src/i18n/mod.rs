@@ -20,9 +20,6 @@
 //! the rare cache that stores translated text. Number / date / relative-time helpers
 //! are in [`format`].
 
-// TEMP(i18n): parts of the API are only used once every surface is converted.
-#![allow(dead_code, unused_imports)]
-
 /// A translated message: `t!("nav.home")` → `&'static str`;
 /// `t!("np.casting_to", device = name)` → `String`.
 macro_rules! t {
@@ -135,13 +132,14 @@ impl Key {
         }
     }
 
+    #[cfg(test)]
+    pub fn name(self) -> &'static str {
+        SIMPLE_KEYS[self.0 as usize]
+    }
+
     /// Runtime lookup by name (script actions, tests).
     pub fn find(name: &str) -> Option<Key> {
         find(SIMPLE_KEYS, name).map(|i| Key(i as u16))
-    }
-
-    pub fn name(self) -> &'static str {
-        SIMPLE_KEYS[self.0 as usize]
     }
 }
 
@@ -157,10 +155,6 @@ impl PluralKey {
                 "unknown plural translation key: add `<key>.one` / `<key>.other` to crates/music-gpui/locales/en"
             ),
         }
-    }
-
-    pub fn name(self) -> &'static str {
-        PLURAL_KEYS[self.0 as usize]
     }
 }
 
@@ -206,6 +200,7 @@ impl Locale {
         code.split('-').next().unwrap_or(code)
     }
 
+    #[cfg(test)]
     /// Share of English plain keys and plural groups this locale translates (0–100).
     pub fn coverage(self) -> f32 {
         let catalog = &CATALOGS[self.0 as usize];
@@ -330,6 +325,11 @@ pub fn fill(template: &str, args: &[(&str, &dyn Display)]) -> String {
     }
     out.push_str(rest);
     out
+}
+
+/// The English source text of `key` (search fallbacks, e.g. country names).
+pub fn english(key: Key) -> &'static str {
+    lookup(Locale::ENGLISH, key).unwrap_or("")
 }
 
 /// `t!` with arguments.

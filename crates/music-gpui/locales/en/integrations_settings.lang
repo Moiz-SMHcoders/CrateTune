@@ -46,17 +46,6 @@ discord.activity.url = URL
 discord.activity.show_paused = Show while paused
 discord.activity.show_paused_desc = Keeps the activity (without the running time) when playback pauses.
 discord.activity.custom_note = Custom images are asset keys of your Discord application or image URLs. Buttons are visible to others, not to yourself.
-# The next three groups are the choices of the Discord activity rows (for the
-# `title()` methods in src/settings/prefs.rs).
-# Discord's activity types, as Discord shows them before the name ("Listening to …").
-discord.activity_type.listening = Listening to
-discord.activity_type.playing = Playing
-discord.activity_type.watching = Watching
-discord.activity_type.competing = Competing in
-# Image source: the song's artwork.
-discord.image.artwork = Artwork
-# Profile button target.
-discord.button_target.custom = Custom URL
 
 # ---- Scrobble rules
 scrobble.rules.title = When a song counts

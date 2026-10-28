@@ -403,6 +403,7 @@ const NOT_UI: &[&str] = &[
     "msg_send",
     "sel!(",
     "KeyBinding::new(",
+    "font_family(",
     "trace(",
     "trace!(",
     "log(",

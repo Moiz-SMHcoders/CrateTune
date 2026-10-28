@@ -5,14 +5,6 @@
 # app's name, `.one` / `.other` = plural forms).
 
 # ---- Library page: tabs (keep short: a row of tab buttons)
-library.tab.songs = Songs
-library.tab.liked = Liked
-library.tab.albums = Albums
-library.tab.artists = Artists
-library.tab.playlists = Playlists
-library.tab.podcasts = Podcasts
-library.tab.downloaded = Downloaded
-library.tab.local = Local files
 
 # Sort menu: the button shows the current sort name (keep short).
 library.sort.label = Sort

@@ -125,6 +125,8 @@ pub const COUNTRIES: &[(&str, Key)] = &[
 pub struct Choice {
     code: &'static str,
     title: SharedString,
+    /// Also matched by the search (a country's English name).
+    alias: &'static str,
 }
 
 impl SelectItem for Choice {
@@ -140,16 +142,19 @@ impl SelectItem for Choice {
 
     fn matches(&self, query: &str) -> bool {
         let q = query.to_lowercase();
-        self.title.to_lowercase().contains(&q) || self.code.to_lowercase().starts_with(&q)
+        self.title.to_lowercase().contains(&q)
+            || self.code.to_lowercase().starts_with(&q)
+            || self.alias.to_lowercase().contains(&q)
     }
 }
 
 type Picker = Entity<SelectState<SearchableVec<Choice>>>;
 
-fn choice(code: &'static str, name: &str) -> Choice {
+fn choice(code: &'static str, name: &str, alias: &'static str) -> Choice {
     Choice {
         code,
         title: format!("{name} ({code})").into(),
+        alias,
     }
 }
 
@@ -157,7 +162,7 @@ fn choice(code: &'static str, name: &str) -> Choice {
 fn language_choices() -> Vec<Choice> {
     LANGUAGES
         .iter()
-        .map(|(code, name)| choice(code, name))
+        .map(|(code, name)| choice(code, name, ""))
         .collect()
 }
 
@@ -165,7 +170,7 @@ fn language_choices() -> Vec<Choice> {
 fn country_choices() -> Vec<Choice> {
     COUNTRIES
         .iter()
-        .map(|(code, key)| choice(code, crate::i18n::text(*key)))
+        .map(|(code, key)| choice(code, crate::i18n::text(*key), crate::i18n::english(*key)))
         .collect()
 }
 
