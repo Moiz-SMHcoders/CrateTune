@@ -21,6 +21,10 @@ versions follow [SemVer](https://semver.org/). "Music" is a working name.
   1.2–2.3 s (the start of the file downloads while the stream is still being resolved,
   the challenge solver loads during the player request, the session renews in the
   background).
+* **Kanji readings without the 48 MB build**: Settings → Lyrics → Romanization downloads
+  the Japanese dictionary on demand (10.5 MB, checksum-verified, 45 MB on disk) with
+  progress, cancel and remove; until then romanization is kana-only.
+* **Translations are kept** in the library: reopening a song doesn't translate it again.
 
 ### Fixed
 
@@ -32,6 +36,17 @@ versions follow [SemVer](https://semver.org/). "Music" is a working name.
   preloaded next song and for downloads).
 * Age-restricted YouTube videos no longer throw away the shared session (they were taken
   for YouTube's bot check), so they fail and get skipped in well under a second.
+* **Credit lines** before the lyrics ("Julian Casablancas/Thomas Bangalter/…", "作词：…",
+  "Written by: …", "Title - Artist") are filtered for every provider and format, without
+  touching lyrics that contain "/" or ":".
+* Instrumentals no longer show another song's lyrics (or a fan-written poem) when a
+  provider reports "pure music"; QQ Music title lines like "MALAMENTE (Cap.1: Augurio) -
+  ROSALÍA" are no longer shown as a duet singer.
+* Google Translate rate limits: the app backs off (2 min, doubling up to 30 min, or the
+  server's Retry-After), says "rate-limited, try again in N min" and retries by itself,
+  instead of failing on every song. AI translation errors say what to check (key,
+  endpoint, model, unreachable).
+* Provider romanization is no longer shown under lines that are already Latin.
 * A module playback test was sensitive to machine speed (it sampled positions on 100 ms
   ticks while rendering at ~3× real time).
 
