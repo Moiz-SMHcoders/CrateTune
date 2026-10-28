@@ -1,0 +1,17 @@
+settings.section.appearance = 화면 설정
+settings.section.playback = 재생
+settings.section.modules = 모듈
+settings.section.equalizer = 이퀄라이저
+settings.section.lyrics = 가사
+settings.section.content = 콘텐츠 및 지역
+settings.section.network = 네트워크
+settings.section.privacy = 개인정보 보호
+settings.section.storage = 저장공간
+settings.section.account = 계정
+settings.section.integrations = 스크로블 및 Discord
+settings.section.sponsorblock = SponsorBlock
+settings.section.together = Music Together
+settings.section.spotify = Spotify 가져오기
+settings.section.ai_filter = AI 콘텐츠 필터
+settings.section.cast = Chromecast
+settings.section.about = 정보

@@ -1,0 +1,27 @@
+settings.language.group = 言語
+settings.language.label = 言語
+settings.language.description = インターフェースの言語です。YouTube Music のコンテンツには別の設定があります（コンテンツと地域）。
+settings.language.system = システムのデフォルト（{language}）
+settings.language.system_search = default automatic デフォルト 自動 システム
+
+language.name.en = 英語
+language.name.es = スペイン語
+language.name.pt-BR = ポルトガル語（ブラジル）
+language.name.fr = フランス語
+language.name.de = ドイツ語
+language.name.it = イタリア語
+language.name.nl = オランダ語
+language.name.pl = ポーランド語
+language.name.ru = ロシア語
+language.name.uk = ウクライナ語
+language.name.tr = トルコ語
+language.name.id = インドネシア語
+language.name.vi = ベトナム語
+language.name.ja = 日本語
+language.name.ko = 韓国語
+language.name.zh-CN = 中国語（簡体字）
+language.name.zh-TW = 中国語（繁体字）
+language.name.hi = ヒンディー語
+language.name.ar = アラビア語
+language.name.fa = ペルシア語
+language.name.he = ヘブライ語

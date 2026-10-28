@@ -1,0 +1,56 @@
+# First-run guide (ja).
+
+# ---- Step titles
+onboarding.step.welcome = ようこそ
+onboarding.step.content = 言語と地域
+onboarding.step.theme = 外観
+onboarding.step.account = YouTube Music アカウント
+onboarding.step.local_files = このコンピュータ上の音楽
+onboarding.step.privacy = プライバシーと制限事項
+onboarding.welcome_title = {app}へようこそ
+onboarding.step_of = ステップ {step}/{total}
+
+# ---- Step subtitles
+onboarding.subtitle.welcome = YouTube Music 用の高速なネイティブプレーヤー。ブラウズと検索、曲に合わせて流れる歌詞、履歴と統計付きのライブラリ、手持ちの音楽ファイル、曲の認識に対応しています。いくつか選ぶだけで準備完了です。ここでの設定はすべて後から設定で変更できます。
+onboarding.subtitle.content = YouTube Music がタイトルやおすすめに使う言語と、表示するチャートやリリースの国を選びます。
+onboarding.subtitle.theme = テーマと文字サイズを選んでください。
+onboarding.subtitle.account = 任意。ログインすると、高評価、ライブラリ、プレイリスト、パーソナライズされたおすすめが利用できます。それ以外はアカウントなしで使えます。
+onboarding.subtitle.local_files = 任意。音楽ファイルのあるフォルダを追加すると、スキャンされてライブラリに入り、YouTube Music と一緒に再生できます。
+onboarding.subtitle.privacy = 始める前に知っておいてほしいこと。
+
+# ---- Footer buttons
+onboarding.skip = 設定をスキップ
+onboarding.get_started = 始める
+onboarding.finish = 完了
+onboarding.next_or_skip = 次へ（またはスキップ）
+
+# ---- Welcome step: feature list
+onboarding.feature.browse.title = ブラウズと検索
+onboarding.feature.browse.text = ホームフィード、チャート、ムード、新リリース、アーティスト、アルバム、プレイリスト。
+onboarding.feature.lyrics.title = 歌詞
+onboarding.feature.lyrics.text = 多数のプロバイダから単語単位で同期する歌詞。翻訳とローマ字表記にも対応。
+onboarding.feature.library.title = ライブラリ
+onboarding.feature.library.text = 高評価、プレイリスト、再生履歴、統計、ダウンロードをこのコンピュータに保存。
+onboarding.feature.recognize.title = 曲を認識
+onboarding.feature.recognize.text = 周りで流れている曲を特定して（⇧⌘R）、すぐに再生。
+
+# ---- Look step
+onboarding.theme.group = テーマ
+onboarding.theme.dynamic_note = 「ダイナミック」は再生中の曲のアートワークからアクセントカラーを取得します。
+onboarding.theme.text_size = 文字サイズ
+
+# ---- Music on this computer step
+onboarding.local.group = 音楽フォルダ
+onboarding.local.empty = フォルダはまだありません。
+onboarding.local.add = フォルダを追加…
+onboarding.local.note = フォルダのスキャンは今でも後でもかまいません。管理は「ローカルファイル」で行えます。
+
+# ---- Privacy & limitations step
+onboarding.privacy.streaming.title = 曲のストリーミングの仕組み
+onboarding.privacy.streaming.text = フル再生の曲は、YouTube の TV クライアント、または PoToken（不正利用防止トークン。macOS では非表示のブラウザビューで生成）付きの Web クライアントから取得します。YouTube は新しいストリームを数秒待たせるため、その間アプリは短いプレビューから再生を始めます。YouTube の仕様が変わった場合、曲は約1分のプレビューに切り替わります（プレーヤーに表示されます）。経路は設定 → 再生 → YouTube ストリームで選択できます。
+onboarding.privacy.data.title = データはこのコンピュータに
+onboarding.privacy.data.text = ライブラリ、履歴、統計、設定はこのコンピュータに保存されます。パスワード、API キー、YouTube のログイン Cookie はシステムのキーチェーンに保存されます。再生履歴と検索履歴は、設定 → プライバシーでいつでも一時停止または消去できます。
+onboarding.privacy.recipients.title = 誰に何が送られるか
+onboarding.privacy.recipients.text = YouTube Music には検索と再生（ログイン時はアカウントの Cookie も）が送られます。歌詞プロバイダには曲名が送られます。曲の認識では、録音そのものではなく音声フィンガープリントが Shazam に送られます。Scrobble と Discord は設定した場合のみ動作します。
+onboarding.privacy.independent.title = 独立したプロジェクト
+onboarding.privacy.independent.text = YouTube、Google、Shazam とは提携していません。GPL-3.0 のもとで公開されているフリーソフトウェアです。

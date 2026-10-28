@@ -1,0 +1,27 @@
+settings.language.group = 언어
+settings.language.label = 언어
+settings.language.description = 인터페이스 언어입니다. YouTube Music 콘텐츠는 별도로 설정합니다(콘텐츠 및 지역).
+settings.language.system = 시스템 기본값({language})
+settings.language.system_search = default automatic 기본값 자동 시스템
+
+language.name.en = 영어
+language.name.es = 스페인어
+language.name.pt-BR = 포르투갈어(브라질)
+language.name.fr = 프랑스어
+language.name.de = 독일어
+language.name.it = 이탈리아어
+language.name.nl = 네덜란드어
+language.name.pl = 폴란드어
+language.name.ru = 러시아어
+language.name.uk = 우크라이나어
+language.name.tr = 튀르키예어
+language.name.id = 인도네시아어
+language.name.vi = 베트남어
+language.name.ja = 일본어
+language.name.ko = 한국어
+language.name.zh-CN = 중국어(간체)
+language.name.zh-TW = 중국어(번체)
+language.name.hi = 힌디어
+language.name.ar = 아랍어
+language.name.fa = 페르시아어
+language.name.he = 히브리어

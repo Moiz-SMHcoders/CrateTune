@@ -1,0 +1,20 @@
+# Settings → Content & region (ja).
+
+settings.content.group_region = 言語と地域
+settings.content.language = コンテンツの言語
+settings.content.language_description = YouTube Music のタイトル、棚、検索の言語です。
+settings.content.language_placeholder = 言語
+settings.content.country = コンテンツの国
+settings.content.country_description = ホームフィード、チャート、新リリースの地域です。
+settings.content.country_placeholder = 国
+settings.content.region_note = 変更はすぐに適用され、開いているページは新しい言語で再読み込みされます。
+
+settings.content.group_filters = フィルタ
+settings.content.hide_explicit = 不適切なコンテンツを非表示
+settings.content.hide_explicit_description = 不適切な表現を含むとマークされた曲やアルバムを、ページ、検索、ラジオから除外します。
+settings.content.hide_videos = ミュージックビデオを非表示
+settings.content.hide_videos_description = 曲のみ：ミュージックビデオとユーザー動画を棚、検索、プレイリスト、アルバム、ラジオ、キューから除外します（YouTube に公式オーディオ動画しかないアルバムはそのまま表示されます）。
+
+settings.content.group_radio = ラジオ
+settings.content.autoplay = 似た曲を自動再生
+settings.content.autoplay_description = キューの最後の曲が始まると、その曲のラジオから曲が後ろに追加されます。

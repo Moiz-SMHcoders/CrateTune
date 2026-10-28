@@ -1,0 +1,233 @@
+# Library pages, Storage / Privacy settings, backup / restore (ja).
+
+# ---- Library page
+library.sort.label = 並べ替え
+library.sort.date_added = 追加日
+library.sort.title = タイトル
+library.sort.artist = アーティスト
+library.sort.play_count = 再生回数
+library.sort.listening_time = 再生時間
+library.sort.last_played = 最終再生日
+library.sort.year = 年
+library.sort.song_count = 曲数
+library.sort.name = 名前
+library.sort.last_updated = 最終更新日
+library.sort.date_created = 作成日
+
+library.filter_placeholder = 絞り込み
+library.saved_only = 保存済みのみ
+library.subscribed_only = 登録済みのみ
+library.new_playlist = 新しいプレイリスト
+
+library.detail_signed_in = {summary} · YouTube Music にログイン中
+library.count.albums.other = {count}枚のアルバム
+library.count.artists.other = {count}組のアーティスト
+library.count.shows.other = {count}件の番組
+library.count.playlists.other = {count}件のプレイリスト
+
+# Empty states
+library.podcasts.signed_out_title = ログインしてポッドキャストを表示
+library.podcasts.signed_out_detail = YouTube Music で保存したポッドキャストがここに表示されます。設定 → アカウントでログインしてください。番組はアカウントなしでも検索、ホーム、探索から開けます。
+library.podcasts.empty_title = ポッドキャストはまだありません
+library.podcasts.empty_detail = 番組のページで「ライブラリに保存」を選ぶと保存できます。
+library.empty.no_matches_title = 一致する項目はありません
+library.empty.no_matches_detail = 絞り込み条件に一致するものはありません。
+library.empty.liked_title = 高評価した曲はありません
+library.empty.liked_detail = 曲のハートをタップしてください。ログインすると、YouTube Music の高評価がここに同期されます。
+library.empty.downloaded_title = ダウンロードした曲はありません
+library.empty.downloaded_detail = 曲のメニューで「ダウンロード」を選ぶと、このコンピュータに保存できます。
+library.empty.local_title = ローカルファイルはありません
+library.empty.local_detail = ローカルファイルのページで音楽フォルダを追加してスキャンしてください。
+library.empty.songs_title = ライブラリに曲はありません
+library.empty.songs_detail = 高評価した曲、追加した曲、ローカルファイルがここに表示されます。
+library.empty.albums_title = アルバムはまだありません
+library.empty.albums_detail = 曲のアルバムや YouTube Music で保存したアルバムがここに表示されます。
+library.empty.artists_title = アーティストはまだありません
+library.empty.artists_detail = 曲のアーティストや登録したアーティストがここに表示されます。
+library.empty.playlists_title = プレイリストはまだありません
+library.empty.playlists_detail = 「新しいプレイリスト」で作成するか、ログインして YouTube Music のプレイリストを同期してください。
+library.load_failed = ライブラリを読み込めませんでした
+library.db_unavailable = ライブラリのデータベースを利用できません。
+
+library.remove_from_library = ライブラリから削除
+library.unlike = 高評価を取り消す
+library.delete_downloads = ダウンロードを削除
+
+# Album / artist cards and pages
+library.album.save = アルバムを保存
+library.album.remove_saved = 保存したアルバムから削除
+library.album.saving = アルバムの保存
+library.artist.subscribed_songs.other = 登録済み · {count}曲
+library.playlist.youtube_songs.other = {count}曲 · YouTube Music
+
+library.item.songs_listened.other = {count}曲 · {time}再生
+library.item.subscribe = 登録
+library.item.unsubscribe = 登録解除
+library.item.remove_saved = 保存済みから削除
+library.item.open_online = YouTube Music で開く
+library.item.empty_detail = このアーティスト／アルバムの曲を高く評価するか追加すると、ここに表示されます。
+
+# Library playlist page
+library.playlist.kind_own = 自分の YouTube Music プレイリスト
+library.playlist.kind_saved = 保存した YouTube Music プレイリスト
+library.playlist.change_cover = カバーを変更…
+library.playlist.rename_title = プレイリスト名を変更
+library.playlist.delete_title = 「{name}」を削除しますか？
+library.playlist.delete_remote = YouTube Music からも削除されます。
+library.playlist.delete_unsave = YouTube Music のライブラリから削除されます。
+library.playlist.delete_local_copy = このコンピュータ上のコピーのみ削除されます。
+library.playlist.delete_undo = この操作は取り消せません。
+library.playlist.move_up = 上へ移動
+library.playlist.move_down = 下へ移動
+library.playlist.remove_from = プレイリストから削除
+library.playlist.not_found_title = プレイリストが見つかりません
+library.playlist.not_found_detail = 削除された可能性があります。
+library.playlist.empty_title = このプレイリストは空です
+library.playlist.empty_detail = 曲のメニューの「プレイリストに追加…」で曲を追加できます。
+
+# ---- Song lists: select mode
+song_list.select_none = 選択を解除
+
+# ---- Local files page
+local_files.prompt_add = 追加
+local_files.prompt_skip = 除外
+local_files.folders_title = 音楽フォルダ
+local_files.add_folder = フォルダを追加
+local_files.skip_folder = フォルダを除外
+local_files.skipped_title = 除外中
+local_files.scan.looking = ファイルを検索中…
+local_files.scan.progress = {done} / {total} ファイル
+local_files.scanning = スキャン中…
+local_files.rescan = 再スキャン
+local_files.detail.other = {count}曲 · {seconds}秒未満のファイルは除外
+local_files.empty.no_folders_title = 音楽フォルダはまだありません
+local_files.empty.no_folders_detail = 音楽（MP3、M4A、FLAC、Ogg、Opus、WAV、AIFF…）の入ったフォルダを追加して「再スキャン」を押してください。
+local_files.empty.no_tracks_title = ローカルの曲はありません
+local_files.empty.no_tracks_detail = 「再スキャン」を押すと上のフォルダを読み込みます。
+
+# ---- Downloads page
+downloads.status.queued = 待機中
+downloads.status.downloading_size = ダウンロード中 {size}
+downloads.status.done = 完了 · {size}
+downloads.status.preview = プレビューのみ · {size}
+downloads.status.failed = 失敗：{error}
+downloads.status.cancelled = キャンセル済み
+downloads.detail.other = {count}曲 · {size} · 再生キャッシュ {cache}／{limit}
+downloads.play_all = すべて再生
+downloads.clear_finished = 完了したものをクリア
+downloads.show_in_finder = Finder で表示
+downloads.unavailable_title = ダウンロードを利用できません
+downloads.unavailable_detail = ダウンロードフォルダを開けませんでした（ターミナルを確認してください）。
+downloads.previews_note.other = {count}件のダウンロードはプレビュー（先頭の約 1 MiB のみ）です。完全なストリームが利用できなかったときに作成されました。削除してもう一度ダウンロードしてください。
+downloads.section.session = このセッション
+downloads.section.downloaded = ダウンロード済み
+downloads.empty_detail = 曲のメニューで「ダウンロード」を選ぶ（またはライブラリで曲を選択する）と、このコンピュータに保存できます。
+downloads.preview_tag = プレビュー
+downloads.delete = ダウンロードを削除
+
+# ---- History page
+history.clear.title = 再生履歴を消去しますか？
+history.clear.detail = 記録されたすべての再生が削除され、再生回数と統計はリセットされます。ライブラリ、高評価、プレイリストはそのまま残ります。
+history.clear.button = 履歴を消去
+history.paused = 再生履歴は一時停止中です（設定 → プライバシー）。
+history.counting = 30秒以上聴いた曲がカウントされます。
+history.load_failed = 読み込めませんでした
+history.empty_title = まだ何も再生していません
+history.empty_detail = 聴いた曲が日ごとにここに表示されます。
+history.remove = 履歴から削除
+history.removing = 履歴からの削除
+history.clearing = 履歴の消去
+history.cleared = 再生履歴を消去しました
+
+# ---- Stats page
+stats.range.week = 7日間
+stats.range.month = 30日間
+stats.range.quarter = 90日間
+stats.range.year = 今年
+stats.range.all = 全期間
+stats.subtitle = このコンピュータの再生履歴に基づきます。
+stats.load_failed = 統計を読み込めませんでした
+stats.empty_title = この期間の再生はありません
+stats.empty_detail = 音楽を再生してみましょう。30秒以上聴くとカウントされます。
+stats.tile.listened = 再生時間
+stats.tile.plays.other = 回再生
+stats.tile.songs.other = 曲
+stats.tile.artists.other = アーティスト
+stats.tile.albums.other = アルバム
+stats.song_plays.other = {count}回再生 · {time}
+stats.top_songs = トップソング
+stats.top_artists = トップアーティスト
+stats.top_albums = トップアルバム
+stats.by_hour = 時間帯別
+stats.by_weekday = 曜日別
+stats.month_by_month = 月別
+stats.year_in_music = 年間まとめ
+stats.year.title = {year}年の音楽
+stats.year.subtitle = このコンピュータの再生履歴から振り返るあなたの1年。
+stats.year.load_failed = 読み込めませんでした
+stats.year.empty_title = この年の再生はありません
+stats.year.empty_detail = 音楽を聴くほどまとめが充実します。
+stats.year.top_song.other = トップソング · {count}回再生
+stats.year.top_artist = トップアーティスト · {time}
+stats.year.favourite_hour = お気に入りの時間帯
+stats.year.busiest_day = 最もよく聴いた日 · {time}
+
+# ---- Settings → Storage
+settings.storage.files = ファイル
+settings.storage.settings_file = 設定ファイル：{path}
+settings.storage.settings_not_saved = 設定は保存されません（設定ディレクトリがありません）
+settings.storage.secrets = 認証情報：{store}
+settings.storage.secrets_loading = 認証情報：読み込み中…
+settings.storage.library_db = ライブラリのデータベース：{path}
+settings.storage.library_db_unavailable = ライブラリのデータベース：利用不可
+settings.storage.play_cache = 再生キャッシュ
+settings.storage.cache_usage = {limit}中 {used}を使用。最後に再生してから最も時間が経った曲から削除されます。
+settings.storage.cache_limit = キャッシュサイズの上限
+settings.storage.cache_played = 再生した曲をキャッシュ
+settings.storage.cache_played_detail = 再生した曲のコピーを保存します（バックグラウンドでもう一度取得します）。
+settings.storage.clear_cache_row = 再生キャッシュを消去
+settings.storage.clear_cache = キャッシュを消去
+settings.storage.downloads = ダウンロード
+settings.storage.downloads_usage = {size}（{path}）
+settings.storage.downloads_unavailable = ダウンロードを利用できません。
+settings.storage.download_folder = ダウンロードフォルダ
+settings.storage.download_folder_detail = ダウンロードが自動的に削除されることはありません。
+settings.storage.backup = バックアップと復元
+settings.storage.export = バックアップを書き出す
+settings.storage.export_detail = ライブラリ、プレイリスト、履歴、設定を1つの zip にまとめます（パスワードと Cookie は含みません）。
+settings.storage.export_button = 書き出す…
+settings.storage.restore = バックアップから復元
+settings.storage.restore_detail = ライブラリと設定を置き換えます。復元後に再起動してください。
+settings.storage.restore_button = 復元…
+
+# ---- Settings → Privacy
+settings.privacy.listen_history = 再生履歴
+settings.privacy.pause_listen = 再生履歴を一時停止
+settings.privacy.pause_listen_detail = 再生が記録されず、履歴と統計が更新されなくなります。
+settings.privacy.clear_listen = 再生履歴を消去
+settings.privacy.clear_listen_detail = このコンピュータに記録されたすべての再生を削除します。
+settings.privacy.clear_button = 消去…
+settings.privacy.clear_listen_confirm = 記録されたすべての再生が削除され、再生回数と統計はリセットされます。
+settings.privacy.search_history = 検索履歴
+settings.privacy.pause_search = 検索履歴を一時停止
+settings.privacy.pause_search_detail = 検索した内容が記録されなくなります。
+settings.privacy.clear_search = 検索履歴を消去
+settings.privacy.clear_search_detail = 記録されたすべての検索を削除します。
+settings.privacy.note = 履歴はこのコンピュータ上のライブラリのデータベースに保存されます。YouTube アカウントの履歴に再生が送信されることはありません。
+
+# ---- Backup / restore
+storage.backup_saved = バックアップを {path} に保存しました
+storage.backup_failed = バックアップに失敗しました：{error}
+storage.restore = 復元
+storage.restore_confirm_title = このバックアップを復元しますか？
+storage.restore_confirm_detail = ライブラリ、プレイリスト、履歴、設定がバックアップの内容に置き換えられます。YouTube Music のログインとその他の認証情報はそのまま残ります。
+storage.restored_title = バックアップを復元しました
+storage.restored_library = ライブラリを復元しました。すべての設定を反映するには{app}を再起動してください。
+storage.restored_all = ライブラリと設定を復元しました。すべての設定を反映するには{app}を再起動してください。
+storage.restored_settings_skipped = ライブラリを復元しました。設定はスキップされました：{error}。すべての設定を反映するには{app}を再起動してください。
+storage.restart_later = 後で
+storage.restart_now = 今すぐ再起動
+storage.restore_failed = 復元に失敗しました：{error}
+storage.cache_cleared = 再生キャッシュを消去しました
+storage.clearing_search = 検索履歴の消去
+storage.search_cleared = 検索履歴を消去しました

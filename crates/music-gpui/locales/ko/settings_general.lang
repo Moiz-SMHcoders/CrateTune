@@ -1,0 +1,121 @@
+# Settings: Account, Network, About, settings panel, update check, sign-in (ko).
+
+# ---- Account
+settings.account.cookie_title = 브라우저 쿠키로 로그인
+settings.account.cookie_steps = 1. 브라우저에서 music.youtube.com을 열고 로그인합니다.\n2. 개발자 도구(Safari/Chrome에서 ⌥⌘I) → 네트워크를 열고 페이지를 새로고침합니다.\n3. music.youtube.com으로 가는 요청(예: “browse”)을 클릭하고 Request Headers에서 “Cookie”를 찾아 값 전체를 복사합니다.\n4. 아래에 붙여넣습니다. OS 키체인에 저장되며 YouTube에만 전송됩니다.
+settings.account.cookie_index = Google 계정 번호(여러 계정에 로그인한 경우):
+settings.account.not_signed_in = 로그인하지 않았습니다. 모든 기능을 익명으로 사용할 수 있습니다. 로그인하면 좋아요 표시한 음악, 저장한 앨범, 구독, 재생목록이 보관함에 동기화되고, 좋아요와 재생목록 편집이 YouTube Music에 반영됩니다.
+settings.account.sign_in_google = Google로 로그인…
+settings.account.paste_cookie = 쿠키 붙여넣기…
+settings.account.google_refused = Google에서 로그인 창을 거부하는 경우(“이 브라우저 또는 앱은 안전하지 않을 수 있습니다”) ‘쿠키 붙여넣기’를 사용하세요.
+settings.account.last_synced = 마지막 동기화: {date}
+settings.account.not_synced = 아직 동기화 안 됨
+settings.account.sync_now = 지금 동기화
+settings.account.syncing = 동기화 중…
+settings.account.sync_group = 보관함 동기화
+settings.account.sync_row = YouTube Music 보관함 동기화
+settings.account.sync_row_desc = 좋아요 표시한 음악, 보관함 노래, 저장한 앨범, 구독, 재생목록.
+settings.account.accounts_group = 계정
+settings.account.channels = 이 Google 계정의 채널(브랜드 계정):
+settings.account.google_index = Google 계정
+settings.account.google_index_desc = 쿠키에 여러 Google 계정이 있을 때 사용할 계정(0 = 첫 번째).
+settings.account.cookie_note = 로그인에는 music.youtube.com의 브라우저 세션 쿠키가 사용됩니다. 쿠키는 OS 키체인에 보관되며 YouTube에만 전송됩니다. 계정 기능은 YouTube 웹 API를 기반으로 만들었지만 아직 실제 계정으로 검증되지 않았습니다.
+
+# ---- About
+settings.about.show_welcome = 시작 가이드 보기
+settings.about.version_summary = 버전 {version} · {summary}
+settings.about.summary = YouTube Music용 네이티브 데스크톱 클라이언트
+settings.about.not_affiliated = YouTube 또는 Google과 제휴하거나 승인 또는 후원을 받지 않았습니다.
+settings.about.license = 라이선스
+settings.about.license_notice = 이 프로그램은 자유 소프트웨어입니다. GNU General Public License 버전 3의 조건에 따라 재배포하거나 수정할 수 있습니다. 이 프로그램은 어떠한 보증도 없이 배포됩니다. 자세한 내용은 라이선스를 참조하세요.
+settings.about.credits = 크레딧
+settings.about.credit.archivetune = 기능과 화면은 {project}(GPL-3.0, © Rukamori and contributors)에서 이식했습니다. 이 프로젝트는 독립 프로젝트입니다.
+settings.about.credit.hummingbird = 이퀄라이저, OS 미디어 컨트롤, 스크로블, Discord 상태 표시는 Hummingbird(Apache-2.0, © Hummingbird contributors)에서 이식했습니다.
+settings.about.credit.recognition_title = 노래 인식
+settings.about.credit.recognition = Shazam 호환 핑거프린팅은 {project}의 shazamkit(GPL-3.0)에서 이식했으며 SongRec 형식을 따릅니다. Shazam 또는 Apple과 제휴 관계가 없습니다.
+settings.about.credit.libraries_title = 라이브러리
+settings.about.credit.libraries = GPUI 및 gpui-component(Apache-2.0), Symphonia 및 rodio, Lucide 아이콘(ISC), LRCLIB 가사.
+
+# ---- Update check
+update.group = 업데이트
+update.releases_from = github.com/{repo}의 릴리스
+update.checking = 확인 중…
+update.up_to_date_version = 최신 버전({version})을 사용 중입니다.
+update.available_version = 버전 {version}을(를) 사용할 수 있습니다.
+update.check_failed = 확인할 수 없음: {error}
+update.check_now = 지금 확인
+update.download = 다운로드…
+update.no_release = 게시된 릴리스 없음
+update.available_toast = {app} {version}을(를) 사용할 수 있습니다(설정 → 정보)
+update.up_to_date_toast = {app}이(가) 최신 버전입니다
+
+# ---- Network
+settings.network.proxy = 프록시
+settings.network.proxy_off = 끔
+settings.network.host = 호스트
+settings.network.port = 포트
+settings.network.user = 사용자 이름
+settings.network.password = 비밀번호
+settings.network.doh_url = DoH URL
+settings.network.host_placeholder = proxy.example.com 또는 127.0.0.1
+settings.network.optional = 선택 사항
+settings.network.test_connection = 연결 테스트
+settings.network.test_dns = DNS 테스트
+settings.network.using_proxy = {url} 사용 중
+settings.network.direct = 직접 연결(프록시 없음)
+settings.network.status_with_doh = {proxy} · DNS-over-HTTPS({server})
+settings.network.testing = 테스트 중…
+settings.network.test_ok = {ms}ms 만에 YouTube에 연결됨
+settings.network.test_failed = 연결 실패: {error}
+settings.network.lookup_failed = 조회 실패: {error}
+settings.network.looking_up = 조회 중…
+settings.network.dns_ok = {host} → {addresses}({via}, {ms}ms)
+settings.network.dns_via_doh = DNS-over-HTTPS
+settings.network.dns_via_cache = DNS-over-HTTPS(캐시됨)
+settings.network.dns_via_system = 시스템 리졸버
+settings.network.proxy_note = YouTube Music, 오디오 스트림, 아트워크, 가사, 스크로블 등 모든 연결에 적용됩니다. SOCKS5h는 프록시를 통해 호스트 이름을 확인합니다. 비밀번호는 키체인에 보관됩니다.
+settings.network.dns = DNS
+settings.network.dns_system = 시스템
+settings.network.dns_custom = 사용자 지정
+settings.network.dns_fallback = DoH 실패 시 시스템 리졸버 사용
+settings.network.dns_note = DNS-over-HTTPS(RFC 8484)는 일반 DNS 대신 암호화된 HTTPS 연결로 호스트 이름을 조회합니다. 응답은 TTL 동안 캐시됩니다. SOCKS5h 프록시를 사용하면 프록시가 직접 이름을 확인합니다. Quad9은 HTTP/1.1 포트 5053으로 연결하며, 일부 네트워크에서는 차단됩니다.
+settings.network.error.port_number = 포트는 숫자(1–65535)여야 합니다.
+settings.network.error.doh_invalid = DNS-over-HTTPS URL이 올바르지 않습니다.
+settings.network.error.proxy_invalid = 이 프록시 유형에 맞지 않는 프록시 주소입니다.
+settings.network.error.doh_https = DNS-over-HTTPS URL은 https://로 시작해야 합니다.
+settings.network.error.doh_invalid_detail = DNS-over-HTTPS URL이 올바르지 않습니다: {error}.
+settings.network.error.host_missing = 프록시 호스트를 입력하세요.
+settings.network.error.host_invalid = 호스트에는 이름이나 주소만 입력하세요(스킴, 경로, 공백 제외).
+settings.network.error.port_missing = 1~65535 사이의 포트를 입력하세요.
+settings.network.error.socks4_auth = SOCKS4는 비밀번호를 지원하지 않습니다. 사용자 이름을 비워 두세요.
+
+# ---- Settings panel
+settings.panel.placeholder.api_key = API 키
+settings.panel.placeholder.shared_secret = 공유 비밀
+settings.panel.placeholder.user_token = 사용자 토큰
+settings.panel.placeholder.application_id = 애플리케이션 ID
+settings.panel.lastfm_missing = 먼저 API 키와 공유 비밀을 입력하세요.
+settings.panel.lastfm_requesting = 토큰 요청 중…
+settings.panel.lastfm_finishing = 마무리 중…
+settings.panel.lb_missing = 먼저 사용자 토큰을 붙여넣으세요.
+settings.panel.secrets.backend_and_file = {backend} + 설정 파일(0600)
+settings.panel.secrets.file_keychain_disabled = 설정 파일(0600, 키체인 사용 안 함)
+settings.panel.secrets.file_keychain_read_failed = 설정 파일(0600, 키체인 읽기 실패)
+settings.panel.secrets.file_keychain_unavailable = 설정 파일(0600, 키체인 사용 불가)
+
+# ---- Credential stores
+secrets.backend.macos = macOS 키체인
+secrets.backend.windows = Windows 자격 증명 관리자
+secrets.backend.secret_service = Secret Service
+
+# ---- Settings file problems
+settings.file.no_config_dir = 구성 디렉터리가 없어 설정이 저장되지 않음
+settings.file.save_failed = 저장 실패: {error}
+settings.file.read_failed = {path} 읽기: {error}
+settings.file.invalid_moved = {path}이(가) 올바르지 않음({error}). {backup}(으)로 이동함
+
+# ---- Google sign-in window
+login.window_title = YouTube Music에 로그인
+login.instructions = Google 계정으로 로그인하세요. YouTube Music이 열리면 이 창이 닫힙니다.
+login.webview_failed = 웹 뷰를 만들 수 없습니다({error}). 대신 ‘쿠키 붙여넣기’를 사용하세요.
+login.checking = 로그인됨. 계정 확인 중…

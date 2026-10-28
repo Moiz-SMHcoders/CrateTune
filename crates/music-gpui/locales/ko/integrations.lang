@@ -1,0 +1,99 @@
+# SponsorBlock, Chromecast, AI content filter, import / export (ko).
+
+# ---- SponsorBlock
+sponsorblock.category.music_offtopic = 음악이 아닌 구간
+sponsorblock.category.sponsor = 스폰서
+sponsorblock.category.intro = 중간 휴식/인트로
+sponsorblock.category.outro = 엔드카드/크레딧
+sponsorblock.category.selfpromo = 자체 홍보
+sponsorblock.category.interaction = 상호작용 알림
+sponsorblock.category.preview = 미리보기/요약
+sponsorblock.category.filler = 잡담
+sponsorblock.category.hook = 훅/인사
+sponsorblock.category_in_chip.music_offtopic = 음악 외 구간
+sponsorblock.category_in_chip.sponsor = 스폰서
+sponsorblock.category_in_chip.intro = 인트로
+sponsorblock.category_in_chip.outro = 엔드카드
+sponsorblock.category_in_chip.selfpromo = 자체 홍보
+sponsorblock.category_in_chip.interaction = 상호작용 알림
+sponsorblock.category_in_chip.preview = 미리보기/요약
+sponsorblock.category_in_chip.filler = 잡담
+sponsorblock.category_in_chip.hook = 훅/인사
+sponsorblock.toast.skipped = 건너뜀: {category}({seconds}초)
+sponsorblock.chip.skip = {category} 건너뛰기({seconds}초)
+sponsorblock.chip.tooltip = SponsorBlock: 이 구간의 끝으로 건너뛰기
+
+# ---- AI content filter
+ai_filter.category.explicit = 유해한 가사
+ai_filter.category.ai_generated = AI 생성 음악
+ai_filter.category.holiday = 시즌 음악
+ai_filter.category.children = 어린이 음악
+ai_filter.category.noise = 수면 사운드 및 백색소음
+ai_filter.category.sped_up = 배속/슬로우 편집본
+ai_filter.category.covers = 커버 및 노래방
+ai_filter.category.live = 라이브 녹음
+
+# ---- Chromecast
+cast.casting_to = {device}에 전송 중
+cast.connecting_to = {device}에 연결 중…
+cast.tooltip = 기기로 전송
+cast.menu.title = 전송 대상
+cast.menu.searching = Cast 기기 검색 중…
+cast.menu.none_found = Cast 기기를 찾을 수 없음
+cast.menu.search_again = 다시 검색
+cast.stop = 전송 중지
+cast.error.disconnected = Cast 기기 연결이 끊어짐
+cast.error.scan_failed = 기기를 검색할 수 없음: {error}
+cast.error.connect_failed = {device}에 연결할 수 없음: {error}
+
+# ---- Import: sources and progress
+import.source.spotify_playlist = Spotify 재생목록
+import.source.spotify_liked = Spotify 좋아요 표시한 곡
+import.error.connect_spotify = 설정 → Spotify 가져오기에서 Spotify를 연결하세요.
+import.error.connect_spotify_first = 먼저 설정 → Spotify 가져오기에서 Spotify를 연결하세요.
+import.error.not_spotify_link = Spotify 재생목록 링크나 ID가 아닙니다.
+import.stage.reading = 읽는 중
+import.stage.reading_playlist = 재생목록 읽는 중
+import.stage.reading_liked = 좋아요 표시한 곡 읽는 중
+import.stage.matching = 대조 중
+import.liked_playlist_name = Spotify 좋아요
+import.cancelled = 취소됨
+import.nothing_to_save = 저장할 항목 없음: 찾은 노래가 없습니다.
+import.exporting = 재생목록 내보내기
+import.exported.other = {count}곡을 {path}(으)로 내보냄
+
+# ---- Import & export page
+import.page.subtitle = Spotify나 파일에서 재생목록을 보관함으로 가져오거나 다른 곳으로 내보낼 수 있습니다.
+import.file.title = 파일에서
+import.file.description = Exportify CSV(Spotify), M3U/M3U8 또는 여기에서 내보낸 CSV/JSON.
+import.file.choose = 파일 선택…
+import.spotify.title = Spotify에서
+import.spotify.connect_hint = Spotify 계정을 연결하면(무료 개발자 Client ID 필요) 재생목록과 좋아요 표시한 곡을 가져올 수 있습니다.
+import.spotify.set_up = Spotify 설정…
+import.spotify.signed_in = {user}(으)로 로그인됨.
+import.spotify.liked = 좋아요 표시한 곡
+import.spotify.show_playlists = 내 재생목록 보기
+import.spotify.playlist_meta.other = {owner} · {count}곡
+import.spotify.playlist_meta_unknown = {owner} · ?곡
+import.job.progress = {stage} · {done}/{total}
+import.job.progress_count = {stage} · {done}
+import.job.found.other = {count}곡 찾음
+import.job.not_found.other = {count}곡 못 찾음
+import.job.saved_as = “{name}”(으)로 저장됨
+import.job.save.other = {count}곡을 재생목록으로 저장
+import.job.open_playlists = 재생목록 열기
+import.job.name_placeholder = 재생목록 이름
+import.guess.best = 가장 유사한 결과: {artists} — {title}({percent}%)
+import.guess.search_failed = 검색 실패: {error}
+import.guess.no_results = 결과 없음
+import.guess.using = 추천 사용 중
+import.guess.use = 추천 사용
+import.guess.search_tooltip = YouTube Music 검색
+import.not_found.title = 찾을 수 없음
+import.not_found.subtitle = 가장 유사한 결과를 사용하거나 직접 검색해서 노래를 추가하세요.
+import.found.title = YouTube Music에서 찾음
+import.found.first = {total}개 중 처음 {shown}개
+import.export.title = 재생목록 내보내기
+import.export.subtitle = CSV와 M3U는 다른 플레이어와 스프레드시트에서 열 수 있고, JSON은 여기에서 가져올 수 있도록 모든 정보를 보존합니다.
+import.export.empty = 보관함에 재생목록이 없습니다.
+import.export.from_youtube_music = {songs} · YouTube Music

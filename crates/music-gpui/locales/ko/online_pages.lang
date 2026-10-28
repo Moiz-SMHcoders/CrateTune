@@ -1,0 +1,54 @@
+# Online browse pages (ko).
+
+# ---- Home
+home.recent.title = 이번 세션에 재생한 음악
+home.recent.subtitle = 다시 듣기
+
+# ---- Explore
+explore.new_releases_detail = 따끈따끈한 앨범과 싱글
+explore.charts_detail = 국가별 인기 음악
+explore.moods_detail = 모든 순간을 위한 재생목록
+
+# ---- Charts
+charts.country_placeholder = 국가
+charts.search_countries = 국가 검색…
+charts.empty.title = 차트 없음
+charts.empty.detail = 이 국가에 대한 YouTube Music 차트가 없습니다.
+
+# ---- Moods & genres
+moods.empty = YouTube Music에서 이 지역의 분위기 및 장르를 반환하지 않았습니다.
+
+# ---- New releases
+new_releases.subtitle = 새 앨범 및 싱글
+new_releases.empty.title = 새 음악 없음
+new_releases.empty.detail = YouTube Music에서 이 지역의 최신 음악을 반환하지 않았습니다.
+
+# ---- Browse pages
+browse.empty = 이 페이지에 재생목록이나 노래가 없습니다(또는 모두 필터링됨).
+
+# ---- Album
+album.empty.title = 재생 가능한 노래 없음
+album.empty.detail = 이 앨범에 재생할 수 있는 트랙이 없습니다(또는 모두 필터링됨).
+
+# ---- Artist
+artist.subscribed = 구독 중
+artist.subscribe = 구독
+artist.subscribe_tooltip = YouTube Music에서 구독(보관함에도 저장됨)
+artist.subscribe_tooltip_signed_out = 보관함에 저장됩니다. YouTube Music에서 구독하려면 로그인하세요
+artist.items_empty = 이 페이지에 발매 항목이 없습니다(또는 모두 필터링됨).
+
+# ---- Playlist
+playlist.change_cover = 커버 변경…
+playlist.empty.title = 노래 없음
+playlist.empty.detail = 이 재생목록이 비어 있습니다(또는 모든 노래가 필터링됨).
+
+# ---- Podcast / episode
+podcast.episodes.other = 에피소드 {count}개
+podcast.episodes_more.other = 에피소드 {count}개 이상
+podcast.saved = 저장됨
+podcast.save = 보관함에 저장
+podcast.save_failed = 보관함을 업데이트할 수 없음: {error}
+podcast.open_episode_page = 에피소드 페이지 열기
+podcast.go_to_podcast = 팟캐스트로 이동
+podcast.empty.title = 에피소드 없음
+podcast.empty.detail = 이 프로그램에는 아직 에피소드가 없습니다.

@@ -1,0 +1,206 @@
+# App shell and shared components (ko).
+
+# ---- Page titles
+route.search = 검색
+route.search_query = 검색: {query}
+route.library = 보관함 · {tab}
+route.year_in_music = {year}년 음악
+route.recognition = 음악 인식
+route.settings = 설정 · {section}
+route.library_tab.songs = 노래
+route.library_tab.liked = 좋아요
+route.library_tab.albums = 앨범
+route.library_tab.artists = 아티스트
+route.library_tab.playlists = 재생목록
+route.library_tab.podcasts = 팟캐스트
+route.library_tab.downloaded = 다운로드됨
+route.library_tab.local = 로컬 파일
+
+# ---- Themes
+theme.dark = 다크
+theme.black = 트루 블랙
+theme.dynamic = 다이내믹
+
+# ---- Player bar
+player.pick_a_song = 노래를 선택해 재생 시작
+player.audio_unavailable = 오디오를 사용할 수 없음: {error}
+player.buffering = 버퍼링 중…
+player.play_failed_skipped = “{title}”을(를) 재생할 수 없어 건너뜀
+player.preview_badge = 미리보기
+player.tooltip.shuffle_on = 셔플: 켬
+player.tooltip.shuffle_off = 셔플: 끔
+player.tooltip.previous = 이전(⌘←, 3초 후에는 처음부터)
+player.tooltip.next = 다음(⌘→)
+player.tooltip.repeat_off = 반복: 끔
+player.tooltip.repeat_all = 반복: 전체
+player.tooltip.repeat_one = 반복: 한 곡
+player.tooltip.volume = 음량 {percent}%(⌘↑ / ⌘↓)
+player.tooltip.queue = 대기열(⌥⌘Q)
+player.tooltip.mini_player = 미니 플레이어(⇧⌘M)
+player.tooltip.now_playing = 지금 재생 중 및 가사(⌘L)
+
+# ---- Sleep timer
+player.sleep.title = 취침 타이머
+player.sleep.minutes.other = {count}분
+player.sleep.end_of_track = 곡이 끝날 때
+player.sleep.custom = 사용자 지정: {minutes}분
+player.sleep.turn_off = 끄기
+player.sleep.left = {time} 남음
+
+# ---- Queue
+queue.toast.play_next_one = 다음에 “{title}” 재생
+queue.toast.play_next_many.other = 다음에 {count}곡 재생
+queue.toast.added_one = “{title}”을(를) 대기열에 추가함
+queue.toast.added_many.other = {count}곡을 대기열에 추가함
+queue.section.now_playing = 지금 재생 중
+queue.section.up_next = 다음 트랙 · {count}
+queue.section.history = 감상 기록
+queue.nothing_playing = 재생 중인 곡 없음
+queue.empty.repeat_all = 전체 반복: 대기열이 처음부터 다시 재생됩니다.
+queue.empty.hint = ‘다음에 재생’ 또는 ‘대기열에 추가’로 노래를 추가하세요.
+queue.tooltip.clear_up_next = 다음 트랙 지우기
+queue.tooltip.close = 닫기(Esc)
+queue.tooltip.move_up = 위로 이동
+queue.tooltip.move_down = 아래로 이동
+
+# ---- Song rows and the song context menu
+track.tooltip.more = 더보기
+track.explicit_badge = E
+track.menu.go_to_podcast = 팟캐스트로 이동
+track.menu.go_to_named_artist = {artist}(으)로 이동
+
+# ---- Item cards, rows, shelves
+items.load_failed = 페이지를 로드할 수 없음
+items.loading_more = 더 불러오는 중…
+
+# ---- "Add to playlist" / "New playlist" dialog
+playlist_dialog.name_placeholder = 새 재생목록 이름
+playlist_dialog.title_new = 새 재생목록
+playlist_dialog.title_add_one = 재생목록에 “{title}” 추가
+playlist_dialog.title_add_many.other = 재생목록에 {count}곡 추가
+playlist_dialog.create = 만들기
+playlist_dialog.also_on_youtube = YouTube Music에도 만들기(비공개)
+playlist_dialog.youtube_songs.other = YouTube Music · {count}곡
+playlist_dialog.empty = 재생목록이 없습니다. 위에서 새로 만드세요.
+
+# ---- Mini player window
+mini.window_title = 미니 플레이어
+mini.tooltip.show_main = 기본 창 보기
+
+# ---- Header search field
+app.search_placeholder = 노래, 아티스트, 앨범 검색
+search_box.recent = 최근 검색어
+search_box.loading_suggestions = 추천 검색어 로드 중…
+
+# ---- Main window
+app.window_title = {page} — {app}
+app.audio_demo_clock = {error}(데모 시계 사용 중)
+app.tooltip.back = 뒤로(⌘[)
+app.tooltip.forward = 앞으로(⌘])
+
+# ---- YouTube Music account
+account.cookie_invalid = 이 쿠키에 SAPISID / __Secure-3PAPISID 항목이 없습니다. 로그인된 music.youtube.com 요청의 쿠키 헤더 전체를 복사하세요.
+account.checking = 계정 확인 중…
+account.toast.signed_in = {name}(으)로 로그인됨
+account.sign_in_failed = 로그인 실패: {error}
+account.toast.signed_out = YouTube Music에서 로그아웃됨
+account.unreachable = 계정에 연결할 수 없음: {error}
+account.switching = 전환 중…
+account.toast.switched = 현재 계정: {name}
+account.switch_failed = 전환 실패: {error}
+account.sign_in_first = 먼저 YouTube Music에 로그인하세요.
+account.action.subscribing = 구독
+account.toast.subscribed = {artist} 구독함
+account.toast.unsubscribed = {artist} 구독 취소함
+account.sync.starting = 시작 중…
+account.sync.step.liked = 좋아요 표시한 음악…
+account.sync.step.songs = 보관함 노래…
+account.sync.step.albums = 앨범…
+account.sync.step.artists = 아티스트…
+account.sync.step.playlists = 재생목록…
+account.sync.step.playlist = 재생목록 {current}/{total}: {title}
+account.sync.summary = {liked}, {songs}, {albums}, {artists}, {playlists}
+account.sync.liked.other = 좋아요 표시한 음악 {count}곡
+account.sync.songs.other = 보관함 노래 {count}곡
+account.sync.albums.other = 앨범 {count}개
+account.sync.artists.other = 아티스트 {count}명
+account.sync.playlists.other = 재생목록 {count}개
+account.toast.synced = YouTube Music 동기화: {summary}
+account.sync.failed = {summary}. 오류: {errors}
+account.sync.error = {part}: {error}
+account.sync.part.liked = 좋아요 표시한 음악
+account.sync.part.songs = 보관함 노래
+account.sync.part.albums = 앨범
+account.sync.part.artists = 아티스트
+account.sync.part.playlists = 재생목록
+account.sync.part.playlist = 재생목록 “{title}”
+account.sync.part.removing_playlist = 재생목록 삭제
+
+# ---- Library database, likes, playlists, downloads (toasts)
+store.library_unavailable = 보관함을 사용할 수 없음: {error}
+store.no_data_dir = 데이터 디렉터리가 없어 보관함을 사용할 수 없습니다.
+store.library_db_unavailable = 보관함 데이터베이스를 사용할 수 없습니다.
+store.toast.action_failed = {action} 실패: {error}
+store.action.saving_like = 좋아요 저장
+store.action.removing_from_library = 보관함에서 삭제
+store.action.adding_to_playlist = 재생목록에 추가
+store.action.creating_playlist = 재생목록 만들기
+store.toast.liked_one = “{title}”에 좋아요 표시함
+store.toast.unliked_one = 좋아요 표시한 음악에서 “{title}” 삭제함
+store.toast.liked_many.other = {count}곡에 좋아요 표시함
+store.toast.unliked_many.other = 좋아요 표시한 음악에서 {count}곡 삭제함
+store.toast.only_locally = {message}(로컬에만 적용, YouTube Music: {error})
+store.toast.removed_from_library.other = 보관함에서 {count}곡 삭제함
+store.toast.added_to_playlist.other = “{playlist}”에 {count}곡 추가함
+store.toast.remote_error = {message}(YouTube Music: {error})
+store.playlist_name_missing = 재생목록 이름을 입력하세요.
+store.toast.playlist_created = “{playlist}” 만듦
+store.toast.playlist_created_with.other = {count}곡이 포함된 “{playlist}” 만듦
+store.downloads_unavailable = 다운로드를 사용할 수 없습니다.
+store.toast.downloading_one = “{title}” 다운로드 중
+store.toast.downloading_many.other = {count}곡 다운로드 중
+store.toast.delete_download_failed = 다운로드 삭제 실패: {error}
+
+# ---- Local music folder scan
+store.add_music_folder_first = 먼저 음악 폴더를 추가하세요.
+store.scan.summary = {files}: 새 항목 {added}, 업데이트 {updated}, 변경 없음 {unchanged}, 삭제 {removed}
+store.scan.files.other = 파일 {count}개
+store.scan.with_extra = {summary}, {extra}
+store.scan.too_short.other = 너무 짧음 {count}
+store.scan.unreadable.other = 읽을 수 없음 {count}
+store.toast.scan_finished = 스캔 완료: {summary}
+store.toast.scan_failed = 스캔 실패: {error}
+
+# ---- Playlist cover upload
+playlist_cover.read_failed = 이미지를 읽을 수 없음: {error}
+playlist_cover.not_an_image = 앱에서 읽을 수 있는 이미지 파일(JPEG, PNG, WebP)이 아닙니다.
+playlist_cover.too_large = 이미지가 너무 큽니다(4,000만 화소 초과).
+playlist_cover.decode_failed = 이미지를 디코딩할 수 없음: {error}
+playlist_cover.encode_failed = 커버를 인코딩할 수 없음: {error}
+playlist_cover.still_too_large = 압축 후에도 커버가 2MiB보다 큽니다.
+playlist_cover.sign_in = 재생목록 커버를 변경하려면 YouTube Music에 로그인하세요.
+playlist_cover.pick_prompt = 커버로 사용
+playlist_cover.uploading = 커버 업로드 중…
+playlist_cover.changed = 재생목록 커버 변경됨
+playlist_cover.change_failed = 커버를 변경할 수 없음: {error}
+
+# ---- Radio and collection playback
+radio.toast.starting_from = “{title}” 기반 라디오 시작
+radio.toast.starting = 라디오 시작: {name}
+radio.playlist_label = 재생목록
+radio.nothing_to_play = 재생할 항목이 없습니다.
+radio.load_failed = 로드할 수 없음: {error}
+
+# ---- Lyrics
+lyrics.no_cache_dir = 캐시 디렉터리 없음
+
+# ---- Playlist editing
+store.action.renaming_playlist = 재생목록 이름 변경
+store.action.deleting_playlist = 재생목록 삭제
+store.action.removing_from_playlist = 재생목록에서 삭제
+store.action.moving_song = 노래 이동
+store.action.refreshing_playlist = 재생목록 새로고침
+store.toast.playlist_renamed = “{playlist}”(으)로 이름 변경함
+store.toast.playlist_deleted = “{playlist}” 삭제함
+store.toast.removed_from_playlist.other = 재생목록에서 {count}곡 삭제함
+store.toast.playlist_refreshed.other = 재생목록 새로고침됨({count}곡)

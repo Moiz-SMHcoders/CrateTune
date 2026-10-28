@@ -1,0 +1,20 @@
+# Settings → Content & region (ko).
+
+settings.content.group_region = 언어 및 지역
+settings.content.language = 콘텐츠 언어
+settings.content.language_description = YouTube Music의 제목, 섹션, 검색에 사용되는 언어입니다.
+settings.content.language_placeholder = 언어
+settings.content.country = 콘텐츠 국가
+settings.content.country_description = 홈 피드, 차트, 최신 음악의 지역입니다.
+settings.content.country_placeholder = 국가
+settings.content.region_note = 변경 사항은 바로 적용되며 열려 있는 페이지는 새 언어로 다시 로드됩니다.
+
+settings.content.group_filters = 필터
+settings.content.hide_explicit = 청소년 유해 콘텐츠 숨기기
+settings.content.hide_explicit_description = 유해 콘텐츠로 표시된 노래와 앨범을 페이지, 검색, 라디오에서 제외합니다.
+settings.content.hide_videos = 뮤직비디오 숨기기
+settings.content.hide_videos_description = 노래만: 뮤직비디오와 사용자 동영상을 섹션, 검색, 재생목록, 앨범, 라디오, 대기열에서 제외합니다(YouTube에 공식 오디오 동영상으로만 있는 앨범은 그대로 유지).
+
+settings.content.group_radio = 라디오
+settings.content.autoplay = 비슷한 노래 자동재생
+settings.content.autoplay_description = 대기열의 마지막 노래가 시작되면 그 노래의 라디오에서 가져온 노래가 뒤에 추가됩니다.

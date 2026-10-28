@@ -1,0 +1,206 @@
+# App shell and shared components (ja).
+
+# ---- Page titles
+route.search = 検索
+route.search_query = 検索：{query}
+route.library = ライブラリ · {tab}
+route.year_in_music = {year}年の音楽
+route.recognition = 曲を認識
+route.settings = 設定 · {section}
+route.library_tab.songs = 曲
+route.library_tab.liked = 高評価
+route.library_tab.albums = アルバム
+route.library_tab.artists = アーティスト
+route.library_tab.playlists = プレイリスト
+route.library_tab.podcasts = ポッドキャスト
+route.library_tab.downloaded = ダウンロード済み
+route.library_tab.local = ローカルファイル
+
+# ---- Themes
+theme.dark = ダーク
+theme.black = ピュアブラック
+theme.dynamic = ダイナミック
+
+# ---- Player bar
+player.pick_a_song = 曲を選んで再生を開始
+player.audio_unavailable = オーディオを利用できません：{error}
+player.buffering = バッファリング中…
+player.play_failed_skipped = 「{title}」を再生できなかったため、スキップしました
+player.preview_badge = プレビュー
+player.tooltip.shuffle_on = シャッフル：オン
+player.tooltip.shuffle_off = シャッフル：オフ
+player.tooltip.previous = 前へ（⌘←、3秒経過後は先頭に戻る）
+player.tooltip.next = 次へ（⌘→）
+player.tooltip.repeat_off = リピート：オフ
+player.tooltip.repeat_all = リピート：すべて
+player.tooltip.repeat_one = リピート：1曲
+player.tooltip.volume = 音量 {percent}%（⌘↑／⌘↓）
+player.tooltip.queue = キュー（⌥⌘Q）
+player.tooltip.mini_player = ミニプレーヤー（⇧⌘M）
+player.tooltip.now_playing = 再生中と歌詞（⌘L）
+
+# ---- Sleep timer
+player.sleep.title = スリープタイマー
+player.sleep.minutes.other = {count}分
+player.sleep.end_of_track = 曲の終わり
+player.sleep.custom = カスタム：{minutes}分
+player.sleep.turn_off = オフにする
+player.sleep.left = 残り{time}
+
+# ---- Queue
+queue.toast.play_next_one = 「{title}」を次に再生します
+queue.toast.play_next_many.other = {count}曲を次に再生します
+queue.toast.added_one = 「{title}」をキューに追加しました
+queue.toast.added_many.other = {count}曲をキューに追加しました
+queue.section.now_playing = 再生中
+queue.section.up_next = 次の曲 · {count}
+queue.section.history = 履歴
+queue.nothing_playing = 再生中の曲はありません
+queue.empty.repeat_all = すべてリピート：キューが最初から再生されます。
+queue.empty.hint = 「次に再生」または「キューに追加」で曲を追加できます。
+queue.tooltip.clear_up_next = 次の曲をクリア
+queue.tooltip.close = 閉じる（Esc）
+queue.tooltip.move_up = 上へ移動
+queue.tooltip.move_down = 下へ移動
+
+# ---- Song rows and the song context menu
+track.tooltip.more = その他
+track.explicit_badge = E
+track.menu.go_to_podcast = ポッドキャストへ移動
+track.menu.go_to_named_artist = {artist}へ移動
+
+# ---- Item cards, rows, shelves
+items.load_failed = このページを読み込めませんでした
+items.loading_more = さらに読み込み中…
+
+# ---- "Add to playlist" / "New playlist" dialog
+playlist_dialog.name_placeholder = 新しいプレイリストの名前
+playlist_dialog.title_new = 新しいプレイリスト
+playlist_dialog.title_add_one = 「{title}」をプレイリストに追加
+playlist_dialog.title_add_many.other = {count}曲をプレイリストに追加
+playlist_dialog.create = 作成
+playlist_dialog.also_on_youtube = YouTube Music にも作成（非公開）
+playlist_dialog.youtube_songs.other = YouTube Music · {count}曲
+playlist_dialog.empty = プレイリストはまだありません。上で作成してください。
+
+# ---- Mini player window
+mini.window_title = ミニプレーヤー
+mini.tooltip.show_main = メインウインドウを表示
+
+# ---- Header search field
+app.search_placeholder = 曲、アーティスト、アルバムを検索
+search_box.recent = 最近の検索
+search_box.loading_suggestions = 候補を読み込み中…
+
+# ---- Main window
+app.window_title = {page} — {app}
+app.audio_demo_clock = {error}（デモ用クロックを使用中）
+app.tooltip.back = 戻る（⌘[）
+app.tooltip.forward = 進む（⌘]）
+
+# ---- YouTube Music account
+account.cookie_invalid = この Cookie には SAPISID / __Secure-3PAPISID が含まれていません。ログイン済みの music.youtube.com のリクエストから Cookie ヘッダー全体をコピーしてください。
+account.checking = アカウントを確認中…
+account.toast.signed_in = {name}としてログインしました
+account.sign_in_failed = ログインに失敗しました：{error}
+account.toast.signed_out = YouTube Music からログアウトしました
+account.unreachable = アカウントに接続できませんでした：{error}
+account.switching = 切り替え中…
+account.toast.switched = {name}を使用中
+account.switch_failed = 切り替えに失敗しました：{error}
+account.sign_in_first = 先に YouTube Music にログインしてください。
+account.action.subscribing = 登録
+account.toast.subscribed = {artist}を登録しました
+account.toast.unsubscribed = {artist}の登録を解除しました
+account.sync.starting = 開始中…
+account.sync.step.liked = 高評価した曲…
+account.sync.step.songs = ライブラリの曲…
+account.sync.step.albums = アルバム…
+account.sync.step.artists = アーティスト…
+account.sync.step.playlists = プレイリスト…
+account.sync.step.playlist = プレイリスト {current}/{total}：{title}
+account.sync.summary = {liked}、{songs}、{albums}、{artists}、{playlists}
+account.sync.liked.other = 高評価した曲 {count}曲
+account.sync.songs.other = ライブラリの曲 {count}曲
+account.sync.albums.other = アルバム {count}枚
+account.sync.artists.other = アーティスト {count}組
+account.sync.playlists.other = プレイリスト {count}件
+account.toast.synced = YouTube Music の同期：{summary}
+account.sync.failed = {summary}。エラー：{errors}
+account.sync.error = {part}：{error}
+account.sync.part.liked = 高評価した曲
+account.sync.part.songs = ライブラリの曲
+account.sync.part.albums = アルバム
+account.sync.part.artists = アーティスト
+account.sync.part.playlists = プレイリスト
+account.sync.part.playlist = プレイリスト「{title}」
+account.sync.part.removing_playlist = プレイリストの削除
+
+# ---- Library database, likes, playlists, downloads (toasts)
+store.library_unavailable = ライブラリを利用できません：{error}
+store.no_data_dir = データディレクトリがないため、ライブラリを利用できません。
+store.library_db_unavailable = ライブラリのデータベースを利用できません。
+store.toast.action_failed = {action}に失敗しました：{error}
+store.action.saving_like = 高評価の保存
+store.action.removing_from_library = ライブラリからの削除
+store.action.adding_to_playlist = プレイリストへの追加
+store.action.creating_playlist = プレイリストの作成
+store.toast.liked_one = 「{title}」を高く評価しました
+store.toast.unliked_one = 「{title}」を高評価した曲から削除しました
+store.toast.liked_many.other = {count}曲を高く評価しました
+store.toast.unliked_many.other = {count}曲を高評価した曲から削除しました
+store.toast.only_locally = {message}（ローカルのみ。YouTube Music：{error}）
+store.toast.removed_from_library.other = {count}曲をライブラリから削除しました
+store.toast.added_to_playlist.other = {count}曲を「{playlist}」に追加しました
+store.toast.remote_error = {message}（YouTube Music：{error}）
+store.playlist_name_missing = プレイリストに名前を付けてください。
+store.toast.playlist_created = 「{playlist}」を作成しました
+store.toast.playlist_created_with.other = {count}曲を含む「{playlist}」を作成しました
+store.downloads_unavailable = ダウンロードを利用できません。
+store.toast.downloading_one = 「{title}」をダウンロード中
+store.toast.downloading_many.other = {count}曲をダウンロード中
+store.toast.delete_download_failed = ダウンロードを削除できませんでした：{error}
+
+# ---- Local music folder scan
+store.add_music_folder_first = 先に音楽フォルダを追加してください。
+store.scan.summary = {files}：新規 {added}、更新 {updated}、変更なし {unchanged}、削除 {removed}
+store.scan.files.other = {count}ファイル
+store.scan.with_extra = {summary}、{extra}
+store.scan.too_short.other = 短すぎ {count}
+store.scan.unreadable.other = 読み取り不可 {count}
+store.toast.scan_finished = スキャン完了：{summary}
+store.toast.scan_failed = スキャンに失敗しました：{error}
+
+# ---- Playlist cover upload
+playlist_cover.read_failed = 画像を読み込めませんでした：{error}
+playlist_cover.not_an_image = このファイルは読み込み可能な画像（JPEG、PNG、WebP）ではありません。
+playlist_cover.too_large = 画像が大きすぎます（4,000万画素超）。
+playlist_cover.decode_failed = 画像をデコードできませんでした：{error}
+playlist_cover.encode_failed = カバーをエンコードできませんでした：{error}
+playlist_cover.still_too_large = 圧縮後もカバーが 2 MiB を超えています。
+playlist_cover.sign_in = プレイリストのカバーを変更するには YouTube Music にログインしてください。
+playlist_cover.pick_prompt = カバーに使用
+playlist_cover.uploading = カバーをアップロード中…
+playlist_cover.changed = プレイリストのカバーを変更しました
+playlist_cover.change_failed = カバーを変更できませんでした：{error}
+
+# ---- Radio and collection playback
+radio.toast.starting_from = 「{title}」からラジオを開始
+radio.toast.starting = ラジオを開始：{name}
+radio.playlist_label = プレイリスト
+radio.nothing_to_play = 再生できるものがありません。
+radio.load_failed = 読み込めませんでした：{error}
+
+# ---- Lyrics
+lyrics.no_cache_dir = キャッシュディレクトリがありません
+
+# ---- Playlist editing
+store.action.renaming_playlist = プレイリスト名の変更
+store.action.deleting_playlist = プレイリストの削除
+store.action.removing_from_playlist = プレイリストからの削除
+store.action.moving_song = 曲の移動
+store.action.refreshing_playlist = プレイリストの更新
+store.toast.playlist_renamed = 「{playlist}」に名前を変更しました
+store.toast.playlist_deleted = 「{playlist}」を削除しました
+store.toast.removed_from_playlist.other = {count}曲をプレイリストから削除しました
+store.toast.playlist_refreshed.other = プレイリストを更新しました（{count}曲）

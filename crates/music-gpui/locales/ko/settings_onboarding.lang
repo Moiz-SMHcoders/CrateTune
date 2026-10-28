@@ -1,0 +1,56 @@
+# First-run guide (ko).
+
+# ---- Step titles
+onboarding.step.welcome = 환영합니다
+onboarding.step.content = 언어 및 지역
+onboarding.step.theme = 화면
+onboarding.step.account = YouTube Music 계정
+onboarding.step.local_files = 이 컴퓨터의 음악
+onboarding.step.privacy = 개인정보 보호 및 제한 사항
+onboarding.welcome_title = {app}에 오신 것을 환영합니다
+onboarding.step_of = {total}단계 중 {step}단계
+
+# ---- Step subtitles
+onboarding.subtitle.welcome = 빠른 YouTube Music 네이티브 플레이어: 둘러보기와 검색, 노래에 맞춰 흐르는 가사, 기록과 통계가 있는 보관함, 내 음악 파일, 노래 인식까지. 몇 가지만 선택하면 준비 완료입니다. 여기서 정한 내용은 나중에 설정에서 모두 바꿀 수 있습니다.
+onboarding.subtitle.content = YouTube Music이 제목과 추천에 사용할 언어와, 차트 및 최신 음악을 볼 국가를 선택합니다.
+onboarding.subtitle.theme = 테마와 텍스트 크기를 선택하세요.
+onboarding.subtitle.account = 선택 사항입니다. 로그인하면 좋아요, 보관함, 재생목록, 맞춤 추천을 사용할 수 있습니다. 나머지 기능은 계정 없이도 작동합니다.
+onboarding.subtitle.local_files = 선택 사항입니다. 음악 파일이 있는 폴더를 추가하면 스캔되어 보관함에 들어가고 YouTube Music과 함께 재생됩니다.
+onboarding.subtitle.privacy = 시작하기 전에 알아 두세요.
+
+# ---- Footer buttons
+onboarding.skip = 설정 건너뛰기
+onboarding.get_started = 시작하기
+onboarding.finish = 완료
+onboarding.next_or_skip = 다음(또는 건너뛰기)
+
+# ---- Welcome step: feature list
+onboarding.feature.browse.title = 둘러보기 및 검색
+onboarding.feature.browse.text = 홈 피드, 차트, 분위기, 최신 음악, 아티스트, 앨범, 재생목록.
+onboarding.feature.lyrics.title = 가사
+onboarding.feature.lyrics.text = 여러 제공업체의 단어 단위 동기화 가사. 번역과 로마자 표기 지원.
+onboarding.feature.library.title = 보관함
+onboarding.feature.library.text = 좋아요, 재생목록, 감상 기록, 통계, 다운로드를 이 컴퓨터에 저장.
+onboarding.feature.recognize.title = 음악 인식
+onboarding.feature.recognize.text = 주변에서 재생 중인 노래를 찾아(⇧⌘R) 바로 재생.
+
+# ---- Look step
+onboarding.theme.group = 테마
+onboarding.theme.dynamic_note = 다이내믹 테마는 재생 중인 노래의 아트워크에서 강조 색상을 가져옵니다.
+onboarding.theme.text_size = 텍스트 크기
+
+# ---- Music on this computer step
+onboarding.local.group = 음악 폴더
+onboarding.local.empty = 폴더가 없습니다.
+onboarding.local.add = 폴더 추가…
+onboarding.local.note = 폴더는 지금 또는 나중에 스캔할 수 있으며, 로컬 파일에서 관리합니다.
+
+# ---- Privacy & limitations step
+onboarding.privacy.streaming.title = 노래 스트리밍 방식
+onboarding.privacy.streaming.text = 전체 노래는 YouTube의 TV 클라이언트 또는 PoToken(부정 사용 방지 토큰, macOS에서는 숨겨진 브라우저 뷰에서 생성)을 사용하는 웹 클라이언트에서 가져옵니다. YouTube는 새 스트림을 몇 초간 대기시키므로 그동안 앱은 짧은 미리보기로 재생을 시작합니다. YouTube가 무언가를 변경하면 노래가 약 1분 미리보기로 전환됩니다(플레이어에 표시됨). 경로는 설정 → 재생 → YouTube 스트림에서 선택합니다.
+onboarding.privacy.data.title = 내 데이터는 여기에
+onboarding.privacy.data.text = 보관함, 기록, 통계, 설정은 이 컴퓨터에 저장됩니다. 비밀번호, API 키, YouTube 로그인 쿠키는 시스템 키체인에 보관됩니다. 감상 기록과 검색 기록은 설정 → 개인정보 보호에서 언제든 일시중지하거나 지울 수 있습니다.
+onboarding.privacy.recipients.title = 누가 무엇을 받나요
+onboarding.privacy.recipients.text = YouTube Music은 검색과 재생 내역(로그인한 경우 계정 쿠키 포함)을 받습니다. 가사 제공업체는 노래 제목을 받습니다. 노래 인식은 녹음 자체가 아닌 오디오 지문을 Shazam에 보냅니다. 스크로블과 Discord는 직접 설정한 경우에만 작동합니다.
+onboarding.privacy.independent.title = 독립 프로젝트
+onboarding.privacy.independent.text = YouTube, Google, Shazam과 제휴 관계가 없습니다. GPL-3.0에 따른 자유 소프트웨어입니다.

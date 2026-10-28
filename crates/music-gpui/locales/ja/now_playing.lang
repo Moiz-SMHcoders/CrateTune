@@ -1,0 +1,76 @@
+# Now Playing screen, lyrics pane, lyrics card dialog (ja).
+
+# ---- Header
+np.close_tooltip = 閉じる（Esc）
+np.header = 再生中
+np.demo_clock = デモクロック
+np.buffering = バッファリング中…
+np.preview = プレビュー
+np.speed = {speed}×
+np.sleep_tooltip = スリープタイマー
+np.layout_tooltip = デザインと背景
+np.menu.design = デザイン
+np.menu.background = 背景
+
+# ---- Player
+np.up_next = 次の曲
+np.playing_from = 再生元
+np.your_queue = キュー
+np.of_total = / {total}
+np.editorial.header_album = 再生中  ·  {album}
+np.editorial.play = 再生
+np.editorial.pause = 一時停止
+np.editorial.loading = 読み込み中
+np.queue.title = 次の曲
+np.queue.more.other = ほか{count}曲
+np.queue.empty = キューは空です。リストから曲を追加するか、自動再生をオンにしてください。
+
+# ---- Lyrics pane
+lyrics.nothing_playing = 再生中の曲はありません
+lyrics.loading = 歌詞を読み込み中…
+lyrics.missing_title = 歌詞がありません
+lyrics.missing_detail = 有効な歌詞プロバイダにこの曲の歌詞はありません。
+lyrics.failed = 歌詞を読み込めませんでした
+lyrics.translating = 翻訳中…
+lyrics.translation_failed = 翻訳に失敗しました：{error}
+lyrics.kind.word = 単語同期
+lyrics.kind.line = 行同期
+lyrics.kind.plain = 非同期
+lyrics.source = {provider} · {kind}
+lyrics.select_hint.other = カードにする行を選択（最大{count}行）
+lyrics.selected.other = {count}行を選択中
+lyrics.create_card = カードを作成…
+lyrics.share_tooltip = 歌詞をカードで共有
+lyrics.translation_on = 翻訳：オン
+lyrics.translation_off = 翻訳：オフ
+lyrics.reload_tooltip = プロバイダを再検索
+
+# ---- Lyrics card dialog
+card.dialog_title = 歌詞カード
+card.row.background = 背景
+card.row.text = テキスト
+card.row.size = サイズ
+card.row.shape = 形
+card.row.cover = カバー
+card.cover.show = 表示
+card.cover.hide = 非表示
+card.save = 画像を保存…
+card.copy = 画像をコピー
+card.copying = コピー中…
+card.copied = クリップボードにコピーしました
+card.saved = {path} に保存しました
+card.save_failed = 保存できませんでした：{error}
+card.draw_failed = カードを描画できませんでした：{error}
+card.aspect.square = 正方形
+card.aspect.portrait = 縦長
+card.aspect.story = ストーリー
+card.bg.blur = ぼかしたアートワーク
+card.bg.album = アルバムの色
+card.bg.dark = ダーク
+card.bg.light = ライト
+card.align.left = 左揃え
+card.align.center = 中央揃え
+card.align.right = 右揃え
+card.size.small = 小
+card.size.medium = 中
+card.size.large = 大

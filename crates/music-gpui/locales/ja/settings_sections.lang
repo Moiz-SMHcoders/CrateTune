@@ -1,0 +1,17 @@
+settings.section.appearance = 外観
+settings.section.playback = 再生
+settings.section.modules = モジュール
+settings.section.equalizer = イコライザ
+settings.section.lyrics = 歌詞
+settings.section.content = コンテンツと地域
+settings.section.network = ネットワーク
+settings.section.privacy = プライバシー
+settings.section.storage = ストレージ
+settings.section.account = アカウント
+settings.section.integrations = Scrobble と Discord
+settings.section.sponsorblock = SponsorBlock
+settings.section.together = Music Together
+settings.section.spotify = Spotify のインポート
+settings.section.ai_filter = AI コンテンツフィルタ
+settings.section.cast = Chromecast
+settings.section.about = 情報

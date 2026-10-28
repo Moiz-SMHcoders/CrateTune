@@ -1,0 +1,44 @@
+# Music recognition page (ko).
+
+recognition.title = 음악 인식
+recognition.subtitle = 주변에서 재생 중인 노래 찾기(⇧⌘R)
+
+recognition.idle.title = 탭하여 노래 찾기
+recognition.idle.detail = 컴퓨터 가까이에서 노래를 재생하세요. 마이크로 약 10초간 듣습니다.
+recognition.permission.title = 마이크 접근 권한 대기 중…
+recognition.permission.detail = 시스템 안내 창에서 접근을 허용하세요.
+recognition.listening = 듣는 중…
+recognition.listening_progress = {elapsed}/{length}초
+recognition.identifying.title = 찾는 중…
+recognition.identifying.detail = 녹음을 대조하는 중입니다.
+recognition.failed = 찾을 수 없음
+recognition.open_privacy_settings = 개인정보 보호 설정 열기
+
+recognition.mic.restricted = 이 컴퓨터에서는 마이크 접근이 제한되어 있습니다.
+recognition.mic.undetermined = 아직 마이크 접근 권한이 없습니다. 다시 시도하고 요청이 표시되면 허용하세요.
+recognition.mic.denied = {app}의 마이크 접근이 꺼져 있습니다. 시스템 설정 → 개인정보 보호 및 보안 → 마이크에서 허용하세요.
+recognition.error.no_microphone = 마이크를 찾을 수 없음
+recognition.error.permission_denied = 마이크 접근이 거부됨
+recognition.error.silent = 마이크에서 무음만 들어왔습니다(마이크 접근이 허용되어 있나요?)
+recognition.error.capture = 녹음 실패: {error}
+recognition.error.cancelled = 취소됨
+recognition.error.no_signature = 음악이 들리지 않음
+recognition.error.no_match = 일치하는 노래 없음
+recognition.error.rate_limited = 요청이 너무 많습니다. 1분 후에 다시 시도하세요
+recognition.error.service = 인식 서비스 오류(HTTP {status})
+recognition.error.network = 네트워크 오류: {error}
+recognition.error.parse = 예상치 못한 응답: {error}
+
+recognition.result.recognized = 인식됨
+recognition.result.from_history = 인식 기록에서
+recognition.match.title = YouTube Music에서
+recognition.match.searching = YouTube Music 검색 중…
+recognition.match.failed = YouTube Music 검색 실패: {error}
+recognition.match.none = YouTube Music에서 찾을 수 없습니다.
+
+recognition.history.title = 기록
+recognition.history.empty.title = 인식 기록 없음
+recognition.history.empty.detail = 찾은 노래가 최신순으로 여기에 표시됩니다.
+recognition.history.clear_title = 인식 기록을 지울까요?
+recognition.history.clear_detail = 찾은 노래 목록이 삭제됩니다.
+recognition.history.remove = 기록에서 삭제
