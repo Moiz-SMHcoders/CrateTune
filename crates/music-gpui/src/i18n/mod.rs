@@ -20,6 +20,9 @@
 //! the rare cache that stores translated text. Number / date / relative-time helpers
 //! are in [`format`].
 
+// TEMP(i18n): parts of the API are only used once every surface is converted.
+#![allow(dead_code, unused_imports)]
+
 /// A translated message: `t!("nav.home")` → `&'static str`;
 /// `t!("np.casting_to", device = name)` → `String`.
 macro_rules! t {

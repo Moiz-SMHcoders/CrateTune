@@ -182,13 +182,8 @@ fn lookups_fall_back_and_fill() {
     for locale in Locale::all() {
         set_locale(locale);
         // Every locale resolves every key to something (its own text or English).
-        for i in 0..SIMPLE_KEYS.len() {
-            assert!(
-                !text(Key(i as u16)).is_empty(),
-                "{}: {}",
-                locale.code(),
-                SIMPLE_KEYS[i]
-            );
+        for (i, name) in SIMPLE_KEYS.iter().enumerate() {
+            assert!(!text(Key(i as u16)).is_empty(), "{}: {name}", locale.code());
         }
         for i in 0..PLURAL_KEYS.len() {
             for n in [0, 1, 2, 5, 11, 21, 101] {
@@ -423,19 +418,25 @@ const NOT_UI: &[&str] = &[
     ".insert(\"",
 ];
 
-/// `path: literal` lines in `i18n/lint_allowlist.txt`.
+/// `path: literal` lines in `src/i18n/lint_allowlist*.txt` (one file per area).
 fn allowlist() -> BTreeMap<String, BTreeSet<String>> {
-    let text = std::fs::read_to_string(crate_dir().join("src/i18n/lint_allowlist.txt"))
-        .unwrap_or_default();
     let mut map: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
-    for line in text.lines().map(str::trim) {
-        if line.is_empty() || line.starts_with('#') {
+    let dir = crate_dir().join("src/i18n");
+    for entry in std::fs::read_dir(&dir).unwrap().flatten() {
+        let name = entry.file_name().to_string_lossy().into_owned();
+        if !(name.starts_with("lint_allowlist") && name.ends_with(".txt")) {
             continue;
         }
-        if let Some((path, literal)) = line.split_once(": ") {
-            map.entry(path.to_owned())
-                .or_default()
-                .insert(literal.to_owned());
+        let text = std::fs::read_to_string(entry.path()).unwrap_or_default();
+        for line in text.lines().map(str::trim) {
+            if line.is_empty() || line.starts_with('#') {
+                continue;
+            }
+            if let Some((path, literal)) = line.split_once(": ") {
+                map.entry(path.to_owned())
+                    .or_default()
+                    .insert(literal.to_owned());
+            }
         }
     }
     map
@@ -547,7 +548,7 @@ fn english_literals_stay_out_of_ui_code() {
     assert!(
         hits.is_empty(),
         "{} English literal(s) outside the catalogs (use t!/tp!, or add `path: literal` to \
-         src/i18n/lint_allowlist.txt / end the line with `// i18n-ignore` for developer-only \
+         src/i18n/lint_allowlist_<area>.txt / end the line with `// i18n-ignore` for developer-only \
          text):\n{}",
         hits.len(),
         hits.join("\n")

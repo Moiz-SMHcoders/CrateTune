@@ -33,7 +33,7 @@ pub fn status_line(text: SharedString, color: Hsla) -> impl IntoElement {
 }
 
 /// A labelled text input row.
-pub fn field(label: &'static str, input: Input, cx: &App) -> impl IntoElement {
+pub fn field(label: impl Into<SharedString>, input: Input, cx: &App) -> impl IntoElement {
     h_flex()
         .gap_3()
         .child(
@@ -42,7 +42,7 @@ pub fn field(label: &'static str, input: Input, cx: &App) -> impl IntoElement {
                 .flex_none()
                 .text_sm()
                 .text_color(cx.theme().muted_foreground)
-                .child(label),
+                .child(label.into()),
         )
         .child(div().flex_1().min_w_0().child(input))
 }
@@ -68,6 +68,32 @@ pub fn row(
                         .text_color(cx.theme().muted_foreground)
                         .child(d)
                 })),
+        )
+        .child(div().flex_none().child(control))
+}
+
+/// [`row`] with a description that isn't a `&'static str` (e.g. `t!` with arguments).
+#[allow(dead_code)] // TEMP(i18n)
+pub fn row_detail(
+    label: impl Into<SharedString>,
+    description: impl Into<SharedString>,
+    control: impl IntoElement,
+    cx: &App,
+) -> impl IntoElement {
+    h_flex()
+        .gap_4()
+        .justify_between()
+        .child(
+            v_flex()
+                .min_w_0()
+                .gap_0p5()
+                .child(div().text_sm().child(label.into()))
+                .child(
+                    div()
+                        .text_xs()
+                        .text_color(cx.theme().muted_foreground)
+                        .child(description.into()),
+                ),
         )
         .child(div().flex_none().child(control))
 }

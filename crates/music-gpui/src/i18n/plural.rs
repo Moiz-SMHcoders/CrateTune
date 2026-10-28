@@ -18,7 +18,7 @@ pub enum Category {
 pub fn category(language: &str, n: u64) -> Category {
     use Category::*;
     let (i10, i100) = (n % 10, n % 100);
-    let million = n != 0 && n % 1_000_000 == 0;
+    let million = n != 0 && n.is_multiple_of(1_000_000);
     match language {
         // one: i = 1 and v = 0 (+ "many" for exact millions in es / it / pt / fr).
         "en" | "de" | "nl" | "sv" | "da" | "nb" | "no" | "fi" | "et" | "el" | "bg" | "hu"
