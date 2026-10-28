@@ -515,8 +515,10 @@ mod tests {
 
     #[test]
     fn snapshots_hold_only_the_look_and_new_fields_come_along() {
-        let mut s = Settings::default();
-        s.volume = 0.3;
+        let mut s = Settings {
+            volume: 0.3,
+            ..Settings::default()
+        };
         s.appearance.language = "de".into();
         s.lyrics.ai_key_set = true;
         s.lyrics.provider_order = vec!["lrclib".into()];
@@ -548,8 +550,10 @@ mod tests {
         }
 
         // Applying keeps everything outside the profile.
-        let mut other = Settings::default();
-        other.volume = 0.9;
+        let mut other = Settings {
+            volume: 0.9,
+            ..Settings::default()
+        };
         other.appearance.language = "ja".into();
         other.lyrics.provider_order = vec!["kugou".into()];
         let applied = apply(&other, &snap);

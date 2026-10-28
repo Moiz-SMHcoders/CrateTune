@@ -636,13 +636,14 @@ mod tests {
     }
 
     fn stock_colors() -> ThemeColor {
-        let mut c = ThemeColor::default();
-        c.background = STOCK_BACKGROUND;
-        c.secondary = STOCK_SURFACE;
-        c.foreground = hsla(0., 0., 0.98, 1.);
-        c.muted_foreground = hsla(0., 0., 0.64, 1.);
-        c.border = STOCK_SURFACE;
-        c
+        ThemeColor {
+            background: STOCK_BACKGROUND,
+            secondary: STOCK_SURFACE,
+            foreground: hsla(0., 0., 0.98, 1.),
+            muted_foreground: hsla(0., 0., 0.64, 1.),
+            border: STOCK_SURFACE,
+            ..ThemeColor::default()
+        }
     }
 
     fn art(rgb: [u8; 3]) -> ArtColors {

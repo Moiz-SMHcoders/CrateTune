@@ -317,12 +317,13 @@ impl PlaylistPage {
         }
         // "Download all" first loads the pages not scrolled to yet.
         let page_handle = cx.entity().downgrade();
-        let download: Rc<dyn Fn(&mut Window, &mut gpui::App)> = Rc::new(move |window, cx| {
-            let handle = window.window_handle();
-            page_handle
-                .update(cx, |page, cx| page.download_all(handle, cx))
-                .ok();
-        });
+        let download: crate::components::download_header::DownloadAction =
+            Rc::new(move |window, cx| {
+                let handle = window.window_handle();
+                page_handle
+                    .update(cx, |page, cx| page.download_all(handle, cx))
+                    .ok();
+            });
         actions.extend(crate::components::download_header::download_button(
             "playlist",
             &data.tracks,

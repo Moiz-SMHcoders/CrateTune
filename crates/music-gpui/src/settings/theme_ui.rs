@@ -316,7 +316,7 @@ impl SettingsPanel {
                 .ok()
                 .map(|v| if v > 1. { v / 100. } else { v })
         };
-        let ok = match field {
+        match field {
             "accent" => {
                 let hex = if value == "none" {
                     Some(String::new())
@@ -362,8 +362,7 @@ impl SettingsPanel {
                 true
             }
             _ => false,
-        };
-        ok
+        }
     }
 }
 

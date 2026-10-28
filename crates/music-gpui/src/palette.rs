@@ -284,7 +284,7 @@ pub fn quantize(pixels: &[[u8; 3]], k: usize) -> Vec<([f32; 3], u32)> {
         .filter(|(_, n)| *n > 0.)
         .map(|(c, n)| (c, n.round() as u32))
         .collect();
-    out.sort_by(|a, b| b.1.cmp(&a.1));
+    out.sort_by_key(|c| std::cmp::Reverse(c.1));
     out
 }
 

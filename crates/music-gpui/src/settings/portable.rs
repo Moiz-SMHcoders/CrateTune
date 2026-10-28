@@ -703,8 +703,10 @@ mod tests {
     use super::*;
 
     fn sample() -> Settings {
-        let mut s = Settings::default();
-        s.volume = 0.4;
+        let mut s = Settings {
+            volume: 0.4,
+            ..Settings::default()
+        };
         s.appearance.theme = ThemeChoice::Dynamic;
         s.appearance.language = "de".into();
         s.custom_theme.accent = "#5B8CFF".into();
@@ -862,8 +864,10 @@ mod tests {
         assert!(!text.contains("language"), "the UI language isn't a look");
         assert!(!text.contains("volume"));
 
-        let mut b = Settings::default();
-        b.volume = 0.1;
+        let mut b = Settings {
+            volume: 0.1,
+            ..Settings::default()
+        };
         b.appearance.language = "ja".into();
         let plan = plan_theme_import(&text, &b).unwrap();
         assert!(plan.theme);

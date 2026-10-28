@@ -99,6 +99,9 @@ pub fn missing(tracks: &[Track], flag: impl Fn(&str) -> Option<DownloadFlag>) ->
         .collect()
 }
 
+/// What "Download all" runs instead of the default (see [`download_button`]).
+pub type DownloadAction = Rc<dyn Fn(&mut Window, &mut App)>;
+
 thread_local! {
     /// Per list (its `Rc` address): flag generation, length and the state, so a
     /// header doesn't re-scan thousands of ids on every frame while scrolling.
@@ -134,7 +137,7 @@ pub fn state_of(tracks: &Rc<Vec<Track>>) -> HeaderDownloadState {
 pub fn download_button(
     id: &str,
     tracks: &Rc<Vec<Track>>,
-    download: Option<Rc<dyn Fn(&mut Window, &mut App)>>,
+    download: Option<DownloadAction>,
     cx: &App,
 ) -> Option<AnyElement> {
     let state = state_of(tracks);
