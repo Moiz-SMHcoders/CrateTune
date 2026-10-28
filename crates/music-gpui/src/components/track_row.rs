@@ -294,16 +294,20 @@ pub fn track_menu(menu: PopupMenu, track: &Track, list: ListContext) -> PopupMen
     }
     let single = artists.len() == 1;
     for (id, name) in artists {
-        let label = if single {
-            "Go to artist".to_owned()
-        } else {
-            format!("Go to {name}")
+        // Episodes name their show (`MPSP…`) where songs name an artist.
+        let podcast = id.starts_with("MPSP");
+        let label = match (podcast, single) {
+            (true, _) => "Go to podcast".to_owned(),
+            (false, true) => "Go to artist".to_owned(),
+            (false, false) => format!("Go to {name}"),
         };
         menu = menu.item(
             item(&label, Lucide::MicVocal).on_click(move |_, window, cx| {
-                let route = Route::Artist {
-                    id: id.clone(),
-                    name: name.clone(),
+                let (id, name) = (id.clone(), name.clone());
+                let route = if podcast {
+                    Route::Podcast { id, name }
+                } else {
+                    Route::Artist { id, name }
                 };
                 update_app(cx, |app, cx| app.navigate(route, window, cx));
             }),

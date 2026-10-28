@@ -32,7 +32,7 @@ use super::track_row::{ListContext, ROW_HEIGHT, TrackRow, explicit_badge, track_
 use super::{empty_state, section_header};
 use crate::app::update_app;
 use crate::icons::Lucide;
-use crate::radio::{Collection, CollectionAction, podcast_playlist_id};
+use crate::radio::{Collection, CollectionAction};
 use crate::router::Route;
 
 // ---- where things lead ---------------------------------------------------------
@@ -128,10 +128,10 @@ pub fn target_route(target: &BrowseTarget, title: &str) -> Route {
         return Route::Album { id, name };
     }
     if page.contains("PODCAST_SHOW") || id.starts_with("MPSP") {
-        return Route::Playlist {
-            id: podcast_playlist_id(&id),
-            name,
-        };
+        return Route::Podcast { id, name };
+    }
+    if page.contains("NON_MUSIC_AUDIO_TRACK_PAGE") || id.starts_with("MPED") {
+        return Route::Episode { id, name };
     }
     if page.ends_with("_ARTIST") || (id.starts_with("UC") && target.params.is_none()) {
         return Route::Artist { id, name };
@@ -888,6 +888,17 @@ mod tests {
         assert!(matches!(
             target_route(&t("MPREb_1", None, None), "x"),
             Route::Album { .. }
+        ));
+        assert!(matches!(
+            target_route(
+                &t("MPSPPLx", None, Some("MUSIC_PAGE_TYPE_PODCAST_SHOW_DETAIL_PAGE")),
+                "x"
+            ),
+            Route::Podcast { id, .. } if id == "MPSPPLx"
+        ));
+        assert!(matches!(
+            target_route(&t("MPEDabc", None, None), "x"),
+            Route::Episode { .. }
         ));
         assert!(matches!(
             target_route(&t("UCabc", None, None), "x"),

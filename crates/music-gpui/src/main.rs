@@ -48,6 +48,7 @@ mod release_script;
 mod router;
 mod script;
 mod search_box;
+mod search_history;
 mod secrets;
 mod services;
 mod settings;

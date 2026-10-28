@@ -31,6 +31,7 @@ mod local_playlist;
 mod moods;
 mod new_releases;
 mod playlist;
+mod podcast;
 mod recognition;
 pub mod search;
 mod song_list;
@@ -191,6 +192,8 @@ pub fn build(
         Route::Artist { id, name } => artist::ArtistPage::build(id.clone(), name.clone(), cx),
         Route::Album { id, name } => album::AlbumPage::build(id.clone(), name.clone(), cx),
         Route::Playlist { id, name } => playlist::PlaylistPage::build(id.clone(), name.clone(), cx),
+        Route::Podcast { id, name } => podcast::PodcastPage::build(id.clone(), name.clone(), cx),
+        Route::Episode { id, name } => podcast::EpisodePage::build(id.clone(), name.clone(), cx),
         Route::Browse { id, params, name } => {
             browse_page::BrowsePage::build(id.clone(), params.clone(), name.clone(), cx)
         }

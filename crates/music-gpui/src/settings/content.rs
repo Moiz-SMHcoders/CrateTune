@@ -312,7 +312,7 @@ pub(super) fn render(
                 ))
                 .child(row(
                     "Hide music videos",
-                    Some("Shelves and search results show songs only (album and playlist tracks are unaffected)."),
+                    Some("Songs only: music videos and user videos are left out of shelves, search, playlists, albums, radio and queues (an album that YouTube only has as official-audio videos stays complete)."),
                     videos,
                     cx,
                 )),

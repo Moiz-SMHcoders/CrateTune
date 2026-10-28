@@ -167,6 +167,8 @@ impl MusicApp {
     }
 
     pub fn clear_search_history(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        // Saves still queued would otherwise land after the clear.
+        self.flush_searches();
         self.with_library(
             "Clearing the search history",
             |lib| lib.clear_search_history(),

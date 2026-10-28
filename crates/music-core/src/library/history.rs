@@ -172,22 +172,27 @@ impl Library {
 
     // ---- search history --------------------------------------------------------------------
 
-    /// Remembers a search; searching the same text again moves it to the top.
+    /// Remembers a search; searching the same text again (in any ASCII letter case)
+    /// moves it to the top, spelled as searched last.
     pub fn add_search_query(&self, query: &str) -> Result<()> {
         let query = query.trim();
         if query.is_empty() {
             return Ok(());
         }
         // Strictly increasing timestamps keep the order stable within one millisecond.
-        self.read(|c| {
-            c.execute(
+        self.write(|tx| {
+            tx.execute(
+                "DELETE FROM search_history WHERE query = ?1 COLLATE NOCASE AND query <> ?1",
+                [query],
+            )?;
+            tx.execute(
                 "INSERT INTO search_history (query, searched_at)
                  VALUES (?1, MAX(?2, COALESCE((SELECT MAX(searched_at) + 1 FROM search_history), 0)))
                  ON CONFLICT(query) DO UPDATE SET searched_at = excluded.searched_at",
                 params![query, now_ms()],
-            )
-        })?;
-        Ok(())
+            )?;
+            Ok(())
+        })
     }
 
     /// Past searches starting with `prefix` (case-insensitive), most recent first.
@@ -209,10 +214,11 @@ impl Library {
         })
     }
 
+    /// Forgets a search (every ASCII letter-case variant, like [`Self::add_search_query`]).
     pub fn remove_search_query(&self, query: &str) -> Result<()> {
         self.read(|c| {
             c.execute(
-                "DELETE FROM search_history WHERE query = ?1",
+                "DELETE FROM search_history WHERE query = ?1 COLLATE NOCASE",
                 [query.trim()],
             )
         })?;
@@ -362,6 +368,17 @@ mod tests {
         assert!(lib.search_history("100%", 10).unwrap().is_empty());
         lib.remove_search_query("justice").unwrap();
         assert_eq!(lib.search_history("", 10).unwrap().len(), 2);
+        // Letter case: one entry, spelled as searched last; removal ignores case too.
+        lib.add_search_query("DAFT PUNK").unwrap();
+        let all: Vec<_> = lib
+            .search_history("", 10)
+            .unwrap()
+            .into_iter()
+            .map(|e| e.query)
+            .collect();
+        assert_eq!(all, ["DAFT PUNK", "Dua Lipa"]);
+        lib.remove_search_query("dua lipa").unwrap();
+        assert_eq!(lib.search_history("", 10).unwrap().len(), 1);
         lib.clear_search_history().unwrap();
         assert!(lib.search_history("", 10).unwrap().is_empty());
     }
