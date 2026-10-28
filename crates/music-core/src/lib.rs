@@ -48,6 +48,7 @@ pub mod lyrics;
 pub mod media_controls;
 mod model;
 pub mod modules;
+mod mp4_gapless;
 mod opus;
 mod output;
 mod player;

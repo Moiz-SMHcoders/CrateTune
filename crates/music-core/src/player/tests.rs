@@ -255,6 +255,72 @@ fn gapless_transition_to_the_preloaded_next_track() {
 }
 
 #[test]
+fn gapless_aac_tracks_join_without_priming_or_padding() {
+    // One chirp split into two AAC files at 0.6 s (not a frame boundary): each
+    // has 1024 frames of encoder priming and a padded last frame, which the
+    // edit list trims. Played back to back, they must reproduce the chirp.
+    const AAC_RATE: u32 = 44_100;
+    let (player, mut out) = Player::headless(FakeResolver::new(), AAC_RATE).unwrap();
+    player.play(local("gapless_a.m4a"));
+    player.set_next(Some(local("gapless_b.m4a")));
+    wait_for(&player, "preload", |s| s.next_preloaded);
+    let run = pull_until(&player, &mut out, "end of b", |s| {
+        s.advance_count == 1 && s.status == PlaybackStatus::Ended
+    });
+    let a = player_track_duration(&run, "gapless_a.m4a");
+    assert_eq!(a, Some(Duration::from_millis(600)));
+
+    // Align the output with the source signal on the first track...
+    let reference = |i: i64| {
+        if i < 0 {
+            0.0
+        } else {
+            crate::decode::tests::reference_chirp(i as u64)
+        }
+    };
+    let start = run.audio.iter().position(|&s| is_sound(s)).unwrap();
+    let from = start.saturating_sub(4);
+    let (lag, corr) = crate::decode::tests::best_lag(&run.audio[from..from + 8192], reference, 16);
+    assert!(corr > 0.99, "{corr}");
+    let origin = from as i64 - lag;
+    // ...then the whole 1.3 s, across the switch, must line up with it: a gap
+    // or overlap of even a few frames at 0.6 s would shift the second half.
+    let total = 57_330; // 0.6 s + 0.7 s at 44.1 kHz
+    let audio = &run.audio[origin as usize..];
+    assert!(audio.len() >= total, "{}", audio.len());
+    let boundary = 26_460;
+    let window = &audio[boundary - 4096..boundary + 4096];
+    let (lag, corr) =
+        crate::decode::tests::best_lag(window, |i| reference(i + boundary as i64 - 4096), 64);
+    assert_eq!(
+        lag, 0,
+        "track b is shifted by {lag} frames (correlation {corr})"
+    );
+    assert!(corr > 0.99, "{corr}");
+    let tail = &audio[total - 4096..total];
+    let (lag, corr) =
+        crate::decode::tests::best_lag(tail, |i| reference(i + total as i64 - 4096), 64);
+    assert_eq!(
+        lag, 0,
+        "end of track b shifted by {lag} (correlation {corr})"
+    );
+    // Nothing inserted around the switch, and the audio stops right at 1.3 s.
+    assert!(longest_silence(&audio[boundary - 2048..boundary + 2048]) <= 2);
+    assert!(
+        audio[total + 64..].iter().all(|s| !is_sound(*s)),
+        "audio continues past the end of track b"
+    );
+}
+
+/// The duration the player reported for `name` while it was current.
+fn player_track_duration(run: &Run, name: &str) -> Option<Duration> {
+    run.states
+        .iter()
+        .find(|s| title(s) == name && s.duration.is_some())
+        .and_then(|s| s.duration)
+}
+
+#[test]
 fn preview_streams_progressively_and_ends_cleanly() {
     let (player, mut out, _r) = player();
     player.play(remote("preview"));
