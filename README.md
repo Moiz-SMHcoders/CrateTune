@@ -261,7 +261,7 @@ if let Some(result) = service.fetch(&LyricsQuery::from_track(&track))? {
   45 MB unpacked — UniDic would be 46 MB zipped), unpacks it into a cache directory and
   `load`s it memory-mapped (~9 ms); without it only kana are romanized. The off-by-default
   `japanese-dict` feature embeds the same dictionary instead (+~48 MB binary, downloaded at
-  build time). lindera without a dictionary adds ~0.26 MB to the release binary. The pinned
+  build time). lindera without a dictionary adds ~0.23 MB to the release binary. The pinned
   zip must match the lindera version in `Cargo.toml` (its dictionary format); update both
   together.
 
@@ -1073,8 +1073,8 @@ then. In the app (release build, temp `MUSIC_CONFIG_DIR`, demo clock — no audi
 OpenAI-compatible fake server got one request for アイドル's 74 lines; after a restart the
 translation came from the library (still one request in total). `@kanji-dict` downloaded
 and verified the real IPADIC in ~1.6 s and loaded it; at the next start it was mapped in
-0.45 s after launch; `@kanji-dict=remove` deleted it. Release binary 40,053,744 B
-(+268,992 B for lindera without a dictionary and this round's UI). **Not verified:** the
+0.45 s after launch; `@kanji-dict=remove` deleted it. Release binary 40,020,928 B
+(+236,192 B for lindera without a dictionary and this round's code). **Not verified:** the
 Settings → Lyrics dictionary row and progress bar on screen (rendered, not looked at),
 in-app cancel of a running download (unit-tested; the real download finished first), a
 successful Google translation, Paxsenix / BetterLyrics keys.
