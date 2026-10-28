@@ -121,6 +121,20 @@ impl SessionCache {
         Ok(script)
     }
 
+    /// Forgets `player_id`'s downloaded script (~4 MB) once the solver has it
+    /// preprocessed: it is only needed to preprocess.
+    pub(crate) fn drop_script(&self, player_id: &str) {
+        if let Some(cur) = self
+            .current
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .as_mut()
+            .filter(|c| c.player_id == player_id)
+        {
+            cur.script = None;
+        }
+    }
+
     fn fetch(&self, video_id: &str) -> Result<WebSession> {
         let url =
             format!("https://www.youtube.com/watch?v={video_id}&bpctr=9999999999&has_verified=1");

@@ -306,12 +306,17 @@ impl WebResolver {
         } else {
             Some(self.session.script(&mut session)?)
         };
+        let had_script = script.is_some();
         let solutions = self.solver.solve(
             &session.player_id,
             script,
             n.iter().cloned().collect(),
             sig.iter().map(|(s, _)| s.clone()).collect(),
         )?;
+        if had_script {
+            // Preprocessed now; the full script isn't needed again.
+            self.session.drop_script(&session.player_id);
+        }
         log::debug!(
             "youtube: {video_id}: challenges solved after {:?}",
             started.elapsed()
@@ -511,6 +516,8 @@ fn preprocess(
             vec!["AAAAAAAAAAAAAAAA".into()],
             vec![],
         )?;
+        session.script = None;
+        cache.drop_script(&session.player_id);
     }
     Ok(())
 }

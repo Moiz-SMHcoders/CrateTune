@@ -32,8 +32,10 @@ pub(crate) const SOLVER_VERSION: &str = "ejs-0.8.0";
 const MEMORY_LIMIT: usize = 768 * 1024 * 1024;
 const JS_STACK: usize = 16 * 1024 * 1024;
 const THREAD_STACK: usize = 64 * 1024 * 1024;
-/// A prepared engine nobody used within this time is dropped (memory).
-const PREPARED_IDLE: std::time::Duration = std::time::Duration::from_secs(30);
+/// A prepared engine nobody used within this time is dropped (memory: the
+/// loaded player holds tens of MB). The solve it is for normally follows
+/// within a second (it is prepared while the player request is in flight).
+const PREPARED_IDLE: std::time::Duration = std::time::Duration::from_secs(10);
 
 /// Solutions for one player, keyed by challenge.
 #[derive(Debug, Default, Clone)]
@@ -149,10 +151,17 @@ impl ChallengeSolver {
                 let mut preprocessed = HashMap::new();
                 let mut prepared: Option<Prepared> = None;
                 loop {
-                    let message = match rx.recv_timeout(PREPARED_IDLE) {
+                    // An unused prepared engine goes once it is PREPARED_IDLE old
+                    // (not up to twice that); without one, just wait.
+                    let received = match &prepared {
+                        Some(p) => rx.recv_timeout(PREPARED_IDLE.saturating_sub(p.at.elapsed())),
+                        None => rx.recv().map_err(|_| RecvTimeoutError::Disconnected),
+                    };
+                    let message = match received {
                         Ok(message) => message,
                         Err(RecvTimeoutError::Timeout) => {
-                            prepared = prepared.filter(|p| p.at.elapsed() < PREPARED_IDLE);
+                            log::debug!("jsc: dropping an unused prepared engine");
+                            prepared = None;
                             continue;
                         }
                         Err(RecvTimeoutError::Disconnected) => return,
@@ -163,7 +172,7 @@ impl ChallengeSolver {
                                 prepared = None;
                                 let started = std::time::Instant::now();
                                 match prepare_engine(
-                                    &mut preprocessed,
+                                    &preprocessed,
                                     cache_dir.as_deref(),
                                     &player_id,
                                 ) {
@@ -239,10 +248,13 @@ struct Engine {
 /// solver runs one (`Function("_result", player)(result)` → `result.n` / `.sig`),
 /// without loading the solver itself.
 fn prepare_engine(
-    preprocessed: &mut HashMap<String, String>,
+    preprocessed: &HashMap<String, String>,
     cache_dir: Option<&std::path::Path>,
     player_id: &str,
 ) -> Result<Engine> {
+    // Read from the cache file each time (a few ms) rather than keeping ~4 MB
+    // of script text in memory; only players that couldn't be cached stay in
+    // `preprocessed`.
     let source = match preprocessed.get(player_id) {
         Some(source) => source.clone(),
         None => {
@@ -250,10 +262,8 @@ fn prepare_engine(
                 cache_dir.ok_or_else(|| Error::Parse("no solver cache".into()))?,
                 player_id,
             );
-            let source = std::fs::read_to_string(path)
-                .map_err(|e| Error::Parse(format!("preprocessed player: {e}")))?;
-            preprocessed.insert(player_id.to_owned(), source.clone());
-            source
+            std::fs::read_to_string(path)
+                .map_err(|e| Error::Parse(format!("preprocessed player: {e}")))?
         }
     };
     let engine = bare_engine()?;
@@ -432,11 +442,14 @@ fn solve_job(
     if cached.is_none()
         && let Some(pre) = output["preprocessed_player"].as_str()
     {
-        if let Some(dir) = cache_dir {
+        // Kept in memory only if it can't be cached on disk (see `prepare_engine`).
+        let stored = cache_dir.is_some_and(|dir| {
             let _ = std::fs::create_dir_all(dir);
-            let _ = std::fs::write(cache_path(dir, &job.player_id), pre);
+            std::fs::write(cache_path(dir, &job.player_id), pre).is_ok()
+        });
+        if !stored {
+            preprocessed.insert(job.player_id.clone(), pre.to_owned());
         }
-        preprocessed.insert(job.player_id.clone(), pre.to_owned());
     }
 
     let mut solutions = Solutions::default();
@@ -466,8 +479,11 @@ fn solve_job(
 ///
 /// Parsing a ~3 MB player script churns through hundreds of MB; in the default
 /// zone that leaves ~100 MB of fragmented pages behind that macOS never reclaims.
-/// Destroying a dedicated zone returns all of it at once. Elsewhere the engine
-/// uses the system allocator.
+/// Destroying a dedicated zone returns what is still allocated in it at once.
+/// (On macOS 26 what QuickJS frees *before* the zone is destroyed is kept by the
+/// allocator like any freed memory; the app runs with `MallocSpaceEfficient=1`
+/// for that, see `music-gpui/src/memory.rs`.) Elsewhere the engine uses the
+/// system allocator.
 mod zone {
     #[cfg(target_os = "macos")]
     mod imp {
@@ -590,8 +606,7 @@ mod tests {
         let prepared = solve();
         assert_eq!((prepared.n, prepared.sig), (fresh.n, fresh.sig));
         // The prepared path on its own.
-        let mut cache = HashMap::new();
-        let engine = prepare_engine(&mut cache, Some(&dir), "test").unwrap();
+        let engine = prepare_engine(&HashMap::new(), Some(&dir), "test").unwrap();
         let (reply, _rx) = mpsc::channel();
         let job = Job {
             player_id: "test".into(),

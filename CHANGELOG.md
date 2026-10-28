@@ -7,6 +7,12 @@ versions follow [SemVer](https://semver.org/).
 
 ### Changed
 
+* **Uses much less memory, and the same amount every run** (macOS): freed memory is
+  handed back to the system instead of being kept by the allocator, decoded artwork is
+  capped by its real (decoded) size and also leaves the GPU when evicted (Settings →
+  Storage → "Artwork in memory", 48 MB; Minimal / Fast: 16 MB), and the YouTube player
+  script is no longer held in memory after it has been prepared.
+
 * The player bar draws nothing on its own by default (the progress follows the
   once-a-second update); the animated styles cap their frame rate (13–22 fps), only run
   while music plays and the bar is visible, and use the spectrum tap only then. The

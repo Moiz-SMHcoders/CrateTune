@@ -723,9 +723,12 @@ locales/<locale>/*.lang  the catalogs (English = source), embedded by build.rs v
   presets, theme files, profiles, text size 88–138 %. Applied to gpui-component's `Theme`
   and our `AppColors` / `AppPalette`.
 * **Artwork cache** (`components/artwork.rs`): one cache for every view and both windows,
-  48 MiB LRU of encoded bytes (evicting also drops GPUI's decoded copy), 4 dedicated
-  fetch threads taking the newest request first, failed URLs retried after 30 s. Now
-  Playing's 544 px art comes from it too (blur + accent for the last 8 tracks).
+  LRU over the *decoded* size (width × height × 4 from the image header; 48 MiB, Settings
+  → Storage → "Artwork in memory", 16 MiB in Minimal / Fast); evicting drops GPUI's
+  decoded copy and its sprite-atlas tiles; images drawn in the last 3 s or held by Now
+  Playing are never evicted. 4 dedicated fetch threads taking the newest request first,
+  failed URLs retried after 30 s. Now Playing's 544 px art comes from it too (blur +
+  accent for the last 8 tracks).
 * **Mini player** (⇧⌘M, View menu, bar button): floating 400×124 window, artwork, title,
   previous / play / next, progress; stays visible over other apps (macOS panel with
   `hidesOnDeactivate` off); position saved.
@@ -884,7 +887,7 @@ locales/<locale>/*.lang  the catalogs (English = source), embedded by build.rs v
   unsubscribe (`set_subscribed`).
 * **Privacy**: pause / clear listen history, pause / clear search history (submitted searches
   are stored via `record_search`). **Storage**: file locations, play-cache limit (128 MB–8 GB),
-  usage and clear, optional "cache played songs", download folder + usage, **backup export /
+  usage and clear, optional "cache played songs", artwork kept in memory (16–192 MB), download folder + usage, **backup export /
   restore** (library database + settings JSON without secrets, window frames or account;
   restoring keeps the current sign-in) followed by a "Restart now" prompt (`cx.restart()`).
 
@@ -1420,6 +1423,7 @@ item's ACL is tied to the binary). Secrets are never logged.
 | `MUSIC_UPDATE_REPO=owner/name` | enable the update check against that repo (testing; the default comes from `packaging/app.env`) |
 | `MUSIC_NO_TRANSITIONS=1` | switch dynamic colours at once (no 400 ms cross-fade) |
 | `MUSIC_BAR_SPECTRUM_DUMP=1` | print the player bar analyzer's band statistics once a second (tuning the Equalizer style) |
+| `MUSIC_MALLOC=system` | keep macOS's default allocator behaviour (no re-exec with `MallocSpaceEfficient=1`, see `memory.rs`; for comparisons) |
 | `MUSIC_TRACE=1` | log playback transitions, seeks, saves, route changes, artwork downloads; `MUSIC_TIMINGS=1`: renders/s + worst frame gap |
 | `MUSIC_SCRIPT="5:@next,9:@seek=75,30:@quit"` | timed actions (any build) |
 | `MUSIC_ON_TOP=1` | keep the main window above other apps and on every Space (CPU sampling while the machine is in use: macOS sends an occluded or off-Space window no frames) |

@@ -215,6 +215,9 @@ pub struct AppearanceConfig {
     /// preferred languages). An unknown code (e.g. from a newer version) also means
     /// `system`.
     pub language: String,
+    /// Decoded artwork kept in memory, MiB (one of
+    /// [`crate::components::artwork::BUDGETS_MB`]; others snap to the nearest).
+    pub artwork_memory_mb: u32,
 }
 
 impl Default for AppearanceConfig {
@@ -223,6 +226,7 @@ impl Default for AppearanceConfig {
             theme: ThemeChoice::Dark,
             font_scale: 1.0,
             language: SYSTEM_LANGUAGE.into(),
+            artwork_memory_mb: crate::components::artwork::DEFAULT_BUDGET_MB,
         }
     }
 }
@@ -583,6 +587,11 @@ impl Settings {
         if !scale.is_finite() {
             self.appearance.font_scale = 1.0;
         }
+        let mb = self.appearance.artwork_memory_mb;
+        self.appearance.artwork_memory_mb = crate::components::artwork::BUDGETS_MB
+            .into_iter()
+            .min_by_key(|b| b.abs_diff(mb))
+            .unwrap_or(crate::components::artwork::DEFAULT_BUDGET_MB);
         self.window = self.window.filter(WindowGeometry::is_sane);
         self.mini_player = self.mini_player.filter(WindowGeometry::is_sane);
         self.library.normalize();
