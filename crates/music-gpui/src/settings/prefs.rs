@@ -796,6 +796,24 @@ mod tests {
     use super::*;
 
     #[test]
+    fn now_playing_designs_round_trip() {
+        for layout in NowPlayingLayout::ALL {
+            assert_eq!(NowPlayingLayout::parse(layout.key()), Some(layout));
+            let json = serde_json::to_string(&NowPlayingConfig {
+                layout,
+                ..NowPlayingConfig::default()
+            })
+            .unwrap();
+            assert!(json.contains(&format!("\"{}\"", layout.key())), "{json}");
+            let back: NowPlayingConfig = serde_json::from_str(&json).unwrap();
+            assert_eq!(back.layout, layout);
+        }
+        // An unknown design (from a newer version) falls back to the default.
+        let back: NowPlayingConfig = serde_json::from_str(r#"{"layout":"vinyl"}"#).unwrap();
+        assert_eq!(back.layout, NowPlayingLayout::Split);
+    }
+
+    #[test]
     fn audio_values_are_clamped_and_snapped() {
         let mut a = AudioConfig {
             crossfade_secs: 30.0,

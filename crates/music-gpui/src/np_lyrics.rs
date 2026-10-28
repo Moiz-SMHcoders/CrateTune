@@ -705,3 +705,39 @@ impl MusicApp {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn word(start: u64, end: u64) -> LyricWord {
+        LyricWord {
+            start: Duration::from_millis(start),
+            end: Duration::from_millis(end),
+            text: "la ".into(),
+        }
+    }
+
+    #[test]
+    fn frames_only_while_a_word_is_swept() {
+        let words = [word(1000, 1400), word(1600, 2000)];
+        let at = |ms| word_events(&words, Duration::from_millis(ms));
+        assert!(matches!(at(500), WordEvents::Next(t) if t == Duration::from_millis(1000)));
+        assert!(matches!(at(1200), WordEvents::Sweeping));
+        // Between two words nothing moves until the next one starts.
+        assert!(matches!(at(1500), WordEvents::Next(t) if t == Duration::from_millis(1600)));
+        assert!(matches!(at(2500), WordEvents::Done));
+    }
+
+    #[test]
+    fn selection_is_capped() {
+        let mut list = LyricsList::new();
+        list.set_selecting(true, Some(2));
+        for i in 0..20 {
+            list.toggle_selected(i);
+        }
+        assert!(list.selected.len() <= MAX_SELECTED);
+        list.set_selecting(false, None);
+        assert!(list.selected.is_empty() && !list.selecting);
+    }
+}

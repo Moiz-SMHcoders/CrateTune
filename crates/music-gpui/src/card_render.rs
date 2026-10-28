@@ -493,16 +493,20 @@ pub fn render(content: &CardContent, style: &CardStyle, width: u32) -> Result<Pi
     let (px0, py0, pw, ph) = (margin, margin, w - 2. * margin, h - 2. * margin);
     let radius = unit * 0.05;
     if let Some(path) = rounded_rect(px0, py0, pw, ph, radius) {
-        let mut fill = Paint::default();
-        fill.anti_alias = true;
+        let mut fill = Paint {
+            anti_alias: true,
+            ..Paint::default()
+        };
         fill.set_color(if light {
             rgba(255, 255, 255, 0.55)
         } else {
             rgba(255, 255, 255, 0.08)
         });
         pixmap.fill_path(&path, &fill, FillRule::Winding, Transform::identity(), None);
-        let mut edge = Paint::default();
-        edge.anti_alias = true;
+        let mut edge = Paint {
+            anti_alias: true,
+            ..Paint::default()
+        };
         edge.set_color(if light {
             rgba(0, 0, 0, 0.08)
         } else {
@@ -543,15 +547,17 @@ pub fn render(content: &CardContent, style: &CardStyle, width: u32) -> Result<Pi
             to_pixmap(&scaled),
             rounded_rect(cx0, cy0, cover_side, cover_side, unit * 0.03),
         ) {
-            let mut fill = Paint::default();
-            fill.anti_alias = true;
-            fill.shader = Pattern::new(
-                art_pixmap.as_ref(),
-                SpreadMode::Pad,
-                FilterQuality::Bicubic,
-                1.,
-                Transform::from_translate(cx0, cy0),
-            );
+            let fill = Paint {
+                anti_alias: true,
+                shader: Pattern::new(
+                    art_pixmap.as_ref(),
+                    SpreadMode::Pad,
+                    FilterQuality::Bicubic,
+                    1.,
+                    Transform::from_translate(cx0, cy0),
+                ),
+                ..Paint::default()
+            };
             pixmap.fill_path(&path, &fill, FillRule::Winding, Transform::identity(), None);
         }
     }
