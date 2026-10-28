@@ -1,0 +1,20 @@
+# Settings → Content & region (Turkish).
+
+settings.content.group_region = Dil ve bölge
+settings.content.language = İçerik dili
+settings.content.language_description = YouTube Music'teki başlıkların, rafların ve aramanın dili.
+settings.content.language_placeholder = Dil
+settings.content.country = İçerik ülkesi
+settings.content.country_description = Ana sayfa akışının, listelerin ve yeni çıkanların bölgesi.
+settings.content.country_placeholder = Ülke
+settings.content.region_note = Değişiklikler hemen uygulanır; açık sayfalar yeni dilde yeniden yüklenir.
+
+settings.content.group_filters = Filtreler
+settings.content.hide_explicit = Müstehcen içeriği gizle
+settings.content.hide_explicit_description = Müstehcen olarak işaretlenen şarkıları ve albümleri sayfalardan, aramadan ve radyodan kaldırır.
+settings.content.hide_videos = Müzik videolarını gizle
+settings.content.hide_videos_description = Yalnızca şarkılar: müzik videoları ve kullanıcı videoları raflara, aramaya, çalma listelerine, albümlere, radyoya ve sıralara alınmaz (YouTube'da yalnızca resmi ses videoları olarak bulunan bir albüm eksiksiz kalır).
+
+settings.content.group_radio = Radyo
+settings.content.autoplay = Benzer şarkıları otomatik çal
+settings.content.autoplay_description = Sıradaki son şarkı başladığında, o şarkının radyosundan şarkılar arkasına eklenir.

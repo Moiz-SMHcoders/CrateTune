@@ -1,0 +1,144 @@
+# Settings sections of the integrations (Turkish).
+
+# ---- Shared
+settings.integrations.connected_as = Bağlı hesap: {user}
+
+# ---- Last.fm / ListenBrainz
+settings.integrations.lastfm_approve = Tarayıcınızda uygulamayı onaylayın, ardından Bitir'e basın.
+settings.integrations.finish = Bitir
+settings.integrations.forget_key = Anahtarı unut
+settings.integrations.api_key = API anahtarı
+settings.integrations.shared_secret = Paylaşılan gizli anahtar
+settings.integrations.checking_token = Belirteç denetleniyor…
+settings.integrations.validate = Doğrula
+settings.integrations.user_token = Kullanıcı belirteci
+
+# ---- Discord
+settings.integrations.discord_title = Discord Rich Presence
+settings.integrations.discord_enter_id = Discord uygulama kimliğinizi girin.
+settings.integrations.discord_connected = Discord'a bağlandı
+settings.integrations.discord_unreachable = Discord'a ulaşılamıyor: {error}
+settings.integrations.discord_waiting = Çalma bekleniyor…
+settings.integrations.application_id = Uygulama kimliği
+discord.activity.title = Etkinlik
+discord.activity.type = Tür
+discord.activity.name = Ad
+discord.activity.details = Ayrıntılar
+discord.activity.state = Durum
+discord.activity.placeholders_note = Yer tutucular: {title}, {artist}, {album}. Ad boş bırakılırsa Discord uygulamasının adı kullanılır.
+discord.activity.large_image = Büyük resim
+discord.activity.small_image = Küçük resim
+discord.activity.button = Düğme {number}
+discord.activity.label = Etiket
+discord.activity.url = URL
+discord.activity.show_paused = Duraklatıldığında göster
+discord.activity.show_paused_desc = Çalma duraklatıldığında etkinliği (geçen süre olmadan) korur.
+discord.activity.custom_note = Özel resimler, Discord uygulamanızın varlık anahtarları veya resim URL'leridir. Düğmeleri başkaları görür, siz göremezsiniz.
+
+# ---- Scrobble rules
+scrobble.rules.title = Bir şarkı ne zaman sayılır
+scrobble.rules.played = Çalınan
+scrobble.rules.or_at_most = …veya en fazla
+scrobble.rules.ignore_under = Şu süreden kısa şarkıları yok say:
+scrobble.rules.percent = %{percent}
+scrobble.rules.note = Last.fm kuralı: %50 veya 4 dakika, 30 sn'den uzun şarkılar. Last.fm ve ListenBrainz için geçerlidir.
+scrobble.errors.one = Scrobble hataları ({count})
+scrobble.errors.other = Scrobble hataları ({count})
+settings.integrations.secrets = Gizli bilgiler: {store}
+settings.integrations.secrets_loading = Gizli bilgiler: yükleniyor…
+settings.integrations.settings_path = Ayarlar: {path}
+settings.integrations.not_saved = Ayarlar kaydedilmiyor (yapılandırma klasörü yok)
+
+# ---- SponsorBlock
+settings.sponsorblock.categories = Kategoriler
+settings.sponsorblock.category_desc.music_offtopic = Müzik videolarındaki konuşmalar, skeçler ve müzik dışı diğer bölümler.
+settings.sponsorblock.category_desc.sponsor = Ücretli tanıtım.
+settings.sponsorblock.category_desc.intro = İçeriksiz aralar ve giriş animasyonları.
+settings.sponsorblock.category_desc.outro = Jenerik ve bitiş kartları.
+settings.sponsorblock.category_desc.selfpromo = Ücretsiz tanıtım: ürünler, bağışlar, selamlamalar.
+settings.sponsorblock.category_desc.interaction = Beğenme, abone olma veya takip etme hatırlatmaları.
+settings.sponsorblock.category_desc.preview = Başka içeriklerin özetleri ve önizlemeleri.
+settings.sponsorblock.category_desc.filler = Ana içerik olmayan konu dışı kısımlar.
+settings.sponsorblock.category_desc.hook = Başlangıçtaki fragmanlar ve selamlamalar.
+settings.sponsorblock.using = Kullanılan: {url}
+settings.sponsorblock.url_error = Kimlik bilgisi veya sorgu içermeyen bir https:// adresi gerekir
+settings.sponsorblock.skip_segments = Bölümleri atla
+settings.sponsorblock.skip_segments_desc = Her şarkının videosunda topluluğun işaretlediği bölümleri bul ve atla.
+settings.sponsorblock.when = Bir bölüm başladığında
+settings.sponsorblock.when_desc = Hemen atla veya oynatıcı çubuğunda Atla düğmesi göster.
+settings.sponsorblock.mode_auto = Otomatik atla
+settings.sponsorblock.mode_ask = Sor
+settings.sponsorblock.notify = Atladıktan sonra bildir
+settings.sponsorblock.server = Sunucu
+settings.sponsorblock.api_url = API URL'si
+settings.sponsorblock.use_default = Varsayılan sunucuyu kullan
+settings.sponsorblock.forget = Bulunan bölümleri unut
+settings.sponsorblock.privacy = Gizlilik: yalnızca video kimliğinin SHA-256 karmasının ilk 4 karakteri gönderilir; böylece sunucu hangi şarkının çaldığını bilemez. Başka bir sunucu belirlemediğiniz sürece bölümler sponsor.ajay.app'ten (SponsorBlock, CC BY-NC-SA) gelir.
+
+# ---- Music Together
+settings.together.you = Siz
+settings.together.display_name = Görünen ad
+settings.together.name_placeholder = Adınız
+settings.together.display_name_note = Oturumdaki diğer kişilere gösterilir.
+settings.together.hosting = Ev sahipliği
+settings.together.port = Port
+settings.together.port_error = Port 1024 ile 65535 arasında olmalıdır
+settings.together.allow_add_desc = Önerileri sıranıza eklenir.
+settings.together.allow_control_desc = Herkes için çalma, duraklatma, sarma ve atlama.
+settings.together.approval = Misafirleri katılmadan önce onayla
+settings.together.hosting_note = Oturumlar yerel ağınızda çalışır: misafirler doğrudan bu bilgisayara bağlanır (güvenlik duvarı sorarsa gelen bağlantılara izin verin). Bağlantı rastgele bir anahtar içerir; yalnızca bağlantıya sahip olanlar katılabilir. Değişiklikler çalışan oturuma hemen uygulanır. Birlikte dinle sayfasında “Ev sahibi yap” oturumu bir misafire devreder: herkes yeni ev sahibini takip eder.
+settings.together.across_networks = Ağlar arası
+settings.together.relay = Aktarma sunucusu
+settings.together.relay_placeholder = wss://relay.example.com (boş: yalnızca LAN)
+settings.together.relay_error = Bir ws:// veya wss:// adresi gerekir (kullanıcı adı veya sorgu olmadan)
+settings.together.relay_note = “Aktarma ile ev sahipliği yap”, oturumu kendi barındırdığınız bir music-relay sunucusu üzerinden yürütür (README'ye bakın: küçük tek bir ikili dosya; wss:// için bir TLS ters proxy'nin arkasına koyun). Böylece misafirler bağlantıyla her yerden katılabilir. Aktarma sunucusu oturumun mesajlarını (şarkı kimlikleri, başlıklar, adlar) iletir ama hiçbir karar vermez; boş = yalnızca LAN.
+settings.together.open = Birlikte dinle'yi aç
+
+# ---- Spotify import
+settings.spotify.waiting = Uygulamayı tarayıcıda onaylamanız bekleniyor…
+settings.spotify.account = Spotify hesabı
+settings.spotify.client_id = Client ID
+settings.spotify.redirect_port = Yönlendirme portu
+settings.spotify.redirect_uri = Yönlendirme URI'si: {uri}
+settings.spotify.steps = 1. developer.spotify.com/dashboard adresinde bir uygulama oluşturun (Web API). 2. Yukarıdaki yönlendirme URI'sini ona ekleyin. 3. Uygulamanın Client ID'sini buraya yapıştırıp Bağlan'a basın. Erişim salt okunurdur (çalma listeleriniz ve beğendiğiniz şarkılar); yenileme belirteci anahtar zincirinde saklanır.
+settings.spotify.without_account = Hesap olmadan
+settings.spotify.without_account_note = Bir çalma listesini Exportify (exportify.app) ile dışa aktarın ve CSV dosyasını Kitaplık → İçe ve dışa aktar bölümünde içe aktarın. Web oynatıcının sp_dc çerezi ile oturum açma ({other_app} uygulamasındaki gibi) desteklenmez: Spotify'ın web oynatıcısından çıkarılan bir gizli anahtara dayanır.
+settings.spotify.open_import = İçe ve dışa aktar'ı aç
+settings.spotify.error.no_client = Önce uygulamanızın Client ID'sini girin.
+settings.spotify.error.redirect = Yönlendirme dinlenemiyor: {error}
+
+# ---- AI content filter
+settings.ai_filter.off = Kapalı: hiçbir yere bir şey gönderilmez
+settings.ai_filter.incomplete = Bir uç nokta, bir model ve en az bir kategori gerekir
+settings.ai_filter.failed = Son istek başarısız oldu: {error}
+settings.ai_filter.on.one = Açık · {count} şarkı veya albüm sınıflandırıldı
+settings.ai_filter.on.other = Açık · {count} şarkı ve albüm sınıflandırıldı
+settings.ai_filter.hide = Gizle
+settings.ai_filter.also_hide = Şunları da gizle
+settings.ai_filter.custom_placeholder = ör. arabalarla ilgili şarkılar, mizahi şarkılar
+settings.ai_filter.custom_note = Kendi kategorileriniz; virgülle ayrılmış (en fazla 8), sade sözcüklerle tanımlanmış.
+settings.ai_filter.title = Yapay zekâ içerik filtresi
+settings.ai_filter.enable = Şarkıları bir yapay zekâ modeliyle filtrele
+settings.ai_filter.enable_desc = “Müstehcen içeriği gizle” gibi, ama aşağıdaki kategoriler için.
+settings.ai_filter.forget = Sınıflandırmaları unut
+settings.ai_filter.model = Model
+settings.ai_filter.endpoint = Uç nokta
+settings.ai_filter.endpoint_placeholder = https://api.openai.com/v1 veya http://localhost:11434/v1
+settings.ai_filter.api_key = API anahtarı
+settings.ai_filter.key_placeholder = API anahtarı (yerel sunucular için gerekmez)
+settings.ai_filter.api_note = OpenAI uyumlu herhangi bir chat-completions API'si: OpenAI, OpenRouter veya bu bilgisayardaki bir model (Ollama, LM Studio, llama.cpp sunucusu). Anahtar, anahtar zincirinde saklanır.
+settings.ai_filter.privacy = Gizlilik
+settings.ai_filter.privacy_note = Varsayılan olarak kapalıdır. Açıkken, açtığınız sayfalardaki şarkı ve albümlerin başlığı, sanatçıları ve albümü yukarıdaki uç noktaya gönderilir (sizinle ilgili hiçbir şey, dinleme geçmişi yok); her karar bu bilgisayarda önbelleğe alınır, böylece bir şarkı yalnızca bir kez sorulur. Modelin henüz değerlendirmediği şarkılar görünür kalır.
+
+# ---- Chromecast
+settings.cast.looking = Cast cihazları aranıyor…
+settings.cast.found.one = {count} cihaz bulundu
+settings.cast.found.other = {count} cihaz bulundu
+settings.cast.devices = Cihazlar
+settings.cast.scan = Ara
+settings.cast.casting = Yayınlanıyor
+settings.cast.cast = Yayınla
+settings.cast.streaming = Akış
+settings.cast.direct = YouTube sesini cihaz kendisi alsın
+settings.cast.direct_desc = Kapalı: bu uygulama sesi cihaza aktarır (her şarkıyla çalışır).
+settings.cast.note = Yayınlama, sırayı bu ağdaki bir Chromecast, Google TV veya Nest hoparlörde çalar (Google'ın Default Media Receiver'ı). Oynatıcı çubuğundaki Cast düğmesi bir cihaz seçer; ardından çalma, duraklatma, sarma, atlama ve ses düzeyi o cihazı denetler; Yayını durdur ise çalmayı burada sürdürür. YouTube sesi ve yerel dosyalar bu bilgisayardan cihaza aktarılır (uygulamayı açık tutun); cihaz ve bu bilgisayar aynı ağda olmalıdır. Değişiklikler bir sonraki şarkıda uygulanır.

@@ -1,0 +1,282 @@
+# Library pages, Storage and Privacy settings, backup / restore (Ukrainian).
+
+# ---- Sort menu
+library.sort.label = Сортування
+library.sort.date_added = Дата додавання
+library.sort.title = Назва
+library.sort.artist = Виконавець
+library.sort.play_count = Кількість прослуховувань
+library.sort.listening_time = Час прослуховування
+library.sort.last_played = Останнє прослуховування
+library.sort.year = Рік
+library.sort.song_count = Кількість пісень
+library.sort.name = Назва
+library.sort.last_updated = Останнє оновлення
+library.sort.date_created = Дата створення
+
+library.filter_placeholder = Фільтр
+library.saved_only = Лише збережені
+library.subscribed_only = Лише підписки
+library.new_playlist = Новий плейлист
+
+library.detail_signed_in = {summary} · вхід у YouTube Music виконано
+library.count.albums.one = {count} альбом
+library.count.albums.few = {count} альбоми
+library.count.albums.many = {count} альбомів
+library.count.albums.other = {count} альбому
+library.count.artists.one = {count} виконавець
+library.count.artists.few = {count} виконавці
+library.count.artists.many = {count} виконавців
+library.count.artists.other = {count} виконавця
+library.count.shows.one = {count} шоу
+library.count.shows.few = {count} шоу
+library.count.shows.many = {count} шоу
+library.count.shows.other = {count} шоу
+library.count.playlists.one = {count} плейлист
+library.count.playlists.few = {count} плейлисти
+library.count.playlists.many = {count} плейлистів
+library.count.playlists.other = {count} плейлиста
+
+# ---- Empty states
+library.podcasts.signed_out_title = Увійдіть, щоб бачити свої подкасти
+library.podcasts.signed_out_detail = Тут з'являються подкасти, збережені в YouTube Music. Увійдіть у «Налаштування → Обліковий запис»; шоу можна відкривати з пошуку, «Головної» та «Огляду» і без облікового запису.
+library.podcasts.empty_title = Подкастів ще немає
+library.podcasts.empty_detail = Збережіть шоу кнопкою «Зберегти в бібліотеку» на його сторінці.
+library.empty.no_matches_title = Нічого не знайдено
+library.empty.no_matches_detail = Нічого не відповідає фільтру.
+library.empty.liked_title = Немає улюблених пісень
+library.empty.liked_detail = Натисніть сердечко біля будь-якої пісні. Якщо ви ввійшли, сюди синхронізуються ваші вподобання з YouTube Music.
+library.empty.downloaded_title = Нічого не завантажено
+library.empty.downloaded_detail = Виберіть «Завантажити» в меню пісні, щоб зберегти її на цьому комп'ютері.
+library.empty.local_title = Немає локальних файлів
+library.empty.local_detail = Додайте теки з музикою на сторінці «Локальні файли» та проскануйте їх.
+library.empty.songs_title = У бібліотеці немає пісень
+library.empty.songs_detail = Тут з'являються улюблені пісні, додані вами пісні та локальні файли.
+library.empty.albums_title = Альбомів ще немає
+library.empty.albums_detail = Тут з'являються альбоми ваших пісень і альбоми, збережені в YouTube Music.
+library.empty.artists_title = Виконавців ще немає
+library.empty.artists_detail = Тут з'являються виконавці ваших пісень і ваші підписки.
+library.empty.playlists_title = Плейлистів ще немає
+library.empty.playlists_detail = Створіть плейлист кнопкою «Новий плейлист» або ввійдіть, щоб синхронізувати плейлисти YouTube Music.
+library.load_failed = Не вдалося завантажити бібліотеку
+library.db_unavailable = База даних бібліотеки недоступна.
+
+# ---- Selection bar
+library.remove_from_library = Прибрати з бібліотеки
+library.unlike = Прибрати з улюблених
+library.delete_downloads = Видалити завантаження
+
+# ---- Album / artist cards and pages
+library.album.save = Зберегти альбом
+library.album.remove_saved = Прибрати зі збережених альбомів
+library.album.saving = Збереження альбому
+library.artist.subscribed_songs.one = Підписка · {count} пісня
+library.artist.subscribed_songs.few = Підписка · {count} пісні
+library.artist.subscribed_songs.many = Підписка · {count} пісень
+library.artist.subscribed_songs.other = Підписка · {count} пісні
+library.playlist.youtube_songs.one = {count} пісня · YouTube Music
+library.playlist.youtube_songs.few = {count} пісні · YouTube Music
+library.playlist.youtube_songs.many = {count} пісень · YouTube Music
+library.playlist.youtube_songs.other = {count} пісні · YouTube Music
+
+library.item.songs_listened.one = {count} пісня · прослухано {time}
+library.item.songs_listened.few = {count} пісні · прослухано {time}
+library.item.songs_listened.many = {count} пісень · прослухано {time}
+library.item.songs_listened.other = {count} пісні · прослухано {time}
+library.item.subscribe = Підписатися
+library.item.unsubscribe = Відписатися
+library.item.remove_saved = Прибрати зі збережених
+library.item.open_online = Відкрити в YouTube Music
+library.item.empty_detail = Вподобайте або додайте пісні цього виконавця / з цього альбому, щоб побачити їх тут.
+
+# ---- Library playlist page
+library.playlist.kind_own = Ваш плейлист YouTube Music
+library.playlist.kind_saved = Збережений плейлист YouTube Music
+library.playlist.change_cover = Змінити обкладинку…
+library.playlist.rename_title = Перейменувати плейлист
+library.playlist.delete_title = Видалити «{name}»?
+library.playlist.delete_remote = Його також буде видалено в YouTube Music.
+library.playlist.delete_unsave = Його буде прибрано з вашої бібліотеки YouTube Music.
+library.playlist.delete_local_copy = Буде видалено лише копію на цьому комп'ютері.
+library.playlist.delete_undo = Цю дію не можна скасувати.
+library.playlist.move_up = Вище
+library.playlist.move_down = Нижче
+library.playlist.remove_from = Прибрати з плейлиста
+library.playlist.not_found_title = Плейлист не знайдено
+library.playlist.not_found_detail = Можливо, його видалено.
+library.playlist.empty_title = Цей плейлист порожній
+library.playlist.empty_detail = Щоб додати пісні, виберіть «Додати в плейлист…» в меню пісні.
+
+# ---- Song lists: select mode
+song_list.select_none = Зняти вибір
+
+# ---- Local files page
+local_files.prompt_add = Додати
+local_files.prompt_skip = Пропускати
+local_files.folders_title = Теки з музикою
+local_files.add_folder = Додати теку
+local_files.skip_folder = Пропускати теку
+local_files.skipped_title = Пропущені
+local_files.scan.looking = Пошук файлів…
+local_files.scan.progress = {done} / {total} файлів
+local_files.scanning = Сканування…
+local_files.rescan = Пересканувати
+local_files.detail.one = {count} пісня · файли, коротші за {seconds} с, пропускаються
+local_files.detail.few = {count} пісні · файли, коротші за {seconds} с, пропускаються
+local_files.detail.many = {count} пісень · файли, коротші за {seconds} с, пропускаються
+local_files.detail.other = {count} пісні · файли, коротші за {seconds} с, пропускаються
+local_files.empty.no_folders_title = Тек із музикою ще немає
+local_files.empty.no_folders_detail = Додайте теку з музикою (MP3, M4A, FLAC, Ogg, Opus, WAV, AIFF…) і натисніть «Пересканувати».
+local_files.empty.no_tracks_title = Немає локальних треків
+local_files.empty.no_tracks_detail = Натисніть «Пересканувати», щоб прочитати теки вище.
+
+# ---- Downloads page
+downloads.status.queued = У черзі
+downloads.status.downloading_size = Завантаження {size}
+downloads.status.done = Готово · {size}
+downloads.status.preview = Лише фрагмент · {size}
+downloads.status.failed = Помилка: {error}
+downloads.status.cancelled = Скасовано
+downloads.detail.one = {count} пісня · {size} · кеш відтворення {cache} з {limit}
+downloads.detail.few = {count} пісні · {size} · кеш відтворення {cache} з {limit}
+downloads.detail.many = {count} пісень · {size} · кеш відтворення {cache} з {limit}
+downloads.detail.other = {count} пісні · {size} · кеш відтворення {cache} з {limit}
+downloads.play_all = Відтворити все
+downloads.clear_finished = Прибрати завершені
+downloads.show_in_finder = Показати у Finder
+downloads.unavailable_title = Завантаження недоступні
+downloads.unavailable_detail = Не вдалося відкрити теку завантажень (див. термінал).
+downloads.previews_note.one = {count} завантаження — це лише фрагмент (перші ~1 МіБ): його створено, коли повні потоки були недоступні. Видаліть і завантажте його знову.
+downloads.previews_note.few = {count} завантаження — це лише фрагменти (перші ~1 МіБ): їх створено, коли повні потоки були недоступні. Видаліть і завантажте їх знову.
+downloads.previews_note.many = {count} завантажень — це лише фрагменти (перші ~1 МіБ): їх створено, коли повні потоки були недоступні. Видаліть і завантажте їх знову.
+downloads.previews_note.other = {count} завантаження — це лише фрагменти (перші ~1 МіБ): їх створено, коли повні потоки були недоступні. Видаліть і завантажте їх знову.
+downloads.section.session = Цей сеанс
+downloads.section.downloaded = Завантажене
+downloads.empty_detail = Виберіть «Завантажити» в меню пісні (або виділіть пісні в бібліотеці), щоб зберегти їх на цьому комп'ютері.
+downloads.preview_tag = фрагмент
+downloads.delete = Видалити завантаження
+
+# ---- History page
+history.clear.title = Очистити історію прослуховування?
+history.clear.detail = Усі записані прослуховування буде видалено, а лічильники й статистика почнуться заново. Бібліотека, вподобання та плейлисти залишаться.
+history.clear.button = Очистити історію
+history.paused = Історію прослуховування призупинено («Налаштування → Конфіденційність»).
+history.counting = Пісня зараховується після 30 секунд прослуховування.
+history.load_failed = Не вдалося завантажити
+history.empty_title = Ще нічого не відтворено
+history.empty_detail = Тут з'являються прослухані пісні, згруповані за днями.
+history.remove = Прибрати з історії
+history.removing = Вилучення з історії
+history.clearing = Очищення історії
+history.cleared = Історію прослуховування очищено
+
+# ---- Stats page
+stats.range.week = 7 днів
+stats.range.month = 30 днів
+stats.range.quarter = 90 днів
+stats.range.year = Цей рік
+stats.range.all = Увесь час
+stats.subtitle = За історією прослуховування на цьому комп'ютері.
+stats.load_failed = Не вдалося завантажити статистику
+stats.empty_title = За цей період нічого не прослухано
+stats.empty_detail = Увімкніть музику — пісні зараховуються після 30 секунд.
+stats.tile.listened = прослухано
+stats.tile.plays.one = прослуховування
+stats.tile.plays.few = прослуховування
+stats.tile.plays.many = прослуховувань
+stats.tile.plays.other = прослуховування
+stats.tile.songs.one = пісня
+stats.tile.songs.few = пісні
+stats.tile.songs.many = пісень
+stats.tile.songs.other = пісні
+stats.tile.artists.one = виконавець
+stats.tile.artists.few = виконавці
+stats.tile.artists.many = виконавців
+stats.tile.artists.other = виконавця
+stats.tile.albums.one = альбом
+stats.tile.albums.few = альбоми
+stats.tile.albums.many = альбомів
+stats.tile.albums.other = альбому
+stats.song_plays.one = {count} прослуховування · {time}
+stats.song_plays.few = {count} прослуховування · {time}
+stats.song_plays.many = {count} прослуховувань · {time}
+stats.song_plays.other = {count} прослуховування · {time}
+stats.top_songs = Топ пісень
+stats.top_artists = Топ виконавців
+stats.top_albums = Топ альбомів
+stats.by_hour = За годинами доби
+stats.by_weekday = За днями тижня
+stats.month_by_month = За місяцями
+stats.year_in_music = Рік у музиці
+stats.year.title = {year} у музиці
+stats.year.subtitle = Ваш рік за історією прослуховування на цьому комп'ютері.
+stats.year.load_failed = Не вдалося завантажити
+stats.year.empty_title = Того року нічого не відтворено
+stats.year.empty_detail = Ваші підсумки заповнюватимуться, поки ви слухаєте.
+stats.year.top_song.one = Ваша пісня року · {count} прослуховування
+stats.year.top_song.few = Ваша пісня року · {count} прослуховування
+stats.year.top_song.many = Ваша пісня року · {count} прослуховувань
+stats.year.top_song.other = Ваша пісня року · {count} прослуховування
+stats.year.top_artist = Ваш виконавець року · {time}
+stats.year.favourite_hour = Ваша улюблена година
+stats.year.busiest_day = Найактивніший день · {time}
+
+# ---- Settings → Storage
+settings.storage.files = Файли
+settings.storage.settings_file = Файл налаштувань: {path}
+settings.storage.settings_not_saved = Налаштування не зберігаються (немає теки конфігурації)
+settings.storage.secrets = Секрети: {store}
+settings.storage.secrets_loading = Секрети: завантаження…
+settings.storage.library_db = База даних бібліотеки: {path}
+settings.storage.library_db_unavailable = База даних бібліотеки: недоступна
+settings.storage.play_cache = Кеш відтворення
+settings.storage.cache_usage = Використано {used} з {limit}. Першими видаляються пісні, які давно не відтворювалися.
+settings.storage.cache_limit = Максимальний розмір кешу
+settings.storage.cache_played = Кешувати відтворені пісні
+settings.storage.cache_played_detail = Зберігає копію того, що ви слухаєте (ще раз завантажується у фоні).
+settings.storage.clear_cache_row = Очистити кеш відтворення
+settings.storage.clear_cache = Очистити кеш
+settings.storage.downloads = Завантаження
+settings.storage.downloads_usage = {size} у {path}
+settings.storage.downloads_unavailable = Завантаження недоступні.
+settings.storage.download_folder = Тека завантажень
+settings.storage.download_folder_detail = Завантаження ніколи не видаляються автоматично.
+settings.storage.backup = Резервне копіювання й відновлення
+settings.storage.export = Експортувати резервну копію
+settings.storage.export_detail = Бібліотека, плейлисти, історія та налаштування в одному zip (без паролів і cookie).
+settings.storage.export_button = Експортувати…
+settings.storage.restore = Відновити з резервної копії
+settings.storage.restore_detail = Замінює бібліотеку й налаштування; потім перезапустіть застосунок.
+settings.storage.restore_button = Відновити…
+
+# ---- Settings → Privacy
+settings.privacy.listen_history = Історія прослуховування
+settings.privacy.pause_listen = Призупинити історію прослуховування
+settings.privacy.pause_listen_detail = Прослуховування не записуються; «Історія» і «Статистика» не поповнюються.
+settings.privacy.clear_listen = Очистити історію прослуховування
+settings.privacy.clear_listen_detail = Видаляє всі записані прослуховування на цьому комп'ютері.
+settings.privacy.clear_button = Очистити…
+settings.privacy.clear_listen_confirm = Усі записані прослуховування буде видалено; лічильники й статистика почнуться заново.
+settings.privacy.search_history = Історія пошуку
+settings.privacy.pause_search = Призупинити історію пошуку
+settings.privacy.pause_search_detail = Ваші пошукові запити не запам'ятовуються.
+settings.privacy.clear_search = Очистити історію пошуку
+settings.privacy.clear_search_detail = Забуває всі збережені пошукові запити.
+settings.privacy.note = Історія зберігається в базі даних бібліотеки на цьому комп'ютері. Прослуховування ніколи не передаються в історію вашого облікового запису YouTube.
+
+# ---- Backup / restore
+storage.backup_saved = Резервну копію збережено в {path}
+storage.backup_failed = Не вдалося створити резервну копію: {error}
+storage.restore = Відновити
+storage.restore_confirm_title = Відновити цю резервну копію?
+storage.restore_confirm_detail = Вашу бібліотеку, плейлисти, історію та налаштування буде замінено даними з резервної копії. Вхід у YouTube Music та інші секрети залишаться.
+storage.restored_title = Резервну копію відновлено
+storage.restored_library = Бібліотеку відновлено. Перезапустіть {app}, щоб усі налаштування набули чинності.
+storage.restored_all = Бібліотеку й налаштування відновлено. Перезапустіть {app}, щоб усі налаштування набули чинності.
+storage.restored_settings_skipped = Бібліотеку відновлено; налаштування пропущено: {error}. Перезапустіть {app}, щоб усі налаштування набули чинності.
+storage.restart_later = Пізніше
+storage.restart_now = Перезапустити
+storage.restore_failed = Не вдалося відновити: {error}
+storage.cache_cleared = Кеш відтворення очищено
+storage.clearing_search = Очищення історії пошуку
+storage.search_cleared = Історію пошуку очищено

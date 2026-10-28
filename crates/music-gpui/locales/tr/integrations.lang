@@ -1,0 +1,104 @@
+# Integrations on top of the player (Turkish).
+
+# ---- SponsorBlock: segment categories
+sponsorblock.category.music_offtopic = Müzik dışı bölüm
+sponsorblock.category.sponsor = Sponsor
+sponsorblock.category.intro = Ara / giriş
+sponsorblock.category.outro = Bitiş kartları / jenerik
+sponsorblock.category.selfpromo = Kendi tanıtımı
+sponsorblock.category.interaction = Etkileşim hatırlatması
+sponsorblock.category.preview = Önizleme / özet
+sponsorblock.category.filler = Konu dışı dolgu
+sponsorblock.category.hook = Kanca / selamlama
+sponsorblock.category_in_chip.music_offtopic = müzik dışı bölüm
+sponsorblock.category_in_chip.sponsor = sponsor
+sponsorblock.category_in_chip.intro = ara / giriş
+sponsorblock.category_in_chip.outro = bitiş / jenerik
+sponsorblock.category_in_chip.selfpromo = kendi tanıtımı
+sponsorblock.category_in_chip.interaction = hatırlatma
+sponsorblock.category_in_chip.preview = önizleme / özet
+sponsorblock.category_in_chip.filler = dolgu
+sponsorblock.category_in_chip.hook = kanca / selamlama
+sponsorblock.toast.skipped = Atlandı: {category} ({seconds} sn)
+sponsorblock.chip.skip = Atla: {category} ({seconds} sn)
+sponsorblock.chip.tooltip = SponsorBlock: bu bölümün sonuna atla
+
+# ---- AI content filter: categories
+ai_filter.category.explicit = Müstehcen sözler
+ai_filter.category.ai_generated = Yapay zekâ ile üretilmiş müzik
+ai_filter.category.holiday = Bayram ve yılbaşı müziği
+ai_filter.category.children = Çocuk müziği
+ai_filter.category.noise = Uyku sesleri ve beyaz gürültü
+ai_filter.category.sped_up = Hızlandırılmış / yavaşlatılmış versiyonlar
+ai_filter.category.covers = Cover'lar ve karaoke
+ai_filter.category.live = Canlı kayıtlar
+
+# ---- Chromecast
+cast.casting_to = Yayınlanıyor: {device}
+cast.connecting_to = Bağlanılıyor: {device}…
+cast.tooltip = Bir cihaza yayınla
+cast.menu.title = Yayınlanacak cihaz
+cast.menu.searching = Cast cihazları aranıyor…
+cast.menu.none_found = Cast cihazı bulunamadı
+cast.menu.search_again = Yeniden ara
+cast.stop = Yayını durdur
+cast.error.disconnected = Cast cihazının bağlantısı kesildi
+cast.error.scan_failed = Cihazlar aranamadı: {error}
+cast.error.connect_failed = Bağlanılamadı ({device}): {error}
+
+# ---- Import: sources and progress
+import.source.spotify_playlist = Spotify çalma listesi
+import.source.spotify_liked = Spotify'da beğenilen şarkılar
+import.error.connect_spotify = Ayarlar → Spotify'dan içe aktar bölümünde Spotify'ı bağlayın.
+import.error.connect_spotify_first = Önce Ayarlar → Spotify'dan içe aktar bölümünde Spotify'ı bağlayın.
+import.error.not_spotify_link = Bu bir Spotify çalma listesi bağlantısı veya kimliği değil.
+import.stage.reading = Okunuyor
+import.stage.reading_playlist = Çalma listesi okunuyor
+import.stage.reading_liked = Beğenilen şarkılar okunuyor
+import.stage.matching = Eşleştiriliyor
+import.liked_playlist_name = Spotify'da beğenilenler
+import.cancelled = İptal edildi
+import.nothing_to_save = Kaydedilecek bir şey yok: hiçbir şarkı bulunamadı.
+import.exporting = Çalma listesini dışa aktarma
+import.exported.one = {count} şarkı dışa aktarıldı: {path}
+import.exported.other = {count} şarkı dışa aktarıldı: {path}
+
+# ---- Import & export page
+import.page.subtitle = Spotify'dan veya dosyalardan çalma listelerini kitaplığınıza getirin ya da başka yere taşıyın.
+import.file.title = Dosyadan
+import.file.description = Exportify CSV (Spotify), M3U / M3U8 veya burada dışa aktarılmış bir CSV / JSON.
+import.file.choose = Dosya seç…
+import.spotify.title = Spotify'dan
+import.spotify.connect_hint = Çalma listelerinizi ve beğendiğiniz şarkıları içe aktarmak için Spotify hesabınızı (kendi ücretsiz geliştirici Client ID'nizle) bağlayın.
+import.spotify.set_up = Spotify'ı ayarla…
+import.spotify.signed_in = Oturum açan hesap: {user}.
+import.spotify.liked = Beğenilen şarkılar
+import.spotify.show_playlists = Çalma listelerimi göster
+import.spotify.playlist_meta.one = {owner} · {count} şarkı
+import.spotify.playlist_meta.other = {owner} · {count} şarkı
+import.spotify.playlist_meta_unknown = {owner} · ? şarkı
+import.job.progress = {stage} · {done} / {total}
+import.job.progress_count = {stage} · {done}
+import.job.found.one = {count} bulundu
+import.job.found.other = {count} bulundu
+import.job.not_found.one = {count} bulunamadı
+import.job.not_found.other = {count} bulunamadı
+import.job.saved_as = Kaydedildi: “{name}”
+import.job.save.one = {count} şarkıyı çalma listesi olarak kaydet
+import.job.save.other = {count} şarkıyı çalma listesi olarak kaydet
+import.job.open_playlists = Çalma listelerini aç
+import.job.name_placeholder = Çalma listesi adı
+import.guess.best = En iyi tahmin: {artists} — {title} (%{percent})
+import.guess.search_failed = Arama başarısız: {error}
+import.guess.no_results = Sonuç yok
+import.guess.using = Tahmin seçili
+import.guess.use = Tahmini kullan
+import.guess.search_tooltip = YouTube Music'te ara
+import.not_found.title = Bulunamadı
+import.not_found.subtitle = En iyi tahmini kabul edin veya şarkıyı arayıp kendiniz ekleyin.
+import.found.title = YouTube Music'te bulundu
+import.found.first = ilk {shown} / {total}
+import.export.title = Çalma listesini dışa aktar
+import.export.subtitle = CSV ve M3U başka oynatıcılarda ve tablolarda açılır; JSON burada içe aktarmak için her şeyi saklar.
+import.export.empty = Kitaplıkta henüz çalma listesi yok.
+import.export.from_youtube_music = {songs} · YouTube Music

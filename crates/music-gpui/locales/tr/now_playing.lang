@@ -1,0 +1,79 @@
+# Now Playing screen, lyrics pane, lyrics card dialog (Turkish).
+
+# ---- Header
+np.close_tooltip = Kapat (Esc)
+np.header = ŞU AN ÇALIYOR
+np.demo_clock = Demo saati
+np.buffering = Arabelleğe alınıyor…
+np.preview = Önizleme
+np.speed = {speed}×
+np.sleep_tooltip = Uyku zamanlayıcısı
+np.layout_tooltip = Tasarım ve arka plan
+np.menu.design = Tasarım
+np.menu.background = Arka plan
+
+# ---- Player
+np.up_next = Sıradaki
+np.playing_from = ÇALINAN YER
+np.your_queue = Sıranız
+np.of_total = / {total}
+np.editorial.header_album = ŞU AN ÇALIYOR  ·  {album}
+np.editorial.play = ÇAL
+np.editorial.pause = DURAKLAT
+np.editorial.loading = YÜKLENİYOR
+np.queue.title = SIRADAKİLER
+np.queue.more.one = +{count} daha
+np.queue.more.other = +{count} daha
+np.queue.empty = Sırada bir şey yok. Bir listeden şarkı ekleyin veya otomatik çalmayı açın.
+
+# ---- Lyrics pane
+lyrics.nothing_playing = Hiçbir şey çalmıyor
+lyrics.loading = Şarkı sözleri yükleniyor…
+lyrics.missing_title = Şarkı sözü yok
+lyrics.missing_detail = Etkin şarkı sözü sağlayıcılarının hiçbirinde bu parça yok.
+lyrics.failed = Şarkı sözleri yüklenemedi
+lyrics.translating = Çevriliyor…
+lyrics.translation_failed = Çeviri başarısız: {error}
+lyrics.kind.word = Kelime eşzamanlı
+lyrics.kind.line = Satır eşzamanlı
+lyrics.kind.plain = Eşzamansız
+lyrics.source = {provider} · {kind}
+lyrics.select_hint.one = Kart için en fazla {count} satır seçin
+lyrics.select_hint.other = Kart için en fazla {count} satır seçin
+lyrics.selected.one = {count} satır seçildi
+lyrics.selected.other = {count} satır seçildi
+lyrics.create_card = Kart oluştur…
+lyrics.share_tooltip = Şarkı sözlerini kart olarak paylaş
+lyrics.translation_on = Çeviri: açık
+lyrics.translation_off = Çeviri: kapalı
+lyrics.reload_tooltip = Sağlayıcılarda yeniden ara
+
+# ---- Lyrics card dialog
+card.dialog_title = Şarkı sözü kartı
+card.row.background = Arka plan
+card.row.text = Metin
+card.row.size = Boyut
+card.row.shape = Biçim
+card.row.cover = Kapak
+card.cover.show = Göster
+card.cover.hide = Gizle
+card.save = Resmi kaydet…
+card.copy = Resmi kopyala
+card.copying = Kopyalanıyor…
+card.copied = Panoya kopyalandı
+card.saved = Kaydedildi: {path}
+card.save_failed = Kaydedilemedi: {error}
+card.draw_failed = Kart çizilemedi: {error}
+card.aspect.square = Kare
+card.aspect.portrait = Dikey
+card.aspect.story = Hikâye
+card.bg.blur = Bulanık kapak
+card.bg.album = Albüm rengi
+card.bg.dark = Koyu
+card.bg.light = Açık
+card.align.left = Sola
+card.align.center = Ortaya
+card.align.right = Sağa
+card.size.small = Küçük
+card.size.medium = Orta
+card.size.large = Büyük

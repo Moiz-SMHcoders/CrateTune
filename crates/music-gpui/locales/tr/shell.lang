@@ -1,0 +1,227 @@
+# App shell and shared components (Turkish).
+
+# ---- Page titles
+route.search = Ara
+route.search_query = Ara: {query}
+route.library = Kitaplık · {tab}
+route.year_in_music = {year} müzik özeti
+route.recognition = Müzik tanıma
+route.settings = Ayarlar · {section}
+route.library_tab.songs = Şarkılar
+route.library_tab.liked = Beğenilenler
+route.library_tab.albums = Albümler
+route.library_tab.artists = Sanatçılar
+route.library_tab.playlists = Çalma listeleri
+route.library_tab.podcasts = Podcast'ler
+route.library_tab.downloaded = İndirilenler
+route.library_tab.local = Yerel dosyalar
+
+# ---- Themes
+theme.dark = Koyu
+theme.black = Saf siyah
+theme.dynamic = Dinamik
+
+# ---- Player bar
+player.pick_a_song = Başlamak için bir şarkı seçin
+player.audio_unavailable = Ses kullanılamıyor: {error}
+player.buffering = Arabelleğe alınıyor…
+player.play_failed_skipped = “{title}” çalınamadı, atlandı
+player.preview_badge = Önizleme
+player.tooltip.shuffle_on = Karıştır: açık
+player.tooltip.shuffle_off = Karıştır: kapalı
+player.tooltip.previous = Önceki (⌘←, 3 sn'den sonra baştan başlatır)
+player.tooltip.next = Sonraki (⌘→)
+player.tooltip.repeat_off = Tekrarla: kapalı
+player.tooltip.repeat_all = Tekrarla: tümü
+player.tooltip.repeat_one = Tekrarla: tek
+player.tooltip.volume = Ses düzeyi %{percent} (⌘↑ / ⌘↓)
+player.tooltip.queue = Sıra (⌥⌘Q)
+player.tooltip.mini_player = Mini oynatıcı (⇧⌘M)
+player.tooltip.now_playing = Şu an çalıyor ve sözler (⌘L)
+
+# ---- Sleep timer
+player.sleep.title = Uyku zamanlayıcısı
+player.sleep.minutes.one = {count} dakika
+player.sleep.minutes.other = {count} dakika
+player.sleep.end_of_track = Parça sonunda
+player.sleep.custom = Özel: {minutes} dk
+player.sleep.turn_off = Kapat
+player.sleep.left = {time} kaldı
+
+# ---- Queue
+queue.toast.play_next_one = “{title}” sonra çalınacak
+queue.toast.play_next_many.one = {count} şarkı sonra çalınacak
+queue.toast.play_next_many.other = {count} şarkı sonra çalınacak
+queue.toast.added_one = “{title}” sıraya eklendi
+queue.toast.added_many.one = {count} şarkı sıraya eklendi
+queue.toast.added_many.other = {count} şarkı sıraya eklendi
+queue.section.now_playing = ŞU AN ÇALIYOR
+queue.section.up_next = SIRADAKİLER · {count}
+queue.section.history = GEÇMİŞ
+queue.nothing_playing = Hiçbir şey çalmıyor
+queue.empty.repeat_all = Tümünü tekrarla: sıra baştan başlar.
+queue.empty.hint = “Sonra çal” veya “Sıraya ekle” ile şarkı ekleyin.
+queue.tooltip.clear_up_next = Sıradakileri temizle
+queue.tooltip.close = Kapat (Esc)
+queue.tooltip.move_up = Yukarı taşı
+queue.tooltip.move_down = Aşağı taşı
+
+# ---- Song rows and the song context menu
+track.tooltip.more = Diğer
+track.explicit_badge = E
+track.menu.go_to_podcast = Podcast'e git
+track.menu.go_to_named_artist = Sanatçıya git: {artist}
+
+# ---- Item cards, rows, shelves
+items.load_failed = Bu sayfa yüklenemedi
+items.loading_more = Daha fazlası yükleniyor…
+
+# ---- "Add to playlist" / "New playlist" dialog
+playlist_dialog.name_placeholder = Yeni çalma listesi adı
+playlist_dialog.title_new = Yeni çalma listesi
+playlist_dialog.title_add_one = “{title}” şarkısını çalma listesine ekle
+playlist_dialog.title_add_many.one = {count} şarkıyı çalma listesine ekle
+playlist_dialog.title_add_many.other = {count} şarkıyı çalma listesine ekle
+playlist_dialog.create = Oluştur
+playlist_dialog.also_on_youtube = YouTube Music'te de oluştur (gizli)
+playlist_dialog.youtube_songs.one = YouTube Music · {count} şarkı
+playlist_dialog.youtube_songs.other = YouTube Music · {count} şarkı
+playlist_dialog.empty = Henüz çalma listesi yok — yukarıdan bir tane oluşturun.
+
+# ---- Mini player window
+mini.window_title = Mini oynatıcı
+mini.tooltip.show_main = Ana pencereyi göster
+
+# ---- Header search field
+app.search_placeholder = Şarkı, sanatçı, albüm ara
+search_box.recent = Son aramalar
+search_box.loading_suggestions = Öneriler yükleniyor…
+
+# ---- Main window
+app.window_title = {page} — {app}
+app.audio_demo_clock = {error} (demo saati kullanılıyor)
+app.tooltip.back = Geri (⌘[)
+app.tooltip.forward = İleri (⌘])
+
+# ---- YouTube Music account
+account.cookie_invalid = Bu çerezde SAPISID / __Secure-3PAPISID girdisi yok; oturum açılmış bir music.youtube.com isteğinin çerez başlığının tamamını kopyalayın.
+account.checking = Hesap denetleniyor…
+account.toast.signed_in = Oturum açan hesap: {name}
+account.sign_in_failed = Oturum açılamadı: {error}
+account.toast.signed_out = YouTube Music oturumu kapatıldı
+account.unreachable = Hesaba ulaşılamadı: {error}
+account.switching = Geçiş yapılıyor…
+account.toast.switched = Kullanılan hesap: {name}
+account.switch_failed = Geçiş başarısız: {error}
+account.sign_in_first = Önce YouTube Music'te oturum açın.
+account.action.subscribing = Abone olma
+account.toast.subscribed = Abone olundu: {artist}
+account.toast.unsubscribed = Abonelikten çıkıldı: {artist}
+account.sync.starting = Başlatılıyor…
+account.sync.step.liked = Beğenilen şarkılar…
+account.sync.step.songs = Kitaplık şarkıları…
+account.sync.step.albums = Albümler…
+account.sync.step.artists = Sanatçılar…
+account.sync.step.playlists = Çalma listeleri…
+account.sync.step.playlist = Çalma listesi {current}/{total}: {title}
+account.sync.summary = {liked}, {songs}, {albums}, {artists}, {playlists}
+account.sync.liked.one = {count} beğenilen şarkı
+account.sync.liked.other = {count} beğenilen şarkı
+account.sync.songs.one = {count} kitaplık şarkısı
+account.sync.songs.other = {count} kitaplık şarkısı
+account.sync.albums.one = {count} albüm
+account.sync.albums.other = {count} albüm
+account.sync.artists.one = {count} sanatçı
+account.sync.artists.other = {count} sanatçı
+account.sync.playlists.one = {count} çalma listesi
+account.sync.playlists.other = {count} çalma listesi
+account.toast.synced = YouTube Music eşitlemesi: {summary}
+account.sync.failed = {summary}. Hatalar: {errors}
+account.sync.error = {part}: {error}
+account.sync.part.liked = beğenilen şarkılar
+account.sync.part.songs = kitaplık şarkıları
+account.sync.part.albums = albümler
+account.sync.part.artists = sanatçılar
+account.sync.part.playlists = çalma listeleri
+account.sync.part.playlist = çalma listesi “{title}”
+account.sync.part.removing_playlist = çalma listesi kaldırma
+
+# ---- Library database, likes, playlists, downloads (toasts)
+store.library_unavailable = Kitaplık kullanılamıyor: {error}
+store.no_data_dir = Veri klasörü yok; kitaplık kullanılamıyor.
+store.library_db_unavailable = Kitaplık veritabanı kullanılamıyor.
+store.toast.action_failed = {action} başarısız oldu: {error}
+store.action.saving_like = Beğeniyi kaydetme
+store.action.removing_from_library = Kitaplıktan kaldırma
+store.action.adding_to_playlist = Çalma listesine ekleme
+store.action.creating_playlist = Çalma listesi oluşturma
+store.toast.liked_one = Beğenildi: “{title}”
+store.toast.unliked_one = Beğenilenlerden kaldırıldı: “{title}”
+store.toast.liked_many.one = {count} şarkı beğenildi
+store.toast.liked_many.other = {count} şarkı beğenildi
+store.toast.unliked_many.one = {count} şarkı beğenilenlerden kaldırıldı
+store.toast.unliked_many.other = {count} şarkı beğenilenlerden kaldırıldı
+store.toast.only_locally = {message} (yalnızca yerel; YouTube Music: {error})
+store.toast.removed_from_library.one = {count} şarkı kitaplıktan kaldırıldı
+store.toast.removed_from_library.other = {count} şarkı kitaplıktan kaldırıldı
+store.toast.added_to_playlist.one = {count} şarkı eklendi: “{playlist}”
+store.toast.added_to_playlist.other = {count} şarkı eklendi: “{playlist}”
+store.toast.remote_error = {message} (YouTube Music: {error})
+store.playlist_name_missing = Çalma listesine bir ad verin.
+store.toast.playlist_created = Oluşturuldu: “{playlist}”
+store.toast.playlist_created_with.one = Oluşturuldu: “{playlist}” · {count} şarkı
+store.toast.playlist_created_with.other = Oluşturuldu: “{playlist}” · {count} şarkı
+store.downloads_unavailable = İndirmeler kullanılamıyor.
+store.toast.downloading_one = İndiriliyor: “{title}”
+store.toast.downloading_many.one = {count} şarkı indiriliyor
+store.toast.downloading_many.other = {count} şarkı indiriliyor
+store.toast.delete_download_failed = İndirme silinemedi: {error}
+
+# ---- Local music folder scan
+store.add_music_folder_first = Önce bir müzik klasörü ekleyin.
+store.scan.summary = {files}: {added} yeni, {updated} güncellendi, {unchanged} değişmedi, {removed} kaldırıldı
+store.scan.files.one = {count} dosya
+store.scan.files.other = {count} dosya
+store.scan.with_extra = {summary}, {extra}
+store.scan.too_short.one = {count} çok kısa
+store.scan.too_short.other = {count} çok kısa
+store.scan.unreadable.one = {count} okunamadı
+store.scan.unreadable.other = {count} okunamadı
+store.toast.scan_finished = Tarama bitti: {summary}
+store.toast.scan_failed = Tarama başarısız: {error}
+
+# ---- Playlist cover upload
+playlist_cover.read_failed = Resim okunamadı: {error}
+playlist_cover.not_an_image = Bu dosya, uygulamanın okuyabildiği bir resim değil (JPEG, PNG veya WebP).
+playlist_cover.too_large = Resim çok büyük (40 megapikselden fazla).
+playlist_cover.decode_failed = Resmin kodu çözülemedi: {error}
+playlist_cover.encode_failed = Kapak kodlanamadı: {error}
+playlist_cover.still_too_large = Kapak sıkıştırmadan sonra hâlâ 2 MiB'tan büyük.
+playlist_cover.sign_in = Çalma listesi kapaklarını değiştirmek için YouTube Music'te oturum açın.
+playlist_cover.pick_prompt = Kapak olarak kullan
+playlist_cover.uploading = Kapak yükleniyor…
+playlist_cover.changed = Çalma listesi kapağı değiştirildi
+playlist_cover.change_failed = Kapak değiştirilemedi: {error}
+
+# ---- Radio and collection playback
+radio.toast.starting_from = Radyo başlatılıyor: “{title}”
+radio.toast.starting = Radyo başlatılıyor: {name}
+radio.playlist_label = çalma listesi
+radio.nothing_to_play = Burada çalınacak bir şey yok.
+radio.load_failed = Yüklenemedi: {error}
+
+# ---- Lyrics
+lyrics.no_cache_dir = Önbellek klasörü yok
+
+# ---- Playlist editing
+store.action.renaming_playlist = Çalma listesini yeniden adlandırma
+store.action.deleting_playlist = Çalma listesini silme
+store.action.removing_from_playlist = Çalma listesinden kaldırma
+store.action.moving_song = Şarkıyı taşıma
+store.action.refreshing_playlist = Çalma listesini yenileme
+store.toast.playlist_renamed = Yeni ad: “{playlist}”
+store.toast.playlist_deleted = Silindi: “{playlist}”
+store.toast.removed_from_playlist.one = {count} şarkı çalma listesinden kaldırıldı
+store.toast.removed_from_playlist.other = {count} şarkı çalma listesinden kaldırıldı
+store.toast.playlist_refreshed.one = Çalma listesi yenilendi ({count} şarkı)
+store.toast.playlist_refreshed.other = Çalma listesi yenilendi ({count} şarkı)

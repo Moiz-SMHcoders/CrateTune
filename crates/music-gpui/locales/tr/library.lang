@@ -1,0 +1,250 @@
+# Library pages, Storage and Privacy settings, backup / restore (Turkish).
+
+# ---- Sort menu
+library.sort.label = Sırala
+library.sort.date_added = Eklenme tarihi
+library.sort.title = Başlık
+library.sort.artist = Sanatçı
+library.sort.play_count = Dinlenme sayısı
+library.sort.listening_time = Dinleme süresi
+library.sort.last_played = Son çalınma
+library.sort.year = Yıl
+library.sort.song_count = Şarkı sayısı
+library.sort.name = Ad
+library.sort.last_updated = Son güncelleme
+library.sort.date_created = Oluşturulma tarihi
+
+library.filter_placeholder = Filtrele
+library.saved_only = Yalnızca kaydedilenler
+library.subscribed_only = Yalnızca abonelikler
+library.new_playlist = Yeni çalma listesi
+
+library.detail_signed_in = {summary} · YouTube Music'te oturum açık
+library.count.albums.one = {count} albüm
+library.count.albums.other = {count} albüm
+library.count.artists.one = {count} sanatçı
+library.count.artists.other = {count} sanatçı
+library.count.shows.one = {count} program
+library.count.shows.other = {count} program
+library.count.playlists.one = {count} çalma listesi
+library.count.playlists.other = {count} çalma listesi
+
+# ---- Empty states
+library.podcasts.signed_out_title = Podcast'lerinizi görmek için oturum açın
+library.podcasts.signed_out_detail = YouTube Music'te kaydettiğiniz podcast'ler burada görünür. Ayarlar → Hesap bölümünden oturum açın; programlar hesap olmadan da aramadan, Ana sayfadan ve Keşfet'ten açılabilir.
+library.podcasts.empty_title = Henüz podcast yok
+library.podcasts.empty_detail = Bir programı sayfasındaki “Kitaplığa kaydet” ile kaydedin.
+library.empty.no_matches_title = Eşleşme yok
+library.empty.no_matches_detail = Filtreyle eşleşen bir şey yok.
+library.empty.liked_title = Beğenilen şarkı yok
+library.empty.liked_detail = Herhangi bir şarkıdaki kalbe dokunun. Oturum açıksa YouTube Music beğenileriniz buraya eşitlenir.
+library.empty.downloaded_title = İndirilen bir şey yok
+library.empty.downloaded_detail = Bir şarkıyı bu bilgisayarda tutmak için menüsünden “İndir”i seçin.
+library.empty.local_title = Yerel dosya yok
+library.empty.local_detail = Yerel dosyalar sayfasında müzik klasörleri ekleyip tarayın.
+library.empty.songs_title = Kitaplığınızda şarkı yok
+library.empty.songs_detail = Beğenilen şarkılar, eklediğiniz şarkılar ve yerel dosyalar burada görünür.
+library.empty.albums_title = Henüz albüm yok
+library.empty.albums_detail = Şarkılarınızın albümleri ve YouTube Music'te kaydedilen albümler burada görünür.
+library.empty.artists_title = Henüz sanatçı yok
+library.empty.artists_detail = Şarkılarınızın sanatçıları ve abonelikleriniz burada görünür.
+library.empty.playlists_title = Henüz çalma listesi yok
+library.empty.playlists_detail = “Yeni çalma listesi” ile bir tane oluşturun veya YouTube Music çalma listelerinizi eşitlemek için oturum açın.
+library.load_failed = Kitaplık yüklenemedi
+library.db_unavailable = Kitaplık veritabanı kullanılamıyor.
+
+# ---- Selection bar
+library.remove_from_library = Kitaplıktan kaldır
+library.unlike = Beğenmekten vazgeç
+library.delete_downloads = İndirilenleri sil
+
+# ---- Album / artist cards and pages
+library.album.save = Albümü kaydet
+library.album.remove_saved = Kaydedilen albümlerden kaldır
+library.album.saving = Albümü kaydetme
+library.artist.subscribed_songs.one = Abone olundu · {count} şarkı
+library.artist.subscribed_songs.other = Abone olundu · {count} şarkı
+library.playlist.youtube_songs.one = {count} şarkı · YouTube Music
+library.playlist.youtube_songs.other = {count} şarkı · YouTube Music
+
+library.item.songs_listened.one = {count} şarkı · {time} dinlendi
+library.item.songs_listened.other = {count} şarkı · {time} dinlendi
+library.item.subscribe = Abone ol
+library.item.unsubscribe = Abonelikten çık
+library.item.remove_saved = Kaydedilenlerden kaldır
+library.item.open_online = YouTube Music'te aç
+library.item.empty_detail = Burada görmek için bu sanatçının / bu albümün şarkılarını beğenin veya ekleyin.
+
+# ---- Library playlist page
+library.playlist.kind_own = YouTube Music çalma listeniz
+library.playlist.kind_saved = Kaydedilen YouTube Music çalma listesi
+library.playlist.change_cover = Kapağı değiştir…
+library.playlist.rename_title = Çalma listesini yeniden adlandır
+library.playlist.delete_title = “{name}” silinsin mi?
+library.playlist.delete_remote = YouTube Music'te de silinir.
+library.playlist.delete_unsave = YouTube Music kitaplığınızdan kaldırılır.
+library.playlist.delete_local_copy = Yalnızca bu bilgisayardaki kopya silinir.
+library.playlist.delete_undo = Bu işlem geri alınamaz.
+library.playlist.move_up = Yukarı taşı
+library.playlist.move_down = Aşağı taşı
+library.playlist.remove_from = Çalma listesinden kaldır
+library.playlist.not_found_title = Çalma listesi bulunamadı
+library.playlist.not_found_detail = Silinmiş olabilir.
+library.playlist.empty_title = Bu çalma listesi boş
+library.playlist.empty_detail = Şarkı eklemek için bir şarkının menüsündeki “Çalma listesine ekle…” seçeneğini kullanın.
+
+# ---- Song lists: select mode
+song_list.select_none = Seçimi kaldır
+
+# ---- Local files page
+local_files.prompt_add = Ekle
+local_files.prompt_skip = Atla
+local_files.folders_title = Müzik klasörleri
+local_files.add_folder = Klasör ekle
+local_files.skip_folder = Klasörü atla
+local_files.skipped_title = Atlananlar
+local_files.scan.looking = Dosyalar aranıyor…
+local_files.scan.progress = {done} / {total} dosya
+local_files.scanning = Taranıyor…
+local_files.rescan = Yeniden tara
+local_files.detail.one = {count} şarkı · {seconds} sn'den kısa dosyalar atlanır
+local_files.detail.other = {count} şarkı · {seconds} sn'den kısa dosyalar atlanır
+local_files.empty.no_folders_title = Henüz müzik klasörü yok
+local_files.empty.no_folders_detail = Müziğinizin bulunduğu bir klasör ekleyin (MP3, M4A, FLAC, Ogg, Opus, WAV, AIFF…) ve Yeniden tara'ya basın.
+local_files.empty.no_tracks_title = Yerel parça yok
+local_files.empty.no_tracks_detail = Yukarıdaki klasörleri okumak için Yeniden tara'ya basın.
+
+# ---- Downloads page
+downloads.status.queued = Sırada
+downloads.status.downloading_size = İndiriliyor · {size}
+downloads.status.done = Bitti · {size}
+downloads.status.preview = Yalnızca önizleme · {size}
+downloads.status.failed = Başarısız: {error}
+downloads.status.cancelled = İptal edildi
+downloads.detail.one = {count} şarkı · {size} · çalma önbelleği {cache} / {limit}
+downloads.detail.other = {count} şarkı · {size} · çalma önbelleği {cache} / {limit}
+downloads.play_all = Tümünü çal
+downloads.clear_finished = Bitenleri temizle
+downloads.show_in_finder = Finder'da göster
+downloads.unavailable_title = İndirmeler kullanılamıyor
+downloads.unavailable_detail = İndirme klasörü açılamadı (terminale bakın).
+downloads.previews_note.one = {count} indirme bir önizleme (yalnızca ilk ~1 MiB): tam akışlar kullanılamazken yapıldı. Silip yeniden indirin.
+downloads.previews_note.other = {count} indirme önizleme (yalnızca ilk ~1 MiB): tam akışlar kullanılamazken yapıldı. Silip yeniden indirin.
+downloads.section.session = Bu oturum
+downloads.section.downloaded = İndirilenler
+downloads.empty_detail = Şarkıları bu bilgisayarda tutmak için bir şarkının menüsünden “İndir”i seçin (veya kitaplıkta şarkıları seçin).
+downloads.preview_tag = önizleme
+downloads.delete = İndirmeyi sil
+
+# ---- History page
+history.clear.title = Dinleme geçmişi temizlensin mi?
+history.clear.detail = Kaydedilen tüm dinlemeler silinir; dinlenme sayıları ve istatistikler sıfırlanır. Kitaplığınız, beğenileriniz ve çalma listeleriniz kalır.
+history.clear.button = Geçmişi temizle
+history.paused = Dinleme geçmişi duraklatıldı (Ayarlar → Gizlilik).
+history.counting = Şarkılar 30 saniye dinlendikten sonra sayılır.
+history.load_failed = Yüklenemedi
+history.empty_title = Henüz bir şey çalınmadı
+history.empty_detail = Dinlediğiniz şarkılar güne göre gruplanmış olarak burada görünür.
+history.remove = Geçmişten kaldır
+history.removing = Geçmişten kaldırma
+history.clearing = Geçmişi temizleme
+history.cleared = Dinleme geçmişi temizlendi
+
+# ---- Stats page
+stats.range.week = 7 gün
+stats.range.month = 30 gün
+stats.range.quarter = 90 gün
+stats.range.year = Bu yıl
+stats.range.all = Tüm zamanlar
+stats.subtitle = Bu bilgisayardaki dinleme geçmişinize göre.
+stats.load_failed = İstatistikler yüklenemedi
+stats.empty_title = Bu aralıkta dinleme yok
+stats.empty_detail = Biraz müzik çalın — şarkılar 30 saniyeden sonra sayılır.
+stats.tile.listened = dinlendi
+stats.tile.plays.one = dinlenme
+stats.tile.plays.other = dinlenme
+stats.tile.songs.one = şarkı
+stats.tile.songs.other = şarkı
+stats.tile.artists.one = sanatçı
+stats.tile.artists.other = sanatçı
+stats.tile.albums.one = albüm
+stats.tile.albums.other = albüm
+stats.song_plays.one = {count} dinlenme · {time}
+stats.song_plays.other = {count} dinlenme · {time}
+stats.top_songs = En çok dinlenen şarkılar
+stats.top_artists = En çok dinlenen sanatçılar
+stats.top_albums = En çok dinlenen albümler
+stats.by_hour = Günün saatine göre
+stats.by_weekday = Haftanın gününe göre
+stats.month_by_month = Aylara göre
+stats.year_in_music = Yıllık müzik özeti
+stats.year.title = {year} müzik özeti
+stats.year.subtitle = Yılınız, bu bilgisayardaki dinleme geçmişine göre.
+stats.year.load_failed = Yüklenemedi
+stats.year.empty_title = O yıl hiçbir şey çalınmadı
+stats.year.empty_detail = Dinledikçe özetiniz dolacak.
+stats.year.top_song.one = En çok dinlediğiniz şarkı · {count} dinlenme
+stats.year.top_song.other = En çok dinlediğiniz şarkı · {count} dinlenme
+stats.year.top_artist = En çok dinlediğiniz sanatçı · {time}
+stats.year.favourite_hour = En sevdiğiniz saat
+stats.year.busiest_day = En yoğun gün · {time}
+
+# ---- Settings → Storage
+settings.storage.files = Dosyalar
+settings.storage.settings_file = Ayar dosyası: {path}
+settings.storage.settings_not_saved = Ayarlar kaydedilmiyor (yapılandırma klasörü yok)
+settings.storage.secrets = Gizli bilgiler: {store}
+settings.storage.secrets_loading = Gizli bilgiler: yükleniyor…
+settings.storage.library_db = Kitaplık veritabanı: {path}
+settings.storage.library_db_unavailable = Kitaplık veritabanı: kullanılamıyor
+settings.storage.play_cache = Çalma önbelleği
+settings.storage.cache_usage = Kullanılan: {used} / {limit}. En uzun süredir çalınmayan şarkılar önce kaldırılır.
+settings.storage.cache_limit = Önbellek boyutu sınırı
+settings.storage.cache_played = Çalınan şarkıları önbelleğe al
+settings.storage.cache_played_detail = Çaldığınız şeylerin bir kopyasını tutar (arka planda bir kez daha alınır).
+settings.storage.clear_cache_row = Çalma önbelleğini temizle
+settings.storage.clear_cache = Önbelleği temizle
+settings.storage.downloads = İndirilenler
+settings.storage.downloads_usage = {size} · {path}
+settings.storage.downloads_unavailable = İndirmeler kullanılamıyor.
+settings.storage.download_folder = İndirme klasörü
+settings.storage.download_folder_detail = İndirilenler hiçbir zaman otomatik olarak kaldırılmaz.
+settings.storage.backup = Yedekleme ve geri yükleme
+settings.storage.export = Yedeği dışa aktar
+settings.storage.export_detail = Kitaplık, çalma listeleri, geçmiş ve ayarlar tek bir zip dosyasında (parolalar ve çerezler hariç).
+settings.storage.export_button = Dışa aktar…
+settings.storage.restore = Yedeği geri yükle
+settings.storage.restore_detail = Kitaplığı ve ayarları değiştirir; ardından yeniden başlatın.
+settings.storage.restore_button = Geri yükle…
+
+# ---- Settings → Privacy
+settings.privacy.listen_history = Dinleme geçmişi
+settings.privacy.pause_listen = Dinleme geçmişini duraklat
+settings.privacy.pause_listen_detail = Dinlemeler kaydedilmez; Geçmiş ve İstatistikler güncellenmez.
+settings.privacy.clear_listen = Dinleme geçmişini temizle
+settings.privacy.clear_listen_detail = Bu bilgisayarda kaydedilen tüm dinlemeleri siler.
+settings.privacy.clear_button = Temizle…
+settings.privacy.clear_listen_confirm = Kaydedilen tüm dinlemeler silinir; dinlenme sayıları ve istatistikler sıfırlanır.
+settings.privacy.search_history = Arama geçmişi
+settings.privacy.pause_search = Arama geçmişini duraklat
+settings.privacy.pause_search_detail = Yaptığınız aramalar hatırlanmaz.
+settings.privacy.clear_search = Arama geçmişini temizle
+settings.privacy.clear_search_detail = Hatırlanan tüm aramaları unutur.
+settings.privacy.note = Geçmiş, bu bilgisayardaki kitaplık veritabanında kalır. Dinlemeler hiçbir zaman YouTube hesabınızın geçmişine bildirilmez.
+
+# ---- Backup / restore
+storage.backup_saved = Yedek kaydedildi: {path}
+storage.backup_failed = Yedekleme başarısız: {error}
+storage.restore = Geri yükle
+storage.restore_confirm_title = Bu yedek geri yüklensin mi?
+storage.restore_confirm_detail = Kitaplığınız, çalma listeleriniz, geçmişiniz ve ayarlarınız yedektekilerle değiştirilir. YouTube Music oturumu ve diğer gizli bilgiler kalır.
+storage.restored_title = Yedek geri yüklendi
+storage.restored_library = Kitaplık geri yüklendi. Tüm ayarların etkili olması için {app} uygulamasını yeniden başlatın.
+storage.restored_all = Kitaplık ve ayarlar geri yüklendi. Tüm ayarların etkili olması için {app} uygulamasını yeniden başlatın.
+storage.restored_settings_skipped = Kitaplık geri yüklendi; ayarlar atlandı: {error}. Tüm ayarların etkili olması için {app} uygulamasını yeniden başlatın.
+storage.restart_later = Daha sonra
+storage.restart_now = Şimdi yeniden başlat
+storage.restore_failed = Geri yükleme başarısız: {error}
+storage.cache_cleared = Çalma önbelleği temizlendi
+storage.clearing_search = Arama geçmişini temizleme
+storage.search_cleared = Arama geçmişi temizlendi

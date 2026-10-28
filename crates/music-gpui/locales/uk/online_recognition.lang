@@ -1,0 +1,44 @@
+# Music recognition page (Ukrainian).
+
+recognition.title = Розпізнавання музики
+recognition.subtitle = Визначте пісню, що грає навколо вас (⇧⌘R)
+
+recognition.idle.title = Натисніть, щоб розпізнати пісню
+recognition.idle.detail = Увімкніть пісню поруч із комп'ютером; застосунок слухатиме через мікрофон близько 10 секунд.
+recognition.permission.title = Очікування доступу до мікрофона…
+recognition.permission.detail = Дозвольте доступ у системному запиті.
+recognition.listening = Слухаю…
+recognition.listening_progress = {elapsed} з {length} с
+recognition.identifying.title = Розпізнавання…
+recognition.identifying.detail = Зіставлення запису.
+recognition.failed = Не вдалося розпізнати
+recognition.open_privacy_settings = Відкрити параметри конфіденційності
+
+recognition.mic.restricted = Доступ до мікрофона на цьому комп'ютері обмежено.
+recognition.mic.undetermined = Доступ до мікрофона ще не надано. Спробуйте ще раз і дозвольте його, коли з'явиться запит.
+recognition.mic.denied = Доступ до мікрофона для {app} вимкнено. Дозвольте його в «Системні параметри → Приватність і безпека → Мікрофон».
+recognition.error.no_microphone = Мікрофон не знайдено
+recognition.error.permission_denied = У доступі до мікрофона відмовлено
+recognition.error.silent = Мікрофон передає лише тишу (чи дозволено доступ до мікрофона?)
+recognition.error.capture = Не вдалося записати: {error}
+recognition.error.cancelled = Скасовано
+recognition.error.no_signature = Не вдалося почути музику
+recognition.error.no_match = Збігів не знайдено
+recognition.error.rate_limited = Забагато запитів — спробуйте за хвилину
+recognition.error.service = Помилка служби розпізнавання (HTTP {status})
+recognition.error.network = Помилка мережі: {error}
+recognition.error.parse = Неочікувана відповідь: {error}
+
+recognition.result.recognized = Розпізнано
+recognition.result.from_history = З вашої історії розпізнавання
+recognition.match.title = У YouTube Music
+recognition.match.searching = Пошук у YouTube Music…
+recognition.match.failed = Пошук у YouTube Music не вдався: {error}
+recognition.match.none = У YouTube Music не знайдено.
+
+recognition.history.title = Історія
+recognition.history.empty.title = Ще нічого не розпізнано
+recognition.history.empty.detail = Тут з'являються розпізнані пісні, найновіші вгорі.
+recognition.history.clear_title = Очистити історію розпізнавання?
+recognition.history.clear_detail = Список розпізнаних пісень буде видалено.
+recognition.history.remove = Прибрати з історії

@@ -1,0 +1,136 @@
+# Settings → Modules (Turkish).
+
+# ---- Playback source
+modules.source.group = Çalma kaynağı
+modules.source.youtube = Yalnızca YouTube
+modules.source.first = Önce modüller, sonra YouTube
+modules.source.only = Yalnızca modüller
+modules.source_note.youtube = Şarkılar YouTube'dan çalınır; yüklü modüller kullanılmaz.
+modules.source_note.first.one = Her şarkı etkin {count} modülde yukarıdan aşağıya aranır; ilk uygun eşleşme çalınır, yoksa YouTube.
+modules.source_note.first.other = Her şarkı etkin {count} modülde yukarıdan aşağıya aranır; ilk uygun eşleşme çalınır, yoksa YouTube.
+modules.source_note.only.one = Şarkılar yalnızca etkin {count} modülden çalınır; hiçbir modülün eşleştiremediği şarkı başarısız olur (“Yüklenemeyen şarkıları atla” açıksa atlanır).
+modules.source_note.only.other = Şarkılar yalnızca etkin {count} modülden çalınır; hiçbir modülün eşleştiremediği şarkı başarısız olur (“Yüklenemeyen şarkıları atla” açıksa atlanır).
+modules.source.note = Modül, çaldığınız şarkının sesini sağlar; başlık, sanatçılar ve kitaplığınız aynı kalır. Oynatıcı çubuğu ve Şu an çalıyor ekranı sesin nereden geldiğini gösterir. İndirmeler de aynı sırayı kullanır.
+
+# ---- Unavailable
+modules.unavailable = Modüller kullanılamıyor.
+modules.no_data_dir = Veri klasörü yok; modüller kullanılamıyor.
+modules.unavailable_error = Modüller kullanılamıyor: {error}
+
+# ---- Add a module
+modules.add.group = Modül ekle
+modules.add.from_file = Dosyadan yükle…
+modules.add.from_file_note = Diskinizdeki bir .arch paketi.
+modules.add.from_url = URL'den yükle
+modules.add.catalog = Katalog ekle
+modules.add.note = Paketler, siz onaylamadan önce denetlenir (biçim, sağlama toplamı, ayarlar, dışa aktarılan işlevler). Hiçbir modül veya katalog önceden yüklü değildir: modüller yazarlarından gelir ve korumalı alanda çalışır (dosya erişimi yok, ağ uygulamanın proxy'si üzerinden).
+modules.url_missing = Bir .arch paketinin, tanımlayıcının veya kataloğun URL'sini girin.
+modules.catalog_url_missing = Bir katalog URL'si girin.
+
+# ---- Progress lines
+modules.busy.saving = Kaydediliyor…
+modules.busy.saving_catalog = Katalog kaydediliyor…
+modules.busy.checking_package = Paket denetleniyor…
+modules.busy.reading_catalog = Katalog okunuyor…
+modules.busy.installing = Yükleniyor…
+modules.busy.removing = Kaldırılıyor…
+modules.busy.checking = Denetleniyor…
+modules.busy.checking_update = Güncelleme denetleniyor…
+modules.busy.loading_settings = Ayarlar yükleniyor…
+modules.busy.saving_settings = Ayarlar kaydediliyor…
+modules.busy.refreshing = Yenileniyor…
+
+# ---- Results
+modules.catalog_added.one = Katalog eklendi: “{name}” ({count} giriş).
+modules.catalog_added.other = Katalog eklendi: “{name}” ({count} giriş).
+modules.installed_needs_setup = Yüklendi: {name}. Ayarlarını doldurup Kaydet'e basın.
+modules.installed = Yüklendi: {name}.
+modules.removed = Modül kaldırıldı.
+modules.update_available = {version} sürümü kullanılabilir.
+modules.up_to_date = Güncel.
+modules.update_from_file = Dosyadan yüklendi: güncellemek için yeni paketi içe aktarın.
+modules.settings_read_failed = Bu modülün ayarları okunamadı.
+modules.settings_saved = Ayarlar kaydedildi.
+modules.catalog_refreshed = Katalog yenilendi.
+modules.diagnostics_copied = Tanılama bilgileri kopyalandı.
+
+# ---- Review card
+modules.review.group = İnceleme
+modules.review.replaces = Yüklü {version} sürümünü günceller; ayarları korunur.
+modules.review.new = Yeni kurulum; çalma sırasının sonuna eklenir.
+modules.review.needs = Gerekenler: {settings}.
+modules.review.homepage = Ana sayfa: {url}
+modules.review.license = Lisans: {license}
+modules.review.sha256 = Paket SHA-256 {hash}
+
+# ---- Installed modules
+modules.installed_group = Yüklü ({count})
+modules.nothing_installed = Henüz bir şey yüklenmedi.
+modules.action.settings = Ayarlar
+modules.action.check = Denetle
+modules.action.check_update = Güncellemeyi denetle
+modules.action.uninstall = Kaldır
+modules.action.confirm_remove = Kaldır — emin misiniz?
+modules.action.higher = Daha yüksek öncelik
+modules.action.lower = Daha düşük öncelik
+modules.needs_configuration = Yapılandırma gerekli: {settings}
+modules.settings_heading = Ayarlar
+modules.no_settings = Bu modülün ayarı yok.
+modules.field.placeholder_required = zorunlu
+modules.field.placeholder_optional = isteğe bağlı
+modules.field.not_a_number = {field}: bir sayı olmalıdır.
+modules.field.required = {field}: zorunludur.
+modules.field.invalid = {field}: geçersiz değer.
+
+# ---- Diagnostics
+modules.diagnostics = Tanılama
+modules.diagnostic_line = {label} {when}: {summary}
+modules.diagnostic_track = {line} — {track}
+modules.diag.last_song = Son şarkı
+modules.diag.check = Denetim
+modules.diag.playback = Çalma
+modules.diag.not_checked = Henüz denetlenmedi.
+modules.diag.not_used = Henüz bir şarkı için kullanılmadı.
+modules.installed_line_file = Yüklenme: {when} · paket {hash} · dosyadan
+modules.installed_line_url = Yüklenme: {when} · paket {hash} · kaynak: {url}
+modules.log_empty = Günlük boş.
+modules.copy_diagnostics = Tanılamayı kopyala
+modules.clear_log = Günlüğü temizle
+
+modules.status.ready = Hazır
+modules.status.configuration = Yapılandırma gerekli
+modules.status.unavailable = Hizmet kullanılamıyor
+modules.status.failed = Başarısız
+modules.status.no_results = Sonuç yok
+modules.status.no_match = Uygun eşleşme yok ({reason})
+modules.status.resolved = Bulundu
+modules.status.timeout = Zaman aşımı
+modules.rejection.metadata = meta veriler
+modules.rejection.title = başlık
+modules.rejection.artist = sanatçı
+modules.rejection.recording = kayıt
+modules.rejection.duration = süre
+modules.rejection.explicit = müstehcenlik
+modules.phase.search = aramada
+modules.phase.match = eşleştirmede
+modules.phase.stream = akışta
+modules.candidates.one = {count} aday
+modules.candidates.other = {count} aday
+modules.elapsed_ms = {ms} ms
+
+modules.failure.invalid_document = Geçersiz modül belgesi
+modules.failure.unsupported = Bu uygulama tarafından desteklenmiyor
+modules.failure.invalid_configuration = Modül ayarları eksik veya geçersiz
+modules.failure.network = Ağ hatası
+modules.failure.timeout = Zaman aşımı
+modules.failure.execution = Modül başarısız oldu
+modules.failure.integrity = Sağlama toplamı uyuşmuyor
+modules.error_with_code = {error} ({code})
+
+# ---- Catalogs
+modules.catalogs = Kataloglar
+modules.catalog_line.one = {url} · {count} giriş · yenilenme: {when}
+modules.catalog_line.other = {url} · {count} giriş · yenilenme: {when}
+modules.remove_catalog = Kataloğu kaldır
+modules.entry.installed = Yüklü
+modules.entry.not_a_module = Modül değil

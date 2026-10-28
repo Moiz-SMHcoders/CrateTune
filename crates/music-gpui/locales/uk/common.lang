@@ -1,0 +1,171 @@
+# Shared strings (Ukrainian).
+
+locale.native_name = Українська
+
+# ---- Actions
+common.play = Відтворити
+common.pause = Пауза
+common.shuffle = Перемішати
+common.radio = Радіо
+common.start_radio = Увімкнути радіо
+common.play_next = Відтворити наступною
+common.add_to_queue = Додати в чергу
+common.add_to_playlist = Додати в плейлист…
+common.like = Подобається
+common.remove_from_liked = Прибрати з улюблених
+common.download = Завантажити
+common.remove_download = Видалити завантаження
+common.go_to_artist = До виконавця
+common.go_to_album = До альбому
+common.open = Відкрити
+common.cancel = Скасувати
+common.close = Закрити
+common.retry = Повторити
+common.remove = Прибрати
+common.delete = Видалити
+common.clear = Очистити
+common.save = Зберегти
+common.apply = Застосувати
+common.reset = Скинути
+common.done = Готово
+common.copy = Копіювати
+common.rename = Перейменувати
+common.refresh = Оновити
+common.install = Встановити
+common.update = Оновити
+common.import = Імпортувати
+common.search = Пошук
+common.search_placeholder = Пошук…
+common.see_all = Усі
+common.load_more = Завантажити ще
+common.show_more = Показати більше
+common.back = Назад
+common.next = Далі
+common.connect = Підключити
+common.disconnect = Відключити
+common.sign_in = Увійти
+common.sign_out = Вийти
+common.select = Вибрати
+common.select_all = Вибрати все
+common.settings = Налаштування
+
+# ---- States
+common.loading = Завантаження…
+common.saving = Збереження…
+common.downloading = Завантаження…
+common.off = Вимк.
+common.on = Увімк.
+common.none = Немає
+common.custom = Власний
+common.automatic = Автоматично
+common.not_playing = Нічого не грає
+common.not_connected = Не підключено
+common.nothing_here = Тут нічого немає
+
+# ---- Things
+common.song = Пісня
+common.video = Відео
+common.artist = Виконавець
+common.album = Альбом
+common.playlist = Плейлист
+common.podcast = Подкаст
+common.episode = Епізод
+common.queue = Черга
+common.now_playing = Зараз грає
+common.youtube_music = YouTube Music
+
+common.songs.one = {count} пісня
+common.songs.few = {count} пісні
+common.songs.many = {count} пісень
+common.songs.other = {count} пісні
+common.plays.one = {count} прослуховування
+common.plays.few = {count} прослуховування
+common.plays.many = {count} прослуховувань
+common.plays.other = {count} прослуховування
+common.selected.one = Вибрано: {count}
+common.selected.few = Вибрано: {count}
+common.selected.many = Вибрано: {count}
+common.selected.other = Вибрано: {count}
+
+# ---- Sidebar
+nav.home = Головна
+nav.explore = Огляд
+nav.charts = Чарти
+nav.moods = Настрої та жанри
+nav.new_releases = Новинки
+nav.recognize = Розпізнати
+nav.library_group = Бібліотека
+nav.library = Бібліотека
+nav.history = Історія
+nav.stats = Статистика
+nav.downloads = Завантаження
+nav.local_files = Локальні файли
+nav.import = Імпорт і експорт
+nav.together = Слухати разом
+nav.settings = Налаштування
+
+# ---- Dates
+date.full = {day} {month} {year} р.
+date.today = Сьогодні
+date.yesterday = Учора
+date.month_in_date.1 = січня
+date.month_in_date.2 = лютого
+date.month_in_date.3 = березня
+date.month_in_date.4 = квітня
+date.month_in_date.5 = травня
+date.month_in_date.6 = червня
+date.month_in_date.7 = липня
+date.month_in_date.8 = серпня
+date.month_in_date.9 = вересня
+date.month_in_date.10 = жовтня
+date.month_in_date.11 = листопада
+date.month_in_date.12 = грудня
+date.month_short.1 = січ.
+date.month_short.2 = лют.
+date.month_short.3 = бер.
+date.month_short.4 = квіт.
+date.month_short.5 = трав.
+date.month_short.6 = черв.
+date.month_short.7 = лип.
+date.month_short.8 = серп.
+date.month_short.9 = вер.
+date.month_short.10 = жовт.
+date.month_short.11 = лист.
+date.month_short.12 = груд.
+date.weekday_short.1 = Пн
+date.weekday_short.2 = Вт
+date.weekday_short.3 = Ср
+date.weekday_short.4 = Чт
+date.weekday_short.5 = Пт
+date.weekday_short.6 = Сб
+date.weekday_short.7 = Нд
+
+# ---- Durations and relative times
+time.just_now = щойно
+time.seconds_ago.one = {count} с тому
+time.seconds_ago.few = {count} с тому
+time.seconds_ago.many = {count} с тому
+time.seconds_ago.other = {count} с тому
+time.minutes_ago.one = {count} хв тому
+time.minutes_ago.few = {count} хв тому
+time.minutes_ago.many = {count} хв тому
+time.minutes_ago.other = {count} хв тому
+time.hours_ago.one = {count} год тому
+time.hours_ago.few = {count} год тому
+time.hours_ago.many = {count} год тому
+time.hours_ago.other = {count} год тому
+time.days_ago.one = {count} день тому
+time.days_ago.few = {count} дні тому
+time.days_ago.many = {count} днів тому
+time.days_ago.other = {count} дня тому
+time.hours_minutes = {hours} год {minutes} хв
+time.minutes = {minutes} хв
+time.seconds = {seconds} с
+
+# ---- File sizes
+units.size = {value} {unit}
+units.b = Б
+units.kb = КБ
+units.mb = МБ
+units.gb = ГБ
+units.tb = ТБ

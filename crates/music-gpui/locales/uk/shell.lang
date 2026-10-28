@@ -1,0 +1,269 @@
+# App shell and shared components (Ukrainian).
+
+# ---- Page titles
+route.search = Пошук
+route.search_query = Пошук: {query}
+route.library = Бібліотека · {tab}
+route.year_in_music = {year} у музиці
+route.recognition = Розпізнавання музики
+route.settings = Налаштування · {section}
+route.library_tab.songs = Пісні
+route.library_tab.liked = Улюблені
+route.library_tab.albums = Альбоми
+route.library_tab.artists = Виконавці
+route.library_tab.playlists = Плейлисти
+route.library_tab.podcasts = Подкасти
+route.library_tab.downloaded = Завантажене
+route.library_tab.local = Локальні файли
+
+# ---- Themes
+theme.dark = Темна
+theme.black = Чисто чорна
+theme.dynamic = Динамічна
+
+# ---- Player bar
+player.pick_a_song = Виберіть пісню, щоб почати
+player.audio_unavailable = Аудіо недоступне: {error}
+player.buffering = Буферизація…
+player.play_failed_skipped = Не вдалося відтворити «{title}», пропущено
+player.preview_badge = Фрагмент
+player.tooltip.shuffle_on = Перемішування: увімк.
+player.tooltip.shuffle_off = Перемішування: вимк.
+player.tooltip.previous = Попередня (⌘←, після 3 с — з початку)
+player.tooltip.next = Наступна (⌘→)
+player.tooltip.repeat_off = Повтор: вимк.
+player.tooltip.repeat_all = Повтор: усі
+player.tooltip.repeat_one = Повтор: одна
+player.tooltip.volume = Гучність {percent} % (⌘↑ / ⌘↓)
+player.tooltip.queue = Черга (⌥⌘Q)
+player.tooltip.mini_player = Мініплеєр (⇧⌘M)
+player.tooltip.now_playing = «Зараз грає» і текст (⌘L)
+
+# ---- Sleep timer
+player.sleep.title = Таймер сну
+player.sleep.minutes.one = {count} хвилина
+player.sleep.minutes.few = {count} хвилини
+player.sleep.minutes.many = {count} хвилин
+player.sleep.minutes.other = {count} хвилини
+player.sleep.end_of_track = До кінця треку
+player.sleep.custom = Власний: {minutes} хв
+player.sleep.turn_off = Вимкнути
+player.sleep.left = Залишилося {time}
+
+# ---- Queue
+queue.toast.play_next_one = «{title}» гратиме наступною
+queue.toast.play_next_many.one = {count} пісня гратиме наступною
+queue.toast.play_next_many.few = {count} пісні гратимуть наступними
+queue.toast.play_next_many.many = {count} пісень гратимуть наступними
+queue.toast.play_next_many.other = {count} пісні гратимуть наступними
+queue.toast.added_one = «{title}» додано в чергу
+queue.toast.added_many.one = {count} пісню додано в чергу
+queue.toast.added_many.few = {count} пісні додано в чергу
+queue.toast.added_many.many = {count} пісень додано в чергу
+queue.toast.added_many.other = {count} пісні додано в чергу
+queue.section.now_playing = ЗАРАЗ ГРАЄ
+queue.section.up_next = ДАЛІ · {count}
+queue.section.history = ІСТОРІЯ
+queue.nothing_playing = Нічого не грає
+queue.empty.repeat_all = Повтор усіх: черга почнеться спочатку.
+queue.empty.hint = Додавайте пісні через «Відтворити наступною» або «Додати в чергу».
+queue.tooltip.clear_up_next = Очистити «Далі»
+queue.tooltip.close = Закрити (Esc)
+queue.tooltip.move_up = Вище
+queue.tooltip.move_down = Нижче
+
+# ---- Song rows and the song context menu
+track.tooltip.more = Більше
+track.explicit_badge = E
+track.menu.go_to_podcast = До подкасту
+track.menu.go_to_named_artist = До виконавця: {artist}
+
+# ---- Item cards, rows, shelves
+items.load_failed = Не вдалося завантажити сторінку
+items.loading_more = Завантаження…
+
+# ---- "Add to playlist" / "New playlist" dialog
+playlist_dialog.name_placeholder = Назва нового плейлиста
+playlist_dialog.title_new = Новий плейлист
+playlist_dialog.title_add_one = Додати «{title}» у плейлист
+playlist_dialog.title_add_many.one = Додати {count} пісню в плейлист
+playlist_dialog.title_add_many.few = Додати {count} пісні в плейлист
+playlist_dialog.title_add_many.many = Додати {count} пісень у плейлист
+playlist_dialog.title_add_many.other = Додати {count} пісні в плейлист
+playlist_dialog.create = Створити
+playlist_dialog.also_on_youtube = Також створити в YouTube Music (приватний)
+playlist_dialog.youtube_songs.one = YouTube Music · {count} пісня
+playlist_dialog.youtube_songs.few = YouTube Music · {count} пісні
+playlist_dialog.youtube_songs.many = YouTube Music · {count} пісень
+playlist_dialog.youtube_songs.other = YouTube Music · {count} пісні
+playlist_dialog.empty = Плейлистів ще немає — створіть плейлист вище.
+
+# ---- Mini player window
+mini.window_title = Мініплеєр
+mini.tooltip.show_main = Показати головне вікно
+
+# ---- Header search field
+app.search_placeholder = Пошук пісень, виконавців, альбомів
+search_box.recent = Нещодавні пошуки
+search_box.loading_suggestions = Завантаження підказок…
+
+# ---- Main window
+app.window_title = {page} — {app}
+app.audio_demo_clock = {error} (використовується демогодинник)
+app.tooltip.back = Назад (⌘[)
+app.tooltip.forward = Вперед (⌘])
+
+# ---- YouTube Music account
+account.cookie_invalid = У цьому cookie немає запису SAPISID / __Secure-3PAPISID; скопіюйте весь заголовок cookie із запиту до music.youtube.com, у якому виконано вхід.
+account.checking = Перевірка облікового запису…
+account.toast.signed_in = Ви ввійшли як {name}
+account.sign_in_failed = Не вдалося ввійти: {error}
+account.toast.signed_out = Ви вийшли з YouTube Music
+account.unreachable = Не вдалося зв'язатися з обліковим записом: {error}
+account.switching = Перемикання…
+account.toast.switched = Тепер використовується {name}
+account.switch_failed = Не вдалося перемкнути: {error}
+account.sign_in_first = Спершу ввійдіть у YouTube Music.
+account.action.subscribing = Підписка
+account.toast.subscribed = Ви підписалися на {artist}
+account.toast.unsubscribed = Ви відписалися від {artist}
+account.sync.starting = Початок…
+account.sync.step.liked = Улюблені пісні…
+account.sync.step.songs = Пісні з бібліотеки…
+account.sync.step.albums = Альбоми…
+account.sync.step.artists = Виконавці…
+account.sync.step.playlists = Плейлисти…
+account.sync.step.playlist = Плейлист {current}/{total}: {title}
+account.sync.summary = {liked}, {songs}, {albums}, {artists}, {playlists}
+account.sync.liked.one = {count} улюблена пісня
+account.sync.liked.few = {count} улюблені пісні
+account.sync.liked.many = {count} улюблених пісень
+account.sync.liked.other = {count} улюбленої пісні
+account.sync.songs.one = {count} пісня з бібліотеки
+account.sync.songs.few = {count} пісні з бібліотеки
+account.sync.songs.many = {count} пісень з бібліотеки
+account.sync.songs.other = {count} пісні з бібліотеки
+account.sync.albums.one = {count} альбом
+account.sync.albums.few = {count} альбоми
+account.sync.albums.many = {count} альбомів
+account.sync.albums.other = {count} альбому
+account.sync.artists.one = {count} виконавець
+account.sync.artists.few = {count} виконавці
+account.sync.artists.many = {count} виконавців
+account.sync.artists.other = {count} виконавця
+account.sync.playlists.one = {count} плейлист
+account.sync.playlists.few = {count} плейлисти
+account.sync.playlists.many = {count} плейлистів
+account.sync.playlists.other = {count} плейлиста
+account.toast.synced = Синхронізація YouTube Music: {summary}
+account.sync.failed = {summary}. Помилки: {errors}
+account.sync.error = {part}: {error}
+account.sync.part.liked = улюблені пісні
+account.sync.part.songs = пісні з бібліотеки
+account.sync.part.albums = альбоми
+account.sync.part.artists = виконавці
+account.sync.part.playlists = плейлисти
+account.sync.part.playlist = плейлист «{title}»
+account.sync.part.removing_playlist = видалення плейлиста
+
+# ---- Library database, likes, playlists, downloads (toasts)
+store.library_unavailable = Бібліотека недоступна: {error}
+store.no_data_dir = Немає теки даних; бібліотека недоступна.
+store.library_db_unavailable = База даних бібліотеки недоступна.
+store.toast.action_failed = {action}: помилка — {error}
+store.action.saving_like = Збереження вподобання
+store.action.removing_from_library = Вилучення з бібліотеки
+store.action.adding_to_playlist = Додавання в плейлист
+store.action.creating_playlist = Створення плейлиста
+store.toast.liked_one = «{title}» додано в улюблені
+store.toast.unliked_one = «{title}» прибрано з улюблених
+store.toast.liked_many.one = {count} пісню додано в улюблені
+store.toast.liked_many.few = {count} пісні додано в улюблені
+store.toast.liked_many.many = {count} пісень додано в улюблені
+store.toast.liked_many.other = {count} пісні додано в улюблені
+store.toast.unliked_many.one = {count} пісню прибрано з улюблених
+store.toast.unliked_many.few = {count} пісні прибрано з улюблених
+store.toast.unliked_many.many = {count} пісень прибрано з улюблених
+store.toast.unliked_many.other = {count} пісні прибрано з улюблених
+store.toast.only_locally = {message} (лише локально; YouTube Music: {error})
+store.toast.removed_from_library.one = {count} пісню прибрано з бібліотеки
+store.toast.removed_from_library.few = {count} пісні прибрано з бібліотеки
+store.toast.removed_from_library.many = {count} пісень прибрано з бібліотеки
+store.toast.removed_from_library.other = {count} пісні прибрано з бібліотеки
+store.toast.added_to_playlist.one = {count} пісню додано в «{playlist}»
+store.toast.added_to_playlist.few = {count} пісні додано в «{playlist}»
+store.toast.added_to_playlist.many = {count} пісень додано в «{playlist}»
+store.toast.added_to_playlist.other = {count} пісні додано в «{playlist}»
+store.toast.remote_error = {message} (YouTube Music: {error})
+store.playlist_name_missing = Дайте плейлисту назву.
+store.toast.playlist_created = Створено «{playlist}»
+store.toast.playlist_created_with.one = Створено «{playlist}» з {count} піснею
+store.toast.playlist_created_with.few = Створено «{playlist}» з {count} піснями
+store.toast.playlist_created_with.many = Створено «{playlist}» з {count} піснями
+store.toast.playlist_created_with.other = Створено «{playlist}» з {count} пісні
+store.downloads_unavailable = Завантаження недоступні.
+store.toast.downloading_one = Завантаження «{title}»
+store.toast.downloading_many.one = Завантаження {count} пісні
+store.toast.downloading_many.few = Завантаження {count} пісень
+store.toast.downloading_many.many = Завантаження {count} пісень
+store.toast.downloading_many.other = Завантаження {count} пісні
+store.toast.delete_download_failed = Не вдалося видалити завантаження: {error}
+
+# ---- Local music folder scan
+store.add_music_folder_first = Спершу додайте теку з музикою.
+store.scan.summary = {files}: нових {added}, оновлено {updated}, без змін {unchanged}, вилучено {removed}
+store.scan.files.one = {count} файл
+store.scan.files.few = {count} файли
+store.scan.files.many = {count} файлів
+store.scan.files.other = {count} файлу
+store.scan.with_extra = {summary}, {extra}
+store.scan.too_short.one = закоротких: {count}
+store.scan.too_short.few = закоротких: {count}
+store.scan.too_short.many = закоротких: {count}
+store.scan.too_short.other = закоротких: {count}
+store.scan.unreadable.one = непрочитних: {count}
+store.scan.unreadable.few = непрочитних: {count}
+store.scan.unreadable.many = непрочитних: {count}
+store.scan.unreadable.other = непрочитних: {count}
+store.toast.scan_finished = Сканування завершено: {summary}
+store.toast.scan_failed = Не вдалося просканувати: {error}
+
+# ---- Playlist cover upload
+playlist_cover.read_failed = Не вдалося прочитати зображення: {error}
+playlist_cover.not_an_image = Цей файл не є зображенням, яке може прочитати застосунок (JPEG, PNG або WebP).
+playlist_cover.too_large = Зображення завелике (понад 40 мегапікселів).
+playlist_cover.decode_failed = Не вдалося декодувати зображення: {error}
+playlist_cover.encode_failed = Не вдалося закодувати обкладинку: {error}
+playlist_cover.still_too_large = Після стиснення обкладинка все ще більша за 2 МіБ.
+playlist_cover.sign_in = Увійдіть у YouTube Music, щоб змінювати обкладинки плейлистів.
+playlist_cover.pick_prompt = Зробити обкладинкою
+playlist_cover.uploading = Вивантаження обкладинки…
+playlist_cover.changed = Обкладинку плейлиста змінено
+playlist_cover.change_failed = Не вдалося змінити обкладинку: {error}
+
+# ---- Radio and collection playback
+radio.toast.starting_from = Радіо на основі «{title}»
+radio.toast.starting = Радіо: {name}
+radio.playlist_label = плейлист
+radio.nothing_to_play = Тут нічого відтворювати.
+radio.load_failed = Не вдалося завантажити: {error}
+
+# ---- Lyrics
+lyrics.no_cache_dir = Немає теки кешу
+
+# ---- Playlist editing
+store.action.renaming_playlist = Перейменування плейлиста
+store.action.deleting_playlist = Видалення плейлиста
+store.action.removing_from_playlist = Вилучення з плейлиста
+store.action.moving_song = Переміщення пісні
+store.action.refreshing_playlist = Оновлення плейлиста
+store.toast.playlist_renamed = Перейменовано на «{playlist}»
+store.toast.playlist_deleted = Видалено «{playlist}»
+store.toast.removed_from_playlist.one = {count} пісню прибрано з плейлиста
+store.toast.removed_from_playlist.few = {count} пісні прибрано з плейлиста
+store.toast.removed_from_playlist.many = {count} пісень прибрано з плейлиста
+store.toast.removed_from_playlist.other = {count} пісні прибрано з плейлиста
+store.toast.playlist_refreshed.one = Плейлист оновлено ({count} пісня)
+store.toast.playlist_refreshed.few = Плейлист оновлено ({count} пісні)
+store.toast.playlist_refreshed.many = Плейлист оновлено ({count} пісень)
+store.toast.playlist_refreshed.other = Плейлист оновлено ({count} пісні)

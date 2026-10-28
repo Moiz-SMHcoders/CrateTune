@@ -1,0 +1,34 @@
+# Menu bar (Turkish).
+menu.about = {app} Hakkında
+menu.settings = Ayarlar…
+menu.services = Servisler
+menu.hide = {app} Uygulamasını Gizle
+menu.hide_others = Diğerlerini Gizle
+menu.show_all = Tümünü Göster
+menu.quit = {app} Uygulamasından Çık
+menu.edit = Düzen
+menu.undo = Geri Al
+menu.redo = Yinele
+menu.cut = Kes
+menu.copy = Kopyala
+menu.paste = Yapıştır
+menu.select_all = Tümünü Seç
+menu.search = Ara
+menu.view = Görüntü
+menu.back = Geri
+menu.forward = İleri
+menu.recognize = Şarkıyı Tanı
+menu.controls = Denetimler
+menu.play_pause = Çal / Duraklat
+menu.repeat = Tekrarla (Kapalı / Tümü / Tek)
+menu.volume_up = Sesi Artır
+menu.volume_down = Sesi Azalt
+menu.window = Pencere
+menu.minimize = Küçült
+menu.zoom = Büyüt/Küçült
+
+tray.next = Sonraki
+tray.previous = Önceki
+tray.mini_player = Mini Oynatıcı
+tray.show_window = {app} Uygulamasını Göster
+tray.quit = {app} Uygulamasından Çık

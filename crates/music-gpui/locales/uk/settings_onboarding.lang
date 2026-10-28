@@ -1,0 +1,56 @@
+# First-run guide (Ukrainian).
+
+# ---- Step titles
+onboarding.step.welcome = Вітаємо
+onboarding.step.content = Мова й регіон
+onboarding.step.theme = Вигляд
+onboarding.step.account = Обліковий запис YouTube Music
+onboarding.step.local_files = Музика на цьому комп'ютері
+onboarding.step.privacy = Конфіденційність і обмеження
+onboarding.welcome_title = Вітаємо в {app}
+onboarding.step_of = Крок {step} з {total}
+
+# ---- Step subtitles
+onboarding.subtitle.welcome = Швидкий нативний плеєр для YouTube Music: огляд і пошук, тексти, що йдуть за піснею, бібліотека з історією та статистикою, ваші власні музичні файли й розпізнавання пісень. Кілька налаштувань — і все готово; усе це можна змінити пізніше в «Налаштуваннях».
+onboarding.subtitle.content = Якою мовою YouTube Music показує назви й рекомендації та чарти й новинки якої країни ви бачите.
+onboarding.subtitle.theme = Виберіть тему й розмір тексту.
+onboarding.subtitle.account = Необов'язково. Після входу з'являться ваші вподобання, бібліотека, плейлисти й персональні рекомендації. Усе інше працює без облікового запису.
+onboarding.subtitle.local_files = Необов'язково. Додайте теки з музичними файлами; їх буде проскановано у вашу бібліотеку, і вони відтворюватимуться разом із YouTube Music.
+onboarding.subtitle.privacy = Що варто знати перед початком.
+
+# ---- Footer buttons
+onboarding.skip = Пропустити
+onboarding.get_started = Почати
+onboarding.finish = Готово
+onboarding.next_or_skip = Далі (або пропустити)
+
+# ---- Welcome step: feature list
+onboarding.feature.browse.title = Огляд і пошук
+onboarding.feature.browse.text = Головна стрічка, чарти, настрої, новинки, виконавці, альбоми й плейлисти.
+onboarding.feature.lyrics.title = Тексти пісень
+onboarding.feature.lyrics.text = Тексти із синхронізацією за словами від багатьох джерел, з перекладом і транслітерацією.
+onboarding.feature.library.title = Бібліотека
+onboarding.feature.library.text = Вподобання, плейлисти, історія прослуховування, статистика й завантаження — на цьому комп'ютері.
+onboarding.feature.recognize.title = Розпізнавання музики
+onboarding.feature.recognize.text = Визначте пісню, що грає навколо вас (⇧⌘R), і одразу відтворіть її.
+
+# ---- Look step
+onboarding.theme.group = Тема
+onboarding.theme.dynamic_note = Динамічна тема бере акцентний колір з обкладинки пісні, що грає.
+onboarding.theme.text_size = Розмір тексту
+
+# ---- Music on this computer step
+onboarding.local.group = Теки з музикою
+onboarding.local.empty = Тек ще немає.
+onboarding.local.add = Додати теку…
+onboarding.local.note = Проскануйте теки зараз або пізніше; керувати ними можна в «Локальних файлах».
+
+# ---- Privacy & limitations step
+onboarding.privacy.streaming.title = Як передаються пісні
+onboarding.privacy.streaming.text = Повні пісні надходять із TV-клієнта YouTube або з вебклієнта з PoToken (токен захисту від зловживань, який на macOS створюється в прихованому вікні браузера). YouTube змушує нові потоки чекати кілька секунд; тим часом застосунок відтворює короткий фрагмент. Якщо YouTube щось змінить, пісні відтворюватимуться фрагментами ~1 хвилини (це позначено в плеєрі). Спосіб вибирається в «Налаштування → Відтворення → Потоки YouTube».
+onboarding.privacy.data.title = Ваші дані залишаються тут
+onboarding.privacy.data.text = Бібліотека, історія, статистика й налаштування зберігаються на цьому комп'ютері. Паролі, ключі API і cookie входу в YouTube потрапляють у системне сховище ключів. Призупинити чи очистити історію прослуховування й пошуку можна будь-коли в «Налаштування → Конфіденційність».
+onboarding.privacy.recipients.title = Хто що отримує
+onboarding.privacy.recipients.text = YouTube Music отримує ваші пошукові запити й прослуховування (і cookie облікового запису, якщо ви ввійшли). Джерела текстів отримують назви пісень. Розпізнавання пісень надсилає в Shazam аудіовідбиток — не сам запис. Скроблінг і Discord працюють, лише якщо ви їх налаштуєте.
+onboarding.privacy.independent.title = Незалежний проєкт
+onboarding.privacy.independent.text = Не пов'язаний із YouTube, Google чи Shazam. Вільне програмне забезпечення за ліцензією GPL-3.0.

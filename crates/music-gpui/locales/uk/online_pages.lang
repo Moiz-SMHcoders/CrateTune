@@ -1,0 +1,60 @@
+# Online browse pages (Ukrainian).
+
+# ---- Home
+home.recent.title = Відтворено в цьому сеансі
+home.recent.subtitle = Послухати знову
+
+# ---- Explore
+explore.new_releases_detail = Свіжі альбоми й сингли
+explore.charts_detail = Що популярне в різних країнах
+explore.moods_detail = Плейлисти на будь-який момент
+
+# ---- Charts
+charts.country_placeholder = Країна
+charts.search_countries = Пошук країн…
+charts.empty.title = Немає чартів
+charts.empty.detail = YouTube Music не має чартів для цієї країни.
+
+# ---- Moods & genres
+moods.empty = YouTube Music не повернув настроїв чи жанрів для цього регіону.
+
+# ---- New releases
+new_releases.subtitle = Нові альбоми й сингли
+new_releases.empty.title = Нічого нового
+new_releases.empty.detail = YouTube Music не повернув новинок для цього регіону.
+
+# ---- Browse pages
+browse.empty = На цій сторінці немає плейлистів чи пісень (або всі вони відфільтровані).
+
+# ---- Album
+album.empty.title = Немає пісень для відтворення
+album.empty.detail = У цьому альбомі тут немає треків (або всі вони відфільтровані).
+
+# ---- Artist
+artist.subscribed = Ви підписані
+artist.subscribe = Підписатися
+artist.subscribe_tooltip = Підписатися в YouTube Music (також зберігається у вашій бібліотеці)
+artist.subscribe_tooltip_signed_out = Зберігається у вашій бібліотеці; увійдіть, щоб підписатися в YouTube Music
+artist.items_empty = На цій сторінці немає релізів (або всі вони відфільтровані).
+
+# ---- Playlist
+playlist.change_cover = Змінити обкладинку…
+playlist.empty.title = Немає пісень
+playlist.empty.detail = Цей плейлист порожній (або всі його пісні відфільтровані).
+
+# ---- Podcast / episode
+podcast.episodes.one = {count} епізод
+podcast.episodes.few = {count} епізоди
+podcast.episodes.many = {count} епізодів
+podcast.episodes.other = {count} епізоду
+podcast.episodes_more.one = {count}+ епізодів
+podcast.episodes_more.few = {count}+ епізодів
+podcast.episodes_more.many = {count}+ епізодів
+podcast.episodes_more.other = {count}+ епізодів
+podcast.saved = Збережено
+podcast.save = Зберегти в бібліотеку
+podcast.save_failed = Не вдалося оновити бібліотеку: {error}
+podcast.open_episode_page = Відкрити сторінку епізоду
+podcast.go_to_podcast = До подкасту
+podcast.empty.title = Немає епізодів
+podcast.empty.detail = У цього шоу тут ще немає епізодів.
