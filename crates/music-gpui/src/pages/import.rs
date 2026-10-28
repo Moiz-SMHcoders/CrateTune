@@ -92,7 +92,7 @@ impl ImportPage {
             .flex_1()
             .min_w(px(280.))
             .p_4()
-            .rounded(px(10.))
+            .rounded(crate::theme::radius(10.))
             .border_1()
             .border_color(theme.border)
             .child(
@@ -123,7 +123,7 @@ impl ImportPage {
             .flex_1()
             .min_w(px(280.))
             .p_4()
-            .rounded(px(10.))
+            .rounded(crate::theme::radius(10.))
             .border_1()
             .border_color(theme.border)
             .child(
@@ -321,7 +321,7 @@ impl ImportPage {
         let mut card = v_flex()
             .gap_3()
             .p_5()
-            .rounded(px(12.))
+            .rounded(crate::theme::radius(12.))
             .border_1()
             .border_color(theme.border)
             .bg(theme.secondary)

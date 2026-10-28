@@ -21,7 +21,7 @@ use music_core::Track;
 
 use super::is_playing;
 use crate::app::update_app;
-use crate::components::track_row::{ROW_HEIGHT, TrackRow};
+use crate::components::track_row::TrackRow;
 use crate::icons::Lucide;
 
 /// Extra controls at the end of a row (e.g. reorder / remove in a playlist).
@@ -58,7 +58,7 @@ impl SongList {
 
     pub fn set_tracks(&mut self, tracks: Vec<Track>) {
         let n = tracks.len();
-        self.sizes = Rc::new(vec![size(px(0.), px(ROW_HEIGHT)); n]);
+        self.sizes = Rc::new(vec![size(px(0.), px(crate::theme::row_height())); n]);
         self.tracks = Rc::new(tracks);
         if let Some(selection) = &mut self.selection {
             selection.retain(|&i| i < n);
@@ -94,50 +94,51 @@ impl SongList {
         extra: Option<RowExtra<P>>,
         cx: &mut Context<P>,
     ) -> AnyElement {
-        let list = v_virtual_list(
-            cx.entity(),
-            id,
-            self.sizes.clone(),
-            move |page, range, window, cx| {
-                let list = get(page);
-                let tracks = list.tracks.clone();
-                let selection = list.selection.clone();
-                range
-                    .map(|ix| {
-                        let active = is_playing(&tracks[ix].video_id, cx);
-                        let check = selection.as_ref().map(|sel| {
-                            Checkbox::new(SharedString::from(format!("{id}-sel-{ix}")))
-                                .checked(sel.contains(&ix))
-                                .on_click(cx.listener(
-                                    move |page: &mut P, checked: &bool, _, cx| {
-                                        if let Some(sel) = &mut get(page).selection {
-                                            if *checked {
-                                                sel.insert(ix);
-                                            } else {
-                                                sel.remove(&ix);
-                                            }
-                                        }
-                                        cx.notify();
-                                    },
-                                ))
-                        });
-                        let trailing = extra.as_ref().map(|f| f(page, ix, window, cx));
-                        h_flex()
-                            .w_full()
-                            .px_4()
-                            .gap_2()
-                            .children(check)
-                            .child(
-                                div()
-                                    .flex_1()
-                                    .min_w_0()
-                                    .child(TrackRow::new(id, tracks.clone(), ix).active(active)),
-                            )
-                            .children(trailing)
-                    })
-                    .collect::<Vec<_>>()
-            },
-        )
+        // The density setting changed since the sizes were made: lay out with the new
+        // row height until the page sets its tracks again.
+        let height = px(crate::theme::row_height());
+        let sizes = if self.sizes.first().is_some_and(|s| s.height != height) {
+            Rc::new(vec![size(px(0.), height); self.sizes.len()])
+        } else {
+            self.sizes.clone()
+        };
+        let list = v_virtual_list(cx.entity(), id, sizes, move |page, range, window, cx| {
+            let list = get(page);
+            let tracks = list.tracks.clone();
+            let selection = list.selection.clone();
+            range
+                .map(|ix| {
+                    let active = is_playing(&tracks[ix].video_id, cx);
+                    let check = selection.as_ref().map(|sel| {
+                        Checkbox::new(SharedString::from(format!("{id}-sel-{ix}")))
+                            .checked(sel.contains(&ix))
+                            .on_click(cx.listener(move |page: &mut P, checked: &bool, _, cx| {
+                                if let Some(sel) = &mut get(page).selection {
+                                    if *checked {
+                                        sel.insert(ix);
+                                    } else {
+                                        sel.remove(&ix);
+                                    }
+                                }
+                                cx.notify();
+                            }))
+                    });
+                    let trailing = extra.as_ref().map(|f| f(page, ix, window, cx));
+                    h_flex()
+                        .w_full()
+                        .px_4()
+                        .gap_2()
+                        .children(check)
+                        .child(
+                            div()
+                                .flex_1()
+                                .min_w_0()
+                                .child(TrackRow::new(id, tracks.clone(), ix).active(active)),
+                        )
+                        .children(trailing)
+                })
+                .collect::<Vec<_>>()
+        })
         .track_scroll(&self.scroll);
         div()
             .flex_1()
@@ -242,7 +243,7 @@ impl SongList {
             .gap_1()
             .px_3()
             .py_1p5()
-            .rounded(px(8.))
+            .rounded(crate::theme::radius(8.))
             .bg(theme.secondary)
             .child(
                 div()

@@ -29,28 +29,20 @@ pub(super) fn render(
     let (border, ring, muted) = (theme.border, theme.ring, theme.muted_foreground);
     let accent = AppColors::get(cx).accent;
 
+    let custom = panel.settings.custom_theme.clone();
     let swatch = |choice: ThemeChoice| {
-        // Background / surface / accent preview of each theme.
-        let (bg, surface, dot) = match choice {
-            ThemeChoice::Dark => (
-                hsla(0., 0., 0.04, 1.),
-                hsla(0., 0., 0.15, 1.),
-                hsla(0., 0., 0.98, 1.),
-            ),
-            ThemeChoice::Black => (
-                hsla(0., 0., 0., 1.),
-                hsla(0., 0., 0.06, 1.),
-                hsla(0., 0., 0.98, 1.),
-            ),
-            ThemeChoice::Dynamic => (
-                hsla(0., 0., 0.04, 1.),
-                hsla(0., 0., 0.15, 1.),
-                if current == ThemeChoice::Dynamic {
-                    accent
-                } else {
-                    hsla(0.93, 0.7, 0.62, 1.)
-                },
-            ),
+        // Background / surface / accent preview of each theme (with the
+        // Customize-theme options; the dynamic card shows the current accent).
+        let (bg, surface, dot) = crate::theme::preview(&crate::theme::Look {
+            choice,
+            font_scale: 1.0,
+            custom: custom.clone(),
+            art: None,
+        });
+        let dot = if choice == ThemeChoice::Dynamic && current == ThemeChoice::Dynamic {
+            accent
+        } else {
+            dot
         };
         h_flex()
             .h(px(56.))
@@ -312,6 +304,7 @@ pub(super) fn render(
                 .child(themes)
                 .child(note(t!("settings.appearance.theme_note"), cx)),
         )
+        .child(super::theme_ui::render(panel, window, cx))
         .child(
             group(t!("settings.appearance.text_size"), cx)
                 .child(scales)

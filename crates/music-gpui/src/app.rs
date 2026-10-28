@@ -18,9 +18,9 @@ use std::time::{Duration, Instant};
 
 use gpui::{
     AnyWindowHandle, App, AppContext as _, Context, Entity, FocusHandle, Focusable as _, Global,
-    Hsla, InteractiveElement as _, IntoElement, MouseButton, NavigationDirection,
-    ParentElement as _, Render, ScrollHandle, Styled as _, Subscription, Task, WeakEntity, Window,
-    WindowBounds, div, px,
+    InteractiveElement as _, IntoElement, MouseButton, NavigationDirection, ParentElement as _,
+    Render, ScrollHandle, Styled as _, Subscription, Task, WeakEntity, Window, WindowBounds, div,
+    px,
 };
 use gpui_component::{
     ActiveTheme as _, Disableable as _, IconName, Sizable as _, WindowExt as _,
@@ -44,7 +44,6 @@ use crate::router::{Route, Router};
 use crate::search_box::SearchBox;
 use crate::services::{self, Services};
 use crate::settings::{SectionId, SettingsEvent, SettingsPanel, WindowGeometry};
-use crate::theme::{self, ThemeChoice};
 
 pub const POLL_INTERVAL: Duration = Duration::from_millis(250);
 
@@ -140,10 +139,9 @@ pub struct MusicApp {
     /// Per video id, for the last few tracks (see `now_playing::ensure_hires`).
     pub(crate) hires: HashMap<String, HiRes>,
     pub(crate) hires_order: VecDeque<String>,
-    /// Theme currently applied (choice, font scale, accent).
-    applied_theme: Option<(ThemeChoice, f32, Option<Hsla>)>,
-    /// Last accent extracted for a playing track (dynamic theme).
-    pub(crate) accent: Option<Hsla>,
+    /// Applied theme, the current artwork colours, the colour transition
+    /// (`theme_state.rs`).
+    pub(crate) theme_state: crate::theme_state::ThemeState,
     /// Library database, downloads, account (`store.rs`).
     pub(crate) store: crate::store::Store,
     /// SponsorBlock, Music Together, playlist import (`integrations/`).
@@ -313,8 +311,7 @@ impl MusicApp {
             lyrics: LyricsHub::default(),
             hires: HashMap::new(),
             hires_order: VecDeque::new(),
-            applied_theme: None,
-            accent: None,
+            theme_state: Default::default(),
             store: crate::store::Store::open(saved.library.clone(), downloads_resolver),
             integrations: Default::default(),
             onboarding: None,
@@ -634,35 +631,6 @@ impl MusicApp {
         let status = self.services.configure_discord(discord);
         self.settings
             .update(cx, |panel, cx| panel.set_discord_status(status, cx));
-    }
-
-    /// Applies the theme from settings (and the current accent for "dynamic")
-    /// when it differs from what is applied.
-    pub(crate) fn apply_theme(&mut self, cx: &mut Context<Self>) {
-        let appearance = self.settings.read(cx).settings().appearance.clone();
-        let accent = (appearance.theme == ThemeChoice::Dynamic)
-            .then_some(self.accent)
-            .flatten();
-        let wanted = (appearance.theme, appearance.font_scale, accent);
-        if self.applied_theme != Some(wanted) {
-            theme::apply(appearance.theme, appearance.font_scale, accent, cx);
-            self.applied_theme = Some(wanted);
-            cx.notify();
-        }
-    }
-
-    /// The current track's artwork accent became known (`now_playing::ensure_hires`).
-    pub(crate) fn update_accent(&mut self, cx: &mut Context<Self>) {
-        let accent = self
-            .current_video_id()
-            .and_then(|id| match self.hires.get(id) {
-                Some(HiRes::Ready { accent, .. }) => *accent,
-                _ => None,
-            });
-        if let Some(accent) = accent {
-            self.accent = Some(accent);
-            self.apply_theme(cx);
-        }
     }
 
     fn save_window_bounds(&mut self, window: &mut Window, cx: &mut Context<Self>) {

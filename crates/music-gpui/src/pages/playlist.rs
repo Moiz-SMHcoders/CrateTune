@@ -22,7 +22,7 @@ use crate::browse::{Load, PageCache, Paging, fetch, on_view};
 use crate::components::items::{
     Hero, action_button, artist_links, hero, load_state, more_footer, sized_art,
 };
-use crate::components::track_row::{ROW_HEIGHT, TrackRow};
+use crate::components::track_row::TrackRow;
 use crate::components::{empty_state, page_scroll, page_title};
 use crate::icons::Lucide;
 use crate::radio::{CollectionAction, playlist_radio};
@@ -37,6 +37,8 @@ fn header_height(page: &PlaylistData) -> f32 {
     if described { 340. } else { 268. }
 }
 const FOOTER_HEIGHT: f32 = 72.;
+/// "Download all" loads at most this many more pages (100 songs each).
+const DOWNLOAD_PAGES: usize = 100;
 /// Load the next page when this many rows are left below the visible range.
 const PREFETCH_ROWS: usize = 15;
 
@@ -86,7 +88,11 @@ impl PlaylistPage {
     fn set_data(&mut self, data: Data) {
         let mut sizes = Vec::with_capacity(data.tracks.len() + 2);
         sizes.push(size(px(0.), px(header_height(&data.page))));
-        sizes.extend(data.tracks.iter().map(|_| size(px(0.), px(ROW_HEIGHT))));
+        sizes.extend(
+            data.tracks
+                .iter()
+                .map(|_| size(px(0.), px(crate::theme::row_height()))),
+        );
         if data.paging.has_more() || data.paging.error.is_some() || data.paging.loading {
             sizes.push(size(px(0.), px(FOOTER_HEIGHT)));
         }
@@ -173,6 +179,61 @@ impl PlaylistPage {
         ));
     }
 
+    /// Loads every remaining page (at most [`DOWNLOAD_PAGES`]), then queues the
+    /// whole playlist for download.
+    fn download_all(&mut self, window: gpui::AnyWindowHandle, cx: &mut Context<Self>) {
+        let Some(data) = self.data.ready_mut() else {
+            return;
+        };
+        let queue = move |tracks: Vec<Track>, cx: &mut gpui::App| {
+            window
+                .update(cx, |_, window, cx| {
+                    update_app(cx, |app, cx| app.download_collection(tracks, window, cx));
+                })
+                .ok();
+        };
+        let Some(token) = data.paging.start(None) else {
+            if !data.paging.loading {
+                queue((*data.tracks).clone(), cx);
+            }
+            return;
+        };
+        self._task = Some(fetch(
+            cx,
+            move |client, filter| {
+                let mut tracks = Vec::new();
+                let mut next = Some(token);
+                for _ in 0..DOWNLOAD_PAGES {
+                    let Some(t) = next.take() else { break };
+                    let more = client.playlist_continuation(&t)?;
+                    tracks
+                        .extend(filter.tracks(more.tracks.into_iter().map(|e| e.track).collect()));
+                    next = more.continuation;
+                }
+                Ok((tracks, next))
+            },
+            move |this: &mut Self, result, cx| {
+                let Load::Ready(data) = &this.data else {
+                    return;
+                };
+                let mut data = data.clone();
+                match result {
+                    Ok((tracks, next)) => {
+                        let mut all = (*data.tracks).clone();
+                        all.extend(tracks);
+                        data.tracks = Rc::new(all);
+                        data.paging.finish(Ok(next));
+                    }
+                    Err(e) => data.paging.finish(Err(e)),
+                }
+                let tracks = (*data.tracks).clone();
+                this.set_data(data);
+                this.store(cx);
+                queue(tracks, cx);
+            },
+        ));
+    }
+
     fn header(&self, data: &Data, cx: &mut Context<Self>) -> AnyElement {
         let page = &data.page;
         let playlist = &page.playlist;
@@ -254,6 +315,20 @@ impl PlaylistPage {
                 tracks_action(CollectionAction::AddToQueue),
             ));
         }
+        // "Download all" first loads the pages not scrolled to yet.
+        let page_handle = cx.entity().downgrade();
+        let download: Rc<dyn Fn(&mut Window, &mut gpui::App)> = Rc::new(move |window, cx| {
+            let handle = window.window_handle();
+            page_handle
+                .update(cx, |page, cx| page.download_all(handle, cx))
+                .ok();
+        });
+        actions.extend(crate::components::download_header::download_button(
+            "playlist",
+            &data.tracks,
+            Some(download),
+            cx,
+        ));
         div()
             .h(px(header_height(page)))
             .overflow_hidden()
@@ -340,6 +415,17 @@ impl PlaylistPage {
 
 impl Render for PlaylistPage {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        // Density changed: rebuild the row sizes.
+        if let Load::Ready(data) = &self.data
+            && !data.tracks.is_empty()
+            && self
+                .sizes
+                .get(1)
+                .is_some_and(|s| s.height != px(crate::theme::row_height()))
+        {
+            let data = data.clone();
+            self.set_data(data);
+        }
         match &self.data {
             Load::Ready(data) if data.tracks.is_empty() && !data.paging.has_more() => {
                 let data = data.clone();

@@ -1,22 +1,41 @@
 //! Themes: dark (gpui-component's default dark), pure black, and "dynamic"
-//! (dark with an accent taken from the current track's artwork), plus a font
-//! scale. Applied to gpui-component's global `Theme` and to our own
-//! [`AppColors`] (sidebar / list highlights, Now Playing progress).
+//! (colours from the current track's artwork), plus the "Customize theme"
+//! options (`settings/theme_prefs.rs`: accent, surface tint and darkness,
+//! contrast, corners, density, font) and the font scale. Applied to
+//! gpui-component's global `Theme` and to our own [`AppColors`] /
+//! [`AppPalette`] globals, which every view reads instead of hard-coded colours.
 //!
-//! The accent is extracted on the artwork worker thread ([`accent_from_artwork`]):
-//! the most common *vibrant* hue of a 48 px thumbnail, then adjusted until it has
-//! at least [`MIN_CONTRAST`] against the background, with black or white text on
-//! top, whichever reads better. Grey artwork yields no accent (the default stays).
+//! The pipeline is pure up to [`apply`]: a [`Look`] (settings + the current
+//! artwork's [`ArtColors`]) is [`resolve`]d into a few colours ([`Resolved`]:
+//! accent, secondary, tertiary, surface tint), which transitions interpolate
+//! ([`Resolved::lerp`]), and [`apply`] derives every token from them on top of
+//! the stock dark theme. With default settings nothing is overridden, so the
+//! stock look is unchanged.
+//!
+//! Dynamic colours: `palette.rs` quantizes the artwork (on the artwork worker
+//! thread, once per artwork) and builds a Material-style scheme in the chosen
+//! [`DynamicStyle`]; the accent is then raised in tone until it has at least the
+//! contrast level's ratio ([`Contrast::min_ratio`], WCAG) against the background,
+//! with black or white text on it, whichever reads better. Grey artwork yields no
+//! colours (the previous ones stay).
 
-use gpui::{App, Global, Hsla, Rgba, hsla, px};
-use gpui_component::{Theme, ThemeMode};
+use std::sync::atomic::{AtomicU32, Ordering};
+
+use gpui::{App, Global, Hsla, Pixels, Rgba, SharedString, hsla, px};
+use gpui_component::{Theme, ThemeColor, ThemeMode};
 use serde::{Deserialize, Serialize};
 
-/// WCAG contrast the accent must reach against the window background (text-sized UI).
-pub const MIN_CONTRAST: f32 = 4.5;
+pub use crate::palette::{ArtColors, DynamicStyle};
+use crate::palette::{Lch, TonalPalette, solve, tone_of};
+use crate::settings::theme_prefs::{Contrast, Corners, CustomTheme, Darkness};
+
 /// Selectable font scales (Appearance settings); 1.0 = 16 px base.
 pub const FONT_SCALES: [f32; 5] = [0.875, 1.0, 1.125, 1.25, 1.375];
 const BASE_FONT_SIZE: f32 = 16.;
+/// Length of the colour cross-fade between songs (dynamic theme).
+pub const TRANSITION_MS: u64 = 400;
+/// Track row height at regular density (see [`row_height`]).
+pub const BASE_ROW_HEIGHT: f32 = 60.;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -63,86 +82,512 @@ impl Global for AppColors {}
 
 impl AppColors {
     pub fn get(cx: &App) -> AppColors {
-        cx.try_global::<AppColors>().copied().unwrap_or(AppColors {
+        cx.try_global::<AppColors>()
+            .copied()
+            .unwrap_or_else(AppColors::stock)
+    }
+
+    fn stock() -> AppColors {
+        AppColors {
             accent: hsla(0., 0., 0.98, 1.),
             accent_soft: hsla(0., 0., 1., 0.08),
             np_progress: hsla(0., 0., 1., 0.92),
-        })
+        }
     }
 }
 
-/// Applies `choice` (with `accent` for [`ThemeChoice::Dynamic`]) and the font scale.
-pub fn apply(choice: ThemeChoice, font_scale: f32, accent: Option<Hsla>, cx: &mut App) {
-    // Reload the stock dark theme first so switching back undoes every override.
+/// More theme colours for our views (a separate global next to [`AppColors`], so
+/// code that builds that struct keeps compiling).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct AppPalette {
+    pub accent: Hsla,
+    /// Text / icons on [`Self::accent`] (black or white).
+    pub on_accent: Hsla,
+    /// Companion colours of the scheme (badges, charts, decorations).
+    pub secondary: Hsla,
+    pub tertiary: Hsla,
+    /// The hue surfaces are tinted with, if any.
+    pub surface_tint: Option<Hsla>,
+    /// Scrim behind overlays (onboarding, dialogs on artwork).
+    pub scrim: Hsla,
+    /// Text on artwork / dark scrims (Now Playing chrome, mini player).
+    pub on_artwork: Hsla,
+    pub on_artwork_muted: Hsla,
+}
+
+impl Global for AppPalette {}
+
+impl AppPalette {
+    pub fn get(cx: &App) -> AppPalette {
+        cx.try_global::<AppPalette>()
+            .copied()
+            .unwrap_or_else(|| AppPalette::from_resolved(&Resolved::default()))
+    }
+
+    fn from_resolved(r: &Resolved) -> AppPalette {
+        let accent = r.accent.unwrap_or(AppColors::stock().accent);
+        AppPalette {
+            accent,
+            on_accent: on_color(accent),
+            secondary: r.secondary.unwrap_or(hsla(0., 0., 0.78, 1.)),
+            tertiary: r.tertiary.unwrap_or(hsla(0., 0., 0.66, 1.)),
+            surface_tint: r.tint,
+            scrim: hsla(0., 0., 0., 0.62),
+            on_artwork: hsla(0., 0., 1., 1.),
+            on_artwork_muted: hsla(0., 0., 1., 0.7),
+        }
+    }
+}
+
+// ---- metrics (no `cx` needed: virtual lists compute row sizes outside render) ----
+
+static RADIUS_SCALE: AtomicU32 = AtomicU32::new(1.0f32.to_bits());
+static DENSITY_SCALE: AtomicU32 = AtomicU32::new(1.0f32.to_bits());
+
+fn load(a: &AtomicU32) -> f32 {
+    f32::from_bits(a.load(Ordering::Relaxed))
+}
+
+/// A corner radius of our own views, scaled by the corner setting (`base` is
+/// the regular radius in px).
+pub fn radius(base: f32) -> Pixels {
+    px((base * load(&RADIUS_SCALE)).round())
+}
+
+/// The density factor (0.84 / 1 / 1.16).
+pub fn density() -> f32 {
+    load(&DENSITY_SCALE)
+}
+
+/// A padding / gap scaled by the density setting.
+pub fn space(base: f32) -> Pixels {
+    px((base * density()).round())
+}
+
+/// Height of track rows (60 px at regular density).
+pub fn row_height() -> f32 {
+    (BASE_ROW_HEIGHT * density()).round()
+}
+
+// ---- look → resolved colours --------------------------------------------------------
+
+/// Everything the theme is computed from.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Look {
+    pub choice: ThemeChoice,
+    pub font_scale: f32,
+    pub custom: CustomTheme,
+    /// The current artwork's colours (used by [`ThemeChoice::Dynamic`]).
+    pub art: Option<ArtColors>,
+}
+
+impl Look {
+    fn darkness(&self) -> Darkness {
+        if self.choice == ThemeChoice::Black {
+            Darkness::Black
+        } else {
+            self.custom.darkness
+        }
+    }
+
+    /// Whether `other` differs only in the artwork colours.
+    pub fn same_but_art(&self, other: &Look) -> bool {
+        self.choice == other.choice
+            && self.font_scale == other.font_scale
+            && self.custom == other.custom
+    }
+}
+
+/// The few colours a look boils down to; `None` = the stock value.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct Resolved {
+    pub accent: Option<Hsla>,
+    pub secondary: Option<Hsla>,
+    pub tertiary: Option<Hsla>,
+    /// Hue source of the surface tint (its strength comes from the settings).
+    pub tint: Option<Hsla>,
+}
+
+fn mix(a: Hsla, b: Hsla, t: f32) -> Hsla {
+    let (pa, pb) = (Rgba::from(a), Rgba::from(b));
+    let la = crate::palette::srgb_to_oklab([pa.r, pa.g, pa.b]);
+    let lb = crate::palette::srgb_to_oklab([pb.r, pb.g, pb.b]);
+    let m = [0, 1, 2].map(|i| la[i] + (lb[i] - la[i]) * t);
+    Lch {
+        l: m[0],
+        c: (m[1] * m[1] + m[2] * m[2]).sqrt(),
+        h: m[2].atan2(m[1]).to_degrees().rem_euclid(360.),
+    }
+    .to_hsla()
+}
+
+impl Resolved {
+    /// The colours `t` (0..1) of the way from `self` to `to` (in Oklab; a missing
+    /// colour fades from / to its stock value).
+    pub fn lerp(&self, to: &Resolved, t: f32) -> Resolved {
+        let t = t.clamp(0., 1.);
+        if t >= 1. {
+            return *to;
+        }
+        if t <= 0. {
+            return *self;
+        }
+        let stock = AppPalette::from_resolved(&Resolved::default());
+        let f = |a: Option<Hsla>, b: Option<Hsla>, fallback: Hsla| match (a, b) {
+            (None, None) => None,
+            (a, b) => Some(mix(a.unwrap_or(fallback), b.unwrap_or(fallback), t)),
+        };
+        let tint = match (self.tint, to.tint) {
+            (Some(a), Some(b)) => Some(mix(a, b, t)),
+            _ if t < 0.5 => self.tint,
+            _ => to.tint,
+        };
+        Resolved {
+            accent: f(self.accent, to.accent, stock.accent),
+            secondary: f(self.secondary, to.secondary, stock.secondary),
+            tertiary: f(self.tertiary, to.tertiary, stock.tertiary),
+            tint,
+        }
+    }
+}
+
+/// `c` with its tone raised (hue and chroma kept) until it has `min` contrast
+/// against `background`; unchanged if it already has.
+pub fn ensure_contrast(c: Hsla, background: Hsla, min: f32) -> Hsla {
+    if contrast(c, background) >= min {
+        return c;
+    }
+    let lch = Lch::from_hsla(c);
+    let mut tone = tone_of(c);
+    let mut out = c;
+    while contrast(out, background) < min && tone < 100. {
+        tone = (tone + 2.).min(100.);
+        out = solve(lch.h, lch.c, tone);
+    }
+    out
+}
+
+/// `#0a0a0a`, gpui-component's dark background (neutral-950).
+const STOCK_BACKGROUND: Hsla = Hsla {
+    h: 0.,
+    s: 0.,
+    l: 0.039,
+    a: 1.,
+};
+/// `#262626`, its raised surfaces (neutral-800).
+const STOCK_SURFACE: Hsla = Hsla {
+    h: 0.,
+    s: 0.,
+    l: 0.149,
+    a: 1.,
+};
+
+/// The window background a look ends up with (for contrast checks).
+pub fn background_of(look: &Look) -> Hsla {
+    if look.darkness() == Darkness::Black {
+        return hsla(0., 0., 0., 1.);
+    }
+    surface(STOCK_BACKGROUND, look.darkness(), None, 0.)
+}
+
+fn rgb_hsla([r, g, b]: [u8; 3]) -> Hsla {
+    Rgba {
+        r: r as f32 / 255.,
+        g: g as f32 / 255.,
+        b: b as f32 / 255.,
+        a: 1.,
+    }
+    .into()
+}
+
+/// Turns a look into its colours.
+pub fn resolve(look: &Look) -> Resolved {
+    let bg = background_of(look);
+    let min = look.custom.contrast.min_ratio();
+    let custom = look.custom.accent_rgb().map(rgb_hsla);
+    match (look.choice, look.art) {
+        (ThemeChoice::Dynamic, Some(art)) => {
+            let dynamic = &look.custom.dynamic;
+            let scheme = crate::palette::scheme(&art, dynamic.style, dynamic.strength);
+            let accent = ensure_contrast(scheme.accent(), bg, min);
+            let tint = (scheme.primary.chroma > 0.).then(|| scheme.primary.tone(50.));
+            Resolved {
+                accent: Some(accent),
+                secondary: Some(ensure_contrast(scheme.secondary.tone(80.), bg, min)),
+                tertiary: Some(ensure_contrast(scheme.tertiary.tone(80.), bg, min)),
+                tint,
+            }
+        }
+        _ => match custom {
+            Some(accent) => {
+                let accent = ensure_contrast(accent, bg, min);
+                let lch = Lch::from_hsla(accent);
+                Resolved {
+                    accent: Some(accent),
+                    secondary: Some(TonalPalette::new(lch.h, lch.c * 0.45).tone(80.)),
+                    tertiary: Some(TonalPalette::new(lch.h + 60., lch.c * 0.7).tone(78.)),
+                    tint: Some(accent),
+                }
+            }
+            None => Resolved::default(),
+        },
+    }
+}
+
+/// A stock surface colour adjusted for darkness and tinted towards `tint`
+/// (`strength` 0..1; the lightness is kept, so contrast stays the same).
+fn surface(c: Hsla, darkness: Darkness, tint: Option<Hsla>, strength: f32) -> Hsla {
+    let l = match darkness {
+        Darkness::Dim => c.l + 0.045 + c.l * 0.18,
+        Darkness::Standard | Darkness::Black => c.l,
+        Darkness::Deep => c.l * 0.55,
+    }
+    .clamp(0., 1.);
+    match tint.filter(|_| strength > 0.) {
+        Some(t) => {
+            let s = (strength * 0.55 * (t.s * 1.4).min(1.)).min(1.);
+            hsla(t.h, s.max(c.s), l, c.a)
+        }
+        None => hsla(c.h, c.s, l, c.a),
+    }
+}
+
+/// Background, surface and accent for a theme card / preset preview.
+pub fn preview(look: &Look) -> (Hsla, Hsla, Hsla) {
+    let resolved = resolve(look);
+    let darkness = look.darkness();
+    let strength = look.custom.surface_tint;
+    let (bg, raised) = if darkness == Darkness::Black {
+        (hsla(0., 0., 0., 1.), hsla(0., 0., 0.06, 1.))
+    } else {
+        (STOCK_BACKGROUND, STOCK_SURFACE)
+    };
+    let accent = match (look.choice, resolved.accent) {
+        (_, Some(accent)) => accent,
+        // A dynamic card without artwork colours yet: a hint of colour.
+        (ThemeChoice::Dynamic, None) => hsla(0.93, 0.7, 0.62, 1.),
+        (_, None) => AppColors::stock().accent,
+    };
+    (
+        surface(bg, darkness, resolved.tint, strength),
+        surface(raised, darkness, resolved.tint, strength),
+        accent,
+    )
+}
+
+// ---- apply --------------------------------------------------------------------------
+
+/// gpui-component's dark theme as loaded, before any of our overrides.
+#[derive(Clone)]
+struct Stock {
+    colors: ThemeColor,
+    radius: Pixels,
+    radius_lg: Pixels,
+    font_family: SharedString,
+}
+
+impl Global for Stock {}
+
+fn stock(cx: &mut App) -> Stock {
+    if let Some(stock) = cx.try_global::<Stock>() {
+        return stock.clone();
+    }
     Theme::change(ThemeMode::Dark, None, cx);
-    let accent = accent.filter(|_| choice == ThemeChoice::Dynamic);
+    let theme = Theme::global(cx);
+    let stock = Stock {
+        colors: theme.colors,
+        radius: theme.radius,
+        radius_lg: theme.radius_lg,
+        font_family: theme.font_family.clone(),
+    };
+    cx.set_global(stock.clone());
+    stock
+}
+
+/// Every surface-like colour of the theme (backgrounds, borders, hovers).
+fn surfaces(c: &mut ThemeColor) -> [&mut Hsla; 37] {
+    [
+        &mut c.background,
+        &mut c.sidebar,
+        &mut c.list,
+        &mut c.table,
+        &mut c.accordion,
+        &mut c.group_box,
+        &mut c.title_bar,
+        &mut c.popover,
+        &mut c.secondary,
+        &mut c.secondary_hover,
+        &mut c.secondary_active,
+        &mut c.tab_bar,
+        &mut c.tab_bar_segmented,
+        &mut c.tab_active,
+        &mut c.muted,
+        &mut c.border,
+        &mut c.input,
+        &mut c.sidebar_border,
+        &mut c.sidebar_accent,
+        &mut c.title_bar_border,
+        &mut c.window_border,
+        &mut c.skeleton,
+        &mut c.list_hover,
+        &mut c.list_even,
+        &mut c.list_head,
+        &mut c.accent,
+        &mut c.switch,
+        &mut c.table_hover,
+        &mut c.table_even,
+        &mut c.table_head,
+        &mut c.table_row_border,
+        &mut c.status_bar,
+        &mut c.status_bar_border,
+        &mut c.description_list_label,
+        &mut c.slider_thumb,
+        &mut c.scrollbar_thumb,
+        &mut c.scrollbar_thumb_hover,
+    ]
+}
+
+fn shift_lightness(c: Hsla, by: f32) -> Hsla {
+    hsla(c.h, c.s, (c.l + by).clamp(0., 1.), c.a)
+}
+
+/// The overrides of the "Pure black" theme.
+fn pure_black(theme: &mut ThemeColor) {
+    let black = hsla(0., 0., 0., 1.);
+    let raised = hsla(0., 0., 0.05, 1.);
+    let line = hsla(0., 0., 0.11, 1.);
+    theme.background = black;
+    theme.sidebar = black;
+    theme.list = black;
+    theme.table = black;
+    theme.accordion = black;
+    theme.group_box = black;
+    theme.title_bar = black;
+    theme.popover = raised;
+    theme.secondary = raised;
+    theme.secondary_hover = hsla(0., 0., 0.09, 1.);
+    theme.secondary_active = hsla(0., 0., 0.12, 1.);
+    theme.tab_bar = raised;
+    theme.muted = hsla(0., 0., 0.08, 1.);
+    theme.border = line;
+    theme.sidebar_border = line;
+    theme.sidebar_accent = hsla(0., 0., 0.1, 1.);
+    theme.title_bar_border = line;
+    theme.window_border = line;
+    theme.skeleton = hsla(0., 0., 0.07, 1.);
+}
+
+/// Our overrides on top of the stock colours (pure; also used by tests).
+fn themed_colors(stock: &ThemeColor, look: &Look, r: &Resolved) -> ThemeColor {
+    let mut c = *stock;
+    let darkness = look.darkness();
+    if darkness == Darkness::Black {
+        pure_black(&mut c);
+    }
+    let strength = look.custom.surface_tint;
+    if matches!(darkness, Darkness::Dim | Darkness::Deep) || (strength > 0. && r.tint.is_some()) {
+        for s in surfaces(&mut c) {
+            *s = surface(*s, darkness, r.tint, strength);
+        }
+    }
+    if look.custom.contrast != Contrast::Standard {
+        let (fg_lift, line_lift) = if look.custom.contrast == Contrast::High {
+            (0.2, 0.14)
+        } else {
+            (0.1, 0.06)
+        };
+        let white = hsla(0., 0., 1., 1.);
+        for fg in [
+            &mut c.foreground,
+            &mut c.popover_foreground,
+            &mut c.secondary_foreground,
+            &mut c.sidebar_foreground,
+            &mut c.sidebar_accent_foreground,
+            &mut c.accent_foreground,
+            &mut c.tab_active_foreground,
+            &mut c.group_box_foreground,
+        ] {
+            *fg = white;
+        }
+        c.muted_foreground = shift_lightness(c.muted_foreground, fg_lift);
+        c.tab_foreground = shift_lightness(c.tab_foreground, fg_lift);
+        c.table_head_foreground = shift_lightness(c.table_head_foreground, fg_lift * 2.);
+        for line in [
+            &mut c.border,
+            &mut c.sidebar_border,
+            &mut c.input,
+            &mut c.window_border,
+            &mut c.title_bar_border,
+        ] {
+            *line = shift_lightness(*line, line_lift);
+        }
+    }
+    if let Some(accent) = r.accent {
+        let fg = on_color(accent);
+        c.primary = accent;
+        c.primary_hover = shift_lightness(accent, 0.06);
+        c.primary_active = shift_lightness(accent, -0.08);
+        c.primary_foreground = fg;
+        c.button_primary = accent;
+        c.button_primary_hover = shift_lightness(accent, 0.06);
+        c.button_primary_active = shift_lightness(accent, -0.08);
+        c.button_primary_foreground = fg;
+        c.ring = accent;
+        c.slider_bar = accent;
+        c.progress_bar = accent;
+        c.caret = accent;
+        c.link = accent;
+        c.link_hover = shift_lightness(accent, 0.08);
+        c.link_active = shift_lightness(accent, -0.08);
+        c.sidebar_primary = accent;
+        c.sidebar_primary_foreground = fg;
+        c.list_active = accent.opacity(0.18);
+        c.list_active_border = accent;
+        c.selection = accent.opacity(0.35);
+        c.drag_border = accent;
+        c.drop_target = accent.opacity(0.1);
+    }
+    c
+}
+
+/// Applies `look` with the colours `resolved` (normally `resolve(look)`, an
+/// in-between value during a transition) to gpui-component's theme and our globals.
+pub fn apply(look: &Look, resolved: &Resolved, cx: &mut App) {
+    let stock = stock(cx);
+    let colors = themed_colors(&stock.colors, look, resolved);
+    let custom = &look.custom;
+    let font_scale = look.font_scale;
+    let font = if custom.font_family.is_empty() {
+        stock.font_family.clone()
+    } else {
+        SharedString::from(custom.font_family.clone())
+    };
+    let (radius, radius_lg) = match custom.corners {
+        Corners::Sharp => (px(2.), px(3.)),
+        Corners::Regular => (stock.radius, stock.radius_lg),
+        Corners::Round => (px(10.), px(14.)),
+    };
+    RADIUS_SCALE.store(custom.corners.scale().to_bits(), Ordering::Relaxed);
+    DENSITY_SCALE.store(custom.density.scale().to_bits(), Ordering::Relaxed);
     Theme::update(cx, |theme| {
+        theme.colors = colors;
         theme.font_size = px(BASE_FONT_SIZE * font_scale.clamp(0.75, 1.5));
+        theme.font_family = font;
+        theme.radius = radius;
+        theme.radius_lg = radius_lg;
         // No custom title bar, so sheets can start at the top of the content.
         theme.sheet.margin_top = px(0.);
-        if choice == ThemeChoice::Black {
-            let black = hsla(0., 0., 0., 1.);
-            let raised = hsla(0., 0., 0.05, 1.);
-            let line = hsla(0., 0., 0.11, 1.);
-            theme.background = black;
-            theme.sidebar = black;
-            theme.colors.list = black;
-            theme.table = black;
-            theme.accordion = black;
-            theme.group_box = black;
-            theme.title_bar = black;
-            theme.popover = raised;
-            theme.secondary = raised;
-            theme.secondary_hover = hsla(0., 0., 0.09, 1.);
-            theme.secondary_active = hsla(0., 0., 0.12, 1.);
-            theme.tab_bar = raised;
-            theme.muted = hsla(0., 0., 0.08, 1.);
-            theme.border = line;
-            theme.sidebar_border = line;
-            theme.sidebar_accent = hsla(0., 0., 0.1, 1.);
-            theme.title_bar_border = line;
-            theme.window_border = line;
-            theme.skeleton = hsla(0., 0., 0.07, 1.);
-        }
-        if let Some(accent) = accent {
-            let fg = on_color(accent);
-            theme.primary = accent;
-            theme.primary_hover = shift_lightness(accent, 0.06);
-            theme.primary_active = shift_lightness(accent, -0.08);
-            theme.primary_foreground = fg;
-            theme.button_primary = accent;
-            theme.button_primary_hover = shift_lightness(accent, 0.06);
-            theme.button_primary_active = shift_lightness(accent, -0.08);
-            theme.button_primary_foreground = fg;
-            theme.ring = accent;
-            theme.slider_bar = accent;
-            theme.progress_bar = accent;
-            theme.caret = accent;
-            theme.link = accent;
-            theme.sidebar_primary = accent;
-            theme.sidebar_primary_foreground = fg;
-            theme.list_active = accent.opacity(0.18);
-            theme.list_active_border = accent;
-            theme.selection = accent.opacity(0.35);
-        }
     });
-    let colors = match accent {
+    let app_colors = match resolved.accent {
         Some(accent) => AppColors {
             accent,
             accent_soft: accent.opacity(0.16),
             np_progress: shift_lightness(accent, 0.12),
         },
-        None => AppColors {
-            accent: hsla(0., 0., 0.98, 1.),
-            accent_soft: hsla(0., 0., 1., 0.08),
-            np_progress: hsla(0., 0., 1., 0.92),
-        },
+        None => AppColors::stock(),
     };
-    cx.set_global(colors);
-}
-
-fn shift_lightness(c: Hsla, by: f32) -> Hsla {
-    hsla(c.h, c.s, (c.l + by).clamp(0., 1.), c.a)
+    cx.set_global(app_colors);
+    cx.set_global(AppPalette::from_resolved(resolved));
 }
 
 /// Black or white, whichever contrasts more with `bg`.
@@ -176,71 +621,37 @@ pub fn contrast(a: Hsla, b: Hsla) -> f32 {
     (hi + 0.05) / (lo + 0.05)
 }
 
-/// Makes `c` usable as an accent on `background`: saturated enough to read as a
-/// colour, and lightened until it reaches [`MIN_CONTRAST`].
-pub fn readable_accent(c: Hsla, background: Hsla) -> Hsla {
-    let mut out = hsla(c.h, c.s.clamp(0.45, 0.85), c.l.clamp(0.45, 0.8), 1.);
-    while contrast(out, background) < MIN_CONTRAST && out.l < 0.95 {
-        out.l += 0.02;
-    }
-    out
-}
-
-/// Dominant vibrant colour of encoded artwork, made readable on the dark
-/// background. `None` for (nearly) grey artwork or undecodable bytes.
-pub fn accent_from_artwork(bytes: &[u8]) -> Option<Hsla> {
-    let image = image::load_from_memory(bytes).ok()?;
-    let small = image.thumbnail(48, 48).to_rgb8();
-    let pixels: Vec<[u8; 3]> = small.pixels().map(|p| p.0).collect();
-    let dominant = dominant_vibrant(&pixels)?;
-    Some(readable_accent(dominant, hsla(0., 0., 0.04, 1.)))
-}
-
-/// Hue histogram (36 bins) weighted by saturation × brightness; returns the
-/// weighted mean colour of the heaviest bin. `None` when the image has (almost)
-/// no saturated pixels.
-pub fn dominant_vibrant(pixels: &[[u8; 3]]) -> Option<Hsla> {
-    const BINS: usize = 36;
-    let mut weight = [0f32; BINS];
-    let mut sum = [[0f32; 3]; BINS];
-    for &[r, g, b] in pixels {
-        let c: Hsla = Rgba {
-            r: r as f32 / 255.,
-            g: g as f32 / 255.,
-            b: b as f32 / 255.,
-            a: 1.,
-        }
-        .into();
-        // HSV-ish vibrancy: skip greys, near-black and near-white.
-        let max = r.max(g).max(b) as f32 / 255.;
-        let min = r.min(g).min(b) as f32 / 255.;
-        let chroma = max - min;
-        if chroma < 0.15 || max < 0.18 {
-            continue;
-        }
-        let bin = ((c.h * BINS as f32) as usize).min(BINS - 1);
-        let w = chroma * max;
-        weight[bin] += w;
-        for (s, v) in sum[bin].iter_mut().zip([r, g, b]) {
-            *s += v as f32 / 255. * w;
-        }
-    }
-    let (best, &w) = weight
-        .iter()
-        .enumerate()
-        .max_by(|a, b| a.1.total_cmp(b.1))?;
-    // Require a meaningful share of vibrant pixels (≈1.5 % fully vibrant; a
-    // small gold detail on dark art still counts).
-    if w <= 0. || w < pixels.len() as f32 * 0.015 {
-        return None;
-    }
-    let [r, g, b] = sum[best].map(|s| s / w);
-    Some(Rgba { r, g, b, a: 1. }.into())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn look(choice: ThemeChoice) -> Look {
+        Look {
+            choice,
+            font_scale: 1.0,
+            custom: CustomTheme::default(),
+            art: None,
+        }
+    }
+
+    fn stock_colors() -> ThemeColor {
+        let mut c = ThemeColor::default();
+        c.background = STOCK_BACKGROUND;
+        c.secondary = STOCK_SURFACE;
+        c.foreground = hsla(0., 0., 0.98, 1.);
+        c.muted_foreground = hsla(0., 0., 0.64, 1.);
+        c.border = STOCK_SURFACE;
+        c
+    }
+
+    fn art(rgb: [u8; 3]) -> ArtColors {
+        crate::palette::art_colors_from_pixels(&vec![rgb; 900]).unwrap()
+    }
+
+    fn hue_distance(a: f32, b: f32) -> f32 {
+        let d = (a - b).abs() % 360.;
+        d.min(360. - d)
+    }
 
     #[test]
     fn contrast_matches_wcag_reference_values() {
@@ -249,63 +660,155 @@ mod tests {
         assert!((contrast(white, black) - 21.).abs() < 0.01);
         assert!((contrast(white, white) - 1.).abs() < 0.001);
         // #777 on white is the classic 4.48:1.
-        let grey: Hsla = Rgba {
-            r: 0x77 as f32 / 255.,
-            g: 0x77 as f32 / 255.,
-            b: 0x77 as f32 / 255.,
-            a: 1.,
-        }
-        .into();
+        let grey = rgb_hsla([0x77; 3]);
         assert!((contrast(grey, white) - 4.48).abs() < 0.02);
         assert_eq!(on_color(white), hsla(0., 0., 0.04, 1.));
         assert_eq!(on_color(black), white);
     }
 
     #[test]
-    fn readable_accent_reaches_min_contrast() {
-        let bg = hsla(0., 0., 0.04, 1.);
-        for (h, s, l) in [
-            (0.66, 0.9, 0.2),
-            (0.0, 1.0, 0.1),
-            (0.33, 0.3, 0.5),
-            (0.8, 0.6, 0.9),
-        ] {
-            let accent = readable_accent(hsla(h, s, l, 1.), bg);
-            assert!(
-                contrast(accent, bg) >= MIN_CONTRAST,
-                "{h} {s} {l} → {accent:?}"
-            );
-            assert!(accent.s >= 0.45);
+    fn defaults_override_nothing() {
+        let stock = stock_colors();
+        for choice in [ThemeChoice::Dark, ThemeChoice::Dynamic] {
+            let l = look(choice);
+            let r = resolve(&l);
+            assert_eq!(r, Resolved::default(), "{choice:?}");
+            assert!(themed_colors(&stock, &l, &r) == stock, "{choice:?}");
         }
+        let black = themed_colors(&stock, &look(ThemeChoice::Black), &Resolved::default());
+        assert_eq!(black.background, hsla(0., 0., 0., 1.));
     }
 
     #[test]
-    fn dominant_colour_of_mostly_red_art() {
-        let mut pixels = vec![[200u8, 30, 40]; 600];
-        pixels.extend(vec![[20u8, 20, 20]; 300]); // dark background
-        pixels.extend(vec![[30u8, 60, 200]; 100]); // a little blue
-        let c = dominant_vibrant(&pixels).unwrap();
-        assert!(c.h < 0.05 || c.h > 0.95, "red hue, got {c:?}");
-        assert!(c.s > 0.5);
+    fn accents_reach_the_contrast_level() {
+        for (rgb, level) in [
+            ([20, 20, 120], Contrast::Standard),
+            ([120, 10, 10], Contrast::Medium),
+            ([30, 90, 40], Contrast::High),
+            ([250, 250, 120], Contrast::High),
+        ] {
+            let mut l = look(ThemeChoice::Dark);
+            l.custom.accent = crate::settings::theme_prefs::to_hex(rgb);
+            l.custom.contrast = level;
+            let accent = resolve(&l).accent.unwrap();
+            let bg = background_of(&l);
+            assert!(
+                contrast(accent, bg) >= level.min_ratio() - 0.01,
+                "{rgb:?} {level:?} → {accent:?}"
+            );
+            let hue = Lch::from_hsla(accent).h;
+            let original = Lch::from_hsla(rgb_hsla(rgb)).h;
+            assert!(hue_distance(hue, original) < 8., "{hue} vs {original}");
+        }
+        let bright = rgb_hsla([91, 140, 255]);
+        assert_eq!(
+            ensure_contrast(bright, STOCK_BACKGROUND, 4.5),
+            bright,
+            "a readable accent is kept as it is"
+        );
     }
 
     #[test]
-    fn grey_art_has_no_accent() {
-        let pixels: Vec<[u8; 3]> = (0..1000).map(|i| [(i % 255) as u8; 3]).collect();
-        assert_eq!(dominant_vibrant(&pixels), None);
-        assert_eq!(dominant_vibrant(&[]), None);
+    fn dynamic_styles_keep_contrast_and_hue() {
+        let red = art([200, 30, 40]);
+        for style in DynamicStyle::ALL {
+            for level in [Contrast::Standard, Contrast::High] {
+                let mut l = look(ThemeChoice::Dynamic);
+                l.art = Some(red);
+                l.custom.dynamic.style = style;
+                l.custom.contrast = level;
+                let r = resolve(&l);
+                let bg = background_of(&l);
+                for c in [r.accent, r.secondary, r.tertiary].into_iter().flatten() {
+                    assert!(contrast(c, bg) >= level.min_ratio() - 0.01, "{style:?}");
+                }
+                let accent = Lch::from_hsla(r.accent.unwrap());
+                if style == DynamicStyle::Monochrome {
+                    assert!(accent.c < 0.01 && r.tint.is_none());
+                } else {
+                    assert!(hue_distance(accent.h, red.primary().h) < 10., "{style:?}");
+                }
+            }
+        }
+        // Without artwork colours a dynamic theme falls back to the custom accent.
+        let mut l = look(ThemeChoice::Dynamic);
+        l.custom.accent = "#5B8CFF".into();
+        assert!(resolve(&l).accent.is_some());
     }
 
     #[test]
-    fn accent_from_encoded_png() {
-        let img = image::RgbImage::from_pixel(64, 64, image::Rgb([40, 180, 90]));
-        let mut png = Vec::new();
-        image::DynamicImage::ImageRgb8(img)
-            .write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
-            .unwrap();
-        let accent = accent_from_artwork(&png).unwrap();
-        assert!((accent.h - 0.4).abs() < 0.05, "green, got {accent:?}");
-        assert!(accent_from_artwork(b"not an image").is_none());
+    fn darkness_tint_and_contrast_change_surfaces() {
+        let stock = stock_colors();
+        let mut l = look(ThemeChoice::Dark);
+        l.custom.darkness = Darkness::Deep;
+        let deep = themed_colors(&stock, &l, &resolve(&l));
+        assert!(deep.background.l < stock.background.l);
+        l.custom.darkness = Darkness::Dim;
+        let dim = themed_colors(&stock, &l, &resolve(&l));
+        assert!(dim.background.l > stock.background.l);
+        l.custom.darkness = Darkness::Black;
+        assert_eq!(
+            themed_colors(&stock, &l, &resolve(&l)).background,
+            hsla(0., 0., 0., 1.)
+        );
+
+        let mut l = look(ThemeChoice::Dark);
+        l.custom.accent = "#3CC98B".into();
+        l.custom.surface_tint = 0.6;
+        let r = resolve(&l);
+        let tinted = themed_colors(&stock, &l, &r);
+        assert!(tinted.secondary.s > 0.1);
+        assert!((tinted.secondary.h - r.accent.unwrap().h).abs() < 0.01);
+        assert!(
+            (tinted.secondary.l - stock.secondary.l).abs() < 1e-4,
+            "same lightness"
+        );
+        assert_eq!(tinted.primary, r.accent.unwrap());
+
+        l.custom.contrast = Contrast::High;
+        let high = themed_colors(&stock, &l, &resolve(&l));
+        assert!(high.muted_foreground.l > stock.muted_foreground.l);
+        assert!(high.border.l > tinted.border.l);
+    }
+
+    #[test]
+    fn transitions_interpolate() {
+        let a = Resolved {
+            accent: Some(rgb_hsla([255, 0, 0])),
+            ..Resolved::default()
+        };
+        let b = Resolved {
+            accent: Some(rgb_hsla([0, 0, 255])),
+            tint: Some(rgb_hsla([0, 0, 255])),
+            ..Resolved::default()
+        };
+        assert_eq!(a.lerp(&b, 0.), a);
+        assert_eq!(a.lerp(&b, 1.), b);
+        let mid = Rgba::from(a.lerp(&b, 0.5).accent.unwrap());
+        assert!(mid.r > 0.3 && mid.b > 0.3, "{mid:?}");
+        assert_eq!(a.lerp(&b, 0.2).tint, None, "tint switches halfway");
+        assert_eq!(
+            Resolved::default().lerp(&Resolved::default(), 0.5),
+            Resolved::default()
+        );
+    }
+
+    #[test]
+    fn previews_follow_the_look() {
+        let (bg, _, dot) = preview(&look(ThemeChoice::Black));
+        assert_eq!(bg, hsla(0., 0., 0., 1.));
+        assert_eq!(dot, AppColors::stock().accent);
+        let mut l = look(ThemeChoice::Dark);
+        l.custom.accent = "#F5B83D".into();
+        let (_, _, dot) = preview(&l);
+        assert!(contrast(dot, STOCK_BACKGROUND) >= 4.5);
         assert_eq!(ThemeChoice::parse("black"), Some(ThemeChoice::Black));
+    }
+
+    #[test]
+    fn metrics_scale() {
+        assert_eq!(radius(8.), px(8.));
+        assert_eq!(row_height(), 60.);
+        assert_eq!(space(16.), px(16.));
     }
 }

@@ -28,7 +28,7 @@ use music_core::innertube::{BrowseTarget, Item, NavButton, Shelf};
 
 use super::artwork::artwork;
 use super::card::{Card, CardKind};
-use super::track_row::{ListContext, ROW_HEIGHT, TrackRow, explicit_badge, track_menu};
+use super::track_row::{ListContext, TrackRow, explicit_badge, track_menu};
 use super::{empty_state, section_header};
 use crate::app::update_app;
 use crate::icons::Lucide;
@@ -383,7 +383,11 @@ impl RenderOnce for ItemRow {
         let art = artwork(
             item_art(&self.item, 120),
             px(44.),
-            if round { px(22.) } else { px(6.) },
+            if round {
+                px(22.)
+            } else {
+                crate::theme::radius(6.)
+            },
             cx,
         );
         let theme = cx.theme();
@@ -400,10 +404,10 @@ impl RenderOnce for ItemRow {
             ))
             .group(group.clone())
             .w_full()
-            .h(px(ROW_HEIGHT))
+            .h(px(crate::theme::row_height()))
             .px_4()
             .gap_4()
-            .rounded(px(8.))
+            .rounded(crate::theme::radius(8.))
             .cursor_pointer()
             .hover(move |s| s.bg(hover_bg))
             .on_click(move |_, window, cx| open_item(&open, list.clone(), window, cx))
@@ -555,7 +559,7 @@ pub fn quick_picks(prefix: &str, tracks: &Rc<Vec<Track>>, cx: &App) -> AnyElemen
             .h(px(56.))
             .px_2()
             .gap_3()
-            .rounded(px(8.))
+            .rounded(crate::theme::radius(8.))
             .cursor_pointer()
             .hover(move |s| s.bg(hover))
             .on_click(move |_, _, cx| {
@@ -621,7 +625,12 @@ pub struct LazyArt {
 
 impl RenderOnce for LazyArt {
     fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
-        artwork(self.url.map(|u| u.to_string()), px(self.size), px(6.), cx)
+        artwork(
+            self.url.map(|u| u.to_string()),
+            px(self.size),
+            crate::theme::radius(6.),
+            cx,
+        )
     }
 }
 
@@ -672,7 +681,7 @@ pub fn mood_tile(id: impl Into<ElementId>, button: &NavButton, cx: &App) -> AnyE
         .w(px(196.))
         .h(px(52.))
         .flex_none()
-        .rounded(px(8.))
+        .rounded(crate::theme::radius(8.))
         .overflow_hidden()
         .bg(bg)
         .cursor_pointer()
@@ -718,7 +727,16 @@ pub fn hero(h: Hero, cx: &mut App) -> AnyElement {
         description,
     } = h;
     let side = px(196.);
-    let art = artwork(art, side, if round { side / 2. } else { px(10.) }, cx);
+    let art = artwork(
+        art,
+        side,
+        if round {
+            side / 2.
+        } else {
+            crate::theme::radius(10.)
+        },
+        cx,
+    );
     let muted = cx.theme().muted_foreground;
     v_flex()
         .w_full()

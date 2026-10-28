@@ -1,0 +1,168 @@
+# Theming round: Customize theme (Appearance), dynamic colours, theme presets and
+# theme files, settings export / import (Backup & sync), and downloading liked
+# songs / whole lists.
+
+# ---- Customize theme: option values (short button labels)
+theme.darkness.dim = Dim
+theme.darkness.standard = Standard
+theme.darkness.deep = Deep
+theme.darkness.black = Pure black
+theme.contrast.standard = Standard
+theme.contrast.medium = Medium
+theme.contrast.high = High
+theme.corners.sharp = Sharp
+theme.corners.regular = Regular
+theme.corners.round = Round
+theme.density.compact = Compact
+theme.density.regular = Regular
+theme.density.comfortable = Comfortable
+# Dynamic colour styles (how artwork colours are used).
+theme.dynamic_style.vibrant = Vibrant
+theme.dynamic_style.muted = Muted
+theme.dynamic_style.monochrome = Monochrome
+# Colours as close to the artwork's own as possible.
+theme.dynamic_style.content = True to artwork
+
+# ---- Customize theme (Settings → Appearance, src/settings/theme_ui.rs)
+theme.custom.group = Customize theme
+theme.custom.intro = Pick a preset or tune the colours, shapes and type. Changes apply right away; Reset goes back to the standard look.
+theme.custom.presets = Presets
+# Button: put every Customize-theme option back to its default.
+theme.custom.reset = Reset to default
+# Heading of a small sample drawn with the current theme.
+theme.custom.preview_title = Preview
+# Sample texts in the preview (a fake song row).
+theme.custom.preview_song = Song title
+theme.custom.preview_playing = Now playing
+theme.custom.preview_artist = Artist · Album
+theme.custom.preview_selection = Selected text
+theme.custom.accent = Accent colour
+# Tooltip of the first swatch: no custom accent.
+theme.custom.accent_default = The theme's own accent
+theme.custom.hex_placeholder = #RRGGBB
+theme.custom.hex_invalid = Not a colour: use #RRGGBB
+theme.custom.hue = Hue
+theme.custom.saturation = Saturation
+theme.custom.accent_note = Accents too dark for the background are lightened until text on them stays readable (WCAG contrast).
+theme.custom.surfaces = Background and shape
+theme.custom.darkness = Darkness
+theme.custom.darkness_detail = How dark the window and its surfaces are.
+theme.custom.tint = Surface tint
+theme.custom.tint_note = Tints backgrounds, cards and menus with the accent's hue (with the dynamic theme: the artwork's).
+theme.custom.contrast = Contrast
+theme.custom.contrast_detail = Brighter text and borders; the accent must reach 4.5, 5.5 or 7 to 1.
+theme.custom.corners = Corners
+theme.custom.density = Density
+theme.custom.density_detail = Row heights and spacing in lists.
+theme.custom.font = Font
+theme.custom.font_detail = Any font installed on this computer.
+theme.custom.font_system = System default
+# Button shown in the dynamic colours group when another theme is active.
+theme.custom.use_dynamic = Use the dynamic theme
+
+# ---- Dynamic colours
+theme.dynamic.group = Dynamic colours
+theme.dynamic.active_note = Colours come from the playing song's artwork: accent, selection, sliders, Now Playing and, with a surface tint, the backgrounds.
+theme.dynamic.inactive_note = These options apply when the Dynamic theme is selected.
+theme.dynamic.style = Style
+theme.dynamic.strength = Strength
+theme.dynamic.transitions = Smooth transitions
+theme.dynamic.transitions_detail = Fade colours between songs instead of switching at once.
+
+# ---- Presets (short names)
+theme.preset.default = Standard
+theme.preset.midnight = Midnight
+theme.preset.rose = Rosé
+theme.preset.forest = Forest
+theme.preset.contrast = High contrast
+theme.preset.artwork = Artwork
+
+# ---- Theme files
+theme.file.export = Export theme…
+theme.file.import = Import theme…
+# Default file name of an exported theme (without extension).
+theme.file.default_name = My theme
+
+# ---- Backup & sync section (src/settings/portable_ui.rs)
+settings.section.backup = Backup & sync
+portable.settings_group = Settings
+portable.export_settings = Export settings
+portable.export_settings_detail = Every setting except passwords, keys and sign-ins, as a JSON file.
+portable.import_settings = Import settings
+portable.import_settings_detail = Shows what would change before anything is applied.
+portable.export_button = Export…
+portable.import_button = Import…
+portable.secrets_never = Passwords, API keys, cookies and the signed-in account are never exported or imported; window positions stay on this computer.
+portable.theme_group = Themes
+portable.export_theme_detail = Only the look: theme, accent, surfaces, shapes, font, Now Playing and player bar style.
+portable.import_theme_detail = Replaces only the look; everything else stays.
+portable.open_customize = Customize theme
+portable.library_group = Library
+portable.library_note = Liked songs, playlists and history are backed up with the library backup in Storage.
+# Title of the file-open dialog.
+portable.open = Import
+# {path} = where the file was written.
+portable.toast.settings_saved = Settings exported to {path}
+portable.toast.theme_saved = Theme exported to {path}
+portable.toast.write_failed = Couldn't write the file: {error}
+portable.toast.read_failed = Couldn't read the file: {error}
+portable.toast.import_failed = Couldn't import: {error}
+portable.toast.settings_imported = Settings imported
+portable.toast.theme_imported = Theme imported
+portable.restart_detail = Most changes are already active. Some fields on the settings page show the new values after a restart.
+portable.preview.settings_title = Import settings
+# {name} = the theme's name.
+portable.preview.theme_title = Import theme “{name}”
+portable.preview.theme_title_unnamed = Import theme
+portable.preview.no_changes = Nothing would change: these are your current settings.
+# {count} changes; {sections} = number of sections.
+portable.preview.changes.one = {count} change in {sections} sections:
+portable.preview.changes.other = {count} changes in {sections} sections:
+portable.preview.section_changes.one = {count} change
+portable.preview.section_changes.other = {count} changes
+portable.preview.more.one = … and {count} more
+portable.preview.more.other = … and {count} more
+portable.preview.secrets_note = Passwords, keys, the signed-in account and window positions are kept as they are.
+# Button that applies the import.
+portable.preview.import = Import
+# {version} = the file's settings format version.
+portable.note.older = Made with an older version (format {version}): settings it doesn't have get their defaults.
+portable.note.newer = Made with a newer version (format {version}): settings this version doesn't know are ignored.
+portable.note.plain = A plain settings file without export header.
+portable.note.secrets = The file contains secrets; they are not imported.
+# {fields} = a comma-separated list of setting names.
+portable.note.unknown.one = {count} unknown setting ignored: {fields}
+portable.note.unknown.other = {count} unknown settings ignored: {fields}
+# {sections} = section names.
+portable.note.invalid = Invalid values, kept as they are: {sections}
+portable.error.malformed = not valid JSON ({error})
+portable.error.not_object = the file doesn't contain a JSON object
+portable.error.not_ours = this isn't a settings or theme file of {app}
+portable.error.theme_file = this is a theme file; use Import theme…
+portable.error.settings_file = this is a settings file; use Import settings…
+portable.error.no_settings = the file has no settings
+portable.error.no_theme = the file has no theme
+portable.error.too_large = the file is too large
+
+# ---- Downloading liked songs and whole lists
+# Settings → Storage → Downloads (switches).
+downloads.auto_liked = Download liked songs
+downloads.auto_liked_detail = Liking a song downloads it (YouTube songs; local files are already on this computer).
+downloads.remove_unliked = Remove download when unliked
+downloads.remove_unliked_detail = Unliking a song deletes its download. Off: downloads stay until you remove them.
+# List headers (Liked songs, library songs, playlists, albums).
+downloads.header.download_all = Download all
+# {done} of {total} songs are already downloaded.
+downloads.header.download_rest = Download all ({done} of {total} done)
+downloads.header.progress = Downloading {done} of {total}
+downloads.header.remove = Remove downloads
+downloads.header.remove_title = Remove downloads?
+downloads.header.remove_detail.one = The downloaded file of this song is deleted; the song stays in the list.
+downloads.header.remove_detail.other = The downloaded files of these {count} songs are deleted; the songs stay in the list.
+downloads.header.all_downloaded.one = The song is downloaded
+downloads.header.all_downloaded.other = All {count} songs are downloaded
+downloads.header.nothing_to_do = Everything is downloaded or already queued
+downloads.header.cancelled.one = Cancelled {count} download
+downloads.header.cancelled.other = Cancelled {count} downloads
+downloads.header.removed.one = Removed {count} download
+downloads.header.removed.other = Removed {count} downloads

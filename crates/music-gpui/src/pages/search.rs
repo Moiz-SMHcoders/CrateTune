@@ -38,7 +38,7 @@ use crate::components::items::{
     ItemRow, Playable, ShelfModel, action_button, chip_row, item_art, item_menu, item_subtitle,
     load_state, more_footer, open_item,
 };
-use crate::components::track_row::{ROW_HEIGHT, TrackRow};
+use crate::components::track_row::TrackRow;
 use crate::components::{empty_state, page_scroll, section_header};
 use crate::icons::Lucide;
 use crate::radio::{Collection, CollectionAction};
@@ -182,7 +182,7 @@ impl TabList {
         let footer = paging.has_more() || paging.error.is_some();
         let sizes = items
             .iter()
-            .map(|_| size(px(0.), px(ROW_HEIGHT)))
+            .map(|_| size(px(0.), px(crate::theme::row_height())))
             .chain(footer.then(|| size(px(0.), px(72.))))
             .collect();
         Self {
@@ -561,7 +561,7 @@ impl SearchPage {
             .flex_none()
             .p_5()
             .gap_4()
-            .rounded(px(12.))
+            .rounded(crate::theme::radius(12.))
             .bg(bg)
             .cursor_pointer()
             .hover(move |s| s.bg(hover))

@@ -71,8 +71,8 @@ pub enum HiRes {
         palette: Palette,
         /// Soft lights in the palette's colours (animated glow background).
         glows: [Arc<RenderImage>; 3],
-        /// Dominant vibrant colour (dynamic theme), if the art has one.
-        accent: Option<Hsla>,
+        /// Scored seed colours (dynamic theme, `palette.rs`), if the art has any.
+        art_colors: Option<crate::theme::ArtColors>,
     },
     Failed,
 }
@@ -257,6 +257,7 @@ impl MusicApp {
             return;
         };
         self.hires.insert(id.clone(), HiRes::Loading);
+        let art_key = url.clone();
         let art = ArtworkCache::global(cx).update(cx, |cache, cx| cache.load(url, cx));
         cx.spawn(async move |this, cx| {
             let entry = match art.await {
@@ -267,7 +268,7 @@ impl MusicApp {
                         let bytes = image.bytes();
                         let started = Instant::now();
                         let backdrop = crate::backdrop::blurred_backdrop(bytes);
-                        let accent = crate::theme::accent_from_artwork(bytes);
+                        let accent = crate::palette::cached_art_colors(&art_key, bytes);
                         if std::env::var_os("MUSIC_TIMINGS").is_some() {
                             eprintln!(
                                 "music-gpui: backdrop blur + accent took {:?}",
@@ -291,7 +292,7 @@ impl MusicApp {
                             backdrop,
                             palette,
                             glows,
-                            accent,
+                            art_colors: accent,
                         },
                         Err(e) => {
                             eprintln!("music-gpui: hi-res artwork {id}: {e}");

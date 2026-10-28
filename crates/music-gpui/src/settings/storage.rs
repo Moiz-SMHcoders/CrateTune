@@ -114,6 +114,18 @@ pub(super) fn render(
                 cx.reveal_path(&dir.join("downloads"));
             }
         });
+    let auto_liked = Switch::new("auto-download-liked")
+        .checked(prefs.downloads.auto_download_liked)
+        .on_click(cx.listener(|this, checked: &bool, _, cx| {
+            let on = *checked;
+            this.update_library(|l| l.downloads.auto_download_liked = on, cx);
+        }));
+    let remove_unliked = Switch::new("remove-download-unliked")
+        .checked(prefs.downloads.remove_when_unliked)
+        .on_click(cx.listener(|this, checked: &bool, _, cx| {
+            let on = *checked;
+            this.update_library(|l| l.downloads.remove_when_unliked = on, cx);
+        }));
     let export = Button::new("backup-export")
         .outline()
         .small()
@@ -193,6 +205,18 @@ pub(super) fn render(
                     t!("settings.storage.download_folder"),
                     Some(t!("settings.storage.download_folder_detail")),
                     reveal,
+                    cx,
+                ))
+                .child(row(
+                    t!("downloads.auto_liked"),
+                    Some(t!("downloads.auto_liked_detail")),
+                    auto_liked,
+                    cx,
+                ))
+                .child(row(
+                    t!("downloads.remove_unliked"),
+                    Some(t!("downloads.remove_unliked_detail")),
+                    remove_unliked,
                     cx,
                 )),
         )

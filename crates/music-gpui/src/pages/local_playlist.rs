@@ -220,7 +220,9 @@ impl LocalPlaylistPage {
             _ => t!("common.playlist"),
         };
         let art = match playlist.as_ref().and_then(|p| p.thumbnail_url.clone()) {
-            Some(url) => artwork(Some(url), px(128.), px(10.), cx).into_any_element(),
+            Some(url) => {
+                artwork(Some(url), px(128.), crate::theme::radius(10.), cx).into_any_element()
+            }
             None => placeholder_art(Lucide::ListMusic, 128., cx).into_any_element(),
         };
         let editable = self.editable();
@@ -302,6 +304,12 @@ impl LocalPlaylistPage {
                             )
                             .children(refresh)
                             .children(cover)
+                            .children(crate::components::download_header::download_button(
+                                "pl",
+                                &self.list.tracks,
+                                None,
+                                cx,
+                            ))
                             .child(
                                 Button::new("pl-delete")
                                     .ghost()

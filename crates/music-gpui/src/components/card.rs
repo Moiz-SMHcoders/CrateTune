@@ -81,7 +81,11 @@ impl RenderOnce for Card {
         let art = artwork(
             self.artwork_url,
             side,
-            if round { side / 2. } else { px(8.) },
+            if round {
+                side / 2.
+            } else {
+                crate::theme::radius(8.)
+            },
             cx,
         );
         let theme = cx.theme();
@@ -93,7 +97,7 @@ impl RenderOnce for Card {
             .flex_none()
             .p_2()
             .gap_2()
-            .rounded(px(10.))
+            .rounded(crate::theme::radius(10.))
             .when(round, |this| this.items_center())
             .when_some(self.on_click, |this, f| {
                 this.cursor_pointer()

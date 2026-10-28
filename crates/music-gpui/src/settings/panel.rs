@@ -177,6 +177,8 @@ pub struct SettingsPanel {
     pub(super) modules: super::modules::ModulesState,
     /// SponsorBlock / Music Together / Spotify inputs (`integrations_ui.rs`).
     pub(super) extras: super::integrations_ui::ExtrasUi,
+    /// Customize theme widgets, pending settings / theme import (`theme_ui.rs`).
+    pub(super) theme_ui: super::theme_ui::ThemeUi,
     _subscriptions: Vec<Subscription>,
 }
 
@@ -299,6 +301,9 @@ impl SettingsPanel {
         let (extras, extras_subscriptions) =
             super::integrations_ui::ExtrasUi::new(&settings, window, cx);
         subscriptions.extend(extras_subscriptions);
+        let (theme_ui, theme_subscriptions) =
+            super::theme_ui::ThemeUi::new(&settings.custom_theme, window, cx);
+        subscriptions.extend(theme_subscriptions);
         subscriptions.push(cx.on_app_quit(|this, _| {
             this.flush();
             async {}
@@ -340,6 +345,7 @@ impl SettingsPanel {
             prefs,
             modules,
             extras,
+            theme_ui,
             _subscriptions: subscriptions,
         };
         // Before any page loads (the password, if any, follows once read).
@@ -886,7 +892,7 @@ impl SettingsPanel {
                     .px_3()
                     .py_1p5()
                     .gap_2p5()
-                    .rounded(px(6.))
+                    .rounded(crate::theme::radius(6.))
                     .text_sm()
                     .cursor_pointer()
                     .text_color(if active { fg } else { muted })

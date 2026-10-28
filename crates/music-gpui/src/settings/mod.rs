@@ -31,10 +31,14 @@ mod network;
 pub mod onboarding;
 pub mod panel;
 mod playback;
+pub mod portable;
+mod portable_ui;
 pub mod prefs;
 mod prefs_ui;
 mod privacy;
 mod storage;
+pub mod theme_prefs;
+mod theme_ui;
 mod widgets;
 
 use crate::i18n::Key;
@@ -80,6 +84,8 @@ pub enum SectionId {
     AiFilter,
     /// Chromecast devices.
     Cast,
+    /// Settings export / import, theme files (`portable_ui.rs`).
+    Backup,
     About,
 }
 
@@ -182,6 +188,12 @@ pub const SECTIONS: &[Section] = &[
         render: integrations_ui::render_cast,
     },
     Section {
+        id: SectionId::Backup,
+        title: k!("settings.section.backup"),
+        icon: IconName::ArchiveRestore,
+        render: portable_ui::render,
+    },
+    Section {
         id: SectionId::About,
         title: k!("settings.section.about"),
         icon: IconName::Info,
@@ -219,6 +231,7 @@ impl SectionId {
             SectionId::Spotify => "spotify",
             SectionId::AiFilter => "ai-filter",
             SectionId::Cast => "cast",
+            SectionId::Backup => "backup",
             SectionId::About => "about",
         }
     }
@@ -244,7 +257,7 @@ mod tests {
             assert_eq!(SECTIONS.iter().filter(|s| s.id == section.id).count(), 1);
             assert_eq!(SectionId::from_key(section.id.key()), Some(section.id));
         }
-        assert_eq!(SECTIONS.len(), 17);
+        assert_eq!(SECTIONS.len(), 18);
         assert_eq!(
             SectionId::from_key("accounts"),
             Some(SectionId::Integrations)
