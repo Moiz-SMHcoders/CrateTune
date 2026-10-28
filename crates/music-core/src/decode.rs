@@ -1072,6 +1072,54 @@ pub(crate) mod tests {
         }
     }
 
+    /// Amplitude of the `hz` component of `mono` (Goertzel).
+    fn tone_level(mono: &[f32], hz: f64, rate: u32) -> f64 {
+        let w = 2.0 * std::f64::consts::PI * hz / rate as f64;
+        let (mut s1, mut s2) = (0.0f64, 0.0f64);
+        for &x in mono {
+            let s0 = x as f64 + 2.0 * w.cos() * s1 - s2;
+            s2 = s1;
+            s1 = s0;
+        }
+        let power = s1 * s1 + s2 * s2 - 2.0 * w.cos() * s1 * s2;
+        2.0 * power.sqrt() / mono.len() as f64
+    }
+
+    #[test]
+    fn multichannel_opus_is_mixed_down_to_stereo() {
+        // 5.1 (mapping family 1, 4 streams of which 2 coupled), one tone per
+        // channel: FL 500, FR 700, C 300, LFE 100, BL 1100, BR 1300 Hz, as
+        // ffmpeg's own decoder reports them (`sine` sources joined as 5.1,
+        // libopus 96 kbps, then copied to WebM).
+        for name in ["surround51.opus", "surround51.webm"] {
+            let mut d =
+                TrackDecoder::open_file(fixture(name)).unwrap_or_else(|e| panic!("{name}: {e}"));
+            assert_eq!((d.rate, d.channels), (48_000, 2), "{name}");
+            let samples: Vec<f32> = d.by_ref().collect();
+            let secs = samples.len() as f64 / 2.0 / 48_000.0;
+            assert!((secs - 0.5).abs() < 0.03, "{name}: {secs} s");
+            let mid = &samples[samples.len() / 4..samples.len() * 3 / 4];
+            let left: Vec<f32> = mid.iter().step_by(2).copied().collect();
+            let right: Vec<f32> = mid.iter().skip(1).step_by(2).copied().collect();
+            let level = |side: &[f32], hz| tone_level(side, hz, 48_000);
+            // Front and back left only on the left, right ones only on the right.
+            for (hz, on_left, on_right) in [
+                (500.0, true, false),
+                (1100.0, true, false),
+                (700.0, false, true),
+                (1300.0, false, true),
+                (300.0, true, true),
+                (100.0, true, true),
+            ] {
+                let (l, r) = (level(&left, hz), level(&right, hz));
+                assert_eq!(l > 0.02, on_left, "{name}: {hz} Hz on the left: {l}");
+                assert_eq!(r > 0.02, on_right, "{name}: {hz} Hz on the right: {r}");
+            }
+            let peak = samples.iter().fold(0.0f32, |m, s| m.max(s.abs()));
+            assert!(peak <= 1.0, "{name}: clipped ({peak})");
+        }
+    }
+
     #[test]
     fn opus_seeks_accurately() {
         let mut d = TrackDecoder::open_file(fixture("sine.webm")).unwrap();
