@@ -7,6 +7,11 @@ versions follow [SemVer](https://semver.org/).
 
 ### Changed
 
+* **Now Playing uses about half the CPU while lyrics animate** (≈ 12 % instead of
+  22–28 % on an M-series Mac with word-synced lyrics; designs without the lyrics list
+  1–5 %): only the lyrics on screen are laid out, lines keep their measured layout,
+  frames are drawn only while a word is being sung (otherwise the screen wakes at the
+  next word or line), static parts are cached, the glow background drifts at 30 fps.
 * The PoToken attestation is renewed on a background thread 30 minutes before it
   expires, so songs no longer wait ~1 s for it every ~12 h.
 * The app is now called **TuneDesk** (app id `tunedesk`): settings live in
@@ -37,6 +42,14 @@ versions follow [SemVer](https://semver.org/).
   progress, cancel and remove; until then romanization is kana-only.
 * **Translations are kept** in the library: reopening a song doesn't translate it again.
 * **Multichannel Opus** (5.1 / 7.1, mapping family 1 and 255) plays, mixed down to stereo.
+* **Five more Now Playing designs**: Immersive (full-bleed artwork, big type, icon
+  controls), Card (a floating card with the audio format and volume), Minimal (title and
+  time only, the window fills as the song plays), Editorial (two tones, round cover, a big
+  PLAY / PAUSE button) and With queue (the next songs beside the player). Settings →
+  Appearance or the Now Playing header's design menu.
+* **Lyrics cards**: share button above the lyrics → pick up to six lines → a card image
+  with the artwork (blurred, album colour, dark or light background; alignment, size,
+  square / portrait / story, cover on or off) → Save image… (PNG) or Copy image.
 
 ### Changed
 
@@ -65,6 +78,12 @@ versions follow [SemVer](https://semver.org/).
   feature `webkitgtk-potoken`) for the web stream client. Not yet tested on those systems.
 
 ### Fixed
+
+* **Esc with a menu or popover open** only closes it (it also closed Now Playing or went
+  back).
+* The player bar's title no longer runs into the transport buttons when the Together
+  chip and the Cast button are shown in a narrow window: the title truncates, chips
+  collapse, the Cast button stays.
 
 * **Gapless AAC**: the encoder delay (~25–50 ms of warm-up) and the end padding of AAC
   files (local M4A, YouTube, modules) are trimmed, so gapless albums no longer get a gap

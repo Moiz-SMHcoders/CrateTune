@@ -534,12 +534,16 @@ impl MusicApp {
         }
     }
 
-    /// Esc: close a dialog, else Now Playing, else the queue panel, else go back.
+    /// Esc (menus and popovers handle it first): close a dialog, else end a lyrics
+    /// card selection, else Now Playing, else the queue panel, else go back.
     pub fn escape(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         if window.has_active_dialog(cx) {
             window.close_dialog(cx);
         } else if self.onboarding.is_some() {
             self.close_onboarding(cx);
+        } else if self.np.open && self.np.list.selecting {
+            // Picking lines for a lyrics card.
+            self.set_lyrics_selecting(false, cx);
         } else if self.np.open {
             self.close_now_playing(window, cx);
         } else if self.queue_open {

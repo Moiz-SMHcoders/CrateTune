@@ -86,9 +86,25 @@ the guide again from **Settings → About → Show welcome guide**.
 
 ## Now Playing and lyrics
 
-Open with ⌘L or by clicking the bar's title. Three layouts (artwork + lyrics side by side,
-big artwork, lyrics first) and four backgrounds (blurred artwork, gradient, solid, glow),
-from the layout menu in its header or Settings → Appearance.
+Open with ⌘L or by clicking the bar's title. Eight designs, from the design menu in its
+header or Settings → Appearance:
+
+* **Split** — artwork and controls beside the lyrics; **Big artwork** — centered, with the
+  current lyric line; **Lyrics first** — lyrics across the screen, controls in a strip;
+* **Immersive** — the artwork across the top fading into black, big title, icon controls;
+* **Card** — a floating card with the artwork, the audio format and a volume slider;
+* **Minimal** — just the title and the time; the window fills with colour as the song plays;
+* **Editorial** — two colours from the artwork, a round cover, a large PLAY / PAUSE button;
+* **With queue** — artwork and controls beside the next songs (click one to play it).
+
+Four backgrounds (blurred artwork, gradient, solid, glow) apply to the designs that don't
+bring their own colours (Immersive, Minimal and Editorial do).
+
+**Lyrics cards**: click the share button above the lyrics, click up to six lines, then
+**Create card…**. Pick a background (blurred artwork, album colour, dark, light), the text
+alignment and size, square / portrait / story shape and whether the cover shows, then
+**Save image…** (PNG) or **Copy image** to paste it elsewhere. Cancel (or Esc) leaves the
+selection.
 
 Lyrics come from several providers (word-by-word where available). Click a line to jump
 there. Songwriter / producer credits that some providers put above the lyrics are left out,
@@ -160,7 +176,7 @@ copies your YouTube Music library into the local one; **Sign out** forgets the c
 
 | Section | What's there |
 |---|---|
-| Appearance | theme (dark, pure black, dynamic accent from the artwork), text size, Now Playing layout and background, mini player style |
+| Appearance | theme (dark, pure black, dynamic accent from the artwork), text size, Now Playing design (eight) and background, mini player style |
 | Playback | shuffle / repeat, quality, loudness normalization, skip silence, skip failing songs, crossfade, speed and pitch, output device, sleep timer |
 | Modules | provider modules (alternative audio sources) and where songs play from |
 | Equalizer | 10-band equalizer with presets |
@@ -201,7 +217,7 @@ Super key in place of ⌘ and Alt for ⌥.
 | ⌘S / ⌘R | shuffle / repeat |
 | ⌘[ / ⌘] | back / forward (also the mouse's back / forward buttons) |
 | ⌘1 / ⌘2 / ⌘3 / ⌘Y | Home / Explore / Library / History |
-| Esc | close the welcome guide, Now Playing or the queue; else back |
+| Esc | close an open menu or dialog first; else the welcome guide, Now Playing or the queue; else back |
 | ⌘Q | quit |
 
 ## Modules
