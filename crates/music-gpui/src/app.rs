@@ -159,8 +159,8 @@ impl MusicApp {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         let handle = AppHandle(cx.entity().downgrade());
         cx.set_global(handle);
-        let search_input =
-            cx.new(|cx| InputState::new(window, cx).placeholder("Search songs, artists, albums"));
+        let search_input = cx.new(|cx| InputState::new(window, cx));
+        crate::i18n::track_placeholder(&search_input, k!("app.search_placeholder"), window, cx);
         let progress = cx.new(|_| SliderState::new().min(0.).max(1.).step(0.25));
         let settings = cx.new(|cx| SettingsPanel::new(window, cx));
         let saved = settings.read(cx).settings().clone();
@@ -225,7 +225,7 @@ impl MusicApp {
                 let mut engine = match result {
                     Ok(player) => Engine::Audio(player),
                     Err(e) => {
-                        this.audio_error = e.map(|e| format!("{e} (using a demo clock)"));
+                        this.audio_error = e.map(|e| t!("app.audio_demo_clock", error = e));
                         Engine::Demo(Box::default())
                     }
                 };
@@ -446,7 +446,7 @@ impl MusicApp {
 
     fn update_window_title(&self, window: &mut Window) {
         let title = self.router.route().title();
-        window.set_window_title(&format!("{title} — {}", crate::identity::APP_NAME));
+        window.set_window_title(&t!("app.window_title", page = title));
     }
 
     fn on_route_changed(&mut self, window: &mut Window, cx: &mut Context<Self>) {
@@ -711,7 +711,7 @@ impl MusicApp {
                     .ghost()
                     .small()
                     .icon(IconName::ChevronLeft)
-                    .tooltip("Back (⌘[)")
+                    .tooltip(t!("app.tooltip.back"))
                     .disabled(!self.router.can_go_back())
                     .on_click(cx.listener(|this, _, window, cx| this.go_back(window, cx))),
             )
@@ -720,7 +720,7 @@ impl MusicApp {
                     .ghost()
                     .small()
                     .icon(IconName::ChevronRight)
-                    .tooltip("Forward (⌘])")
+                    .tooltip(t!("app.tooltip.forward"))
                     .disabled(!self.router.can_go_forward())
                     .on_click(cx.listener(|this, _, window, cx| this.go_forward(window, cx))),
             )

@@ -155,7 +155,7 @@ impl RenderOnce for TrackRow {
                             .ghost()
                             .small()
                             .icon(Lucide::ListStart)
-                            .tooltip("Play next")
+                            .tooltip(t!("common.play_next"))
                             .on_click(move |_, window, cx| {
                                 cx.stop_propagation();
                                 let t = next_track.clone();
@@ -167,7 +167,7 @@ impl RenderOnce for TrackRow {
                             .ghost()
                             .small()
                             .icon(Lucide::ListEnd)
-                            .tooltip("Add to queue")
+                            .tooltip(t!("common.add_to_queue"))
                             .on_click(move |_, window, cx| {
                                 cx.stop_propagation();
                                 let t = add_track.clone();
@@ -179,7 +179,7 @@ impl RenderOnce for TrackRow {
                             .ghost()
                             .small()
                             .icon(IconName::Ellipsis)
-                            .tooltip("More")
+                            .tooltip(t!("track.tooltip.more"))
                             .dropdown_menu(move |menu, _, _| {
                                 track_menu(menu, &more_track, more_ctx.clone())
                             }),
@@ -217,7 +217,7 @@ pub fn explicit_badge(cx: &App) -> impl IntoElement + use<> {
         .text_color(theme.muted_foreground)
         .text_xs()
         .font_weight(FontWeight::BOLD)
-        .child("E")
+        .child(t!("track.explicit_badge"))
 }
 
 /// The song context menu (right click, "…" buttons). `list` lets "Play" start
@@ -226,7 +226,7 @@ pub fn track_menu(menu: PopupMenu, track: &Track, list: ListContext) -> PopupMen
     let item = |label: &str, icon: Lucide| PopupMenuItem::new(label.to_owned()).icon(icon);
     let t = track.clone();
     let menu = menu
-        .item(item("Play", Lucide::Play).on_click({
+        .item(item(t!("common.play"), Lucide::Play).on_click({
             let t = t.clone();
             move |_, _, cx| {
                 let (t, list) = (t.clone(), list.clone());
@@ -236,14 +236,14 @@ pub fn track_menu(menu: PopupMenu, track: &Track, list: ListContext) -> PopupMen
                 });
             }
         }))
-        .item(item("Play next", Lucide::ListStart).on_click({
+        .item(item(t!("common.play_next"), Lucide::ListStart).on_click({
             let t = t.clone();
             move |_, window, cx| {
                 let t = t.clone();
                 update_app(cx, |app, cx| app.queue_play_next(vec![t], window, cx));
             }
         }))
-        .item(item("Add to queue", Lucide::ListEnd).on_click({
+        .item(item(t!("common.add_to_queue"), Lucide::ListEnd).on_click({
             let t = t.clone();
             move |_, window, cx| {
                 let t = t.clone();
@@ -251,26 +251,28 @@ pub fn track_menu(menu: PopupMenu, track: &Track, list: ListContext) -> PopupMen
             }
         }))
         .separator()
-        .item(item("Start radio", Lucide::Radio).on_click({
+        .item(item(t!("common.start_radio"), Lucide::Radio).on_click({
             let t = t.clone();
             move |_, window, cx| {
                 let t = t.clone();
                 update_app(cx, |app, cx| app.start_radio(t, window, cx));
             }
         }))
-        .item(item("Add to playlist…", Lucide::ListPlus).on_click({
-            let t = t.clone();
-            move |_, window, cx| {
+        .item(
+            item(t!("common.add_to_playlist"), Lucide::ListPlus).on_click({
                 let t = t.clone();
-                update_app(cx, |app, cx| app.add_to_playlist(t, window, cx));
-            }
-        }))
+                move |_, window, cx| {
+                    let t = t.clone();
+                    update_app(cx, |app, cx| app.add_to_playlist(t, window, cx));
+                }
+            }),
+        )
         .item(
             item(
                 if crate::store::is_liked(&track.video_id) {
-                    "Remove from liked songs"
+                    t!("common.remove_from_liked")
                 } else {
-                    "Like"
+                    t!("common.like")
                 },
                 Lucide::Heart,
             )
@@ -292,16 +294,16 @@ pub fn track_menu(menu: PopupMenu, track: &Track, list: ListContext) -> PopupMen
         .filter_map(|a| Some((a.id.clone()?, a.name.clone())))
         .collect();
     if artists.is_empty() {
-        menu = menu.item(item("Go to artist", Lucide::MicVocal).disabled(true));
+        menu = menu.item(item(t!("common.go_to_artist"), Lucide::MicVocal).disabled(true));
     }
     let single = artists.len() == 1;
     for (id, name) in artists {
         // Episodes name their show (`MPSP…`) where songs name an artist.
         let podcast = id.starts_with("MPSP");
         let label = match (podcast, single) {
-            (true, _) => "Go to podcast".to_owned(),
-            (false, true) => "Go to artist".to_owned(),
-            (false, false) => format!("Go to {name}"),
+            (true, _) => t!("track.menu.go_to_podcast").to_owned(),
+            (false, true) => t!("common.go_to_artist").to_owned(),
+            (false, false) => t!("track.menu.go_to_named_artist", artist = name),
         };
         menu = menu.item(
             item(&label, Lucide::MicVocal).on_click(move |_, window, cx| {
@@ -315,12 +317,12 @@ pub fn track_menu(menu: PopupMenu, track: &Track, list: ListContext) -> PopupMen
             }),
         );
     }
-    let album = track
-        .album_id
-        .clone()
-        .map(|id| (id, track.album.clone().unwrap_or_else(|| "Album".into())));
+    let album = track.album_id.clone().map(|id| {
+        let name = track.album.clone();
+        (id, name.unwrap_or_else(|| t!("common.album").into()))
+    });
     menu.item(
-        item("Go to album", Lucide::Disc3)
+        item(t!("common.go_to_album"), Lucide::Disc3)
             .disabled(album.is_none())
             .on_click(move |_, window, cx| {
                 if let Some((id, name)) = album.clone() {
@@ -340,9 +342,11 @@ fn download_item(menu: PopupMenu, track: &Track) -> PopupMenu {
     let id = track.video_id.clone();
     let t = track.clone();
     let (label, busy, delete) = match download_flag(&id) {
-        None | Some(DownloadFlag::Failed) => ("Download", false, false),
-        Some(DownloadFlag::Queued | DownloadFlag::Downloading) => ("Downloading…", true, false),
-        Some(DownloadFlag::Done { .. }) => ("Remove download", false, true),
+        None | Some(DownloadFlag::Failed) => (t!("common.download"), false, false),
+        Some(DownloadFlag::Queued | DownloadFlag::Downloading) => {
+            (t!("common.downloading"), true, false)
+        }
+        Some(DownloadFlag::Done { .. }) => (t!("common.remove_download"), false, true),
     };
     menu.item(
         PopupMenuItem::new(label)

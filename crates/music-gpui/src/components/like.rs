@@ -37,9 +37,9 @@ pub fn like_button(
         .small()
         .icon(icon)
         .tooltip(if liked {
-            "Remove from liked songs"
+            t!("common.remove_from_liked")
         } else {
-            "Like"
+            t!("common.like")
         })
         .on_click(move |_, window, cx| {
             // Rows and the bar are clickable themselves.

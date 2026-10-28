@@ -1,0 +1,3 @@
+# App shell: strings the lint flags that are not UI text.
+# Cookie header prefix stripped from pasted cookies (parsing, not shown).
+account.rs: Cookie:
