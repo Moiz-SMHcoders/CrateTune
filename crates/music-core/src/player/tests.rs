@@ -667,3 +667,71 @@ fn preloaded_next_track_starts_instantly_when_played() {
     let s = wait_for(&player, "playing", |s| s.status == PlaybackStatus::Playing);
     assert!(s.next_track.is_none() && !s.next_preloaded);
 }
+
+#[test]
+fn spectrum_follows_muted_playback_and_decays_when_paused() {
+    use crate::{Spectrum, SpectrumConfig};
+
+    let (player, mut out, _r) = player();
+    let bands = 32;
+    let edges = SpectrumConfig::default().band_edges(bands);
+    let a440 = edges
+        .windows(2)
+        .position(|e| e[0] <= 440.0 && 440.0 < e[1])
+        .unwrap();
+    let mut spectrum = Spectrum::default();
+    // Pulls ~one display frame of audio (≈ real time), then polls like a UI.
+    let mut frame = |player: &Player, spectrum: &mut Spectrum| {
+        out.by_ref().take(800 * 2).for_each(drop);
+        std::thread::sleep(Duration::from_millis(16));
+        player.spectrum_into(bands, spectrum);
+    };
+
+    // Disabled by default: nothing, even while playing.
+    assert!(!player.spectrum_enabled());
+    player.play(local("sine.mp3"));
+    wait_for(&player, "loaded", |s| s.status != PlaybackStatus::Loading);
+    for _ in 0..5 {
+        frame(&player, &mut spectrum);
+    }
+    assert!(spectrum.is_silent() && spectrum.bands.len() == bands);
+
+    // Enabled with the volume at 0: the tap is pre-volume.
+    player.set_spectrum_enabled(true);
+    player.set_volume(0.0);
+    let mut lit = Spectrum::default();
+    for _ in 0..20 {
+        frame(&player, &mut spectrum);
+        if spectrum.bands[a440] > lit.bands.get(a440).copied().unwrap_or(0.0) {
+            lit = spectrum.clone();
+        }
+    }
+    assert_eq!(player.state().status, PlaybackStatus::Playing);
+    let top = (0..bands)
+        .max_by(|&a, &b| lit.bands[a].total_cmp(&lit.bands[b]))
+        .unwrap();
+    assert_eq!(top, a440, "{:?}", lit.bands);
+    assert!(lit.bands[a440] > 0.5, "{:?}", lit.bands);
+    assert!(lit.level > 0.3, "level {}", lit.level);
+    let highs = edges.windows(2).position(|e| e[0] > 3000.0).unwrap();
+    assert!(
+        lit.bands[highs..].iter().all(|&b| b < 0.1),
+        "{:?}",
+        lit.bands
+    );
+
+    // Paused: falls to exactly zero within a few seconds.
+    player.pause();
+    let paused_at = Instant::now();
+    while !spectrum.is_silent() {
+        assert!(
+            paused_at.elapsed() < Duration::from_secs(5),
+            "no decay: {spectrum:?}"
+        );
+        frame(&player, &mut spectrum);
+    }
+    assert!(
+        player.state().position < Duration::from_millis(900),
+        "paused mid-track"
+    );
+}
