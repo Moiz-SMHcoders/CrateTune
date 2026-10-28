@@ -41,7 +41,6 @@ common.load_more = さらに読み込む
 common.show_more = もっと見る
 common.back = 戻る
 common.next = 次へ
-common.previous = 前へ
 common.connect = 接続
 common.disconnect = 切断
 common.sign_in = ログイン

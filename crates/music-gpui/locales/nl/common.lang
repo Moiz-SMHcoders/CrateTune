@@ -41,7 +41,6 @@ common.load_more = Meer laden
 common.show_more = Meer tonen
 common.back = Terug
 common.next = Volgende
-common.previous = Vorige
 common.connect = Verbinden
 common.disconnect = Verbinding verbreken
 common.sign_in = Inloggen

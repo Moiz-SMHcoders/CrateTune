@@ -578,7 +578,7 @@ impl MusicApp {
                 h_flex()
                     .gap_2()
                     .child(
-                        text_button("np-min-prev", t!("common.previous"))
+                        text_button("np-min-prev", t!("tray.previous"))
                             .on_click(cx.listener(|this, _, _, cx| this.previous_track(cx))),
                     )
                     .child(
@@ -596,7 +596,7 @@ impl MusicApp {
                         .on_click(cx.listener(|this, _, _, cx| this.toggle_playback(cx))),
                     )
                     .child(
-                        text_button("np-min-next", t!("common.next"))
+                        text_button("np-min-next", t!("tray.next"))
                             .on_click(cx.listener(|this, _, _, cx| this.next_track(cx))),
                     )
                     .child(div().flex_1())

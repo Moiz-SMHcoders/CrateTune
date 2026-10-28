@@ -44,8 +44,8 @@ common.see_all = See all
 common.load_more = Load more
 common.show_more = Show more
 common.back = Back
+# Wizard step button (onboarding), not the next track (that is tray.next).
 common.next = Next
-common.previous = Previous
 common.connect = Connect
 common.disconnect = Disconnect
 common.sign_in = Sign in

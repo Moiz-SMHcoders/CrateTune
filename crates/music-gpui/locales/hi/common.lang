@@ -41,7 +41,6 @@ common.load_more = और लोड करें
 common.show_more = और दिखाएँ
 common.back = वापस
 common.next = अगला
-common.previous = पिछला
 common.connect = कनेक्ट करें
 common.disconnect = डिस्कनेक्ट करें
 common.sign_in = साइन इन करें

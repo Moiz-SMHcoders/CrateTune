@@ -11,6 +11,8 @@ settings.section.storage = Storage
 settings.section.account = Account
 settings.section.integrations = Scrobbling & Discord
 settings.section.sponsorblock = SponsorBlock
+# “Music Together” is the feature’s name (also in music-together:// links); it may stay
+# untranslated. The sidebar page is nav.together (“Listen together”).
 settings.section.together = Music Together
 settings.section.spotify = Spotify import
 settings.section.ai_filter = AI content filter

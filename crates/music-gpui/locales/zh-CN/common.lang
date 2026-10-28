@@ -41,7 +41,6 @@ common.load_more = 加载更多
 common.show_more = 显示更多
 common.back = 返回
 common.next = 下一步
-common.previous = 上一首
 common.connect = 连接
 common.disconnect = 断开连接
 common.sign_in = 登录

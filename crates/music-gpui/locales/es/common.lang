@@ -42,7 +42,6 @@ common.load_more = Cargar más
 common.show_more = Mostrar más
 common.back = Atrás
 common.next = Siguiente
-common.previous = Anterior
 common.connect = Conectar
 common.disconnect = Desconectar
 common.sign_in = Iniciar sesión

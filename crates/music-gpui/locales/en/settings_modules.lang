@@ -12,9 +12,9 @@ modules.source_note.youtube = Songs play from YouTube; installed modules are not
 # {count} = number of enabled modules.
 modules.source_note.first.one = Each song is looked up in the {count} enabled module, top to bottom; the first acceptable match plays, otherwise YouTube.
 modules.source_note.first.other = Each song is looked up in the {count} enabled modules, top to bottom; the first acceptable match plays, otherwise YouTube.
-# “Skip failing songs” is a setting under Playback.
-modules.source_note.only.one = Songs play only from the {count} enabled module; a song no module can match fails (and is skipped when “Skip failing songs” is on).
-modules.source_note.only.other = Songs play only from the {count} enabled modules; a song no module can match fails (and is skipped when “Skip failing songs” is on).
+# “Skip songs that fail to load” is the setting settings.playback.auto_skip (Playback).
+modules.source_note.only.one = Songs play only from the {count} enabled module; a song no module can match fails (and is skipped when “Skip songs that fail to load” is on).
+modules.source_note.only.other = Songs play only from the {count} enabled modules; a song no module can match fails (and is skipped when “Skip songs that fail to load” is on).
 modules.source.note = A module supplies audio for the song you play; title, artists and your library stay the same. The bar and Now Playing show where the audio comes from. Downloads use the same order.
 
 # ---- Unavailable
