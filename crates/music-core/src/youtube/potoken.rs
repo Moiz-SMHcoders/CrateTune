@@ -36,6 +36,18 @@ pub trait PoTokenProvider: Send + Sync {
     /// [`Self::content_token`] renews it, exactly as when its lifetime runs out.
     /// For tests and checks of the renewal; providers without one ignore it.
     fn expire_attestation(&self) {}
+    /// Whether the attestation is in use and ends within `within` (cheap; no I/O).
+    fn attestation_expiring(&self, within: Duration) -> bool {
+        let _ = within;
+        false
+    }
+    /// Renews an in-use attestation that ends within `within`, so no song has to
+    /// wait for it. Blocking (~1 s); call from a background thread. `Ok(false)`
+    /// when nothing was due or a renewal is already running.
+    fn renew_if_expiring(&self, within: Duration) -> Result<bool> {
+        let _ = within;
+        Ok(false)
+    }
 }
 
 /// A browser JS environment that can run BotGuard (see the module docs).
@@ -80,6 +92,8 @@ const TOKEN_CACHE: usize = 200;
 pub struct BotGuardTokenProvider<V: BotGuardVm> {
     vm: V,
     state: Mutex<State>,
+    /// A background renewal is running.
+    renewing: std::sync::atomic::AtomicBool,
     /// Unit tests replace the network part of [`Self::bootstrap`].
     #[cfg(test)]
     fake_bootstrap: Option<fn(&V) -> Result<Duration>>,
@@ -98,6 +112,7 @@ impl<V: BotGuardVm> BotGuardTokenProvider<V> {
         Self {
             vm,
             state: Mutex::default(),
+            renewing: Default::default(),
             #[cfg(test)]
             fake_bootstrap: None,
         }
@@ -138,6 +153,30 @@ impl<V: BotGuardVm> BotGuardTokenProvider<V> {
     }
 }
 
+impl<V: BotGuardVm> BotGuardTokenProvider<V> {
+    /// Runs the attestation and installs its minter. The page is reloaded, so the
+    /// caller holds the state lock: no token is minted from a half-loaded page.
+    fn attest(&self, state: &mut State) -> Result<()> {
+        state.tokens.clear();
+        state.order.clear();
+        state.ready_until = None;
+        let lifetime = self.bootstrap().inspect_err(|_| self.vm.release())?;
+        state.ready_until = Some(
+            Instant::now()
+                + lifetime
+                    .saturating_sub(EXPIRY_MARGIN)
+                    .max(Duration::from_secs(60)),
+        );
+        Ok(())
+    }
+
+    fn expiring(state: &State, within: Duration) -> bool {
+        state
+            .ready_until
+            .is_some_and(|until| until.saturating_duration_since(Instant::now()) < within)
+    }
+}
+
 impl<V: BotGuardVm> PoTokenProvider for BotGuardTokenProvider<V> {
     fn content_token(&self, video_id: &str) -> Result<String> {
         let mut state = self.state.lock().unwrap_or_else(PoisonError::into_inner);
@@ -148,16 +187,7 @@ impl<V: BotGuardVm> PoTokenProvider for BotGuardTokenProvider<V> {
             return Ok(token.clone());
         }
         if !ready {
-            state.tokens.clear();
-            state.order.clear();
-            state.ready_until = None;
-            let lifetime = self.bootstrap().inspect_err(|_| self.vm.release())?;
-            state.ready_until = Some(
-                Instant::now()
-                    + lifetime
-                        .saturating_sub(EXPIRY_MARGIN)
-                        .max(Duration::from_secs(60)),
-            );
+            self.attest(&mut state)?;
         }
         let token = match self.vm.mint(video_id.as_bytes()) {
             Ok(bytes) => URL_SAFE.encode(bytes),
@@ -187,6 +217,35 @@ impl<V: BotGuardVm> PoTokenProvider for BotGuardTokenProvider<V> {
         if state.ready_until.is_some() {
             state.ready_until = Some(Instant::now());
         }
+    }
+
+    fn attestation_expiring(&self, within: Duration) -> bool {
+        Self::expiring(
+            &self.state.lock().unwrap_or_else(PoisonError::into_inner),
+            within,
+        )
+    }
+
+    fn renew_if_expiring(&self, within: Duration) -> Result<bool> {
+        use std::sync::atomic::Ordering;
+        if self.renewing.swap(true, Ordering::AcqRel) {
+            return Ok(false);
+        }
+        let result = (|| {
+            let mut state = self.state.lock().unwrap_or_else(PoisonError::into_inner);
+            if !Self::expiring(&state, within) {
+                return Ok(false);
+            }
+            let started = Instant::now();
+            self.attest(&mut state)?;
+            log::info!(
+                "youtube: BotGuard renewed ahead of expiry in {:?}",
+                started.elapsed()
+            );
+            Ok(true)
+        })();
+        self.renewing.store(false, Ordering::Release);
+        result
     }
 }
 
@@ -552,6 +611,41 @@ ytcfg.set({"VISITOR_DATA":"vd"});</script><script>window.ytAtN({'R':'{"bgChallen
         assert!(provider.state.lock().unwrap().ready_until.is_none());
         provider.fake_bootstrap = Some(offline_bootstrap);
         provider.content_token("abc").unwrap();
+    }
+
+    #[test]
+    fn attestation_is_renewed_ahead_of_expiry() {
+        use std::sync::atomic::Ordering::SeqCst;
+        let mut provider = BotGuardTokenProvider::new(FakeVm::default());
+        provider.fake_bootstrap = Some(offline_bootstrap);
+        let within = Duration::from_secs(30 * 60);
+        // Unused attestations are never renewed.
+        assert!(!provider.attestation_expiring(within));
+        assert!(!provider.renew_if_expiring(within).unwrap());
+        assert_eq!(provider.vm.runs.load(SeqCst), 0);
+
+        provider.content_token("abc").unwrap();
+        // Fresh: ~12 h left, nothing to do.
+        assert!(!provider.attestation_expiring(within));
+        assert!(!provider.renew_if_expiring(within).unwrap());
+        assert_eq!(provider.vm.runs.load(SeqCst), 1);
+
+        // 20 min left: renewed now, and the next token needs no attestation.
+        provider.state.lock().unwrap().ready_until =
+            Some(Instant::now() + Duration::from_secs(20 * 60));
+        assert!(provider.attestation_expiring(within));
+        assert!(provider.renew_if_expiring(within).unwrap());
+        assert_eq!(provider.vm.runs.load(SeqCst), 2);
+        assert!(!provider.attestation_expiring(within));
+        provider.content_token("abc").unwrap();
+        assert_eq!(provider.vm.runs.load(SeqCst), 2);
+
+        // A failed renewal leaves the provider to renew on demand.
+        provider.fake_bootstrap = Some(|_| Err(Error::Parse("offline".into())));
+        provider.state.lock().unwrap().ready_until = Some(Instant::now() + Duration::from_secs(60));
+        assert!(provider.renew_if_expiring(within).is_err());
+        assert!(provider.state.lock().unwrap().ready_until.is_none());
+        assert!(!provider.renewing.load(SeqCst));
     }
 
     #[test]
