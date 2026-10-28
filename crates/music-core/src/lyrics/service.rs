@@ -233,7 +233,10 @@ impl LyricsService {
             match cache.load(query) {
                 Some(CachedLyrics::NotFound) => return Ok(None),
                 Some(CachedLyrics::Found(raw)) => {
-                    if let Some(r) = raw.parse(query.duration_secs) {
+                    if let Some(r) = raw
+                        .parse(query.duration_secs)
+                        .and_then(|r| r.without_credits(query))
+                    {
                         return Ok(Some(r));
                     }
                 }
@@ -305,8 +308,13 @@ impl LyricsService {
         q
     }
 
-    /// Rejects plain text when not wanted and synced lyrics that start after the track ends.
+    /// Drops credit lines; rejects instrumental markers, plain text when not wanted and
+    /// synced lyrics that start after the track ends.
     fn accept(&self, r: LyricsResult, query: &LyricsQuery) -> Option<LyricsResult> {
+        if r.is_instrumental() {
+            return None;
+        }
+        let r = r.without_credits(query)?;
         if r.synced.is_none() && !self.config.accept_plain {
             return None;
         }
@@ -341,6 +349,8 @@ impl LyricsService {
         let mut best: Option<(usize, u8, LyricsResult)> = None;
         let mut errors = 0usize;
         let mut last_error: Option<Error> = None;
+        // Providers that say the song is instrumental ("纯音乐，请欣赏").
+        let mut instrumental = 0usize;
 
         loop {
             let now = Instant::now();
@@ -376,6 +386,10 @@ impl LyricsService {
                             last_error = Some(e);
                         }
                         Ok(None) => {}
+                        Ok(Some(r)) if r.is_instrumental() => {
+                            log::debug!("{}: instrumental", r.provider);
+                            instrumental += 1;
+                        }
                         Ok(Some(r)) => {
                             if let Some(r) = self.accept(r, &query) {
                                 let q = self.quality(&r);
@@ -402,6 +416,12 @@ impl LyricsService {
         }
         let answered = run.completed.iter().filter(|c| **c).count();
         match best {
+            // An instrumental verdict beats guesses: line-synced or plain text found for
+            // an instrumental is nearly always another song (or a fan-written poem).
+            Some((_, _, r)) if instrumental > 0 && r.sync_kind() != SyncKind::Word => {
+                log::debug!("lyrics: instrumental; ignoring {}", r.provider);
+                (Ok(None), false)
+            }
             Some((_, _, r)) => (Ok(Some(r)), false),
             None if errors > 0 && errors == answered => (
                 Err(last_error
@@ -708,6 +728,41 @@ mod tests {
         let third = LyricsQuery::new("third", "song");
         assert!(s.fetch(&third).is_err());
         assert_eq!(cache.load(&third), None);
+    }
+
+    #[test]
+    fn instrumental_verdict_and_credits() {
+        const PURE: &str = "[00:00.00]纯音乐，请欣赏";
+        // A line-synced guess for an instrumental is dropped …
+        let s = service(
+            vec![Mock::new("a", 0, Some(LINE)), Mock::new("b", 0, Some(PURE))],
+            LyricsServiceConfig::default(),
+        );
+        assert!(s.fetch(&q()).unwrap().is_none());
+        // … word-synced lyrics are trusted over it.
+        let s = service(
+            vec![Mock::new("a", 0, Some(WORD)), Mock::new("b", 0, Some(PURE))],
+            LyricsServiceConfig::default(),
+        );
+        assert_eq!(s.fetch(&q()).unwrap().unwrap().provider, "a");
+        // Credit lines naming the track's artist are removed with the query.
+        const CREDITED: &str =
+            "[00:01.00]Julian Casablancas/Thomas Bangalter\n[00:05.00]I didn't want to be the one";
+        let s = service(
+            vec![Mock::new("a", 0, Some(CREDITED))],
+            LyricsServiceConfig::default(),
+        );
+        let r = s
+            .fetch(&LyricsQuery::new(
+                "Instant Crush",
+                "Daft Punk, Julian Casablancas",
+            ))
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            r.synced.unwrap().lines[0].text,
+            "I didn't want to be the one"
+        );
     }
 
     #[test]

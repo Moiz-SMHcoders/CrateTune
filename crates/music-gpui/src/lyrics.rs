@@ -2,18 +2,25 @@
 //! `LyricsService` (provider order / switches / keys from Settings → Lyrics,
 //! results cached in memory), preparing them for the renderer (word offsets,
 //! background vocals, duet sides, romanization) and on-demand translation,
-//! cached per track and translator settings.
+//! cached per track and translator settings (for the session, and in the library
+//! database across sessions); a rate-limited translation retries by itself once the
+//! service's back-off has passed.
 //!
 //! Persistent caching: [`MusicApp::set_lyrics_cache`] swaps the in-memory
 //! `LyricsCache` for another one (e.g. the library database's table); the
 //! service is rebuilt around it.
 
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::{Duration, Instant};
 
 use gpui::{Context, SharedString};
 use music_core::Track;
+use music_core::lyrics::romanize::dictionary::{self, DictionarySource};
 use music_core::lyrics::romanize::{Script, detect_script, romanize_line};
+use music_core::lyrics::translate::{CachedTranslator, LyricsTranslator, is_rate_limited};
 use music_core::lyrics::{
     LyricLine, Lyrics, LyricsCache, LyricsQuery, LyricsResult, LyricsService, MemoryLyricsCache,
     SyncKind,
@@ -55,6 +62,8 @@ pub struct PreparedLyrics {
     pub plain: Vec<SharedString>,
     /// Per line (synced or plain): the line's script and its romanization.
     pub romanized: Vec<Option<(Script, SharedString)>>,
+    /// Romanization shipped by the provider, per line (kept for re-romanizing).
+    provided_romanization: Vec<Option<String>>,
 }
 
 impl PreparedLyrics {
@@ -125,6 +134,32 @@ impl PreparedLyrics {
             lines,
             plain,
             romanized,
+            provided_romanization: provided,
+        }
+    }
+
+    /// The same lyrics with romanization computed again (a dictionary was loaded).
+    fn reromanized(&self) -> Self {
+        let texts = self.texts();
+        let provided: Vec<Option<String>> = self.provided_romanization.clone();
+        Self {
+            provider: self.provider.clone(),
+            kind: self.kind,
+            synced: self.synced.clone(),
+            lines: self
+                .lines
+                .iter()
+                .map(|l| PreparedLine {
+                    text: l.text.clone(),
+                    word_starts: l.word_starts.clone(),
+                    background: l.background.clone(),
+                    secondary_singer: l.secondary_singer,
+                    provided_translation: l.provided_translation.clone(),
+                })
+                .collect(),
+            plain: self.plain.clone(),
+            romanized: romanize_all(&texts, &provided),
+            provided_romanization: provided,
         }
     }
 
@@ -167,7 +202,40 @@ fn romanize_all(
 pub enum TranslationState {
     Loading,
     Ready(Arc<Vec<Option<SharedString>>>),
+    /// `retry_at`: the service rate-limited us; ask again by itself after this.
+    Failed {
+        message: String,
+        retry_at: Option<Instant>,
+    },
+}
+
+/// The downloadable kanji dictionary (Japanese romanization), see
+/// `music_core::lyrics::romanize::dictionary`.
+#[derive(Clone)]
+pub enum KanjiDictionary {
+    /// Not looked at yet (startup).
+    Unknown,
+    /// This build embeds IPADIC (`japanese-dict`): nothing to download.
+    Embedded,
+    Missing,
+    Downloading {
+        done: u64,
+        total: u64,
+        cancel: Arc<AtomicBool>,
+    },
+    /// Installed and loaded; bytes on disk.
+    Ready(u64),
     Failed(String),
+}
+
+/// Where the dictionary is unpacked: `$MUSIC_CONFIG_DIR/cache/ja-dict`, else the
+/// platform cache dir (macOS `~/Library/Caches/music-macos/ja-dict`).
+pub fn kanji_dictionary_dir() -> Option<PathBuf> {
+    if let Some(dir) = std::env::var_os("MUSIC_CONFIG_DIR").filter(|d| !d.is_empty()) {
+        return Some(PathBuf::from(dir).join("cache").join("ja-dict"));
+    }
+    directories::ProjectDirs::from("", "", crate::identity::APP_ID)
+        .map(|d| d.cache_dir().join("ja-dict"))
 }
 
 /// Lyrics service + cache and the per-track state the app keeps.
@@ -180,6 +248,7 @@ pub struct LyricsHub {
     pub states: HashMap<String, LyricsState>,
     /// Per (video id, translator key).
     pub translations: HashMap<(String, String), TranslationState>,
+    pub kanji: KanjiDictionary,
 }
 
 impl Default for LyricsHub {
@@ -191,6 +260,7 @@ impl Default for LyricsHub {
             generation: 0,
             states: HashMap::new(),
             translations: HashMap::new(),
+            kanji: KanjiDictionary::Unknown,
         }
     }
 }
@@ -198,6 +268,9 @@ impl Default for LyricsHub {
 impl MusicApp {
     /// Rebuilds the service from Settings → Lyrics (providers, keys).
     pub(crate) fn rebuild_lyrics_service(&mut self, cx: &mut Context<Self>) {
+        if matches!(self.lyrics.kanji, KanjiDictionary::Unknown) {
+            self.load_kanji_dictionary(cx);
+        }
         let config = self.settings.read(cx).lyrics_service_config();
         if *self.lyrics.service.config() == config {
             return;
@@ -294,16 +367,26 @@ impl MusicApp {
         cx: &mut Context<Self>,
     ) -> Option<Result<Arc<Vec<Option<SharedString>>>, String>> {
         let key = self.settings.read(cx).translator_key();
-        let slot = (video_id.to_owned(), key);
+        let slot = (video_id.to_owned(), key.clone());
         match self.lyrics.translations.get(&slot) {
             Some(TranslationState::Ready(lines)) => return Some(Ok(lines.clone())),
-            Some(TranslationState::Failed(e)) => return Some(Err(e.clone())),
+            Some(TranslationState::Failed { message, retry_at }) => {
+                // A rate limit ran out: ask again (the Retry button does it earlier).
+                if !retry_at.is_some_and(|at| Instant::now() >= at) {
+                    return Some(Err(message.clone()));
+                }
+            }
             Some(TranslationState::Loading) => return None,
             None => {}
         }
         let translator = match self.settings.read(cx).translator() {
             Ok(t) => t,
             Err(e) => return Some(Err(e)),
+        };
+        // Finished translations persist in the library (per lyrics, language, translator).
+        let translator: Box<dyn LyricsTranslator> = match self.store.library.clone() {
+            Some(library) => Box::new(CachedTranslator::new(translator, Arc::new(library), key)),
+            None => translator,
         };
         let language = self
             .settings
@@ -319,15 +402,37 @@ impl MusicApp {
         cx.spawn(async move |this, cx| {
             let result = off_thread(move || {
                 let lines: Vec<&str> = texts.iter().map(String::as_str).collect();
-                translator.translate_lines(&lines, &language)
+                translator
+                    .translate_lines(&lines, &language)
+                    .map_err(|e| (e, translator.retry_after()))
             })
             .await;
             this.update(cx, |this, cx| {
+                if let Some(started) = this.trace {
+                    let what = match &result {
+                        Ok(lines) => format!("{} lines", lines.iter().flatten().count()),
+                        Err((e, _)) => format!("failed: {e}"),
+                    };
+                    eprintln!(
+                        "music-gpui: [{:6.2}s] translation {}: {what}",
+                        started.elapsed().as_secs_f64(),
+                        slot.0
+                    );
+                }
                 let state = match result {
                     Ok(lines) => TranslationState::Ready(Arc::new(
                         lines.into_iter().map(|l| l.map(Into::into)).collect(),
                     )),
-                    Err(e) => TranslationState::Failed(e.to_string()),
+                    Err((e, retry_after)) => TranslationState::Failed {
+                        retry_at: is_rate_limited(&e).then(|| {
+                            Instant::now() + retry_after.unwrap_or(Duration::from_secs(120))
+                        }),
+                        // Without the generic "unexpected response:" prefix.
+                        message: match e {
+                            music_core::Error::Parse(m) => m,
+                            e => e.to_string(),
+                        },
+                    },
                 };
                 this.lyrics.translations.insert(slot, state);
                 cx.notify();
@@ -338,11 +443,154 @@ impl MusicApp {
         None
     }
 
+    /// At startup: loads an installed kanji dictionary (memory-mapped, off the UI thread).
+    fn load_kanji_dictionary(&mut self, cx: &mut Context<Self>) {
+        if music_core::lyrics::romanize::HAS_KANJI_READINGS {
+            self.lyrics.kanji = KanjiDictionary::Embedded;
+            return;
+        }
+        self.lyrics.kanji = KanjiDictionary::Missing;
+        let Some(dir) = kanji_dictionary_dir() else {
+            return;
+        };
+        cx.spawn(async move |this, cx| {
+            let state = off_thread(move || {
+                let source = DictionarySource::ipadic();
+                let path = dictionary::installed(&source, &dir)?;
+                Some(match dictionary::load(&path) {
+                    Ok(()) => KanjiDictionary::Ready(dictionary::installed_size(&source, &dir)),
+                    Err(e) => KanjiDictionary::Failed(e.to_string()),
+                })
+            })
+            .await;
+            if let Some(state) = state {
+                this.update(cx, |this, cx| this.kanji_dictionary_changed(state, cx))
+                    .ok();
+            }
+        })
+        .detach();
+    }
+
+    /// Downloads, verifies and loads the kanji dictionary (Settings → Lyrics, or
+    /// turning Japanese romanization on). No-op when it is there or downloading.
+    pub fn download_kanji_dictionary(&mut self, cx: &mut Context<Self>) {
+        if matches!(
+            self.lyrics.kanji,
+            KanjiDictionary::Embedded
+                | KanjiDictionary::Ready(_)
+                | KanjiDictionary::Downloading { .. }
+        ) {
+            return;
+        }
+        let Some(dir) = kanji_dictionary_dir() else {
+            self.lyrics.kanji = KanjiDictionary::Failed("no cache directory".into());
+            cx.notify();
+            return;
+        };
+        let source = DictionarySource::ipadic();
+        let cancel = Arc::new(AtomicBool::new(false));
+        let progress = Arc::new(std::sync::Mutex::new((0u64, source.size)));
+        self.lyrics.kanji = KanjiDictionary::Downloading {
+            done: 0,
+            total: source.size,
+            cancel: cancel.clone(),
+        };
+        cx.notify();
+        let executor = cx.background_executor().clone();
+        let shared = progress.clone();
+        let ticker = cx.spawn(async move |this, cx| {
+            loop {
+                executor.timer(Duration::from_millis(250)).await;
+                let (done, total) = *progress.lock().unwrap_or_else(|e| e.into_inner());
+                let keep = this
+                    .update(cx, |this, cx| match &mut this.lyrics.kanji {
+                        KanjiDictionary::Downloading {
+                            done: d, total: t, ..
+                        } => {
+                            (*d, *t) = (done, total);
+                            cx.notify();
+                            true
+                        }
+                        _ => false,
+                    })
+                    .unwrap_or(false);
+                if !keep {
+                    break;
+                }
+            }
+        });
+        cx.spawn(async move |this, cx| {
+            let state = off_thread(move || {
+                let path = dictionary::install(&source, &dir, &cancel, |done, total| {
+                    *shared.lock().unwrap_or_else(|e| e.into_inner()) = (done, total);
+                })?;
+                dictionary::load(&path)?;
+                Ok::<_, music_core::Error>(dictionary::installed_size(&source, &dir))
+            })
+            .await;
+            drop(ticker);
+            let state = match state {
+                Ok(bytes) => KanjiDictionary::Ready(bytes),
+                Err(e) if e.to_string().contains("cancelled") => KanjiDictionary::Missing,
+                Err(e) => KanjiDictionary::Failed(e.to_string()),
+            };
+            this.update(cx, |this, cx| this.kanji_dictionary_changed(state, cx))
+                .ok();
+        })
+        .detach();
+    }
+
+    pub fn cancel_kanji_dictionary(&mut self, cx: &mut Context<Self>) {
+        if let KanjiDictionary::Downloading { cancel, .. } = &self.lyrics.kanji {
+            cancel.store(true, Ordering::Relaxed);
+        }
+        cx.notify();
+    }
+
+    /// Deletes the downloaded dictionary (kana-only romanization again).
+    pub fn remove_kanji_dictionary(&mut self, cx: &mut Context<Self>) {
+        if let Some(dir) = kanji_dictionary_dir()
+            && let Err(e) = dictionary::remove(&DictionarySource::ipadic(), &dir)
+        {
+            self.kanji_dictionary_changed(KanjiDictionary::Failed(e.to_string()), cx);
+            return;
+        }
+        self.kanji_dictionary_changed(KanjiDictionary::Missing, cx);
+    }
+
+    /// New dictionary state; lyrics already on screen are romanized again.
+    fn kanji_dictionary_changed(&mut self, state: KanjiDictionary, cx: &mut Context<Self>) {
+        if let Some(started) = self.trace {
+            let what = match &state {
+                KanjiDictionary::Ready(bytes) => format!("ready ({bytes} bytes)"),
+                KanjiDictionary::Failed(e) => format!("failed: {e}"),
+                KanjiDictionary::Missing => "not installed".into(),
+                _ => "…".into(),
+            };
+            eprintln!(
+                "music-gpui: [{:6.2}s] kanji dictionary {what}",
+                started.elapsed().as_secs_f64()
+            );
+        }
+        let reload = matches!(state, KanjiDictionary::Ready(_))
+            || matches!(self.lyrics.kanji, KanjiDictionary::Ready(_));
+        self.lyrics.kanji = state;
+        if reload {
+            // Prepared lyrics carry their romanization: prepare them again.
+            for state in self.lyrics.states.values_mut() {
+                if let LyricsState::Ready(prepared) = state {
+                    *prepared = Arc::new(prepared.reromanized());
+                }
+            }
+        }
+        cx.notify();
+    }
+
     /// Forgets a failed translation so the next render asks again.
     pub fn retry_translation(&mut self, cx: &mut Context<Self>) {
         self.lyrics
             .translations
-            .retain(|_, s| !matches!(s, TranslationState::Failed(_)));
+            .retain(|_, s| !matches!(s, TranslationState::Failed { .. }));
         cx.notify();
     }
 }
@@ -374,6 +622,19 @@ mod tests {
             "{roman}"
         );
         assert!(prepared.romanized[1].is_none(), "latin stays as is");
+    }
+
+    #[test]
+    fn reromanizing_keeps_lines_and_provider_romanization() {
+        let ttml = r#"<tt xmlns="http://www.w3.org/ns/ttml" xmlns:ttm="http://www.w3.org/ns/ttml#metadata"><body>
+<p begin="1" end="2"><span begin="1" end="2">사랑</span><span ttm:role="x-roman">sa-rang</span></p>
+<p begin="2" end="3"><span begin="2" end="3">君の名は</span></p></body></tt>"#;
+        let prepared = PreparedLyrics::new(RawLyrics::new("T", ttml).parse(None).unwrap());
+        let again = prepared.reromanized();
+        assert_eq!(again.lines.len(), 2);
+        assert_eq!(again.texts(), prepared.texts());
+        assert_eq!(again.romanized[0].as_ref().unwrap().1, "sa-rang");
+        assert_eq!(again.romanized[1].as_ref().unwrap().0, Script::Japanese);
     }
 
     #[test]

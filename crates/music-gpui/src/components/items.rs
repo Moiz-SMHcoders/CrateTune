@@ -928,7 +928,7 @@ mod tests {
         ));
         assert!(matches!(
             target_route(&t("MPSPPLabc", None, None), "x"),
-            Route::Playlist { id, .. } if id == "PLabc"
+            Route::Podcast { id, .. } if id == "MPSPPLabc"
         ));
     }
 

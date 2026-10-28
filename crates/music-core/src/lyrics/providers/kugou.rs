@@ -11,12 +11,10 @@ use crate::lyrics::{LyricsQuery, LyricsResult};
 use crate::{Error, Result};
 
 const PAGE_SIZE: &str = "8";
-const HEAD_CUT_LIMIT: usize = 30;
 const DURATION_TOLERANCE: u32 = 8;
 
 static ACCEPTED: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^\[(\d\d):(\d\d)\.(\d{2,3})\].*$").unwrap());
-static BANNED: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^.+\].+[:：].+$").unwrap());
 static BRACKETS: LazyLock<[Regex; 8]> = LazyLock::new(|| {
     [
         r"\(.*\)", "（.*）", "「.*」", "『.*』", "<.*>", "《.*》", "〈.*〉", "＜.*＞",
@@ -168,33 +166,18 @@ fn normalize_artist(artist: &str) -> String {
         .fold(a, |t, re| re.replace_all(&t, "").into_owned())
 }
 
-/// Keeps timestamped lines and cuts the credits block (lines like
-/// `[00:05.33]Lyrics by：…`) at the head and tail.
+/// Keeps timestamped lines. The credits block (`[00:05.33]Lyrics by：…`) is left to
+/// the shared credit filter in [`LyricsResult::parse`]: ArchiveTune's cut (drop
+/// everything up to the last `…]…:…` line among the first 30) also ate real lyrics
+/// that contain a colon ("He said: …").
 fn normalize_lrc(lrc: &str) -> String {
     let unescaped = lrc.replace("&apos;", "'");
-    let lines: Vec<&str> = unescaped
+    unescaped
         .lines()
         .map(|l| l.trim_end_matches('\r'))
         .filter(|l| ACCEPTED.is_match(l))
-        .collect();
-    if lines.is_empty() {
-        return String::new();
-    }
-    let last = lines.len() - 1;
-    let head_cut = (0..=HEAD_CUT_LIMIT.min(last))
-        .rev()
-        .find(|&i| BANNED.is_match(lines[i]))
-        .map_or(0, |i| i + 1);
-    let tail_cut = match lines.len().checked_sub(HEAD_CUT_LIMIT) {
-        Some(start) => (0..=start.min(last))
-            .rev()
-            .find(|&i| BANNED.is_match(lines[last - i]))
-            .map_or(0, |i| i + 1),
-        None => 0,
-    };
-    let kept = &lines[head_cut.min(lines.len())..];
-    let kept = &kept[..kept.len().saturating_sub(tail_cut)];
-    kept.join("\n")
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 /// Standard base64 (with or without padding).
@@ -241,10 +224,34 @@ mod tests {
         assert_eq!(id, "133543278");
         assert_eq!(key.len(), 32);
         let lrc = decode_download(&json("kugou_download.json")).unwrap();
-        // Credits ("Lyrics by：…") and the title line are cut.
-        assert!(lrc.starts_with("[00:26.65]I didn't wanna"), "{lrc}");
+        // Credits ("Lyrics by：…") and the title line are filtered when parsing.
         let r = LyricsResult::parse("Kugou", lrc, Some(337)).unwrap();
-        assert_eq!(r.synced.unwrap().lines.len(), 4);
+        let lines = r.synced.unwrap().lines;
+        assert_eq!(
+            lines.len(),
+            4,
+            "{:#?}",
+            lines.iter().map(|l| &l.text).collect::<Vec<_>>()
+        );
+        assert!(lines[0].text.starts_with("I didn't wanna"));
+    }
+
+    #[test]
+    fn colon_in_lyrics_keeps_the_lines_before_it() {
+        let lrc = "[00:00.00]Song - Band\n[00:01.00]作词：A\n[00:10.00]First line\n\
+                   [00:12.00]Second line\n[00:14.00]He said: hello\n[00:16.00]Last";
+        let r = LyricsResult::parse("Kugou", normalize_lrc(lrc), None).unwrap();
+        let texts: Vec<String> = r
+            .synced
+            .unwrap()
+            .lines
+            .into_iter()
+            .map(|l| l.text)
+            .collect();
+        assert_eq!(
+            texts,
+            ["First line", "Second line", "He said: hello", "Last"]
+        );
     }
 
     #[test]

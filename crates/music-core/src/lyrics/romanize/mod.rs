@@ -2,7 +2,7 @@
 //!
 //! | Script | Method |
 //! |---|---|
-//! | Japanese | kana table (Hepburn-style); kanji readings only with the `japanese-dict` feature (lindera + IPADIC, ~48 MB) |
+//! | Japanese | kana table (Hepburn-style); kanji readings with lindera + IPADIC, downloaded on demand ([`dictionary`]) or embedded (`japanese-dict` feature, ~48 MB) |
 //! | Korean | algorithmic Revised Romanization with liaison/assimilation |
 //! | Chinese | `pinyin` crate, with tone marks |
 //! | Devanagari | table, word-final schwa deletion |
@@ -14,6 +14,7 @@
 
 mod cyrillic;
 mod devanagari;
+pub mod dictionary;
 mod japanese;
 mod korean;
 
@@ -25,7 +26,9 @@ use devanagari::{is_devanagari, romanize_devanagari};
 use japanese::{is_han, is_kana, romanize_japanese};
 use korean::{is_hangul, romanize_korean};
 
-/// Whether this build can read kanji (`japanese-dict` feature).
+/// Whether this build embeds a kanji dictionary (`japanese-dict` feature). A
+/// dictionary can also be downloaded and loaded at runtime, see
+/// [`dictionary::kanji_readings_available`].
 pub const HAS_KANJI_READINGS: bool = cfg!(feature = "japanese-dict");
 
 /// Which romanizer to use.
@@ -150,6 +153,8 @@ pub fn romanize_result(result: &LyricsResult, script: Script) -> Vec<Option<Stri
                     .get(i)
                     .and_then(|e| e.romanization.as_deref())
                     .filter(|r| !r.eq_ignore_ascii_case(lyrics.lines[i].text.trim()))
+                    // Apple ships transliterations for Latin lines too ("(One, two) Baby").
+                    .filter(|_| detect_script(&lyrics.lines[i].text).is_some())
                 {
                     *slot = Some(provided.to_owned());
                 }
@@ -234,12 +239,13 @@ mod tests {
         let r = romanize(&l, Script::Auto);
         assert_eq!(r.len(), 3);
         assert!(r[0].is_some());
-        // Kanji-only line in a Japanese song: not pinyin.
-        if HAS_KANJI_READINGS {
-            assert_eq!(r[1].as_deref(), Some("himitsu"));
-        } else {
-            assert_eq!(r[1], None);
-        }
+        // Kanji-only line in a Japanese song: not pinyin (a dictionary may be loaded by
+        // another test meanwhile, which reads it "himitsu").
+        assert!(
+            matches!(r[1].as_deref(), None | Some("himitsu")),
+            "{:?}",
+            r[1]
+        );
         assert_eq!(r[2], None);
     }
 
@@ -247,11 +253,12 @@ mod tests {
     fn provider_romanization_wins() {
         let ttml = r#"<tt xmlns="http://www.w3.org/ns/ttml" xmlns:ttm="http://www.w3.org/ns/ttml#metadata"><body>
 <p begin="1" end="2"><span begin="1" end="2">사랑</span><span ttm:role="x-roman">sa-rang</span></p>
-<p begin="2" end="3"><span begin="2" end="3">안녕</span></p></body></tt>"#;
+<p begin="2" end="3"><span begin="2" end="3">안녕</span></p>
+<p begin="3" end="4"><span begin="3" end="4">Baby</span><span ttm:role="x-roman">(One) Baby</span></p></body></tt>"#;
         let r = LyricsResult::parse("x", ttml, None).unwrap();
         assert_eq!(
             romanize_result(&r, Script::Auto),
-            [Some("sa-rang".into()), Some("annyeong".into())]
+            [Some("sa-rang".into()), Some("annyeong".into()), None]
         );
     }
 }

@@ -88,8 +88,16 @@ big artwork, lyrics first) and four backgrounds (blurred artwork, gradient, soli
 from the layout menu in its header or Settings → Appearance.
 
 Lyrics come from several providers (word-by-word where available). Click a line to jump
-there. Translation (Google or your own AI endpoint) and romanization (Japanese, Korean,
-Chinese, Hindi, Cyrillic, …) are in Settings → Lyrics.
+there. Songwriter / producer credits that some providers put above the lyrics are left out,
+and songs the providers know as instrumentals show no lyrics. Translation (Google or your
+own AI endpoint) and romanization (Japanese, Korean, Chinese, Hindi, Cyrillic, …) are in
+Settings → Lyrics. A song is translated once per language and kept, so opening it again
+doesn't wait for the translator.
+
+**Kanji in Japanese romanization** need a dictionary: Settings → Lyrics → Romanization →
+**Kanji readings** → Download (10.5 MB, about 45 MB on disk; it also starts when you turn
+Japanese romanization on). Until it is there, only kana are romanized and kanji stay as
+they are. Remove deletes it again.
 
 ## Recognize music
 
@@ -241,7 +249,8 @@ of this app and the packaging tool.
 * Your library, history, stats and settings stay on your computer; nothing is sent to the
   developers.
 * YouTube receives your searches and what you play (with your account cookie when signed
-  in). Lyrics providers receive song titles and artists. Recognition sends an audio
+  in). Lyrics providers receive song titles and artists; translators receive the lyrics.
+  The kanji dictionary is downloaded from lindera's GitHub releases. Recognition sends an audio
   fingerprint to Shazam. Last.fm / ListenBrainz / Discord only get data if you set them up.
 * When an update repository is configured, the app asks GitHub once per launch for the
   latest release (Settings → About); nothing is downloaded automatically.
@@ -261,6 +270,9 @@ of this app and the packaging tool.
   HTTP/2); some networks block that port.
 * Recognition uses Shazam's public endpoint, which may rate-limit ("Too many requests —
   try again in a minute") or change without notice.
+* Google Translate's free endpoint rate-limits busy connections ("rate-limited this
+  connection; try again in N min"); the app then leaves it alone for a while and retries by
+  itself. An AI endpoint of your own avoids this.
 * Accessibility (screen readers) is limited by the UI toolkit.
 * Builds are not signed with a Developer ID / Authenticode certificate yet (see Install).
 
