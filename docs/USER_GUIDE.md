@@ -1,6 +1,6 @@
 # User guide
 
-"Music" is the working name of this app: a native desktop player for YouTube Music on
+TuneDesk is a native desktop player for YouTube Music on
 macOS, Windows and Linux. It is free software (GPL-3.0) and not affiliated with YouTube,
 Google or Shazam.
 
@@ -170,8 +170,8 @@ copies your YouTube Music library into the local one; **Sign out** forgets the c
 | Scrobbling & Discord | Last.fm, ListenBrainz, scrobble rules, Discord Rich Presence |
 | About | version, license, credits, welcome guide, update check (when enabled) |
 
-Settings live in `~/Library/Application Support/music-macos/` (macOS),
-`~/.config/music-macos/` (Linux) or `%APPDATA%\music-macos\config\` (Windows); passwords
+Settings live in `~/Library/Application Support/tunedesk/` (macOS),
+`~/.config/tunedesk/` (Linux) or `%APPDATA%\tunedesk\config\` (Windows); passwords
 and keys in the system keychain.
 
 ## Keyboard shortcuts

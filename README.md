@@ -1,4 +1,4 @@
-# music-macos — native desktop YouTube Music client
+# TuneDesk — native desktop YouTube Music client
 
 A lightweight Rust desktop client (macOS, Windows, Linux) in the spirit of the
 Android app ArchiveTune: a UI-agnostic core (`crates/music-core`) and a GPUI
@@ -33,7 +33,7 @@ libxcb1-dev libvulkan-dev libdbus-1-dev` (the list CI installs, `.github/workflo
 
 | Platform | Command | Output |
 |---|---|---|
-| macOS | `scripts/bundle-macos.sh [--no-build] [--no-dmg]` | `Music.app` (Info.plist with bundle id, version from Cargo, `LSMinimumSystemVersion` 11.0, `NSMicrophoneUsageDescription`, high-res, music category; ad-hoc signed, or Developer ID + hardened runtime with `MACOS_SIGN_IDENTITY`) and `music-macos-<ver>-macos-<arch>.dmg` |
+| macOS | `scripts/bundle-macos.sh [--no-build] [--no-dmg]` | `TuneDesk.app` (Info.plist with bundle id, version from Cargo, `LSMinimumSystemVersion` 11.0, `NSMicrophoneUsageDescription`, high-res, music category; ad-hoc signed, or Developer ID + hardened runtime with `MACOS_SIGN_IDENTITY`) and `tunedesk-<ver>-macos-<arch>.dmg` |
 | Linux | `scripts/bundle-linux.sh [--no-build] [--appimage]` | `.tar.gz` with `bin/`, `.desktop`, hicolor icons, AppStream metainfo, `install.sh`; AppImage via `appimagetool` |
 | Windows | `pwsh scripts/bundle-windows.ps1` | `.zip` and an Inno Setup 6 per-user installer (`packaging/windows/installer.iss`); the `.exe` gets its icon + version resource from `build.rs` (`embed-resource`, native Windows builds). An MSI could be made with `cargo-wix` instead. |
 
@@ -41,8 +41,8 @@ CI (`.github/workflows/ci.yml`) runs fmt, clippy (also with `--features screensh
 tests on macOS, Ubuntu and Windows; `release.yml` builds every package on a `v*` tag and
 attaches them to a draft release.
 
-**App identity.** No final name has been chosen: "Music" and the `music-macos` ids are
-working names. They live in **one file, `packaging/app.env`** (`APP_NAME`, `APP_ID`,
+**App identity.** The app is **TuneDesk** (app id `tunedesk`; the bundle id
+`io.github.tunedesk` is a placeholder). Name and ids live in **one file, `packaging/app.env`** (`APP_NAME`, `APP_ID`,
 `BUNDLE_ID`, `APP_SUMMARY`, `UPDATE_REPO`), read by `crates/music-gpui/build.rs`
 (→ `identity.rs`: window title, menus, tray, About, media-controls / MPRIS name, settings
 directory and keychain service) and by the packaging scripts. Renaming `APP_ID` moves the
@@ -201,7 +201,7 @@ Media controls, scrobbling and Discord all hang off the poll the UI already does
 // once, on the UI thread after the event loop/main window exists
 // (macOS: main thread; Windows: set `config.hwnd` to the main window's HWND)
 let mut controls = MediaControls::for_player(
-    MediaControlsConfig::new("music_macos", "Music"),
+    MediaControlsConfig::new("tunedesk", "TuneDesk"),
     player.clone(),
     |event| { /* MediaControlEvent::Next / Previous → UI queue */ },
 )?;
@@ -1018,8 +1018,8 @@ switch + id + `activity`, theme + text size, shuffle + repeat, `audio`, `lyrics`
 `network` (proxy), main window and mini player frames, and `library`: privacy switches,
 play-cache limit, music folders, the signed-in YouTube account's name / avatar /
 `auth_user` / channel, `sponsorblock`, `together`, `spotify`) lives in the platform config dir — macOS
-`~/Library/Application Support/music-macos/`, Linux `~/.config/music-macos/`, Windows
-`%APPDATA%\music-macos\config\` — or `$MUSIC_CONFIG_DIR`. It is written 500 ms after the last
+`~/Library/Application Support/tunedesk/`, Linux `~/.config/tunedesk/`, Windows
+`%APPDATA%\tunedesk\config\` — or `$MUSIC_CONFIG_DIR`. It is written 500 ms after the last
 change and on quit, atomically (temp file + rename), mode 0600 in a 0700 directory. Missing
 fields fall back to defaults, unknown ones are ignored, out-of-range values are clamped, and a
 file that isn't valid JSON is moved to `settings.json.bad`; an unknown theme / repeat value
@@ -1029,7 +1029,7 @@ The Last.fm shared secret and session key, the ListenBrainz token, the Paxsenix 
 BetterLyrics / AI-translation API keys, the proxy password, the YouTube Music sign-in
 cookie and the Spotify refresh token go to the OS keychain
 (`keyring` 4: macOS Keychain, Windows Credential Manager, Secret Service), service
-`music-macos`, one entry each. If the keychain fails (or `MUSIC_SECRET_STORE=file`), they are
+`tunedesk`, one entry each. If the keychain fails (or `MUSIC_SECRET_STORE=file`), they are
 stored in the `secrets` object of `settings.json` (still 0600) and moved back into the keychain
 the next time it accepts a write; the Storage and Scrobbling sections show where secrets are kept. The keychain
 is only read for accounts the settings say exist, on a worker thread (macOS may show an
@@ -1126,7 +1126,7 @@ build, demo clock): `@recognize-file` with 12 s WAV clips → result, YouTube Mu
 history of two entries, `@recognize-history=1`; clicking Play on the result played the
 match. Onboarding all six steps + finish (`onboarded: true` written). Update check against
 `zed-industries/zed` → "Version 1.25.3 is available". **Bundle:** `scripts/bundle-macos.sh`
-→ `Music.app` (34 MB, ad-hoc signed, `codesign --verify --strict` passes, Info.plist
+→ `TuneDesk.app` (34 MB, ad-hoc signed, `codesign --verify --strict` passes, Info.plist
 linted) + 15 MB DMG; launched with `open --env …` (temp config, `MUSIC_VOLUME=0.0`):
 menu-bar item created, media controls started without error, search → play (real device,
 muted) → next → pause/resume → mini player on/off → Recognition page → quit.

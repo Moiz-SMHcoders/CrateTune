@@ -1,9 +1,15 @@
 # Changelog
 
 All notable changes. The format follows [Keep a Changelog](https://keepachangelog.com/),
-versions follow [SemVer](https://semver.org/). "Music" is a working name.
+versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
+
+### Changed
+
+* The app is now called **TuneDesk** (app id `tunedesk`): settings live in
+  `~/Library/Application Support/tunedesk` (macOS), `~/.config/tunedesk` (Linux),
+  `%APPDATA%\tunedesk\config` (Windows), and keychain entries use the service `tunedesk`.
 
 ### Added
 
