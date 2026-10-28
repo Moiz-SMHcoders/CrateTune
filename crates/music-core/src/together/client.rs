@@ -1,18 +1,18 @@
 // Ported from ArchiveTune app/src/main/kotlin/moe/rukamori/archivetune/together/
 // TogetherClient.kt, © Rukamori and ArchiveTune contributors, GPL-3.0.
 //! A guest's connection to a host: hello, heartbeats (clock sync), room states in,
-//! control / add-track requests out. One worker thread; the app polls
-//! [`TogetherClient::poll_events`].
+//! control / add-track requests out; follows a host transfer by reconnecting to
+//! the new host (same session, client id and name). One worker thread; the app
+//! polls [`TogetherClient::poll_events`].
 
 use std::collections::HashMap;
-use std::net::{TcpStream, ToSocketAddrs};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{Receiver, Sender, channel};
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
-use super::conn::{Conn, POLL, Recv};
+use super::conn::{Conn, Link, POLL, Recv};
 use super::link::JoinInfo;
 use super::messages::{
     AddTrackMode, ControlAction, Message, PROTOCOL_VERSION, RoomSettings, RoomState, TogetherTrack,
@@ -27,6 +27,8 @@ const FAST_PING_INTERVAL: Duration = Duration::from_millis(400);
 const PING_INTERVAL: Duration = Duration::from_secs(3);
 /// The host broadcasts twice a second; this much silence means it's gone.
 const HOST_TIMEOUT: Duration = Duration::from_secs(15);
+/// How long to keep trying to reach a new host after a transfer.
+const RECONNECT_FOR: Duration = Duration::from_secs(15);
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ClientEvent {
@@ -53,6 +55,23 @@ pub enum ClientEvent {
     Disconnected {
         reason: Option<String>,
     },
+    /// The host wants this guest to take over the session. Start a server with
+    /// these (same session id + key; [`super::HostOptions`] from the lists and
+    /// the secret), then answer with [`TogetherClient::answer_host_offer`].
+    HostOffer {
+        /// The room as the host had it (queue, position, repeat, settings).
+        state: Option<RoomState>,
+        trusted_client_ids: Vec<String>,
+        banned_client_ids: Vec<String>,
+        relay_secret: Option<String>,
+    },
+    /// Someone else is the host now; the client is reconnecting to `join`.
+    HostChanged {
+        name: Option<String>,
+        join: JoinInfo,
+    },
+    /// Connected (and said hello) to the new host after [`ClientEvent::HostChanged`].
+    Reconnected,
 }
 
 enum Outgoing {
@@ -64,7 +83,36 @@ struct Shared {
     epoch: Instant,
     clock: Mutex<TogetherClock>,
     participant_id: Mutex<Option<String>>,
+    /// Where the session is (changes with a host transfer).
+    join: Mutex<JoinInfo>,
     shutdown: AtomicBool,
+}
+
+fn lock<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
+    m.lock().unwrap_or_else(|e| e.into_inner())
+}
+
+/// Who this client is, for the hello (again after a host transfer).
+struct Identity {
+    display_name: String,
+    client_id: String,
+}
+
+/// Connects and says hello.
+fn open(join: &JoinInfo, identity: &Identity) -> Result<Conn> {
+    let mut conn = Conn::connect(&join.ws_url(), CONNECT_TIMEOUT)?;
+    let hello = Message::ClientHello {
+        protocol_version: PROTOCOL_VERSION,
+        session_id: join.session_id.clone(),
+        session_key: join.session_key.clone(),
+        client_id: identity.client_id.clone(),
+        display_name: identity.display_name.trim().to_owned(),
+    };
+    if !conn.send(&hello) {
+        return Err(Error::Parse("connection closed during hello".into()));
+    }
+    conn.set_timeout(POLL);
+    Ok(conn)
 }
 
 /// Dropping it disconnects (without a "leave" message; call [`Self::leave`] first).
@@ -79,48 +127,16 @@ pub struct TogetherClient {
 impl TogetherClient {
     /// Connects and says hello. Blocking (up to a few seconds); call off the UI thread.
     pub fn connect(join: &JoinInfo, display_name: &str, client_id: &str) -> Result<Self> {
-        let addrs: Vec<_> = (join.host.as_str(), join.port)
-            .to_socket_addrs()
-            .map_err(|e| Error::Parse(format!("can't resolve {}: {e}", join.host)))?
-            .collect();
-        let mut last_error = None;
-        let mut stream = None;
-        for addr in addrs {
-            match TcpStream::connect_timeout(&addr, CONNECT_TIMEOUT) {
-                Ok(s) => {
-                    stream = Some(s);
-                    break;
-                }
-                Err(e) => last_error = Some(e),
-            }
-        }
-        let stream = stream.ok_or_else(|| match last_error {
-            Some(e) if e.kind() == std::io::ErrorKind::ConnectionRefused => {
-                Error::Parse("connection refused (is the session still running?)".into())
-            }
-            Some(e) => Error::Io(e),
-            None => Error::Parse(format!("no address for {}", join.host)),
-        })?;
-        stream.set_nodelay(true)?;
-        stream.set_read_timeout(Some(CONNECT_TIMEOUT))?;
-        let (ws, _) = tungstenite::client(join.ws_url().as_str(), stream)
-            .map_err(|e| Error::Parse(format!("WebSocket handshake: {e}")))?;
-        let mut conn = Conn::new(ws);
-        let hello = Message::ClientHello {
-            protocol_version: PROTOCOL_VERSION,
-            session_id: join.session_id.clone(),
-            session_key: join.session_key.clone(),
+        let identity = Identity {
+            display_name: display_name.to_owned(),
             client_id: client_id.to_owned(),
-            display_name: display_name.trim().to_owned(),
         };
-        if !conn.send(&hello) {
-            return Err(Error::Parse("connection closed during hello".into()));
-        }
-        conn.set_timeout(POLL);
+        let conn = open(join, &identity)?;
         let shared = Arc::new(Shared {
             epoch: Instant::now(),
             clock: Mutex::new(TogetherClock::default()),
             participant_id: Mutex::new(None),
+            join: Mutex::new(join.clone()),
             shutdown: AtomicBool::new(false),
         });
         let (out_tx, out_rx) = channel();
@@ -130,7 +146,16 @@ impl TogetherClient {
         let thread_session = session_id.clone();
         let thread = std::thread::Builder::new()
             .name("together-client".into())
-            .spawn(move || run(conn, &thread_shared, &thread_session, &out_rx, &ev_tx))
+            .spawn(move || {
+                run(
+                    conn,
+                    &thread_shared,
+                    &thread_session,
+                    &identity,
+                    &out_rx,
+                    &ev_tx,
+                )
+            })
             .map_err(Error::Io)?;
         Ok(Self {
             shared,
@@ -138,6 +163,35 @@ impl TogetherClient {
             outbox: out_tx,
             events: ev_rx,
             thread: Some(thread),
+        })
+    }
+
+    /// Where the session is now (it moves with a host transfer).
+    pub fn join_info(&self) -> JoinInfo {
+        lock(&self.shared.join).clone()
+    }
+
+    /// Answers a [`ClientEvent::HostOffer`]: `Ok(Some((host, port)))` where guests
+    /// reach this app's new server on the LAN, `Ok(None)` for a relayed session
+    /// (registered with the relay already), `Err(why)` to refuse.
+    pub fn answer_host_offer(
+        &self,
+        result: std::result::Result<Option<(String, u16)>, String>,
+    ) -> bool {
+        let session_id = self.session_id.clone();
+        self.send(|participant_id| {
+            let (host, port, error) = match result {
+                Ok(Some((host, port))) => (Some(host), Some(port), None),
+                Ok(None) => (None, None, None),
+                Err(e) => (None, None, Some(e)),
+            };
+            Message::HostTransferReady {
+                session_id,
+                participant_id,
+                host,
+                port,
+                error,
+            }
         })
     }
 
@@ -151,19 +205,11 @@ impl TogetherClient {
     }
 
     pub fn clock(&self) -> ClockSnapshot {
-        self.shared
-            .clock
-            .lock()
-            .unwrap_or_else(|e| e.into_inner())
-            .snapshot()
+        lock(&self.shared.clock).snapshot()
     }
 
     pub fn participant_id(&self) -> Option<String> {
-        self.shared
-            .participant_id
-            .lock()
-            .unwrap_or_else(|e| e.into_inner())
-            .clone()
+        lock(&self.shared.participant_id).clone()
     }
 
     fn send(&self, make: impl FnOnce(String) -> Message) -> bool {
@@ -214,6 +260,7 @@ fn run(
     mut conn: Conn,
     shared: &Shared,
     session_id: &str,
+    identity: &Identity,
     outbox: &Receiver<Outgoing>,
     events: &Sender<ClientEvent>,
 ) {
@@ -223,6 +270,8 @@ fn run(
     };
     let mut next_ping = Instant::now();
     let mut ping_id = 0u64;
+    // Fast pings again after reconnecting (a new host has a new clock).
+    let mut fast_pings_from = 0u64;
     let mut pings: HashMap<u64, u64> = HashMap::new();
     let mut last_heard = Instant::now();
     let reason = loop {
@@ -243,12 +292,7 @@ fn run(
             }
         }
         if leave {
-            if let Some(pid) = shared
-                .participant_id
-                .lock()
-                .unwrap_or_else(|e| e.into_inner())
-                .clone()
-            {
+            if let Some(pid) = lock(&shared.participant_id).clone() {
                 conn.send(&Message::ClientLeave {
                     session_id: session_id.to_owned(),
                     participant_id: pid,
@@ -268,7 +312,7 @@ fn run(
                 client_elapsed_realtime_ms: now,
             });
             next_ping = Instant::now()
-                + if ping_id < FAST_PINGS {
+                + if ping_id < fast_pings_from + FAST_PINGS {
                     FAST_PING_INTERVAL
                 } else {
                     PING_INTERVAL
@@ -285,10 +329,7 @@ fn run(
                         settings,
                         ..
                     } if sid == session_id => {
-                        *shared
-                            .participant_id
-                            .lock()
-                            .unwrap_or_else(|e| e.into_inner()) = Some(participant_id.clone());
+                        *lock(&shared.participant_id) = Some(participant_id.clone());
                         emit(ClientEvent::Welcome {
                             participant_id,
                             pending: is_pending,
@@ -307,11 +348,11 @@ fn run(
                         ..
                     } => {
                         if let Some(sent) = pings.remove(&ping_id) {
-                            shared
-                                .clock
-                                .lock()
-                                .unwrap_or_else(|e| e.into_inner())
-                                .on_pong(sent, elapsed(), server_elapsed_realtime_ms);
+                            lock(&shared.clock).on_pong(
+                                sent,
+                                elapsed(),
+                                server_elapsed_realtime_ms,
+                            );
                         }
                     }
                     Message::ServerError { message, code, .. } => {
@@ -326,6 +367,63 @@ fn run(
                         reason: reason.unwrap_or_else(|| "Banned by the host".into()),
                         banned: true,
                     }),
+                    Message::HostTransfer {
+                        state,
+                        trusted_client_ids,
+                        banned_client_ids,
+                        relay_secret,
+                        ..
+                    } => emit(ClientEvent::HostOffer {
+                        state: state.map(|s| *s),
+                        trusted_client_ids,
+                        banned_client_ids,
+                        relay_secret,
+                    }),
+                    Message::HostTransferred {
+                        participant_id,
+                        participant_name,
+                        host,
+                        port,
+                        ..
+                    } => {
+                        if lock(&shared.participant_id).as_deref() == Some(participant_id.as_str())
+                        {
+                            // This app is the new host; it drops this client.
+                            continue;
+                        }
+                        let old = lock(&shared.join).clone();
+                        let join = match (host, port) {
+                            (Some(host), Some(port)) if !host.is_empty() && port > 0 => JoinInfo {
+                                host,
+                                port,
+                                url: None,
+                                ..old
+                            },
+                            // Same relay: it routes the new connection to the new host.
+                            _ if old.is_relay() => old,
+                            _ => continue,
+                        };
+                        emit(ClientEvent::HostChanged {
+                            name: participant_name,
+                            join: join.clone(),
+                        });
+                        conn.close("Host moved");
+                        *lock(&shared.participant_id) = None;
+                        match reconnect(&join, identity, shared, &emit) {
+                            Some(new) => {
+                                conn = new;
+                                *lock(&shared.join) = join;
+                                *lock(&shared.clock) = TogetherClock::default();
+                                pings.clear();
+                                fast_pings_from = ping_id;
+                                next_ping = Instant::now();
+                                last_heard = Instant::now();
+                                emit(ClientEvent::Reconnected);
+                            }
+                            None if shared.shutdown.load(Ordering::Relaxed) => break None,
+                            None => break Some("Couldn't reach the new host".to_owned()),
+                        }
+                    }
                     _ => {}
                 }
             }
@@ -339,4 +437,53 @@ fn run(
         }
     };
     emit(ClientEvent::Disconnected { reason });
+}
+
+/// Tries to reach a new host for [`RECONNECT_FOR`] (it may still be starting, a
+/// relay may still count the old connection): connects, says hello and waits for
+/// the welcome (recorded and emitted like the first one); refusals are retried.
+fn reconnect(
+    join: &JoinInfo,
+    identity: &Identity,
+    shared: &Shared,
+    emit: &dyn Fn(ClientEvent),
+) -> Option<Conn> {
+    let deadline = Instant::now() + RECONNECT_FOR;
+    while Instant::now() < deadline && !shared.shutdown.load(Ordering::Relaxed) {
+        match open(join, identity) {
+            Ok(mut conn) => {
+                let wait_until = Instant::now() + CONNECT_TIMEOUT;
+                while Instant::now() < wait_until {
+                    match conn.recv() {
+                        Recv::Message(Message::ServerWelcome {
+                            session_id,
+                            participant_id,
+                            is_pending,
+                            settings,
+                            ..
+                        }) if session_id == join.session_id => {
+                            *lock(&shared.participant_id) = Some(participant_id.clone());
+                            emit(ClientEvent::Welcome {
+                                participant_id,
+                                pending: is_pending,
+                                settings,
+                            });
+                            return Some(conn);
+                        }
+                        Recv::Message(Message::ServerError { code, .. })
+                            if code.as_deref() == Some("banned") =>
+                        {
+                            return None;
+                        }
+                        Recv::Message(Message::ServerError { .. }) | Recv::Closed(_) => break,
+                        _ => {}
+                    }
+                }
+                log::debug!("together: {} refused the reconnect", join.ws_url());
+            }
+            Err(e) => log::debug!("together: reconnecting to {}: {e}", join.ws_url()),
+        }
+        std::thread::sleep(Duration::from_millis(300));
+    }
+    None
 }

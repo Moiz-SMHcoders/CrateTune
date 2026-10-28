@@ -1,6 +1,6 @@
-//! Listen together (Music Together on the LAN): host or join a session, the
-//! join link, participants (approve / remove), room settings, the room's queue
-//! and requests to the host.
+//! Listen together (Music Together on the LAN or through a relay): host or join a
+//! session, the join link, participants (approve / remove / make host), room
+//! settings, the room's queue and requests to the host.
 
 use std::rc::Rc;
 use std::time::Duration;
@@ -84,7 +84,13 @@ fn muted(text: impl Into<SharedString>, cx: &gpui::App) -> gpui::Div {
         .child(text.into())
 }
 
-fn participant_row(p: &Participant, hosting: bool, ix: usize, cx: &gpui::App) -> AnyElement {
+fn participant_row(
+    p: &Participant,
+    hosting: bool,
+    transferring: bool,
+    ix: usize,
+    cx: &gpui::App,
+) -> AnyElement {
     let id = p.id.clone();
     let mut row = h_flex()
         .gap_3()
@@ -139,8 +145,19 @@ fn participant_row(p: &Participant, hosting: bool, ix: usize, cx: &gpui::App) ->
                         }),
                 );
         } else {
-            let (k, b) = (id.clone(), id);
+            let (k, b, t) = (id.clone(), id.clone(), id);
             row = row
+                .child(
+                    Button::new(("tg-make-host", ix))
+                        .xsmall()
+                        .ghost()
+                        .label("Make host")
+                        .tooltip("Hand the session over: they host, everyone follows them")
+                        .disabled(transferring)
+                        .on_click(move |_, _, cx| {
+                            update_app(cx, |app, cx| app.together_transfer(&t, cx));
+                        }),
+                )
                 .child(
                     Button::new(("tg-kick", ix))
                         .xsmall()
@@ -202,13 +219,15 @@ impl Render for TogetherPage {
                     h.join.to_compact(),
                     h.join.host.clone(),
                     h.join.port,
+                    h.join.is_relay(),
+                    h.transferring.clone(),
                 )),
                 _ => None,
             };
             let guest = match &t.role {
                 Role::Guest(g) => Some((
                     g.join.host.clone(),
-                    g.pending,
+                    g.pending || g.taking_over,
                     g.room.clone(),
                     g.client.clock(),
                 )),
@@ -232,7 +251,7 @@ impl Render for TogetherPage {
         let danger = theme.danger;
         let mut content = v_flex().gap_6().child(page_title(
             "Listen together",
-            Some("Play the same music in sync with people on your network.".into()),
+            Some("Play the same music in sync with people on your network, or anywhere through a relay.".into()),
             cx,
         ));
         if let Some(e) = &error {
@@ -286,6 +305,22 @@ impl Render for TogetherPage {
                                     .label("Start session")
                                     .on_click(|_, window, cx| {
                                         update_app(cx, |app, cx| app.together_host(window, cx));
+                                    }),
+                            )
+                            .child(
+                                Button::new("tg-host-relay")
+                                    .outline()
+                                    .icon(Lucide::Globe)
+                                    .label("Host via relay")
+                                    .tooltip(match prefs.relay() {
+                                        Some(_) => "Through your relay server: guests can join from any network",
+                                        None => "Set a relay server in Settings → Music Together",
+                                    })
+                                    .disabled(prefs.relay().is_none())
+                                    .on_click(|_, window, cx| {
+                                        update_app(cx, |app, cx| {
+                                            app.together_host_relay(window, cx, |_| {})
+                                        });
                                     }),
                             )
                             .child(
@@ -355,7 +390,7 @@ impl Render for TogetherPage {
             }
             // ---- hosting
             2 => {
-                let (link, compact, host, port) = link.unwrap_or_default();
+                let (link, compact, host, port, relayed, transferring) = link.unwrap_or_default();
                 let (copy_link, copy_compact) = (link.clone(), compact.clone());
                 let guests = participants.iter().filter(|p| !p.is_host).count();
                 content = content.child(
@@ -383,9 +418,19 @@ impl Render for TogetherPage {
                                 ),
                         )
                         .child(muted(
-                            format!("Share this link with people on the same network ({host}, port {port}):"),
+                            if relayed {
+                                format!("Share this link; it works from any network (through the relay {host}):")
+                            } else {
+                                format!("Share this link with people on the same network ({host}, port {port}):")
+                            },
                             cx,
                         ))
+                        .children(transferring.map(|name| {
+                            h_flex()
+                                .gap_2()
+                                .child(Spinner::new().small())
+                                .child(muted(format!("Handing the session to {name}…"), cx))
+                        }))
                         .child(
                             h_flex()
                                 .gap_2()
@@ -415,7 +460,11 @@ impl Render for TogetherPage {
                                         .small()
                                         .ghost()
                                         .label("Copy code")
-                                        .tooltip("host|port|session|key, for typing on another device")
+                                        .tooltip(if relayed {
+                                            "relay URL|session|key, for typing on another device"
+                                        } else {
+                                            "host|port|session|key, for typing on another device"
+                                        })
                                         .on_click(move |_, _, cx| {
                                             cx.write_to_clipboard(ClipboardItem::new_string(copy_compact.clone()));
                                         }),
@@ -553,6 +602,10 @@ impl Render for TogetherPage {
 
         if !participants.is_empty() {
             let hosting = role == 2;
+            let transferring = read_app(cx, |app, _| {
+                matches!(&app.integrations.together.role, Role::Hosting(h) if h.transferring.is_some())
+            })
+            .unwrap_or(false);
             content = content.child(
                 v_flex()
                     .gap_2()
@@ -566,7 +619,7 @@ impl Render for TogetherPage {
                         participants
                             .iter()
                             .enumerate()
-                            .map(|(ix, p)| participant_row(p, hosting, ix, cx)),
+                            .map(|(ix, p)| participant_row(p, hosting, transferring, ix, cx)),
                     ),
             );
         }

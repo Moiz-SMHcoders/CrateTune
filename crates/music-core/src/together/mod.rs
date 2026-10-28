@@ -1,17 +1,21 @@
 // Ported from ArchiveTune app/src/main/kotlin/moe/rukamori/archivetune/together/
-// (protocol, server, client, clock, playback sync, links), © Rukamori and ArchiveTune
-// contributors, GPL-3.0. Only the LAN mode: no online relay.
-//! Music Together: listen with others on the local network.
+// (protocol, server, client, clock, playback sync, links, host transfer),
+// © Rukamori and ArchiveTune contributors, GPL-3.0. The relay mode is our own
+// (ArchiveTune's online mode uses its own servers; nothing of it is used here).
+//! Music Together: listen with others on the local network or through a relay.
 //!
 //! The host runs a [`TogetherServer`] (WebSocket on a TCP port, default
-//! [`DEFAULT_PORT`]); guests connect with a [`JoinInfo`] (link / address + session
-//! key) through [`TogetherClient`]. The host app broadcasts a [`RoomState`] (queue,
-//! current index, playing, position stamped with the server clock) every
-//! [`sync::BROADCAST_INTERVAL_MS`] and on changes; guests follow it with
-//! [`sync::GuestSync`] (clock offset from heartbeats, drift threshold, echo
-//! suppression). Guests may suggest songs ([`AddTrackMode`]) and, if the host
-//! allows it, control playback ([`ControlAction`]); the host can require approval
-//! before anyone joins, and kick / ban.
+//! [`DEFAULT_PORT`], or registered with a self-hosted relay server through
+//! [`TogetherServer::start_relay`], see [`relay`]); guests connect with a
+//! [`JoinInfo`] (link / address + session key) through [`TogetherClient`]. The
+//! host app broadcasts a [`RoomState`] (queue, current index, playing, position
+//! stamped with the server clock) every [`sync::BROADCAST_INTERVAL_MS`] and on
+//! changes; guests follow it with [`sync::GuestSync`] (clock offset from
+//! heartbeats, drift threshold, echo suppression). Guests may suggest songs
+//! ([`AddTrackMode`]) and, if the host allows it, control playback
+//! ([`ControlAction`]); the host can require approval before anyone joins, kick /
+//! ban, and hand the session to a guest ([`TogetherServer::transfer_host`]: the
+//! guest starts its own server with the room's state, everyone reconnects to it).
 //!
 //! Everything is blocking std threads + `tungstenite`; no async runtime.
 
@@ -19,16 +23,17 @@ mod client;
 mod conn;
 pub mod link;
 pub mod messages;
+pub mod relay;
 mod server;
 pub mod sync;
 
 pub use client::{ClientEvent, TogetherClient};
-pub use link::{JoinInfo, local_ip};
+pub use link::{JoinInfo, local_ip, relay_url};
 pub use messages::{
     AddTrackMode, ControlAction, Message, PROTOCOL_VERSION, Participant, Role, RoomSettings,
     RoomState, TogetherTrack, queue_hash,
 };
-pub use server::{HOST_ID, ServerEvent, TogetherServer};
+pub use server::{HOST_ID, HostOptions, ServerEvent, TogetherServer};
 pub use sync::{ClockSnapshot, GuestSync, LocalPlayback, SyncPlan, TogetherClock};
 
 pub const DEFAULT_PORT: u16 = 42117;
@@ -77,6 +82,7 @@ mod tests {
             port: server.port(),
             session_id: server.session_id().into(),
             session_key: key.into(),
+            url: None,
         }
     }
 
@@ -251,5 +257,161 @@ mod tests {
             })
         });
         assert_eq!(reason.as_deref(), Some("Session ended"));
+    }
+
+    /// Host → guest hand-over on the LAN: Ann takes over, Bob and the old host
+    /// reconnect to her (no approval needed for them), the state carries over.
+    #[test]
+    fn host_transfer_on_the_lan() {
+        let mut old = TogetherServer::start(
+            0,
+            new_id(),
+            new_id(),
+            "Hana".into(),
+            RoomSettings {
+                require_host_approval_to_join: true,
+                ..RoomSettings::default()
+            },
+        )
+        .unwrap();
+        let key = old.session_key().to_owned();
+        let ann = TogetherClient::connect(&join(&old, &key), "Ann", "ann-client").unwrap();
+        let bob = TogetherClient::connect(&join(&old, &key), "Bob", "bob-client").unwrap();
+        for _ in 0..2 {
+            let p = wait_for(|| {
+                old.poll_events().into_iter().find_map(|e| match e {
+                    ServerEvent::JoinRequested(p) => Some(p),
+                    _ => None,
+                })
+            });
+            old.approve(&p.id, true);
+        }
+        let ann_id = wait_for(|| ann.participant_id());
+        wait_for(|| bob.participant_id());
+        // Banned before the transfer: stays banned.
+        let eve = TogetherClient::connect(&join(&old, &key), "Eve", "eve-client").unwrap();
+        let eve_p = wait_for(|| {
+            old.poll_events().into_iter().find_map(|e| match e {
+                ServerEvent::JoinRequested(p) => Some(p),
+                _ => None,
+            })
+        });
+        old.kick(&eve_p.id, None, true);
+        drop(eve);
+
+        let state = RoomState {
+            queue: vec![track("aaaaaaaaaaa"), track("bbbbbbbbbbb")],
+            current_index: 1,
+            is_playing: true,
+            position_ms: 42_000,
+            repeat_mode: 2,
+            ..RoomState::default()
+        };
+        assert!(!old.transfer_host("nobody", state.clone(), None));
+        assert!(old.transfer_host(&ann_id, state, Some("hana-client")));
+        assert!(old.transfer_pending());
+
+        // Ann gets the offer with the room and the guest lists, and starts a server.
+        let (offered, trusted, banned) = wait_for(|| {
+            ann.poll_events().into_iter().find_map(|e| match e {
+                ClientEvent::HostOffer {
+                    state,
+                    trusted_client_ids,
+                    banned_client_ids,
+                    relay_secret,
+                } => {
+                    assert!(relay_secret.is_none());
+                    Some((state.unwrap(), trusted_client_ids, banned_client_ids))
+                }
+                _ => None,
+            })
+        });
+        assert_eq!(offered.position_ms, 42_000);
+        assert_eq!(offered.current().unwrap().id, "bbbbbbbbbbb");
+        assert_eq!(offered.repeat_mode, 2);
+        assert!(offered.settings.require_host_approval_to_join);
+        for id in ["ann-client", "bob-client", "hana-client"] {
+            assert!(trusted.contains(&id.to_owned()), "{trusted:?}");
+        }
+        assert_eq!(banned, vec!["eve-client".to_owned()]);
+        let new = TogetherServer::start_with(
+            0,
+            old.session_id().into(),
+            key.clone(),
+            "Ann".into(),
+            offered.settings,
+            HostOptions {
+                trusted_client_ids: trusted,
+                banned_client_ids: banned,
+                relay_secret: None,
+            },
+        )
+        .unwrap();
+        assert!(ann.answer_host_offer(Ok(Some(("127.0.0.1".into(), new.port())))));
+
+        // The old host learns where the session went.
+        let (who, moved) = wait_for(|| {
+            old.poll_events().into_iter().find_map(|e| match e {
+                ServerEvent::HostTransferred { participant, join } => Some((participant, join)),
+                ServerEvent::TransferFailed { reason, .. } => panic!("{reason}"),
+                _ => None,
+            })
+        });
+        assert_eq!(who.name, "Ann");
+        assert_eq!((moved.host.as_str(), moved.port), ("127.0.0.1", new.port()));
+        assert!(!old.transfer_pending());
+
+        // Bob follows on his own, straight in (trusted).
+        let changed = wait_for(|| {
+            bob.poll_events().into_iter().find_map(|e| match e {
+                ClientEvent::HostChanged { name, join } => Some((name, join)),
+                _ => None,
+            })
+        });
+        assert_eq!(changed.0.as_deref(), Some("Ann"));
+        wait_for(|| {
+            bob.poll_events()
+                .into_iter()
+                .find(|e| matches!(e, ClientEvent::Reconnected))
+        });
+        let joined = wait_for(|| {
+            new.poll_events().into_iter().find_map(|e| match e {
+                ServerEvent::Joined(p) => Some(p),
+                ServerEvent::JoinRequested(p) => panic!("{} should be trusted", p.name),
+                _ => None,
+            })
+        });
+        assert_eq!(joined.name, "Bob");
+        assert_eq!(bob.join_info().port, new.port());
+        // Ann's old client doesn't reconnect; the old host ends and rejoins as a guest.
+        ann.leave();
+        old.stop();
+        let hana = TogetherClient::connect(&moved, "Hana", "hana-client").unwrap();
+        let joined = wait_for(|| {
+            new.poll_events().into_iter().find_map(|e| match e {
+                ServerEvent::Joined(p) => Some(p),
+                ServerEvent::JoinRequested(p) => panic!("{} should be trusted", p.name),
+                _ => None,
+            })
+        });
+        assert_eq!(joined.name, "Hana");
+        // Bob gets the new host's room state and its clock.
+        let sent = new.broadcast_room_state(offered.clone());
+        let got = wait_for(|| {
+            bob.poll_events().into_iter().find_map(|e| match e {
+                ClientEvent::RoomState(s) => Some(s),
+                _ => None,
+            })
+        });
+        assert_eq!(got.queue, sent.queue);
+        wait_for(|| Some(bob.clock()).filter(|c| c.samples >= 2));
+        // Eve stays banned.
+        let eve = TogetherClient::connect(&moved, "Eve", "eve-client").unwrap();
+        wait_for(|| {
+            eve.poll_events().into_iter().find(
+                |e| matches!(e, ClientEvent::ServerError { code: Some(c), .. } if c == "banned"),
+            )
+        });
+        drop(hana);
     }
 }

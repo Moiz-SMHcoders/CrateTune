@@ -63,6 +63,8 @@ pub struct TogetherPrefs {
     pub last_join: String,
     /// Random id that identifies this app to hosts (bans stick to it).
     pub client_id: String,
+    /// A self-hosted `music-relay` server (`wss://…`); empty = LAN only.
+    pub relay_url: String,
 }
 
 impl Default for TogetherPrefs {
@@ -75,6 +77,7 @@ impl Default for TogetherPrefs {
             require_host_approval: false,
             last_join: String::new(),
             client_id: String::new(),
+            relay_url: String::new(),
         }
     }
 }
@@ -86,6 +89,11 @@ impl TogetherPrefs {
             allow_guests_to_control_playback: self.allow_guests_to_control_playback,
             require_host_approval_to_join: self.require_host_approval,
         }
+    }
+
+    /// The relay's WebSocket URL, if one is set and valid.
+    pub fn relay(&self) -> Option<String> {
+        music_core::together::relay_url(&self.relay_url)
     }
 
     pub fn name(&self) -> String {
@@ -149,6 +157,10 @@ mod tests {
         assert_eq!(t.port, 5000);
         assert!(t.allow_guests_to_add_tracks && !t.allow_guests_to_control_playback);
         assert!(!t.name().is_empty());
+        assert_eq!(t.relay(), None);
+        let t: TogetherPrefs =
+            serde_json::from_str(r#"{"relay_url":"https://relay.example.com"}"#).unwrap();
+        assert_eq!(t.relay().as_deref(), Some("wss://relay.example.com/"));
         let s: SpotifyPrefs = serde_json::from_str("{}").unwrap();
         assert_eq!(s.redirect_port, 43819);
     }

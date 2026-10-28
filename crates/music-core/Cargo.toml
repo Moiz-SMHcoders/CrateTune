@@ -55,6 +55,10 @@ getrandom = "0.3"
 sha2 = "0.10"
 # Music Together: blocking WebSockets over std TCP on worker threads (no async runtime).
 tungstenite = { version = "0.28", default-features = false, features = ["handshake"] }
+# `wss://` relays for Music Together and the Cast channel (TLS 1.2+ on port 8009):
+# the rustls + ring + Mozilla roots already in the graph through ureq.
+rustls = { version = "0.23", default-features = false, features = ["std", "tls12", "ring"] }
+webpki-roots = "1"
 unicode-normalization = "0.1"
 ureq = { version = "3", features = ["json", "socks-proxy"] }
 url = "2.5"

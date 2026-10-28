@@ -4495,6 +4495,7 @@ dependencies = [
  "roxmltree 0.21.2",
  "rquickjs",
  "rusqlite",
+ "rustls",
  "serde",
  "serde_json",
  "sha1_smol",
@@ -4505,6 +4506,7 @@ dependencies = [
  "unicode-normalization",
  "ureq",
  "url",
+ "webpki-roots",
  "windows 0.62.2",
  "windows-future 0.3.2",
  "zip",
@@ -4533,6 +4535,17 @@ dependencies = [
  "serde_json",
  "tray-icon",
  "wry",
+]
+
+[[package]]
+name = "music-relay"
+version = "0.1.0"
+dependencies = [
+ "music-core",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "tungstenite",
 ]
 
 [[package]]

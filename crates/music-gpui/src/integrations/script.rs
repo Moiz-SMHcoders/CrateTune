@@ -7,8 +7,10 @@
 //! | `@sb-skip` | accept the offered skip ("ask" mode) |
 //! | `@sb-status` | print the current song's segments |
 //! | `@play-id=VIDEO_ID[:TITLE]` | play one YouTube video id (e.g. a music video with segments) |
-//! | `@set=FIELD:VALUE` | type into `sb-url`, `together-name`, `together-port`, `spotify-client`, `spotify-port` |
+//! | `@set=FIELD:VALUE` | type into `sb-url`, `together-name`, `together-port`, `together-relay`, `spotify-client`, `spotify-port` |
 //! | `@together-host[=FILE]` | start a session (and write the join link to FILE) |
+//! | `@together-host-relay[=FILE]` | start a session through the relay from the settings |
+//! | `@together-transfer=NAME` | hand the session to a guest |
 //! | `@together-join=LINK` / `@together-join=file:PATH` | join a session |
 //! | `@together-leave` | leave / end the session |
 //! | `@together-approve`, `@together-deny` | decide on every pending guest |
@@ -112,6 +114,31 @@ impl MusicApp {
                     && let Err(e) = std::fs::write(path, link)
                 {
                     eprintln!("music-gpui: writing {path}: {e}");
+                }
+            }
+            "together-host-relay" => {
+                let path = arg.map(str::to_owned);
+                self.together_host_relay(window, cx, move |link| {
+                    eprintln!("music-gpui: together link {link:?}");
+                    if let Some(path) = path
+                        && let Err(e) = std::fs::write(&path, link)
+                    {
+                        eprintln!("music-gpui: writing {path}: {e}");
+                    }
+                });
+            }
+            "together-transfer" => {
+                let wanted = arg.unwrap_or("");
+                let id = self
+                    .integrations
+                    .together
+                    .participants()
+                    .into_iter()
+                    .find(|p| !p.is_host && !p.is_pending && p.name == wanted)
+                    .map(|p| p.id);
+                match id {
+                    Some(id) => self.together_transfer(&id, cx),
+                    None => eprintln!("music-gpui: no admitted guest called {wanted:?}"),
                 }
             }
             "together-join" => {

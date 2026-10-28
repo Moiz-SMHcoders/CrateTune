@@ -43,10 +43,12 @@ pub struct ExtrasUi {
     sb_url: Entity<InputState>,
     together_name: Entity<InputState>,
     together_port: Entity<InputState>,
+    together_relay: Entity<InputState>,
     spotify_client: Entity<InputState>,
     spotify_port: Entity<InputState>,
     sb_url_error: Option<String>,
     port_error: Option<String>,
+    relay_error: Option<String>,
     pub(super) spotify: SpotifyFlow,
 }
 
@@ -68,16 +70,22 @@ impl ExtrasUi {
             sb_url: input(DEFAULT_API_URL, settings.sponsorblock.api_url.clone()),
             together_name: input("Your name", settings.together.display_name.clone()),
             together_port: input("42117", settings.together.port.to_string()),
+            together_relay: input(
+                "wss://relay.example.com (empty: LAN only)",
+                settings.together.relay_url.clone(),
+            ),
             spotify_client: input("Client ID", settings.spotify.client_id.clone()),
             spotify_port: input("43819", settings.spotify.redirect_port.to_string()),
             sb_url_error: None,
             port_error: None,
+            relay_error: None,
             spotify: SpotifyFlow::Idle,
         };
         let subscriptions = [
             &this.sb_url,
             &this.together_name,
             &this.together_port,
+            &this.together_relay,
             &this.spotify_client,
             &this.spotify_port,
         ]
@@ -105,6 +113,7 @@ impl SettingsPanel {
         let url = read(&self.extras.sb_url, cx);
         let name = read(&self.extras.together_name, cx);
         let port = read(&self.extras.together_port, cx);
+        let relay = read(&self.extras.together_relay, cx);
         let client = read(&self.extras.spotify_client, cx);
         let redirect = read(&self.extras.spotify_port, cx);
         let mut changed = false;
@@ -123,6 +132,13 @@ impl SettingsPanel {
         }
         if name != self.settings.together.display_name {
             self.settings.together.display_name = name;
+            changed = true;
+        }
+        self.extras.relay_error = (!relay.is_empty()
+            && music_core::together::relay_url(&relay).is_none())
+        .then(|| "Needs a ws:// or wss:// address (no user name or query)".into());
+        if self.extras.relay_error.is_none() && relay != self.settings.together.relay_url {
+            self.settings.together.relay_url = relay;
             changed = true;
         }
         let parse_port = |p: &str| p.parse::<u16>().ok().filter(|p| *p >= 1024);
@@ -161,6 +177,7 @@ impl SettingsPanel {
             "sb-url" => &self.extras.sb_url,
             "together-name" => &self.extras.together_name,
             "together-port" => &self.extras.together_port,
+            "together-relay" => &self.extras.together_relay,
             "spotify-client" => &self.extras.spotify_client,
             "spotify-port" => &self.extras.spotify_port,
             _ => return false,
@@ -443,6 +460,7 @@ pub(super) fn render_together(
 ) -> AnyElement {
     let t = panel.settings.together.clone();
     let port_error = panel.extras.port_error.clone();
+    let relay_error = panel.extras.relay_error.clone();
     v_flex()
         .gap_5()
         .child(
@@ -496,10 +514,28 @@ pub(super) fn render_together(
                     cx,
                 ))
                 .child(note(
-                    "Sessions run on your local network only: guests connect straight to this \
+                    "Sessions run on your local network: guests connect straight to this \
                      computer (allow incoming connections if the firewall asks). The link \
                      contains a random key; only people with the link can join. Changes apply \
-                     to a running session right away.",
+                     to a running session right away. On the Listen together page, “Make host” \
+                     hands the session to a guest: everyone follows the new host.",
+                    cx,
+                )),
+        )
+        .child(
+            group("Across networks", cx)
+                .child(field(
+                    "Relay server",
+                    Input::new(&panel.extras.together_relay).small(),
+                    cx,
+                ))
+                .children(relay_error.map(|e| status_line(e.into(), cx.theme().danger)))
+                .child(note(
+                    "“Host via relay” runs the session through a music-relay server you host \
+                     yourself (see the README: one small binary, put it behind a TLS reverse \
+                     proxy for wss://). Guests then join from anywhere with the link. The relay \
+                     forwards the session's messages (song ids, titles, names) but never \
+                     decides anything; empty = LAN only.",
                     cx,
                 )),
         )
