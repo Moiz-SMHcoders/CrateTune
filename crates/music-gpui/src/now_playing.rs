@@ -264,9 +264,13 @@ impl MusicApp {
         self.hires.insert(id.clone(), HiRes::Loading);
         let art_key = url.clone();
         // Artwork colours only feed the dynamic theme (`theme_state.rs` extracts them
-        // later if the theme is switched to dynamic).
-        let want_colors = self.settings.read(cx).settings().appearance.theme
-            == crate::theme::ThemeChoice::Dynamic;
+        // later if the theme is switched to dynamic) and the player bar's
+        // background effect (glow / dynamic gradient / pulse colours).
+        let want_colors = {
+            let s = self.settings.read(cx).settings();
+            s.appearance.theme == crate::theme::ThemeChoice::Dynamic
+                || s.player_bar.background_effect
+        };
         let art = ArtworkCache::global(cx).update(cx, |cache, cx| cache.load(url, cx));
         cx.spawn(async move |this, cx| {
             let entry = match art.await {

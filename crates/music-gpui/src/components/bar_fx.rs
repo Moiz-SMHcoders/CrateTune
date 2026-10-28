@@ -161,7 +161,9 @@ impl TrackFx {
                 if let Some(dump) = &mut self.dump {
                     dump.add(&out, now);
                 }
-                if !out.is_silent() {
+                // While playing keep sampling (the first frames after the tap turns
+                // on, or a quiet intro, read silent); paused, until the bars rest.
+                if playing || !out.is_silent() {
                     frame.wake_in(if style == ProgressStyle::Equalizer {
                         EQ_INTERVAL
                     } else {

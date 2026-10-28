@@ -610,7 +610,11 @@ impl MusicApp {
                 cx.notify();
             }
             SettingsEvent::Lyrics => self.rebuild_lyrics_service(cx),
-            SettingsEvent::NowPlaying => cx.notify(),
+            SettingsEvent::NowPlaying => {
+                // The bar's background effect may need the artwork colours now.
+                self.ensure_art_colors(cx);
+                cx.notify();
+            }
             SettingsEvent::Appearance => self.apply_theme(cx),
             SettingsEvent::Language => self.apply_language(window, cx),
             SettingsEvent::PlaybackModes => {
@@ -752,12 +756,12 @@ impl MusicApp {
         }
     }
 
-    /// From the poll: turns the tap off 1 s after the last visualizer stopped asking.
+    /// From the poll: turns the tap off 2 s after the last visualizer stopped asking.
     pub(crate) fn poll_spectrum(&mut self) {
         let stale = self
             .spectrum_wanted
             .get()
-            .is_some_and(|t| t.elapsed() > Duration::from_secs(1));
+            .is_some_and(|t| t.elapsed() > Duration::from_secs(2));
         if stale {
             self.spectrum_wanted.set(None);
             if let Some(player) = self.audio_player() {
