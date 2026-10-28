@@ -1047,6 +1047,38 @@ Frames are still only requested while Now Playing is visible and something moves
 glow background adds no frames while paused, the mini player none at all. Backdrop blur
 + palette + glow lights: ~9.5 ms per track on a worker thread.
 
+### Lyrics round: verification
+
+`examples/lyrics.rs` against the live providers (no API keys; Paxsenix skipped), after the
+fixes. Cells: sync kind, format, lines; "credits" = credit lines the filter removed.
+
+| Provider | Instant Crush (EN) | Hype Boy (KR) | アイドル (JP) | MALAMENTE (ES) | Time (instrumental) | 晴天 (ZH) | Double Talk (obscure) |
+|---|---|---|---|---|---|---|---|
+| BetterLyrics | Line TTML 82 | Word TTML 66, 1 bg | Line LRC 75 | Word TTML 57, 25 bg | Line LRC 20 (a fan poem) | Line LRC 50 | — |
+| BetterLyrics Portato | Word QRC 76 (credits) | Word QRC 68 (title + credits) | Word QRC 75 | Word QRC 60 (title line was a "singer") | "纯音乐" → instrumental | Word QRC 50 | — |
+| YouLyPlus | Word TTML 76 (songwriter line) | Word LRC 66 | Word TTML 76 | Word LRC 57 | — | — | — (11.5 s → stops at the 404) |
+| Binimum | Word TTML 84 | Word TTML 66, 1 bg | Word TTML 74 | Word TTML 57, 25 bg | — | — | Line TTML 12 |
+| LRCLIB | Line 80 | Line 49 | Line 76 | Line 57 (≈ 7 s early) | — | Line 50 (header + 词/曲) | Line 12 |
+| KuGou | Line 76 (credits) | Line 68 | Line 75 | Line 60 (title line, with the query) | "纯音乐" → instrumental | Line 50 | — |
+| Megalobiz | — | — | — | — | — | — | — (site rebuilt: search 301 → 404/410) |
+| SimpMusic | Word LRC 82 | Word LRC 66 | Word LRC 76 | Word LRC 57 | Line 42: another song | Word LRC 56 → 50 (producer names, with the query) | — |
+| Unison | Word TTML 78 | — | Word TTML 74 | — | — | Word TTML 49 | — |
+| YouTube Music | Plain 100 | Plain 68 | Plain 88 | Plain 65 | — | Plain 48 | Plain 15 |
+| **Service pick** | Portato (Word) | BetterLyrics (Word) | Portato / YouLyPlus (Word) | BetterLyrics (Word) | **no lyrics** (was the poem) | Portato (Word) | Binimum (Line) |
+
+Google Translate (one live request, spaced): still refused for this IP — a 302 to
+`google.com/sorry` that answers 429 without `Retry-After`; the translator now reports
+"Google Translate rate-limited this connection; try again in 2 min" and sends nothing until
+then. In the app (release build, temp `MUSIC_CONFIG_DIR`, demo clock — no audio): an
+OpenAI-compatible fake server got one request for アイドル's 74 lines; after a restart the
+translation came from the library (still one request in total). `@kanji-dict` downloaded
+and verified the real IPADIC in ~1.6 s and loaded it; at the next start it was mapped in
+0.45 s after launch; `@kanji-dict=remove` deleted it. Release binary 40,053,744 B
+(+268,992 B for lindera without a dictionary and this round's UI). **Not verified:** the
+Settings → Lyrics dictionary row and progress bar on screen (rendered, not looked at),
+in-app cancel of a running download (unit-tested; the real download finished first), a
+successful Google translation, Paxsenix / BetterLyrics keys.
+
 ### Measurements (app shell round)
 
 macOS arm64, release (thin LTO), demo clock unless noted, sampled 10 s after launch
