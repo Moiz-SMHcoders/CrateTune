@@ -4,6 +4,7 @@
 //! ```sh
 //! cargo run -p music-core --example lyrics -- "daft punk instant crush"
 //! cargo run -p music-core --example lyrics -- --translate en "yoasobi idol"
+//! cargo run -p music-core --example lyrics -- --raw DIR "yoasobi idol"   # + every raw payload into DIR
 //! ```
 //!
 //! Optional environment: `PAXSENIX_API_KEY`, `BETTERLYRICS_API_KEY`,
@@ -72,6 +73,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             translate_to = Some(args.remove(i));
         }
     }
+    let mut raw_dir = None;
+    if let Some(i) = args.iter().position(|a| a == "--raw") {
+        args.remove(i);
+        if i < args.len() {
+            raw_dir = Some(std::path::PathBuf::from(args.remove(i)));
+        }
+    }
     let track = InnerTube::default()
         .search_songs(&args.join(" "))?
         .into_iter()
@@ -101,6 +109,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         match res {
             Ok(Some(r)) => {
                 println!("{:<22} {ms:>5} ms  {}", provider.name(), summary(&r));
+                if let Some(dir) = &raw_dir {
+                    std::fs::create_dir_all(dir)?;
+                    std::fs::write(dir.join(format!("{}.txt", id.key())), &r.raw)?;
+                }
                 for l in first_lines(&r, 2) {
                     println!("{:<31}{l}", "");
                 }
