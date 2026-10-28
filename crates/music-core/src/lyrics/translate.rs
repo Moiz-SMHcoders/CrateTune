@@ -358,7 +358,7 @@ impl Default for GoogleTranslator {
         Self {
             endpoint: "https://translate.googleapis.com/translate_a/single".into(),
             client: "at".into(),
-            user_agent: "music-macos".into(),
+            user_agent: "TuneDesk".into(),
             timeout: Duration::from_secs(30),
             max_items_per_batch: 50,
             max_chars_per_batch: 4000,
