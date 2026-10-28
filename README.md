@@ -28,6 +28,9 @@ Linux needs the development packages GPUI and the audio stack link against (Debi
 Ubuntu names): `build-essential pkg-config clang libasound2-dev libfontconfig-dev
 libfreetype-dev libwayland-dev libxkbcommon-dev libxkbcommon-x11-dev libx11-xcb-dev
 libxcb1-dev libvulkan-dev libdbus-1-dev` (the list CI installs, `.github/workflows/ci.yml`).
+For PoTokens on Linux (optional, untested) add `libwebkit2gtk-4.1-dev` and build with
+`--features music-core/webkitgtk-potoken`. The relay server is `cargo build --release -p
+music-relay` ([Relay server](#relay-server-music-relay)).
 
 **Packages** (`target/bundle/`):
 
@@ -147,9 +150,19 @@ its own executor.
   cancel).
 * `spotify` — Spotify Web API with the user's own Client ID: Authorization Code + PKCE with
   a loopback redirect, playlists, liked songs, playlist items (read-only scopes).
-* `together` — Music Together on the LAN: ArchiveTune's JSON protocol over WebSockets
-  (`tungstenite` on std threads), `TogetherServer` / `TogetherClient`, heartbeat clock sync,
-  `GuestSync` (drift / play-state planner), join links.
+* `together` — Music Together on the LAN or through a self-hosted relay: ArchiveTune's JSON
+  protocol over WebSockets (`tungstenite` on std threads, `wss://` via rustls),
+  `TogetherServer` (`start` on a port, `start_relay` through a `music-relay` server) /
+  `TogetherClient`, heartbeat clock sync, `GuestSync` (drift / play-state planner), join
+  links, host transfer (`transfer_host`: the guest starts its own server with the room's
+  state, everyone reconnects). See [Relay server](#relay-server-music-relay).
+* `cast` — Chromecast / Google Cast: mDNS discovery (`discover`, `_googlecast._tcp`),
+  `CastSession` (CASTV2 over TLS: Default Media Receiver, LOAD / PLAY / PAUSE / SEEK /
+  STOP / volume, status), `MediaProxy` (serves a `ResolvedStream` or a local file to the
+  receiver over HTTP with ranges).
+* `ai_filter` — AI content filter: classifies songs / albums into categories the user
+  hides with any OpenAI-compatible chat-completions API (user-supplied endpoint / key /
+  model), verdicts cached per id (memory + JSON file), cache-only `hidden(id)`.
 * `recognition` — Shazam-compatible song recognition ported from ArchiveTune's `shazamkit`:
   `capture::record_microphone(len, &cancel, |progress| ..)` (cpal input, any rate → 16 kHz
   mono, cancellable, level callback), `audio::decode_file` / `to_signature_pcm`,
@@ -272,8 +285,15 @@ Pieces:
   youtube.com's page, the interpreter, `GenerateIT`, then a minter that makes per-video
   tokens (cached; the integrity token lasts ~12 h). The browser part is the `BotGuardVm`
   trait: `WebKitBotGuard` runs `assets/po_token.html` in a hidden WKWebView on macOS (work
-  is dispatched to the main thread, so never call the resolver from it). No PoToken
-  provider on Linux / Windows yet; they use the TV client.
+  is dispatched to the main thread, so never call the resolver from it). On **Windows** a
+  hidden WebView2 on its own thread (feature `webview2-potoken`, default; the WebView2
+  runtime ships with Windows 10/11, the loader is linked statically with MSVC), on
+  **Linux** WebKitGTK on its own GTK thread (feature `webkitgtk-potoken`, **off by
+  default**: build with `--features music-core/webkitgtk-potoken` and
+  `libwebkit2gtk-4.1-dev` ≥ 2.40). Both run the same page and calls (`webview_host.rs`) and
+  fetch the challenge with their engine's User-Agent (`BotGuardVm::user_agent`). **They are
+  untested**: written and type-checked / clippy-clean for `x86_64-pc-windows-gnu` and
+  `x86_64-unknown-linux-gnu` from macOS only. Without a provider the TV client is used.
 * `WebResolver::prewarm()` does the slow one-time work at launch; the app calls it.
 * Settings → Playback → **YouTube streams**: Automatic (TV, then web + PoToken, then
   preview), TV client, Web + PoToken, Previews only.
@@ -376,9 +396,10 @@ src/
   module_service.rs  provider modules: the shared `Modules` store, the module-first resolver
                      (player + downloads), keychain hook for secret module settings;
                      settings/modules.rs: the Modules section
-  integrations/      SponsorBlock, Music Together, import / export state + script actions
-                     (config.rs: their settings; settings/integrations_ui.rs: sections;
-                     pages/together.rs, pages/import.rs)
+  integrations/      SponsorBlock, Music Together (+ relay, host transfer), import / export,
+                     AI content filter (ai_filter.rs), Chromecast (cast.rs: Engine::Cast)
+                     state + script actions (config.rs: their settings;
+                     settings/integrations_ui.rs: sections; pages/together.rs, pages/import.rs)
   services.rs, secrets.rs, script.rs, util.rs, icons.rs
   recognize.rs       recognition session (Recognizer global entity: permission → capture →
                      signature → request → history → YouTube Music search);
@@ -725,6 +746,9 @@ descriptor / catalog installs and updates, secrets, downloads).
 
 ### Integrations: SponsorBlock, Music Together, playlist import / export
 
+(Relay, host transfer, Chromecast and the AI content filter:
+[next section](#integrations-round-2-relay-host-transfer-chromecast-ai-filter-potoken).)
+
 | ![SponsorBlock: Skip chip](docs/screenshots/integrations-sponsorblock-ask.png) | ![Settings: SponsorBlock](docs/screenshots/integrations-settings-sponsorblock.png) |
 |---|---|
 | ![Together: host](docs/screenshots/integrations-together-host.png) | ![Together: guest](docs/screenshots/integrations-together-guest.png) |
@@ -758,7 +782,8 @@ descriptor / catalog installs and updates, secrets, downloads).
   session. *Play next* / *Add to queue* anywhere in the app become suggestions to the host;
   previous / play / next on the page are requests (when the host allows). Kicks, bans,
   declined joins, a host that ends the session or goes silent for 15 s end the guest's
-  session with a message. LAN only: there is no relay server.
+  session with a message. Across networks: a self-hosted relay and **Make host** (host
+  transfer), see the next section.
 * **Import & export** (sidebar): *Choose a file…* (Exportify CSV of a Spotify playlist,
   M3U / M3U8, or our own CSV / JSON), or — after connecting Spotify — a playlist link, one
   of *Show my playlists*, or *Liked songs*. The job reads the source, then matches every
@@ -815,8 +840,141 @@ ID available here — they are implemented per the documented Web API; Spotify's
 development-mode changes renamed `/playlists/{id}/tracks` to `/items`, the client tries
 `/items` first and falls back), Together between two different machines / through a
 firewall prompt, Together with real audio on both sides (only demo clocks), drag of the
-progress bar by a guest (it is overridden by the host's state), a host transfer (not
-implemented), physical input.
+progress bar by a guest (it is overridden by the host's state), physical input.
+
+### Integrations round 2: relay, host transfer, Chromecast, AI filter, PoToken
+
+| ![Together: hosting via relay](docs/screenshots/integrations2-together-relay-host.png) | ![Together: after a host transfer](docs/screenshots/integrations2-together-transferred.png) |
+|---|---|
+| ![Settings: Music Together (relay)](docs/screenshots/integrations2-settings-together.png) | ![Settings: AI content filter](docs/screenshots/integrations2-settings-ai-filter.png) |
+| ![Casting (player bar)](docs/screenshots/integrations2-casting.png) | ![Settings: Chromecast](docs/screenshots/integrations2-settings-cast.png) |
+
+* **Host transfer** (Listen together → a guest's **Make host**): the host sends that guest
+  `host_transfer` with the room (queue, position stamped with its clock, repeat, room
+  settings), the client ids that may rejoin without approval (everyone admitted + the old
+  host) and the banned ones. The guest's app starts its own server with the same session id
+  and key (`TogetherServer::start_with` + `HostOptions`; LAN: its port, relay: the same
+  relay with the room's secret), takes over the queue / position / repeat / settings and
+  answers `host_transfer_ready` (its LAN address). The old host broadcasts
+  `host_transferred`; every `TogetherClient` reconnects on its own (same client id and
+  name, waits for the welcome, retries refusals for 15 s, resets its clock and the sync
+  planner), the old host stops its server and joins as a guest. ArchiveTune's bare
+  `host_transfer` / `host_transferred` messages still decode.
+* **Relay** (Settings → Music Together → Relay server, then **Host via relay**): the
+  host keeps one WebSocket to a [`music-relay`](#relay-server-music-relay) server and
+  serves the guests it tunnels in; the link is `music-together://join?url=wss…&sid=…&key=…`
+  and works from any network. Guests speak the normal protocol to the relay URL, so the
+  session logic (key, approval, heartbeats, requests) is the same code as on the LAN (a
+  `Link` trait over a direct connection or a tunnelled one). The relay re-routes on a
+  transfer: the new host claims the room with its secret, new connections go to it,
+  connections to the old host stay with it until it leaves.
+* **Chromecast** (player bar Cast button, Settings → Chromecast): devices are found with
+  mDNS when the menu / section opens (4 s); casting swaps the engine for `Engine::Cast`,
+  which plays the queue on the device and reports its state back as `PlaybackState`, so the
+  player bar ("Casting to Living Room"), Now Playing, the queue and auto-advance (on the
+  receiver's `FINISHED`) work unchanged; play / pause / seek / next / previous / volume go
+  to the device; the local engine waits paused (media keys that reach it are forwarded);
+  Stop casting continues here at the device's position. Audio goes through the app's
+  `MediaProxy` (googlevideo: see below; local files too); "Let the device fetch YouTube
+  audio itself" sends plain YouTube URLs directly and falls back to the proxy on an error.
+  The sleep timer, EQ and speed don't apply while casting.
+* **AI content filter** (Settings → AI content filter; off by default): an
+  OpenAI-compatible endpoint (OpenAI, OpenRouter, Ollama / LM Studio on this machine), model
+  and optional key (keychain); categories explicit lyrics, AI-generated music, holiday,
+  children's, sleep sounds / noise, sped-up / slowed edits, covers & karaoke, live
+  recordings, plus up to 8 of the user's own. Applied next to "hide explicit" in
+  `browse::ContentFilter`: pages classify unknown songs / albums in batches of 25 on their
+  fetch worker before filtering; UI-thread callers (radio batches, search suggestions) read
+  the cache and classify in the background. Verdicts are cached per video / album id in
+  `<config>/cache/ai_filter.json` (re-asked when a new category is selected); unknown =
+  shown. Only id, title, artists and album are sent, and nothing while it is off.
+  (ArchiveTune's "AI content filter" is a different thing — channel blocklists of
+  AI-generated music from a third-party list — and isn't used.)
+
+**Verification** (`MUSIC_VOLUME=0.0`, demo clocks, temporary `MUSIC_CONFIG_DIR`s):
+
+* Relay, three app instances + `music-relay` on localhost: Hana hosted via relay
+  (`ws://127.0.0.1:42118`), Ann and Bob joined from the link; Hana handed the session to
+  Ann at 24 s: Ann started hosting through the relay (room secret), Bob was re-routed
+  ("Ann is the host now; reconnecting…" → "Reconnected to the new host"), Hana rejoined as
+  a guest; 20 s later all three played the same track (status lines from each app's own
+  timer, started up to 1 s apart: 34.9 / 36.3 / 36.5 s), the relay log showing the second
+  host connection and the reconnects; `/health` answered.
+* LAN, three instances with approval on: Hana let Ann and Bob in, transferred to Ann (port
+  42119): Bob and Hana reconnected to Ann's address without approval (trusted ids), the
+  positions were continuous (6.8 s at 22 s → 18.7 s at 34 s).
+* Unit / integration tests: wire format (incl. ArchiveTune's bare transfer messages),
+  relay envelopes, relay links / URLs; `host_transfer_on_the_lan` (state, trusted / banned
+  lists, reconnect, clock); `crates/music-relay/tests/relay_e2e.rs` (relay + host + 2
+  guests: wrong key, approval, full room, health, room state, clock through the relay,
+  suggestions, a second host without the secret refused, transfer re-routed, end of
+  session).
+* Chromecast: `cargo run -p music-core --example cast -- list` found no device on this
+  network (none available). `-- check khnokW3Mw24` resolved a TV-client stream and
+  requested it like a receiver would: googlevideo accepted another User-Agent and no
+  headers, but a GET without `Range` was throttled (6.1 MB in 173 s) while
+  `Range: bytes=0-` took 5 s, after the pre-roll wait — hence the proxy by default. In the
+  app against `examples/fake_cast_receiver.rs` (CASTV2 over TLS, downloads like a receiver):
+  the current track was loaded at the current position (22 s), the receiver fetched the
+  real stream through the proxy (2.2 MB, 206, 3.7 s), pause / play / seek 120 s reached it,
+  the end of the track advanced the queue (next LOAD, 3.4 MB), Stop casting resumed here.
+  Unit tests: protobuf framing, a fake TLS receiver (launch, load, controls, volume,
+  refused load, stopped on the device), the proxy (ranges, 404 / 416, files).
+* AI filter: request body / lenient parsing / a local stub server (batches, auth, cache,
+  category change, persistence); in the app, a Python stub endpoint classified 17 search
+  results for "christmas songs" (13 holiday) and the search page hid them.
+* PoToken Windows / Linux: type-checked and clippy-clean for both targets in a temporary
+  crate including the real files (stub `pkg-config` for the GTK sys crates; removed);
+  `webview_host` tests run the shared call sequence against a fake engine. macOS unchanged
+  (the default `user_agent` is the old constant).
+
+**Not verified:** a real Chromecast / Google TV / Nest device (none here; the receiver's
+real fetch behaviour, codec support for Opus-in-WebM and the TLS handshake with a real
+device certificate are untested), PoToken on real Windows (WebView2) and Linux
+(WebKitGTK) machines, the relay behind a real TLS reverse proxy and across the internet,
+a host transfer between two different machines, a real LLM endpoint (only stubs).
+
+### Relay server (`music-relay`)
+
+`crates/music-relay`: one small binary (std threads + tungstenite, ~0.9 MB release) for
+Music Together sessions across networks. It never decides anything: it checks a guest's
+first frame (session id + key against the room's key hash; same answer for unknown
+session and wrong key), then forwards text frames between the host and its guests.
+
+```sh
+cargo build --release -p music-relay
+./target/release/music-relay --listen 0.0.0.0:42118 -v
+curl http://localhost:42118/health   # {"status":"ok","rooms":0,"guests":0,"connections":1}
+```
+
+Options: `--max-rooms 100`, `--max-guests 20` (per room), `--max-connections 1000`,
+`--max-message-kib 1024` (a guest's frame; hosts may send twice that), `--rate 20`
+(messages / s per guest, burst 3×; over it a guest is disconnected, a host's excess frames
+are dropped — room states repeat), `--idle-timeout 60`; `MUSIC_RELAY_LISTEN` sets the
+address. Rooms live while their host is connected (a host transfer moves them).
+
+TLS is left to a reverse proxy; give the app the `wss://` URL. Caddy:
+
+```
+relay.example.com {
+    reverse_proxy 127.0.0.1:42118
+}
+```
+
+nginx:
+
+```nginx
+location / {
+    proxy_pass http://127.0.0.1:42118;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_read_timeout 120s;
+}
+```
+
+The relay sees what the session sends (song ids and titles, display names, the session
+key in each guest's hello), like any host would; run your own.
 
 ### Keyboard shortcuts and menus
 
@@ -849,7 +1007,8 @@ switch + id + `activity`, theme + text size, shuffle + repeat, `audio`, `lyrics`
 `now_playing`, `scrobble_rules`, `content` (language / country / filters / autoplay),
 `network` (proxy), main window and mini player frames, and `library`: privacy switches,
 play-cache limit, music folders, the signed-in YouTube account's name / avatar /
-`auth_user` / channel, `sponsorblock`, `together`, `spotify`) lives in the platform config dir — macOS
+`auth_user` / channel, `sponsorblock`, `together` (incl. `relay_url`), `spotify`, `ai_filter`,
+`cast`) lives in the platform config dir — macOS
 `~/Library/Application Support/music-macos/`, Linux `~/.config/music-macos/`, Windows
 `%APPDATA%\music-macos\config\` — or `$MUSIC_CONFIG_DIR`. It is written 500 ms after the last
 change and on quit, atomically (temp file + rename), mode 0600 in a 0700 directory. Missing
@@ -859,7 +1018,7 @@ file that isn't valid JSON is moved to `settings.json.bad`; an unknown theme / r
 
 The Last.fm shared secret and session key, the ListenBrainz token, the Paxsenix /
 BetterLyrics / AI-translation API keys, the proxy password, the YouTube Music sign-in
-cookie and the Spotify refresh token go to the OS keychain
+cookie, the Spotify refresh token and the AI-filter API key go to the OS keychain
 (`keyring` 4: macOS Keychain, Windows Credential Manager, Secret Service), service
 `music-macos`, one entry each. If the keychain fails (or `MUSIC_SECRET_STORE=file`), they are
 stored in the `secrets` object of `settings.json` (still 0600) and moved back into the keychain
@@ -912,6 +1071,9 @@ playback `@play=N @next @prev @seek=S @toggle @open @close @volume=V`; navigatio
 @together-host[=FILE] @together-join=LINK|file:PATH @together-leave @together-approve
 @together-deny @together-kick=NAME @together-ban=NAME @together-allow=add|control|approval:on|off
 @together-suggest=N @together-control=play|pause|next|prev|seek:S @together-status
+@together-host-relay[=FILE] @together-transfer=NAME @ai-filter=on|off @ai-category=KEY:on|off
+@ai-filter-status @ai-filter-clear @cast-scan @cast=NAME|IP:PORT[:NAME] @cast-stop[=off]
+@cast-status
 @import-file=PATH @spotify-playlist=URL @spotify-liked @spotify-playlists @import-accept=N
 @import-save[=NAME] @import-cancel @import-status @export=PLAYLIST:FORMAT:PATH`;
 recognition `@recognize` (microphone), `@recognize-file=PATH`,
