@@ -32,9 +32,18 @@ impl Aspect {
 
     pub fn title(self) -> &'static str {
         match self {
-            Self::Square => "Square",
-            Self::Portrait => "Portrait",
-            Self::Story => "Story",
+            Self::Square => t!("card.aspect.square"),
+            Self::Portrait => t!("card.aspect.portrait"),
+            Self::Story => t!("card.aspect.story"),
+        }
+    }
+
+    /// Stable, untranslated name (script `@card-style=aspect:…`, element ids).
+    pub fn key(self) -> &'static str {
+        match self {
+            Self::Square => "square",
+            Self::Portrait => "portrait",
+            Self::Story => "story",
         }
     }
 
@@ -65,10 +74,20 @@ impl Background {
 
     pub fn title(self) -> &'static str {
         match self {
-            Self::Blur => "Blurred artwork",
-            Self::AlbumColor => "Album colour",
-            Self::Dark => "Dark",
-            Self::Light => "Light",
+            Self::Blur => t!("card.bg.blur"),
+            Self::AlbumColor => t!("card.bg.album"),
+            Self::Dark => t!("card.bg.dark"),
+            Self::Light => t!("card.bg.light"),
+        }
+    }
+
+    /// Stable, untranslated name (script `@card-style=bg:…`, element ids).
+    pub fn key(self) -> &'static str {
+        match self {
+            Self::Blur => "blur",
+            Self::AlbumColor => "album",
+            Self::Dark => "dark",
+            Self::Light => "light",
         }
     }
 }
@@ -86,9 +105,18 @@ impl Align {
 
     pub fn title(self) -> &'static str {
         match self {
-            Self::Left => "Left",
-            Self::Center => "Center",
-            Self::Right => "Right",
+            Self::Left => t!("card.align.left"),
+            Self::Center => t!("card.align.center"),
+            Self::Right => t!("card.align.right"),
+        }
+    }
+
+    /// Stable, untranslated name (script `@card-style=align:…`, element ids).
+    pub fn key(self) -> &'static str {
+        match self {
+            Self::Left => "left",
+            Self::Center => "center",
+            Self::Right => "right",
         }
     }
 }
@@ -106,9 +134,18 @@ impl TextSize {
 
     pub fn title(self) -> &'static str {
         match self {
-            Self::Small => "Small",
-            Self::Medium => "Medium",
-            Self::Large => "Large",
+            Self::Small => t!("card.size.small"),
+            Self::Medium => t!("card.size.medium"),
+            Self::Large => t!("card.size.large"),
+        }
+    }
+
+    /// Stable, untranslated name (script `@card-style=size:…`, element ids).
+    pub fn key(self) -> &'static str {
+        match self {
+            Self::Small => "small",
+            Self::Medium => "medium",
+            Self::Large => "large",
         }
     }
 
@@ -146,6 +183,7 @@ pub struct CardContent {
 /// Width of a saved / copied card.
 pub const FULL_WIDTH: u32 = 1080;
 
+// Font family names, not UI text.
 const FONTS: &str = "'Helvetica Neue', 'SF Pro Display', 'Segoe UI', Inter, 'Noto Sans', \
                      'DejaVu Sans', Arial, sans-serif";
 
@@ -155,7 +193,7 @@ fn fontdb() -> Arc<usvg::fontdb::Database> {
     DB.get_or_init(|| {
         let mut db = usvg::fontdb::Database::new();
         db.load_system_fonts();
-        db.set_sans_serif_family("Helvetica Neue");
+        db.set_sans_serif_family("Helvetica Neue"); // i18n-ignore
         Arc::new(db)
     })
     .clone()
@@ -164,7 +202,7 @@ fn fontdb() -> Arc<usvg::fontdb::Database> {
 fn options() -> usvg::Options<'static> {
     usvg::Options {
         fontdb: fontdb(),
-        font_family: "Helvetica Neue".into(),
+        font_family: "Helvetica Neue".into(), // i18n-ignore
         ..usvg::Options::default()
     }
 }
@@ -414,7 +452,7 @@ fn tone((r, g, b): (u8, u8, u8), factor: f32) -> Color {
 pub fn render(content: &CardContent, style: &CardStyle, width: u32) -> Result<Pixmap, String> {
     let width = width.clamp(64, 4096);
     let height = style.aspect.height(width);
-    let mut pixmap = Pixmap::new(width, height).ok_or("bad card size")?;
+    let mut pixmap = Pixmap::new(width, height).ok_or("bad card size")?; // i18n-ignore
     let (w, h) = (width as f32, height as f32);
     let unit = w.min(h);
     let art = content.art.as_deref();
@@ -425,7 +463,7 @@ pub fn render(content: &CardContent, style: &CardStyle, width: u32) -> Result<Pi
     let light = background == Background::Light;
 
     // ---- background
-    let full = Rect::from_xywh(0., 0., w, h).ok_or("bad rect")?;
+    let full = Rect::from_xywh(0., 0., w, h).ok_or("bad rect")?; // i18n-ignore
     let gradient = |top: Color, bottom: Color| {
         LinearGradient::new(
             Point::from_xy(0., 0.),

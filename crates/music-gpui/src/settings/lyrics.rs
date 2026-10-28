@@ -45,9 +45,11 @@ pub(super) fn render(
             let enabled = l.is_enabled(id);
             let missing_key = match id {
                 ProviderId::BetterLyrics | ProviderId::BetterLyricsPortato => {
-                    (!l.betterlyrics_key_set).then_some("cached songs only without a key")
+                    (!l.betterlyrics_key_set).then_some(t!("settings.lyrics.cached_only"))
                 }
-                _ if id.requires_api_key() && !l.paxsenix_key_set => Some("needs an API key"),
+                _ if id.requires_api_key() && !l.paxsenix_key_set => {
+                    Some(t!("settings.lyrics.needs_key"))
+                }
                 _ => None,
             };
             h_flex()
@@ -112,8 +114,9 @@ pub(super) fn render(
         &[TranslatorKind::Google, TranslatorKind::Ai],
         l.translator,
         |k| match k {
-            TranslatorKind::Google => "Google Translate",
-            TranslatorKind::Ai => "AI (OpenAI-compatible)",
+            // A product name.
+            TranslatorKind::Google => "Google Translate", // i18n-ignore
+            TranslatorKind::Ai => t!("settings.lyrics.translator_ai"),
         },
         |this, k, cx| this.set_translator(k, cx),
         cx,
@@ -125,7 +128,7 @@ pub(super) fn render(
         .children(RomanizeConfig::SCRIPTS.iter().map(|&(script, title)| {
             let on = l.romanize.enabled(script);
             row(
-                title,
+                RomanizeConfig::script_title(script),
                 None,
                 Switch::new(SharedString::from(format!("romanize-{title}")))
                     .checked(on)
@@ -168,46 +171,42 @@ pub(super) fn render(
     v_flex()
         .gap_5()
         .child(
-            group("Look", cx)
-                .child(row("Animation", None, animation, cx))
-                .child(note(
-                    "Karaoke: soft sweep with lifted words · Apple: wider sweep, glowing word · \
-                     Slide: sharp sweep, words slide up · Glow: halo around sung words · Fade: \
-                     words fade in · None: the line lights up. Word animations need \
-                     word-synced lyrics; line-synced lyrics light the whole line.",
-                    cx,
-                ))
+            group(t!("settings.lyrics.look"), cx)
+                .child(row(t!("settings.lyrics.animation"), None, animation, cx))
+                .child(note(t!("settings.lyrics.animation_note"), cx))
                 .child(slider_row(
-                    "Text size",
-                    format!("{:.0} px", l.text_size),
+                    t!("settings.lyrics.text_size"),
+                    t!(
+                        "settings.lyrics.text_size_value",
+                        size = crate::i18n::format::number(l.text_size.round() as u64)
+                    ),
                     &panel.prefs.lyrics_size,
                     cx,
                 ))
                 .child(slider_row(
-                    "Line spacing",
-                    format!("{:.2}×", l.line_spacing),
+                    t!("settings.lyrics.line_spacing"),
+                    t!(
+                        "settings.lyrics.line_spacing_value",
+                        spacing = crate::i18n::format::decimal(l.line_spacing.into(), 2)
+                    ),
                     &panel.prefs.lyrics_spacing,
                     cx,
                 ))
-                .child(row("Alignment", None, align, cx))
+                .child(row(t!("settings.lyrics.alignment"), None, align, cx))
                 .child(row(
-                    "Background vocals and duets",
-                    Some("Backing vocals under their line; a second singer on the other side."),
+                    t!("settings.lyrics.bg_vocals"),
+                    Some(t!("settings.lyrics.bg_vocals_desc")),
                     background_vocals,
                     cx,
                 )),
         )
         .child(
-            group("Providers", cx)
-                .child(note(
-                    "Asked in this order (several at once); the best result wins. Click a \
-                     line in Now Playing to seek; the reload button there searches again.",
-                    cx,
-                ))
+            group(t!("settings.lyrics.providers"), cx)
+                .child(note(t!("settings.lyrics.providers_note"), cx))
                 .child(providers)
                 .child(row(
-                    "Prefer word-synced lyrics",
-                    Some("A word-synced result beats a line-synced one from a provider higher up."),
+                    t!("settings.lyrics.prefer_word"),
+                    Some(t!("settings.lyrics.prefer_word_desc")),
                     prefer_word,
                     cx,
                 ))
@@ -216,7 +215,7 @@ pub(super) fn render(
                         Button::new("lyrics-reset-order")
                             .small()
                             .ghost()
-                            .label("Reset order")
+                            .label(t!("settings.lyrics.reset_order"))
                             .on_click(cx.listener(|this, _, _, cx| this.reset_provider_order(cx))),
                     ),
                 )
@@ -232,52 +231,44 @@ pub(super) fn render(
                         .mask_toggle(),
                     cx,
                 ))
-                .child(note(
-                    "API keys are saved to the keychain when the field loses focus or on Enter.",
-                    cx,
-                )),
+                .child(note(t!("settings.lyrics.keys_note"), cx)),
         )
         .child(
-            group("Translation", cx)
+            group(t!("settings.lyrics.translation"), cx)
                 .child(row(
-                    "Translate lyrics",
-                    Some("Adds a translated line under each line (also the translate button in Now Playing)."),
+                    t!("settings.lyrics.translate"),
+                    Some(t!("settings.lyrics.translate_desc")),
                     translate,
                     cx,
                 ))
-                .child(row("Translator", None, translator, cx))
+                .child(row(t!("settings.lyrics.translator"), None, translator, cx))
                 .child(field(
-                    "Language",
+                    t!("settings.lyrics.language"),
                     Input::new(&panel.prefs.target_language).small(),
                     cx,
                 ))
                 .when(l.translator == TranslatorKind::Ai, |this| {
                     this.child(field(
-                        "Endpoint",
+                        t!("settings.lyrics.endpoint"),
                         Input::new(&panel.prefs.ai_endpoint).small(),
                         cx,
                     ))
-                    .child(field("Model", Input::new(&panel.prefs.ai_model).small(), cx))
                     .child(field(
-                        "API key",
+                        t!("settings.lyrics.model"),
+                        Input::new(&panel.prefs.ai_model).small(),
+                        cx,
+                    ))
+                    .child(field(
+                        t!("settings.lyrics.api_key"),
                         Input::new(&panel.prefs.ai_key).small().mask_toggle(),
                         cx,
                     ))
                 })
-                .child(note(
-                    "Language codes like en, de, ja, zh-CN. Each song is translated once per \
-                     language and translator and kept in the library. Google's free endpoint \
-                     is rate limited: after a refusal it is left alone for a while (2 min, \
-                     longer if it keeps refusing) and the translation is retried then.",
-                    cx,
-                )),
+                .child(note(t!("settings.lyrics.translation_note"), cx)),
         )
         .child(
-            group("Romanization", cx)
-                .child(note(
-                    "Adds a Latin-script line under lines in these scripts.",
-                    cx,
-                ))
+            group(t!("settings.lyrics.romanization"), cx)
+                .child(note(t!("settings.lyrics.romanization_note"), cx))
                 .child(romanize)
                 .children(kanji),
         )
@@ -291,27 +282,31 @@ fn kanji_dictionary_row(cx: &mut Context<SettingsPanel>) -> Option<AnyElement> {
     let (muted, danger) = (theme.muted_foreground, theme.danger);
     let source = DictionarySource::ipadic();
     let download_size = format_bytes(source.size);
+    let failed = matches!(state, KanjiDictionary::Failed(_));
     let (status, control): (String, AnyElement) = match state {
-        KanjiDictionary::Embedded => ("Built into this version.".into(), div().into_any_element()),
+        KanjiDictionary::Embedded => (
+            t!("settings.lyrics.kanji_embedded").into(),
+            div().into_any_element(),
+        ),
         KanjiDictionary::Unknown | KanjiDictionary::Missing => (
-            format!(
-                "Without it kanji stay as they are and only kana are romanized. Downloads \
-                 {download_size} once ({} on disk).",
-                format_bytes(source.unpacked_size)
+            t!(
+                "settings.lyrics.kanji_missing",
+                download = download_size,
+                disk = format_bytes(source.unpacked_size)
             ),
             Button::new("kanji-dict-download")
                 .small()
-                .label(format!("Download ({download_size})"))
+                .label(t!("settings.lyrics.kanji_download", size = download_size))
                 .on_click(|_, _, cx| {
                     update_app(cx, |app, cx| app.download_kanji_dictionary(cx));
                 })
                 .into_any_element(),
         ),
         KanjiDictionary::Downloading { done, total, .. } => (
-            format!(
-                "Downloading… {} of {}",
-                format_bytes(done),
-                format_bytes(total)
+            t!(
+                "settings.lyrics.kanji_downloading",
+                done = format_bytes(done),
+                total = format_bytes(total)
             ),
             h_flex()
                 .gap_2()
@@ -328,7 +323,7 @@ fn kanji_dictionary_row(cx: &mut Context<SettingsPanel>) -> Option<AnyElement> {
                     Button::new("kanji-dict-cancel")
                         .small()
                         .ghost()
-                        .label("Cancel")
+                        .label(t!("common.cancel"))
                         .on_click(|_, _, cx| {
                             update_app(cx, |app, cx| app.cancel_kanji_dictionary(cx));
                         }),
@@ -336,28 +331,31 @@ fn kanji_dictionary_row(cx: &mut Context<SettingsPanel>) -> Option<AnyElement> {
                 .into_any_element(),
         ),
         KanjiDictionary::Ready(bytes) => (
-            format!("{} · {} on disk.", source.name, format_bytes(bytes)),
+            t!(
+                "settings.lyrics.kanji_ready",
+                name = source.name,
+                size = format_bytes(bytes)
+            ),
             Button::new("kanji-dict-remove")
                 .small()
                 .ghost()
-                .label("Remove")
+                .label(t!("common.remove"))
                 .on_click(|_, _, cx| {
                     update_app(cx, |app, cx| app.remove_kanji_dictionary(cx));
                 })
                 .into_any_element(),
         ),
         KanjiDictionary::Failed(e) => (
-            format!("Download failed: {e}"),
+            t!("settings.lyrics.kanji_failed", error = e),
             Button::new("kanji-dict-retry")
                 .small()
-                .label("Retry")
+                .label(t!("common.retry"))
                 .on_click(|_, _, cx| {
                     update_app(cx, |app, cx| app.download_kanji_dictionary(cx));
                 })
                 .into_any_element(),
         ),
     };
-    let failed = status.starts_with("Download failed");
     Some(
         h_flex()
             .gap_4()
@@ -366,7 +364,7 @@ fn kanji_dictionary_row(cx: &mut Context<SettingsPanel>) -> Option<AnyElement> {
                 v_flex()
                     .min_w_0()
                     .gap_0p5()
-                    .child(div().text_sm().child("Kanji readings (Japanese)"))
+                    .child(div().text_sm().child(t!("settings.lyrics.kanji")))
                     .child(
                         div()
                             .text_xs()

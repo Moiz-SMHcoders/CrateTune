@@ -1,0 +1,194 @@
+# Settings → Appearance (theme, Now Playing design), Playback, Equalizer, Lyrics, and
+# the option names of player / lyrics / Now Playing / Discord preferences.
+# Format: see crates/music-gpui/i18n_parse.rs ({name} = placeholder, {app} = the
+# app's name, `.one` / `.other` = plural forms).
+
+# ---- Option names (buttons in a row: keep short)
+# Where full-length YouTube streams come from.
+prefs.stream.tv = TV client
+prefs.stream.web_potoken = Web + PoToken
+prefs.stream.preview = Previews only
+# Streaming quality.
+prefs.quality.low = Low
+prefs.quality.normal = Normal
+prefs.quality.high = High
+# Lyrics animation styles. "Karaoke" and "Apple" (like Apple Music) are style names.
+prefs.lyrics_anim.none = None
+prefs.lyrics_anim.fade = Fade
+prefs.lyrics_anim.glow = Glow
+prefs.lyrics_anim.slide = Slide
+prefs.lyrics_anim.karaoke = Karaoke
+prefs.lyrics_anim.apple = Apple
+# Lyrics text alignment.
+prefs.align.left = Left
+prefs.align.center = Center
+prefs.align.right = Right
+# Scripts that get a romanization (Latin letters) line.
+prefs.romanize.japanese = Japanese
+prefs.romanize.korean = Korean
+prefs.romanize.chinese = Chinese (pinyin)
+prefs.romanize.devanagari = Hindi / Devanagari
+prefs.romanize.cyrillic = Cyrillic
+prefs.romanize.other_scripts = Other scripts
+# Now Playing designs (card titles in Appearance and the Now Playing layout menu).
+prefs.layout.split = Split
+prefs.layout.centered = Big artwork
+prefs.layout.lyrics = Lyrics first
+prefs.layout.immersive = Immersive
+prefs.layout.card = Card
+prefs.layout.minimal = Minimal
+prefs.layout.editorial = Editorial
+prefs.layout.queue = With queue
+# Now Playing backgrounds.
+prefs.background.blur = Blurred artwork
+prefs.background.gradient = Gradient
+prefs.background.solid = Solid colour
+prefs.background.glow = Animated glow
+# Mini player background.
+prefs.mini.theme = Theme
+prefs.mini.artwork = Blurred artwork
+# Discord activity type: what Discord shows before the name ("Listening to {app}").
+prefs.discord.kind.listening = Listening to
+prefs.discord.kind.playing = Playing
+prefs.discord.kind.watching = Watching
+prefs.discord.kind.competing = Competing in
+# Discord activity image source.
+prefs.discord.image.artwork = Artwork
+prefs.discord.image.custom = Custom
+# Discord activity button target ("YouTube Music" stays as it is).
+prefs.discord.button.custom = Custom URL
+
+# ---- Text field placeholders
+prefs.placeholder.paxsenix_key = Paxsenix API key
+prefs.placeholder.betterlyrics_key = BetterLyrics API key (optional)
+prefs.placeholder.api_key = API key
+# Discord activity: the application name shown on the profile.
+prefs.placeholder.app_name = Application name
+# Discord activity, second line. Keep {artist} exactly as it is (it is filled in by the app).
+prefs.placeholder.discord_state = by {artist}
+# Discord image: the asset key of the Discord application or an image URL.
+prefs.placeholder.asset = Asset key or URL
+# Discord button label.
+prefs.placeholder.button_label = Label
+
+# ---- Appearance
+settings.appearance.theme = Theme
+settings.appearance.theme_note = Dynamic takes its accent from the playing track's artwork (the most common vibrant colour, adjusted to stay readable on the dark background).
+settings.appearance.text_size = Text size
+# Font scale button, e.g. "110 %".
+settings.appearance.font_scale = {percent} %
+settings.appearance.text_size_note = Scales all interface text; lyrics keep their own size (Lyrics).
+settings.appearance.background = Background
+settings.appearance.np_note = Gradient, solid and glow take their colours from the artwork. The glow only moves while music plays. Layout and background are also in the Now Playing screen's layout menu.
+settings.appearance.mini_player = Mini player
+
+# ---- Playback
+settings.playback.queue = Queue
+settings.playback.shuffle = Shuffle
+settings.playback.shuffle_desc = Keeps the current song first; turning it off restores the order.
+settings.playback.repeat = Repeat
+settings.playback.repeat_desc = Remembered between launches (⌘R cycles it).
+# Repeat modes (buttons): repeat the whole queue / one song.
+settings.playback.repeat_all = All
+settings.playback.repeat_one = One
+settings.playback.audio = Audio
+settings.playback.streams = YouTube streams
+settings.playback.stream_auto = Full songs: TV client, then the web client with a PoToken, then a ~1 min preview.
+settings.playback.stream_tv = Full songs via the TV client (no PoToken); a preview if it fails.
+settings.playback.stream_web = Full songs via the web client and a BotGuard PoToken (macOS); a preview if it fails.
+settings.playback.stream_preview = Only the first ~1 minute of each song (the old behaviour).
+settings.playback.quality = Streaming quality
+settings.playback.quality_desc = Low saves data; High prefers Opus (~160 kbps) over AAC 128.
+settings.playback.normalize = Loudness normalization
+settings.playback.normalize_desc = Evens out volume with YouTube's loudness data and ReplayGain tags.
+settings.playback.skip_silence = Skip silence
+settings.playback.skip_silence_desc = Drops silence at track edges and shortens long silent gaps.
+settings.playback.auto_skip = Skip songs that fail to load
+settings.playback.auto_skip_desc = Moves on instead of stopping (up to 3 in a row).
+settings.playback.transitions = Transitions
+settings.playback.crossfade = Crossfade
+# Slider value; {seconds} is a decimal number.
+settings.playback.crossfade_value = {seconds} s
+settings.playback.transitions_note = Playback is gapless: the next song is buffered about 30 s ahead and starts on the very next sample. Crossfade blends the two (also before a preview ends early).
+settings.playback.speed_pitch = Speed and pitch
+settings.playback.speed = Speed
+# Slider value; {speed} is a decimal number (1,25×).
+settings.playback.speed_value = {speed}×
+settings.playback.pitch = Pitch
+# Slider value in semitones; {value} has its sign (+2, -3, 0).
+settings.playback.pitch_value = {value} st
+settings.playback.speed_pitch_note = Speed keeps the pitch; pitch keeps the speed.
+settings.playback.output = Output device
+settings.playback.system_default = System default
+# {device} is the saved output device's name.
+settings.playback.device_missing = {device} (not connected)
+# In the device menu: the device that is the system's default right now.
+settings.playback.device_current_default = {device} (current default)
+settings.playback.playing_through = Playing through {device}
+settings.playback.output_note = A missing device falls back to the system default and is picked up again when it comes back.
+settings.playback.sleep = Sleep timer
+# Sleep timer button: the custom length.
+settings.playback.sleep_custom_button = {minutes} min (custom)
+settings.playback.end_of_track = End of track
+settings.playback.turn_off = Turn off
+# {when} is "23:41 left" or "End of track".
+settings.playback.sleep_armed = Pauses playback: {when}
+settings.playback.custom_length = Custom length
+settings.playback.sleep_note = Also in the player bar and on the Now Playing screen (moon icon).
+
+# ---- Equalizer
+# Preset names (buttons in a row).
+settings.eq.preset.flat = Flat
+settings.eq.preset.bass = Bass
+settings.eq.preset.vocal = Vocal
+settings.eq.preset.treble = Treble
+settings.eq.preset.loudness = Loudness
+settings.eq.note = Applied live. Boosts are compensated so the output never clips.
+
+# ---- Lyrics
+settings.lyrics.look = Look
+settings.lyrics.animation = Animation
+settings.lyrics.animation_note = Karaoke: soft sweep with lifted words · Apple: wider sweep, glowing word · Slide: sharp sweep, words slide up · Glow: halo around sung words · Fade: words fade in · None: the line lights up. Word animations need word-synced lyrics; line-synced lyrics light the whole line.
+settings.lyrics.text_size = Text size
+# Slider value: the text size in pixels.
+settings.lyrics.text_size_value = {size} px
+settings.lyrics.line_spacing = Line spacing
+# Slider value; {spacing} is a decimal number (1,24×).
+settings.lyrics.line_spacing_value = {spacing}×
+settings.lyrics.alignment = Alignment
+settings.lyrics.bg_vocals = Background vocals and duets
+settings.lyrics.bg_vocals_desc = Backing vocals under their line; a second singer on the other side.
+settings.lyrics.providers = Providers
+settings.lyrics.providers_note = Asked in this order (several at once); the best result wins. Click a line in Now Playing to seek; the reload button there searches again.
+# Under a provider's name.
+settings.lyrics.cached_only = cached songs only without a key
+settings.lyrics.needs_key = needs an API key
+settings.lyrics.prefer_word = Prefer word-synced lyrics
+settings.lyrics.prefer_word_desc = A word-synced result beats a line-synced one from a provider higher up.
+settings.lyrics.reset_order = Reset order
+settings.lyrics.keys_note = API keys are saved to the keychain when the field loses focus or on Enter.
+settings.lyrics.translation = Translation
+settings.lyrics.translate = Translate lyrics
+settings.lyrics.translate_desc = Adds a translated line under each line (also the translate button in Now Playing).
+settings.lyrics.translator = Translator
+settings.lyrics.translator_ai = AI (OpenAI-compatible)
+# The target language of lyrics translations (a language code field).
+settings.lyrics.language = Language
+settings.lyrics.endpoint = Endpoint
+settings.lyrics.model = Model
+settings.lyrics.api_key = API key
+settings.lyrics.translation_note = Language codes like en, de, ja, zh-CN. Each song is translated once per language and translator and kept in the library. Google's free endpoint is rate limited: after a refusal it is left alone for a while (2 min, longer if it keeps refusing) and the translation is retried then.
+settings.lyrics.ai_missing = Set the AI endpoint and model in Settings → Lyrics.
+settings.lyrics.romanization = Romanization
+settings.lyrics.romanization_note = Adds a Latin-script line under lines in these scripts.
+settings.lyrics.kanji = Kanji readings (Japanese)
+settings.lyrics.kanji_embedded = Built into this version.
+# {download} and {disk} are sizes (12 MB).
+settings.lyrics.kanji_missing = Without it kanji stay as they are and only kana are romanized. Downloads {download} once ({disk} on disk).
+# Button; {size} is the download size.
+settings.lyrics.kanji_download = Download ({size})
+settings.lyrics.kanji_downloading = Downloading… {done} of {total}
+# {name} is the dictionary's name (IPADIC), {size} its size on disk.
+settings.lyrics.kanji_ready = {name} · {size} on disk.
+# {error} is an English error message.
+settings.lyrics.kanji_failed = Download failed: {error}

@@ -21,6 +21,7 @@ use super::prefs::{
     LYRICS_SPACING_RANGE, LyricsAnimation, MiniPlayerStyle, NowPlayingBackground, NowPlayingLayout,
     PITCH_MAX, SPEED_MAX, SPEED_MIN, TextAlign, TranslatorKind,
 };
+use crate::i18n::Key;
 use crate::secrets::Secret;
 use crate::util::off_thread;
 
@@ -101,6 +102,16 @@ impl PrefsUi {
                     .default_value(value)
             })
         };
+        // An input whose placeholder is translated (and follows language switches).
+        let tr_input = |placeholder: Key,
+                        value: &str,
+                        masked: bool,
+                        window: &mut Window,
+                        cx: &mut Context<SettingsPanel>| {
+            let entity = input("", value, masked, window, cx);
+            crate::i18n::track_placeholder(&entity, placeholder, window, cx);
+            entity
+        };
         let a = &s.audio;
         let l = &s.lyrics;
         let act = &s.discord.activity;
@@ -125,8 +136,14 @@ impl PrefsUi {
                 l.line_spacing,
                 cx,
             ),
-            paxsenix_key: input("Paxsenix API key", "", true, window, cx),
-            betterlyrics_key: input("BetterLyrics API key (optional)", "", true, window, cx),
+            paxsenix_key: tr_input(k!("prefs.placeholder.paxsenix_key"), "", true, window, cx),
+            betterlyrics_key: tr_input(
+                k!("prefs.placeholder.betterlyrics_key"),
+                "",
+                true,
+                window,
+                cx,
+            ),
             target_language: input("en", &l.target_language, false, window, cx),
             ai_endpoint: input(
                 "https://api.openai.com/v1",
@@ -136,11 +153,17 @@ impl PrefsUi {
                 cx,
             ),
             ai_model: input("gpt-4o-mini", &l.ai_model, false, window, cx),
-            ai_key: input("API key", "", true, window, cx),
+            ai_key: tr_input(k!("prefs.placeholder.api_key"), "", true, window, cx),
             activity: vec![
                 (
                     ActivityField::Name,
-                    input("Application name", &act.name, false, window, cx),
+                    tr_input(
+                        k!("prefs.placeholder.app_name"),
+                        &act.name,
+                        false,
+                        window,
+                        cx,
+                    ),
                 ),
                 (
                     ActivityField::Details,
@@ -148,12 +171,18 @@ impl PrefsUi {
                 ),
                 (
                     ActivityField::State,
-                    input("by {artist}", &act.state, false, window, cx),
+                    tr_input(
+                        k!("prefs.placeholder.discord_state"),
+                        &act.state,
+                        false,
+                        window,
+                        cx,
+                    ),
                 ),
                 (
                     ActivityField::LargeImage,
-                    input(
-                        "Asset key or URL",
+                    tr_input(
+                        k!("prefs.placeholder.asset"),
                         &act.large_image_custom,
                         false,
                         window,
@@ -162,8 +191,8 @@ impl PrefsUi {
                 ),
                 (
                     ActivityField::SmallImage,
-                    input(
-                        "Asset key or URL",
+                    tr_input(
+                        k!("prefs.placeholder.asset"),
                         &act.small_image_custom,
                         false,
                         window,
@@ -172,7 +201,13 @@ impl PrefsUi {
                 ),
                 (
                     ActivityField::ButtonLabel(0),
-                    input("Label", &act.buttons[0].label, false, window, cx),
+                    tr_input(
+                        k!("prefs.placeholder.button_label"),
+                        &act.buttons[0].label,
+                        false,
+                        window,
+                        cx,
+                    ),
                 ),
                 (
                     ActivityField::ButtonUrl(0),
@@ -180,7 +215,13 @@ impl PrefsUi {
                 ),
                 (
                     ActivityField::ButtonLabel(1),
-                    input("Label", &act.buttons[1].label, false, window, cx),
+                    tr_input(
+                        k!("prefs.placeholder.button_label"),
+                        &act.buttons[1].label,
+                        false,
+                        window,
+                        cx,
+                    ),
                 ),
                 (
                     ActivityField::ButtonUrl(1),
@@ -312,7 +353,7 @@ impl SettingsPanel {
             TranslatorKind::Ai => {
                 let key = self.secret(Secret::AiTranslateKey).unwrap_or_default();
                 if l.ai_endpoint.is_empty() || l.ai_model.is_empty() {
-                    return Err("Set the AI endpoint and model in Settings → Lyrics.".into());
+                    return Err(t!("settings.lyrics.ai_missing").into());
                 }
                 Ok(Box::new(AiTranslator::new(
                     &l.ai_endpoint,
