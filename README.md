@@ -145,6 +145,22 @@ its own executor.
   * `Player::headless` renders without a device (tests use it end to end).
 * `equalizer` — parametric EQ (port of Hummingbird's), applied live:
   `player.set_equalizer(EqPreset::Bass.settings())`, `player.clear_equalizer()`.
+* `spectrum` — real-time spectrum for visualizers. The deck taps its final mix (after EQ,
+  normalization, crossfades and the pause ramp; *before* the volume, so muted playback still
+  moves) into a fixed lock-free ring of mono samples (relaxed atomic stores, no allocation or
+  lock in the audio callback; skipped entirely while off). On demand — from the UI thread at
+  ≤ 60 Hz — `player.spectrum(bands)` / `spectrum_into(bands, &mut Spectrum)` (no per-frame
+  allocation) runs a Hann-windowed 2048-point FFT (`rustfft`) over the newest samples and
+  returns `Spectrum { bands, peaks, level }`, all 0..1: log-spaced bands (1–256, default
+  range 40 Hz–16 kHz, `SpectrumConfig::band_edges`), dB mapped from −70..−12 dBFS with a
+  +3 dB/octave tilt around 1 kHz, fast attack (15 ms) / slower decay (300 ms), peak hold
+  (600 ms, then 1.2/s), and the RMS level (−60..0 dBFS). Paused, stopped, silent or not
+  pulled for 150 ms, it decays to exact zeros (`Spectrum::is_silent` → stop redrawing).
+  `set_spectrum_enabled(true)` while a visualizer is visible; `spectrum_analyzer()` gives
+  each view its own band count and smoothing (`set_config`). Cost ≈ 11 µs per call (64 bands) in
+  release on an M-series Mac (`spectrum::tests::analyze_is_cheap`). Low bands narrower than
+  the 23 Hz bin spacing (below ~200 Hz with 32+ bands) share the window's main lobe and
+  read alike.
 * `media_controls` — macOS Now Playing / media keys, Windows SMTC, Linux MPRIS
   (feature `media-controls`, default on).
 * `scrobble` — Last.fm + ListenBrainz (`ScrobbleTracker` applies `ScrobbleRules` — by

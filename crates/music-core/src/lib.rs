@@ -13,6 +13,8 @@
 //!   gets full-length streams (TV client, or web client + BotGuard PoToken).
 //! * [`Player`] – background audio engine with a pollable [`PlaybackState`].
 //! * [`equalizer`] – parametric EQ applied live via [`Player::set_equalizer`].
+//! * [`Spectrum`] – real-time spectrum / level of the output for visualizers
+//!   ([`Player::spectrum`], [`SpectrumAnalyzer`]).
 //! * [`media_controls`] – OS now-playing info + media keys (macOS, Windows, Linux).
 //! * [`scrobble`] – Last.fm / ListenBrainz scrobbling driven by [`PlaybackState`] snapshots.
 //! * `discord` – Discord Rich Presence (cargo feature `discord`, on by default).
@@ -60,6 +62,7 @@ pub mod recognition;
 pub mod scrobble;
 mod silence;
 mod sleep;
+mod spectrum;
 pub mod sponsorblock;
 pub mod spotify;
 mod stream;
@@ -87,6 +90,10 @@ pub use output::OutputDevice;
 pub use player::{PlaybackState, PlaybackStatus, Player};
 pub use silence::{SilenceConfig, SkipSilence};
 pub use sleep::{SleepTimer, SleepTimerState};
+pub use spectrum::{
+    FFT_SIZE as SPECTRUM_FFT_SIZE, MAX_BANDS as SPECTRUM_MAX_BANDS, Spectrum, SpectrumAnalyzer,
+    SpectrumConfig,
+};
 pub use stream::{
     Download, IosClientResolver, PrefetchedHead, Quality, ResolvedStream, SourceKind, StreamPrefix,
     StreamResolver, StreamSource,
