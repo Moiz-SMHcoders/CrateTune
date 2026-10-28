@@ -1,0 +1,42 @@
+recognition.title = Kenali musik
+recognition.subtitle = Kenali lagu yang diputar di sekitar Anda (⇧⌘R)
+
+recognition.idle.title = Ketuk untuk mengenali lagu
+recognition.idle.detail = Putar lagu di dekat komputer Anda; aplikasi mendengarkan melalui mikrofon selama sekitar 10 detik.
+recognition.permission.title = Menunggu akses mikrofon…
+recognition.permission.detail = Izinkan akses di dialog sistem.
+recognition.listening = Mendengarkan…
+recognition.listening_progress = {elapsed} dari {length} dtk
+recognition.identifying.title = Mengenali…
+recognition.identifying.detail = Mencocokkan rekaman.
+recognition.failed = Tidak dapat dikenali
+recognition.open_privacy_settings = Buka pengaturan privasi
+
+recognition.mic.restricted = Akses mikrofon dibatasi di komputer ini.
+recognition.mic.undetermined = Akses mikrofon belum diberikan. Coba lagi dan izinkan saat diminta.
+recognition.mic.denied = Akses mikrofon untuk {app} nonaktif. Izinkan di Pengaturan Sistem → Privasi & Keamanan → Mikrofon.
+recognition.error.no_microphone = Mikrofon tidak ditemukan
+recognition.error.permission_denied = Akses mikrofon ditolak
+recognition.error.silent = Mikrofon hanya menangkap keheningan (apakah akses mikrofon diizinkan?)
+recognition.error.capture = Perekaman gagal: {error}
+recognition.error.cancelled = Dibatalkan
+recognition.error.no_signature = Tidak terdengar musik apa pun
+recognition.error.no_match = Tidak ada yang cocok
+recognition.error.rate_limited = Terlalu banyak permintaan — coba lagi dalam semenit
+recognition.error.service = Kesalahan layanan pengenalan (HTTP {status})
+recognition.error.network = Kesalahan jaringan: {error}
+recognition.error.parse = Respons tak terduga: {error}
+
+recognition.result.recognized = Dikenali
+recognition.result.from_history = Dari riwayat pengenalan Anda
+recognition.match.title = Di YouTube Music
+recognition.match.searching = Mencari di YouTube Music…
+recognition.match.failed = Pencarian YouTube Music gagal: {error}
+recognition.match.none = Tidak ditemukan di YouTube Music.
+
+recognition.history.title = Riwayat
+recognition.history.empty.title = Belum ada pengenalan
+recognition.history.empty.detail = Lagu yang Anda kenali muncul di sini, yang terbaru di atas.
+recognition.history.clear_title = Hapus riwayat pengenalan?
+recognition.history.clear_detail = Daftar lagu yang dikenali akan dihapus.
+recognition.history.remove = Hapus dari riwayat

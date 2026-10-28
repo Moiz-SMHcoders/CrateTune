@@ -1,0 +1,231 @@
+# ---- Library page
+library.sort.label = Sắp xếp
+library.sort.date_added = Ngày thêm
+library.sort.title = Tiêu đề
+library.sort.artist = Nghệ sĩ
+library.sort.play_count = Lượt phát
+library.sort.listening_time = Thời gian nghe
+library.sort.last_played = Phát gần nhất
+library.sort.year = Năm
+library.sort.song_count = Số bài hát
+library.sort.name = Tên
+library.sort.last_updated = Cập nhật gần nhất
+library.sort.date_created = Ngày tạo
+
+library.filter_placeholder = Lọc
+library.saved_only = Chỉ đã lưu
+library.subscribed_only = Chỉ đã đăng ký
+library.new_playlist = Danh sách phát mới
+
+library.detail_signed_in = {summary} · đã đăng nhập YouTube Music
+library.count.albums.other = {count} album
+library.count.artists.other = {count} nghệ sĩ
+library.count.shows.other = {count} chương trình
+library.count.playlists.other = {count} danh sách phát
+
+# Empty states
+library.podcasts.signed_out_title = Đăng nhập để xem podcast của bạn
+library.podcasts.signed_out_detail = Các podcast bạn lưu trên YouTube Music sẽ hiện ở đây. Đăng nhập trong Cài đặt → Tài khoản; có thể mở chương trình từ tìm kiếm, Trang chủ và Khám phá mà không cần tài khoản.
+library.podcasts.empty_title = Chưa có podcast nào
+library.podcasts.empty_detail = Lưu một chương trình bằng “Lưu vào thư viện” trên trang của nó.
+library.empty.no_matches_title = Không có kết quả khớp
+library.empty.no_matches_detail = Không có mục nào khớp với bộ lọc.
+library.empty.liked_title = Chưa có bài hát đã thích
+library.empty.liked_detail = Nhấn vào biểu tượng trái tim trên bất kỳ bài hát nào. Khi đăng nhập, các bài bạn thích trên YouTube Music sẽ được đồng bộ về đây.
+library.empty.downloaded_title = Chưa tải xuống gì
+library.empty.downloaded_detail = Chọn “Tải xuống” trong menu của bài hát để lưu nó trên máy tính này.
+library.empty.local_title = Không có tệp cục bộ
+library.empty.local_detail = Thêm thư mục nhạc ở trang Tệp cục bộ rồi quét chúng.
+library.empty.songs_title = Thư viện chưa có bài hát nào
+library.empty.songs_detail = Bài hát đã thích, bài hát bạn thêm và tệp cục bộ sẽ hiện ở đây.
+library.empty.albums_title = Chưa có album nào
+library.empty.albums_detail = Album của các bài hát của bạn và album đã lưu trên YouTube Music sẽ hiện ở đây.
+library.empty.artists_title = Chưa có nghệ sĩ nào
+library.empty.artists_detail = Nghệ sĩ của các bài hát của bạn và các kênh bạn đã đăng ký sẽ hiện ở đây.
+library.empty.playlists_title = Chưa có danh sách phát nào
+library.empty.playlists_detail = Tạo bằng “Danh sách phát mới” hoặc đăng nhập để đồng bộ danh sách phát YouTube Music của bạn.
+library.load_failed = Không thể tải thư viện
+library.db_unavailable = Cơ sở dữ liệu thư viện không khả dụng.
+
+library.remove_from_library = Xóa khỏi thư viện
+library.unlike = Bỏ thích
+library.delete_downloads = Xóa bản tải xuống
+
+# Album / artist cards and pages
+library.album.save = Lưu album
+library.album.remove_saved = Xóa khỏi album đã lưu
+library.album.saving = Lưu album
+library.artist.subscribed_songs.other = Đã đăng ký · {count} bài hát
+library.playlist.youtube_songs.other = {count} bài hát · YouTube Music
+
+library.item.songs_listened.other = {count} bài hát · đã nghe {time}
+library.item.subscribe = Đăng ký
+library.item.unsubscribe = Hủy đăng ký
+library.item.remove_saved = Xóa khỏi mục đã lưu
+library.item.open_online = Mở trên YouTube Music
+library.item.empty_detail = Thích hoặc thêm bài hát của nghệ sĩ / album này để xem chúng ở đây.
+
+# Library playlist page
+library.playlist.kind_own = Danh sách phát YouTube Music của bạn
+library.playlist.kind_saved = Danh sách phát YouTube Music đã lưu
+library.playlist.change_cover = Đổi ảnh bìa…
+library.playlist.rename_title = Đổi tên danh sách phát
+library.playlist.delete_title = Xóa “{name}”?
+library.playlist.delete_remote = Danh sách phát cũng sẽ bị xóa trên YouTube Music.
+library.playlist.delete_unsave = Danh sách phát sẽ bị xóa khỏi thư viện YouTube Music của bạn.
+library.playlist.delete_local_copy = Chỉ bản sao trên máy tính này bị xóa.
+library.playlist.delete_undo = Không thể hoàn tác thao tác này.
+library.playlist.move_up = Chuyển lên
+library.playlist.move_down = Chuyển xuống
+library.playlist.remove_from = Xóa khỏi danh sách phát
+library.playlist.not_found_title = Không tìm thấy danh sách phát
+library.playlist.not_found_detail = Có thể nó đã bị xóa.
+library.playlist.empty_title = Danh sách phát này trống
+library.playlist.empty_detail = Dùng “Thêm vào danh sách phát…” trong menu của bài hát để thêm bài hát.
+
+# ---- Song lists
+song_list.select_none = Bỏ chọn tất cả
+
+# ---- Local files page
+local_files.prompt_add = Thêm
+local_files.prompt_skip = Bỏ qua
+local_files.folders_title = Thư mục nhạc
+local_files.add_folder = Thêm thư mục
+local_files.skip_folder = Bỏ qua thư mục
+local_files.skipped_title = Đã bỏ qua
+local_files.scan.looking = Đang tìm tệp…
+local_files.scan.progress = {done} / {total} tệp
+local_files.scanning = Đang quét…
+local_files.rescan = Quét lại
+local_files.detail.other = {count} bài hát · bỏ qua các tệp ngắn hơn {seconds} giây
+local_files.empty.no_folders_title = Chưa có thư mục nhạc nào
+local_files.empty.no_folders_detail = Thêm thư mục chứa nhạc của bạn (MP3, M4A, FLAC, Ogg, Opus, WAV, AIFF…) rồi nhấn Quét lại.
+local_files.empty.no_tracks_title = Không có bài hát cục bộ
+local_files.empty.no_tracks_detail = Nhấn Quét lại để đọc các thư mục ở trên.
+
+# ---- Downloads page
+downloads.status.queued = Đang chờ
+downloads.status.downloading_size = Đang tải {size}
+downloads.status.done = Xong · {size}
+downloads.status.preview = Chỉ bản xem trước · {size}
+downloads.status.failed = Thất bại: {error}
+downloads.status.cancelled = Đã hủy
+downloads.detail.other = {count} bài hát · {size} · bộ nhớ đệm phát {cache} / {limit}
+downloads.play_all = Phát tất cả
+downloads.clear_finished = Xóa mục đã xong
+downloads.show_in_finder = Hiện trong Finder
+downloads.unavailable_title = Tính năng tải xuống không khả dụng
+downloads.unavailable_detail = Không thể mở thư mục tải xuống (xem terminal).
+downloads.previews_note.other = {count} bản tải xuống chỉ là bản xem trước (chỉ ~1 MiB đầu): chúng được tạo khi luồng đầy đủ không khả dụng. Hãy xóa và tải xuống lại.
+downloads.section.session = Phiên này
+downloads.section.downloaded = Đã tải xuống
+downloads.empty_detail = Chọn “Tải xuống” trong menu của bài hát (hoặc chọn bài hát trong thư viện) để lưu chúng trên máy tính này.
+downloads.preview_tag = xem trước
+downloads.delete = Xóa bản tải xuống
+
+# ---- History page
+history.clear.title = Xóa lịch sử nghe?
+history.clear.detail = Mọi lượt phát đã ghi lại sẽ bị xóa, số lượt phát và thống kê sẽ bắt đầu lại từ đầu. Thư viện, bài hát đã thích và danh sách phát vẫn được giữ nguyên.
+history.clear.button = Xóa lịch sử
+history.paused = Lịch sử nghe đang tạm dừng (Cài đặt → Quyền riêng tư).
+history.counting = Bài hát được tính sau khi bạn nghe 30 giây.
+history.load_failed = Không thể tải
+history.empty_title = Chưa phát bài nào
+history.empty_detail = Các bài hát bạn nghe sẽ hiện ở đây, nhóm theo ngày.
+history.remove = Xóa khỏi lịch sử
+history.removing = Xóa khỏi lịch sử
+history.clearing = Xóa lịch sử
+history.cleared = Đã xóa lịch sử nghe
+
+# ---- Stats page
+stats.range.week = 7 ngày
+stats.range.month = 30 ngày
+stats.range.quarter = 90 ngày
+stats.range.year = Năm nay
+stats.range.all = Mọi lúc
+stats.subtitle = Từ lịch sử nghe của bạn trên máy tính này.
+stats.load_failed = Không thể tải thống kê
+stats.empty_title = Không có lượt nghe nào trong khoảng này
+stats.empty_detail = Hãy phát nhạc — bài hát được tính sau 30 giây.
+stats.tile.listened = đã nghe
+stats.tile.plays.other = lượt phát
+stats.tile.songs.other = bài hát
+stats.tile.artists.other = nghệ sĩ
+stats.tile.albums.other = album
+stats.song_plays.other = {count} lượt phát · {time}
+stats.top_songs = Bài hát hàng đầu
+stats.top_artists = Nghệ sĩ hàng đầu
+stats.top_albums = Album hàng đầu
+stats.by_hour = Theo giờ trong ngày
+stats.by_weekday = Theo ngày trong tuần
+stats.month_by_month = Theo từng tháng
+stats.year_in_music = Năm qua âm nhạc
+stats.year.title = Năm {year} qua âm nhạc
+stats.year.subtitle = Năm của bạn, từ lịch sử nghe trên máy tính này.
+stats.year.load_failed = Không thể tải
+stats.year.empty_title = Không phát bài nào trong năm đó
+stats.year.empty_detail = Bản tổng kết sẽ đầy dần khi bạn nghe.
+stats.year.top_song.other = Bài hát hàng đầu · {count} lượt phát
+stats.year.top_artist = Nghệ sĩ hàng đầu · {time}
+stats.year.favourite_hour = Giờ yêu thích của bạn
+stats.year.busiest_day = Ngày nghe nhiều nhất · {time}
+
+# ---- Settings → Storage
+settings.storage.files = Tệp
+settings.storage.settings_file = Tệp cài đặt: {path}
+settings.storage.settings_not_saved = Cài đặt không được lưu (không có thư mục cấu hình)
+settings.storage.secrets = Thông tin bí mật: {store}
+settings.storage.secrets_loading = Thông tin bí mật: đang tải…
+settings.storage.library_db = Cơ sở dữ liệu thư viện: {path}
+settings.storage.library_db_unavailable = Cơ sở dữ liệu thư viện: không khả dụng
+settings.storage.play_cache = Bộ nhớ đệm phát
+settings.storage.cache_usage = Đã dùng {used} / {limit}. Các bài lâu chưa phát nhất sẽ bị xóa trước.
+settings.storage.cache_limit = Giới hạn bộ nhớ đệm
+settings.storage.cache_played = Lưu đệm bài đã phát
+settings.storage.cache_played_detail = Giữ bản sao những gì bạn phát (được tải thêm một lần trong nền).
+settings.storage.clear_cache_row = Xóa bộ nhớ đệm phát
+settings.storage.clear_cache = Xóa bộ nhớ đệm
+settings.storage.downloads = Tải xuống
+settings.storage.downloads_usage = {size} trong {path}
+settings.storage.downloads_unavailable = Tính năng tải xuống không khả dụng.
+settings.storage.download_folder = Thư mục tải xuống
+settings.storage.download_folder_detail = Bản tải xuống không bao giờ bị xóa tự động.
+settings.storage.backup = Sao lưu & khôi phục
+settings.storage.export = Xuất bản sao lưu
+settings.storage.export_detail = Thư viện, danh sách phát, lịch sử và cài đặt trong một tệp zip (không có mật khẩu hay cookie).
+settings.storage.export_button = Xuất…
+settings.storage.restore = Khôi phục bản sao lưu
+settings.storage.restore_detail = Thay thế thư viện và cài đặt; khởi động lại sau đó.
+settings.storage.restore_button = Khôi phục…
+
+# ---- Settings → Privacy
+settings.privacy.listen_history = Lịch sử nghe
+settings.privacy.pause_listen = Tạm dừng lịch sử nghe
+settings.privacy.pause_listen_detail = Lượt phát không được ghi lại; Lịch sử và Thống kê ngừng tăng.
+settings.privacy.clear_listen = Xóa lịch sử nghe
+settings.privacy.clear_listen_detail = Xóa mọi lượt phát đã ghi lại trên máy tính này.
+settings.privacy.clear_button = Xóa…
+settings.privacy.clear_listen_confirm = Mọi lượt phát đã ghi lại sẽ bị xóa; số lượt phát và thống kê bắt đầu lại từ đầu.
+settings.privacy.search_history = Lịch sử tìm kiếm
+settings.privacy.pause_search = Tạm dừng lịch sử tìm kiếm
+settings.privacy.pause_search_detail = Các tìm kiếm bạn gửi sẽ không được ghi nhớ.
+settings.privacy.clear_search = Xóa lịch sử tìm kiếm
+settings.privacy.clear_search_detail = Quên mọi tìm kiếm đã ghi nhớ.
+settings.privacy.note = Lịch sử được giữ trong cơ sở dữ liệu thư viện trên máy tính này. Lượt phát không bao giờ được báo cáo về lịch sử tài khoản YouTube của bạn.
+
+# ---- Backup / restore
+storage.backup_saved = Đã lưu bản sao lưu vào {path}
+storage.backup_failed = Sao lưu thất bại: {error}
+storage.restore = Khôi phục
+storage.restore_confirm_title = Khôi phục bản sao lưu này?
+storage.restore_confirm_detail = Thư viện, danh sách phát, lịch sử và cài đặt của bạn sẽ được thay bằng dữ liệu trong bản sao lưu. Thông tin đăng nhập YouTube Music và các thông tin bí mật khác vẫn được giữ.
+storage.restored_title = Đã khôi phục bản sao lưu
+storage.restored_library = Đã khôi phục thư viện. Hãy khởi động lại {app} để mọi cài đặt có hiệu lực.
+storage.restored_all = Đã khôi phục thư viện và cài đặt. Hãy khởi động lại {app} để mọi cài đặt có hiệu lực.
+storage.restored_settings_skipped = Đã khôi phục thư viện; bỏ qua cài đặt: {error}. Hãy khởi động lại {app} để mọi cài đặt có hiệu lực.
+storage.restart_later = Để sau
+storage.restart_now = Khởi động lại ngay
+storage.restore_failed = Khôi phục thất bại: {error}
+storage.cache_cleared = Đã xóa bộ nhớ đệm phát
+storage.clearing_search = Xóa lịch sử tìm kiếm
+storage.search_cleared = Đã xóa lịch sử tìm kiếm

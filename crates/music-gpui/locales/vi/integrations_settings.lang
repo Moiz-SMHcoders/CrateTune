@@ -1,0 +1,139 @@
+# ---- Shared
+settings.integrations.connected_as = Đã kết nối với tên {user}
+
+# ---- Last.fm / ListenBrainz
+settings.integrations.lastfm_approve = Hãy chấp thuận ứng dụng trong trình duyệt, rồi nhấn Hoàn tất.
+settings.integrations.finish = Hoàn tất
+settings.integrations.forget_key = Quên khóa
+settings.integrations.api_key = Khóa API
+settings.integrations.shared_secret = Mã bí mật dùng chung
+settings.integrations.checking_token = Đang kiểm tra token…
+settings.integrations.validate = Xác thực
+settings.integrations.user_token = Token người dùng
+
+# ---- Discord
+settings.integrations.discord_title = Discord Rich Presence
+settings.integrations.discord_enter_id = Hãy nhập ID ứng dụng Discord của bạn.
+settings.integrations.discord_connected = Đã kết nối với Discord
+settings.integrations.discord_unreachable = Không kết nối được Discord: {error}
+settings.integrations.discord_waiting = Đang chờ phát nhạc…
+settings.integrations.application_id = ID ứng dụng
+discord.activity.title = Hoạt động
+discord.activity.type = Loại
+discord.activity.name = Tên
+discord.activity.details = Chi tiết
+discord.activity.state = Trạng thái
+discord.activity.placeholders_note = Biến thay thế: {title}, {artist}, {album}. Để trống tên sẽ dùng tên của ứng dụng Discord.
+discord.activity.large_image = Hình ảnh lớn
+discord.activity.small_image = Hình ảnh nhỏ
+discord.activity.button = Nút {number}
+discord.activity.label = Nhãn
+discord.activity.url = URL
+discord.activity.show_paused = Hiện khi tạm dừng
+discord.activity.show_paused_desc = Giữ hoạt động (không kèm thời gian đang chạy) khi tạm dừng phát.
+discord.activity.custom_note = Hình ảnh tùy chỉnh là khóa asset của ứng dụng Discord hoặc URL hình ảnh. Các nút hiển thị với người khác, không hiển thị với chính bạn.
+
+# ---- Scrobble rules
+scrobble.rules.title = Khi nào một bài hát được tính
+scrobble.rules.played = Đã phát
+scrobble.rules.or_at_most = …hoặc tối đa
+scrobble.rules.ignore_under = Bỏ qua bài ngắn hơn
+scrobble.rules.percent = {percent}%
+scrobble.rules.note = Quy tắc của Last.fm là 50% hoặc 4 phút, với bài dài hơn 30 giây. Áp dụng cho Last.fm và ListenBrainz.
+scrobble.errors.other = Lỗi scrobble ({count})
+settings.integrations.secrets = Thông tin bí mật: {store}
+settings.integrations.secrets_loading = Thông tin bí mật: đang tải…
+settings.integrations.settings_path = Cài đặt: {path}
+settings.integrations.not_saved = Cài đặt không được lưu (không có thư mục cấu hình)
+
+# ---- SponsorBlock
+settings.sponsorblock.categories = Danh mục
+settings.sponsorblock.category_desc.music_offtopic = Trò chuyện, tiểu phẩm và các phần không phải nhạc khác trong video âm nhạc.
+settings.sponsorblock.category_desc.sponsor = Quảng cáo trả phí.
+settings.sponsorblock.category_desc.intro = Đoạn tạm nghỉ và hoạt ảnh mở đầu không có nội dung.
+settings.sponsorblock.category_desc.outro = Danh đề và màn hình kết thúc.
+settings.sponsorblock.category_desc.selfpromo = Quảng bá không trả phí: hàng lưu niệm, quyên góp, lời cảm ơn.
+settings.sponsorblock.category_desc.interaction = Lời nhắc thích, đăng ký hoặc theo dõi.
+settings.sponsorblock.category_desc.preview = Tóm tắt và xem trước nội dung khác.
+settings.sponsorblock.category_desc.filler = Đoạn lạc đề không thuộc nội dung chính.
+settings.sponsorblock.category_desc.hook = Đoạn nhá hàng và lời chào ở đầu.
+settings.sponsorblock.using = Đang dùng {url}
+settings.sponsorblock.url_error = Cần địa chỉ https:// không chứa thông tin đăng nhập hay chuỗi truy vấn
+settings.sponsorblock.skip_segments = Bỏ qua phân đoạn
+settings.sponsorblock.skip_segments_desc = Tra cứu các phân đoạn do cộng đồng đánh dấu trong video của mỗi bài hát và bỏ qua chúng.
+settings.sponsorblock.when = Khi một phân đoạn bắt đầu
+settings.sponsorblock.when_desc = Bỏ qua ngay, hoặc hiện nút Bỏ qua trên thanh trình phát.
+settings.sponsorblock.mode_auto = Tự động bỏ qua
+settings.sponsorblock.mode_ask = Hỏi
+settings.sponsorblock.notify = Thông báo sau khi bỏ qua
+settings.sponsorblock.server = Máy chủ
+settings.sponsorblock.api_url = URL API
+settings.sponsorblock.use_default = Dùng máy chủ mặc định
+settings.sponsorblock.forget = Quên các phân đoạn đã tra cứu
+settings.sponsorblock.privacy = Quyền riêng tư: chỉ 4 ký tự đầu của mã băm SHA-256 của ID video được gửi đi, nên máy chủ không biết bài nào đang phát. Phân đoạn lấy từ sponsor.ajay.app (SponsorBlock, CC BY-NC-SA) trừ khi bạn đặt máy chủ khác.
+
+# ---- Music Together
+settings.together.you = Bạn
+settings.together.display_name = Tên hiển thị
+settings.together.name_placeholder = Tên của bạn
+settings.together.display_name_note = Hiển thị cho những người khác trong phiên.
+settings.together.hosting = Tổ chức phiên
+settings.together.port = Cổng
+settings.together.port_error = Cổng phải nằm trong khoảng 1024 đến 65535
+settings.together.allow_add_desc = Đề xuất của họ được đưa vào danh sách chờ của bạn.
+settings.together.allow_control_desc = Phát, tạm dừng, tua và chuyển bài cho mọi người.
+settings.together.approval = Duyệt khách trước khi họ tham gia
+settings.together.hosting_note = Phiên chạy trên mạng cục bộ của bạn: khách kết nối thẳng tới máy tính này (hãy cho phép kết nối đến nếu tường lửa hỏi). Liên kết chứa một khóa ngẫu nhiên; chỉ người có liên kết mới tham gia được. Thay đổi áp dụng ngay cho phiên đang chạy. Trên trang Nghe cùng nhau, “Đặt làm chủ phòng” sẽ trao phiên cho một khách: mọi người sẽ theo chủ phòng mới.
+settings.together.across_networks = Qua nhiều mạng
+settings.together.relay = Máy chủ chuyển tiếp
+settings.together.relay_placeholder = wss://relay.example.com (để trống: chỉ LAN)
+settings.together.relay_error = Cần địa chỉ ws:// hoặc wss:// (không có tên người dùng hay chuỗi truy vấn)
+settings.together.relay_note = “Tổ chức qua máy chủ chuyển tiếp” chạy phiên qua một máy chủ music-relay do bạn tự vận hành (xem README: một tệp thực thi nhỏ, đặt sau reverse proxy TLS để dùng wss://). Khi đó khách có thể tham gia từ bất cứ đâu bằng liên kết. Máy chủ chuyển tiếp chỉ chuyển tiếp tin nhắn của phiên (ID bài hát, tiêu đề, tên) và không bao giờ tự quyết định gì; để trống = chỉ LAN.
+settings.together.open = Mở Nghe cùng nhau
+
+# ---- Spotify import
+settings.spotify.waiting = Đang chờ bạn chấp thuận ứng dụng trong trình duyệt…
+settings.spotify.account = Tài khoản Spotify
+settings.spotify.client_id = Client ID
+settings.spotify.redirect_port = Cổng chuyển hướng
+settings.spotify.redirect_uri = URI chuyển hướng: {uri}
+settings.spotify.steps = 1. Tạo một ứng dụng tại developer.spotify.com/dashboard (Web API). 2. Thêm URI chuyển hướng ở trên vào ứng dụng đó. 3. Dán Client ID của nó vào đây và nhấn Kết nối. Quyền truy cập chỉ đọc (danh sách phát và bài hát đã thích); token làm mới được giữ trong chuỗi khóa.
+settings.spotify.without_account = Không cần tài khoản
+settings.spotify.without_account_note = Xuất danh sách phát bằng Exportify (exportify.app) rồi nhập tệp CSV trong Thư viện → Nhập & xuất. Không hỗ trợ đăng nhập bằng cookie sp_dc của trình phát web (như {other_app} làm): cách này phụ thuộc vào một khóa bí mật trích xuất từ trình phát web của Spotify.
+settings.spotify.open_import = Mở Nhập & xuất
+settings.spotify.error.no_client = Hãy nhập Client ID của ứng dụng trước.
+settings.spotify.error.redirect = Không thể chờ chuyển hướng: {error}
+
+# ---- AI content filter
+settings.ai_filter.off = Tắt: không gửi gì đi đâu cả
+settings.ai_filter.incomplete = Cần endpoint, mô hình và ít nhất một danh mục
+settings.ai_filter.failed = Yêu cầu gần nhất thất bại: {error}
+settings.ai_filter.on.other = Bật · đã phân loại {count} bài hát và album
+settings.ai_filter.hide = Ẩn
+settings.ai_filter.also_hide = Ẩn thêm
+settings.ai_filter.custom_placeholder = ví dụ: bài hát về xe hơi, nhạc meme
+settings.ai_filter.custom_note = Danh mục của riêng bạn, phân tách bằng dấu phẩy (tối đa 8), mô tả bằng lời thông thường.
+settings.ai_filter.title = Bộ lọc nội dung AI
+settings.ai_filter.enable = Lọc bài hát bằng mô hình AI
+settings.ai_filter.enable_desc = Giống “Ẩn nội dung nhạy cảm”, cho các danh mục bên dưới.
+settings.ai_filter.forget = Quên kết quả phân loại
+settings.ai_filter.model = Mô hình
+settings.ai_filter.endpoint = Endpoint
+settings.ai_filter.endpoint_placeholder = https://api.openai.com/v1 hoặc http://localhost:11434/v1
+settings.ai_filter.api_key = Khóa API
+settings.ai_filter.key_placeholder = Khóa API (không cần cho máy chủ cục bộ)
+settings.ai_filter.api_note = Bất kỳ API chat-completions nào tương thích OpenAI: OpenAI, OpenRouter, hoặc một mô hình trên máy tính này (Ollama, LM Studio, máy chủ llama.cpp). Khóa được giữ trong chuỗi khóa.
+settings.ai_filter.privacy = Quyền riêng tư
+settings.ai_filter.privacy_note = Mặc định tắt. Khi bật, tiêu đề, nghệ sĩ và album của các bài hát và album trên những trang bạn mở sẽ được gửi tới endpoint ở trên (không có gì về bạn, không có lịch sử nghe); mỗi kết quả đánh giá được lưu đệm trên máy tính này, nên mỗi bài chỉ được hỏi một lần. Bài hát chưa được mô hình đánh giá vẫn hiển thị.
+
+# ---- Chromecast
+settings.cast.looking = Đang tìm thiết bị Cast…
+settings.cast.found.other = Đã tìm thấy {count} thiết bị
+settings.cast.devices = Thiết bị
+settings.cast.scan = Tìm kiếm
+settings.cast.casting = Đang truyền
+settings.cast.cast = Truyền
+settings.cast.streaming = Đang phát trực tuyến
+settings.cast.direct = Để thiết bị tự lấy âm thanh YouTube
+settings.cast.direct_desc = Tắt: ứng dụng này sẽ truyền luồng tới thiết bị (hoạt động với mọi bài hát).
+settings.cast.note = Truyền sẽ phát danh sách chờ trên Chromecast, Google TV hoặc loa Nest trong mạng này (Default Media Receiver của Google). Nút Cast trên thanh trình phát dùng để chọn thiết bị; sau đó phát, tạm dừng, tua, chuyển bài và âm lượng sẽ điều khiển thiết bị, còn Dừng truyền sẽ tiếp tục phát ở đây. Âm thanh YouTube và tệp cục bộ được truyền từ máy tính này tới thiết bị (hãy giữ ứng dụng mở); thiết bị và máy tính này phải ở cùng một mạng. Thay đổi áp dụng cho bài hát tiếp theo.

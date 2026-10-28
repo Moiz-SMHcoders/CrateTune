@@ -1,0 +1,231 @@
+# ---- Library page
+library.sort.label = Urutkan
+library.sort.date_added = Tanggal ditambahkan
+library.sort.title = Judul
+library.sort.artist = Artis
+library.sort.play_count = Jumlah putar
+library.sort.listening_time = Waktu dengar
+library.sort.last_played = Terakhir diputar
+library.sort.year = Tahun
+library.sort.song_count = Jumlah lagu
+library.sort.name = Nama
+library.sort.last_updated = Terakhir diperbarui
+library.sort.date_created = Tanggal dibuat
+
+library.filter_placeholder = Saring
+library.saved_only = Hanya tersimpan
+library.subscribed_only = Hanya disubscribe
+library.new_playlist = Playlist baru
+
+library.detail_signed_in = {summary} · masuk ke YouTube Music
+library.count.albums.other = {count} album
+library.count.artists.other = {count} artis
+library.count.shows.other = {count} acara
+library.count.playlists.other = {count} playlist
+
+# Empty states
+library.podcasts.signed_out_title = Masuk untuk melihat podcast Anda
+library.podcasts.signed_out_detail = Podcast yang Anda simpan di YouTube Music muncul di sini. Masuk di Pengaturan → Akun; acara dapat dibuka dari pencarian, Beranda, dan Jelajahi tanpa akun.
+library.podcasts.empty_title = Belum ada podcast
+library.podcasts.empty_detail = Simpan acara dengan “Simpan ke pustaka” di halamannya.
+library.empty.no_matches_title = Tidak ada yang cocok
+library.empty.no_matches_detail = Tidak ada yang cocok dengan filter.
+library.empty.liked_title = Tidak ada lagu yang disukai
+library.empty.liked_detail = Ketuk ikon hati pada lagu mana pun. Jika masuk, lagu yang Anda sukai di YouTube Music disinkronkan ke sini.
+library.empty.downloaded_title = Belum ada unduhan
+library.empty.downloaded_detail = Pilih “Unduh” di menu lagu untuk menyimpannya di komputer ini.
+library.empty.local_title = Tidak ada file lokal
+library.empty.local_detail = Tambahkan folder musik di halaman File lokal lalu pindai.
+library.empty.songs_title = Tidak ada lagu di pustaka Anda
+library.empty.songs_detail = Lagu yang disukai, lagu yang Anda tambahkan, dan file lokal muncul di sini.
+library.empty.albums_title = Belum ada album
+library.empty.albums_detail = Album dari lagu Anda, dan album yang disimpan di YouTube Music, muncul di sini.
+library.empty.artists_title = Belum ada artis
+library.empty.artists_detail = Artis dari lagu Anda dan langganan Anda muncul di sini.
+library.empty.playlists_title = Belum ada playlist
+library.empty.playlists_detail = Buat dengan “Playlist baru”, atau masuk untuk menyinkronkan playlist YouTube Music Anda.
+library.load_failed = Tidak dapat memuat pustaka
+library.db_unavailable = Database pustaka tidak tersedia.
+
+library.remove_from_library = Hapus dari pustaka
+library.unlike = Batal suka
+library.delete_downloads = Hapus unduhan
+
+# Album / artist cards and pages
+library.album.save = Simpan album
+library.album.remove_saved = Hapus dari album tersimpan
+library.album.saving = Menyimpan album
+library.artist.subscribed_songs.other = Disubscribe · {count} lagu
+library.playlist.youtube_songs.other = {count} lagu · YouTube Music
+
+library.item.songs_listened.other = {count} lagu · didengarkan {time}
+library.item.subscribe = Subscribe
+library.item.unsubscribe = Berhenti subscribe
+library.item.remove_saved = Hapus dari tersimpan
+library.item.open_online = Buka di YouTube Music
+library.item.empty_detail = Sukai atau tambahkan lagu dari artis / album ini untuk melihatnya di sini.
+
+# Library playlist page
+library.playlist.kind_own = Playlist YouTube Music Anda
+library.playlist.kind_saved = Playlist YouTube Music tersimpan
+library.playlist.change_cover = Ganti sampul…
+library.playlist.rename_title = Ganti nama playlist
+library.playlist.delete_title = Hapus “{name}”?
+library.playlist.delete_remote = Playlist juga dihapus di YouTube Music.
+library.playlist.delete_unsave = Playlist dihapus dari pustaka YouTube Music Anda.
+library.playlist.delete_local_copy = Hanya salinan di komputer ini yang dihapus.
+library.playlist.delete_undo = Tindakan ini tidak dapat diurungkan.
+library.playlist.move_up = Pindah ke atas
+library.playlist.move_down = Pindah ke bawah
+library.playlist.remove_from = Hapus dari playlist
+library.playlist.not_found_title = Playlist tidak ditemukan
+library.playlist.not_found_detail = Mungkin sudah dihapus.
+library.playlist.empty_title = Playlist ini kosong
+library.playlist.empty_detail = Gunakan “Tambah ke playlist…” di menu lagu untuk menambahkan lagu.
+
+# ---- Song lists
+song_list.select_none = Batalkan pilihan
+
+# ---- Local files page
+local_files.prompt_add = Tambah
+local_files.prompt_skip = Lewati
+local_files.folders_title = Folder musik
+local_files.add_folder = Tambah folder
+local_files.skip_folder = Lewati folder
+local_files.skipped_title = Dilewati
+local_files.scan.looking = Mencari file…
+local_files.scan.progress = {done} / {total} file
+local_files.scanning = Memindai…
+local_files.rescan = Pindai ulang
+local_files.detail.other = {count} lagu · file yang lebih pendek dari {seconds} dtk dilewati
+local_files.empty.no_folders_title = Belum ada folder musik
+local_files.empty.no_folders_detail = Tambahkan folder berisi musik Anda (MP3, M4A, FLAC, Ogg, Opus, WAV, AIFF…) lalu tekan Pindai ulang.
+local_files.empty.no_tracks_title = Tidak ada lagu lokal
+local_files.empty.no_tracks_detail = Tekan Pindai ulang untuk membaca folder di atas.
+
+# ---- Downloads page
+downloads.status.queued = Dalam antrean
+downloads.status.downloading_size = Mengunduh {size}
+downloads.status.done = Selesai · {size}
+downloads.status.preview = Hanya pratinjau · {size}
+downloads.status.failed = Gagal: {error}
+downloads.status.cancelled = Dibatalkan
+downloads.detail.other = {count} lagu · {size} · cache putar {cache} dari {limit}
+downloads.play_all = Putar semua
+downloads.clear_finished = Bersihkan yang selesai
+downloads.show_in_finder = Tampilkan di Finder
+downloads.unavailable_title = Unduhan tidak tersedia
+downloads.unavailable_detail = Folder unduhan tidak dapat dibuka (lihat terminal).
+downloads.previews_note.other = {count} unduhan adalah pratinjau (hanya ~1 MiB pertama): dibuat saat stream lengkap tidak tersedia. Hapus lalu unduh lagi.
+downloads.section.session = Sesi ini
+downloads.section.downloaded = Diunduh
+downloads.empty_detail = Pilih “Unduh” di menu lagu (atau pilih lagu di pustaka) untuk menyimpannya di komputer ini.
+downloads.preview_tag = pratinjau
+downloads.delete = Hapus unduhan
+
+# ---- History page
+history.clear.title = Hapus riwayat mendengarkan?
+history.clear.detail = Setiap pemutaran yang tercatat dihapus, dan jumlah putar serta statistik dimulai dari awal. Pustaka, lagu yang disukai, dan playlist Anda tetap ada.
+history.clear.button = Hapus riwayat
+history.paused = Riwayat mendengarkan dijeda (Pengaturan → Privasi).
+history.counting = Lagu dihitung setelah Anda mendengarkan selama 30 detik.
+history.load_failed = Tidak dapat memuat
+history.empty_title = Belum ada yang diputar
+history.empty_detail = Lagu yang Anda dengarkan muncul di sini, dikelompokkan per hari.
+history.remove = Hapus dari riwayat
+history.removing = Menghapus dari riwayat
+history.clearing = Menghapus riwayat
+history.cleared = Riwayat mendengarkan dihapus
+
+# ---- Stats page
+stats.range.week = 7 hari
+stats.range.month = 30 hari
+stats.range.quarter = 90 hari
+stats.range.year = Tahun ini
+stats.range.all = Sepanjang waktu
+stats.subtitle = Dari riwayat mendengarkan Anda di komputer ini.
+stats.load_failed = Tidak dapat memuat statistik
+stats.empty_title = Tidak ada aktivitas dalam rentang ini
+stats.empty_detail = Putar musik — lagu dihitung setelah 30 detik.
+stats.tile.listened = didengarkan
+stats.tile.plays.other = pemutaran
+stats.tile.songs.other = lagu
+stats.tile.artists.other = artis
+stats.tile.albums.other = album
+stats.song_plays.other = {count} pemutaran · {time}
+stats.top_songs = Lagu teratas
+stats.top_artists = Artis teratas
+stats.top_albums = Album teratas
+stats.by_hour = Per jam
+stats.by_weekday = Per hari
+stats.month_by_month = Bulan demi bulan
+stats.year_in_music = Tahun dalam Musik
+stats.year.title = {year} dalam musik
+stats.year.subtitle = Tahun Anda, dari riwayat mendengarkan di komputer ini.
+stats.year.load_failed = Tidak dapat memuat
+stats.year.empty_title = Tidak ada yang diputar tahun itu
+stats.year.empty_detail = Rangkuman Anda terisi seiring Anda mendengarkan.
+stats.year.top_song.other = Lagu teratas Anda · {count} pemutaran
+stats.year.top_artist = Artis teratas Anda · {time}
+stats.year.favourite_hour = Jam favorit Anda
+stats.year.busiest_day = Hari tersibuk · {time}
+
+# ---- Settings → Storage
+settings.storage.files = File
+settings.storage.settings_file = File pengaturan: {path}
+settings.storage.settings_not_saved = Pengaturan tidak disimpan (tidak ada direktori konfigurasi)
+settings.storage.secrets = Rahasia: {store}
+settings.storage.secrets_loading = Rahasia: memuat…
+settings.storage.library_db = Database pustaka: {path}
+settings.storage.library_db_unavailable = Database pustaka: tidak tersedia
+settings.storage.play_cache = Cache putar
+settings.storage.cache_usage = {used} terpakai dari {limit}. Lagu yang paling lama tidak diputar dihapus lebih dulu.
+settings.storage.cache_limit = Batas ukuran cache
+settings.storage.cache_played = Simpan lagu yang diputar ke cache
+settings.storage.cache_played_detail = Menyimpan salinan dari yang Anda putar (diambil sekali lagi di latar belakang).
+settings.storage.clear_cache_row = Bersihkan cache putar
+settings.storage.clear_cache = Bersihkan cache
+settings.storage.downloads = Unduhan
+settings.storage.downloads_usage = {size} di {path}
+settings.storage.downloads_unavailable = Unduhan tidak tersedia.
+settings.storage.download_folder = Folder unduhan
+settings.storage.download_folder_detail = Unduhan tidak pernah dihapus secara otomatis.
+settings.storage.backup = Cadangkan & pulihkan
+settings.storage.export = Ekspor cadangan
+settings.storage.export_detail = Pustaka, playlist, riwayat, dan pengaturan dalam satu zip (tanpa kata sandi atau cookie).
+settings.storage.export_button = Ekspor…
+settings.storage.restore = Pulihkan cadangan
+settings.storage.restore_detail = Mengganti pustaka dan pengaturan; mulai ulang setelahnya.
+settings.storage.restore_button = Pulihkan…
+
+# ---- Settings → Privacy
+settings.privacy.listen_history = Riwayat mendengarkan
+settings.privacy.pause_listen = Jeda riwayat mendengarkan
+settings.privacy.pause_listen_detail = Pemutaran tidak dicatat; Riwayat dan Statistik berhenti bertambah.
+settings.privacy.clear_listen = Hapus riwayat mendengarkan
+settings.privacy.clear_listen_detail = Menghapus setiap pemutaran yang tercatat di komputer ini.
+settings.privacy.clear_button = Hapus…
+settings.privacy.clear_listen_confirm = Setiap pemutaran yang tercatat dihapus; jumlah putar dan statistik dimulai dari awal.
+settings.privacy.search_history = Riwayat pencarian
+settings.privacy.pause_search = Jeda riwayat pencarian
+settings.privacy.pause_search_detail = Pencarian yang Anda kirim tidak diingat.
+settings.privacy.clear_search = Hapus riwayat pencarian
+settings.privacy.clear_search_detail = Melupakan setiap pencarian yang diingat.
+settings.privacy.note = Riwayat tetap berada di database pustaka di komputer ini. Pemutaran tidak pernah dilaporkan ke riwayat akun YouTube Anda.
+
+# ---- Backup / restore
+storage.backup_saved = Cadangan disimpan ke {path}
+storage.backup_failed = Pencadangan gagal: {error}
+storage.restore = Pulihkan
+storage.restore_confirm_title = Pulihkan cadangan ini?
+storage.restore_confirm_detail = Pustaka, playlist, riwayat, dan pengaturan Anda diganti dengan isi cadangan. Akun YouTube Music yang masuk dan rahasia lainnya tetap ada.
+storage.restored_title = Cadangan dipulihkan
+storage.restored_library = Pustaka dipulihkan. Mulai ulang {app} agar semua pengaturan berlaku.
+storage.restored_all = Pustaka dan pengaturan dipulihkan. Mulai ulang {app} agar semua pengaturan berlaku.
+storage.restored_settings_skipped = Pustaka dipulihkan; pengaturan dilewati: {error}. Mulai ulang {app} agar semua pengaturan berlaku.
+storage.restart_later = Nanti
+storage.restart_now = Mulai ulang sekarang
+storage.restore_failed = Pemulihan gagal: {error}
+storage.cache_cleared = Cache putar dibersihkan
+storage.clearing_search = Menghapus riwayat pencarian
+storage.search_cleared = Riwayat pencarian dihapus

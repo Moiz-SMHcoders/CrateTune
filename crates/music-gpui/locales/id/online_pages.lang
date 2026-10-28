@@ -1,0 +1,52 @@
+# ---- Home
+home.recent.title = Diputar di sesi ini
+home.recent.subtitle = Dengarkan lagi
+
+# ---- Explore
+explore.new_releases_detail = Album dan single terbaru
+explore.charts_detail = Yang populer, per negara
+explore.moods_detail = Playlist untuk setiap momen
+
+# ---- Charts
+charts.country_placeholder = Negara
+charts.search_countries = Cari negara…
+charts.empty.title = Tidak ada tangga lagu
+charts.empty.detail = YouTube Music tidak memiliki tangga lagu untuk negara ini.
+
+# ---- Moods & genres
+moods.empty = YouTube Music tidak menampilkan suasana atau genre untuk wilayah ini.
+
+# ---- New releases
+new_releases.subtitle = Album dan single baru
+new_releases.empty.title = Tidak ada yang baru
+new_releases.empty.detail = YouTube Music tidak menampilkan rilis baru untuk wilayah ini.
+
+# ---- Browse pages
+browse.empty = Halaman ini tidak memiliki playlist atau lagu (atau semuanya tersaring).
+
+# ---- Album
+album.empty.title = Tidak ada lagu yang dapat diputar
+album.empty.detail = Album ini tidak memiliki lagu di sini (atau semuanya tersaring).
+
+# ---- Artist
+artist.subscribed = Disubscribe
+artist.subscribe = Subscribe
+artist.subscribe_tooltip = Subscribe di YouTube Music (juga disimpan di pustaka Anda)
+artist.subscribe_tooltip_signed_out = Disimpan di pustaka Anda; masuk untuk subscribe di YouTube Music
+artist.items_empty = Tidak ada rilisan di halaman ini (atau semuanya tersaring).
+
+# ---- Playlist
+playlist.change_cover = Ganti sampul…
+playlist.empty.title = Tidak ada lagu
+playlist.empty.detail = Playlist ini kosong (atau semua lagunya tersaring).
+
+# ---- Podcast / episode
+podcast.episodes.other = {count} episode
+podcast.episodes_more.other = {count}+ episode
+podcast.saved = Tersimpan
+podcast.save = Simpan ke pustaka
+podcast.save_failed = Tidak dapat memperbarui pustaka Anda: {error}
+podcast.open_episode_page = Buka halaman episode
+podcast.go_to_podcast = Buka podcast
+podcast.empty.title = Tidak ada episode
+podcast.empty.detail = Acara ini belum memiliki episode di sini.

@@ -1,0 +1,119 @@
+# ---- Account
+settings.account.cookie_title = Masuk dengan cookie browser
+settings.account.cookie_steps = 1. Buka music.youtube.com di browser Anda dan masuk.\n2. Buka alat pengembang (⌥⌘I di Safari / Chrome) → Network, muat ulang halaman.\n3. Klik permintaan apa pun ke music.youtube.com (misalnya “browse”), cari “Cookie” di bawah Request Headers dan salin seluruh nilainya.\n4. Tempel di bawah. Cookie disimpan di rantai kunci sistem dan hanya dikirim ke YouTube.
+settings.account.cookie_index = Indeks akun Google (jika beberapa akun masuk):
+settings.account.not_signed_in = Belum masuk. Semua fitur berfungsi secara anonim; dengan masuk, lagu yang disukai, album tersimpan, langganan, dan playlist Anda disinkronkan ke pustaka, serta suka dan perubahan playlist dikirim kembali ke YouTube Music.
+settings.account.sign_in_google = Masuk dengan Google…
+settings.account.paste_cookie = Tempel cookie…
+settings.account.google_refused = Jika Google menolak jendela masuk (“Browser atau aplikasi ini mungkin tidak aman”), gunakan “Tempel cookie”.
+settings.account.last_synced = Terakhir disinkronkan {date}
+settings.account.not_synced = Belum disinkronkan
+settings.account.sync_now = Sinkronkan
+settings.account.syncing = Menyinkronkan…
+settings.account.sync_group = Sinkronisasi pustaka
+settings.account.sync_row = Sinkronkan pustaka YouTube Music Anda
+settings.account.sync_row_desc = Lagu yang disukai, lagu pustaka, album tersimpan, langganan, playlist.
+settings.account.accounts_group = Akun
+settings.account.channels = Channel (akun brand) dari akun Google ini:
+settings.account.google_index = Akun Google
+settings.account.google_index_desc = Jika cookie memuat beberapa akun Google: yang mana (0 = pertama).
+settings.account.cookie_note = Masuk menggunakan cookie sesi browser Anda untuk music.youtube.com. Cookie disimpan di rantai kunci sistem dan hanya dikirim ke YouTube. Fitur akun dibuat berdasarkan API web YouTube tetapi belum diverifikasi dengan akun sungguhan.
+
+# ---- About
+settings.about.show_welcome = Tampilkan panduan selamat datang
+settings.about.version_summary = Versi {version} · {summary}
+settings.about.summary = Klien desktop native untuk YouTube Music
+settings.about.not_affiliated = Tidak berafiliasi dengan, didukung, atau disponsori oleh YouTube atau Google.
+settings.about.license = Lisensi
+settings.about.license_notice = Program ini adalah perangkat lunak bebas: Anda dapat mendistribusikan ulang dan/atau memodifikasinya di bawah ketentuan GNU General Public License, versi 3. Program ini didistribusikan TANPA JAMINAN APA PUN; lihat lisensi untuk detailnya.
+settings.about.credits = Kredit
+settings.about.credit.archivetune = Fitur dan layar di-porting dari {project} (GPL-3.0), © Rukamori and contributors. Ini adalah proyek independen.
+settings.about.credit.hummingbird = Ekualiser, kontrol media OS, scrobbling, dan status Discord di-porting dari Hummingbird (Apache-2.0), © Hummingbird contributors.
+settings.about.credit.recognition_title = Pengenalan lagu
+settings.about.credit.recognition = Sidik jari audio yang kompatibel dengan Shazam di-porting dari shazamkit milik {project} (GPL-3.0), yang mengikuti format SongRec. Tidak berafiliasi dengan Shazam atau Apple.
+settings.about.credit.libraries_title = Pustaka perangkat lunak
+settings.about.credit.libraries = GPUI dan gpui-component (Apache-2.0), Symphonia dan rodio, ikon Lucide (ISC), lirik LRCLIB.
+
+# ---- Update check
+update.group = Pembaruan
+update.releases_from = Rilis dari github.com/{repo}
+update.checking = Memeriksa…
+update.up_to_date_version = Anda memiliki versi terbaru ({version}).
+update.available_version = Versi {version} tersedia.
+update.check_failed = Tidak dapat memeriksa: {error}
+update.check_now = Periksa sekarang
+update.download = Unduh…
+update.no_release = tidak ada rilis yang dipublikasikan
+update.available_toast = {app} {version} tersedia (Pengaturan → Tentang)
+update.up_to_date_toast = {app} sudah versi terbaru
+
+# ---- Network
+settings.network.proxy = Proxy
+settings.network.proxy_off = Mati
+settings.network.host = Host
+settings.network.port = Port
+settings.network.user = Nama pengguna
+settings.network.password = Kata sandi
+settings.network.doh_url = URL DoH
+settings.network.host_placeholder = proxy.example.com atau 127.0.0.1
+settings.network.optional = opsional
+settings.network.test_connection = Uji koneksi
+settings.network.test_dns = Uji DNS
+settings.network.using_proxy = Menggunakan {url}
+settings.network.direct = Koneksi langsung (tanpa proxy)
+settings.network.status_with_doh = {proxy} · DNS-over-HTTPS ({server})
+settings.network.testing = Menguji…
+settings.network.test_ok = Terhubung ke YouTube dalam {ms} md
+settings.network.test_failed = Koneksi gagal: {error}
+settings.network.lookup_failed = Pencarian DNS gagal: {error}
+settings.network.looking_up = Mencari…
+settings.network.dns_ok = {host} → {addresses} melalui {via} dalam {ms} md
+settings.network.dns_via_doh = DNS-over-HTTPS
+settings.network.dns_via_cache = DNS-over-HTTPS (cache)
+settings.network.dns_via_system = resolver sistem
+settings.network.proxy_note = Berlaku untuk semuanya: YouTube Music, stream audio, sampul, lirik, dan scrobbling. SOCKS5h menyelesaikan nama host melalui proxy. Kata sandi disimpan di rantai kunci.
+settings.network.dns = DNS
+settings.network.dns_system = Sistem
+settings.network.dns_custom = Kustom
+settings.network.dns_fallback = Beralih ke resolver sistem jika DoH gagal
+settings.network.dns_note = DNS-over-HTTPS (RFC 8484) mencari nama host melalui koneksi HTTPS terenkripsi, bukan DNS biasa. Jawaban di-cache selama TTL-nya. Dengan proxy SOCKS5h, proxy menyelesaikan nama sendiri. Quad9 dijangkau melalui port HTTP/1.1 5053, yang diblokir oleh sebagian jaringan.
+settings.network.error.port_number = Port harus berupa angka (1–65535).
+settings.network.error.doh_invalid = URL DNS-over-HTTPS tidak valid.
+settings.network.error.proxy_invalid = Alamat proxy tidak valid untuk jenis proxy ini.
+settings.network.error.doh_https = URL DNS-over-HTTPS harus diawali dengan https://.
+settings.network.error.doh_invalid_detail = URL DNS-over-HTTPS tidak valid: {error}.
+settings.network.error.host_missing = Masukkan host proxy.
+settings.network.error.host_invalid = Host harus berupa nama atau alamat saja (tanpa skema, path, atau spasi).
+settings.network.error.port_missing = Masukkan port antara 1 dan 65535.
+settings.network.error.socks4_auth = SOCKS4 tidak mendukung kata sandi; kosongkan nama pengguna.
+
+# ---- Settings panel
+settings.panel.placeholder.api_key = Kunci API
+settings.panel.placeholder.shared_secret = Rahasia bersama
+settings.panel.placeholder.user_token = Token pengguna
+settings.panel.placeholder.application_id = ID aplikasi
+settings.panel.lastfm_missing = Masukkan kunci API dan rahasia bersama terlebih dahulu.
+settings.panel.lastfm_requesting = Meminta token…
+settings.panel.lastfm_finishing = Menyelesaikan…
+settings.panel.lb_missing = Tempel token pengguna Anda terlebih dahulu.
+settings.panel.secrets.backend_and_file = {backend} + file pengaturan (0600)
+settings.panel.secrets.file_keychain_disabled = file pengaturan (0600; rantai kunci dinonaktifkan)
+settings.panel.secrets.file_keychain_read_failed = file pengaturan (0600; gagal membaca rantai kunci)
+settings.panel.secrets.file_keychain_unavailable = file pengaturan (0600; rantai kunci tidak tersedia)
+
+# ---- Credential stores
+secrets.backend.macos = Rantai Kunci macOS
+secrets.backend.windows = Pengelola Kredensial Windows
+secrets.backend.secret_service = Secret Service
+
+# ---- Settings file problems
+settings.file.no_config_dir = tidak ada direktori konfigurasi; pengaturan tidak disimpan
+settings.file.save_failed = gagal menyimpan: {error}
+settings.file.read_failed = membaca {path}: {error}
+settings.file.invalid_moved = {path} tidak valid ({error}); dipindahkan ke {backup}
+
+# ---- Google sign-in window
+login.window_title = Masuk ke YouTube Music
+login.instructions = Masuk dengan akun Google Anda. Jendela ini tertutup setelah YouTube Music terbuka.
+login.webview_failed = Tampilan web tidak dapat dibuat ({error}). Gunakan “Tempel cookie” sebagai gantinya.
+login.checking = Sudah masuk — memeriksa akun…

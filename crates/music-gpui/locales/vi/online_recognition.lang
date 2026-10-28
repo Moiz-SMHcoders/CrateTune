@@ -1,0 +1,42 @@
+recognition.title = Nhận dạng nhạc
+recognition.subtitle = Nhận dạng bài hát đang phát quanh bạn (⇧⌘R)
+
+recognition.idle.title = Nhấn để nhận dạng bài hát
+recognition.idle.detail = Phát bài hát gần máy tính; ứng dụng sẽ nghe qua micrô trong khoảng 10 giây.
+recognition.permission.title = Đang chờ quyền truy cập micrô…
+recognition.permission.detail = Cho phép truy cập trong hộp thoại của hệ thống.
+recognition.listening = Đang nghe…
+recognition.listening_progress = {elapsed} / {length} giây
+recognition.identifying.title = Đang nhận dạng…
+recognition.identifying.detail = Đang so khớp bản ghi âm.
+recognition.failed = Không thể nhận dạng
+recognition.open_privacy_settings = Mở cài đặt quyền riêng tư
+
+recognition.mic.restricted = Quyền truy cập micrô bị hạn chế trên máy tính này.
+recognition.mic.undetermined = Chưa cấp quyền truy cập micrô. Hãy thử lại và cho phép khi được hỏi.
+recognition.mic.denied = Quyền truy cập micrô của {app} đang tắt. Hãy cho phép trong Cài đặt hệ thống → Quyền riêng tư & Bảo mật → Micrô.
+recognition.error.no_microphone = Không tìm thấy micrô
+recognition.error.permission_denied = Quyền truy cập micrô bị từ chối
+recognition.error.silent = Micrô chỉ thu được im lặng (đã cho phép truy cập micrô chưa?)
+recognition.error.capture = Ghi âm thất bại: {error}
+recognition.error.cancelled = Đã hủy
+recognition.error.no_signature = Không nghe thấy nhạc
+recognition.error.no_match = Không tìm thấy kết quả khớp
+recognition.error.rate_limited = Quá nhiều yêu cầu — hãy thử lại sau một phút
+recognition.error.service = Lỗi dịch vụ nhận dạng (HTTP {status})
+recognition.error.network = Lỗi mạng: {error}
+recognition.error.parse = Phản hồi không mong đợi: {error}
+
+recognition.result.recognized = Đã nhận dạng
+recognition.result.from_history = Từ lịch sử nhận dạng của bạn
+recognition.match.title = Trên YouTube Music
+recognition.match.searching = Đang tìm trên YouTube Music…
+recognition.match.failed = Tìm kiếm trên YouTube Music thất bại: {error}
+recognition.match.none = Không tìm thấy trên YouTube Music.
+
+recognition.history.title = Lịch sử
+recognition.history.empty.title = Chưa nhận dạng bài nào
+recognition.history.empty.detail = Các bài hát bạn nhận dạng sẽ hiện ở đây, mới nhất ở trên cùng.
+recognition.history.clear_title = Xóa lịch sử nhận dạng?
+recognition.history.clear_detail = Danh sách bài hát đã nhận dạng sẽ bị xóa.
+recognition.history.remove = Xóa khỏi lịch sử

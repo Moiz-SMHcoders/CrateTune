@@ -1,0 +1,54 @@
+# ---- Step titles
+onboarding.step.welcome = Selamat datang
+onboarding.step.content = Bahasa & wilayah
+onboarding.step.theme = Tampilan
+onboarding.step.account = Akun YouTube Music
+onboarding.step.local_files = Musik di komputer ini
+onboarding.step.privacy = Privasi & batasan
+onboarding.welcome_title = Selamat datang di {app}
+onboarding.step_of = Langkah {step} dari {total}
+
+# ---- Step subtitles
+onboarding.subtitle.welcome = Pemutar native yang cepat untuk YouTube Music: jelajahi dan cari, lirik yang mengikuti lagu, pustaka dengan riwayat dan statistik, file musik Anda sendiri, serta pengenalan lagu. Cukup beberapa pilihan dan Anda siap — semuanya bisa diubah nanti di Pengaturan.
+onboarding.subtitle.content = Bahasa yang digunakan YouTube Music untuk judul dan rekomendasi, serta tangga lagu dan rilisan negara mana yang Anda lihat.
+onboarding.subtitle.theme = Pilih tema dan ukuran teks.
+onboarding.subtitle.account = Opsional. Dengan masuk, Anda mendapatkan lagu yang disukai, pustaka, playlist, dan rekomendasi pribadi. Semua fitur lain berfungsi tanpa akun.
+onboarding.subtitle.local_files = Opsional. Tambahkan folder berisi file musik; folder dipindai ke pustaka Anda dan diputar bersama YouTube Music.
+onboarding.subtitle.privacy = Yang perlu diketahui sebelum memulai.
+
+# ---- Footer buttons
+onboarding.skip = Lewati penyiapan
+onboarding.get_started = Mulai
+onboarding.finish = Selesai
+onboarding.next_or_skip = Berikutnya (atau lewati)
+
+# ---- Welcome step
+onboarding.feature.browse.title = Jelajahi & cari
+onboarding.feature.browse.text = Beranda, tangga lagu, suasana, rilis baru, artis, album, dan playlist.
+onboarding.feature.lyrics.title = Lirik
+onboarding.feature.lyrics.text = Lirik yang disinkronkan per kata dari banyak penyedia, dengan terjemahan dan romanisasi.
+onboarding.feature.library.title = Pustaka
+onboarding.feature.library.text = Lagu yang disukai, playlist, riwayat mendengarkan, statistik, dan unduhan — disimpan di komputer ini.
+onboarding.feature.recognize.title = Kenali musik
+onboarding.feature.recognize.text = Kenali lagu yang diputar di sekitar Anda (⇧⌘R) dan langsung putar.
+
+# ---- Look step
+onboarding.theme.group = Tema
+onboarding.theme.dynamic_note = Dinamis mengambil warna aksen dari sampul lagu yang sedang diputar.
+onboarding.theme.text_size = Ukuran teks
+
+# ---- Music on this computer step
+onboarding.local.group = Folder musik
+onboarding.local.empty = Belum ada folder.
+onboarding.local.add = Tambah folder…
+onboarding.local.note = Pindai folder sekarang atau nanti; kelola di File lokal.
+
+# ---- Privacy & limitations step
+onboarding.privacy.streaming.title = Cara lagu di-streaming
+onboarding.privacy.streaming.text = Lagu lengkap berasal dari klien TV YouTube atau klien web-nya dengan PoToken (token anti-penyalahgunaan, dibuat di tampilan browser tersembunyi di macOS). YouTube membuat stream baru menunggu beberapa detik; sementara itu aplikasi memulai dari pratinjau singkat. Jika YouTube mengubah sesuatu, lagu kembali ke pratinjau ~1 menit (ditandai di pemutar). Pengaturan → Pemutaran → Stream YouTube memilih jalurnya.
+onboarding.privacy.data.title = Data Anda tetap di sini
+onboarding.privacy.data.text = Pustaka, riwayat, statistik, dan pengaturan disimpan di komputer ini. Kata sandi, kunci API, dan cookie masuk YouTube disimpan di rantai kunci sistem. Jeda atau hapus riwayat mendengarkan dan pencarian kapan saja di Pengaturan → Privasi.
+onboarding.privacy.recipients.title = Siapa menerima apa
+onboarding.privacy.recipients.text = YouTube Music menerima pencarian dan pemutaran Anda (serta cookie akun Anda saat masuk). Penyedia lirik menerima judul lagu. Pengenalan lagu mengirim sidik jari audio — bukan rekamannya — ke Shazam. Scrobbling dan Discord hanya berjalan jika Anda menyiapkannya.
+onboarding.privacy.independent.title = Proyek independen
+onboarding.privacy.independent.text = Tidak berafiliasi dengan YouTube, Google, atau Shazam. Perangkat lunak bebas di bawah GPL-3.0.

@@ -1,0 +1,204 @@
+# ---- Page titles
+route.search = Tìm kiếm
+route.search_query = Tìm kiếm: {query}
+route.library = Thư viện · {tab}
+route.year_in_music = Năm {year} qua âm nhạc
+route.recognition = Nhận dạng nhạc
+route.settings = Cài đặt · {section}
+route.library_tab.songs = Bài hát
+route.library_tab.liked = Đã thích
+route.library_tab.albums = Album
+route.library_tab.artists = Nghệ sĩ
+route.library_tab.playlists = Danh sách phát
+route.library_tab.podcasts = Podcast
+route.library_tab.downloaded = Đã tải xuống
+route.library_tab.local = Tệp cục bộ
+
+# ---- Themes
+theme.dark = Tối
+theme.black = Đen thuần
+theme.dynamic = Động
+
+# ---- Player bar
+player.pick_a_song = Chọn một bài hát để bắt đầu
+player.audio_unavailable = Âm thanh không khả dụng: {error}
+player.buffering = Đang đệm…
+player.play_failed_skipped = Không thể phát “{title}”, đã bỏ qua
+player.preview_badge = Xem trước
+player.tooltip.shuffle_on = Trộn bài: bật
+player.tooltip.shuffle_off = Trộn bài: tắt
+player.tooltip.previous = Bài trước (⌘←, phát lại từ đầu sau 3 giây)
+player.tooltip.next = Tiếp theo (⌘→)
+player.tooltip.repeat_off = Lặp lại: tắt
+player.tooltip.repeat_all = Lặp lại: tất cả
+player.tooltip.repeat_one = Lặp lại: một bài
+player.tooltip.volume = Âm lượng {percent}% (⌘↑ / ⌘↓)
+player.tooltip.queue = Danh sách chờ (⌥⌘Q)
+player.tooltip.mini_player = Trình phát mini (⇧⌘M)
+player.tooltip.now_playing = Đang phát & lời bài hát (⌘L)
+
+# ---- Sleep timer
+player.sleep.title = Hẹn giờ ngủ
+player.sleep.minutes.other = {count} phút
+player.sleep.end_of_track = Hết bài hát
+player.sleep.custom = Tùy chỉnh: {minutes} phút
+player.sleep.turn_off = Tắt
+player.sleep.left = Còn {time}
+
+# ---- Queue
+queue.toast.play_next_one = “{title}” sẽ phát tiếp theo
+queue.toast.play_next_many.other = {count} bài hát sẽ phát tiếp theo
+queue.toast.added_one = Đã thêm “{title}” vào danh sách chờ
+queue.toast.added_many.other = Đã thêm {count} bài hát vào danh sách chờ
+queue.section.now_playing = ĐANG PHÁT
+queue.section.up_next = TIẾP THEO · {count}
+queue.section.history = LỊCH SỬ
+queue.nothing_playing = Không có gì đang phát
+queue.empty.repeat_all = Lặp lại tất cả: danh sách chờ sẽ phát lại từ đầu.
+queue.empty.hint = Thêm bài hát bằng “Phát tiếp theo” hoặc “Thêm vào danh sách chờ”.
+queue.tooltip.clear_up_next = Xóa phần tiếp theo
+queue.tooltip.close = Đóng (Esc)
+queue.tooltip.move_up = Chuyển lên
+queue.tooltip.move_down = Chuyển xuống
+
+# ---- Song rows and the song context menu
+track.tooltip.more = Thêm
+track.explicit_badge = E
+track.menu.go_to_podcast = Đến podcast
+track.menu.go_to_named_artist = Đến {artist}
+
+# ---- Item cards, rows, shelves
+items.load_failed = Không thể tải trang này
+items.loading_more = Đang tải thêm…
+
+# ---- "Add to playlist" / "New playlist" dialog
+playlist_dialog.name_placeholder = Tên danh sách phát mới
+playlist_dialog.title_new = Danh sách phát mới
+playlist_dialog.title_add_one = Thêm “{title}” vào danh sách phát
+playlist_dialog.title_add_many.other = Thêm {count} bài hát vào danh sách phát
+playlist_dialog.create = Tạo
+playlist_dialog.also_on_youtube = Đồng thời tạo trên YouTube Music (riêng tư)
+playlist_dialog.youtube_songs.other = YouTube Music · {count} bài hát
+playlist_dialog.empty = Chưa có danh sách phát nào — hãy tạo ở trên.
+
+# ---- Mini player window
+mini.window_title = Trình phát mini
+mini.tooltip.show_main = Hiện cửa sổ chính
+
+# ---- Header search field
+app.search_placeholder = Tìm bài hát, nghệ sĩ, album
+search_box.recent = Tìm kiếm gần đây
+search_box.loading_suggestions = Đang tải gợi ý…
+
+# ---- Main window
+app.window_title = {page} — {app}
+app.audio_demo_clock = {error} (đang dùng đồng hồ demo)
+app.tooltip.back = Quay lại (⌘[)
+app.tooltip.forward = Tiến tới (⌘])
+
+# ---- YouTube Music account
+account.cookie_invalid = Cookie này không có mục SAPISID / __Secure-3PAPISID; hãy sao chép toàn bộ header cookie của một yêu cầu music.youtube.com đã đăng nhập.
+account.checking = Đang kiểm tra tài khoản…
+account.toast.signed_in = Đã đăng nhập với tên {name}
+account.sign_in_failed = Đăng nhập thất bại: {error}
+account.toast.signed_out = Đã đăng xuất khỏi YouTube Music
+account.unreachable = Không thể kết nối tới tài khoản: {error}
+account.switching = Đang chuyển…
+account.toast.switched = Đang dùng {name}
+account.switch_failed = Chuyển thất bại: {error}
+account.sign_in_first = Hãy đăng nhập YouTube Music trước.
+account.action.subscribing = Đăng ký
+account.toast.subscribed = Đã đăng ký {artist}
+account.toast.unsubscribed = Đã hủy đăng ký {artist}
+account.sync.starting = Đang bắt đầu…
+account.sync.step.liked = Bài hát đã thích…
+account.sync.step.songs = Bài hát trong thư viện…
+account.sync.step.albums = Album…
+account.sync.step.artists = Nghệ sĩ…
+account.sync.step.playlists = Danh sách phát…
+account.sync.step.playlist = Danh sách phát {current}/{total}: {title}
+account.sync.summary = {liked}, {songs}, {albums}, {artists}, {playlists}
+account.sync.liked.other = {count} bài hát đã thích
+account.sync.songs.other = {count} bài hát trong thư viện
+account.sync.albums.other = {count} album
+account.sync.artists.other = {count} nghệ sĩ
+account.sync.playlists.other = {count} danh sách phát
+account.toast.synced = Đồng bộ YouTube Music: {summary}
+account.sync.failed = {summary}. Lỗi: {errors}
+account.sync.error = {part}: {error}
+account.sync.part.liked = bài hát đã thích
+account.sync.part.songs = bài hát trong thư viện
+account.sync.part.albums = album
+account.sync.part.artists = nghệ sĩ
+account.sync.part.playlists = danh sách phát
+account.sync.part.playlist = danh sách phát “{title}”
+account.sync.part.removing_playlist = xóa một danh sách phát
+
+# ---- Library database, likes, playlists, downloads (toasts)
+store.library_unavailable = Thư viện không khả dụng: {error}
+store.no_data_dir = Không có thư mục dữ liệu; thư viện không khả dụng.
+store.library_db_unavailable = Cơ sở dữ liệu thư viện không khả dụng.
+store.toast.action_failed = {action} thất bại: {error}
+store.action.saving_like = Lưu lượt thích
+store.action.removing_from_library = Xóa khỏi thư viện
+store.action.adding_to_playlist = Thêm vào danh sách phát
+store.action.creating_playlist = Tạo danh sách phát
+store.toast.liked_one = Đã thích “{title}”
+store.toast.unliked_one = Đã xóa “{title}” khỏi bài hát đã thích
+store.toast.liked_many.other = Đã thích {count} bài hát
+store.toast.unliked_many.other = Đã xóa {count} bài hát khỏi bài hát đã thích
+store.toast.only_locally = {message} (chỉ trên máy; YouTube Music: {error})
+store.toast.removed_from_library.other = Đã xóa {count} bài hát khỏi thư viện
+store.toast.added_to_playlist.other = Đã thêm {count} bài hát vào “{playlist}”
+store.toast.remote_error = {message} (YouTube Music: {error})
+store.playlist_name_missing = Hãy đặt tên cho danh sách phát.
+store.toast.playlist_created = Đã tạo “{playlist}”
+store.toast.playlist_created_with.other = Đã tạo “{playlist}” với {count} bài hát
+store.downloads_unavailable = Tính năng tải xuống không khả dụng.
+store.toast.downloading_one = Đang tải xuống “{title}”
+store.toast.downloading_many.other = Đang tải xuống {count} bài hát
+store.toast.delete_download_failed = Xóa bản tải xuống thất bại: {error}
+
+# ---- Local music folder scan
+store.add_music_folder_first = Hãy thêm thư mục nhạc trước.
+store.scan.summary = {files}: {added} mới, {updated} đã cập nhật, {unchanged} không đổi, {removed} đã xóa
+store.scan.files.other = {count} tệp
+store.scan.with_extra = {summary}, {extra}
+store.scan.too_short.other = {count} quá ngắn
+store.scan.unreadable.other = {count} không đọc được
+store.toast.scan_finished = Quét xong: {summary}
+store.toast.scan_failed = Quét thất bại: {error}
+
+# ---- Playlist cover upload
+playlist_cover.read_failed = Không thể đọc ảnh: {error}
+playlist_cover.not_an_image = Tệp này không phải ảnh mà ứng dụng đọc được (JPEG, PNG hoặc WebP).
+playlist_cover.too_large = Ảnh quá lớn (hơn 40 megapixel).
+playlist_cover.decode_failed = Không thể giải mã ảnh: {error}
+playlist_cover.encode_failed = Không thể mã hóa ảnh bìa: {error}
+playlist_cover.still_too_large = Ảnh bìa vẫn lớn hơn 2 MiB sau khi nén.
+playlist_cover.sign_in = Đăng nhập YouTube Music để đổi ảnh bìa danh sách phát.
+playlist_cover.pick_prompt = Dùng làm ảnh bìa
+playlist_cover.uploading = Đang tải ảnh bìa lên…
+playlist_cover.changed = Đã đổi ảnh bìa danh sách phát
+playlist_cover.change_failed = Không thể đổi ảnh bìa: {error}
+
+# ---- Radio and collection playback
+radio.toast.starting_from = Bắt đầu radio từ “{title}”
+radio.toast.starting = Bắt đầu radio: {name}
+radio.playlist_label = danh sách phát
+radio.nothing_to_play = Không có gì để phát ở đây.
+radio.load_failed = Không thể tải: {error}
+
+# ---- Lyrics
+lyrics.no_cache_dir = Không có thư mục bộ nhớ đệm
+
+# ---- Playlist editing
+store.action.renaming_playlist = Đổi tên danh sách phát
+store.action.deleting_playlist = Xóa danh sách phát
+store.action.removing_from_playlist = Xóa khỏi danh sách phát
+store.action.moving_song = Di chuyển bài hát
+store.action.refreshing_playlist = Làm mới danh sách phát
+store.toast.playlist_renamed = Đã đổi tên thành “{playlist}”
+store.toast.playlist_deleted = Đã xóa “{playlist}”
+store.toast.removed_from_playlist.other = Đã xóa {count} bài hát khỏi danh sách phát
+store.toast.playlist_refreshed.other = Đã làm mới danh sách phát ({count} bài hát)

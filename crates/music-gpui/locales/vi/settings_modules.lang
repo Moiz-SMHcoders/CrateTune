@@ -1,0 +1,129 @@
+# ---- Playback source
+modules.source.group = Nguồn phát
+modules.source.youtube = Chỉ YouTube
+modules.source.first = Ưu tiên mô-đun, sau đó YouTube
+modules.source.only = Chỉ mô-đun
+modules.source_note.youtube = Bài hát được phát từ YouTube; các mô-đun đã cài không được dùng.
+modules.source_note.first.other = Mỗi bài hát được tìm trong {count} mô-đun đang bật, từ trên xuống dưới; kết quả phù hợp đầu tiên sẽ được phát, nếu không thì dùng YouTube.
+modules.source_note.only.other = Bài hát chỉ được phát từ {count} mô-đun đang bật; bài nào không mô-đun nào khớp sẽ thất bại (và bị bỏ qua khi bật “Bỏ qua bài không tải được”).
+modules.source.note = Mô-đun cung cấp âm thanh cho bài hát bạn phát; tiêu đề, nghệ sĩ và thư viện của bạn vẫn giữ nguyên. Thanh trình phát và Đang phát cho biết âm thanh đến từ đâu. Tải xuống cũng dùng cùng thứ tự này.
+
+# ---- Unavailable
+modules.unavailable = Mô-đun không khả dụng.
+modules.no_data_dir = Không có thư mục dữ liệu; mô-đun không khả dụng.
+modules.unavailable_error = Mô-đun không khả dụng: {error}
+
+# ---- Add a module
+modules.add.group = Thêm mô-đun
+modules.add.from_file = Cài từ tệp…
+modules.add.from_file_note = Gói .arch từ ổ đĩa của bạn.
+modules.add.from_url = Cài từ URL
+modules.add.catalog = Thêm danh mục
+modules.add.note = Các gói được kiểm tra (định dạng, checksum, cài đặt, hàm được xuất) trước khi bạn xác nhận. Không có mô-đun hay danh mục nào được cài sẵn: mô-đun đến từ tác giả của chúng và chạy trong sandbox (không truy cập tệp, mạng đi qua proxy của ứng dụng).
+modules.url_missing = Hãy nhập URL của gói .arch, tệp mô tả hoặc danh mục.
+modules.catalog_url_missing = Hãy nhập URL danh mục.
+
+# ---- Progress lines
+modules.busy.saving = Đang lưu…
+modules.busy.saving_catalog = Đang lưu danh mục…
+modules.busy.checking_package = Đang kiểm tra gói…
+modules.busy.reading_catalog = Đang đọc danh mục…
+modules.busy.installing = Đang cài đặt…
+modules.busy.removing = Đang xóa…
+modules.busy.checking = Đang kiểm tra…
+modules.busy.checking_update = Đang kiểm tra bản cập nhật…
+modules.busy.loading_settings = Đang tải cài đặt…
+modules.busy.saving_settings = Đang lưu cài đặt…
+modules.busy.refreshing = Đang làm mới…
+
+# ---- Results
+modules.catalog_added.other = Đã thêm danh mục “{name}” ({count} mục).
+modules.installed_needs_setup = Đã cài {name}. Hãy điền cài đặt của nó rồi nhấn Lưu.
+modules.installed = Đã cài {name}.
+modules.removed = Đã xóa mô-đun.
+modules.update_available = Đã có phiên bản {version}.
+modules.up_to_date = Đã là bản mới nhất.
+modules.update_from_file = Được cài từ tệp: hãy nhập gói mới để cập nhật.
+modules.settings_read_failed = Không thể đọc cài đặt của mô-đun này.
+modules.settings_saved = Đã lưu cài đặt.
+modules.catalog_refreshed = Đã làm mới danh mục.
+modules.diagnostics_copied = Đã sao chép chẩn đoán.
+
+# ---- Review card
+modules.review.group = Xem lại
+modules.review.replaces = Cập nhật phiên bản đã cài {version}; cài đặt của nó được giữ nguyên.
+modules.review.new = Cài đặt mới, được thêm vào cuối thứ tự phát.
+modules.review.needs = Cần: {settings}.
+modules.review.homepage = Trang chủ: {url}
+modules.review.license = Giấy phép: {license}
+modules.review.sha256 = SHA-256 của gói {hash}
+
+# ---- Installed modules
+modules.installed_group = Đã cài ({count})
+modules.nothing_installed = Chưa cài gì.
+modules.action.settings = Cài đặt
+modules.action.check = Kiểm tra
+modules.action.check_update = Kiểm tra cập nhật
+modules.action.uninstall = Gỡ cài đặt
+modules.action.confirm_remove = Xóa — chắc chưa?
+modules.action.higher = Ưu tiên cao hơn
+modules.action.lower = Ưu tiên thấp hơn
+modules.needs_configuration = Cần cấu hình: {settings}
+modules.settings_heading = Cài đặt
+modules.no_settings = Mô-đun này không có cài đặt.
+modules.field.placeholder_required = bắt buộc
+modules.field.placeholder_optional = không bắt buộc
+modules.field.not_a_number = {field} phải là một số.
+modules.field.required = {field} là bắt buộc.
+modules.field.invalid = {field} có giá trị không hợp lệ.
+
+# ---- Diagnostics
+modules.diagnostics = Chẩn đoán
+modules.diagnostic_line = {label} {when}: {summary}
+modules.diagnostic_track = {line} — {track}
+modules.diag.last_song = Bài gần nhất
+modules.diag.check = Kiểm tra
+modules.diag.playback = Phát
+modules.diag.not_checked = Chưa kiểm tra.
+modules.diag.not_used = Chưa được dùng cho bài hát nào.
+modules.installed_line_file = Đã cài {when} · gói {hash} · từ tệp
+modules.installed_line_url = Đã cài {when} · gói {hash} · từ {url}
+modules.log_empty = Nhật ký trống.
+modules.copy_diagnostics = Sao chép chẩn đoán
+modules.clear_log = Xóa nhật ký
+
+modules.status.ready = Sẵn sàng
+modules.status.configuration = Cần cấu hình
+modules.status.unavailable = Dịch vụ không khả dụng
+modules.status.failed = Thất bại
+modules.status.no_results = Không có kết quả
+modules.status.no_match = Không có kết quả phù hợp ({reason})
+modules.status.resolved = Đã tìm thấy
+modules.status.timeout = Hết thời gian chờ
+modules.rejection.metadata = siêu dữ liệu
+modules.rejection.title = tiêu đề
+modules.rejection.artist = nghệ sĩ
+modules.rejection.recording = bản thu
+modules.rejection.duration = thời lượng
+modules.rejection.explicit = nội dung nhạy cảm
+modules.phase.search = khi tìm kiếm
+modules.phase.match = khi so khớp
+modules.phase.stream = khi phát luồng
+modules.candidates.other = {count} ứng viên
+modules.elapsed_ms = {ms} ms
+
+modules.failure.invalid_document = Tài liệu mô-đun không hợp lệ
+modules.failure.unsupported = Ứng dụng này không hỗ trợ
+modules.failure.invalid_configuration = Cài đặt mô-đun chưa đầy đủ hoặc không hợp lệ
+modules.failure.network = Lỗi mạng
+modules.failure.timeout = Hết thời gian chờ
+modules.failure.execution = Mô-đun gặp lỗi
+modules.failure.integrity = Checksum không khớp
+modules.error_with_code = {error} ({code})
+
+# ---- Catalogs
+modules.catalogs = Danh mục
+modules.catalog_line.other = {url} · {count} mục · làm mới {when}
+modules.remove_catalog = Xóa danh mục
+modules.entry.installed = Đã cài
+modules.entry.not_a_module = Không phải mô-đun

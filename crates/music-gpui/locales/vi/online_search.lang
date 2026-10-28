@@ -1,0 +1,33 @@
+search.title = Tìm kiếm
+search.query_title = “{query}”
+search.searching = Đang tìm…
+
+search.tab.all = Tất cả
+search.tab.songs = Bài hát
+search.tab.videos = Video
+search.tab.albums = Album
+search.tab.artists = Nghệ sĩ
+search.tab.community_playlists = Danh sách phát cộng đồng
+search.tab.featured_playlists = Danh sách phát nổi bật
+search.tab.podcasts = Podcast
+search.tab.episodes = Tập
+
+search.tab_empty.songs = Không có bài hát
+search.tab_empty.videos = Không có video
+search.tab_empty.albums = Không có album
+search.tab_empty.artists = Không có nghệ sĩ
+search.tab_empty.community_playlists = Không có danh sách phát cộng đồng
+search.tab_empty.featured_playlists = Không có danh sách phát nổi bật
+search.tab_empty.podcasts = Không có podcast
+search.tab_empty.episodes = Không có tập nào
+search.tab_empty.detail = Hãy thử danh mục hoặc tìm kiếm khác.
+
+search.correction.applied = Đang hiện kết quả cho {corrected} · Tìm {original} thay thế
+search.correction.suggested = Có phải bạn muốn tìm {corrected}?
+
+search.top_result = Kết quả hàng đầu
+search.empty.title = Không có kết quả
+search.empty.detail = Hãy thử tìm kiếm khác hoặc kiểm tra chính tả.
+
+search.start.title = Tìm kiếm trên YouTube Music
+search.start.detail = Nhập bài hát, nghệ sĩ, album hoặc danh sách phát vào ô tìm kiếm (⌘F) rồi nhấn Enter.

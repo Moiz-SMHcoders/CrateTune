@@ -1,0 +1,52 @@
+# ---- Home
+home.recent.title = Đã phát trong phiên này
+home.recent.subtitle = Nghe lại
+
+# ---- Explore
+explore.new_releases_detail = Album và đĩa đơn mới nhất
+explore.charts_detail = Nhạc thịnh hành theo quốc gia
+explore.moods_detail = Danh sách phát cho mọi khoảnh khắc
+
+# ---- Charts
+charts.country_placeholder = Quốc gia
+charts.search_countries = Tìm quốc gia…
+charts.empty.title = Không có bảng xếp hạng
+charts.empty.detail = YouTube Music không có bảng xếp hạng cho quốc gia này.
+
+# ---- Moods & genres
+moods.empty = YouTube Music không trả về tâm trạng hay thể loại nào cho khu vực này.
+
+# ---- New releases
+new_releases.subtitle = Album và đĩa đơn mới
+new_releases.empty.title = Chưa có gì mới
+new_releases.empty.detail = YouTube Music không trả về bản phát hành mới nào cho khu vực này.
+
+# ---- Browse pages
+browse.empty = Trang này không có danh sách phát hay bài hát nào (hoặc tất cả đã bị lọc).
+
+# ---- Album
+album.empty.title = Không có bài hát phát được
+album.empty.detail = Album này không có bài hát nào ở đây (hoặc tất cả đã bị lọc).
+
+# ---- Artist
+artist.subscribed = Đã đăng ký
+artist.subscribe = Đăng ký
+artist.subscribe_tooltip = Đăng ký trên YouTube Music (cũng được lưu vào thư viện của bạn)
+artist.subscribe_tooltip_signed_out = Đã lưu vào thư viện; đăng nhập để đăng ký trên YouTube Music
+artist.items_empty = Không có bản phát hành nào trên trang này (hoặc tất cả đã bị lọc).
+
+# ---- Playlist
+playlist.change_cover = Đổi ảnh bìa…
+playlist.empty.title = Không có bài hát
+playlist.empty.detail = Danh sách phát này trống (hoặc tất cả bài hát đã bị lọc).
+
+# ---- Podcast / episode
+podcast.episodes.other = {count} tập
+podcast.episodes_more.other = {count}+ tập
+podcast.saved = Đã lưu
+podcast.save = Lưu vào thư viện
+podcast.save_failed = Không thể cập nhật thư viện: {error}
+podcast.open_episode_page = Mở trang tập
+podcast.go_to_podcast = Đến podcast
+podcast.empty.title = Không có tập nào
+podcast.empty.detail = Chương trình này chưa có tập nào ở đây.

@@ -1,0 +1,54 @@
+# ---- Step titles
+onboarding.step.welcome = Chào mừng
+onboarding.step.content = Ngôn ngữ & khu vực
+onboarding.step.theme = Giao diện
+onboarding.step.account = Tài khoản YouTube Music
+onboarding.step.local_files = Nhạc trên máy tính này
+onboarding.step.privacy = Quyền riêng tư & giới hạn
+onboarding.welcome_title = Chào mừng đến với {app}
+onboarding.step_of = Bước {step} / {total}
+
+# ---- Step subtitles
+onboarding.subtitle.welcome = Trình phát gốc, nhanh cho YouTube Music: duyệt và tìm kiếm, lời bài hát chạy theo nhạc, thư viện có lịch sử và thống kê, tệp nhạc của riêng bạn và nhận dạng bài hát. Chỉ vài lựa chọn là xong — mọi thứ ở đây đều có thể thay đổi sau trong Cài đặt.
+onboarding.subtitle.content = YouTube Music dùng ngôn ngữ nào cho tiêu đề và đề xuất, và bạn xem bảng xếp hạng cũng như bản phát hành của quốc gia nào.
+onboarding.subtitle.theme = Chọn chủ đề và cỡ chữ.
+onboarding.subtitle.account = Không bắt buộc. Đăng nhập để có bài hát đã thích, thư viện, danh sách phát và đề xuất dành riêng cho bạn. Mọi thứ khác đều hoạt động mà không cần tài khoản.
+onboarding.subtitle.local_files = Không bắt buộc. Thêm thư mục chứa tệp nhạc; chúng sẽ được quét vào thư viện và phát cùng với YouTube Music.
+onboarding.subtitle.privacy = Những điều cần biết trước khi bắt đầu.
+
+# ---- Footer buttons
+onboarding.skip = Bỏ qua thiết lập
+onboarding.get_started = Bắt đầu
+onboarding.finish = Hoàn tất
+onboarding.next_or_skip = Tiếp (hoặc bỏ qua)
+
+# ---- Welcome step
+onboarding.feature.browse.title = Duyệt & tìm kiếm
+onboarding.feature.browse.text = Trang chủ, bảng xếp hạng, tâm trạng, nhạc mới, nghệ sĩ, album và danh sách phát.
+onboarding.feature.lyrics.title = Lời bài hát
+onboarding.feature.lyrics.text = Lời bài hát đồng bộ theo từng từ từ nhiều nhà cung cấp, kèm bản dịch và phiên âm Latinh.
+onboarding.feature.library.title = Thư viện
+onboarding.feature.library.text = Bài hát đã thích, danh sách phát, lịch sử nghe, thống kê và bản tải xuống — lưu trên máy tính này.
+onboarding.feature.recognize.title = Nhận dạng nhạc
+onboarding.feature.recognize.text = Nhận dạng bài hát đang phát quanh bạn (⇧⌘R) và phát ngay.
+
+# ---- Look step
+onboarding.theme.group = Chủ đề
+onboarding.theme.dynamic_note = Chủ đề Động lấy màu nhấn từ ảnh bìa của bài hát đang phát.
+onboarding.theme.text_size = Cỡ chữ
+
+# ---- Music on this computer step
+onboarding.local.group = Thư mục nhạc
+onboarding.local.empty = Chưa có thư mục nào.
+onboarding.local.add = Thêm thư mục…
+onboarding.local.note = Quét thư mục ngay hoặc để sau; quản lý chúng trong Tệp cục bộ.
+
+# ---- Privacy & limitations step
+onboarding.privacy.streaming.title = Cách bài hát được phát trực tuyến
+onboarding.privacy.streaming.text = Bài hát đầy đủ đến từ ứng dụng TV của YouTube hoặc ứng dụng web với PoToken (mã chống lạm dụng, được tạo trong một chế độ xem trình duyệt ẩn trên macOS). YouTube bắt luồng mới phải chờ vài giây; trong lúc đó ứng dụng bắt đầu bằng một đoạn xem trước ngắn. Nếu YouTube thay đổi điều gì, bài hát sẽ quay về bản xem trước ~1 phút (được đánh dấu trong trình phát). Cài đặt → Phát lại → Luồng YouTube chọn cách phát.
+onboarding.privacy.data.title = Dữ liệu của bạn ở lại đây
+onboarding.privacy.data.text = Thư viện, lịch sử, thống kê và cài đặt được lưu trên máy tính này. Mật khẩu, khóa API và cookie đăng nhập YouTube được lưu vào chuỗi khóa của hệ thống. Tạm dừng hoặc xóa lịch sử nghe và tìm kiếm bất cứ lúc nào trong Cài đặt → Quyền riêng tư.
+onboarding.privacy.recipients.title = Ai nhận được gì
+onboarding.privacy.recipients.text = YouTube Music nhận các tìm kiếm và lượt phát của bạn (và cookie tài khoản khi đăng nhập). Nhà cung cấp lời bài hát nhận tên bài hát. Nhận dạng bài hát gửi dấu vân tay âm thanh — không phải bản ghi âm — đến Shazam. Scrobbling và Discord chỉ chạy nếu bạn thiết lập.
+onboarding.privacy.independent.title = Dự án độc lập
+onboarding.privacy.independent.text = Không liên kết với YouTube, Google hay Shazam. Phần mềm tự do theo giấy phép GPL-3.0.

@@ -1,0 +1,74 @@
+# ---- Header
+np.close_tooltip = Đóng (Esc)
+np.header = ĐANG PHÁT
+np.demo_clock = Đồng hồ demo
+np.buffering = Đang đệm…
+np.preview = Xem trước
+np.speed = {speed}×
+np.sleep_tooltip = Hẹn giờ ngủ
+np.layout_tooltip = Thiết kế và nền
+np.menu.design = Thiết kế
+np.menu.background = Nền
+
+# ---- Player
+np.up_next = Tiếp theo
+np.playing_from = ĐANG PHÁT TỪ
+np.your_queue = Danh sách chờ của bạn
+np.of_total = / {total}
+np.editorial.header_album = ĐANG PHÁT  ·  {album}
+np.editorial.play = PHÁT
+np.editorial.pause = TẠM DỪNG
+np.editorial.loading = ĐANG TẢI
+np.queue.title = TIẾP THEO
+np.queue.more.other = +{count} bài nữa
+np.queue.empty = Danh sách chờ trống. Hãy thêm bài hát từ một danh sách hoặc bật tự động phát.
+
+# ---- Lyrics pane
+lyrics.nothing_playing = Không có gì đang phát
+lyrics.loading = Đang tải lời bài hát…
+lyrics.missing_title = Không có lời bài hát
+lyrics.missing_detail = Không nhà cung cấp lời bài hát nào đang bật có bài này.
+lyrics.failed = Không thể tải lời bài hát
+lyrics.translating = Đang dịch…
+lyrics.translation_failed = Dịch thất bại: {error}
+lyrics.kind.word = Đồng bộ theo từ
+lyrics.kind.line = Đồng bộ theo dòng
+lyrics.kind.plain = Không đồng bộ
+lyrics.source = {provider} · {kind}
+lyrics.select_hint.other = Chọn tối đa {count} dòng cho thẻ
+lyrics.selected.other = Đã chọn {count} dòng
+lyrics.create_card = Tạo thẻ…
+lyrics.share_tooltip = Chia sẻ lời bài hát dưới dạng thẻ
+lyrics.translation_on = Bản dịch: bật
+lyrics.translation_off = Bản dịch: tắt
+lyrics.reload_tooltip = Tìm lại ở các nhà cung cấp
+
+# ---- Lyrics card dialog
+card.dialog_title = Thẻ lời bài hát
+card.row.background = Nền
+card.row.text = Chữ
+card.row.size = Cỡ
+card.row.shape = Hình dạng
+card.row.cover = Ảnh bìa
+card.cover.show = Hiện
+card.cover.hide = Ẩn
+card.save = Lưu ảnh…
+card.copy = Sao chép ảnh
+card.copying = Đang sao chép…
+card.copied = Đã sao chép vào bảng nhớ tạm
+card.saved = Đã lưu {path}
+card.save_failed = Không thể lưu: {error}
+card.draw_failed = Không thể vẽ thẻ: {error}
+card.aspect.square = Vuông
+card.aspect.portrait = Dọc
+card.aspect.story = Story
+card.bg.blur = Ảnh bìa làm mờ
+card.bg.album = Màu album
+card.bg.dark = Tối
+card.bg.light = Sáng
+card.align.left = Trái
+card.align.center = Giữa
+card.align.right = Phải
+card.size.small = Nhỏ
+card.size.medium = Vừa
+card.size.large = Lớn
