@@ -26,6 +26,8 @@ serde_json = "1"
 directories = "6"
 # Secrets in the OS keychain (macOS Keychain, Windows Credential Manager, Secret Service).
 keyring = "4.2"
+# The system's preferred UI languages (already in GPUI's graph through parley).
+sys-locale = "0.3"
 
 [target.'cfg(windows)'.build-dependencies]
 # Icon + version info in the .exe (`build.rs`, `packaging/windows/app.rc`); already a

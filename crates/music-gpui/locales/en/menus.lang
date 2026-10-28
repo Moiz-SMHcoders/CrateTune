@@ -1,0 +1,35 @@
+# Menu bar (macOS) and the menu-bar item. {app} is the app's name.
+menu.about = About {app}
+menu.settings = Settings…
+menu.services = Services
+menu.hide = Hide {app}
+menu.hide_others = Hide Others
+menu.show_all = Show All
+menu.quit = Quit {app}
+menu.edit = Edit
+menu.undo = Undo
+menu.redo = Redo
+menu.cut = Cut
+menu.copy = Copy
+menu.paste = Paste
+menu.select_all = Select All
+menu.search = Search
+menu.view = View
+menu.back = Back
+menu.forward = Forward
+menu.recognize = Recognize Song
+menu.controls = Controls
+menu.play_pause = Play / Pause
+menu.repeat = Repeat (Off / All / One)
+menu.volume_up = Volume Up
+menu.volume_down = Volume Down
+menu.window = Window
+menu.minimize = Minimize
+menu.zoom = Zoom
+
+# Menu-bar item
+tray.next = Next
+tray.previous = Previous
+tray.mini_player = Mini Player
+tray.show_window = Show {app}
+tray.quit = Quit {app}

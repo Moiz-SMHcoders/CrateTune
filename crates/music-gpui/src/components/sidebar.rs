@@ -8,6 +8,7 @@ use gpui::{
 use gpui_component::{ActiveTheme as _, Icon, Sizable as _, h_flex, v_flex};
 
 use crate::app::MusicApp;
+use crate::i18n::{Key, text};
 use crate::icons::Lucide;
 use crate::pages::{NAV, NavItem};
 use crate::router::Route;
@@ -31,11 +32,7 @@ impl MusicApp {
         );
 
         let entry =
-            |id: SharedString,
-             icon: Lucide,
-             title: &'static str,
-             route: Route,
-             cx: &mut Context<Self>| {
+            |id: SharedString, icon: Lucide, title: Key, route: Route, cx: &mut Context<Self>| {
                 let active = route.same_page(&current);
                 h_flex()
                     .id(id)
@@ -57,12 +54,12 @@ impl MusicApp {
                             .text_color(if active { colors.accent } else { muted })
                             .child(Icon::new(icon).small()),
                     )
-                    .child(title)
+                    .child(text(title))
                     .on_click(cx.listener(move |this, _, window, cx| {
                         this.navigate(route.clone(), window, cx)
                     }))
             };
-        let group_label = |label: &'static str| {
+        let group_label = |label: Key| {
             div()
                 .px_3()
                 .pt_4()
@@ -70,18 +67,18 @@ impl MusicApp {
                 .text_xs()
                 .font_weight(FontWeight::SEMIBOLD)
                 .text_color(muted)
-                .child(label)
+                .child(text(label))
         };
 
         let mut list = v_flex().gap_0p5();
         for (i, item) in NAV.iter().enumerate() {
             match item {
-                NavItem::Group(label) => list = list.child(group_label(label)),
+                NavItem::Group(label) => list = list.child(group_label(*label)),
                 NavItem::Page { title, icon, route } => {
                     list = list.child(entry(
                         SharedString::from(format!("nav-{i}")),
                         *icon,
-                        title,
+                        *title,
                         route(),
                         cx,
                     ))
@@ -132,7 +129,7 @@ impl MusicApp {
             .child(div().pt_2().border_t_1().border_color(border).child(entry(
                 "nav-settings".into(),
                 Lucide::Settings,
-                "Settings",
+                k!("nav.settings"),
                 Route::Settings {
                     section: match &current {
                         Route::Settings { section } => *section,

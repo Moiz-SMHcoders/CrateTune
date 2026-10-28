@@ -428,6 +428,27 @@ impl MusicApp {
         }
     }
 
+    /// Switches the UI to the language in the settings, live: menus are rebuilt,
+    /// tracked input placeholders reset, every window re-rendered (cached views too)
+    /// and the menu-bar item relabelled on the next poll.
+    pub fn apply_language(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let locale = self.settings.read(cx).settings().appearance.ui_locale();
+        if locale == crate::i18n::locale() {
+            return;
+        }
+        crate::i18n::set_locale(locale);
+        crate::actions::set_menus(cx);
+        crate::i18n::relocalize(window, cx);
+        self.update_window_title(window);
+        cx.refresh_windows();
+        cx.notify();
+    }
+
+    fn update_window_title(&self, window: &mut Window) {
+        let title = self.router.route().title();
+        window.set_window_title(&format!("{title} — {}", crate::identity::APP_NAME));
+    }
+
     fn on_route_changed(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         self.ensure_page(window, cx);
         let title = self.router.route().title();
@@ -437,7 +458,7 @@ impl MusicApp {
                 started.elapsed().as_secs_f64()
             );
         }
-        window.set_window_title(&format!("{title} — {}", crate::identity::APP_NAME));
+        self.update_window_title(window);
         match self.router.route().clone() {
             // Keep the search field in sync when going back/forward between searches.
             Route::Search { query } if query != self.search_text => {
@@ -581,6 +602,7 @@ impl MusicApp {
             SettingsEvent::Lyrics => self.rebuild_lyrics_service(cx),
             SettingsEvent::NowPlaying => cx.notify(),
             SettingsEvent::Appearance => self.apply_theme(cx),
+            SettingsEvent::Language => self.apply_language(window, cx),
             SettingsEvent::PlaybackModes => {
                 let modes = self.settings.read(cx).settings().playback.clone();
                 self.queue.set_shuffle(modes.shuffle);

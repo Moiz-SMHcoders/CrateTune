@@ -100,43 +100,19 @@ pub fn placeholder_art(icon: Lucide, side: f32, cx: &gpui::App) -> gpui::Div {
         .child(Icon::new(icon).size(px(side * 0.4)))
 }
 
-/// `1.2 GB`, `640 KB`.
+/// `1.2 GB`, `640 KB` (locale-aware, see [`crate::i18n::format::bytes`]).
 pub fn format_bytes(bytes: u64) -> String {
-    const UNITS: [&str; 5] = ["B", "KB", "MB", "GB", "TB"];
-    let mut value = bytes as f64;
-    let mut unit = 0;
-    while value >= 1024. && unit + 1 < UNITS.len() {
-        value /= 1024.;
-        unit += 1;
-    }
-    if unit == 0 {
-        format!("{bytes} B")
-    } else if value >= 100. {
-        format!("{value:.0} {}", UNITS[unit])
-    } else {
-        format!("{value:.1} {}", UNITS[unit])
-    }
+    crate::i18n::format::bytes(bytes)
 }
 
 /// `3 h 12 min`, `45 min`, `20 s`.
 pub fn format_listening(ms: u64) -> String {
-    let secs = ms / 1000;
-    let (h, m) = (secs / 3600, (secs / 60) % 60);
-    if h > 0 {
-        format!("{h} h {m} min")
-    } else if m > 0 {
-        format!("{m} min")
-    } else {
-        format!("{secs} s")
-    }
+    crate::i18n::format::listening(ms)
 }
 
 /// "1 song" / "12 songs".
 pub fn songs_label(n: impl Into<u64>) -> SharedString {
-    match n.into() {
-        1 => "1 song".into(),
-        n => format!("{n} songs").into(),
-    }
+    tp!("common.songs", n.into()).into()
 }
 
 #[cfg(test)]

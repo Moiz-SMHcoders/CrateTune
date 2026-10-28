@@ -20,7 +20,7 @@ use crate::theme::{AppColors, FONT_SCALES, ThemeChoice};
 
 pub(super) fn render(
     panel: &mut SettingsPanel,
-    _: &mut Window,
+    window: &mut Window,
     cx: &mut Context<SettingsPanel>,
 ) -> AnyElement {
     let current = panel.settings.appearance.theme;
@@ -294,8 +294,10 @@ pub(super) fn render(
         cx,
     );
 
+    let language = super::language::language_row(panel, window, cx);
     v_flex()
         .gap_5()
+        .child(group(t!("settings.language.group"), cx).child(language))
         .child(group("Theme", cx).child(themes).child(note(
             "Dynamic takes its accent from the playing track's artwork (the most \
                      common vibrant colour, adjusted to stay readable on the dark background).",

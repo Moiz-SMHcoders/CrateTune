@@ -4854,6 +4854,7 @@ dependencies = [
  "resvg 0.46.0",
  "serde",
  "serde_json",
+ "sys-locale",
  "tray-icon",
  "wry",
 ]

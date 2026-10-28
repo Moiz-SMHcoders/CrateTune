@@ -52,6 +52,8 @@ pub enum SettingsEvent {
     Integrations,
     /// Theme or font scale changed.
     Appearance,
+    /// The UI language setting changed (`MusicApp::apply_language`).
+    Language,
     /// The user picked another section (the app keeps the route in sync).
     Section(SectionId),
     /// Shuffle / repeat changed on the settings page (apply to the queue).
@@ -118,6 +120,8 @@ pub struct SettingsPanel {
     pub(super) scrobble_errors: VecDeque<String>,
     /// Content & region section (language / country pickers).
     pub(super) content: super::content::ContentState,
+    /// UI language picker (Appearance, onboarding).
+    pub(super) language: super::language::LanguagePicker,
     /// Network section (proxy draft fields, status).
     pub(super) network: super::network::NetworkState,
     /// Player / lyrics / Now Playing / activity widgets (`prefs_ui.rs`).
@@ -149,6 +153,15 @@ impl SettingsPanel {
         }
         if first_run {
             settings.onboarded = false;
+            // YouTube Music content in the UI language (and the system's region)
+            // until the user picks something else (Content & region).
+            let locale = settings.appearance.ui_locale();
+            settings.content.language = crate::i18n::content_language(locale).to_owned();
+            if let Some(region) = crate::i18n::system_region()
+                && super::content::COUNTRIES.iter().any(|(c, _)| *c == region)
+            {
+                settings.content.country = region;
+            }
         }
 
         let gains = settings.equalizer.gains();
@@ -210,6 +223,9 @@ impl SettingsPanel {
         let (content, content_subscriptions) =
             super::content::ContentState::new(&settings, window, cx);
         subscriptions.extend(content_subscriptions);
+        let (language, language_subscription) =
+            super::language::LanguagePicker::new(&settings, window, cx);
+        subscriptions.push(language_subscription);
         let network = super::network::NetworkState::new(&settings, window, cx);
         let modules = super::modules::ModulesState::new(window, cx);
         let (prefs, prefs_subscriptions) = PrefsUi::new(&settings, window, cx);
@@ -250,6 +266,7 @@ impl SettingsPanel {
             discord_status: DiscordStatus::Idle,
             scrobble_errors: VecDeque::new(),
             content,
+            language,
             network,
             prefs,
             modules,
@@ -389,6 +406,20 @@ impl SettingsPanel {
             self.settings.appearance.theme = theme;
             cx.emit(SettingsEvent::Appearance);
             self.changed(false, cx);
+        }
+    }
+
+    /// `code` is a catalog code or [`file::SYSTEM_LANGUAGE`].
+    pub fn set_language(&mut self, code: &str, cx: &mut Context<Self>) {
+        if self.settings.appearance.language != code {
+            self.settings.appearance.language = code.to_owned();
+            cx.emit(SettingsEvent::Language);
+            self.changed(false, cx);
+            if !self.settings.onboarded {
+                // First run: YouTube Music content follows the UI language.
+                let hl = crate::i18n::content_language(self.settings.appearance.ui_locale());
+                self.set_content(|c| c.language = hl.to_owned(), cx);
+            }
         }
     }
 
@@ -788,7 +819,7 @@ impl SettingsPanel {
                     .when(active, |this| this.bg(active_bg))
                     .when(!active, |this| this.hover(move |s| s.bg(hover_bg)))
                     .child(Icon::new(section.icon).small())
-                    .child(section.title)
+                    .child(crate::i18n::text(section.title))
                     .on_click(cx.listener(move |this, _, _, cx| {
                         this.show_section(id, cx);
                         cx.emit(SettingsEvent::Section(id));
@@ -825,7 +856,7 @@ impl Render for SettingsPanel {
                                     div()
                                         .text_2xl()
                                         .font_weight(FontWeight::BOLD)
-                                        .child(section.title),
+                                        .child(crate::i18n::text(section.title)),
                                 )
                                 .child(body),
                         ),

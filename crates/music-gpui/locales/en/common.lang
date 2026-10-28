@@ -1,0 +1,192 @@
+# Shared strings: the language's own name, words used all over the app, and the
+# date / time / number vocabulary used by `src/i18n/format.rs`.
+# Format: see crates/music-gpui/i18n_parse.rs ({name} = placeholder, {app} = the
+# app's name, `.one` / `.other` = plural forms).
+
+# The language's name in itself (shown in the language picker).
+locale.native_name = English
+
+# ---- Actions
+common.play = Play
+common.pause = Pause
+common.shuffle = Shuffle
+common.radio = Radio
+common.start_radio = Start radio
+common.play_next = Play next
+common.add_to_queue = Add to queue
+common.add_to_playlist = Add to playlist…
+common.like = Like
+common.remove_from_liked = Remove from liked songs
+common.download = Download
+common.remove_download = Remove download
+common.go_to_artist = Go to artist
+common.go_to_album = Go to album
+common.open = Open
+common.cancel = Cancel
+common.close = Close
+common.retry = Retry
+common.remove = Remove
+common.delete = Delete
+common.clear = Clear
+common.save = Save
+common.apply = Apply
+common.reset = Reset
+common.ok = OK
+common.done = Done
+common.copy = Copy
+common.edit = Edit
+common.rename = Rename
+common.refresh = Refresh
+common.install = Install
+common.update = Update
+common.import = Import
+common.export = Export
+common.search = Search
+common.search_placeholder = Search…
+common.see_all = See all
+common.load_more = Load more
+common.show_more = Show more
+common.back = Back
+common.next = Next
+common.previous = Previous
+common.skip = Skip
+common.connect = Connect
+common.disconnect = Disconnect
+common.sign_in = Sign in
+common.sign_out = Sign out
+common.select = Select
+common.select_all = Select all
+common.settings = Settings
+
+# ---- States
+common.loading = Loading…
+common.saving = Saving…
+common.downloading = Downloading…
+common.off = Off
+common.on = On
+common.none = None
+common.custom = Custom
+common.automatic = Automatic
+common.unknown = Unknown
+common.not_playing = Not playing
+common.not_connected = Not connected
+common.connected = Connected
+common.nothing_here = Nothing here
+common.error = Error
+
+# ---- Things
+common.song = Song
+common.video = Video
+common.artist = Artist
+common.album = Album
+common.single = Single
+common.playlist = Playlist
+common.podcast = Podcast
+common.episode = Episode
+common.songs_title = Songs
+common.artists_title = Artists
+common.albums_title = Albums
+common.playlists_title = Playlists
+common.queue = Queue
+common.lyrics = Lyrics
+common.now_playing = Now Playing
+common.youtube_music = YouTube Music
+
+# Counts ({count} is formatted with the locale's digit grouping).
+common.songs.one = {count} song
+common.songs.other = {count} songs
+common.plays.one = {count} play
+common.plays.other = {count} plays
+common.selected.one = {count} selected
+common.selected.other = {count} selected
+
+# ---- Sidebar
+nav.home = Home
+nav.explore = Explore
+nav.charts = Charts
+nav.moods = Moods & genres
+nav.new_releases = New releases
+nav.recognize = Recognize
+nav.library_group = Library
+nav.library = Library
+nav.history = History
+nav.stats = Stats
+nav.downloads = Downloads
+nav.local_files = Local files
+nav.import = Import & export
+nav.together = Listen together
+nav.settings = Settings
+
+# ---- Dates (src/i18n/format.rs)
+# A full date. Placeholders: {day}, {month} (date.month_in_date.N), {month_num}, {year}.
+date.full = {day} {month} {year}
+date.today = Today
+date.yesterday = Yesterday
+# Standalone month names (charts, headings).
+date.month.1 = January
+date.month.2 = February
+date.month.3 = March
+date.month.4 = April
+date.month.5 = May
+date.month.6 = June
+date.month.7 = July
+date.month.8 = August
+date.month.9 = September
+date.month.10 = October
+date.month.11 = November
+date.month.12 = December
+# Month names as used inside date.full (the genitive in Slavic languages).
+date.month_in_date.1 = January
+date.month_in_date.2 = February
+date.month_in_date.3 = March
+date.month_in_date.4 = April
+date.month_in_date.5 = May
+date.month_in_date.6 = June
+date.month_in_date.7 = July
+date.month_in_date.8 = August
+date.month_in_date.9 = September
+date.month_in_date.10 = October
+date.month_in_date.11 = November
+date.month_in_date.12 = December
+date.month_short.1 = Jan
+date.month_short.2 = Feb
+date.month_short.3 = Mar
+date.month_short.4 = Apr
+date.month_short.5 = May
+date.month_short.6 = Jun
+date.month_short.7 = Jul
+date.month_short.8 = Aug
+date.month_short.9 = Sep
+date.month_short.10 = Oct
+date.month_short.11 = Nov
+date.month_short.12 = Dec
+# Weekdays, 1 = Monday … 7 = Sunday.
+date.weekday_short.1 = Mon
+date.weekday_short.2 = Tue
+date.weekday_short.3 = Wed
+date.weekday_short.4 = Thu
+date.weekday_short.5 = Fri
+date.weekday_short.6 = Sat
+date.weekday_short.7 = Sun
+
+# ---- Durations and relative times
+time.just_now = just now
+time.seconds_ago.one = {count} s ago
+time.seconds_ago.other = {count} s ago
+time.minutes_ago.one = {count} min ago
+time.minutes_ago.other = {count} min ago
+time.hours_ago.one = {count} h ago
+time.hours_ago.other = {count} h ago
+time.days_ago.one = {count} day ago
+time.days_ago.other = {count} days ago
+time.hours_minutes = {hours} h {minutes} min
+time.minutes = {minutes} min
+time.seconds = {seconds} s
+
+# ---- File sizes: "{value} {unit}"
+units.size = {value} {unit}
+units.b = B
+units.kb = KB
+units.mb = MB
+units.gb = GB
+units.tb = TB

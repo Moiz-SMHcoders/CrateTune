@@ -29,7 +29,7 @@ use crate::components::{empty_state, page_scroll, page_title, section_header, sh
 use crate::icons::Lucide;
 use crate::router::Route;
 use crate::theme::AppColors;
-use crate::util::{MONTHS, local_year, pretty_date};
+use crate::util::{local_year, pretty_date};
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 enum Range {
@@ -338,8 +338,9 @@ impl Render for StatsPage {
                         cx,
                     ));
                 } else {
-                    let weekdays =
-                        ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(String::from);
+                    // The library counts weekdays from Sunday; the catalog from Monday.
+                    let weekdays = [7, 1, 2, 3, 4, 5, 6]
+                        .map(|d| crate::i18n::format::weekday_short(d).to_owned());
                     content = content
                         .child(totals_row(&stats.totals, cx))
                         .child(
@@ -491,7 +492,9 @@ impl Render for YearInMusicPage {
                         format!("Busiest day · {}", format_listening(day.play_ms)),
                     ));
                 }
-                let month_labels: Vec<String> = MONTHS.iter().map(|m| m[..3].to_owned()).collect();
+                let month_labels: Vec<String> = (1..=12)
+                    .map(|m| crate::i18n::format::month_short(m).to_owned())
+                    .collect();
                 content = content
                     .child(totals_row(&recap.totals, cx))
                     .child(highlights)

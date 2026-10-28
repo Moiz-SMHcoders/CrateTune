@@ -424,6 +424,18 @@ impl MusicApp {
                 Some(theme) => panel.update(cx, |p, cx| p.set_theme(theme, cx)),
                 None => eprintln!("music-gpui: unknown theme {arg:?}"),
             },
+            // UI language: a catalog code or `system` (saved like a pick in Settings).
+            "lang" => match arg {
+                Some(code)
+                    if code == crate::settings::file::SYSTEM_LANGUAGE
+                        || crate::i18n::Locale::from_code(code).is_some() =>
+                {
+                    let code = crate::i18n::Locale::from_code(code)
+                        .map_or(code.to_owned(), |l| l.code().to_owned());
+                    panel.update(cx, |p, cx| p.set_language(&code, cx));
+                }
+                _ => eprintln!("music-gpui: unknown language {arg:?}"),
+            },
             "font-scale" => {
                 let scale = num().unwrap_or(1.) as f32;
                 panel.update(cx, |p, cx| p.set_font_scale(scale, cx));

@@ -204,6 +204,10 @@ pub struct AppearanceConfig {
     pub theme: ThemeChoice,
     /// One of [`FONT_SCALES`] (other values are snapped to the nearest).
     pub font_scale: f32,
+    /// UI language: a catalog code (`de`, `pt-BR`, `zh-CN`) or `system` (the OS's
+    /// preferred languages). An unknown code (e.g. from a newer version) also means
+    /// `system`.
+    pub language: String,
 }
 
 impl Default for AppearanceConfig {
@@ -211,7 +215,20 @@ impl Default for AppearanceConfig {
         Self {
             theme: ThemeChoice::Dark,
             font_scale: 1.0,
+            language: SYSTEM_LANGUAGE.into(),
         }
+    }
+}
+
+/// [`AppearanceConfig::language`] value for "follow the system".
+pub const SYSTEM_LANGUAGE: &str = "system";
+
+impl AppearanceConfig {
+    /// The UI locale this setting means (`MUSIC_LANG` overrides it for a session).
+    pub fn ui_locale(&self) -> crate::i18n::Locale {
+        let forced = std::env::var("MUSIC_LANG").ok().filter(|v| !v.is_empty());
+        let code = forced.as_deref().unwrap_or(&self.language);
+        crate::i18n::Locale::from_code(code).unwrap_or_else(crate::i18n::system_locale)
     }
 }
 

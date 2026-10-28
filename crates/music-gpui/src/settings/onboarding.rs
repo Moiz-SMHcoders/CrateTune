@@ -128,7 +128,16 @@ impl Onboarding {
     fn body(&mut self, window: &mut Window, cx: &mut Context<Self>) -> AnyElement {
         let step = self.step();
         match step {
-            Step::Welcome => welcome(cx),
+            Step::Welcome => {
+                let language = self.settings.update(cx, |panel, cx| {
+                    super::language::language_row(panel, window, cx)
+                });
+                v_flex()
+                    .gap_3()
+                    .child(group(t!("settings.language.group"), cx).child(language))
+                    .child(welcome(cx))
+                    .into_any_element()
+            }
             Step::Content => self
                 .settings
                 .update(cx, |panel, cx| super::content::render(panel, window, cx)),
