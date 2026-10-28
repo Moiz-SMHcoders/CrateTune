@@ -1,0 +1,128 @@
+# Music Together (Listen together): src/integrations/together.rs and
+# src/pages/together.rs. Format: see crates/music-gpui/i18n_parse.rs.
+# {name} is a person's display name; {reason} / {error} is text from the network
+# layer or the other side (stays English).
+
+# ---- Activity log and notifications
+together.log.started_port = Session started on port {port}
+together.log.started_relay = Session started through {relay}
+together.toast.started = Music Together session started
+together.toast.started_relay = Music Together session started (relay)
+together.error.start_failed = Couldn't start on port {port}: {error}
+together.error.no_relay = Set a relay server in Settings → Music Together first.
+together.error.relay_failed = Couldn't host through {relay}: {error}
+together.log.handing_over = Handing the session to {name}…
+together.log.hand_over_failed = Couldn't hand the session over
+together.log.wants_to_join = {name} wants to join
+# Notification ("Listen together" is the page's name in the sidebar).
+together.toast.wants_to_join = {name} wants to join (Listen together)
+together.log.joined = {name} joined
+together.log.left = {name} left ({reason})
+# {title}: song title.
+together.log.suggested = {name} suggested “{title}”
+together.log.new_host = {name} is the host now
+together.log.transfer_failed = Couldn't hand the session to {name}: {reason}
+together.log.transfer_failed_guest = Couldn't hand the session to the guest: {reason}
+together.error.session_ended = Session ended: {reason}
+together.toast.ended = Music Together: {reason}
+together.error.bad_link = That isn't a Music Together link (it needs host, port, session and key).
+together.log.connected = Connected to {host}
+together.toast.joined = Joined the Music Together session
+together.error.join_failed = Couldn't join: {error}
+together.log.handing_to_you = The host is handing the session to you…
+together.error.take_over_failed = Couldn't take over the session: {error}
+together.log.you_are_host = You're the host now
+together.toast.you_are_host = You're the host of the Music Together session now
+together.log.ended = Session ended
+together.log.left_session = Left the session
+together.toast.no_suggestions = The host doesn't take suggestions in this session
+together.toast.only_youtube_music = Only YouTube Music songs can be suggested
+together.toast.suggested_title = Suggested “{title}” to the host
+together.toast.suggested.one = Suggested {count} song to the host
+together.toast.suggested.other = Suggested {count} songs to the host
+together.toast.no_control = The host doesn't let guests control playback
+together.status.waiting_approval = Waiting for the host to let you in…
+together.status.let_in = The host let you in
+together.status.declined = The host declined
+together.status.disconnected = Disconnected
+together.log.host_changed = {name} is the host now; reconnecting…
+together.log.host_changed_unknown = Someone else is the host now; reconnecting…
+together.log.reconnected = Reconnected to the new host
+
+# ---- Player-bar chip (keep short)
+together.chip.hosting.one = Together · hosting · {count} guest
+together.chip.hosting.other = Together · hosting · {count} guests
+together.chip.hosting_relay.one = Together · hosting via relay · {count} guest
+together.chip.hosting_relay.other = Together · hosting via relay · {count} guests
+together.chip.waiting = Together · waiting
+together.chip.following = Together · following the host
+together.chip.joining = Together · joining…
+
+# ---- Listen together page
+together.page.subtitle = Play the same music in sync with people on your network, or anywhere through a relay.
+# Placeholder of the join field; keep "music-together://join?…" and host|port|session|key.
+together.join.placeholder = music-together://join?… or host|port|session|key
+# Tags next to a person (keep short).
+together.tag.host = Host
+together.tag.waiting = Waiting
+# Buttons in the people list (keep short).
+together.people.let_in = Let in
+together.people.decline = Decline
+together.people.make_host = Make host
+together.people.make_host_tooltip = Hand the session over: they host, everyone follows them
+together.people.remove = Remove
+together.people.ban = Ban
+# Heading of the people list.
+together.people.title.one = People · {count}
+together.people.title.other = People · {count}
+together.queue.title = The room's queue
+together.host.title = Host a session
+# {name}: the user's display name; {port}: TCP port number.
+together.host.intro = Others follow what you play, as “{name}” on port {port}.
+together.host.guests_add_and_control = Guests can add songs and control playback.
+together.host.guests_add_only = Guests can add songs but can't control playback.
+together.host.guests_control_only = Guests can't add songs but can control playback.
+together.host.guests_neither = Guests can't add songs or control playback.
+together.host.approval = You approve each guest.
+# The three sentences above in a row ({approval} may be empty).
+together.host.summary = {intro} {guests} {approval}
+together.host.start = Start session
+together.host.via_relay = Host via relay
+together.host.via_relay_tooltip = Through your relay server: guests can join from any network
+together.host.no_relay_tooltip = Set a relay server in Settings → Music Together
+# Button that opens the Music Together settings.
+together.host.settings = Settings…
+together.join.title = Join a session
+together.join.hint = Paste the link the host shared with you.
+# Button.
+together.join.button = Join
+together.connecting = Connecting to {host}…
+together.hosting.title.one = Hosting · {count} guest
+together.hosting.title.other = Hosting · {count} guests
+together.hosting.end = End session
+together.hosting.share_relay = Share this link; it works from any network (through the relay {host}):
+together.hosting.share_lan = Share this link with people on the same network ({host}, port {port}):
+together.hosting.copy_link = Copy link
+together.hosting.link_copied = Link copied
+together.hosting.copy_code = Copy code
+# Keep "relay URL|session|key" / "host|port|session|key" recognizable: it's the code's format.
+together.hosting.copy_code_tooltip_relay = relay URL|session|key, for typing on another device
+together.hosting.copy_code_tooltip = host|port|session|key, for typing on another device
+# Room settings (switches on the page and rows in Settings).
+together.room.allow_add = Guests can add songs
+together.room.allow_control = Guests can control playback
+together.room.approve = Approve new guests
+together.guest.listening_with = Listening with {name}
+# Button: leave the session.
+together.guest.leave = Leave
+together.guest.nothing_playing = The host isn't playing anything.
+together.guest.ask_previous = Ask the host: previous
+together.guest.ask_play_pause = Ask the host: play / pause
+together.guest.ask_next = Ask the host: next
+together.guest.can_control = The host lets guests control playback.
+together.guest.host_controls = Only the host controls playback.
+together.guest.suggest_hint = Use “Play next” or “Add to queue” on any song to suggest it to the host.
+together.guest.no_suggestions = The host doesn't take suggestions.
+# Sync diagnostics: {offset} / {rtt} in milliseconds.
+together.guest.clock = Clock offset {offset} ms · round trip {rtt} ms
+together.activity = Activity
