@@ -462,7 +462,9 @@ impl StreamResolver for WebResolver {
             Some(fallback) => fallback
                 .resolve_with_quality(video_id, quality)
                 .map_err(|e| match last {
-                    Some(web) => Error::Unplayable(format!("{web}; fallback: {e}")),
+                    Some(web) => {
+                        Error::Unplayable(format!("{}; fallback: {}", reason(&web), reason(&e)))
+                    }
                     None => e,
                 }),
             None => {
@@ -514,9 +516,19 @@ fn same_file_prefix(web: &ResolvedStream, ios: &ResolvedStream) -> Option<Stream
     })
 }
 
+/// YouTube's "confirm you're not a bot" (a stale session), not other sign-in
+/// requirements such as "Sign in to confirm your age".
 fn is_bot_check(reason: &str) -> bool {
-    let r = reason.to_ascii_lowercase();
-    r.contains("not a bot") || r.contains("sign in to confirm")
+    let r = reason.to_lowercase();
+    r.contains("not a bot") || (r.contains("sign in to confirm you") && !r.contains("your age"))
+}
+
+/// An error's message without the "not playable: " wrapper.
+fn reason(e: &Error) -> String {
+    match e {
+        Error::Unplayable(reason) => reason.clone(),
+        other => other.to_string(),
+    }
 }
 
 /// A format's base URL, its `n` challenge, and its `(s, param)` signature challenge.
@@ -756,5 +768,16 @@ mod tests {
             "LOGIN_REQUIRED: Sign in to confirm you’re not a bot"
         ));
         assert!(!is_bot_check("UNPLAYABLE: Video unavailable"));
+        // Age-restricted videos must not cost the shared session a refetch.
+        assert!(!is_bot_check("LOGIN_REQUIRED: Sign in to confirm your age"));
+        assert!(is_bot_check(
+            "LOGIN_REQUIRED: Sign in to confirm you're not a bot"
+        ));
+        assert_eq!(
+            reason(&Error::Unplayable(
+                "ERROR: This video is unavailable".into()
+            )),
+            "ERROR: This video is unavailable"
+        );
     }
 }

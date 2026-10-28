@@ -31,6 +31,10 @@ pub trait PoTokenProvider: Send + Sync {
     fn content_token(&self, video_id: &str) -> Result<String>;
     /// Drop cached state (e.g. after googlevideo rejected a token).
     fn reset(&self) {}
+    /// Treat the attestation (integrity token) as expired now, so the next
+    /// [`Self::content_token`] renews it, exactly as when its lifetime runs out.
+    /// For tests and checks of the renewal; providers without one ignore it.
+    fn expire_attestation(&self) {}
 }
 
 /// A browser JS environment that can run BotGuard (see the module docs).
@@ -70,6 +74,9 @@ const TOKEN_CACHE: usize = 200;
 pub struct BotGuardTokenProvider<V: BotGuardVm> {
     vm: V,
     state: Mutex<State>,
+    /// Unit tests replace the network part of [`Self::bootstrap`].
+    #[cfg(test)]
+    fake_bootstrap: Option<fn(&V) -> Result<Duration>>,
 }
 
 #[derive(Default)]
@@ -85,10 +92,16 @@ impl<V: BotGuardVm> BotGuardTokenProvider<V> {
         Self {
             vm,
             state: Mutex::default(),
+            #[cfg(test)]
+            fake_bootstrap: None,
         }
     }
 
     fn bootstrap(&self) -> Result<Duration> {
+        #[cfg(test)]
+        if let Some(fake) = self.fake_bootstrap {
+            return fake(&self.vm);
+        }
         let started = Instant::now();
         let page = fetch_text(CHALLENGE_PAGE, None)?;
         let challenge = parse_page_challenge(&page)?;
@@ -160,6 +173,13 @@ impl<V: BotGuardVm> PoTokenProvider for BotGuardTokenProvider<V> {
     fn reset(&self) {
         *self.state.lock().unwrap_or_else(PoisonError::into_inner) = State::default();
         self.vm.release();
+    }
+
+    fn expire_attestation(&self) {
+        let mut state = self.state.lock().unwrap_or_else(PoisonError::into_inner);
+        if state.ready_until.is_some() {
+            state.ready_until = Some(Instant::now());
+        }
     }
 }
 
@@ -439,9 +459,13 @@ ytcfg.set({"VISITOR_DATA":"vd"});</script><script>window.ytAtN({'R':'{"bgChallen
         assert!(parse_integrity_token("{}").is_err());
     }
 
-    /// A fake VM: counts bootstraps, mints `id` reversed.
+    /// A fake VM: counts bootstraps, mints `id` reversed (plus the minter's
+    /// generation, so tokens from a renewed attestation differ).
+    #[derive(Default)]
     struct FakeVm {
         runs: std::sync::atomic::AtomicUsize,
+        minters: std::sync::atomic::AtomicUsize,
+        mints: std::sync::atomic::AtomicUsize,
     }
 
     impl BotGuardVm for FakeVm {
@@ -450,22 +474,86 @@ ytcfg.set({"VISITOR_DATA":"vd"});</script><script>window.ytAtN({'R':'{"bgChallen
             Ok("bg".into())
         }
         fn create_minter(&self, _: &[u8]) -> Result<()> {
+            self.minters
+                .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
             Ok(())
         }
         fn mint(&self, id: &[u8]) -> Result<Vec<u8>> {
-            Ok(id.iter().rev().copied().collect())
+            self.mints.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            let generation = self.minters.load(std::sync::atomic::Ordering::SeqCst) as u8;
+            let mut token: Vec<u8> = id.iter().rev().copied().collect();
+            token.push(generation);
+            Ok(token)
         }
+    }
+
+    /// Bootstrap without the network: the challenge and minter on the fake VM,
+    /// an integrity token valid for 12 h.
+    fn offline_bootstrap(vm: &FakeVm) -> Result<Duration> {
+        vm.run_challenge("{}", "{}")?;
+        vm.create_minter(b"it")?;
+        Ok(Duration::from_secs(12 * 3600))
+    }
+
+    #[test]
+    fn attestation_is_renewed_when_the_integrity_token_expires() {
+        use std::sync::atomic::Ordering::SeqCst;
+        let mut provider = BotGuardTokenProvider::new(FakeVm::default());
+        provider.fake_bootstrap = Some(offline_bootstrap);
+        let first = provider.content_token("abc").unwrap();
+        assert_eq!(provider.vm.runs.load(SeqCst), 1);
+        // Valid for its lifetime minus the 10 min margin; tokens are cached.
+        let until = provider.state.lock().unwrap().ready_until.unwrap();
+        let left = until.duration_since(Instant::now());
+        assert!(
+            left > Duration::from_secs(11 * 3600) && left < Duration::from_secs(12 * 3600 - 590)
+        );
+        assert_eq!(provider.content_token("abc").unwrap(), first);
+        assert_eq!(provider.vm.mints.load(SeqCst), 1);
+
+        // The lifetime runs out: the next token renews the attestation first,
+        // and tokens minted under the old one are not handed out again.
+        provider.expire_attestation();
+        let renewed = provider.content_token("abc").unwrap();
+        assert_eq!(provider.vm.runs.load(SeqCst), 2);
+        assert_ne!(renewed, first);
+        assert_eq!(provider.state.lock().unwrap().tokens.len(), 1);
+        assert!(provider.state.lock().unwrap().ready_until.unwrap() > Instant::now());
+        provider.content_token("def").unwrap();
+        assert_eq!(provider.vm.runs.load(SeqCst), 2, "no renewal while valid");
+
+        // A short lifetime still keeps the minter for at least a minute.
+        provider.fake_bootstrap = Some(|vm| {
+            offline_bootstrap(vm)?;
+            Ok(Duration::from_secs(300))
+        });
+        provider.expire_attestation();
+        provider.content_token("abc").unwrap();
+        let left = provider
+            .state
+            .lock()
+            .unwrap()
+            .ready_until
+            .unwrap()
+            .duration_since(Instant::now());
+        assert!(left > Duration::from_secs(55) && left <= Duration::from_secs(60));
+
+        // A failed renewal is an error now and retried next time.
+        provider.fake_bootstrap = Some(|_| Err(Error::Parse("BotGuard page: no challenge".into())));
+        provider.expire_attestation();
+        assert!(provider.content_token("abc").is_err());
+        assert!(provider.state.lock().unwrap().ready_until.is_none());
+        provider.fake_bootstrap = Some(offline_bootstrap);
+        provider.content_token("abc").unwrap();
     }
 
     #[test]
     fn provider_caches_tokens_per_video() {
-        let provider = BotGuardTokenProvider::new(FakeVm {
-            runs: Default::default(),
-        });
+        let provider = BotGuardTokenProvider::new(FakeVm::default());
         // Pretend bootstrap already happened (no network in unit tests).
         provider.state.lock().unwrap().ready_until = Some(Instant::now() + Duration::from_secs(60));
         let a = provider.content_token("abc").unwrap();
-        assert_eq!(URL_SAFE.decode(&a).unwrap(), b"cba");
+        assert_eq!(URL_SAFE.decode(&a).unwrap(), b"cba\0");
         assert_eq!(provider.content_token("abc").unwrap(), a);
         assert_eq!(provider.state.lock().unwrap().tokens.len(), 1);
         assert_eq!(

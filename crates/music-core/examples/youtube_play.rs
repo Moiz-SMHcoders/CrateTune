@@ -10,12 +10,14 @@
 //!
 //! `--first-audio [N]` instead measures time to first audio for the first N
 //! (default 4) results, one after another (after `prewarm`, as the app does;
-//! `--cold` skips it). `MUSIC_LOG=1` (or `debug`) prints the core's log with timestamps.
+//! `--cold` skips it; `--expire-potoken` expires the PoToken attestation before
+//! every song after the first, to check its renewal with `web`). `MUSIC_LOG=1`
+//! (or `debug`) prints the core's log with timestamps.
 
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use music_core::youtube::{WebClient, WebResolver, platform_potoken_provider};
+use music_core::youtube::{PoTokenProvider, WebClient, WebResolver, platform_potoken_provider};
 use music_core::{InnerTube, IosClientResolver, PlaybackStatus, Player};
 
 /// Minimal stderr logger (`MUSIC_LOG=1`): milliseconds since start + message.
@@ -38,9 +40,14 @@ impl log::Log for Logger {
 fn first_audio(
     player: &Player,
     tracks: &[music_core::Track],
+    expire: Option<&dyn PoTokenProvider>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut times = Vec::new();
-    for track in tracks {
+    for (i, track) in tracks.iter().enumerate() {
+        if let Some(provider) = expire.filter(|_| i > 0) {
+            log::info!("expiring the PoToken attestation");
+            provider.expire_attestation();
+        }
         let started = Instant::now();
         log::info!("play {}", track.video_id);
         player.play(track.clone());
@@ -104,6 +111,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
     let cold = take_flag(&mut args, "--cold").is_some();
+    let expire_potoken = take_flag(&mut args, "--expire-potoken").is_some();
     let mut args = args.into_iter();
     let client = match args.next().as_deref() {
         Some("web") => WebClient::MobileWeb,
@@ -122,9 +130,10 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let cache = std::env::temp_dir().join("music-core-youtube-example");
+    let potoken = platform_potoken_provider();
     let resolver = Arc::new(WebResolver::new(
         vec![client],
-        platform_potoken_provider(),
+        potoken.clone(),
         Some(Arc::new(IosClientResolver)),
         Some(cache),
     ));
@@ -136,7 +145,8 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         }
         let player = Player::new(resolver)?;
         player.set_volume(0.0);
-        return first_audio(&player, &tracks[..n.min(tracks.len())]);
+        let expire = potoken.as_deref().filter(|_| expire_potoken);
+        return first_audio(&player, &tracks[..n.min(tracks.len())], expire);
     }
     let player = Player::new(resolver)?;
     player.set_volume(0.0);
