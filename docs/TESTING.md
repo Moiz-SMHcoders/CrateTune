@@ -239,6 +239,19 @@ playback). Copy them into problem reports.
 * [ ] **Fonts**: no missing glyphs (boxes) in titles with accents / CJK characters.
 * [ ] **Folder picker**: Local files → add a music folder → Rescan finds MP3 / FLAC / M4A.
 
+### 5.9 Player bar (Settings → Appearance → Player bar)
+
+* [ ] Hover the progress bar: a thumb and the time under the pointer appear; drag seeks.
+* [ ] Scroll (mouse wheel and touchpad) over the volume: it changes, a "NN %" bubble shows.
+* [ ] Shrink the window to its minimum width: buttons on the right disappear one by one,
+      nothing overlaps the title or the transport.
+* [ ] Progress style **Equalizer** while playing: the bars move with the music and fall
+      when paused. **Wavy**: the wave moves while playing and flattens when paused.
+* [ ] Background **Dynamic gradient** / **Artwork glow** / **Pulse**: colours of the
+      cover; dimmed when paused.
+* [ ] Task Manager: with the default look the app stays near idle while a song plays
+      (Now Playing closed); with Wavy / Equalizer a few percent; paused, near 0.
+
 ## 6. Reporting a problem
 
 For each failed check, send:
