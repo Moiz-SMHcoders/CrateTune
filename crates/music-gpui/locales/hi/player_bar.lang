@@ -1,0 +1,41 @@
+# Player bar: progress styles, background effects, tooltips, and the
+# Appearance → Player bar settings group (hi).
+
+bar.style.standard = मानक
+bar.style.thick = मोटा
+bar.style.simple = सादा
+bar.style.wavy = लहरदार
+bar.style.equalizer = इक्वलाइज़र
+bar.background.glow = कवर की चमक
+bar.background.dynamic_gradient = डायनैमिक ग्रेडिएंट
+bar.background.pulse = पल्स
+bar.direction.left_to_right = बाएँ से दाएँ
+bar.direction.right_to_left = दाएँ से बाएँ
+bar.direction.diagonal = तिरछा
+bar.tooltip.play = चलाएँ (स्पेस)
+bar.tooltip.pause = रोकें (स्पेस)
+bar.tooltip.mute = म्यूट करें
+bar.tooltip.unmute = अनम्यूट करें
+bar.tooltip.lyrics = बोल
+bar.tooltip.show_remaining = बचा हुआ समय दिखाएँ
+bar.tooltip.show_length = गाने की अवधि दिखाएँ
+bar.volume_percent = {percent} %
+settings.bar.group = प्लेयर बार
+settings.bar.progress_style = प्रोग्रेस बार की शैली
+settings.bar.peak_caps = शिखर चिह्न
+settings.bar.peak_caps_note = इक्वलाइज़र शैली: हाल के शिखर दिखाने वाले छोटे चिह्न।
+settings.bar.background_effect = पृष्ठभूमि प्लेबैक पर प्रतिक्रिया दे
+settings.bar.background_effect_note = बार के पीछे कवर का रंग।
+settings.bar.background_style = पृष्ठभूमि की शैली
+settings.bar.dim_when_paused = रोकने पर धुंधला करें
+settings.bar.gradient_direction = ग्रेडिएंट की दिशा
+settings.bar.gradient_intensity = ग्रेडिएंट की तीव्रता
+settings.bar.intensity_value = {percent} %
+settings.bar.animate_gradient = ग्रेडिएंट को एनिमेट करें
+settings.bar.animate_gradient_note = संगीत चलते समय धीमी हलचल (लगभग 13 फ़्रेम प्रति सेकंड)।
+settings.bar.show_remaining = बचा हुआ समय दिखाएँ
+settings.bar.scroll_volume = स्क्रॉल करके आवाज़ बदलें
+settings.bar.mini_follows = मिनी प्लेयर में भी यही रूप
+settings.bar.np_visualizer = अभी चल रहा है में विज़ुअलाइज़र
+settings.bar.np_visualizer_note = नीचे के किनारे पर एक पतली स्पेक्ट्रम पट्टी।
+settings.bar.cpu_note = बार डिफ़ॉल्ट रूप से स्थिर है। लहरदार, इक्वलाइज़र, पल्स, एनिमेटेड ग्रेडिएंट और अभी चल रहा है का विज़ुअलाइज़र संगीत चलते समय सेकंड में लगभग 13–22 बार फिर से बनते हैं (CPU का कुछ प्रतिशत) और रोकने पर थम जाते हैं।

@@ -1,0 +1,41 @@
+# Player bar: progress styles, background effects, tooltips, and the
+# Appearance → Player bar settings group (tr).
+
+bar.style.standard = Standart
+bar.style.thick = Kalın
+bar.style.simple = Sade
+bar.style.wavy = Dalgalı
+bar.style.equalizer = Ekolayzır
+bar.background.glow = Kapak parıltısı
+bar.background.dynamic_gradient = Dinamik gradyan
+bar.background.pulse = Nabız
+bar.direction.left_to_right = Soldan sağa
+bar.direction.right_to_left = Sağdan sola
+bar.direction.diagonal = Çapraz
+bar.tooltip.play = Oynat (Boşluk)
+bar.tooltip.pause = Duraklat (Boşluk)
+bar.tooltip.mute = Sesi kapat
+bar.tooltip.unmute = Sesi aç
+bar.tooltip.lyrics = Şarkı sözleri
+bar.tooltip.show_remaining = Kalan süreyi göster
+bar.tooltip.show_length = Şarkı süresini göster
+bar.volume_percent = %{percent}
+settings.bar.group = Oynatıcı çubuğu
+settings.bar.progress_style = İlerleme çubuğu stili
+settings.bar.peak_caps = Tepe işaretleri
+settings.bar.peak_caps_note = Ekolayzır stili: son tepeleri gösteren küçük işaretler.
+settings.bar.background_effect = Arka plan çalmaya tepki verir
+settings.bar.background_effect_note = Çubuğun arkasında kapaktan gelen renk.
+settings.bar.background_style = Arka plan stili
+settings.bar.dim_when_paused = Duraklatınca karart
+settings.bar.gradient_direction = Gradyan yönü
+settings.bar.gradient_intensity = Gradyan yoğunluğu
+settings.bar.intensity_value = %{percent}
+settings.bar.animate_gradient = Gradyanı canlandır
+settings.bar.animate_gradient_note = Müzik çalarken yavaş bir kayma (saniyede yaklaşık 13 kare).
+settings.bar.show_remaining = Kalan süreyi göster
+settings.bar.scroll_volume = Sesi kaydırarak değiştir
+settings.bar.mini_follows = Mini oynatıcıda aynı görünüm
+settings.bar.np_visualizer = Şu an çalıyor ekranında görselleştirici
+settings.bar.np_visualizer_note = Alt kenar boyunca ince bir spektrum şeridi.
+settings.bar.cpu_note = Çubuk varsayılan olarak durağandır. Dalgalı, Ekolayzır, Nabız, canlı gradyan ve Şu an çalıyor görselleştiricisi müzik çalarken saniyede yaklaşık 13–22 kez yeniden çizilir (CPU'nun birkaç yüzdesi) ve duraklatınca durur.

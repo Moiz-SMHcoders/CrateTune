@@ -1,0 +1,41 @@
+# Player bar: progress styles, background effects, tooltips, and the
+# Appearance → Player bar settings group (ja).
+
+bar.style.standard = 標準
+bar.style.thick = 太め
+bar.style.simple = シンプル
+bar.style.wavy = ウェーブ
+bar.style.equalizer = イコライザー
+bar.background.glow = アートワークの光
+bar.background.dynamic_gradient = ダイナミックグラデーション
+bar.background.pulse = パルス
+bar.direction.left_to_right = 左から右
+bar.direction.right_to_left = 右から左
+bar.direction.diagonal = 斜め
+bar.tooltip.play = 再生（スペース）
+bar.tooltip.pause = 一時停止（スペース）
+bar.tooltip.mute = ミュート
+bar.tooltip.unmute = ミュート解除
+bar.tooltip.lyrics = 歌詞
+bar.tooltip.show_remaining = 残り時間を表示
+bar.tooltip.show_length = 曲の長さを表示
+bar.volume_percent = {percent}%
+settings.bar.group = プレーヤーバー
+settings.bar.progress_style = プログレスバーのスタイル
+settings.bar.peak_caps = ピークマーカー
+settings.bar.peak_caps_note = イコライザースタイル：最近のピークを小さなマークで表示します。
+settings.bar.background_effect = 背景が再生に反応する
+settings.bar.background_effect_note = バーの背景にアートワークの色を使います。
+settings.bar.background_style = 背景のスタイル
+settings.bar.dim_when_paused = 一時停止中は暗くする
+settings.bar.gradient_direction = グラデーションの向き
+settings.bar.gradient_intensity = グラデーションの強さ
+settings.bar.intensity_value = {percent}%
+settings.bar.animate_gradient = グラデーションをアニメーション
+settings.bar.animate_gradient_note = 再生中にゆっくり動きます（毎秒約13フレーム）。
+settings.bar.show_remaining = 残り時間を表示
+settings.bar.scroll_volume = スクロールで音量を変更
+settings.bar.mini_follows = ミニプレーヤーにも同じ見た目を使う
+settings.bar.np_visualizer = 再生中画面のビジュアライザー
+settings.bar.np_visualizer_note = 下端に細いスペクトラムの帯を表示します。
+settings.bar.cpu_note = バーは既定では静的です。ウェーブ、イコライザー、パルス、アニメーションするグラデーション、再生中画面のビジュアライザーは、再生中に毎秒約13〜22回再描画され（CPUの数パーセント）、一時停止すると止まります。

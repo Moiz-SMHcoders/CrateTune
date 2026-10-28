@@ -1,0 +1,41 @@
+# Player bar: progress styles, background effects, tooltips, and the
+# Appearance → Player bar settings group (nl).
+
+bar.style.standard = Standaard
+bar.style.thick = Dik
+bar.style.simple = Eenvoudig
+bar.style.wavy = Golvend
+bar.style.equalizer = Equalizer
+bar.background.glow = Hoesgloed
+bar.background.dynamic_gradient = Dynamisch verloop
+bar.background.pulse = Puls
+bar.direction.left_to_right = Links naar rechts
+bar.direction.right_to_left = Rechts naar links
+bar.direction.diagonal = Diagonaal
+bar.tooltip.play = Afspelen (spatiebalk)
+bar.tooltip.pause = Pauzeren (spatiebalk)
+bar.tooltip.mute = Dempen
+bar.tooltip.unmute = Dempen opheffen
+bar.tooltip.lyrics = Songtekst
+bar.tooltip.show_remaining = Resterende tijd tonen
+bar.tooltip.show_length = Nummerduur tonen
+bar.volume_percent = {percent} %
+settings.bar.group = Spelerbalk
+settings.bar.progress_style = Stijl van de voortgangsbalk
+settings.bar.peak_caps = Piekmarkeringen
+settings.bar.peak_caps_note = Equalizer-stijl: kleine streepjes tonen recente pieken.
+settings.bar.background_effect = Achtergrond reageert op afspelen
+settings.bar.background_effect_note = Kleur van de hoes achter de balk.
+settings.bar.background_style = Achtergrondstijl
+settings.bar.dim_when_paused = Dimmen bij pauze
+settings.bar.gradient_direction = Richting van het verloop
+settings.bar.gradient_intensity = Sterkte van het verloop
+settings.bar.intensity_value = {percent} %
+settings.bar.animate_gradient = Verloop animeren
+settings.bar.animate_gradient_note = Een langzame beweging tijdens het afspelen (ongeveer 13 beelden per seconde).
+settings.bar.show_remaining = Resterende tijd tonen
+settings.bar.scroll_volume = Scrollen om het volume te wijzigen
+settings.bar.mini_follows = Zelfde uiterlijk in de minispeler
+settings.bar.np_visualizer = Visualisatie in Speelt nu
+settings.bar.np_visualizer_note = Een smalle spectrumstrook langs de onderrand.
+settings.bar.cpu_note = De balk is standaard statisch. Golvend, Equalizer, Puls, een geanimeerd verloop en de visualisatie in Speelt nu tekenen ongeveer 13–22 keer per seconde opnieuw terwijl er muziek speelt (een paar procent CPU) en stoppen bij pauze.

@@ -87,15 +87,30 @@ in the app's language and your system's region.
 
 ## Playing
 
-* The player bar at the bottom: artwork, title (click to open Now Playing), previous /
-  play / next, progress (click or drag to seek), like, sleep timer, queue, mini player,
-  volume.
+* The player bar at the bottom: artwork, title and artist (click to open Now Playing),
+  like; shuffle / previous / play / next / repeat with the progress bar below (click or
+  drag to seek; hovering shows the time under the pointer; click the time on the right
+  to switch between the remaining time and the song's length); lyrics, queue, sleep
+  timer, Cast, mini player, Now Playing and the volume on the right (click the speaker
+  to mute; scroll over it or the slider to change the volume). In a narrow window the
+  less important buttons hide first. Messages such as "Loading…" or a skipped song
+  appear under the artist.
+* **Player bar look** (Settings → Appearance → Player bar): progress bar style —
+  Standard, Thick, Simple, **Wavy** (an animated wave) or **Equalizer** (bars that move
+  with the music) — and **Background reacts to playback**: *Artwork glow*, *Dynamic
+  gradient* (direction, intensity, optional slow animation) or *Pulse* (follows the
+  loudness), dimmed while paused unless you turn that off. Also: show the remaining
+  time, scroll to change the volume, the same look in the mini player, and a visualizer
+  strip in Now Playing. The bar is static by default; the moving styles use a few
+  percent of CPU while music plays and stop when it pauses. The **Minimal / Fast**
+  profile switches all of it to the cheapest look.
 * **Queue** (⌥⌘Q): now playing, up next (drag to reorder, remove), history. Shuffle (⌘S)
   and repeat off / all / one (⌘R) are remembered.
 * **Radio** plays an endless mix based on a song, artist, album or playlist.
   **Autoplay similar songs** (Settings → Content & region) keeps playing related songs
   when the queue ends.
-* **Mini player** (⇧⌘M): a small window that stays on top.
+* **Mini player** (⇧⌘M): a small window that stays on top; click or drag its progress
+  bar to seek.
 * **Sleep timer**: the moon button in the bar — 5 to 60 minutes, end of the song, or a
   custom length.
 * **Media keys** and the system's now-playing controls work on all three systems; on

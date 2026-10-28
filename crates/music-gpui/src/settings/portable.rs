@@ -46,10 +46,11 @@ pub const LOCAL_ONLY: &[&str] = &[
     "ai_filter.key_set",
 ];
 
-/// Top-level sections of the player bar's look (progress / volume slider style,
-/// background effects) that theme files carry when present. Add the bar's
-/// settings key here when it gets one.
-pub const BAR_STYLE_KEYS: &[&str] = &["player_bar", "bar_style"];
+/// Top-level sections of the player bar's look that theme files and profiles
+/// carry: `player_bar` (`bar_prefs::PlayerBarConfig`: progress style, background
+/// effect + dynamic gradient, times, volume scroll, mini player, Now Playing
+/// visualizer).
+pub const BAR_STYLE_KEYS: &[&str] = &["player_bar"];
 /// Sections a theme file replaces (besides `appearance.theme` / `font_scale`).
 const THEME_SECTIONS: &[&str] = &["custom_theme", "now_playing"];
 const THEME_APPEARANCE_KEYS: &[&str] = &["theme", "font_scale"];
@@ -862,7 +863,8 @@ mod tests {
         let text = export_theme(&a, "Blue night", 0);
         assert!(text.contains(&theme_format()));
         assert!(!text.contains("language"), "the UI language isn't a look");
-        assert!(!text.contains("volume"));
+        // (`player_bar.scroll_volume` is a look option; the volume itself isn't.)
+        assert!(!text.contains("\"volume\""));
 
         let mut b = Settings {
             volume: 0.1,

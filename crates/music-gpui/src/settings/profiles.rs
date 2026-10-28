@@ -146,6 +146,9 @@ pub fn minimal_settings() -> Settings {
     s.lyrics.romanize.cyrillic = false;
     s.lyrics.romanize.other = false;
     s.lyrics.show_background_vocals = false;
+    // Player bar: static track, no background effect / gradient animation, no
+    // visualizer — nothing asks for frames or the spectrum tap while playing.
+    s.player_bar = super::bar_prefs::PlayerBarConfig::least_resources();
     s
 }
 
@@ -528,7 +531,13 @@ mod tests {
         keys.sort();
         assert_eq!(
             keys,
-            ["appearance", "custom_theme", "lyrics", "now_playing"]
+            [
+                "appearance",
+                "custom_theme",
+                "lyrics",
+                "now_playing",
+                "player_bar"
+            ]
         );
         let text = Value::Object(snap.clone()).to_string();
         for absent in [
@@ -538,11 +547,13 @@ mod tests {
             "provider_order",
             "secrets",
         ] {
-            assert!(!text.contains(absent), "{absent} in {text}");
+            // As keys (`player_bar.scroll_volume` is a look option, not the volume).
+            let key = format!("\"{absent}\"");
+            assert!(!text.contains(&key), "{absent} in {text}");
         }
         // Every field of the sections is there (whole structs).
         let all = to_value(&Settings::default());
-        for key in ["custom_theme", "now_playing"] {
+        for key in ["custom_theme", "now_playing", "player_bar"] {
             assert_eq!(
                 snap[key].as_object().unwrap().len(),
                 all[key].as_object().unwrap().len()

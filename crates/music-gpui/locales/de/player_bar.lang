@@ -1,0 +1,41 @@
+# Player bar: progress styles, background effects, tooltips, and the
+# Appearance → Player bar settings group (de).
+
+bar.style.standard = Standard
+bar.style.thick = Dick
+bar.style.simple = Schlicht
+bar.style.wavy = Welle
+bar.style.equalizer = Equalizer
+bar.background.glow = Cover-Schimmer
+bar.background.dynamic_gradient = Dynamischer Verlauf
+bar.background.pulse = Puls
+bar.direction.left_to_right = Links nach rechts
+bar.direction.right_to_left = Rechts nach links
+bar.direction.diagonal = Diagonal
+bar.tooltip.play = Abspielen (Leertaste)
+bar.tooltip.pause = Pause (Leertaste)
+bar.tooltip.mute = Stummschalten
+bar.tooltip.unmute = Ton an
+bar.tooltip.lyrics = Songtext
+bar.tooltip.show_remaining = Restzeit anzeigen
+bar.tooltip.show_length = Songlänge anzeigen
+bar.volume_percent = {percent} %
+settings.bar.group = Player-Leiste
+settings.bar.progress_style = Stil der Fortschrittsleiste
+settings.bar.peak_caps = Spitzenmarken
+settings.bar.peak_caps_note = Equalizer-Stil: kleine Kappen zeigen die letzten Spitzen.
+settings.bar.background_effect = Hintergrund reagiert auf die Wiedergabe
+settings.bar.background_effect_note = Farbe aus dem Cover hinter der Leiste.
+settings.bar.background_style = Hintergrundstil
+settings.bar.dim_when_paused = Bei Pause abdunkeln
+settings.bar.gradient_direction = Verlaufsrichtung
+settings.bar.gradient_intensity = Verlaufsstärke
+settings.bar.intensity_value = {percent} %
+settings.bar.animate_gradient = Verlauf animieren
+settings.bar.animate_gradient_note = Ein langsames Wandern während der Wiedergabe (etwa 13 Bilder pro Sekunde).
+settings.bar.show_remaining = Restzeit anzeigen
+settings.bar.scroll_volume = Lautstärke per Scrollen ändern
+settings.bar.mini_follows = Gleicher Look im Mini-Player
+settings.bar.np_visualizer = Visualisierung in „Läuft gerade“
+settings.bar.np_visualizer_note = Ein schmaler Spektrumstreifen am unteren Rand.
+settings.bar.cpu_note = Die Leiste ist standardmäßig statisch. Welle, Equalizer, Puls, ein animierter Verlauf und die Visualisierung in „Läuft gerade“ zeichnen während der Wiedergabe etwa 13–22-mal pro Sekunde neu (wenige Prozent CPU) und halten bei Pause an.

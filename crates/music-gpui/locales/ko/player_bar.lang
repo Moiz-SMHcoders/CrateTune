@@ -1,0 +1,41 @@
+# Player bar: progress styles, background effects, tooltips, and the
+# Appearance → Player bar settings group (ko).
+
+bar.style.standard = 기본
+bar.style.thick = 두껍게
+bar.style.simple = 단순
+bar.style.wavy = 물결
+bar.style.equalizer = 이퀄라이저
+bar.background.glow = 앨범 아트 빛
+bar.background.dynamic_gradient = 다이내믹 그라데이션
+bar.background.pulse = 펄스
+bar.direction.left_to_right = 왼쪽에서 오른쪽
+bar.direction.right_to_left = 오른쪽에서 왼쪽
+bar.direction.diagonal = 대각선
+bar.tooltip.play = 재생(스페이스)
+bar.tooltip.pause = 일시정지(스페이스)
+bar.tooltip.mute = 음소거
+bar.tooltip.unmute = 음소거 해제
+bar.tooltip.lyrics = 가사
+bar.tooltip.show_remaining = 남은 시간 표시
+bar.tooltip.show_length = 곡 길이 표시
+bar.volume_percent = {percent}%
+settings.bar.group = 플레이어 바
+settings.bar.progress_style = 진행 막대 스타일
+settings.bar.peak_caps = 피크 표시
+settings.bar.peak_caps_note = 이퀄라이저 스타일: 최근 피크를 작은 표시로 보여 줍니다.
+settings.bar.background_effect = 배경이 재생에 반응
+settings.bar.background_effect_note = 바 뒤에 앨범 아트의 색을 표시합니다.
+settings.bar.background_style = 배경 스타일
+settings.bar.dim_when_paused = 일시정지 시 어둡게
+settings.bar.gradient_direction = 그라데이션 방향
+settings.bar.gradient_intensity = 그라데이션 강도
+settings.bar.intensity_value = {percent}%
+settings.bar.animate_gradient = 그라데이션 애니메이션
+settings.bar.animate_gradient_note = 음악이 재생되는 동안 천천히 움직입니다(초당 약 13프레임).
+settings.bar.show_remaining = 남은 시간 표시
+settings.bar.scroll_volume = 스크롤로 볼륨 변경
+settings.bar.mini_follows = 미니 플레이어에도 같은 모양
+settings.bar.np_visualizer = 지금 재생 중 화면의 시각화
+settings.bar.np_visualizer_note = 아래쪽 가장자리를 따라 얇은 스펙트럼 띠를 표시합니다.
+settings.bar.cpu_note = 바는 기본적으로 정적입니다. 물결, 이퀄라이저, 펄스, 애니메이션 그라데이션, 지금 재생 중 시각화는 재생 중 초당 약 13~22회 다시 그려지며(CPU 몇 퍼센트) 일시정지하면 멈춥니다.
