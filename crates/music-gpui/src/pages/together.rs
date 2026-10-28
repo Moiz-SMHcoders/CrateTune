@@ -42,11 +42,8 @@ impl TogetherPage {
     pub fn build(last: String, window: &mut Window, cx: &mut Context<MusicApp>) -> PageView {
         let scroll = ScrollHandle::new();
         let page = cx.new(|cx: &mut Context<Self>| {
-            let link = cx.new(|cx| {
-                InputState::new(window, cx)
-                    .placeholder("music-together://join?… or host|port|session|key")
-                    .default_value(last)
-            });
+            let link = cx.new(|cx| InputState::new(window, cx).default_value(last));
+            crate::i18n::track_placeholder(&link, k!("together.join.placeholder"), window, cx);
             let executor = cx.background_executor().clone();
             // Participants / room change on the app's poll; refresh twice a second.
             let tick = cx.spawn(async move |this, cx| {
@@ -117,10 +114,10 @@ fn participant_row(
         )
         .child(div().flex_1().min_w_0().truncate().child(p.name.clone()));
     if p.is_host {
-        row = row.child(Tag::primary().small().child("Host"));
+        row = row.child(Tag::primary().small().child(t!("together.tag.host")));
     }
     if p.is_pending {
-        row = row.child(Tag::warning().small().child("Waiting"));
+        row = row.child(Tag::warning().small().child(t!("together.tag.waiting")));
     }
     if hosting && !p.is_host {
         if p.is_pending {
@@ -130,7 +127,7 @@ fn participant_row(
                     Button::new(("tg-approve", ix))
                         .xsmall()
                         .primary()
-                        .label("Let in")
+                        .label(t!("together.people.let_in"))
                         .on_click(move |_, _, cx| {
                             update_app(cx, |app, cx| app.together_approve(&a, true, cx));
                         }),
@@ -139,7 +136,7 @@ fn participant_row(
                     Button::new(("tg-deny", ix))
                         .xsmall()
                         .ghost()
-                        .label("Decline")
+                        .label(t!("together.people.decline"))
                         .on_click(move |_, _, cx| {
                             update_app(cx, |app, cx| app.together_approve(&d, false, cx));
                         }),
@@ -151,8 +148,8 @@ fn participant_row(
                     Button::new(("tg-make-host", ix))
                         .xsmall()
                         .ghost()
-                        .label("Make host")
-                        .tooltip("Hand the session over: they host, everyone follows them")
+                        .label(t!("together.people.make_host"))
+                        .tooltip(t!("together.people.make_host_tooltip"))
                         .disabled(transferring)
                         .on_click(move |_, _, cx| {
                             update_app(cx, |app, cx| app.together_transfer(&t, cx));
@@ -162,7 +159,7 @@ fn participant_row(
                     Button::new(("tg-kick", ix))
                         .xsmall()
                         .ghost()
-                        .label("Remove")
+                        .label(t!("together.people.remove"))
                         .on_click(move |_, _, cx| {
                             update_app(cx, |app, cx| app.together_kick(&k, false, cx));
                         }),
@@ -171,7 +168,7 @@ fn participant_row(
                     Button::new(("tg-ban", ix))
                         .xsmall()
                         .ghost()
-                        .label("Ban")
+                        .label(t!("together.people.ban"))
                         .on_click(move |_, _, cx| {
                             update_app(cx, |app, cx| app.together_kick(&b, true, cx));
                         }),
@@ -193,8 +190,8 @@ fn room_queue(room: &RoomState, cx: &gpui::App) -> AnyElement {
     v_flex()
         .gap_2()
         .child(section_header(
-            "The room's queue",
-            Some(format!("{} songs", room.queue.len()).into()),
+            t!("together.queue.title"),
+            Some(tp!("common.songs", room.queue.len()).into()),
             None,
             cx,
         ))
@@ -250,8 +247,8 @@ impl Render for TogetherPage {
         let theme = cx.theme();
         let danger = theme.danger;
         let mut content = v_flex().gap_6().child(page_title(
-            "Listen together",
-            Some("Play the same music in sync with people on your network, or anywhere through a relay.".into()),
+            t!("nav.together"),
+            Some(t!("together.page.subtitle").into()),
             cx,
         ));
         if let Some(e) = &error {
@@ -269,40 +266,18 @@ impl Render for TogetherPage {
                         div()
                             .text_lg()
                             .font_weight(FontWeight::SEMIBOLD)
-                            .child("Host a session"),
+                            .child(t!("together.host.title")),
                     )
-                    .child(muted(
-                        format!(
-                            "Others follow what you play. As “{}” on port {}; guests {} add songs \
-                             and {} control playback{}.",
-                            prefs.name(),
-                            prefs.port,
-                            if prefs.allow_guests_to_add_tracks {
-                                "can"
-                            } else {
-                                "can't"
-                            },
-                            if prefs.allow_guests_to_control_playback {
-                                "can"
-                            } else {
-                                "can't"
-                            },
-                            if prefs.require_host_approval {
-                                "; you approve each guest"
-                            } else {
-                                ""
-                            }
-                        ),
-                        cx,
-                    ))
+                    .child(muted(host_summary(&prefs), cx))
                     .child(
                         h_flex()
                             .gap_2()
+                            .flex_wrap()
                             .child(
                                 Button::new("tg-host")
                                     .primary()
                                     .icon(Lucide::UsersRound)
-                                    .label("Start session")
+                                    .label(t!("together.host.start"))
                                     .on_click(|_, window, cx| {
                                         update_app(cx, |app, cx| app.together_host(window, cx));
                                     }),
@@ -311,10 +286,10 @@ impl Render for TogetherPage {
                                 Button::new("tg-host-relay")
                                     .outline()
                                     .icon(Lucide::Globe)
-                                    .label("Host via relay")
+                                    .label(t!("together.host.via_relay"))
                                     .tooltip(match prefs.relay() {
-                                        Some(_) => "Through your relay server: guests can join from any network",
-                                        None => "Set a relay server in Settings → Music Together",
+                                        Some(_) => t!("together.host.via_relay_tooltip"),
+                                        None => t!("together.host.no_relay_tooltip"),
                                     })
                                     .disabled(prefs.relay().is_none())
                                     .on_click(|_, window, cx| {
@@ -326,7 +301,7 @@ impl Render for TogetherPage {
                             .child(
                                 Button::new("tg-settings")
                                     .ghost()
-                                    .label("Settings…")
+                                    .label(t!("together.host.settings"))
                                     .on_click(|_, window, cx| {
                                         update_app(cx, |app, cx| {
                                             app.navigate(
@@ -347,16 +322,19 @@ impl Render for TogetherPage {
                         div()
                             .text_lg()
                             .font_weight(FontWeight::SEMIBOLD)
-                            .child("Join a session"),
+                            .child(t!("together.join.title")),
                     )
-                    .child(muted("Paste the link the host shared with you.", cx))
+                    .child(muted(t!("together.join.hint"), cx))
                     .child(Input::new(&self.link))
-                    .child(Button::new("tg-join").primary().label("Join").on_click(
-                        move |_, window, cx| {
-                            let link = link_input.read(cx).value().to_string();
-                            update_app(cx, |app, cx| app.together_join(&link, window, cx));
-                        },
-                    ));
+                    .child(
+                        Button::new("tg-join")
+                            .primary()
+                            .label(t!("together.join.button"))
+                            .on_click(move |_, window, cx| {
+                                let link = link_input.read(cx).value().to_string();
+                                update_app(cx, |app, cx| app.together_join(&link, window, cx));
+                            }),
+                    );
                 content = content.child(
                     h_flex()
                         .gap_4()
@@ -375,13 +353,13 @@ impl Render for TogetherPage {
                             h_flex()
                                 .gap_3()
                                 .child(Spinner::new())
-                                .child(format!("Connecting to {host}…")),
+                                .child(t!("together.connecting", host = host)),
                         )
                         .child(
                             Button::new("tg-cancel")
                                 .small()
                                 .ghost()
-                                .label("Cancel")
+                                .label(t!("common.cancel"))
                                 .on_click(|_, _, cx| {
                                     update_app(cx, |app, cx| app.together_leave(cx));
                                 }),
@@ -402,16 +380,13 @@ impl Render for TogetherPage {
                                     div()
                                         .text_lg()
                                         .font_weight(FontWeight::SEMIBOLD)
-                                        .child(format!(
-                                            "Hosting · {guests} guest{}",
-                                            if guests == 1 { "" } else { "s" }
-                                        )),
+                                        .child(tp!("together.hosting.title", guests)),
                                 )
                                 .child(
                                     Button::new("tg-end")
                                         .small()
                                         .danger()
-                                        .label("End session")
+                                        .label(t!("together.hosting.end"))
                                         .on_click(|_, _, cx| {
                                             update_app(cx, |app, cx| app.together_leave(cx));
                                         }),
@@ -419,9 +394,9 @@ impl Render for TogetherPage {
                         )
                         .child(muted(
                             if relayed {
-                                format!("Share this link; it works from any network (through the relay {host}):")
+                                t!("together.hosting.share_relay", host = host)
                             } else {
-                                format!("Share this link with people on the same network ({host}, port {port}):")
+                                t!("together.hosting.share_lan", host = host, port = port)
                             },
                             cx,
                         ))
@@ -429,7 +404,7 @@ impl Render for TogetherPage {
                             h_flex()
                                 .gap_2()
                                 .child(Spinner::new().small())
-                                .child(muted(format!("Handing the session to {name}…"), cx))
+                                .child(muted(t!("together.log.handing_over", name = name), cx))
                         }))
                         .child(
                             h_flex()
@@ -449,24 +424,32 @@ impl Render for TogetherPage {
                                     Button::new("tg-copy")
                                         .small()
                                         .outline()
-                                        .label("Copy link")
+                                        .label(t!("together.hosting.copy_link"))
                                         .on_click(move |_, window, cx| {
-                                            cx.write_to_clipboard(ClipboardItem::new_string(copy_link.clone()));
-                                            crate::app::notify(window, cx, "Link copied");
+                                            cx.write_to_clipboard(ClipboardItem::new_string(
+                                                copy_link.clone(),
+                                            ));
+                                            crate::app::notify(
+                                                window,
+                                                cx,
+                                                t!("together.hosting.link_copied"),
+                                            );
                                         }),
                                 )
                                 .child(
                                     Button::new("tg-copy-compact")
                                         .small()
                                         .ghost()
-                                        .label("Copy code")
+                                        .label(t!("together.hosting.copy_code"))
                                         .tooltip(if relayed {
-                                            "relay URL|session|key, for typing on another device"
+                                            t!("together.hosting.copy_code_tooltip_relay")
                                         } else {
-                                            "host|port|session|key, for typing on another device"
+                                            t!("together.hosting.copy_code_tooltip")
                                         })
                                         .on_click(move |_, _, cx| {
-                                            cx.write_to_clipboard(ClipboardItem::new_string(copy_compact.clone()));
+                                            cx.write_to_clipboard(ClipboardItem::new_string(
+                                                copy_compact.clone(),
+                                            ));
                                         }),
                                 ),
                         )
@@ -476,19 +459,19 @@ impl Render for TogetherPage {
                                 .flex_wrap()
                                 .child(setting_switch(
                                     "tg-allow-add",
-                                    "Guests can add songs",
+                                    t!("together.room.allow_add"),
                                     prefs.allow_guests_to_add_tracks,
                                     |t, on| t.allow_guests_to_add_tracks = on,
                                 ))
                                 .child(setting_switch(
                                     "tg-allow-control",
-                                    "Guests can control playback",
+                                    t!("together.room.allow_control"),
                                     prefs.allow_guests_to_control_playback,
                                     |t, on| t.allow_guests_to_control_playback = on,
                                 ))
                                 .child(setting_switch(
                                     "tg-approval",
-                                    "Approve new guests",
+                                    t!("together.room.approve"),
                                     prefs.require_host_approval,
                                     |t, on| t.require_host_approval = on,
                                 )),
@@ -530,13 +513,13 @@ impl Render for TogetherPage {
                             div()
                                 .text_lg()
                                 .font_weight(FontWeight::SEMIBOLD)
-                                .child(format!("Listening with {host_name}")),
+                                .child(t!("together.guest.listening_with", name = host_name)),
                         )
                         .child(
                             Button::new("tg-leave")
                                 .small()
                                 .outline()
-                                .label("Leave")
+                                .label(t!("together.guest.leave"))
                                 .on_click(|_, _, cx| {
                                     update_app(cx, |app, cx| app.together_leave(cx));
                                 }),
@@ -547,48 +530,68 @@ impl Render for TogetherPage {
                         h_flex()
                             .gap_2()
                             .child(Spinner::new().small())
-                            .child(muted("Waiting for the host to let you in…", cx)),
+                            .child(muted(t!("together.status.waiting_approval"), cx)),
                     );
                 } else {
                     session = session
                         .child(match &now {
                             Some(t) => v_flex()
-                                .child(div().font_weight(FontWeight::SEMIBOLD).child(t.title.clone()))
+                                .child(
+                                    div()
+                                        .font_weight(FontWeight::SEMIBOLD)
+                                        .child(t.title.clone()),
+                                )
                                 .child(muted(t.artists.join(", "), cx)),
-                            None => v_flex().child(muted("The host isn't playing anything.", cx)),
+                            None => v_flex().child(muted(t!("together.guest.nothing_playing"), cx)),
                         })
                         .child(
                             h_flex()
                                 .gap_1()
-                                .child(control("tg-prev", Lucide::SkipBack, "Ask the host: previous", ControlAction::SkipPrevious))
+                                .flex_wrap()
+                                .child(control(
+                                    "tg-prev",
+                                    Lucide::SkipBack,
+                                    t!("together.guest.ask_previous"),
+                                    ControlAction::SkipPrevious,
+                                ))
                                 .child(control(
                                     "tg-toggle",
                                     if playing { Lucide::Pause } else { Lucide::Play },
-                                    "Ask the host: play / pause",
-                                    if playing { ControlAction::Pause } else { ControlAction::Play },
+                                    t!("together.guest.ask_play_pause"),
+                                    if playing {
+                                        ControlAction::Pause
+                                    } else {
+                                        ControlAction::Play
+                                    },
                                 ))
-                                .child(control("tg-next", Lucide::SkipForward, "Ask the host: next", ControlAction::SkipNext))
+                                .child(control(
+                                    "tg-next",
+                                    Lucide::SkipForward,
+                                    t!("together.guest.ask_next"),
+                                    ControlAction::SkipNext,
+                                ))
                                 .child(muted(
                                     if can_control {
-                                        "The host lets guests control playback."
+                                        t!("together.guest.can_control")
                                     } else {
-                                        "Only the host controls playback."
+                                        t!("together.guest.host_controls")
                                     },
                                     cx,
                                 )),
                         )
                         .child(muted(
                             if can_add {
-                                "Use “Play next” or “Add to queue” on any song to suggest it to the host."
+                                t!("together.guest.suggest_hint")
                             } else {
-                                "The host doesn't take suggestions."
+                                t!("together.guest.no_suggestions")
                             },
                             cx,
                         ))
                         .child(muted(
-                            format!(
-                                "Clock offset {} ms · round trip {} ms",
-                                clock.offset_ms, clock.rtt_ms
+                            t!(
+                                "together.guest.clock",
+                                offset = clock.offset_ms,
+                                rtt = clock.rtt_ms
                             ),
                             cx,
                         ));
@@ -610,7 +613,7 @@ impl Render for TogetherPage {
                 v_flex()
                     .gap_2()
                     .child(section_header(
-                        format!("People · {}", participants.len()),
+                        tp!("together.people.title", participants.len()),
                         None,
                         None,
                         cx,
@@ -627,12 +630,43 @@ impl Render for TogetherPage {
             content = content.child(
                 v_flex()
                     .gap_1()
-                    .child(section_header("Activity", None, None, cx))
+                    .child(section_header(t!("together.activity"), None, None, cx))
                     .children(log.into_iter().map(|line| muted(line, cx))),
             );
         }
         page_scroll("together-page", &self.scroll, content).into_any_element()
     }
+}
+
+/// "Others follow what you play, as … on port …. Guests can … You approve each guest."
+fn host_summary(prefs: &crate::integrations::config::TogetherPrefs) -> String {
+    let guests = match (
+        prefs.allow_guests_to_add_tracks,
+        prefs.allow_guests_to_control_playback,
+    ) {
+        (true, true) => t!("together.host.guests_add_and_control"),
+        (true, false) => t!("together.host.guests_add_only"),
+        (false, true) => t!("together.host.guests_control_only"),
+        (false, false) => t!("together.host.guests_neither"),
+    };
+    let approval = if prefs.require_host_approval {
+        t!("together.host.approval")
+    } else {
+        ""
+    };
+    let intro = t!(
+        "together.host.intro",
+        name = prefs.name(),
+        port = prefs.port
+    );
+    t!(
+        "together.host.summary",
+        intro = intro,
+        guests = guests,
+        approval = approval
+    )
+    .trim_end()
+    .to_owned()
 }
 
 fn setting_switch(

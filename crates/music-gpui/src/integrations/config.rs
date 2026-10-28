@@ -118,7 +118,52 @@ fn default_display_name() -> String {
                 .map(|f| f.to_uppercase().chain(c).collect())
                 .unwrap_or(u)
         })
-        .unwrap_or_else(|| "Listener".into())
+        // Sent to the other people in a session as this user's name.
+        .unwrap_or_else(|| "Listener".into()) // i18n-ignore
+}
+
+/// A SponsorBlock category's name in the UI language.
+pub fn sponsorblock_label(category: Category) -> &'static str {
+    match category {
+        Category::MusicOfftopic => t!("sponsorblock.category.music_offtopic"),
+        Category::Sponsor => t!("sponsorblock.category.sponsor"),
+        Category::Intro => t!("sponsorblock.category.intro"),
+        Category::Outro => t!("sponsorblock.category.outro"),
+        Category::SelfPromo => t!("sponsorblock.category.selfpromo"),
+        Category::Interaction => t!("sponsorblock.category.interaction"),
+        Category::Preview => t!("sponsorblock.category.preview"),
+        Category::Filler => t!("sponsorblock.category.filler"),
+        Category::Hook => t!("sponsorblock.category.hook"),
+    }
+}
+
+/// The category as it reads inside "Skip {category}" (the player-bar chip).
+pub fn sponsorblock_chip_label(category: Category) -> &'static str {
+    match category {
+        Category::MusicOfftopic => t!("sponsorblock.category_in_chip.music_offtopic"),
+        Category::Sponsor => t!("sponsorblock.category_in_chip.sponsor"),
+        Category::Intro => t!("sponsorblock.category_in_chip.intro"),
+        Category::Outro => t!("sponsorblock.category_in_chip.outro"),
+        Category::SelfPromo => t!("sponsorblock.category_in_chip.selfpromo"),
+        Category::Interaction => t!("sponsorblock.category_in_chip.interaction"),
+        Category::Preview => t!("sponsorblock.category_in_chip.preview"),
+        Category::Filler => t!("sponsorblock.category_in_chip.filler"),
+        Category::Hook => t!("sponsorblock.category_in_chip.hook"),
+    }
+}
+
+/// An AI-filter category's name in the UI language.
+pub fn ai_category_label(category: AiCategory) -> &'static str {
+    match category {
+        AiCategory::Explicit => t!("ai_filter.category.explicit"),
+        AiCategory::AiGenerated => t!("ai_filter.category.ai_generated"),
+        AiCategory::Holiday => t!("ai_filter.category.holiday"),
+        AiCategory::Children => t!("ai_filter.category.children"),
+        AiCategory::Noise => t!("ai_filter.category.noise"),
+        AiCategory::SpedUp => t!("ai_filter.category.sped_up"),
+        AiCategory::Covers => t!("ai_filter.category.covers"),
+        AiCategory::Live => t!("ai_filter.category.live"),
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

@@ -28,7 +28,7 @@ use super::prefs_ui::choice;
 use super::widgets::{field, group, note, row, status_line};
 use crate::app::update_app;
 use crate::icons::Lucide;
-use crate::integrations::config::SkipMode;
+use crate::integrations::config::{SkipMode, ai_category_label, sponsorblock_label};
 use crate::router::Route;
 use crate::secrets::Secret;
 use crate::util::off_thread;
@@ -54,9 +54,10 @@ pub struct ExtrasUi {
     ai_key: Entity<InputState>,
     /// The key field shows the stored key once the keychain was read.
     ai_key_filled: bool,
-    sb_url_error: Option<String>,
-    port_error: Option<String>,
-    relay_error: Option<String>,
+    /// The SponsorBlock URL / a port / the relay URL typed is invalid.
+    sb_url_invalid: bool,
+    port_invalid: bool,
+    relay_invalid: bool,
     pub(super) spotify: SpotifyFlow,
 }
 
@@ -66,6 +67,8 @@ impl ExtrasUi {
         window: &mut Window,
         cx: &mut Context<SettingsPanel>,
     ) -> (Self, Vec<Subscription>) {
+        // `placeholder`: technical text that stays as it is (addresses, numbers);
+        // translated placeholders are set with `track_placeholder` below.
         let mut input = |placeholder: &str, value: String| {
             let placeholder = placeholder.to_owned();
             cx.new(|cx| {
@@ -76,34 +79,40 @@ impl ExtrasUi {
         };
         let this = Self {
             sb_url: input(DEFAULT_API_URL, settings.sponsorblock.api_url.clone()),
-            together_name: input("Your name", settings.together.display_name.clone()),
+            together_name: input("", settings.together.display_name.clone()),
             together_port: input("42117", settings.together.port.to_string()),
-            together_relay: input(
-                "wss://relay.example.com (empty: LAN only)",
-                settings.together.relay_url.clone(),
-            ),
-            spotify_client: input("Client ID", settings.spotify.client_id.clone()),
+            together_relay: input("", settings.together.relay_url.clone()),
+            spotify_client: input("", settings.spotify.client_id.clone()),
             spotify_port: input("43819", settings.spotify.redirect_port.to_string()),
-            ai_endpoint: input(
-                "https://api.openai.com/v1 or http://localhost:11434/v1",
-                settings.ai_filter.endpoint.clone(),
-            ),
+            ai_endpoint: input("", settings.ai_filter.endpoint.clone()),
             ai_model: input("gpt-4o-mini, llama3.1, …", settings.ai_filter.model.clone()),
-            ai_custom: input(
-                "e.g. songs about cars, meme songs",
-                settings.ai_filter.custom.clone(),
-            ),
-            ai_key: cx.new(|cx| {
-                InputState::new(window, cx)
-                    .placeholder("API key (not needed for local servers)")
-                    .masked(true)
-            }),
+            ai_custom: input("", settings.ai_filter.custom.clone()),
+            ai_key: cx.new(|cx| InputState::new(window, cx).masked(true)),
             ai_key_filled: false,
-            sb_url_error: None,
-            port_error: None,
-            relay_error: None,
+            sb_url_invalid: false,
+            port_invalid: false,
+            relay_invalid: false,
             spotify: SpotifyFlow::Idle,
         };
+        for (input, key) in [
+            (
+                &this.together_name,
+                k!("settings.together.name_placeholder"),
+            ),
+            (
+                &this.together_relay,
+                k!("settings.together.relay_placeholder"),
+            ),
+            (&this.spotify_client, k!("settings.spotify.client_id")),
+            (
+                &this.ai_endpoint,
+                k!("settings.ai_filter.endpoint_placeholder"),
+            ),
+            (&this.ai_custom, k!("settings.ai_filter.custom_placeholder")),
+            (&this.ai_key, k!("settings.ai_filter.key_placeholder")),
+        ] {
+            crate::i18n::track_placeholder(input, key, window, cx);
+        }
         let mut subscriptions: Vec<Subscription> = Vec::new();
         subscriptions.push(cx.subscribe(
             &this.ai_key,
@@ -165,32 +174,28 @@ impl SettingsPanel {
         }
         match normalize_api_url(&url) {
             Some(url) => {
-                self.extras.sb_url_error = None;
+                self.extras.sb_url_invalid = false;
                 if url != self.settings.sponsorblock.api_url {
                     self.settings.sponsorblock.api_url = url;
                     changed = true;
                 }
             }
-            None => {
-                self.extras.sb_url_error =
-                    Some("Needs an https:// address without credentials or query".into())
-            }
+            None => self.extras.sb_url_invalid = true,
         }
         if name != self.settings.together.display_name {
             self.settings.together.display_name = name;
             changed = true;
         }
-        self.extras.relay_error = (!relay.is_empty()
-            && music_core::together::relay_url(&relay).is_none())
-        .then(|| "Needs a ws:// or wss:// address (no user name or query)".into());
-        if self.extras.relay_error.is_none() && relay != self.settings.together.relay_url {
+        self.extras.relay_invalid =
+            !relay.is_empty() && music_core::together::relay_url(&relay).is_none();
+        if !self.extras.relay_invalid && relay != self.settings.together.relay_url {
             self.settings.together.relay_url = relay;
             changed = true;
         }
         let parse_port = |p: &str| p.parse::<u16>().ok().filter(|p| *p >= 1024);
         match (parse_port(&port), parse_port(&redirect)) {
             (Some(port), Some(redirect)) => {
-                self.extras.port_error = None;
+                self.extras.port_invalid = false;
                 if port != self.settings.together.port
                     || redirect != self.settings.spotify.redirect_port
                 {
@@ -199,7 +204,7 @@ impl SettingsPanel {
                     changed = true;
                 }
             }
-            _ => self.extras.port_error = Some("Ports must be between 1024 and 65535".into()),
+            _ => self.extras.port_invalid = true,
         }
         if client != self.settings.spotify.client_id {
             self.settings.spotify.client_id = client;
@@ -366,7 +371,8 @@ impl SettingsPanel {
     pub fn spotify_connect(&mut self, cx: &mut Context<Self>) {
         let client_id = self.settings.spotify.client_id.trim().to_owned();
         if client_id.is_empty() {
-            self.extras.spotify = SpotifyFlow::Failed("Enter your app's Client ID first.".into());
+            self.extras.spotify =
+                SpotifyFlow::Failed(t!("settings.spotify.error.no_client").into());
             cx.notify();
             return;
         }
@@ -374,7 +380,7 @@ impl SettingsPanel {
             Ok(r) => r,
             Err(e) => {
                 self.extras.spotify =
-                    SpotifyFlow::Failed(format!("Can't listen for the redirect: {e}"));
+                    SpotifyFlow::Failed(t!("settings.spotify.error.redirect", error = e));
                 cx.notify();
                 return;
             }
@@ -437,11 +443,11 @@ pub(super) fn render_sponsorblock(
     cx: &mut Context<SettingsPanel>,
 ) -> AnyElement {
     let sb = panel.settings.sponsorblock.clone();
-    let mut categories = group("Categories", cx);
+    let mut categories = group(t!("settings.sponsorblock.categories"), cx);
     for category in Category::ALL {
         let on = sb.categories.contains(&category);
         categories = categories.child(row(
-            category.label(),
+            sponsorblock_label(category),
             Some(category_description(category)),
             switch(
                 SharedString::from(format!("sb-cat-{}", category.api_value())),
@@ -452,20 +458,28 @@ pub(super) fn render_sponsorblock(
             cx,
         ));
     }
-    let url_status: (SharedString, gpui::Hsla) = match &panel.extras.sb_url_error {
-        Some(e) => (e.clone().into(), cx.theme().danger),
-        None => (
-            format!("Using {}", panel.settings.sponsorblock.api_url).into(),
+    let url_status: (SharedString, gpui::Hsla) = if panel.extras.sb_url_invalid {
+        (
+            t!("settings.sponsorblock.url_error").into(),
+            cx.theme().danger,
+        )
+    } else {
+        (
+            t!(
+                "settings.sponsorblock.using",
+                url = panel.settings.sponsorblock.api_url
+            )
+            .into(),
             cx.theme().muted_foreground,
-        ),
+        )
     };
     v_flex()
         .gap_5()
         .child(
-            group("SponsorBlock", cx)
+            group("SponsorBlock", cx) // i18n-ignore
                 .child(row(
-                    "Skip segments",
-                    Some("Look up community-marked segments of each song's video and skip them."),
+                    t!("settings.sponsorblock.skip_segments"),
+                    Some(t!("settings.sponsorblock.skip_segments_desc")),
                     switch(
                         "sb-enabled",
                         sb.enabled,
@@ -475,15 +489,15 @@ pub(super) fn render_sponsorblock(
                     cx,
                 ))
                 .child(row(
-                    "When a segment starts",
-                    Some("Skip right away, or show a Skip button in the player bar."),
+                    t!("settings.sponsorblock.when"),
+                    Some(t!("settings.sponsorblock.when_desc")),
                     choice(
                         "sb-mode",
                         &[SkipMode::Auto, SkipMode::Ask],
                         sb.mode,
                         |m| match m {
-                            SkipMode::Auto => "Skip automatically",
-                            SkipMode::Ask => "Ask",
+                            SkipMode::Auto => t!("settings.sponsorblock.mode_auto"),
+                            SkipMode::Ask => t!("settings.sponsorblock.mode_ask"),
                         },
                         |p, m, cx| p.set_sponsorblock(|s| s.mode = m, cx),
                         cx,
@@ -491,7 +505,7 @@ pub(super) fn render_sponsorblock(
                     cx,
                 ))
                 .child(row(
-                    "Notify after skipping",
+                    t!("settings.sponsorblock.notify"),
                     None,
                     switch(
                         "sb-notify",
@@ -504,9 +518,9 @@ pub(super) fn render_sponsorblock(
         )
         .child(categories)
         .child(
-            group("Server", cx)
+            group(t!("settings.sponsorblock.server"), cx)
                 .child(field(
-                    "API URL",
+                    t!("settings.sponsorblock.api_url"),
                     Input::new(&panel.extras.sb_url).small(),
                     cx,
                 ))
@@ -518,7 +532,7 @@ pub(super) fn render_sponsorblock(
                             Button::new("sb-url-reset")
                                 .small()
                                 .outline()
-                                .label("Use the default server")
+                                .label(t!("settings.sponsorblock.use_default"))
                                 .on_click(cx.listener(|this, _, window, cx| {
                                     this.set_extras_field("sb-url", DEFAULT_API_URL, window, cx);
                                 })),
@@ -527,7 +541,7 @@ pub(super) fn render_sponsorblock(
                             Button::new("sb-cache")
                                 .small()
                                 .ghost()
-                                .label("Forget looked-up segments")
+                                .label(t!("settings.sponsorblock.forget"))
                                 .on_click(|_, _, cx| {
                                     update_app(cx, |app, _| {
                                         app.integrations.sponsorblock.clear_cache()
@@ -535,27 +549,22 @@ pub(super) fn render_sponsorblock(
                                 }),
                         ),
                 )
-                .child(note(
-                    "Privacy: only the first 4 characters of the SHA-256 hash of a video id are \
-                     sent, so the server can't tell which song plays. Segments come from \
-                     sponsor.ajay.app (SponsorBlock, CC BY-NC-SA) unless you set another server.",
-                    cx,
-                )),
+                .child(note(t!("settings.sponsorblock.privacy"), cx)),
         )
         .into_any_element()
 }
 
 fn category_description(category: Category) -> &'static str {
     match category {
-        Category::MusicOfftopic => "Talking, skits and other non-music parts of music videos.",
-        Category::Sponsor => "Paid promotion.",
-        Category::Intro => "Intermissions and intro animations without content.",
-        Category::Outro => "Credits and end cards.",
-        Category::SelfPromo => "Unpaid promotion: merch, donations, shout-outs.",
-        Category::Interaction => "Reminders to like, subscribe or follow.",
-        Category::Preview => "Recaps and previews of other content.",
-        Category::Filler => "Tangents that aren't the main content.",
-        Category::Hook => "Teasers and greetings at the start.",
+        Category::MusicOfftopic => t!("settings.sponsorblock.category_desc.music_offtopic"),
+        Category::Sponsor => t!("settings.sponsorblock.category_desc.sponsor"),
+        Category::Intro => t!("settings.sponsorblock.category_desc.intro"),
+        Category::Outro => t!("settings.sponsorblock.category_desc.outro"),
+        Category::SelfPromo => t!("settings.sponsorblock.category_desc.selfpromo"),
+        Category::Interaction => t!("settings.sponsorblock.category_desc.interaction"),
+        Category::Preview => t!("settings.sponsorblock.category_desc.preview"),
+        Category::Filler => t!("settings.sponsorblock.category_desc.filler"),
+        Category::Hook => t!("settings.sponsorblock.category_desc.hook"),
     }
 }
 
@@ -565,30 +574,36 @@ pub(super) fn render_together(
     cx: &mut Context<SettingsPanel>,
 ) -> AnyElement {
     let t = panel.settings.together.clone();
-    let port_error = panel.extras.port_error.clone();
-    let relay_error = panel.extras.relay_error.clone();
+    let port_error = panel
+        .extras
+        .port_invalid
+        .then(|| t!("settings.together.port_error"));
+    let relay_error = panel
+        .extras
+        .relay_invalid
+        .then(|| t!("settings.together.relay_error"));
     v_flex()
         .gap_5()
         .child(
-            group("You", cx)
+            group(t!("settings.together.you"), cx)
                 .child(field(
-                    "Display name",
+                    t!("settings.together.display_name"),
                     Input::new(&panel.extras.together_name).small(),
                     cx,
                 ))
-                .child(note("Shown to the others in a session.", cx)),
+                .child(note(t!("settings.together.display_name_note"), cx)),
         )
         .child(
-            group("Hosting", cx)
+            group(t!("settings.together.hosting"), cx)
                 .child(field(
-                    "Port",
+                    t!("settings.together.port"),
                     Input::new(&panel.extras.together_port).small(),
                     cx,
                 ))
                 .children(port_error.map(|e| status_line(e.into(), cx.theme().danger)))
                 .child(row(
-                    "Guests can add songs",
-                    Some("Their suggestions go into your queue."),
+                    t!("together.room.allow_add"),
+                    Some(t!("settings.together.allow_add_desc")),
                     switch(
                         "together-add",
                         t.allow_guests_to_add_tracks,
@@ -598,8 +613,8 @@ pub(super) fn render_together(
                     cx,
                 ))
                 .child(row(
-                    "Guests can control playback",
-                    Some("Play, pause, seek and skip for everyone."),
+                    t!("together.room.allow_control"),
+                    Some(t!("settings.together.allow_control_desc")),
                     switch(
                         "together-control",
                         t.allow_guests_to_control_playback,
@@ -609,7 +624,7 @@ pub(super) fn render_together(
                     cx,
                 ))
                 .child(row(
-                    "Approve guests before they join",
+                    t!("settings.together.approval"),
                     None,
                     switch(
                         "together-approval",
@@ -619,31 +634,17 @@ pub(super) fn render_together(
                     ),
                     cx,
                 ))
-                .child(note(
-                    "Sessions run on your local network: guests connect straight to this \
-                     computer (allow incoming connections if the firewall asks). The link \
-                     contains a random key; only people with the link can join. Changes apply \
-                     to a running session right away. On the Listen together page, “Make host” \
-                     hands the session to a guest: everyone follows the new host.",
-                    cx,
-                )),
+                .child(note(t!("settings.together.hosting_note"), cx)),
         )
         .child(
-            group("Across networks", cx)
+            group(t!("settings.together.across_networks"), cx)
                 .child(field(
-                    "Relay server",
+                    t!("settings.together.relay"),
                     Input::new(&panel.extras.together_relay).small(),
                     cx,
                 ))
                 .children(relay_error.map(|e| status_line(e.into(), cx.theme().danger)))
-                .child(note(
-                    "“Host via relay” runs the session through a music-relay server you host \
-                     yourself (see the README: one small binary, put it behind a TLS reverse \
-                     proxy for wss://). Guests then join from anywhere with the link. The relay \
-                     forwards the session's messages (song ids, titles, names) but never \
-                     decides anything; empty = LAN only.",
-                    cx,
-                )),
+                .child(note(t!("settings.together.relay_note"), cx)),
         )
         .child(
             h_flex().child(
@@ -651,7 +652,7 @@ pub(super) fn render_together(
                     .small()
                     .outline()
                     .icon(Lucide::UsersRound)
-                    .label("Open Listen together")
+                    .label(t!("settings.together.open"))
                     .on_click(|_, window, cx| {
                         update_app(cx, |app, cx| app.navigate(Route::Together, window, cx));
                     }),
@@ -669,25 +670,28 @@ pub(super) fn render_spotify(
     let theme = cx.theme();
     let (status, color): (SharedString, gpui::Hsla) = match (&s.user, &panel.extras.spotify) {
         (_, SpotifyFlow::Waiting) => (
-            "Waiting for you to approve the app in the browser…".into(),
+            t!("settings.spotify.waiting").into(),
             theme.muted_foreground,
         ),
         (_, SpotifyFlow::Failed(e)) => (e.clone().into(), theme.danger),
-        (Some(user), SpotifyFlow::Idle) => (format!("Connected as {user}").into(), theme.success),
-        (None, SpotifyFlow::Idle) => ("Not connected".into(), theme.muted_foreground),
+        (Some(user), SpotifyFlow::Idle) => (
+            t!("settings.integrations.connected_as", user = user).into(),
+            theme.success,
+        ),
+        (None, SpotifyFlow::Idle) => (t!("common.not_connected").into(), theme.muted_foreground),
     };
     let waiting = matches!(panel.extras.spotify, SpotifyFlow::Waiting);
     let button = if s.user.is_some() {
         Button::new("spotify-disconnect")
             .small()
             .outline()
-            .label("Disconnect")
+            .label(t!("common.disconnect"))
             .on_click(cx.listener(|this, _, _, cx| this.spotify_disconnect(cx)))
     } else {
         Button::new("spotify-connect")
             .small()
             .primary()
-            .label("Connect")
+            .label(t!("common.connect"))
             .loading(waiting)
             .disabled(waiting || s.client_id.trim().is_empty())
             .on_click(cx.listener(|this, _, _, cx| this.spotify_connect(cx)))
@@ -697,7 +701,7 @@ pub(super) fn render_spotify(
     v_flex()
         .gap_5()
         .child(
-            group("Spotify account", cx)
+            group(t!("settings.spotify.account"), cx)
                 .child(
                     h_flex()
                         .justify_between()
@@ -705,12 +709,12 @@ pub(super) fn render_spotify(
                         .child(button),
                 )
                 .child(field(
-                    "Client ID",
+                    t!("settings.spotify.client_id"),
                     Input::new(&panel.extras.spotify_client).small(),
                     cx,
                 ))
                 .child(field(
-                    "Redirect port",
+                    t!("settings.spotify.redirect_port"),
                     Input::new(&panel.extras.spotify_port).small(),
                     cx,
                 ))
@@ -721,13 +725,13 @@ pub(super) fn render_spotify(
                             div()
                                 .text_xs()
                                 .text_color(theme.muted_foreground)
-                                .child(format!("Redirect URI: {redirect}")),
+                                .child(t!("settings.spotify.redirect_uri", uri = redirect)),
                         )
                         .child(
                             Button::new("spotify-copy-redirect")
                                 .xsmall()
                                 .ghost()
-                                .label("Copy")
+                                .label(t!("common.copy"))
                                 .on_click(move |_, _, cx| {
                                     cx.write_to_clipboard(gpui::ClipboardItem::new_string(
                                         copy_redirect.clone(),
@@ -735,21 +739,15 @@ pub(super) fn render_spotify(
                                 }),
                         ),
                 )
-                .child(note(
-                    "1. Create an app at developer.spotify.com/dashboard (Web API). \
-                     2. Add the redirect URI above to it. 3. Paste its Client ID here and press \
-                     Connect. Access is read-only (your playlists and liked songs); the refresh \
-                     token is kept in the keychain.",
-                    cx,
-                )),
+                .child(note(t!("settings.spotify.steps"), cx)),
         )
         .child(
-            group("Without an account", cx)
+            group(t!("settings.spotify.without_account"), cx)
                 .child(note(
-                    "Export a playlist with Exportify (exportify.app) and import the CSV file \
-                     in Library → Import & export. Signing in with the web player's sp_dc cookie \
-                     (as ArchiveTune does) is not supported: it depends on a secret extracted \
-                     from Spotify's web player.",
+                    t!(
+                        "settings.spotify.without_account_note",
+                        other_app = "ArchiveTune"
+                    ),
                     cx,
                 ))
                 .child(
@@ -758,7 +756,7 @@ pub(super) fn render_spotify(
                             .small()
                             .outline()
                             .icon(Lucide::Upload)
-                            .label("Open Import & export")
+                            .label(t!("settings.spotify.open_import"))
                             .on_click(|_, window, cx| {
                                 update_app(cx, |app, cx| app.navigate(Route::Import, window, cx));
                             }),
@@ -788,25 +786,22 @@ pub(super) fn render_ai_filter(
         crate::app::read_app(cx, |app, _| app.ai_filter_status()).unwrap_or_default();
     let theme = cx.theme();
     let (status, color): (SharedString, gpui::Hsla) = match (a.enabled, usable, &error) {
-        (false, _, _) => (
-            "Off: nothing is sent anywhere".into(),
-            theme.muted_foreground,
+        (false, _, _) => (t!("settings.ai_filter.off").into(), theme.muted_foreground),
+        (true, false, _) => (t!("settings.ai_filter.incomplete").into(), theme.warning),
+        (true, true, Some(e)) => (
+            t!("settings.ai_filter.failed", error = e).into(),
+            theme.danger,
         ),
-        (true, false, _) => (
-            "Needs an endpoint, a model and at least one category".into(),
-            theme.warning,
-        ),
-        (true, true, Some(e)) => (format!("Last request failed: {e}").into(), theme.danger),
         (true, true, None) => (
-            format!("On · {classified} songs and albums classified").into(),
+            tp!("settings.ai_filter.on", classified).into(),
             theme.success,
         ),
     };
-    let mut categories = group("Hide", cx);
+    let mut categories = group(t!("settings.ai_filter.hide"), cx);
     for category in AiCategory::ALL {
         let on = a.categories.contains(&category);
         categories = categories.child(row(
-            category.label(),
+            ai_category_label(category),
             None,
             switch(
                 SharedString::from(format!("ai-cat-{}", category.key())),
@@ -829,21 +824,18 @@ pub(super) fn render_ai_filter(
     }
     categories = categories
         .child(field(
-            "Also hide",
+            t!("settings.ai_filter.also_hide"),
             Input::new(&panel.extras.ai_custom).small(),
             cx,
         ))
-        .child(note(
-            "Your own categories, comma-separated (up to 8), described in plain words.",
-            cx,
-        ));
+        .child(note(t!("settings.ai_filter.custom_note"), cx));
     v_flex()
         .gap_5()
         .child(
-            group("AI content filter", cx)
+            group(t!("settings.ai_filter.title"), cx)
                 .child(row(
-                    "Filter songs with an AI model",
-                    Some("Like “Hide explicit content”, for the categories below."),
+                    t!("settings.ai_filter.enable"),
+                    Some(t!("settings.ai_filter.enable_desc")),
                     switch(
                         "ai-filter-enabled",
                         a.enabled,
@@ -858,7 +850,7 @@ pub(super) fn render_ai_filter(
                         Button::new("ai-filter-clear")
                             .small()
                             .ghost()
-                            .label("Forget classifications")
+                            .label(t!("settings.ai_filter.forget"))
                             .disabled(classified == 0)
                             .on_click(|_, window, cx| {
                                 update_app(cx, |app, cx| app.ai_filter_clear_cache(window, cx));
@@ -867,37 +859,29 @@ pub(super) fn render_ai_filter(
                 ),
         )
         .child(
-            group("Model", cx)
+            group(t!("settings.ai_filter.model"), cx)
                 .child(field(
-                    "Endpoint",
+                    t!("settings.ai_filter.endpoint"),
                     Input::new(&panel.extras.ai_endpoint).small(),
                     cx,
                 ))
                 .child(field(
-                    "Model",
+                    t!("settings.ai_filter.model"),
                     Input::new(&panel.extras.ai_model).small(),
                     cx,
                 ))
                 .child(field(
-                    "API key",
+                    t!("settings.ai_filter.api_key"),
                     Input::new(&panel.extras.ai_key).small().mask_toggle(),
                     cx,
                 ))
-                .child(note(
-                    "Any OpenAI-compatible chat-completions API: OpenAI, OpenRouter, or a model \
-                     on this computer (Ollama, LM Studio, llama.cpp server). The key is kept in \
-                     the keychain.",
-                    cx,
-                )),
+                .child(note(t!("settings.ai_filter.api_note"), cx)),
         )
         .child(categories)
-        .child(group("Privacy", cx).child(note(
-            "Off by default. While on, the title, artists and album of the songs and \
-                 albums on the pages you open are sent to the endpoint above (nothing about \
-                 you, no listening history); each verdict is cached on this computer, so a \
-                 song is asked about once. Songs the model hasn't judged yet stay visible.",
-            cx,
-        )))
+        .child(
+            group(t!("settings.ai_filter.privacy"), cx)
+                .child(note(t!("settings.ai_filter.privacy_note"), cx)),
+        )
         .into_any_element()
 }
 
@@ -920,26 +904,21 @@ pub(super) fn render_cast(
     .unwrap_or_default();
     let theme = cx.theme();
     let (status, color): (SharedString, gpui::Hsla) = match (&casting, &connecting, &error) {
-        (Some(name), _, _) => (format!("Casting to {name}").into(), theme.success),
+        (Some(name), _, _) => (t!("cast.casting_to", device = name).into(), theme.success),
         (None, Some(name), _) => (
-            format!("Connecting to {name}…").into(),
+            t!("cast.connecting_to", device = name).into(),
             theme.muted_foreground,
         ),
         (None, None, Some(e)) => (e.clone().into(), theme.danger),
         (None, None, None) if scanning => {
-            ("Looking for Cast devices…".into(), theme.muted_foreground)
+            (t!("settings.cast.looking").into(), theme.muted_foreground)
         }
         (None, None, None) => (
-            format!(
-                "{} device{} found",
-                devices.len(),
-                if devices.len() == 1 { "" } else { "s" }
-            )
-            .into(),
+            tp!("settings.cast.found", devices.len()).into(),
             theme.muted_foreground,
         ),
     };
-    let mut list = group("Devices", cx).child(
+    let mut list = group(t!("settings.cast.devices"), cx).child(
         h_flex()
             .justify_between()
             .child(status_line(status, color))
@@ -950,7 +929,7 @@ pub(super) fn render_cast(
                         Button::new("cast-scan")
                             .small()
                             .outline()
-                            .label("Search")
+                            .label(t!("settings.cast.scan"))
                             .loading(scanning)
                             .disabled(scanning)
                             .on_click(|_, window, cx| {
@@ -961,7 +940,7 @@ pub(super) fn render_cast(
                         Button::new("cast-stop")
                             .small()
                             .danger()
-                            .label("Stop casting")
+                            .label(t!("cast.stop"))
                             .on_click(|_, _, cx| {
                                 update_app(cx, |app, cx| app.cast_stop(true, cx));
                             })
@@ -999,7 +978,11 @@ pub(super) fn render_cast(
                     Button::new(("cast-to", ix))
                         .small()
                         .when_primary(!current)
-                        .label(if current { "Casting" } else { "Cast" })
+                        .label(if current {
+                            t!("settings.cast.casting")
+                        } else {
+                            t!("settings.cast.cast")
+                        })
                         .disabled(current || connecting.is_some())
                         .on_click(move |_, window, cx| {
                             let device = target.clone();
@@ -1012,10 +995,10 @@ pub(super) fn render_cast(
         .gap_5()
         .child(list)
         .child(
-            group("Streaming", cx)
+            group(t!("settings.cast.streaming"), cx)
                 .child(row(
-                    "Let the device fetch YouTube audio itself",
-                    Some("Off: this app streams it to the device (works with every song)."),
+                    t!("settings.cast.direct"),
+                    Some(t!("settings.cast.direct_desc")),
                     switch(
                         "cast-direct",
                         prefs.direct,
@@ -1024,15 +1007,7 @@ pub(super) fn render_cast(
                     ),
                     cx,
                 ))
-                .child(note(
-                    "Casting plays the queue on a Chromecast, Google TV or Nest speaker on this \
-                     network (Google's Default Media Receiver). The player bar's Cast button \
-                     picks a device; play, pause, seek, skip and volume then control it, and \
-                     Stop casting continues here. YouTube audio and local files are streamed \
-                     from this computer to the device (keep the app open); the device and this \
-                     computer must be on the same network. Changes apply to the next song.",
-                    cx,
-                )),
+                .child(note(t!("settings.cast.note"), cx)),
         )
         .into_any_element()
 }

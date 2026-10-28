@@ -273,7 +273,7 @@ impl CastEngine {
         let playback = if let Some(e) = slot_error.or_else(|| status.error.clone()) {
             PlaybackStatus::Error(e)
         } else if !status.connected {
-            PlaybackStatus::Error("The Cast device disconnected".into())
+            PlaybackStatus::Error(t!("cast.error.disconnected").into())
         } else if self.track.is_none() {
             PlaybackStatus::Idle
         } else if resolving || status.loading || !ours {
@@ -348,7 +348,7 @@ impl MusicApp {
                 state.scanning = false;
                 match result {
                     Ok(devices) => state.devices = devices,
-                    Err(e) => state.error = Some(format!("Couldn't look for devices: {e}")),
+                    Err(e) => state.error = Some(t!("cast.error.scan_failed", error = e)),
                 }
                 this.settings.update(cx, |_, cx| cx.notify());
                 cx.notify();
@@ -382,7 +382,7 @@ impl MusicApp {
         cx.spawn_in(window, async move |this, cx| {
             let result = off_thread(move || {
                 let ip = local_ip_towards(addr.ip()).ok_or_else(|| {
-                    music_core::Error::Parse("no network route to the device".into())
+                    music_core::Error::Parse("no network route to the device".into()) // i18n-ignore
                 })?;
                 let proxy = MediaProxy::start(ip)?;
                 let session = CastSession::connect(addr)?;
@@ -394,7 +394,7 @@ impl MusicApp {
                 match result {
                     Ok((session, proxy)) => this.cast_started(device, session, proxy, window, cx),
                     Err(e) => {
-                        let line = format!("Couldn't connect to {}: {e}", device.name);
+                        let line = t!("cast.error.connect_failed", device = device.name, error = e);
                         this.integrations.cast.error = Some(line.clone());
                         notify(window, cx, line);
                     }
@@ -458,7 +458,7 @@ impl MusicApp {
         cast.set_next(before.next_track);
         self.engine = Some(Engine::Cast(Box::new(cast)));
         self.refresh_soon(cx);
-        notify(window, cx, format!("Casting to {name}"));
+        notify(window, cx, t!("cast.casting_to", device = name));
     }
 
     /// Stops casting; `resume_here` continues the track on this computer.
@@ -504,8 +504,8 @@ impl MusicApp {
         let scanning = state.scanning;
         let connecting = state.connecting.clone();
         let label = match (&casting, &connecting) {
-            (Some(name), _) => Some(format!("Casting to {name}")),
-            (None, Some(name)) => Some(format!("Connecting to {name}…")),
+            (Some(name), _) => Some(t!("cast.casting_to", device = name)),
+            (None, Some(name)) => Some(t!("cast.connecting_to", device = name)),
             _ => None,
         };
         let current = casting.clone();
@@ -515,16 +515,16 @@ impl MusicApp {
             .icon(Lucide::Cast)
             .selected(casting.is_some())
             .when_label(label)
-            .tooltip("Cast to a device")
+            .tooltip(t!("cast.tooltip"))
             .dropdown_menu(move |mut menu, window, cx| {
                 update_app(cx, |app, cx| app.cast_scan_if_stale(window, cx));
-                menu = menu.label("Cast to");
+                menu = menu.label(t!("cast.menu.title"));
                 if devices.is_empty() {
                     menu = menu.item(
                         PopupMenuItem::new(if scanning {
-                            "Searching for Cast devices…"
+                            t!("cast.menu.searching")
                         } else {
-                            "No Cast devices found"
+                            t!("cast.menu.none_found")
                         })
                         .disabled(true),
                     );
@@ -543,15 +543,13 @@ impl MusicApp {
                         },
                     ));
                 }
-                menu = menu
-                    .separator()
-                    .item(
-                        PopupMenuItem::new("Search again").on_click(|_, window, cx| {
-                            update_app(cx, |app, cx| app.cast_scan(window, cx));
-                        }),
-                    );
+                menu = menu.separator().item(
+                    PopupMenuItem::new(t!("cast.menu.search_again")).on_click(|_, window, cx| {
+                        update_app(cx, |app, cx| app.cast_scan(window, cx));
+                    }),
+                );
                 if current.is_some() {
-                    menu = menu.item(PopupMenuItem::new("Stop casting").on_click(|_, _, cx| {
+                    menu = menu.item(PopupMenuItem::new(t!("cast.stop")).on_click(|_, _, cx| {
                         update_app(cx, |app, cx| app.cast_stop(true, cx));
                     }));
                 }

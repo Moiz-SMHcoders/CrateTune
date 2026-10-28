@@ -1,0 +1,129 @@
+# Integrations on top of the player: SponsorBlock, Chromecast, the AI content
+# filter and playlist import / export (src/integrations/*, src/pages/import.rs).
+# Format: see crates/music-gpui/i18n_parse.rs ({name} = placeholder, {app} = the
+# app's name, `.one` / `.other` = plural forms). Brand names (SponsorBlock,
+# Chromecast, Spotify, YouTube Music, Exportify) stay as they are.
+
+# ---- SponsorBlock: segment categories (as SponsorBlock's own UI names them)
+sponsorblock.category.music_offtopic = Non-music section
+sponsorblock.category.sponsor = Sponsor
+sponsorblock.category.intro = Intermission / intro
+sponsorblock.category.outro = Endcards / credits
+sponsorblock.category.selfpromo = Self-promotion
+sponsorblock.category.interaction = Interaction reminder
+sponsorblock.category.preview = Preview / recap
+sponsorblock.category.filler = Filler tangent
+sponsorblock.category.hook = Hook / greetings
+# The same categories as they read inside "Skip {category}" on the player-bar chip
+# (lowercase in English; keep short).
+sponsorblock.category_in_chip.music_offtopic = non-music section
+sponsorblock.category_in_chip.sponsor = sponsor
+sponsorblock.category_in_chip.intro = intermission / intro
+sponsorblock.category_in_chip.outro = endcards / credits
+sponsorblock.category_in_chip.selfpromo = self-promotion
+sponsorblock.category_in_chip.interaction = interaction reminder
+sponsorblock.category_in_chip.preview = preview / recap
+sponsorblock.category_in_chip.filler = filler tangent
+sponsorblock.category_in_chip.hook = hook / greetings
+# Notification after an automatic skip. {category}: a category name above;
+# {seconds}: length of the skipped part.
+sponsorblock.toast.skipped = Skipped: {category} ({seconds} s)
+# Player-bar chip (keep short). {category}: sponsorblock.category_in_chip.*;
+# {seconds}: seconds left in the segment.
+sponsorblock.chip.skip = Skip {category} ({seconds}s)
+sponsorblock.chip.tooltip = SponsorBlock: skip to the end of this segment
+
+# ---- AI content filter: categories
+ai_filter.category.explicit = Explicit lyrics
+ai_filter.category.ai_generated = AI-generated music
+ai_filter.category.holiday = Holiday music
+ai_filter.category.children = Children's music
+ai_filter.category.noise = Sleep sounds & white noise
+ai_filter.category.sped_up = Sped-up / slowed edits
+ai_filter.category.covers = Covers & karaoke
+ai_filter.category.live = Live recordings
+
+# ---- Chromecast
+# Player-bar button label and settings status. {device}: the device's name.
+cast.casting_to = Casting to {device}
+cast.connecting_to = Connecting to {device}…
+cast.tooltip = Cast to a device
+# Heading of the device menu.
+cast.menu.title = Cast to
+cast.menu.searching = Searching for Cast devices…
+cast.menu.none_found = No Cast devices found
+cast.menu.search_again = Search again
+# Menu item / button.
+cast.stop = Stop casting
+cast.error.disconnected = The Cast device disconnected
+cast.error.scan_failed = Couldn't look for devices: {error}
+cast.error.connect_failed = Couldn't connect to {device}: {error}
+
+# ---- Import: sources and progress
+import.source.spotify_playlist = Spotify playlist
+import.source.spotify_liked = Spotify liked songs
+import.error.connect_spotify = Connect Spotify in Settings → Spotify import.
+import.error.connect_spotify_first = Connect Spotify in Settings → Spotify import first.
+import.error.not_spotify_link = That isn't a Spotify playlist link or id.
+# Progress stages ("{stage} · 12 of 40").
+import.stage.reading = Reading
+import.stage.reading_playlist = Reading the playlist
+import.stage.reading_liked = Reading liked songs
+import.stage.matching = Matching
+# Suggested name of the playlist made from Spotify's liked songs.
+import.liked_playlist_name = Liked on Spotify
+import.cancelled = Cancelled
+import.nothing_to_save = Nothing to save: no song was found.
+# What failed, used in "{what} failed: {error}".
+import.exporting = Exporting the playlist
+# {path}: the file written.
+import.exported.one = Exported {count} song to {path}
+import.exported.other = Exported {count} songs to {path}
+
+# ---- Import & export page
+import.page.subtitle = Bring playlists from Spotify or files into your library, or take them elsewhere.
+import.file.title = From a file
+import.file.description = Exportify CSV (Spotify), M3U / M3U8, or a CSV / JSON exported here.
+import.file.choose = Choose a file…
+import.spotify.title = From Spotify
+import.spotify.connect_hint = Connect your Spotify account (with your own free developer Client ID) to import your playlists and liked songs.
+import.spotify.set_up = Set up Spotify…
+import.spotify.signed_in = Signed in as {user}.
+# Button: import the user's Spotify liked songs.
+import.spotify.liked = Liked songs
+import.spotify.show_playlists = Show my playlists
+# One of the user's Spotify playlists: {owner} · number of songs.
+import.spotify.playlist_meta.one = {owner} · {count} song
+import.spotify.playlist_meta.other = {owner} · {count} songs
+import.spotify.playlist_meta_unknown = {owner} · ? songs
+# Progress line. {stage}: import.stage.*; {done} / {total}: songs.
+import.job.progress = {stage} · {done} of {total}
+import.job.progress_count = {stage} · {done}
+# Result tags (keep short).
+import.job.found.one = {count} found
+import.job.found.other = {count} found
+import.job.not_found.one = {count} not found
+import.job.not_found.other = {count} not found
+import.job.saved_as = Saved as “{name}”
+import.job.save.one = Save {count} song as a playlist
+import.job.save.other = Save {count} songs as a playlist
+import.job.open_playlists = Open playlists
+import.job.name_placeholder = Playlist name
+# A song that wasn't found: the closest search result. {percent}: how close (0–100).
+import.guess.best = Best guess: {artists} — {title} ({percent} %)
+import.guess.search_failed = Search failed: {error}
+import.guess.no_results = No results
+# Toggle button (keep short): the guess is / isn't used.
+import.guess.using = Using guess
+import.guess.use = Use guess
+import.guess.search_tooltip = Search YouTube Music
+import.not_found.title = Not found
+import.not_found.subtitle = Accept the best guess, or search and add the song yourself.
+import.found.title = Found on YouTube Music
+# Shown when the list is cut: "first 400 of 1,200".
+import.found.first = first {shown} of {total}
+import.export.title = Export a playlist
+import.export.subtitle = CSV and M3U open in other players and spreadsheets; JSON keeps everything for importing here.
+import.export.empty = No playlists in the library yet.
+# A library playlist that comes from YouTube Music. {songs}: "12 songs".
+import.export.from_youtube_music = {songs} · YouTube Music

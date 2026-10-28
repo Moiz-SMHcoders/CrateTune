@@ -17,8 +17,9 @@ use music_core::sponsorblock::{
 };
 use music_core::{PlaybackState, PlaybackStatus};
 
-use super::config::SkipMode;
+use super::config::{SkipMode, sponsorblock_chip_label, sponsorblock_label};
 use crate::app::{MusicApp, notify};
+use crate::i18n::format::number;
 use crate::icons::Lucide;
 use crate::util::off_thread;
 
@@ -144,10 +145,10 @@ impl MusicApp {
                     notify(
                         window,
                         cx,
-                        format!(
-                            "Skipped: {} ({:.0} s)",
-                            segment.category.label(),
-                            segment.len().as_secs_f32()
+                        t!(
+                            "sponsorblock.toast.skipped",
+                            category = sponsorblock_label(segment.category),
+                            seconds = number(segment.len().as_secs_f32().round() as u64)
                         ),
                     );
                 }
@@ -177,12 +178,12 @@ impl MusicApp {
                 .warning()
                 .rounded_full()
                 .icon(Lucide::SkipForward)
-                .label(format!(
-                    "Skip {} ({}s)",
-                    segment.category.label().to_lowercase(),
-                    left.as_secs().max(1)
+                .label(t!(
+                    "sponsorblock.chip.skip",
+                    category = sponsorblock_chip_label(segment.category),
+                    seconds = number(left.as_secs().max(1))
                 ))
-                .tooltip("SponsorBlock: skip to the end of this segment")
+                .tooltip(t!("sponsorblock.chip.tooltip"))
                 .on_click(cx.listener(|this, _, _, cx| this.sponsorblock_skip_offer(cx)))
                 .into_any_element(),
         )
