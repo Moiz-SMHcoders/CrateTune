@@ -89,6 +89,7 @@ fn section_title(key: &str) -> String {
         "spotify" => Some(SectionId::Spotify),
         "ai_filter" => Some(SectionId::AiFilter),
         "cast" => Some(SectionId::Cast),
+        "shortcuts" => Some(SectionId::Shortcuts),
         _ => None,
     };
     match (section, key) {

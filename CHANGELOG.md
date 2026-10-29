@@ -31,6 +31,11 @@ versions follow [SemVer](https://semver.org/).
 
 ### Added
 
+* **Editable keyboard shortcuts** (Settings → Keyboard shortcuts): change, clear or reset
+  any shortcut by pressing the new keys; conflicts ask before taking keys from another
+  action, keys needed for typing and system keys are refused; changes apply at once, also in
+  the menu bar, and travel with settings exports. ⌘/ (Help → Keyboard Shortcuts) shows a
+  cheat sheet.
 * **Choose what the player bar shows** (right-click the bar, or Settings → Appearance →
   Player bar → *Show on the bar*): like, source / quality tag, shuffle, repeat, the
   SponsorBlock prompt, the Music Together status, lyrics, queue, sleep timer, Cast, mini

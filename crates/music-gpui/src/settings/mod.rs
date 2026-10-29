@@ -42,6 +42,7 @@ mod prefs_ui;
 mod privacy;
 pub mod profiles;
 mod profiles_ui;
+mod shortcuts_ui;
 mod storage;
 pub mod theme_prefs;
 mod theme_ui;
@@ -54,6 +55,7 @@ use gpui::{AnyElement, Context, Window};
 pub use accounts::open_cookie_dialog;
 pub use file::{APP_ID, Settings, WindowGeometry};
 pub use panel::{SettingsEvent, SettingsPanel};
+pub use shortcuts_ui::{Outcome as ShortcutOutcome, open_cheat_sheet};
 
 /// One entry of the settings page's section list.
 pub struct Section {
@@ -93,6 +95,8 @@ pub enum SectionId {
     /// Settings export / import, theme files (`portable_ui.rs`).
     Backup,
     About,
+    /// Keyboard shortcuts (`shortcuts_ui.rs`, `crate::shortcuts`).
+    Shortcuts,
 }
 
 /// The settings page's sections, in display order.
@@ -200,6 +204,12 @@ pub const SECTIONS: &[Section] = &[
         render: portable_ui::render,
     },
     Section {
+        id: SectionId::Shortcuts,
+        title: k!("settings.section.shortcuts"),
+        icon: IconName::Keyboard,
+        render: shortcuts_ui::render,
+    },
+    Section {
         id: SectionId::About,
         title: k!("settings.section.about"),
         icon: IconName::Info,
@@ -239,6 +249,7 @@ impl SectionId {
             SectionId::Cast => "cast",
             SectionId::Backup => "backup",
             SectionId::About => "about",
+            SectionId::Shortcuts => "shortcuts",
         }
     }
 
@@ -263,7 +274,7 @@ mod tests {
             assert_eq!(SECTIONS.iter().filter(|s| s.id == section.id).count(), 1);
             assert_eq!(SectionId::from_key(section.id.key()), Some(section.id));
         }
-        assert_eq!(SECTIONS.len(), 18);
+        assert_eq!(SECTIONS.len(), 19);
         assert_eq!(
             SectionId::from_key("accounts"),
             Some(SectionId::Integrations)

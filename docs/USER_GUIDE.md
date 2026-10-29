@@ -316,6 +316,17 @@ macOS keys shown. On Windows and Linux use **Ctrl** in place of ⌘ and Alt for 
 | ⌘1 / ⌘2 / ⌘3 / ⌘Y | Home / Explore / Library / History |
 | Esc | close an open menu or dialog first; else the welcome guide, Now Playing or the queue; else back |
 | ⌘Q | quit |
+| ⌘/ | show all shortcuts (also Help → Keyboard Shortcuts) |
+
+**Changing shortcuts.** Settings → **Keyboard shortcuts** lists every action with its keys.
+Click **Change** and press the new combination; Esc cancels, Backspace (or **Clear**) leaves
+the action without a shortcut. If another action already uses the keys, you're asked
+whether to **Replace** it (that action then has no shortcut). Keys you need for typing in
+the search field (letters, digits, Space, arrows… without ⌘ / Ctrl), copy / paste / undo and
+keys the system keeps (⌘Tab, ⌘Space, ⌘Q…) can't be used. The ↺ button puts one shortcut
+back, **Reset all** all of them. Changes work at once, also in the menu bar, and are part of
+a settings export (not of profiles). The media keys of your keyboard and headphones are
+handled by the system and work even when the app is in the background; they aren't set here.
 
 ## Modules
 

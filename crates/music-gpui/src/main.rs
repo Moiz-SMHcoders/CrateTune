@@ -66,6 +66,7 @@ mod search_history;
 mod secrets;
 mod services;
 mod settings;
+mod shortcuts;
 mod snapshot;
 mod storage_ops;
 mod store;
@@ -141,7 +142,8 @@ fn main() {
                     .as_ref()
                     .map_or_else(i18n::system_locale, |s| s.appearance.ui_locale()),
             );
-            actions::init(cx);
+            let shortcuts = saved.as_ref().map(|s| s.shortcuts.clone());
+            actions::init(&shortcuts.unwrap_or_default(), cx);
             let saved = saved.and_then(|s| s.window);
             let options = WindowOptions {
                 window_bounds: Some(initial_bounds(saved, cx)),
