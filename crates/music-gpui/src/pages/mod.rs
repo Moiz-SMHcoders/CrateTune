@@ -18,7 +18,7 @@ mod artist;
 mod artist_items;
 mod browse_page;
 mod charts;
-mod downloads;
+pub(crate) mod downloads;
 mod explore;
 mod history;
 mod home;

@@ -143,6 +143,7 @@ downloads.detail.other = {count} utworu · {size} · pamięć podręczna {cache}
 downloads.play_all = Odtwórz wszystkie
 downloads.clear_finished = Wyczyść ukończone
 downloads.show_in_finder = Pokaż w Finderze
+downloads.open_folder = Otwórz folder
 downloads.unavailable_title = Pobieranie jest niedostępne
 downloads.unavailable_detail = Nie udało się otworzyć folderu pobranych plików (szczegóły w terminalu).
 downloads.previews_note.one = {count} pobrany plik to podgląd (tylko pierwszy ~1 MiB): powstał, gdy pełne strumienie były niedostępne. Usuń go i pobierz ponownie.

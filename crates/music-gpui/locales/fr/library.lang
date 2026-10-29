@@ -122,6 +122,7 @@ downloads.detail.other = {count} titres · {size} · cache de lecture {cache} su
 downloads.play_all = Tout lire
 downloads.clear_finished = Effacer les terminés
 downloads.show_in_finder = Afficher dans le Finder
+downloads.open_folder = Ouvrir le dossier
 downloads.unavailable_title = Téléchargements indisponibles
 downloads.unavailable_detail = Impossible d'ouvrir le dossier de téléchargement (voir le terminal).
 downloads.previews_note.one = {count} téléchargement n'est qu'un extrait (seulement le premier ~1 Mio) : il a été effectué alors que les flux complets étaient indisponibles. Supprimez-le et téléchargez-le à nouveau.

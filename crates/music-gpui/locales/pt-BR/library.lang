@@ -126,6 +126,7 @@ downloads.detail.other = {count} músicas · {size} · cache de reprodução {ca
 downloads.play_all = Tocar tudo
 downloads.clear_finished = Limpar concluídos
 downloads.show_in_finder = Mostrar no Finder
+downloads.open_folder = Abrir pasta
 downloads.unavailable_title = Downloads indisponíveis
 downloads.unavailable_detail = Não foi possível abrir a pasta de downloads (veja o terminal).
 downloads.previews_note.one = {count} download é uma prévia (só o primeiro ~1 MiB): foi feito enquanto as transmissões completas estavam indisponíveis. Exclua e baixe de novo.

@@ -126,6 +126,7 @@ downloads.detail.other = {count} şarkı · {size} · çalma önbelleği {cache}
 downloads.play_all = Tümünü çal
 downloads.clear_finished = Bitenleri temizle
 downloads.show_in_finder = Finder'da göster
+downloads.open_folder = Klasörü aç
 downloads.unavailable_title = İndirmeler kullanılamıyor
 downloads.unavailable_detail = İndirme klasörü açılamadı (terminale bakın).
 downloads.previews_note.one = {count} indirme bir önizleme (yalnızca ilk ~1 MiB): tam akışlar kullanılamazken yapıldı. Silip yeniden indirin.

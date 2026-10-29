@@ -125,6 +125,7 @@ downloads.detail.other = {count} nummers · {size} · afspeelcache {cache} van {
 downloads.play_all = Alles afspelen
 downloads.clear_finished = Voltooide wissen
 downloads.show_in_finder = Toon in Finder
+downloads.open_folder = Map openen
 downloads.unavailable_title = Downloads zijn niet beschikbaar
 downloads.unavailable_detail = De downloadmap kan niet worden geopend (zie de terminal).
 downloads.previews_note.one = {count} download is een voorbeeld (alleen de eerste ~1 MiB): hij is gemaakt toen volledige streams niet beschikbaar waren. Verwijder hem en download hem opnieuw.

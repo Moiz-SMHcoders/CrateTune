@@ -143,6 +143,7 @@ downloads.detail.other = {count} трека · {size} · кеш воспроиз
 downloads.play_all = Слушать все
 downloads.clear_finished = Убрать завершённые
 downloads.show_in_finder = Показать в Finder
+downloads.open_folder = Открыть папку
 downloads.unavailable_title = Загрузки недоступны
 downloads.unavailable_detail = Не удалось открыть папку загрузок (подробности в терминале).
 downloads.previews_note.one = {count} загрузка — это превью (только первые ~1 МиБ): она сделана, когда полные потоки были недоступны. Удалите её и скачайте заново.

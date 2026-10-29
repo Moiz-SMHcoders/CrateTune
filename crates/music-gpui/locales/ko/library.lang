@@ -116,6 +116,7 @@ downloads.detail.other = {count}곡 · {size} · 재생 캐시 {cache}/{limit}
 downloads.play_all = 모두 재생
 downloads.clear_finished = 완료된 항목 지우기
 downloads.show_in_finder = Finder에서 보기
+downloads.open_folder = 폴더 열기
 downloads.unavailable_title = 다운로드를 사용할 수 없음
 downloads.unavailable_detail = 다운로드 폴더를 열 수 없습니다(터미널 확인).
 downloads.previews_note.other = 다운로드 {count}개가 미리보기(처음 약 1MiB만)입니다. 전체 스트림을 사용할 수 없을 때 만들어졌습니다. 삭제하고 다시 다운로드하세요.

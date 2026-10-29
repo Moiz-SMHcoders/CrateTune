@@ -114,6 +114,7 @@ downloads.detail.other = {count} lagu · {size} · cache putar {cache} dari {lim
 downloads.play_all = Putar semua
 downloads.clear_finished = Bersihkan yang selesai
 downloads.show_in_finder = Tampilkan di Finder
+downloads.open_folder = Buka folder
 downloads.unavailable_title = Unduhan tidak tersedia
 downloads.unavailable_detail = Folder unduhan tidak dapat dibuka (lihat terminal).
 downloads.previews_note.other = {count} unduhan adalah pratinjau (hanya ~1 MiB pertama): dibuat saat stream lengkap tidak tersedia. Hapus lalu unduh lagi.

@@ -122,6 +122,7 @@ downloads.detail.other = {count} brani · {size} · cache di riproduzione {cache
 downloads.play_all = Riproduci tutto
 downloads.clear_finished = Rimuovi completati
 downloads.show_in_finder = Mostra nel Finder
+downloads.open_folder = Apri cartella
 downloads.unavailable_title = Download non disponibili
 downloads.unavailable_detail = Impossibile aprire la cartella dei download (vedi il terminale).
 downloads.previews_note.one = {count} download è un'anteprima (solo il primo ~1 MiB): è stato eseguito mentre gli stream completi non erano disponibili. Eliminalo e scaricalo di nuovo.

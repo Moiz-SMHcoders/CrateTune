@@ -127,7 +127,7 @@ pub(super) fn render(
         .outline()
         .small()
         .icon(gpui_component::IconName::FolderOpen)
-        .label(t!("downloads.show_in_finder"))
+        .label(crate::pages::downloads::show_folder_label())
         .on_click(move |_, _, cx| {
             if let Some(dir) = &downloads_dir {
                 cx.reveal_path(&dir.join("downloads"));

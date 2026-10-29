@@ -125,6 +125,7 @@ downloads.detail.other = {count} गाने · {size} · प्ले कै�
 downloads.play_all = सभी चलाएँ
 downloads.clear_finished = पूरे हुए हटाएँ
 downloads.show_in_finder = Finder में दिखाएँ
+downloads.open_folder = फ़ोल्डर खोलें
 downloads.unavailable_title = डाउनलोड उपलब्ध नहीं हैं
 downloads.unavailable_detail = डाउनलोड फ़ोल्डर नहीं खुल सका (टर्मिनल देखें)।
 downloads.previews_note.one = {count} डाउनलोड सिर्फ़ प्रीव्यू है (सिर्फ़ पहला ~1 MiB): यह तब बना जब पूरी स्ट्रीम उपलब्ध नहीं थी। इसे मिटाकर फिर से डाउनलोड करें।

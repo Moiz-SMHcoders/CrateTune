@@ -232,7 +232,7 @@ impl Render for DownloadsPage {
                     .ghost()
                     .small()
                     .icon(gpui_component::IconName::FolderOpen)
-                    .label(t!("downloads.show_in_finder"))
+                    .label(show_folder_label())
                     .on_click(move |_, _, cx| cx.reveal_path(&dir.join("downloads")))
             }));
         let mut content = v_flex().gap_6().child(
@@ -344,5 +344,14 @@ impl Render for DownloadsPage {
             );
         }
         page_scroll("downloads-page", &self.scroll, content)
+    }
+}
+
+/// "Show in Finder" on macOS; "Open folder" elsewhere (Explorer / the file manager).
+pub(crate) fn show_folder_label() -> &'static str {
+    if cfg!(target_os = "macos") {
+        t!("downloads.show_in_finder")
+    } else {
+        t!("downloads.open_folder")
     }
 }

@@ -163,7 +163,7 @@ fn main() {
     memory::tune_allocator();
     gpui_platform::application()
         .with_assets(icons::Assets)
-        .run(|cx: &mut App| {
+        .run(move |cx: &mut App| {
             gpui_component::init(cx);
             ArtworkCache::init(cx);
             logo::set_dock_icon();
