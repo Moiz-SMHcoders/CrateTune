@@ -313,7 +313,14 @@ impl TrackDecoder {
                     d.saturating_sub(Duration::from_secs_f64(g.start as f64 / g.timescale as f64))
                 }),
             },
-            None => media_duration,
+            // WebM (YouTube's Opus formats, downloaded .webm): Symphonia leaves
+            // the length unset; Segment Info has it.
+            None => media_duration.or_else(|| {
+                input
+                    .media_source()
+                    .ok()
+                    .and_then(|mut source| crate::webm_duration::read(&mut source))
+            }),
         };
         let (codec, rate, channels) = if params.codec == CODEC_ID_OPUS {
             let opus = OpusPacketDecoder::new(&params)?;

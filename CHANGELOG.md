@@ -154,6 +154,11 @@ versions follow [SemVer](https://semver.org/).
 
 ### Fixed
 
+* **High quality (Opus) playback uses ~100× less CPU for decoding**: the bundled Opus
+  decoder computed a key transform the slow way (about a quarter of a CPU core while a
+  song played); it now uses an FFT. Output is unchanged (90 dB SNR to the original).
+* **Opus songs show their length**: the bar showed `--:--`, had no progress fill and
+  couldn't seek by position for High-quality streams and downloaded `.webm` files.
 * **Shortcuts on Windows and Linux** use Ctrl (they were bound to the Windows / Super key).
 * **Esc with a menu or popover open** only closes it (it also closed Now Playing or went
   back).

@@ -110,6 +110,12 @@ its own executor.
 * `Player` — audio thread with a pollable `PlaybackState`, `pause`/`resume`/`toggle_pause`/`seek`.
   Decoding is Symphonia 0.6 plus the pure-Rust `opus-decoder` (`TrackDecoder`, a seekable
   `rodio::Source`): MP4/M4A (AAC, ALAC), MP3, FLAC, Ogg Vorbis/Opus, WAV, AIFF, WebM/MKV.
+  `opus-decoder` 0.1.1 is vendored (`vendor/opus-decoder/VENDORED.md`): its inverse MDCT
+  ran a direct O(N²) DFT with a `sin_cos` per term — 66 s of CPU to decode a 4.7-min song,
+  ~23 % of a core while an Opus stream (High quality) played — now a cached `rustfft` plan
+  (0.66 s, 100× faster; output within 6e-5 of the original, 90 dB SNR); and it no longer
+  tries to open its developer's debug log file on decode paths. WebM durations come from
+  the Segment Info (`webm_duration.rs`; Symphonia leaves them unset).
   rodio/cpal only mix and output. Gapless details the libraries leave out:
   * AAC in MP4 (files, YouTube's fragmented DASH `.m4a`): the encoder delay ("priming",
     ~1–2k frames) and the last frame's padding are trimmed from the edit list
@@ -175,9 +181,7 @@ its own executor.
   per 50 ms window while it runs (~22 kB for 4.7 min). `Player::waveform()` returns a
   `WaveformStatus` (`Off` / `Pending` / `Ready(Arc<Waveform>)` / `Unavailable(why)` for
   previews, streams of unknown length, failed downloads; plus `from_cache` and the
-  `WaveformCost`). **Opus is not decoded**: `opus-decoder` 0.1 computes its inverse MDCT
-  with a naive O(N²) DFT (`sin_cos` in the inner loop) and needs ~28 s of CPU for a 4.7-min
-  stereo song (~10 % of a core while it plays); `opus_energy` instead range-decodes only
+  `WaveformCost`). **Opus is not decoded** for this: `opus_energy` range-decodes only
   each CELT frame's header and coarse band energies (RFC 6716 / libopus `quant_bands.c`),
   weights them with the inverse pre-emphasis and a 0.9 exponent (calibrated against the
   AAC decode of the same songs: correlation 0.97–0.985, 0.8–2.8 dB mean difference per

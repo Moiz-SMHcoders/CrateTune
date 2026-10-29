@@ -74,6 +74,7 @@ mod testutil;
 pub mod together;
 mod voice;
 pub mod waveform;
+mod webm_duration;
 pub mod youtube;
 
 pub use buffer::{BufferEnd, StreamBuffer, StreamReader};

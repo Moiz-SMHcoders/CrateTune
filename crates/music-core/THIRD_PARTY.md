@@ -110,7 +110,7 @@ Paths are relative to `app/src/main/kotlin/moe/rukamori/archivetune/`. All Kotli
 specifics (Media3, coroutines, DataStore) are replaced by the blocking engine thread.
 
 Libraries used by the engine (not ported code): `opus-decoder` (MIT OR Apache-2.0,
-pure-Rust Opus), `libsonic` (Apache-2.0, Rust port of Bill Cox's Sonic, used for speed/pitch).
+pure-Rust Opus; vendored with two fixes in `vendor/opus-decoder`, see its `VENDORED.md`), `libsonic` (Apache-2.0, Rust port of Bill Cox's Sonic, used for speed/pitch).
 
 ## ArchiveTune (feat/integrations)
 
