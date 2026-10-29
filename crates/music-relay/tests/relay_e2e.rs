@@ -12,8 +12,11 @@ use music_core::together::{
 };
 use music_relay::{Config, Relay};
 
+#[track_caller]
 fn wait_for<T>(mut f: impl FnMut() -> Option<T>) -> T {
-    let deadline = Instant::now() + Duration::from_secs(10);
+    // Generous: on Windows a connection attempt to a port nobody listens on takes ~2 s
+    // to fail, and a closing link waits up to 5 s for its peer's reply.
+    let deadline = Instant::now() + Duration::from_secs(30);
     loop {
         if let Some(v) = f() {
             return v;
