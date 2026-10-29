@@ -348,6 +348,8 @@ mod tests {
         let lib = Library::open(&path).unwrap();
         assert_eq!(lib.schema_version().unwrap(), SCHEMA_VERSION);
         assert_eq!(lib.get_value("a").unwrap().as_deref(), Some("1"));
+        // Windows can't delete a database file that is still open.
+        drop(lib);
         std::fs::remove_dir_all(dir).unwrap();
     }
 

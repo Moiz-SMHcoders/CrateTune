@@ -16,6 +16,7 @@ env:
   CARGO_INCREMENTAL: "0"
   # Tests open no audio device / keychain unless asked; keep secrets in the settings file.
   MUSIC_SECRET_STORE: file
+  RUST_BACKTRACE: "1"
 
 jobs:
   fmt:

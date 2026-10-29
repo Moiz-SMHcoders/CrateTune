@@ -55,8 +55,11 @@ mod tests {
 
     use super::*;
 
+    #[track_caller]
     fn wait_for<T>(mut f: impl FnMut() -> Option<T>) -> T {
-        let deadline = Instant::now() + Duration::from_secs(5);
+        // Generous: on Windows a connection attempt to a port nobody listens on
+        // (the old host, while a guest follows the transfer) takes ~2 s to fail.
+        let deadline = Instant::now() + Duration::from_secs(20);
         loop {
             if let Some(v) = f() {
                 return v;
