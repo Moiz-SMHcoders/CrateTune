@@ -32,6 +32,8 @@
 //! * [`playlist_import`] – CSV / M3U / JSON playlists, matching tracks to YouTube Music.
 //! * [`spotify`] – Spotify Web API (PKCE sign-in, playlists, liked songs) for imports.
 //! * [`together`] – Music Together: synced listening on the LAN over WebSockets.
+//! * [`waveform`] – a track's loudness envelope for a waveform progress bar, computed
+//!   once per track on a background thread and cached ([`Player::waveform`]).
 
 pub mod ai_filter;
 pub mod buffer;
@@ -55,6 +57,7 @@ mod model;
 pub mod modules;
 mod mp4_gapless;
 mod opus;
+mod opus_energy;
 mod output;
 mod player;
 pub mod playlist_import;
@@ -70,6 +73,7 @@ mod stream;
 mod testutil;
 pub mod together;
 mod voice;
+pub mod waveform;
 pub mod youtube;
 
 pub use buffer::{BufferEnd, StreamBuffer, StreamReader};
@@ -87,7 +91,7 @@ pub use lyrics::{
 };
 pub use model::{EntityRef, MusicVideoType, Track, format_duration};
 pub use output::OutputDevice;
-pub use player::{PlaybackState, PlaybackStatus, Player};
+pub use player::{PlaybackState, PlaybackStatus, Player, WaveformState, WaveformStatus};
 pub use silence::{SilenceConfig, SkipSilence};
 pub use sleep::{SleepTimer, SleepTimerState};
 pub use spectrum::{
@@ -98,3 +102,4 @@ pub use stream::{
     Download, IosClientResolver, PrefetchedHead, Quality, ResolvedStream, SourceKind, StreamPrefix,
     StreamResolver, StreamSource,
 };
+pub use waveform::{WAVEFORM_BUCKETS, Waveform};

@@ -735,3 +735,92 @@ fn spectrum_follows_muted_playback_and_decays_when_paused() {
         "paused mid-track"
     );
 }
+
+/// Pulls audio until the waveform status satisfies `cond`.
+fn pull_until_waveform(
+    player: &Player,
+    output: &mut HeadlessOutput,
+    what: &str,
+    cond: impl Fn(&WaveformStatus) -> bool,
+) -> WaveformStatus {
+    let deadline = Instant::now() + Duration::from_secs(20);
+    loop {
+        let w = player.waveform();
+        if cond(&w) {
+            return w;
+        }
+        assert!(
+            Instant::now() < deadline,
+            "timed out waiting for {what}: {w:?}"
+        );
+        output.by_ref().take(480 * 2).for_each(drop);
+        std::thread::sleep(Duration::from_millis(3));
+    }
+}
+
+#[test]
+fn waveform_is_computed_cached_and_follows_the_track() {
+    let dir =
+        std::env::temp_dir().join(format!("music-core-player-waveform-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    let (player, mut out, _r) = player();
+    player.set_waveform_cache(Some(dir.clone()));
+    player.play(remote("full"));
+    wait_for(&player, "playing", |s| s.status == PlaybackStatus::Playing);
+    std::thread::sleep(Duration::from_millis(250));
+    assert_eq!(
+        player.waveform(),
+        WaveformStatus::default(),
+        "off by default"
+    );
+
+    // A stream: decoded (AAC) once the download is in, then cached.
+    player.set_waveform_enabled(true);
+    let w = pull_until_waveform(&player, &mut out, "full", |w| {
+        matches!(w.state, WaveformState::Ready(_))
+    });
+    assert_eq!(w.video_id.as_deref(), Some("full"));
+    assert!(!w.from_cache);
+    let cost = w.cost.unwrap();
+    assert_eq!(cost.method, "decode");
+    assert!(cost.audio > Duration::from_secs(19), "{cost:?}");
+    assert!(w.ready_for("full").is_some() && w.ready_for("other").is_none());
+    let WaveformState::Ready(first) = w.state else {
+        unreachable!()
+    };
+    assert_eq!(first.len(), crate::WAVEFORM_BUCKETS);
+
+    // A local Opus file: read from the bitstream after playback started.
+    player.play(local("quiet_loud_celt.webm"));
+    let w = pull_until_waveform(&player, &mut out, "opus", |w| {
+        w.video_id.as_deref() == Some("local:quiet_loud_celt.webm")
+            && matches!(w.state, WaveformState::Ready(_))
+    });
+    assert_eq!(w.cost.unwrap().method, "opus-bitstream");
+    let WaveformState::Ready(opus) = &w.state else {
+        unreachable!()
+    };
+    let half = opus.len() / 2;
+    assert!(opus.peaks[..half - 8].iter().all(|&p| p < 20));
+    assert!(opus.peaks[half + 8..].iter().all(|&p| p > 200));
+
+    // A preview can't have one; the job ends without touching the next track.
+    player.play(remote("preview"));
+    pull_until_waveform(&player, &mut out, "preview", |w| {
+        w.video_id.as_deref() == Some("preview") && matches!(w.state, WaveformState::Unavailable(_))
+    });
+
+    // The same stream again comes from the cache.
+    player.play(remote("full"));
+    let w = pull_until_waveform(&player, &mut out, "cached", |w| {
+        w.video_id.as_deref() == Some("full") && matches!(w.state, WaveformState::Ready(_))
+    });
+    assert!(w.from_cache && w.cost.is_none());
+    assert_eq!(w.state, WaveformState::Ready(first));
+
+    player.set_waveform_enabled(false);
+    pull_until_waveform(&player, &mut out, "off", |w| {
+        *w == WaveformStatus::default()
+    });
+    let _ = std::fs::remove_dir_all(&dir);
+}
