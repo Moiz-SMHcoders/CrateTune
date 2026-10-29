@@ -34,6 +34,11 @@ pub const MAX_CROSSFADE: Duration = Duration::from_secs(12);
 const RENDER_FRAMES: usize = 512;
 /// Per-frame smoothing of gain changes (volume, normalization): ~10 ms at 48 kHz.
 const GAIN_SMOOTH: f32 = 0.002;
+/// Linear cross-fade when another stream of the same track takes over.
+const HANDOFF_FADE: Duration = Duration::from_millis(40);
+/// The incoming stream may start this much after the outgoing one's position
+/// (audio skipped at most); later, the outgoing stream plays on until it gets there.
+const HANDOFF_TOLERANCE: Duration = Duration::from_millis(15);
 
 /// Equal-power crossfade gains `(outgoing, incoming)` at `progress` 0..=1.
 pub(crate) fn equal_power_gains(progress: f32) -> (f32, f32) {
@@ -57,6 +62,9 @@ struct Fade {
     done: u64,
     len: u64,
     incoming: bool,
+    /// Linear gains (they sum to 1): for two streams of the same audio, whose
+    /// equal-power sum would bulge by up to 3 dB.
+    linear: bool,
 }
 
 impl Fade {
@@ -65,12 +73,25 @@ impl Fade {
             done: 0,
             len: ((len.as_secs_f64() * rate as f64) as u64).max(1),
             incoming,
+            linear: false,
+        }
+    }
+
+    fn linear(len: Duration, rate: u32, incoming: bool) -> Self {
+        Self {
+            linear: true,
+            ..Self::new(len, rate, incoming)
         }
     }
 
     /// Gain for the next frame; advances the fade.
     fn step(&mut self) -> f32 {
-        let (out, inc) = equal_power_gains(self.done as f32 / self.len as f32);
+        let progress = self.done as f32 / self.len as f32;
+        let (out, inc) = if self.linear {
+            (1.0 - progress, progress)
+        } else {
+            equal_power_gains(progress)
+        };
         self.done = (self.done + 1).min(self.len);
         if self.incoming { inc } else { out }
     }
@@ -172,6 +193,12 @@ impl Active {
     }
 }
 
+struct Handoff {
+    voice: Arc<Voice>,
+    /// The voice it replaces; dropped if that is no longer the current one.
+    replaces: u64,
+}
+
 #[derive(Default)]
 struct DeckState {
     paused: bool,
@@ -184,6 +211,9 @@ struct DeckState {
     hold_at_end: bool,
     current: Option<Active>,
     next: Option<Arc<Voice>>,
+    /// Another stream of the current track that takes over at the same
+    /// position as soon as it has audio there (`Deck::set_handoff`).
+    handoff: Option<Handoff>,
     fading: Vec<Active>,
     /// Transitions the deck made on its own (gapless or crossfade).
     advances: u64,
@@ -244,6 +274,11 @@ impl Deck {
         for old in st.fading.drain(..) {
             old.voice.stop();
         }
+        if let Some(handoff) = st.handoff.take()
+            && voice.as_ref().is_none_or(|v| v.id != handoff.voice.id)
+        {
+            handoff.voice.stop();
+        }
         if let Some(mut old) = st.current.take() {
             if voice.as_ref().is_some_and(|v| v.id == old.voice.id) {
                 st.current = Some(old);
@@ -267,6 +302,20 @@ impl Deck {
     /// previous one (the caller stops it if it is not reused).
     pub(crate) fn set_next(&self, voice: Option<Arc<Voice>>) -> Option<Arc<Voice>> {
         std::mem::replace(&mut self.lock().next, voice)
+    }
+
+    /// `voice` (another stream of the current track, already seeked near
+    /// the current position) replaces the current voice `replaces` once it has
+    /// audio at the position being played: a 40 ms linear cross-fade at the
+    /// same track time, without a gap. Dropped (and stopped) if the current
+    /// voice changes first. Returns the previous candidate (not stopped).
+    pub(crate) fn set_handoff(
+        &self,
+        voice: Option<Arc<Voice>>,
+        replaces: u64,
+    ) -> Option<Arc<Voice>> {
+        let new = voice.map(|voice| Handoff { voice, replaces });
+        std::mem::replace(&mut self.lock().handoff, new).map(|h| h.voice)
     }
 
     pub(crate) fn set_paused(&self, paused: bool) {
@@ -319,7 +368,7 @@ impl Deck {
             crossfading: st
                 .fading
                 .iter()
-                .any(|f| f.fade.is_some_and(|f| !f.incoming))
+                .any(|f| f.fade.is_some_and(|f| !f.incoming && !f.linear))
                 && st.current.as_ref().is_some_and(|c| c.fade.is_some()),
         }
     }
@@ -348,6 +397,7 @@ impl Deck {
     fn mix_block(&self, st: &mut DeckState, out: &mut [f32]) {
         let target_master = if st.paused { 0.0 } else { 1.0 };
         let ramp_step = 1.0 / (PAUSE_RAMP.as_secs_f32() * self.rate as f32).max(1.0);
+        self.maybe_hand_off(st);
         self.maybe_start_crossfade(st);
 
         let frames = out.len() / 2;
@@ -419,6 +469,50 @@ impl Deck {
     #[cfg(test)]
     pub(crate) fn test_out_gain(&self) -> f32 {
         self.lock().out_gain
+    }
+
+    /// [`Self::maybe_hand_off`] outside the audio callback (while paused).
+    pub(crate) fn try_hand_off(&self) {
+        let mut st = self.lock();
+        self.maybe_hand_off(&mut st);
+    }
+
+    /// Switches to the handoff stream once it has audio where the current
+    /// voice is (dropping what lies before; waiting while it starts later).
+    fn maybe_hand_off(&self, st: &mut DeckState) {
+        let Some(handoff) = &st.handoff else {
+            return;
+        };
+        let Some(cur) = &st.current else {
+            return;
+        };
+        if cur.voice.id != handoff.replaces {
+            // A new track or an advance came first.
+            if let Some(stale) = st.handoff.take() {
+                stale.voice.stop();
+            }
+            return;
+        }
+        // Not during a fade (a crossfade or a stop fade) or a pending seek.
+        if cur.fade.is_some() || !st.fading.is_empty() || cur.voice.pending_seek().is_some() {
+            return;
+        }
+        let at = cur.voice.played();
+        let Some((chunk, offset)) = handoff.voice.take_chunk_at(at, HANDOFF_TOLERANCE) else {
+            return;
+        };
+        let handoff = st.handoff.take().expect("checked above");
+        let mut old = st.current.take().expect("checked above");
+        old.fade = Some(Fade::linear(HANDOFF_FADE, self.rate, false));
+        st.fading.push(old);
+        let mut incoming = Active::new(
+            handoff.voice,
+            Some(Fade::linear(HANDOFF_FADE, self.rate, true)),
+        );
+        incoming.voice.set_played(at);
+        incoming.chunk = Some(chunk);
+        incoming.offset = offset;
+        st.current = Some(incoming);
     }
 
     fn maybe_start_crossfade(&self, st: &mut DeckState) {
@@ -547,6 +641,49 @@ mod tests {
             deck.render(block);
         }
         out.into_iter().step_by(2).collect()
+    }
+
+    /// Like [`voice`], but each frame's value is its track time in ms / 10 000.
+    fn ramp(id: u64, frames: usize) -> Arc<Voice> {
+        let v = Voice::manual(id, Some(Duration::from_millis(frames as u64)));
+        for start in (0..frames).step_by(100) {
+            let n = 100.min(frames - start);
+            let samples = (start..start + n)
+                .flat_map(|f| [f as f32 / 10_000.; 2])
+                .collect();
+            v.push_test_audio(
+                samples,
+                Duration::from_millis(start as u64),
+                Duration::from_millis(n as u64),
+                start + n == frames,
+            );
+        }
+        v
+    }
+
+    #[test]
+    fn handoff_continues_at_the_same_track_time() {
+        let deck = Deck::new(RATE);
+        let a = ramp(1, 1000);
+        deck.set_current(Some(a.clone()));
+        let mut out = render(&deck, 250);
+        // The replacement has audio from 0 s: what was already heard is dropped.
+        let b = ramp(2, 1000);
+        assert!(deck.set_handoff(Some(b.clone()), a.id).is_none());
+        out.extend(render(&deck, 250));
+        for (i, s) in out.iter().enumerate() {
+            assert!((s - i as f32 / 10_000.).abs() < 1e-4, "frame {i}: {s}");
+        }
+        assert_eq!(deck.snapshot().current, Some(b.id));
+        assert!(a.is_stopped(), "the old stream stops after the 40 ms fade");
+        assert_eq!(deck.snapshot().advances, 0, "not an advance");
+
+        // A replacement for a voice that is no longer current is dropped.
+        let c = ramp(3, 1000);
+        deck.set_handoff(Some(c.clone()), a.id);
+        render(&deck, 10);
+        assert!(c.is_stopped());
+        assert_eq!(deck.snapshot().current, Some(b.id));
     }
 
     #[test]
