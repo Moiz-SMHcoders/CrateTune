@@ -197,7 +197,13 @@ pub(super) fn render(panel: &mut SettingsPanel, cx: &mut Context<SettingsPanel>)
         .child(
             v_flex()
                 .gap_2()
-                .child(row(t!("settings.bar.progress_style"), None, styles, cx))
+                .child(row(
+                    t!("settings.bar.progress_style"),
+                    (bar.progress_style == ProgressStyle::Waveform)
+                        .then(|| t!("settings.bar.waveform_note")),
+                    styles,
+                    cx,
+                ))
                 .child(row(
                     t!("settings.bar.peak_caps"),
                     Some(t!("settings.bar.peak_caps_note")),

@@ -173,12 +173,20 @@ impl Render for MiniPlayer {
                     app.engine.is_some(),
                     app.mini_backdrop(cx),
                 ),
-                (bar, hires_art, app.scrub),
+                (
+                    bar,
+                    hires_art,
+                    app.scrub,
+                    app.playback
+                        .track
+                        .as_ref()
+                        .and_then(|t| app.waveform.ready_for(&t.video_id).cloned()),
+                ),
             )
         });
         let Some((
             (track, status, position, duration, has_next, has_engine, backdrop),
-            (bar, hires_art, scrub),
+            (bar, hires_art, scrub, waveform),
         )) = info
         else {
             return div().size_full().into_any_element();
@@ -241,6 +249,16 @@ impl Render for MiniPlayer {
         let fx = self
             .progress
             .step(&mut frame, style, playing, wants_spectrum, analyzer, 0.8);
+        let waveform = waveform.filter(|_| style == ProgressStyle::Waveform);
+        let wave_fade = if style == ProgressStyle::Waveform {
+            self.progress.wave_step(
+                &mut frame,
+                track.as_ref().map(|t| t.video_id.as_str()),
+                waveform.is_some(),
+            )
+        } else {
+            0.
+        };
         let surface = bg;
         let (backdrop_img, art_colors) = match hires_art {
             Some((b, c)) => (Some(b), c),
@@ -282,6 +300,8 @@ impl Render for MiniPlayer {
                 phase: fx.phase,
                 spectrum: fx.spectrum,
                 peak_caps: bar.peak_caps,
+                waveform,
+                wave_fade,
                 enabled,
                 look: TrackLook {
                     played: accent,

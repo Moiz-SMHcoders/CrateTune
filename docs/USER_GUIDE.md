@@ -96,14 +96,19 @@ in the app's language and your system's region.
   less important buttons hide first. Messages such as "Loading…" or a skipped song
   appear under the artist.
 * **Player bar look** (Settings → Appearance → Player bar): progress bar style —
-  Standard, Thick, Simple, **Wavy** (an animated wave) or **Equalizer** (bars that move
-  with the music) — and **Background reacts to playback**: *Artwork glow*, *Dynamic
+  Standard, Thick, Simple, **Wavy** (an animated wave), **Equalizer** (bars that move
+  with the music) or **Waveform** (the song's loudness shape as bars, like SoundCloud:
+  quiet intros are low, choruses tall; it doesn't move, only the played part fills in;
+  until the shape is known — the first seconds of a new song — a flat row of low bars
+  stands in, then the shape fades in once) — and **Background reacts to playback**: *Artwork glow*, *Dynamic
   gradient* (direction, intensity, optional slow animation) or *Pulse* (follows the
   loudness), dimmed while paused unless you turn that off. Also: show the remaining
   time, scroll to change the volume, the same look in the mini player, and a visualizer
   strip in Now Playing. The bar is static by default; the moving styles use a few
-  percent of CPU while music plays and stop when it pauses. The **Minimal / Fast**
-  profile switches all of it to the cheapest look.
+  percent of CPU while music plays and stop when it pauses. Waveform is static too: each
+  song is read once in the background (a fraction of a second of CPU) and its shape is
+  kept (a few hundred bytes per song), so playing it again costs nothing. The
+  **Minimal / Fast** profile switches all of it to the cheapest look.
 * **Queue** (⌥⌘Q): now playing, up next (drag to reorder, remove), history. Shuffle (⌘S)
   and repeat off / all / one (⌘R) are remembered.
 * **Radio** plays an endless mix based on a song, artist, album or playlist.

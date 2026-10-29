@@ -101,6 +101,8 @@ pub(crate) struct Voice {
     wake: Condvar,
     info: Mutex<Info>,
     buffer: Mutex<Option<Arc<StreamBuffer>>>,
+    /// MIME type of the stream in `buffer` (for a second decoder over it).
+    mime_type: Mutex<Option<String>>,
     /// Where the audio comes from (set while loading, completed by the decoder).
     source: Mutex<Option<StreamSource>>,
     /// Loudness normalization multiplier (f32 bits).
@@ -159,6 +161,7 @@ impl Voice {
                 stream_error: None,
             }),
             buffer: Mutex::new(None),
+            mime_type: Mutex::new(None),
             source: Mutex::new(None),
             gain: AtomicU32::new(1f32.to_bits()),
             played_us: AtomicU64::new(0),
@@ -240,6 +243,18 @@ impl Voice {
             info.end.or(info.duration)?
         };
         Some(end.saturating_sub(self.played()))
+    }
+
+    /// The track's bytes for an independent decoder (the waveform): its local
+    /// file, or the stream buffer once the stream is resolved.
+    pub(crate) fn waveform_source(&self) -> Option<crate::waveform::WaveformSource> {
+        use crate::waveform::WaveformSource;
+        if let Some(path) = &self.track.local_path {
+            return Some(WaveformSource::File(path.clone()));
+        }
+        let buffer = lock(&self.buffer).clone()?;
+        let mime_type = lock(&self.mime_type).clone()?;
+        Some(WaveformSource::Stream { buffer, mime_type })
     }
 
     pub(crate) fn played(&self) -> Duration {
@@ -354,6 +369,7 @@ impl Voice {
         self.gain.store(gain.to_bits(), Ordering::Relaxed);
 
         let buffer = StreamBuffer::new(stream.content_length);
+        *lock(&self.mime_type) = Some(stream.mime_type.clone());
         *lock(&self.buffer) = Some(buffer.clone());
         if self.stopped() {
             buffer.cancel();

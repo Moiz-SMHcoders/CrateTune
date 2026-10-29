@@ -43,7 +43,7 @@ const AAC_PREROLL_FRAMES: u64 = 2048;
 
 /// Where the encoded bytes come from; reopened after a failed seek.
 #[derive(Clone)]
-enum Input {
+pub(crate) enum Input {
     Memory(Arc<[u8]>),
     File(PathBuf),
     Stream {
@@ -53,6 +53,13 @@ enum Input {
 }
 
 impl Input {
+    pub(crate) fn stream(buffer: Arc<StreamBuffer>, mime_type: &str) -> Self {
+        Input::Stream {
+            buffer,
+            extension: extension_for_mime(mime_type),
+        }
+    }
+
     fn media_source(&self) -> std::io::Result<Box<dyn MediaSource>> {
         Ok(match self {
             Input::Memory(audio) => Box::new(Cursor::new(audio.clone())),
@@ -265,13 +272,10 @@ impl TrackDecoder {
     /// container header has arrived; afterwards reads block until the bytes they
     /// need are downloaded (see [`StreamBuffer::set_read_timeout`]).
     pub fn from_stream(buffer: Arc<StreamBuffer>, mime_type: &str) -> Result<Self> {
-        Self::open(Input::Stream {
-            buffer,
-            extension: extension_for_mime(mime_type),
-        })
+        Self::open(Input::stream(buffer, mime_type))
     }
 
-    fn open(input: Input) -> Result<Self> {
+    pub(crate) fn open(input: Input) -> Result<Self> {
         let mut format = input.open_format().map_err(audio_err)?;
         let track = format
             .first_track_known_codec(TrackType::Audio)
@@ -412,6 +416,22 @@ impl TrackDecoder {
     /// True once every sample has been yielded.
     pub fn is_finished(&self) -> bool {
         self.finished && self.offset >= self.buffer.len()
+    }
+
+    /// The rest of the current packet (or the next one) as interleaved
+    /// samples with their rate and channel count; `None` at the end. For
+    /// whole-track analysis without the per-sample iterator.
+    pub(crate) fn next_block(&mut self) -> Option<(&[f32], u32, usize)> {
+        if self.offset >= self.buffer.len() && !self.refill() {
+            return None;
+        }
+        let start = self.offset;
+        self.offset = self.buffer.len();
+        Some((
+            &self.buffer[start..],
+            self.rate,
+            usize::from(self.channels.max(1)),
+        ))
     }
 
     /// Why decoding ended before the end of the data (e.g. a failed download).
@@ -709,6 +729,64 @@ impl Source for TrackDecoder {
             self.next();
         }
         result.map_err(|e| SeekError::Other(Arc::new(e)))
+    }
+}
+
+/// The encoded packets of a file's first audio track, without decoding: for
+/// analysis that can work on the bitstream (the waveform of Opus tracks).
+pub(crate) struct Demuxer {
+    format: Box<dyn FormatReader>,
+    track_id: u32,
+    pub(crate) params: symphonia::core::codecs::audio::AudioCodecParameters,
+}
+
+impl Demuxer {
+    pub(crate) fn open(input: &Input) -> Result<Self> {
+        let format = input.open_format().map_err(audio_err)?;
+        let track = format
+            .first_track_known_codec(TrackType::Audio)
+            .ok_or_else(|| Error::Audio("no audio track".into()))?;
+        let params = track
+            .codec_params
+            .as_ref()
+            .and_then(|p| p.audio())
+            .ok_or_else(|| Error::Audio("no audio codec parameters".into()))?
+            .clone();
+        Ok(Self {
+            track_id: track.id,
+            format,
+            params,
+        })
+    }
+
+    /// The channel count of a single-stream Opus track (mapping family 0).
+    pub(crate) fn plain_opus_channels(&self) -> Option<usize> {
+        if self.params.codec != CODEC_ID_OPUS {
+            return None;
+        }
+        let head = self
+            .params
+            .extra_data
+            .as_deref()
+            .and_then(crate::opus::OpusHead::parse)?;
+        (head.mapping_family == 0 && (1..=2).contains(&head.channels))
+            .then_some(usize::from(head.channels))
+    }
+
+    /// The next packet's bytes; `Ok(None)` at the end (also the end of a
+    /// truncated file).
+    pub(crate) fn next_packet(&mut self) -> Result<Option<Box<[u8]>>> {
+        loop {
+            match self.format.next_packet() {
+                Ok(Some(packet)) if packet.track_id == self.track_id => {
+                    return Ok(Some(packet.data));
+                }
+                Ok(Some(_)) => {}
+                Ok(None) => return Ok(None),
+                Err(e) if is_eof(&e) => return Ok(None),
+                Err(e) => return Err(audio_err(e)),
+            }
+        }
     }
 }
 

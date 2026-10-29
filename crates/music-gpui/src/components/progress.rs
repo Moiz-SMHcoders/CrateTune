@@ -3,7 +3,7 @@
 // a stop dot at the end) — © Rukamori and contributors, GPL-3.0.
 //! The progress / volume track used by the player bar and the mini player: one
 //! custom element that draws every [`ProgressStyle`] with quads and paths
-//! (Standard, Thick, Simple, Wavy, Equalizer) and reports pointer input
+//! (Standard, Thick, Simple, Wavy, Equalizer, Waveform) and reports pointer input
 //! (hover, press, drag, release, scroll) to its owner, which keeps the state
 //! that has to survive frames (tweens, wave phase, spectrum, drag).
 //!
@@ -14,13 +14,14 @@
 use std::cell::{Cell, RefCell};
 use std::panic::Location;
 use std::rc::Rc;
+use std::sync::Arc;
 
 use gpui::{
     App, Bounds, CursorStyle, Element, ElementId, GlobalElementId, Hitbox, HitboxBehavior, Hsla,
     InspectorElementId, IntoElement, LayoutId, MouseButton, MouseDownEvent, MouseMoveEvent,
     MouseUpEvent, PathBuilder, Pixels, ScrollEvent, Style, Window, fill, point, px, relative, size,
 };
-use music_core::Spectrum;
+use music_core::{Spectrum, Waveform};
 
 use crate::settings::bar_prefs::ProgressStyle;
 
@@ -31,6 +32,11 @@ const AMPLITUDE: f32 = 2.6;
 /// Equalizer: bar width and gap at scale 1.
 const EQ_BAR: f32 = 3.0;
 const EQ_GAP: f32 = 2.0;
+/// Waveform: bar width and gap at scale 1, and the level of the flat
+/// placeholder row shown until the track's waveform is known.
+const WF_BAR: f32 = 2.0;
+const WF_GAP: f32 = 1.0;
+pub const WF_PLACEHOLDER: f32 = 0.16;
 
 /// Colours of a track (from the theme, or white-on-artwork in the mini player).
 #[derive(Clone, Copy)]
@@ -59,6 +65,10 @@ pub struct TrackParams {
     /// Equalizer: the current spectrum (`None` = bars at rest).
     pub spectrum: Option<Rc<RefCell<Spectrum>>>,
     pub peak_caps: bool,
+    /// Waveform: the track's loudness shape (`None`: the placeholder row).
+    pub waveform: Option<Arc<Waveform>>,
+    /// Waveform: 0 = placeholder heights, 1 = the real shape (one short fade).
+    pub wave_fade: f32,
     pub enabled: bool,
     pub look: TrackLook,
     /// Height of the element (= the hit area); the track is centred in it.
@@ -90,6 +100,12 @@ pub type TrackHandler = Rc<dyn Fn(TrackEvent, &mut Window, &mut App)>;
 pub fn eq_bar_count(width: Pixels, scale: f32) -> usize {
     let step = (EQ_BAR + EQ_GAP) * scale;
     (((f32::from(width) + EQ_GAP * scale) / step).floor() as usize).clamp(8, 160)
+}
+
+/// How many Waveform bars fit into `width`.
+pub fn wave_bar_count(width: Pixels, scale: f32) -> usize {
+    let step = (WF_BAR + WF_GAP) * scale;
+    (((f32::from(width) + WF_GAP * scale) / step).floor() as usize).clamp(8, 400)
 }
 
 pub struct ProgressTrack {
@@ -417,6 +433,73 @@ pub fn paint_track(p: &TrackParams, bounds: Bounds<Pixels>, window: &mut Window)
                 );
             }
         }
+        ProgressStyle::Waveform => {
+            let n = wave_bar_count(bounds.size.width, s);
+            let bar = WF_BAR * s;
+            let gap = if n > 1 {
+                (width - bar * n as f32) / (n - 1) as f32
+            } else {
+                0.
+            };
+            let full = f32::from(bounds.size.height) - 2.;
+            let low = 2. * s;
+            let fade = if p.waveform.is_some() {
+                p.wave_fade.clamp(0., 1.)
+            } else {
+                0.
+            };
+            for i in 0..n {
+                let x = left + i as f32 * (bar + gap);
+                let level = match &p.waveform {
+                    Some(w) if fade > 0. => {
+                        w.max_in(i as f32 / n as f32, (i + 1) as f32 / n as f32)
+                    }
+                    _ => WF_PLACEHOLDER,
+                };
+                let v = WF_PLACEHOLDER + (level - WF_PLACEHOLDER) * fade;
+                let h = low + (full - low) * v;
+                let top = cy - h / 2.;
+                let hovered = hover_x.is_some_and(|hx| x + bar / 2. <= hx);
+                let rest = if hovered { look.ghost } else { look.rail };
+                let radius = px(bar / 2.);
+                if x + bar <= xp {
+                    quad(
+                        window,
+                        Bounds::new(point(px(x), px(top)), size(px(bar), px(h))),
+                        radius,
+                        look.played,
+                    );
+                    continue;
+                }
+                quad(
+                    window,
+                    Bounds::new(point(px(x), px(top)), size(px(bar), px(h))),
+                    radius,
+                    rest,
+                );
+                // The bar the position is in: played up to the boundary.
+                if x < xp {
+                    let w = xp - x;
+                    quad(
+                        window,
+                        Bounds::new(point(px(x), px(top)), size(px(w), px(h))),
+                        px(w.min(bar) / 2.),
+                        look.played,
+                    );
+                }
+            }
+            if reveal > 0.01 {
+                let w = 2. * s;
+                dot(
+                    window,
+                    xp.clamp(left + w / 2., left + width - w / 2.),
+                    cy,
+                    w,
+                    full * (0.6 + 0.4 * reveal),
+                    look.thumb.opacity(reveal),
+                );
+            }
+        }
         ProgressStyle::Equalizer => {
             let n = eq_bar_count(bounds.size.width, s);
             let bar = EQ_BAR * s;
@@ -504,5 +587,8 @@ mod tests {
         assert_eq!(eq_bar_count(px(98.), 1.), 20);
         assert_eq!(eq_bar_count(px(100.), 1.), 20);
         assert_eq!(eq_bar_count(px(5000.), 1.), 160);
+        // 2 pt bars, 1 pt gaps: 98 pt hold 33 bars.
+        assert_eq!(wave_bar_count(px(98.), 1.), 33);
+        assert_eq!(wave_bar_count(px(5.), 1.), 8);
     }
 }

@@ -155,6 +155,11 @@ pub struct MusicApp {
     /// Last time a visualizer asked for the live spectrum (the tap is turned
     /// off by the poll a while after nobody does).
     pub(crate) spectrum_wanted: std::cell::Cell<Option<Instant>>,
+    /// The current track's waveform as the player last reported it (polled;
+    /// only computed while the Waveform progress style is selected).
+    pub(crate) waveform: music_core::WaveformStatus,
+    /// What `Player::set_waveform_enabled` was last told.
+    waveform_sent: Option<bool>,
     /// Now Playing's spectrum strip (`components/np_visualizer.rs`).
     pub(crate) np_viz: Option<Entity<crate::components::np_visualizer::NpVisualizer>>,
 
@@ -238,6 +243,13 @@ impl MusicApp {
                 };
                 // Volume and EQ before anything can play (MUSIC_VOLUME=0.0 stays silent).
                 engine.set_volume(this.volume);
+                if let Engine::Audio(player) = &engine {
+                    // Finished waveforms (a few hundred bytes per track).
+                    player.set_waveform_cache(
+                        crate::settings::file::config_dir()
+                            .map(|d| d.join("cache").join("waveforms")),
+                    );
+                }
                 engine.set_equalizer(this.settings.read(cx).equalizer());
                 engine.apply_audio(&this.settings.read(cx).settings().audio);
                 // Main thread, window exists: what the media-controls docs require.
@@ -327,6 +339,8 @@ impl MusicApp {
             bar: None,
             shell: None,
             spectrum_wanted: std::cell::Cell::new(None),
+            waveform: Default::default(),
+            waveform_sent: None,
             np_viz: None,
             _poll: poll,
             _subscriptions: subscriptions,
@@ -769,6 +783,32 @@ impl MusicApp {
             && !player.spectrum_enabled()
         {
             player.set_spectrum_enabled(true);
+        }
+    }
+
+    /// From the poll: tells the player whether to compute waveforms (the
+    /// Waveform style is selected; the mini player follows the bar's style)
+    /// and picks up the current track's. Notifies only when it changed.
+    pub(crate) fn poll_waveform(&mut self, cx: &mut Context<Self>) {
+        let wanted = self
+            .settings
+            .read(cx)
+            .settings()
+            .player_bar
+            .wants_waveform();
+        let status = match self.audio_player().cloned() {
+            Some(player) => {
+                if self.waveform_sent != Some(wanted) {
+                    player.set_waveform_enabled(wanted);
+                    self.waveform_sent = Some(wanted);
+                }
+                player.waveform()
+            }
+            None => Default::default(),
+        };
+        if status != self.waveform {
+            self.waveform = status;
+            cx.notify();
         }
     }
 

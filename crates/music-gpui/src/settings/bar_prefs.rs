@@ -23,15 +23,19 @@ pub enum ProgressStyle {
     Wavy,
     /// Vertical spectrum bars from the live audio; played bars in the accent.
     Equalizer,
+    /// The song's loudness shape as vertical bars (SoundCloud-style), computed
+    /// once per track in the background and cached; static like Standard.
+    Waveform,
 }
 
 impl ProgressStyle {
-    pub const ALL: [Self; 5] = [
+    pub const ALL: [Self; 6] = [
         Self::Standard,
         Self::Thick,
         Self::Simple,
         Self::Wavy,
         Self::Equalizer,
+        Self::Waveform,
     ];
 
     pub fn title(self) -> &'static str {
@@ -41,6 +45,7 @@ impl ProgressStyle {
             Self::Simple => t!("bar.style.simple"),
             Self::Wavy => t!("bar.style.wavy"),
             Self::Equalizer => t!("bar.style.equalizer"),
+            Self::Waveform => t!("bar.style.waveform"),
         }
     }
 
@@ -52,6 +57,7 @@ impl ProgressStyle {
             Self::Simple => "simple",
             Self::Wavy => "wavy",
             Self::Equalizer => "equalizer",
+            Self::Waveform => "waveform",
         }
     }
 
@@ -195,7 +201,8 @@ impl Default for PlayerBarConfig {
 
 impl PlayerBarConfig {
     /// The cheapest look (Minimal / Fast profile): a static Simple line, no
-    /// background effect, no gradient drift, no visualizer, no spectrum tap.
+    /// background effect, no gradient drift, no visualizer, no spectrum tap
+    /// (and not Waveform, which reads every new track once).
     /// Conveniences that cost nothing (times, scroll volume) stay as they are.
     pub fn least_resources() -> Self {
         Self {
@@ -226,6 +233,12 @@ impl PlayerBarConfig {
             && (self.background == BarBackground::Pulse
                 || (self.background == BarBackground::Gradient && self.animate_gradient)))
             || self.np_visualizer
+    }
+
+    /// The progress style shows the track's waveform: the player computes it
+    /// (once per track, cached) only while this is on.
+    pub fn wants_waveform(&self) -> bool {
+        self.progress_style == ProgressStyle::Waveform
     }
 
     /// Whether this look needs the live spectrum (Equalizer bars, Pulse glow).
@@ -278,8 +291,14 @@ mod tests {
             );
         }
         assert!(!PlayerBarConfig::default().animates(), "static by default");
+        // Waveform is static and needs no spectrum, only the waveform.
+        let c: PlayerBarConfig = serde_json::from_str(r#"{"progress_style": "waveform"}"#).unwrap();
+        assert_eq!(c.progress_style, ProgressStyle::Waveform);
+        assert!(!c.animates() && !c.wants_spectrum() && c.wants_waveform());
+        assert!(!PlayerBarConfig::default().wants_waveform());
         let least = PlayerBarConfig::least_resources();
         assert!(!least.animates() && !least.wants_spectrum() && !least.background_effect);
+        assert!(!least.wants_waveform());
         assert_eq!(super::super::profiles::minimal_settings().player_bar, least);
         assert!(super::super::portable::BAR_STYLE_KEYS.contains(&"player_bar"));
         let mut c: PlayerBarConfig =

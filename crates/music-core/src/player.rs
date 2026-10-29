@@ -11,6 +11,8 @@
 //! gapless switches and crossfades, and fades. UIs only ever poll
 //! [`Player::state`] (and, for visualizers, [`Player::spectrum`]).
 
+use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Receiver, RecvTimeoutError, Sender};
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::thread;
@@ -25,6 +27,7 @@ use crate::silence::SilenceConfig;
 use crate::sleep::{SleepClock, SleepTimer, SleepTimerState};
 use crate::spectrum::{Spectrum, SpectrumAnalyzer, SpectrumConfig, SpectrumTap};
 use crate::voice::{Phase, Settings, Voice, VoiceConfig};
+use crate::waveform::{self, WAVEFORM_BUCKETS, Waveform, WaveformCache, WaveformCost};
 use crate::{EqualizerSettings, Error, Quality, Result, StreamResolver, StreamSource, Track};
 
 const TICK: Duration = Duration::from_millis(100);
@@ -34,6 +37,9 @@ const PRELOAD_AHEAD: Duration = Duration::from_secs(30);
 const MAX_CONSECUTIVE_SKIPS: u32 = 3;
 /// How often to retry a missing output device.
 const DEVICE_RETRY: Duration = Duration::from_secs(3);
+/// The waveform decode starts once this much of the track has played (so it
+/// never delays the first audio), or once the download is complete.
+const WAVEFORM_START_AFTER: Duration = Duration::from_millis(500);
 
 #[derive(Debug, Clone, PartialEq, Default)]
 pub enum PlaybackStatus {
@@ -115,6 +121,42 @@ impl Default for PlaybackState {
     }
 }
 
+/// The current track's waveform ([`Player::waveform`]).
+#[derive(Debug, Clone, Default, PartialEq)]
+pub enum WaveformState {
+    /// Waveforms are off, or nothing is loaded.
+    #[default]
+    Off,
+    /// Looking in the cache, waiting for playback to start, or decoding.
+    Pending,
+    Ready(Arc<Waveform>),
+    /// Can't be computed for this track (a preview, a stream of unknown
+    /// length such as a live stream, a failed download or decode).
+    Unavailable(String),
+}
+
+/// Snapshot of the waveform work for the current track.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct WaveformStatus {
+    /// The track this is about (`None` with nothing loaded).
+    pub video_id: Option<String>,
+    pub state: WaveformState,
+    /// Read from the cache (no decode).
+    pub from_cache: bool,
+    /// What the decode cost (`None` from the cache or before it finished).
+    pub cost: Option<WaveformCost>,
+}
+
+impl WaveformStatus {
+    /// The waveform, if it is ready and belongs to `video_id`.
+    pub fn ready_for(&self, video_id: &str) -> Option<&Arc<Waveform>> {
+        match &self.state {
+            WaveformState::Ready(w) if self.video_id.as_deref() == Some(video_id) => Some(w),
+            _ => None,
+        }
+    }
+}
+
 enum Command {
     Play(Track),
     TogglePause,
@@ -132,6 +174,8 @@ enum Command {
     SetAutoSkip(bool),
     SetSleepTimer(Option<SleepTimer>),
     SetOutputDevice(Option<String>),
+    SetWaveform(bool),
+    SetWaveformCache(Option<PathBuf>),
     DeviceLost(String),
     /// From the device worker.
     DeviceOpened {
@@ -153,6 +197,7 @@ pub struct Player {
     tap: Arc<SpectrumTap>,
     /// Shared analyzer behind [`Player::spectrum`], created on first use.
     analyzer: Arc<Mutex<Option<SpectrumAnalyzer>>>,
+    waveform: Arc<Mutex<WaveformStatus>>,
 }
 
 impl Player {
@@ -177,8 +222,10 @@ impl Player {
         let (tx, rx) = mpsc::channel();
         let state = Arc::new(Mutex::new(PlaybackState::default()));
         let eq = Arc::new(EqControl::default());
+        let waveform = Arc::new(Mutex::new(WaveformStatus::default()));
         let (ready_tx, ready_rx) = mpsc::channel();
         let (engine_tx, engine_state, engine_eq) = (tx.clone(), state.clone(), eq.clone());
+        let engine_waveform = waveform.clone();
         thread::Builder::new()
             .name("music-core-audio".into())
             .spawn(move || {
@@ -201,6 +248,7 @@ impl Player {
                 };
                 let tap = deck.spectrum_tap();
                 let mut engine = Engine::new(engine_state, engine_eq, resolver, deck, output);
+                engine.waveform.status = engine_waveform;
                 engine.attach_output();
                 let _ = ready_tx.send(Ok(tap));
                 engine.run(rx);
@@ -215,6 +263,7 @@ impl Player {
             eq,
             tap,
             analyzer: Arc::default(),
+            waveform,
         })
     }
 
@@ -323,6 +372,33 @@ impl Player {
 
     pub fn state(&self) -> PlaybackState {
         self.state.lock().unwrap_or_else(|e| e.into_inner()).clone()
+    }
+
+    /// Computes the loudness envelope ([`Waveform`]) of each track that
+    /// becomes current while on (off by default): looked up in the cache
+    /// (see [`Self::set_waveform_cache`]), else decoded once on a separate
+    /// low-priority thread with its own decoder over the same bytes — the
+    /// local file, or the stream as it downloads (no extra requests). The
+    /// decode starts after the first 0.5 s have played (or once the download
+    /// is complete), so it never delays the first audio, and is cancelled
+    /// when the track changes or this is turned off. Poll [`Self::waveform`].
+    pub fn set_waveform_enabled(&self, enabled: bool) {
+        self.send(Command::SetWaveform(enabled));
+    }
+
+    /// Directory for finished waveforms (a few hundred bytes per track,
+    /// keyed by video id or local file + modification time); `None`: no cache.
+    pub fn set_waveform_cache(&self, dir: Option<PathBuf>) {
+        self.send(Command::SetWaveformCache(dir));
+    }
+
+    /// The current track's waveform and how it was obtained. Cheap (a lock
+    /// and an `Arc` clone); meant for the UI's poll.
+    pub fn waveform(&self) -> WaveformStatus {
+        self.waveform
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .clone()
     }
 
     /// Applies `settings` to the playing track within ~150 ms (the decoded
@@ -527,6 +603,151 @@ struct Engine {
     /// Paused at the end of the last track by the sleep timer; resuming
     /// reports `Ended` so the UI's queue moves on.
     held_at_end: bool,
+    waveform: WaveformJobs,
+}
+
+/// The waveform worker of the current voice ([`Player::set_waveform_enabled`]).
+#[derive(Default)]
+struct WaveformJobs {
+    enabled: bool,
+    cache: Option<Arc<WaveformCache>>,
+    status: Arc<Mutex<WaveformStatus>>,
+    /// The voice the running (or finished) job belongs to, and its cancel flag.
+    job: Option<(u64, Arc<AtomicBool>)>,
+}
+
+impl WaveformJobs {
+    fn status(&self) -> MutexGuard<'_, WaveformStatus> {
+        self.status.lock().unwrap_or_else(|e| e.into_inner())
+    }
+
+    fn cancel(&mut self) {
+        if let Some((_, cancel)) = self.job.take() {
+            cancel.store(true, Ordering::Relaxed);
+        }
+    }
+
+    /// Starts (or keeps) the job for `voice`; called on every engine tick.
+    fn follow(&mut self, voice: Option<&Arc<Voice>>) {
+        let voice = match voice {
+            Some(voice) if self.enabled => voice,
+            _ => {
+                self.cancel();
+                let mut status = self.status();
+                if *status != WaveformStatus::default() {
+                    *status = WaveformStatus::default();
+                }
+                return;
+            }
+        };
+        if self.job.as_ref().is_some_and(|(id, _)| *id == voice.id) {
+            return;
+        }
+        self.cancel();
+        let video_id = voice.track.video_id.clone();
+        let cancel = Arc::new(AtomicBool::new(false));
+        self.job = Some((voice.id, cancel.clone()));
+        {
+            let mut status = self.status();
+            // The same song again (repeat one, replay): keep what we have.
+            if status.video_id.as_deref() == Some(video_id.as_str())
+                && matches!(status.state, WaveformState::Ready(_))
+            {
+                return;
+            }
+            *status = WaveformStatus {
+                video_id: Some(video_id),
+                state: WaveformState::Pending,
+                ..WaveformStatus::default()
+            };
+        }
+        let (voice, cache, status) = (voice.clone(), self.cache.clone(), self.status.clone());
+        let spawned = thread::Builder::new()
+            .name("music-core-waveform".into())
+            .spawn(move || waveform_job(&voice, cache.as_deref(), &cancel, &status));
+        if let Err(e) = spawned {
+            let mut status = self.status();
+            status.state = WaveformState::Unavailable(format!("no thread: {e}"));
+        }
+    }
+}
+
+/// One track's waveform: the cache, else (once playback has started or the
+/// download is complete) a full decode; the result goes to `status` unless
+/// `cancel` was set meanwhile.
+fn waveform_job(
+    voice: &Voice,
+    cache: Option<&WaveformCache>,
+    cancel: &AtomicBool,
+    status: &Mutex<WaveformStatus>,
+) {
+    waveform::lower_thread_priority();
+    let publish = |state: WaveformState, from_cache: bool, cost: Option<WaveformCost>| {
+        let mut status = status.lock().unwrap_or_else(|e| e.into_inner());
+        if !cancel.load(Ordering::Relaxed)
+            && status.video_id.as_deref() == Some(voice.track.video_id.as_str())
+        {
+            status.state = state;
+            status.from_cache = from_cache;
+            status.cost = cost;
+        }
+    };
+    let key = waveform::cache_key(&voice.track);
+    if let (Some(cache), Some(key)) = (cache, &key)
+        && let Some(found) = cache.get(key)
+    {
+        publish(WaveformState::Ready(Arc::new(found)), true, None);
+        return;
+    }
+    // Wait until the track plays (or its download is complete).
+    let source = loop {
+        if cancel.load(Ordering::Relaxed) {
+            return;
+        }
+        match voice.phase() {
+            Phase::Failed(e) => {
+                publish(WaveformState::Unavailable(e), false, None);
+                return;
+            }
+            Phase::Loading => {}
+            Phase::Ready => {
+                let source = voice.waveform_source();
+                let downloaded = matches!(
+                    &source,
+                    Some(waveform::WaveformSource::Stream { buffer, .. })
+                        if buffer.end().is_some()
+                );
+                if source.is_some() && (downloaded || voice.played() >= WAVEFORM_START_AFTER) {
+                    break source;
+                }
+            }
+        }
+        thread::sleep(TICK);
+    };
+    let Some(source) = source else { return };
+    match waveform::compute(&source, WAVEFORM_BUCKETS, cancel) {
+        Ok((found, cost)) => {
+            log::debug!(
+                "{}: waveform in {:?} CPU / {:?} for {:?} of audio",
+                voice.track.video_id,
+                cost.cpu,
+                cost.wall,
+                cost.audio
+            );
+            if let (Some(cache), Some(key)) = (cache, &key)
+                && let Err(e) = cache.put(key, &found)
+            {
+                log::warn!("waveform cache: {e}");
+            }
+            publish(WaveformState::Ready(Arc::new(found)), false, Some(cost));
+        }
+        Err(e) => {
+            if !cancel.load(Ordering::Relaxed) {
+                log::info!("{}: no waveform: {e}", voice.track.video_id);
+            }
+            publish(WaveformState::Unavailable(e.to_string()), false, None);
+        }
+    }
 }
 
 impl Engine {
@@ -558,6 +779,7 @@ impl Engine {
             consecutive_errors: 0,
             sleep: SleepClock::default(),
             held_at_end: false,
+            waveform: WaveformJobs::default(),
         }
     }
 
@@ -579,6 +801,7 @@ impl Engine {
             }
             self.tick();
         }
+        self.waveform.cancel();
         for voice in [self.current.take(), self.next.take()]
             .into_iter()
             .flatten()
@@ -653,6 +876,10 @@ impl Engine {
                     // The current stream keeps playing until the new one is open.
                     out.send(|request| DeviceJob::Open { request, wanted });
                 }
+            }
+            Command::SetWaveform(enabled) => self.waveform.enabled = enabled,
+            Command::SetWaveformCache(dir) => {
+                self.waveform.cache = dir.map(|d| Arc::new(WaveformCache::new(d)));
             }
             Command::DeviceLost(reason) => {
                 if let Output::Device(out) = &mut self.output {
@@ -854,6 +1081,7 @@ impl Engine {
 
         self.update_status(&snap);
         self.maybe_preload();
+        self.waveform.follow(self.current.as_ref());
 
         let mut st = self.state();
         st.sleep_timer = self.sleep.state(now);

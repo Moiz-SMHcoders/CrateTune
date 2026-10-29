@@ -9,6 +9,8 @@ bar.style.simple = Simple
 bar.style.wavy = Wavy
 # The progress bar drawn as spectrum bars of the music.
 bar.style.equalizer = Equalizer
+# The progress bar drawn as the song's loudness shape (like SoundCloud).
+bar.style.waveform = Waveform
 
 # ---- Background effect styles (buttons)
 # A soft tint of the blurred album artwork.
@@ -40,6 +42,8 @@ settings.bar.group = Player bar
 settings.bar.progress_style = Progress bar style
 settings.bar.peak_caps = Peak markers
 settings.bar.peak_caps_note = Equalizer style: small caps that show recent peaks.
+# Under the progress style buttons while Waveform is selected.
+settings.bar.waveform_note = The song's loudness shape, worked out once per song in the background and saved.
 settings.bar.background_effect = Background reacts to playback
 settings.bar.background_effect_note = Colour from the artwork behind the bar.
 settings.bar.background_style = Background style

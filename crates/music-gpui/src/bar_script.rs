@@ -2,7 +2,10 @@
 //! `@bar-style=wavy`, `@bar-bg=glow|gradient|pulse|off`, `@bar-peaks=on|off`,
 //! `@bar-remaining=on|off`, `@bar-scroll-volume=on|off`, `@mini-follow=on|off`,
 //! `@np-viz=on|off`, `@bar-gradient=dir:diagonal|intensity:0.7|animate:on|dim:off`,
-//! `@bar-status` (prints the settings and whether the spectrum tap is on), and `@bar-hover=F` / `@bar-hover=off` / `@bar-volume-hover`
+//! `@bar-status` (prints the settings and whether the spectrum tap is on),
+//! `@waveform-status` (whether the current track's waveform is loaded, its
+//! bucket count, how it was made and what it cost, and its shape as a
+//! sparkline), and `@bar-hover=F` / `@bar-hover=off` / `@bar-volume-hover`
 //! (a real mouse move over the progress track at fraction F, or over the
 //! volume slider, through GPUI's dispatch).
 
@@ -26,7 +29,9 @@ impl MusicApp {
             "bar-style" => match arg.and_then(ProgressStyle::parse) {
                 Some(style) => panel.update(cx, |p, cx| p.set_progress_style(style, cx)),
                 None => {
-                    eprintln!("music-gpui: @bar-style wants standard|thick|simple|wavy|equalizer")
+                    eprintln!(
+                        "music-gpui: @bar-style wants standard|thick|simple|wavy|equalizer|waveform"
+                    )
                 }
             },
             "bar-bg" => match arg {
@@ -65,6 +70,7 @@ impl MusicApp {
                     config.animates()
                 );
             }
+            "waveform-status" => eprintln!("music-gpui: {}", self.waveform_status_line(cx)),
             "bar-peaks" => panel.update(cx, |p, cx| p.set_peak_caps(on, cx)),
             "bar-remaining" => panel.update(cx, |p, cx| p.set_show_remaining(on, cx)),
             "bar-scroll-volume" => panel.update(cx, |p, cx| p.set_scroll_volume(on, cx)),
@@ -104,5 +110,45 @@ impl MusicApp {
             _ => return false,
         }
         true
+    }
+
+    /// `@waveform-status`: one line about the current track's waveform.
+    fn waveform_status_line(&self, cx: &Context<Self>) -> String {
+        use music_core::WaveformState;
+        let style = self.settings.read(cx).settings().player_bar.progress_style;
+        let w = &self.waveform;
+        let state = match &w.state {
+            WaveformState::Off => "off".to_owned(),
+            WaveformState::Pending => "pending".to_owned(),
+            WaveformState::Ready(_) => "loaded".to_owned(),
+            WaveformState::Unavailable(why) => format!("unavailable ({why})"),
+        };
+        let mut line = format!(
+            "waveform {state} style={} track={}",
+            style.key(),
+            w.video_id.as_deref().unwrap_or("-")
+        );
+        if let WaveformState::Ready(waveform) = &w.state {
+            line.push_str(&format!(" buckets={}", waveform.len()));
+            match &w.cost {
+                Some(cost) => line.push_str(&format!(
+                    " from_cache=false method={} cpu_ms={:.1} wall_ms={:.1} audio_s={:.1}",
+                    cost.method,
+                    cost.cpu.unwrap_or_default().as_secs_f64() * 1000.,
+                    cost.wall.as_secs_f64() * 1000.,
+                    cost.audio.as_secs_f64(),
+                )),
+                None => line.push_str(" from_cache=true"),
+            }
+            const BARS: [char; 8] = ['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
+            let shape: String = (0..64)
+                .map(|i| {
+                    let v = waveform.max_in(i as f32 / 64., (i + 1) as f32 / 64.);
+                    BARS[((v * 7.).round() as usize).min(7)]
+                })
+                .collect();
+            line.push_str(&format!(" shape={shape}"));
+        }
+        line
     }
 }

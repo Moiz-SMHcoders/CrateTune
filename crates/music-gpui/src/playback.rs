@@ -397,6 +397,7 @@ impl MusicApp {
         }
         self.poll_tray(window, cx);
         self.poll_spectrum();
+        self.poll_waveform(cx);
         self.sync_engine_next();
         let Some(engine) = &mut self.engine else {
             return;

@@ -109,6 +109,10 @@ media-controls = [
     "dep:mpris-server",
 ]
 
+[target.'cfg(unix)'.dependencies]
+# Background QoS / nice and thread CPU time for the waveform worker (`waveform`).
+libc = "0.2"
+
 [target.'cfg(target_os = "macos")'.dependencies]
 block2 = { version = "0.6", optional = true }
 objc2 = { version = "0.6", optional = true }
