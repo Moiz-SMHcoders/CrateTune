@@ -191,8 +191,9 @@ impl Services {
 /// `raw-window-handle`'s `HasWindowHandle`). Untested: only built on macOS so far.
 #[cfg(target_os = "windows")]
 pub fn hwnd(window: &gpui::Window) -> Option<std::num::NonZeroIsize> {
-    use raw_window_handle::{HasWindowHandle as _, RawWindowHandle};
-    match window.window_handle().ok()?.as_raw() {
+    use raw_window_handle::{HasWindowHandle, RawWindowHandle};
+    // Explicitly the trait's method: `Window::window_handle` is GPUI's own handle.
+    match HasWindowHandle::window_handle(window).ok()?.as_raw() {
         RawWindowHandle::Win32(handle) => Some(handle.hwnd),
         _ => None,
     }

@@ -9,6 +9,8 @@
 
 /// What a menu-bar click asks the app to do.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+// No menu-bar item on Linux, so nothing sends these there.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 pub enum TrayCommand {
     TogglePlayback,
     Next,

@@ -376,6 +376,33 @@ impl Voice {
             .store(pos.as_micros() as u64, Ordering::Relaxed);
     }
 
+    /// Internal state, for test failure messages.
+    #[cfg(test)]
+    pub(crate) fn debug_state(&self) -> String {
+        let q = lock(&self.queue);
+        let (frames, chunks, eof, seek, deferred, stop) = (
+            q.frames,
+            q.chunks.len(),
+            q.eof,
+            q.seek,
+            q.deferred_seek,
+            q.stop,
+        );
+        drop(q);
+        let buffer = lock(&self.buffer)
+            .as_ref()
+            .map(|b| format!("{}/{:?} end={:?}", b.len(), b.total_len(), b.end()));
+        format!(
+            "voice {} phase={:?} played={:?} frames={frames} chunks={chunks} eof={eof} \
+             seek={seek:?} deferred={deferred:?} stop={stop} underrun={} epoch={} buffer={buffer:?}",
+            self.id,
+            self.phase(),
+            self.played(),
+            self.is_underrun(),
+            self.epoch(),
+        )
+    }
+
     pub(crate) fn set_underrun(&self, underrun: bool) {
         self.underrun.store(underrun, Ordering::Relaxed);
     }

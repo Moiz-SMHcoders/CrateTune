@@ -199,6 +199,9 @@ enum Command {
         request: u64,
         present: bool,
     },
+    /// Internal state as text, for test failure messages.
+    #[cfg(test)]
+    Debug(Sender<String>),
 }
 
 /// Background audio engine. Cloning shares the same engine.
@@ -249,7 +252,7 @@ impl Player {
                             let rate = opened.sink.config().sample_rate().get();
                             let jobs = spawn_device_worker(engine_tx.clone());
                             (
-                                Output::Device(DeviceOutput::new(opened, None, jobs)),
+                                Output::Device(Box::new(DeviceOutput::new(opened, None, jobs))),
                                 Deck::new(rate),
                             )
                         }
@@ -397,6 +400,15 @@ impl Player {
         self.send(Command::SetOutputDevice(id));
     }
 
+    /// Engine, deck and voice state as text, for test failure messages.
+    #[cfg(test)]
+    pub(crate) fn debug_dump(&self) -> String {
+        let (tx, rx) = mpsc::channel();
+        self.send(Command::Debug(tx));
+        rx.recv_timeout(Duration::from_secs(2))
+            .unwrap_or_else(|_| "engine did not answer".into())
+    }
+
     pub fn state(&self) -> PlaybackState {
         self.state.lock().unwrap_or_else(|e| e.into_inner()).clone()
     }
@@ -499,7 +511,8 @@ impl Player {
 
 enum Output {
     Headless,
-    Device(DeviceOutput),
+    // Boxed: the device side is a few hundred bytes (more on Linux / Windows).
+    Device(Box<DeviceOutput>),
 }
 
 /// The output device, managed without ever blocking the engine thread: every
@@ -935,6 +948,23 @@ impl Engine {
                 }
             }
             Command::DeviceOpened { request, result } => self.device_opened(request, result),
+            #[cfg(test)]
+            Command::Debug(reply) => {
+                let mut lines = vec![self.deck.debug_state()];
+                for (what, voice) in [("current", &self.current), ("next", &self.next)] {
+                    if let Some(v) = voice {
+                        lines.push(format!("{what}: {}", v.debug_state()));
+                    }
+                }
+                if let Some(r) = &self.replacement {
+                    lines.push(format!(
+                        "replacement (armed={}): {}",
+                        r.armed,
+                        r.voice.debug_state()
+                    ));
+                }
+                let _ = reply.send(lines.join("\n"));
+            }
             Command::DeviceChecked { request, present } => {
                 if let Output::Device(out) = &mut self.output
                     && request == out.request
@@ -1365,9 +1395,8 @@ impl Engine {
     // ---- output device ----
 
     fn attach_output(&mut self) {
-        if let Output::Device(DeviceOutput {
-            sink: Some(sink), ..
-        }) = &self.output
+        if let Output::Device(out) = &self.output
+            && let Some(sink) = &out.sink
         {
             // The deck keeps its rate; the mixer converts if the device differs.
             sink.mixer().add(HeadlessOutput::new(self.deck.clone()));

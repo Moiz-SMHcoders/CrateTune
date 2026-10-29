@@ -225,9 +225,14 @@ impl Link for Conn {
             code: CloseCode::Normal,
             reason: reason.to_owned().into(),
         }));
-        // Give the close frame a moment to go out.
-        for _ in 0..5 {
+        // Wait (briefly) for the peer's close reply, discarding whatever it still
+        // sends meanwhile. Dropping a socket with unread data makes Linux and
+        // Windows reset the connection, and the peer then sees "Connection
+        // lost" instead of this close frame and its reason.
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(1);
+        while std::time::Instant::now() < deadline {
             match self.ws.read() {
+                Ok(_) => continue,
                 Err(tungstenite::Error::Io(e)) if is_timeout(e.kind()) => continue,
                 _ => break,
             }

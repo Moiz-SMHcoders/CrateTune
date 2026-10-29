@@ -55,8 +55,11 @@ mod tests {
 
     use super::*;
 
+    #[track_caller]
     fn wait_for<T>(mut f: impl FnMut() -> Option<T>) -> T {
-        let deadline = Instant::now() + Duration::from_secs(5);
+        // Generous: on Windows a connection attempt to a port nobody listens on
+        // (the old host, while a guest follows the transfer) takes ~2 s to fail.
+        let deadline = Instant::now() + Duration::from_secs(20);
         loop {
             if let Some(v) = f() {
                 return v;
@@ -277,13 +280,16 @@ mod tests {
         let key = old.session_key().to_owned();
         let ann = TogetherClient::connect(&join(&old, &key), "Ann", "ann-client").unwrap();
         let bob = TogetherClient::connect(&join(&old, &key), "Bob", "bob-client").unwrap();
-        for _ in 0..2 {
-            let p = wait_for(|| {
-                old.poll_events().into_iter().find_map(|e| match e {
-                    ServerEvent::JoinRequested(p) => Some(p),
-                    _ => None,
-                })
-            });
+        // Both requests can arrive in one poll: keep every one seen.
+        let mut requests = Vec::new();
+        wait_for(|| {
+            requests.extend(old.poll_events().into_iter().filter_map(|e| match e {
+                ServerEvent::JoinRequested(p) => Some(p),
+                _ => None,
+            }));
+            (requests.len() >= 2).then_some(())
+        });
+        for p in &requests {
             old.approve(&p.id, true);
         }
         let ann_id = wait_for(|| ann.participant_id());

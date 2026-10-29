@@ -3,7 +3,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, "ci/**"]
   pull_request:
   workflow_dispatch:
 
@@ -59,10 +59,15 @@ jobs:
           shared-key: ci-${{ matrix.os }}
 
       - name: clippy
-        run: cargo clippy --workspace --all-targets -- -D warnings
+        shell: bash
+        run: scripts/ci-run.sh cargo clippy --workspace --all-targets -- -D warnings
 
       - name: clippy (screenshot feature)
-        run: cargo clippy -p music-gpui --features screenshot -- -D warnings
+        shell: bash
+        run: scripts/ci-run.sh cargo clippy -p music-gpui --features screenshot -- -D warnings
 
       - name: test
-        run: cargo test --workspace
+        shell: bash
+        # Release: the engine tests play audio against the clock, too slow unoptimized
+        # on the hosted runners.
+        run: scripts/ci-run.sh cargo test --workspace --release

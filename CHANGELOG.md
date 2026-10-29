@@ -3,7 +3,7 @@
 All notable changes. The format follows [Keep a Changelog](https://keepachangelog.com/),
 versions follow [SemVer](https://semver.org/).
 
-## [Unreleased]
+## [0.1.0] — 2026-10-29 (first public release)
 
 ### Changed
 
@@ -209,7 +209,7 @@ versions follow [SemVer](https://semver.org/).
 * A module playback test was sensitive to machine speed (it sampled positions on 100 ms
   ticks while rendering at ~3× real time).
 
-## [0.1.0] — first release
+## Before 0.1.0 — first development build (not released)
 
 ### Added
 
@@ -243,6 +243,6 @@ versions follow [SemVer](https://semver.org/).
 
 ### Known limitations
 
-* YouTube songs play as ~1-minute previews without a PoToken (fixed in Unreleased).
+* YouTube songs play as ~1-minute previews without a PoToken (fixed in 0.1.0).
 * Account features and the Linux / Windows builds are not verified on real accounts /
   machines yet; builds are not signed with a Developer ID / Authenticode certificate.

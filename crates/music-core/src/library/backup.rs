@@ -320,6 +320,8 @@ mod tests {
             .filter(|n| n.starts_with('.'))
             .collect();
         assert!(leftovers.is_empty(), "{leftovers:?}");
+        // Windows can't delete a database file that is still open.
+        drop((lib, other_handle));
         std::fs::remove_dir_all(dir).unwrap();
     }
 

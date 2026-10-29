@@ -27,9 +27,12 @@ Google or Shazam.
 ## Install
 
 **macOS (11 Big Sur or later).** Open the `.dmg` and drag the app to Applications.
-Builds that aren't signed with a Developer ID (the default) are refused by Gatekeeper on
-first open: right-click the app → **Open** → **Open**, or allow it under System Settings →
-Privacy & Security. The first time you recognize a song, macOS asks for microphone access.
+Builds that aren't signed with a Developer ID (the default, including the GitHub
+releases for now) are refused by Gatekeeper on first open ("Apple could not verify…"):
+click **Done**, then System Settings → Privacy & Security → **Open Anyway** (on macOS 14
+and earlier, right-click the app → **Open** also works). Or, in Terminal:
+`xattr -dr com.apple.quarantine /Applications/TuneDesk.app`. The first time you
+recognize a song, macOS asks for microphone access.
 
 **Windows 10/11 (x64).** Run the `…-setup.exe` (installs for the current user, no admin
 rights) or unpack the `.zip` anywhere and start the `.exe`. SmartScreen may warn about an
