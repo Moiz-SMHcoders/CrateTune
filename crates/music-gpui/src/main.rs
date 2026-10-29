@@ -17,6 +17,8 @@
 //! * `module_service.rs` – provider modules (`.arch`): the store, the module-first
 //!   resolver used by the player and downloads, keychain-backed secret settings.
 //! * `script.rs` – timed actions / screenshots for verification.
+//! * `titlebar.rs` – the custom top bar (menu, navigation, search, account, window
+//!   controls) and its window options.
 //! * `win.rs` – Windows only: console, single instance, always-on-top, motion setting;
 //!   `smooth_scroll.rs` – wheel notches glide (Windows, Linux).
 
@@ -87,6 +89,7 @@ mod store;
 mod theme;
 mod theme_script;
 mod theme_state;
+mod titlebar;
 mod tray;
 mod update_check;
 mod update_script;
@@ -180,8 +183,15 @@ fn main() {
             );
             let shortcuts = saved.as_ref().map(|s| s.shortcuts.clone());
             actions::init(&shortcuts.unwrap_or_default(), cx);
+            // The custom top bar unless "Use the system title bar" is on (read
+            // once: the window's title bar is fixed when it opens).
+            let chrome = titlebar::init(
+                saved
+                    .as_ref()
+                    .is_some_and(|s| s.appearance.system_title_bar),
+            );
             let saved = saved.and_then(|s| s.window);
-            let options = WindowOptions {
+            let mut options = WindowOptions {
                 window_bounds: Some(initial_bounds(saved, cx)),
                 window_min_size: Some(size(px(860.), px(540.))),
                 // GPUI caps unfocused windows to ~30 fps by default; lyrics should stay
@@ -196,6 +206,7 @@ fn main() {
                 }),
                 ..Default::default()
             };
+            titlebar::apply_window_options(&mut options, chrome);
             let mut app = None;
             let window = cx
                 .open_window(options, |window, cx| {

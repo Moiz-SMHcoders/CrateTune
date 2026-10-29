@@ -95,6 +95,8 @@ app.window_title = {page} — {app}
 app.audio_demo_clock = {error} (đang dùng đồng hồ demo)
 app.tooltip.back = Quay lại (⌘[)
 app.tooltip.forward = Tiến tới (⌘])
+titlebar.account_settings = Cài đặt tài khoản
+titlebar.signed_out = Chưa đăng nhập
 
 # ---- YouTube Music account
 account.cookie_invalid = Cookie này không có mục SAPISID / __Secure-3PAPISID; hãy sao chép toàn bộ header cookie của một yêu cầu music.youtube.com đã đăng nhập.

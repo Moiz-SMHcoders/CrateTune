@@ -97,6 +97,8 @@ app.window_title = {page} — {app}
 app.audio_demo_clock = {error}（使用演示时钟）
 app.tooltip.back = 后退（⌘[）
 app.tooltip.forward = 前进（⌘]）
+titlebar.account_settings = 账号设置
+titlebar.signed_out = 未登录
 
 # ---- YouTube Music account
 account.cookie_invalid = 该 Cookie 中没有 SAPISID / __Secure-3PAPISID 项；请复制已登录的 music.youtube.com 请求的完整 Cookie 标头。

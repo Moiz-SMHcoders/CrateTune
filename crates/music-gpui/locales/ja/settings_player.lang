@@ -63,6 +63,10 @@ settings.appearance.background = 背景
 settings.appearance.np_note = グラデーション、単色、グローの色はアートワークから取得します。グローは音楽の再生中のみ動きます。レイアウトと背景は再生画面のレイアウトメニューでも変更できます。
 settings.appearance.np_fullscreen = 再生中画面を開いたらフルスクリーンにする
 settings.appearance.np_fullscreen_note = 再生中画面や歌詞を開くとウィンドウがフルスクリーンになり、閉じると元に戻ります。すでにフルスクリーンだったウィンドウはそのままです。
+settings.appearance.window_group = ウィンドウ
+settings.appearance.system_title_bar = システムのタイトルバーを使う
+settings.appearance.system_title_bar_note = 上部バーの代わりに OS のタイトルバーを表示し、戻る・進む・検索はページの上に置きます。次に {app} を起動したときに反映されます。
+settings.appearance.title_bar_pending = タイトルバーを切り替えるには {app} を再起動してください。
 settings.appearance.mini_player = ミニプレーヤー
 
 # ---- Playback

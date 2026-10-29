@@ -171,6 +171,15 @@ pub struct MusicApp {
     waveform_sent: Option<bool>,
     /// Now Playing's spectrum strip (`components/np_visualizer.rs`).
     pub(crate) np_viz: Option<Entity<crate::components::np_visualizer::NpVisualizer>>,
+    /// The custom top bar's cached region (`titlebar.rs`).
+    titlebar: Option<Entity<crate::np_region::Region>>,
+    /// Where the bar's parts were laid out (`@titlebar-status`).
+    pub(crate) titlebar_layout: crate::titlebar::Layout,
+    /// The left button went down on the empty bar: the next move drags the window.
+    pub(crate) titlebar_drag: bool,
+    /// `@titlebar-account=NAME`: a fake signed-in account shown in the bar
+    /// (screenshots; nothing else sees it).
+    pub(crate) titlebar_fake_account: Option<String>,
 
     _poll: Task<()>,
     _subscriptions: Vec<Subscription>,
@@ -217,6 +226,8 @@ impl MusicApp {
                 this.save_window_bounds(window, cx);
                 this.sync_fullscreen(window, cx);
             }),
+            // The top bar's controls dim in an inactive window.
+            cx.observe_window_activation(window, |_, _, cx| cx.notify()),
             cx.on_app_quit(|this, cx| {
                 this.flush_listening();
                 this.save_queue_now();
@@ -359,6 +370,10 @@ impl MusicApp {
             waveform: Default::default(),
             waveform_sent: None,
             np_viz: None,
+            titlebar: None,
+            titlebar_layout: Default::default(),
+            titlebar_drag: false,
+            titlebar_fake_account: None,
             _poll: poll,
             _subscriptions: subscriptions,
         };
@@ -802,7 +817,9 @@ impl MusicApp {
         self.ensure_page(window, cx);
         let page = self.router.current().page.as_ref().map(|p| p.view.clone());
         let sidebar = self.render_sidebar(cx);
-        let header = self.render_header(cx);
+        // The custom top bar has back / forward / search; the old header only
+        // comes with the system title bar.
+        let header = (!crate::titlebar::custom()).then(|| self.render_header(cx));
         let queue_panel = self.queue_open.then(|| self.render_queue_panel(cx));
         // A new page fades in (and slides up a little with full motion): ~180 ms
         // of frames once per navigation, then static.
@@ -831,7 +848,7 @@ impl MusicApp {
                     .flex_1()
                     .min_w_0()
                     .h_full()
-                    .child(header)
+                    .children(header)
                     .child(page_box),
             )
             .children(queue_panel)
@@ -926,6 +943,26 @@ impl Render for MusicApp {
                 MouseButton::Navigate(NavigationDirection::Forward),
                 cx.listener(|this, _, window, cx| this.go_forward(window, cx)),
             );
+        // The custom top bar (`titlebar.rs`): a cached region, above Now Playing
+        // except in full screen (where Now Playing covers the whole window).
+        let custom = crate::titlebar::custom();
+        let bar_h = px(crate::titlebar::top_inset());
+        let titlebar = (custom && !(covered && window.is_fullscreen())).then(|| {
+            let key = self.titlebar_key(window, cx);
+            crate::np_region::sync(
+                &mut self.titlebar,
+                key,
+                Self::render_titlebar,
+                &mut frame,
+                cx,
+            )
+            .cached(
+                gpui::StyleRefinement::default()
+                    .w_full()
+                    .h(px(crate::titlebar::HEIGHT))
+                    .flex_none(),
+            )
+        });
         if !covered {
             // While the bar animates (or the pointer is on one of its tracks) the
             // shell is a cached view: a bar frame then doesn't rebuild the page.
@@ -952,10 +989,13 @@ impl Render for MusicApp {
             } else {
                 bar.into_any_element()
             };
+            // With the translucent sidebar the top bar is see-through like the
+            // sidebar: the opaque base and the backdrop start below it.
+            let under_bar = if translucent { bar_h } else { px(0.) };
             let base = translucent.then(|| {
                 div()
                     .absolute()
-                    .top_0()
+                    .top(under_bar)
                     .bottom_0()
                     .right_0()
                     .left(px(crate::components::sidebar::SIDEBAR_WIDTH))
@@ -975,7 +1015,7 @@ impl Render for MusicApp {
                                 // Behind the content area only, with the desktop blur.
                                 div()
                                     .absolute()
-                                    .top_0()
+                                    .top(under_bar)
                                     .bottom_0()
                                     .right_0()
                                     .left(px(if translucent {
@@ -985,16 +1025,36 @@ impl Render for MusicApp {
                                     }))
                                     .child(b)
                             }))
-                            .child(shell),
+                            .child(
+                                v_flex()
+                                    .relative()
+                                    .size_full()
+                                    .children(titlebar)
+                                    .child(div().flex_1().min_h_0().w_full().child(shell)),
+                            ),
                     )
                     .child(bar),
             );
+        } else if let Some(titlebar) = titlebar {
+            root = root.child(titlebar);
         }
         if reveal > 0. {
             root = root.child(self.render_now_playing_screen(reveal, &mut frame, window, cx));
         }
         if let Some(onboarding) = &self.onboarding {
-            root = root.child(onboarding.clone());
+            // Below the top bar, so the window controls stay reachable.
+            root = root.child(
+                div()
+                    .absolute()
+                    .top(bar_h)
+                    .left_0()
+                    .right_0()
+                    .bottom_0()
+                    .child(onboarding.clone()),
+            );
+        }
+        if custom && let Some(edges) = self.resize_edges(window) {
+            root = root.child(edges);
         }
         if let Some(stats) = &mut self.frame_stats {
             stats.record(frame.now, frame.is_animating());

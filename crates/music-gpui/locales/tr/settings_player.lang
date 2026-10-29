@@ -63,6 +63,10 @@ settings.appearance.background = Arka plan
 settings.appearance.np_note = Gradyan, düz renk ve parıltı renklerini kapak resminden alır. Parıltı yalnızca müzik çalarken hareket eder. Tasarım ve arka plan, Şu an çalıyor ekranının düzen menüsünde de bulunur.
 settings.appearance.np_fullscreen = Şu an çalıyor açılınca tam ekran
 settings.appearance.np_fullscreen_note = Şu an çalıyor ekranını veya şarkı sözlerini açmak pencereyi tam ekrana alır, kapatmak tam ekrandan çıkarır. Zaten tam ekranda olan pencere öyle kalır.
+settings.appearance.window_group = Pencere
+settings.appearance.system_title_bar = Sistem başlık çubuğunu kullan
+settings.appearance.system_title_bar_note = Üst çubuk yerine işletim sisteminin başlık çubuğunu gösterir; geri, ileri ve arama sayfanın üstünde olur. {app} bir sonraki açılışında geçerli olur.
+settings.appearance.title_bar_pending = Başlık çubuğunu değiştirmek için {app} uygulamasını yeniden başlatın.
 settings.appearance.mini_player = Mini oynatıcı
 
 # ---- Playback

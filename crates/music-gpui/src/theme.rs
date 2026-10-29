@@ -605,8 +605,13 @@ pub fn apply(look: &Look, resolved: &Resolved, cx: &mut App) {
         theme.font_family = font;
         theme.radius = radius;
         theme.radius_lg = radius_lg;
-        // No custom title bar, so sheets can start at the top of the content.
-        theme.sheet.margin_top = px(0.);
+        // Sheets and toasts start below the custom top bar (`titlebar.rs`);
+        // with the system title bar, at the top of the content.
+        let inset = px(crate::titlebar::top_inset());
+        theme.sheet.margin_top = inset;
+        if inset > px(0.) {
+            theme.notification.margins.top = inset + px(12.);
+        }
     });
     let app_colors = match resolved.accent {
         Some(accent) => AppColors {

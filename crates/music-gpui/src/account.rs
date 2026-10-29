@@ -167,6 +167,12 @@ impl Account {
         }
     }
 
+    /// Changes whenever [`Self::is_signed_in`] may (without copying the cookie;
+    /// the top bar hashes it with every render, `titlebar.rs`).
+    pub(crate) fn sign_in_fingerprint(&self) -> (bool, Option<usize>) {
+        (self.config.is_some(), self.cookie.as_ref().map(String::len))
+    }
+
     pub fn is_signed_in(&self) -> bool {
         self.config.is_some() && self.auth().is_some()
     }

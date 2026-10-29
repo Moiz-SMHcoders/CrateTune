@@ -50,6 +50,19 @@ pub struct SearchBox {
 }
 
 impl SearchBox {
+    /// Feeds everything the field and its dropdown show into `h` (the top bar is
+    /// a cached view re-rendered when this changes; `titlebar.rs`).
+    pub(crate) fn hash_shown(&self, h: &mut impl std::hash::Hasher) {
+        use std::hash::Hash as _;
+        self.open.hash(h);
+        self.highlight.hash(h);
+        self.shown.hash(h);
+        self.task.is_some().hash(h);
+        self.recent.len().hash(h);
+        self.recent.front().hash(h);
+        self.cache.len().hash(h);
+    }
+
     /// Drops cached suggestions (after the content language changed).
     pub fn clear_cache(&mut self) {
         self.cache.clear();

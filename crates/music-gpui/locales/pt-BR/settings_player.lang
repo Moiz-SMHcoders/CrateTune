@@ -64,6 +64,10 @@ settings.appearance.background = Fundo
 settings.appearance.np_note = Gradiente, sólido e brilho pegam as cores da capa. O brilho só se move enquanto a música toca. O visual e o fundo também ficam no menu de visual da tela Tocando agora.
 settings.appearance.np_fullscreen = Tela cheia ao abrir Tocando agora
 settings.appearance.np_fullscreen_note = Abrir Tocando agora ou a letra coloca a janela em tela cheia, e fechar sai dela. Uma janela que já estava em tela cheia continua assim.
+settings.appearance.window_group = Janela
+settings.appearance.system_title_bar = Usar a barra de título do sistema
+settings.appearance.system_title_bar_note = Mostra a barra de título do sistema operacional, com voltar, avançar e busca acima da página, em vez da barra superior. Vale na próxima vez que o {app} abrir.
+settings.appearance.title_bar_pending = Reinicie o {app} para trocar a barra de título.
 settings.appearance.mini_player = Miniplayer
 
 # ---- Playback

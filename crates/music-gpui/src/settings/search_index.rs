@@ -458,6 +458,31 @@ pub const ENTRIES: &[Entry] = &[
         "smaller"
     ),
     entry!(
+        "appearance.window",
+        Appearance,
+        -,
+        "settings.appearance.window_group",
+        -,
+        "titlebar",
+        "chrome",
+        "frame"
+    ),
+    entry!(
+        "appearance.window.system_title_bar",
+        Appearance,
+        "settings.appearance.window_group",
+        "settings.appearance.system_title_bar",
+        "settings.appearance.system_title_bar_note",
+        "titlebar",
+        "title",
+        "native",
+        "window",
+        "controls",
+        "header",
+        "decorations",
+        "frame"
+    ),
+    entry!(
         "appearance.now_playing",
         Appearance,
         -,

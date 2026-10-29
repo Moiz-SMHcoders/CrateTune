@@ -43,6 +43,8 @@ pub const PROFILE_SECTIONS: &[&str] = &["appearance", "custom_theme", "now_playi
 /// Fields inside those sections that are not about the look or resource use.
 pub const PROFILE_EXCLUDE: &[&str] = &[
     "appearance.language",
+    // Window chrome, read at launch: switching profiles shouldn't restart the window.
+    "appearance.system_title_bar",
     "lyrics.provider_order",
     "lyrics.disabled",
     "lyrics.translator",

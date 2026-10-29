@@ -102,6 +102,8 @@ app.window_title = {page} — {app}
 app.audio_demo_clock = {error} (Demo-Uhr aktiv)
 app.tooltip.back = Zurück (⌘[)
 app.tooltip.forward = Vorwärts (⌘])
+titlebar.account_settings = Kontoeinstellungen
+titlebar.signed_out = Nicht angemeldet
 
 # ---- YouTube Music account
 account.cookie_invalid = Dieses Cookie hat keinen SAPISID- / __Secure-3PAPISID-Eintrag; kopiere den ganzen Cookie-Header einer angemeldeten Anfrage an music.youtube.com.

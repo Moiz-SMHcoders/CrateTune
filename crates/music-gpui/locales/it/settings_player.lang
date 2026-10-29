@@ -63,6 +63,10 @@ settings.appearance.background = Sfondo
 settings.appearance.np_note = Sfumatura, tinta unita e bagliore prendono i colori dalla copertina. Il bagliore si muove solo durante la riproduzione. Layout e sfondo si trovano anche nel menu layout della schermata In riproduzione.
 settings.appearance.np_fullscreen = Schermo intero all'apertura di In riproduzione
 settings.appearance.np_fullscreen_note = Aprendo In riproduzione o il testo, la finestra passa a schermo intero; chiudendoli ne esce. Una finestra già a schermo intero resta così.
+settings.appearance.window_group = Finestra
+settings.appearance.system_title_bar = Usa la barra del titolo di sistema
+settings.appearance.system_title_bar_note = Mostra la barra del titolo del sistema operativo, con indietro, avanti e ricerca sopra la pagina, al posto della barra superiore. Ha effetto al prossimo avvio di {app}.
+settings.appearance.title_bar_pending = Riavvia {app} per cambiare la barra del titolo.
 settings.appearance.mini_player = Mini player
 
 # ---- Playback

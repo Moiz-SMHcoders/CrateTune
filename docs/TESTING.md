@@ -284,7 +284,7 @@ Run the installed app normally (Start menu) unless a step says otherwise.
 * [ ] **Notification-area icon** (maybe under the ^ overflow): the CrateTune logo. Right
       click: menu with the song, play / pause, next, previous, mini player, show window,
       quit — each works. Left click: the window comes to the front.
-* [ ] **⋯ menu** at the right of the header: Settings, Keyboard shortcuts, Check for
+* [ ] **⋯ menu** at the left of the top bar: Settings, Keyboard shortcuts, Check for
       Updates, About, Quit all work; shortcuts shown with Ctrl.
 * [ ] **Mini player** (Ctrl+Shift+M): stays above other windows (click another app); drag
       it by its top strip; × closes it; its position comes back next time.
@@ -294,6 +294,51 @@ Run the installed app normally (Start menu) unless a step says otherwise.
       off, restart the app: Settings → Appearance → Motion → System behaves as Reduced.
 * [ ] **Media keys / SMTC**, **fonts (Segoe UI, CJK titles)**, **high DPI** (125 % /
       150 % scaling, moving between monitors): see 5.8.
+
+### 5.11 Top bar and window controls (Windows; also worth a look on Linux)
+
+The app draws its own title bar (`titlebar.rs`). Check at 100 %, 125 % and 150 % display
+scaling, and after moving the window to a monitor with other scaling.
+
+* [ ] **Layout:** one bar across the top: ⋯, ← →, Home + search centred, the account
+      circle, then minimise / maximise / close flush in the top-right corner (46 × 32 each).
+      No native title bar above it, no gap or 1 px line at the top, nothing cut off when
+      maximised.
+* [ ] **Buttons:** minimise minimises; maximise maximises and its icon turns into restore
+      (two squares), which restores; close quits (as the old ×). Hover: a light square on
+      minimise / maximise, **red** on close with a white ×. Pressing and dragging off a
+      button before releasing does nothing.
+* [ ] **Snap layouts (Windows 11):** hover the maximise button for about a second: the snap
+      layout flyout appears; picking a zone snaps the window.
+* [ ] **Drag:** drag the empty bar (left of Home, right of search, below the caption buttons)
+      to move the window; drag to the top of the screen maximises, to a side snaps (Aero
+      Snap); dragging a maximised window down restores it. Win+← / → / ↑ / ↓ still work.
+* [ ] **Double-click** the empty bar: maximises; again: restores. Double-clicking a button
+      or the search field does **not** maximise.
+* [ ] **Right-click** the empty bar: the system window menu (Restore, Move, Size, Minimise,
+      Maximise, Close); Alt+Space opens it too.
+* [ ] **Resize** from the top edge (a thin band, also above the caption buttons) and the
+      other edges / corners as before.
+* [ ] **Clicks still work** on ⋯, ← →, Home, the search field (typing, suggestions,
+      Enter), and the account circle (menu: Sign in, or your name / Account settings / Sync
+      now / Sign out).
+* [ ] **Inactive window:** the caption glyphs dim when another app is focused.
+* [ ] **Glyphs:** the caption icons look like other Windows 11 apps' (Segoe Fluent Icons;
+      Windows 10: Segoe MDL2 Assets), crisp at every scaling.
+* [ ] **Now Playing** (Ctrl+L) opens below the bar; the caption buttons and the drag still
+      work while it's open. **F11** (full screen): the bar has no caption buttons, Esc / F11
+      leave full screen.
+* [ ] **Ctrl+F** focuses the search field; in Settings it focuses the settings search first,
+      Ctrl+F again the music search. Ctrl+[ / Ctrl+] go back / forward.
+* [ ] **System title bar:** Settings → Appearance → Window → **Use the system title bar** →
+      **Restart now**: the normal Windows title bar is back with the old header (← →,
+      search, ⋯ on the right). Switch it off and restart again.
+* [ ] **Linux** (GNOME / KDE, Wayland and X11): with client-side decorations there are
+      round minimise / maximise / close buttons on the right (only those the desktop
+      supports), dragging the bar moves the window, double-click maximises, right-click
+      opens the window menu, the edges resize. With server-side decorations (KDE / X11
+      without a compositor) the desktop's own title bar shows above the bar and the bar has
+      no buttons of its own.
 
 ## 6. Reporting a problem
 

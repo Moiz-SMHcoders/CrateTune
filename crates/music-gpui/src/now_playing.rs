@@ -337,7 +337,9 @@ impl MusicApp {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> AnyElement {
-        let viewport = window.viewport_size();
+        // Below the custom top bar (`titlebar.rs`), except in full screen.
+        let top = self.np_top_inset(window);
+        let viewport = self.np_viewport(window);
         let track = self.playback.track.clone();
         let position = self.clock.position(frame.now);
         if self.clock.is_running() {
@@ -393,7 +395,7 @@ impl MusicApp {
                     |app, frame, window, cx| {
                         let track = app.playback.track.clone();
                         let position = app.clock.position(frame.now);
-                        let viewport = window.viewport_size();
+                        let viewport = app.np_viewport(window);
                         app.render_player_column(track.as_ref(), position, viewport, frame, cx)
                             .into_any_element()
                     },
@@ -500,9 +502,9 @@ impl MusicApp {
             .left_0()
             // Reduced motion: a fade instead of the slide up.
             .top(if crate::effects::ambient_motion() {
-                viewport.height * (1. - reveal)
+                top + viewport.height * (1. - reveal)
             } else {
-                px(0.)
+                top
             })
             .w_full()
             .h(viewport.height)

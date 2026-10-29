@@ -136,6 +136,10 @@ app.window_title = {page} — {app}
 app.audio_demo_clock = {error} (using a demo clock)
 app.tooltip.back = Back (⌘[)
 app.tooltip.forward = Forward (⌘])
+# ---- Top bar: the account button's menu (the signed-in name comes first)
+titlebar.account_settings = Account settings
+# Account menu header when no YouTube Music account is signed in.
+titlebar.signed_out = Not signed in
 
 # ---- YouTube Music account (sign-in, account switching, library sync)
 account.cookie_invalid = That cookie has no SAPISID / __Secure-3PAPISID entry; copy the whole cookie header of a signed-in music.youtube.com request.

@@ -102,6 +102,8 @@ app.window_title = {page} — {app}
 app.audio_demo_clock = {error} (डेमो घड़ी इस्तेमाल हो रही है)
 app.tooltip.back = पीछे (⌘[)
 app.tooltip.forward = आगे (⌘])
+titlebar.account_settings = खाते की सेटिंग्स
+titlebar.signed_out = साइन इन नहीं है
 
 # ---- YouTube Music account
 account.cookie_invalid = इस कुकी में SAPISID / __Secure-3PAPISID एंट्री नहीं है; साइन-इन किए गए music.youtube.com अनुरोध का पूरा cookie हेडर कॉपी करें।
