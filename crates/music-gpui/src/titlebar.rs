@@ -352,11 +352,16 @@ impl MusicApp {
         matches!(self.router.route(), Route::Home).hash(&mut h);
         self.search_text.hash(&mut h);
         self.search_box.hash_shown(&mut h);
-        let account = self.account_view();
-        account.signed_in.hash(&mut h);
-        account.name.hash(&mut h);
-        account.avatar.hash(&mut h);
-        account.syncing.hash(&mut h);
+        // What `account_view` reads, borrowed (this runs with every app render).
+        let account = &self.store.account;
+        account.sign_in_fingerprint().hash(&mut h);
+        account
+            .config
+            .as_ref()
+            .map(|c| (&c.name, &c.thumbnail_url))
+            .hash(&mut h);
+        account.is_syncing().hash(&mut h);
+        self.titlebar_fake_account.hash(&mut h);
         window.is_fullscreen().hash(&mut h);
         window.is_maximized().hash(&mut h);
         window.is_window_active().hash(&mut h);
