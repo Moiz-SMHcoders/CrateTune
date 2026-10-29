@@ -727,3 +727,176 @@ fn library_podcasts_tab() {
     assert_eq!(p.author.as_ref().unwrap().name, "PowerfulJRE");
     assert!(page.feedback[1].as_ref().unwrap().in_library);
 }
+
+// ---------------------------------------------------------------- Google accounts of a cookie
+
+fn info(name: &str) -> account::AccountInfo {
+    account::AccountInfo {
+        name: name.into(),
+        email: Some(format!("{name}@example.com")),
+        ..Default::default()
+    }
+}
+
+#[test]
+fn google_account_walk_stops_at_gap_or_repeat() {
+    let walk = |answers: Vec<crate::Result<account::AccountInfo>>| {
+        let mut answers = answers.into_iter();
+        let mut asked = Vec::new();
+        let out = account::collect_google_accounts(|n| {
+            asked.push(n);
+            answers
+                .next()
+                .unwrap_or_else(|| Err(crate::Error::Parse("no more".into())))
+        });
+        (out, asked)
+    };
+    let err = || Err(crate::Error::Parse("401".into()));
+
+    // One account: index 1 fails, nothing after it is asked.
+    let (out, asked) = walk(vec![Ok(info("a")), err(), Ok(info("never"))]);
+    let out = out.unwrap();
+    assert_eq!(out.len(), 1);
+    assert_eq!(out[0].auth_user, 0);
+    assert_eq!(asked, [0, 1]);
+
+    // Two accounts, indexes kept.
+    let (out, _) = walk(vec![Ok(info("a")), Ok(info("b")), err()]);
+    let out = out.unwrap();
+    assert_eq!(
+        out.iter()
+            .map(|a| (a.auth_user, a.info.name.as_str()))
+            .collect::<Vec<_>>(),
+        [(0, "a"), (1, "b")]
+    );
+
+    // A server that answers an unknown index with the default account: no duplicates.
+    let (out, asked) = walk(vec![Ok(info("a")), Ok(info("b")), Ok(info("a"))]);
+    assert_eq!(out.unwrap().len(), 2);
+    assert_eq!(asked, [0, 1, 2]);
+
+    // Index 0 failing means the cookie itself doesn't work.
+    let (out, asked) = walk(vec![err(), Ok(info("b"))]);
+    assert!(out.is_err());
+    assert_eq!(asked, [0]);
+
+    // Never more than Google's per-session limit.
+    let mut n = 0;
+    let out = account::collect_google_accounts(|_| {
+        n += 1;
+        Ok(info(&format!("u{n}")))
+    })
+    .unwrap();
+    assert_eq!(out.len(), account::MAX_GOOGLE_ACCOUNTS as usize);
+}
+
+/// A fake music.youtube.com answering `account/account_menu` per `X-Goog-AuthUser`.
+fn fake_account_menu(
+    answer: impl Fn(u32) -> Option<&'static str> + Send + Sync + 'static,
+) -> (
+    crate::testutil::TestServer,
+    std::sync::Arc<std::sync::Mutex<Vec<String>>>,
+) {
+    use crate::testutil::{Reply, TestServer};
+    let seen = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+    let log = seen.clone();
+    let server = TestServer::start_http(move |req| {
+        assert!(
+            req.path.starts_with("/youtubei/v1/account/account_menu"),
+            "{}",
+            req.path
+        );
+        assert!(req.header("Cookie").is_some_and(|c| c.contains("SAPISID")));
+        assert!(
+            req.header("X-Goog-PageId").is_none(),
+            "probes never act as a brand channel"
+        );
+        let body: Value = serde_json::from_slice(&req.body).unwrap();
+        assert!(body["context"]["user"].get("onBehalfOfUser").is_none());
+        let user = req.header("X-Goog-AuthUser").unwrap_or("?").to_owned();
+        log.lock().unwrap().push(user.clone());
+        match user.parse().ok().and_then(&answer) {
+            Some(name) => Reply::Full {
+                status: 200,
+                headers: vec!["Content-Type: application/json".into()],
+                body: serde_json::to_vec(&fixture(name)).unwrap(),
+            },
+            None => Reply::Full {
+                status: 401,
+                headers: vec!["Content-Type: application/json".into()],
+                body: br#"{"error":{"code":401,"message":"Request had invalid authentication credentials."}}"#.to_vec(),
+            },
+        }
+    });
+    (server, seen)
+}
+
+fn probing_client(base: &str) -> super::InnerTube {
+    let auth = super::Auth {
+        auth_user: 1,
+        data_sync_id: Some("222222222222||111111111111111111111".into()),
+        ..super::Auth::new("SAPISID=fake; SID=fake")
+    };
+    super::InnerTube::default()
+        .with_api_base(base)
+        .with_auth(auth)
+}
+
+#[test]
+fn google_accounts_from_a_fake_server() {
+    // Two Google accounts in the session; index 2 is refused like Google does.
+    let (server, seen) = fake_account_menu(|n| match n {
+        0 => Some("authed/account_menu"),
+        1 => Some("authed/account_menu_second"),
+        _ => None,
+    });
+    let accounts = probing_client(&server.base).google_accounts().unwrap();
+    assert_eq!(accounts.len(), 2);
+    assert_eq!(accounts[0].auth_user, 0);
+    assert_eq!(accounts[0].info.name, "Test User");
+    assert_eq!(
+        accounts[0].info.email.as_deref(),
+        Some("test.user@example.com")
+    );
+    assert_eq!(accounts[1].auth_user, 1);
+    assert_eq!(accounts[1].info.name, "Work Account");
+    assert_eq!(
+        accounts[1].info.email.as_deref(),
+        Some("work.account@example.org")
+    );
+    assert_eq!(
+        accounts[1].info.thumbnail_url.as_deref(),
+        Some("https://yt3.ggpht.com/work=s88")
+    );
+    assert_eq!(*seen.lock().unwrap(), ["0", "1", "2"]);
+
+    // One account; the next index answers "signed out" (no account header).
+    let (server, seen) = fake_account_menu(|n| match n {
+        0 => Some("authed/account_menu"),
+        _ => Some("authed/account_menu_signed_out"),
+    });
+    let accounts = probing_client(&server.base).google_accounts().unwrap();
+    assert_eq!(accounts.len(), 1);
+    assert_eq!(*seen.lock().unwrap(), ["0", "1"]);
+
+    // A server falling back to the default account for any index: still one.
+    let (server, _) = fake_account_menu(|_| Some("authed/account_menu"));
+    assert_eq!(
+        probing_client(&server.base)
+            .google_accounts()
+            .unwrap()
+            .len(),
+        1
+    );
+
+    // A cookie that doesn't work at all.
+    let (server, _) = fake_account_menu(|_| None);
+    let err = probing_client(&server.base).google_accounts().unwrap_err();
+    assert!(
+        err.to_string().contains("401") || err.to_string().contains("invalid"),
+        "{err}"
+    );
+
+    // No cookie: nothing is sent.
+    assert!(super::InnerTube::default().google_accounts().is_err());
+}

@@ -6,6 +6,15 @@
 //! The cookie is a secret (keychain, `Secret::YouTubeCookie`); the account's
 //! name, avatar, `auth_user` and selected channel live in `settings.library.account`.
 //!
+//! **Google accounts of one login.** A browser session (and so its cookie) can hold
+//! several Google accounts, picked per request with `X-Goog-AuthUser` (0, 1, …).
+//! Which ones exist is found by asking `account/account_menu` for each index in
+//! turn ([`InnerTube::google_accounts`]) at sign-in, at startup and on every sync,
+//! in the background; Settings → Account only offers those. A switch is applied only
+//! after the new account answered: on failure the previous `auth_user` / channel stay
+//! (in memory and in the settings file). A saved index that is no longer signed in
+//! (left over from an older version) is reset to the first account at startup.
+//!
 //! **Not verified against a real account** in this round: every request here is
 //! music-core's cookie layer, whose request bodies are unit-tested but which was
 //! never run signed-in. Errors are shown in the Account section.
@@ -15,7 +24,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use gpui::{Context, Window};
-use music_core::innertube::{AccountChannel, Auth, InnerTube, Item};
+use music_core::innertube::{AccountChannel, Auth, GoogleAccount, InnerTube, Item};
 use music_core::library::{
     AlbumMeta, AlbumQuery, ArtistMeta, ArtistQuery, Library, PlaylistSort, RemotePlaylist,
     SongQuery, SongScope, now_ms,
@@ -42,10 +51,25 @@ pub struct Account {
     pub config: Option<AccountConfig>,
     cookie: Option<String>,
     pub channels: Vec<AccountChannel>,
+    /// Google accounts of the cookie's browser session; `None` until probed.
+    pub google_accounts: Option<Vec<GoogleAccount>>,
+    /// A probe for [`Account::google_accounts`] is running.
+    probing: bool,
     /// Sign-in / account refresh.
     pub status: Busy,
     /// Library sync.
     pub sync: Busy,
+}
+
+/// What Settings → Account shows for the Google accounts of the login.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum GoogleAccountsView {
+    /// Not probed yet (or the probe failed): nothing.
+    Hidden,
+    /// The login holds just the account in use: a note on how to add one.
+    Single,
+    /// Named choices (several accounts, or the one in use isn't among them).
+    Choices(Vec<GoogleAccount>),
 }
 
 impl Account {
@@ -54,6 +78,8 @@ impl Account {
             config,
             cookie: None,
             channels: Vec::new(),
+            google_accounts: None,
+            probing: false,
             status: Busy::Idle,
             sync: Busy::Idle,
         }
@@ -65,10 +91,75 @@ impl Account {
             return false;
         }
         self.cookie = cookie;
+        // Another cookie is another browser session with its own accounts.
+        self.google_accounts = None;
         if self.cookie.is_none() {
             self.channels.clear();
         }
         true
+    }
+
+    /// Credentials for acting as `auth_user` / `data_sync_id` with the current cookie,
+    /// without touching the config.
+    pub fn auth_as(&self, auth_user: u32, data_sync_id: Option<String>) -> Option<Auth> {
+        let auth = Auth {
+            auth_user,
+            data_sync_id,
+            ..Auth::new(self.cookie.clone()?)
+        };
+        auth.is_signed_in().then_some(auth)
+    }
+
+    pub fn google_accounts_view(&self) -> GoogleAccountsView {
+        let current = self.config.as_ref().map_or(0, |c| c.auth_user);
+        match self.google_accounts.as_deref() {
+            None | Some([]) => GoogleAccountsView::Hidden,
+            Some([only]) if only.auth_user == current => GoogleAccountsView::Single,
+            Some(list) => GoogleAccountsView::Choices(list.to_vec()),
+        }
+    }
+
+    /// Applies a finished switch to `target_auth_user`. On success the fetched config
+    /// (and channels) replace the old ones and are returned for saving; on failure
+    /// the `auth_user` / channel of `previous` are put back, the channels stay, and
+    /// `status` says what happened. Nothing happens if the cookie changed meanwhile.
+    pub fn finish_switch(
+        &mut self,
+        cookie: &str,
+        previous: AccountConfig,
+        target_auth_user: u32,
+        result: Result<(AccountConfig, Vec<AccountChannel>)>,
+    ) -> Option<AccountConfig> {
+        if self.cookie.as_deref() != Some(cookie) || self.config.is_none() {
+            return None;
+        }
+        match result {
+            Ok((config, channels)) => {
+                self.channels = channels;
+                self.config = Some(config.clone());
+                self.status = Busy::Idle;
+                Some(config)
+            }
+            Err(e) => {
+                let known_missing = target_auth_user != previous.auth_user
+                    && self
+                        .google_accounts
+                        .as_ref()
+                        .is_some_and(|list| list.iter().all(|a| a.auth_user != target_auth_user));
+                self.status = Busy::Failed(if known_missing {
+                    t!("account.switch_not_signed_in", name = previous.name)
+                } else {
+                    t!("account.switch_failed", error = e, name = previous.name)
+                });
+                // Back to the previous Google account / channel (other fields, e.g. a
+                // sync finishing meanwhile, are kept).
+                if let Some(config) = &mut self.config {
+                    config.auth_user = previous.auth_user;
+                    config.data_sync_id = previous.data_sync_id;
+                }
+                None
+            }
+        }
     }
 
     pub fn is_signed_in(&self) -> bool {
@@ -90,6 +181,43 @@ impl Account {
     pub fn is_syncing(&self) -> bool {
         matches!(self.sync, Busy::Working(_))
     }
+
+    /// `@account-index-status`: the Google account in use, the login's accounts (names
+    /// only; e-mails are not printed), what Settings shows, and the status line.
+    pub fn index_status_line(&self) -> String {
+        let config = self.config.as_ref();
+        let accounts = match &self.google_accounts {
+            None if self.probing => "probing".to_owned(),
+            None => "unknown".to_owned(),
+            Some(list) => list
+                .iter()
+                .map(|a| format!("{}:{:?}", a.auth_user, a.info.name))
+                .collect::<Vec<_>>()
+                .join(","),
+        };
+        let view = match self.google_accounts_view() {
+            GoogleAccountsView::Hidden => "hidden",
+            GoogleAccountsView::Single => "single",
+            GoogleAccountsView::Choices(_) => "choices",
+        };
+        let status = match &self.status {
+            Busy::Idle => "idle".to_owned(),
+            Busy::Working(t) => format!("working ({t})"),
+            Busy::Done(t) => format!("done ({t})"),
+            Busy::Failed(t) => format!("failed ({t})"),
+        };
+        format!(
+            "account-index: signed_in={} auth_user={} channel={} name={:?} accounts=[{accounts}] view={view} status={status}",
+            self.is_signed_in(),
+            config.map_or(0, |c| c.auth_user),
+            if config.and_then(|c| c.data_sync_id.as_ref()).is_some() {
+                "set"
+            } else {
+                "default"
+            },
+            config.map(|c| c.name.as_str()).unwrap_or_default(),
+        )
+    }
 }
 
 /// Cleans up what users paste: a `cookie:` prefix, quotes, line breaks.
@@ -110,7 +238,12 @@ pub fn normalize_cookie(raw: &str) -> String {
 
 /// Account name, avatar, channels, data sync id for `auth`. Blocking.
 fn fetch_account(auth: Auth) -> Result<(AccountConfig, Vec<AccountChannel>)> {
-    let it = InnerTube::default().with_auth(auth.clone());
+    fetch_account_on(InnerTube::default(), auth)
+}
+
+/// [`fetch_account`] through `it` (its API base; a fake server in tests).
+fn fetch_account_on(it: InnerTube, auth: Auth) -> Result<(AccountConfig, Vec<AccountChannel>)> {
+    let it = it.with_auth(auth.clone());
     let info = it.account_info()?;
     let channels = it.account_channels().unwrap_or_default();
     let config = AccountConfig {
@@ -123,6 +256,34 @@ fn fetch_account(auth: Auth) -> Result<(AccountConfig, Vec<AccountChannel>)> {
         last_sync_at: None,
     };
     Ok((config, channels))
+}
+
+/// The startup refresh: the saved account, or — when its Google account index is
+/// confirmed gone from the login (an older version saved it before checking) — the
+/// first Google account instead. `Ok((.., true))` = reset to the first account.
+fn refresh_account_on(
+    it: InnerTube,
+    auth: Auth,
+) -> Result<((AccountConfig, Vec<AccountChannel>), bool)> {
+    let err = match fetch_account_on(it.clone(), auth.clone()) {
+        Ok(found) => return Ok((found, false)),
+        Err(e) if auth.auth_user == 0 => return Err(e),
+        Err(e) => e,
+    };
+    let gone = it
+        .clone()
+        .with_auth(auth.clone())
+        .google_accounts()
+        .is_ok_and(|list| !list.is_empty() && list.iter().all(|a| a.auth_user != auth.auth_user));
+    if !gone {
+        return Err(err);
+    }
+    let first = Auth {
+        auth_user: 0,
+        data_sync_id: None,
+        ..auth
+    };
+    fetch_account_on(it, first).map(|found| (found, true))
 }
 
 impl MusicApp {
@@ -162,6 +323,7 @@ impl MusicApp {
                     this.store.account.set_cookie(Some(cookie));
                     this.sync_account_auth(cx);
                     notify(window, cx, t!("account.toast.signed_in", name = name));
+                    // Also finds the Google accounts of the login (in the background).
                     this.sync_youtube_library(window, cx);
                 }
                 Err(e) => {
@@ -190,27 +352,36 @@ impl MusicApp {
         cx.notify();
     }
 
-    /// The cookie arrived from the keychain at startup: refresh name, avatar, channels.
+    /// The cookie arrived from the keychain at startup: refresh name, avatar, channels
+    /// and the login's Google accounts.
     pub(crate) fn account_after_cookie(&mut self, cx: &mut Context<Self>) {
         let Some(auth) = self.store.account.auth() else {
             return;
         };
         cx.spawn(async move |this, cx| {
-            let result = off_thread(move || fetch_account(auth)).await;
+            let result = off_thread(move || refresh_account_on(InnerTube::default(), auth)).await;
             this.update(cx, |this, cx| {
                 match result {
-                    Ok((mut config, channels)) => {
+                    Ok(((mut config, channels), reset)) => {
                         this.store.account.channels = channels;
-                        if let Some(old) = &this.store.account.config {
+                        if let Some(old) = &this.store.account.config
+                            && !reset
+                        {
                             config.last_sync_at = old.last_sync_at;
                         }
                         if this.store.account.config.as_ref() != Some(&config) {
                             this.store.account.config = Some(config.clone());
                             this.settings.update(cx, |panel, cx| {
-                                panel.update_library(|l| l.account = Some(config), cx)
+                                panel.update_library(|l| l.account = Some(config.clone()), cx)
                             });
                         }
-                        this.store.account.status = Busy::Idle;
+                        this.store.account.status = if reset {
+                            this.sync_account_auth(cx);
+                            Busy::Done(t!("account.index_reset", name = config.name))
+                        } else {
+                            Busy::Idle
+                        };
+                        this.refresh_google_accounts(cx);
                     }
                     Err(e) => {
                         this.store.account.status =
@@ -224,7 +395,42 @@ impl MusicApp {
         .detach();
     }
 
+    /// Finds the Google accounts of the cookie's login in the background
+    /// (`Account::google_accounts`); a failed probe keeps the last list.
+    pub(crate) fn refresh_google_accounts(&mut self, cx: &mut Context<Self>) {
+        let account = &mut self.store.account;
+        if account.probing {
+            return;
+        }
+        let Some(auth) = account.auth() else {
+            return;
+        };
+        account.probing = true;
+        let cookie = auth.cookie.clone();
+        cx.spawn(async move |this, cx| {
+            let result =
+                off_thread(move || InnerTube::default().with_auth(auth).google_accounts()).await;
+            this.update(cx, |this, cx| {
+                let account = &mut this.store.account;
+                account.probing = false;
+                // Signed out or another cookie meanwhile: the list is for another login.
+                if account.cookie.as_deref() != Some(cookie.as_str()) {
+                    return;
+                }
+                match result {
+                    Ok(list) => account.google_accounts = Some(list),
+                    Err(e) => eprintln!("music-gpui: listing Google accounts: {e}"),
+                }
+                cx.notify();
+            })
+            .ok();
+        })
+        .detach();
+    }
+
     /// Acts as another channel (brand account) and/or Google account of the cookie.
+    /// Nothing is saved until the new account answered; a failed switch keeps the
+    /// previous account (see [`Account::finish_switch`]).
     pub fn switch_account(
         &mut self,
         data_sync_id: Option<String>,
@@ -232,39 +438,40 @@ impl MusicApp {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        let Some(mut config) = self.store.account.config.clone() else {
+        let account = &mut self.store.account;
+        if matches!(account.status, Busy::Working(_)) {
+            return;
+        }
+        let Some(previous) = account.config.clone() else {
             return;
         };
-        config.data_sync_id = data_sync_id;
-        config.auth_user = auth_user;
-        config.last_sync_at = None;
-        self.store.account.config = Some(config.clone());
-        self.settings.update(cx, |panel, cx| {
-            panel.update_library(|l| l.account = Some(config), cx)
-        });
-        self.store.account.status = Busy::Working(t!("account.switching").into());
-        let Some(auth) = self.store.account.auth() else {
+        let Some(auth) = account.auth_as(auth_user, data_sync_id) else {
             return;
         };
+        account.status = Busy::Working(t!("account.switching").into());
+        let cookie = auth.cookie.clone();
         cx.spawn_in(window, async move |this, cx| {
             let result = off_thread(move || fetch_account(auth)).await;
-            this.update_in(cx, |this, window, cx| match result {
-                Ok((config, channels)) => {
-                    let name = config.name.clone();
-                    this.store.account.channels = channels;
-                    this.store.account.config = Some(config.clone());
-                    this.store.account.status = Busy::Idle;
-                    this.sync_account_auth(cx);
-                    this.settings.update(cx, |panel, cx| {
-                        panel.update_library(|l| l.account = Some(config), cx)
-                    });
-                    notify(window, cx, t!("account.toast.switched", name = name));
-                    this.sync_youtube_library(window, cx);
-                }
-                Err(e) => {
-                    this.store.account.status =
-                        Busy::Failed(t!("account.switch_failed", error = e));
-                    cx.notify();
+            this.update_in(cx, |this, window, cx| {
+                let changed_google = auth_user != previous.auth_user;
+                let account = &mut this.store.account;
+                match account.finish_switch(&cookie, previous, auth_user, result) {
+                    Some(config) => {
+                        let name = config.name.clone();
+                        this.sync_account_auth(cx);
+                        this.settings.update(cx, |panel, cx| {
+                            panel.update_library(|l| l.account = Some(config), cx)
+                        });
+                        notify(window, cx, t!("account.toast.switched", name = name));
+                        this.sync_youtube_library(window, cx);
+                    }
+                    None => {
+                        // The list may be out of date (an account signed out since).
+                        if changed_google {
+                            this.refresh_google_accounts(cx);
+                        }
+                        cx.notify();
+                    }
                 }
             })
             .ok();
@@ -283,6 +490,8 @@ impl MusicApp {
             notify(window, cx, t!("account.sign_in_first"));
             return;
         };
+        // Accounts may have been added to / removed from the login since.
+        self.refresh_google_accounts(cx);
         let progress = Arc::new(Mutex::new(String::from(t!("account.sync.starting"))));
         self.store.account.sync = Busy::Working(t!("account.sync.starting").into());
         let shared = progress.clone();
@@ -712,6 +921,236 @@ mod tests {
         assert!(a.is_signed_in());
         a.set_cookie(Some("SID=only".into()));
         assert!(!a.is_signed_in());
+    }
+
+    // ------------------------------------------------ Google accounts of the login
+
+    const COOKIE: &str = "SAPISID=fake; SID=fake";
+
+    fn fixture(name: &str) -> String {
+        let path = format!(
+            "{}/../music-core/tests/fixtures/innertube/authed/{name}.json",
+            env!("CARGO_MANIFEST_DIR")
+        );
+        std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{path}: {e}"))
+    }
+
+    /// A fake music.youtube.com whose login holds the Google accounts `menus`
+    /// (`account_menu` fixture per `X-Goog-AuthUser`; other indexes get a 401 like
+    /// Google's). Returns the base URL.
+    fn fake_youtube(menus: &'static [&'static str]) -> String {
+        use std::io::{BufRead, BufReader, Read, Write};
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let base = format!("http://{}", listener.local_addr().unwrap());
+        std::thread::spawn(move || {
+            for mut stream in listener.incoming().flatten() {
+                let mut reader = BufReader::new(stream.try_clone().unwrap());
+                let mut line = String::new();
+                reader.read_line(&mut line).unwrap();
+                let path = line.split_whitespace().nth(1).unwrap_or("/").to_owned();
+                let (mut len, mut user) = (0usize, 0usize);
+                loop {
+                    let mut header = String::new();
+                    if reader.read_line(&mut header).unwrap_or(0) == 0 || header.trim().is_empty() {
+                        break;
+                    }
+                    let (k, v) = header.split_once(':').unwrap_or_default();
+                    match k.trim().to_ascii_lowercase().as_str() {
+                        "content-length" => len = v.trim().parse().unwrap_or(0),
+                        "x-goog-authuser" => user = v.trim().parse().unwrap_or(usize::MAX),
+                        _ => {}
+                    }
+                }
+                let mut body = vec![0; len];
+                let _ = reader.read_exact(&mut body);
+                let (status, json) = if path.contains("/account/account_menu") {
+                    match menus.get(user) {
+                        Some(name) => (200, fixture(name)),
+                        None => (401, r#"{"error":{"code":401,"message":"Request had invalid authentication credentials."}}"#.to_owned()),
+                    }
+                } else if path.contains("/account/accounts_list") {
+                    (200, fixture("accounts_list"))
+                } else {
+                    (404, "{}".to_owned())
+                };
+                let _ = write!(
+                    stream,
+                    "HTTP/1.1 {status} X\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{json}",
+                    json.len()
+                );
+            }
+        });
+        base
+    }
+
+    const TWO: &[&str] = &["account_menu", "account_menu_second"];
+    const ONE: &[&str] = &["account_menu"];
+
+    fn google(list: &[(u32, &str)]) -> Vec<GoogleAccount> {
+        list.iter()
+            .map(|(n, name)| GoogleAccount {
+                auth_user: *n,
+                info: music_core::innertube::AccountInfo {
+                    name: (*name).into(),
+                    ..Default::default()
+                },
+            })
+            .collect()
+    }
+
+    /// Signed in as Google account 0 ("Test User"), last synced at 5.
+    fn signed_in() -> Account {
+        let mut a = Account::new(Some(AccountConfig {
+            name: "Test User".into(),
+            auth_user: 0,
+            last_sync_at: Some(5),
+            ..Default::default()
+        }));
+        a.set_cookie(Some(COOKIE.into()));
+        a
+    }
+
+    /// What `MusicApp::switch_account` does, minus GPUI: fetch on `base`, then settle.
+    fn switch(a: &mut Account, base: &str, to: u32) -> Option<AccountConfig> {
+        let previous = a.config.clone().unwrap();
+        let auth = a.auth_as(to, None).unwrap();
+        let result = fetch_account_on(InnerTube::default().with_api_base(base), auth);
+        a.finish_switch(COOKIE, previous, to, result)
+    }
+
+    #[test]
+    fn failed_switch_keeps_the_previous_account() {
+        let base = fake_youtube(ONE);
+        let mut a = signed_in();
+        a.google_accounts = Some(google(&[(0, "Test User")]));
+        let before = a.config.clone();
+
+        // Index 2 isn't in the login: nothing is kept from the attempt.
+        assert_eq!(switch(&mut a, &base, 2), None, "nothing to save");
+        assert_eq!(a.config, before);
+        assert_eq!(
+            a.auth().unwrap().auth_user,
+            0,
+            "still signed in to account 0"
+        );
+        assert!(a.is_signed_in());
+        let Busy::Failed(message) = &a.status else {
+            panic!("{:?}", a.status)
+        };
+        assert!(message.contains("isn't signed in"), "{message}");
+        assert!(message.contains("Test User"), "{message}");
+
+        // Not known to be missing (list not probed yet): the error is shown instead.
+        a.google_accounts = None;
+        assert_eq!(switch(&mut a, &base, 3), None);
+        assert_eq!(a.config, before);
+        let Busy::Failed(message) = &a.status else {
+            panic!("{:?}", a.status)
+        };
+        assert!(message.contains("Couldn't switch"), "{message}");
+        assert!(
+            message.contains("401") || message.contains("invalid"),
+            "{message}"
+        );
+
+        // A failed channel switch puts the previous channel back as well.
+        let mut a = signed_in();
+        a.config.as_mut().unwrap().data_sync_id = Some("222||111".into());
+        let previous = a.config.clone().unwrap();
+        let err = Err(music_core::Error::Parse("offline".into()));
+        assert_eq!(a.finish_switch(COOKIE, previous.clone(), 0, err), None);
+        assert_eq!(a.config.as_ref(), Some(&previous));
+    }
+
+    #[test]
+    fn switch_to_a_signed_in_google_account() {
+        let base = fake_youtube(TWO);
+        let mut a = signed_in();
+        a.google_accounts = Some(google(&[(0, "Test User"), (1, "Work Account")]));
+        let saved = switch(&mut a, &base, 1).expect("switched");
+        assert_eq!(saved.auth_user, 1);
+        assert_eq!(saved.name, "Work Account");
+        assert_eq!(saved.email.as_deref(), Some("work.account@example.org"));
+        assert_eq!(saved.data_sync_id, None, "the account's own channel");
+        assert_eq!(saved.last_sync_at, None, "another library");
+        assert_eq!(a.config.as_ref(), Some(&saved));
+        assert_eq!(a.auth().unwrap().auth_user, 1);
+        assert_eq!(a.status, Busy::Idle);
+        assert_eq!(a.channels.len(), 2, "channels of the new account");
+    }
+
+    #[test]
+    fn switch_result_after_sign_out_is_dropped() {
+        let base = fake_youtube(TWO);
+        let mut a = signed_in();
+        let previous = a.config.clone().unwrap();
+        let auth = a.auth_as(1, None).unwrap();
+        let result = fetch_account_on(InnerTube::default().with_api_base(&base), auth);
+        a.config = None;
+        a.set_cookie(None);
+        assert_eq!(a.finish_switch(COOKIE, previous, 1, result), None);
+        assert_eq!(a.config, None, "not signed back in");
+    }
+
+    #[test]
+    fn google_account_row_only_for_several_accounts() {
+        let mut a = signed_in();
+        assert_eq!(
+            a.google_accounts_view(),
+            GoogleAccountsView::Hidden,
+            "not probed"
+        );
+        a.google_accounts = Some(Vec::new());
+        assert_eq!(a.google_accounts_view(), GoogleAccountsView::Hidden);
+        a.google_accounts = Some(google(&[(0, "Test User")]));
+        assert_eq!(a.google_accounts_view(), GoogleAccountsView::Single);
+        let two = google(&[(0, "Test User"), (1, "Work Account")]);
+        a.google_accounts = Some(two.clone());
+        assert_eq!(a.google_accounts_view(), GoogleAccountsView::Choices(two));
+        // Using an index that isn't in the login: offer the way back.
+        a.config.as_mut().unwrap().auth_user = 1;
+        a.google_accounts = Some(google(&[(0, "Test User")]));
+        assert!(matches!(
+            a.google_accounts_view(),
+            GoogleAccountsView::Choices(list) if list.len() == 1
+        ));
+        // Another cookie is another login: probe again.
+        a.set_cookie(Some("SAPISID=other".into()));
+        assert_eq!(a.google_accounts, None);
+        assert!(a.index_status_line().contains("view=hidden"));
+    }
+
+    #[test]
+    fn startup_resets_an_index_that_left_the_login() {
+        let base = fake_youtube(ONE);
+        let it = || InnerTube::default().with_api_base(&base);
+        let saved = |auth_user| Auth {
+            auth_user,
+            data_sync_id: Some("999||888".into()),
+            ..Auth::new(COOKIE)
+        };
+        // Index 2 (saved by an older version) isn't in the login: back to the first.
+        let ((config, _), reset) = refresh_account_on(it(), saved(2)).unwrap();
+        assert!(reset);
+        assert_eq!(config.auth_user, 0);
+        assert_eq!(config.data_sync_id, None);
+        assert_eq!(config.name, "Test User");
+        // Index 0 works as saved.
+        let ((config, _), reset) = refresh_account_on(it(), saved(0)).unwrap();
+        assert!(!reset);
+        assert_eq!(config.data_sync_id.as_deref(), Some("999||888"));
+
+        // Index 1 is in the login: used as saved.
+        let two = fake_youtube(TWO);
+        let ((config, _), reset) =
+            refresh_account_on(InnerTube::default().with_api_base(&two), saved(1)).unwrap();
+        assert!(!reset);
+        assert_eq!(config.auth_user, 1);
+
+        // Nothing answers (offline, cookie expired): an error, the config stays.
+        let none = fake_youtube(&[]);
+        assert!(refresh_account_on(InnerTube::default().with_api_base(&none), saved(2)).is_err());
+        assert!(refresh_account_on(InnerTube::default().with_api_base(&none), saved(0)).is_err());
     }
 
     /// Syncing against an anonymous client fails cleanly for every step.

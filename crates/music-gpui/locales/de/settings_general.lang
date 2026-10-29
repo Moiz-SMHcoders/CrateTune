@@ -19,7 +19,8 @@ settings.account.sync_row_desc = Lieblingssongs, Mediathek-Songs, gespeicherte A
 settings.account.accounts_group = Konten
 settings.account.channels = Kanäle (Brand-Accounts) dieses Google-Kontos:
 settings.account.google_index = Google-Konto
-settings.account.google_index_desc = Wenn das Cookie mehrere Google-Konten enthält: welches (0 = erstes).
+settings.account.google_index_desc = Deine Anmeldung kann mehrere Google-Konten enthalten, wie auf youtube.com. Wähle, welches {app} verwendet.
+settings.account.google_single = Diese Anmeldung enthält ein Google-Konto. Für mehrere melde dich in einem Browser bei music.youtube.com mit jedem an, melde dich hier ab und füge das Cookie dieses Browsers ein.
 settings.account.cookie_note = Die Anmeldung nutzt das Sitzungs-Cookie deines Browsers für music.youtube.com. Es wird im Schlüsselbund des Systems aufbewahrt und nur an YouTube gesendet. Die Kontofunktionen wurden gegen die Web-API von YouTube gebaut, aber noch nicht mit einem echten Konto geprüft.
 
 # ---- About

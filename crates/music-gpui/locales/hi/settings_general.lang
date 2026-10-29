@@ -18,7 +18,8 @@ settings.account.sync_row_desc = पसंद किए गए गाने, ल
 settings.account.accounts_group = खाते
 settings.account.channels = इस Google खाते के चैनल (ब्रैंड खाते):
 settings.account.google_index = Google खाता
-settings.account.google_index_desc = जब कुकी में कई Google खाते हों: कौन-सा (0 = पहला)।
+settings.account.google_index_desc = आपके लॉगिन में कई Google खाते हो सकते हैं, जैसे youtube.com पर। चुनें कि {app} कौन-सा इस्तेमाल करे।
+settings.account.google_single = इस लॉगिन में एक ही Google खाता है। कई खातों के लिए, ब्राउज़र में music.youtube.com पर हर खाते से साइन इन करें, फिर यहाँ साइन आउट करके उस ब्राउज़र की कुकी पेस्ट करें।
 settings.account.cookie_note = साइन इन करने में music.youtube.com के लिए आपके ब्राउज़र की सेशन कुकी इस्तेमाल होती है। यह OS कीचेन में रखी जाती है और सिर्फ़ YouTube को भेजी जाती है। खाते की सुविधाएँ YouTube के वेब API के हिसाब से बनाई गई हैं, लेकिन अभी तक किसी असली खाते से जाँची नहीं गईं।
 
 # ---- About

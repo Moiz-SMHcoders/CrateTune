@@ -18,7 +18,8 @@ settings.account.sync_row_desc = 喜欢的歌曲、媒体库歌曲、保存的�
 settings.account.accounts_group = 账号
 settings.account.channels = 此 Google 账号下的频道（品牌账号）：
 settings.account.google_index = Google 账号
-settings.account.google_index_desc = 当 Cookie 中包含多个 Google 账号时，选择使用哪一个（0 = 第一个）。
+settings.account.google_index_desc = 和 youtube.com 一样，你的登录可以包含多个 Google 账号。选择 {app} 使用哪一个。
+settings.account.google_single = 此登录只有一个 Google 账号。要使用多个账号，请在浏览器中用每个账号登录 music.youtube.com，然后在这里退出并粘贴该浏览器的 Cookie。
 settings.account.cookie_note = 登录会使用你浏览器中 music.youtube.com 的会话 Cookie。它保存在系统钥匙串中，并且只会发送给 YouTube。账号相关功能基于 YouTube 的网页 API 开发，但尚未使用真实账号验证。
 
 # ---- About

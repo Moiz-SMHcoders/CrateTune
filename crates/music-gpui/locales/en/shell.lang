@@ -147,9 +147,15 @@ account.sign_in_failed = Sign-in failed: {error}
 account.toast.signed_out = Signed out of YouTube Music
 account.unreachable = Couldn't reach the account: {error}
 account.switching = Switching…
-# After switching to another channel / brand account of the same Google account.
+# After switching to another channel / brand account or Google account of the login.
 account.toast.switched = Now using {name}
-account.switch_failed = Switching failed: {error}
+# A switch failed; the previous account stays. {error} is a technical message
+# (English), {name} the account / channel still in use.
+account.switch_failed = Couldn't switch: {error}. Still using {name}.
+# Switching to another Google account of the login that isn't signed in (any more).
+account.switch_not_signed_in = That Google account isn't signed in in this session. Still using {name}.
+# At startup: the saved Google account left the login; {name} is the first one.
+account.index_reset = The Google account in use isn't signed in to this login any more, so {app} switched to the first one ({name}).
 account.sign_in_first = Sign in to YouTube Music first.
 # Used in "{action} failed: {error}" (see store.toast.action_failed).
 account.action.subscribing = Subscribing

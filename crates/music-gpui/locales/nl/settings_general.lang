@@ -19,7 +19,8 @@ settings.account.sync_row_desc = Leuke nummers, bibliotheeknummers, opgeslagen a
 settings.account.accounts_group = Accounts
 settings.account.channels = Kanalen (merkaccounts) van dit Google-account:
 settings.account.google_index = Google-account
-settings.account.google_index_desc = Als de cookie meerdere Google-accounts bevat: welke (0 = eerste).
+settings.account.google_index_desc = Je login kan meerdere Google-accounts bevatten, zoals op youtube.com. Kies welke {app} gebruikt.
+settings.account.google_single = Deze login bevat één Google-account. Wil je er meerdere gebruiken, log dan in een browser bij music.youtube.com met elk account in, meld je hier af en plak de cookie van die browser.
 settings.account.cookie_note = Inloggen gebruikt de sessiecookie van je browser voor music.youtube.com. Die wordt bewaard in de sleutelhanger van het systeem en alleen naar YouTube gestuurd. Accountfuncties zijn gebouwd op de web-API van YouTube, maar nog niet getest met een echt account.
 
 # ---- About

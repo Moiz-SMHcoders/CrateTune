@@ -12,6 +12,7 @@
 //! | `@pause-history=on\|off`, `@pause-search=on\|off` | privacy switches |
 //! | `@backup=PATH`, `@restore=PATH` | export / restore a backup without file dialogs |
 //! | `@cookie=VALUE`, `@sync`, `@sign-out`, `@login-window`, `@cookie-dialog` | account |
+//! | `@account-index=N`, `@account-index-refresh`, `@account-index-status` | switch to Google account N of the login (like its button, but any N), list the login's Google accounts again, print them / the view / the status |
 //! | `@close-dialog` | close open dialogs |
 //! | `@scroll=PX` | scroll the current page to PX from the top |
 //! | `@submit=QUERY` | submit a search like Enter in the field (recorded in the history) |
@@ -106,6 +107,14 @@ impl MusicApp {
             }
             "cookie" => self.sign_in_with_cookie(arg.unwrap_or_default().to_owned(), 0, window, cx),
             "sync" => self.sync_youtube_library(window, cx),
+            "account-index" => match arg.and_then(|a| a.trim().parse().ok()) {
+                Some(n) => self.switch_account(None, n, window, cx),
+                None => eprintln!("music-gpui: @account-index wants a number (0 = first)"),
+            },
+            "account-index-refresh" => self.refresh_google_accounts(cx),
+            "account-index-status" => {
+                eprintln!("music-gpui: {}", self.store.account.index_status_line())
+            }
             "sign-out" => self.sign_out(window, cx),
             "cookie-dialog" => crate::settings::open_cookie_dialog(window, cx),
             "submit" => self.submit_search(arg.unwrap_or_default().to_owned(), window, cx),

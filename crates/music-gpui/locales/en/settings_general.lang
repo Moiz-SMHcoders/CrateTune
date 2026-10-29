@@ -28,9 +28,11 @@ settings.account.sync_row = Sync your YouTube Music library
 settings.account.sync_row_desc = Liked songs, library songs, saved albums, subscriptions, playlists.
 settings.account.accounts_group = Accounts
 settings.account.channels = Channels (brand accounts) of this Google account:
-# Row label; the control is a row of buttons 0 1 2 3.
+# Row label; below it, one button per Google account of the login (avatar, name, e-mail).
 settings.account.google_index = Google account
-settings.account.google_index_desc = When the cookie holds several Google accounts: which one (0 = first).
+settings.account.google_index_desc = Your login can hold several Google accounts, like on youtube.com. Pick which one {app} uses.
+# Instead of the Google account choices when the login holds only the account in use.
+settings.account.google_single = This login holds one Google account. To use several, sign in to each on music.youtube.com in a browser, then sign out here and paste that browser's cookie.
 settings.account.cookie_note = Signing in uses your browser session cookie for music.youtube.com. It is kept in the OS keychain and sent only to YouTube. Account features were built against YouTube's web API but not yet verified with a real account.
 
 # ---- About (src/settings/about.rs)

@@ -11,7 +11,8 @@ use crate::http::{agent, user_agent_override};
 use crate::{Error, Result};
 
 pub(crate) const ORIGIN: &str = "https://music.youtube.com";
-const BASE: &str = "https://music.youtube.com/youtubei/v1";
+/// Path of the InnerTube API under [`ORIGIN`] (or an [`InnerTube::with_api_base`] origin).
+const API_PATH: &str = "/youtubei/v1";
 pub(crate) const CLIENT_NAME: &str = "WEB_REMIX";
 /// `X-YouTube-Client-Name` for WEB_REMIX.
 const CLIENT_ID: &str = "67";
@@ -36,6 +37,34 @@ fn anon_visitor() -> Option<String> {
         .lock()
         .unwrap_or_else(PoisonError::into_inner)
         .clone()
+}
+
+/// `MUSIC_INNERTUBE_API=http://127.0.0.1:PORT`: a stand-in for music.youtube.com, so
+/// the app's account flows can be driven against a fake server. Only loopback
+/// origins are accepted (the cookie is sent along); anything else is ignored.
+pub(crate) fn env_api_base() -> Option<String> {
+    static BASE: std::sync::OnceLock<Option<String>> = std::sync::OnceLock::new();
+    BASE.get_or_init(|| {
+        let raw = std::env::var("MUSIC_INNERTUBE_API").ok()?;
+        let base = loopback_base(&raw);
+        if base.is_none() && !raw.trim().is_empty() {
+            eprintln!("music-core: MUSIC_INNERTUBE_API must be http://127.0.0.1:PORT (or localhost); ignored");
+        }
+        base
+    })
+    .clone()
+}
+
+/// `raw` without a trailing slash if it is an `http://` loopback origin.
+pub(crate) fn loopback_base(raw: &str) -> Option<String> {
+    let raw = raw.trim().trim_end_matches('/');
+    let rest = raw.strip_prefix("http://")?;
+    let host_port = rest.split('/').next().unwrap_or_default();
+    let host = match host_port.strip_prefix('[') {
+        Some(v6) => v6.split(']').next().unwrap_or_default(),
+        None => host_port.split(':').next().unwrap_or_default(),
+    };
+    matches!(host, "127.0.0.1" | "localhost" | "::1").then(|| raw.to_owned())
 }
 
 fn remember_anon_visitor(resp: &Value) {
@@ -134,8 +163,9 @@ impl InnerTube {
             }
         };
         let body = self.body(extra, use_login);
+        let origin = self.api_base.as_deref().unwrap_or(ORIGIN);
         let mut req = agent()
-            .post(format!("{BASE}/{endpoint}"))
+            .post(format!("{origin}{API_PATH}/{endpoint}"))
             .query("prettyPrint", "false");
         for (k, v) in query {
             req = req.query(*k, *v);
@@ -226,6 +256,23 @@ mod tests {
         assert_eq!(get("X-Goog-Visitor-Id").as_deref(), Some("CgtWSVNJVE9S"));
         assert_eq!(get("X-Origin").as_deref(), Some(ORIGIN));
         assert!(get("Authorization").unwrap().starts_with("SAPISIDHASH "));
+    }
+
+    #[test]
+    fn api_base_only_accepts_loopback() {
+        assert_eq!(
+            loopback_base("http://127.0.0.1:8080/").as_deref(),
+            Some("http://127.0.0.1:8080")
+        );
+        assert!(loopback_base("http://localhost:9").is_some());
+        assert!(loopback_base("http://[::1]:9").is_some());
+        assert!(
+            loopback_base("https://127.0.0.1:9").is_none(),
+            "plain http only"
+        );
+        assert!(loopback_base("http://127.0.0.1.evil.com").is_none());
+        assert!(loopback_base("http://music.youtube.com").is_none());
+        assert!(loopback_base("").is_none());
     }
 
     #[test]

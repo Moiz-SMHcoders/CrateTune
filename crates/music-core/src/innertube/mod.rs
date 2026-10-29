@@ -33,8 +33,8 @@ mod parse;
 use serde_json::{Value, json};
 
 pub use account::{
-    AccountChannel, AccountInfo, HistorySection, LibraryPage, MAX_COVER_BYTES, PlaylistAction,
-    PlaylistPrivacy, Rating,
+    AccountChannel, AccountInfo, GoogleAccount, HistorySection, LibraryPage, MAX_COVER_BYTES,
+    MAX_GOOGLE_ACCOUNTS, PlaylistAction, PlaylistPrivacy, Rating,
 };
 pub use auth::{Auth, sapisid_hash};
 pub use models::*;
@@ -62,6 +62,9 @@ pub struct InnerTube {
     pub gl: String,
     /// Signed-in account; `None` = anonymous.
     pub auth: Option<Auth>,
+    /// Origin requests go to instead of `https://music.youtube.com` (a fake server in
+    /// tests, `MUSIC_INNERTUBE_API` for loopback stand-ins); see [`InnerTube::with_api_base`].
+    api_base: Option<String>,
 }
 
 impl Default for InnerTube {
@@ -70,6 +73,7 @@ impl Default for InnerTube {
             hl: "en".into(),
             gl: "US".into(),
             auth: None,
+            api_base: client::env_api_base(),
         }
     }
 }
@@ -93,6 +97,13 @@ impl InnerTube {
     /// Uses a signed-in account for every request.
     pub fn with_auth(mut self, auth: Auth) -> Self {
         self.auth = Some(auth);
+        self
+    }
+
+    /// Sends requests to `base` (`http://127.0.0.1:PORT`, no trailing slash) instead of
+    /// music.youtube.com: `POST {base}/youtubei/v1/<endpoint>`. For fake servers in tests.
+    pub fn with_api_base(mut self, base: impl Into<String>) -> Self {
+        self.api_base = Some(base.into().trim_end_matches('/').to_owned());
         self
     }
 

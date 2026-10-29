@@ -18,7 +18,8 @@ settings.account.sync_row_desc = 좋아요 표시한 음악, 보관함 노래, �
 settings.account.accounts_group = 계정
 settings.account.channels = 이 Google 계정의 채널(브랜드 계정):
 settings.account.google_index = Google 계정
-settings.account.google_index_desc = 쿠키에 여러 Google 계정이 있을 때 사용할 계정(0 = 첫 번째).
+settings.account.google_index_desc = youtube.com처럼 로그인에 여러 Google 계정이 있을 수 있습니다. {app}에서 사용할 계정을 선택하세요.
+settings.account.google_single = 이 로그인에는 Google 계정이 하나뿐입니다. 여러 계정을 쓰려면 브라우저에서 music.youtube.com에 각 계정으로 로그인한 뒤, 여기서 로그아웃하고 그 브라우저의 쿠키를 붙여 넣으세요.
 settings.account.cookie_note = 로그인에는 music.youtube.com의 브라우저 세션 쿠키가 사용됩니다. 쿠키는 OS 키체인에 보관되며 YouTube에만 전송됩니다. 계정 기능은 YouTube 웹 API를 기반으로 만들었지만 아직 실제 계정으로 검증되지 않았습니다.
 
 # ---- About

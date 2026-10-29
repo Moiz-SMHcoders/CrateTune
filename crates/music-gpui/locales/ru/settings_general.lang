@@ -18,7 +18,8 @@ settings.account.sync_row_desc = Понравившиеся треки, трек
 settings.account.accounts_group = Аккаунты
 settings.account.channels = Каналы (аккаунты брендов) этого аккаунта Google:
 settings.account.google_index = Аккаунт Google
-settings.account.google_index_desc = Если в cookie несколько аккаунтов Google — какой использовать (0 = первый).
+settings.account.google_index_desc = Ваш вход может включать несколько аккаунтов Google, как на youtube.com. Выберите, какой использует {app}.
+settings.account.google_single = В этом входе один аккаунт Google. Чтобы использовать несколько, войдите в каждый на music.youtube.com в браузере, затем выйдите здесь и вставьте cookie этого браузера.
 settings.account.cookie_note = Для входа используется cookie сеанса браузера для music.youtube.com. Он хранится в связке ключей ОС и отправляется только в YouTube. Функции аккаунта созданы по веб-API YouTube, но ещё не проверены на реальном аккаунте.
 
 # ---- About

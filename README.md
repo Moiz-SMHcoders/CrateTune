@@ -923,7 +923,17 @@ locales/<locale>/*.lang  the catalogs (English = source), embedded by build.rs v
   step-by-step instructions (copy the `cookie` request header from the browser's dev tools).
   The cookie goes to the keychain (`Secret::YouTubeCookie`); the account card shows avatar,
   name, handle / e-mail; channels (brand accounts, `account_channels` → `data_sync_id`) and
-  the Google account index (`auth_user`) can be switched; Sign out forgets cookie and account
+  the Google account of a multi-account login (`auth_user`, `X-Goog-AuthUser`) can be
+  switched. Which Google accounts the login holds is found by probing `account/account_menu`
+  for index 0, 1, … without a channel until one fails or repeats (`InnerTube::google_accounts`;
+  at sign-in, at startup and on every sync, in the background). Only those are offered,
+  by name / e-mail / avatar; with one, a note explains how to add more. Google's
+  `ListAccounts` would need `.google.com` cookies (CrateTune keeps only the `.youtube.com`
+  ones), and `accounts_list` lists channels, not Google accounts, so probing the call
+  switching itself relies on is the one that needs nothing new. A switch is saved only
+  after the new account answered (failure: previous account kept, "That Google account
+  isn't signed in in this session"); a saved index that left the login is reset to 0 at
+  startup. Sign out forgets cookie and account
   (synced data stays). **Sync now** (also right after signing in / switching) mirrors liked
   songs, library songs, saved albums, subscriptions and playlists (with entries and
   `setVideoId`s) into the database; YouTube wins for likes / saved albums / subscriptions /
@@ -1514,6 +1524,7 @@ item's ACL is tied to the binary). Secrets are never logged.
 | `MUSIC_LANG=de` / `MUSIC_SYSTEM_LANG=ja-JP,en` | UI language for this session (not saved) / pretend the system prefers these languages |
 | `MUSIC_ONBOARDING=1\|0` | force / suppress the first-run guide (it is skipped automatically for `MUSIC_SCRIPT` / screenshot runs) |
 | `MUSIC_UPDATE_REPO=owner/name` | enable the update check against that repo (testing; the default comes from `packaging/app.env`) |
+| `MUSIC_INNERTUBE_API=http://127.0.0.1:PORT` | a stand-in for music.youtube.com (`POST /youtubei/v1/<endpoint>`); loopback origins only, since the account cookie is sent along. Used with `MUSIC_CONFIG_DIR`, `MUSIC_SECRET_STORE=file` and `@cookie=…` / `@account-index-status` to drive the account flows against a fake server |
 | `MUSIC_UPDATE_API=http://127.0.0.1:PORT` | a stand-in for the GitHub API (`GET /repos/<repo>/releases`; assets from the same origin are allowed) |
 | `MUSIC_UPDATE_FAKE_VERSION=0.0.1` | pretend to run that version (update checks only) |
 | `MUSIC_UPDATE_FAIL=copy\|swap\|verify\|launch` | make that install step fail (rollback tests) |

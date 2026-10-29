@@ -18,7 +18,8 @@ settings.account.sync_row_desc = 高評価した曲、ライブラリの曲、�
 settings.account.accounts_group = アカウント
 settings.account.channels = この Google アカウントのチャンネル（ブランドアカウント）：
 settings.account.google_index = Google アカウント
-settings.account.google_index_desc = Cookie に複数の Google アカウントが含まれる場合に使用するアカウント（0 = 1番目）。
+settings.account.google_index_desc = youtube.com と同じく、ログインには複数の Google アカウントを含められます。{app} で使うアカウントを選んでください。
+settings.account.google_single = このログインの Google アカウントは 1 つです。複数使うには、ブラウザで music.youtube.com に各アカウントでログインし、ここでログアウトしてからそのブラウザの Cookie を貼り付けてください。
 settings.account.cookie_note = ログインには music.youtube.com のブラウザセッション Cookie を使用します。Cookie は OS のキーチェーンに保存され、YouTube にのみ送信されます。アカウント機能は YouTube の Web API に基づいて作られていますが、実際のアカウントではまだ検証されていません。
 
 # ---- About
