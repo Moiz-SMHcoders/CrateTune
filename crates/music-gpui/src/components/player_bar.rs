@@ -1282,6 +1282,20 @@ fn chip_slot(chip: AnyElement) -> gpui::Div {
         .child(chip)
 }
 
+/// Style of the player bar's (and mini player's) icon buttons: transparent, with a
+/// light wash on hover and press. gpui-component's ghost hover is the theme's
+/// `accent` at half opacity, which is the bar's own surface colour, so hovering a bar
+/// button showed nothing but the tooltip.
+pub(crate) fn bar_button_style(cx: &App) -> ButtonCustomVariant {
+    let fg = cx.theme().foreground;
+    ButtonCustomVariant::new(cx)
+        .color(gpui::transparent_black())
+        .foreground(cx.theme().secondary_foreground)
+        .hover(fg.opacity(0.10))
+        .active(fg.opacity(0.16))
+        .shadow(false)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1443,18 +1457,4 @@ mod tests {
         assert!(!layout(880., items).add_to_playlist || layout(880., items).side >= 240.);
         assert!(!layout(700., items).add_to_playlist && layout(1280., items).add_to_playlist);
     }
-}
-
-/// Style of the player bar's (and mini player's) icon buttons: transparent, with a
-/// light wash on hover and press. gpui-component's ghost hover is the theme's
-/// `accent` at half opacity, which is the bar's own surface colour, so hovering a bar
-/// button showed nothing but the tooltip.
-pub(crate) fn bar_button_style(cx: &App) -> ButtonCustomVariant {
-    let fg = cx.theme().foreground;
-    ButtonCustomVariant::new(cx)
-        .color(gpui::transparent_black())
-        .foreground(cx.theme().secondary_foreground)
-        .hover(fg.opacity(0.10))
-        .active(fg.opacity(0.16))
-        .shadow(false)
 }
