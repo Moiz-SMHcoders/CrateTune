@@ -5,6 +5,9 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.1] — 2026-10-30
+
+
 ### Added
 
 * **Custom top bar** (Spotify-style) in place of the system title bar and the old header,
@@ -86,9 +89,6 @@ versions follow [SemVer](https://semver.org/).
   songs out of radio and autoplay. **Remove dislike** takes it back.
 * **Offline likes**: a like or dislike YouTube Music didn't take is kept and retried
   every 5 min and before each sync, instead of staying local only.
-
-### Changed
-
 * Library database schema v2 (adds `song.disliked_at` and `pending_rating`; older builds
   refuse a v2 database, as for every schema bump).
 * Automatic and liked-only syncs no longer unlike everything when YouTube's liked list
@@ -123,9 +123,6 @@ versions follow [SemVer](https://semver.org/).
   Motion → System.
 * The paste-cookie steps name the developer-tools key of the platform (F12 on Windows /
   Linux), and the YouTube streams texts mention the Windows PoToken route.
-
-### Fixed
-
 * **Home showed a generic feed**: it was fetched before the keychain returned the YouTube
   cookie, so a signed-in user got the anonymous feed (and kept it, cached), and the
   anonymous visitor YouTube assigns was forgotten at every launch. Home now reloads for the
