@@ -55,6 +55,7 @@
 //! | `@bench-bar=N[:MS]` | the same, marking only the player bar dirty (the cost of one bar animation frame) |
 //! | `@bar-style=standard\|thick\|simple\|wavy\|equalizer`, `@bar-bg=glow\|gradient\|pulse\|off`, `@bar-peaks=on\|off`, `@bar-remaining=on\|off`, `@bar-scroll-volume=on\|off`, `@mini-follow=on\|off`, `@np-viz=on\|off`, `@bar-gradient=dir:…\|intensity:…\|animate:on\|dim:off`, `@bar-status` | player bar look (saved; `bar_script.rs`) |
 //! | `@bar-hover=F`, `@bar-hover=off` | hover the progress bar at fraction F (tooltip, thumb) |
+//! | `@shortcut=ACTION:KEYS`, `@shortcut-reset=ACTION\|all`, `@shortcut-status`, `@shortcut-record=ACTION`, `@shortcut-replace`, `@shortcut-cancel`, `@shortcut-sheet` | keyboard shortcuts (saved; `shortcuts/script.rs`) |
 //! | `@quit` | quit |
 //!
 //! Library / account / storage actions (`@like`, `@download`, `@backup`, …) are listed
@@ -647,6 +648,7 @@ impl MusicApp {
             // Library, downloads, account, storage (`library_script.rs`).
             other => {
                 if !self.bar_script_action(other, arg, window, cx)
+                    && !self.shortcut_script_action(other, arg, window, cx)
                     && !self.module_script_action(other, arg, window, cx)
                     && !self.library_script_action(other, arg, window, cx)
                     && !self.integrations_script_action(other, arg, window, cx)

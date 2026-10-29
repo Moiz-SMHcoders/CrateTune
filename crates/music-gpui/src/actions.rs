@@ -1,4 +1,5 @@
-//! Keyboard shortcuts and the macOS menu bar.
+//! Shell actions, their handlers and the macOS menu bar. Which keys trigger them
+//! (defaults, the user's changes, rebuilding the keymap) is in [`crate::shortcuts`].
 //!
 //! Every shell action is handled by one *global* listener that defers to the
 //! main window's `MusicApp`, so the same path serves key bindings, menu items,
@@ -6,7 +7,7 @@
 //! without a focused element. Text inputs keep their own bindings (Space,
 //! ⌘←/→, ⌘↑/↓ edit text while the search field is focused).
 
-use gpui::{Action, App, KeyBinding, Menu, MenuItem, NoAction, OsAction, SystemMenuType, Window};
+use gpui::{Action, App, Menu, MenuItem, OsAction, SystemMenuType, Window};
 use gpui_component::input;
 
 use crate::app::{MusicApp, update_app};
@@ -45,60 +46,13 @@ gpui::actions!(
         Minimize,
         Zoom,
         Quit,
+        ShowShortcuts,
     ]
 );
 
-/// The shortcut modifier: ⌘ on macOS, Ctrl on Windows / Linux. (GPUI reads `cmd-` as
-/// the Windows / Super key elsewhere, and `KeyBinding::new` can't resolve `secondary-`.)
-#[cfg(target_os = "macos")]
-macro_rules! primary {
-    ($key:literal) => {
-        concat!("cmd-", $key)
-    };
-}
-#[cfg(not(target_os = "macos"))]
-macro_rules! primary {
-    ($key:literal) => {
-        concat!("ctrl-", $key)
-    };
-}
-
-pub fn init(cx: &mut App) {
-    cx.bind_keys([
-        KeyBinding::new("space", TogglePlayback, None),
-        // Typing a space into the search field must not toggle playback.
-        KeyBinding::new("space", NoAction, Some("Input")),
-        KeyBinding::new(primary!("right"), NextTrack, None),
-        KeyBinding::new(primary!("left"), PreviousTrack, None),
-        KeyBinding::new(primary!("up"), VolumeUp, None),
-        KeyBinding::new(primary!("down"), VolumeDown, None),
-        KeyBinding::new(primary!("f"), FocusSearch, None),
-        KeyBinding::new(primary!(","), OpenSettings, None),
-        KeyBinding::new(primary!("l"), ToggleNowPlaying, None),
-        KeyBinding::new(primary!("alt-q"), ToggleQueue, None),
-        KeyBinding::new(primary!("shift-m"), ToggleMiniPlayer, None),
-        KeyBinding::new(primary!("s"), ToggleShuffle, None),
-        KeyBinding::new(primary!("r"), CycleRepeat, None),
-        KeyBinding::new(primary!("["), GoBack, None),
-        KeyBinding::new(primary!("]"), GoForward, None),
-        // ...also while the search field has focus (it binds ⌘[ / ⌘] to indent).
-        KeyBinding::new(primary!("["), GoBack, Some("Input")),
-        KeyBinding::new(primary!("]"), GoForward, Some("Input")),
-        KeyBinding::new(primary!("1"), GoHome, None),
-        KeyBinding::new(primary!("2"), GoExplore, None),
-        KeyBinding::new(primary!("3"), GoLibrary, None),
-        KeyBinding::new(primary!("y"), GoHistory, None),
-        KeyBinding::new(primary!("shift-r"), RecognizeSong, None),
-        // In the app's own context, not globally: a binding without a context counts
-        // as the deepest match and would beat the Esc of an open menu, popover or
-        // dialog (which then closed together with Now Playing / went back).
-        KeyBinding::new("escape", Escape, Some("MusicApp")),
-        KeyBinding::new(primary!("h"), Hide, None),
-        KeyBinding::new(primary!("alt-h"), HideOthers, None),
-        KeyBinding::new(primary!("m"), Minimize, None),
-        KeyBinding::new(primary!("q"), Quit, None),
-    ]);
-
+/// Binds the shortcuts (defaults plus the user's `overrides`, see `shortcuts.rs`),
+/// registers the action handlers and builds the menu bar.
+pub fn init(overrides: &crate::shortcuts::Overrides, cx: &mut App) {
     on::<TogglePlayback>(cx, |app, _, cx| app.toggle_playback(cx));
     on::<NextTrack>(cx, |app, _, cx| app.next_track(cx));
     on::<PreviousTrack>(cx, |app, _, cx| app.previous_track(cx));
@@ -154,8 +108,13 @@ pub fn init(cx: &mut App) {
     cx.on_action(|_: &HideOthers, cx| cx.hide_other_apps());
     cx.on_action(|_: &ShowAll, cx| cx.unhide_other_apps());
     cx.on_action(|_: &Quit, cx| cx.quit());
+    on::<ShowShortcuts>(cx, |_, window, cx| {
+        activate_main(window);
+        crate::settings::open_cheat_sheet(window, cx)
+    });
 
-    set_menus(cx);
+    // Also builds the menu bar (with the bindings as key equivalents).
+    crate::shortcuts::apply(overrides, cx);
 }
 
 /// Builds (or rebuilds, after a language change) the menu bar.
@@ -166,7 +125,7 @@ pub fn set_menus(cx: &mut App) {
 }
 
 /// GPUI hands AppKit the menu titled exactly "Window" as the windows menu (window
-/// list, "Bring All to Front"); with a translated title that's the last menu.
+/// list, "Bring All to Front"); with a translated title that's the one before Help.
 #[cfg(target_os = "macos")]
 fn register_windows_menu() {
     use objc2::runtime::AnyObject;
@@ -183,10 +142,10 @@ fn register_windows_menu() {
             return;
         }
         let count: isize = msg_send![main, numberOfItems];
-        if count == 0 {
+        if count < 2 {
             return;
         }
-        let item: *mut AnyObject = msg_send![main, itemAtIndex: count - 1];
+        let item: *mut AnyObject = msg_send![main, itemAtIndex: count - 2];
         if item.is_null() {
             return;
         }
@@ -252,6 +211,8 @@ fn menus() -> Vec<Menu> {
             MenuItem::action(t!("menu.minimize"), Minimize),
             MenuItem::action(t!("menu.zoom"), Zoom),
         ]),
+        Menu::new(t!("shortcuts.menu.help"))
+            .items([MenuItem::action(t!("shortcuts.action.show"), ShowShortcuts)]),
     ]
 }
 

@@ -86,6 +86,9 @@ pub struct Settings {
     /// Accent, surfaces, contrast, corners, density, font, dynamic colours
     /// (Appearance → Customize theme, `theme_prefs.rs`).
     pub custom_theme: super::theme_prefs::CustomTheme,
+    /// Keyboard shortcuts the user changed: action id → combination (`""` = none);
+    /// see `shortcuts.rs`. In settings exports, not in profiles.
+    pub shortcuts: crate::shortcuts::Overrides,
     /// Secrets that could not go to the OS keychain (see `secrets.rs`).
     #[serde(skip_serializing_if = "FileSecrets::is_empty")]
     pub secrets: FileSecrets,
@@ -119,6 +122,7 @@ impl Default for Settings {
             player_bar: Default::default(),
             onboarded: true,
             custom_theme: Default::default(),
+            shortcuts: Default::default(),
             secrets: FileSecrets::default(),
         }
     }

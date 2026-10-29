@@ -221,6 +221,10 @@ playback). Copy them into problem reports.
 
 ### 5.8 Windows-specific (untested)
 
+* [ ] **Editable shortcuts** (Settings → Keyboard shortcuts): the section shows Ctrl+Shift+M
+      style names; "Change" + Ctrl+Shift+K records it and Ctrl+Shift+K then works, the old keys
+      don't; Alt+Tab / Alt+F4 are refused; typing in the search field is unaffected; ⌘/ is
+      Ctrl+/ (cheat sheet). Same on Linux (Super key shown as "Super").
 * [ ] **Shortcuts use Ctrl** (the docs write ⌘; on Windows / Linux that is Ctrl): Ctrl+F
       search, Ctrl+L Now Playing, Ctrl+Alt+Q queue, Ctrl+→ / Ctrl+← next / previous,
       Ctrl+↑ / Ctrl+↓ volume, Ctrl+1/2/3 Home / Explore / Library, Ctrl+, settings, Space
