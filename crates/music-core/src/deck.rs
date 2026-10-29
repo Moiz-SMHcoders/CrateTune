@@ -367,7 +367,13 @@ impl Deck {
             "deck paused={} master={} current={:?} next={:?} handoff={:?} fading={:?} advances={}",
             st.paused,
             st.master,
-            st.current.as_ref().map(|a| (a.voice.id, a.fade.is_some())),
+            st.current.as_ref().map(|a| (
+                a.voice.id,
+                a.fade.is_some(),
+                a.chunk
+                    .as_ref()
+                    .map(|c| (c.start, c.span, c.samples.len(), c.epoch, a.offset)),
+            )),
             st.next.as_ref().map(|v| v.id),
             st.handoff.as_ref().map(|h| (h.voice.id, h.replaces)),
             st.fading.iter().map(|a| a.voice.id).collect::<Vec<_>>(),

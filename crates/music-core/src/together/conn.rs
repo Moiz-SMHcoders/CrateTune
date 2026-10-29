@@ -237,6 +237,19 @@ impl Link for Conn {
                 _ => break,
             }
         }
+        // Then a graceful TCP close: send FIN after the close frame and drain
+        // until the peer closes too, so nothing unread is left to trigger a reset.
+        let tcp = self.ws.get_ref().tcp();
+        let _ = tcp.shutdown(std::net::Shutdown::Write);
+        let mut sink = [0u8; 512];
+        while std::time::Instant::now() < deadline {
+            match (&*tcp).read(&mut sink) {
+                Ok(0) => break,
+                Ok(_) => continue,
+                Err(e) if is_timeout(e.kind()) => continue,
+                Err(_) => break,
+            }
+        }
     }
 }
 

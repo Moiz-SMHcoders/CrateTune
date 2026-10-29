@@ -388,13 +388,20 @@ impl Voice {
             q.deferred_seek,
             q.stop,
         );
+        let head: Vec<_> = q
+            .chunks
+            .iter()
+            .take(3)
+            .map(|c| (c.start, c.span, c.samples.len(), c.epoch))
+            .collect();
         drop(q);
         let buffer = lock(&self.buffer)
             .as_ref()
             .map(|b| format!("{}/{:?} end={:?}", b.len(), b.total_len(), b.end()));
         format!(
             "voice {} phase={:?} played={:?} frames={frames} chunks={chunks} eof={eof} \
-             seek={seek:?} deferred={deferred:?} stop={stop} underrun={} epoch={} buffer={buffer:?}",
+             seek={seek:?} deferred={deferred:?} stop={stop} underrun={} epoch={} buffer={buffer:?} \
+             head={head:?}",
             self.id,
             self.phase(),
             self.played(),
