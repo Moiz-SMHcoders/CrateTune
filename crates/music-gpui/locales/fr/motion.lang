@@ -1,0 +1,59 @@
+# App-wide artwork look, Motion & effects (Appearance), and the player bar's
+# artwork style (fr).
+
+look.style.off = Désactivé
+look.style.tint = Teinte
+look.style.gradient = Dégradé
+look.style.glow = Halo
+
+settings.look.group = Apparence de l'app
+settings.look.style = Assortir à la pochette
+settings.look.style_note = Toute la fenêtre prend ses couleurs de la pochette du morceau, comme le fond de la barre du lecteur.
+settings.look.follow_bar = Suivre le style de la barre du lecteur
+settings.look.follow_bar_note = Tant que l'effet de fond de la barre est activé, son style, sa direction, son intensité et son animation sont aussi utilisés ici.
+settings.look.following = Suit la barre du lecteur : {style}.
+settings.look.direction = Direction du dégradé
+settings.look.intensity = Intensité
+settings.look.dim_when_paused = Atténuer en pause
+settings.look.tint_surfaces = Teinter aussi les menus et panneaux
+settings.look.tint_surfaces_note = Les menus, la barre latérale, les panneaux et les cartes prennent aussi la teinte de la pochette.
+settings.look.animate = Animer
+settings.look.animate_note = Un lent mouvement du dégradé pendant la lecture (environ 13 images par seconde ; s'arrête en pause).
+settings.look.cpu_note = Statique sauf si Animer est activé : les couleurs changent une fois par morceau avec un court fondu, et le texte garde son contraste.
+
+motion.level.system = Système
+motion.level.full = Complètes
+motion.level.reduced = Réduites
+motion.level.off = Désactivées
+
+settings.motion.group = Mouvement et effets
+settings.motion.animations = Animations
+settings.motion.animations_note = Réduites garde de courts fondus et arrête le mouvement d'ambiance ; Désactivées rend chaque changement instantané.
+settings.motion.system_reduced = Votre système demande de réduire les animations, elles sont donc réduites.
+settings.motion.system_full = Votre système autorise toutes les animations.
+settings.motion.page_transitions = Transitions de page
+settings.motion.page_transitions_note = Un court fondu à l'ouverture d'une nouvelle page.
+settings.motion.card_hover = Effets de survol des vignettes
+settings.motion.card_hover_note = Les vignettes d'albums, de playlists et de morceaux s'illuminent et affichent un bouton de lecture.
+settings.motion.artwork_headers = En-têtes aux couleurs de la pochette
+settings.motion.artwork_headers_note = Les pages d'album, de playlist et d'artiste prennent la couleur de la pochette.
+settings.motion.artwork_corners = Coins des pochettes
+settings.motion.artwork_shadow = Ombres des pochettes
+settings.motion.card_size = Taille des vignettes
+settings.motion.translucent_sidebar = Barre latérale translucide
+settings.motion.translucent_sidebar_note = Le bureau transparaît à travers la barre latérale, flouté.
+settings.motion.cpu_note = Les effets de survol et les transitions de page coûtent chacun un court redessin ; rien ici n'est dessiné en continu.
+
+effects.corners.theme = Selon le thème
+effects.corners.square = Droits
+effects.corners.rounded = Adoucis
+effects.corners.round = Arrondis
+
+effects.card_size.small = Petite
+effects.card_size.regular = Normale
+effects.card_size.large = Grande
+
+bar.artwork.standard = Standard
+bar.artwork.edge = Bord à bord
+settings.bar.artwork_style = Pochette
+settings.bar.artwork_style_note = Bord à bord : la pochette occupe toute la hauteur de la barre sur son bord gauche.

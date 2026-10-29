@@ -53,8 +53,10 @@
 //! | `@card-select=3;4`, `@card-open`, `@card-style=bg:light`, `@card-save=PATH`, `@card-copy`, `@card-close` | lyrics cards (`lyrics_card.rs`) |
 //! | `@bench=N[:MS]` | draw the main window N times MS (16) ms apart and print the draw times (UI CPU per frame) |
 //! | `@bench-bar=N[:MS]` | the same, marking only the player bar dirty (the cost of one bar animation frame) |
+//! | `@bench-backdrop=N[:MS]` | the same, marking only the app-wide backdrop dirty (one frame of its fade / drift) |
 //! | `@bar-style=standard\|thick\|simple\|wavy\|equalizer\|waveform`, `@bar-bg=glow\|gradient\|pulse\|off`, `@bar-peaks=on\|off`, `@bar-remaining=on\|off`, `@bar-scroll-volume=on\|off`, `@mini-follow=on\|off`, `@np-viz=on\|off`, `@bar-gradient=dir:…\|intensity:…\|animate:on\|dim:off`, `@bar-status`, `@waveform-status` | player bar look (saved; `bar_script.rs`) |
 //! | `@bar-hover=F`, `@bar-hover=off` | hover the progress bar at fraction F (tooltip, thumb) |
+//! | `@app-look=off\|tint\|gradient\|glow`, `@app-look-opt=follow:on\|intensity:0.7\|dir:diagonal\|dim:off\|tint:on\|animate:on`, `@motion=system\|full\|reduced\|off`, `@effects=transitions:…\|hover:…\|headers:…\|corners:square\|shadow:on\|cards:large\|translucent:on`, `@bar-art=standard\|edge`, `@look-status` | app-wide look, Motion & effects, bar artwork (saved; `look_script.rs`) |
 //! | `@shortcut=ACTION:KEYS`, `@shortcut-reset=ACTION\|all`, `@shortcut-status`, `@shortcut-record=ACTION`, `@shortcut-replace`, `@shortcut-cancel`, `@shortcut-sheet` | keyboard shortcuts (saved; `shortcuts/script.rs`) |
 //! | `@quit` | quit |
 //!
@@ -138,9 +140,16 @@ pub fn schedule(window: AnyWindowHandle, app: Entity<MusicApp>, cx: &mut App) {
             };
             let bench = item
                 .strip_prefix("@bench=")
-                .map(|spec| (spec, false))
-                .or_else(|| item.strip_prefix("@bench-bar=").map(|spec| (spec, true)));
-            if let Some((spec, bar_only)) = bench {
+                .map(|spec| (spec, BenchTarget::App))
+                .or_else(|| {
+                    item.strip_prefix("@bench-bar=")
+                        .map(|spec| (spec, BenchTarget::Bar))
+                })
+                .or_else(|| {
+                    item.strip_prefix("@bench-backdrop=")
+                        .map(|spec| (spec, BenchTarget::Backdrop))
+                });
+            if let Some((spec, target)) = bench {
                 let (frames, gap) = spec.split_once(':').unwrap_or((spec, "16"));
                 let gap = Duration::from_millis(gap.parse().unwrap_or(16));
                 bench_frames(
@@ -148,7 +157,7 @@ pub fn schedule(window: AnyWindowHandle, app: Entity<MusicApp>, cx: &mut App) {
                     &app,
                     frames.parse().unwrap_or(300),
                     gap,
-                    bar_only,
+                    target,
                     &executor,
                     cx,
                 )
@@ -180,6 +189,16 @@ pub fn schedule(window: AnyWindowHandle, app: Entity<MusicApp>, cx: &mut App) {
     .detach();
 }
 
+/// Which view a `@bench…` frame marks dirty.
+#[derive(Clone, Copy)]
+enum BenchTarget {
+    App,
+    /// The player bar, as its own animation frames do.
+    Bar,
+    /// The app-wide backdrop, as its fades and drift do.
+    Backdrop,
+}
+
 /// `@bench=N[:MS]`: draws the main window N times MS (16) ms apart (marking the app dirty
 /// first, as an animation frame does) and prints how long the draws took: the UI's
 /// CPU cost per frame (layout, prepaint, paint, scene) without presenting it, and
@@ -190,7 +209,7 @@ async fn bench_frames(
     app: &Entity<MusicApp>,
     frames: usize,
     gap: Duration,
-    bar_only: bool,
+    target: BenchTarget,
     executor: &gpui::BackgroundExecutor,
     cx: &mut gpui::AsyncApp,
 ) {
@@ -198,10 +217,17 @@ async fn bench_frames(
     for _ in 0..frames {
         executor.timer(gap).await;
         let drawn = cx.update_window(window, |_, window, cx| {
-            // `@bench-bar`: only the player bar view, as its own animation frames do.
-            match app.read(cx).bar.clone().filter(|_| bar_only) {
-                Some(bar) => bar.update(cx, |_, cx| cx.notify()),
-                None => app.update(cx, |_, cx| cx.notify()),
+            // `@bench-bar` / `@bench-backdrop`: only that view, as its own
+            // animation frames do.
+            let app_ref = app.read(cx);
+            match target {
+                BenchTarget::Bar if let Some(bar) = app_ref.bar.clone() => {
+                    bar.update(cx, |_, cx| cx.notify())
+                }
+                BenchTarget::Backdrop if let Some(b) = app_ref.look.backdrop.clone() => {
+                    b.update(cx, |_, cx| cx.notify())
+                }
+                _ => app.update(cx, |_, cx| cx.notify()),
             }
             let started = Instant::now();
             window.draw(cx).clear(cx);
@@ -648,6 +674,7 @@ impl MusicApp {
             // Library, downloads, account, storage (`library_script.rs`).
             other => {
                 if !self.bar_script_action(other, arg, window, cx)
+                    && !self.look_script_action(other, arg, window, cx)
                     && !self.shortcut_script_action(other, arg, window, cx)
                     && !self.module_script_action(other, arg, window, cx)
                     && !self.library_script_action(other, arg, window, cx)

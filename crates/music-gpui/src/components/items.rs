@@ -337,10 +337,21 @@ pub fn card_kind(item: &Item) -> CardKind {
 /// A card for any item; `list` is the song context for song cards.
 pub fn item_card(id: impl Into<ElementId>, item: &Item, list: ListContext) -> Card {
     let (open, menu_item_, menu_list) = (item.clone(), item.clone(), list.clone());
+    let (play, play_list) = (item.clone(), list.clone());
     Card::new(id, card_kind(item), item.title().to_owned())
         .subtitle(item_subtitle(item, false))
         .artwork(item_art(item, 320))
         .on_click(move |_, window, cx| open_item(&open, list.clone(), window, cx))
+        // The hover play button: albums / playlists / artists play without
+        // opening their page; songs play as on click.
+        .on_play(move |_, window, cx| match Collection::from_item(&play) {
+            Some(collection) => {
+                update_app(cx, |app, cx| {
+                    app.collection_action(collection, CollectionAction::Play, window, cx)
+                });
+            }
+            None => open_item(&play, play_list.clone(), window, cx),
+        })
         .context_menu(move |m, _, _| item_menu(m, &menu_item_, menu_list.clone()))
 }
 
@@ -727,6 +738,13 @@ pub fn hero(h: Hero, cx: &mut App) -> AnyElement {
         description,
     } = h;
     let side = px(196.);
+    // Motion & effects → Artwork-coloured page headers: a gradient in the
+    // cover's main colour behind the header, darkened until muted text keeps
+    // 4.5:1 (colours extracted once per cover, off the UI thread).
+    let header_bg = art
+        .as_deref()
+        .filter(|_| crate::effects::artwork_headers())
+        .map(|url| crate::effects::header_colors(url, cx));
     let art = artwork(
         art,
         side,
@@ -737,10 +755,37 @@ pub fn hero(h: Hero, cx: &mut App) -> AnyElement {
         },
         cx,
     );
-    let muted = cx.theme().muted_foreground;
-    v_flex()
-        .w_full()
-        .gap_4()
+    let theme = cx.theme();
+    let (muted, bg) = (theme.muted_foreground, theme.background);
+    let header = match header_bg {
+        None => v_flex().w_full().gap_4(),
+        Some(colors) => {
+            let fill = colors.map(|c| {
+                let p = c.primary();
+                let tone = crate::palette::TonalPalette::new(p.h, p.c.max(0.04)).tone(34.);
+                crate::components::app_backdrop::readable_wash(
+                    tone,
+                    HEADER_ALPHA,
+                    bg,
+                    muted,
+                    crate::components::app_backdrop::MIN_TEXT_CONTRAST,
+                )
+            });
+            v_flex()
+                .w_full()
+                .gap_4()
+                .p_6()
+                .rounded(crate::theme::radius(16.))
+                .when_some(fill, |this, c| {
+                    this.bg(gpui::linear_gradient(
+                        180.,
+                        gpui::linear_color_stop(c.opacity(HEADER_ALPHA), 0.),
+                        gpui::linear_color_stop(c.opacity(0.), 1.),
+                    ))
+                })
+        }
+    };
+    header
         .child(
             h_flex().w_full().gap_6().items_end().child(art).child(
                 v_flex()
@@ -775,6 +820,9 @@ pub fn hero(h: Hero, cx: &mut App) -> AnyElement {
         }))
         .into_any_element()
 }
+
+/// Strongest opacity of an artwork-coloured header.
+const HEADER_ALPHA: f32 = 0.9;
 
 /// A header action button ("Play", "Shuffle", "Radio", …).
 pub fn action_button(

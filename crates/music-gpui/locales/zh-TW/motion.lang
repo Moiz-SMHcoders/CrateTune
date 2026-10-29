@@ -1,0 +1,59 @@
+# App-wide artwork look, Motion & effects (Appearance), and the player bar's
+# artwork style (zh-TW).
+
+look.style.off = 關閉
+look.style.tint = 著色
+look.style.gradient = 漸層
+look.style.glow = 光暈
+
+settings.look.group = 全域外觀
+settings.look.style = 配合封面
+settings.look.style_note = 整個視窗從歌曲封面取色，就像播放列的背景一樣。
+settings.look.follow_bar = 跟隨播放列樣式
+settings.look.follow_bar_note = 播放列的背景效果開啟時，其樣式、方向、強度和動畫也會用於這裡。
+settings.look.following = 正在跟隨播放列：{style}。
+settings.look.direction = 漸層方向
+settings.look.intensity = 強度
+settings.look.dim_when_paused = 暫停時變暗
+settings.look.tint_surfaces = 選單和面板也著色
+settings.look.tint_surfaces_note = 選單、側邊欄、面板和卡片也會帶上封面的色調。
+settings.look.animate = 動畫
+settings.look.animate_note = 播放音樂時漸層緩慢流動（約每秒 13 格；暫停時停止）。
+settings.look.cpu_note = 未開啟動畫時為靜態：顏色每首歌變化一次並帶有短暫的交叉淡化，文字保持對比度。
+
+motion.level.system = 系統
+motion.level.full = 完整
+motion.level.reduced = 減少
+motion.level.off = 關閉
+
+settings.motion.group = 動態與效果
+settings.motion.animations = 動畫
+settings.motion.animations_note = 減少會保留短暫的淡化並停止背景動態；關閉會讓所有變化立即完成。
+settings.motion.system_reduced = 你的系統要求減少動態效果，因此動畫已減少。
+settings.motion.system_full = 你的系統允許完整動態。
+settings.motion.page_transitions = 頁面轉場
+settings.motion.page_transitions_note = 開啟新頁面時短暫淡入。
+settings.motion.card_hover = 方塊懸停效果
+settings.motion.card_hover_note = 專輯、播放清單和歌曲方塊會亮起並顯示播放按鈕。
+settings.motion.artwork_headers = 封面色頁面標題
+settings.motion.artwork_headers_note = 專輯、播放清單和藝人頁面採用封面的顏色。
+settings.motion.artwork_corners = 封面圓角
+settings.motion.artwork_shadow = 封面陰影
+settings.motion.card_size = 方塊大小
+settings.motion.translucent_sidebar = 半透明側邊欄
+settings.motion.translucent_sidebar_note = 透過側邊欄可以看到模糊的桌面。
+settings.motion.cpu_note = 懸停效果和頁面轉場每次只需一次短暫重繪；這裡沒有任何內容會持續繪製。
+
+effects.corners.theme = 跟隨主題
+effects.corners.square = 直角
+effects.corners.rounded = 小圓角
+effects.corners.round = 圓角
+
+effects.card_size.small = 小
+effects.card_size.regular = 標準
+effects.card_size.large = 大
+
+bar.artwork.standard = 標準
+bar.artwork.edge = 貼邊
+settings.bar.artwork_style = 封面
+settings.bar.artwork_style_note = 貼邊：封面在播放列左側填滿整個高度。

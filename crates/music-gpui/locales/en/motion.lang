@@ -1,0 +1,74 @@
+# App-wide artwork look, Motion & effects (Appearance), and the player bar's
+# artwork style.
+
+# ---- App-wide look: styles (buttons in a row, keep short)
+look.style.off = Off
+# Surfaces tinted with the artwork's hue.
+look.style.tint = Tint
+# A large soft gradient in the artwork's colours behind the content.
+look.style.gradient = Gradient wash
+# A soft artwork-coloured light along the top of the window.
+look.style.glow = Glow
+
+# ---- App-wide look: settings group
+settings.look.group = App-wide look
+settings.look.style = Match the artwork
+settings.look.style_note = The whole window takes its colours from the song's artwork, like the player bar's background.
+settings.look.follow_bar = Follow the player bar's style
+settings.look.follow_bar_note = While the bar's background effect is on, its style, direction, intensity and animation are used here too.
+# {style} is the bar's background style (e.g. "Dynamic gradient").
+settings.look.following = Following the player bar: {style}.
+settings.look.direction = Gradient direction
+settings.look.intensity = Intensity
+settings.look.dim_when_paused = Dim when paused
+settings.look.tint_surfaces = Tint menus and panels too
+settings.look.tint_surfaces_note = Menus, the sidebar, panels and cards take the artwork's hue as well.
+settings.look.animate = Animate
+settings.look.animate_note = A slow drift of the gradient while music plays (about 13 frames a second; stops when paused).
+settings.look.cpu_note = Static unless Animate is on: the colours change once per song with a short cross-fade, and text keeps its contrast.
+
+# ---- Animations levels (buttons)
+# Follow the operating system's "reduce motion" setting.
+motion.level.system = System
+motion.level.full = Full
+motion.level.reduced = Reduced
+motion.level.off = Off
+
+# ---- Motion & effects: settings group
+settings.motion.group = Motion & effects
+settings.motion.animations = Animations
+settings.motion.animations_note = Reduced keeps short fades and stops ambient motion; Off makes every change instant.
+settings.motion.system_reduced = Your system asks for reduced motion, so animations are reduced.
+settings.motion.system_full = Your system allows full motion.
+settings.motion.page_transitions = Page transitions
+settings.motion.page_transitions_note = A short fade when a new page opens.
+settings.motion.card_hover = Hover effects on tiles
+settings.motion.card_hover_note = Album, playlist and song tiles light up and show a play button.
+settings.motion.artwork_headers = Artwork-coloured page headers
+settings.motion.artwork_headers_note = Album, playlist and artist pages take the cover's colour.
+settings.motion.artwork_corners = Artwork corners
+settings.motion.artwork_shadow = Artwork shadows
+settings.motion.card_size = Tile size
+settings.motion.translucent_sidebar = Translucent sidebar
+settings.motion.translucent_sidebar_note = The desktop shows through the sidebar, blurred.
+settings.motion.cpu_note = Hover effects and page transitions cost one short redraw each; nothing here draws continuously.
+
+# ---- Artwork corners (buttons)
+# Use the corner setting of Customize theme.
+effects.corners.theme = Match theme
+effects.corners.square = Square
+effects.corners.rounded = Rounded
+effects.corners.round = Round
+
+# ---- Tile size (buttons)
+effects.card_size.small = Small
+effects.card_size.regular = Regular
+effects.card_size.large = Large
+
+# ---- Player bar: artwork style (buttons)
+# A padded, rounded thumbnail.
+bar.artwork.standard = Standard
+# The artwork fills the bar's height, flush with the left edge.
+bar.artwork.edge = Edge to edge
+settings.bar.artwork_style = Artwork
+settings.bar.artwork_style_note = Edge to edge: the cover fills the bar's height at its left edge.

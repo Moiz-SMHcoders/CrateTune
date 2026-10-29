@@ -264,13 +264,9 @@ impl MusicApp {
         self.hires.insert(id.clone(), HiRes::Loading);
         let art_key = url.clone();
         // Artwork colours only feed the dynamic theme (`theme_state.rs` extracts them
-        // later if the theme is switched to dynamic) and the player bar's
-        // background effect (glow / dynamic gradient / pulse colours).
-        let want_colors = {
-            let s = self.settings.read(cx).settings();
-            s.appearance.theme == crate::theme::ThemeChoice::Dynamic
-                || s.player_bar.background_effect
-        };
+        // later if the theme is switched to dynamic), the player bar's background
+        // effect (glow / dynamic gradient / pulse colours) and the app-wide look.
+        let want_colors = crate::look_state::wants_art_colors(self.settings.read(cx).settings());
         let art = ArtworkCache::global(cx).update(cx, |cache, cx| cache.load(url, cx));
         cx.spawn(async move |this, cx| {
             let entry = match art.await {
@@ -496,11 +492,20 @@ impl MusicApp {
             .occlude()
             .absolute()
             .left_0()
-            .top(viewport.height * (1. - reveal))
+            // Reduced motion: a fade instead of the slide up.
+            .top(if crate::effects::ambient_motion() {
+                viewport.height * (1. - reveal)
+            } else {
+                px(0.)
+            })
             .w_full()
             .h(viewport.height)
             .overflow_hidden()
-            .opacity((reveal * 1.8).min(1.))
+            .opacity(if crate::effects::ambient_motion() {
+                (reveal * 1.8).min(1.)
+            } else {
+                reveal
+            })
             .text_color(gpui::white())
             .child(backdrop)
             .children(design_backdrop)
@@ -729,7 +734,7 @@ impl MusicApp {
                 let a = frame.get(&self.np.colors[0]);
                 // The phase only advances while playing, so a paused screen is still.
                 let now = frame.now;
-                if self.clock.is_running() {
+                if self.clock.is_running() && crate::effects::ambient_motion() {
                     if let Some(last) = self.np.glow_last {
                         self.np.glow_phase += (now - last).as_secs_f32().min(0.1);
                     }
@@ -818,37 +823,40 @@ impl MusicApp {
         let playing = self.playback.status == PlaybackStatus::Playing;
         let art = self.art_image(track, cx);
         let radius = radius.unwrap_or(side * 0.5);
+        let inner = div()
+            .rounded(radius)
+            .shadow_2xl()
+            .bg(white(0.08))
+            .when_some(art, |this, art| {
+                this.child(
+                    img(art)
+                        .size_full()
+                        .rounded(radius)
+                        .object_fit(ObjectFit::Cover),
+                )
+            });
+        let scale = if playing { 1.0f32 } else { 0.9 };
+        let shaped = if crate::effects::ambient_motion() {
+            // GPUI's built-in stateful spring (keyed by element id): slightly
+            // underdamped, so the art "pops" when playback resumes.
+            inner
+                .with_spring(
+                    "np-artwork-scale",
+                    SpringAnimation::new(SpringConfig::new(260., 22., 1.)).to(scale),
+                    move |this, scale| this.size(side * scale),
+                )
+                .into_any_element()
+        } else {
+            // Reduced / no motion: the size just changes.
+            inner.size(side * scale).into_any_element()
+        };
         div()
             .size(side)
             .flex_none()
             .flex()
             .items_center()
             .justify_center()
-            .child(
-                div()
-                    .rounded(radius)
-                    .shadow_2xl()
-                    .bg(white(0.08))
-                    .when_some(art, |this, art| {
-                        this.child(
-                            img(art)
-                                .size_full()
-                                .rounded(radius)
-                                .object_fit(ObjectFit::Cover),
-                        )
-                    })
-                    // GPUI's built-in stateful spring (keyed by element id): slightly
-                    // underdamped, so the art "pops" when playback resumes.
-                    .with_spring(
-                        "np-artwork-scale",
-                        SpringAnimation::new(SpringConfig::new(260., 22., 1.)).to(if playing {
-                            1.0f32
-                        } else {
-                            0.9
-                        }),
-                        move |this, scale| this.size(side * scale),
-                    ),
-            )
+            .child(shaped)
     }
 
     /// Progress bar (click to seek) and elapsed / remaining time.

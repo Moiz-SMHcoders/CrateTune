@@ -20,8 +20,9 @@
 //! user confirms.
 //!
 //! **Theme files** carry `appearance.theme` / `font_scale`, `custom_theme`,
-//! `now_playing` (layout, background, mini player style) and the player bar's
-//! style sections ([`BAR_STYLE_KEYS`]); importing one replaces exactly those.
+//! `now_playing` (layout, background, mini player style), the player bar's
+//! style sections ([`BAR_STYLE_KEYS`]) and the app-wide look / Motion & effects
+//! ([`LOOK_KEYS`]); importing one replaces exactly those.
 
 use serde_json::{Map, Value, json};
 
@@ -51,6 +52,14 @@ pub const LOCAL_ONLY: &[&str] = &[
 /// effect + dynamic gradient, times, volume scroll, mini player, Now Playing
 /// visualizer).
 pub const BAR_STYLE_KEYS: &[&str] = &["player_bar"];
+/// The app-wide look and Motion & effects (`look_prefs.rs`): in profiles and
+/// theme files like the bar's style.
+pub const LOOK_KEYS: &[&str] = &["app_look", "effects"];
+
+/// Style sections beside `custom_theme` / `now_playing`: the bar's and the look's.
+pub fn style_keys() -> impl Iterator<Item = &'static &'static str> {
+    BAR_STYLE_KEYS.iter().chain(LOOK_KEYS)
+}
 /// Sections a theme file replaces (besides `appearance.theme` / `font_scale`).
 const THEME_SECTIONS: &[&str] = &["custom_theme", "now_playing"];
 const THEME_APPEARANCE_KEYS: &[&str] = &["theme", "font_scale"];
@@ -496,7 +505,7 @@ fn theme_payload(settings: &Settings) -> Map<String, Value> {
         }
     }
     out.insert("appearance".into(), Value::Object(appearance));
-    for key in THEME_SECTIONS.iter().chain(BAR_STYLE_KEYS) {
+    for key in THEME_SECTIONS.iter().chain(style_keys()) {
         if let Some(value) = v.get(*key) {
             out.insert((*key).to_owned(), value.clone());
         }
@@ -525,7 +534,7 @@ fn apply_theme_payload(current: &Settings, theme: &Map<String, Value>) -> (Setti
             .unwrap_or(Value::Null);
         set_path(&mut v, &path, value);
     }
-    for key in THEME_SECTIONS.iter().chain(BAR_STYLE_KEYS) {
+    for key in THEME_SECTIONS.iter().chain(style_keys()) {
         match theme.get(*key) {
             Some(value) => {
                 let mut one = Map::new();
@@ -569,11 +578,12 @@ pub fn plan_theme_import(text: &str, current: &Settings) -> Result<ImportPlan, I
             *k != "appearance"
                 && !THEME_SECTIONS.contains(&k.as_str())
                 && !BAR_STYLE_KEYS.contains(&k.as_str())
+                && !LOOK_KEYS.contains(&k.as_str())
         })
         .cloned()
         .collect();
     let known = to_value(&Settings::default());
-    for key in THEME_SECTIONS.iter().chain(BAR_STYLE_KEYS) {
+    for key in THEME_SECTIONS.iter().chain(style_keys()) {
         if let (Some(v), Some(k)) = (theme.get(*key), known.get(*key)) {
             unknown_paths(v, k, key, &mut unknown);
         }
@@ -928,6 +938,15 @@ mod tests {
         assert_eq!(plan.settings.appearance.language, "ja");
         let sections: Vec<&str> = plan.diff.iter().map(|d| d.section.as_str()).collect();
         assert_eq!(sections, ["appearance", "custom_theme", "now_playing"]);
+
+        // The app-wide look and Motion & effects travel with a theme too.
+        let mut c = a.clone();
+        c.app_look.style = super::super::look_prefs::AppLookStyle::Glow;
+        c.effects.card_size = super::super::look_prefs::CardSize::Large;
+        let plan = plan_theme_import(&export_theme(&c, "Glow", 0), &b).unwrap();
+        assert_eq!(plan.settings.app_look, c.app_look);
+        assert_eq!(plan.settings.effects, c.effects);
+        assert_eq!(plan.settings.volume, 0.1);
 
         // An older theme file without some sections: those get defaults; unknown
         // keys are reported.

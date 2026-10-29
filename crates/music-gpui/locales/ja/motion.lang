@@ -1,0 +1,59 @@
+# App-wide artwork look, Motion & effects (Appearance), and the player bar's
+# artwork style (ja).
+
+look.style.off = オフ
+look.style.tint = 色合い
+look.style.gradient = グラデーション
+look.style.glow = 光
+
+settings.look.group = アプリ全体の外観
+settings.look.style = アートワークに合わせる
+settings.look.style_note = プレーヤーバーの背景と同じように、ウィンドウ全体が曲のアートワークから色を取ります。
+settings.look.follow_bar = プレーヤーバーのスタイルに合わせる
+settings.look.follow_bar_note = バーの背景効果がオンの間は、そのスタイル、向き、強さ、アニメーションがここでも使われます。
+settings.look.following = プレーヤーバーに合わせています：{style}。
+settings.look.direction = グラデーションの向き
+settings.look.intensity = 強さ
+settings.look.dim_when_paused = 一時停止中は暗くする
+settings.look.tint_surfaces = メニューやパネルにも色を付ける
+settings.look.tint_surfaces_note = メニュー、サイドバー、パネル、カードにもアートワークの色合いが付きます。
+settings.look.animate = アニメーション
+settings.look.animate_note = 再生中にグラデーションがゆっくり動きます（毎秒約13フレーム、一時停止中は停止）。
+settings.look.cpu_note = アニメーションがオフなら静止しています。色は曲ごとに一度、短いクロスフェードで変わり、文字のコントラストは保たれます。
+
+motion.level.system = システム
+motion.level.full = フル
+motion.level.reduced = 控えめ
+motion.level.off = オフ
+
+settings.motion.group = モーションとエフェクト
+settings.motion.animations = アニメーション
+settings.motion.animations_note = 控えめでは短いフェードを残して背景の動きを止めます。オフではすべての変化が即座に反映されます。
+settings.motion.system_reduced = システムが視差効果を減らす設定のため、アニメーションは控えめになっています。
+settings.motion.system_full = システムはフルモーションを許可しています。
+settings.motion.page_transitions = ページの切り替え効果
+settings.motion.page_transitions_note = 新しいページを開くときに短いフェードを表示します。
+settings.motion.card_hover = タイルのホバー効果
+settings.motion.card_hover_note = アルバム、プレイリスト、曲のタイルが明るくなり、再生ボタンを表示します。
+settings.motion.artwork_headers = アートワーク色のページヘッダー
+settings.motion.artwork_headers_note = アルバム、プレイリスト、アーティストのページがジャケットの色になります。
+settings.motion.artwork_corners = アートワークの角
+settings.motion.artwork_shadow = アートワークの影
+settings.motion.card_size = タイルのサイズ
+settings.motion.translucent_sidebar = 半透明のサイドバー
+settings.motion.translucent_sidebar_note = サイドバー越しにデスクトップがぼかして見えます。
+settings.motion.cpu_note = ホバー効果とページの切り替え効果はそれぞれ短い再描画が1回だけです。ここに常に描画し続けるものはありません。
+
+effects.corners.theme = テーマに合わせる
+effects.corners.square = 角張り
+effects.corners.rounded = 角丸
+effects.corners.round = 丸め
+
+effects.card_size.small = 小
+effects.card_size.regular = 標準
+effects.card_size.large = 大
+
+bar.artwork.standard = 標準
+bar.artwork.edge = 端まで
+settings.bar.artwork_style = アートワーク
+settings.bar.artwork_style_note = 端まで：ジャケットがバーの左端で高さいっぱいに表示されます。

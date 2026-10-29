@@ -1,0 +1,59 @@
+# App-wide artwork look, Motion & effects (Appearance), and the player bar's
+# artwork style (zh-CN).
+
+look.style.off = 关
+look.style.tint = 着色
+look.style.gradient = 渐变
+look.style.glow = 光晕
+
+settings.look.group = 全局外观
+settings.look.style = 匹配封面
+settings.look.style_note = 整个窗口从歌曲封面取色，就像播放栏的背景一样。
+settings.look.follow_bar = 跟随播放栏样式
+settings.look.follow_bar_note = 播放栏的背景效果开启时，其样式、方向、强度和动画也会用于这里。
+settings.look.following = 正在跟随播放栏：{style}。
+settings.look.direction = 渐变方向
+settings.look.intensity = 强度
+settings.look.dim_when_paused = 暂停时变暗
+settings.look.tint_surfaces = 菜单和面板也着色
+settings.look.tint_surfaces_note = 菜单、侧边栏、面板和卡片也会带上封面的色调。
+settings.look.animate = 动画
+settings.look.animate_note = 播放音乐时渐变缓慢流动（约每秒 13 帧；暂停时停止）。
+settings.look.cpu_note = 未开启动画时为静态：颜色每首歌变化一次并带有短暂的淡入淡出，文字保持对比度。
+
+motion.level.system = 系统
+motion.level.full = 完整
+motion.level.reduced = 减弱
+motion.level.off = 关
+
+settings.motion.group = 动效与效果
+settings.motion.animations = 动画
+settings.motion.animations_note = 减弱会保留短暂的淡入淡出并停止背景动效；关会让所有变化立即完成。
+settings.motion.system_reduced = 你的系统要求减弱动态效果，因此动画已减弱。
+settings.motion.system_full = 你的系统允许完整动效。
+settings.motion.page_transitions = 页面过渡
+settings.motion.page_transitions_note = 打开新页面时短暂淡入。
+settings.motion.card_hover = 磁贴悬停效果
+settings.motion.card_hover_note = 专辑、播放列表和歌曲磁贴会亮起并显示播放按钮。
+settings.motion.artwork_headers = 封面色页面标题
+settings.motion.artwork_headers_note = 专辑、播放列表和艺人页面采用封面的颜色。
+settings.motion.artwork_corners = 封面圆角
+settings.motion.artwork_shadow = 封面阴影
+settings.motion.card_size = 磁贴大小
+settings.motion.translucent_sidebar = 半透明侧边栏
+settings.motion.translucent_sidebar_note = 透过侧边栏可以看到模糊的桌面。
+settings.motion.cpu_note = 悬停效果和页面过渡每次只需一次短暂重绘；这里没有任何内容会持续绘制。
+
+effects.corners.theme = 跟随主题
+effects.corners.square = 直角
+effects.corners.rounded = 小圆角
+effects.corners.round = 圆角
+
+effects.card_size.small = 小
+effects.card_size.regular = 标准
+effects.card_size.large = 大
+
+bar.artwork.standard = 标准
+bar.artwork.edge = 贴边
+settings.bar.artwork_style = 封面
+settings.bar.artwork_style_note = 贴边：封面在播放栏左侧填满整个高度。

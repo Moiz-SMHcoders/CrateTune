@@ -20,7 +20,7 @@ use gpui::{
     AnyWindowHandle, App, AppContext as _, Context, Entity, FocusHandle, Focusable as _, Global,
     InteractiveElement as _, IntoElement, MouseButton, NavigationDirection, ParentElement as _,
     Render, ScrollHandle, Styled as _, Subscription, Task, WeakEntity, Window, WindowBounds, div,
-    px,
+    prelude::FluentBuilder as _, px,
 };
 use gpui_component::{
     ActiveTheme as _, Disableable as _, IconName, Sizable as _, WindowExt as _,
@@ -142,6 +142,8 @@ pub struct MusicApp {
     /// Applied theme, the current artwork colours, the colour transition
     /// (`theme_state.rs`).
     pub(crate) theme_state: crate::theme_state::ThemeState,
+    /// App-wide artwork look and Motion & effects (`look_state.rs`).
+    pub(crate) look: crate::look_state::LookState,
     /// Library database, downloads, account (`store.rs`).
     pub(crate) store: crate::store::Store,
     /// SponsorBlock, Music Together, playlist import (`integrations/`).
@@ -336,6 +338,7 @@ impl MusicApp {
             hires: HashMap::new(),
             hires_order: VecDeque::new(),
             theme_state: Default::default(),
+            look: Default::default(),
             store: crate::store::Store::open(saved.library.clone(), downloads_resolver),
             integrations: Default::default(),
             onboarding: None,
@@ -348,6 +351,7 @@ impl MusicApp {
             _poll: poll,
             _subscriptions: subscriptions,
         };
+        crate::effects::poll_os_reduce_motion();
         this.apply_theme(cx);
         this.apply_artwork_budget(cx);
         this.sync_browse_client(cx);
@@ -416,6 +420,7 @@ impl MusicApp {
         }
         self.save_scroll();
         if self.router.push(route) {
+            self.start_page_transition();
             self.on_route_changed(window, cx);
         }
     }
@@ -438,6 +443,7 @@ impl MusicApp {
     pub fn go_back(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         self.save_scroll();
         if self.router.back() {
+            self.start_page_transition();
             self.on_route_changed(window, cx);
         }
     }
@@ -445,6 +451,7 @@ impl MusicApp {
     pub fn go_forward(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         self.save_scroll();
         if self.router.forward() {
+            self.start_page_transition();
             self.on_route_changed(window, cx);
         }
     }
@@ -756,6 +763,24 @@ impl MusicApp {
         let sidebar = self.render_sidebar(cx);
         let header = self.render_header(cx);
         let queue_panel = self.queue_open.then(|| self.render_queue_panel(cx));
+        // A new page fades in (and slides up a little with full motion): ~180 ms
+        // of frames once per navigation, then static.
+        let mut frame = Frame::new();
+        let t = frame.get(&self.look.page_in);
+        let page_box = div().flex_1().min_h_0().children(page);
+        let page_box = if t < 1. {
+            let slide = if crate::effects::ambient_motion() {
+                crate::look_state::PAGE_SLIDE * (1. - t)
+            } else {
+                0.
+            };
+            page_box.relative().top(px(slide)).opacity(t.max(0.))
+        } else {
+            page_box
+        };
+        if frame.finish(window).is_some() {
+            // (Tweens only ask for frames, never timed wakes.)
+        }
         h_flex()
             .size_full()
             .items_start()
@@ -766,7 +791,7 @@ impl MusicApp {
                     .min_w_0()
                     .h_full()
                     .child(header)
-                    .child(div().flex_1().min_h_0().children(page)),
+                    .child(page_box),
             )
             .children(queue_panel)
             .into_any_element()
@@ -838,13 +863,19 @@ impl Render for MusicApp {
         // Once the Now Playing screen fully covers the window, skip building the
         // shell underneath, so per-frame lyric renders stay cheap.
         let covered = reveal >= 1.;
+        self.sync_window_background(window, cx);
+        let translucent = self.translucent_sidebar(cx);
         let mut root = div()
             .id("music-app")
             .key_context("MusicApp")
             .track_focus(&self.focus)
             .relative()
             .size_full()
-            .bg(cx.theme().background)
+            // With the translucent sidebar the window itself is see-through
+            // (blurred); everything but the sidebar paints its own background.
+            .when(!translucent || covered, |this| {
+                this.bg(cx.theme().background)
+            })
             .text_color(cx.theme().foreground)
             .on_mouse_down(
                 MouseButton::Navigate(NavigationDirection::Back),
@@ -857,18 +888,64 @@ impl Render for MusicApp {
         if !covered {
             // While the bar animates (or the pointer is on one of its tracks) the
             // shell is a cached view: a bar frame then doesn't rebuild the page.
-            let cached = self.bar_is_live(cx);
+            // So is the app-wide backdrop (and then the bar too).
+            let bar_live = self.bar_is_live(cx);
+            let backdrop_live = self.backdrop_is_live(cx);
+            let cached = bar_live || backdrop_live;
             let shell = crate::components::player_bar::region(
                 &mut self.shell,
                 Self::render_shell,
                 cached,
                 cx,
             );
+            let backdrop = self.app_backdrop(cx);
             let bar = self.player_bar_view(cx);
+            let bar = if backdrop_live && !bar_live {
+                bar.cached(
+                    gpui::StyleRefinement::default()
+                        .w_full()
+                        .h(px(crate::components::player_bar::BAR_HEIGHT))
+                        .flex_none(),
+                )
+                .into_any_element()
+            } else {
+                bar.into_any_element()
+            };
+            let base = translucent.then(|| {
+                div()
+                    .absolute()
+                    .top_0()
+                    .bottom_0()
+                    .right_0()
+                    .left(px(crate::components::sidebar::SIDEBAR_WIDTH))
+                    .bg(cx.theme().background)
+            });
             root = root.child(
                 v_flex()
                     .size_full()
-                    .child(div().flex_1().min_h_0().w_full().child(shell))
+                    .child(
+                        div()
+                            .relative()
+                            .flex_1()
+                            .min_h_0()
+                            .w_full()
+                            .children(base)
+                            .children(backdrop.map(|b| {
+                                // Behind the content area only, with the desktop blur.
+                                div()
+                                    .absolute()
+                                    .top_0()
+                                    .bottom_0()
+                                    .right_0()
+                                    .left(px(if translucent {
+                                        crate::components::sidebar::SIDEBAR_WIDTH
+                                    } else {
+                                        0.
+                                    }))
+                                    .child(b)
+                            }))
+                            .child(shell),
+                    )
                     .child(bar),
             );
         }

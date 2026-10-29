@@ -236,6 +236,7 @@ impl Render for MiniPlayer {
         };
         let wants_spectrum = (style == ProgressStyle::Equalizer
             || effect == Some(crate::settings::bar_prefs::BarBackground::Pulse))
+            && crate::effects::spectrum_allowed(style == ProgressStyle::Equalizer)
             && (playing || self.progress.level() > 0.);
         if wants_spectrum {
             read_app(cx, |app, _| app.want_spectrum());

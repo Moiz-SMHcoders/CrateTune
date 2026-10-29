@@ -86,6 +86,11 @@ pub struct Settings {
     /// Accent, surfaces, contrast, corners, density, font, dynamic colours
     /// (Appearance → Customize theme, `theme_prefs.rs`).
     pub custom_theme: super::theme_prefs::CustomTheme,
+    /// The whole window in the artwork's colours (off by default; `look_prefs.rs`).
+    pub app_look: super::look_prefs::AppLookConfig,
+    /// Motion & effects: animations, page transitions, hover, artwork look
+    /// (`look_prefs.rs`).
+    pub effects: super::look_prefs::EffectsConfig,
     /// Keyboard shortcuts the user changed: action id → combination (`""` = none);
     /// see `shortcuts.rs`. In settings exports, not in profiles.
     pub shortcuts: crate::shortcuts::Overrides,
@@ -125,6 +130,8 @@ impl Default for Settings {
             player_bar: Default::default(),
             onboarded: true,
             custom_theme: Default::default(),
+            app_look: Default::default(),
+            effects: Default::default(),
             shortcuts: Default::default(),
             updates: Default::default(),
             secrets: FileSecrets::default(),
@@ -622,6 +629,7 @@ impl Settings {
         self.scrobble_rules.normalize();
         self.player_bar.normalize();
         self.custom_theme.normalize();
+        self.app_look.normalize();
     }
 
     pub fn from_json(text: &str) -> serde_json::Result<Self> {

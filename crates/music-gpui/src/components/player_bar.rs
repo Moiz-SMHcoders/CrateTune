@@ -46,7 +46,7 @@ use crate::icons::{AppIcon, Lucide};
 use crate::now_playing::HiRes;
 use crate::queue::Repeat;
 use crate::settings::bar_items::BarItems;
-use crate::settings::bar_prefs::{PlayerBarConfig, ProgressStyle};
+use crate::settings::bar_prefs::{BarArtworkStyle, PlayerBarConfig, ProgressStyle};
 use crate::theme::AppColors;
 
 pub const BAR_HEIGHT: f32 = 88.;
@@ -378,11 +378,13 @@ impl Render for PlayerBar {
         );
         let live = self.is_live();
         let config = state.config;
+        let edge = config.artwork_style == BarArtworkStyle::Edge;
 
         // ---- progress
         // The spectrum while playing, and after a pause until the bars have fallen.
-        let spectrum_wanted =
-            config.wants_spectrum() && (state.playing || self.progress.level() > 0.);
+        let spectrum_wanted = config.wants_spectrum()
+            && crate::effects::spectrum_allowed(config.progress_style == ProgressStyle::Equalizer)
+            && (state.playing || self.progress.level() > 0.);
         if spectrum_wanted {
             read_app(cx, |app, _| app.want_spectrum());
         }
@@ -675,7 +677,16 @@ impl Render for PlayerBar {
                     .inset_0()
                     .px(px(PAD))
                     .gap(px(PAD))
-                    .child(div().w(px(side)).h_full().flex_none().child(left))
+                    // Edge artwork: the track info starts at the bar's left edge
+                    // (into the padding), so every zone keeps its width.
+                    .child(
+                        div()
+                            .when(edge, |this| this.ml(px(-PAD)))
+                            .w(px(if edge { side + PAD } else { side }))
+                            .h_full()
+                            .flex_none()
+                            .child(left),
+                    )
                     .child(
                         v_flex()
                             .flex_1()
@@ -866,6 +877,9 @@ impl MusicApp {
     ) -> AnyElement {
         let layout = self.bar_layout_now(window, cx);
         let like = self.settings.read(cx).bar_items().like;
+        // Edge: square at the bar's full height, flush left, no outer rounding.
+        let edge =
+            self.settings.read(cx).settings().player_bar.artwork_style == BarArtworkStyle::Edge;
         let (track, _) = self.bar_track();
         let image = track
             .as_ref()
@@ -880,10 +894,13 @@ impl MusicApp {
                 t!("player.pick_a_song").into(),
             ),
         };
+        let art_side = if edge { BAR_HEIGHT - 1. } else { 56. };
         let art = div()
-            .size(px(56.))
+            .size(px(art_side))
             .flex_none()
-            .rounded(px(6.))
+            .when(!edge, |this| {
+                this.rounded(crate::effects::art_radius(px(56.), px(6.)))
+            })
             .overflow_hidden()
             .bg(theme.muted)
             .flex()
@@ -893,7 +910,7 @@ impl MusicApp {
                 Some(image) => this.child(img(image).size_full().object_fit(ObjectFit::Cover)),
                 None => this.child(
                     Icon::new(Lucide::Music)
-                        .size(px(22.))
+                        .size(px(if edge { 28. } else { 22. }))
                         .text_color(theme.muted_foreground),
                 ),
             });
@@ -908,8 +925,8 @@ impl MusicApp {
                     .flex_1()
                     .min_w_0()
                     .gap_3()
-                    .p_1()
-                    .rounded(px(8.))
+                    .when(!edge, |this| this.p_1().rounded(px(8.)))
+                    .when(edge, |this| this.h_full().rounded_r(px(8.)))
                     .when(has_track, |this| {
                         this.cursor_pointer().hover(move |s| s.bg(hover)).on_click(
                             cx.listener(|this, _, window, cx| this.open_now_playing(window, cx)),

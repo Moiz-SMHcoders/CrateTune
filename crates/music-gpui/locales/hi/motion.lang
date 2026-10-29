@@ -1,0 +1,59 @@
+# App-wide artwork look, Motion & effects (Appearance), and the player bar's
+# artwork style (hi).
+
+look.style.off = बंद
+look.style.tint = रंगत
+look.style.gradient = ग्रेडिएंट
+look.style.glow = चमक
+
+settings.look.group = पूरे ऐप का रूप
+settings.look.style = कवर से मिलाएँ
+settings.look.style_note = पूरी विंडो अपने रंग गाने के कवर से लेती है, जैसे प्लेयर बार का बैकग्राउंड।
+settings.look.follow_bar = प्लेयर बार की स्टाइल अपनाएँ
+settings.look.follow_bar_note = जब तक बार का बैकग्राउंड इफ़ेक्ट चालू है, उसकी स्टाइल, दिशा, तीव्रता और एनिमेशन यहाँ भी इस्तेमाल होते हैं।
+settings.look.following = प्लेयर बार के अनुसार: {style}।
+settings.look.direction = ग्रेडिएंट की दिशा
+settings.look.intensity = तीव्रता
+settings.look.dim_when_paused = रोकने पर धुंधला करें
+settings.look.tint_surfaces = मेन्यू और पैनल को भी रंगें
+settings.look.tint_surfaces_note = मेन्यू, साइडबार, पैनल और कार्ड भी कवर की रंगत ले लेते हैं।
+settings.look.animate = एनिमेट करें
+settings.look.animate_note = संगीत चलते समय ग्रेडिएंट का धीमा बहाव (लगभग 13 फ़्रेम प्रति सेकंड; रोकने पर रुक जाता है)।
+settings.look.cpu_note = एनिमेट बंद हो तो स्थिर: रंग हर गाने पर एक बार छोटे क्रॉस-फ़ेड के साथ बदलते हैं, और टेक्स्ट का कंट्रास्ट बना रहता है।
+
+motion.level.system = सिस्टम
+motion.level.full = पूरा
+motion.level.reduced = कम
+motion.level.off = बंद
+
+settings.motion.group = मोशन और इफ़ेक्ट
+settings.motion.animations = एनिमेशन
+settings.motion.animations_note = कम में छोटे फ़ेड बने रहते हैं और पृष्ठभूमि की हलचल रुक जाती है; बंद से हर बदलाव तुरंत होता है।
+settings.motion.system_reduced = आपका सिस्टम कम मोशन चाहता है, इसलिए एनिमेशन कम किए गए हैं।
+settings.motion.system_full = आपका सिस्टम पूरा मोशन अनुमति देता है।
+settings.motion.page_transitions = पेज ट्रांज़िशन
+settings.motion.page_transitions_note = नया पेज खुलने पर एक छोटा फ़ेड।
+settings.motion.card_hover = टाइल पर होवर इफ़ेक्ट
+settings.motion.card_hover_note = एल्बम, प्लेलिस्ट और गाने की टाइलें चमकती हैं और प्ले बटन दिखाती हैं।
+settings.motion.artwork_headers = कवर के रंग वाले पेज हेडर
+settings.motion.artwork_headers_note = एल्बम, प्लेलिस्ट और कलाकार के पेज कवर का रंग ले लेते हैं।
+settings.motion.artwork_corners = कवर के कोने
+settings.motion.artwork_shadow = कवर की छाया
+settings.motion.card_size = टाइल का आकार
+settings.motion.translucent_sidebar = पारभासी साइडबार
+settings.motion.translucent_sidebar_note = साइडबार के पीछे से डेस्कटॉप धुंधला दिखता है।
+settings.motion.cpu_note = होवर इफ़ेक्ट और पेज ट्रांज़िशन हर बार बस एक छोटा रीड्रॉ लेते हैं; यहाँ कुछ भी लगातार नहीं बनता।
+
+effects.corners.theme = थीम जैसा
+effects.corners.square = नुकीले
+effects.corners.rounded = हल्के गोल
+effects.corners.round = गोल
+
+effects.card_size.small = छोटा
+effects.card_size.regular = सामान्य
+effects.card_size.large = बड़ा
+
+bar.artwork.standard = मानक
+bar.artwork.edge = किनारे तक
+settings.bar.artwork_style = कवर
+settings.bar.artwork_style_note = किनारे तक: कवर बार के बाएँ किनारे पर उसकी पूरी ऊँचाई भरता है।

@@ -1,0 +1,59 @@
+# App-wide artwork look, Motion & effects (Appearance), and the player bar's
+# artwork style (pl).
+
+look.style.off = Wył.
+look.style.tint = Zabarwienie
+look.style.gradient = Gradient
+look.style.glow = Poświata
+
+settings.look.group = Wygląd całej aplikacji
+settings.look.style = Dopasuj do okładki
+settings.look.style_note = Całe okno przejmuje kolory z okładki utworu, tak jak tło paska odtwarzacza.
+settings.look.follow_bar = Używaj stylu paska odtwarzacza
+settings.look.follow_bar_note = Gdy efekt tła paska jest włączony, jego styl, kierunek, intensywność i animacja są używane również tutaj.
+settings.look.following = Zgodnie z paskiem odtwarzacza: {style}.
+settings.look.direction = Kierunek gradientu
+settings.look.intensity = Intensywność
+settings.look.dim_when_paused = Przyciemnij po wstrzymaniu
+settings.look.tint_surfaces = Zabarwiaj też menu i panele
+settings.look.tint_surfaces_note = Menu, pasek boczny, panele i karty również przyjmują odcień okładki.
+settings.look.animate = Animuj
+settings.look.animate_note = Powolny ruch gradientu podczas odtwarzania (około 13 klatek na sekundę; zatrzymuje się po wstrzymaniu).
+settings.look.cpu_note = Statyczne, chyba że Animuj jest włączone: kolory zmieniają się raz na utwór z krótkim przenikaniem, a tekst zachowuje kontrast.
+
+motion.level.system = System
+motion.level.full = Pełne
+motion.level.reduced = Ograniczone
+motion.level.off = Wył.
+
+settings.motion.group = Ruch i efekty
+settings.motion.animations = Animacje
+settings.motion.animations_note = Ograniczone zachowuje krótkie przejścia i zatrzymuje ruch tła; Wył. sprawia, że każda zmiana jest natychmiastowa.
+settings.motion.system_reduced = System prosi o ograniczenie ruchu, więc animacje są ograniczone.
+settings.motion.system_full = System pozwala na pełny ruch.
+settings.motion.page_transitions = Przejścia stron
+settings.motion.page_transitions_note = Krótkie przenikanie przy otwieraniu nowej strony.
+settings.motion.card_hover = Efekty najechania na kafelki
+settings.motion.card_hover_note = Kafelki albumów, playlist i utworów podświetlają się i pokazują przycisk odtwarzania.
+settings.motion.artwork_headers = Nagłówki w kolorze okładki
+settings.motion.artwork_headers_note = Strony albumów, playlist i wykonawców przyjmują kolor okładki.
+settings.motion.artwork_corners = Narożniki okładek
+settings.motion.artwork_shadow = Cienie okładek
+settings.motion.card_size = Rozmiar kafelków
+settings.motion.translucent_sidebar = Półprzezroczysty pasek boczny
+settings.motion.translucent_sidebar_note = Pulpit prześwituje przez pasek boczny, rozmyty.
+settings.motion.cpu_note = Efekty najechania i przejścia stron kosztują po jednym krótkim przerysowaniu; nic tutaj nie jest rysowane w sposób ciągły.
+
+effects.corners.theme = Jak motyw
+effects.corners.square = Ostre
+effects.corners.rounded = Lekko zaokrąglone
+effects.corners.round = Zaokrąglone
+
+effects.card_size.small = Małe
+effects.card_size.regular = Zwykłe
+effects.card_size.large = Duże
+
+bar.artwork.standard = Standardowa
+bar.artwork.edge = Bez marginesu
+settings.bar.artwork_style = Okładka
+settings.bar.artwork_style_note = Bez marginesu: okładka wypełnia wysokość paska przy jego lewej krawędzi.

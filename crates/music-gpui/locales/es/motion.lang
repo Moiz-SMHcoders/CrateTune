@@ -1,0 +1,59 @@
+# App-wide artwork look, Motion & effects (Appearance), and the player bar's
+# artwork style (es).
+
+look.style.off = Desactivado
+look.style.tint = Tinte
+look.style.gradient = Degradado
+look.style.glow = Brillo
+
+settings.look.group = Aspecto de toda la app
+settings.look.style = Según la portada
+settings.look.style_note = Toda la ventana toma sus colores de la portada de la canción, como el fondo de la barra del reproductor.
+settings.look.follow_bar = Seguir el estilo de la barra del reproductor
+settings.look.follow_bar_note = Mientras el efecto de fondo de la barra esté activado, su estilo, dirección, intensidad y animación también se usan aquí.
+settings.look.following = Siguiendo la barra del reproductor: {style}.
+settings.look.direction = Dirección del degradado
+settings.look.intensity = Intensidad
+settings.look.dim_when_paused = Atenuar en pausa
+settings.look.tint_surfaces = Teñir también menús y paneles
+settings.look.tint_surfaces_note = Los menús, la barra lateral, los paneles y las tarjetas también toman el tono de la portada.
+settings.look.animate = Animar
+settings.look.animate_note = Un desplazamiento lento del degradado mientras suena la música (unos 13 fotogramas por segundo; se detiene en pausa).
+settings.look.cpu_note = Estático salvo que Animar esté activado: los colores cambian una vez por canción con una breve transición, y el texto mantiene su contraste.
+
+motion.level.system = Sistema
+motion.level.full = Completas
+motion.level.reduced = Reducidas
+motion.level.off = Desactivadas
+
+settings.motion.group = Movimiento y efectos
+settings.motion.animations = Animaciones
+settings.motion.animations_note = Reducidas mantiene fundidos cortos y detiene el movimiento ambiental; Desactivadas hace que cada cambio sea instantáneo.
+settings.motion.system_reduced = Tu sistema pide reducir el movimiento, así que las animaciones están reducidas.
+settings.motion.system_full = Tu sistema permite el movimiento completo.
+settings.motion.page_transitions = Transiciones de página
+settings.motion.page_transitions_note = Un breve fundido al abrir una página nueva.
+settings.motion.card_hover = Efectos al pasar sobre mosaicos
+settings.motion.card_hover_note = Los mosaicos de álbumes, listas y canciones se iluminan y muestran un botón de reproducir.
+settings.motion.artwork_headers = Encabezados del color de la portada
+settings.motion.artwork_headers_note = Las páginas de álbumes, listas y artistas toman el color de la portada.
+settings.motion.artwork_corners = Esquinas de la portada
+settings.motion.artwork_shadow = Sombras de la portada
+settings.motion.card_size = Tamaño de mosaicos
+settings.motion.translucent_sidebar = Barra lateral translúcida
+settings.motion.translucent_sidebar_note = El escritorio se ve a través de la barra lateral, desenfocado.
+settings.motion.cpu_note = Los efectos al pasar el cursor y las transiciones de página cuestan un breve redibujado cada uno; nada aquí se dibuja continuamente.
+
+effects.corners.theme = Según tema
+effects.corners.square = Rectas
+effects.corners.rounded = Suaves
+effects.corners.round = Redondeadas
+
+effects.card_size.small = Pequeño
+effects.card_size.regular = Normal
+effects.card_size.large = Grande
+
+bar.artwork.standard = Estándar
+bar.artwork.edge = Sin márgenes
+settings.bar.artwork_style = Portada
+settings.bar.artwork_style_note = Sin márgenes: la portada ocupa toda la altura de la barra en su borde izquierdo.

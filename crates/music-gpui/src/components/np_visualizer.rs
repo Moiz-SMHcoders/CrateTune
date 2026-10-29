@@ -115,7 +115,10 @@ impl crate::app::MusicApp {
         cx: &mut Context<Self>,
     ) -> Option<gpui::Entity<NpVisualizer>> {
         use gpui::AppContext as _;
-        if !self.settings.read(cx).settings().player_bar.np_visualizer {
+        // Animations off: the strip would only rest, so it isn't shown.
+        if !self.settings.read(cx).settings().player_bar.np_visualizer
+            || !crate::effects::any_motion()
+        {
             self.np_viz = None;
             return None;
         }

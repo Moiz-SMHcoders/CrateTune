@@ -40,6 +40,7 @@ macro_rules! choice_enum {
         }
     };
 }
+pub(crate) use choice_enum;
 
 choice_enum! {
     /// How dark the window background and surfaces are.

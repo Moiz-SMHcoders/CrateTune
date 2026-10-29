@@ -7,6 +7,38 @@ versions follow [SemVer](https://semver.org/).
 
 ### Added
 
+* **App-wide look** (Settings → Appearance → App-wide look; off by default): the whole
+  window can take its colours from the song's artwork, like the player bar's background.
+  **Tint** tints the sidebar, panels, menus and cards with the artwork's hue; **Gradient
+  wash** puts a large soft gradient in the artwork's colours behind the content (with a
+  direction); **Glow** adds a soft artwork-coloured light along the top of the window.
+  Options: intensity, dim when paused, tint menus and panels too, **Follow the player
+  bar's style**, and an **Animate** switch (gradient only, off by default: a slow drift
+  at about 13 fps that stops when paused). It is static otherwise: one 400 ms cross-fade
+  per song, and text keeps at least 4.5:1 contrast.
+* **Motion & effects** (Settings → Appearance):
+  * **Animations: System / Full / Reduced / Off.** System follows the macOS "Reduce
+    motion" setting (and GNOME's animations switch on Linux). Reduced turns slides into
+    fades, caps transitions at 150 ms and stops ambient motion (gradient drift, Wavy,
+    Pulse and Now Playing glows, the artwork spring). Off makes every change instant and
+    rests the visualizers and word-by-word lyrics.
+  * **Page transitions** (on): a 180 ms fade (and a small slide with full motion) when a
+    new page opens.
+  * **Hover effects on tiles** (on): album, playlist and song tiles light up and show a
+    round play button that plays without opening the page.
+  * **Artwork-coloured page headers** (on): album, playlist and artist headers take the
+    cover's colour.
+  * **Artwork corners** (match theme, square, rounded, round), **artwork shadows** (off)
+    and **tile size** (small, regular, large).
+  * **Translucent sidebar** (macOS, off): the desktop shows through the sidebar, blurred.
+* **Player bar artwork: Standard or Edge to edge** (Appearance → Player bar). Edge to edge
+  fills the bar's height with the cover, flush with the left edge. The mini player keeps
+  its own layout.
+* All of these are in profiles, theme files and settings export. **Minimal / Fast** turns
+  them off (animations off, no app-wide look, no transitions, hover, header colours,
+  shadows or blur).
+* Script hooks: `@app-look`, `@app-look-opt`, `@motion`, `@effects`, `@bar-art`,
+  `@look-status`.
 * **The app updates itself** on macOS, Windows and Linux (Settings → About → Updates, or
   **Check for Updates…** in the app menu on macOS / the Help menu elsewhere):
   * The flow is **Update to X.Y.Z**, then a progress bar with Cancel, then **Restart to

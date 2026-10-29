@@ -335,6 +335,7 @@ fn theme(panel: &mut SettingsPanel, cx: &mut Context<SettingsPanel>) -> AnyEleme
             font_scale: 1.0,
             custom: panel.settings.custom_theme.clone(),
             art: None,
+            art_tint: 0.,
         });
         v_flex()
             .id(SharedString::from(format!("onboarding-theme-{choice:?}")))

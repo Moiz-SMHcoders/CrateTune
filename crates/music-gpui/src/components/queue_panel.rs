@@ -61,8 +61,9 @@ impl MusicApp {
         &mut self,
         cx: &mut Context<Self>,
     ) -> impl IntoElement + use<> {
+        let bg = self.chrome_bg(cx);
         let theme = cx.theme();
-        let (border, muted, bg) = (theme.border, theme.muted_foreground, theme.sidebar);
+        let (border, muted) = (theme.border, theme.muted_foreground);
         let shuffle = self.queue.shuffle();
         let repeat = self.queue.repeat();
 

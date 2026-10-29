@@ -320,13 +320,17 @@ fn release(images: Vec<Arc<Image>>, cx: &mut App) {
 }
 
 /// A rounded artwork square for `url` (muted placeholder while loading).
+///
+/// The corners follow Motion & effects → Artwork corners (circles stay
+/// circles); larger artwork gets a shadow when Artwork shadows is on.
 pub fn artwork(url: Option<String>, side: Pixels, radius: Pixels, cx: &mut App) -> gpui::Div {
     let image =
         url.and_then(|url| ArtworkCache::global(cx).update(cx, |cache, cx| cache.get(&url, cx)));
     div()
         .size(side)
         .flex_none()
-        .rounded(radius)
+        .rounded(crate::effects::art_radius(side, radius))
+        .when(crate::effects::art_shadow(side), |this| this.shadow_lg())
         .overflow_hidden()
         .bg(cx.theme().muted)
         .when_some(image, |this, image| {

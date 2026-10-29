@@ -392,6 +392,7 @@ fn look_of(choice: ThemeChoice, custom: CustomTheme) -> Look {
         font_scale: 1.0,
         custom,
         art: None,
+        art_tint: 0.,
     }
 }
 

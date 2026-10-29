@@ -1518,6 +1518,7 @@ item's ACL is tied to the binary). Secrets are never logged.
 | `MUSIC_UPDATE_FAKE_VERSION=0.0.1` | pretend to run that version (update checks only) |
 | `MUSIC_UPDATE_FAIL=copy\|swap\|verify\|launch` | make that install step fail (rollback tests) |
 | `MUSIC_NO_TRANSITIONS=1` | switch dynamic colours at once (no 400 ms cross-fade) |
+| `MUSIC_REDUCE_MOTION=1\|0` | pretend the OS asks for reduced motion (or doesn't); Animations → System follows it |
 | `MUSIC_BAR_SPECTRUM_DUMP=1` | print the player bar analyzer's band statistics once a second (tuning the Equalizer style) |
 | `MUSIC_MALLOC=system` | keep macOS's default allocator behaviour (no re-exec with `MallocSpaceEfficient=1`, see `memory.rs`; for comparisons) |
 | `MUSIC_TRACE=1` | log playback transitions, seeks, saves, route changes, artwork downloads; `MUSIC_TIMINGS=1`: renders/s + worst frame gap |
@@ -1577,8 +1578,13 @@ button: refused / conflict prompt; empty KEYS = none), `@shortcut-replace`,
 macOS menu items' key equivalents); lyrics cards (`lyrics_card.rs`)
 `@card-select=3;4;5 @card-open @card-style=aspect:story|bg:blur|album|dark|light|align:left|size:large|art:off
 @card-save=PATH @card-copy @card-close`; measurement player bar (`bar_script.rs`) `@bar-style=wavy @bar-bg=gradient @bar-gradient=dir:diagonal @bar-hover=0.4 @bar-status @waveform-status`,
+app-wide look and Motion & effects (`look_script.rs`) `@app-look=off|tint|gradient|glow
+@app-look-opt=follow|dim|tint|animate:on|off @app-look-opt=intensity:0.7|dir:diagonal
+@motion=system|full|reduced|off @effects=transitions|hover|headers|shadow|translucent:on|off
+@effects=corners:theme|square|rounded|round @effects=cards:small|regular|large
+@bar-art=standard|edge @look-status`,
 bar items (`bar_items_script.rs`) `@bar-item=KEY:on|off @bar-items=default|none|all @bar-items-status
-@quality-menu @bar-menu @bar-customize @bar-add-to-playlist`, `@bench-bar=N[:MS]` (only the bar marked dirty), `@bench=N[:MS]` (draws the main window N
+@quality-menu @bar-menu @bar-customize @bar-add-to-playlist`, `@bench-bar=N[:MS]` (only the bar marked dirty), `@bench-backdrop=N[:MS]` (only the app-wide backdrop), `@bench=N[:MS]` (draws the main window N
 times MS ms apart and prints the draw times: the UI's CPU per frame, also with the screen
 locked); `@quit`.
 
@@ -1982,6 +1988,121 @@ spread between runs (stream buffers, artwork cache, PoToken web view) is far lar
 what the switched-off features hold (a 320 px blurred backdrop and three 64 px glow
 images per recent track, the colour seeds); the artwork cache size (48 MiB) is not a
 setting. One Default run without lyrics on screen measured 1.2 %.
+
+### App-wide look & motion
+
+| Song 1 (Despacito) | Song 2 (Billie Eilish, "ocean eyes" search) |
+|---|---|
+| ![Gradient wash, home](docs/screenshots/look-gradient-home-1.png) | ![Gradient wash, home](docs/screenshots/look-gradient-home-2.png) |
+| ![Gradient wash, album page](docs/screenshots/look-gradient-album-1.png) | ![Gradient wash, album page](docs/screenshots/look-gradient-album-2.png) |
+| ![Glow, home](docs/screenshots/look-glow-home-1.png) | ![Glow, home](docs/screenshots/look-glow-home-2.png) |
+| ![Glow, album page](docs/screenshots/look-glow-album-1.png) | ![Glow, album page](docs/screenshots/look-glow-album-2.png) |
+| ![Tint, home](docs/screenshots/look-tint-home-1.png) | ![Tint, home](docs/screenshots/look-tint-home-2.png) |
+| ![Tint, album page](docs/screenshots/look-tint-album-1.png) | ![Tint, album page](docs/screenshots/look-tint-album-2.png) |
+| ![Settings: App-wide look](docs/screenshots/look-settings-app-look.png) | ![Settings: Motion & effects](docs/screenshots/look-settings-motion.png) |
+| ![Tile hover: highlight + play button](docs/screenshots/look-card-hover.png) | ![Artwork-coloured page header (look off)](docs/screenshots/look-header-album.png) |
+
+Player bar, **Artwork → Edge to edge** (idle / playing at 1280 and 880 pt, dynamic gradient,
+waveform):
+
+![Edge artwork, idle, 1280 pt](docs/screenshots/bar-edge-idle-1280.png)
+![Edge artwork, playing, 1280 pt](docs/screenshots/bar-edge-playing-1280.png)
+![Edge artwork, idle, 880 pt](docs/screenshots/bar-edge-idle-880.png)
+![Edge artwork, playing, 880 pt](docs/screenshots/bar-edge-playing-880.png)
+![Edge artwork with the dynamic gradient](docs/screenshots/bar-edge-gradient-1280.png)
+![Edge artwork with the waveform style](docs/screenshots/bar-edge-waveform-1280.png)
+
+Two option groups in **Settings → Appearance** (`settings/look_prefs.rs`, `look_ui.rs`),
+applied by `effects.rs`, `look_state.rs` and `components/app_backdrop.rs`. Everything is
+in profiles and theme files (`portable::LOOK_KEYS`: the `app_look` and `effects` sections)
+and in settings export; **Minimal / Fast** sets every option to its cheapest value
+(`AppLookConfig::least_resources`, `EffectsConfig::least_resources`, tested in
+`minimal_is_cheaper_than_default`).
+
+**App-wide look** (off by default) — the whole window in the current track's artwork
+colours, like the bar's background effect:
+
+| Setting | Values (default **bold**) | What it does |
+|---|---|---|
+| Match the artwork | **Off**, Tint, Gradient wash, Glow | *Tint*: the artwork's hue on every surface token (sidebar, panels, menus, cards, inputs) — the dynamic theme's own pipeline (`Look::art_tint` → `Resolved::art_tint`, lightness kept, so contrast doesn't change) with its 400 ms Oklab cross-fade; the accent stays the theme's. *Gradient wash*: the artwork's two main colours along the direction, fading into the background. *Glow*: a band of the artwork's light tone along the top. |
+| Follow the player bar's style | **off** | While the bar's background effect is on: its style (glow / pulse → Glow, gradient → Gradient wash), direction, intensity, dimming and animation. |
+| Gradient direction | left to right, right to left, **diagonal** | As the bar's (diagonal = from the top-left). |
+| Intensity | 30, 50, **70**, 90 % | Opacity of the backdrop / strength of the tint. |
+| Dim when paused | **on** | One 350 ms fade to 55 % (and less saturation) on pause. |
+| Tint menus and panels too | **off** | Gradient / Glow plus the Tint at 60 % strength. |
+| Animate | **off** | Gradient only: a slow drift (one cycle per 16 s) at ~13 fps while playing. |
+
+How it's drawn: the backdrop is its own view, like the player bar — a few quads with GPUI
+`linear_gradient`s (no images, no blur) behind the shell. A new song's colours cross-fade
+once (400 ms, `TRANSITION_MS`); play / pause dims once. While it fades or drifts, the app
+embeds the shell **and the bar** as cached views, so a frame repaints the gradient and
+composites the cached content; no page is rebuilt. Otherwise it asks for no frames and
+no timers. The drift stops when paused, with reduced / no motion, when Now Playing covers
+the window, and — like every frame in GPUI — when the window is hidden or occluded (no
+display-link frames). The sidebar and queue panel draw at 60 % opacity over the backdrop.
+**Readability**: each backdrop colour is darkened (hue and chroma kept) until the page's
+muted text keeps ≥ 4.5:1 on the strongest spot at the chosen intensity
+(`readable_wash`, tested for red, yellow, cyan, white and purple artwork at 30–100 %), so
+no extra scrim is needed; with no artwork colours yet it uses the theme accent's tones.
+
+**Motion & effects:**
+
+| Setting | Values (default **bold**) | What it does |
+|---|---|---|
+| Animations | **System**, Full, Reduced, Off | *System* = Full, or Reduced when macOS "Reduce motion" is on (`NSWorkspace.accessibilityDisplayShouldReduceMotion`, re-read every ~4 s) or GNOME's `enable-animations` is false (read once). *Reduced*: every `Tween` capped at 150 ms, Now Playing fades instead of sliding, pages fade without the slide, no ambient motion (bar / app gradient drift, Wavy, Pulse, Now Playing glow, the artwork spring); Equalizer bars, the visualizer and karaoke keep going. *Off*: every transition instant (also theme cross-fades and GPUI's own animations via `App::set_reduce_motion`), Equalizer / Pulse / visualizer rest, lyrics light up line by line. |
+| Page transitions | **on** | 180 ms fade + 10 pt slide on push / back / forward (not on search-as-you-type or settings sections), then static. |
+| Hover effects on tiles | **on** | Raised background, a shadow under the art and a round accent play button (Spotify-style) on album / playlist / artist / song tiles; the button plays without opening the page. Plain hover styles: one render per hover change. |
+| Artwork-coloured page headers | **on** | Album, playlist, artist and podcast headers get a gradient in the cover's main colour (`effects::header_colors`: extracted once per cover on a worker thread from the already downloaded image, shared quantizer cache; ≥ 4.5:1 for muted text). |
+| Artwork corners | **Match theme**, Square, Rounded, Round | Covers in tiles, rows, headers, the queue and the bar (circles stay circles). |
+| Artwork shadows | **off** | A shadow under covers ≥ 96 pt. |
+| Tile size | Small, **Regular**, Large | 128 / 160 / 200 pt tile artwork. |
+| Translucent sidebar | **off** (macOS only) | GPUI's blurred window background (`NSVisualEffectView`); everything but the sidebar paints its own background. |
+
+**Player bar → Artwork**: *Standard* (default) or *Edge to edge*: square at the bar's
+height (87 pt), flush with the left edge, no outer rounding; the track info zone takes the
+bar's left padding, so `bar_layout` and its 700–2400 pt tests are unchanged. Works with
+every background (glow, gradient, pulse) and progress style. The mini player does **not**
+follow it under "Same look in the mini player": its compact layout has no bar-height
+cover slot (that switch is about the progress style and background).
+
+**Settings JSON** (defaults):
+
+```json
+"app_look": { "style": "off", "follow_bar": false, "intensity": 0.7, "direction": "diagonal",
+              "dim_when_paused": true, "tint_surfaces": false, "animate": false },
+"effects": { "motion": "system", "page_transitions": true, "card_hover": true,
+             "artwork_headers": true, "artwork_corners": "theme", "artwork_shadow": false,
+             "card_size": "regular", "translucent_sidebar": false },
+"player_bar": { …, "artwork_style": "standard" }
+```
+
+**Measured** (release, macOS arm64, `MUSIC_ON_TOP=1`, `caffeinate -u`, `MUSIC_TIMINGS=1`,
+Despacito playing muted, Now Playing closed, home page; CPU from `ps -o cputime` deltas over
+20 s windows; the machine was busy with other builds, so treat these as ranges):
+
+| Setting | CPU | Renders / s | Notes |
+|---|---|---|---|
+| **Defaults** (look off, page transitions + hover on) | 2.8–2.9 % | 2 | main at `9d2429e`, same run conditions: 2.8–2.9 %, 2 / s — unchanged |
+| Gradient wash, static | 2.8 % | 2 | |
+| Glow, static | 2.7 % | 2 | |
+| Tint, static | 2.9 % | 2 | |
+| Gradient wash, **Animate on**, playing | 5.6 % | 13–15 | the drift; content and bar cached |
+| … paused | 0.9 % | ≤ 1 | stops after the dim fade |
+| Navigating every 2 s, page transitions on | 9.8 % | 14 (peaks 46) | main: 6.0–8.3 % (peaks 39–61); the difference is ~11 extra full frames per navigation |
+| Hover changes twice a second, hover effects on | 2.0–5.1 % | 3–4 | main: 3.2–3.9 %, 3–4 / s: within the noise, one render per change |
+
+Per frame (`@bench`, 150 draws, the same session; independent of display-link frames):
+a full window frame on the home page costs 6.5 ms with the look off, 6.6 / 6.5 / 6.7 ms with
+gradient / glow / tint (the backdrop adds ≈ 0.1 ms); **a backdrop frame** (`@bench-backdrop`,
+what a fade or drift frame does) costs **1.1 ms p50** because the shell and bar are reused
+from the cache. A page transition is ≈ 11 full frames ≈ 70 ms of CPU per navigation.
+With Animations Reduced or Off nothing changes on a static screen (nothing animates there
+by default); they matter with Now Playing, the bar's animated styles and transitions.
+The rows for transitions / hover *off* and the Reduced / Off levels could not be sampled
+live: the display stopped delivering frames during that run (see the Backlog's F2).
+
+Memory: `footprint` stayed at 203 MB through every style (static and animated) in one
+session; page navigation moved it by the loaded pages (210–267 MB), as on main.
 
 ### Self-update
 
