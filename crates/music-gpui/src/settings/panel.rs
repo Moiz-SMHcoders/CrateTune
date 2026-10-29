@@ -181,6 +181,8 @@ pub struct SettingsPanel {
     pub(super) theme_ui: super::theme_ui::ThemeUi,
     /// Appearance / behaviour profiles (`profiles.rs`).
     pub(super) profiles: super::profiles::ProfileStore,
+    /// Keyboard shortcuts section (recording, conflict prompt).
+    pub(super) shortcuts_ui: super::shortcuts_ui::ShortcutsUi,
     _subscriptions: Vec<Subscription>,
 }
 
@@ -350,6 +352,7 @@ impl SettingsPanel {
             extras,
             theme_ui,
             profiles,
+            shortcuts_ui: Default::default(),
             _subscriptions: subscriptions,
         };
         // Before any page loads (the password, if any, follows once read).
@@ -579,6 +582,8 @@ impl SettingsPanel {
     pub(super) fn changed(&mut self, integrations: bool, cx: &mut Context<Self>) {
         self.integrations_dirty |= integrations;
         self.save_pending = true;
+        // Edited, imported or restored shortcuts take effect at once.
+        crate::shortcuts::sync(&self.settings.shortcuts, cx);
         let executor = cx.background_executor().clone();
         self.save_task = Some(cx.spawn(async move |this, cx| {
             executor.timer(SAVE_DEBOUNCE).await;

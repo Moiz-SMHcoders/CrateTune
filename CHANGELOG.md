@@ -38,6 +38,11 @@ versions follow [SemVer](https://semver.org/).
   background from the audio already being downloaded (Opus: read from the bitstream,
   ~20 ms of CPU; AAC: decoded, ~0.15–0.3 s) and cached in `<config>/cache/waveforms/`
   (~260 bytes per song). Also in the mini player.
+* **Editable keyboard shortcuts** (Settings → Keyboard shortcuts): change, clear or reset
+  any shortcut by pressing the new keys; conflicts ask before taking keys from another
+  action, keys needed for typing and system keys are refused; changes apply at once, also in
+  the menu bar, and travel with settings exports. ⌘/ (Help → Keyboard Shortcuts) shows a
+  cheat sheet.
 * **Redesigned player bar**: track info · transport + progress · secondary controls, the
   transport centred in the window; elapsed and remaining time (click to switch), a
   thumb and time bubble on hover, a lyrics button, active states for queue / lyrics /
