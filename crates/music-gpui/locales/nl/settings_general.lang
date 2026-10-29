@@ -3,7 +3,7 @@
 
 # ---- Account
 settings.account.cookie_title = Inloggen met een browsercookie
-settings.account.cookie_steps = 1. Open music.youtube.com in je browser en log in.\n2. Open de ontwikkelaarstools (⌥⌘I in Safari / Chrome) → Netwerk en laad de pagina opnieuw.\n3. Klik op een willekeurig verzoek aan music.youtube.com (bijv. ‘browse’), zoek ‘Cookie’ onder Request Headers en kopieer de hele waarde.\n4. Plak die hieronder. Hij wordt opgeslagen in de sleutelhanger van het systeem en alleen naar YouTube gestuurd.
+settings.account.cookie_steps = 1. Open music.youtube.com in je browser en log in.\n2. Open de ontwikkelaarstools ({keys} in {browsers}) → Netwerk en laad de pagina opnieuw.\n3. Klik op een willekeurig verzoek aan music.youtube.com (bijv. ‘browse’), zoek ‘Cookie’ onder Request Headers en kopieer de hele waarde.\n4. Plak die hieronder. Hij wordt opgeslagen in de sleutelhanger van het systeem en alleen naar YouTube gestuurd.
 settings.account.cookie_index = Google-accountindex (als er meerdere zijn ingelogd):
 settings.account.not_signed_in = Niet ingelogd. Alles werkt anoniem; met inloggen worden je leuke nummers, opgeslagen albums, abonnementen en playlists naar de bibliotheek gesynchroniseerd, en likes en playlistwijzigingen gaan terug naar YouTube Music.
 settings.account.sign_in_google = Inloggen met Google…
@@ -119,3 +119,4 @@ login.window_title = Inloggen bij YouTube Music
 login.instructions = Log in met je Google-account. Dit venster sluit zodra YouTube Music opent.
 login.webview_failed = De webweergave kan niet worden gemaakt ({error}). Gebruik in plaats daarvan ‘Cookie plakken’.
 login.checking = Ingelogd — account controleren…
+login.webview2_missing = Inloggen met Google vereist de Microsoft Edge WebView2 Runtime, die niet is geïnstalleerd. Installeer die via microsoft.com/edge/webview2 of gebruik ‘Cookie plakken’.

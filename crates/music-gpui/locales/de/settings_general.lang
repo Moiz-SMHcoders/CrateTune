@@ -3,7 +3,7 @@
 
 # ---- Account
 settings.account.cookie_title = Mit einem Browser-Cookie anmelden
-settings.account.cookie_steps = 1. Öffne music.youtube.com in deinem Browser und melde dich an.\n2. Öffne die Entwicklertools (⌥⌘I in Safari / Chrome) → Netzwerk und lade die Seite neu.\n3. Klick auf eine beliebige Anfrage an music.youtube.com (z. B. „browse“), such unter Request Headers nach „Cookie“ und kopiere den gesamten Wert.\n4. Füg ihn unten ein. Er wird im Schlüsselbund des Systems gespeichert und nur an YouTube gesendet.
+settings.account.cookie_steps = 1. Öffne music.youtube.com in deinem Browser und melde dich an.\n2. Öffne die Entwicklertools ({keys} in {browsers}) → Netzwerk und lade die Seite neu.\n3. Klick auf eine beliebige Anfrage an music.youtube.com (z. B. „browse“), such unter Request Headers nach „Cookie“ und kopiere den gesamten Wert.\n4. Füg ihn unten ein. Er wird im Schlüsselbund des Systems gespeichert und nur an YouTube gesendet.
 settings.account.cookie_index = Google-Kontoindex (falls mehrere angemeldet sind):
 settings.account.not_signed_in = Nicht angemeldet. Alles funktioniert anonym; mit der Anmeldung werden deine Lieblingssongs, gespeicherten Alben, Abos und Playlists in die Mediathek synchronisiert, und Likes und Playlist-Änderungen gehen zurück an YouTube Music.
 settings.account.sign_in_google = Mit Google anmelden…
@@ -119,3 +119,4 @@ login.window_title = Bei YouTube Music anmelden
 login.instructions = Melde dich mit deinem Google-Konto an. Dieses Fenster schließt sich, sobald YouTube Music geöffnet wird.
 login.webview_failed = Die Webansicht konnte nicht erstellt werden ({error}). Nutze stattdessen „Cookie einfügen“.
 login.checking = Angemeldet – Konto wird geprüft…
+login.webview2_missing = Die Anmeldung mit Google braucht die Microsoft Edge WebView2 Runtime, die nicht installiert ist. Installiere sie über microsoft.com/edge/webview2 oder nutze „Cookie einfügen“.

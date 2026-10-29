@@ -2,7 +2,7 @@
 
 # ---- Account
 settings.account.cookie_title = Accedi con un cookie del browser
-settings.account.cookie_steps = 1. Apri music.youtube.com nel browser e accedi.\n2. Apri gli strumenti per sviluppatori (⌥⌘I in Safari / Chrome) → Rete (Network) e ricarica la pagina.\n3. Fai clic su una richiesta a music.youtube.com (ad es. “browse”), trova “Cookie” in Request Headers (intestazioni della richiesta) e copiane l'intero valore.\n4. Incollalo qui sotto. Viene conservato nel portachiavi del sistema e inviato solo a YouTube.
+settings.account.cookie_steps = 1. Apri music.youtube.com nel browser e accedi.\n2. Apri gli strumenti per sviluppatori ({keys} in {browsers}) → Rete (Network) e ricarica la pagina.\n3. Fai clic su una richiesta a music.youtube.com (ad es. “browse”), trova “Cookie” in Request Headers (intestazioni della richiesta) e copiane l'intero valore.\n4. Incollalo qui sotto. Viene conservato nel portachiavi del sistema e inviato solo a YouTube.
 settings.account.cookie_index = Indice dell'account Google (se ne hai più di uno connesso):
 settings.account.not_signed_in = Accesso non effettuato. Tutto funziona in modo anonimo; con l'accesso, brani piaciuti, album salvati, iscrizioni e playlist vengono sincronizzati nella libreria, e i Mi piace e le modifiche alle playlist tornano su YouTube Music.
 settings.account.sign_in_google = Accedi con Google…
@@ -118,3 +118,4 @@ login.window_title = Accedi a YouTube Music
 login.instructions = Accedi con il tuo account Google. Questa finestra si chiude non appena si apre YouTube Music.
 login.webview_failed = Impossibile creare la vista web ({error}). Usa invece “Incolla cookie”.
 login.checking = Accesso effettuato: verifica dell'account…
+login.webview2_missing = L’accesso con Google richiede Microsoft Edge WebView2 Runtime, che non è installato. Installalo da microsoft.com/edge/webview2 oppure usa “Incolla cookie”.

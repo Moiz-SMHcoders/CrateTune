@@ -2,7 +2,7 @@
 
 # ---- Account
 settings.account.cookie_title = Se connecter avec un cookie du navigateur
-settings.account.cookie_steps = 1. Ouvrez music.youtube.com dans votre navigateur et connectez-vous.\n2. Ouvrez les outils de développement (⌥⌘I dans Safari / Chrome) → Réseau, puis rechargez la page.\n3. Cliquez sur une requête vers music.youtube.com (p. ex. « browse »), trouvez « Cookie » sous Request Headers (en-têtes de requête) et copiez toute sa valeur.\n4. Collez-la ci-dessous. Elle est conservée dans le trousseau du système et envoyée uniquement à YouTube.
+settings.account.cookie_steps = 1. Ouvrez music.youtube.com dans votre navigateur et connectez-vous.\n2. Ouvrez les outils de développement ({keys} dans {browsers}) → Réseau, puis rechargez la page.\n3. Cliquez sur une requête vers music.youtube.com (p. ex. « browse »), trouvez « Cookie » sous Request Headers (en-têtes de requête) et copiez toute sa valeur.\n4. Collez-la ci-dessous. Elle est conservée dans le trousseau du système et envoyée uniquement à YouTube.
 settings.account.cookie_index = Index du compte Google (si plusieurs sont connectés) :
 settings.account.not_signed_in = Non connecté. Tout fonctionne de manière anonyme ; la connexion synchronise vos titres aimés, albums enregistrés, abonnements et playlists dans la bibliothèque, et les « J'aime » et modifications de playlists sont renvoyés à YouTube Music.
 settings.account.sign_in_google = Se connecter avec Google…
@@ -118,3 +118,4 @@ login.window_title = Se connecter à YouTube Music
 login.instructions = Connectez-vous avec votre compte Google. Cette fenêtre se ferme dès que YouTube Music s'ouvre.
 login.webview_failed = Impossible de créer la vue web ({error}). Utilisez plutôt « Coller un cookie ».
 login.checking = Connecté — vérification du compte…
+login.webview2_missing = La connexion avec Google nécessite Microsoft Edge WebView2 Runtime, qui n’est pas installé. Installez-le depuis microsoft.com/edge/webview2, ou utilisez « Coller un cookie ».

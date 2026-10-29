@@ -47,7 +47,7 @@ onboarding.local.note = Analysez les dossiers maintenant ou plus tard ; gérez
 
 # ---- Privacy & limitations step
 onboarding.privacy.streaming.title = Comment les titres sont diffusés
-onboarding.privacy.streaming.text = Les titres complets proviennent du client TV de YouTube ou de son client web avec un PoToken (un jeton anti-abus, généré dans une vue de navigateur masquée sur macOS). YouTube fait patienter les nouveaux flux quelques secondes ; l'app démarre entre-temps avec un court extrait. Si YouTube change quelque chose, les titres se limitent à des extraits d'environ 1 minute (signalés dans le lecteur). Paramètres → Lecture → Flux YouTube permet de choisir la méthode.
+onboarding.privacy.streaming.text = Les titres complets proviennent du client TV de YouTube ou de son client web avec un PoToken (un jeton anti-abus, généré dans une vue de navigateur masquée sur macOS / Windows). YouTube fait patienter les nouveaux flux quelques secondes ; l'app démarre entre-temps avec un court extrait. Si YouTube change quelque chose, les titres se limitent à des extraits d'environ 1 minute (signalés dans le lecteur). Paramètres → Lecture → Flux YouTube permet de choisir la méthode.
 onboarding.privacy.data.title = Vos données restent ici
 onboarding.privacy.data.text = La bibliothèque, l'historique, les statistiques et les paramètres sont stockés sur cet ordinateur. Les mots de passe, clés API et le cookie de connexion YouTube vont dans le trousseau du système. Suspendez ou effacez à tout moment l'historique d'écoute et de recherche dans Paramètres → Confidentialité.
 onboarding.privacy.recipients.title = Qui reçoit quoi

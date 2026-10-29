@@ -18,7 +18,8 @@
 //!
 //! "System" (the default) is Full, or Reduced when the OS asks for less
 //! motion: macOS "Reduce motion" (`NSWorkspace.accessibilityDisplayShouldReduceMotion`),
-//! GNOME's `enable-animations` on Linux (read once per launch).
+//! GNOME's `enable-animations` on Linux (read once per launch), "Animation effects"
+//! on Windows (`SPI_GETCLIENTAREAANIMATION`).
 //! `MUSIC_REDUCE_MOTION=1|0` overrides what the OS says (tests).
 
 use std::collections::{HashMap, HashSet, VecDeque};
@@ -248,9 +249,14 @@ fn platform_reduce_motion() -> bool {
     answer.load(Ordering::Relaxed)
 }
 
-#[cfg(not(any(target_os = "macos", target_os = "linux")))]
+/// Windows: Settings → Accessibility → Visual effects → "Animation effects" off.
+#[cfg(target_os = "windows")]
 fn platform_reduce_motion() -> bool {
-    // Windows: not read yet (docs/BACKLOG.md); "Reduced" can be picked by hand.
+    crate::win::reduce_motion()
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
+fn platform_reduce_motion() -> bool {
     false
 }
 

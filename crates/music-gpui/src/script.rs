@@ -38,6 +38,7 @@
 //! | `@resize=W;H` | resize the main window (frame is saved) |
 //! | `@radio=N` | start a radio from search result N |
 //! | `@scroll=X;Y;DY` | synthetic scroll wheel at window coordinates (DY < 0 scrolls down) |
+//! | `@wheel=X;Y;LINES` | a mouse-wheel event of LINES lines (−3 = one notch down; smooth with `MUSIC_SMOOTH_WHEEL`) |
 //! | `@locale=de:DE` | Content & region: content language and country |
 //! | `@suggest` | print the search dropdown's entries and the recent searches |
 //! | `@proxy=KIND:HOST:PORT`, `@proxy=off` | Network section: apply a proxy (no credentials) |
@@ -321,7 +322,7 @@ fn input_event(name: &str, arg: Option<&str>, window: &mut Window, cx: &mut App)
             cx,
         ),
         "move" => mouse_move(window, cx),
-        "scroll" => {
+        "scroll" | "wheel" => {
             let mut parts = arg
                 .unwrap_or("")
                 .split(';')
@@ -329,13 +330,18 @@ fn input_event(name: &str, arg: Option<&str>, window: &mut Window, cx: &mut App)
             let (Some(Ok(x)), Some(Ok(y)), Some(Ok(dy))) =
                 (parts.next(), parts.next(), parts.next())
             else {
-                eprintln!("music-gpui: @scroll wants X;Y;DY");
+                eprintln!("music-gpui: @{name} wants X;Y;DY");
                 return true;
             };
             window.dispatch_event(
                 PlatformInput::Scroll(ScrollEvent {
                     position: point(px(x), px(y)),
-                    delta: ScrollDelta::Pixels(point(px(0.), px(dy))),
+                    // `@wheel`: DY lines, as a mouse wheel (not a trackpad) reports them.
+                    delta: if name == "wheel" {
+                        ScrollDelta::Lines(point(0., dy))
+                    } else {
+                        ScrollDelta::Pixels(point(px(0.), px(dy)))
+                    },
                     modifiers: Modifiers::default(),
                     touch_phase: TouchPhase::Moved,
                     source: ScrollSource::default(),
@@ -360,7 +366,11 @@ fn pump_frames(window: AnyWindowHandle, app: Entity<MusicApp>, cx: &mut App) {
             executor.timer(Duration::from_millis(200)).await;
             let mini = cx.update(|cx| app.read(cx).mini);
             for target in std::iter::once(window).chain(mini) {
-                let _ = cx.update_window(target, |_, window, cx| window.draw(cx).clear(cx));
+                let _ = cx.update_window(target, |_, window, cx| {
+                    // What a display link would run first (e.g. a wheel glide's steps).
+                    window.simulate_next_frame(cx);
+                    window.draw(cx).clear(cx)
+                });
             }
         }
     })

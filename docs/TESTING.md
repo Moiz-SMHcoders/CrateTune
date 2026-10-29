@@ -92,6 +92,7 @@ when you don't want to hear anything:
 $env:MUSIC_CONFIG_DIR = "$env:TEMP\cratetune-test"   # delete it to start fresh
 $env:MUSIC_VOLUME = "0.0"                            # muted (real audio device)
 $env:MUSIC_TRACE = "1"                               # log routes, fetches, playback
+$env:MUSIC_CONSOLE = "1"                             # release builds: log to this terminal
 .\target\release\music-gpui.exe
 ```
 
@@ -106,7 +107,9 @@ $env:MUSIC_TRACE = "1"                               # log routes, fetches, play
 * Clear a variable with `Remove-Item Env:NAME`.
 
 The console prints `music-gpui: …` lines (errors, and with `MUSIC_TRACE` routes / fetches /
-playback). Copy them into problem reports.
+playback). Copy them into problem reports. Release builds have no console of their own:
+`MUSIC_CONSOLE=1` sends the log to the terminal that started them (closing that terminal
+then closes the app).
 
 ## 5. Manual checklist
 
@@ -255,6 +258,42 @@ playback). Copy them into problem reports.
       cover; dimmed when paused.
 * [ ] Task Manager: with the default look the app stays near idle while a song plays
       (Now Playing closed); with Wavy / Equalizer a few percent; paused, near 0.
+
+### 5.10 Windows checklist for the user (after updating to the Windows polish build)
+
+Run the installed app normally (Start menu) unless a step says otherwise.
+
+* [ ] **No console window.** Only the app's window opens; nothing behind it. From
+      PowerShell with `$env:MUSIC_CONSOLE = "1"` the `music-gpui: …` log appears in that
+      terminal.
+* [ ] **One instance.** With the app running, start it again (Start menu or the `.exe`):
+      no second app; the running window comes to the front, also when it was minimized.
+      After Settings → About → update + restart, the new version starts (once).
+* [ ] **Sign in with Google.** Settings → Account → **Sign in with Google…**: a "Sign in to
+      YouTube Music" window with Google's page opens, centred on the app. Sign in; when
+      YouTube Music appears the window closes and the account card fills in. Closing the
+      window early changes nothing. Note if Google says "This browser or app may not be
+      secure" (then **Paste cookie…** still works). Signing in again later asks for the
+      password again (nothing is kept).
+* [ ] **Paste cookie** dialog says F12 for the developer tools.
+* [ ] **Mouse wheel** on Home, an album, the library song list, Settings, the queue and the
+      sidebar: each notch glides smoothly (no jumps), about 3 lines; fast spinning adds up
+      and stops promptly; reversing direction turns at once. Settings → Appearance →
+      Motion → **Off**: notches jump instantly. The touchpad still scrolls as before.
+      Wheel over the volume slider still steps the volume by one notch.
+* [ ] **Notification-area icon** (maybe under the ^ overflow): the CrateTune logo. Right
+      click: menu with the song, play / pause, next, previous, mini player, show window,
+      quit — each works. Left click: the window comes to the front.
+* [ ] **⋯ menu** at the right of the header: Settings, Keyboard shortcuts, Check for
+      Updates, About, Quit all work; shortcuts shown with Ctrl.
+* [ ] **Mini player** (Ctrl+Shift+M): stays above other windows (click another app); drag
+      it by its top strip; × closes it; its position comes back next time.
+* [ ] **Dates**: History / Stats days match your local date (not UTC) for plays near
+      midnight.
+* [ ] **Animations**: Windows Settings → Accessibility → Visual effects → Animation effects
+      off, restart the app: Settings → Appearance → Motion → System behaves as Reduced.
+* [ ] **Media keys / SMTC**, **fonts (Segoe UI, CJK titles)**, **high DPI** (125 % /
+      150 % scaling, moving between monitors): see 5.8.
 
 ## 6. Reporting a problem
 

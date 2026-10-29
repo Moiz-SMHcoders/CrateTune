@@ -5,9 +5,11 @@
 # ---- Account (src/settings/accounts.rs)
 # Title of the paste-cookie dialog.
 settings.account.cookie_title = Sign in with a browser cookie
-# Numbered instructions in the paste-cookie dialog (\n = line break). Keep ⌥⌘I,
-# “browse” and “Cookie” / Request Headers as the browser shows them.
-settings.account.cookie_steps = 1. Open music.youtube.com in your browser and sign in.\n2. Open the developer tools (⌥⌘I in Safari / Chrome) → Network, reload the page.\n3. Click any request to music.youtube.com (e.g. “browse”), find “Cookie” under Request Headers and copy its whole value.\n4. Paste it below. It is stored in the OS keychain and only sent to YouTube.
+# Numbered instructions in the paste-cookie dialog (\n = line break). {keys} = the
+# developer-tools shortcut (⌥⌘I on a Mac, F12 elsewhere), {browsers} = browser names
+# ("Safari / Chrome", "Chrome / Edge / Firefox"). Keep “browse” and “Cookie” /
+# Request Headers as the browser shows them.
+settings.account.cookie_steps = 1. Open music.youtube.com in your browser and sign in.\n2. Open the developer tools ({keys} in {browsers}) → Network, reload the page.\n3. Click any request to music.youtube.com (e.g. “browse”), find “Cookie” under Request Headers and copy its whole value.\n4. Paste it below. It is stored in the OS keychain and only sent to YouTube.
 # Label next to a small number field in the paste-cookie dialog.
 settings.account.cookie_index = Google account index (if several are signed in):
 settings.account.not_signed_in = Not signed in. Everything works anonymously; signing in syncs your liked songs, saved albums, subscriptions and playlists into the library, and likes and playlist edits go back to YouTube Music.
@@ -160,7 +162,7 @@ settings.file.read_failed = reading {path}: {error}
 # {backup} = the path the broken file was moved to.
 settings.file.invalid_moved = {path} is not valid ({error}); moved to {backup}
 
-# ---- Google sign-in window (macOS; src/login_webview.rs)
+# ---- Google sign-in window (macOS, Windows; src/login_webview/)
 # Window title.
 login.window_title = Sign in to YouTube Music
 # Status bar above the sign-in page.
@@ -169,3 +171,6 @@ login.instructions = Sign in with your Google account. This window closes once Y
 # settings.account.paste_cookie.
 login.webview_failed = The web view couldn't be created ({error}). Use “Paste cookie” instead.
 login.checking = Signed in — checking the account…
+# Windows: shown when "Sign in with Google…" can't open its window; the paste-cookie
+# dialog opens next. “Paste cookie” is the button settings.account.paste_cookie.
+login.webview2_missing = Signing in with Google needs the Microsoft Edge WebView2 Runtime, which isn't installed. Install it from microsoft.com/edge/webview2, or use “Paste cookie”.

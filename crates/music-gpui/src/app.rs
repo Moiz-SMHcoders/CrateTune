@@ -27,6 +27,7 @@ use gpui_component::{
     button::{Button, ButtonVariants as _},
     h_flex,
     input::InputState,
+    menu::DropdownMenu as _,
     slider::SliderState,
     v_flex,
 };
@@ -73,6 +74,8 @@ pub fn read_app<R>(cx: &App, f: impl FnOnce(&MusicApp, &App) -> R) -> Option<R> 
 pub struct MusicApp {
     pub(crate) focus: FocusHandle,
     pub(crate) main_window: Option<AnyWindowHandle>,
+    /// Wheel notches glide (Windows, Linux; `smooth_scroll.rs`).
+    wheel: crate::smooth_scroll::Wheel,
 
     // ---- navigation
     pub(crate) router: Router<PageView>,
@@ -297,6 +300,7 @@ impl MusicApp {
         let mut this = Self {
             focus,
             main_window: Some(window.window_handle()),
+            wheel: Default::default(),
             router: Router::new(Route::Home),
             search_input,
             search_text: String::new(),
@@ -762,6 +766,20 @@ impl MusicApp {
             )
             .child(search)
             .child(div().flex_1())
+            // No menu bar outside macOS: Settings, shortcuts, updates, About and Quit
+            // live here.
+            .when(!cfg!(target_os = "macos"), |this| {
+                this.child(
+                    Button::new("app-menu")
+                        .ghost()
+                        .small()
+                        .icon(IconName::Ellipsis)
+                        .tooltip(t!("track.tooltip.more"))
+                        .dropdown_menu_with_anchor(gpui::Anchor::TopRight, |menu, _, _| {
+                            crate::actions::app_menu(menu)
+                        }),
+                )
+            })
     }
 }
 
@@ -971,7 +989,8 @@ impl Render for MusicApp {
         if let Some(at) = frame.finish(window) {
             self.schedule_np_wake(at, cx);
         }
-        root
+        // Last, so its capture listener runs after the wheel controls' claims.
+        root.children(self.wheel.listener())
     }
 }
 

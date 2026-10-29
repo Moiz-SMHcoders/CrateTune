@@ -1,16 +1,18 @@
-//! Menu-bar item (macOS): a template music-note icon whose menu shows the
-//! current track and offers play/pause, next, previous, the mini player, the
-//! main window and quit. Built on `tray-icon` (an `NSStatusItem`), which needs
-//! no run loop of its own: GPUI's `NSApplication` delivers its clicks, and the
-//! menu events are drained by the app's 250 ms poll.
+//! Menu-bar item (macOS) / notification-area icon (Windows): a music-note icon
+//! whose menu shows the current track and offers play/pause, next, previous, the
+//! mini player, the main window and quit. Built on `tray-icon` (an `NSStatusItem`,
+//! a `Shell_NotifyIcon` icon), which needs no event loop of its own: GPUI's
+//! `NSApplication` / message loop delivers its clicks, and the menu events are
+//! drained by the app's 250 ms poll. On Windows the icon is the app logo, the menu
+//! opens with a right click and a left click shows the main window.
 //!
-//! Other platforms: not built (Linux would need GTK/appindicator; Windows is
-//! untested), so [`Tray::new`] returns `None` there.
+//! Linux: not built (it would need GTK / appindicator), so [`Tray::new`] returns
+//! `None` there.
 
 /// What a menu-bar click asks the app to do.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 // No menu-bar item on Linux, so nothing sends these there.
-#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+#[cfg_attr(target_os = "linux", allow(dead_code))]
 pub enum TrayCommand {
     TogglePlayback,
     Next,
@@ -20,7 +22,7 @@ pub enum TrayCommand {
     Quit,
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 mod imp {
     use tray_icon::menu::{Menu, MenuEvent, MenuId, MenuItem, PredefinedMenuItem};
     use tray_icon::{Icon, TrayIcon, TrayIconBuilder};
@@ -68,18 +70,23 @@ mod imp {
                 eprintln!("music-gpui: tray menu: {e}");
                 return None;
             }
-            let icon = match Icon::from_rgba(note_icon(), ICON_SIZE, ICON_SIZE) {
+            let icon = match platform_icon() {
                 Ok(icon) => icon,
                 Err(e) => {
                     eprintln!("music-gpui: tray icon: {e}");
                     return None;
                 }
             };
-            let tray = TrayIconBuilder::new()
+            let builder = TrayIconBuilder::new()
                 .with_menu(Box::new(menu))
-                .with_icon_templated(icon)
-                .with_tooltip(crate::identity::APP_NAME)
-                .build();
+                .with_tooltip(crate::identity::APP_NAME);
+            // macOS tints a template image for the menu bar; Windows shows the logo,
+            // with the menu on a right click (a left click shows the window).
+            #[cfg(target_os = "macos")]
+            let builder = builder.with_icon_templated(icon);
+            #[cfg(target_os = "windows")]
+            let builder = builder.with_icon(icon).with_menu_on_left_click(false);
+            let tray = builder.build();
             let tray = match tray {
                 Ok(tray) => tray,
                 Err(e) => {
@@ -108,9 +115,10 @@ mod imp {
             })
         }
 
-        /// Menu clicks since the last call.
+        /// Menu clicks since the last call (and, on Windows, a left click on the icon).
         pub fn take_commands(&self) -> Vec<TrayCommand> {
-            MenuEvent::receiver()
+            #[cfg_attr(not(target_os = "windows"), allow(unused_mut))]
+            let mut commands: Vec<TrayCommand> = MenuEvent::receiver()
                 .try_iter()
                 .filter_map(|event| {
                     self.items
@@ -118,7 +126,25 @@ mod imp {
                         .find(|(id, _)| *id == event.id)
                         .map(|(_, command)| *command)
                 })
-                .collect()
+                .collect();
+            #[cfg(target_os = "windows")]
+            {
+                use tray_icon::{MouseButton, MouseButtonState, TrayIconEvent};
+                let clicked = TrayIconEvent::receiver().try_iter().any(|event| {
+                    matches!(
+                        event,
+                        TrayIconEvent::Click {
+                            button: MouseButton::Left,
+                            button_state: MouseButtonState::Up,
+                            ..
+                        }
+                    )
+                });
+                if clicked {
+                    commands.push(TrayCommand::ShowWindow);
+                }
+            }
+            commands
         }
 
         /// Reflects the current track / play state (only touches AppKit on change).
@@ -153,10 +179,30 @@ mod imp {
         }
     }
 
+    #[cfg(target_os = "macos")]
+    fn platform_icon() -> Result<Icon, tray_icon::BadIcon> {
+        Icon::from_rgba(note_icon(), ICON_SIZE, ICON_SIZE)
+    }
+
+    /// The app logo at 32 px (Windows scales it to the notification area's size).
+    #[cfg(target_os = "windows")]
+    fn platform_icon() -> Result<Icon, String> {
+        const LOGO_PNG: &[u8] = include_bytes!("../../../packaging/icons/app-logo-256.png");
+        const SIZE: u32 = 32;
+        let logo = image::load_from_memory_with_format(LOGO_PNG, image::ImageFormat::Png)
+            .map_err(|e| e.to_string())?
+            .into_rgba8();
+        let small =
+            image::imageops::resize(&logo, SIZE, SIZE, image::imageops::FilterType::Triangle);
+        Icon::from_rgba(small.into_raw(), SIZE, SIZE).map_err(|e| e.to_string())
+    }
+
     /// 18 pt @2x template image.
+    #[cfg(target_os = "macos")]
     const ICON_SIZE: u32 = 36;
 
     /// A beamed eighth-note pair in black on transparent (macOS tints templates).
+    #[cfg(target_os = "macos")]
     fn note_icon() -> Vec<u8> {
         let n = ICON_SIZE as i32;
         let mut rgba = vec![0u8; (n * n * 4) as usize];
@@ -200,6 +246,13 @@ mod imp {
 
     #[cfg(test)]
     mod tests {
+        #[cfg(target_os = "windows")]
+        #[test]
+        fn logo_icon_decodes() {
+            assert!(super::platform_icon().is_ok());
+        }
+
+        #[cfg(target_os = "macos")]
         #[test]
         fn icon_has_ink_and_transparency() {
             let rgba = super::note_icon();
@@ -213,7 +266,7 @@ mod imp {
     }
 }
 
-#[cfg(not(target_os = "macos"))]
+#[cfg(not(any(target_os = "macos", target_os = "windows")))]
 mod imp {
     use super::TrayCommand;
 

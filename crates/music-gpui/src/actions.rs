@@ -235,6 +235,23 @@ fn menus() -> Vec<Menu> {
     ]
 }
 
+/// The header's "⋯" menu where there is no app menu bar (Windows, Linux): what the
+/// macOS app and Help menus hold.
+#[cfg_attr(target_os = "macos", allow(dead_code))]
+pub fn app_menu(menu: gpui_component::menu::PopupMenu) -> gpui_component::menu::PopupMenu {
+    let menu = menu
+        .menu(t!("menu.settings"), Box::new(OpenSettings))
+        .menu(t!("shortcuts.action.show"), Box::new(ShowShortcuts));
+    let menu = if crate::update_check::repo().is_some() {
+        menu.menu(t!("menu.check_updates"), Box::new(CheckForUpdates))
+    } else {
+        menu
+    };
+    menu.menu(t!("menu.about"), Box::new(About))
+        .separator()
+        .menu(t!("menu.quit"), Box::new(Quit))
+}
+
 /// Registers a global handler for `A` that runs `f` on the main window's app
 /// once the current dispatch is over (the window is free to update then).
 fn on<A: Action>(cx: &mut App, f: fn(&mut MusicApp, &mut Window, &mut gpui::Context<MusicApp>)) {

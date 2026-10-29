@@ -775,10 +775,30 @@ locales/<locale>/*.lang  the catalogs (English = source), embedded by build.rs v
   accent for the last 8 tracks).
 * **Mini player** (⇧⌘M, View menu, bar button): floating 400×124 window, artwork, title,
   previous / play / next, progress; stays visible over other apps (macOS panel with
-  `hidesOnDeactivate` off); position saved.
-* **Menu-bar item** (macOS, `tray-icon`): current track, play/pause, next, previous,
-  mini player, show window, quit. It coexists with GPUI's run loop (the status item is
-  just AppKit; menu events are drained by the poll). Not built on Linux/Windows.
+  `hidesOnDeactivate` off; Windows: made topmost with `SetWindowPos(HWND_TOPMOST)`, and
+  as GPUI draws no title bar there, the top strip has a close button and is the drag area
+  — `WindowControlArea::Drag` on Windows, `start_window_move` on Linux); position saved.
+* **Menu-bar item** (macOS) / **notification-area icon** (Windows), `tray-icon`: current
+  track, play/pause, next, previous, mini player, show window, quit. It coexists with
+  GPUI's event loop (the status item is just AppKit; on Windows `tray-icon`'s hidden
+  window is served by GPUI's message loop); menu events are drained by the poll. Windows
+  shows the app logo (from `packaging/icons/app-logo-256.png`), the menu on a right click,
+  the window on a left click. Not built on Linux (GTK / appindicator).
+* **No menu bar outside macOS:** the header's **⋯** button (`actions::app_menu`) has
+  Settings, Keyboard shortcuts, Check for Updates, About and Quit.
+* **Windows shell** (`win.rs`): release builds are `windows_subsystem = "windows"` (no
+  console; `MUSIC_CONSOLE=1` attaches to the parent console or opens one, and points
+  stdout / stderr at it); a named mutex per settings folder keeps one instance — a second
+  launch finds the first one's message-only window, gets its main HWND back and brings it
+  to the front, waiting up to 5 s for a copy that is starting or quitting (update
+  relaunch); "Animation effects" (`SPI_GETCLIENTAREAANIMATION`) feeds Motion → System.
+* **Smooth wheel scrolling** (`smooth_scroll.rs`, Windows / Linux): one capture-phase
+  listener, painted last in the main window, stops `ScrollDelta::Lines` events and replays
+  them as pixel deltas from `on_next_frame` (36 px per line, ease-out cubic over 140 ms,
+  90 ms with Reduced motion, at once with Off; notches add up, a reversal drops the rest;
+  "one screen per notch" = 87.5 % of the window). Pixel deltas (trackpads), Ctrl / ⌘ +
+  wheel and controls that `claim_wheel` first (progress tracks, the bar's volume) pass
+  through. Frames only while a glide runs. `MUSIC_SMOOTH_WHEEL=0|1`; off on macOS.
 * **Window frame** saved (content size, position, maximized) and restored if on screen.
 * **Engine wiring** (`playback.rs`): the engine's `set_next` follows the queue on every
   poll and after `play` (shuffle, repeat-all wrap, repeat-one = the same track again,
@@ -914,12 +934,19 @@ locales/<locale>/*.lang  the catalogs (English = source), embedded by build.rs v
 * **Local files**: music folders and skipped folders (folder picker), Rescan with progress
   (`local_files::scan_with_progress`, new in music-core), the scanned tracks (filter,
   select); local cover art (`file://`) goes through the artwork cache.
-* **Account** (Settings → Account): on macOS **"Sign in with Google…"** opens a window with a
+* **Account** (Settings → Account, `login_webview/`): on macOS **"Sign in with Google…"** opens a window with a
   WKWebView child (wry `build_as_child` on the GPUI window's NSView, non-persistent data
   store, Safari user agent) on Google's sign-in page continuing to music.youtube.com; once
   there with a SAPISID cookie, the `.youtube.com` cookies are read from WebKit's cookie store
   (`getAllCookies` + a channel polled by a GPUI timer — wry's `cookies()` spins the run loop
-  and would re-enter GPUI) and the window closes. Everywhere: **"Paste cookie…"** with
+  and would re-enter GPUI) and the window closes. On Windows the same flow runs in a plain
+  Win32 window with a WebView2 on a thread of its own (`login_webview/webview2.rs`): a
+  child of a GPUI window would be covered by GPUI's topmost DirectComposition target, and
+  creating WebView2 waits by pumping messages, which would re-enter GPUI. InPrivate
+  controller, user data in `<local data>\SignIn`; once a second the address is checked
+  and on music.youtube.com `ICoreWebView2CookieManager::GetCookies` is asked
+  (asynchronously); GPUI awaits a oneshot with the result. No WebView2 runtime → a
+  notification and the cookie dialog. Everywhere: **"Paste cookie…"** with
   step-by-step instructions (copy the `cookie` request header from the browser's dev tools).
   The cookie goes to the keychain (`Secret::YouTubeCookie`); the account card shows avatar,
   name, handle / e-mail; channels (brand accounts, `account_channels` → `data_sync_id`) and
@@ -1580,7 +1607,9 @@ item's ACL is tied to the binary). Secrets are never logged.
 | `MUSIC_VOLUME=0.0` | volume for this session (muted real-device tests; ⌘↑/↓ and `@volume` still save) |
 | `MUSIC_EQ_PRESET=Bass` | apply an EQ preset at startup (saved like a click) |
 | `MUSIC_CONFIG_DIR=…` / `MUSIC_SECRET_STORE=file` | other settings dir / skip the keychain |
-| `MUSIC_TRAY=0` | no menu-bar item |
+| `MUSIC_TRAY=0` | no menu-bar item / notification-area icon |
+| `MUSIC_CONSOLE=1` | Windows release builds: log to the terminal that started the app (or a new console window) |
+| `MUSIC_SMOOTH_WHEEL=0\|1` | wheel notches glide (default on Windows / Linux, off on macOS; `=1` with `@wheel` tests it on macOS) |
 | `MUSIC_LANG=de` / `MUSIC_SYSTEM_LANG=ja-JP,en` | UI language for this session (not saved) / pretend the system prefers these languages |
 | `MUSIC_ONBOARDING=1\|0` | force / suppress the first-run guide (it is skipped automatically for `MUSIC_SCRIPT` / screenshot runs) |
 | `MUSIC_UPDATE_REPO=owner/name` | enable the update check against that repo (testing; the default comes from `packaging/app.env`) |
@@ -1623,7 +1652,7 @@ windows/appearance `@mini[=on|off] @theme=dark|black|dynamic
 @sleep=MIN|eot|off|5s @speed=1.25 @pitch=-2 @crossfade=6 @quality=low|normal|high
 @normalize=on|off @skip-silence=on|off`; browse `@radio=N` (radio from search result N),
 `@suggest` (print the search dropdown), `@proxy=KIND:HOST:PORT|off`, `@locale=de:DE`,
-`@scroll=X;Y;DY`, `@dns=system|cloudflare|google|quad9|URL[;nofallback]`, `@dns-test`,
+`@scroll=X;Y;DY`, `@wheel=X;Y;LINES`, `@dns=system|cloudflare|google|quad9|URL[;nofallback]`, `@dns-test`,
 `@hide-videos[=off]`; modules `@modules=youtube|first|only`, `@module-install=PATH|URL`,
 `@module-catalog=URL`, `@module-confirm`, `@module-cancel`, `@module-open=N|ID`,
 `@module-field=KEY:VALUE`, `@module-save`, `@module-check=N`, `@module-update=N`,

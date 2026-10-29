@@ -47,7 +47,7 @@ onboarding.local.note = フォルダのスキャンは今でも後でもかま�
 
 # ---- Privacy & limitations step
 onboarding.privacy.streaming.title = 曲のストリーミングの仕組み
-onboarding.privacy.streaming.text = フル再生の曲は、YouTube の TV クライアント、または PoToken（不正利用防止トークン。macOS では非表示のブラウザビューで生成）付きの Web クライアントから取得します。YouTube は新しいストリームを数秒待たせるため、その間アプリは短いプレビューから再生を始めます。YouTube の仕様が変わった場合、曲は約1分のプレビューに切り替わります（プレーヤーに表示されます）。経路は設定 → 再生 → YouTube ストリームで選択できます。
+onboarding.privacy.streaming.text = フル再生の曲は、YouTube の TV クライアント、または PoToken（不正利用防止トークン。macOS / Windows では非表示のブラウザビューで生成）付きの Web クライアントから取得します。YouTube は新しいストリームを数秒待たせるため、その間アプリは短いプレビューから再生を始めます。YouTube の仕様が変わった場合、曲は約1分のプレビューに切り替わります（プレーヤーに表示されます）。経路は設定 → 再生 → YouTube ストリームで選択できます。
 onboarding.privacy.data.title = データはこのコンピュータに
 onboarding.privacy.data.text = ライブラリ、履歴、統計、設定はこのコンピュータに保存されます。パスワード、API キー、YouTube のログイン Cookie はシステムのキーチェーンに保存されます。再生履歴と検索履歴は、設定 → プライバシーでいつでも一時停止または消去できます。
 onboarding.privacy.recipients.title = 誰に何が送られるか

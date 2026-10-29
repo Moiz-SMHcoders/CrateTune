@@ -47,7 +47,7 @@ onboarding.local.note = 现在或稍后扫描文件夹；可在“本地文件�
 
 # ---- Privacy & limitations step
 onboarding.privacy.streaming.title = 歌曲如何串流
-onboarding.privacy.streaming.text = 完整歌曲来自 YouTube 的 TV 客户端，或使用 PoToken（一种防滥用令牌，在 macOS 上由隐藏的浏览器视图生成）的网页客户端。YouTube 会让新的音频流等待几秒钟；在此期间，应用会先播放一段短的试听片段。如果 YouTube 做出了更改，歌曲会退回为约 1 分钟的试听片段（会在播放器中标出）。可在“设置 → 播放 → YouTube 音频流”中选择获取方式。
+onboarding.privacy.streaming.text = 完整歌曲来自 YouTube 的 TV 客户端，或使用 PoToken（一种防滥用令牌，在 macOS / Windows 上由隐藏的浏览器视图生成）的网页客户端。YouTube 会让新的音频流等待几秒钟；在此期间，应用会先播放一段短的试听片段。如果 YouTube 做出了更改，歌曲会退回为约 1 分钟的试听片段（会在播放器中标出）。可在“设置 → 播放 → YouTube 音频流”中选择获取方式。
 onboarding.privacy.data.title = 你的数据保存在本地
 onboarding.privacy.data.text = 媒体库、历史记录、统计和设置都保存在这台电脑上。密码、API 密钥和 YouTube 登录 Cookie 保存在系统钥匙串中。你可以随时在“设置 → 隐私”中暂停或清除收听和搜索历史。
 onboarding.privacy.recipients.title = 谁会获得哪些数据

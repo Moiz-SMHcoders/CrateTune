@@ -3,7 +3,7 @@
 
 # ---- Account
 settings.account.cookie_title = Iniciar sesión con una cookie del navegador
-settings.account.cookie_steps = 1. Abre music.youtube.com en tu navegador e inicia sesión.\n2. Abre las herramientas para desarrolladores (⌥⌘I en Safari / Chrome) → Network (Red) y recarga la página.\n3. Haz clic en cualquier solicitud a music.youtube.com (p. ej., “browse”), busca “Cookie” en Request Headers y copia su valor completo.\n4. Pégalo abajo. Se guarda en el llavero del sistema y solo se envía a YouTube.
+settings.account.cookie_steps = 1. Abre music.youtube.com en tu navegador e inicia sesión.\n2. Abre las herramientas para desarrolladores ({keys} en {browsers}) → Network (Red) y recarga la página.\n3. Haz clic en cualquier solicitud a music.youtube.com (p. ej., “browse”), busca “Cookie” en Request Headers y copia su valor completo.\n4. Pégalo abajo. Se guarda en el llavero del sistema y solo se envía a YouTube.
 settings.account.cookie_index = Índice de la cuenta de Google (si hay varias con sesión iniciada):
 settings.account.not_signed_in = No has iniciado sesión. Todo funciona de forma anónima; al iniciar sesión, tus canciones que te gustan, álbumes guardados, suscripciones y playlists se sincronizan con la biblioteca, y los Me gusta y los cambios en playlists vuelven a YouTube Music.
 settings.account.sign_in_google = Iniciar sesión con Google…
@@ -119,3 +119,4 @@ login.window_title = Iniciar sesión en YouTube Music
 login.instructions = Inicia sesión con tu cuenta de Google. Esta ventana se cierra en cuanto se abre YouTube Music.
 login.webview_failed = No se pudo crear la vista web ({error}). Usa “Pegar cookie” en su lugar.
 login.checking = Sesión iniciada; comprobando la cuenta…
+login.webview2_missing = Iniciar sesión con Google requiere Microsoft Edge WebView2 Runtime, que no está instalado. Instálalo desde microsoft.com/edge/webview2 o usa “Pegar cookie”.

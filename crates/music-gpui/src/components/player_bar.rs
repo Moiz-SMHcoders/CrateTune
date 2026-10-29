@@ -577,9 +577,12 @@ impl Render for PlayerBar {
             .gap_1()
             .when(scroll_volume, |this| {
                 let weak = weak.clone();
-                this.on_scroll(move |e: &ScrollEvent, window, cx| {
-                    scroll_volume_by(&weak, scroll_lines(e), window, cx);
-                })
+                // Notches step the volume (no glide; `smooth_scroll.rs`).
+                this.relative()
+                    .children(crate::smooth_scroll::claim_area())
+                    .on_scroll(move |e: &ScrollEvent, window, cx| {
+                        scroll_volume_by(&weak, scroll_lines(e), window, cx);
+                    })
             })
             .child(
                 Button::new("mute")

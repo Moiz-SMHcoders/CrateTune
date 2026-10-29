@@ -47,7 +47,7 @@ onboarding.local.note = 폴더는 지금 또는 나중에 스캔할 수 있으�
 
 # ---- Privacy & limitations step
 onboarding.privacy.streaming.title = 노래 스트리밍 방식
-onboarding.privacy.streaming.text = 전체 노래는 YouTube의 TV 클라이언트 또는 PoToken(부정 사용 방지 토큰, macOS에서는 숨겨진 브라우저 뷰에서 생성)을 사용하는 웹 클라이언트에서 가져옵니다. YouTube는 새 스트림을 몇 초간 대기시키므로 그동안 앱은 짧은 미리보기로 재생을 시작합니다. YouTube가 무언가를 변경하면 노래가 약 1분 미리보기로 전환됩니다(플레이어에 표시됨). 경로는 설정 → 재생 → YouTube 스트림에서 선택합니다.
+onboarding.privacy.streaming.text = 전체 노래는 YouTube의 TV 클라이언트 또는 PoToken(부정 사용 방지 토큰, macOS / Windows에서는 숨겨진 브라우저 뷰에서 생성)을 사용하는 웹 클라이언트에서 가져옵니다. YouTube는 새 스트림을 몇 초간 대기시키므로 그동안 앱은 짧은 미리보기로 재생을 시작합니다. YouTube가 무언가를 변경하면 노래가 약 1분 미리보기로 전환됩니다(플레이어에 표시됨). 경로는 설정 → 재생 → YouTube 스트림에서 선택합니다.
 onboarding.privacy.data.title = 내 데이터는 여기에
 onboarding.privacy.data.text = 보관함, 기록, 통계, 설정은 이 컴퓨터에 저장됩니다. 비밀번호, API 키, YouTube 로그인 쿠키는 시스템 키체인에 보관됩니다. 감상 기록과 검색 기록은 설정 → 개인정보 보호에서 언제든 일시중지하거나 지울 수 있습니다.
 onboarding.privacy.recipients.title = 누가 무엇을 받나요

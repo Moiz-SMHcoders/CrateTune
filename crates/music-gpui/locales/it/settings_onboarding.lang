@@ -47,7 +47,7 @@ onboarding.local.note = Scansiona le cartelle ora o più tardi; gestiscile in Fi
 
 # ---- Privacy & limitations step
 onboarding.privacy.streaming.title = Come vengono trasmessi i brani
-onboarding.privacy.streaming.text = I brani completi provengono dal client TV di YouTube o dal suo client web con un PoToken (un token anti-abuso, generato in una vista browser nascosta su macOS). YouTube fa attendere qualche secondo i nuovi stream; nel frattempo l'app parte da una breve anteprima. Se YouTube cambia qualcosa, i brani ripiegano su anteprime di circa 1 minuto (segnalate nel player). Impostazioni → Riproduzione → Stream di YouTube permette di scegliere il metodo.
+onboarding.privacy.streaming.text = I brani completi provengono dal client TV di YouTube o dal suo client web con un PoToken (un token anti-abuso, generato in una vista browser nascosta su macOS / Windows). YouTube fa attendere qualche secondo i nuovi stream; nel frattempo l'app parte da una breve anteprima. Se YouTube cambia qualcosa, i brani ripiegano su anteprime di circa 1 minuto (segnalate nel player). Impostazioni → Riproduzione → Stream di YouTube permette di scegliere il metodo.
 onboarding.privacy.data.title = I tuoi dati restano qui
 onboarding.privacy.data.text = Libreria, cronologia, statistiche e impostazioni sono salvate su questo computer. Password, chiavi API e il cookie di accesso a YouTube vanno nel portachiavi del sistema. Puoi sospendere o cancellare in qualsiasi momento la cronologia di ascolto e delle ricerche in Impostazioni → Privacy.
 onboarding.privacy.recipients.title = Chi riceve cosa

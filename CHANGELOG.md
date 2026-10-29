@@ -5,6 +5,39 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+* **Windows: "Sign in with Google…"** opens a sign-in window like on macOS (WebView2,
+  InPrivate, its own data folder under `%LOCALAPPDATA%\cratetune\data\SignIn`); it
+  closes by itself once YouTube Music opens. Without the WebView2 runtime the app says so
+  and opens the paste-cookie dialog.
+* **Windows: notification-area icon** with the same menu as the macOS menu-bar item
+  (now playing, play / pause, next, previous, mini player, show window, quit); a left
+  click shows the window.
+* **Smooth mouse-wheel scrolling** on Windows and Linux: each notch glides ~108 px over
+  ~140 ms instead of jumping, quick notches add up; trackpads, Ctrl + wheel and the volume
+  / seek bars are unchanged; follows Motion (Reduced: shorter, Off: instant).
+  `MUSIC_SMOOTH_WHEEL=0` turns it off. macOS is unchanged.
+* **Windows / Linux: a "⋯" menu** at the right of the header with Settings, Keyboard
+  shortcuts, Check for Updates, About and Quit (what the macOS menu bar holds).
+* **Windows: one app at a time.** Starting CrateTune again brings the running window to the
+  front (per settings folder, so a test copy with `MUSIC_CONFIG_DIR` still starts).
+* `MUSIC_CONSOLE=1` (Windows): show the log in the terminal that started the app, or in a
+  new console window.
+
+### Fixed
+
+* **Windows: no console window** behind the app any more (closing it closed the app).
+  Release builds are GUI programs now.
+* Windows: the mini player stays above other windows and has a close button and a drag
+  strip (it had no title bar, so it couldn't be moved or closed from its window).
+* Windows: dates in the library, history and stats used UTC instead of the local time
+  zone.
+* Windows: "Animation effects" off in the Windows settings now counts as reduced motion for
+  Motion → System.
+* The paste-cookie steps name the developer-tools key of the platform (F12 on Windows /
+  Linux), and the YouTube streams texts mention the Windows PoToken route.
+
 ## [0.2.0] — 2026-10-29
 
 ### Added

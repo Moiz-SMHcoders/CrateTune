@@ -2,7 +2,7 @@
 
 # ---- Account
 settings.account.cookie_title = Zaloguj się plikiem cookie przeglądarki
-settings.account.cookie_steps = 1. Otwórz music.youtube.com w przeglądarce i zaloguj się.\n2. Otwórz narzędzia deweloperskie (⌥⌘I w Safari / Chrome) → Network (Sieć) i odśwież stronę.\n3. Kliknij dowolne żądanie do music.youtube.com (np. “browse”), znajdź “Cookie” w sekcji Request Headers i skopiuj całą wartość.\n4. Wklej ją poniżej. Jest przechowywana w pęku kluczy systemu i wysyłana tylko do YouTube.
+settings.account.cookie_steps = 1. Otwórz music.youtube.com w przeglądarce i zaloguj się.\n2. Otwórz narzędzia deweloperskie ({keys} w {browsers}) → Network (Sieć) i odśwież stronę.\n3. Kliknij dowolne żądanie do music.youtube.com (np. “browse”), znajdź “Cookie” w sekcji Request Headers i skopiuj całą wartość.\n4. Wklej ją poniżej. Jest przechowywana w pęku kluczy systemu i wysyłana tylko do YouTube.
 settings.account.cookie_index = Numer konta Google (jeśli zalogowano kilka):
 settings.account.not_signed_in = Nie zalogowano. Wszystko działa anonimowo; po zalogowaniu polubione utwory, zapisane albumy, subskrypcje i playlisty synchronizują się z biblioteką, a polubienia i zmiany playlist trafiają z powrotem do YouTube Music.
 settings.account.sign_in_google = Zaloguj się przez Google…
@@ -118,3 +118,4 @@ login.window_title = Zaloguj się w YouTube Music
 login.instructions = Zaloguj się kontem Google. To okno zamknie się, gdy otworzy się YouTube Music.
 login.webview_failed = Nie udało się utworzyć widoku przeglądarki ({error}). Zamiast tego użyj „Wklej cookie”.
 login.checking = Zalogowano — sprawdzanie konta…
+login.webview2_missing = Logowanie przez Google wymaga środowiska Microsoft Edge WebView2 Runtime, które nie jest zainstalowane. Zainstaluj je z microsoft.com/edge/webview2 albo użyj „Wklej cookie”.

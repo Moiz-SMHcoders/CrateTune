@@ -2,7 +2,7 @@
 
 # ---- Account
 settings.account.cookie_title = 使用瀏覽器 Cookie 登入
-settings.account.cookie_steps = 1. 在瀏覽器中開啟 music.youtube.com 並登入。\n2. 開啟開發者工具（在 Safari / Chrome 中按 ⌥⌘I）→ 網路（Network），然後重新載入頁面。\n3. 點選任一傳送至 music.youtube.com 的要求（例如「browse」），在「要求標頭」（Request Headers）中找到「Cookie」，複製它的完整值。\n4. 將它貼到下方。它會保存在系統鑰匙圈中，而且只會傳送給 YouTube。
+settings.account.cookie_steps = 1. 在瀏覽器中開啟 music.youtube.com 並登入。\n2. 開啟開發者工具（在 {browsers} 中按 {keys}）→ 網路（Network），然後重新載入頁面。\n3. 點選任一傳送至 music.youtube.com 的要求（例如「browse」），在「要求標頭」（Request Headers）中找到「Cookie」，複製它的完整值。\n4. 將它貼到下方。它會保存在系統鑰匙圈中，而且只會傳送給 YouTube。
 settings.account.cookie_index = Google 帳號索引（如果登入了多個帳號）：
 settings.account.not_signed_in = 尚未登入。所有功能都能以匿名方式使用；登入後，你喜歡的歌曲、儲存的專輯、訂閱和播放清單會同步到媒體庫，你的喜歡和播放清單編輯也會同步回 YouTube Music。
 settings.account.sign_in_google = 使用 Google 登入…
@@ -118,3 +118,4 @@ login.window_title = 登入 YouTube Music
 login.instructions = 請使用你的 Google 帳號登入。YouTube Music 開啟後，這個視窗會自動關閉。
 login.webview_failed = 無法建立網頁檢視（{error}）。請改用「貼上 Cookie」。
 login.checking = 已登入——正在檢查帳號…
+login.webview2_missing = 使用 Google 登入需要 Microsoft Edge WebView2 Runtime，但尚未安裝。請從 microsoft.com/edge/webview2 安裝，或改用「貼上 Cookie」。

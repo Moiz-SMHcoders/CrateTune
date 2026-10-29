@@ -1,19 +1,9 @@
 //! macOS sign-in window: a GPUI window whose content below a small status bar
 //! is a WKWebView (wry, `build_as_child` on the window's NSView) showing Google's
-//! sign-in page with music.youtube.com as the destination. Once the web view is
-//! on music.youtube.com with a SAPISID cookie, the `.youtube.com` cookies are read
-//! from its cookie store and handed to `MusicApp::sign_in_with_cookie`, and the
-//! window closes.
-//!
-//! The web view uses a non-persistent data store, so nothing of the Google
-//! session is kept on disk besides the cookie the app stores in the keychain.
-//! The cookie store is read with `getAllCookies` + a channel polled from a GPUI
-//! timer instead of wry's `cookies()`, which spins the main run loop and would
-//! re-enter GPUI from inside an update.
-//!
-//! Google may refuse embedded browsers ("This browser or app may not be
-//! secure"); the window says so and the cookie-paste dialog is the fallback.
-//! **Not verified with a real Google account** (only that the page loads).
+//! sign-in page. The web view uses a non-persistent data store. The cookie store is
+//! read with `getAllCookies` + a channel polled from a GPUI timer instead of wry's
+//! `cookies()`, which spins the main run loop and would re-enter GPUI from inside an
+//! update.
 
 use std::ptr::NonNull;
 use std::sync::mpsc;
@@ -29,22 +19,18 @@ use gpui_component::{
     button::{Button, ButtonVariants as _},
     h_flex,
 };
-use music_core::innertube::Auth;
 use objc2_foundation::{NSArray, NSHTTPCookie};
 use wry::dpi::{LogicalPosition, LogicalSize};
 use wry::{Rect, WebView, WebViewBuilder, WebViewExtMacOS as _};
 
-use crate::app::{app_entity, update_app};
+use super::{Cookies, LOGIN_URL, hand_over, youtube_cookie};
 
-const LOGIN_URL: &str = "https://accounts.google.com/ServiceLogin?ltmpl=music&service=youtube&continue=https%3A%2F%2Fmusic.youtube.com%2F";
 /// Safari's user agent: Google serves its normal sign-in flow to WebKit with it.
 const USER_AGENT: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 \
      (KHTML, like Gecko) Version/18.5 Safari/605.1.15";
 const BAR_HEIGHT: f32 = 44.;
 
-type Cookies = Vec<(String, String, String)>;
-
-pub struct LoginWindow {
+pub(super) struct LoginWindow {
     webview: Option<WebView>,
     status: String,
     cookies: Option<mpsc::Receiver<Cookies>>,
@@ -56,7 +42,7 @@ pub struct LoginWindow {
 }
 
 /// Opens the sign-in window (one at a time is enough; a second call opens another).
-pub fn open(cx: &mut App) {
+pub(super) fn open(cx: &mut App) {
     let options = WindowOptions {
         window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
             None,
@@ -209,34 +195,6 @@ fn bounds(width: f32, height: f32) -> Rect {
     }
 }
 
-/// `name=value; …` of the youtube.com cookies, if they can sign requests.
-fn youtube_cookie(cookies: &[(String, String, String)]) -> Option<String> {
-    let mut seen = std::collections::HashSet::new();
-    let header = cookies
-        .iter()
-        .filter(|(_, _, domain)| {
-            let d = domain.trim_start_matches('.');
-            d == "youtube.com" || d.ends_with(".youtube.com")
-        })
-        // A more specific domain (music.youtube.com) comes first if both exist.
-        .filter(|(name, _, _)| seen.insert(name.clone()))
-        .map(|(name, value, _)| format!("{name}={value}"))
-        .collect::<Vec<_>>()
-        .join("; ");
-    Auth::new(header.clone()).is_signed_in().then_some(header)
-}
-
-/// Gives the cookie to the main window's app (notifications go there).
-fn hand_over(cookie: String, cx: &mut App) {
-    let Some(app) = app_entity(cx) else { return };
-    let Some(main) = app.read(cx).main_window else {
-        return;
-    };
-    let _ = cx.update_window(main, move |_, window, cx| {
-        update_app(cx, |app, cx| app.sign_in_with_cookie(cookie, 0, window, cx));
-    });
-}
-
 impl Render for LoginWindow {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = cx.theme();
@@ -268,26 +226,5 @@ impl Render for LoginWindow {
                             .on_click(|_, window, _| window.remove_window()),
                     ),
             )
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn picks_youtube_cookies() {
-        let c = |n: &str, v: &str, d: &str| (n.to_owned(), v.to_owned(), d.to_owned());
-        let cookies = vec![
-            c("SID", "1", ".google.com"),
-            c("SAPISID", "abc", ".youtube.com"),
-            c("SID", "2", ".youtube.com"),
-            c("PREF", "x", "music.youtube.com"),
-        ];
-        assert_eq!(
-            youtube_cookie(&cookies).as_deref(),
-            Some("SAPISID=abc; SID=2; PREF=x")
-        );
-        assert_eq!(youtube_cookie(&cookies[..1]), None);
     }
 }

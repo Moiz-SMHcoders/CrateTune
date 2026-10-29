@@ -4858,6 +4858,8 @@ dependencies = [
  "serde_json",
  "sys-locale",
  "tray-icon",
+ "webview2-com",
+ "windows 0.62.2",
  "wry",
 ]
 

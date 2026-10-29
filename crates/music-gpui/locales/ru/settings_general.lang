@@ -2,7 +2,7 @@
 
 # ---- Account
 settings.account.cookie_title = Вход с cookie браузера
-settings.account.cookie_steps = 1. Откройте music.youtube.com в браузере и войдите в аккаунт.\n2. Откройте инструменты разработчика (⌥⌘I в Safari / Chrome) → Network (Сеть) и перезагрузите страницу.\n3. Нажмите любой запрос к music.youtube.com (например, “browse”), найдите “Cookie” в разделе Request Headers и скопируйте всё значение.\n4. Вставьте его ниже. Оно хранится в связке ключей ОС и отправляется только в YouTube.
+settings.account.cookie_steps = 1. Откройте music.youtube.com в браузере и войдите в аккаунт.\n2. Откройте инструменты разработчика ({keys} в {browsers}) → Network (Сеть) и перезагрузите страницу.\n3. Нажмите любой запрос к music.youtube.com (например, “browse”), найдите “Cookie” в разделе Request Headers и скопируйте всё значение.\n4. Вставьте его ниже. Оно хранится в связке ключей ОС и отправляется только в YouTube.
 settings.account.cookie_index = Номер аккаунта Google (если вошли в несколько):
 settings.account.not_signed_in = Вход не выполнен. Всё работает анонимно; после входа понравившиеся треки, сохранённые альбомы, подписки и плейлисты синхронизируются в библиотеку, а отметки «Нравится» и изменения плейлистов отправляются обратно в YouTube Music.
 settings.account.sign_in_google = Войти через Google…
@@ -118,3 +118,4 @@ login.window_title = Вход в YouTube Music
 login.instructions = Войдите в аккаунт Google. Окно закроется, как только откроется YouTube Music.
 login.webview_failed = Не удалось создать веб-представление ({error}). Используйте «Вставить cookie».
 login.checking = Вход выполнен — проверка аккаунта…
+login.webview2_missing = Для входа через Google нужен Microsoft Edge WebView2 Runtime, но он не установлен. Установите его с microsoft.com/edge/webview2 или используйте «Вставить cookie».

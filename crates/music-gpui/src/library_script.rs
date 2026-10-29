@@ -130,8 +130,8 @@ impl MusicApp {
                 window.close_all_dialogs(cx);
             }
             "login-window" => {
-                #[cfg(target_os = "macos")]
-                crate::login_webview::open(cx);
+                #[cfg(any(target_os = "macos", target_os = "windows"))]
+                crate::login_webview::open(window, cx);
             }
             "seed-plays" => self.seed_plays(arg.and_then(|a| a.parse().ok()).unwrap_or(200), cx),
             _ => return false,

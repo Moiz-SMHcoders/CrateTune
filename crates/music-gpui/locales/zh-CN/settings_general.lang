@@ -2,7 +2,7 @@
 
 # ---- Account
 settings.account.cookie_title = 使用浏览器 Cookie 登录
-settings.account.cookie_steps = 1. 在浏览器中打开 music.youtube.com 并登录。\n2. 打开开发者工具（Safari / Chrome 中按 ⌥⌘I）→ 网络（Network），然后重新加载页面。\n3. 点击任意一个发往 music.youtube.com 的请求（例如“browse”），在“请求标头”（Request Headers）中找到“Cookie”，复制其完整的值。\n4. 将其粘贴到下方。它会保存在系统钥匙串中，并且只会发送给 YouTube。
+settings.account.cookie_steps = 1. 在浏览器中打开 music.youtube.com 并登录。\n2. 打开开发者工具（{browsers} 中按 {keys}）→ 网络（Network），然后重新加载页面。\n3. 点击任意一个发往 music.youtube.com 的请求（例如“browse”），在“请求标头”（Request Headers）中找到“Cookie”，复制其完整的值。\n4. 将其粘贴到下方。它会保存在系统钥匙串中，并且只会发送给 YouTube。
 settings.account.cookie_index = Google 账号序号（如果登录了多个账号）：
 settings.account.not_signed_in = 未登录。所有功能都可以匿名使用；登录后，你喜欢的歌曲、保存的专辑、订阅和播放列表会同步到媒体库，你的喜欢和播放列表编辑也会同步回 YouTube Music。
 settings.account.sign_in_google = 使用 Google 登录…
@@ -118,3 +118,4 @@ login.window_title = 登录 YouTube Music
 login.instructions = 请使用你的 Google 账号登录。YouTube Music 打开后，此窗口会自动关闭。
 login.webview_failed = 无法创建网页视图（{error}）。请改用“粘贴 Cookie”。
 login.checking = 已登录——正在检查账号…
+login.webview2_missing = 使用 Google 登录需要 Microsoft Edge WebView2 Runtime，但尚未安装。请从 microsoft.com/edge/webview2 安装，或改用“粘贴 Cookie”。
