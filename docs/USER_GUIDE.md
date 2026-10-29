@@ -77,8 +77,18 @@ in the app's language and your system's region.
   scroll. When YouTube corrects a typo, the page says **Showing results for …** with a
   **Search instead for …** link (or **Did you mean …?**); recent searches keep what you
   typed.
-* **Home** shows YouTube Music's personalized feed (mood chips at the top), **Explore**,
-  **Charts** (pick a country), **Moods & genres** and **New releases** the rest.
+* **Home** is made for you, like ArchiveTune's: **Quick picks** (songs related to the
+  ones you play most), **Speed dial** (what you pinned with **Pin to speed dial** in a
+  right-click menu), **Keep listening**, **Your YouTube playlists** (signed in),
+  **Forgotten favourites** (songs you loved and haven't played for a month), **Similar
+  to …** rows for artists and songs you play a lot, then YouTube Music's feed with its mood
+  chips. Before you have listened to anything, Home shows YouTube Music's quick picks and
+  feed for your content language and country. **Refresh** (next to the title) brings new
+  picks; Home also refreshes by itself when you open it after 20 minutes. Choose what
+  quick picks are based on, their layout, the chips, the tonal backdrop and which sections
+  show in **Settings → Content & region → Home**.
+* **Explore**, **Charts** (pick a country), **Moods & genres** and **New releases** show
+  the rest.
 * Artist, album and playlist pages have Play, Shuffle, Radio and Add to queue. Long
   albums (over 200 tracks) load the rest of their tracks automatically.
 * **Podcasts**: a show's page (from search, Home or Explore) has its description, Play /

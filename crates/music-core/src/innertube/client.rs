@@ -82,6 +82,31 @@ fn remember_anon_visitor(resp: &Value) {
 }
 
 impl InnerTube {
+    /// The anonymous `visitorData` of this process (assigned by YouTube on the first
+    /// anonymous request, or restored with [`InnerTube::restore_visitor_data`]), for the
+    /// app to keep across launches.
+    pub fn anonymous_visitor_data() -> Option<String> {
+        anon_visitor()
+    }
+
+    /// Reuses a `visitorData` saved by an earlier launch for anonymous requests (and as
+    /// the `X-Goog-Visitor-Id` of signed-in ones without their own). YouTube ties its
+    /// anonymous recommendations to the visitor; without this, every launch starts as a
+    /// new visitor and the first request (usually the home feed) carries none. Ignored
+    /// if this process already has one or `vd` is empty. Returns whether it was taken.
+    pub fn restore_visitor_data(vd: &str) -> bool {
+        let vd = vd.trim();
+        if vd.is_empty() || !vd.is_ascii() {
+            return false;
+        }
+        let mut slot = ANON_VISITOR.lock().unwrap_or_else(PoisonError::into_inner);
+        if slot.is_some() {
+            return false;
+        }
+        *slot = Some(vd.to_owned());
+        true
+    }
+
     fn signed_in(&self) -> bool {
         self.auth.as_ref().is_some_and(|a| a.is_signed_in())
     }
@@ -273,6 +298,31 @@ mod tests {
         assert!(loopback_base("http://127.0.0.1.evil.com").is_none());
         assert!(loopback_base("http://music.youtube.com").is_none());
         assert!(loopback_base("").is_none());
+    }
+
+    #[test]
+    fn restored_visitor_data_is_sent_and_kept() {
+        // Process-wide slot: this is the only test that fills it before a request.
+        assert!(!InnerTube::restore_visitor_data("  "));
+        let had = InnerTube::anonymous_visitor_data();
+        let taken = InnerTube::restore_visitor_data("CgtSRVNUT1JFRA");
+        assert_eq!(taken, had.is_none());
+        let vd = InnerTube::anonymous_visitor_data().unwrap();
+        // A second restore never replaces the visitor of this process.
+        assert!(!InnerTube::restore_visitor_data("CgtPVEhFUg"));
+        assert_eq!(
+            InnerTube::anonymous_visitor_data().as_deref(),
+            Some(vd.as_str())
+        );
+        let it = InnerTube::default();
+        assert_eq!(
+            it.body(json!({}), false)["context"]["client"]["visitorData"],
+            vd
+        );
+        assert!(
+            it.headers(false)
+                .contains(&("X-Goog-Visitor-Id", vd.clone()))
+        );
     }
 
     #[test]

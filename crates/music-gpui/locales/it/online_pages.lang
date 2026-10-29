@@ -1,9 +1,5 @@
 # Online browse pages (Italian).
 
-# ---- Home
-home.recent.title = Ascoltati in questa sessione
-home.recent.subtitle = Ascolta di nuovo
-
 # ---- Explore
 explore.new_releases_detail = Album e singoli appena usciti
 explore.charts_detail = I brani più popolari, per paese

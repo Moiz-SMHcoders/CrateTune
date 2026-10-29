@@ -320,7 +320,7 @@ pub fn item_menu(menu: PopupMenu, item: &Item, list: ListContext) -> PopupMenu {
             }),
         );
     }
-    menu
+    crate::pages::speed_dial_menu_item(menu, item, true)
 }
 
 // ---- cards & rows --------------------------------------------------------------
@@ -511,7 +511,18 @@ pub fn shelf_view(prefix: &str, model: &ShelfModel, style: ShelfStyle, cx: &App)
         see_all(format!("{prefix}-all").into(), shelf),
         cx,
     );
-    let body = match style {
+    v_flex()
+        .w_full()
+        .gap_3()
+        .child(header)
+        .child(shelf_body(prefix, model, style, cx))
+        .into_any_element()
+}
+
+/// A shelf's items without its header (quick-picks grid, track list or cards).
+pub fn shelf_body(prefix: &str, model: &ShelfModel, style: ShelfStyle, cx: &App) -> AnyElement {
+    let shelf = &model.shelf;
+    match style {
         ShelfStyle::List(max) if model.is_songs() => {
             let tracks = model.songs.tracks.clone();
             v_flex()
@@ -540,13 +551,7 @@ pub fn shelf_view(prefix: &str, model: &ShelfModel, style: ShelfStyle, cx: &App)
                     })),
             )
             .into_any_element(),
-    };
-    v_flex()
-        .w_full()
-        .gap_3()
-        .child(header)
-        .child(body)
-        .into_any_element()
+    }
 }
 
 /// Quick picks: columns of four compact song rows, scrolling sideways.

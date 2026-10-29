@@ -1,9 +1,5 @@
 # Online browse pages (Hindi).
 
-# ---- Home
-home.recent.title = इस सेशन में चलाए गए
-home.recent.subtitle = फिर से सुनें
-
 # ---- Explore
 explore.new_releases_detail = नए एल्बम और सिंगल
 explore.charts_detail = देश के हिसाब से क्या लोकप्रिय है

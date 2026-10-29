@@ -1,9 +1,5 @@
 # Online browse pages (zh-TW).
 
-# ---- Home
-home.recent.title = 本次播放
-home.recent.subtitle = 再聽一次
-
 # ---- Explore
 explore.new_releases_detail = 全新專輯與單曲
 explore.charts_detail = 各國家/地區的熱門內容

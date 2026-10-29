@@ -1027,6 +1027,74 @@ pub const ENTRIES: &[Entry] = &[
         "continue",
         "endless"
     ),
+    // ---- Content & region → Home
+    entry!(
+        "content.home.quick_picks",
+        Content,
+        "settings.home.group",
+        "settings.home.quick_picks",
+        "settings.home.quick_picks_description",
+        "home",
+        "recommendations",
+        "discover",
+        "mix",
+        "personal"
+    ),
+    entry!(
+        "content.home.display",
+        Content,
+        "settings.home.group",
+        "settings.home.display",
+        "settings.home.display_description",
+        "home",
+        "layout",
+        "cards",
+        "list",
+        "grid"
+    ),
+    entry!(
+        "content.home.chips",
+        Content,
+        "settings.home.group",
+        "settings.home.chips",
+        "settings.home.chips_description",
+        "home",
+        "categories",
+        "moods",
+        "filters"
+    ),
+    entry!(
+        "content.home.backdrop",
+        Content,
+        "settings.home.group",
+        "settings.home.backdrop",
+        "settings.home.backdrop_description",
+        "home",
+        "tonal",
+        "gradient",
+        "background",
+        "wash"
+    ),
+    entry!(
+        "content.home.sections",
+        Content,
+        "settings.home.group",
+        "settings.home.sections",
+        "settings.home.sections_description",
+        "home",
+        "sections",
+        "shelves",
+        "hide",
+        "speed",
+        "dial",
+        "forgotten",
+        "favorites",
+        "favourites",
+        "similar",
+        "community",
+        "feed",
+        "playlists"
+    ),
     // ---- Network
     entry!(
         "network.proxy",
@@ -1650,7 +1718,7 @@ fn section_keywords(id: SectionId) -> &'static [&'static str] {
         SectionId::Modules => &["plugins", "extensions", "providers"],
         SectionId::Equalizer => &["eq", "equaliser"],
         SectionId::Lyrics => &["words", "karaoke"],
-        SectionId::Content => &["region", "country", "language"],
+        SectionId::Content => &["region", "country", "language", "home"],
         SectionId::Network => &["proxy", "internet", "dns"],
         SectionId::Privacy => &["history", "tracking"],
         SectionId::Storage => &["cache", "disk", "downloads"],

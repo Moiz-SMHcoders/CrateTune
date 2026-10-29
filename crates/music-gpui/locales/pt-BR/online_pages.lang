@@ -1,9 +1,5 @@
 # Online browse pages (YouTube Music).
 
-# ---- Home
-home.recent.title = Tocadas nesta sessão
-home.recent.subtitle = Ouvir de novo
-
 # ---- Explore
 explore.new_releases_detail = Álbuns e singles fresquinhos
 explore.charts_detail = O que está em alta, por país

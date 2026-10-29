@@ -1,0 +1,31 @@
+# Home: personal sections, their options (Content & region → Home) and the speed
+# dial menu entries (see en/home.lang).
+
+home.quick_picks = Sélection rapide
+home.section.community = Playlists de la communauté
+home.section.speed_dial = Accès rapide
+home.section.keep_listening = Continuer l'écoute
+home.section.account_playlists = Vos playlists YouTube
+home.section.forgotten_favorites = Favoris oubliés
+home.section.similar = Similaire à…
+home.section.feed = Flux YouTube Music
+home.similar_to = Similaire à
+home.playlists_word = playlists
+home.speed_dial.pin = Épingler à l'accès rapide
+home.speed_dial.unpin = Retirer de l'accès rapide
+settings.home.group = Accueil
+settings.home.quick_picks = Sélection rapide
+settings.home.quick_picks_description = Des titres proches de ceux que vous écoutez le plus, ou du dernier écouté. Tant qu'il n'y a pas d'historique, la sélection rapide de YouTube Music s'affiche.
+home.options.quick_picks.mix = D'après vos favoris
+home.options.quick_picks.last = D'après votre dernier titre
+home.options.quick_picks.hidden = Ne pas afficher
+settings.home.display = Disposition de la sélection rapide
+settings.home.display_description = Des cartes de titres avec pochette, ou une liste compacte sur quatre lignes.
+home.options.display.cards = Cartes
+home.options.display.list = Liste
+settings.home.chips = Puces de catégories
+settings.home.chips_description = Les ambiances et genres de YouTube Music (Énergie, Détente, …) en haut de l'accueil. En choisir une change la sélection rapide et le flux YouTube.
+settings.home.backdrop = Fond tonal
+settings.home.backdrop_description = Un léger voile de la couleur d'accent derrière le haut de l'accueil. Masqué tant que l'apparence de pochette de toute l'app colore la fenêtre.
+settings.home.sections = Sections
+settings.home.sections_description = Les sections en surbrillance s'affichent sur l'accueil. L'accès rapide contient ce que vous épinglez depuis un menu contextuel.

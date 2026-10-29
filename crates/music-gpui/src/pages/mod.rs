@@ -39,6 +39,10 @@ mod stats;
 mod together;
 pub mod widgets;
 
+pub use home::speed_dial::{
+    menu_item as speed_dial_menu_item, set_pinned_in as speed_dial_set_pinned,
+};
+
 use gpui::{AnyView, App, Context, Entity, Pixels, Point, ScrollHandle, Window};
 
 use crate::app::MusicApp;

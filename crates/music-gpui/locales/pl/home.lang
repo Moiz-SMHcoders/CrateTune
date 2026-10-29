@@ -1,0 +1,31 @@
+# Home: personal sections, their options (Content & region → Home) and the speed
+# dial menu entries (see en/home.lang).
+
+home.quick_picks = Szybki wybór
+home.section.community = Playlisty społeczności
+home.section.speed_dial = Szybkie wybieranie
+home.section.keep_listening = Słuchaj dalej
+home.section.account_playlists = Twoje playlisty YouTube
+home.section.forgotten_favorites = Zapomniani ulubieńcy
+home.section.similar = Podobne do…
+home.section.feed = Kanał YouTube Music
+home.similar_to = Podobne do
+home.playlists_word = playlisty
+home.speed_dial.pin = Przypnij do szybkiego wybierania
+home.speed_dial.unpin = Usuń z szybkiego wybierania
+settings.home.group = Strona główna
+settings.home.quick_picks = Szybki wybór
+settings.home.quick_picks_description = Utwory powiązane z tymi, których słuchasz najczęściej, albo z ostatnim odtworzonym. Dopóki nie ma historii słuchania, widać szybki wybór YouTube Music.
+home.options.quick_picks.mix = Z Twoich ulubionych
+home.options.quick_picks.last = Z ostatniego utworu
+home.options.quick_picks.hidden = Nie pokazuj
+settings.home.display = Układ szybkiego wyboru
+settings.home.display_description = Karty utworów z okładkami albo zwarta lista o wysokości czterech wierszy.
+home.options.display.cards = Karty
+home.options.display.list = Lista
+settings.home.chips = Kategorie
+settings.home.chips_description = Nastroje i gatunki YouTube Music (Energia, Relaks, …) na górze strony głównej. Wybór jednego zmienia szybki wybór i kanał YouTube.
+settings.home.backdrop = Tonalne tło
+settings.home.backdrop_description = Delikatna poświata koloru akcentu za górną częścią strony głównej. Nie jest rysowana, gdy wygląd okładki całej aplikacji koloruje okno.
+settings.home.sections = Sekcje
+settings.home.sections_description = Wyróżnione sekcje są widoczne na stronie głównej. Szybkie wybieranie zawiera to, co przypniesz z menu kontekstowego.

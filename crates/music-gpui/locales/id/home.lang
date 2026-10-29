@@ -1,0 +1,31 @@
+# Home: personal sections, their options (Content & region → Home) and the speed
+# dial menu entries (see en/home.lang).
+
+home.quick_picks = Pilihan cepat
+home.section.community = Playlist komunitas
+home.section.speed_dial = Panggilan cepat
+home.section.keep_listening = Lanjut dengarkan
+home.section.account_playlists = Playlist YouTube Anda
+home.section.forgotten_favorites = Favorit yang terlupakan
+home.section.similar = Mirip dengan…
+home.section.feed = Feed YouTube Music
+home.similar_to = Mirip dengan
+home.playlists_word = playlist
+home.speed_dial.pin = Sematkan ke panggilan cepat
+home.speed_dial.unpin = Hapus dari panggilan cepat
+settings.home.group = Beranda
+settings.home.quick_picks = Pilihan cepat
+settings.home.quick_picks_description = Lagu yang terkait dengan lagu yang paling sering Anda putar, atau dengan lagu terakhir. Selama belum ada riwayat, pilihan cepat dari YouTube Music yang ditampilkan.
+home.options.quick_picks.mix = Dari favorit Anda
+home.options.quick_picks.last = Dari lagu terakhir Anda
+home.options.quick_picks.hidden = Jangan tampilkan
+settings.home.display = Tata letak pilihan cepat
+settings.home.display_description = Kartu lagu dengan sampul, atau daftar ringkas setinggi empat baris.
+home.options.display.cards = Kartu
+home.options.display.list = Daftar
+settings.home.chips = Chip kategori
+settings.home.chips_description = Suasana dan genre YouTube Music (Energize, Relax, …) di bagian atas Beranda. Memilih salah satu mengubah pilihan cepat dan feed YouTube.
+settings.home.backdrop = Latar tonal
+settings.home.backdrop_description = Sapuan lembut warna aksen di belakang bagian atas Beranda. Tidak digambar selama tampilan sampul untuk seluruh aplikasi mewarnai jendela.
+settings.home.sections = Bagian
+settings.home.sections_description = Bagian yang disorot tampil di Beranda. Panggilan cepat berisi apa yang Anda sematkan dari menu konteks.

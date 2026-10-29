@@ -28,6 +28,7 @@
 
 mod backup;
 mod history;
+mod home;
 mod playlists;
 mod ratings;
 mod schema;
@@ -47,6 +48,7 @@ pub use backup::{
     BACKUP_DB_ENTRY, BACKUP_MANIFEST_ENTRY, BACKUP_SETTINGS_ENTRY, BackupManifest, RestoredBackup,
 };
 pub use history::{CachedLyrics, HistoryDay, HistoryEntry, SearchHistoryEntry, group_by_day};
+pub use home::ForgottenRule;
 pub use playlists::{Playlist, PlaylistEntry, PlaylistSort, RemotePlaylist};
 pub use ratings::{MAX_RATING_ATTEMPTS, PendingRating, RatingPush};
 pub use schema::SCHEMA_VERSION;

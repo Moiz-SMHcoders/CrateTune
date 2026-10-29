@@ -1,0 +1,31 @@
+# Home: personal sections, their options (Content & region → Home) and the speed
+# dial menu entries (see en/home.lang).
+
+home.quick_picks = Lựa chọn nhanh
+home.section.community = Danh sách phát cộng đồng
+home.section.speed_dial = Quay số nhanh
+home.section.keep_listening = Nghe tiếp
+home.section.account_playlists = Danh sách phát YouTube của bạn
+home.section.forgotten_favorites = Bài yêu thích bị lãng quên
+home.section.similar = Tương tự…
+home.section.feed = Nguồn cấp YouTube Music
+home.similar_to = Tương tự
+home.playlists_word = danh sách phát
+home.speed_dial.pin = Ghim vào quay số nhanh
+home.speed_dial.unpin = Xoá khỏi quay số nhanh
+settings.home.group = Trang chủ
+settings.home.quick_picks = Lựa chọn nhanh
+settings.home.quick_picks_description = Bài hát liên quan đến những bài bạn nghe nhiều nhất, hoặc bài bạn nghe gần nhất. Khi chưa có lịch sử nghe, sẽ hiện lựa chọn nhanh của YouTube Music.
+home.options.quick_picks.mix = Từ bài yêu thích
+home.options.quick_picks.last = Từ bài gần nhất
+home.options.quick_picks.hidden = Không hiển thị
+settings.home.display = Bố cục lựa chọn nhanh
+settings.home.display_description = Thẻ bài hát có ảnh bìa, hoặc danh sách gọn cao bốn dòng.
+home.options.display.cards = Thẻ
+home.options.display.list = Danh sách
+settings.home.chips = Chip danh mục
+settings.home.chips_description = Tâm trạng và thể loại của YouTube Music (Năng lượng, Thư giãn, …) ở đầu Trang chủ. Chọn một mục sẽ đổi lựa chọn nhanh và nguồn cấp của YouTube.
+settings.home.backdrop = Nền tông màu
+settings.home.backdrop_description = Một lớp màu nhấn nhẹ phía sau phần đầu Trang chủ. Không vẽ khi giao diện ảnh bìa toàn ứng dụng đang tô màu cửa sổ.
+settings.home.sections = Mục
+settings.home.sections_description = Các mục được tô sáng sẽ hiện trên Trang chủ. Quay số nhanh chứa những gì bạn ghim từ menu ngữ cảnh.

@@ -1,9 +1,5 @@
 # Online browse pages (YouTube Music).
 
-# ---- Home
-home.recent.title = Escuchado en esta sesión
-home.recent.subtitle = Volver a escuchar
-
 # ---- Explore
 explore.new_releases_detail = Álbumes y sencillos recientes
 explore.charts_detail = Lo más popular, por país

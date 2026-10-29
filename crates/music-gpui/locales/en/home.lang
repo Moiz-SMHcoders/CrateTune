@@ -1,0 +1,45 @@
+# Home (pages/home): the personal sections ArchiveTune shows above the YouTube Music
+# feed, their options (Settings → Content & region → Home) and the speed dial menu
+# entries. Shelf titles of the feed itself come from YouTube Music.
+
+# Section titles, in the order Home shows them. The same words name the sections in
+# the settings (buttons that show / hide each one).
+home.quick_picks = Quick picks
+home.section.community = Community playlists
+# Songs, albums, artists and playlists the user pinned from a context menu.
+home.section.speed_dial = Speed dial
+home.section.keep_listening = Keep listening
+home.section.account_playlists = Your YouTube playlists
+# Songs played a lot some time ago and rarely lately.
+home.section.forgotten_favorites = Forgotten favourites
+# The rows of recommendations "Similar to <artist or song>".
+home.section.similar = Similar to…
+home.section.feed = YouTube Music feed
+# Small label above an artist or song name: the row recommends things like it.
+home.similar_to = Similar to
+# The plural word "playlists" as YouTube Music writes it in shelf titles; removed from
+# "Community playlists" to find the community shelf in the feed. Lower case.
+home.playlists_word = playlists
+
+# Context menu entries of songs, albums, artists and playlists.
+home.speed_dial.pin = Pin to speed dial
+home.speed_dial.unpin = Remove from speed dial
+
+# ---- Settings → Content & region → Home
+settings.home.group = Home
+settings.home.quick_picks = Quick picks
+settings.home.quick_picks_description = Songs related to the ones you play most, or to the last one you played. Until there is listening history, YouTube Music's own quick picks show.
+# Choices for the quick picks.
+home.options.quick_picks.mix = From your favourites
+home.options.quick_picks.last = From your last song
+home.options.quick_picks.hidden = Don't show
+settings.home.display = Quick picks layout
+settings.home.display_description = Song cards with artwork, or a compact list four rows high.
+home.options.display.cards = Cards
+home.options.display.list = List
+settings.home.chips = Category chips
+settings.home.chips_description = YouTube Music's moods and genres (Energize, Relax, …) at the top of Home. Picking one changes the YouTube quick picks and feed.
+settings.home.backdrop = Tonal backdrop
+settings.home.backdrop_description = A soft wash of the accent colour behind the top of Home. Not drawn while the app-wide artwork look colours the window.
+settings.home.sections = Sections
+settings.home.sections_description = Highlighted sections show on Home. Speed dial holds what you pin from a context menu.

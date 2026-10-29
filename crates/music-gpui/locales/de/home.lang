@@ -1,0 +1,31 @@
+# Home: personal sections, their options (Content & region → Home) and the speed
+# dial menu entries (see en/home.lang).
+
+home.quick_picks = Schnellauswahl
+home.section.community = Community-Playlists
+home.section.speed_dial = Kurzwahl
+home.section.keep_listening = Weiterhören
+home.section.account_playlists = Deine YouTube-Playlists
+home.section.forgotten_favorites = Vergessene Lieblinge
+home.section.similar = Ähnlich wie …
+home.section.feed = YouTube-Music-Feed
+home.similar_to = Ähnlich wie
+home.playlists_word = playlists
+home.speed_dial.pin = An Kurzwahl anheften
+home.speed_dial.unpin = Aus Kurzwahl entfernen
+settings.home.group = Startseite
+settings.home.quick_picks = Schnellauswahl
+settings.home.quick_picks_description = Songs, die zu deinen meistgehörten passen oder zu deinem zuletzt gehörten. Solange es noch keinen Hörverlauf gibt, erscheint die Schnellauswahl von YouTube Music.
+home.options.quick_picks.mix = Aus deinen Favoriten
+home.options.quick_picks.last = Aus deinem letzten Song
+home.options.quick_picks.hidden = Nicht anzeigen
+settings.home.display = Darstellung der Schnellauswahl
+settings.home.display_description = Song-Karten mit Cover oder eine kompakte Liste mit vier Zeilen.
+home.options.display.cards = Karten
+home.options.display.list = Liste
+settings.home.chips = Kategorie-Chips
+settings.home.chips_description = Stimmungen und Genres von YouTube Music (Energize, Relax, …) oben auf der Startseite. Eine Auswahl ändert die Schnellauswahl und den Feed von YouTube.
+settings.home.backdrop = Farbverlauf im Hintergrund
+settings.home.backdrop_description = Ein sanfter Schimmer der Akzentfarbe hinter dem oberen Teil der Startseite. Entfällt, solange der App-weite Cover-Look das Fenster einfärbt.
+settings.home.sections = Bereiche
+settings.home.sections_description = Hervorgehobene Bereiche erscheinen auf der Startseite. In der Kurzwahl landet, was du über ein Kontextmenü anheftest.

@@ -1,0 +1,31 @@
+# Home: personal sections, their options (Content & region → Home) and the speed
+# dial menu entries (see en/home.lang).
+
+home.quick_picks = 빠른 선곡
+home.section.community = 커뮤니티 재생목록
+home.section.speed_dial = 단축 다이얼
+home.section.keep_listening = 계속 듣기
+home.section.account_playlists = 내 YouTube 재생목록
+home.section.forgotten_favorites = 잊고 있던 최애곡
+home.section.similar = 비슷한 음악…
+home.section.feed = YouTube Music 피드
+home.similar_to = 비슷한 음악
+home.playlists_word = 재생목록
+home.speed_dial.pin = 단축 다이얼에 고정
+home.speed_dial.unpin = 단축 다이얼에서 삭제
+settings.home.group = 홈
+settings.home.quick_picks = 빠른 선곡
+settings.home.quick_picks_description = 가장 많이 들은 곡이나 마지막으로 들은 곡과 관련된 곡입니다. 감상 기록이 쌓이기 전에는 YouTube Music의 빠른 선곡이 표시됩니다.
+home.options.quick_picks.mix = 즐겨 듣는 곡에서
+home.options.quick_picks.last = 마지막 곡에서
+home.options.quick_picks.hidden = 표시 안 함
+settings.home.display = 빠른 선곡 레이아웃
+settings.home.display_description = 아트워크가 있는 곡 카드 또는 4줄짜리 간단한 목록.
+home.options.display.cards = 카드
+home.options.display.list = 목록
+settings.home.chips = 카테고리 칩
+settings.home.chips_description = 홈 상단에 YouTube Music의 분위기와 장르(에너지, 휴식 등)를 표시합니다. 하나를 고르면 YouTube의 빠른 선곡과 피드가 바뀝니다.
+settings.home.backdrop = 톤 배경
+settings.home.backdrop_description = 홈 상단 뒤에 강조 색상의 은은한 그라데이션을 그립니다. 앱 전체 아트워크 모습이 창을 물들이는 동안에는 그리지 않습니다.
+settings.home.sections = 섹션
+settings.home.sections_description = 강조된 섹션이 홈에 표시됩니다. 단축 다이얼에는 컨텍스트 메뉴에서 고정한 항목이 들어갑니다.

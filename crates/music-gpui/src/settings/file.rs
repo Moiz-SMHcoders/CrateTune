@@ -52,6 +52,8 @@ pub struct Settings {
     pub playback: PlaybackConfig,
     /// Content language / country, filters, autoplay (Content & region section).
     pub content: ContentConfig,
+    /// Home: quick picks, chips, backdrop, shown sections (`home_prefs.rs`).
+    pub home: super::home_prefs::HomeConfig,
     /// Proxy (Network section); the proxy password is a secret.
     pub network: NetworkConfig,
     /// Engine options (quality, crossfade, speed, …; see `prefs.rs`).
@@ -114,6 +116,7 @@ impl Default for Settings {
             appearance: AppearanceConfig::default(),
             playback: PlaybackConfig::default(),
             content: ContentConfig::default(),
+            home: Default::default(),
             network: NetworkConfig::default(),
             audio: AudioConfig::default(),
             lyrics: LyricsConfig::default(),
@@ -610,6 +613,7 @@ impl Settings {
         self.window = self.window.filter(WindowGeometry::is_sane);
         self.mini_player = self.mini_player.filter(WindowGeometry::is_sane);
         self.library.normalize();
+        self.home.normalize();
         let trim = |s: &mut String| *s = s.trim().to_owned();
         trim(&mut self.lastfm.api_key);
         trim(&mut self.discord.client_id);

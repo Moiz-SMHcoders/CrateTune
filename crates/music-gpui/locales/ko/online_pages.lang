@@ -1,9 +1,5 @@
 # Online browse pages (ko).
 
-# ---- Home
-home.recent.title = 이번 세션에 재생한 음악
-home.recent.subtitle = 다시 듣기
-
 # ---- Explore
 explore.new_releases_detail = 따끈따끈한 앨범과 싱글
 explore.charts_detail = 국가별 인기 음악

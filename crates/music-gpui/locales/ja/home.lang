@@ -1,0 +1,31 @@
+# Home: personal sections, their options (Content & region → Home) and the speed
+# dial menu entries (see en/home.lang).
+
+home.quick_picks = クイック ピック
+home.section.community = コミュニティのプレイリスト
+home.section.speed_dial = スピードダイヤル
+home.section.keep_listening = 続けて聴く
+home.section.account_playlists = YouTube のプレイリスト
+home.section.forgotten_favorites = 忘れかけたお気に入り
+home.section.similar = 似ている曲…
+home.section.feed = YouTube Music のフィード
+home.similar_to = 似ているもの
+home.playlists_word = プレイリスト
+home.speed_dial.pin = スピードダイヤルに固定
+home.speed_dial.unpin = スピードダイヤルから削除
+settings.home.group = ホーム
+settings.home.quick_picks = クイック ピック
+settings.home.quick_picks_description = よく聴く曲、または最後に聴いた曲に関連する曲です。再生履歴ができるまでは YouTube Music のクイック ピックを表示します。
+home.options.quick_picks.mix = お気に入りから
+home.options.quick_picks.last = 最後に聴いた曲から
+home.options.quick_picks.hidden = 表示しない
+settings.home.display = クイック ピックのレイアウト
+settings.home.display_description = アートワーク付きの曲カード、または 4 行のコンパクトなリスト。
+home.options.display.cards = カード
+home.options.display.list = リスト
+settings.home.chips = カテゴリ チップ
+settings.home.chips_description = ホームの上部に YouTube Music のムードとジャンル（元気を出したいとき、リラックス など）を表示します。選ぶと YouTube のクイック ピックとフィードが変わります。
+settings.home.backdrop = トーンの背景
+settings.home.backdrop_description = ホーム上部の背後にアクセントカラーの淡いグラデーションを描きます。アプリ全体のアートワーク表示がウィンドウを彩っている間は描きません。
+settings.home.sections = セクション
+settings.home.sections_description = 強調表示されたセクションがホームに表示されます。スピードダイヤルにはコンテキストメニューから固定したものが入ります。

@@ -1,0 +1,31 @@
+# Home: personal sections, their options (Content & region → Home) and the speed
+# dial menu entries (see en/home.lang).
+
+home.quick_picks = क्विक पिक्स
+home.section.community = कम्युनिटी प्लेलिस्ट
+home.section.speed_dial = स्पीड डायल
+home.section.keep_listening = सुनते रहें
+home.section.account_playlists = आपकी YouTube प्लेलिस्ट
+home.section.forgotten_favorites = भूले हुए पसंदीदा
+home.section.similar = इसके जैसा…
+home.section.feed = YouTube Music फ़ीड
+home.similar_to = इसके जैसा
+home.playlists_word = प्लेलिस्ट
+home.speed_dial.pin = स्पीड डायल में पिन करें
+home.speed_dial.unpin = स्पीड डायल से हटाएँ
+settings.home.group = होम
+settings.home.quick_picks = क्विक पिक्स
+settings.home.quick_picks_description = आपके सबसे ज़्यादा सुने गए गानों से, या पिछली बार सुने गए गाने से जुड़े गाने। जब तक सुनने का इतिहास नहीं बनता, YouTube Music की अपनी क्विक पिक्स दिखती हैं।
+home.options.quick_picks.mix = आपके पसंदीदा से
+home.options.quick_picks.last = आपके पिछले गाने से
+home.options.quick_picks.hidden = न दिखाएँ
+settings.home.display = क्विक पिक्स का लेआउट
+settings.home.display_description = आर्टवर्क वाले गाने के कार्ड, या चार पंक्तियों वाली छोटी सूची।
+home.options.display.cards = कार्ड
+home.options.display.list = सूची
+settings.home.chips = श्रेणी चिप्स
+settings.home.chips_description = होम के ऊपर YouTube Music के मूड और जॉनर (एनर्जाइज़, रिलैक्स, …)। किसी एक को चुनने से YouTube की क्विक पिक्स और फ़ीड बदल जाते हैं।
+settings.home.backdrop = टोनल बैकड्रॉप
+settings.home.backdrop_description = होम के ऊपरी हिस्से के पीछे एक्सेंट रंग की हल्की परत। जब पूरे ऐप का आर्टवर्क लुक विंडो को रंगता है, तब यह नहीं दिखती।
+settings.home.sections = सेक्शन
+settings.home.sections_description = हाइलाइट किए गए सेक्शन होम पर दिखते हैं। स्पीड डायल में वह रहता है जिसे आप संदर्भ मेनू से पिन करते हैं।
