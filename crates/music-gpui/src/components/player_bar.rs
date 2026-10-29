@@ -29,7 +29,7 @@ use gpui::{
 };
 use gpui_component::{
     ActiveTheme as _, Disableable as _, Icon, IconName, Selectable as _, Sizable as _, Size,
-    button::{Button, ButtonVariants as _},
+    button::{Button, ButtonCustomVariant, ButtonVariants as _},
     h_flex,
     menu::{ContextMenuExt as _, DropdownMenu as _},
     tag::Tag,
@@ -581,7 +581,7 @@ impl Render for PlayerBar {
             })
             .child(
                 Button::new("mute")
-                    .ghost()
+                    .custom(bar_button_style(cx))
                     .with_size(Size::Medium)
                     .icon(if volume <= 0. {
                         AppIcon::Muted
@@ -941,10 +941,11 @@ impl MusicApp {
             )
             .children(track.as_ref().filter(|_| like).map(|t| {
                 crate::components::like::like_button("bar-like", t, None, cx)
+                    .custom(bar_button_style(cx))
                     .with_size(Size::Medium)
             }))
             .when(layout.add_to_playlist, |this| {
-                this.child(self.bar_add_to_playlist_button(track.as_ref()))
+                this.child(self.bar_add_to_playlist_button(track.as_ref(), cx))
             })
             .into_any_element()
     }
@@ -1043,7 +1044,7 @@ impl MusicApp {
             .when(layout.shuffle, |this| {
                 this.child(
                     Button::new("shuffle")
-                        .ghost()
+                        .custom(bar_button_style(cx))
                         .with_size(Size::Medium)
                         .rounded(px(999.))
                         .icon(toggle_icon(Lucide::Shuffle, shuffle))
@@ -1058,7 +1059,7 @@ impl MusicApp {
             })
             .child(
                 Button::new("previous")
-                    .ghost()
+                    .custom(bar_button_style(cx))
                     .with_size(px(26.))
                     .w(px(SKIP_BUTTON))
                     .h(px(SKIP_BUTTON))
@@ -1091,7 +1092,7 @@ impl MusicApp {
             )
             .child(
                 Button::new("next")
-                    .ghost()
+                    .custom(bar_button_style(cx))
                     .with_size(px(26.))
                     .w(px(SKIP_BUTTON))
                     .h(px(SKIP_BUTTON))
@@ -1104,7 +1105,7 @@ impl MusicApp {
             .when(layout.repeat, |this| {
                 this.child(
                     Button::new("repeat")
-                        .ghost()
+                        .custom(bar_button_style(cx))
                         .with_size(Size::Medium)
                         .rounded(px(999.))
                         .icon(toggle_icon(
@@ -1155,9 +1156,10 @@ impl MusicApp {
         let np_open = self.np.open;
         let lyrics_open = np_open && self.np.lyrics_view;
         let accent = AppColors::get(cx).accent;
+        let style = bar_button_style(cx);
         let toggle = |id: &'static str, icon: Lucide, on: bool| {
             Button::new(id)
-                .ghost()
+                .custom(style)
                 .with_size(Size::Medium)
                 .icon(if on {
                     Icon::new(icon).text_color(accent)
@@ -1231,7 +1233,7 @@ impl MusicApp {
             .when(layout.now_playing, |this| {
                 this.child(
                     Button::new("np-expand")
-                        .ghost()
+                        .custom(bar_button_style(cx))
                         .with_size(Size::Medium)
                         .icon(IconName::ChevronUp)
                         .selected(np_open && !lyrics_open)
@@ -1441,4 +1443,18 @@ mod tests {
         assert!(!layout(880., items).add_to_playlist || layout(880., items).side >= 240.);
         assert!(!layout(700., items).add_to_playlist && layout(1280., items).add_to_playlist);
     }
+}
+
+/// Style of the player bar's (and mini player's) icon buttons: transparent, with a
+/// light wash on hover and press. gpui-component's ghost hover is the theme's
+/// `accent` at half opacity, which is the bar's own surface colour, so hovering a bar
+/// button showed nothing but the tooltip.
+pub(crate) fn bar_button_style(cx: &App) -> ButtonCustomVariant {
+    let fg = cx.theme().foreground;
+    ButtonCustomVariant::new(cx)
+        .color(gpui::transparent_black())
+        .foreground(cx.theme().secondary_foreground)
+        .hover(fg.opacity(0.10))
+        .active(fg.opacity(0.16))
+        .shadow(false)
 }

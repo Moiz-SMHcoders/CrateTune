@@ -85,9 +85,9 @@ impl MusicApp {
     }
 
     /// The "Add to playlist" button beside the like button.
-    pub(crate) fn bar_add_to_playlist_button(&self, track: Option<&Track>) -> AnyElement {
+    pub(crate) fn bar_add_to_playlist_button(&self, track: Option<&Track>, cx: &App) -> AnyElement {
         Button::new("bar-add-to-playlist")
-            .ghost()
+            .custom(super::player_bar::bar_button_style(cx))
             .with_size(Size::Medium)
             .icon(Lucide::ListPlus)
             .tooltip(t!("common.add_to_playlist"))

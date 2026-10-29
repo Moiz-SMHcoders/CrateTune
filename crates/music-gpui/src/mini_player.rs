@@ -382,7 +382,7 @@ impl Render for MiniPlayer {
                 // Title-bar strip (draggable natively; the close button sits at its left).
                 h_flex().h(px(28.)).pl(px(72.)).pr_1().justify_end().child(
                     Button::new("mini-expand")
-                        .ghost()
+                        .custom(crate::components::player_bar::bar_button_style(cx))
                         .xsmall()
                         .icon(IconName::Maximize)
                         .tooltip(t!("mini.tooltip.show_main"))
@@ -431,7 +431,7 @@ impl Render for MiniPlayer {
                             .gap_1()
                             .child(
                                 Button::new("mini-prev")
-                                    .ghost()
+                                    .custom(crate::components::player_bar::bar_button_style(cx))
                                     .small()
                                     .icon(AppIcon::Previous)
                                     .disabled(track.is_none())
@@ -456,7 +456,7 @@ impl Render for MiniPlayer {
                             )
                             .child(
                                 Button::new("mini-next")
-                                    .ghost()
+                                    .custom(crate::components::player_bar::bar_button_style(cx))
                                     .small()
                                     .icon(AppIcon::Next)
                                     .disabled(!has_next)
