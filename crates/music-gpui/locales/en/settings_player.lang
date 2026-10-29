@@ -82,6 +82,12 @@ settings.appearance.background = Background
 settings.appearance.np_note = Gradient, solid and glow take their colours from the artwork. The glow only moves while music plays. Layout and background are also in the Now Playing screen's layout menu.
 settings.appearance.np_fullscreen = Full screen when Now Playing opens
 settings.appearance.np_fullscreen_note = Opening Now Playing or the lyrics also puts the window in full screen, and closing them leaves it again. A window that was already in full screen stays that way.
+# ---- Appearance → Window: the custom top bar or the operating system's title bar
+settings.appearance.window_group = Window
+settings.appearance.system_title_bar = Use the system title bar
+settings.appearance.system_title_bar_note = Shows the operating system's title bar, with back, forward and search above the page, instead of the top bar. Takes effect the next time {app} starts.
+# Under the switch when it differs from the running window's title bar (a Restart now button follows).
+settings.appearance.title_bar_pending = Restart {app} to switch the title bar.
 settings.appearance.mini_player = Mini player
 
 # ---- Playback

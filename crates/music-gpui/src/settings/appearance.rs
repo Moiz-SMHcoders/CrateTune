@@ -1,5 +1,6 @@
 //! Appearance section: theme (dark / pure black / dynamic accent), font size,
-//! Now Playing layout + background + full screen on open, and the mini player style.
+//! the window's title bar (custom top bar or the system's), Now Playing layout +
+//! background + full screen on open, and the mini player style.
 
 use gpui::{
     AnyElement, Context, FontWeight, InteractiveElement as _, IntoElement, ParentElement as _,
@@ -301,6 +302,47 @@ pub(super) fn render(
         cx,
     );
 
+    // ---- Window: the custom top bar or the system title bar (next launch)
+    let system_title_bar = panel.settings.appearance.system_title_bar;
+    let title_bar = Switch::new("system-title-bar")
+        .checked(system_title_bar)
+        .on_click(cx.listener(|this, on: &bool, _, cx| this.set_system_title_bar(*on, cx)));
+    // The running window keeps the chrome it opened with.
+    let pending = system_title_bar == crate::titlebar::custom();
+    let window_group = group_at(
+        "appearance.window",
+        t!("settings.appearance.window_group"),
+        cx,
+    )
+    .child(row_at(
+        "appearance.window.system_title_bar",
+        t!("settings.appearance.system_title_bar"),
+        Some(t!("settings.appearance.system_title_bar_note")),
+        title_bar,
+        cx,
+    ))
+    .when(pending, |this| {
+        this.child(
+            h_flex()
+                .gap_3()
+                .items_center()
+                .child(
+                    div()
+                        .flex_1()
+                        .text_xs()
+                        .text_color(muted)
+                        .child(t!("settings.appearance.title_bar_pending")),
+                )
+                .child(
+                    Button::new("title-bar-restart")
+                        .small()
+                        .outline()
+                        .label(t!("storage.restart_now"))
+                        .on_click(|_, _, cx| cx.restart()),
+                ),
+        )
+    });
+
     let language = super::language::language_row(panel, window, cx);
     let player_bar = super::bar_ui::render(panel, cx);
     v_flex()
@@ -329,6 +371,7 @@ pub(super) fn render(
                     .child(t!("settings.appearance.text_size_note")),
             ),
         )
+        .child(window_group)
         .child(
             group_at("appearance.now_playing", t!("common.now_playing"), cx)
                 .child(layouts)

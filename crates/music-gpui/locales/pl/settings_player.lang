@@ -63,6 +63,10 @@ settings.appearance.background = Tło
 settings.appearance.np_note = Gradient, jednolity kolor i poświata biorą kolory z okładki. Poświata porusza się tylko podczas odtwarzania. Układ i tło są też dostępne w menu ekranu Teraz odtwarzane.
 settings.appearance.np_fullscreen = Pełny ekran po otwarciu Teraz odtwarzane
 settings.appearance.np_fullscreen_note = Otwarcie ekranu Teraz odtwarzane lub tekstu przełącza okno na pełny ekran, a zamknięcie z niego wychodzi. Okno, które już było na pełnym ekranie, takie pozostaje.
+settings.appearance.window_group = Okno
+settings.appearance.system_title_bar = Używaj systemowego paska tytułu
+settings.appearance.system_title_bar_note = Pokazuje pasek tytułu systemu, z przyciskami wstecz, dalej i wyszukiwaniem nad stroną, zamiast górnego paska. Działa od następnego uruchomienia {app}.
+settings.appearance.title_bar_pending = Uruchom {app} ponownie, aby zmienić pasek tytułu.
 settings.appearance.mini_player = Miniodtwarzacz
 
 # ---- Playback

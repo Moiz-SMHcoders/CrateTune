@@ -7,6 +7,31 @@ versions follow [SemVer](https://semver.org/).
 
 ### Added
 
+* **Custom top bar** (Spotify-style) in place of the system title bar and the old header,
+  the same on macOS, Windows and Linux: **⋯** (Settings, Keyboard shortcuts, Check for
+  Updates, About, Quit — on macOS too, so the bar looks the same everywhere), **← →**,
+  **Home** and the **search field** centred in the window, and the **account** on the right
+  (signed in: your name, Account settings, Sync now, Sign out; signed out: Sign in, which
+  opens Settings → Account). macOS keeps its native traffic lights, moved into the bar and
+  centred in it; in native full screen they hide and the bar moves left. Windows gets
+  46 × 32 caption buttons with a red close hover, wired to Windows' own hit-testing
+  (`WindowControlArea`), so drag, double-click to maximise, Aero Snap, the system menu and
+  the Windows 11 snap layouts on the maximise button behave natively. Linux asks for
+  client-side decorations and draws round buttons (only those the compositor offers),
+  drags with the compositor, opens the window menu on right-click and adds resize edges;
+  under server-side decorations the window manager's title bar stays. The bar uses the
+  sidebar's colour (translucent like the sidebar over the artwork backdrop or the desktop
+  blur) and density, stays above Now Playing (except in full screen) so the window
+  controls are always reachable, and is a cached view that only re-renders when what it
+  shows changes. Home moved from the sidebar to the bar. Script hooks: `@titlebar-status`,
+  `@app-menu`, `@account-menu`, `@titlebar-account=NAME|off`, `@system-title-bar[=off]`;
+  `MUSIC_TITLEBAR=system|custom` for one session, `MUSIC_TITLEBAR_STYLE=windows|linux|mac`
+  (debug / screenshot builds) draws another platform's controls.
+* **Settings → Appearance → Window → Use the system title bar** (off by default): the OS
+  title bar and the old header (back, forward, search; ⋯ on Windows / Linux) as before.
+  It applies the next time the app starts; the row says so and offers **Restart now**. In
+  the settings search; not part of profiles (`appearance.system_title_bar`).
+
 * **Home like ArchiveTune's**: personal sections from your listening above the YouTube
   Music feed, in ArchiveTune's order — category chips, **Quick picks** (up to four of your
   most played songs, one per artist, each seeding a radio; songs related to several rank

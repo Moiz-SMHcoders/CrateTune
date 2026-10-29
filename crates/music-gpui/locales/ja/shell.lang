@@ -97,6 +97,8 @@ app.window_title = {page} — {app}
 app.audio_demo_clock = {error}（デモ用クロックを使用中）
 app.tooltip.back = 戻る（⌘[）
 app.tooltip.forward = 進む（⌘]）
+titlebar.account_settings = アカウント設定
+titlebar.signed_out = ログインしていません
 
 # ---- YouTube Music account
 account.cookie_invalid = この Cookie には SAPISID / __Secure-3PAPISID が含まれていません。ログイン済みの music.youtube.com のリクエストから Cookie ヘッダー全体をコピーしてください。

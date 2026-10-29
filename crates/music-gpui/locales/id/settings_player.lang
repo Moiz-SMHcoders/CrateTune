@@ -61,6 +61,10 @@ settings.appearance.background = Latar
 settings.appearance.np_note = Gradien, solid, dan pendar mengambil warnanya dari sampul. Pendar hanya bergerak saat musik diputar. Tata letak dan latar juga ada di menu tata letak layar Sedang Diputar.
 settings.appearance.np_fullscreen = Layar penuh saat Sedang Diputar dibuka
 settings.appearance.np_fullscreen_note = Membuka Sedang Diputar atau lirik membuat jendela masuk ke layar penuh, dan menutupnya akan keluar lagi. Jendela yang sudah dalam layar penuh tetap seperti itu.
+settings.appearance.window_group = Jendela
+settings.appearance.system_title_bar = Gunakan bilah judul sistem
+settings.appearance.system_title_bar_note = Menampilkan bilah judul sistem operasi, dengan kembali, maju, dan pencarian di atas halaman, alih-alih bilah atas. Berlaku saat {app} dimulai berikutnya.
+settings.appearance.title_bar_pending = Mulai ulang {app} untuk mengganti bilah judul.
 settings.appearance.mini_player = Pemutar mini
 
 # ---- Playback

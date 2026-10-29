@@ -61,6 +61,10 @@ settings.appearance.background = Nền
 settings.appearance.np_note = Chuyển sắc, đơn sắc và ánh sáng lấy màu từ ảnh bìa. Ánh sáng chỉ chuyển động khi đang phát nhạc. Bố cục và nền cũng có trong menu bố cục của màn hình Đang phát.
 settings.appearance.np_fullscreen = Toàn màn hình khi mở Đang phát
 settings.appearance.np_fullscreen_note = Mở Đang phát hoặc lời bài hát sẽ đưa cửa sổ vào chế độ toàn màn hình, đóng lại sẽ thoát ra. Cửa sổ đã ở chế độ toàn màn hình từ trước sẽ giữ nguyên.
+settings.appearance.window_group = Cửa sổ
+settings.appearance.system_title_bar = Dùng thanh tiêu đề của hệ thống
+settings.appearance.system_title_bar_note = Hiện thanh tiêu đề của hệ điều hành, với quay lại, tiến tới và tìm kiếm phía trên trang, thay cho thanh trên cùng. Có hiệu lực ở lần khởi động {app} tiếp theo.
+settings.appearance.title_bar_pending = Khởi động lại {app} để đổi thanh tiêu đề.
 settings.appearance.mini_player = Trình phát mini
 
 # ---- Playback

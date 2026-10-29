@@ -97,6 +97,8 @@ app.window_title = {page} — {app}
 app.audio_demo_clock = {error}(데모 시계 사용 중)
 app.tooltip.back = 뒤로(⌘[)
 app.tooltip.forward = 앞으로(⌘])
+titlebar.account_settings = 계정 설정
+titlebar.signed_out = 로그인하지 않음
 
 # ---- YouTube Music account
 account.cookie_invalid = 이 쿠키에 SAPISID / __Secure-3PAPISID 항목이 없습니다. 로그인된 music.youtube.com 요청의 쿠키 헤더 전체를 복사하세요.

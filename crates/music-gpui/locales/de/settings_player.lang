@@ -63,6 +63,10 @@ settings.appearance.background = Hintergrund
 settings.appearance.np_note = Verlauf, Einfarbig und Leuchten übernehmen ihre Farben aus dem Cover. Das Leuchten bewegt sich nur, während Musik läuft. Layout und Hintergrund findest du auch im Layout-Menü von „Läuft gerade“.
 settings.appearance.np_fullscreen = Vollbild beim Öffnen von „Läuft gerade“
 settings.appearance.np_fullscreen_note = Wenn du „Läuft gerade“ oder den Songtext öffnest, wechselt das Fenster ins Vollbild; beim Schließen verlässt es das Vollbild wieder. Ein Fenster, das schon im Vollbild war, bleibt es.
+settings.appearance.window_group = Fenster
+settings.appearance.system_title_bar = Titelleiste des Systems verwenden
+settings.appearance.system_title_bar_note = Zeigt die Titelleiste des Betriebssystems, mit Zurück, Vorwärts und Suche über der Seite, statt der oberen Leiste. Wirkt beim nächsten Start von {app}.
+settings.appearance.title_bar_pending = Starte {app} neu, um die Titelleiste zu wechseln.
 settings.appearance.mini_player = Miniplayer
 
 # ---- Playback

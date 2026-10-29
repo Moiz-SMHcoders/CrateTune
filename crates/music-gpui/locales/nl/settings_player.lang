@@ -63,6 +63,10 @@ settings.appearance.background = Achtergrond
 settings.appearance.np_note = Verloop, effen kleur en gloed nemen hun kleuren over van de cover. De gloed beweegt alleen als er muziek speelt. Indeling en achtergrond staan ook in het indelingsmenu van het scherm Speelt nu.
 settings.appearance.np_fullscreen = Volledig scherm bij openen van Speelt nu
 settings.appearance.np_fullscreen_note = Als je Speelt nu of de songtekst opent, gaat het venster naar volledig scherm; bij sluiten gaat het weer terug. Een venster dat al op volledig scherm stond, blijft zo.
+settings.appearance.window_group = Venster
+settings.appearance.system_title_bar = Titelbalk van het systeem gebruiken
+settings.appearance.system_title_bar_note = Toont de titelbalk van het besturingssysteem, met terug, vooruit en zoeken boven de pagina, in plaats van de bovenste balk. Werkt de volgende keer dat {app} start.
+settings.appearance.title_bar_pending = Start {app} opnieuw om van titelbalk te wisselen.
 settings.appearance.mini_player = Miniplayer
 
 # ---- Playback

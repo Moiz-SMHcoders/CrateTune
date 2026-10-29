@@ -63,6 +63,10 @@ settings.appearance.background = 배경
 settings.appearance.np_note = 그라데이션, 단색, 글로우는 아트워크에서 색상을 가져옵니다. 글로우는 음악이 재생될 때만 움직입니다. 레이아웃과 배경은 지금 재생 중 화면의 레이아웃 메뉴에서도 바꿀 수 있습니다.
 settings.appearance.np_fullscreen = 지금 재생 중을 열 때 전체 화면
 settings.appearance.np_fullscreen_note = 지금 재생 중 화면이나 가사를 열면 창이 전체 화면으로 전환되고, 닫으면 다시 돌아옵니다. 이미 전체 화면이던 창은 그대로 유지됩니다.
+settings.appearance.window_group = 창
+settings.appearance.system_title_bar = 시스템 제목 표시줄 사용
+settings.appearance.system_title_bar_note = 상단 바 대신 운영 체제의 제목 표시줄을 표시하고, 뒤로·앞으로·검색은 페이지 위에 둡니다. 다음에 {app}을(를) 시작할 때 적용됩니다.
+settings.appearance.title_bar_pending = 제목 표시줄을 바꾸려면 {app}을(를) 다시 시작하세요.
 settings.appearance.mini_player = 미니 플레이어
 
 # ---- Playback

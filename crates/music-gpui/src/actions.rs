@@ -243,9 +243,9 @@ fn menus() -> Vec<Menu> {
     ]
 }
 
-/// The header's "⋯" menu where there is no app menu bar (Windows, Linux): what the
-/// macOS app and Help menus hold.
-#[cfg_attr(target_os = "macos", allow(dead_code))]
+/// The "⋯" menu: in the top bar on every platform (`titlebar.rs`; on macOS it
+/// repeats the menu bar's app and Help menus, so the bar looks the same
+/// everywhere), in the old header without a menu bar (Windows, Linux).
 pub fn app_menu(menu: gpui_component::menu::PopupMenu) -> gpui_component::menu::PopupMenu {
     let menu = menu
         .menu(t!("menu.settings"), Box::new(OpenSettings))

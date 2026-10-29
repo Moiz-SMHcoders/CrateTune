@@ -1,5 +1,6 @@
 //! Left navigation: app title, the browse / library entries from
-//! [`crate::pages::NAV`], and Settings at the bottom.
+//! [`crate::pages::NAV`] (without Home when the custom top bar shows it), and
+//! Settings at the bottom.
 
 use gpui::{
     Context, FontWeight, InteractiveElement as _, IntoElement, ParentElement as _, SharedString,
@@ -76,10 +77,13 @@ impl MusicApp {
                 .child(text(label))
         };
 
+        // Home is the top bar's button when the custom bar is on (`titlebar.rs`).
+        let home_in_bar = crate::titlebar::custom();
         let mut list = v_flex().gap_0p5();
         for (i, item) in NAV.iter().enumerate() {
             match item {
                 NavItem::Group(label) => list = list.child(group_label(*label)),
+                NavItem::Page { route, .. } if home_in_bar && route() == Route::Home => {}
                 NavItem::Page { title, icon, route } => {
                     list = list.child(entry(
                         SharedString::from(format!("nav-{i}")),

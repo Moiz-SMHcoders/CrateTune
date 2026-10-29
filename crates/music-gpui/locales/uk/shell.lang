@@ -112,6 +112,8 @@ app.window_title = {page} — {app}
 app.audio_demo_clock = {error} (використовується демогодинник)
 app.tooltip.back = Назад (⌘[)
 app.tooltip.forward = Вперед (⌘])
+titlebar.account_settings = Налаштування облікового запису
+titlebar.signed_out = Вхід не виконано
 
 # ---- YouTube Music account
 account.cookie_invalid = У цьому cookie немає запису SAPISID / __Secure-3PAPISID; скопіюйте весь заголовок cookie із запиту до music.youtube.com, у якому виконано вхід.

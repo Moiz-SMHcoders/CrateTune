@@ -702,6 +702,14 @@ impl SettingsPanel {
         }
     }
 
+    /// Appearance → Window → "Use the system title bar" (applies on the next launch).
+    pub fn set_system_title_bar(&mut self, on: bool, cx: &mut Context<Self>) {
+        if self.settings.appearance.system_title_bar != on {
+            self.settings.appearance.system_title_bar = on;
+            self.changed(false, cx);
+        }
+    }
+
     pub fn set_font_scale(&mut self, scale: f32, cx: &mut Context<Self>) {
         if (self.settings.appearance.font_scale - scale).abs() > f32::EPSILON {
             self.settings.appearance.font_scale = scale;

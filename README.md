@@ -1541,6 +1541,78 @@ item after a switch on screen (built through the same calls; not looked at), Win
 Linux system-language detection (only the macOS path ran), native-speaker review of the
 translations, every screen in every language (five locales were looked at).
 
+### Top bar (custom title bar)
+
+![Top bar, macOS, signed out](docs/screenshots/titlebar-signed-out.png)
+
+| | |
+|---|---|
+| ![Signed in (fake account for the screenshot)](docs/screenshots/titlebar-signed-in.png) | ![Account menu](docs/screenshots/titlebar-account-menu.png) |
+| ![Account menu, signed out](docs/screenshots/titlebar-account-menu-signed-out.png) | ![⋯ menu](docs/screenshots/titlebar-app-menu.png) |
+| ![880 pt](docs/screenshots/titlebar-narrow-880.png) | ![1600 pt](docs/screenshots/titlebar-wide-1600.png) |
+| ![Windows-style controls (MUSIC_TITLEBAR_STYLE=windows)](docs/screenshots/titlebar-windows.png) | ![Linux-style controls (MUSIC_TITLEBAR_STYLE=linux)](docs/screenshots/titlebar-linux.png) |
+| ![Now Playing below the bar](docs/screenshots/titlebar-now-playing.png) | ![Use the system title bar (MUSIC_TITLEBAR=system)](docs/screenshots/titlebar-system-mode.png) |
+| ![Settings search → the Window row](docs/screenshots/titlebar-settings-search.png) | ![Switched: restart to apply](docs/screenshots/titlebar-settings-restart.png) |
+
+![Windows caption buttons, close hovered](docs/screenshots/titlebar-windows-controls.png)
+![Real on-screen run: the traffic lights centred in the bar](docs/screenshots/titlebar-macos-onscreen.png)
+
+`titlebar.rs`. One 52 pt bar across the window, the same layout everywhere:
+
+| OS | left → right |
+|---|---|
+| macOS | native traffic lights (in the bar, vertically centred; full screen: hidden, the bar shifts left) · ⋯ · ← → · Home + search (centred in the window) · account |
+| Windows | ⋯ · ← → · Home + search · account · minimise, maximise / restore, close (46 × 32, red close hover) |
+| Linux | as Windows, with round GNOME-style buttons; only with client-side decorations (server-side: the window manager's title bar, no buttons of ours) |
+
+* **Window options** (`apply_window_options`): `TitlebarOptions { appears_transparent: true,
+  traffic_light_position: (18, 19) }` (19 = (52 − 14) / 2 centres AppKit's 14 pt buttons),
+  `app_owns_titlebar_drag: true` (macOS: AppKit neither drags nor delays titlebar clicks),
+  `window_decorations: Client` (X11 / Wayland). The mini player, sign-in window and dialogs
+  keep their chrome.
+* **Windows hit-testing:** GPUI asks the app on every `WM_NCHITTEST` which
+  `WindowControlArea` is under the pointer (`on_hit_test_window_control`, the first
+  registered area whose hitbox is hovered). The bar's empty area is `Drag` (→ HTCAPTION:
+  native drag, double-click maximise, Aero Snap, system menu), the caption buttons `Min` /
+  `Max` / `Close` (→ HTMINBUTTON / HTMAXBUTTON / HTCLOSE: Windows runs them, and the maximise
+  button gets the Windows 11 snap layouts). The buttons have no click handlers. Every
+  interactive cluster (⋯ ← →, Home + search, account) and every caption button `occlude`s,
+  so the drag area behind them isn't hit and they get ordinary clicks. The top resize band
+  is GPUI's (not while maximised). Glyphs: Segoe Fluent Icons, else Segoe MDL2 Assets, else
+  the SVG icons.
+* **macOS / Linux drag:** a left press on the empty bar arms a move; the first move with the
+  button down calls `start_window_move` (macOS: `performWindowDragWithEvent`); a double click
+  runs `titlebar_double_click` (System Settings' choice: zoom, minimise, nothing) on macOS and
+  `zoom_window` on Linux; right-click opens the Linux window menu. Linux CSD windows get 6 px
+  resize bands (`start_window_resize`) unless maximised, tiled or full screen.
+* **Now Playing** opens below the bar (window controls stay reachable; navigating from the
+  bar closes it). In full screen it covers the whole window as before.
+* **Old header:** gone in this mode (back, forward, search and ⋯ are in the bar); Home moved
+  from the sidebar into the bar, so nothing shows twice. Sheets and toasts start below the bar.
+* **Cost:** the bar is a cached region (`np_region.rs`) keyed by a hash of what it shows
+  (history, route, search text and dropdown, account, window state, theme colours, density,
+  language); entities it reads (the search field, an open menu) re-render it themselves.
+  Lyrics frames reuse it: `@bench=200` with Now Playing open, debug build, 1280 × 800:
+  3.4 ms per draw with the bar vs 4.0 ms with the system title bar (noise; nothing added),
+  25 ms vs 25 ms on the search page.
+* **Setting:** Appearance → Window → **Use the system title bar** (`appearance.system_title_bar`,
+  off) restores the system title bar and the old header. The title bar is fixed when the
+  window opens, so it applies on the next launch; the row says so and shows **Restart now**
+  while the running window differs. `MUSIC_TITLEBAR=system|custom` overrides it for a session.
+* **Hooks:** `@titlebar-status` (mode, controls, window size / origin, full screen, maximised,
+  decorations, traffic-light position, Now Playing's top, account, and the laid-out bounds of
+  menu / back / forward / home / search / account / controls), `@app-menu` / `@account-menu`
+  (click them; the latter prints the menu's items), `@titlebar-account=NAME|off` (debug /
+  screenshot builds: a fake signed-in account in the bar only), `@system-title-bar[=off]`.
+  `MUSIC_TITLEBAR_STYLE=windows|linux|mac` (debug / screenshot builds) draws another
+  platform's controls, e.g. for the screenshots above.
+* **Verified on macOS:** offscreen screenshots (they can't show the native traffic lights,
+  which are AppKit views over the content) and a real on-screen run with `MUSIC_ON_TOP=1`
+  (the crop above): the traffic lights sit at x = 18 pt, centred in the 52 pt bar, left of
+  ⋯ with room to spare. Native full screen could not be entered on the test machine (a
+  tiling window manager), so the shift there is untested. Windows and Linux: built and
+  tested in CI only; see `docs/TESTING.md` 5.11 for the manual checks.
+
 ### Keyboard shortcuts and menus
 
 | Keys | Action |
@@ -1730,6 +1802,8 @@ item's ACL is tied to the binary). Secrets are never logged.
 | `MUSIC_MALLOC=system` | keep macOS's default allocator behaviour (no re-exec with `MallocSpaceEfficient=1`, see `memory.rs`; for comparisons) |
 | `MUSIC_TRACE=1` | log playback transitions, seeks, saves, route changes, artwork downloads; `MUSIC_TIMINGS=1`: renders/s + worst frame gap |
 | `MUSIC_SCRIPT="5:@next,9:@seek=75,30:@quit"` | timed actions (any build) |
+| `MUSIC_TITLEBAR=system\|custom` | this session: the system title bar + old header, or the custom top bar (overrides Appearance → Window) |
+| `MUSIC_TITLEBAR_STYLE=windows\|linux\|mac` | debug / screenshot builds: draw that platform's window controls in the top bar |
 | `MUSIC_ON_TOP=1` | keep the main window above other apps and on every Space (CPU sampling while the machine is in use: macOS sends an occluded or off-Space window no frames) |
 | `MUSIC_SHORTCUTS_OS=linux\|windows\|mac` | screenshot builds only: shortcuts as on that platform (key names, Ctrl as the shortcut modifier) |
 | `MUSIC_GPUI_SCREENSHOT="12:a.png,13:@settings,14:b.png,15:mini:m.png"` | offscreen shots + actions, quits after the last (feature `screenshot`; `mini:` shoots the mini player) |

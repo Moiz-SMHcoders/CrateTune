@@ -95,6 +95,8 @@ app.window_title = {page} — {app}
 app.audio_demo_clock = {error} (menggunakan jam demo)
 app.tooltip.back = Kembali (⌘[)
 app.tooltip.forward = Maju (⌘])
+titlebar.account_settings = Pengaturan akun
+titlebar.signed_out = Belum masuk
 
 # ---- YouTube Music account
 account.cookie_invalid = Cookie itu tidak memiliki entri SAPISID / __Secure-3PAPISID; salin seluruh header cookie dari permintaan music.youtube.com yang sudah masuk.

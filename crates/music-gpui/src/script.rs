@@ -63,6 +63,7 @@
 //! | `@app-look=off\|tint\|gradient\|glow`, `@app-look-opt=follow:on\|intensity:0.7\|dir:diagonal\|dim:off\|tint:on\|animate:on`, `@motion=system\|full\|reduced\|off`, `@effects=transitions:…\|hover:…\|headers:…\|corners:square\|shadow:on\|cards:large\|translucent:on`, `@bar-art=standard\|edge`, `@look-status` | app-wide look, Motion & effects, bar artwork (saved; `look_script.rs`) |
 //! | `@shortcut=ACTION:KEYS`, `@shortcut-reset=ACTION\|all`, `@shortcut-status`, `@shortcut-record=ACTION`, `@shortcut-replace`, `@shortcut-cancel`, `@shortcut-sheet` | keyboard shortcuts (saved; `shortcuts/script.rs`) |
 //! | `@np-fullscreen[=on\|off]`, `@np-fullscreen-auto=on\|off`, `@lyrics-view`, `@fullscreen-external`, `@fullscreen-status` | full screen: Now Playing's button (no argument toggles), "Full screen when Now Playing opens" (saved), the bar's lyrics button, toggle as the green button would, print the window state and who entered it (`np_fullscreen.rs`) |
+//! | `@titlebar-status`, `@app-menu`, `@account-menu`, `@titlebar-account=NAME\|off`, `@system-title-bar[=off]` | custom top bar: print mode / controls / window state / part positions; click the ⋯ or account button (prints the account menu's items); a fake signed-in account in the bar (debug / screenshot builds); "Use the system title bar" (saved, next launch; `titlebar.rs`) |
 //! | `@quit` | quit |
 //!
 //! Library / account / storage actions (`@like`, `@download`, `@backup`, …) are listed
@@ -324,6 +325,28 @@ fn input_event(name: &str, arg: Option<&str>, window: &mut Window, cx: &mut App)
             cx,
         ),
         "move" => mouse_move(window, cx),
+        // The top bar's ⋯ / account buttons, wherever they were laid out (`titlebar.rs`).
+        "app-menu" | "account-menu" => {
+            let part = if name == "app-menu" {
+                "menu"
+            } else {
+                "account"
+            };
+            let found = crate::app::read_app(cx, |app, _| {
+                (app.titlebar_point(part), app.account_menu_entries())
+            });
+            match found {
+                Some((Some(at), entries)) => {
+                    if name == "account-menu" {
+                        eprintln!("music-gpui: account-menu: {}", entries.join(" | "));
+                    }
+                    let (x, y) = (f32::from(at.x), f32::from(at.y));
+                    let spec = format!("{x};{y}");
+                    return input_event("click", Some(&spec), window, cx);
+                }
+                _ => eprintln!("music-gpui: @{name}: no top bar (system title bar?)"),
+            }
+        }
         "scroll" | "wheel" => {
             let mut parts = arg
                 .unwrap_or("")
@@ -724,6 +747,7 @@ impl MusicApp {
                     && !self.theme_script_action(other, arg, window, cx)
                     && !self.fullscreen_script_action(other, arg, window, cx)
                     && !self.home_script_action(other, arg, cx)
+                    && !self.titlebar_script_action(other, arg, window, cx)
                 {
                     eprintln!("music-gpui: unknown script action @{other}");
                 }

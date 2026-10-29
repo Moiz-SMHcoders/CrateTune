@@ -64,6 +64,10 @@ settings.appearance.background = Fondo
 settings.appearance.np_note = Degradado, sólido y brillo toman sus colores de la portada. El brillo solo se mueve mientras suena música. El diseño y el fondo también están en el menú de diseño de la pantalla Reproduciendo.
 settings.appearance.np_fullscreen = Pantalla completa al abrir Reproduciendo
 settings.appearance.np_fullscreen_note = Al abrir Reproduciendo o la letra, la ventana pasa a pantalla completa, y al cerrarlos sale de ella. Si la ventana ya estaba en pantalla completa, se queda así.
+settings.appearance.window_group = Ventana
+settings.appearance.system_title_bar = Usar la barra de título del sistema
+settings.appearance.system_title_bar_note = Muestra la barra de título del sistema operativo, con atrás, adelante y búsqueda sobre la página, en lugar de la barra superior. Se aplica la próxima vez que se inicie {app}.
+settings.appearance.title_bar_pending = Reinicia {app} para cambiar la barra de título.
 settings.appearance.mini_player = Minirreproductor
 
 # ---- Playback

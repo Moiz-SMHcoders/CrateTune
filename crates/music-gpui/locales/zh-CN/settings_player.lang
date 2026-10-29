@@ -63,6 +63,10 @@ settings.appearance.background = 背景
 settings.appearance.np_note = 渐变、纯色和光晕背景的颜色取自封面。光晕仅在播放音乐时流动。样式和背景也可以在“正在播放”界面的样式菜单中设置。
 settings.appearance.np_fullscreen = 打开正在播放时进入全屏
 settings.appearance.np_fullscreen_note = 打开“正在播放”或歌词时，窗口会进入全屏，关闭后退出全屏。原本就处于全屏的窗口保持不变。
+settings.appearance.window_group = 窗口
+settings.appearance.system_title_bar = 使用系统标题栏
+settings.appearance.system_title_bar_note = 显示操作系统的标题栏，后退、前进和搜索放在页面上方，代替顶部栏。下次启动 {app} 时生效。
+settings.appearance.title_bar_pending = 重启 {app} 以切换标题栏。
 settings.appearance.mini_player = 迷你播放器
 
 # ---- Playback

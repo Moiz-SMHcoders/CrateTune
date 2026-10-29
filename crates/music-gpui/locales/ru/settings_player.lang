@@ -63,6 +63,10 @@ settings.appearance.background = Фон
 settings.appearance.np_note = Градиент, сплошной цвет и свечение берут цвета из обложки. Свечение движется только во время воспроизведения. Оформление и фон также можно выбрать в меню экрана «Сейчас играет».
 settings.appearance.np_fullscreen = Полный экран при открытии «Сейчас играет»
 settings.appearance.np_fullscreen_note = При открытии экрана «Сейчас играет» или текста песни окно переходит в полноэкранный режим, а при закрытии выходит из него. Окно, которое уже было в полноэкранном режиме, таким и останется.
+settings.appearance.window_group = Окно
+settings.appearance.system_title_bar = Системная строка заголовка
+settings.appearance.system_title_bar_note = Показывает строку заголовка системы, а «назад», «вперёд» и поиск — над страницей, вместо верхней панели. Действует со следующего запуска {app}.
+settings.appearance.title_bar_pending = Перезапустите {app}, чтобы сменить строку заголовка.
 settings.appearance.mini_player = Мини-плеер
 
 # ---- Playback

@@ -236,6 +236,10 @@ pub struct AppearanceConfig {
     /// Decoded artwork kept in memory, MiB (one of
     /// [`crate::components::artwork::BUDGETS_MB`]; others snap to the nearest).
     pub artwork_memory_mb: u32,
+    /// "Use the system title bar": the OS's title bar and the old header (back,
+    /// forward, search) instead of the custom top bar (`titlebar.rs`). Read when
+    /// the main window opens, so a change applies on the next launch.
+    pub system_title_bar: bool,
 }
 
 impl Default for AppearanceConfig {
@@ -245,6 +249,7 @@ impl Default for AppearanceConfig {
             font_scale: 1.0,
             language: SYSTEM_LANGUAGE.into(),
             artwork_memory_mb: crate::components::artwork::DEFAULT_BUDGET_MB,
+            system_title_bar: false,
         }
     }
 }

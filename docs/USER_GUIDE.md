@@ -69,9 +69,35 @@ The language of titles, shelves and search results comes from YouTube Music and 
 separate setting (**Content & region → Content language**). On a fresh install it starts
 in the app's language and your system's region.
 
+## The top bar
+
+![The top bar](screenshots/titlebar-signed-in.png)
+
+Across the top of the window, left to right:
+
+* **⋯** — Settings, Keyboard shortcuts, Check for Updates, About and Quit (on a Mac also
+  in the menu bar).
+* **← →** — back and forward (⌘[ / ⌘], or the mouse's back / forward buttons).
+* **Home** and the **search field** in the middle (⌘F jumps to it).
+* **Your account** on the right: your name, **Account settings**, **Sync now** and **Sign
+  out**; when you aren't signed in, **Sign in** (it opens Settings → Account).
+* **Window buttons.** On a Mac the usual red / yellow / green buttons sit at the left of
+  the bar (in full screen they hide). On Windows: minimise, maximise / restore and close at
+  the right; hover maximise for the Windows 11 snap layouts. On Linux: round buttons at the
+  right when your desktop lets apps draw their own title bar.
+
+Drag the empty part of the bar to move the window; double-click it to maximise (on a Mac,
+what System Settings → Desktop & Dock says for a title bar double-click). The bar stays
+above Now Playing, so the window buttons are always there (in full screen Now Playing fills
+the whole window).
+
+Prefer the system's title bar? **Settings → Appearance → Window → Use the system title
+bar** brings back the operating system's title bar with back, forward and search above the
+page. It takes effect the next time the app starts; **Restart now** does it right away.
+
 ## Finding music
 
-* **Search** (⌘F): type to get suggestions (songs, artists, albums) and recent searches;
+* **Search** (⌘F, the field in the top bar): type to get suggestions (songs, artists, albums) and recent searches;
   ↑/↓ and Enter pick one. The search page has an **All** overview and tabs for songs,
   videos, albums, artists, playlists, podcasts and episodes; more results load as you
   scroll. When YouTube corrects a typo, the page says **Showing results for …** with a
@@ -317,7 +343,7 @@ Sections:
 
 | Section | What's there |
 |---|---|
-| Appearance | profiles, interface language, theme (dark, pure black, dynamic colours from the artwork), **Customize theme** (presets, accent, darkness, surface tint, contrast, corners, density, font, dynamic colour style), text size, Now Playing design (eight) and background, mini player style |
+| Appearance | profiles, interface language, **Window** (use the system title bar instead of the top bar), theme (dark, pure black, dynamic colours from the artwork), **Customize theme** (presets, accent, darkness, surface tint, contrast, corners, density, font, dynamic colour style), text size, Now Playing design (eight) and background, mini player style |
 | Playback | shuffle / repeat, quality, loudness normalization, skip silence, skip failing songs, crossfade, speed and pitch, output device, sleep timer |
 | Modules | provider modules (alternative audio sources) and where songs play from |
 | Equalizer | 10-band equalizer with presets |
