@@ -61,6 +61,8 @@ settings.appearance.font_scale = %{percent}
 settings.appearance.text_size_note = Tüm arayüz metnini ölçekler; şarkı sözlerinin kendi boyutu vardır (Şarkı sözleri).
 settings.appearance.background = Arka plan
 settings.appearance.np_note = Gradyan, düz renk ve parıltı renklerini kapak resminden alır. Parıltı yalnızca müzik çalarken hareket eder. Tasarım ve arka plan, Şu an çalıyor ekranının düzen menüsünde de bulunur.
+settings.appearance.np_fullscreen = Şu an çalıyor açılınca tam ekran
+settings.appearance.np_fullscreen_note = Şu an çalıyor ekranını veya şarkı sözlerini açmak pencereyi tam ekrana alır, kapatmak tam ekrandan çıkarır. Zaten tam ekranda olan pencere öyle kalır.
 settings.appearance.mini_player = Mini oynatıcı
 
 # ---- Playback

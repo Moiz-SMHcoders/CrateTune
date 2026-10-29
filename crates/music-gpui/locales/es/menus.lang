@@ -26,6 +26,7 @@ menu.volume_down = Bajar volumen
 menu.window = Ventana
 menu.minimize = Minimizar
 menu.zoom = Zoom
+menu.fullscreen = Activar/desactivar pantalla completa
 
 # Menu-bar item
 tray.next = Siguiente

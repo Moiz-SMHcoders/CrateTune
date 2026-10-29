@@ -61,6 +61,8 @@ settings.appearance.font_scale = {percent}%
 settings.appearance.text_size_note = インターフェースのすべての文字を拡大縮小します。歌詞のサイズは別に設定します（歌詞）。
 settings.appearance.background = 背景
 settings.appearance.np_note = グラデーション、単色、グローの色はアートワークから取得します。グローは音楽の再生中のみ動きます。レイアウトと背景は再生画面のレイアウトメニューでも変更できます。
+settings.appearance.np_fullscreen = 再生中画面を開いたらフルスクリーンにする
+settings.appearance.np_fullscreen_note = 再生中画面や歌詞を開くとウィンドウがフルスクリーンになり、閉じると元に戻ります。すでにフルスクリーンだったウィンドウはそのままです。
 settings.appearance.mini_player = ミニプレーヤー
 
 # ---- Playback

@@ -26,6 +26,7 @@ menu.volume_down = Diminuir volume
 menu.window = Janela
 menu.minimize = Minimizar
 menu.zoom = Zoom
+menu.fullscreen = Alternar Tela Cheia
 
 # Menu-bar item
 tray.next = Próxima

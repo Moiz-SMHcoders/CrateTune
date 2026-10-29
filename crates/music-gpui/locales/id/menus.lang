@@ -25,6 +25,7 @@ menu.volume_down = Volume Turun
 menu.window = Jendela
 menu.minimize = Minimalkan
 menu.zoom = Perbesar
+menu.fullscreen = Alihkan Layar Penuh
 
 tray.next = Berikutnya
 tray.previous = Sebelumnya

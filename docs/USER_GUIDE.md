@@ -155,6 +155,16 @@ header or Settings → Appearance:
 Four backgrounds (blurred artwork, gradient, solid, glow) apply to the designs that don't
 bring their own colours (Immersive, Minimal and Editorial do).
 
+**Full screen**: the full-screen button in the header (four corners, top right) (or ⌃⌘F on macOS, F11 on Windows and Linux)
+puts the window in full screen and back; on a Mac that is native full screen, in its own
+Space. To have it every time, turn on Settings → Appearance → Now Playing → **Full screen
+when Now Playing opens** (also for the lyrics view). Closing Now Playing (Esc, the close
+button, ⌘L or going to another page) leaves full screen again, but only when the app
+entered it for Now Playing: if the window was already in full screen, it stays. With the
+button, the first Esc leaves full screen and the second closes Now Playing; with the
+setting, one Esc does both. If you leave full screen yourself (the green button), the app
+doesn't put it back. The mini player keeps working on top of the full-screen window.
+
 **Lyrics cards**: click the share button above the lyrics, click up to six lines, then
 **Create card…**. Pick a background (blurred artwork, album colour, dark, light), the text
 alignment and size, square / portrait / story shape and whether the cover shows, then
@@ -385,11 +395,12 @@ macOS keys shown. On Windows and Linux use **Ctrl** in place of ⌘ and Alt for 
 | ⌘L | Now Playing |
 | ⌥⌘Q | queue |
 | ⇧⌘M | mini player |
+| ⌃⌘F (Windows / Linux: F11) | full screen (also the full-screen button in Now Playing) |
 | ⇧⌘R | recognize a song |
 | ⌘S / ⌘R | shuffle / repeat |
 | ⌘[ / ⌘] | back / forward (also the mouse's back / forward buttons) |
 | ⌘1 / ⌘2 / ⌘3 / ⌘Y | Home / Explore / Library / History |
-| Esc | close an open menu or dialog first; else the welcome guide, Now Playing or the queue; else back |
+| Esc | close an open menu or dialog first; else the welcome guide, the full screen entered with Now Playing's button, Now Playing or the queue; else back |
 | ⌘Q | quit |
 | ⌘/ | show all shortcuts (also Help → Keyboard Shortcuts) |
 

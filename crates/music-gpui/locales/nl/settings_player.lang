@@ -61,6 +61,8 @@ settings.appearance.font_scale = {percent}%
 settings.appearance.text_size_note = Schaalt alle tekst van de interface; songteksten houden hun eigen grootte (Songteksten).
 settings.appearance.background = Achtergrond
 settings.appearance.np_note = Verloop, effen kleur en gloed nemen hun kleuren over van de cover. De gloed beweegt alleen als er muziek speelt. Indeling en achtergrond staan ook in het indelingsmenu van het scherm Speelt nu.
+settings.appearance.np_fullscreen = Volledig scherm bij openen van Speelt nu
+settings.appearance.np_fullscreen_note = Als je Speelt nu of de songtekst opent, gaat het venster naar volledig scherm; bij sluiten gaat het weer terug. Een venster dat al op volledig scherm stond, blijft zo.
 settings.appearance.mini_player = Miniplayer
 
 # ---- Playback

@@ -26,6 +26,7 @@ menu.volume_down = Тихіше
 menu.window = Вікно
 menu.minimize = Згорнути
 menu.zoom = Масштаб
+menu.fullscreen = Повноекранний режим увімк./вимк.
 
 tray.next = Наступна
 tray.previous = Попередня

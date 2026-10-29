@@ -59,6 +59,8 @@ settings.appearance.font_scale = {percent}%
 settings.appearance.text_size_note = Menskalakan semua teks antarmuka; lirik memiliki ukurannya sendiri (Lirik).
 settings.appearance.background = Latar
 settings.appearance.np_note = Gradien, solid, dan pendar mengambil warnanya dari sampul. Pendar hanya bergerak saat musik diputar. Tata letak dan latar juga ada di menu tata letak layar Sedang Diputar.
+settings.appearance.np_fullscreen = Layar penuh saat Sedang Diputar dibuka
+settings.appearance.np_fullscreen_note = Membuka Sedang Diputar atau lirik membuat jendela masuk ke layar penuh, dan menutupnya akan keluar lagi. Jendela yang sudah dalam layar penuh tetap seperti itu.
 settings.appearance.mini_player = Pemutar mini
 
 # ---- Playback

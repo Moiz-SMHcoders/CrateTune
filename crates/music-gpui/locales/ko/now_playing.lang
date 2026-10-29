@@ -9,6 +9,10 @@ np.preview = 미리보기
 np.speed = {speed}×
 np.sleep_tooltip = 취침 타이머
 np.layout_tooltip = 디자인 및 배경
+np.fullscreen_enter = 전체 화면
+np.fullscreen_exit = 전체 화면 종료
+np.fullscreen_enter_keys = 전체 화면({keys})
+np.fullscreen_exit_keys = 전체 화면 종료({keys})
 np.menu.design = 디자인
 np.menu.background = 배경
 

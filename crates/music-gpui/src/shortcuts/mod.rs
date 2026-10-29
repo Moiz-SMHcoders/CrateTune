@@ -86,6 +86,9 @@ pub struct ShortcutAction {
     pub label: Key,
     /// Default combination (`secondary-` = ⌘ / Ctrl), `""` = none.
     pub default: &'static str,
+    /// The macOS default, where it isn't [`Self::default`] (full screen: ⌃⌘F
+    /// there, F11 elsewhere).
+    pub default_mac: Option<&'static str>,
     /// Key context of the binding (`None`: everywhere).
     pub context: Option<&'static str>,
     /// Also bound in the `Input` context, beating the text field's own binding
@@ -101,7 +104,11 @@ impl ShortcutAction {
     }
 
     pub fn default_combo(&self, os: Os) -> Option<Combo> {
-        Combo::parse(self.default, os)
+        let text = match (os, self.default_mac) {
+            (Os::Mac, Some(mac)) => mac,
+            _ => self.default,
+        };
+        Combo::parse(text, os)
     }
 
     /// The combination in effect: the override if there is a readable one, else
@@ -123,12 +130,19 @@ macro_rules! shortcut {
     ($id:literal, $group:ident, $label:literal, $action:ident, $default:literal) => {
         shortcut!($id, $group, $label, $action, $default, None, false)
     };
+    ($id:literal, $group:ident, $label:literal, $action:ident, $default:literal, mac: $mac:literal) => {
+        ShortcutAction {
+            default_mac: Some($mac),
+            ..shortcut!($id, $group, $label, $action, $default)
+        }
+    };
     ($id:literal, $group:ident, $label:literal, $action:ident, $default:literal, $context:expr, $in_input:expr) => {
         ShortcutAction {
             id: $id,
             group: Group::$group,
             label: k!($label),
             default: $default,
+            default_mac: None,
             context: $context,
             in_input: $in_input,
             bind: |keys, context| KeyBinding::new(keys, $action, context),
@@ -273,6 +287,14 @@ pub const ACTIONS: &[ShortcutAction] = &[
         "tray.mini_player",
         ToggleMiniPlayer,
         "secondary-shift-m"
+    ),
+    shortcut!(
+        "toggle_fullscreen",
+        View,
+        "menu.fullscreen",
+        ToggleFullscreen,
+        "f11",
+        mac: "ctrl-cmd-f"
     ),
     shortcut!("minimize", View, "menu.minimize", Minimize, "secondary-m"),
     shortcut!("zoom", View, "menu.zoom", Zoom, ""),
@@ -469,6 +491,16 @@ pub fn current(cx: &App) -> Overrides {
     cx.try_global::<Applied>()
         .map(|a| a.0.clone())
         .unwrap_or_default()
+}
+
+/// How the keys in effect for action `id` are written here (`⌃⌘F`, `F11`), for
+/// tooltips; `None` if it has no shortcut. Doesn't copy the overrides (called
+/// while rendering).
+pub fn display(id: &str, cx: &App) -> Option<String> {
+    let os = Os::current();
+    let empty = Overrides::new();
+    let overrides = cx.try_global::<Applied>().map_or(&empty, |a| &a.0);
+    find(id)?.binding(overrides, os).map(|c| c.display(os))
 }
 
 /// `label: keys` for every action (scripts, the cheat sheet).

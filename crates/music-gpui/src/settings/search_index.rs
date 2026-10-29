@@ -477,6 +477,18 @@ pub const ENTRIES: &[Entry] = &[
         "glow"
     ),
     entry!(
+        "appearance.now_playing.fullscreen",
+        Appearance,
+        "common.now_playing",
+        "settings.appearance.np_fullscreen",
+        "settings.appearance.np_fullscreen_note",
+        "fullscreen",
+        "full",
+        "screen",
+        "maximize",
+        "immersive"
+    ),
+    entry!(
         "appearance.mini_player",
         Appearance,
         -,

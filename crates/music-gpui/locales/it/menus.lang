@@ -26,6 +26,7 @@ menu.volume_down = Abbassa volume
 menu.window = Finestra
 menu.minimize = Contrai
 menu.zoom = Ridimensiona
+menu.fullscreen = Attiva/disattiva schermo intero
 
 # Menu-bar item
 tray.next = Successivo

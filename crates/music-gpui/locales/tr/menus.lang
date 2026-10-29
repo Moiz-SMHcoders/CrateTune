@@ -26,6 +26,7 @@ menu.volume_down = Sesi Azalt
 menu.window = Pencere
 menu.minimize = Küçült
 menu.zoom = Büyüt/Küçült
+menu.fullscreen = Tam Ekranı Aç/Kapat
 
 tray.next = Sonraki
 tray.previous = Önceki

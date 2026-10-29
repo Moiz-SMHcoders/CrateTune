@@ -25,6 +25,7 @@ menu.volume_down = Giảm âm lượng
 menu.window = Cửa sổ
 menu.minimize = Thu nhỏ
 menu.zoom = Phóng to
+menu.fullscreen = Bật/tắt toàn màn hình
 
 tray.next = Tiếp theo
 tray.previous = Bài trước

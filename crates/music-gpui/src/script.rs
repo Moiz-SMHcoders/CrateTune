@@ -60,6 +60,7 @@
 //! | `@bar-hover=F`, `@bar-hover=off` | hover the progress bar at fraction F (tooltip, thumb) |
 //! | `@app-look=off\|tint\|gradient\|glow`, `@app-look-opt=follow:on\|intensity:0.7\|dir:diagonal\|dim:off\|tint:on\|animate:on`, `@motion=system\|full\|reduced\|off`, `@effects=transitions:…\|hover:…\|headers:…\|corners:square\|shadow:on\|cards:large\|translucent:on`, `@bar-art=standard\|edge`, `@look-status` | app-wide look, Motion & effects, bar artwork (saved; `look_script.rs`) |
 //! | `@shortcut=ACTION:KEYS`, `@shortcut-reset=ACTION\|all`, `@shortcut-status`, `@shortcut-record=ACTION`, `@shortcut-replace`, `@shortcut-cancel`, `@shortcut-sheet` | keyboard shortcuts (saved; `shortcuts/script.rs`) |
+//! | `@np-fullscreen[=on\|off]`, `@np-fullscreen-auto=on\|off`, `@lyrics-view`, `@fullscreen-external`, `@fullscreen-status` | full screen: Now Playing's button (no argument toggles), "Full screen when Now Playing opens" (saved), the bar's lyrics button, toggle as the green button would, print the window state and who entered it (`np_fullscreen.rs`) |
 //! | `@quit` | quit |
 //!
 //! Library / account / storage actions (`@like`, `@download`, `@backup`, …) are listed
@@ -710,6 +711,7 @@ impl MusicApp {
                     && !self.update_script_action(other, arg, window, cx)
                     && !self.card_script_action(other, arg, window, cx)
                     && !self.theme_script_action(other, arg, window, cx)
+                    && !self.fullscreen_script_action(other, arg, window, cx)
                 {
                     eprintln!("music-gpui: unknown script action @{other}");
                 }

@@ -9,6 +9,10 @@ np.preview = Anteprima
 np.speed = {speed}×
 np.sleep_tooltip = Timer di spegnimento
 np.layout_tooltip = Stile e sfondo
+np.fullscreen_enter = Schermo intero
+np.fullscreen_exit = Esci da schermo intero
+np.fullscreen_enter_keys = Schermo intero ({keys})
+np.fullscreen_exit_keys = Esci da schermo intero ({keys})
 np.menu.design = Stile
 np.menu.background = Sfondo
 

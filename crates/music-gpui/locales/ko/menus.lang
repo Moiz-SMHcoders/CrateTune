@@ -25,6 +25,7 @@ menu.volume_down = 음량 낮추기
 menu.window = 윈도우
 menu.minimize = 최소화
 menu.zoom = 확대/축소
+menu.fullscreen = 전체 화면 전환
 
 # Menu-bar item
 tray.next = 다음

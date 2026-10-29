@@ -26,6 +26,7 @@ menu.volume_down = आवाज़ घटाएँ
 menu.window = विंडो
 menu.minimize = छोटा करें
 menu.zoom = ज़ूम करें
+menu.fullscreen = पूर्ण स्क्रीन चालू/बंद करें
 
 # Menu-bar item
 tray.next = अगला

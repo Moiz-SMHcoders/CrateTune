@@ -51,6 +51,7 @@ mod mini_player;
 mod module_service;
 mod now_playing;
 mod np_designs;
+mod np_fullscreen;
 mod np_lyrics;
 mod np_region;
 mod pages;

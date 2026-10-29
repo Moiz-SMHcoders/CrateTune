@@ -7,6 +7,10 @@ np.preview = Xem trước
 np.speed = {speed}×
 np.sleep_tooltip = Hẹn giờ ngủ
 np.layout_tooltip = Thiết kế và nền
+np.fullscreen_enter = Toàn màn hình
+np.fullscreen_exit = Thoát toàn màn hình
+np.fullscreen_enter_keys = Toàn màn hình ({keys})
+np.fullscreen_exit_keys = Thoát toàn màn hình ({keys})
 np.menu.design = Thiết kế
 np.menu.background = Nền
 

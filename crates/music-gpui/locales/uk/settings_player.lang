@@ -61,6 +61,8 @@ settings.appearance.font_scale = {percent} %
 settings.appearance.text_size_note = Масштабує весь текст інтерфейсу; тексти пісень мають власний розмір («Тексти пісень»).
 settings.appearance.background = Тло
 settings.appearance.np_note = Градієнт, суцільний колір і сяйво беруть кольори з обкладинки. Сяйво рухається лише під час відтворення. Дизайн і тло також є в меню макета на екрані «Зараз грає».
+settings.appearance.np_fullscreen = Повний екран під час відкриття «Зараз грає»
+settings.appearance.np_fullscreen_note = Відкриття екрана «Зараз грає» або тексту пісні переводить вікно в повноекранний режим, а закриття виходить із нього. Вікно, яке вже було в повноекранному режимі, таким і залишиться.
 settings.appearance.mini_player = Мініплеєр
 
 # ---- Playback

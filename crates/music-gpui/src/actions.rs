@@ -31,6 +31,7 @@ gpui::actions!(
         ToggleNowPlaying,
         ToggleQueue,
         ToggleMiniPlayer,
+        ToggleFullscreen,
         GoBack,
         GoForward,
         GoHome,
@@ -80,6 +81,11 @@ pub fn init(overrides: &crate::shortcuts::Overrides, cx: &mut App) {
     on::<ToggleNowPlaying>(cx, |app, window, cx| app.toggle_now_playing(window, cx));
     on::<ToggleQueue>(cx, |app, _, cx| app.toggle_queue_panel(cx));
     on::<ToggleMiniPlayer>(cx, |app, _, cx| app.toggle_mini_player(cx));
+    // The main window's full screen, also from the mini player (`np_fullscreen.rs`).
+    on::<ToggleFullscreen>(cx, |app, window, cx| {
+        activate_main(window);
+        app.toggle_fullscreen(window, cx)
+    });
     on::<GoBack>(cx, |app, window, cx| app.go_back(window, cx));
     on::<GoForward>(cx, |app, window, cx| app.go_forward(window, cx));
     on::<GoHome>(cx, |app, window, cx| app.navigate(Route::Home, window, cx));
@@ -211,6 +217,8 @@ fn menus() -> Vec<Menu> {
             MenuItem::action(t!("common.now_playing"), ToggleNowPlaying),
             MenuItem::action(t!("common.queue"), ToggleQueue),
             MenuItem::action(t!("tray.mini_player"), ToggleMiniPlayer),
+            MenuItem::separator(),
+            MenuItem::action(t!("menu.fullscreen"), ToggleFullscreen),
         ]),
         Menu::new(t!("menu.controls")).items([
             MenuItem::action(t!("menu.play_pause"), TogglePlayback),
