@@ -272,6 +272,9 @@ struct BarState {
     art: BackgroundArt,
     casting: bool,
     sleep_armed: bool,
+    /// The current track's id and, with the Waveform style, its waveform.
+    track_id: Option<String>,
+    waveform: Option<std::sync::Arc<music_core::Waveform>>,
 }
 
 impl Render for PlayerBar {
@@ -284,6 +287,7 @@ impl Render for PlayerBar {
         let Some(state) = read_app(cx, |app, cx| {
             let config = app.settings.read(cx).settings().player_bar;
             let restored = app.playback.track.is_none() && app.store.resume_at.is_some();
+            let track_id = app.playback.track.as_ref().map(|t| t.video_id.clone());
             let hires = app
                 .current_video_id()
                 .and_then(|id| match app.hires.get(id) {
@@ -318,6 +322,11 @@ impl Render for PlayerBar {
                 },
                 casting: app.cast_device().is_some(),
                 sleep_armed: app.playback.sleep_timer.is_some(),
+                waveform: track_id
+                    .as_deref()
+                    .filter(|_| config.wants_waveform())
+                    .and_then(|id| app.waveform.ready_for(id).cloned()),
+                track_id,
             }
         }) else {
             return div().into_any_element();
@@ -348,6 +357,16 @@ impl Render for PlayerBar {
             analyzer,
             1.,
         );
+        // Waveform: the placeholder row until the shape is known, then one fade.
+        let wave_fade = if config.progress_style == ProgressStyle::Waveform {
+            self.progress.wave_step(
+                &mut frame,
+                state.track_id.as_deref(),
+                state.waveform.is_some(),
+            )
+        } else {
+            0.
+        };
         let enabled = state.has_track && state.total > 0.;
         let shown = state.scrub.unwrap_or(state.position).clamp(0., state.total);
         let frac = if state.total > 0. {
@@ -375,6 +394,8 @@ impl Render for PlayerBar {
                 phase: track_frame.phase,
                 spectrum: track_frame.spectrum,
                 peak_caps: config.peak_caps,
+                waveform: state.waveform.clone(),
+                wave_fade,
                 enabled,
                 look,
                 height: px(20.),
@@ -555,6 +576,8 @@ impl Render for PlayerBar {
                                     phase: 0.,
                                     spectrum: None,
                                     peak_caps: false,
+                                    waveform: None,
+                                    wave_fade: 0.,
                                     enabled: true,
                                     look,
                                     height: px(20.),

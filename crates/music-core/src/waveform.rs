@@ -19,7 +19,7 @@
 //! replayed track costs a file read.
 //!
 //! The player runs all of this itself, one track at a time on one low-priority
-//! thread, while enabled ([`crate::Player::set_waveform_enabled`],
+//! (utility QoS) thread, while enabled ([`crate::Player::set_waveform_enabled`],
 //! [`crate::Player::waveform`]).
 
 use std::fs;
@@ -408,13 +408,15 @@ fn thread_cpu_time() -> Option<Duration> {
     }
 }
 
-/// Moves the calling thread to the background: QoS "background" on macOS
-/// (efficiency cores, throttled I/O), `nice` 19 on Linux. Elsewhere a no-op.
+/// Lowers the calling thread's priority: QoS "utility" on macOS (below the UI
+/// and audio threads, prefers efficiency cores), `nice` 19 on Linux. Elsewhere
+/// a no-op. Not "background": on a busy Mac (load average 30+) that class got
+/// no CPU at all for over 15 s, for work that needs 20–300 ms.
 pub(crate) fn lower_thread_priority() {
     #[cfg(target_os = "macos")]
     // SAFETY: plain syscall on the calling thread; failure leaves the priority as is.
     unsafe {
-        libc::pthread_set_qos_class_self_np(libc::qos_class_t::QOS_CLASS_BACKGROUND, 0);
+        libc::pthread_set_qos_class_self_np(libc::qos_class_t::QOS_CLASS_UTILITY, 0);
     }
     #[cfg(target_os = "linux")]
     // SAFETY: plain syscalls on the calling thread; failure leaves the priority as is.

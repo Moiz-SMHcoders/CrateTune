@@ -31,6 +31,13 @@ versions follow [SemVer](https://semver.org/).
 
 ### Added
 
+* **Waveform progress style** (Settings → Appearance → Player bar → Waveform): the
+  song's loudness shape as bars, SoundCloud-style, played part in the accent. Static
+  (no animation, the fill follows the once-a-second update); a flat row of low bars
+  until the shape is known, then one short fade. Worked out once per song in the
+  background from the audio already being downloaded (Opus: read from the bitstream,
+  ~20 ms of CPU; AAC: decoded, ~0.15–0.3 s) and cached in `<config>/cache/waveforms/`
+  (~260 bytes per song). Also in the mini player.
 * **Redesigned player bar**: track info · transport + progress · secondary controls, the
   transport centred in the window; elapsed and remaining time (click to switch), a
   thumb and time bubble on hover, a lyrics button, active states for queue / lyrics /

@@ -17,7 +17,7 @@ use gpui::{
 };
 use music_core::{Spectrum, SpectrumAnalyzer, SpectrumConfig};
 
-use crate::anim::{Frame, Spec, Tween, ease_in_out_cubic, ease_out_cubic};
+use crate::anim::{Frame, Spec, Tween, ease_in_out_cubic, ease_out_cubic, linear};
 use crate::components::progress::{TrackInput, eq_bar_count};
 use crate::settings::bar_prefs::{BarBackground, GradientDirection, ProgressStyle};
 
@@ -33,6 +33,8 @@ pub const GRADIENT_INTERVAL: Duration = Duration::from_millis(66);
 const BG_FADE: Spec = Spec::ms(350, ease_in_out_cubic);
 const REVEAL: Spec = Spec::ms(140, ease_out_cubic);
 const CALM: Spec = Spec::ms(450, ease_in_out_cubic);
+/// Waveform: the placeholder row grows into the real shape once per track.
+const WAVE_FADE: Spec = Spec::ms(300, ease_out_cubic);
 /// Bands analyzed when only the level is needed (Pulse).
 const LEVEL_BANDS: usize = 16;
 
@@ -76,6 +78,9 @@ pub struct TrackFx {
     last: Option<Instant>,
     analyzer: Option<SpectrumAnalyzer>,
     pub spectrum: Rc<RefCell<Spectrum>>,
+    /// Waveform: the track the fade belongs to, and whether its shape is shown.
+    wave_track: Option<(String, bool)>,
+    wave_fade: Tween<f32>,
     /// `MUSIC_BAR_SPECTRUM_DUMP=1`: band statistics once a second (tuning).
     dump: Option<SpectrumDump>,
 }
@@ -92,6 +97,8 @@ impl Default for TrackFx {
             last: None,
             analyzer: None,
             spectrum: Rc::default(),
+            wave_track: None,
+            wave_fade: Tween::new(0.),
             dump: std::env::var_os("MUSIC_BAR_SPECTRUM_DUMP").map(|_| SpectrumDump::default()),
         }
     }
@@ -182,6 +189,31 @@ impl TrackFx {
             phase: self.phase,
             spectrum,
         }
+    }
+
+    /// Waveform: how far the placeholder row has turned into the real shape
+    /// (0..=1). A track whose waveform is already there shows it at once;
+    /// one that arrives later fades in over 300 ms, once — the only frames
+    /// this style ever asks for.
+    pub fn wave_step(&mut self, frame: &mut Frame, track: Option<&str>, ready: bool) -> f32 {
+        let now = frame.now;
+        let same = matches!((&self.wave_track, track), (Some((id, _)), Some(t)) if id == t);
+        if !same {
+            self.wave_track = track.map(|t| (t.to_owned(), ready));
+            let v = if ready { 1. } else { 0. };
+            self.wave_fade.animate_from(v, v, Spec::ms(0, linear), now);
+        } else if let Some((_, shown)) = &mut self.wave_track
+            && *shown != ready
+        {
+            *shown = ready;
+            if ready {
+                self.wave_fade.animate_from(0., 1., WAVE_FADE, now);
+            } else {
+                self.wave_fade
+                    .animate_from(0., 0., Spec::ms(0, linear), now);
+            }
+        }
+        frame.get(&self.wave_fade)
     }
 
     /// The overall level of the last analysis (0 when nothing was analyzed).

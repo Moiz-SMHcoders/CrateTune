@@ -162,6 +162,29 @@ its own executor.
   release on an M-series Mac (`spectrum::tests::analyze_is_cheap`). Low bands narrower than
   the 23 Hz bin spacing (below ~200 Hz with 32+ bands) share the window's main lobe and
   read alike.
+* `waveform` — a track's loudness envelope for the Waveform progress style:
+  `Waveform { peaks: Vec<u8> }`, 256 buckets (RMS per bucket, dB below the loudest bucket
+  over a 30 dB range, one byte each). `Player::set_waveform_enabled(true)` makes the engine
+  compute it for every track that becomes current, on one utility-QoS (`nice` 19 on Linux)
+  thread per track: first the cache (`Player::set_waveform_cache(dir)`, `<key>.wf`, 263
+  bytes; key = video id, or for `local:` tracks md5 of path + mtime + size; the oldest go
+  beyond 5000 files), else its own reader over the same bytes — the local file, or the
+  `StreamBuffer` that is already downloading (reads wait for the download; no extra
+  request) — started once 0.5 s have played or the download is complete, so it never
+  competes with the first audio, and cancelled when the track changes. Memory: one `f32`
+  per 50 ms window while it runs (~22 kB for 4.7 min). `Player::waveform()` returns a
+  `WaveformStatus` (`Off` / `Pending` / `Ready(Arc<Waveform>)` / `Unavailable(why)` for
+  previews, streams of unknown length, failed downloads; plus `from_cache` and the
+  `WaveformCost`). **Opus is not decoded**: `opus-decoder` 0.1 computes its inverse MDCT
+  with a naive O(N²) DFT (`sin_cos` in the inner loop) and needs ~28 s of CPU for a 4.7-min
+  stereo song (~10 % of a core while it plays); `opus_energy` instead range-decodes only
+  each CELT frame's header and coarse band energies (RFC 6716 / libopus `quant_bands.c`),
+  weights them with the inverse pre-emphasis and a 0.9 exponent (calibrated against the
+  AAC decode of the same songs: correlation 0.97–0.985, 0.8–2.8 dB mean difference per
+  bucket) — 6–22 ms per song. SILK / hybrid-heavy files (> 10 % of the frames) and other
+  codecs are decoded with Symphonia (AAC 4.7 min: ~0.15 s on a performance core,
+  ~0.3 s at utility QoS). `cargo run --release -p music-core --example waveform -- ID|FILE`
+  prints the cost and a sparkline (`MUSIC_COMPARE=1`: against a full decode).
 * `media_controls` — macOS Now Playing / media keys, Windows SMTC, Linux MPRIS
   (feature `media-controls`, default on).
 * `scrobble` — Last.fm + ListenBrainz (`ScrobbleTracker` applies `ScrobbleRules` — by
@@ -1472,7 +1495,7 @@ recognition `@recognize` (microphone), `@recognize-file=PATH`,
 `@onboarding-back`, `@update-check` (`release_script.rs`); `@lang=CODE|system` (UI language,
 saved); lyrics cards (`lyrics_card.rs`)
 `@card-select=3;4;5 @card-open @card-style=aspect:story|bg:blur|album|dark|light|align:left|size:large|art:off
-@card-save=PATH @card-copy @card-close`; measurement player bar (`bar_script.rs`) `@bar-style=wavy @bar-bg=gradient @bar-gradient=dir:diagonal @bar-hover=0.4 @bar-status`, `@bench-bar=N[:MS]` (only the bar marked dirty), `@bench=N[:MS]` (draws the main window N
+@card-save=PATH @card-copy @card-close`; measurement player bar (`bar_script.rs`) `@bar-style=wavy @bar-bg=gradient @bar-gradient=dir:diagonal @bar-hover=0.4 @bar-status @waveform-status`, `@bench-bar=N[:MS]` (only the bar marked dirty), `@bench=N[:MS]` (draws the main window N
 times MS ms apart and prints the draw times: the UI's CPU per frame, also with the screen
 locked); `@quit`.
 
@@ -1495,6 +1518,9 @@ lazily started artwork downloads would never begin).
 | ![Hover: thumb + time](docs/screenshots/bar-hover-1280.png) | ![Volume bubble](docs/screenshots/bar-volume-tooltip.png) |
 | ![Thick](docs/screenshots/bar-style-thick.png) | ![Simple](docs/screenshots/bar-style-simple.png) |
 | ![Wavy](docs/screenshots/bar-style-wavy.png) | ![Equalizer](docs/screenshots/bar-style-equalizer.png) |
+| ![Waveform: Despacito, playing](docs/screenshots/bar-style-waveform.png) | ![Waveform: Bohemian Rhapsody](docs/screenshots/bar-waveform-song2.png) |
+| ![Waveform, paused (same shape, only the play button and fill differ)](docs/screenshots/bar-waveform-paused.png) | ![Waveform, hover](docs/screenshots/bar-waveform-hover.png) |
+| ![Waveform placeholder (shape not known yet)](docs/screenshots/bar-waveform-placeholder.png) | ![Mini player: waveform](docs/screenshots/bar-mini-waveform.png) |
 | ![Artwork glow, playing](docs/screenshots/bar-bg-glow-playing.png) | ![Artwork glow, paused](docs/screenshots/bar-bg-glow-paused.png) |
 | ![Dynamic gradient, playing](docs/screenshots/bar-bg-gradient-playing.png) | ![Dynamic gradient, paused (dimmed)](docs/screenshots/bar-bg-gradient-paused.png) |
 | ![Gradient, dim theme, playing](docs/screenshots/bar-bg-gradient-dim-playing.png) | ![Gradient, dim theme, paused](docs/screenshots/bar-bg-gradient-dim-paused.png) |
@@ -1544,6 +1570,22 @@ per group, % full / empty, level, once a second): with the defaults pop / rock a
 used only the middle octaves. Now floor −64 dB, ceiling −16 dB, +4 dB / octave
 (`bar_fx::bar_spectrum_config`): 0.4–0.65 across all groups for the same songs.
 
+**Waveform** (`progress_style: "waveform"`): the song's loudness shape, SoundCloud-style —
+one 2 pt bar per 3 pt, mirrored around the centre line, height = the highest of the
+`music_core::Waveform` buckets it covers; played bars (and the played part of the bar the
+position is in) in the accent, the rest muted, the hover ghost and time bubble as for the
+other styles, click / drag seeks. It is static: no frames of its own, no spectrum tap, the
+fill follows the app's once-a-second update. Until the shape is known (track just started,
+still computing, a preview, a live stream, a decode error, the demo clock or casting) a
+flat row of low bars (16 %) stands in; when it arrives the bars grow into the shape in one
+300 ms fade (`TrackFx::wave_step`); a cached shape shows at once. The app's poll tells the
+player to compute waveforms only while this style is selected
+(`PlayerBarConfig::wants_waveform`; the mini player uses the bar's style when "Same look in
+the mini player" is on) and notifies only when the status changes. Settings shows a one-line
+note under the styles while Waveform is selected.
+
+![Settings → Appearance → Player bar with Waveform](docs/screenshots/bar-settings-waveform.png)
+
 **Background reacting to play / pause** (`player_bar.background_effect`, off by
 default): **Artwork glow** (the blurred artwork plus the artwork's main colour behind the
 track info, fading towards the transport), **Dynamic gradient** (two colours of the
@@ -1591,6 +1633,7 @@ single samples up to ~100 % from that were discarded and re-run):
 | Static default (Standard, no effect) | 1.6 / 0.7 / 2.7 / 0.4 / 1.1 | ~1 |
 | Minimal / Fast profile | 0.4 | ~1 |
 | Thick / Simple | 1.2 – 1.1 / 1.2 – 0.4 – 0.9 | ~1 |
+| Waveform (cached / just computed), same run conditions as Standard 1.0 † | 1.2 / 1.2 | 2–3 (as Standard in that run) |
 | Artwork glow / dynamic gradient (static) | 0.9 – 1.4 / 1.2 – 1.2 | ~1 (+ one 350 ms fade) |
 | Wavy | 5.9 / 6.5 / 4.8 | 16–18 |
 | Equalizer | 6.6 / 6.9 / 4.3 | 18–22 |
@@ -1599,6 +1642,19 @@ single samples up to ~100 % from that were discarded and re-run):
 | Wavy / Equalizer / Pulse / animated gradient, paused | 0.0 / 0.2–0.4 / 0.3 / 0.0–0.3 | 0 |
 | Mini player open: static / with Wavy (both animate) | 1.2 – 1.3 / 7.3 | 1 / 17 |
 | Now Playing open (lyrics) without / with the visualizer | 8.5 – 9.6 – 7.7 / 10.4 – 10.8 | 46–50 |
+
+† Waveform round (release, macOS arm64, a shared machine at load average 45–70, so only
+same-session pairs are comparable): "Despacito" seeked to 1:10, 12 one-second `ps` samples
+from 16 s: Standard 1.0, Waveform 1.2 (cache hit) and 1.2 (computed in that run); both
+2–3 renders/s with the same startup / seek bursts (`MUSIC_TIMINGS=1`), no frames of the
+Waveform style's own apart from the one 300 ms fade. One-time cost per song, in the app
+(utility QoS, `@waveform-status`): AAC 4:41 decoded in 311 ms of CPU (1.1–4.3 s wall on
+the loaded machine), Opus 4:22 / 5:59 read from the bitstream in 14 / 22 ms of CPU
+(91 / 650 ms wall, the latter following the download); a replay reads the 263-byte file.
+First audio (Loading → Playing, warm player cache, alternating runs): Standard 0.60 /
+0.62 / 0.67 s, Waveform 0.61 / 0.61 / 0.60 s — unchanged (the decode waits for 0.5 s of
+playback). RSS while playing: 273 / 272 MB (Standard / Waveform). With the "background"
+QoS class instead of "utility" the job got no CPU for 15+ s on this machine.
 
 Each animated frame costs ~3–4 ms of process CPU in total (draw ~1–1.7 ms plus presenting
 the whole window), which is why the rates are capped at 13–22 fps rather than 30.
@@ -1609,7 +1665,7 @@ profile sets, `PlayerBarConfig::least_resources`):
 
 | Key | Default | Least resources |
 |---|---|---|
-| `progress_style` | `standard` | `simple` (`standard` / `thick` are static too; `wavy`, `equalizer` animate) |
+| `progress_style` | `standard` | `simple` (`standard` / `thick` / `waveform` are static too, but `waveform` reads each new song once; `wavy`, `equalizer` animate) |
 | `peak_caps` | `true` | `false` |
 | `background_effect` | `false` | `false` |
 | `background` | `glow` | any (unused while off; `pulse` animates) |
@@ -1622,11 +1678,12 @@ profile sets, `PlayerBarConfig::least_resources`):
 | `mini_follows_bar` | `true` | any |
 | `np_visualizer` | `false` | `false` |
 
-**Script actions** (`bar_script.rs`): `@bar-style=standard|thick|simple|wavy|equalizer`,
+**Script actions** (`bar_script.rs`): `@bar-style=standard|thick|simple|wavy|equalizer|waveform`,
 `@bar-bg=glow|gradient|pulse|off`, `@bar-gradient=dir:…|intensity:0.7|animate:on|dim:off`,
 `@bar-peaks`, `@bar-remaining`, `@bar-scroll-volume`, `@mini-follow`, `@np-viz` (`=on|off`),
 `@bar-hover=F|off`, `@bar-volume-hover=F|off`, `@bar-status` (settings, `animates`, tap
-state), `@bench-bar=N[:MS]`; env `MUSIC_BAR_SPECTRUM_DUMP=1`.
+state), `@waveform-status` (loaded / pending / unavailable, bucket count, cache hit or
+method + CPU / wall time, a 64-character sparkline of the shape), `@bench-bar=N[:MS]`; env `MUSIC_BAR_SPECTRUM_DUMP=1`.
 
 **Verified** (screenshot build, temporary `MUSIC_CONFIG_DIR`s, real device at
 `MUSIC_VOLUME=0.0` or the demo clock): every style and background on screen (above),

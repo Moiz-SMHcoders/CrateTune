@@ -67,6 +67,8 @@ impl Render for NpVisualizer {
                         phase: 0.,
                         spectrum: fx.spectrum,
                         peak_caps: false,
+                        waveform: None,
+                        wave_fade: 0.,
                         enabled: false,
                         look: TrackLook {
                             played: bars,
