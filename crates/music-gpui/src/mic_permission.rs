@@ -8,6 +8,8 @@
 
 /// What the OS says about recording.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+// Only macOS reports anything but `Granted`.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 pub enum MicPermission {
     Granted,
     Denied,
