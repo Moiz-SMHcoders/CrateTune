@@ -15,7 +15,7 @@ macro_rules! debug_trace {
     ($($arg:tt)*) => {};
 }
 
-/// TuneDesk patch: the published crate left its developer's debug logging in place,
+/// CrateTune patch: the published crate left its developer's debug logging in place,
 /// opening `/Users/tadeusz/.../.cursor/debug-bea564.log` (or `./.cursor/...`) for
 /// append on decode paths, some of them for every packet. This stand-in for
 /// `std::fs::OpenOptions` never opens anything, so those blocks compile away.

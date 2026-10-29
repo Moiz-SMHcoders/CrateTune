@@ -25,12 +25,19 @@ versions follow [SemVer](https://semver.org/).
   installs on quit) and **Include pre-releases** (on by default for 0.x and pre-release
   versions). They are part of settings export and import, not of profiles.
 * The "Check for Updates…" action can be given a keyboard shortcut (none by default).
-* Releases now include `tunedesk-<ver>-macos-<arch>.app.zip` (the macOS update package)
+* Releases now include `cratetune-<ver>-macos-<arch>.app.zip` (the macOS update package)
   and `SHA256SUMS.txt`; `-beta` / `-rc` tags are drafted as pre-releases. How to cut a release:
   `docs/RELEASING.md`.
 
 ### Changed
 
+* **Renamed to CrateTune** (app id `cratetune`, bundle id `io.github.moiz-smhcoders.cratetune`,
+  repository `Moiz-SMHcoders/CrateTune`), with a new icon: a white katakana ク ("ku", as in
+  クレート, crate) on a navy tile. Nothing is lost: on the first start the old `tunedesk`
+  settings, library and cache folders are moved to the new name, keychain entries are taken
+  over the first time they are read, and settings / theme files exported by TuneDesk still
+  import. The macOS app is now `CrateTune.app` (delete the old `TuneDesk.app` after
+  installing).
 * The update check reads the release list instead of `releases/latest`, which skips
   pre-releases.
 * Updating from **0.1.0** still needs one manual download; later versions update

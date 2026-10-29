@@ -6,7 +6,7 @@ Pure-Rust Opus decoder by the Rusopus authors — <https://github.com/TadeuszWol
 <https://opensource.org/license/mit> and <https://www.apache.org/licenses/LICENSE-2.0>).
 
 Copied from the crates.io package 0.1.1 and used through `[patch.crates-io]` in the
-workspace `Cargo.toml`. TuneDesk's changes (search for "TuneDesk patch"):
+workspace `Cargo.toml`. CrateTune's changes (search for "CrateTune patch"):
 
 1. `src/celt/kiss_fft.rs` — `flat_fft_forward` (the FFT inside the CELT inverse MDCT)
    was a direct O(n²) DFT computing a `sin_cos` per term; it now runs a cached

@@ -133,7 +133,7 @@ mod tests {
             "draft": draft,
             "html_url": format!("https://github.com/o/r/releases/tag/{tag}"),
             "assets": [
-                {"name": format!("tunedesk-{}-macos-arm64.app.zip", tag.trim_start_matches('v')),
+                {"name": format!("cratetune-{}-macos-arm64.app.zip", tag.trim_start_matches('v')),
                  "browser_download_url": format!("https://github.com/o/r/releases/download/{tag}/a.zip"),
                  "size": 1234},
                 {"name": "SHA256SUMS.txt",
@@ -159,10 +159,10 @@ mod tests {
         assert_eq!(r.assets[0].size, 1234);
         assert_eq!(r.sums().unwrap().name, "SHA256SUMS.txt");
         assert_eq!(
-            r.package("tunedesk", "-macos-arm64.app.zip").unwrap().name,
-            "tunedesk-0.3.0-macos-arm64.app.zip"
+            r.package("cratetune", "-macos-arm64.app.zip").unwrap().name,
+            "cratetune-0.3.0-macos-arm64.app.zip"
         );
-        assert!(r.package("tunedesk", "-windows-x64.zip").is_none());
+        assert!(r.package("cratetune", "-windows-x64.zip").is_none());
         // A single object (`releases/latest`) works too.
         assert_eq!(
             Release::list_from_json(&release("v1.0.0", false, false)).len(),
@@ -173,14 +173,14 @@ mod tests {
     #[test]
     fn package_falls_back_only_to_a_single_match() {
         let mut r = Release::from_json(&release("v0.3.0", false, false)).unwrap();
-        r.assets[0].name = "tunedesk-0.3.0-hotfix-macos-arm64.app.zip".into();
-        assert!(r.package("tunedesk", "-macos-arm64.app.zip").is_some());
+        r.assets[0].name = "cratetune-0.3.0-hotfix-macos-arm64.app.zip".into();
+        assert!(r.package("cratetune", "-macos-arm64.app.zip").is_some());
         r.assets.push(Asset {
-            name: "tunedesk-0.3.1-macos-arm64.app.zip".into(),
+            name: "cratetune-0.3.1-macos-arm64.app.zip".into(),
             url: String::new(),
             size: 0,
         });
-        assert!(r.package("tunedesk", "-macos-arm64.app.zip").is_none());
+        assert!(r.package("cratetune", "-macos-arm64.app.zip").is_none());
         // Another app's asset doesn't count.
         assert!(r.package("other", "-macos-arm64.app.zip").is_none());
     }

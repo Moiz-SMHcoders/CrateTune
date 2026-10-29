@@ -1,7 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 512 512">
-  <!-- TuneDesk app icon (original artwork, GPL-3.0 like the rest of the project).
-       A white katakana テ ("te", the T of TuneDesk) in chunky geometric strokes on a
-       deep navy rounded tile. Rendered to .icns / .ico / PNG by scripts/make-icons.sh. -->
+  <!-- CrateTune app icon (original artwork, GPL-3.0 like the rest of the project).
+       A white katakana ク ("ku", as in クレート, "crate") in chunky, slightly tilted
+       strokes on a deep navy rounded tile. Rendered to .icns / .ico / PNG by
+       scripts/make-icons.sh. -->
   <defs>
     <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#22436A"/>
@@ -13,8 +14,7 @@
   </defs>
   <rect x="40" y="40" width="432" height="432" rx="104" fill="url(#tile)" filter="url(#shadow)"/>
   <g fill="#F2F5FA">
-    <path d="M168 152 L344 140 L348 188 L172 199 Z"/>
-    <path d="M118 238 L394 222 L398 274 L122 290 Z"/>
-    <path d="M262 280 L316 278 C313 338 288 384 236 418 L196 386 C238 356 259 322 262 280 Z"/>
+    <path d="M204 116 L256 126 L190 262 L140 242 Z"/>
+    <path d="M212 176 L384 158 L274 404 L224 382 L300 214 L206 224 Z"/>
   </g>
 </svg>

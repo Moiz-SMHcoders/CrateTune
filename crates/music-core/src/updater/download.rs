@@ -278,21 +278,21 @@ mod tests {
 
     #[test]
     fn only_github_release_downloads_are_allowed() {
-        let s = Source::github("Moiz-SMHcoders/TuneDesk");
+        let s = Source::github("Moiz-SMHcoders/CrateTune");
         let ok =
-            "https://github.com/Moiz-SMHcoders/TuneDesk/releases/download/v0.2.0/SHA256SUMS.txt";
+            "https://github.com/Moiz-SMHcoders/CrateTune/releases/download/v0.2.0/SHA256SUMS.txt";
         assert!(s.allows_download(ok));
         // Owner / repo names are case-insensitive on GitHub.
         assert!(s.allows_download(
-            "https://github.com/moiz-smhcoders/tunedesk/releases/download/v0.2.0/x.zip"
+            "https://github.com/moiz-smhcoders/cratetune/releases/download/v0.2.0/x.zip"
         ));
         for bad in [
-            "http://github.com/Moiz-SMHcoders/TuneDesk/releases/download/v0.2.0/x.zip",
+            "http://github.com/Moiz-SMHcoders/CrateTune/releases/download/v0.2.0/x.zip",
             "https://github.com/someone/else/releases/download/v0.2.0/x.zip",
-            "https://github.com/Moiz-SMHcoders/TuneDesk/archive/v0.2.0.zip",
-            "https://github.com.evil.example/Moiz-SMHcoders/TuneDesk/releases/download/v1/x",
-            "https://user@github.com/Moiz-SMHcoders/TuneDesk/releases/download/v1/x",
-            "https://github.com:8443/Moiz-SMHcoders/TuneDesk/releases/download/v1/x",
+            "https://github.com/Moiz-SMHcoders/CrateTune/archive/v0.2.0.zip",
+            "https://github.com.evil.example/Moiz-SMHcoders/CrateTune/releases/download/v1/x",
+            "https://user@github.com/Moiz-SMHcoders/CrateTune/releases/download/v1/x",
+            "https://github.com:8443/Moiz-SMHcoders/CrateTune/releases/download/v1/x",
             "https://objects.githubusercontent.com/x",
             "file:///etc/passwd",
             "not a url",
@@ -305,7 +305,7 @@ mod tests {
         assert!(s.allows_redirect("https://release-assets.githubusercontent.com/x"));
         assert!(!s.allows_redirect("http://objects.githubusercontent.com/x"));
         assert!(!s.allows_redirect("https://example.com/x"));
-        assert!(s.allows_api("https://api.github.com/repos/Moiz-SMHcoders/TuneDesk/releases"));
+        assert!(s.allows_api("https://api.github.com/repos/Moiz-SMHcoders/CrateTune/releases"));
         assert!(!s.allows_api("http://api.github.com/repos/x/y/releases"));
         assert!(!s.is_test());
     }

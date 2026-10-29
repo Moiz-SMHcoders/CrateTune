@@ -1,4 +1,4 @@
-//! A small self-hostable relay for the app's (TuneDesk's) Music Together sessions
+//! A small self-hostable relay for the app's (CrateTune's) Music Together sessions
 //! across networks.
 //!
 //! Guests speak the normal session protocol to the relay's URL; the relay checks

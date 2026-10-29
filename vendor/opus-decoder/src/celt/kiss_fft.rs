@@ -114,7 +114,7 @@ impl KissFft {
 /// number of complex samples.
 /// Returns: nothing; writes the forward transform to `output`.
 pub(crate) fn flat_fft_forward(input: &[f32], output: &mut [f32], n: usize) {
-    // TuneDesk patch: the published crate evaluated this DFT directly — O(n²) with a
+    // CrateTune patch: the published crate evaluated this DFT directly — O(n²) with a
     // `sin_cos` per term (n = 480 for a 20 ms frame: ~230k per channel per frame),
     // ~10 % of a core just to play a song. Same transform through a cached FFT plan.
     use std::cell::RefCell;

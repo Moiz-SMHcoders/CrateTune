@@ -93,6 +93,26 @@ impl Keychain {
     fn entry(key: &str) -> Result<keyring::Entry, String> {
         keyring::Entry::new(SERVICE, key).map_err(|e| e.to_string())
     }
+
+    /// A secret stored under a previous app id ([`crate::identity::LEGACY_APP_IDS`]):
+    /// copied to the current service, then removed from the old one.
+    fn take_legacy(key: &str) -> Option<String> {
+        for old in crate::identity::LEGACY_APP_IDS {
+            let Ok(entry) = keyring::Entry::new(old, key) else {
+                continue;
+            };
+            if let Ok(value) = entry.get_password() {
+                if Self::entry(key)
+                    .and_then(|e| e.set_password(&value).map_err(|e| e.to_string()))
+                    .is_ok()
+                {
+                    let _ = entry.delete_credential();
+                }
+                return Some(value);
+            }
+        }
+        None
+    }
 }
 
 impl Backend for Keychain {
@@ -119,7 +139,7 @@ impl Backend for Keychain {
     fn get(&self, key: &str) -> Result<Option<String>, String> {
         match Self::entry(key)?.get_password() {
             Ok(value) => Ok(Some(value)),
-            Err(keyring::Error::NoEntry) => Ok(None),
+            Err(keyring::Error::NoEntry) => Ok(Self::take_legacy(key)),
             Err(e) => Err(e.to_string()),
         }
     }

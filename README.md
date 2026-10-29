@@ -1,4 +1,4 @@
-# TuneDesk — native desktop YouTube Music client
+# CrateTune — native desktop YouTube Music client
 
 A lightweight Rust desktop client (macOS, Windows, Linux) in the spirit of the
 Android app ArchiveTune: a UI-agnostic core (`crates/music-core`) and a GPUI
@@ -38,7 +38,7 @@ music-relay` ([Relay server](#relay-server-music-relay)).
 
 | Platform | Command | Output |
 |---|---|---|
-| macOS | `scripts/bundle-macos.sh [--no-build] [--no-dmg]` | `TuneDesk.app` (Info.plist with bundle id, version from Cargo, `LSMinimumSystemVersion` 11.0, `NSMicrophoneUsageDescription`, high-res, music category; ad-hoc signed, or Developer ID + hardened runtime with `MACOS_SIGN_IDENTITY`), `tunedesk-<ver>-macos-<arch>.dmg` (first installs) and `tunedesk-<ver>-macos-<arch>.app.zip` (the updater's package, `ditto -c -k --keepParent`) |
+| macOS | `scripts/bundle-macos.sh [--no-build] [--no-dmg]` | `CrateTune.app` (Info.plist with bundle id, version from Cargo, `LSMinimumSystemVersion` 11.0, `NSMicrophoneUsageDescription`, high-res, music category; ad-hoc signed, or Developer ID + hardened runtime with `MACOS_SIGN_IDENTITY`), `cratetune-<ver>-macos-<arch>.dmg` (first installs) and `cratetune-<ver>-macos-<arch>.app.zip` (the updater's package, `ditto -c -k --keepParent`) |
 | Linux | `scripts/bundle-linux.sh [--no-build] [--appimage]` | `.tar.gz` with `bin/`, `.desktop`, hicolor icons, AppStream metainfo, `install.sh`; AppImage via `appimagetool` |
 | Windows | `pwsh scripts/bundle-windows.ps1` | `.zip` and an Inno Setup 6 per-user installer (`packaging/windows/installer.iss`); the `.exe` gets its icon + version resource from `build.rs` (`embed-resource`, native Windows builds). An MSI could be made with `cargo-wix` instead. |
 
@@ -48,8 +48,8 @@ attaches them to a draft release with `SHA256SUMS.txt`. How to cut a release:
 [docs/RELEASING.md](docs/RELEASING.md). The app updates itself from those releases
 ([Self-update](#self-update)).
 
-**App identity.** The app is **TuneDesk** (app id `tunedesk`; the bundle id
-`io.github.tunedesk` is a placeholder). Name and ids live in **one file, `packaging/app.env`** (`APP_NAME`, `APP_ID`,
+**App identity.** The app is **CrateTune** (app id `cratetune`; the bundle id
+`io.github.moiz-smhcoders.cratetune` is a placeholder). Name and ids live in **one file, `packaging/app.env`** (`APP_NAME`, `APP_ID`,
 `BUNDLE_ID`, `APP_SUMMARY`, `UPDATE_REPO`), read by `crates/music-gpui/build.rs`
 (→ `identity.rs`: window title, menus, tray, About, media-controls / MPRIS name, settings
 directory and keychain service) and by the packaging scripts. Renaming `APP_ID` moves the
@@ -268,7 +268,7 @@ Media controls, scrobbling and Discord all hang off the poll the UI already does
 // once, on the UI thread after the event loop/main window exists
 // (macOS: main thread; Windows: set `config.hwnd` to the main window's HWND)
 let mut controls = MediaControls::for_player(
-    MediaControlsConfig::new("tunedesk", "TuneDesk"),
+    MediaControlsConfig::new("cratetune", "CrateTune"),
     player.clone(),
     |event| { /* MediaControlEvent::Next / Previous → UI queue */ },
 )?;
@@ -1219,7 +1219,7 @@ session and wrong key), then forwards text frames between the host and its guest
 ```sh
 cargo build --release -p music-relay
 ./target/release/music-relay --listen 0.0.0.0:42118 -v
-curl http://localhost:42118/health   # {"app":"TuneDesk","connections":1,"guests":0,"rooms":0,"status":"ok"}
+curl http://localhost:42118/health   # {"app":"CrateTune","connections":1,"guests":0,"rooms":0,"status":"ok"}
 ```
 
 Options: `--max-rooms 100`, `--max-guests 20` (per room), `--max-connections 1000`,
@@ -1476,8 +1476,8 @@ main window and mini player frames, and `library`: privacy switches,
 play-cache limit, music folders, the signed-in YouTube account's name / avatar /
 `auth_user` / channel, `library.downloads` (download liked songs), `sponsorblock`, `together`
 (incl. `relay_url`), `spotify`, `ai_filter`, `cast`, `custom_theme`, `player_bar`, `shortcuts`) lives in the platform config dir — macOS
-`~/Library/Application Support/tunedesk/`, Linux `~/.config/tunedesk/`, Windows
-`%APPDATA%\tunedesk\config\` — or `$MUSIC_CONFIG_DIR`. It is written 500 ms after the last
+`~/Library/Application Support/cratetune/`, Linux `~/.config/cratetune/`, Windows
+`%APPDATA%\cratetune\config\` — or `$MUSIC_CONFIG_DIR`. It is written 500 ms after the last
 change and on quit, atomically (temp file + rename), mode 0600 in a 0700 directory. Missing
 fields fall back to defaults, unknown ones are ignored, out-of-range values are clamped, and a
 file that isn't valid JSON is moved to `settings.json.bad`; an unknown theme / repeat value
@@ -1491,7 +1491,7 @@ The Last.fm shared secret and session key, the ListenBrainz token, the Paxsenix 
 BetterLyrics / AI-translation API keys, the proxy password, the YouTube Music sign-in
 cookie, the Spotify refresh token and the AI-filter API key go to the OS keychain
 (`keyring` 4: macOS Keychain, Windows Credential Manager, Secret Service), service
-`tunedesk`, one entry each. If the keychain fails (or `MUSIC_SECRET_STORE=file`), they are
+`cratetune`, one entry each. If the keychain fails (or `MUSIC_SECRET_STORE=file`), they are
 stored in the `secrets` object of `settings.json` (still 0600) and moved back into the keychain
 the next time it accepts a write; the Storage and Scrobbling sections show where secrets are kept. The keychain
 is only read for accounts the settings say exist, on a worker thread (macOS may show an
@@ -1921,7 +1921,7 @@ tag), `@bar-menu` (a real right-click on the bar), `@bar-customize`,
   ignored, sections with wrong types → skipped, plain `settings.json` accepted, secrets in
   the file ignored) — shown in a preview; nothing changes before **Import**. Applied live
   (theme, audio, lyrics, content, proxy, EQ, language), then a "Restart now / Later"
-  prompt for the settings page's own fields. **Theme files** (`<name>.tunedesk-theme.json`)
+  prompt for the settings page's own fields. **Theme files** (`<name>.cratetune-theme.json`)
   carry only the look and replace only it.
 * **Profiles** (`settings/profiles.rs`): see the user guide. Files `profiles/<id>.json`
   (settings-export format with a `profile` header, so they import as settings and any
@@ -1949,7 +1949,7 @@ tag), `@bar-menu` (a real right-click on the bar), `@bar-customize`,
 `darkness`: dim | standard | deep | black; `contrast`: standard | medium | high;
 `corners`: sharp | regular | round; `density`: compact | regular | comfortable;
 `dynamic.style`: vibrant | muted | monochrome | content. Unknown values fall back to the
-default. Profiles: `profiles/<id>.json` = `{"format": "tunedesk-settings", "schema": 1,
+default. Profiles: `profiles/<id>.json` = `{"format": "cratetune-settings", "schema": 1,
 "app_version", "exported_at", "profile": {"id", "name"}, "settings": {"appearance",
 "custom_theme", "now_playing", "lyrics"}}`, `profiles/active.json` = `{"active": "<id>"}`.
 
@@ -2031,7 +2031,7 @@ in [docs/USER_GUIDE.md → Updates](docs/USER_GUIDE.md#updates); cutting a relea
     failure. Then it starts the app.
   * **AppImage** (`$APPIMAGE`): copied next to the old one, re-hashed, `chmod 755`, then
     renamed over it.
-  * **Tarball** (`<prefix>/bin/tunedesk` + `share/applications/tunedesk.desktop`):
+  * **Tarball** (`<prefix>/bin/cratetune` + `share/applications/cratetune.desktop`):
     `tar -xzf`, then `bin/` + `share/` are replaced all-or-nothing as on Windows. A
     read-only or `/usr` prefix, Flatpak and Snap get the link only.
 * **UI** (`update_check.rs`, `settings/about.rs`):
@@ -2045,13 +2045,13 @@ in [docs/USER_GUIDE.md → Updates](docs/USER_GUIDE.md#updates); cutting a relea
     (`CheckForUpdates`, shortcut id `check_for_updates`, unbound) opens About and checks.
 * **macOS keychain / TCC:**
   * Secrets are legacy login-keychain items (keyring's `apple-native` store, one item per
-    secret, service `tunedesk`).
+    secret, service `cratetune`).
   * Ad-hoc signing gives every build a new code identity, so after an update macOS asks
     once per stored item. The app reads only the items whose account is set up. The
     microphone permission may be asked again.
   * Not done as a "mitigation": an explicit designated requirement (`codesign -s - -r
-    'designated => identifier "io.github.tunedesk"'`). It would keep the microphone grant
-    across versions, but any binary calling itself `io.github.tunedesk` would inherit it.
+    'designated => identifier "io.github.moiz-smhcoders.cratetune"'`). It would keep the microphone grant
+    across versions, but any binary calling itself `io.github.moiz-smhcoders.cratetune` would inherit it.
     It would likely not stop the keychain prompts either, because legacy keychain items
     also check the signer's partition (the cdhash for code without a Team ID).
   * The real fix is Developer ID signing (`MACOS_SIGN_IDENTITY`).
@@ -2128,7 +2128,7 @@ build, demo clock): `@recognize-file` with 12 s WAV clips → result, YouTube Mu
 history of two entries, `@recognize-history=1`; clicking Play on the result played the
 match. Onboarding all six steps + finish (`onboarded: true` written). Update check against
 `zed-industries/zed` → "Version 1.25.3 is available". **Bundle:** `scripts/bundle-macos.sh`
-→ `TuneDesk.app` (34 MB, ad-hoc signed, `codesign --verify --strict` passes, Info.plist
+→ `CrateTune.app` (34 MB, ad-hoc signed, `codesign --verify --strict` passes, Info.plist
 linted) + 15 MB DMG; launched with `open --env …` (temp config, `MUSIC_VOLUME=0.0`):
 menu-bar item created, media controls started without error, search → play (real device,
 muted) → next → pause/resume → mini player on/off → Recognition page → quit.

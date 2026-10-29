@@ -67,5 +67,5 @@ version = "6.4"
 version = "2.0.18"
 
 
-# Kept out of the TuneDesk workspace (built through [patch.crates-io]).
+# Kept out of the CrateTune workspace (built through [patch.crates-io]).
 [workspace]

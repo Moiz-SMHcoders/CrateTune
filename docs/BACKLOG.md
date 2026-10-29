@@ -1,6 +1,6 @@
 # Backlog
 
-Known bugs, unverified areas, platform work, features ArchiveTune has that TuneDesk lacks,
+Known bugs, unverified areas, platform work, features ArchiveTune has that CrateTune lacks,
 performance ideas and technical debt, all in one list so items can be picked up later.
 Details stay in the linked sections. Keep this file current: remove an item once it is
 fixed or verified, and add new ones here instead of only in a README round section.
@@ -156,7 +156,7 @@ work, but with one fewer fallback. Details: [README: Full-length YouTube
 streams](../README.md#full-length-youtube-streams-youtube-module),
 `crates/music-core/src/youtube/webview2.rs`, `webkitgtk.rs`. · Size: medium · Priority: medium
 
-**P4. The bundle ID is a placeholder (`io.github.tunedesk`)**
+**P4. The bundle ID is a placeholder (`io.github.moiz-smhcoders.cratetune`)**
 Changing the identity in `packaging/app.env` moves the settings folder and keychain entries,
 so pick the final ID before many users exist. Details: [README: Install /
 build](../README.md#install--build) ("App identity"). · Size: small · Priority: high
@@ -205,14 +205,14 @@ use stops at the buttons. Details: [USER_GUIDE: Known limitations](USER_GUIDE.md
 
 **M4. Spotify `sp_dc` cookie login (by design, won't do)**
 ArchiveTune's cookie login needs a TOTP made from a secret extracted from Spotify's web player,
-which isn't a legitimate client flow. TuneDesk uses the official Web API with the user's own
+which isn't a legitimate client flow. CrateTune uses the official Web API with the user's own
 Client ID, or an Exportify CSV. Listed so nobody ports it by accident. Details: [README:
 Integrations](../README.md#integrations-sponsorblock-music-together-playlist-import--export).
 · Size: n/a · Priority: low
 
 **M5. ArchiveTune's blocklist-based AI-music filter (by design, not used)**
 ArchiveTune hides AI-generated music using channel blocklists from a third-party list.
-TuneDesk's AI content filter asks an LLM endpoint instead. Details: [README: Integrations
+CrateTune's AI content filter asks an LLM endpoint instead. Details: [README: Integrations
 round 2](../README.md#integrations-round-2-relay-host-transfer-chromecast-ai-filter-potoken).
 · Size: medium · Priority: low
 

@@ -2,7 +2,7 @@
 
 How to cut a release that the in-app updater can install. The updater (`music_core::updater`,
 Settings → About → Updates) reads the GitHub releases of `UPDATE_REPO` in
-`packaging/app.env` (`Moiz-SMHcoders/TuneDesk`).
+`packaging/app.env` (`Moiz-SMHcoders/CrateTune`).
 
 ## Steps
 
@@ -35,12 +35,12 @@ asset is wrong, delete the release and tag, then cut a new patch version.
 
 | Asset | Used for |
 |---|---|
-| `tunedesk-X.Y.Z-macos-arm64.dmg`, `…-macos-x86_64.dmg` | first install on macOS |
-| `tunedesk-X.Y.Z-macos-arm64.app.zip`, `…-macos-x86_64.app.zip` | **macOS updates** (`ditto -c -k --keepParent`, made by `scripts/bundle-macos.sh`) |
-| `tunedesk-X.Y.Z-windows-x64-setup.exe` | first install and **updates of installed copies** (Inno Setup, run with `/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP- /NOCANCEL /RELAUNCH=1`) |
-| `tunedesk-X.Y.Z-windows-x64.zip` | portable copies: first install and **updates** |
-| `tunedesk-X.Y.Z-x86_64.AppImage` | AppImage: first install and **updates** |
-| `tunedesk-X.Y.Z-linux-x86_64.tar.gz` | tarball installs (`install.sh`): first install and **updates** |
+| `cratetune-X.Y.Z-macos-arm64.dmg`, `…-macos-x86_64.dmg` | first install on macOS |
+| `cratetune-X.Y.Z-macos-arm64.app.zip`, `…-macos-x86_64.app.zip` | **macOS updates** (`ditto -c -k --keepParent`, made by `scripts/bundle-macos.sh`) |
+| `cratetune-X.Y.Z-windows-x64-setup.exe` | first install and **updates of installed copies** (Inno Setup, run with `/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP- /NOCANCEL /RELAUNCH=1`) |
+| `cratetune-X.Y.Z-windows-x64.zip` | portable copies: first install and **updates** |
+| `cratetune-X.Y.Z-x86_64.AppImage` | AppImage: first install and **updates** |
+| `cratetune-X.Y.Z-linux-x86_64.tar.gz` | tarball installs (`install.sh`): first install and **updates** |
 | `SHA256SUMS.txt` | **required**: no sums file, or no line for the package, means no update |
 
 The updater looks for `<APP_ID>-<version><suffix>`, so the names must stay as they are.

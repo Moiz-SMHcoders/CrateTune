@@ -60,14 +60,18 @@ fn file_stem(name: &str) -> String {
     }
 }
 
-/// The theme name of a file name (`Blue night.tunedesk-theme.json` → `Blue night`).
+/// The theme name of a file name (`Blue night.cratetune-theme.json` → `Blue night`).
 fn theme_name_of(path: &std::path::Path) -> String {
     let name = path
         .file_name()
         .map(|n| n.to_string_lossy().into_owned())
         .unwrap_or_default();
     let ext = format!(".{}", portable::theme_extension());
+    let legacy = crate::identity::LEGACY_APP_IDS
+        .iter()
+        .find_map(|old| name.strip_suffix(&format!(".{old}-theme.json")));
     name.strip_suffix(&ext)
+        .or(legacy)
         .or_else(|| name.strip_suffix(".json"))
         .unwrap_or(&name)
         .to_owned()

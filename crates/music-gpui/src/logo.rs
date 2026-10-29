@@ -22,7 +22,7 @@ pub fn logo(size: f32) -> impl IntoElement {
 }
 
 /// Shows the app icon in the Dock and the app switcher when the binary runs outside
-/// `TuneDesk.app` (an app bundle gets it from `Info.plist`). Call after the
+/// `CrateTune.app` (an app bundle gets it from `Info.plist`). Call after the
 /// application has started.
 #[cfg(target_os = "macos")]
 pub fn set_dock_icon() {

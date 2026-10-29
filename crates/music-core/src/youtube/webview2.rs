@@ -2,7 +2,7 @@
 //!
 //! WebView2 is single-threaded apartment COM with callbacks delivered through
 //! the window message loop, so it lives on a dedicated thread: a never-shown
-//! window, an environment (user data in `%LOCALAPPDATA%\tunedesk\BotGuard`),
+//! window, an environment (user data in `%LOCALAPPDATA%\cratetune\BotGuard`),
 //! a controller and its `ICoreWebView2`. Requests arrive over a channel; the
 //! thread is woken with `PostThreadMessageW(WM_APP)` and otherwise blocks in
 //! `GetMessageW` (no polling). The page is served for
@@ -377,7 +377,7 @@ fn create_environment() -> Result<ICoreWebView2Environment> {
     let data = std::env::var_os("LOCALAPPDATA")
         .map(std::path::PathBuf::from)
         .unwrap_or_else(std::env::temp_dir)
-        .join("tunedesk")
+        .join("cratetune")
         .join("BotGuard");
     let _ = std::fs::create_dir_all(&data);
     let data = HSTRING::from(data.as_os_str());

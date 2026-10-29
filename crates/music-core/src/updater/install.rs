@@ -492,11 +492,11 @@ mod tests {
     #[test]
     fn finds_the_tarball_tree() {
         let work = temp("tarball");
-        let top = work.join("tunedesk-0.2.0-linux-x86_64");
+        let top = work.join("cratetune-0.2.0-linux-x86_64");
         for rel in [
-            "bin/tunedesk",
-            "share/applications/tunedesk.desktop",
-            "share/icons/hicolor/64x64/apps/tunedesk.png",
+            "bin/cratetune",
+            "share/applications/cratetune.desktop",
+            "share/icons/hicolor/64x64/apps/cratetune.png",
             "install.sh",
             "LICENSE",
         ] {
@@ -504,8 +504,8 @@ mod tests {
             std::fs::create_dir_all(p.parent().unwrap()).unwrap();
             std::fs::write(p, rel).unwrap();
         }
-        assert_eq!(tarball_root(&work, "tunedesk").unwrap(), top);
-        let files = tarball_files(&top, "tunedesk").unwrap();
+        assert_eq!(tarball_root(&work, "cratetune").unwrap(), top);
+        let files = tarball_files(&top, "cratetune").unwrap();
         assert_eq!(files.len(), 3);
         assert!(!files.iter().any(|f| f.ends_with("install.sh")));
         assert!(tarball_root(&work, "other").is_err());
@@ -520,7 +520,7 @@ mod tests {
         {
             let mut zip = zip::ZipWriter::new(std::fs::File::create(&zip_path).unwrap());
             let options = zip::write::SimpleFileOptions::default();
-            zip.start_file("tunedesk.exe", options).unwrap();
+            zip.start_file("cratetune.exe", options).unwrap();
             zip.write_all(b"exe").unwrap();
             zip.start_file("sub/LICENSE", options).unwrap();
             zip.write_all(b"gpl").unwrap();
@@ -528,7 +528,7 @@ mod tests {
         }
         let out = dir.join("out");
         extract_zip(&zip_path, &out).unwrap();
-        assert_eq!(std::fs::read(out.join("tunedesk.exe")).unwrap(), b"exe");
+        assert_eq!(std::fs::read(out.join("cratetune.exe")).unwrap(), b"exe");
         assert_eq!(std::fs::read(out.join("sub/LICENSE")).unwrap(), b"gpl");
 
         let evil = dir.join("evil.zip");
@@ -546,11 +546,11 @@ mod tests {
 
     #[test]
     fn open_args_pass_the_apps_variables_only() {
-        let args = mac_open_args(Path::new("/Applications/TuneDesk.app"));
+        let args = mac_open_args(Path::new("/Applications/CrateTune.app"));
         assert_eq!(args.first().map(|a| a.as_os_str()), Some(OsStr::new("-n")));
         assert_eq!(
             args.last().map(|a| a.as_os_str()),
-            Some(OsStr::new("/Applications/TuneDesk.app"))
+            Some(OsStr::new("/Applications/CrateTune.app"))
         );
         for pair in args.chunks(2).skip(1) {
             if pair.len() == 2 && pair[0] == "--env" {
@@ -567,7 +567,7 @@ mod tests {
     #[test]
     fn appimage_swap_is_atomic_and_checked() {
         let dir = temp("appimage");
-        let installed = dir.join("TuneDesk.AppImage");
+        let installed = dir.join("CrateTune.AppImage");
         std::fs::write(&installed, b"old").unwrap();
         let file = dir.join("new.AppImage");
         std::fs::write(&file, b"new").unwrap();
@@ -610,10 +610,10 @@ mod tests {
     #[test]
     fn mac_swap_rolls_back() {
         let dir = temp("macswap");
-        let bundle = dir.join("TuneDesk.app");
+        let bundle = dir.join("CrateTune.app");
         std::fs::create_dir_all(bundle.join("Contents")).unwrap();
         std::fs::write(bundle.join("Contents/marker"), b"old").unwrap();
-        let new_app = dir.join("work/TuneDesk.app");
+        let new_app = dir.join("work/CrateTune.app");
         std::fs::create_dir_all(new_app.join("Contents")).unwrap();
         std::fs::write(new_app.join("Contents/marker"), b"new").unwrap();
         let log = UpdateLog::new(dir.join("update.log"));
@@ -633,7 +633,11 @@ mod tests {
         let hidden = std::fs::read_dir(&dir)
             .unwrap()
             .flatten()
-            .filter(|e| e.file_name().to_string_lossy().starts_with(".TuneDesk.app"))
+            .filter(|e| {
+                e.file_name()
+                    .to_string_lossy()
+                    .starts_with(".CrateTune.app")
+            })
             .count();
         assert_eq!(hidden, 0);
         std::fs::remove_dir_all(&dir).unwrap();

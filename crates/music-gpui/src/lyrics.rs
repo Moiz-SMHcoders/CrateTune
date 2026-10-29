@@ -234,8 +234,7 @@ pub fn kanji_dictionary_dir() -> Option<PathBuf> {
     if let Some(dir) = std::env::var_os("MUSIC_CONFIG_DIR").filter(|d| !d.is_empty()) {
         return Some(PathBuf::from(dir).join("cache").join("ja-dict"));
     }
-    directories::ProjectDirs::from("", "", crate::identity::APP_ID)
-        .map(|d| d.cache_dir().join("ja-dict"))
+    crate::identity::project_dirs().map(|d| d.cache_dir().join("ja-dict"))
 }
 
 /// Lyrics service + cache and the per-track state the app keeps.

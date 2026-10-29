@@ -64,7 +64,7 @@ pub enum ManualReason {
 /// The install the updater replaces.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum InstallKind {
-    /// `…/TuneDesk.app` (updated from `<id>-<ver>-macos-<arch>.app.zip`).
+    /// `…/CrateTune.app` (updated from `<id>-<ver>-macos-<arch>.app.zip`).
     MacBundle { bundle: PathBuf },
     /// Inno Setup per-user install (`unins000.exe` next to the exe); updated by
     /// running the new `-setup.exe` silently.
@@ -301,7 +301,7 @@ mod tests {
         let exists = move |p: &Path| files.iter().any(|f| f == p);
         InstallKind::detect(&Environment {
             os,
-            app_id: "tunedesk",
+            app_id: "cratetune",
             exe: Path::new(exe),
             appimage: appimage.map(Path::new),
             sandboxed: false,
@@ -314,12 +314,12 @@ mod tests {
         assert_eq!(
             detect(
                 Os::MacOs,
-                "/Applications/TuneDesk.app/Contents/MacOS/music-gpui",
+                "/Applications/CrateTune.app/Contents/MacOS/music-gpui",
                 None,
                 &[]
             ),
             InstallKind::MacBundle {
-                bundle: "/Applications/TuneDesk.app".into()
+                bundle: "/Applications/CrateTune.app".into()
             }
         );
         assert_eq!(
@@ -334,7 +334,7 @@ mod tests {
         assert_eq!(
             detect(
                 Os::MacOs,
-                "/private/var/folders/x/AppTranslocation/ABC/d/TuneDesk.app/Contents/MacOS/music-gpui",
+                "/private/var/folders/x/AppTranslocation/ABC/d/CrateTune.app/Contents/MacOS/music-gpui",
                 None,
                 &[]
             ),
@@ -344,10 +344,10 @@ mod tests {
 
     #[test]
     fn detects_windows_installs() {
-        let installed = r"C:\Users\me\AppData\Local\Programs\TuneDesk\tunedesk.exe";
+        let installed = r"C:\Users\me\AppData\Local\Programs\CrateTune\cratetune.exe";
         // Path::parent only understands `\` on Windows; use `/` for the fake paths.
         let installed_fwd = installed.replace('\\', "/");
-        let uninstaller = installed_fwd.replace("tunedesk.exe", "unins000.exe");
+        let uninstaller = installed_fwd.replace("cratetune.exe", "unins000.exe");
         assert_eq!(
             detect(Os::Windows, &installed_fwd, None, &[&uninstaller]),
             InstallKind::WindowsInstaller {
@@ -355,9 +355,14 @@ mod tests {
             }
         );
         assert_eq!(
-            detect(Os::Windows, "D:/Portable/TuneDesk/TuneDesk.EXE", None, &[]),
+            detect(
+                Os::Windows,
+                "D:/Portable/CrateTune/CrateTune.EXE",
+                None,
+                &[]
+            ),
             InstallKind::WindowsPortable {
-                exe: "D:/Portable/TuneDesk/TuneDesk.EXE".into()
+                exe: "D:/Portable/CrateTune/CrateTune.EXE".into()
             }
         );
         assert_eq!(
@@ -376,44 +381,44 @@ mod tests {
         assert_eq!(
             detect(
                 Os::Linux,
-                "/tmp/.mount_tuneXYZ/usr/bin/tunedesk",
-                Some("/home/me/Apps/tunedesk-0.1.0-x86_64.AppImage"),
+                "/tmp/.mount_tuneXYZ/usr/bin/cratetune",
+                Some("/home/me/Apps/cratetune-0.1.0-x86_64.AppImage"),
                 &[]
             ),
             InstallKind::AppImage {
-                path: "/home/me/Apps/tunedesk-0.1.0-x86_64.AppImage".into()
+                path: "/home/me/Apps/cratetune-0.1.0-x86_64.AppImage".into()
             }
         );
         assert_eq!(
             detect(
                 Os::Linux,
-                "/home/me/.local/bin/tunedesk",
+                "/home/me/.local/bin/cratetune",
                 None,
-                &["/home/me/.local/share/applications/tunedesk.desktop"]
+                &["/home/me/.local/share/applications/cratetune.desktop"]
             ),
             InstallKind::LinuxTarball {
                 prefix: "/home/me/.local".into(),
-                exe: "/home/me/.local/bin/tunedesk".into()
+                exe: "/home/me/.local/bin/cratetune".into()
             }
         );
         // No desktop file: not the tarball layout.
         assert_eq!(
-            detect(Os::Linux, "/home/me/.local/bin/tunedesk", None, &[]),
+            detect(Os::Linux, "/home/me/.local/bin/cratetune", None, &[]),
             InstallKind::Manual(ManualReason::DevBuild)
         );
         assert_eq!(
             detect(
                 Os::Linux,
-                "/usr/bin/tunedesk",
+                "/usr/bin/cratetune",
                 None,
-                &["/usr/share/applications/tunedesk.desktop"]
+                &["/usr/share/applications/cratetune.desktop"]
             ),
             InstallKind::Manual(ManualReason::SystemPackage)
         );
         let sandboxed = InstallKind::detect(&Environment {
             os: Os::Linux,
-            app_id: "tunedesk",
-            exe: Path::new("/app/bin/tunedesk"),
+            app_id: "cratetune",
+            exe: Path::new("/app/bin/cratetune"),
             appimage: None,
             sandboxed: true,
             exists: &|_| true,

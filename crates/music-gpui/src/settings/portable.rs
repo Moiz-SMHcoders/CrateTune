@@ -1,12 +1,12 @@
 //! Moving settings between machines: settings export / import (every non-secret
-//! setting) and theme files (`<name>.tunedesk-theme.json`: only the look), plus
+//! setting) and theme files (`<name>.cratetune-theme.json`: only the look), plus
 //! the built-in theme presets. Pure functions on `serde_json::Value`, so they are
 //! tested without a UI; `portable_ui.rs` adds the file dialogs and the preview.
 //!
 //! **Settings files** wrap `settings.json` with a header:
 //!
 //! ```json
-//! { "format": "tunedesk-settings", "schema": 1, "app_version": "0.1.0",
+//! { "format": "cratetune-settings", "schema": 1, "app_version": "0.1.0",
 //!   "exported_at": "2026-10-28T12:00:00Z", "settings": { … } }
 //! ```
 //!
@@ -63,7 +63,23 @@ pub fn theme_format() -> String {
     format!("{APP_ID}-theme")
 }
 
-/// Suffix of theme files (`My theme.tunedesk-theme.json`).
+/// `format` is a settings export of this app, also under a previous id.
+fn is_settings_format(format: &str) -> bool {
+    format == settings_format()
+        || crate::identity::LEGACY_APP_IDS
+            .iter()
+            .any(|old| format == format!("{old}-settings"))
+}
+
+/// `format` is a theme file of this app, also under a previous id.
+fn is_theme_format(format: &str) -> bool {
+    format == theme_format()
+        || crate::identity::LEGACY_APP_IDS
+            .iter()
+            .any(|old| format == format!("{old}-theme"))
+}
+
+/// Suffix of theme files (`My theme.cratetune-theme.json`).
 pub fn theme_extension() -> String {
     format!("{APP_ID}-theme.json")
 }
@@ -376,7 +392,7 @@ pub fn plan_settings_import(text: &str, current: &Settings) -> Result<ImportPlan
     let mut notes = Vec::new();
     let format = doc.get("format").and_then(Value::as_str).map(str::to_owned);
     let mut payload = match format.as_deref() {
-        Some(f) if f == settings_format() => {
+        Some(f) if is_settings_format(f) => {
             schema_note(&doc, &mut notes);
             match doc.get("settings") {
                 Some(Value::Object(m)) => m.clone(),
@@ -387,7 +403,7 @@ pub fn plan_settings_import(text: &str, current: &Settings) -> Result<ImportPlan
                 }
             }
         }
-        Some(f) if f == theme_format() => return Err(ImportError::WrongKind { theme: true }),
+        Some(f) if is_theme_format(f) => return Err(ImportError::WrongKind { theme: true }),
         Some(_) => return Err(ImportError::NotOurs),
         None => {
             // A plain settings.json: must look like one.
@@ -537,8 +553,8 @@ fn apply_theme_payload(current: &Settings, theme: &Map<String, Value>) -> (Setti
 pub fn plan_theme_import(text: &str, current: &Settings) -> Result<ImportPlan, ImportError> {
     let doc = parse_object(text)?;
     match doc.get("format").and_then(Value::as_str) {
-        Some(f) if f == theme_format() => {}
-        Some(f) if f == settings_format() => return Err(ImportError::WrongKind { theme: false }),
+        Some(f) if is_theme_format(f) => {}
+        Some(f) if is_settings_format(f) => return Err(ImportError::WrongKind { theme: false }),
         _ => return Err(ImportError::NotOurs),
     }
     let mut notes = Vec::new();
@@ -756,7 +772,7 @@ mod tests {
         let doc: Value = serde_json::from_str(&text).unwrap();
         assert_eq!(
             doc["format"],
-            "tunedesk-settings".replace("tunedesk", APP_ID)
+            "cratetune-settings".replace("cratetune", APP_ID)
         );
         assert_eq!(doc["schema"], VERSION);
         assert_eq!(doc["exported_at"], "2026-10-28T12:00:00Z");
@@ -785,6 +801,18 @@ mod tests {
         assert_eq!(plan.settings.window, s.window);
         assert_eq!(plan.settings.lastfm.user, s.lastfm.user);
         assert!(plan.settings.network.has_password);
+    }
+
+    #[test]
+    fn exports_made_under_a_previous_app_id_import() {
+        let current = sample();
+        for old in crate::identity::LEGACY_APP_IDS {
+            let file = format!(
+                r#"{{"format": "{old}-settings", "schema": 1, "settings": {{"volume": 0.4}}}}"#
+            );
+            let plan = plan_settings_import(&file, &current).unwrap();
+            assert_eq!(plan.settings.volume, 0.4);
+        }
     }
 
     #[test]

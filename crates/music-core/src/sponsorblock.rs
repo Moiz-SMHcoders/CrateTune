@@ -378,7 +378,7 @@ fn fetch(api: &str, video_id: &str, categories: &[Category]) -> Result<Vec<Segme
         .query("categories", &categories_json)
         .query("actionTypes", "[\"skip\"]")
         .query("service", "YouTube")
-        .header("User-Agent", "TuneDesk")
+        .header("User-Agent", "CrateTune")
         .call()?;
     let status = resp.status().as_u16();
     if status == 404 {

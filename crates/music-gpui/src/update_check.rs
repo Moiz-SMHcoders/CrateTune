@@ -142,8 +142,7 @@ fn build_updater() -> Option<Updater> {
     let config_override = std::env::var_os("MUSIC_CONFIG_DIR")
         .filter(|d| !d.is_empty())
         .map(std::path::PathBuf::from);
-    let platform_cache =
-        directories::ProjectDirs::from("", "", identity::APP_ID).map(|d| d.cache_dir().to_owned());
+    let platform_cache = identity::project_dirs().map(|d| d.cache_dir().to_owned());
     let dir =
         music_core::updater::default_dir(platform_cache.as_deref(), config_override.as_deref())?;
     let current = Version::parse(&current_version())?;

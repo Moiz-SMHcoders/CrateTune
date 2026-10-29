@@ -84,21 +84,21 @@ mod tests {
     #[test]
     fn parses_shasum_output() {
         let text = format!(
-            "{A}  tunedesk-0.2.0-macos-arm64.app.zip\n\
-             {}  *tunedesk-0.2.0-windows-x64-setup.exe\r\n\
+            "{A}  cratetune-0.2.0-macos-arm64.app.zip\n\
+             {}  *cratetune-0.2.0-windows-x64-setup.exe\r\n\
              \n# comment\n\
-             {B}  dist/tunedesk-0.2.0-x86_64.AppImage\n\
-             SHA256 (tunedesk-0.2.0-linux-x86_64.tar.gz) = {B}\n\
+             {B}  dist/cratetune-0.2.0-x86_64.AppImage\n\
+             SHA256 (cratetune-0.2.0-linux-x86_64.tar.gz) = {B}\n\
              nonsense line\n\
              abc  short-hash.zip\n",
             A.to_uppercase()
         );
         let sums = parse_sums(&text);
-        assert_eq!(sums["tunedesk-0.2.0-macos-arm64.app.zip"], A);
+        assert_eq!(sums["cratetune-0.2.0-macos-arm64.app.zip"], A);
         // Upper-case digests and the binary-mode `*` marker.
-        assert_eq!(sums["tunedesk-0.2.0-windows-x64-setup.exe"], A);
-        assert_eq!(sums["tunedesk-0.2.0-x86_64.AppImage"], B);
-        assert_eq!(sums["tunedesk-0.2.0-linux-x86_64.tar.gz"], B);
+        assert_eq!(sums["cratetune-0.2.0-windows-x64-setup.exe"], A);
+        assert_eq!(sums["cratetune-0.2.0-x86_64.AppImage"], B);
+        assert_eq!(sums["cratetune-0.2.0-linux-x86_64.tar.gz"], B);
         assert_eq!(sums.len(), 4);
     }
 

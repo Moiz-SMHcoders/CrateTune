@@ -737,7 +737,7 @@ mod tests {
             lines: lines.iter().map(|l| l.to_string()).collect(),
             title: "Instant Crush".into(),
             artist: "Daft Punk".into(),
-            footer: "TuneDesk".into(),
+            footer: "CrateTune".into(),
             art: Some(Arc::new(art)),
         }
     }

@@ -355,10 +355,10 @@ mod tests {
     fn setup(name: &str) -> (Dir, PathBuf, PathBuf, UpdateLog) {
         let dir = Dir::new(name);
         let (new, installed) = (dir.0.join("new"), dir.0.join("installed"));
-        write(&new, "tunedesk.exe", "v2");
+        write(&new, "cratetune.exe", "v2");
         write(&new, "LICENSE", "license v2");
         write(&new, "share/icons/app.png", "icon v2");
-        write(&installed, "tunedesk.exe", "v1");
+        write(&installed, "cratetune.exe", "v1");
         write(&installed, "LICENSE", "license v1");
         write(&installed, "settings-the-user-made.txt", "keep");
         let log = UpdateLog::new(dir.0.join("update.log"));
@@ -372,7 +372,7 @@ mod tests {
         assert_eq!(files.len(), 3);
         let replaced = replace_files(&new, &installed, &files, &log).unwrap();
         assert_eq!(replaced.len(), 3);
-        assert_eq!(read(&installed, "tunedesk.exe").as_deref(), Some("v2"));
+        assert_eq!(read(&installed, "cratetune.exe").as_deref(), Some("v2"));
         assert_eq!(read(&installed, "LICENSE").as_deref(), Some("license v2"));
         assert_eq!(
             read(&installed, "share/icons/app.png").as_deref(),
@@ -398,7 +398,7 @@ mod tests {
         let mut files = list_files(&new).unwrap();
         files.push("missing.dll".into());
         assert!(replace_files(&new, &installed, &files, &log).is_err());
-        assert_eq!(read(&installed, "tunedesk.exe").as_deref(), Some("v1"));
+        assert_eq!(read(&installed, "cratetune.exe").as_deref(), Some("v1"));
         assert_eq!(read(&installed, "LICENSE").as_deref(), Some("license v1"));
         assert!(!installed.join("share").exists());
         assert_eq!(list_files(&installed).unwrap().len(), 3);
@@ -413,7 +413,7 @@ mod tests {
         // (`share/icons/app.png.update-new` can't be created over a directory.)
         std::fs::create_dir_all(installed.join("share/icons/app.png.update-new/x")).unwrap();
         assert!(replace_files(&new, &installed, &files, &log).is_err());
-        assert_eq!(read(&installed, "tunedesk.exe").as_deref(), Some("v1"));
+        assert_eq!(read(&installed, "cratetune.exe").as_deref(), Some("v1"));
         assert_eq!(read(&installed, "LICENSE").as_deref(), Some("license v1"));
 
         // A failure in the middle of the swap phase (after files were moved aside).
@@ -421,7 +421,7 @@ mod tests {
         let swap_fail =
             super::super::with_fail_point("swap", || replace_files(&new, &installed, &files, &log));
         assert!(swap_fail.is_err());
-        assert_eq!(read(&installed, "tunedesk.exe").as_deref(), Some("v1"));
+        assert_eq!(read(&installed, "cratetune.exe").as_deref(), Some("v1"));
         assert_eq!(read(&installed, "LICENSE").as_deref(), Some("license v1"));
         assert!(!installed.join("share/icons/app.png").exists());
         let names: Vec<_> = list_files(&installed).unwrap();
@@ -453,7 +453,7 @@ mod tests {
             "0".into(),
         ];
         assert_eq!(run_helper(&args), Some(0));
-        assert_eq!(read(&installed, "tunedesk.exe").as_deref(), Some("v2"));
+        assert_eq!(read(&installed, "cratetune.exe").as_deref(), Some("v2"));
         assert!(
             std::fs::read_to_string(&log)
                 .unwrap()

@@ -20,8 +20,8 @@ the console output (see [Reporting](#reporting-a-problem)).
    toolchain (`rust-toolchain.toml`, Rust 1.99); `cargo` installs it on first use.
 3. **Git**, then clone the repository:
    ```powershell
-   git clone <repo-url> tunedesk
-   cd tunedesk
+   git clone <repo-url> cratetune
+   cd cratetune
    ```
 4. For the installer only: **Inno Setup 6** (<https://jrsoftware.org/isinfo.php>).
    `iscc` must be on `PATH`, or installed in the default `Program Files (x86)\Inno Setup 6`.
@@ -67,19 +67,19 @@ pwsh scripts\bundle-windows.ps1 -NoInstaller # zip only (no Inno Setup needed)
 
 Output in `target\bundle\`:
 
-* `tunedesk-<version>-windows-x64.zip`: `tunedesk.exe` + `LICENSE`, portable.
-* `tunedesk-<version>-windows-x64-setup.exe`: per-user installer (no admin rights).
+* `cratetune-<version>-windows-x64.zip`: `cratetune.exe` + `LICENSE`, portable.
+* `cratetune-<version>-windows-x64-setup.exe`: per-user installer (no admin rights).
 
 To make a GitHub release instead, push a tag `v<version>`. `.github/workflows/release.yml`
 then builds every platform, Windows included, and attaches the files to a draft release.
 
 **Check the .exe itself:**
 
-* [ ] Explorer shows the app icon on `tunedesk.exe`. Properties → Details shows the name
+* [ ] Explorer shows the app icon on `cratetune.exe`. Properties → Details shows the name
       and version.
 * [ ] The installer installs without admin rights, creates a Start-menu entry, and the
       app starts from it. Uninstall (Settings → Apps) removes it. The settings folder
-      `%APPDATA%\tunedesk\config\` stays.
+      `%APPDATA%\cratetune\config\` stays.
 * [ ] Note whether a console window opens next to the app. The binary currently uses the
       console subsystem; that helps testing, but a release may want it hidden.
 
@@ -89,7 +89,7 @@ Use a throw-away settings folder so tests don't touch your real library. Keep vo
 when you don't want to hear anything:
 
 ```powershell
-$env:MUSIC_CONFIG_DIR = "$env:TEMP\tunedesk-test"   # delete it to start fresh
+$env:MUSIC_CONFIG_DIR = "$env:TEMP\cratetune-test"   # delete it to start fresh
 $env:MUSIC_VOLUME = "0.0"                            # muted (real audio device)
 $env:MUSIC_TRACE = "1"                               # log routes, fetches, playback
 .\target\release\music-gpui.exe
@@ -204,7 +204,7 @@ playback). Copy them into problem reports.
 5. Fallback: Custom `https://127.0.0.1:9/dns-query` (nothing listens there):
    * [ ] fallback **on**: Test DNS says "via the system resolver" and pages load.
    * [ ] fallback **off**: Test DNS fails and pages show load errors with Retry.
-6. Restart the app: the DNS choice is kept (`%TEMP%\tunedesk-test\settings.json` →
+6. Restart the app: the DNS choice is kept (`%TEMP%\cratetune-test\settings.json` →
    `"network": {"dns": …}`).
 7. **System** again → Test DNS says "via the system resolver".
 
@@ -235,7 +235,7 @@ playback). Copy them into problem reports.
       control play / pause / next.
 * [ ] **Credential Manager**: without `MUSIC_SECRET_STORE=file`, paste a Last.fm secret or
       a proxy password, restart, and it is still there. Windows Credential Manager has a
-      `tunedesk` entry.
+      `cratetune` entry.
 * [ ] **WebView2 PoToken**: Settings → Playback → YouTube streams → **Web + PoToken**. A
       song then plays in full (no "Preview"). Console lines mention PoToken / WebView2.
 * [ ] **Window**: resize, maximize, restart; the size and position come back. The mini

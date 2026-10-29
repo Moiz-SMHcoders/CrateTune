@@ -27,7 +27,7 @@ impl Drop for Fixture {
 
 fn kind_in(dir: &Path) -> InstallKind {
     InstallKind::AppImage {
-        path: dir.join("app/TuneDesk.AppImage"),
+        path: dir.join("app/CrateTune.AppImage"),
     }
 }
 
@@ -38,7 +38,7 @@ fn fixture(name: &str) -> Fixture {
     let suffix = kind_in(&dir)
         .asset_suffix(Arch::current())
         .unwrap_or("-x86_64.AppImage");
-    let asset_name = format!("tunedesk-0.2.0{suffix}");
+    let asset_name = format!("cratetune-0.2.0{suffix}");
     let routes: Routes = Arc::new(Mutex::new(Vec::new()));
     let served = routes.clone();
     let server = TestServer::start(move |path, _, _| {
@@ -103,7 +103,7 @@ fn fixture(name: &str) -> Fixture {
 fn updater(f: &Fixture) -> Updater {
     Updater::new(
         Source::with_api_base("o/r", &f.base),
-        "tunedesk",
+        "cratetune",
         Version::new(0, 1, 0),
         f.dir.join("cache/updates"),
         kind_in(&f.dir),
@@ -211,13 +211,13 @@ fn install_refuses_a_tampered_download_and_unwritable_installs() {
         u.install(&staged, false),
         Err(UpdateError::ChecksumMismatch { .. })
     ));
-    let installed = f.dir.join("app/TuneDesk.AppImage");
+    let installed = f.dir.join("app/CrateTune.AppImage");
     assert!(!installed.exists());
 
     // A folder that can't be written.
     let mut elsewhere = u.clone();
     elsewhere.kind = InstallKind::AppImage {
-        path: f.dir.join("missing-dir/TuneDesk.AppImage"),
+        path: f.dir.join("missing-dir/CrateTune.AppImage"),
     };
     assert!(matches!(
         elsewhere.blocker(),
@@ -275,7 +275,7 @@ fn cancels_and_rejects_foreign_urls() {
 fn installs_an_appimage_end_to_end() {
     let f = fixture("install");
     let u = updater(&f);
-    let installed = f.dir.join("app/TuneDesk.AppImage");
+    let installed = f.dir.join("app/CrateTune.AppImage");
     std::fs::write(&installed, b"old").unwrap();
     let offer = u.check(false).unwrap().unwrap();
     let staged = u

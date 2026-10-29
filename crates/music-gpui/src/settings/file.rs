@@ -686,7 +686,7 @@ pub fn config_dir() -> Option<PathBuf> {
     if let Some(dir) = std::env::var_os("MUSIC_CONFIG_DIR").filter(|d| !d.is_empty()) {
         return Some(PathBuf::from(dir));
     }
-    directories::ProjectDirs::from("", "", APP_ID).map(|d| d.config_dir().to_owned())
+    crate::identity::project_dirs().map(|d| d.config_dir().to_owned())
 }
 
 pub fn settings_path() -> Option<PathBuf> {

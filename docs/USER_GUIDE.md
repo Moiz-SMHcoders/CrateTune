@@ -1,6 +1,6 @@
 # User guide
 
-TuneDesk is a native desktop player for YouTube Music on
+CrateTune is a native desktop player for YouTube Music on
 macOS, Windows and Linux. It is free software (GPL-3.0) and not affiliated with YouTube,
 Google or Shazam.
 
@@ -32,7 +32,7 @@ Builds that aren't signed with a Developer ID (the default, including the GitHub
 releases for now) are refused by Gatekeeper on first open ("Apple could not verify…"):
 click **Done**, then System Settings → Privacy & Security → **Open Anyway** (on macOS 14
 and earlier, right-click the app → **Open** also works). Or, in Terminal:
-`xattr -dr com.apple.quarantine /Applications/TuneDesk.app`. The first time you
+`xattr -dr com.apple.quarantine /Applications/CrateTune.app`. The first time you
 recognize a song, macOS asks for microphone access.
 
 **Windows 10/11 (x64).** Run the `…-setup.exe` (installs for the current user, no admin
@@ -258,8 +258,8 @@ copies your YouTube Music library into the local one; **Sign out** forgets the c
 | Backup & sync | export / import settings, export / import themes |
 | About | version, updates (check, update, the automatic switches; see [Updates](#updates)), license, credits, welcome guide |
 
-Settings live in `~/Library/Application Support/tunedesk/` (macOS),
-`~/.config/tunedesk/` (Linux) or `%APPDATA%\tunedesk\config\` (Windows); passwords
+Settings live in `~/Library/Application Support/cratetune/` (macOS),
+`~/.config/cratetune/` (Linux) or `%APPDATA%\cratetune\config\` (Windows); passwords
 and keys in the system keychain.
 
 ## Themes and profiles
@@ -284,7 +284,7 @@ and **Reset to default** brings back the standard look:
 
 **Theme files**: **Export theme…** saves the look (theme, Customize theme, Now Playing
 design and background, mini player and player bar style) as a small
-`.tunedesk-theme.json` file; **Import theme…** shows what would change and replaces only
+`.cratetune-theme.json` file; **Import theme…** shows what would change and replaces only
 the look.
 
 **Settings files** (Settings → Backup & sync): **Export settings…** saves every setting
@@ -428,11 +428,11 @@ karaoke, live recordings — plus your own ("songs about cars"), like "Hide expl
 
 ## Updates
 
-TuneDesk updates itself from its GitHub releases. You don't need to download a new
+CrateTune updates itself from its GitHub releases. You don't need to download a new
 installer.
 
 **Where:** Settings → About → **Updates**, or the menu item **Check for Updates…**: in
-the TuneDesk menu under About on macOS, in the Help menu on Windows and Linux. It has no
+the CrateTune menu under About on macOS, in the Help menu on Windows and Linux. It has no
 shortcut by default; you can give it one in Settings → Keyboard shortcuts.
 
 **How it goes:**
@@ -475,9 +475,9 @@ These switches are part of settings export and import, not of profiles.
 * If anything goes wrong while installing, the old version is put back and keeps
   working.
 * What the updater did is written to `update.log` in the app's cache folder:
-  * macOS: `~/Library/Caches/tunedesk/updates/`
-  * Linux: `~/.cache/tunedesk/updates/`
-  * Windows: `%LOCALAPPDATA%\tunedesk\cache\updates\`
+  * macOS: `~/Library/Caches/cratetune/updates/`
+  * Linux: `~/.cache/cratetune/updates/`
+  * Windows: `%LOCALAPPDATA%\cratetune\cache\updates\`
 
 **When it can only show "Download manually":** in these cases the app tells you why, and
 the button opens the release page instead.
@@ -499,8 +499,8 @@ different app.
 
 * **Keychain:** your sign-ins and keys (YouTube Music, Last.fm, ListenBrainz, Spotify, the
   proxy password, API keys) are separate entries in your login keychain, under
-  "tunedesk". After an update, macOS asks once per stored entry whether TuneDesk may use
-  it ("TuneDesk wants to use your confidential information stored in 'tunedesk' in your
+  "cratetune". After an update, macOS asks once per stored entry whether CrateTune may use
+  it ("CrateTune wants to use your confidential information stored in 'cratetune' in your
   keychain"). This happens at the first launch, which only reads the entries for accounts
   you have set up. Click **Always Allow**; macOS may ask for your login password. If you
   click **Deny**, that account looks signed out until the next launch, but nothing is
