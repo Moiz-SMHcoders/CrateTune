@@ -17,7 +17,7 @@ use music_core::downloads::DownloadKind;
 
 use super::SettingsPanel;
 use super::library_config::CACHE_LIMITS_MB;
-use super::widgets::{group, note, row, status_line};
+use super::widgets::{group, group_at, note, row_at, status_line};
 use crate::app::{read_app, update_app};
 use crate::i18n::format::number;
 use crate::icons::Lucide;
@@ -165,7 +165,7 @@ pub(super) fn render(
     v_flex()
         .gap_5()
         .child(
-            group(t!("settings.storage.files"), cx)
+            group_at("storage.files", t!("settings.storage.files"), cx)
                 .child(note(path_line, cx))
                 .child(note(secrets_line, cx))
                 .child(note(
@@ -184,7 +184,7 @@ pub(super) fn render(
                 ),
         )
         .child(
-            group(t!("settings.storage.play_cache"), cx)
+            group_at("storage.cache", t!("settings.storage.play_cache"), cx)
                 .child(note(
                     t!(
                         "settings.storage.cache_usage",
@@ -193,28 +193,37 @@ pub(super) fn render(
                     ),
                     cx,
                 ))
-                .child(row(t!("settings.storage.cache_limit"), None, limits, cx))
-                .child(row(
+                .child(row_at(
+                    "storage.cache_limit",
+                    t!("settings.storage.cache_limit"),
+                    None,
+                    limits,
+                    cx,
+                ))
+                .child(row_at(
+                    "storage.cache_played",
                     t!("settings.storage.cache_played"),
                     Some(t!("settings.storage.cache_played_detail")),
                     cache_played,
                     cx,
                 ))
-                .child(row(
+                .child(row_at(
+                    "storage.clear_cache",
                     t!("settings.storage.clear_cache_row"),
                     None,
                     clear_cache,
                     cx,
                 )),
         )
-        .child(group(t!("settings.storage.memory"), cx).child(row(
+        .child(group(t!("settings.storage.memory"), cx).child(row_at(
+            "storage.artwork_memory",
             t!("settings.storage.artwork_memory"),
             Some(t!("settings.storage.artwork_memory_detail")),
             artwork_budgets,
             cx,
         )))
         .child(
-            group(t!("settings.storage.downloads"), cx)
+            group_at("storage.downloads", t!("settings.storage.downloads"), cx)
                 .child(note(
                     match &info.downloads_dir {
                         Some(dir) => t!(
@@ -226,19 +235,22 @@ pub(super) fn render(
                     },
                     cx,
                 ))
-                .child(row(
+                .child(row_at(
+                    "storage.download_folder",
                     t!("settings.storage.download_folder"),
                     Some(t!("settings.storage.download_folder_detail")),
                     reveal,
                     cx,
                 ))
-                .child(row(
+                .child(row_at(
+                    "storage.auto_download_liked",
                     t!("downloads.auto_liked"),
                     Some(t!("downloads.auto_liked_detail")),
                     auto_liked,
                     cx,
                 ))
-                .child(row(
+                .child(row_at(
+                    "storage.remove_unliked",
                     t!("downloads.remove_unliked"),
                     Some(t!("downloads.remove_unliked_detail")),
                     remove_unliked,
@@ -246,14 +258,16 @@ pub(super) fn render(
                 )),
         )
         .child(
-            group(t!("settings.storage.backup"), cx)
-                .child(row(
+            group_at("storage.backup", t!("settings.storage.backup"), cx)
+                .child(row_at(
+                    "storage.backup.export",
                     t!("settings.storage.export"),
                     Some(t!("settings.storage.export_detail")),
                     export,
                     cx,
                 ))
-                .child(row(
+                .child(row_at(
+                    "storage.backup.restore",
                     t!("settings.storage.restore"),
                     Some(t!("settings.storage.restore_detail")),
                     import,

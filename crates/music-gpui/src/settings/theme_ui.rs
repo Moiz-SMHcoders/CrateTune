@@ -26,12 +26,12 @@ use gpui_component::{
 use super::SettingsPanel;
 use super::panel::SettingsEvent;
 use super::portable::{PRESETS, ThemePreset};
-use super::prefs_ui::{choice, slider_row};
+use super::prefs_ui::{choice, slider_row_at};
 use super::theme_prefs::{
     ACCENT_PRESETS, Contrast, Corners, CustomTheme, Darkness, Density, DynamicStyle, parse_hex,
     to_hex,
 };
-use super::widgets::{group, note, row};
+use super::widgets::{group_at, note, row_at};
 use crate::icons::Lucide;
 use crate::theme::{self, AppPalette, Look, ThemeChoice};
 
@@ -672,7 +672,8 @@ pub(super) fn render(
         .child(
             v_flex()
                 .gap_1()
-                .child(slider_row(
+                .child(slider_row_at(
+                    "appearance.accent.hue",
                     t!("theme.custom.hue"),
                     format!("{}°", hue_now.round()),
                     &panel.theme_ui.hue,
@@ -685,7 +686,8 @@ pub(super) fn render(
                         .child(div().w(px(76.)).flex_none()),
                 ),
         )
-        .child(slider_row(
+        .child(slider_row_at(
+            "appearance.accent.saturation",
             t!("theme.custom.saturation"),
             format!("{} %", sat_now.round()),
             &panel.theme_ui.saturation,
@@ -763,7 +765,7 @@ pub(super) fn render(
     v_flex()
         .gap_5()
         .child(
-            group(t!("theme.custom.group"), cx)
+            group_at("appearance.custom_theme", t!("theme.custom.group"), cx)
                 .child(note(t!("theme.custom.intro"), cx))
                 .child(
                     div()
@@ -775,37 +777,48 @@ pub(super) fn render(
                 .child(file_buttons)
                 .child(preview(cx)),
         )
-        .child(group(t!("theme.custom.accent"), cx).child(accent_body))
+        .child(group_at("appearance.accent", t!("theme.custom.accent"), cx).child(accent_body))
         .child(
-            group(t!("theme.custom.surfaces"), cx)
-                .child(row(
+            group_at("appearance.surfaces", t!("theme.custom.surfaces"), cx)
+                .child(row_at(
+                    "appearance.surfaces.darkness",
                     t!("theme.custom.darkness"),
                     Some(t!("theme.custom.darkness_detail")),
                     darkness,
                     cx,
                 ))
-                .child(slider_row(
+                .child(slider_row_at(
+                    "appearance.surfaces.tint",
                     t!("theme.custom.tint"),
                     format!("{} %", (custom.surface_tint * 100.).round()),
                     &panel.theme_ui.tint,
                     cx,
                 ))
                 .child(note(t!("theme.custom.tint_note"), cx))
-                .child(row(
+                .child(row_at(
+                    "appearance.surfaces.contrast",
                     t!("theme.custom.contrast"),
                     Some(t!("theme.custom.contrast_detail")),
                     contrast,
                     cx,
                 ))
-                .child(row(t!("theme.custom.corners"), None, corners, cx))
-                .child(row(
+                .child(row_at(
+                    "appearance.surfaces.corners",
+                    t!("theme.custom.corners"),
+                    None,
+                    corners,
+                    cx,
+                ))
+                .child(row_at(
+                    "appearance.surfaces.density",
                     t!("theme.custom.density"),
                     Some(t!("theme.custom.density_detail")),
                     density,
                     cx,
                 ))
                 .children(font.map(|font| {
-                    row(
+                    row_at(
+                        "appearance.surfaces.font",
                         t!("theme.custom.font"),
                         Some(t!("theme.custom.font_detail")),
                         font,
@@ -814,7 +827,7 @@ pub(super) fn render(
                 })),
         )
         .child(
-            group(t!("theme.dynamic.group"), cx)
+            group_at("appearance.dynamic", t!("theme.dynamic.group"), cx)
                 .child(note(
                     if dynamic_active {
                         t!("theme.dynamic.active_note")
@@ -824,14 +837,22 @@ pub(super) fn render(
                     cx,
                 ))
                 .children(use_dynamic.map(|b| h_flex().child(b)))
-                .child(row(t!("theme.dynamic.style"), None, styles, cx))
-                .child(slider_row(
+                .child(row_at(
+                    "appearance.dynamic.style",
+                    t!("theme.dynamic.style"),
+                    None,
+                    styles,
+                    cx,
+                ))
+                .child(slider_row_at(
+                    "appearance.dynamic.strength",
                     t!("theme.dynamic.strength"),
                     format!("{} %", (dynamic.strength * 100.).round()),
                     &panel.theme_ui.strength,
                     cx,
                 ))
-                .child(row(
+                .child(row_at(
+                    "appearance.dynamic.transitions",
                     t!("theme.dynamic.transitions"),
                     Some(t!("theme.dynamic.transitions_detail")),
                     transitions,

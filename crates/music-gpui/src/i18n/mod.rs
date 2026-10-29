@@ -267,6 +267,12 @@ fn lookup(locale: Locale, key: Key) -> Option<&'static str> {
     (start != end).then(|| &catalog.text[start..end])
 }
 
+/// The message in `locale`'s own catalog (no English fallback).
+#[cfg(test)]
+pub fn own_text(locale: Locale, key: Key) -> Option<&'static str> {
+    lookup(locale, key)
+}
+
 /// The message in the current locale (English if it isn't translated).
 #[inline]
 pub fn text(key: Key) -> &'static str {

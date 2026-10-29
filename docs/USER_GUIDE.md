@@ -235,7 +235,20 @@ copies your YouTube Music library into the local one; **Sign out** forgets the c
 
 ## Settings
 
-⌘, or the sidebar. Sections:
+⌘, or the sidebar.
+
+**Finding a setting.** Type into **Search settings** at the top of the settings sidebar
+(⌘F while Settings is open; press ⌘F again for the music search). With the field empty you
+see the settings you opened recently and a few popular ones. As you type, matching settings
+appear with where they are (*Appearance › Player bar*) and their description. Other words
+work too — *dark*, *colour* or *color*, *volume*, *bitrate*, *EQ*, *shortcut*, *update* —
+and a small typo is fine. ↑ / ↓ and Enter, or a click, open the setting: its section opens,
+the row scrolls into view and lights up briefly (without the fade when motion is reduced),
+and its switch or field gets the keyboard focus. Esc clears the field; Esc again closes the
+list. Titles and descriptions are searched in your interface language, plus the English
+names.
+
+Sections:
 
 | Section | What's there |
 |---|---|
@@ -358,7 +371,7 @@ macOS keys shown. On Windows and Linux use **Ctrl** in place of ⌘ and Alt for 
 | Space | play / pause |
 | ⌘→ / ⌘← | next / previous |
 | ⌘↑ / ⌘↓ | volume up / down |
-| ⌘F | search |
+| ⌘F | search (in Settings: search the settings; again: the music search) |
 | ⌘, | settings |
 | ⌘L | Now Playing |
 | ⌥⌘Q | queue |

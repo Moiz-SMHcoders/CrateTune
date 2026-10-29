@@ -17,7 +17,7 @@ use music_core::EqPreset;
 use music_core::equalizer::GRAPHIC_BANDS_HZ;
 
 use super::SettingsPanel;
-use super::widgets::{band_label, note, section_title};
+use super::widgets::{Anchor as _, band_label, note, section_title};
 
 const SLIDER_HEIGHT: f32 = 150.;
 
@@ -89,6 +89,7 @@ pub(super) fn render(
         .child(
             h_flex()
                 .justify_between()
+                .anchor("eq.enabled")
                 .child(section_title(t!("settings.section.equalizer")))
                 .child(
                     Switch::new("eq-enabled")
@@ -106,6 +107,7 @@ pub(super) fn render(
         .child(
             h_flex()
                 .gap_2()
+                .anchor("eq.presets")
                 .child(presets)
                 .when(current.is_none(), |this| {
                     this.child(Tag::secondary().small().child(t!("common.custom")))
@@ -115,6 +117,7 @@ pub(super) fn render(
             h_flex()
                 .items_start()
                 .gap_2()
+                .anchor("eq.bands")
                 .child(
                     v_flex()
                         .h(px(SLIDER_HEIGHT))

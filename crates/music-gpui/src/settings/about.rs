@@ -15,7 +15,7 @@ use gpui_component::{
 
 use super::SettingsPanel;
 use super::prefs::UpdatePrefs;
-use super::widgets::{group, note, row, status_line};
+use super::widgets::{Anchor as _, group_at, note, row_at, status_line};
 use crate::app::update_app;
 use crate::update_check::{self, UpdateStatus};
 
@@ -28,7 +28,7 @@ pub(super) fn render(
     _: &mut Window,
     cx: &mut Context<SettingsPanel>,
 ) -> AnyElement {
-    let welcome = h_flex().gap_2().child(
+    let welcome = h_flex().gap_2().anchor("about.welcome").child(
         Button::new("about-onboarding")
             .small()
             .outline()
@@ -89,12 +89,12 @@ pub(super) fn render(
         )
         .children(updates)
         .child(
-            group(t!("settings.about.license"), cx)
+            group_at("about.license", t!("settings.about.license"), cx)
                 .child(note(t!("settings.about.license_notice"), cx))
                 .child(h_flex().child(link("about-gpl", "GNU GPL v3.0", GPL_URL))),
         )
         .child(
-            group(t!("settings.about.credits"), cx)
+            group_at("about.credits", t!("settings.about.credits"), cx)
                 .child(credit(
                     "ArchiveTune",
                     t!("settings.about.credit.archivetune", project = "ArchiveTune").into(),
@@ -292,7 +292,7 @@ fn updates_group(
             let on = *on;
             this.update_update_prefs(|u| u.include_prereleases = Some(on), cx);
         }));
-    group(t!("update.group"), cx)
+    group_at("about.updates", t!("update.group"), cx)
         .child(if failed {
             status_line(status_text, danger).into_any_element()
         } else {
@@ -304,23 +304,27 @@ fn updates_group(
             h_flex()
                 .gap_2()
                 .flex_wrap()
+                .anchor("about.updates.check")
                 .children(action)
                 .child(check)
                 .children(failed.then(|| manual_link("about-update-manual", false))),
         )
-        .child(row(
+        .child(row_at(
+            "about.updates.auto_check",
             t!("update.auto_check"),
             Some(t!("update.auto_check_detail")),
             auto_check,
             cx,
         ))
-        .child(row(
+        .child(row_at(
+            "about.updates.auto_install",
             t!("update.auto_install"),
             Some(t!("update.auto_install_detail")),
             auto_install,
             cx,
         ))
-        .child(row(
+        .child(row_at(
+            "about.updates.prereleases",
             t!("update.prereleases"),
             Some(t!("update.prereleases_detail")),
             include_pre,

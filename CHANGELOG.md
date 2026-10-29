@@ -7,6 +7,17 @@ versions follow [SemVer](https://semver.org/).
 
 ### Added
 
+* **Settings search**: a search field at the top of the settings sidebar (⌘F / Ctrl+F
+  while Settings is open; again for the music search). It suggests popular and recently
+  opened settings, and while you type lists matching settings with their section and
+  group and a description snippet, matches highlighted. Titles and descriptions are
+  searched in the interface language and in English, with English synonyms ("dark",
+  "colour", "bitrate", "EQ", "shortcut", …), word starts and one or two typos. ↑ / ↓ /
+  Enter or a click opens the section, scrolls the row into view, highlights it for 1.5 s
+  (instant with reduced motion) and focuses its control; Esc clears, then closes. Covers
+  every row of every section and every keyboard shortcut. Script hooks:
+  `@settings-search=QUERY`, `@settings-search-pick=N`, `@settings-anchors`.
+
 * **App-wide look** (Settings → Appearance → App-wide look; off by default): the whole
   window can take its colours from the song's artwork, like the player bar's background.
   **Tint** tints the sidebar, panels, menus and cards with the artwork's hue; **Gradient

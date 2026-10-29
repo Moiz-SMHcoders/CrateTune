@@ -21,8 +21,8 @@ use music_core::lyrics::romanize::dictionary::DictionarySource;
 
 use super::SettingsPanel;
 use super::prefs::{LyricsAnimation, RomanizeConfig, TextAlign, TranslatorKind};
-use super::prefs_ui::{choice, slider_row};
-use super::widgets::{field, group, note, row};
+use super::prefs_ui::{choice, slider_row_at};
+use super::widgets::{field, field_at, group_at, note, row, row_at};
 use crate::app::{read_app, update_app};
 use crate::lyrics::KanjiDictionary;
 use crate::pages::widgets::format_bytes;
@@ -171,10 +171,17 @@ pub(super) fn render(
     v_flex()
         .gap_5()
         .child(
-            group(t!("settings.lyrics.look"), cx)
-                .child(row(t!("settings.lyrics.animation"), None, animation, cx))
+            group_at("lyrics.look", t!("settings.lyrics.look"), cx)
+                .child(row_at(
+                    "lyrics.style",
+                    t!("settings.lyrics.animation"),
+                    None,
+                    animation,
+                    cx,
+                ))
                 .child(note(t!("settings.lyrics.animation_note"), cx))
-                .child(slider_row(
+                .child(slider_row_at(
+                    "lyrics.text_size",
                     t!("settings.lyrics.text_size"),
                     t!(
                         "settings.lyrics.text_size_value",
@@ -183,7 +190,8 @@ pub(super) fn render(
                     &panel.prefs.lyrics_size,
                     cx,
                 ))
-                .child(slider_row(
+                .child(slider_row_at(
+                    "lyrics.line_spacing",
                     t!("settings.lyrics.line_spacing"),
                     t!(
                         "settings.lyrics.line_spacing_value",
@@ -192,8 +200,15 @@ pub(super) fn render(
                     &panel.prefs.lyrics_spacing,
                     cx,
                 ))
-                .child(row(t!("settings.lyrics.alignment"), None, align, cx))
-                .child(row(
+                .child(row_at(
+                    "lyrics.alignment",
+                    t!("settings.lyrics.alignment"),
+                    None,
+                    align,
+                    cx,
+                ))
+                .child(row_at(
+                    "lyrics.bg_vocals",
                     t!("settings.lyrics.bg_vocals"),
                     Some(t!("settings.lyrics.bg_vocals_desc")),
                     background_vocals,
@@ -201,10 +216,11 @@ pub(super) fn render(
                 )),
         )
         .child(
-            group(t!("settings.lyrics.providers"), cx)
+            group_at("lyrics.providers", t!("settings.lyrics.providers"), cx)
                 .child(note(t!("settings.lyrics.providers_note"), cx))
                 .child(providers)
-                .child(row(
+                .child(row_at(
+                    "lyrics.prefer_word",
                     t!("settings.lyrics.prefer_word"),
                     Some(t!("settings.lyrics.prefer_word_desc")),
                     prefer_word,
@@ -219,7 +235,8 @@ pub(super) fn render(
                             .on_click(cx.listener(|this, _, _, cx| this.reset_provider_order(cx))),
                     ),
                 )
-                .child(field(
+                .child(field_at(
+                    "lyrics.providers.keys",
                     "Paxsenix",
                     Input::new(&panel.prefs.paxsenix_key).small().mask_toggle(),
                     cx,
@@ -234,31 +251,42 @@ pub(super) fn render(
                 .child(note(t!("settings.lyrics.keys_note"), cx)),
         )
         .child(
-            group(t!("settings.lyrics.translation"), cx)
-                .child(row(
+            group_at("lyrics.translation", t!("settings.lyrics.translation"), cx)
+                .child(row_at(
+                    "lyrics.translate",
                     t!("settings.lyrics.translate"),
                     Some(t!("settings.lyrics.translate_desc")),
                     translate,
                     cx,
                 ))
-                .child(row(t!("settings.lyrics.translator"), None, translator, cx))
-                .child(field(
+                .child(row_at(
+                    "lyrics.translator",
+                    t!("settings.lyrics.translator"),
+                    None,
+                    translator,
+                    cx,
+                ))
+                .child(field_at(
+                    "lyrics.translate_language",
                     t!("settings.lyrics.language"),
                     Input::new(&panel.prefs.target_language).small(),
                     cx,
                 ))
                 .when(l.translator == TranslatorKind::Ai, |this| {
-                    this.child(field(
+                    this.child(field_at(
+                        "lyrics.translation.endpoint",
                         t!("settings.lyrics.endpoint"),
                         Input::new(&panel.prefs.ai_endpoint).small(),
                         cx,
                     ))
-                    .child(field(
+                    .child(field_at(
+                        "lyrics.translation.model",
                         t!("settings.lyrics.model"),
                         Input::new(&panel.prefs.ai_model).small(),
                         cx,
                     ))
-                    .child(field(
+                    .child(field_at(
+                        "lyrics.translation.api_key",
                         t!("settings.lyrics.api_key"),
                         Input::new(&panel.prefs.ai_key).small().mask_toggle(),
                         cx,
@@ -267,10 +295,14 @@ pub(super) fn render(
                 .child(note(t!("settings.lyrics.translation_note"), cx)),
         )
         .child(
-            group(t!("settings.lyrics.romanization"), cx)
-                .child(note(t!("settings.lyrics.romanization_note"), cx))
-                .child(romanize)
-                .children(kanji),
+            group_at(
+                "lyrics.romanization",
+                t!("settings.lyrics.romanization"),
+                cx,
+            )
+            .child(note(t!("settings.lyrics.romanization_note"), cx))
+            .child(romanize)
+            .children(kanji),
         )
         .into_any_element()
 }

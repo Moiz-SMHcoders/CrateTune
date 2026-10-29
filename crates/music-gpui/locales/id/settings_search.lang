@@ -1,0 +1,6 @@
+# ---- Settings search.
+settings_search.placeholder = Cari pengaturan
+settings_search.suggested = Saran
+settings_search.recent = Baru dibuka
+settings_search.no_results = Tidak ada pengaturan yang cocok dengan “{query}”
+settings_search.no_results_hint = Coba kata yang lebih pendek atau nama lain, misalnya “warna”, “volume”, atau “pintasan”.

@@ -1,0 +1,6 @@
+# ---- Settings search.
+settings_search.placeholder = 搜尋設定
+settings_search.suggested = 建議
+settings_search.recent = 最近開啟
+settings_search.no_results = 沒有符合「{query}」的設定
+settings_search.no_results_hint = 試試更短的字詞或換個說法，例如「顏色」、「音量」或「快速鍵」。

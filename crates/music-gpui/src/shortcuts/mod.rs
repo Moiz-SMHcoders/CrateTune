@@ -55,11 +55,25 @@ impl Group {
     pub const ALL: [Group; 4] = [Group::Playback, Group::Navigation, Group::View, Group::App];
 
     pub fn title(self) -> &'static str {
+        crate::i18n::text(self.title_key())
+    }
+
+    pub const fn title_key(self) -> Key {
         match self {
-            Group::Playback => t!("shortcuts.group.playback"),
-            Group::Navigation => t!("shortcuts.group.navigation"),
-            Group::View => t!("shortcuts.group.view"),
-            Group::App => t!("shortcuts.group.app"),
+            Group::Playback => k!("shortcuts.group.playback"),
+            Group::Navigation => k!("shortcuts.group.navigation"),
+            Group::View => k!("shortcuts.group.view"),
+            Group::App => k!("shortcuts.group.app"),
+        }
+    }
+
+    /// The group's scroll anchor in Settings → Keyboard shortcuts.
+    pub const fn anchor(self) -> &'static str {
+        match self {
+            Group::Playback => "shortcuts.playback",
+            Group::Navigation => "shortcuts.navigation",
+            Group::View => "shortcuts.view",
+            Group::App => "shortcuts.app",
         }
     }
 }

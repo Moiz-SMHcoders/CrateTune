@@ -20,7 +20,7 @@ use serde_json::{Map, Value};
 use super::SettingsPanel;
 use super::panel::SettingsEvent;
 use super::profiles::{self, ProfileStore};
-use super::widgets::{group, note};
+use super::widgets::{group_at, note};
 use crate::app::notify;
 use crate::icons::Lucide;
 use crate::util::off_thread;
@@ -422,7 +422,7 @@ pub(super) fn render(
                 }),
             ),
         );
-    group(t!("profiles.group"), cx)
+    group_at("appearance.profile", t!("profiles.group"), cx)
         .child(chips)
         .child(div().text_xs().text_color(muted).child(status))
         .child(actions)

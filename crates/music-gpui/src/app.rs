@@ -556,9 +556,19 @@ impl MusicApp {
         self.navigate(Route::Search { query }, window, cx);
     }
 
+    /// ⌘F / Ctrl+F: the music search; on the settings page the settings search
+    /// first (pressed again there, the music search).
     pub fn focus_search(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         if self.np.open {
             self.close_now_playing(window, cx);
+        }
+        if matches!(self.router.route(), Route::Settings { .. })
+            && self.onboarding.is_none()
+            && !self.settings.read(cx).search_focused(window, cx)
+        {
+            self.settings
+                .update(cx, |panel, cx| panel.focus_search(window, cx));
+            return;
         }
         let handle = self.search_input.read(cx).focus_handle(cx);
         window.focus(&handle, cx);

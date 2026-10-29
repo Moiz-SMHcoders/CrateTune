@@ -1,0 +1,6 @@
+# ---- Settings search.
+settings_search.placeholder = Поиск в настройках
+settings_search.suggested = Предложения
+settings_search.recent = Недавно открытые
+settings_search.no_results = Нет настроек, подходящих под «{query}»
+settings_search.no_results_hint = Попробуйте слово короче или другое название, например «цвет», «громкость» или «сочетание клавиш».

@@ -18,7 +18,7 @@ use gpui_component::{
 
 use super::SettingsPanel;
 use super::file::{SYSTEM_LANGUAGE, Settings};
-use super::widgets::row;
+use super::widgets::row_at;
 use crate::i18n::{Key, Locale};
 
 #[derive(Clone)]
@@ -163,7 +163,8 @@ pub(super) fn language_row(
             .search_placeholder(t!("common.search_placeholder"))
             .menu_max_h(px(320.)),
     );
-    row(
+    row_at(
+        "appearance.language.interface",
         t!("settings.language.label"),
         Some(t!("settings.language.description")),
         select,

@@ -1,0 +1,6 @@
+# ---- Settings search.
+settings_search.placeholder = Szukaj w ustawieniach
+settings_search.suggested = Sugerowane
+settings_search.recent = Ostatnio otwierane
+settings_search.no_results = Żadne ustawienie nie pasuje do „{query}”
+settings_search.no_results_hint = Spróbuj krótszego słowa lub innej nazwy, np. „kolor”, „głośność” albo „skrót”.

@@ -1404,7 +1404,7 @@ translations, every screen in every language (five locales were looked at).
 | Space | play / pause (not while typing) |
 | ⌘→ / ⌘← | next / previous (restart past 3 s) |
 | ⌘↑ / ⌘↓ | volume ±5 % |
-| ⌘F | search field |
+| ⌘F | search field (on the settings page: the settings search; again: the music search) |
 | ⌘, | settings |
 | ⌘L | Now Playing |
 | ⌥⌘Q | queue panel |
@@ -1465,6 +1465,66 @@ the next Esc went back; `@shortcut-menu` showed the menu's key equivalents follo
 ⌘Q when cleared, Edit's ⌘C / ⌘V / ⌘A stayed). **Not verified**: a physical keyboard (only
 synthetic keystrokes), the menu bar on screen, Windows / Linux (the Linux screenshot is
 simulated with `MUSIC_SHORTCUTS_OS`), non-US keyboard layouts.
+
+### Settings search
+
+A search field at the top of the settings sidebar finds a setting by name, description or
+synonym (`settings/search_ui.rs`, `search_match.rs`, `search_index.rs`, `reveal.rs`). ⌘F /
+Ctrl+F on the settings page focuses it (the same editable *Search* shortcut; pressed again
+in the field it goes to the music search). An empty field lists recently opened settings
+(this session) and suggestions — Theme, Streaming quality, Equalizer, lyrics animation
+style, Progress bar style, Keyboard shortcuts, Check for Updates, Profile. While typing it
+shows up to eight ranked matches with the setting's title, its place (*Appearance › Player
+bar*) and the description, matches underlined; ↑ / ↓ move, Enter (the best match is
+preselected) or a click opens it, Esc clears the field, then closes the list. "No settings
+match" comes with a hint. Choosing a result opens the section, scrolls the row into view
+(a fifth of the viewport from the top, unless it is already visible), highlights it with
+a soft accent wash for 1.5 s (a fade with full motion; shown and removed without a fade
+with reduced motion or animations off) and moves the keyboard focus to the row's first
+control (switch, button, slider or text field; the row itself if it has none).
+
+**Index.** `search_index::ENTRIES` lists every setting row and group of the sections — 143
+entries — as the same `k!` keys the rows render with (title, description, group) plus the
+section, single-word English keywords / synonyms ("dark", "colour"/"color", "bitrate",
+"eq", "hotkey", …) and an anchor id. `all()` adds one entry per section and one per keyboard
+shortcut (from `shortcuts::ACTIONS`). Rows register their anchor through the existing
+helpers: `row_at("playback.quality", …)`, `group_at`, `field_at`, `slider_row_at` or
+`.anchor(id)` on any `Div` (`reveal.rs`). An anchor costs a string compare per row while no
+reveal is pending; the target row gets an invisible `canvas` whose prepaint reads the row's
+bounds against the content's `ScrollHandle` and sets the offset; the panel polls for it
+(16 ms timer, so it works without display-link frames too), then starts the flash and moves
+the focus. A row that isn't shown right now (it depends on another option) hands over to its
+dotted parent (`appearance.bar.gradient_direction` → `appearance.bar`), then the section top.
+
+**Matching** (`search_match.rs`): the title, keywords, group, section and description in the
+UI language, and in English (keywords are always English), lowercased with accents folded
+and split into words. Per query word the best of: the whole word (1.0), a prefix (0.8–0.95),
+inside a word (3+ letters or CJK, 0.5), one typo from 4 letters with the first letter right,
+two from 8 (swap / missing / extra / wrong letter, 0.45–0.62), times the field's weight
+(title 1, keywords 0.9, English title 0.85, group 0.55, section 0.5, description 0.4).
+Every word has to match; bonuses when all words are in the title (+15), the title starts
+with the query (+25) and for the suggested settings (+6). The normalized index is built
+once per UI language when the field is first used; a query is a scan of ~200 entries.
+The field is its own entity, so typing only notifies it (GPUI still re-renders its ancestors,
+the settings panel and the app shell, as for the header's search field).
+
+**Tests**: ranking ("quality" → Streaming quality, "eq" → Equalizer, "theme", "bitrate",
+"lyrics style", "check for updates", …), synonyms ("dark", "colour", "color", "volume",
+"EQ", "shortcut", "update", "hotkey", "login"), typos ("equalzier", "shufle", "crosfade",
+"langauge", "qualty", "normalisation"), German titles plus English keywords, highlight
+ranges, snippets; every index key is translated in all 18 locales; every anchor is
+registered by exactly one row (a scan of `src/settings/*.rs`) whose file uses the entry's
+title and description keys, so a renamed row can't silently drift from the index; hidden rows
+have a registered parent. Script hooks: `@settings-search=QUERY` (opens Settings, types,
+prints the ranked list with anchors and scores), `@settings-search-pick=N`, and
+`@settings-anchors` (shows every section and prints which index rows it draws; hidden rows
+with their fallback).
+
+| | |
+|---|---|
+| ![Results for "gradient"](docs/screenshots/settings-search-query.png) | ![Empty field: suggestions](docs/screenshots/settings-search-empty.png) |
+| ![The picked row, highlighted](docs/screenshots/settings-search-picked.png) | ![No match](docs/screenshots/settings-search-none.png) |
+| ![Suggestions for "eq"](docs/screenshots/settings-search-eq.png) | |
 
 ### Settings file and secrets
 
@@ -1541,6 +1601,7 @@ playback `@play=N @next @prev @seek=S @toggle @open @close @volume=V`; navigatio
 @download-all|download-cancel|download-remove=liked|library @download-status`;
 windows/appearance `@mini[=on|off] @theme=dark|black|dynamic
 @font-scale=1.125 @resize=W;H`; settings `@settings[=section] @close-settings
+@settings-search=QUERY @settings-search-pick=N @settings-anchors
 @eq=Preset|on|off @field=lastfm-key|lastfm-secret|lb-token|discord-id:VALUE
 @lastfm-connect @lastfm-finish @lastfm-disconnect @lastfm-clear @lb-validate
 @lb-disconnect @discord=on|off`; player `@layout=split|centered|lyrics|immersive|card|minimal|editorial|queue

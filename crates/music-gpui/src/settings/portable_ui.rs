@@ -23,7 +23,7 @@ use super::portable::{
     self, ImportError, ImportNote, ImportPlan, export_settings, export_theme, plan_settings_import,
     plan_theme_import,
 };
-use super::widgets::{group, note, row};
+use super::widgets::{group_at, note, row_at};
 use crate::app::notify;
 use crate::icons::Lucide;
 use crate::util::off_thread;
@@ -493,8 +493,9 @@ pub(super) fn render(
     v_flex()
         .gap_5()
         .child(
-            group(t!("portable.settings_group"), cx)
-                .child(row(
+            group_at("backup.settings", t!("portable.settings_group"), cx)
+                .child(row_at(
+                    "backup.export_settings",
                     t!("portable.export_settings"),
                     Some(t!("portable.export_settings_detail")),
                     button(
@@ -507,7 +508,8 @@ pub(super) fn render(
                     ),
                     cx,
                 ))
-                .child(row(
+                .child(row_at(
+                    "backup.import_settings",
                     t!("portable.import_settings"),
                     Some(t!("portable.import_settings_detail")),
                     button(
@@ -523,8 +525,9 @@ pub(super) fn render(
                 .child(note(t!("portable.secrets_never"), cx)),
         )
         .child(
-            group(t!("portable.theme_group"), cx)
-                .child(row(
+            group_at("backup.theme", t!("portable.theme_group"), cx)
+                .child(row_at(
+                    "backup.export_theme",
                     t!("theme.file.export"),
                     Some(t!("portable.export_theme_detail")),
                     button(
@@ -537,7 +540,8 @@ pub(super) fn render(
                     ),
                     cx,
                 ))
-                .child(row(
+                .child(row_at(
+                    "backup.import_theme",
                     t!("theme.file.import"),
                     Some(t!("portable.import_theme_detail")),
                     button(
@@ -564,7 +568,10 @@ pub(super) fn render(
                     ),
                 ),
         )
-        .child(group(t!("portable.library_group"), cx).child(note(t!("portable.library_note"), cx)))
+        .child(
+            group_at("backup.library", t!("portable.library_group"), cx)
+                .child(note(t!("portable.library_note"), cx)),
+        )
         .into_any_element()
 }
 

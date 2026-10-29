@@ -25,7 +25,7 @@ use music_core::spotify;
 use super::SettingsPanel;
 use super::file::Settings;
 use super::prefs_ui::choice;
-use super::widgets::{field, group, note, row, status_line};
+use super::widgets::{field, field_at, group_at, note, row, row_at, status_line};
 use crate::app::update_app;
 use crate::icons::Lucide;
 use crate::integrations::config::{SkipMode, ai_category_label, sponsorblock_label};
@@ -443,7 +443,11 @@ pub(super) fn render_sponsorblock(
     cx: &mut Context<SettingsPanel>,
 ) -> AnyElement {
     let sb = panel.settings.sponsorblock.clone();
-    let mut categories = group(t!("settings.sponsorblock.categories"), cx);
+    let mut categories = group_at(
+        "sponsorblock.categories",
+        t!("settings.sponsorblock.categories"),
+        cx,
+    );
     for category in Category::ALL {
         let on = sb.categories.contains(&category);
         categories = categories.child(row(
@@ -476,8 +480,9 @@ pub(super) fn render_sponsorblock(
     v_flex()
         .gap_5()
         .child(
-            group("SponsorBlock", cx) // i18n-ignore
-                .child(row(
+            group_at("sponsorblock.main", "SponsorBlock", cx) // i18n-ignore
+                .child(row_at(
+                    "sponsorblock.enabled",
                     t!("settings.sponsorblock.skip_segments"),
                     Some(t!("settings.sponsorblock.skip_segments_desc")),
                     switch(
@@ -488,7 +493,8 @@ pub(super) fn render_sponsorblock(
                     ),
                     cx,
                 ))
-                .child(row(
+                .child(row_at(
+                    "sponsorblock.mode",
                     t!("settings.sponsorblock.when"),
                     Some(t!("settings.sponsorblock.when_desc")),
                     choice(
@@ -504,7 +510,8 @@ pub(super) fn render_sponsorblock(
                     ),
                     cx,
                 ))
-                .child(row(
+                .child(row_at(
+                    "sponsorblock.notify",
                     t!("settings.sponsorblock.notify"),
                     None,
                     switch(
@@ -518,38 +525,43 @@ pub(super) fn render_sponsorblock(
         )
         .child(categories)
         .child(
-            group(t!("settings.sponsorblock.server"), cx)
-                .child(field(
-                    t!("settings.sponsorblock.api_url"),
-                    Input::new(&panel.extras.sb_url).small(),
-                    cx,
-                ))
-                .child(status_line(url_status.0, url_status.1))
-                .child(
-                    h_flex()
-                        .gap_2()
-                        .child(
-                            Button::new("sb-url-reset")
-                                .small()
-                                .outline()
-                                .label(t!("settings.sponsorblock.use_default"))
-                                .on_click(cx.listener(|this, _, window, cx| {
-                                    this.set_extras_field("sb-url", DEFAULT_API_URL, window, cx);
-                                })),
-                        )
-                        .child(
-                            Button::new("sb-cache")
-                                .small()
-                                .ghost()
-                                .label(t!("settings.sponsorblock.forget"))
-                                .on_click(|_, _, cx| {
-                                    update_app(cx, |app, _| {
-                                        app.integrations.sponsorblock.clear_cache()
-                                    });
-                                }),
-                        ),
-                )
-                .child(note(t!("settings.sponsorblock.privacy"), cx)),
+            group_at(
+                "sponsorblock.server",
+                t!("settings.sponsorblock.server"),
+                cx,
+            )
+            .child(field_at(
+                "sponsorblock.server.url",
+                t!("settings.sponsorblock.api_url"),
+                Input::new(&panel.extras.sb_url).small(),
+                cx,
+            ))
+            .child(status_line(url_status.0, url_status.1))
+            .child(
+                h_flex()
+                    .gap_2()
+                    .child(
+                        Button::new("sb-url-reset")
+                            .small()
+                            .outline()
+                            .label(t!("settings.sponsorblock.use_default"))
+                            .on_click(cx.listener(|this, _, window, cx| {
+                                this.set_extras_field("sb-url", DEFAULT_API_URL, window, cx);
+                            })),
+                    )
+                    .child(
+                        Button::new("sb-cache")
+                            .small()
+                            .ghost()
+                            .label(t!("settings.sponsorblock.forget"))
+                            .on_click(|_, _, cx| {
+                                update_app(cx, |app, _| {
+                                    app.integrations.sponsorblock.clear_cache()
+                                });
+                            }),
+                    ),
+            )
+            .child(note(t!("settings.sponsorblock.privacy"), cx)),
         )
         .into_any_element()
 }
@@ -585,8 +597,9 @@ pub(super) fn render_together(
     v_flex()
         .gap_5()
         .child(
-            group(t!("settings.together.you"), cx)
-                .child(field(
+            group_at("together.you", t!("settings.together.you"), cx)
+                .child(field_at(
+                    "together.display_name",
                     t!("settings.together.display_name"),
                     Input::new(&panel.extras.together_name).small(),
                     cx,
@@ -594,14 +607,16 @@ pub(super) fn render_together(
                 .child(note(t!("settings.together.display_name_note"), cx)),
         )
         .child(
-            group(t!("settings.together.hosting"), cx)
-                .child(field(
+            group_at("together.hosting", t!("settings.together.hosting"), cx)
+                .child(field_at(
+                    "together.port",
                     t!("settings.together.port"),
                     Input::new(&panel.extras.together_port).small(),
                     cx,
                 ))
                 .children(port_error.map(|e| status_line(e.into(), cx.theme().danger)))
-                .child(row(
+                .child(row_at(
+                    "together.allow_add",
                     t!("together.room.allow_add"),
                     Some(t!("settings.together.allow_add_desc")),
                     switch(
@@ -612,7 +627,8 @@ pub(super) fn render_together(
                     ),
                     cx,
                 ))
-                .child(row(
+                .child(row_at(
+                    "together.allow_control",
                     t!("together.room.allow_control"),
                     Some(t!("settings.together.allow_control_desc")),
                     switch(
@@ -623,7 +639,8 @@ pub(super) fn render_together(
                     ),
                     cx,
                 ))
-                .child(row(
+                .child(row_at(
+                    "together.approval",
                     t!("settings.together.approval"),
                     None,
                     switch(
@@ -637,14 +654,19 @@ pub(super) fn render_together(
                 .child(note(t!("settings.together.hosting_note"), cx)),
         )
         .child(
-            group(t!("settings.together.across_networks"), cx)
-                .child(field(
-                    t!("settings.together.relay"),
-                    Input::new(&panel.extras.together_relay).small(),
-                    cx,
-                ))
-                .children(relay_error.map(|e| status_line(e.into(), cx.theme().danger)))
-                .child(note(t!("settings.together.relay_note"), cx)),
+            group_at(
+                "together.networks",
+                t!("settings.together.across_networks"),
+                cx,
+            )
+            .child(field_at(
+                "together.relay",
+                t!("settings.together.relay"),
+                Input::new(&panel.extras.together_relay).small(),
+                cx,
+            ))
+            .children(relay_error.map(|e| status_line(e.into(), cx.theme().danger)))
+            .child(note(t!("settings.together.relay_note"), cx)),
         )
         .child(
             h_flex().child(
@@ -701,19 +723,21 @@ pub(super) fn render_spotify(
     v_flex()
         .gap_5()
         .child(
-            group(t!("settings.spotify.account"), cx)
+            group_at("spotify.account", t!("settings.spotify.account"), cx)
                 .child(
                     h_flex()
                         .justify_between()
                         .child(status_line(status, color))
                         .child(button),
                 )
-                .child(field(
+                .child(field_at(
+                    "spotify.client_id",
                     t!("settings.spotify.client_id"),
                     Input::new(&panel.extras.spotify_client).small(),
                     cx,
                 ))
-                .child(field(
+                .child(field_at(
+                    "spotify.redirect_port",
                     t!("settings.spotify.redirect_port"),
                     Input::new(&panel.extras.spotify_port).small(),
                     cx,
@@ -742,26 +766,30 @@ pub(super) fn render_spotify(
                 .child(note(t!("settings.spotify.steps"), cx)),
         )
         .child(
-            group(t!("settings.spotify.without_account"), cx)
-                .child(note(
-                    t!(
-                        "settings.spotify.without_account_note",
-                        other_app = "ArchiveTune"
-                    ),
-                    cx,
-                ))
-                .child(
-                    h_flex().child(
-                        Button::new("spotify-open-import")
-                            .small()
-                            .outline()
-                            .icon(Lucide::Upload)
-                            .label(t!("settings.spotify.open_import"))
-                            .on_click(|_, window, cx| {
-                                update_app(cx, |app, cx| app.navigate(Route::Import, window, cx));
-                            }),
-                    ),
+            group_at(
+                "spotify.without_account",
+                t!("settings.spotify.without_account"),
+                cx,
+            )
+            .child(note(
+                t!(
+                    "settings.spotify.without_account_note",
+                    other_app = "ArchiveTune"
                 ),
+                cx,
+            ))
+            .child(
+                h_flex().child(
+                    Button::new("spotify-open-import")
+                        .small()
+                        .outline()
+                        .icon(Lucide::Upload)
+                        .label(t!("settings.spotify.open_import"))
+                        .on_click(|_, window, cx| {
+                            update_app(cx, |app, cx| app.navigate(Route::Import, window, cx));
+                        }),
+                ),
+            ),
         )
         .into_any_element()
 }
@@ -797,7 +825,7 @@ pub(super) fn render_ai_filter(
             theme.success,
         ),
     };
-    let mut categories = group(t!("settings.ai_filter.hide"), cx);
+    let mut categories = group_at("ai_filter.categories", t!("settings.ai_filter.hide"), cx);
     for category in AiCategory::ALL {
         let on = a.categories.contains(&category);
         categories = categories.child(row(
@@ -823,7 +851,8 @@ pub(super) fn render_ai_filter(
         ));
     }
     categories = categories
-        .child(field(
+        .child(field_at(
+            "ai_filter.categories.custom",
             t!("settings.ai_filter.also_hide"),
             Input::new(&panel.extras.ai_custom).small(),
             cx,
@@ -832,8 +861,9 @@ pub(super) fn render_ai_filter(
     v_flex()
         .gap_5()
         .child(
-            group(t!("settings.ai_filter.title"), cx)
-                .child(row(
+            group_at("ai_filter.main", t!("settings.ai_filter.title"), cx)
+                .child(row_at(
+                    "ai_filter.enabled",
                     t!("settings.ai_filter.enable"),
                     Some(t!("settings.ai_filter.enable_desc")),
                     switch(
@@ -859,8 +889,9 @@ pub(super) fn render_ai_filter(
                 ),
         )
         .child(
-            group(t!("settings.ai_filter.model"), cx)
-                .child(field(
+            group_at("ai_filter.model", t!("settings.ai_filter.model"), cx)
+                .child(field_at(
+                    "ai_filter.model.endpoint",
                     t!("settings.ai_filter.endpoint"),
                     Input::new(&panel.extras.ai_endpoint).small(),
                     cx,
@@ -870,7 +901,8 @@ pub(super) fn render_ai_filter(
                     Input::new(&panel.extras.ai_model).small(),
                     cx,
                 ))
-                .child(field(
+                .child(field_at(
+                    "ai_filter.model.api_key",
                     t!("settings.ai_filter.api_key"),
                     Input::new(&panel.extras.ai_key).small().mask_toggle(),
                     cx,
@@ -879,7 +911,7 @@ pub(super) fn render_ai_filter(
         )
         .child(categories)
         .child(
-            group(t!("settings.ai_filter.privacy"), cx)
+            group_at("ai_filter.privacy", t!("settings.ai_filter.privacy"), cx)
                 .child(note(t!("settings.ai_filter.privacy_note"), cx)),
         )
         .into_any_element()
@@ -918,7 +950,7 @@ pub(super) fn render_cast(
             theme.muted_foreground,
         ),
     };
-    let mut list = group(t!("settings.cast.devices"), cx).child(
+    let mut list = group_at("cast.devices", t!("settings.cast.devices"), cx).child(
         h_flex()
             .justify_between()
             .child(status_line(status, color))
@@ -995,8 +1027,9 @@ pub(super) fn render_cast(
         .gap_5()
         .child(list)
         .child(
-            group(t!("settings.cast.streaming"), cx)
-                .child(row(
+            group_at("cast.streaming", t!("settings.cast.streaming"), cx)
+                .child(row_at(
+                    "cast.direct",
                     t!("settings.cast.direct"),
                     Some(t!("settings.cast.direct_desc")),
                     switch(

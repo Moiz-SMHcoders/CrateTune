@@ -19,7 +19,7 @@ use super::look_prefs::{
 };
 use super::panel::{SettingsEvent, SettingsPanel};
 use super::prefs_ui::choice;
-use super::widgets::{group, note, row};
+use super::widgets::{group_at, note, row_at};
 
 impl SettingsPanel {
     fn update_app_look(&mut self, cx: &mut Context<Self>, f: impl FnOnce(&mut AppLookConfig)) {
@@ -183,18 +183,20 @@ pub(super) fn render_app_look(
         cx,
     );
     let own = on && !following;
-    group(t!("settings.look.group"), cx)
+    group_at("appearance.look", t!("settings.look.group"), cx)
         .child(
             v_flex()
                 .gap_2()
-                .child(row(
+                .child(row_at(
+                    "appearance.look.style",
                     t!("settings.look.style"),
                     Some(t!("settings.look.style_note")),
                     styles,
                     cx,
                 ))
                 .when(on, |this| {
-                    this.child(row(
+                    this.child(row_at(
+                        "appearance.look.follow_bar",
                         t!("settings.look.follow_bar"),
                         Some(t!("settings.look.follow_bar_note")),
                         follow,
@@ -208,14 +210,33 @@ pub(super) fn render_app_look(
                     ))
                 })
                 .when(own && look.style == AppLookStyle::Gradient, |this| {
-                    this.child(row(t!("settings.look.direction"), None, directions, cx))
+                    this.child(row_at(
+                        "appearance.look.direction",
+                        t!("settings.look.direction"),
+                        None,
+                        directions,
+                        cx,
+                    ))
                 })
                 .when(own, |this| {
-                    this.child(row(t!("settings.look.intensity"), None, intensities, cx))
-                        .child(row(t!("settings.look.dim_when_paused"), None, dim, cx))
+                    this.child(row_at(
+                        "appearance.look.intensity",
+                        t!("settings.look.intensity"),
+                        None,
+                        intensities,
+                        cx,
+                    ))
+                    .child(row_at(
+                        "appearance.look.dim",
+                        t!("settings.look.dim_when_paused"),
+                        None,
+                        dim,
+                        cx,
+                    ))
                 })
                 .when(on && effective.draws_backdrop(), |this| {
-                    this.child(row(
+                    this.child(row_at(
+                        "appearance.look.tint_surfaces",
                         t!("settings.look.tint_surfaces"),
                         Some(t!("settings.look.tint_surfaces_note")),
                         tint,
@@ -223,7 +244,8 @@ pub(super) fn render_app_look(
                     ))
                 })
                 .when(own && look.style == AppLookStyle::Gradient, |this| {
-                    this.child(row(
+                    this.child(row_at(
+                        "appearance.look.animate",
                         t!("settings.look.animate"),
                         Some(t!("settings.look.animate_note")),
                         animate,
@@ -303,45 +325,63 @@ pub(super) fn render_effects(
         SettingsPanel::set_translucent_sidebar,
         cx,
     );
-    group(t!("settings.motion.group"), cx)
+    group_at("appearance.motion", t!("settings.motion.group"), cx)
         .child(
             v_flex()
                 .gap_2()
-                .child(row(
+                .child(row_at(
+                    "appearance.motion.animations",
                     t!("settings.motion.animations"),
                     Some(t!("settings.motion.animations_note")),
                     levels,
                     cx,
                 ))
                 .children(system.map(|text| note(text, cx)))
-                .child(row(
+                .child(row_at(
+                    "appearance.motion.page_transitions",
                     t!("settings.motion.page_transitions"),
                     Some(t!("settings.motion.page_transitions_note")),
                     transitions,
                     cx,
                 ))
-                .child(row(
+                .child(row_at(
+                    "appearance.motion.card_hover",
                     t!("settings.motion.card_hover"),
                     Some(t!("settings.motion.card_hover_note")),
                     hover,
                     cx,
                 ))
-                .child(row(
+                .child(row_at(
+                    "appearance.motion.artwork_headers",
                     t!("settings.motion.artwork_headers"),
                     Some(t!("settings.motion.artwork_headers_note")),
                     headers,
                     cx,
                 ))
-                .child(row(
+                .child(row_at(
+                    "appearance.motion.artwork_corners",
                     t!("settings.motion.artwork_corners"),
                     None,
                     corners,
                     cx,
                 ))
-                .child(row(t!("settings.motion.artwork_shadow"), None, shadow, cx))
-                .child(row(t!("settings.motion.card_size"), None, sizes, cx))
+                .child(row_at(
+                    "appearance.motion.artwork_shadow",
+                    t!("settings.motion.artwork_shadow"),
+                    None,
+                    shadow,
+                    cx,
+                ))
+                .child(row_at(
+                    "appearance.motion.card_size",
+                    t!("settings.motion.card_size"),
+                    None,
+                    sizes,
+                    cx,
+                ))
                 .when(cfg!(target_os = "macos"), |this| {
-                    this.child(row(
+                    this.child(row_at(
+                        "appearance.motion.translucent_sidebar",
                         t!("settings.motion.translucent_sidebar"),
                         Some(t!("settings.motion.translucent_sidebar_note")),
                         translucent,

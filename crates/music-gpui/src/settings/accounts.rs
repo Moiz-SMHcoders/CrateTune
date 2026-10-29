@@ -19,7 +19,7 @@ use gpui_component::{
 };
 
 use super::SettingsPanel;
-use super::widgets::{group, note, row, status_line};
+use super::widgets::{group, group_at, note, row, status_line};
 use crate::account::Busy;
 use crate::app::{read_app, update_app};
 use crate::components::artwork::artwork;
@@ -143,7 +143,7 @@ pub(super) fn render(
 
     match config.filter(|_| signed_in || loading_secret) {
         None => {
-            let mut sign_in = group(t!("common.youtube_music"), cx)
+            let mut sign_in = group_at("account.youtube", t!("common.youtube_music"), cx)
                 .child(note(t!("settings.account.not_signed_in"), cx))
                 .child(
                     h_flex()
@@ -223,7 +223,7 @@ pub(super) fn render(
                         }),
                 );
             content = content.child(
-                group(t!("common.youtube_music"), cx)
+                group_at("account.youtube", t!("common.youtube_music"), cx)
                     .child(header)
                     .children(busy_line(&status, cx)),
             );
@@ -242,7 +242,7 @@ pub(super) fn render(
                     update_app(cx, |app, cx| app.sync_youtube_library(window, cx));
                 });
             content = content.child(
-                group(t!("settings.account.sync_group"), cx)
+                group_at("account.sync", t!("settings.account.sync_group"), cx)
                     .child(row(
                         t!("settings.account.sync_row"),
                         Some(t!("settings.account.sync_row_desc")),

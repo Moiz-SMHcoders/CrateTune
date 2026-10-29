@@ -1,0 +1,6 @@
+# ---- Settings search.
+settings_search.placeholder = Einstellungen durchsuchen
+settings_search.suggested = Vorschläge
+settings_search.recent = Zuletzt geöffnet
+settings_search.no_results = Keine Einstellung passt zu „{query}“
+settings_search.no_results_hint = Versuche ein kürzeres Wort oder einen anderen Begriff, etwa „Farbe“, „Lautstärke“ oder „Tastenkürzel“.

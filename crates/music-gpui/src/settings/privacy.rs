@@ -5,7 +5,7 @@ use gpui::{AnyElement, Context, IntoElement, ParentElement as _, Styled as _, Wi
 use gpui_component::{Sizable as _, WindowExt as _, button::Button, switch::Switch, v_flex};
 
 use super::SettingsPanel;
-use super::widgets::{group, note, row};
+use super::widgets::{group_at, note, row_at};
 use crate::app::update_app;
 use crate::icons::Lucide;
 
@@ -56,34 +56,46 @@ pub(super) fn render(
     v_flex()
         .gap_5()
         .child(
-            group(t!("settings.privacy.listen_history"), cx)
-                .child(row(
-                    t!("settings.privacy.pause_listen"),
-                    Some(t!("settings.privacy.pause_listen_detail")),
-                    pause_listen,
-                    cx,
-                ))
-                .child(row(
-                    t!("settings.privacy.clear_listen"),
-                    Some(t!("settings.privacy.clear_listen_detail")),
-                    clear_listen,
-                    cx,
-                )),
+            group_at(
+                "privacy.listen_history",
+                t!("settings.privacy.listen_history"),
+                cx,
+            )
+            .child(row_at(
+                "privacy.pause_listen",
+                t!("settings.privacy.pause_listen"),
+                Some(t!("settings.privacy.pause_listen_detail")),
+                pause_listen,
+                cx,
+            ))
+            .child(row_at(
+                "privacy.clear_listen",
+                t!("settings.privacy.clear_listen"),
+                Some(t!("settings.privacy.clear_listen_detail")),
+                clear_listen,
+                cx,
+            )),
         )
         .child(
-            group(t!("settings.privacy.search_history"), cx)
-                .child(row(
-                    t!("settings.privacy.pause_search"),
-                    Some(t!("settings.privacy.pause_search_detail")),
-                    pause_search,
-                    cx,
-                ))
-                .child(row(
-                    t!("settings.privacy.clear_search"),
-                    Some(t!("settings.privacy.clear_search_detail")),
-                    clear_search,
-                    cx,
-                )),
+            group_at(
+                "privacy.search_history",
+                t!("settings.privacy.search_history"),
+                cx,
+            )
+            .child(row_at(
+                "privacy.pause_search",
+                t!("settings.privacy.pause_search"),
+                Some(t!("settings.privacy.pause_search_detail")),
+                pause_search,
+                cx,
+            ))
+            .child(row_at(
+                "privacy.clear_search",
+                t!("settings.privacy.clear_search"),
+                Some(t!("settings.privacy.clear_search_detail")),
+                clear_search,
+                cx,
+            )),
         )
         .child(note(t!("settings.privacy.note"), cx))
         .into_any_element()
