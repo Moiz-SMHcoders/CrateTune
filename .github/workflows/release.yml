@@ -1,5 +1,7 @@
 # Builds release artifacts for every OS when a version tag (v1.2.3) is pushed and
-# attaches them to a draft GitHub release. Signing/notarization secrets are optional:
+# attaches them to a draft GitHub release, with SHA256SUMS.txt over every asset (the
+# in-app updater refuses to install without it). Publish the draft by hand (docs/RELEASING.md).
+# Signing/notarization secrets are optional:
 #   MACOS_SIGN_IDENTITY (+ a keychain with the Developer ID certificate) for macOS.
 name: Release
 
@@ -76,6 +78,7 @@ jobs:
           name: ${{ matrix.name }}
           path: |
             target/bundle/*.dmg
+            target/bundle/*.app.zip
             target/bundle/*.tar.gz
             target/bundle/*.AppImage
             target/bundle/*.zip
@@ -91,9 +94,27 @@ jobs:
         with:
           path: dist
           merge-multiple: true
+      - name: Checksums
+        working-directory: dist
+        run: |
+          # Every update package must be there (the updater looks them up by name).
+          VERSION="${GITHUB_REF_NAME#v}"
+          for suffix in macos-arm64.app.zip macos-x86_64.app.zip macos-arm64.dmg macos-x86_64.dmg \
+                        x86_64.AppImage linux-x86_64.tar.gz windows-x64-setup.exe windows-x64.zip; do
+            ls ./*-"$VERSION"-"$suffix" >/dev/null || { echo "missing *-$VERSION-$suffix" >&2; exit 1; }
+          done
+          rm -f SHA256SUMS.txt
+          sha256sum -- * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+          sha256sum --check --strict SHA256SUMS.txt
       - name: Draft release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # -beta / -rc tags are pre-releases (offered to pre-release / 0.x builds and to
+          # users who opted in; music_core::updater::Version). Plain 0.x tags are not:
+          # 0.1.0's update check reads releases/latest, which skips pre-releases.
+          PRE=()
+          if [[ "$GITHUB_REF_NAME" == *-* ]]; then PRE=(--prerelease); fi
           gh release create "$GITHUB_REF_NAME" dist/* \
-            --repo "$GITHUB_REPOSITORY" --draft --title "$GITHUB_REF_NAME" --generate-notes
+            --repo "$GITHUB_REPOSITORY" --draft "${PRE[@]}" --title "$GITHUB_REF_NAME" --generate-notes

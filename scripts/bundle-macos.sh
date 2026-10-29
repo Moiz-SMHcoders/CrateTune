@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
-# Builds "<APP_NAME>.app" and a DMG from the release binary.
+# Builds "<APP_NAME>.app", a DMG and the update archive from the release binary.
 #
-#   scripts/bundle-macos.sh [--no-build] [--no-dmg] [--target <triple>]
+#   scripts/bundle-macos.sh [--no-build] [--no-dmg] [--no-zip] [--target <triple>]
 #
-# Output: target/bundle/<APP_NAME>.app and target/bundle/<APP_ID>-<version>-macos-<arch>.dmg.
+# Output (target/bundle/):
+# * <APP_NAME>.app
+# * <APP_ID>-<version>-macos-<arch>.dmg      first installs (drag to Applications)
+# * <APP_ID>-<version>-macos-<arch>.app.zip  the in-app updater's package
+#   (`ditto -c -k --keepParent`, keeps the signature; see music_core::updater)
 # Name, bundle id and summary come from packaging/app.env, the version from Cargo.toml.
 # Signing: ad-hoc (`codesign -s -`) unless MACOS_SIGN_IDENTITY is set (a "Developer ID
 # Application: …" identity; then the hardened runtime and packaging/macos/entitlements.plist
@@ -12,11 +16,12 @@ set -euo pipefail
 source "$(dirname "$0")/lib/app-env.sh"
 cd "$ROOT"
 
-BUILD=1 DMG=1 TARGET=""
+BUILD=1 DMG=1 ZIP=1 TARGET=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --no-build) BUILD=0 ;;
     --no-dmg) DMG=0 ;;
+    --no-zip) ZIP=0 ;;
     --target) TARGET="$2"; shift ;;
     *) echo "unknown option $1" >&2; exit 2 ;;
   esac
@@ -84,6 +89,17 @@ else
 fi
 codesign --verify --strict "$APP"
 echo "built $APP ($APP_VERSION, $APP_ARCH)"
+
+if [[ $ZIP == 1 ]]; then
+  # The updater unpacks this with `ditto -x -k` next to the installed bundle and
+  # checks `codesign --verify --strict`, the bundle id and CFBundleShortVersionString.
+  ZIP_PATH="$OUT/${APP_ID}-${APP_VERSION}-macos-${APP_ARCH}.app.zip"
+  rm -f "$ZIP_PATH"
+  # No extended attributes / resource forks: only local metadata (provenance); the
+  # signature lives in the files.
+  ditto -c -k --keepParent --norsrc --noextattr "$APP" "$ZIP_PATH"
+  echo "built $ZIP_PATH"
+fi
 
 if [[ $DMG == 1 ]]; then
   STAGE="$(mktemp -d)"

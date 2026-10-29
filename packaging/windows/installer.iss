@@ -42,6 +42,13 @@ LicenseFile=..\..\LICENSE
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
+; In-app updates run this installer with /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-
+; /NOCANCEL [/RELAUNCH=1] after the app has started to quit (music_core::updater).
+; If the app still holds its files, the Restart Manager closes it; it is started
+; again by the [Run] entry below (not by the Restart Manager, which would start it
+; a second time).
+CloseApplications=yes
+RestartApplications=no
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
@@ -56,3 +63,11 @@ Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppId}.exe"; Tasks: desktop
 
 [Run]
 Filename: "{app}\{#AppId}.exe"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall skipifsilent
+; Silent in-app update with /RELAUNCH=1: start the new version.
+Filename: "{app}\{#AppId}.exe"; Flags: nowait; Check: RelaunchAfterSilentUpdate
+
+[Code]
+function RelaunchAfterSilentUpdate: Boolean;
+begin
+  Result := WizardSilent and (ExpandConstant('{param:RELAUNCH|0}') = '1');
+end;

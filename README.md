@@ -38,13 +38,15 @@ music-relay` ([Relay server](#relay-server-music-relay)).
 
 | Platform | Command | Output |
 |---|---|---|
-| macOS | `scripts/bundle-macos.sh [--no-build] [--no-dmg]` | `TuneDesk.app` (Info.plist with bundle id, version from Cargo, `LSMinimumSystemVersion` 11.0, `NSMicrophoneUsageDescription`, high-res, music category; ad-hoc signed, or Developer ID + hardened runtime with `MACOS_SIGN_IDENTITY`) and `tunedesk-<ver>-macos-<arch>.dmg` |
+| macOS | `scripts/bundle-macos.sh [--no-build] [--no-dmg]` | `TuneDesk.app` (Info.plist with bundle id, version from Cargo, `LSMinimumSystemVersion` 11.0, `NSMicrophoneUsageDescription`, high-res, music category; ad-hoc signed, or Developer ID + hardened runtime with `MACOS_SIGN_IDENTITY`), `tunedesk-<ver>-macos-<arch>.dmg` (first installs) and `tunedesk-<ver>-macos-<arch>.app.zip` (the updater's package, `ditto -c -k --keepParent`) |
 | Linux | `scripts/bundle-linux.sh [--no-build] [--appimage]` | `.tar.gz` with `bin/`, `.desktop`, hicolor icons, AppStream metainfo, `install.sh`; AppImage via `appimagetool` |
 | Windows | `pwsh scripts/bundle-windows.ps1` | `.zip` and an Inno Setup 6 per-user installer (`packaging/windows/installer.iss`); the `.exe` gets its icon + version resource from `build.rs` (`embed-resource`, native Windows builds). An MSI could be made with `cargo-wix` instead. |
 
 CI (`.github/workflows/ci.yml`) runs fmt, clippy (also with `--features screenshot`) and
 tests on macOS, Ubuntu and Windows; `release.yml` builds every package on a `v*` tag and
-attaches them to a draft release.
+attaches them to a draft release with `SHA256SUMS.txt`. How to cut a release:
+[docs/RELEASING.md](docs/RELEASING.md). The app updates itself from those releases
+([Self-update](#self-update)).
 
 **App identity.** The app is **TuneDesk** (app id `tunedesk`; the bundle id
 `io.github.tunedesk` is a placeholder). Name and ids live in **one file, `packaging/app.env`** (`APP_NAME`, `APP_ID`,
@@ -569,8 +571,10 @@ src/
                      signature → request → history → YouTube Music search);
                      pages/recognition.rs renders it; mic_permission.rs (macOS AVFoundation)
   settings/onboarding.rs  first-run guide overlay (reuses the settings sections)
-  update_check.rs    optional GitHub release check; identity.rs (name / ids from
-                     packaging/app.env via build.rs); release_script.rs (script actions)
+  update_check.rs    update check + self-update flow (status, notifications, install on
+                     quit) over music_core::updater; update_script.rs (@update-* actions);
+                     identity.rs (name / ids from packaging/app.env via build.rs);
+                     release_script.rs (script actions)
   i18n/              translations: t! / tp! / k! (mod.rs), CLDR plurals (plural.rs),
                      numbers / dates / relative times (format.rs), system language
                      (system.rs), live input placeholders (inputs.rs), catalog tests and
@@ -1510,6 +1514,9 @@ item's ACL is tied to the binary). Secrets are never logged.
 | `MUSIC_LANG=de` / `MUSIC_SYSTEM_LANG=ja-JP,en` | UI language for this session (not saved) / pretend the system prefers these languages |
 | `MUSIC_ONBOARDING=1\|0` | force / suppress the first-run guide (it is skipped automatically for `MUSIC_SCRIPT` / screenshot runs) |
 | `MUSIC_UPDATE_REPO=owner/name` | enable the update check against that repo (testing; the default comes from `packaging/app.env`) |
+| `MUSIC_UPDATE_API=http://127.0.0.1:PORT` | a stand-in for the GitHub API (`GET /repos/<repo>/releases`; assets from the same origin are allowed) |
+| `MUSIC_UPDATE_FAKE_VERSION=0.0.1` | pretend to run that version (update checks only) |
+| `MUSIC_UPDATE_FAIL=copy\|swap\|verify\|launch` | make that install step fail (rollback tests) |
 | `MUSIC_NO_TRANSITIONS=1` | switch dynamic colours at once (no 400 ms cross-fade) |
 | `MUSIC_BAR_SPECTRUM_DUMP=1` | print the player bar analyzer's band statistics once a second (tuning the Equalizer style) |
 | `MUSIC_MALLOC=system` | keep macOS's default allocator behaviour (no re-exec with `MallocSpaceEfficient=1`, see `memory.rs`; for comparisons) |
@@ -1559,7 +1566,10 @@ windows/appearance `@mini[=on|off] @theme=dark|black|dynamic
 @import-save[=NAME] @import-cancel @import-status @export=PLAYLIST:FORMAT:PATH`;
 recognition `@recognize` (microphone), `@recognize-file=PATH`,
 `@recognize-cancel`, `@recognize-history=N`; `@onboarding[=STEP|off]`, `@onboarding-next`,
-`@onboarding-back`, `@update-check` (`release_script.rs`); `@lang=CODE|system` (UI language,
+`@onboarding-back` (`release_script.rs`); updates (`update_script.rs`) `@update-check`,
+`@update-menu` (the "Check for Updates…" item), `@update-status`, `@update-download`,
+`@update-cancel`, `@update-install[=norestart]` (alias `@update-apply`), `@update-retry`,
+`@update-pref=auto-check|auto-install:on|off`, `@update-pref=prereleases:on|off|auto`; `@lang=CODE|system` (UI language,
 saved); keyboard shortcuts (`shortcuts/script.rs`) `@shortcut=ACTION:KEYS` (as the Change
 button: refused / conflict prompt; empty KEYS = none), `@shortcut-replace`,
 `@shortcut-cancel`, `@shortcut-record=ACTION` (the next `@key=` is recorded),
@@ -1973,6 +1983,117 @@ what the switched-off features hold (a 320 px blurred backdrop and three 64 px g
 images per recent track, the colour seeds); the artwork cache size (48 MiB) is not a
 setting. One Default run without lyrics on screen measured 1.2 %.
 
+### Self-update
+
+| ![Update available](docs/screenshots/update-available.png) | ![Downloading](docs/screenshots/update-downloading.png) |
+|---|---|
+| ![Ready: restart to finish](docs/screenshots/update-ready.png) | ![Bad checksum refused](docs/screenshots/update-failed.png) |
+| ![Up to date](docs/screenshots/update-up-to-date.png) | ![Built from source: link only](docs/screenshots/update-manual-only.png) |
+
+The app updates itself from the GitHub releases of `UPDATE_REPO`. User-facing behaviour is
+in [docs/USER_GUIDE.md → Updates](docs/USER_GUIDE.md#updates); cutting a release is in
+[docs/RELEASING.md](docs/RELEASING.md).
+
+* **Core** (`music_core::updater`, blocking):
+  * `Updater::check` lists the releases (`/releases?per_page=30`; `releases/latest`
+    skips pre-releases) and picks the newest one above the running version. Versions
+    compare by SemVer (`version.rs`). Drafts are never offered. Pre-releases (marked on
+    GitHub, or `-beta`-style tags) are offered only with "Include pre-releases", whose
+    default is on for pre-release and `0.x` builds.
+  * `Updater::download` fetches the asset for the install kind (`kind.rs`), with
+    progress and cancel, into `<cache>/updates/<ver>/`. It goes through the app's proxy /
+    DNS settings, follows redirects by hand, and allows only
+    `https://github.com/<repo>/releases/download/…` plus GitHub's download hosts.
+  * The download is then hashed and compared with `SHA256SUMS.txt` (`sums.rs`: GNU and BSD
+    formats). If the sums file is missing, doesn't list the asset or has a different
+    hash, the file is deleted and the download fails.
+  * `Updater::install` hashes the staged file once more and installs it per kind
+    (`install.rs`, below). Everything is logged to `<cache>/updates/update.log`.
+* **Per platform:**
+  * **macOS:** `ditto -x -k` next to the bundle, then `codesign --verify --strict`, the
+    same `CFBundleIdentifier` and the promised `CFBundleShortVersionString`. The old
+    bundle is renamed aside and the new one renamed in (rolled back if that fails), then
+    the old one is deleted. A detached `sh` waits for the pid and runs `open -n [--env
+    MUSIC_*=…] <bundle>`.
+  * **Link only on macOS** for `cargo run` (no bundle), App Translocation, or a folder
+    that isn't writable (probed before downloading). The app never asks for admin rights
+    and never adds a quarantine attribute.
+  * **Windows installer** (`unins000.exe` next to the exe): the new setup runs detached
+    with `/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP- /NOCANCEL /LOG=… /RELAUNCH=1`,
+    and the app quits. `installer.iss` sets `CloseApplications=yes` and
+    `RestartApplications=no`, and has a `[Run]` entry checked by `WizardSilent` +
+    `{param:RELAUNCH}`.
+  * **Windows portable:** the zip is unpacked in the cache (zip-slip checked) and its exe
+    is started as `--apply-update <staging> <target> <pid> <log> <1|0>` (`apply.rs`,
+    handled first thing in `main`). It waits until the old exe can be opened for writing,
+    then replaces the files all-or-nothing: copies go next to the targets first, then each
+    target is renamed to `.update-old` and the copy renamed in, undone in reverse on any
+    failure. Then it starts the app.
+  * **AppImage** (`$APPIMAGE`): copied next to the old one, re-hashed, `chmod 755`, then
+    renamed over it.
+  * **Tarball** (`<prefix>/bin/tunedesk` + `share/applications/tunedesk.desktop`):
+    `tar -xzf`, then `bin/` + `share/` are replaced all-or-nothing as on Windows. A
+    read-only or `/usr` prefix, Flatpak and Snap get the link only.
+* **UI** (`update_check.rs`, `settings/about.rs`):
+  * The status line has a step button: Update to X.Y.Z → progress + Cancel → Restart to
+    finish (or Try again / Download manually). The button sits next to **Check now**,
+    which is the primary button when there's nothing else to do.
+  * Three switches in `settings.json` → `updates`: `auto_check` (true),
+    `auto_install` (false: when on, the app downloads in the background, asks to restart
+    and installs on quit), and `include_prereleases` (null = automatic).
+  * Notifications carry the same actions. The menu item **Check for Updates…**
+    (`CheckForUpdates`, shortcut id `check_for_updates`, unbound) opens About and checks.
+* **macOS keychain / TCC:**
+  * Secrets are legacy login-keychain items (keyring's `apple-native` store, one item per
+    secret, service `tunedesk`).
+  * Ad-hoc signing gives every build a new code identity, so after an update macOS asks
+    once per stored item. The app reads only the items whose account is set up. The
+    microphone permission may be asked again.
+  * Not done as a "mitigation": an explicit designated requirement (`codesign -s - -r
+    'designated => identifier "io.github.tunedesk"'`). It would keep the microphone grant
+    across versions, but any binary calling itself `io.github.tunedesk` would inherit it.
+    It would likely not stop the keychain prompts either, because legacy keychain items
+    also check the signer's partition (the cdhash for code without a Team ID).
+  * The real fix is Developer ID signing (`MACOS_SIGN_IDENTITY`).
+
+**Verified (macOS arm64, release build):**
+
+* Unit tests (`cargo test -p music-core updater`, 35): SemVer order (the spec's chain),
+  the pre-release policy, release / asset parsing and selection, sums parsing
+  (GNU / `*binary` / BSD, conflicts), the URL allowlist, and install-kind detection with
+  fake paths for every platform.
+* The all-or-nothing file replacement on temp dirs: success, failed copy, failed swap
+  with rollback, unsafe paths, and the helper mode end to end.
+* The AppImage swap, zip extraction (zip-slip refused), the macOS bundle swap +
+  rollback, and check → download → verify → install against a local fake API: bad hash,
+  missing sums, unlisted asset, a tampered file after verification, unwritable folders,
+  cancel and foreign URLs.
+* **End to end in the app**, against a Python stand-in for the API serving a copy of the
+  bundle with `Info.plist` set to 0.2.0 and re-signed ad hoc, installed in a temp folder:
+  * a wrong `SHA256SUMS.txt` → "doesn't match", the download deleted;
+  * `MUSIC_UPDATE_FAIL=swap` / `verify` → the old bundle byte-identical (tree hash),
+    signature valid, no leftovers;
+  * a bundle with a broken signature but a matching hash → refused by `codesign`;
+  * success → bundle 0.2.0 with the marker file and a valid signature. The old process
+    exited about 1 s after "installing"; a new one started under launchd with the
+    `MUSIC_*` env passed on and no `MUSIC_SCRIPT`;
+  * a read-only folder → link only; install on quit → swapped, no restart;
+  * auto-check off → no check, but the menu item / `@update-menu` checks; the
+    unbundled binary → link only; the menu item is present in the AppKit menu, and a
+    bound shortcut fires it.
+* The updater's sources pass `clippy -D warnings` for `x86_64-pc-windows-gnu` and
+  `x86_64-unknown-linux-gnu` in a scratch crate with the HTTP layer stubbed: the whole
+  app can't be cross-compiled here because of C dependencies.
+
+**Not verified:**
+
+* Windows and Linux installs on real systems (the Inno flags and the `[Run]` relaunch,
+  the helper waiting for a locked exe, AppImage / tarball relaunch).
+* `/Applications` with App Management (macOS 13+) and the actual keychain / microphone
+  prompts after an update: the test must not touch the real keychain or TCC.
+* Downloads from real GitHub (redirect to `release-assets.githubusercontent.com`): no
+  release with `SHA256SUMS.txt` from the workflow exists yet.
+
 ### Release round: recognition, onboarding, packaging
 
 | ![Recognition result](docs/screenshots/release-recognition-result.png) | ![From the history](docs/screenshots/release-recognition-history.png) |
@@ -1996,7 +2117,7 @@ setting. One Default run without lyrics on screen measured 1.2 %.
   About → "Show welcome guide".
 * **Update check**: only with `UPDATE_REPO` (or `MUSIC_UPDATE_REPO`); once per launch +
   "Check now"; a newer tag shows a notification and a "Download…" link to the release
-  page.
+  page. (Superseded by [Self-update](#self-update).)
 
 **Verified:** signature generation is bit-identical to a Java transliteration of
 ArchiveTune's Kotlin generator on a synthetic fixture (golden file, unit test), plus
