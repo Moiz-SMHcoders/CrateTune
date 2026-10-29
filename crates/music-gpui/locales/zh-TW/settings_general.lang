@@ -18,7 +18,8 @@ settings.account.sync_row_desc = 喜歡的歌曲、媒體庫歌曲、儲存的�
 settings.account.accounts_group = 帳號
 settings.account.channels = 此 Google 帳號的頻道（品牌帳戶）：
 settings.account.google_index = Google 帳號
-settings.account.google_index_desc = 當 Cookie 中包含多個 Google 帳號時，選擇要使用哪一個（0 = 第一個）。
+settings.account.google_index_desc = 和 youtube.com 一樣，你的登入可以包含多個 Google 帳號。選擇 {app} 要使用哪一個。
+settings.account.google_single = 此登入只有一個 Google 帳號。若要使用多個帳號，請在瀏覽器中以每個帳號登入 music.youtube.com，然後在這裡登出並貼上該瀏覽器的 Cookie。
 settings.account.cookie_note = 登入時會使用你瀏覽器中 music.youtube.com 的工作階段 Cookie。它會保存在系統鑰匙圈中，而且只會傳送給 YouTube。帳號相關功能是依據 YouTube 的網頁 API 開發的，但尚未以真實帳號驗證。
 
 # ---- About

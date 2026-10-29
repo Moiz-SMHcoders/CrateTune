@@ -1,0 +1,7 @@
+{"responseContext":{"mainAppWebResponseContext":{"dataSyncId":"333333333333333333333||","loggedOut":false}},
+ "actions":[{"openPopupAction":{"popup":{"multiPageMenuRenderer":{
+   "header":{"activeAccountHeaderRenderer":{
+     "accountName":{"runs":[{"text":"Work Account"}]},
+     "email":{"runs":[{"text":"work.account@example.org"}]},
+     "accountPhoto":{"thumbnails":[{"url":"https://yt3.ggpht.com/work=s88","width":88,"height":88}]}}},
+   "sections":[]}},"popupType":"DROPDOWN"}}]}

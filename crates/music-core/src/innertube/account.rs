@@ -43,6 +43,42 @@ pub struct AccountChannel {
     pub selected: bool,
 }
 
+/// Most Google accounts [`InnerTube::google_accounts`] probes (Google's limit for one
+/// browser session is 10).
+pub const MAX_GOOGLE_ACCOUNTS: u32 = 10;
+
+/// One Google account signed in to the cookie's browser session (what youtube.com's
+/// "Switch account" lists at the top level; brand channels are [`AccountChannel`]s).
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(default)]
+pub struct GoogleAccount {
+    /// `X-Goog-AuthUser` index ([`Auth::auth_user`](super::Auth::auth_user)).
+    pub auth_user: u32,
+    /// The Google account's own profile (no brand channel selected).
+    pub info: AccountInfo,
+}
+
+/// Probes `X-Goog-AuthUser` 0, 1, … with `probe` and keeps the accounts that answer.
+///
+/// Index 0 failing is an error (the cookie doesn't work at all). Later indexes stop
+/// the walk at the first failure (Google numbers a session's accounts without gaps)
+/// or at the first account seen before (a server that falls back to the default
+/// account for an unknown index instead of failing).
+pub(crate) fn collect_google_accounts(
+    mut probe: impl FnMut(u32) -> Result<AccountInfo>,
+) -> Result<Vec<GoogleAccount>> {
+    let mut out: Vec<GoogleAccount> = Vec::new();
+    for auth_user in 0..MAX_GOOGLE_ACCOUNTS {
+        match probe(auth_user) {
+            Ok(info) if out.iter().any(|a| a.info == info) => break,
+            Ok(info) => out.push(GoogleAccount { auth_user, info }),
+            Err(e) if auth_user == 0 => return Err(e),
+            Err(_) => break,
+        }
+    }
+    Ok(out)
+}
+
 /// A library tab (songs, albums, artists, subscriptions, playlists, podcasts).
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(default)]
@@ -544,6 +580,29 @@ impl InnerTube {
     pub fn account_channels(&self) -> Result<Vec<AccountChannel>> {
         let resp = self.post_authed("account/accounts_list", json!({}))?;
         Ok(parse_account_channels(&resp))
+    }
+
+    /// The Google accounts the cookie's browser session holds, by `X-Goog-AuthUser`.
+    ///
+    /// Asks `account/account_menu` (the call signing in and switching rely on) for
+    /// index 0, 1, … without a brand channel, so an account listed here is one
+    /// switching to will work for. Stops at the first index that fails or repeats an
+    /// earlier account; index 0 failing is an error.
+    /// One request per account plus one. Needs [`InnerTube::auth`].
+    pub fn google_accounts(&self) -> Result<Vec<GoogleAccount>> {
+        let auth = self
+            .auth
+            .clone()
+            .filter(super::Auth::is_signed_in)
+            .ok_or_else(|| Error::Parse("google accounts: needs a signed-in account".into()))?;
+        collect_google_accounts(|auth_user| {
+            let probe = super::Auth {
+                auth_user,
+                data_sync_id: None,
+                ..auth.clone()
+            };
+            self.clone().with_auth(probe).account_info()
+        })
     }
 
     /// The `DATASYNC_ID` YouTube reports for the current cookie.

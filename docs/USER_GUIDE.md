@@ -233,6 +233,15 @@ The sign-in cookie is stored in the system keychain and only sent to YouTube. **
 copies your YouTube Music library into the local one; **Sign out** forgets the cookie
 (the synced data stays).
 
+**Several Google accounts.** Like youtube.com, one browser login can hold several Google
+accounts. If yours does, Settings → Account → Accounts lists them by name and e-mail;
+pick the one CrateTune should use. If it holds just one, a note says so instead. To add
+another: sign in to each account on music.youtube.com in your browser (avatar → Switch
+account → Add account), then sign out in CrateTune and use **Paste cookie…** with that
+browser's cookie (the sign-in window keeps only the first account). **Channels** (brand
+accounts) of the Google account in use are listed below it and are separate from this.
+If a switch fails, CrateTune stays on the account you had and tells you why.
+
 ## Settings
 
 ⌘, or the sidebar. Sections:

@@ -19,7 +19,8 @@ settings.account.sync_row_desc = Canciones que te gustan, canciones de la biblio
 settings.account.accounts_group = Cuentas
 settings.account.channels = Canales (cuentas de marca) de esta cuenta de Google:
 settings.account.google_index = Cuenta de Google
-settings.account.google_index_desc = Si la cookie contiene varias cuentas de Google: cuál usar (0 = la primera).
+settings.account.google_index_desc = Tu inicio de sesión puede incluir varias cuentas de Google, como en youtube.com. Elige cuál usa {app}.
+settings.account.google_single = Este inicio de sesión tiene una sola cuenta de Google. Para usar varias, inicia sesión con cada una en music.youtube.com en un navegador, cierra sesión aquí y pega la cookie de ese navegador.
 settings.account.cookie_note = El inicio de sesión usa la cookie de sesión de tu navegador para music.youtube.com. Se guarda en el llavero del sistema y solo se envía a YouTube. Las funciones de cuenta se crearon sobre la API web de YouTube, pero aún no se han verificado con una cuenta real.
 
 # ---- About

@@ -75,6 +75,20 @@ versions follow [SemVer](https://semver.org/).
 * Updating from **0.1.0** still needs one manual download; later versions update
   themselves.
 
+### Fixed
+
+* **Settings → Account → Google account** no longer offers bare numbers 0–3 that failed
+  for accounts that aren't there. The row is for logins that hold several Google
+  accounts (like the account switcher on youtube.com): CrateTune now finds which ones the
+  cookie's login actually holds (at sign-in, at startup and on every sync, in the
+  background) and shows them by name, e-mail and picture. With a single Google account
+  the row is replaced by a note on how to add more; brand channels keep their own picker.
+* Switching Google account or channel is safe: nothing is saved until the new account
+  answers. If it fails, CrateTune stays signed in to the previous account and says why
+  ("That Google account isn't signed in in this session"), instead of keeping a broken
+  setting. A Google account index saved by 0.1.0 that the login no longer holds is reset
+  to the first account at startup (with a message).
+
 ## [0.1.0] — 2026-10-29 (first public release)
 
 ### Changed

@@ -7,7 +7,7 @@ use std::cell::Cell;
 
 use gpui::{
     AnyElement, App, AppContext as _, Context, Focusable as _, FontWeight, IntoElement,
-    ParentElement as _, SharedString, Styled as _, Window, div, px,
+    ParentElement as _, SharedString, Styled as _, Window, div, prelude::FluentBuilder as _, px,
 };
 use gpui_component::{
     ActiveTheme as _, Disableable as _, Selectable as _, Sizable as _, WindowExt as _,
@@ -17,14 +17,54 @@ use gpui_component::{
     spinner::Spinner,
     v_flex,
 };
+use music_core::innertube::GoogleAccount;
 
 use super::SettingsPanel;
 use super::widgets::{group, note, row, status_line};
-use crate::account::Busy;
+use crate::account::{Busy, GoogleAccountsView};
 use crate::app::{read_app, update_app};
 use crate::components::artwork::artwork;
 use crate::icons::Lucide;
 use crate::util::{local_date, pretty_date};
+
+/// One button per Google account of the login: avatar, name, e-mail.
+fn google_account_buttons(
+    list: &[GoogleAccount],
+    current: u32,
+    busy: bool,
+    cx: &mut App,
+) -> Vec<AnyElement> {
+    list.iter()
+        .map(|account| {
+            let n = account.auth_user;
+            let info = &account.info;
+            let label = match &info.email {
+                Some(email) if *email != info.name => format!("{} · {email}", info.name),
+                _ => info.name.clone(),
+            };
+            Button::new(("account-google", n as usize))
+                .small()
+                .map(|b| {
+                    if n == current {
+                        b.primary()
+                    } else {
+                        b.outline()
+                    }
+                })
+                .disabled(busy)
+                .child(artwork(info.thumbnail_url.clone(), px(18.), px(9.), cx))
+                .child(SharedString::from(label))
+                .on_click(move |_, window, cx| {
+                    if n == current {
+                        return;
+                    }
+                    // Another Google account: its own default channel.
+                    update_app(cx, |app, cx| app.switch_account(None, n, window, cx));
+                })
+                .into_any_element()
+        })
+        .collect()
+}
 
 /// Opens the paste-cookie dialog.
 pub fn open_cookie_dialog(window: &mut Window, cx: &mut App) {
@@ -126,13 +166,14 @@ pub(super) fn render(
     _: &mut Window,
     cx: &mut Context<SettingsPanel>,
 ) -> AnyElement {
-    let Some((signed_in, status, sync, channels)) = read_app(cx, |app, _| {
+    let Some((signed_in, status, sync, channels, google)) = read_app(cx, |app, _| {
         let a = &app.store.account;
         (
             a.is_signed_in(),
             a.status.clone(),
             a.sync.clone(),
             a.channels.clone(),
+            a.google_accounts_view(),
         )
     }) else {
         return note(t!("common.loading"), cx).into_any_element();
@@ -196,6 +237,8 @@ pub(super) fn render(
                 })
                 .unwrap_or_else(|| t!("settings.account.not_synced").into());
             let syncing = matches!(sync, Busy::Working(_));
+            // A switch (or sign-in check) is running: the account choices wait.
+            let busy = matches!(status, Busy::Working(_));
             let auth_user = account.auth_user;
             let selected_channel = account.data_sync_id.clone();
             let header = h_flex()
@@ -270,6 +313,7 @@ pub(super) fn render(
                         .small()
                         .outline()
                         .selected(selected)
+                        .disabled(busy)
                         .label(label)
                         .on_click(move |_, window, cx| {
                             let id = id.clone();
@@ -278,31 +322,37 @@ pub(super) fn render(
                         .into_any_element()
                 })
                 .collect();
-            let index_buttons = h_flex().gap_1().children((0..4u32).map(|n| {
-                let channel = selected_channel.clone();
-                Button::new(("account-authuser", n as usize))
-                    .small()
-                    .outline()
-                    .selected(n == auth_user)
-                    .label(n.to_string())
-                    .on_click(move |_, window, cx| {
-                        let channel = channel.clone();
-                        update_app(cx, |app, cx| app.switch_account(channel, n, window, cx));
-                    })
-            }));
             let mut accounts = group(t!("settings.account.accounts_group"), cx);
+            let mut shown = false;
+            // Google accounts of the login first: channels belong to the one in use.
+            match google {
+                GoogleAccountsView::Hidden => {}
+                GoogleAccountsView::Single => {
+                    accounts = accounts.child(note(t!("settings.account.google_single"), cx));
+                    shown = true;
+                }
+                GoogleAccountsView::Choices(list) => {
+                    let choices = google_account_buttons(&list, auth_user, busy, cx);
+                    accounts = accounts
+                        .child(row(
+                            t!("settings.account.google_index"),
+                            Some(t!("settings.account.google_index_desc")),
+                            div(),
+                            cx,
+                        ))
+                        .child(h_flex().gap_1().flex_wrap().children(choices));
+                    shown = true;
+                }
+            }
             if channel_rows.len() > 1 {
                 accounts = accounts
                     .child(note(t!("settings.account.channels"), cx))
                     .child(h_flex().gap_1().flex_wrap().children(channel_rows));
+                shown = true;
             }
-            accounts = accounts.child(row(
-                t!("settings.account.google_index"),
-                Some(t!("settings.account.google_index_desc")),
-                index_buttons,
-                cx,
-            ));
-            content = content.child(accounts);
+            if shown {
+                content = content.child(accounts);
+            }
         }
     }
     content

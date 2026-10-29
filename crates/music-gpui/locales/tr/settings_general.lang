@@ -18,7 +18,8 @@ settings.account.sync_row_desc = Beğenilen şarkılar, kitaplık şarkıları, 
 settings.account.accounts_group = Hesaplar
 settings.account.channels = Bu Google hesabının kanalları (marka hesapları):
 settings.account.google_index = Google hesabı
-settings.account.google_index_desc = Çerez birden fazla Google hesabı içerdiğinde hangisinin kullanılacağı (0 = ilki).
+settings.account.google_index_desc = Oturumunuz youtube.com’daki gibi birden fazla Google hesabı içerebilir. {app} uygulamasının hangisini kullanacağını seçin.
+settings.account.google_single = Bu oturumda tek bir Google hesabı var. Birden fazlasını kullanmak için bir tarayıcıda music.youtube.com’da her birine giriş yapın, ardından burada çıkış yapıp o tarayıcının çerezini yapıştırın.
 settings.account.cookie_note = Oturum açmak, music.youtube.com için tarayıcı oturum çerezinizi kullanır. Çerez işletim sisteminin anahtar zincirinde saklanır ve yalnızca YouTube'a gönderilir. Hesap özellikleri YouTube'un web API'sine göre geliştirildi ancak henüz gerçek bir hesapla doğrulanmadı.
 
 # ---- About

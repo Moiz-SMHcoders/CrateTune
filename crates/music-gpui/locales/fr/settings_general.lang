@@ -18,7 +18,8 @@ settings.account.sync_row_desc = Titres aimés, titres de la bibliothèque, albu
 settings.account.accounts_group = Comptes
 settings.account.channels = Chaînes (comptes de marque) de ce compte Google :
 settings.account.google_index = Compte Google
-settings.account.google_index_desc = Lorsque le cookie contient plusieurs comptes Google : lequel utiliser (0 = le premier).
+settings.account.google_index_desc = Votre connexion peut contenir plusieurs comptes Google, comme sur youtube.com. Choisissez celui qu’utilise {app}.
+settings.account.google_single = Cette connexion contient un seul compte Google. Pour en utiliser plusieurs, connectez-vous à chacun sur music.youtube.com dans un navigateur, déconnectez-vous ici puis collez le cookie de ce navigateur.
 settings.account.cookie_note = La connexion utilise le cookie de session de votre navigateur pour music.youtube.com. Il est conservé dans le trousseau du système et envoyé uniquement à YouTube. Les fonctions de compte ont été développées d'après l'API web de YouTube mais pas encore vérifiées avec un vrai compte.
 
 # ---- About

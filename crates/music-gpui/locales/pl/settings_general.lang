@@ -18,7 +18,8 @@ settings.account.sync_row_desc = Polubione utwory, utwory z biblioteki, zapisane
 settings.account.accounts_group = Konta
 settings.account.channels = Kanały (konta marki) tego konta Google:
 settings.account.google_index = Konto Google
-settings.account.google_index_desc = Gdy plik cookie zawiera kilka kont Google: które z nich (0 = pierwsze).
+settings.account.google_index_desc = Twoje logowanie może obejmować kilka kont Google, jak na youtube.com. Wybierz, którego używa {app}.
+settings.account.google_single = To logowanie obejmuje jedno konto Google. Aby używać kilku, zaloguj się na każde w music.youtube.com w przeglądarce, wyloguj się tutaj i wklej plik cookie z tej przeglądarki.
 settings.account.cookie_note = Logowanie używa pliku cookie sesji przeglądarki dla music.youtube.com. Jest przechowywany w pęku kluczy systemu i wysyłany tylko do YouTube. Funkcje konta zbudowano w oparciu o internetowe API YouTube, ale nie zostały jeszcze sprawdzone na prawdziwym koncie.
 
 # ---- About

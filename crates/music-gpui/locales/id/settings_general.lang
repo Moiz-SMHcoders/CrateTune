@@ -16,7 +16,8 @@ settings.account.sync_row_desc = Lagu yang disukai, lagu pustaka, album tersimpa
 settings.account.accounts_group = Akun
 settings.account.channels = Channel (akun brand) dari akun Google ini:
 settings.account.google_index = Akun Google
-settings.account.google_index_desc = Jika cookie memuat beberapa akun Google: yang mana (0 = pertama).
+settings.account.google_index_desc = Login Anda bisa memuat beberapa akun Google, seperti di youtube.com. Pilih akun yang dipakai {app}.
+settings.account.google_single = Login ini hanya memuat satu akun Google. Untuk memakai beberapa, masuk ke masing-masing di music.youtube.com pada browser, lalu keluar di sini dan tempel cookie browser itu.
 settings.account.cookie_note = Masuk menggunakan cookie sesi browser Anda untuk music.youtube.com. Cookie disimpan di rantai kunci sistem dan hanya dikirim ke YouTube. Fitur akun dibuat berdasarkan API web YouTube tetapi belum diverifikasi dengan akun sungguhan.
 
 # ---- About

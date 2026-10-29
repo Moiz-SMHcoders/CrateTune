@@ -26,7 +26,11 @@ against the real service or device yet.
 
 **U1. Google sign-in and the signed-in features**
 Cookie sign-in, library (including the Podcasts tab), history, likes, subscriptions, playlist
-editing, Save to library and playlist cover upload were checked against fixtures only. These
+editing, Save to library and playlist cover upload were checked against fixtures only.
+Picking a Google account of a multi-account login (Settings → Account; probing
+`account/account_menu` per `X-Goog-AuthUser`) was checked against a fake server only: still
+to confirm what Google answers for an index the login doesn't hold (expected: an error;
+a fallback to account 0 is handled too) and that a two-account browser cookie switches. These
 are the features users will notice first. Details: [README: Library, account, downloads, local
 files](../README.md#library-account-downloads-local-files), [Content
 round](../README.md#content-round-video-types-podcasts-long-albums-dns-over-https-covers),

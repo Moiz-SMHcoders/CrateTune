@@ -16,7 +16,8 @@ settings.account.sync_row_desc = Bài hát đã thích, bài hát trong thư vi�
 settings.account.accounts_group = Tài khoản
 settings.account.channels = Các kênh (tài khoản thương hiệu) của tài khoản Google này:
 settings.account.google_index = Tài khoản Google
-settings.account.google_index_desc = Khi cookie chứa nhiều tài khoản Google: dùng tài khoản nào (0 = đầu tiên).
+settings.account.google_index_desc = Phiên đăng nhập của bạn có thể chứa nhiều tài khoản Google, như trên youtube.com. Chọn tài khoản {app} sẽ dùng.
+settings.account.google_single = Phiên đăng nhập này chỉ có một tài khoản Google. Để dùng nhiều tài khoản, hãy đăng nhập từng tài khoản trên music.youtube.com trong trình duyệt, rồi đăng xuất ở đây và dán cookie của trình duyệt đó.
 settings.account.cookie_note = Việc đăng nhập dùng cookie phiên trình duyệt của bạn cho music.youtube.com. Cookie được giữ trong chuỗi khóa của hệ điều hành và chỉ được gửi tới YouTube. Các tính năng tài khoản được xây dựng dựa trên API web của YouTube nhưng chưa được kiểm chứng với tài khoản thật.
 
 # ---- About

@@ -1,4 +1,5 @@
-//! Test helpers: a minimal local HTTP server answering byte-range requests.
+//! Test helpers: a minimal local HTTP server answering byte-range requests (and,
+//! with [`TestServer::start_http`], API fakes that look at headers).
 
 use std::io::{BufRead, BufReader, Write};
 use std::net::{TcpListener, TcpStream};
@@ -30,7 +31,25 @@ pub(crate) enum Reply {
     },
 }
 
-type Handler = dyn Fn(&str, u64, Option<u64>) -> Reply + Send + Sync;
+/// One request as [`TestServer::start_http`] sees it.
+pub(crate) struct Request {
+    pub path: String,
+    /// Header lines as sent (`name`, `value`), names as written by the client.
+    pub headers: Vec<(String, String)>,
+    pub body: Vec<u8>,
+}
+
+impl Request {
+    /// A header's value (name compared case-insensitively).
+    pub(crate) fn header(&self, name: &str) -> Option<&str> {
+        self.headers
+            .iter()
+            .find(|(k, _)| k.eq_ignore_ascii_case(name))
+            .map(|(_, v)| v.as_str())
+    }
+}
+
+type Handler = dyn Fn(&Request, u64, Option<u64>) -> Reply + Send + Sync;
 
 /// Serves requests on 127.0.0.1 until dropped (the listener thread is detached).
 pub(crate) struct TestServer {
@@ -43,10 +62,20 @@ impl TestServer {
     pub(crate) fn start(
         handler: impl Fn(&str, u64, Option<u64>) -> Reply + Send + Sync + 'static,
     ) -> Self {
+        Self::serve_with(Arc::new(move |req: &Request, start, end| {
+            handler(&req.path, start, end)
+        }))
+    }
+
+    /// Like [`TestServer::start`], with the request's headers and body (API fakes).
+    pub(crate) fn start_http(handler: impl Fn(&Request) -> Reply + Send + Sync + 'static) -> Self {
+        Self::serve_with(Arc::new(move |req: &Request, _, _| handler(req)))
+    }
+
+    fn serve_with(handler: Arc<Handler>) -> Self {
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let base = format!("http://{}", listener.local_addr().unwrap());
         let requests = Arc::new(Mutex::new(Vec::new()));
-        let handler: Arc<Handler> = Arc::new(handler);
         let log = requests.clone();
         thread::spawn(move || {
             for stream in listener.incoming().flatten() {
@@ -86,10 +115,14 @@ fn serve(stream: TcpStream, handler: &Handler, log: &Mutex<Vec<(String, u64)>>) 
     let path = line.split_whitespace().nth(1).unwrap_or("/").to_owned();
     let (mut start, mut end) = (0u64, None);
     let mut body_len = 0usize;
+    let mut headers = Vec::new();
     loop {
         let mut header = String::new();
         if reader.read_line(&mut header).unwrap_or(0) == 0 || header.trim().is_empty() {
             break;
+        }
+        if let Some((k, v)) = header.split_once(':') {
+            headers.push((k.trim().to_owned(), v.trim().to_owned()));
         }
         let lower = header.to_ascii_lowercase();
         if let Some(len) = lower.strip_prefix("content-length:") {
@@ -106,7 +139,12 @@ fn serve(stream: TcpStream, handler: &Handler, log: &Mutex<Vec<(String, u64)>>) 
     let _ = std::io::Read::read_exact(&mut reader, &mut body);
     log.lock().unwrap().push((path.clone(), start));
     let mut stream = stream;
-    let reply = match handler(&path, start, end) {
+    let request = Request {
+        path,
+        headers,
+        body,
+    };
+    let reply = match handler(&request, start, end) {
         Reply::Partial {
             body,
             start,
