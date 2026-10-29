@@ -155,7 +155,11 @@ notarization in `release.yml`, and Authenticode for the `.exe` and the installer
 **P2. Linux and Windows builds are untested on real desktops**
 CI builds them and runs the tests, and nothing more. Untested by hand:
 - Windows: media keys (SMTC), Credential Manager, the window handle, Ctrl shortcuts, fonts,
-  the folder picker, the resource embedding and the Inno Setup installer.
+  the folder picker, the resource embedding and the Inno Setup installer. New with the
+  Windows polish (built and tested in CI only): the WebView2 sign-in window, the
+  notification-area icon, smooth wheel scrolling, the single-instance handoff, the
+  mini player's topmost style / drag strip, `MUSIC_CONSOLE`, local-time dates and the
+  "Animation effects" setting. Checklist: [TESTING.md 5.10](TESTING.md#510-windows-checklist-for-the-user-after-updating-to-the-windows-polish-build).
 - Linux: the tarball, the AppImage and `.desktop` integration.
 
 Details: [TESTING.md 5.8](TESTING.md#58-windows-specific-untested), [README: Release
@@ -174,9 +178,28 @@ Changing the identity in `packaging/app.env` moves the settings folder and keych
 so pick the final ID before many users exist. Details: [README: Install /
 build](../README.md#install--build) ("App identity"). · Size: small · Priority: high
 
-**P5. No menu-bar or tray item on Linux and Windows**
-The item is built on macOS only. Linux would need GTK or appindicator, and Windows is unbuilt
-and untested. Details: `crates/music-gpui/src/tray.rs`. · Size: medium · Priority: low
+**P5. No tray item on Linux**
+macOS has the menu-bar item and Windows the notification-area icon (`tray-icon`). Linux would
+need GTK or appindicator (`tray-icon`'s Linux backend runs a GTK loop). Details:
+`crates/music-gpui/src/tray.rs`. · Size: medium · Priority: low
+
+**P5b. "Sign in with Google…" on Linux**
+macOS (WKWebView) and Windows (WebView2) have the sign-in window; Linux has only "Paste
+cookie…". A WebKitGTK window would need a GTK main loop on its own thread (as the
+WebKitGTK PoToken provider does, behind `webkitgtk-potoken`) plus `libwebkit2gtk-4.1` at
+build and run time, which the default Linux build avoids. Details:
+`crates/music-gpui/src/login_webview/`. · Size: medium · Priority: low
+
+**P5c. Windows: smaller gaps found in the Windows polish**
+* The mini player has its own taskbar button (GPUI's `Floating` kind is a normal app
+  window on Windows; a tool window would hide it but also from Alt+Tab).
+* Window chrome is the native title bar (light / dark follows Windows, not the app theme);
+  a custom title bar like the mini player's strip would match the theme.
+* High-DPI and per-monitor scaling are GPUI's (manifest `PerMonitorV2`); not looked at on a
+  real 125 % / 150 % screen.
+* Smooth wheel scrolling uses GPUI's line deltas; free-spinning wheels and the "one screen
+  at a time" setting are handled, but not tried on hardware.
+· Size: small · Priority: low
 
 **P6. Self-update: Windows and Linux paths not run on a real system**
 Self-update is implemented. On macOS it was tested end to end against a fake release
@@ -254,10 +277,9 @@ of [README: App-wide look & motion](../README.md#app-wide-look--motion):
   truncated title on screen. · Size: small · Priority: low
 * *A separate compact list mode.* Customize theme → Density → Compact already gives 50 pt
   rows and tighter paddings everywhere. · Won't do unless asked
-* *Windows "Show animations in Windows" for the System animations level.* Needs
-  `SystemParametersInfo(SPI_GETCLIENTAREAANIMATION)` (a new `windows-sys` dependency),
-  untestable here; Windows users can pick Reduced or Off by hand. KDE's animation speed
-  isn't read either (only GNOME's `enable-animations`). · Size: small · Priority: low
+* *KDE's animation speed for the System animations level.* Only GNOME's
+  `enable-animations` (and Windows' "Animation effects") are read. · Size: small ·
+  Priority: low
 * *Translucent sidebar on Windows (Mica) and Linux.* GPUI has `MicaBackdrop` for Windows 11
   and transparency on Wayland/X11 compositors, but neither was tried on a real desktop
   (P2); the switch is shown on macOS only. · Size: small · Priority: low

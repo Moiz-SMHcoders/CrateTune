@@ -146,6 +146,7 @@ downloads.detail.other = {count} пісні · {size} · кеш відтворе
 downloads.play_all = Відтворити все
 downloads.clear_finished = Прибрати завершені
 downloads.show_in_finder = Показати у Finder
+downloads.open_folder = Відкрити папку
 downloads.unavailable_title = Завантаження недоступні
 downloads.unavailable_detail = Не вдалося відкрити теку завантажень (див. термінал).
 downloads.previews_note.one = {count} завантаження — це лише фрагмент (перші ~1 МіБ): його створено, коли повні потоки були недоступні. Видаліть і завантажте його знову.

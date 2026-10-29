@@ -133,11 +133,17 @@ in the app's language and your system's region.
   **Autoplay similar songs** (Settings → Content & region) keeps playing related songs
   when the queue ends.
 * **Mini player** (⇧⌘M): a small window that stays on top; click or drag its progress
-  bar to seek.
+  bar to seek. On Windows and Linux, drag its top strip to move it; × closes it.
 * **Sleep timer**: the moon button in the bar — 5 to 60 minutes, end of the song, or a
   custom length.
 * **Media keys** and the system's now-playing controls work on all three systems; on
-  macOS there is also a menu-bar item.
+  macOS there is also a menu-bar item, on Windows an icon in the notification area (right
+  click: the menu; left click: show the window).
+* **Windows / Linux:** the **⋯** button at the right of the header has Settings, Keyboard
+  shortcuts, Check for Updates, About and Quit (on macOS they are in the menu bar).
+  Starting CrateTune on Windows while it runs brings its window to the front.
+* **Mouse wheel** (Windows, Linux): each notch scrolls smoothly (about 3 lines); with
+  Motion set to Off it jumps at once. Trackpads scroll as before.
 
 ## Now Playing and lyrics
 
@@ -233,9 +239,12 @@ play in full.
 Optional — browsing, search and playback work without an account. Signing in adds your
 likes, library, playlists, subscriptions and personalized recommendations.
 
-* **macOS:** Settings → Account → **Sign in with Google…** opens Google's sign-in page in a
-  window; when you reach YouTube Music the window closes.
-* **Everywhere:** **Paste cookie…** — copy the `Cookie` request header of
+* **macOS and Windows:** Settings → Account → **Sign in with Google…** opens Google's
+  sign-in page in a window; when you reach YouTube Music the window closes. On Windows the
+  window uses the Microsoft Edge WebView2 Runtime (part of Windows 10/11); if it is
+  missing, the app says so and opens **Paste cookie…** instead. The window keeps nothing
+  of the Google session.
+* **Everywhere (and on Linux):** **Paste cookie…** — copy the `Cookie` request header of
   music.youtube.com from your browser's developer tools (step-by-step instructions are in
   the dialog).
 
@@ -536,7 +545,7 @@ CrateTune updates itself from its GitHub releases. You don't need to download a 
 installer.
 
 **Where:** Settings → About → **Updates**, or the menu item **Check for Updates…**: in
-the CrateTune menu under About on macOS, in the Help menu on Windows and Linux. It has no
+the CrateTune menu under About on macOS, in the header's **⋯** menu on Windows and Linux. It has no
 shortcut by default; you can give it one in Settings → Keyboard shortcuts.
 
 **How it goes:**
@@ -635,7 +644,7 @@ Builds signed with a Developer ID keep the same identity, and neither prompt com
 
 * **How YouTube songs are streamed.** Full songs come from YouTube's TV client, or its web
   client with a PoToken (an anti-abuse token the app makes in a hidden browser view on
-  macOS). YouTube makes each new stream wait a few seconds; the app plays the start of the
+  macOS and Windows). YouTube makes each new stream wait a few seconds; the app plays the start of the
   song from a preview meanwhile, so songs usually start within a second (two or three for
   the first song after launch). Choose the
   route in Settings → Playback → **YouTube streams** (Automatic is best). Windows makes the
@@ -673,4 +682,8 @@ Builds signed with a Developer ID keep the same identity, and neither prompt com
 * **Nothing loads:** check Settings → Network (proxy) → **Test connection**; with
   DNS-over-HTTPS on, **Test DNS** shows whether names resolve (turn on the fallback, or
   pick another provider, if the DoH server is blocked on your network).
+* **Windows: see the log.** Start the app from a terminal with `MUSIC_CONSOLE=1` (in
+  PowerShell: `$env:MUSIC_CONSOLE=1; & "$env:LOCALAPPDATA\Programs\CrateTune\cratetune.exe"`);
+  the log appears in that terminal (closing it then also closes the app). Started from the
+  Start menu with `MUSIC_CONSOLE=1` set, a console window opens for it.
 * **Start over:** quit and remove (or rename) the settings folder listed under Settings.

@@ -3,7 +3,7 @@
 
 # ---- Account
 settings.account.cookie_title = Entrar com um cookie do navegador
-settings.account.cookie_steps = 1. Abra music.youtube.com no navegador e entre na sua conta.\n2. Abra as ferramentas de desenvolvedor (⌥⌘I no Safari / Chrome) → Network (Rede) e recarregue a página.\n3. Clique em qualquer solicitação a music.youtube.com (por ex. “browse”), encontre “Cookie” em Request Headers e copie o valor inteiro.\n4. Cole abaixo. Ele fica guardado no chaveiro do sistema e só é enviado ao YouTube.
+settings.account.cookie_steps = 1. Abra music.youtube.com no navegador e entre na sua conta.\n2. Abra as ferramentas de desenvolvedor ({keys} no {browsers}) → Network (Rede) e recarregue a página.\n3. Clique em qualquer solicitação a music.youtube.com (por ex. “browse”), encontre “Cookie” em Request Headers e copie o valor inteiro.\n4. Cole abaixo. Ele fica guardado no chaveiro do sistema e só é enviado ao YouTube.
 settings.account.cookie_index = Índice da conta Google (se houver várias conectadas):
 settings.account.not_signed_in = Não conectado. Tudo funciona de forma anônima; ao entrar, suas músicas curtidas, álbuns salvos, inscrições e playlists são sincronizados com a biblioteca, e curtidas e edições de playlists voltam para o YouTube Music.
 settings.account.sign_in_google = Entrar com o Google…
@@ -123,3 +123,4 @@ login.window_title = Entrar no YouTube Music
 login.instructions = Entre com sua conta Google. Esta janela fecha assim que o YouTube Music abrir.
 login.webview_failed = Não foi possível criar a visualização web ({error}). Use “Colar cookie”.
 login.checking = Conectado — verificando a conta…
+login.webview2_missing = Entrar com o Google requer o Microsoft Edge WebView2 Runtime, que não está instalado. Instale-o em microsoft.com/edge/webview2 ou use “Colar cookie”.

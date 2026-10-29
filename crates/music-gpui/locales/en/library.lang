@@ -155,6 +155,8 @@ downloads.play_all = Play all
 downloads.clear_finished = Clear finished
 # Opens the download folder in the macOS Finder.
 downloads.show_in_finder = Show in Finder
+# Windows / Linux: opens the download folder in Explorer / the file manager.
+downloads.open_folder = Open folder
 downloads.unavailable_title = Downloads are unavailable
 downloads.unavailable_detail = The download folder couldn't be opened (see the terminal).
 downloads.previews_note.one = {count} download is a preview (only the first ~1 MiB): it was made while full streams were unavailable. Delete and download it again.

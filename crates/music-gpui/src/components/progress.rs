@@ -265,6 +265,11 @@ impl Element for ProgressTrack {
                 handler(TrackEvent::Release(frac_at(e.position.x)), window, cx);
             });
         }
+        // The wheel reaches the track as notches (no glide; `smooth_scroll.rs`).
+        crate::smooth_scroll::claim_wheel(window, {
+            let hit = hit.clone();
+            move |window| hit.is_hovered(window)
+        });
         window.on_mouse_event(move |e: &ScrollEvent, phase, window, cx| {
             if !phase.bubble() || !hit.is_hovered(window) {
                 return;

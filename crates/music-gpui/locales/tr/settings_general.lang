@@ -2,7 +2,7 @@
 
 # ---- Account
 settings.account.cookie_title = Tarayıcı çereziyle oturum aç
-settings.account.cookie_steps = 1. Tarayıcınızda music.youtube.com adresini açın ve oturum açın.\n2. Geliştirici araçlarını açın (Safari / Chrome'da ⌥⌘I) → Network, sayfayı yeniden yükleyin.\n3. music.youtube.com'a giden herhangi bir isteğe tıklayın (ör. “browse”), Request Headers altında “Cookie” satırını bulun ve değerinin tamamını kopyalayın.\n4. Aşağıya yapıştırın. İşletim sisteminin anahtar zincirinde saklanır ve yalnızca YouTube'a gönderilir.
+settings.account.cookie_steps = 1. Tarayıcınızda music.youtube.com adresini açın ve oturum açın.\n2. Geliştirici araçlarını açın ({browsers}'da {keys}) → Network, sayfayı yeniden yükleyin.\n3. music.youtube.com'a giden herhangi bir isteğe tıklayın (ör. “browse”), Request Headers altında “Cookie” satırını bulun ve değerinin tamamını kopyalayın.\n4. Aşağıya yapıştırın. İşletim sisteminin anahtar zincirinde saklanır ve yalnızca YouTube'a gönderilir.
 settings.account.cookie_index = Google hesabı dizini (birden fazla hesapta oturum açıksa):
 settings.account.not_signed_in = Oturum açılmadı. Her şey anonim olarak çalışır; oturum açmak beğendiğiniz şarkıları, kaydedilen albümleri, abonelikleri ve çalma listelerini kitaplığa eşitler; beğeniler ve çalma listesi düzenlemeleri de YouTube Music'e geri gönderilir.
 settings.account.sign_in_google = Google ile oturum aç…
@@ -122,3 +122,4 @@ login.window_title = YouTube Music'te oturum aç
 login.instructions = Google hesabınızla oturum açın. YouTube Music açıldığında bu pencere kapanır.
 login.webview_failed = Web görünümü oluşturulamadı ({error}). Bunun yerine “Çerez yapıştır” seçeneğini kullanın.
 login.checking = Oturum açıldı — hesap denetleniyor…
+login.webview2_missing = Google ile oturum açmak için Microsoft Edge WebView2 Runtime gerekir ve yüklü değil. microsoft.com/edge/webview2 adresinden yükleyin ya da “Çerez yapıştır” seçeneğini kullanın.

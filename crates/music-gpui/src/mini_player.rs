@@ -8,7 +8,9 @@
 //! settings file.
 //!
 //! macOS: a floating `NSPanel` (GPUI `WindowKind::Floating`) whose
-//! `hidesOnDeactivate` is turned off, so it stays visible over other apps.
+//! `hidesOnDeactivate` is turned off, so it stays visible over other apps. Windows:
+//! a borderless window made topmost (`win::set_topmost`) with its own close button
+//! and drag strip.
 
 use gpui::prelude::FluentBuilder as _;
 use gpui::{
@@ -107,6 +109,10 @@ fn open(geometry: Option<WindowGeometry>, cx: &mut App) -> Option<AnyWindowHandl
     let window = cx
         .open_window(options, |window, cx| {
             keep_visible_when_inactive(window);
+            #[cfg(target_os = "windows")]
+            if let Some(hwnd) = crate::services::hwnd(window) {
+                crate::win::set_topmost(hwnd.get());
+            }
             let view = cx.new(|cx| MiniPlayer::new(window, cx));
             cx.new(|cx| Root::new(view, window, cx))
         })
@@ -379,20 +385,7 @@ impl Render for MiniPlayer {
                 )
             })
             .children(layers)
-            .child(
-                // Title-bar strip (draggable natively; the close button sits at its left).
-                h_flex().h(px(28.)).pl(px(72.)).pr_1().justify_end().child(
-                    Button::new("mini-expand")
-                        .custom(crate::components::player_bar::bar_button_style(cx))
-                        .xsmall()
-                        .icon(IconName::Maximize)
-                        .tooltip(t!("mini.tooltip.show_main"))
-                        .on_click(|_, _, cx| {
-                            cx.activate(true);
-                            with_main_window(cx, |_, window, _| window.activate_window());
-                        }),
-                ),
-            )
+            .child(title_strip(cx))
             .child(
                 h_flex()
                     .px_3()
@@ -469,6 +462,59 @@ impl Render for MiniPlayer {
             )
             .into_any_element()
     }
+}
+
+/// The top strip: the expand button on the right. On macOS the strip is the
+/// (transparent) title bar with the close button at its left; elsewhere the window
+/// has no title bar, so the strip draws a close button and is the drag area.
+fn title_strip(cx: &App) -> gpui::AnyElement {
+    let expand = Button::new("mini-expand")
+        .custom(crate::components::player_bar::bar_button_style(cx))
+        .xsmall()
+        .icon(IconName::Maximize)
+        .tooltip(t!("mini.tooltip.show_main"))
+        .on_click(|_, _, cx| {
+            cx.activate(true);
+            with_main_window(cx, |_, window, _| window.activate_window());
+        });
+    if cfg!(target_os = "macos") {
+        return h_flex()
+            .h(px(28.))
+            .pl(px(72.))
+            .pr_1()
+            .justify_end()
+            .child(expand)
+            .into_any_element();
+    }
+    h_flex()
+        .h(px(28.))
+        .px_1()
+        .items_center()
+        .child(
+            Button::new("mini-close")
+                .custom(crate::components::player_bar::bar_button_style(cx))
+                .xsmall()
+                .icon(IconName::Close)
+                .tooltip(t!("common.close"))
+                .on_click(|_, window, _| window.remove_window()),
+        )
+        .child(
+            div()
+                .id("mini-drag")
+                .flex_1()
+                .h_full()
+                // Windows: the hit test answers "caption", so Windows moves it.
+                .window_control_area(gpui::WindowControlArea::Drag)
+                // Linux (client-side decorations): ask the compositor to move it. Not
+                // on Windows, where a handled press would stop the caption drag.
+                .when(cfg!(target_os = "linux"), |this| {
+                    this.on_mouse_down(gpui::MouseButton::Left, |_, window, _| {
+                        window.start_window_move()
+                    })
+                }),
+        )
+        .child(expand)
+        .into_any_element()
 }
 
 /// NSPanels hide when the app deactivates by default; a mini player shouldn't.

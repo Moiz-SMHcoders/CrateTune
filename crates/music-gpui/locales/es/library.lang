@@ -128,6 +128,7 @@ downloads.detail.other = {count} canciones · {size} · caché de reproducción 
 downloads.play_all = Reproducir todo
 downloads.clear_finished = Borrar terminadas
 downloads.show_in_finder = Mostrar en Finder
+downloads.open_folder = Abrir carpeta
 downloads.unavailable_title = Las descargas no están disponibles
 downloads.unavailable_detail = No se pudo abrir la carpeta de descargas (consulta la terminal).
 downloads.previews_note.one = {count} descarga es un avance (solo el primer ~1 MiB): se hizo cuando las transmisiones completas no estaban disponibles. Elimínala y vuelve a descargarla.

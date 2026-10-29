@@ -68,6 +68,20 @@ fn google_account_buttons(
 }
 
 /// Opens the paste-cookie dialog.
+/// "Sign in with Google…" opens a web view (macOS: WKWebView, Windows: WebView2);
+/// Linux has the cookie dialog only.
+const SIGN_IN_WINDOW: bool = cfg!(any(target_os = "macos", target_os = "windows"));
+
+/// The browser's developer-tools shortcut and browsers named in the cookie steps (key and
+/// browser names, not translated).
+fn devtools_hint() -> (&'static str, &'static str) {
+    if cfg!(target_os = "macos") {
+        ("⌥⌘I", "Safari / Chrome") // i18n-ignore
+    } else {
+        ("F12", "Chrome / Edge / Firefox") // i18n-ignore
+    }
+}
+
 pub fn open_cookie_dialog(window: &mut Window, cx: &mut App) {
     let input = cx.new(|cx| {
         InputState::new(window, cx)
@@ -94,7 +108,14 @@ pub fn open_cookie_dialog(window: &mut Window, cx: &mut App) {
                             .text_sm()
                             .text_color(muted)
                             .whitespace_normal()
-                            .child(t!("settings.account.cookie_steps")),
+                            .child({
+                                let (keys, browsers) = devtools_hint();
+                                t!(
+                                    "settings.account.cookie_steps",
+                                    keys = keys,
+                                    browsers = browsers
+                                )
+                            }),
                     )
                     .child(Input::new(&input))
                     .child(
@@ -192,17 +213,17 @@ pub(super) fn render(
                         .gap_2()
                         .flex_wrap()
                         .pt_1()
-                        .children(cfg!(target_os = "macos").then(|| {
+                        .children(SIGN_IN_WINDOW.then(|| {
                             Button::new("account-google")
                                 .primary()
                                 .small()
                                 .icon(gpui_component::IconName::Globe)
                                 .label(t!("settings.account.sign_in_google"))
-                                .on_click(|_, _, cx| {
-                                    #[cfg(target_os = "macos")]
-                                    crate::login_webview::open(cx);
-                                    #[cfg(not(target_os = "macos"))]
-                                    let _ = cx;
+                                .on_click(|_, window, cx| {
+                                    #[cfg(any(target_os = "macos", target_os = "windows"))]
+                                    crate::login_webview::open(window, cx);
+                                    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+                                    let _ = (window, cx);
                                 })
                         }))
                         .child(
@@ -214,7 +235,7 @@ pub(super) fn render(
                                 .on_click(|_, window, cx| open_cookie_dialog(window, cx)),
                         ),
                 );
-            if cfg!(target_os = "macos") {
+            if SIGN_IN_WINDOW {
                 sign_in = sign_in.child(note(t!("settings.account.google_refused"), cx));
             }
             content = content.child(sign_in.children(busy_line(&status, cx)));

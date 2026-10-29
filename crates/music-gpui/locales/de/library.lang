@@ -127,6 +127,7 @@ downloads.detail.other = {count} Songs · {size} · Wiedergabe-Cache {cache} von
 downloads.play_all = Alle abspielen
 downloads.clear_finished = Fertige entfernen
 downloads.show_in_finder = Im Finder zeigen
+downloads.open_folder = Ordner öffnen
 downloads.unavailable_title = Downloads sind nicht verfügbar
 downloads.unavailable_detail = Der Download-Ordner konnte nicht geöffnet werden (siehe Terminal).
 downloads.previews_note.one = {count} Download ist eine Vorschau (nur die ersten ~1 MiB): Er entstand, als ganze Streams nicht verfügbar waren. Lösch ihn und lade ihn erneut herunter.

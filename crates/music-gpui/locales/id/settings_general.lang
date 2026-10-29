@@ -1,6 +1,6 @@
 # ---- Account
 settings.account.cookie_title = Masuk dengan cookie browser
-settings.account.cookie_steps = 1. Buka music.youtube.com di browser Anda dan masuk.\n2. Buka alat pengembang (⌥⌘I di Safari / Chrome) → Network, muat ulang halaman.\n3. Klik permintaan apa pun ke music.youtube.com (misalnya “browse”), cari “Cookie” di bawah Request Headers dan salin seluruh nilainya.\n4. Tempel di bawah. Cookie disimpan di rantai kunci sistem dan hanya dikirim ke YouTube.
+settings.account.cookie_steps = 1. Buka music.youtube.com di browser Anda dan masuk.\n2. Buka alat pengembang ({keys} di {browsers}) → Network, muat ulang halaman.\n3. Klik permintaan apa pun ke music.youtube.com (misalnya “browse”), cari “Cookie” di bawah Request Headers dan salin seluruh nilainya.\n4. Tempel di bawah. Cookie disimpan di rantai kunci sistem dan hanya dikirim ke YouTube.
 settings.account.cookie_index = Indeks akun Google (jika beberapa akun masuk):
 settings.account.not_signed_in = Belum masuk. Semua fitur berfungsi secara anonim; dengan masuk, lagu yang disukai, album tersimpan, langganan, dan playlist Anda disinkronkan ke pustaka, serta suka dan perubahan playlist dikirim kembali ke YouTube Music.
 settings.account.sign_in_google = Masuk dengan Google…
@@ -120,3 +120,4 @@ login.window_title = Masuk ke YouTube Music
 login.instructions = Masuk dengan akun Google Anda. Jendela ini tertutup setelah YouTube Music terbuka.
 login.webview_failed = Tampilan web tidak dapat dibuat ({error}). Gunakan “Tempel cookie” sebagai gantinya.
 login.checking = Sudah masuk — memeriksa akun…
+login.webview2_missing = Masuk dengan Google memerlukan Microsoft Edge WebView2 Runtime, yang belum terpasang. Pasang dari microsoft.com/edge/webview2, atau gunakan “Tempel cookie”.

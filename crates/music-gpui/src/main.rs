@@ -12,11 +12,20 @@
 //! * `now_playing.rs`, `karaoke.rs`, `anim.rs`, `backdrop.rs`, `clock.rs` – Now Playing.
 //! * `services.rs` – media controls, scrobbling, Discord; `secrets.rs` – keychain.
 //! * `store.rs` – library database, downloads, play history, saved queue;
-//!   `account.rs` – YouTube Music sign-in and library sync (`login_webview.rs`: macOS
-//!   login window).
+//!   `account.rs` – YouTube Music sign-in and library sync (`login_webview/`: the
+//!   sign-in window on macOS and Windows).
 //! * `module_service.rs` – provider modules (`.arch`): the store, the module-first
 //!   resolver used by the player and downloads, keychain-backed secret settings.
 //! * `script.rs` – timed actions / screenshots for verification.
+//! * `win.rs` – Windows only: console, single instance, always-on-top, motion setting;
+//!   `smooth_scroll.rs` – wheel notches glide (Windows, Linux).
+
+// Release builds on Windows are GUI programs: no console window behind the app
+// (`MUSIC_CONSOLE=1` attaches one for logs, see `win::attach_console`).
+#![cfg_attr(
+    all(windows, not(debug_assertions), not(test)),
+    windows_subsystem = "windows"
+)]
 
 // First, so `t!` / `tp!` / `k!` are visible in every module.
 #[macro_use]
@@ -38,7 +47,7 @@ mod identity;
 mod integrations;
 mod karaoke;
 mod library_script;
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 mod login_webview;
 mod logo;
 mod look_script;
@@ -71,6 +80,7 @@ mod secrets;
 mod services;
 mod settings;
 mod shortcuts;
+mod smooth_scroll;
 mod snapshot;
 mod storage_ops;
 mod store;
@@ -81,6 +91,8 @@ mod tray;
 mod update_check;
 mod update_script;
 mod util;
+#[cfg(windows)]
+mod win;
 mod youtube_sync;
 
 use gpui::{
@@ -137,11 +149,23 @@ fn main() {
     if let Some(code) = music_core::updater::run_helper(&args) {
         std::process::exit(code);
     }
+    #[cfg(windows)]
+    win::attach_console();
+    // A second launch shows the running app's window instead (one app per settings
+    // folder; macOS does this itself for an app bundle).
+    #[cfg(windows)]
+    let instance = match win::single_instance(&win::instance_key(
+        identity::APP_ID,
+        settings::file::config_dir().as_deref(),
+    )) {
+        win::Instance::First(guard) => guard,
+        win::Instance::Forwarded => return,
+    };
     // Before anything else: may re-execute the process (see `memory.rs`).
     memory::tune_allocator();
     gpui_platform::application()
         .with_assets(icons::Assets)
-        .run(|cx: &mut App| {
+        .run(move |cx: &mut App| {
             gpui_component::init(cx);
             ArtworkCache::init(cx);
             logo::set_dock_icon();
@@ -186,6 +210,10 @@ fn main() {
                 .update(cx, |_, window, cx| {
                     if std::env::var_os("MUSIC_ON_TOP").is_some() {
                         mini_player::float_above_others(window);
+                    }
+                    #[cfg(windows)]
+                    if let Some(hwnd) = services::hwnd(window) {
+                        instance.listen(hwnd.get());
                     }
                     app.update(cx, |app, cx| app.apply_startup_env(window, cx))
                 })

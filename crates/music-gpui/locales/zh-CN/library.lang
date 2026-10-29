@@ -119,6 +119,7 @@ downloads.detail.other = {count} 首歌曲 · {size} · 播放缓存 {cache} / {
 downloads.play_all = 全部播放
 downloads.clear_finished = 清除已完成
 downloads.show_in_finder = 在访达中显示
+downloads.open_folder = 打开文件夹
 downloads.unavailable_title = 下载不可用
 downloads.unavailable_detail = 无法打开下载文件夹（请查看终端）。
 downloads.previews_note.other = {count} 个下载只是试听片段（仅前约 1 MiB）：它们是在完整音频流不可用时下载的。请删除后重新下载。

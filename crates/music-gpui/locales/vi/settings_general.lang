@@ -1,6 +1,6 @@
 # ---- Account
 settings.account.cookie_title = Đăng nhập bằng cookie trình duyệt
-settings.account.cookie_steps = 1. Mở music.youtube.com trong trình duyệt và đăng nhập.\n2. Mở công cụ dành cho nhà phát triển (⌥⌘I trong Safari / Chrome) → Network, tải lại trang.\n3. Nhấp vào bất kỳ yêu cầu nào tới music.youtube.com (ví dụ “browse”), tìm “Cookie” trong Request Headers và sao chép toàn bộ giá trị.\n4. Dán vào bên dưới. Cookie được lưu trong chuỗi khóa của hệ điều hành và chỉ được gửi tới YouTube.
+settings.account.cookie_steps = 1. Mở music.youtube.com trong trình duyệt và đăng nhập.\n2. Mở công cụ dành cho nhà phát triển ({keys} trong {browsers}) → Network, tải lại trang.\n3. Nhấp vào bất kỳ yêu cầu nào tới music.youtube.com (ví dụ “browse”), tìm “Cookie” trong Request Headers và sao chép toàn bộ giá trị.\n4. Dán vào bên dưới. Cookie được lưu trong chuỗi khóa của hệ điều hành và chỉ được gửi tới YouTube.
 settings.account.cookie_index = Chỉ số tài khoản Google (nếu đăng nhập nhiều tài khoản):
 settings.account.not_signed_in = Chưa đăng nhập. Mọi thứ đều hoạt động ẩn danh; khi đăng nhập, bài hát đã thích, album đã lưu, kênh đã đăng ký và danh sách phát sẽ được đồng bộ vào thư viện, còn lượt thích và chỉnh sửa danh sách phát sẽ được gửi lại YouTube Music.
 settings.account.sign_in_google = Đăng nhập bằng Google…
@@ -120,3 +120,4 @@ login.window_title = Đăng nhập YouTube Music
 login.instructions = Đăng nhập bằng tài khoản Google của bạn. Cửa sổ này sẽ đóng khi YouTube Music mở ra.
 login.webview_failed = Không thể tạo chế độ xem web ({error}). Hãy dùng “Dán cookie” thay thế.
 login.checking = Đã đăng nhập — đang kiểm tra tài khoản…
+login.webview2_missing = Đăng nhập bằng Google cần Microsoft Edge WebView2 Runtime nhưng chưa được cài đặt. Hãy cài từ microsoft.com/edge/webview2, hoặc dùng “Dán cookie”.

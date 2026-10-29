@@ -223,7 +223,7 @@ const SKIP_FILES: &[&str] = &[
     "library_script.rs",
     "release_script.rs",
     "update_script.rs",
-    "login_webview.rs",
+    "login_webview/",
     "mic_permission.rs",
     "secrets.rs",
     "identity.rs",

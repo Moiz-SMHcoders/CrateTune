@@ -2,7 +2,7 @@
 
 # ---- Account
 settings.account.cookie_title = ブラウザの Cookie でログイン
-settings.account.cookie_steps = 1. ブラウザで music.youtube.com を開いてログインします。\n2. デベロッパーツール（Safari／Chrome では ⌥⌘I）→ ネットワークを開き、ページを再読み込みします。\n3. music.youtube.com へのリクエスト（例：“browse”）をクリックし、Request Headers の “Cookie” を探して値全体をコピーします。\n4. 下に貼り付けます。OS のキーチェーンに保存され、YouTube にのみ送信されます。
+settings.account.cookie_steps = 1. ブラウザで music.youtube.com を開いてログインします。\n2. デベロッパーツール（{browsers} では {keys}）→ ネットワークを開き、ページを再読み込みします。\n3. music.youtube.com へのリクエスト（例：“browse”）をクリックし、Request Headers の “Cookie” を探して値全体をコピーします。\n4. 下に貼り付けます。OS のキーチェーンに保存され、YouTube にのみ送信されます。
 settings.account.cookie_index = Google アカウントの番号（複数ログインしている場合）：
 settings.account.not_signed_in = ログインしていません。すべての機能を匿名で利用できます。ログインすると、高評価した曲、保存したアルバム、登録チャンネル、プレイリストがライブラリに同期され、高評価やプレイリストの編集が YouTube Music に反映されます。
 settings.account.sign_in_google = Google でログイン…
@@ -122,3 +122,4 @@ login.window_title = YouTube Music にログイン
 login.instructions = Google アカウントでログインしてください。YouTube Music が開くとこのウインドウは閉じます。
 login.webview_failed = Web ビューを作成できませんでした（{error}）。代わりに「Cookie を貼り付け」を使用してください。
 login.checking = ログインしました。アカウントを確認中…
+login.webview2_missing = Google でのログインには Microsoft Edge WebView2 Runtime が必要ですが、インストールされていません。microsoft.com/edge/webview2 からインストールするか、「Cookie を貼り付け」を使用してください。

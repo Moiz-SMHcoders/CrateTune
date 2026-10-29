@@ -2,7 +2,7 @@
 
 # ---- Account
 settings.account.cookie_title = Вхід за допомогою cookie браузера
-settings.account.cookie_steps = 1. Відкрийте music.youtube.com у браузері та ввійдіть.\n2. Відкрийте інструменти розробника (⌥⌘I у Safari / Chrome) → Network і перезавантажте сторінку.\n3. Клацніть будь-який запит до music.youtube.com (напр., «browse»), знайдіть «Cookie» в розділі Request Headers і скопіюйте все значення.\n4. Вставте його нижче. Його буде збережено у сховищі ключів ОС і надіслано лише YouTube.
+settings.account.cookie_steps = 1. Відкрийте music.youtube.com у браузері та ввійдіть.\n2. Відкрийте інструменти розробника ({keys} у {browsers}) → Network і перезавантажте сторінку.\n3. Клацніть будь-який запит до music.youtube.com (напр., «browse»), знайдіть «Cookie» в розділі Request Headers і скопіюйте все значення.\n4. Вставте його нижче. Його буде збережено у сховищі ключів ОС і надіслано лише YouTube.
 settings.account.cookie_index = Індекс облікового запису Google (якщо ви ввійшли в кілька):
 settings.account.not_signed_in = Вхід не виконано. Усе працює анонімно; після входу ваші улюблені пісні, збережені альбоми, підписки та плейлисти синхронізуються в бібліотеку, а вподобання й зміни плейлистів передаються назад у YouTube Music.
 settings.account.sign_in_google = Увійти через Google…
@@ -122,3 +122,4 @@ login.window_title = Вхід у YouTube Music
 login.instructions = Увійдіть за допомогою облікового запису Google. Це вікно закриється, щойно відкриється YouTube Music.
 login.webview_failed = Не вдалося створити вебперегляд ({error}). Скористайтеся кнопкою «Вставити cookie».
 login.checking = Вхід виконано — перевірка облікового запису…
+login.webview2_missing = Для входу через Google потрібен Microsoft Edge WebView2 Runtime, але його не встановлено. Установіть його з microsoft.com/edge/webview2 або скористайтеся кнопкою «Вставити cookie».

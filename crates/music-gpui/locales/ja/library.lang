@@ -118,6 +118,7 @@ downloads.detail.other = {count}曲 · {size} · 再生キャッシュ {cache}�
 downloads.play_all = すべて再生
 downloads.clear_finished = 完了したものをクリア
 downloads.show_in_finder = Finder で表示
+downloads.open_folder = フォルダを開く
 downloads.unavailable_title = ダウンロードを利用できません
 downloads.unavailable_detail = ダウンロードフォルダを開けませんでした（ターミナルを確認してください）。
 downloads.previews_note.other = {count}件のダウンロードはプレビュー（先頭の約 1 MiB のみ）です。完全なストリームが利用できなかったときに作成されました。削除してもう一度ダウンロードしてください。

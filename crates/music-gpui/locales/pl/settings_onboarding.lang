@@ -47,7 +47,7 @@ onboarding.local.note = Przeskanuj foldery teraz lub później; zarządzaj nimi 
 
 # ---- Privacy & limitations step
 onboarding.privacy.streaming.title = Jak przesyłane są utwory
-onboarding.privacy.streaming.text = Pełne utwory pochodzą z klienta TV YouTube lub jego klienta web z PoToken (token zapobiegający nadużyciom, tworzony w ukrytym widoku przeglądarki na macOS). YouTube każe nowym strumieniom czekać kilka sekund; w tym czasie aplikacja zaczyna od krótkiego podglądu. Jeśli YouTube coś zmieni, utwory przełączą się na ~1-minutowe podglądy (oznaczone w odtwarzaczu). Sposób wybierzesz w Ustawienia → Odtwarzanie → Strumienie YouTube.
+onboarding.privacy.streaming.text = Pełne utwory pochodzą z klienta TV YouTube lub jego klienta web z PoToken (token zapobiegający nadużyciom, tworzony w ukrytym widoku przeglądarki na macOS / Windows). YouTube każe nowym strumieniom czekać kilka sekund; w tym czasie aplikacja zaczyna od krótkiego podglądu. Jeśli YouTube coś zmieni, utwory przełączą się na ~1-minutowe podglądy (oznaczone w odtwarzaczu). Sposób wybierzesz w Ustawienia → Odtwarzanie → Strumienie YouTube.
 onboarding.privacy.data.title = Twoje dane zostają tutaj
 onboarding.privacy.data.text = Biblioteka, historia, statystyki i ustawienia są przechowywane na tym komputerze. Hasła, klucze API i plik cookie logowania do YouTube trafiają do systemowego pęku kluczy. Historię słuchania i wyszukiwania możesz w każdej chwili wstrzymać lub wyczyścić w Ustawienia → Prywatność.
 onboarding.privacy.recipients.title = Kto co otrzymuje

@@ -55,7 +55,7 @@ onboarding.local.note = Scan the folders now or later; manage them under Local f
 
 # ---- Privacy & limitations step (title + paragraph each)
 onboarding.privacy.streaming.title = How songs are streamed
-onboarding.privacy.streaming.text = Full songs come from YouTube's TV client or its web client with a PoToken (an anti-abuse token, made in a hidden browser view on macOS). YouTube makes new streams wait a few seconds; the app starts from a short preview meanwhile. If YouTube changes something, songs fall back to ~1-minute previews (marked in the player). Settings → Playback → YouTube streams chooses the route.
+onboarding.privacy.streaming.text = Full songs come from YouTube's TV client or its web client with a PoToken (an anti-abuse token, made in a hidden browser view on macOS / Windows). YouTube makes new streams wait a few seconds; the app starts from a short preview meanwhile. If YouTube changes something, songs fall back to ~1-minute previews (marked in the player). Settings → Playback → YouTube streams chooses the route.
 onboarding.privacy.data.title = Your data stays here
 onboarding.privacy.data.text = Library, history, stats and settings are stored on this computer. Passwords, API keys and the YouTube sign-in cookie go to the system keychain. Pause or clear listen and search history any time under Settings → Privacy.
 onboarding.privacy.recipients.title = Who gets what

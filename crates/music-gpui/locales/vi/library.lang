@@ -116,6 +116,7 @@ downloads.detail.other = {count} bài hát · {size} · bộ nhớ đệm phát 
 downloads.play_all = Phát tất cả
 downloads.clear_finished = Xóa mục đã xong
 downloads.show_in_finder = Hiện trong Finder
+downloads.open_folder = Mở thư mục
 downloads.unavailable_title = Tính năng tải xuống không khả dụng
 downloads.unavailable_detail = Không thể mở thư mục tải xuống (xem terminal).
 downloads.previews_note.other = {count} bản tải xuống chỉ là bản xem trước (chỉ ~1 MiB đầu): chúng được tạo khi luồng đầy đủ không khả dụng. Hãy xóa và tải xuống lại.

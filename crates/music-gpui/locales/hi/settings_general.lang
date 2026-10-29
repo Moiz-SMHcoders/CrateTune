@@ -2,7 +2,7 @@
 
 # ---- Account
 settings.account.cookie_title = ब्राउज़र कुकी से साइन इन करें
-settings.account.cookie_steps = 1. अपने ब्राउज़र में music.youtube.com खोलें और साइन इन करें।\n2. डेवलपर टूल खोलें (Safari / Chrome में ⌥⌘I) → Network, पेज रीलोड करें।\n3. music.youtube.com पर किसी भी अनुरोध (जैसे “browse”) पर क्लिक करें, Request Headers में “Cookie” ढूँढें और उसकी पूरी वैल्यू कॉपी करें।\n4. इसे नीचे पेस्ट करें। यह OS कीचेन में रखी जाती है और सिर्फ़ YouTube को भेजी जाती है।
+settings.account.cookie_steps = 1. अपने ब्राउज़र में music.youtube.com खोलें और साइन इन करें।\n2. डेवलपर टूल खोलें ({browsers} में {keys}) → Network, पेज रीलोड करें।\n3. music.youtube.com पर किसी भी अनुरोध (जैसे “browse”) पर क्लिक करें, Request Headers में “Cookie” ढूँढें और उसकी पूरी वैल्यू कॉपी करें।\n4. इसे नीचे पेस्ट करें। यह OS कीचेन में रखी जाती है और सिर्फ़ YouTube को भेजी जाती है।
 settings.account.cookie_index = Google खाता इंडेक्स (अगर कई खातों से साइन इन है):
 settings.account.not_signed_in = साइन इन नहीं है। सब कुछ बिना पहचान के काम करता है; साइन इन करने पर आपके पसंद किए गए गाने, सेव किए गए एल्बम, सब्सक्रिप्शन और प्लेलिस्ट लाइब्रेरी में सिंक होते हैं, और पसंद व प्लेलिस्ट में बदलाव YouTube Music पर वापस जाते हैं।
 settings.account.sign_in_google = Google से साइन इन करें…
@@ -122,3 +122,4 @@ login.window_title = YouTube Music में साइन इन करें
 login.instructions = अपने Google खाते से साइन इन करें। YouTube Music खुलते ही यह विंडो बंद हो जाएगी।
 login.webview_failed = वेब व्यू नहीं बन सका ({error})। इसके बजाय “कुकी पेस्ट करें” इस्तेमाल करें।
 login.checking = साइन इन हो गया — खाता जाँचा जा रहा है…
+login.webview2_missing = Google से साइन इन करने के लिए Microsoft Edge WebView2 Runtime चाहिए, जो इंस्टॉल नहीं है। इसे microsoft.com/edge/webview2 से इंस्टॉल करें, या “कुकी पेस्ट करें” इस्तेमाल करें।

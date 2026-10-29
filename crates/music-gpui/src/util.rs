@@ -87,9 +87,61 @@ fn local_offset_secs(secs: i64) -> i64 {
     }
 }
 
-#[cfg(not(unix))]
+/// Seconds east of UTC at `secs` (Unix time), from the C runtime's `_localtime64_s`
+/// (the same time-zone rules SQLite's `localtime` uses there).
+#[cfg(windows)]
+fn local_offset_secs(secs: i64) -> i64 {
+    // `struct tm` of the Microsoft C runtime (no `tm_gmtoff`).
+    #[repr(C)]
+    struct Tm {
+        tm_sec: i32,
+        tm_min: i32,
+        tm_hour: i32,
+        tm_mday: i32,
+        tm_mon: i32,
+        tm_year: i32,
+        tm_wday: i32,
+        tm_yday: i32,
+        tm_isdst: i32,
+    }
+    unsafe extern "C" {
+        fn _localtime64_s(result: *mut Tm, time: *const i64) -> i32;
+    }
+    let mut tm = std::mem::MaybeUninit::<Tm>::zeroed();
+    // SAFETY: `_localtime64_s` reads `secs` and fills the `struct tm` behind the
+    // pointer; it returns 0 on success (EINVAL e.g. before 1970).
+    if unsafe { _localtime64_s(tm.as_mut_ptr(), &secs) } != 0 {
+        return 0;
+    }
+    // SAFETY: zero-initialised and filled by the successful call.
+    let tm = unsafe { tm.assume_init() };
+    let days = days_from_civil(
+        i64::from(tm.tm_year) + 1900,
+        (tm.tm_mon + 1) as u32,
+        tm.tm_mday as u32,
+    );
+    let local = days * 86_400
+        + i64::from(tm.tm_hour) * 3600
+        + i64::from(tm.tm_min) * 60
+        + i64::from(tm.tm_sec);
+    local - secs
+}
+
+#[cfg(not(any(unix, windows)))]
 fn local_offset_secs(_: i64) -> i64 {
     0
+}
+
+/// (year, month, day) → days since 1970-01-01 (Howard Hinnant's `days_from_civil`).
+#[cfg_attr(not(any(windows, test)), allow(dead_code))]
+pub fn days_from_civil(y: i64, m: u32, d: u32) -> i64 {
+    let y = if m <= 2 { y - 1 } else { y };
+    let era = y.div_euclid(400);
+    let yoe = y.rem_euclid(400);
+    let m = i64::from(m);
+    let doy = (153 * (if m > 2 { m - 3 } else { m + 9 }) + 2) / 5 + i64::from(d) - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    era * 146_097 + doe - 719_468
 }
 
 /// Days since 1970-01-01 → (year, month, day) (Howard Hinnant's `civil_from_days`).
@@ -128,6 +180,10 @@ mod tests {
         assert_eq!(civil_from_days(0), (1970, 1, 1));
         assert_eq!(civil_from_days(20_389), (2025, 10, 28));
         assert_eq!(civil_from_days(-1), (1969, 12, 31));
+        for days in [-800_000, -1, 0, 59, 60, 20_389, 2_932_896] {
+            let (y, m, d) = civil_from_days(days);
+            assert_eq!(days_from_civil(y, m, d), days);
+        }
         assert_eq!(pretty_date("2026-10-28"), "28 October 2026");
         assert_eq!(pretty_date("bogus"), "bogus");
         assert_eq!(local_date(0).len(), 10);
