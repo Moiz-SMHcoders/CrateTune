@@ -230,6 +230,14 @@ impl Link for Conn {
         // Windows reset the connection, and the peer then sees "Connection
         // lost" instead of this close frame and its reason.
         let deadline = std::time::Instant::now() + std::time::Duration::from_secs(1);
+        // Make sure the close frame itself went out (a write that timed out
+        // leaves it queued inside tungstenite).
+        while std::time::Instant::now() < deadline {
+            match self.ws.flush() {
+                Err(tungstenite::Error::Io(e)) if is_timeout(e.kind()) => continue,
+                _ => break,
+            }
+        }
         while std::time::Instant::now() < deadline {
             match self.ws.read() {
                 Ok(_) => continue,
