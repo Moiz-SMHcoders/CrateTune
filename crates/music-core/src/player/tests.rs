@@ -227,7 +227,9 @@ fn pull_fast_until(
     what: &str,
     cond: impl Fn(&PlaybackState) -> bool,
 ) -> Run {
-    let deadline = Instant::now() + Duration::from_secs(30);
+    // Generous: on a loaded CI runner (3 cores, every test in parallel) the
+    // engine threads can get far less than real time; seen ~0.3x on macos-14.
+    let deadline = Instant::now() + Duration::from_secs(120);
     let mut run = Run {
         audio: Vec::new(),
         states: Vec::new(),

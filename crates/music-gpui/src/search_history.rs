@@ -110,6 +110,9 @@ mod tests {
             queries(&lib),
             ["justice genisis", "daft punk", "Justice Genesis"]
         );
-        std::fs::remove_dir_all(&dir).unwrap();
+        // Best effort: on Windows the writer thread may still hold the database
+        // open for a moment, and an open file can't be deleted there.
+        drop(lib);
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }
