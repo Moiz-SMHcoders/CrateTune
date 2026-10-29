@@ -254,5 +254,6 @@ pub(super) fn render(panel: &mut SettingsPanel, cx: &mut Context<SettingsPanel>)
                 )),
         )
         .child(note(t!("settings.bar.cpu_note"), cx))
+        .child(super::bar_items_ui::render(panel, cx))
         .into_any_element()
 }

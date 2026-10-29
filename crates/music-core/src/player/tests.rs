@@ -105,6 +105,16 @@ impl StreamResolver for FakeResolver {
         })
     }
 
+    /// `High` gets "Opus 160 kbps" (itag 251; the same file, so only the
+    /// declared bitrate tells the streams apart).
+    fn resolve_with_quality(&self, video_id: &str, quality: Quality) -> Result<ResolvedStream> {
+        let mut stream = self.resolve(video_id)?;
+        if quality == Quality::High && stream.itag == 140 {
+            stream.itag = 251;
+        }
+        Ok(stream)
+    }
+
     fn refresh_track(
         &self,
         track: &Track,
@@ -823,4 +833,94 @@ fn waveform_is_computed_cached_and_follows_the_track() {
         *w == WaveformStatus::default()
     });
     let _ = std::fs::remove_dir_all(&dir);
+}
+
+fn bitrate(s: &PlaybackState) -> Option<u32> {
+    s.source.as_ref().and_then(|s| s.bitrate)
+}
+
+/// Pulls until `switching_stream` was seen and is over.
+fn pull_through_switch(player: &Player, output: &mut HeadlessOutput, what: &str) -> Run {
+    let seen = std::cell::Cell::new(false);
+    pull_until(player, output, what, |s| {
+        seen.set(seen.get() || s.switching_stream);
+        seen.get() && !s.switching_stream
+    })
+}
+
+#[test]
+fn reload_stream_switches_quality_at_the_same_position_without_a_gap() {
+    let (player, mut out, _r) = player();
+    player.play(remote("full"));
+    pull_until(&player, &mut out, "2 s in", |s| {
+        s.position > Duration::from_secs(2)
+    });
+    assert_eq!(bitrate(&player.state()), Some(128_000));
+
+    // The same quality resolves the same format: dropped, nothing changes.
+    player.reload_stream();
+    pull_through_switch(&player, &mut out, "same format");
+    assert_eq!(bitrate(&player.state()), Some(128_000));
+
+    // Another quality takes over at the same position.
+    let before = player.state().position;
+    player.set_quality(Quality::High);
+    player.reload_stream();
+    let run = pull_through_switch(&player, &mut out, "switch to High");
+    let s = run.states.last().unwrap();
+    assert_eq!(bitrate(s), Some(160_000), "{:?}", s.source);
+    assert!(s.status == PlaybackStatus::Playing && s.advance_count == 0);
+    assert_eq!(title(s), "full");
+    // Positions never go back, and advanced exactly by the audio pulled: no
+    // part skipped or heard twice.
+    assert!(
+        run.states
+            .windows(2)
+            .all(|w| w[1].position + Duration::from_millis(5) >= w[0].position),
+        "position went back"
+    );
+    let advanced = s.position.as_secs_f64() - before.as_secs_f64();
+    let pulled = secs(run.audio.len());
+    assert!(
+        (advanced - pulled).abs() < 0.15,
+        "advanced {advanced:.3} s, pulled {pulled:.3} s"
+    );
+    assert!(
+        longest_silence(&run.audio) < 48,
+        "gap of {} frames",
+        longest_silence(&run.audio)
+    );
+
+    // Paused: the switch happens at once, at the paused position.
+    player.pause();
+    let paused = wait_for(&player, "paused", |s| s.status == PlaybackStatus::Paused).position;
+    player.set_quality(Quality::Normal);
+    player.reload_stream();
+    let s = wait_for(&player, "switch while paused", |s| {
+        bitrate(s) == Some(128_000) && !s.switching_stream
+    });
+    assert!(
+        s.position.abs_diff(paused) < Duration::from_millis(30),
+        "{:?}",
+        s.position
+    );
+    assert_eq!(s.status, PlaybackStatus::Paused);
+
+    // The new stream plays to the end like any other.
+    player.resume();
+    pull_until(&player, &mut out, "end", |s| {
+        s.status == PlaybackStatus::Ended
+    });
+    assert!(player.state().position > Duration::from_millis(19_800));
+}
+
+#[test]
+fn reload_stream_leaves_local_files_alone() {
+    let (player, _out, _r) = player();
+    player.play(local("a440.wav"));
+    wait_for(&player, "loaded", |s| s.status == PlaybackStatus::Playing);
+    player.set_quality(Quality::High);
+    player.reload_stream();
+    std::thread::sleep(Duration::from_millis(250));
+    assert!(!player.state().switching_stream);
 }

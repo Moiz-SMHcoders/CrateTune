@@ -1,0 +1,30 @@
+# Player bar items and the quality menu (see locales/en/bar_items.lang).
+
+bar_items.title = Mostrar na barra
+bar_items.reset = Redefinir
+bar_items.note = Itens ocultos não deixam espaços vazios. Em janelas estreitas, os botões menos importantes continuam sumindo primeiro; uma transmissão em andamento ou um timer ativo continuam visíveis para que você possa pará-los. O miniplayer mantém os próprios controles.
+bar_items.item.like = Curtir
+bar_items.item.quality_tag = Origem e qualidade
+bar_items.item.shuffle = Aleatório
+bar_items.item.repeat = Repetir
+bar_items.item.sponsorblock = Aviso do SponsorBlock
+bar_items.item.together = Status do Music Together
+bar_items.item.lyrics = Letra
+bar_items.item.add_to_playlist = Adicionar à playlist
+bar_items.item.queue = Fila
+bar_items.item.sleep_timer = Timer de suspensão
+bar_items.item.cast = Transmitir para um dispositivo
+bar_items.item.mini_player = Miniplayer
+bar_items.item.now_playing = Tocando agora
+bar_items.item.volume_slider = Controle de volume
+bar_items.menu.customize = Personalizar a barra do player…
+bar_items.quality.tooltip = Qualidade do streaming
+bar_items.quality.low_hint = cerca de 50 kbps, economiza dados
+bar_items.quality.normal_hint = AAC 128 kbps
+bar_items.quality.high_hint = Opus até 160 kbps
+bar_items.quality.playing = Tocando: {source}
+bar_items.quality.applies_now = Troca a música atual na hora
+bar_items.quality.applies_next = Vale a partir da próxima música
+bar_items.quality.switching = Trocando a música atual…
+bar_items.quality.fixed = Este arquivo toca no próprio formato; a escolha vale para músicas em streaming
+bar_items.quality.settings = Configurações de reprodução…

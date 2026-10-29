@@ -43,6 +43,14 @@ versions follow [SemVer](https://semver.org/).
   action, keys needed for typing and system keys are refused; changes apply at once, also in
   the menu bar, and travel with settings exports. ⌘/ (Help → Keyboard Shortcuts) shows a
   cheat sheet.
+* **Choose what the player bar shows** (right-click the bar, or Settings → Appearance →
+  Player bar → *Show on the bar*): like, source / quality tag, shuffle, repeat, the
+  SponsorBlock prompt, the Music Together status, lyrics, queue, sleep timer, Cast, mini
+  player, Now Playing, volume slider, and a new **Add to playlist** button (off by
+  default). Hidden items leave no gap; narrow windows give their room to the next buttons.
+* **Quality menu on the source tag**: click "YouTube · AAC 128 kbps" to switch between
+  Low, Normal and High; the playing song changes stream at the same position without a
+  pause, and the choice is saved like in Settings → Playback.
 * **Redesigned player bar**: track info · transport + progress · secondary controls, the
   transport centred in the window; elapsed and remaining time (click to switch), a
   thumb and time bubble on hover, a lyrics button, active states for queue / lyrics /

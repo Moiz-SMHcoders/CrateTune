@@ -70,6 +70,8 @@ pub enum SettingsEvent {
     Lyrics,
     /// Now Playing / lyrics display options changed (re-render only).
     NowPlaying,
+    /// The stream quality changed (after `Audio`): switch the playing song to it.
+    Quality,
 }
 
 pub(super) enum LastFmFlow {

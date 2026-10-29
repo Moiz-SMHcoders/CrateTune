@@ -6,6 +6,7 @@
 
 use serde::{Deserialize, Serialize};
 
+use super::bar_items::BarItems;
 use super::file::lenient;
 
 /// How the bar's (and optionally the mini player's) progress bar is drawn.
@@ -178,6 +179,8 @@ pub struct PlayerBarConfig {
     pub mini_follows_bar: bool,
     /// A small spectrum strip along the bottom of Now Playing.
     pub np_visualizer: bool,
+    /// Which buttons, tags and chips the bar shows (`bar_items.rs`).
+    pub items: BarItems,
 }
 
 impl Default for PlayerBarConfig {
@@ -195,6 +198,7 @@ impl Default for PlayerBarConfig {
             scroll_volume: true,
             mini_follows_bar: true,
             np_visualizer: false,
+            items: BarItems::default(),
         }
     }
 }

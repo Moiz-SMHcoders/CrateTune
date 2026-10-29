@@ -289,6 +289,66 @@ impl Voice {
         !lock(&self.queue).chunks.is_empty()
     }
 
+    /// Track time where the queued audio starts (`None`: nothing queued, or a
+    /// seek is pending).
+    pub(crate) fn queued_start(&self) -> Option<Duration> {
+        let q = lock(&self.queue);
+        let epoch = self.epoch();
+        q.seek
+            .is_none()
+            .then(|| q.chunks.iter().find(|c| c.epoch == epoch).map(|c| c.start))
+            .flatten()
+    }
+
+    /// For a stream of the same track taking over from another voice at track
+    /// time `at` (see `Deck::set_handoff`): drops queued audio before `at` (the
+    /// listener heard it from the other voice) and returns the chunk covering
+    /// `at` with the sample index to continue from. `None` while nothing at
+    /// `at` is queued yet, or the queued audio starts more than `tolerance`
+    /// after `at` (the other voice plays on until it gets there).
+    pub(crate) fn take_chunk_at(
+        &self,
+        at: Duration,
+        tolerance: Duration,
+    ) -> Option<(Chunk, usize)> {
+        let epoch = self.epoch();
+        let mut q = lock(&self.queue);
+        if q.seek.is_some() {
+            return None;
+        }
+        let mut dropped = false;
+        let found = loop {
+            let Some(front) = q.chunks.front() else {
+                break None;
+            };
+            if front.epoch != epoch || front.start + front.span <= at {
+                let stale = q.chunks.pop_front().expect("front exists");
+                q.frames = q.frames.saturating_sub(stale.samples.len() / 2);
+                dropped = true;
+                continue;
+            }
+            if front.start > at + tolerance {
+                break None;
+            }
+            let chunk = q.chunks.pop_front().expect("front exists");
+            let frames = chunk.samples.len() / 2;
+            q.frames = q.frames.saturating_sub(frames);
+            let skip = if at > chunk.start && !chunk.span.is_zero() {
+                let fraction = (at - chunk.start).as_secs_f64() / chunk.span.as_secs_f64();
+                ((fraction * frames as f64) as usize).min(frames)
+            } else {
+                0
+            };
+            break Some((chunk, skip * 2));
+        };
+        drop(q);
+        if dropped || found.is_some() {
+            // The producer refills (and so catches up) right away.
+            self.wake.notify_all();
+        }
+        found
+    }
+
     /// Nothing more will come: all audio was handed out (or the track failed).
     pub(crate) fn is_exhausted(&self) -> bool {
         if matches!(self.phase(), Phase::Failed(_)) {

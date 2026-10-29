@@ -1,0 +1,30 @@
+# Player bar items and the quality menu (see locales/en/bar_items.lang).
+
+bar_items.title = बार में दिखाएँ
+bar_items.reset = रीसेट करें
+bar_items.note = छिपाए गए आइटम कोई खाली जगह नहीं छोड़ते। संकरी विंडो में कम ज़रूरी बटन अब भी पहले छिपते हैं; चल रहा कास्ट या चालू स्लीप टाइमर दिखता रहता है ताकि आप उसे रोक सकें। मिनी प्लेयर के अपने कंट्रोल रहते हैं।
+bar_items.item.like = पसंद करें
+bar_items.item.quality_tag = स्रोत और क्वालिटी
+bar_items.item.shuffle = शफ़ल
+bar_items.item.repeat = दोहराएँ
+bar_items.item.sponsorblock = SponsorBlock संकेत
+bar_items.item.together = Music Together स्थिति
+bar_items.item.lyrics = बोल
+bar_items.item.add_to_playlist = प्लेलिस्ट में जोड़ें
+bar_items.item.queue = कतार
+bar_items.item.sleep_timer = स्लीप टाइमर
+bar_items.item.cast = डिवाइस पर कास्ट करें
+bar_items.item.mini_player = मिनी प्लेयर
+bar_items.item.now_playing = अभी चल रहा है
+bar_items.item.volume_slider = वॉल्यूम स्लाइडर
+bar_items.menu.customize = प्लेयर बार अनुकूलित करें…
+bar_items.quality.tooltip = स्ट्रीमिंग क्वालिटी
+bar_items.quality.low_hint = लगभग 50 kbps, डेटा बचाता है
+bar_items.quality.normal_hint = AAC 128 kbps
+bar_items.quality.high_hint = Opus 160 kbps तक
+bar_items.quality.playing = चल रहा है: {source}
+bar_items.quality.applies_now = चल रहे गाने को तुरंत बदलता है
+bar_items.quality.applies_next = अगले गाने से लागू होगा
+bar_items.quality.switching = चल रहा गाना बदला जा रहा है…
+bar_items.quality.fixed = यह फ़ाइल अपने ही फ़ॉर्मैट में चलती है; चुनाव स्ट्रीम किए गए गानों पर लागू होता है
+bar_items.quality.settings = प्लेबैक सेटिंग्स…

@@ -40,6 +40,14 @@ const DEVICE_RETRY: Duration = Duration::from_secs(3);
 /// The waveform decode starts once this much of the track has played (so it
 /// never delays the first audio), or once the download is complete.
 const WAVEFORM_START_AFTER: Duration = Duration::from_millis(500);
+/// [`Player::reload_stream`] leaves a track alone this close to its end.
+const RELOAD_MIN_REMAINING: Duration = Duration::from_secs(4);
+/// ...and keeps a preloaded next track (loaded at the old quality) this close
+/// to the end, so the gapless switch stays gapless.
+const RELOAD_KEEP_NEXT: Duration = Duration::from_secs(12);
+/// A replacement stream this far behind the playing one seeks again (its first
+/// seek was rejected, e.g. it waited too long for data).
+const RELOAD_RESEEK_BEHIND: Duration = Duration::from_secs(3);
 
 #[derive(Debug, Clone, PartialEq, Default)]
 pub enum PlaybackStatus {
@@ -94,6 +102,9 @@ pub struct PlaybackState {
     /// Where the current track's audio comes from (YouTube, a provider module,
     /// a file) and its codec / sample rate / bit depth once decoding started.
     pub source: Option<StreamSource>,
+    /// [`Player::reload_stream`] is loading another stream of the current
+    /// track; it takes over at the same position (then `source` changes).
+    pub switching_stream: bool,
 }
 
 impl Default for PlaybackState {
@@ -117,6 +128,7 @@ impl Default for PlaybackState {
             crossfading: false,
             output_device: None,
             source: None,
+            switching_stream: false,
         }
     }
 }
@@ -171,6 +183,7 @@ enum Command {
     SetSpeed(f32),
     SetPitch(f32),
     SetQuality(Quality),
+    ReloadStream,
     SetAutoSkip(bool),
     SetSleepTimer(Option<SleepTimer>),
     SetOutputDevice(Option<String>),
@@ -342,6 +355,20 @@ impl Player {
     /// Stream quality for tracks loaded from now on.
     pub fn set_quality(&self, quality: Quality) {
         self.send(Command::SetQuality(quality));
+    }
+
+    /// Resolves the current track again with the current settings (e.g. after
+    /// [`Self::set_quality`]) and switches to the new stream at the same
+    /// position without a gap: the playing stream continues until the new
+    /// one has audio there, then a 40 ms cross-fade hands over.
+    /// [`PlaybackState::switching_stream`] is set meanwhile. If the new stream
+    /// turns out to be the same format, or fails, the current one just plays
+    /// on. A preloaded next track is loaded again too (unless the current one
+    /// is about to end). Does nothing for local files, a track that is still
+    /// loading its first stream (which restarts with the new settings
+    /// instead), or one within a few seconds of its end.
+    pub fn reload_stream(&self) {
+        self.send(Command::ReloadStream);
     }
 
     /// When a track fails to load, move on to the next track (if one is set)
@@ -584,6 +611,12 @@ fn spawn_device_worker(tx: Sender<Command>) -> Sender<DeviceJob> {
     jobs
 }
 
+struct Replacement {
+    voice: Arc<Voice>,
+    /// Given to the deck for the handoff.
+    armed: bool,
+}
+
 struct Engine {
     state: Arc<Mutex<PlaybackState>>,
     deck: Arc<Deck>,
@@ -592,6 +625,9 @@ struct Engine {
     current: Option<Arc<Voice>>,
     /// Preloaded voice for `next_track` (also handed to the deck).
     next: Option<Arc<Voice>>,
+    /// Another stream of the current track ([`Player::reload_stream`]);
+    /// handed to the deck once it is open and differs from the current one.
+    replacement: Option<Replacement>,
     next_track: Option<Track>,
     last_voice_id: u64,
     seen_advances: u64,
@@ -771,6 +807,7 @@ impl Engine {
             output,
             current: None,
             next: None,
+            replacement: None,
             next_track: None,
             last_voice_id: 0,
             seen_advances: 0,
@@ -802,6 +839,7 @@ impl Engine {
             self.tick();
         }
         self.waveform.cancel();
+        self.drop_replacement();
         for voice in [self.current.take(), self.next.take()]
             .into_iter()
             .flatten()
@@ -835,6 +873,9 @@ impl Engine {
                     voice.seek(position);
                     self.held_at_end = false;
                 }
+                if let Some(replacement) = &self.replacement {
+                    replacement.voice.seek(position);
+                }
             }
             Command::SetVolume(volume) => {
                 self.state().volume = volume;
@@ -864,6 +905,7 @@ impl Engine {
                 self.push_settings();
             }
             Command::SetQuality(quality) => self.config.quality = quality,
+            Command::ReloadStream => self.reload_stream(),
             Command::SetAutoSkip(enabled) => self.auto_skip = enabled,
             Command::SetSleepTimer(timer) => {
                 self.sleep.start(timer, Instant::now());
@@ -911,7 +953,13 @@ impl Engine {
 
     fn push_settings(&mut self) {
         let settings = self.config.settings;
-        for voice in self.current.iter().chain(self.next.iter()) {
+        let replacement = self.replacement.as_ref().map(|r| &r.voice);
+        for voice in self
+            .current
+            .iter()
+            .chain(self.next.iter())
+            .chain(replacement)
+        {
             voice.set_settings(settings);
         }
         let mut st = self.state();
@@ -953,6 +1001,7 @@ impl Engine {
 
     /// Puts `voice` on the deck and resets the state for it.
     fn make_current(&mut self, voice: Arc<Voice>, track: Track) {
+        self.drop_replacement();
         self.deck.set_current(Some(voice.clone()));
         self.current = Some(voice);
         let mut st = self.state();
@@ -1079,12 +1128,14 @@ impl Engine {
             }
         }
 
+        self.check_replacement(&snap);
         self.update_status(&snap);
         self.maybe_preload();
         self.waveform.follow(self.current.as_ref());
 
         let mut st = self.state();
         st.sleep_timer = self.sleep.state(now);
+        st.switching_stream = self.replacement.is_some();
         st.crossfading = snap.crossfading;
         st.next_preloaded = self.next.as_ref().is_some_and(|v| v.has_audio());
         if let Output::Device(out) = &self.output {
@@ -1158,6 +1209,130 @@ impl Engine {
         }
         st.preview_only = voice.is_preview();
         st.source = voice.source();
+    }
+
+    /// [`Player::reload_stream`].
+    fn reload_stream(&mut self) {
+        let Some(current) = self.current.clone() else {
+            return;
+        };
+        if current.track.is_local() {
+            return;
+        }
+        let status = self.state().status.clone();
+        match current.phase() {
+            Phase::Failed(_) => return,
+            // Nothing played yet: start over with the new settings.
+            Phase::Loading => {
+                let pending = current.pending_seek();
+                let voice = self.spawn_voice(current.track.clone());
+                if let Some(at) = pending {
+                    voice.seek(at);
+                }
+                let track = current.track.clone();
+                self.make_current(voice, track);
+                return;
+            }
+            Phase::Ready => {}
+        }
+        if !matches!(status, PlaybackStatus::Playing | PlaybackStatus::Paused)
+            || current
+                .remaining()
+                .is_some_and(|r| r < RELOAD_MIN_REMAINING)
+        {
+            return;
+        }
+        self.drop_replacement();
+        let voice = self.spawn_voice(current.track.clone());
+        voice.seek(current.pending_seek().unwrap_or_else(|| current.played()));
+        self.replacement = Some(Replacement {
+            voice,
+            armed: false,
+        });
+        self.state().switching_stream = true;
+        // A preloaded next track was resolved with the old settings.
+        if current.remaining().is_none_or(|r| r > RELOAD_KEEP_NEXT) {
+            if let Some(old) = self.next.take() {
+                old.stop();
+            }
+            if let Some(old) = self.deck.set_next(None) {
+                old.stop();
+            }
+        }
+    }
+
+    fn drop_replacement(&mut self) {
+        if let Some(old) = self.replacement.take() {
+            old.voice.stop();
+            if old.armed {
+                self.deck.set_handoff(None, 0);
+            }
+        }
+        self.state().switching_stream = false;
+    }
+
+    /// Follows the replacement stream: hands it to the deck once it is open
+    /// (unless it is the very same format), adopts it once the deck switched.
+    fn check_replacement(&mut self, snap: &crate::deck::DeckSnapshot) {
+        let Some(replacement) = &self.replacement else {
+            return;
+        };
+        let on_deck = snap.current;
+        let voice = replacement.voice.clone();
+        if on_deck == Some(voice.id) {
+            log::debug!("{}: switched to the reloaded stream", voice.track.video_id);
+            self.replacement = None;
+            self.current = Some(voice);
+            self.state().switching_stream = false;
+            return;
+        }
+        let Some(current) = self.current.clone() else {
+            self.drop_replacement();
+            return;
+        };
+        if current.track.video_id != voice.track.video_id || on_deck != Some(current.id) {
+            self.drop_replacement();
+            return;
+        }
+        match voice.phase() {
+            Phase::Loading => {}
+            Phase::Failed(e) => {
+                log::warn!("{}: reloading the stream failed: {e}", voice.track.video_id);
+                self.drop_replacement();
+            }
+            Phase::Ready if !replacement.armed => {
+                if voice.source().is_some() && voice.source() == current.source() {
+                    log::debug!(
+                        "{}: reloaded stream is the same format",
+                        voice.track.video_id
+                    );
+                    self.drop_replacement();
+                    return;
+                }
+                if let Some(old) = self.deck.set_handoff(Some(voice.clone()), current.id) {
+                    old.stop();
+                }
+                if let Some(r) = &mut self.replacement {
+                    r.armed = true;
+                }
+            }
+            Phase::Ready => {
+                // Paused, the deck mixes nothing: switch now, so the source
+                // shown is right before playback resumes.
+                if snap.paused {
+                    self.deck.try_hand_off();
+                }
+                // Far behind (a rejected seek): try again a little ahead.
+                let at = current.played();
+                if voice.pending_seek().is_none()
+                    && voice
+                        .queued_start()
+                        .is_some_and(|start| start + RELOAD_RESEEK_BEHIND < at)
+                {
+                    voice.seek(at + Duration::from_millis(500));
+                }
+            }
+        }
     }
 
     fn maybe_preload(&mut self) {

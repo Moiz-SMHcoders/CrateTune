@@ -1,0 +1,30 @@
+# Player bar items and the quality menu (see locales/en/bar_items.lang).
+
+bar_items.title = 在播放栏中显示
+bar_items.reset = 重置
+bar_items.note = 隐藏的项目不会留下空位。窗口较窄时，仍会先隐藏不太重要的按钮；正在进行的投放或已设置的睡眠定时器会保持可见，方便你停止。迷你播放器保留自己的按钮。
+bar_items.item.like = 喜欢
+bar_items.item.quality_tag = 来源和音质
+bar_items.item.shuffle = 随机播放
+bar_items.item.repeat = 循环播放
+bar_items.item.sponsorblock = SponsorBlock 提示
+bar_items.item.together = Music Together 状态
+bar_items.item.lyrics = 歌词
+bar_items.item.add_to_playlist = 添加到播放列表
+bar_items.item.queue = 队列
+bar_items.item.sleep_timer = 睡眠定时器
+bar_items.item.cast = 投放到设备
+bar_items.item.mini_player = 迷你播放器
+bar_items.item.now_playing = 正在播放
+bar_items.item.volume_slider = 音量滑块
+bar_items.menu.customize = 自定义播放栏…
+bar_items.quality.tooltip = 串流音质
+bar_items.quality.low_hint = 约 50 kbps，节省流量
+bar_items.quality.normal_hint = AAC 128 kbps
+bar_items.quality.high_hint = Opus 最高 160 kbps
+bar_items.quality.playing = 正在播放：{source}
+bar_items.quality.applies_now = 立即切换正在播放的歌曲
+bar_items.quality.applies_next = 从下一首歌开始生效
+bar_items.quality.switching = 正在切换当前歌曲…
+bar_items.quality.fixed = 此文件以其自身格式播放；所选音质适用于串流歌曲
+bar_items.quality.settings = 播放设置…

@@ -1,0 +1,30 @@
+# Player bar items and the quality menu (see locales/en/bar_items.lang).
+
+bar_items.title = 바에 표시
+bar_items.reset = 재설정
+bar_items.note = 숨긴 항목은 빈 공간을 남기지 않습니다. 창이 좁으면 여전히 덜 중요한 버튼부터 숨겨집니다. 진행 중인 전송이나 켜진 취침 타이머는 끌 수 있도록 계속 표시됩니다. 미니 플레이어는 자체 컨트롤을 유지합니다.
+bar_items.item.like = 좋아요
+bar_items.item.quality_tag = 소스 및 품질
+bar_items.item.shuffle = 셔플
+bar_items.item.repeat = 반복
+bar_items.item.sponsorblock = SponsorBlock 알림
+bar_items.item.together = Music Together 상태
+bar_items.item.lyrics = 가사
+bar_items.item.add_to_playlist = 재생목록에 추가
+bar_items.item.queue = 대기열
+bar_items.item.sleep_timer = 취침 타이머
+bar_items.item.cast = 기기로 전송
+bar_items.item.mini_player = 미니 플레이어
+bar_items.item.now_playing = 지금 재생 중
+bar_items.item.volume_slider = 볼륨 슬라이더
+bar_items.menu.customize = 플레이어 바 사용자화…
+bar_items.quality.tooltip = 스트리밍 품질
+bar_items.quality.low_hint = 약 50kbps, 데이터 절약
+bar_items.quality.normal_hint = AAC 128kbps
+bar_items.quality.high_hint = Opus 최대 160kbps
+bar_items.quality.playing = 재생 중: {source}
+bar_items.quality.applies_now = 재생 중인 곡을 바로 전환합니다
+bar_items.quality.applies_next = 다음 곡부터 적용됩니다
+bar_items.quality.switching = 재생 중인 곡을 전환하는 중…
+bar_items.quality.fixed = 이 파일은 자체 형식으로 재생됩니다. 선택은 스트리밍 곡에 적용됩니다
+bar_items.quality.settings = 재생 설정…

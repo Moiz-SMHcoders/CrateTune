@@ -1,0 +1,30 @@
+# Player bar items and the quality menu (see locales/en/bar_items.lang).
+
+bar_items.title = Çubukta göster
+bar_items.reset = Sıfırla
+bar_items.note = Gizlenen öğeler boşluk bırakmaz. Dar pencerelerde daha az önemli düğmeler yine önce gizlenir; devam eden bir yayın veya kurulu uyku zamanlayıcısı, durdurabilmen için görünür kalır. Mini oynatıcı kendi düğmelerini korur.
+bar_items.item.like = Beğen
+bar_items.item.quality_tag = Kaynak ve kalite
+bar_items.item.shuffle = Karıştır
+bar_items.item.repeat = Tekrarla
+bar_items.item.sponsorblock = SponsorBlock uyarısı
+bar_items.item.together = Music Together durumu
+bar_items.item.lyrics = Şarkı sözleri
+bar_items.item.add_to_playlist = Çalma listesine ekle
+bar_items.item.queue = Sıra
+bar_items.item.sleep_timer = Uyku zamanlayıcısı
+bar_items.item.cast = Bir cihaza yayınla
+bar_items.item.mini_player = Mini oynatıcı
+bar_items.item.now_playing = Şu an çalıyor
+bar_items.item.volume_slider = Ses kaydırıcısı
+bar_items.menu.customize = Oynatıcı çubuğunu özelleştir…
+bar_items.quality.tooltip = Akış kalitesi
+bar_items.quality.low_hint = yaklaşık 50 kbps, veri tasarrufu
+bar_items.quality.normal_hint = AAC 128 kbps
+bar_items.quality.high_hint = 160 kbps'ye kadar Opus
+bar_items.quality.playing = Çalıyor: {source}
+bar_items.quality.applies_now = Çalan şarkıyı hemen değiştirir
+bar_items.quality.applies_next = Sonraki şarkıdan itibaren geçerli
+bar_items.quality.switching = Çalan şarkı değiştiriliyor…
+bar_items.quality.fixed = Bu dosya kendi biçiminde çalar; seçim akışla çalan şarkılar için geçerlidir
+bar_items.quality.settings = Oynatma ayarları…

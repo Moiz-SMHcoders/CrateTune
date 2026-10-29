@@ -624,6 +624,7 @@ impl MusicApp {
                 self.refresh_soon(cx);
                 cx.notify();
             }
+            SettingsEvent::Quality => self.switch_stream_quality(cx),
             SettingsEvent::Lyrics => self.rebuild_lyrics_service(cx),
             SettingsEvent::NowPlaying => {
                 // The bar's background effect may need the artwork colours now.

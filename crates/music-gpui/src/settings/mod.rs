@@ -17,6 +17,8 @@
 mod about;
 mod accounts;
 mod appearance;
+pub mod bar_items;
+mod bar_items_ui;
 pub mod bar_prefs;
 mod bar_ui;
 mod content;

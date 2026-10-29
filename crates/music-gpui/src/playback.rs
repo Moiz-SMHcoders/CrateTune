@@ -605,6 +605,8 @@ fn same_except_position(a: &PlaybackState, b: &PlaybackState) -> bool {
         && a.duration == b.duration
         && a.preview_only == b.preview_only
         && a.volume == b.volume
+        && a.source == b.source
+        && a.switching_stream == b.switching_stream
         && a.track.as_ref().map(|t| &t.video_id) == b.track.as_ref().map(|t| &t.video_id)
 }
 
@@ -613,9 +615,10 @@ fn trace(started: Instant, old: &PlaybackState, new: &PlaybackState) {
     let id = |s: &PlaybackState| s.track.as_ref().map(|t| t.video_id.clone());
     let jumped = new.position.abs_diff(old.position) > Duration::from_millis(1500);
     let tick = new.position.as_secs() / 5 != old.position.as_secs() / 5;
-    if old.status != new.status || id(old) != id(new) || jumped || tick {
+    let source = old.source != new.source || old.switching_stream != new.switching_stream;
+    if old.status != new.status || id(old) != id(new) || jumped || tick || source {
         eprintln!(
-            "music-gpui: [{:6.2}s] {:?} {} pos {:.1}s / {} vol {:.2}{}",
+            "music-gpui: [{:6.2}s] {:?} {} pos {:.3}s / {} vol {:.2}{} [{}{}]",
             started.elapsed().as_secs_f64(),
             new.status,
             id(new).unwrap_or_default(),
@@ -624,6 +627,12 @@ fn trace(started: Instant, old: &PlaybackState, new: &PlaybackState) {
                 .map_or("?".into(), |d| format!("{:.1}s", d.as_secs_f64())),
             new.volume,
             if new.preview_only { " preview" } else { "" },
+            crate::module_service::source_label(new.source.as_ref()).unwrap_or_default(),
+            if new.switching_stream {
+                ", switching"
+            } else {
+                ""
+            },
         );
     }
 }

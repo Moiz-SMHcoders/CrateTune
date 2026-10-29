@@ -1,0 +1,41 @@
+# Player bar items: which buttons the bar shows (Settings → Appearance →
+# Player bar, and the bar's right-click menu), the "Add to playlist" button,
+# and the menu of the source / quality tag beside the transport.
+
+# ---- Show on the bar (check boxes and right-click menu items; keep short)
+bar_items.title = Show on the bar
+bar_items.reset = Reset
+bar_items.note = Hidden items leave no gap. Narrow windows still hide the less important buttons first; a Cast session or an armed sleep timer stays visible so you can stop it. The mini player keeps its own controls.
+bar_items.item.like = Like
+# The small tag that says where the audio comes from, e.g. "YouTube · AAC 128 kbps".
+bar_items.item.quality_tag = Source and quality
+bar_items.item.shuffle = Shuffle
+bar_items.item.repeat = Repeat
+# The chip that offers to skip a sponsor segment.
+bar_items.item.sponsorblock = SponsorBlock prompt
+# The chip that shows a running Music Together session.
+bar_items.item.together = Music Together status
+bar_items.item.lyrics = Lyrics
+bar_items.item.add_to_playlist = Add to playlist
+bar_items.item.queue = Queue
+bar_items.item.sleep_timer = Sleep timer
+bar_items.item.cast = Cast to device
+bar_items.item.mini_player = Mini player
+bar_items.item.now_playing = Now Playing
+bar_items.item.volume_slider = Volume slider
+# Last entry of the bar's right-click menu: opens the settings.
+bar_items.menu.customize = Customize player bar…
+
+# ---- Quality menu (click on the source tag)
+bar_items.quality.tooltip = Streaming quality
+# After each quality name: what it means.
+bar_items.quality.low_hint = about 50 kbps, saves data
+bar_items.quality.normal_hint = AAC 128 kbps
+bar_items.quality.high_hint = Opus up to 160 kbps
+# {source} is e.g. "YouTube · Opus 160 kbps".
+bar_items.quality.playing = Playing: {source}
+bar_items.quality.applies_now = Switches the playing song at once
+bar_items.quality.applies_next = Applies from the next song
+bar_items.quality.switching = Switching the playing song…
+bar_items.quality.fixed = This file plays in its own format; the choice applies to streamed songs
+bar_items.quality.settings = Playback settings…
