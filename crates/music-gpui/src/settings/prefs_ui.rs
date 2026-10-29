@@ -386,8 +386,14 @@ impl SettingsPanel {
         }
     }
 
+    /// Saved like any audio option; the playing song switches to it too
+    /// (`SettingsEvent::Quality`, see `MusicApp::switch_stream_quality`).
     pub fn set_quality(&mut self, quality: Quality, cx: &mut Context<Self>) {
+        let before = self.settings.audio.quality;
         self.update_audio(cx, |a| a.quality = quality);
+        if self.settings.audio.quality != before {
+            cx.emit(SettingsEvent::Quality);
+        }
     }
 
     pub fn set_stream_source(

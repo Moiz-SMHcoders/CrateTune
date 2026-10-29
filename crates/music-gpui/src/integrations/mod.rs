@@ -42,11 +42,20 @@ impl MusicApp {
         self.sync_ai_filter(window, cx);
     }
 
-    /// Extra chips for the player bar's transport row (SponsorBlock "Skip", Together).
-    pub(crate) fn integration_chips(&mut self, cx: &mut Context<Self>) -> Vec<AnyElement> {
+    /// Extra chips for the player bar's transport row (SponsorBlock "Skip",
+    /// Together), each unless hidden in the bar's items.
+    pub(crate) fn integration_chips(
+        &mut self,
+        items: crate::settings::bar_items::BarItems,
+        cx: &mut Context<Self>,
+    ) -> Vec<AnyElement> {
         let mut chips = Vec::new();
-        chips.extend(self.sponsorblock_chip(cx));
-        chips.extend(self.together_chip(cx));
+        if items.sponsorblock {
+            chips.extend(self.sponsorblock_chip(cx));
+        }
+        if items.together {
+            chips.extend(self.together_chip(cx));
+        }
         chips
     }
 

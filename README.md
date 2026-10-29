@@ -143,6 +143,13 @@ its own executor.
     `set_sleep_timer` (duration or end of track), `set_auto_skip` (errors →
     `error_count`/`failed_track_id`), `output_devices` / `set_output_device` (falls back
     to the default and back when a device disappears/reappears);
+  * `set_quality` applies to tracks loaded from then on; `reload_stream` switches the
+    playing one too: another voice resolves the track again, seeked to the current
+    position, while the old one plays on; once it is open (and not the very same
+    format) the deck hands over as soon as it has audio where the old one is — earlier
+    audio is dropped, a 40 ms linear cross-fade joins them at the same track time (paused:
+    at once). `PlaybackState::switching_stream` meanwhile; seeks are mirrored, a new
+    track / advance / failure drops it; local files are left alone;
   * `Player::headless` renders without a device (tests use it end to end).
 * `equalizer` — parametric EQ (port of Hummingbird's), applied live:
   `player.set_equalizer(EqPreset::Bass.settings())`, `player.clear_equalizer()`.

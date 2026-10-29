@@ -1,0 +1,30 @@
+# Player bar items and the quality menu (see locales/en/bar_items.lang).
+
+bar_items.title = Hiện trên thanh
+bar_items.reset = Đặt lại
+bar_items.note = Mục bị ẩn không để lại khoảng trống. Ở cửa sổ hẹp, các nút ít quan trọng vẫn ẩn trước; phiên truyền đang chạy hoặc hẹn giờ ngủ đang bật vẫn hiện để bạn có thể dừng. Trình phát mini giữ các nút riêng.
+bar_items.item.like = Thích
+bar_items.item.quality_tag = Nguồn và chất lượng
+bar_items.item.shuffle = Trộn bài
+bar_items.item.repeat = Lặp lại
+bar_items.item.sponsorblock = Lời nhắc SponsorBlock
+bar_items.item.together = Trạng thái Music Together
+bar_items.item.lyrics = Lời bài hát
+bar_items.item.add_to_playlist = Thêm vào danh sách phát
+bar_items.item.queue = Danh sách chờ
+bar_items.item.sleep_timer = Hẹn giờ ngủ
+bar_items.item.cast = Truyền tới thiết bị
+bar_items.item.mini_player = Trình phát mini
+bar_items.item.now_playing = Đang phát
+bar_items.item.volume_slider = Thanh trượt âm lượng
+bar_items.menu.customize = Tùy chỉnh thanh trình phát…
+bar_items.quality.tooltip = Chất lượng phát trực tuyến
+bar_items.quality.low_hint = khoảng 50 kbps, tiết kiệm dữ liệu
+bar_items.quality.normal_hint = AAC 128 kbps
+bar_items.quality.high_hint = Opus tới 160 kbps
+bar_items.quality.playing = Đang phát: {source}
+bar_items.quality.applies_now = Đổi bài đang phát ngay lập tức
+bar_items.quality.applies_next = Áp dụng từ bài tiếp theo
+bar_items.quality.switching = Đang đổi bài đang phát…
+bar_items.quality.fixed = Tệp này phát theo định dạng riêng; lựa chọn áp dụng cho các bài phát trực tuyến
+bar_items.quality.settings = Cài đặt phát nhạc…

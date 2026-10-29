@@ -1,0 +1,30 @@
+# Player bar items and the quality menu (see locales/en/bar_items.lang).
+
+bar_items.title = Показувати на панелі
+bar_items.reset = Скинути
+bar_items.note = Приховані елементи не залишають порожніх місць. У вузькому вікні менш важливі кнопки, як і раніше, ховаються першими; трансляція, що триває, або увімкнений таймер сну лишаються видимими, щоб їх можна було зупинити. Мініплеєр має власні кнопки.
+bar_items.item.like = Подобається
+bar_items.item.quality_tag = Джерело та якість
+bar_items.item.shuffle = Перемішування
+bar_items.item.repeat = Повтор
+bar_items.item.sponsorblock = Підказка SponsorBlock
+bar_items.item.together = Стан Music Together
+bar_items.item.lyrics = Текст
+bar_items.item.add_to_playlist = Додати в плейлист
+bar_items.item.queue = Черга
+bar_items.item.sleep_timer = Таймер сну
+bar_items.item.cast = Транслювати на пристрій
+bar_items.item.mini_player = Мініплеєр
+bar_items.item.now_playing = Зараз грає
+bar_items.item.volume_slider = Повзунок гучності
+bar_items.menu.customize = Налаштувати панель плеєра…
+bar_items.quality.tooltip = Якість потоку
+bar_items.quality.low_hint = близько 50 кбіт/с, економить трафік
+bar_items.quality.normal_hint = AAC 128 кбіт/с
+bar_items.quality.high_hint = Opus до 160 кбіт/с
+bar_items.quality.playing = Грає: {source}
+bar_items.quality.applies_now = Одразу перемикає поточний трек
+bar_items.quality.applies_next = Діє з наступного треку
+bar_items.quality.switching = Перемикання поточного треку…
+bar_items.quality.fixed = Цей файл грає у власному форматі; вибір діє для потокових треків
+bar_items.quality.settings = Налаштування відтворення…

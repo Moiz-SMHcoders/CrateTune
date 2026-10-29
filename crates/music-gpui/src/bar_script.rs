@@ -101,7 +101,7 @@ impl MusicApp {
                     window.refresh();
                 });
             }
-            _ => return false,
+            other => return self.bar_items_script_action(other, arg, window, cx),
         }
         true
     }

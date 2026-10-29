@@ -115,6 +115,19 @@ impl Engine {
         }
     }
 
+    /// Switches the playing song to a stream at the quality just set, at the
+    /// same position (`Player::reload_stream`). Casting and the demo clock
+    /// keep their stream (`false`); the new quality applies from the next song.
+    pub fn reload_stream(&mut self) -> bool {
+        match self {
+            Engine::Audio(player) => {
+                player.reload_stream();
+                true
+            }
+            Engine::Demo(_) | Engine::Cast(_) => false,
+        }
+    }
+
     /// Arms (`Some`) or cancels the sleep timer.
     pub fn set_sleep_timer(&mut self, timer: Option<SleepTimer>) {
         match self {

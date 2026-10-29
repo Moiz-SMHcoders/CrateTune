@@ -1,0 +1,30 @@
+# Player bar items and the quality menu (see locales/en/bar_items.lang).
+
+bar_items.title = Afficher dans la barre
+bar_items.reset = Réinitialiser
+bar_items.note = Les éléments masqués ne laissent pas de vide. Dans une fenêtre étroite, les boutons les moins importants disparaissent toujours en premier ; une diffusion en cours ou un minuteur actif reste visible pour pouvoir l'arrêter. Le mini-lecteur garde ses propres commandes.
+bar_items.item.like = J'aime
+bar_items.item.quality_tag = Source et qualité
+bar_items.item.shuffle = Aléatoire
+bar_items.item.repeat = Répéter
+bar_items.item.sponsorblock = Invite SponsorBlock
+bar_items.item.together = État de Music Together
+bar_items.item.lyrics = Paroles
+bar_items.item.add_to_playlist = Ajouter à une playlist
+bar_items.item.queue = File d'attente
+bar_items.item.sleep_timer = Minuteur de veille
+bar_items.item.cast = Diffuser sur un appareil
+bar_items.item.mini_player = Mini-lecteur
+bar_items.item.now_playing = À l'écoute
+bar_items.item.volume_slider = Curseur de volume
+bar_items.menu.customize = Personnaliser la barre…
+bar_items.quality.tooltip = Qualité du streaming
+bar_items.quality.low_hint = environ 50 kbit/s, économise les données
+bar_items.quality.normal_hint = AAC 128 kbit/s
+bar_items.quality.high_hint = Opus jusqu'à 160 kbit/s
+bar_items.quality.playing = En lecture : {source}
+bar_items.quality.applies_now = Change le titre en cours immédiatement
+bar_items.quality.applies_next = S'applique à partir du titre suivant
+bar_items.quality.switching = Changement du titre en cours…
+bar_items.quality.fixed = Ce fichier est lu dans son propre format ; le choix s'applique aux titres en streaming
+bar_items.quality.settings = Réglages de lecture…

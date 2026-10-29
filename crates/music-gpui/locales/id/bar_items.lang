@@ -1,0 +1,30 @@
+# Player bar items and the quality menu (see locales/en/bar_items.lang).
+
+bar_items.title = Tampilkan di bilah
+bar_items.reset = Atur ulang
+bar_items.note = Item yang disembunyikan tidak meninggalkan celah. Di jendela sempit, tombol yang kurang penting tetap disembunyikan lebih dulu; transmisi yang berjalan atau pengatur waktu tidur yang aktif tetap terlihat agar bisa dihentikan. Pemutar mini tetap memakai kontrolnya sendiri.
+bar_items.item.like = Suka
+bar_items.item.quality_tag = Sumber dan kualitas
+bar_items.item.shuffle = Acak
+bar_items.item.repeat = Ulangi
+bar_items.item.sponsorblock = Prompt SponsorBlock
+bar_items.item.together = Status Music Together
+bar_items.item.lyrics = Lirik
+bar_items.item.add_to_playlist = Tambah ke playlist
+bar_items.item.queue = Antrean
+bar_items.item.sleep_timer = Pengatur waktu tidur
+bar_items.item.cast = Transmisikan ke perangkat
+bar_items.item.mini_player = Pemutar mini
+bar_items.item.now_playing = Sedang Diputar
+bar_items.item.volume_slider = Penggeser volume
+bar_items.menu.customize = Sesuaikan bilah pemutar…
+bar_items.quality.tooltip = Kualitas streaming
+bar_items.quality.low_hint = sekitar 50 kbps, hemat data
+bar_items.quality.normal_hint = AAC 128 kbps
+bar_items.quality.high_hint = Opus hingga 160 kbps
+bar_items.quality.playing = Diputar: {source}
+bar_items.quality.applies_now = Langsung mengganti lagu yang diputar
+bar_items.quality.applies_next = Berlaku mulai lagu berikutnya
+bar_items.quality.switching = Mengganti lagu yang diputar…
+bar_items.quality.fixed = File ini diputar dalam formatnya sendiri; pilihan berlaku untuk lagu streaming
+bar_items.quality.settings = Setelan pemutaran…

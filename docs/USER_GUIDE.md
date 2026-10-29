@@ -104,6 +104,20 @@ in the app's language and your system's region.
   strip in Now Playing. The bar is static by default; the moving styles use a few
   percent of CPU while music plays and stop when it pauses. The **Minimal / Fast**
   profile switches all of it to the cheapest look.
+* **Choose what the bar shows**: right-click the bar (or Settings → Appearance → Player
+  bar → *Show on the bar*) and tick or untick like, the source / quality tag, shuffle,
+  repeat, the SponsorBlock prompt, the Music Together status, lyrics, **Add to playlist**
+  (off at first; a button beside the heart that opens the playlist picker for the
+  playing song), queue, sleep timer, Cast, mini player, Now Playing and the volume
+  slider. Hidden buttons leave no gap, and the room goes to the next buttons when the
+  window is narrow. A Cast session in progress and an armed sleep timer stay visible so
+  you can stop them. *Reset* brings back the usual bar. The mini player is not affected:
+  it has its own fixed buttons.
+* **Change the quality from the bar**: click the tag beside the transport ("YouTube ·
+  AAC 128 kbps") and pick Low, Normal or High. The playing song switches at once, from
+  the same moment, without a pause (the tag shows a spinner meanwhile); the choice is
+  saved just like Settings → Playback → Streaming quality. Your own files and downloads
+  keep their format (the menu says so); while casting, it applies from the next song.
 * **Queue** (⌥⌘Q): now playing, up next (drag to reorder, remove), history. Shuffle (⌘S)
   and repeat off / all / one (⌘R) are remembered.
 * **Radio** plays an endless mix based on a song, artist, album or playlist.

@@ -29,7 +29,7 @@ use gpui_component::{
     ActiveTheme as _, Disableable as _, Icon, IconName, Selectable as _, Sizable as _, Size,
     button::{Button, ButtonVariants as _},
     h_flex,
-    menu::DropdownMenu as _,
+    menu::{ContextMenuExt as _, DropdownMenu as _},
     tag::Tag,
     v_flex,
 };
@@ -43,6 +43,7 @@ use crate::components::artwork::ArtworkCache;
 use crate::icons::{AppIcon, Lucide};
 use crate::now_playing::HiRes;
 use crate::queue::Repeat;
+use crate::settings::bar_items::BarItems;
 use crate::settings::bar_prefs::{PlayerBarConfig, ProgressStyle};
 use crate::theme::AppColors;
 
@@ -78,17 +79,33 @@ pub struct BarLayout {
     pub mini: bool,
     /// The "YouTube · AAC 128 kbps" source tag beside the transport.
     pub source_chip: bool,
-    pub shuffle_repeat: bool,
+    pub shuffle: bool,
+    pub repeat: bool,
+    pub queue: bool,
+    pub now_playing: bool,
+    /// Beside the like button in the track info.
+    pub add_to_playlist: bool,
 }
 
-/// Priority, highest first: Now Playing, queue, mute (always); then an active
-/// Cast session, an armed sleep timer, the volume slider, lyrics, Cast, sleep
-/// timer, mini player, the sleep timer's label.
-pub fn bar_layout(width: f32, casting: bool, sleep_armed: bool, cast_available: bool) -> BarLayout {
+/// Items the user hid ([`BarItems`]) are never shown and take no room. Of the
+/// rest, priority, highest first: Now Playing, queue, mute (always); then an
+/// active Cast session, an armed sleep timer (both even when hidden: they are
+/// how you stop them), the volume slider, lyrics, Cast, sleep timer, mini
+/// player, the sleep timer's label. Shuffle / repeat need room beside the
+/// transport, the source tag room in its flank (more without shuffle / repeat),
+/// "Add to playlist" a track info zone of at least 240 pt.
+pub fn bar_layout(
+    width: f32,
+    casting: bool,
+    sleep_armed: bool,
+    cast_available: bool,
+    items: BarItems,
+) -> BarLayout {
     let side = (width * 0.27).clamp(200., 380.);
     let center = (width - 4. * PAD - 2. * side).max(0.);
     let step = ICON_BUTTON + 4.;
-    let mut free = side - 3. * step;
+    let fixed = 1 + usize::from(items.queue) + usize::from(items.now_playing);
+    let mut free = side - fixed as f32 * step;
     // An active Cast session and an armed sleep timer always show (their labels clip).
     if casting {
         free -= step + 96.;
@@ -111,14 +128,28 @@ pub fn bar_layout(width: f32, casting: bool, sleep_armed: bool, cast_available: 
     } else {
         64.
     };
-    let slider = take(slider_w + 8.)
-        .then_some(slider_w)
-        .or_else(|| take(64. + 8.).then_some(64.));
-    let lyrics = take(step);
-    let cast = casting || (cast_available && take(step));
-    let sleep = sleep_armed || take(step);
-    let mini = take(step);
+    let slider = if items.volume_slider {
+        take(slider_w + 8.)
+            .then_some(slider_w)
+            .or_else(|| take(64. + 8.).then_some(64.))
+    } else {
+        None
+    };
+    let lyrics = items.lyrics && take(step);
+    let cast = casting || (cast_available && items.cast && take(step));
+    let sleep = sleep_armed || (items.sleep_timer && take(step));
+    let mini = items.mini_player && take(step);
     let sleep_label = sleep_armed && sleep && take(64.);
+    // Shuffle and repeat: both or neither fit (they flank the transport).
+    let toggle_w = ICON_BUTTON + 8.;
+    let toggles = usize::from(items.shuffle) + usize::from(items.repeat);
+    let transport = TRANSPORT_WIDTH - (2 - toggles) as f32 * toggle_w;
+    let toggles_fit = center >= transport + 40.;
+    let transport = if toggles_fit {
+        transport
+    } else {
+        TRANSPORT_WIDTH - 2. * toggle_w
+    };
     BarLayout {
         side,
         center,
@@ -128,8 +159,12 @@ pub fn bar_layout(width: f32, casting: bool, sleep_armed: bool, cast_available: 
         sleep,
         sleep_label,
         mini,
-        source_chip: (center - TRANSPORT_WIDTH) / 2. >= 150.,
-        shuffle_repeat: center >= TRANSPORT_WIDTH + 40.,
+        source_chip: items.quality_tag && (center - transport) / 2. >= 150.,
+        shuffle: items.shuffle && toggles_fit,
+        repeat: items.repeat && toggles_fit,
+        queue: items.queue,
+        now_playing: items.now_playing,
+        add_to_playlist: items.add_to_playlist && side >= 240.,
     }
 }
 
@@ -323,7 +358,13 @@ impl Render for PlayerBar {
             return div().into_any_element();
         };
         let width = f32::from(window.viewport_size().width);
-        let layout = bar_layout(width, state.casting, state.sleep_armed, true);
+        let layout = bar_layout(
+            width,
+            state.casting,
+            state.sleep_armed,
+            true,
+            state.config.items,
+        );
         let live = self.is_live();
         let config = state.config;
 
@@ -631,6 +672,7 @@ impl Render for PlayerBar {
                             .child(volume_group),
                     ),
             )
+            .context_menu(super::bar_menu::customize_menu)
             .into_any_element();
 
         let animating = frame.is_animating();
@@ -770,17 +812,18 @@ impl MusicApp {
         self.bar.as_ref().is_some_and(|b| b.read(cx).is_live())
     }
 
-    fn bar_layout_now(&self, window: &Window) -> BarLayout {
+    fn bar_layout_now(&self, window: &Window, cx: &App) -> BarLayout {
         bar_layout(
             f32::from(window.viewport_size().width),
             self.cast_device().is_some(),
             self.playback.sleep_timer.is_some(),
             true,
+            self.settings.read(cx).bar_items(),
         )
     }
 
     /// The track the bar shows: the playing one, or last session's restored one.
-    fn bar_track(&self) -> (Option<music_core::Track>, bool) {
+    pub(crate) fn bar_track(&self) -> (Option<music_core::Track>, bool) {
         let restored = self.playback.track.is_none() && self.store.resume_at.is_some();
         let track = self
             .playback
@@ -791,7 +834,13 @@ impl MusicApp {
     }
 
     /// Left zone: artwork, title, artists, a status line; like.
-    pub(crate) fn bar_info_zone(&mut self, _: &mut Window, cx: &mut Context<Self>) -> AnyElement {
+    pub(crate) fn bar_info_zone(
+        &mut self,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> AnyElement {
+        let layout = self.bar_layout_now(window, cx);
+        let like = self.settings.read(cx).bar_items().like;
         let (track, _) = self.bar_track();
         let image = track
             .as_ref()
@@ -865,10 +914,13 @@ impl MusicApp {
                             }),
                     ),
             )
-            .children(track.as_ref().map(|t| {
+            .children(track.as_ref().filter(|_| like).map(|t| {
                 crate::components::like::like_button("bar-like", t, None, cx)
                     .with_size(Size::Medium)
             }))
+            .when(layout.add_to_playlist, |this| {
+                this.child(self.bar_add_to_playlist_button(track.as_ref()))
+            })
             .into_any_element()
     }
 
@@ -908,8 +960,9 @@ impl MusicApp {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> AnyElement {
-        let layout = self.bar_layout_now(window);
-        let chips = self.integration_chips(cx);
+        let layout = self.bar_layout_now(window, cx);
+        let items = self.settings.read(cx).bar_items();
+        let chips = self.integration_chips(items, cx);
         let (track, restored) = self.bar_track();
         let state = &self.playback;
         let has_next = self.queue.has_next();
@@ -959,20 +1012,10 @@ impl MusicApp {
                         ))
                     })
                     .when_some(source, |this, (label, module)| {
-                        this.child(chip_slot(
-                            if module {
-                                Tag::primary()
-                            } else {
-                                Tag::secondary()
-                            }
-                            .small()
-                            .rounded_full()
-                            .child(label)
-                            .into_any_element(),
-                        ))
+                        this.child(chip_slot(self.bar_quality_tag(label, module, cx)))
                     }),
             )
-            .when(layout.shuffle_repeat, |this| {
+            .when(layout.shuffle, |this| {
                 this.child(
                     Button::new("shuffle")
                         .ghost()
@@ -1033,7 +1076,7 @@ impl MusicApp {
                     .disabled(!has_next)
                     .on_click(cx.listener(|this, _, _, cx| this.next_track(cx))),
             )
-            .when(layout.shuffle_repeat, |this| {
+            .when(layout.repeat, |this| {
                 this.child(
                     Button::new("repeat")
                         .ghost()
@@ -1075,7 +1118,7 @@ impl MusicApp {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> AnyElement {
-        let layout = self.bar_layout_now(window);
+        let layout = self.bar_layout_now(window, cx);
         let cast = layout
             .cast
             .then(|| self.integration_cast_button(cx))
@@ -1112,11 +1155,13 @@ impl MusicApp {
                         ),
                 )
             })
-            .child(
-                toggle("queue-toggle", Lucide::ListMusic, self.queue_open)
-                    .tooltip(t!("player.tooltip.queue"))
-                    .on_click(cx.listener(|this, _, _, cx| this.toggle_queue_panel(cx))),
-            )
+            .when(layout.queue, |this| {
+                this.child(
+                    toggle("queue-toggle", Lucide::ListMusic, self.queue_open)
+                        .tooltip(t!("player.tooltip.queue"))
+                        .on_click(cx.listener(|this, _, _, cx| this.toggle_queue_panel(cx))),
+                )
+            })
             .when(layout.sleep, |this| {
                 this.child(
                     div()
@@ -1158,16 +1203,20 @@ impl MusicApp {
                     .on_click(cx.listener(|this, _, _, cx| this.toggle_mini_player(cx))),
                 )
             })
-            .child(
-                Button::new("np-expand")
-                    .ghost()
-                    .with_size(Size::Medium)
-                    .icon(IconName::ChevronUp)
-                    .selected(np_open && !lyrics_open)
-                    .tooltip(t!("player.tooltip.now_playing"))
-                    .disabled(track.is_none())
-                    .on_click(cx.listener(|this, _, window, cx| this.open_now_playing(window, cx))),
-            )
+            .when(layout.now_playing, |this| {
+                this.child(
+                    Button::new("np-expand")
+                        .ghost()
+                        .with_size(Size::Medium)
+                        .icon(IconName::ChevronUp)
+                        .selected(np_open && !lyrics_open)
+                        .tooltip(t!("player.tooltip.now_playing"))
+                        .disabled(track.is_none())
+                        .on_click(
+                            cx.listener(|this, _, window, cx| this.open_now_playing(window, cx)),
+                        ),
+                )
+            })
             .into_any_element()
     }
 
@@ -1209,32 +1258,162 @@ fn chip_slot(chip: AnyElement) -> gpui::Div {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::settings::bar_items::BarItem;
+
+    const WIDTHS: [f32; 11] = [
+        700., 760., 880., 1000., 1180., 1280., 1440., 1600., 1920., 2200., 2400.,
+    ];
+
+    fn layout(width: f32, items: BarItems) -> BarLayout {
+        bar_layout(width, false, false, true, items)
+    }
+
+    fn all_items() -> BarItems {
+        let mut all = BarItems::none();
+        for item in BarItem::ALL {
+            all.set(item, true);
+        }
+        all
+    }
+
+    /// Width the right zone's buttons take (Cast's label excluded: it clips).
+    fn right_width(l: &BarLayout) -> f32 {
+        let step = ICON_BUTTON + 4.;
+        let buttons = [l.queue, l.now_playing, l.lyrics, l.cast, l.sleep, l.mini];
+        let mut w = step * (1 + buttons.iter().filter(|b| **b).count()) as f32;
+        if l.sleep_label {
+            w += 64.;
+        }
+        if let Some(slider) = l.slider {
+            w += slider + 8.;
+        }
+        w
+    }
+
+    /// Whether the layout shows `item` (`None`: not a layout decision).
+    fn shows(l: &BarLayout, item: BarItem) -> Option<bool> {
+        Some(match item {
+            BarItem::QualityTag => l.source_chip,
+            BarItem::Shuffle => l.shuffle,
+            BarItem::Repeat => l.repeat,
+            BarItem::Lyrics => l.lyrics,
+            BarItem::AddToPlaylist => l.add_to_playlist,
+            BarItem::Queue => l.queue,
+            BarItem::SleepTimer => l.sleep,
+            BarItem::Cast => l.cast,
+            BarItem::MiniPlayer => l.mini,
+            BarItem::NowPlaying => l.now_playing,
+            BarItem::Volume => l.slider.is_some(),
+            BarItem::Like | BarItem::SponsorBlock | BarItem::Together => return None,
+        })
+    }
+
+    /// The default items, everything, nothing, and each item alone hidden / shown.
+    fn item_sets() -> Vec<BarItems> {
+        let mut sets = vec![BarItems::default(), all_items(), BarItems::none()];
+        for item in BarItem::ALL {
+            let mut hidden = all_items();
+            hidden.set(item, false);
+            let mut alone = BarItems::none();
+            alone.set(item, true);
+            sets.extend([hidden, alone]);
+        }
+        sets
+    }
 
     #[test]
     fn narrow_bars_drop_controls_by_priority_without_overlap() {
-        for width in [700., 880., 1000., 1180., 1280., 1600., 2400.] {
+        for width in WIDTHS {
             for casting in [false, true] {
                 for sleep in [false, true] {
-                    let l = bar_layout(width, casting, sleep, true);
-                    // The zones and their padding add up to the window width.
-                    assert!(2. * l.side + l.center + 4. * PAD <= width + 0.5, "{width}");
-                    if casting {
-                        assert!(l.cast, "an active Cast session stays visible at {width}");
-                    }
-                    if sleep {
-                        assert!(l.sleep, "an armed sleep timer stays visible at {width}");
+                    for items in item_sets() {
+                        let l = bar_layout(width, casting, sleep, true, items);
+                        // The zones and their padding add up to the window width.
+                        assert!(2. * l.side + l.center + 4. * PAD <= width + 0.5, "{width}");
+                        if casting {
+                            assert!(l.cast, "an active Cast session stays visible at {width}");
+                        } else {
+                            // The right zone's buttons fit beside the volume.
+                            assert!(right_width(&l) <= l.side + 0.5, "{width} {items:?}: {l:?}");
+                        }
+                        if sleep {
+                            assert!(l.sleep, "an armed sleep timer stays visible at {width}");
+                        }
+                        // Hidden items never show (active Cast / timer aside).
+                        for item in BarItem::ALL {
+                            let forced = (item == BarItem::Cast && casting)
+                                || (item == BarItem::SleepTimer && sleep);
+                            if !items.shows(item) && !forced {
+                                assert!(!shows(&l, item).unwrap_or(false), "{item:?}");
+                            }
+                        }
                     }
                 }
             }
         }
-        let narrow = bar_layout(880., false, false, true);
+        let narrow = layout(880., BarItems::default());
         assert!(narrow.slider.is_some(), "volume slider at 880 pt");
-        assert!(narrow.shuffle_repeat);
-        assert!(!narrow.mini && !narrow.source_chip);
-        let common = bar_layout(1280., false, false, true);
+        assert!(narrow.shuffle && narrow.repeat);
+        assert!(!narrow.mini && !narrow.source_chip && !narrow.add_to_playlist);
+        let common = layout(1280., BarItems::default());
         assert!(common.mini && common.lyrics && common.slider == Some(80.));
-        let wide = bar_layout(1600., false, false, true);
+        let wide = layout(1600., BarItems::default());
         assert!(wide.lyrics && wide.cast && wide.sleep && wide.mini && wide.source_chip);
         assert_eq!(wide.slider, Some(92.));
+    }
+
+    #[test]
+    fn hidden_items_free_room_for_the_others() {
+        for width in WIDTHS {
+            let base = layout(width, all_items());
+            for hidden in BarItem::ALL {
+                let mut items = all_items();
+                items.set(hidden, false);
+                let l = layout(width, items);
+                // Nothing else disappears, and the slider never gets shorter.
+                for item in BarItem::ALL.into_iter().filter(|i| *i != hidden) {
+                    if shows(&base, item) == Some(true) {
+                        assert_eq!(
+                            shows(&l, item),
+                            Some(true),
+                            "{width}: hiding {hidden:?} hid {item:?}"
+                        );
+                    }
+                }
+                if hidden != BarItem::Volume {
+                    assert!(l.slider >= base.slider, "{width}: {hidden:?}");
+                }
+            }
+        }
+        // 880 pt: without lyrics and Cast the sleep timer fits; with only the
+        // essentials and the mini player, the mini player does.
+        let items = BarItems {
+            lyrics: false,
+            cast: false,
+            ..BarItems::default()
+        };
+        assert!(layout(880., items).sleep && !layout(880., BarItems::default()).sleep);
+        let mut items = BarItems::none();
+        items.mini_player = true;
+        items.queue = true;
+        items.now_playing = true;
+        assert!(layout(880., items).mini);
+        // 1180 pt: the source tag fits once shuffle / repeat are hidden.
+        let mut items = BarItems::default();
+        assert!(!layout(1180., items).source_chip);
+        items.shuffle = false;
+        items.repeat = false;
+        assert!(layout(1180., items).source_chip);
+        // Only play / pause, previous / next and mute are left with nothing.
+        let none = layout(1280., BarItems::none());
+        assert_eq!(right_width(&none), ICON_BUTTON + 4.);
+        assert!(none.slider.is_none() && !none.source_chip && !none.shuffle);
+        // "Add to playlist" (off by default) needs a track info zone of 240 pt.
+        let items = BarItems {
+            add_to_playlist: true,
+            ..BarItems::default()
+        };
+        assert!(!layout(880., items).add_to_playlist || layout(880., items).side >= 240.);
+        assert!(!layout(700., items).add_to_playlist && layout(1280., items).add_to_playlist);
     }
 }

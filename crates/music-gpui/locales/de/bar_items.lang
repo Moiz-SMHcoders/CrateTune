@@ -1,0 +1,30 @@
+# Player bar items and the quality menu (see locales/en/bar_items.lang).
+
+bar_items.title = In der Leiste zeigen
+bar_items.reset = Zurücksetzen
+bar_items.note = Ausgeblendetes hinterlässt keine Lücke. In schmalen Fenstern verschwinden weniger wichtige Tasten weiterhin zuerst; eine laufende Übertragung oder ein gestellter Sleep-Timer bleibt sichtbar, damit du ihn beenden kannst. Der Miniplayer behält seine eigenen Tasten.
+bar_items.item.like = Gefällt mir
+bar_items.item.quality_tag = Quelle und Qualität
+bar_items.item.shuffle = Zufallswiedergabe
+bar_items.item.repeat = Wiederholen
+bar_items.item.sponsorblock = SponsorBlock-Hinweis
+bar_items.item.together = Music-Together-Status
+bar_items.item.lyrics = Songtext
+bar_items.item.add_to_playlist = Zur Playlist hinzufügen
+bar_items.item.queue = Warteschlange
+bar_items.item.sleep_timer = Sleep-Timer
+bar_items.item.cast = An Gerät übertragen
+bar_items.item.mini_player = Miniplayer
+bar_items.item.now_playing = Läuft gerade
+bar_items.item.volume_slider = Lautstärkeregler
+bar_items.menu.customize = Player-Leiste anpassen…
+bar_items.quality.tooltip = Streamingqualität
+bar_items.quality.low_hint = etwa 50 kbit/s, spart Daten
+bar_items.quality.normal_hint = AAC 128 kbit/s
+bar_items.quality.high_hint = Opus bis 160 kbit/s
+bar_items.quality.playing = Läuft: {source}
+bar_items.quality.applies_now = Wechselt den laufenden Song sofort
+bar_items.quality.applies_next = Gilt ab dem nächsten Song
+bar_items.quality.switching = Laufender Song wird umgestellt…
+bar_items.quality.fixed = Diese Datei spielt in ihrem eigenen Format; die Wahl gilt für gestreamte Songs
+bar_items.quality.settings = Wiedergabe-Einstellungen…

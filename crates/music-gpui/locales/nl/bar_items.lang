@@ -1,0 +1,30 @@
+# Player bar items and the quality menu (see locales/en/bar_items.lang).
+
+bar_items.title = Tonen in de balk
+bar_items.reset = Herstellen
+bar_items.note = Verborgen onderdelen laten geen gat achter. In smalle vensters verdwijnen de minder belangrijke knoppen nog steeds eerst; een lopende cast of een ingestelde slaaptimer blijft zichtbaar zodat je hem kunt stoppen. De miniplayer houdt zijn eigen knoppen.
+bar_items.item.like = Vind ik leuk
+bar_items.item.quality_tag = Bron en kwaliteit
+bar_items.item.shuffle = Shuffle
+bar_items.item.repeat = Herhalen
+bar_items.item.sponsorblock = SponsorBlock-melding
+bar_items.item.together = Music Together-status
+bar_items.item.lyrics = Songtekst
+bar_items.item.add_to_playlist = Toevoegen aan playlist
+bar_items.item.queue = Wachtrij
+bar_items.item.sleep_timer = Slaaptimer
+bar_items.item.cast = Casten naar een apparaat
+bar_items.item.mini_player = Miniplayer
+bar_items.item.now_playing = Speelt nu
+bar_items.item.volume_slider = Volumeschuif
+bar_items.menu.customize = Spelerbalk aanpassen…
+bar_items.quality.tooltip = Streamingkwaliteit
+bar_items.quality.low_hint = ongeveer 50 kbps, bespaart data
+bar_items.quality.normal_hint = AAC 128 kbps
+bar_items.quality.high_hint = Opus tot 160 kbps
+bar_items.quality.playing = Speelt: {source}
+bar_items.quality.applies_now = Wisselt het huidige nummer meteen
+bar_items.quality.applies_next = Geldt vanaf het volgende nummer
+bar_items.quality.switching = Huidige nummer wordt gewisseld…
+bar_items.quality.fixed = Dit bestand speelt in zijn eigen formaat; de keuze geldt voor gestreamde nummers
+bar_items.quality.settings = Afspeelinstellingen…

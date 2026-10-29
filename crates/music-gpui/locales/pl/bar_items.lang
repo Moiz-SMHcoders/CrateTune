@@ -1,0 +1,30 @@
+# Player bar items and the quality menu (see locales/en/bar_items.lang).
+
+bar_items.title = Pokazuj na pasku
+bar_items.reset = Przywróć
+bar_items.note = Ukryte elementy nie zostawiają pustych miejsc. W wąskich oknach mniej ważne przyciski nadal znikają jako pierwsze; trwające przesyłanie lub ustawiony wyłącznik czasowy pozostają widoczne, aby można je było zatrzymać. Miniodtwarzacz ma własne przyciski.
+bar_items.item.like = Lubię to
+bar_items.item.quality_tag = Źródło i jakość
+bar_items.item.shuffle = Losowo
+bar_items.item.repeat = Powtarzanie
+bar_items.item.sponsorblock = Monit SponsorBlock
+bar_items.item.together = Stan Music Together
+bar_items.item.lyrics = Tekst
+bar_items.item.add_to_playlist = Dodaj do playlisty
+bar_items.item.queue = Kolejka
+bar_items.item.sleep_timer = Wyłącznik czasowy
+bar_items.item.cast = Przesyłaj na urządzenie
+bar_items.item.mini_player = Miniodtwarzacz
+bar_items.item.now_playing = Teraz odtwarzane
+bar_items.item.volume_slider = Suwak głośności
+bar_items.menu.customize = Dostosuj pasek odtwarzacza…
+bar_items.quality.tooltip = Jakość strumienia
+bar_items.quality.low_hint = ok. 50 kb/s, oszczędza dane
+bar_items.quality.normal_hint = AAC 128 kb/s
+bar_items.quality.high_hint = Opus do 160 kb/s
+bar_items.quality.playing = Odtwarzane: {source}
+bar_items.quality.applies_now = Od razu przełącza bieżący utwór
+bar_items.quality.applies_next = Obowiązuje od następnego utworu
+bar_items.quality.switching = Przełączanie bieżącego utworu…
+bar_items.quality.fixed = Ten plik gra we własnym formacie; wybór dotyczy utworów strumieniowanych
+bar_items.quality.settings = Ustawienia odtwarzania…
