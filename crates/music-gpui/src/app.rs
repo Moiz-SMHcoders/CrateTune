@@ -207,10 +207,13 @@ impl MusicApp {
             cx.observe_window_bounds(window, |this, window, cx| {
                 this.save_window_bounds(window, cx)
             }),
-            cx.on_app_quit(|this, _| {
+            cx.on_app_quit(|this, cx| {
                 this.flush_listening();
                 this.save_queue_now();
                 this.flush_searches();
+                // "Install updates automatically": a verified download waiting for a
+                // restart goes in now (`update_check.rs`).
+                this.install_update_on_quit(cx);
                 async {}
             }),
         ];
@@ -367,7 +370,7 @@ impl MusicApp {
     pub fn apply_startup_env(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let env = |name: &str| std::env::var(name).ok().filter(|v| !v.is_empty());
         self.maybe_open_onboarding(window, cx);
-        self.check_for_updates(false, cx);
+        self.start_update_checks(cx);
         if let Some(name) = env("MUSIC_EQ_PRESET") {
             self.script_action("eq", Some(&name), window, cx);
         }

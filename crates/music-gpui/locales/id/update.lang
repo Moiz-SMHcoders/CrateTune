@@ -1,0 +1,54 @@
+# ---- Self-update (Settings → About → Updates, notifications, menu; src/update_check.rs,
+# src/settings/about.rs). The older update.* keys are in settings_general.lang.
+
+# Menu item (macOS: app menu under "About"; elsewhere: Help menu). Also a shortcut label.
+menu.check_updates = Periksa Pembaruan…
+
+# Buttons. {version} = a version number such as 0.2.0.
+update.update_to = Perbarui ke {version}
+# Notification button: download and install the update that was found.
+update.update_now = Perbarui
+update.restart = Mulai ulang untuk menyelesaikan
+update.retry = Coba lagi
+# Opens the release page in the browser.
+update.download_manually = Unduh manual
+
+# Status lines.
+# {progress} = update.progress, or just the amount downloaded ("12.3 MB").
+update.downloading = Mengunduh {version}… {progress}
+# {done}, {total} = sizes such as "12.3 MB".
+update.progress = {done} dari {total}
+update.ready = Versi {version} sudah diunduh dan diverifikasi. Mulai ulang untuk menyelesaikan pembaruan.
+update.installing = Menginstal {version}…
+
+# Switches.
+update.auto_check = Periksa pembaruan secara otomatis
+update.auto_check_detail = Saat {app} dibuka dan setiap 24 jam selama berjalan.
+update.auto_install = Instal pembaruan secara otomatis
+update.auto_install_detail = Mengunduh pembaruan di latar belakang dan meminta Anda memulai ulang. Jika Anda keluar, pembaruan akan diinstal saat itu.
+update.prereleases = Sertakan pra-rilis
+update.prereleases_detail = Versi uji yang dirilis sebelum rilis stabil. Aktif secara bawaan saat Anda menjalankan pra-rilis (versi 0.x apa pun).
+
+# Notifications.
+update.ready_toast = {app} {version} siap. Mulai ulang untuk menyelesaikan pembaruan.
+# {error} = one of the update.error.* messages.
+update.failed_toast = Pembaruan gagal. {error}
+
+# Errors, in plain words. "Nothing was installed" = the current version is unchanged.
+# {error} = an English technical detail.
+update.error.network = Tidak dapat terhubung ke GitHub ({error}). Periksa koneksi internet atau proxy Anda.
+update.error.bad_response = GitHub mengirim respons yang tidak terduga ({error}).
+update.error.untrusted = Tautan unduhan tidak mengarah ke rilis GitHub aplikasi ini, jadi tidak dibuka.
+update.error.no_asset = Rilis ini tidak memiliki paket untuk sistem Anda. Unduh secara manual.
+update.error.no_checksums = Rilis ini tidak memiliki file checksum, jadi unduhan tidak dapat diverifikasi. Tidak ada yang diinstal.
+update.error.not_listed = File checksum rilis ini tidak mencantumkan paket ini, jadi tidak dapat diverifikasi. Tidak ada yang diinstal.
+update.error.mismatch = Unduhan tidak cocok dengan checksum rilis. Unduhan telah dihapus dan tidak ada yang diinstal.
+update.error.cancelled = Unduhan dibatalkan.
+# {path} = a folder.
+update.error.not_writable = {app} tidak dapat mengganti dirinya sendiri karena pengguna Anda tidak memiliki izin menulis ke {path}. Unduh versi baru secara manual.
+update.error.dev_build = Salinan ini tidak diinstal dari paket rilis (misalnya, dibuat dari kode sumber), jadi tidak dapat memperbarui dirinya sendiri.
+update.error.translocated = macOS menjalankan salinan ini dari lokasi sementara yang hanya-baca. Pindahkan {app} ke folder Aplikasi, buka dari sana, lalu coba lagi.
+update.error.system_package = Salinan ini diinstal oleh pengelola paket. Perbarui melalui pengelola paket tersebut.
+update.error.invalid = Paket yang diunduh tidak valid ({error}). Tidak ada yang diinstal.
+update.error.io = Tidak dapat menyimpan unduhan ({error}).
+update.error.install = Penginstalan gagal dan versi saat ini tetap digunakan ({error}).

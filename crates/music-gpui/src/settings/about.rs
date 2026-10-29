@@ -1,24 +1,30 @@
-//! About section: version, license and attribution notices.
+//! About section: version, updates, license and attribution notices.
 
 use gpui::{
     AnyElement, Context, FontWeight, IntoElement, ParentElement as _, SharedString, Styled as _,
-    Window, div,
+    Window, div, px,
 };
 use gpui_component::{
-    ActiveTheme as _, Sizable as _,
+    ActiveTheme as _, Disableable as _, Sizable as _,
     button::{Button, ButtonVariants as _},
-    h_flex, v_flex,
+    h_flex,
+    progress::Progress,
+    switch::Switch,
+    v_flex,
 };
 
 use super::SettingsPanel;
-use super::widgets::{group, note};
+use super::prefs::UpdatePrefs;
+use super::widgets::{group, note, row, status_line};
+use crate::app::update_app;
+use crate::update_check::{self, UpdateStatus};
 
 const GPL_URL: &str = "https://www.gnu.org/licenses/gpl-3.0.html";
 const ARCHIVETUNE_URL: &str = "https://github.com/rukamori/ArchiveTune";
 const HUMMINGBIRD_URL: &str = "https://github.com/hummingbird-player/hummingbird";
 
 pub(super) fn render(
-    _: &mut SettingsPanel,
+    panel: &mut SettingsPanel,
     _: &mut Window,
     cx: &mut Context<SettingsPanel>,
 ) -> AnyElement {
@@ -31,48 +37,7 @@ pub(super) fn render(
                 crate::app::update_app(cx, |app, cx| app.open_onboarding(0, window, cx));
             }),
     );
-    let updates = crate::update_check::repo().map(|repo| {
-        use crate::update_check::UpdateStatus;
-        let status = crate::update_check::status(cx);
-        let (text, url): (SharedString, Option<String>) = match &status {
-            UpdateStatus::Unknown => (t!("update.releases_from", repo = repo).into(), None),
-            UpdateStatus::Checking => (t!("update.checking").into(), None),
-            UpdateStatus::UpToDate => (
-                t!(
-                    "update.up_to_date_version",
-                    version = env!("CARGO_PKG_VERSION")
-                )
-                .into(),
-                None,
-            ),
-            UpdateStatus::Available { version, url } => (
-                t!("update.available_version", version = version).into(),
-                Some(url.clone()),
-            ),
-            UpdateStatus::Failed(e) => (t!("update.check_failed", error = e).into(), None),
-        };
-        group(t!("update.group"), cx).child(note(text, cx)).child(
-            h_flex()
-                .gap_2()
-                .flex_wrap()
-                .child(
-                    Button::new("about-update-check")
-                        .small()
-                        .outline()
-                        .label(t!("update.check_now"))
-                        .on_click(|_, _, cx| {
-                            crate::app::update_app(cx, |app, cx| app.check_for_updates(true, cx));
-                        }),
-                )
-                .children(url.map(|url| {
-                    Button::new("about-update-open")
-                        .small()
-                        .primary()
-                        .label(t!("update.download"))
-                        .on_click(move |_, _, cx| cx.open_url(&url))
-                })),
-        )
-    });
+    let updates = crate::update_check::repo().map(|repo| updates_group(panel, &repo, cx));
     // English: the description from packaging/app.env (the one place to rename).
     let summary = if crate::i18n::locale() == crate::i18n::Locale::ENGLISH {
         crate::identity::APP_SUMMARY
@@ -154,4 +119,211 @@ pub(super) fn render(
                 ),
         )
         .into_any_element()
+}
+
+impl SettingsPanel {
+    /// Changes the Updates switches (saved like every other setting).
+    pub fn update_update_prefs(
+        &mut self,
+        f: impl FnOnce(&mut UpdatePrefs),
+        cx: &mut Context<Self>,
+    ) {
+        let before = self.settings.updates;
+        f(&mut self.settings.updates);
+        if self.settings.updates != before {
+            self.changed(false, cx);
+        }
+    }
+}
+
+/// Settings → About → Updates: status, the actions for it, the three switches.
+fn updates_group(
+    panel: &mut SettingsPanel,
+    repo: &str,
+    cx: &mut Context<SettingsPanel>,
+) -> gpui::Div {
+    let status = update_check::status(cx);
+    let theme = cx.theme();
+    let (danger, muted) = (theme.danger, theme.muted_foreground);
+    let status_text: SharedString = match &status {
+        UpdateStatus::Unknown => t!("update.releases_from", repo = repo).into(),
+        UpdateStatus::Checking => t!("update.checking").into(),
+        UpdateStatus::UpToDate => t!(
+            "update.up_to_date_version",
+            version = update_check::current_version()
+        )
+        .into(),
+        UpdateStatus::Available { version, .. } => {
+            t!("update.available_version", version = version).into()
+        }
+        UpdateStatus::Downloading {
+            version,
+            done,
+            total,
+        } => t!(
+            "update.downloading",
+            version = version,
+            progress = update_check::progress_text(*done, *total)
+        )
+        .into(),
+        UpdateStatus::Ready { version } => t!("update.ready", version = version).into(),
+        UpdateStatus::Installing { version } => t!("update.installing", version = version).into(),
+        UpdateStatus::Failed { message, .. } => message.clone().into(),
+    };
+    let failed = matches!(status, UpdateStatus::Failed { .. });
+    let busy = matches!(
+        status,
+        UpdateStatus::Checking | UpdateStatus::Downloading { .. } | UpdateStatus::Installing { .. }
+    );
+    let manual_link = |id: &'static str, primary: bool| {
+        let button = Button::new(id)
+            .small()
+            .label(t!("update.download_manually"))
+            .on_click(|_, _, cx| {
+                update_app(cx, |app, cx| app.open_update_page(cx));
+            });
+        if primary {
+            button.primary()
+        } else {
+            button.outline()
+        }
+    };
+    // The step's main action (primary), then "Check now".
+    let action = match &status {
+        UpdateStatus::Available {
+            version,
+            installable: true,
+            ..
+        } => Some(
+            Button::new("about-update-install")
+                .small()
+                .primary()
+                .label(t!("update.update_to", version = version))
+                .on_click(|_, _, cx| {
+                    update_app(cx, |app, cx| app.start_update_download(cx));
+                })
+                .into_any_element(),
+        ),
+        UpdateStatus::Available {
+            installable: false, ..
+        } => Some(manual_link("about-update-open", true).into_any_element()),
+        UpdateStatus::Downloading { .. } => Some(
+            Button::new("about-update-cancel")
+                .small()
+                .outline()
+                .label(t!("common.cancel"))
+                .on_click(|_, _, cx| {
+                    update_app(cx, |app, cx| app.cancel_update_download(cx));
+                })
+                .into_any_element(),
+        ),
+        UpdateStatus::Ready { .. } => Some(
+            Button::new("about-update-restart")
+                .small()
+                .primary()
+                .label(t!("update.restart"))
+                .on_click(|_, _, cx| {
+                    update_app(cx, |app, cx| app.install_update_and_restart(cx));
+                })
+                .into_any_element(),
+        ),
+        UpdateStatus::Failed { .. } => Some(
+            Button::new("about-update-retry")
+                .small()
+                .primary()
+                .label(t!("update.retry"))
+                .on_click(|_, _, cx| {
+                    update_app(cx, |app, cx| app.retry_update(cx));
+                })
+                .into_any_element(),
+        ),
+        _ => None,
+    };
+    let has_action = action.is_some();
+    let check = Button::new("about-update-check")
+        .small()
+        .label(t!("update.check_now"))
+        .disabled(busy)
+        .on_click(|_, _, cx| {
+            update_app(cx, |app, cx| app.check_for_updates(true, cx));
+        });
+    let check = if has_action {
+        check.outline()
+    } else {
+        check.primary()
+    };
+    let progress = match &status {
+        UpdateStatus::Downloading { done, total, .. } => {
+            Some(div().w_full().max_w(px(360.)).child(
+                Progress::new("about-update-progress").value(match total {
+                    Some(total) if *total > 0 => *done as f32 * 100. / *total as f32,
+                    _ => 0.,
+                }),
+            ))
+        }
+        _ => None,
+    };
+    let blocker = matches!(
+        status,
+        UpdateStatus::Available {
+            installable: false,
+            ..
+        }
+    )
+    .then(|| update_check::blocker_text(cx))
+    .flatten();
+    let prefs = panel.settings.updates;
+    let prereleases = update_check::include_prereleases(&prefs);
+    let auto_check = Switch::new("about-update-auto-check")
+        .checked(prefs.auto_check)
+        .on_click(cx.listener(|this, on: &bool, _, cx| {
+            let on = *on;
+            this.update_update_prefs(|u| u.auto_check = on, cx);
+        }));
+    let auto_install = Switch::new("about-update-auto-install")
+        .checked(prefs.auto_install)
+        .on_click(cx.listener(|this, on: &bool, _, cx| {
+            let on = *on;
+            this.update_update_prefs(|u| u.auto_install = on, cx);
+        }));
+    let include_pre = Switch::new("about-update-prereleases")
+        .checked(prereleases)
+        .on_click(cx.listener(|this, on: &bool, _, cx| {
+            let on = *on;
+            this.update_update_prefs(|u| u.include_prereleases = Some(on), cx);
+        }));
+    group(t!("update.group"), cx)
+        .child(if failed {
+            status_line(status_text, danger).into_any_element()
+        } else {
+            div().text_sm().child(status_text).into_any_element()
+        })
+        .children(progress)
+        .children(blocker.map(|text| div().text_xs().text_color(muted).child(text)))
+        .child(
+            h_flex()
+                .gap_2()
+                .flex_wrap()
+                .children(action)
+                .child(check)
+                .children(failed.then(|| manual_link("about-update-manual", false))),
+        )
+        .child(row(
+            t!("update.auto_check"),
+            Some(t!("update.auto_check_detail")),
+            auto_check,
+            cx,
+        ))
+        .child(row(
+            t!("update.auto_install"),
+            Some(t!("update.auto_install_detail")),
+            auto_install,
+            cx,
+        ))
+        .child(row(
+            t!("update.prereleases"),
+            Some(t!("update.prereleases_detail")),
+            include_pre,
+            cx,
+        ))
 }

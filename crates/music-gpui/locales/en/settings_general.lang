@@ -66,10 +66,6 @@ update.available_version = Version {version} is available.
 update.check_failed = Couldn't check: {error}
 # Button.
 update.check_now = Check now
-# Button (opens the release page in the browser).
-update.download = Download…
-# The update check found no release (shown as {error} in update.check_failed).
-update.no_release = no published release
 # Notifications. "Settings → About" is where the download link is.
 update.available_toast = {app} {version} is available (Settings → About)
 update.up_to_date_toast = {app} is up to date

@@ -44,8 +44,6 @@ update.up_to_date_version = 你使用的是最新版本（{version}）。
 update.available_version = 已推出版本 {version}。
 update.check_failed = 無法檢查：{error}
 update.check_now = 立即檢查
-update.download = 下載…
-update.no_release = 沒有已發布的版本
 update.available_toast = 已推出 {app} {version}（設定 → 關於）
 update.up_to_date_toast = {app} 已是最新版本
 

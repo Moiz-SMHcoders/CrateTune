@@ -1,0 +1,54 @@
+# ---- Self-update (Settings → About → Updates, notifications, menu; src/update_check.rs,
+# src/settings/about.rs). The older update.* keys are in settings_general.lang.
+
+# Menu item (macOS: app menu under "About"; elsewhere: Help menu). Also a shortcut label.
+menu.check_updates = 업데이트 확인…
+
+# Buttons. {version} = a version number such as 0.2.0.
+update.update_to = {version}(으)로 업데이트
+# Notification button: download and install the update that was found.
+update.update_now = 업데이트
+update.restart = 다시 시작하여 완료
+update.retry = 다시 시도
+# Opens the release page in the browser.
+update.download_manually = 직접 다운로드
+
+# Status lines.
+# {progress} = update.progress, or just the amount downloaded ("12.3 MB").
+update.downloading = {version} 다운로드 중… {progress}
+# {done}, {total} = sizes such as "12.3 MB".
+update.progress = {done} / {total}
+update.ready = 버전 {version}을(를) 다운로드하고 확인했습니다. 업데이트를 완료하려면 다시 시작하세요.
+update.installing = {version} 설치 중…
+
+# Switches.
+update.auto_check = 자동으로 업데이트 확인
+update.auto_check_detail = {app}을(를) 시작할 때와 실행 중 24시간마다 확인합니다.
+update.auto_install = 자동으로 업데이트 설치
+update.auto_install_detail = 백그라운드에서 업데이트를 다운로드한 다음 다시 시작하라고 알려 줍니다. 다시 시작하지 않고 종료하면 그때 업데이트가 설치됩니다.
+update.prereleases = 사전 릴리스 포함
+update.prereleases_detail = 안정 버전 출시 전에 공개되는 테스트 버전입니다. 사전 릴리스(모든 0.x 버전)를 사용하는 동안에는 기본적으로 켜져 있습니다.
+
+# Notifications.
+update.ready_toast = {app} {version}이(가) 준비되었습니다. 업데이트를 완료하려면 다시 시작하세요.
+# {error} = one of the update.error.* messages.
+update.failed_toast = 업데이트하지 못했습니다. {error}
+
+# Errors, in plain words. "Nothing was installed" = the current version is unchanged.
+# {error} = an English technical detail.
+update.error.network = GitHub에 연결할 수 없습니다({error}). 인터넷 연결 또는 프록시를 확인하세요.
+update.error.bad_response = GitHub에서 예상치 못한 응답을 보냈습니다({error}).
+update.error.untrusted = 다운로드 링크가 이 앱의 GitHub 릴리스를 가리키지 않아 열지 않았습니다.
+update.error.no_asset = 이 릴리스에는 사용 중인 시스템용 패키지가 없습니다. 직접 다운로드하세요.
+update.error.no_checksums = 이 릴리스에는 체크섬 파일이 없어 다운로드를 확인할 수 없습니다. 아무것도 설치되지 않았습니다.
+update.error.not_listed = 릴리스의 체크섬 파일에 이 패키지가 없어 확인할 수 없습니다. 아무것도 설치되지 않았습니다.
+update.error.mismatch = 다운로드한 파일이 릴리스의 체크섬과 일치하지 않습니다. 파일을 삭제했으며 아무것도 설치되지 않았습니다.
+update.error.cancelled = 다운로드가 취소되었습니다.
+# {path} = a folder.
+update.error.not_writable = 현재 사용자에게 {path}에 대한 쓰기 권한이 없어 {app}을(를) 교체할 수 없습니다. 새 버전을 직접 다운로드하세요.
+update.error.dev_build = 이 사본은 릴리스 패키지로 설치되지 않았으므로(예: 소스에서 빌드한 경우) 스스로 업데이트할 수 없습니다.
+update.error.translocated = macOS가 이 사본을 읽기 전용 임시 위치에서 실행하고 있습니다. {app}을(를) 응용 프로그램 폴더로 옮기고 거기에서 연 다음 다시 시도하세요.
+update.error.system_package = 이 사본은 패키지 관리자로 설치되었습니다. 패키지 관리자에서 업데이트하세요.
+update.error.invalid = 다운로드한 패키지가 유효하지 않습니다({error}). 아무것도 설치되지 않았습니다.
+update.error.io = 다운로드한 파일을 저장할 수 없습니다({error}).
+update.error.install = 설치하지 못했으며 현재 버전이 그대로 유지됩니다({error}).

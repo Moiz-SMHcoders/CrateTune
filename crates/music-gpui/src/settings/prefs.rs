@@ -789,6 +789,30 @@ impl ActivityConfig {
 
 // ---- scrobbling rules ---------------------------------------------------------------
 
+/// Updates (Settings → About, `update_check.rs`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct UpdatePrefs {
+    /// Check once per launch and every 24 hours while running.
+    pub auto_check: bool,
+    /// Download a found update in the background, offer "Restart to update", and
+    /// install it when the app quits if it wasn't restarted before.
+    pub auto_install: bool,
+    /// Offer pre-releases. `None` (the default): on while the running version is a
+    /// pre-release or `0.x` (`Version::wants_prereleases_by_default`).
+    pub include_prereleases: Option<bool>,
+}
+
+impl Default for UpdatePrefs {
+    fn default() -> Self {
+        Self {
+            auto_check: true,
+            auto_install: false,
+            include_prereleases: None,
+        }
+    }
+}
+
 /// ArchiveTune's scrobble settings; defaults are Last.fm's rules.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[serde(default)]

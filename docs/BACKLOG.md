@@ -165,8 +165,20 @@ build](../README.md#install--build) ("App identity"). · Size: small · Priority
 The item is built on macOS only. Linux would need GTK or appindicator, and Windows is unbuilt
 and untested. Details: `crates/music-gpui/src/tray.rs`. · Size: medium · Priority: low
 
-**P6. Self-update**
-In progress (feat/self-update). · Size: medium · Priority: high
+**P6. Self-update: Windows and Linux paths not run on a real system**
+Self-update is implemented. On macOS it was tested end to end against a fake release
+server: download, SHA-256 check, bundle swap, relaunch and rollback. The Windows paths
+(the silent Inno Setup update with `/RELAUNCH=1`, the portable `--apply-update` helper)
+and the Linux paths (the AppImage swap, the tarball `bin/` + `share/` swap, the relaunch)
+are only unit-tested and type-checked. Also unverified:
+* the keychain and microphone prompts after an ad-hoc-signed macOS update;
+* App Management on `/Applications` (macOS 13+);
+* a download from a real GitHub release with `SHA256SUMS.txt` (the first one will be the
+  release after 0.1.0).
+
+0.1.0 users must install the next version by hand once. Details: [README:
+Self-update](../README.md#self-update), [RELEASING.md](RELEASING.md). · Size: small ·
+Priority: high
 
 ## 4. Missing features vs ArchiveTune
 

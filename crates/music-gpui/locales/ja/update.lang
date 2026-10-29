@@ -1,0 +1,54 @@
+# ---- Self-update (Settings → About → Updates, notifications, menu; src/update_check.rs,
+# src/settings/about.rs). The older update.* keys are in settings_general.lang.
+
+# Menu item (macOS: app menu under "About"; elsewhere: Help menu). Also a shortcut label.
+menu.check_updates = アップデートを確認…
+
+# Buttons. {version} = a version number such as 0.2.0.
+update.update_to = {version} にアップデート
+# Notification button: download and install the update that was found.
+update.update_now = アップデート
+update.restart = 再起動して完了
+update.retry = 再試行
+# Opens the release page in the browser.
+update.download_manually = 手動でダウンロード
+
+# Status lines.
+# {progress} = update.progress, or just the amount downloaded ("12.3 MB").
+update.downloading = {version} をダウンロード中… {progress}
+# {done}, {total} = sizes such as "12.3 MB".
+update.progress = {done} / {total}
+update.ready = バージョン {version} のダウンロードと検証が完了しました。再起動するとアップデートが完了します。
+update.installing = {version} をインストール中…
+
+# Switches.
+update.auto_check = アップデートを自動的に確認
+update.auto_check_detail = {app}の起動時と、実行中は24時間ごとに確認します。
+update.auto_install = アップデートを自動的にインストール
+update.auto_install_detail = バックグラウンドでアップデートをダウンロードし、再起動を求めます。再起動せずに終了した場合は、そのときにインストールされます。
+update.prereleases = プレリリース版を含める
+update.prereleases_detail = 安定版のリリース前に公開されるテスト版です。プレリリース版（0.x のバージョン）を使用中はデフォルトでオンになります。
+
+# Notifications.
+update.ready_toast = {app} {version} の準備ができました。再起動するとアップデートが完了します。
+# {error} = one of the update.error.* messages.
+update.failed_toast = アップデートに失敗しました。{error}
+
+# Errors, in plain words. "Nothing was installed" = the current version is unchanged.
+# {error} = an English technical detail.
+update.error.network = GitHub に接続できませんでした（{error}）。インターネット接続またはプロキシを確認してください。
+update.error.bad_response = GitHub から予期しない応答がありました（{error}）。
+update.error.untrusted = ダウンロードリンクがこのアプリの GitHub リリースを指していないため、開きませんでした。
+update.error.no_asset = このリリースにはお使いのシステム用のパッケージがありません。手動でダウンロードしてください。
+update.error.no_checksums = このリリースにはチェックサムファイルがないため、ダウンロードを検証できません。何もインストールされていません。
+update.error.not_listed = リリースのチェックサムファイルにこのパッケージが記載されていないため、検証できません。何もインストールされていません。
+update.error.mismatch = ダウンロードがリリースのチェックサムと一致しません。ファイルは削除され、何もインストールされていません。
+update.error.cancelled = ダウンロードをキャンセルしました。
+# {path} = a folder.
+update.error.not_writable = {path} への書き込み権限がないため、{app}を置き換えられません。新しいバージョンを手動でダウンロードしてください。
+update.error.dev_build = このコピーはリリースパッケージからインストールされていないため（ソースからビルドした場合など）、自動でアップデートできません。
+update.error.translocated = macOS がこのコピーを一時的な読み取り専用の場所から実行しています。{app}を「アプリケーション」フォルダに移動し、そこから開いてもう一度お試しください。
+update.error.system_package = このコピーはパッケージマネージャでインストールされています。パッケージマネージャでアップデートしてください。
+update.error.invalid = ダウンロードしたパッケージが無効です（{error}）。何もインストールされていません。
+update.error.io = ダウンロードを保存できませんでした（{error}）。
+update.error.install = インストールに失敗しました。現在のバージョンはそのままです（{error}）。

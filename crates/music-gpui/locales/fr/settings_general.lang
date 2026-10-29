@@ -44,8 +44,6 @@ update.up_to_date_version = Vous avez la dernière version ({version}).
 update.available_version = La version {version} est disponible.
 update.check_failed = Vérification impossible : {error}
 update.check_now = Vérifier
-update.download = Télécharger…
-update.no_release = aucune version publiée
 update.available_toast = {app} {version} est disponible (Paramètres → À propos)
 update.up_to_date_toast = {app} est à jour
 

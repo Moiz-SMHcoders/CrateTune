@@ -3,6 +3,39 @@
 All notable changes. The format follows [Keep a Changelog](https://keepachangelog.com/),
 versions follow [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+* **The app updates itself** on macOS, Windows and Linux (Settings → About → Updates, or
+  **Check for Updates…** in the app menu on macOS / the Help menu elsewhere):
+  * The flow is **Update to X.Y.Z**, then a progress bar with Cancel, then **Restart to
+    finish**.
+  * Every package is checked against the release's `SHA256SUMS.txt` and is refused if
+    the file is missing or doesn't match.
+  * The swap is atomic, with rollback, so a failed update leaves the old version
+    working.
+  * Copies that can't replace themselves (built from source, a read-only folder,
+    package managers) get a **Download manually** link.
+  * The macOS bundle is replaced in place and restarted; the Windows installer runs
+    silently and restarts the app; the portable zip, AppImage and tarball are replaced
+    by the app itself. See the user guide, "Updates".
+* New switches: **Check for updates automatically** (on: at launch and every 24 hours),
+  **Install updates automatically** (off: downloads in the background, asks to restart,
+  installs on quit) and **Include pre-releases** (on by default for 0.x and pre-release
+  versions). They are part of settings export and import, not of profiles.
+* The "Check for Updates…" action can be given a keyboard shortcut (none by default).
+* Releases now include `tunedesk-<ver>-macos-<arch>.app.zip` (the macOS update package)
+  and `SHA256SUMS.txt`; `-beta` / `-rc` tags are drafted as pre-releases. How to cut a release:
+  `docs/RELEASING.md`.
+
+### Changed
+
+* The update check reads the release list instead of `releases/latest`, which skips
+  pre-releases.
+* Updating from **0.1.0** still needs one manual download; later versions update
+  themselves.
+
 ## [0.1.0] — 2026-10-29 (first public release)
 
 ### Changed

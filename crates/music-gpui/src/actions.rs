@@ -47,6 +47,7 @@ gpui::actions!(
         Zoom,
         Quit,
         ShowShortcuts,
+        CheckForUpdates,
     ]
 );
 
@@ -108,6 +109,10 @@ pub fn init(overrides: &crate::shortcuts::Overrides, cx: &mut App) {
     cx.on_action(|_: &HideOthers, cx| cx.hide_other_apps());
     cx.on_action(|_: &ShowAll, cx| cx.unhide_other_apps());
     cx.on_action(|_: &Quit, cx| cx.quit());
+    on::<CheckForUpdates>(cx, |app, window, cx| {
+        activate_main(window);
+        app.check_for_updates_from_menu(window, cx)
+    });
     on::<ShowShortcuts>(cx, |_, window, cx| {
         activate_main(window);
         crate::settings::open_cheat_sheet(window, cx)
@@ -157,20 +162,31 @@ fn register_windows_menu() {
 }
 
 fn menus() -> Vec<Menu> {
+    // "Check for Updates…": under About in the app menu on macOS, in Help elsewhere;
+    // only when there is a release repository (`update_check::repo`).
+    let updates = crate::update_check::repo().is_some();
+    let mac_updates = (updates && cfg!(target_os = "macos"))
+        .then(|| MenuItem::action(t!("menu.check_updates"), CheckForUpdates));
+    let help_updates = (updates && !cfg!(target_os = "macos"))
+        .then(|| MenuItem::action(t!("menu.check_updates"), CheckForUpdates));
     vec![
-        Menu::new(APP_NAME).items([
-            MenuItem::action(t!("menu.about"), About),
-            MenuItem::separator(),
-            MenuItem::action(t!("menu.settings"), OpenSettings),
-            MenuItem::separator(),
-            MenuItem::os_submenu(t!("menu.services"), SystemMenuType::Services),
-            MenuItem::separator(),
-            MenuItem::action(t!("menu.hide"), Hide),
-            MenuItem::action(t!("menu.hide_others"), HideOthers),
-            MenuItem::action(t!("menu.show_all"), ShowAll),
-            MenuItem::separator(),
-            MenuItem::action(t!("menu.quit"), Quit),
-        ]),
+        Menu::new(APP_NAME).items(
+            [MenuItem::action(t!("menu.about"), About)]
+                .into_iter()
+                .chain(mac_updates)
+                .chain([MenuItem::separator()])
+                .chain([
+                    MenuItem::action(t!("menu.settings"), OpenSettings),
+                    MenuItem::separator(),
+                    MenuItem::os_submenu(t!("menu.services"), SystemMenuType::Services),
+                    MenuItem::separator(),
+                    MenuItem::action(t!("menu.hide"), Hide),
+                    MenuItem::action(t!("menu.hide_others"), HideOthers),
+                    MenuItem::action(t!("menu.show_all"), ShowAll),
+                    MenuItem::separator(),
+                    MenuItem::action(t!("menu.quit"), Quit),
+                ]),
+        ),
         Menu::new(t!("menu.edit")).items([
             MenuItem::os_action(t!("menu.undo"), input::Undo, OsAction::Undo),
             MenuItem::os_action(t!("menu.redo"), input::Redo, OsAction::Redo),
@@ -211,8 +227,11 @@ fn menus() -> Vec<Menu> {
             MenuItem::action(t!("menu.minimize"), Minimize),
             MenuItem::action(t!("menu.zoom"), Zoom),
         ]),
-        Menu::new(t!("shortcuts.menu.help"))
-            .items([MenuItem::action(t!("shortcuts.action.show"), ShowShortcuts)]),
+        Menu::new(t!("shortcuts.menu.help")).items(
+            [MenuItem::action(t!("shortcuts.action.show"), ShowShortcuts)]
+                .into_iter()
+                .chain(help_updates),
+        ),
     ]
 }
 

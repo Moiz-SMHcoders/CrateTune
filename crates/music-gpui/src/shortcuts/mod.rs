@@ -277,6 +277,13 @@ pub const ACTIONS: &[ShortcutAction] = &[
         "secondary-/"
     ),
     shortcut!("about", App, "menu.about", About, ""),
+    shortcut!(
+        "check_for_updates",
+        App,
+        "menu.check_updates",
+        CheckForUpdates,
+        ""
+    ),
     shortcut!("hide", App, "menu.hide", Hide, "secondary-h"),
     shortcut!(
         "hide_others",

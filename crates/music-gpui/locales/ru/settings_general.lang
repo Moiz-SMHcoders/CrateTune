@@ -44,8 +44,6 @@ update.up_to_date_version = У вас последняя версия ({version}
 update.available_version = Доступна версия {version}.
 update.check_failed = Не удалось проверить: {error}
 update.check_now = Проверить
-update.download = Скачать…
-update.no_release = нет опубликованных релизов
 update.available_toast = Доступна версия {app} {version} («Настройки → О программе»)
 update.up_to_date_toast = У вас последняя версия {app}
 

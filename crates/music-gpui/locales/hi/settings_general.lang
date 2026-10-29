@@ -44,8 +44,6 @@ update.up_to_date_version = आपके पास नया वर्शन ह
 update.available_version = वर्शन {version} उपलब्ध है।
 update.check_failed = जाँच नहीं हो सकी: {error}
 update.check_now = अभी जाँचें
-update.download = डाउनलोड करें…
-update.no_release = कोई रिलीज़ प्रकाशित नहीं है
 update.available_toast = {app} {version} उपलब्ध है (सेटिंग → जानकारी)
 update.up_to_date_toast = {app} अप टू डेट है
 

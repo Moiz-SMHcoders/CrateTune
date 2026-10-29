@@ -32,6 +32,8 @@
 //! * [`playlist_import`] – CSV / M3U / JSON playlists, matching tracks to YouTube Music.
 //! * [`spotify`] – Spotify Web API (PKCE sign-in, playlists, liked songs) for imports.
 //! * [`together`] – Music Together: synced listening on the LAN over WebSockets.
+//! * [`updater`] – self-update from GitHub releases: check, download, SHA-256 check
+//!   against `SHA256SUMS.txt`, install per platform with rollback.
 //! * [`waveform`] – a track's loudness envelope for a waveform progress bar, computed
 //!   once per track on a background thread and cached ([`Player::waveform`]).
 
@@ -72,6 +74,7 @@ mod stream;
 #[cfg(test)]
 mod testutil;
 pub mod together;
+pub mod updater;
 mod voice;
 pub mod waveform;
 mod webm_duration;

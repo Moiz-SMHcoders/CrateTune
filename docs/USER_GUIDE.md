@@ -20,6 +20,7 @@ Google or Shazam.
 * [Listen together](#listen-together)
 * [Cast to a TV or speaker](#cast-to-a-tv-or-speaker)
 * [AI content filter](#ai-content-filter)
+* [Updates](#updates)
 * [Privacy](#privacy)
 * [Known limitations](#known-limitations)
 * [Troubleshooting](#troubleshooting)
@@ -255,7 +256,7 @@ copies your YouTube Music library into the local one; **Sign out** forgets the c
 | AI content filter | endpoint, model, key, categories to hide |
 | Chromecast | devices, stop casting, direct fetch |
 | Backup & sync | export / import settings, export / import themes |
-| About | version, license, credits, welcome guide, update check (when enabled) |
+| About | version, updates (check, update, the automatic switches; see [Updates](#updates)), license, credits, welcome guide |
 
 Settings live in `~/Library/Application Support/tunedesk/` (macOS),
 `~/.config/tunedesk/` (Linux) or `%APPDATA%\tunedesk\config\` (Windows); passwords
@@ -425,6 +426,89 @@ karaoke, live recordings — plus your own ("songs about cars"), like "Hide expl
 * Each song is asked about once; the answers are remembered on your computer ("Forget
   classifications" clears them). Songs the model hasn't judged yet stay visible.
 
+## Updates
+
+TuneDesk updates itself from its GitHub releases. You don't need to download a new
+installer.
+
+**Where:** Settings → About → **Updates**, or the menu item **Check for Updates…**: in
+the TuneDesk menu under About on macOS, in the Help menu on Windows and Linux. It has no
+shortcut by default; you can give it one in Settings → Keyboard shortcuts.
+
+**How it goes:**
+
+1. **Check now** (or the automatic check) shows "Checking…". Then it shows "You have the
+   latest version (X.Y.Z)", or "Version X.Y.Z is available" with **Update to X.Y.Z**. A
+   notification with an **Update** button appears too.
+2. **Update to X.Y.Z** downloads the package for your system, with a progress bar
+   ("12.3 MB of 31.0 MB") and **Cancel**.
+3. The download is checked against the release's checksum file. Then the button says
+   **Restart to finish**.
+4. **Restart to finish** installs the new version, quits, and starts the new version.
+
+**Switches:**
+
+| Switch | Default | What it does |
+|---|---|---|
+| Check for updates automatically | on | checks at launch and every 24 hours while the app runs. **Check now** works even when this is off. |
+| Install updates automatically | off | downloads a found update in the background and asks you to restart. If you quit instead, the update is installed then (without starting the app again). |
+| Include pre-releases | on for 0.x versions | also offers test versions. It is on by default while you run a pre-release, which every 0.x version is. It is off by default from 1.0. |
+
+These switches are part of settings export and import, not of profiles.
+
+**What happens per system:**
+
+| You installed… | The update… |
+|---|---|
+| macOS: the `.app` (from the DMG) | unpacks the new app next to the old one and checks its signature. Then it swaps the new app in and starts it. |
+| Windows: the installer (`…-setup.exe`) | runs the new installer silently (no admin rights), which then starts the app again. |
+| Windows: the portable `.zip` | unpacks the new version, waits for the app to quit, replaces the files, and starts the app again. |
+| Linux: the AppImage | puts the new AppImage in place of the old one (same file name) and starts it. |
+| Linux: the `.tar.gz` (`install.sh`) | replaces `bin/` and `share/` in the install folder, then starts the app again. |
+
+**Safety:**
+
+* Downloads come only from this app's GitHub releases.
+* Every package is checked against the release's `SHA256SUMS.txt`. If the file is
+  missing, doesn't list the package, or the checksum doesn't match, nothing is
+  installed, and the download is deleted.
+* If anything goes wrong while installing, the old version is put back and keeps
+  working.
+* What the updater did is written to `update.log` in the app's cache folder:
+  * macOS: `~/Library/Caches/tunedesk/updates/`
+  * Linux: `~/.cache/tunedesk/updates/`
+  * Windows: `%LOCALAPPDATA%\tunedesk\cache\updates\`
+
+**When it can only show "Download manually":** in these cases the app tells you why, and
+the button opens the release page instead.
+
+* The app can't write to its own folder. For example, `/Applications` belongs to an
+  administrator and you use a standard account, or the app was installed system-wide on
+  Linux.
+* macOS runs the app from a temporary read-only location. This happens when you open it
+  straight from Downloads. Move it to Applications first.
+* It was built from source.
+* It came from a package manager, Flatpak or Snap.
+
+**Upgrading from 0.1.0:** version 0.1.0 can only show "update available". Install the
+next version by hand once; it updates itself after that.
+
+**macOS: keychain and microphone after an update.** Release builds are not signed with an
+Apple Developer ID yet. Each version is "ad-hoc" signed, so macOS treats it as a
+different app.
+
+* **Keychain:** your sign-ins and keys (YouTube Music, Last.fm, ListenBrainz, Spotify, the
+  proxy password, API keys) are separate entries in your login keychain, under
+  "tunedesk". After an update, macOS asks once per stored entry whether TuneDesk may use
+  it ("TuneDesk wants to use your confidential information stored in 'tunedesk' in your
+  keychain"). This happens at the first launch, which only reads the entries for accounts
+  you have set up. Click **Always Allow**; macOS may ask for your login password. If you
+  click **Deny**, that account looks signed out until the next launch, but nothing is
+  deleted.
+* **Microphone:** macOS may ask again the next time you recognize a song.
+
+Builds signed with a Developer ID keep the same identity, and neither prompt comes back.
+
 ## Privacy
 
 * Your library, history, stats and settings stay on your computer; nothing is sent to the
@@ -433,8 +517,9 @@ karaoke, live recordings — plus your own ("songs about cars"), like "Hide expl
   in). Lyrics providers receive song titles and artists; translators receive the lyrics.
   The kanji dictionary is downloaded from lindera's GitHub releases. Recognition sends an audio
   fingerprint to Shazam. Last.fm / ListenBrainz / Discord only get data if you set them up.
-* When an update repository is configured, the app asks GitHub once per launch for the
-  latest release (Settings → About); nothing is downloaded automatically.
+* The app asks GitHub for its releases at launch and every 24 hours (turn this off in
+  Settings → About → Updates). An update is downloaded only when you click **Update**,
+  or in the background if you turned on **Install updates automatically**.
 * The **AI content filter** (off by default) sends the titles, artists and albums of the
   songs on the pages you open to the service you configured, and nothing while it is off.
 * A **relay server** (only if you set one) forwards your Listen together session: song

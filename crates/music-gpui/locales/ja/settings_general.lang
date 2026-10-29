@@ -44,8 +44,6 @@ update.up_to_date_version = 最新バージョン（{version}）です。
 update.available_version = バージョン {version} が利用可能です。
 update.check_failed = 確認できませんでした：{error}
 update.check_now = 今すぐ確認
-update.download = ダウンロード…
-update.no_release = 公開されたリリースがありません
 update.available_toast = {app} {version} が利用可能です（設定 → 情報）
 update.up_to_date_toast = {app}は最新です
 
