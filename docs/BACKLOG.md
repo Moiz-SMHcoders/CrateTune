@@ -13,17 +13,11 @@ Last reviewed: 2026-10-29, against `main` at `bdb3625`.
 ## 1. Bugs
 
 **B1. Windows: guests see "Connection lost" when the host ends a Listen Together session**
-Guests should see "Session ended". The server now waits up to 1 s for the peer's close reply
-before it drops the socket. That fixed Linux, but Windows still shows the problem.
-Details: CI test `together::tests::session_end_to_end` (`crates/music-core/src/together/mod.rs`),
-commit `084636f`. · Size: medium · Priority: medium
-
-**B2. macOS CI only: playback freezes ~2 s before the end after a paused quality switch**
-`player::tests::reload_stream_switches_quality_at_the_same_position_without_a_gap` hangs about
-2 s before the track ends, only on GitHub's macos-14 runners. It can't be reproduced locally.
-On a timeout the test now prints the engine, deck and voice state, so the next failing CI run
-should show where it stops. Details: `crates/music-core/src/player/tests.rs`, commit `043d748`.
-· Size: medium · Priority: medium
+Guests should see "Session ended". The server flushes the close frame, waits up to 1 s for
+the reply, then half-closes and drains the socket; that fixed Linux, but on Windows the close
+frame is still lost now and then. The CI test accepts either message on Windows until this is
+looked at on a real Windows machine. Details: `together::tests::session_end_to_end`,
+`Conn::close` in `crates/music-core/src/together/conn.rs`. · Size: medium · Priority: low
 
 ## 2. Unverified / needs real-world testing
 
