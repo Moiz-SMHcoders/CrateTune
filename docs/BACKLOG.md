@@ -245,7 +245,7 @@ alpha or gradient masks, or radial gradients. The app works around this with CPU
 [README: History](../README.md#history-benchmark-rounds-condensed), [Now Playing
 round](../README.md#now-playing-round-cpu-designs-lyrics-cards). · Size: large · Priority: low
 
-**T5. YouTube stream access is fragile**
+**T4. YouTube stream access is fragile**
 Full streams depend on YouTube's current client behaviour (TV client, PoToken, the
 `n`/signature solver from yt-dlp/ejs 0.8.0). When YouTube changes something, the app falls
 back to previews until it is updated. Keep the vendored solver current and the live examples
