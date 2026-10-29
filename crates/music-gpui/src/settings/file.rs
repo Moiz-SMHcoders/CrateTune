@@ -89,6 +89,9 @@ pub struct Settings {
     /// Keyboard shortcuts the user changed: action id → combination (`""` = none);
     /// see `shortcuts.rs`. In settings exports, not in profiles.
     pub shortcuts: crate::shortcuts::Overrides,
+    /// Update checks and installs (Settings → About; `prefs::UpdatePrefs`). In
+    /// settings exports, not in profiles.
+    pub updates: super::prefs::UpdatePrefs,
     /// Secrets that could not go to the OS keychain (see `secrets.rs`).
     #[serde(skip_serializing_if = "FileSecrets::is_empty")]
     pub secrets: FileSecrets,
@@ -123,6 +126,7 @@ impl Default for Settings {
             onboarded: true,
             custom_theme: Default::default(),
             shortcuts: Default::default(),
+            updates: Default::default(),
             secrets: FileSecrets::default(),
         }
     }

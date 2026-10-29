@@ -703,6 +703,24 @@ impl ThemePreset {
 mod tests {
     use super::*;
 
+    #[test]
+    fn update_prefs_travel_with_exports_but_not_profiles() {
+        let mut settings = Settings::default();
+        assert!(settings.updates.auto_check && !settings.updates.auto_install);
+        assert_eq!(settings.updates.include_prereleases, None);
+        settings.updates.auto_install = true;
+        settings.updates.include_prereleases = Some(false);
+        let file = export_settings(&settings, 0);
+        let plan = plan_settings_import(&file, &Settings::default()).unwrap();
+        assert_eq!(plan.settings.updates, settings.updates);
+        assert!(plan.diff.iter().any(|d| d.section == "updates"));
+        // Profiles carry look and resource use only.
+        assert!(!super::super::profiles::snapshot(&settings).contains_key("updates"));
+        // Older files without the section get the defaults.
+        let old: Settings = serde_json::from_str("{}").unwrap();
+        assert_eq!(old.updates, Default::default());
+    }
+
     fn sample() -> Settings {
         let mut s = Settings {
             volume: 0.4,

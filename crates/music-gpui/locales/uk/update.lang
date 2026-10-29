@@ -1,0 +1,54 @@
+# ---- Self-update (Settings → About → Updates, notifications, menu; src/update_check.rs,
+# src/settings/about.rs). The older update.* keys are in settings_general.lang.
+
+# Menu item (macOS: app menu under "About"; elsewhere: Help menu). Also a shortcut label.
+menu.check_updates = Перевірити оновлення…
+
+# Buttons. {version} = a version number such as 0.2.0.
+update.update_to = Оновити до {version}
+# Notification button: download and install the update that was found.
+update.update_now = Оновити
+update.restart = Перезапустити й завершити
+update.retry = Спробувати ще раз
+# Opens the release page in the browser.
+update.download_manually = Завантажити вручну
+
+# Status lines.
+# {progress} = update.progress, or just the amount downloaded ("12.3 MB").
+update.downloading = Завантаження {version}… {progress}
+# {done}, {total} = sizes such as "12.3 MB".
+update.progress = {done} з {total}
+update.ready = Версію {version} завантажено й перевірено. Перезапустіть застосунок, щоб завершити оновлення.
+update.installing = Встановлення {version}…
+
+# Switches.
+update.auto_check = Автоматично перевіряти оновлення
+update.auto_check_detail = Під час запуску {app} і кожні 24 години під час роботи.
+update.auto_install = Автоматично встановлювати оновлення
+update.auto_install_detail = Завантажує оновлення у фоновому режимі й пропонує перезапустити застосунок. Якщо натомість ви його закриєте, оновлення встановиться під час виходу.
+update.prereleases = Включати попередні версії
+update.prereleases_detail = Тестові версії, що виходять до стабільного випуску. Увімкнено за замовчуванням, поки ви користуєтеся попередньою версією (будь-якою версією 0.x).
+
+# Notifications.
+update.ready_toast = {app} {version} готовий. Перезапустіть застосунок, щоб завершити оновлення.
+# {error} = one of the update.error.* messages.
+update.failed_toast = Не вдалося оновити. {error}
+
+# Errors, in plain words. "Nothing was installed" = the current version is unchanged.
+# {error} = an English technical detail.
+update.error.network = Не вдалося з'єднатися з GitHub ({error}). Перевірте підключення до інтернету або проксі.
+update.error.bad_response = GitHub надіслав неочікувану відповідь ({error}).
+update.error.untrusted = Посилання для завантаження веде не до випусків цього застосунку на GitHub, тому його не відкрито.
+update.error.no_asset = У цьому випуску немає пакета для вашої системи. Завантажте його вручну.
+update.error.no_checksums = У цьому випуску немає файлу контрольних сум, тому завантажений файл не можна перевірити. Нічого не встановлено.
+update.error.not_listed = У файлі контрольних сум випуску немає цього пакета, тому його не можна перевірити. Нічого не встановлено.
+update.error.mismatch = Завантажений файл не збігається з контрольною сумою випуску. Його видалено, нічого не встановлено.
+update.error.cancelled = Завантаження скасовано.
+# {path} = a folder.
+update.error.not_writable = {app} не може замінити себе: ваш користувач не має права запису в {path}. Завантажте нову версію вручну.
+update.error.dev_build = Цю копію встановлено не з пакета випуску (наприклад, її зібрано з вихідного коду), тому вона не може оновитися сама.
+update.error.translocated = macOS запускає цю копію з тимчасового розташування лише для читання. Перемістіть {app} до папки «Програми», відкрийте звідти й спробуйте ще раз.
+update.error.system_package = Цю копію встановлено через менеджер пакетів. Оновіть її там.
+update.error.invalid = Завантажений пакет недійсний ({error}). Нічого не встановлено.
+update.error.io = Не вдалося зберегти завантаження ({error}).
+update.error.install = Не вдалося встановити оновлення, поточна версія залишилася без змін ({error}).

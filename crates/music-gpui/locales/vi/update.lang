@@ -1,0 +1,54 @@
+# ---- Self-update (Settings → About → Updates, notifications, menu; src/update_check.rs,
+# src/settings/about.rs). The older update.* keys are in settings_general.lang.
+
+# Menu item (macOS: app menu under "About"; elsewhere: Help menu). Also a shortcut label.
+menu.check_updates = Kiểm tra bản cập nhật…
+
+# Buttons. {version} = a version number such as 0.2.0.
+update.update_to = Cập nhật lên {version}
+# Notification button: download and install the update that was found.
+update.update_now = Cập nhật
+update.restart = Khởi động lại để hoàn tất
+update.retry = Thử lại
+# Opens the release page in the browser.
+update.download_manually = Tải xuống thủ công
+
+# Status lines.
+# {progress} = update.progress, or just the amount downloaded ("12.3 MB").
+update.downloading = Đang tải xuống {version}… {progress}
+# {done}, {total} = sizes such as "12.3 MB".
+update.progress = {done} / {total}
+update.ready = Phiên bản {version} đã được tải xuống và xác minh. Khởi động lại để hoàn tất cập nhật.
+update.installing = Đang cài đặt {version}…
+
+# Switches.
+update.auto_check = Tự động kiểm tra bản cập nhật
+update.auto_check_detail = Khi {app} khởi động và cứ mỗi 24 giờ trong lúc đang chạy.
+update.auto_install = Tự động cài đặt bản cập nhật
+update.auto_install_detail = Tải bản cập nhật xuống trong nền và nhắc bạn khởi động lại. Nếu bạn thoát thay vì khởi động lại, bản cập nhật sẽ được cài đặt khi đó.
+update.prereleases = Bao gồm bản phát hành trước
+update.prereleases_detail = Các phiên bản thử nghiệm được phát hành trước bản ổn định. Mặc định bật khi bạn đang dùng bản phát hành trước (mọi phiên bản 0.x).
+
+# Notifications.
+update.ready_toast = {app} {version} đã sẵn sàng. Khởi động lại để hoàn tất cập nhật.
+# {error} = one of the update.error.* messages.
+update.failed_toast = Cập nhật không thành công. {error}
+
+# Errors, in plain words. "Nothing was installed" = the current version is unchanged.
+# {error} = an English technical detail.
+update.error.network = Không thể kết nối với GitHub ({error}). Hãy kiểm tra kết nối internet hoặc proxy.
+update.error.bad_response = GitHub gửi phản hồi không mong đợi ({error}).
+update.error.untrusted = Liên kết tải xuống không trỏ đến trang phát hành GitHub của ứng dụng này, nên đã không được mở.
+update.error.no_asset = Bản phát hành này không có gói cho hệ thống của bạn. Hãy tải xuống thủ công.
+update.error.no_checksums = Bản phát hành này không có tệp checksum nên không thể xác minh bản tải xuống. Chưa có gì được cài đặt.
+update.error.not_listed = Tệp checksum của bản phát hành không liệt kê gói này nên không thể xác minh. Chưa có gì được cài đặt.
+update.error.mismatch = Bản tải xuống không khớp với checksum của bản phát hành. Tệp đã bị xóa và chưa có gì được cài đặt.
+update.error.cancelled = Đã hủy tải xuống.
+# {path} = a folder.
+update.error.not_writable = {app} không thể tự thay thế vì người dùng của bạn không có quyền ghi vào {path}. Hãy tải phiên bản mới xuống thủ công.
+update.error.dev_build = Bản này không được cài từ gói phát hành (ví dụ: được biên dịch từ mã nguồn), nên không thể tự cập nhật.
+update.error.translocated = macOS đang chạy bản này từ một vị trí tạm thời chỉ đọc. Hãy di chuyển {app} vào thư mục Ứng dụng, mở từ đó rồi thử lại.
+update.error.system_package = Bản này được cài bằng trình quản lý gói. Hãy cập nhật qua trình quản lý gói đó.
+update.error.invalid = Gói đã tải xuống không hợp lệ ({error}). Chưa có gì được cài đặt.
+update.error.io = Không thể lưu bản tải xuống ({error}).
+update.error.install = Cài đặt không thành công và phiên bản hiện tại vẫn được giữ nguyên ({error}).

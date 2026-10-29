@@ -44,8 +44,6 @@ update.up_to_date_version = En son sürümü kullanıyorsunuz ({version}).
 update.available_version = {version} sürümü kullanılabilir.
 update.check_failed = Denetlenemedi: {error}
 update.check_now = Şimdi denetle
-update.download = İndir…
-update.no_release = yayımlanmış sürüm yok
 update.available_toast = {app} {version} kullanılabilir (Ayarlar → Hakkında)
 update.up_to_date_toast = {app} güncel
 

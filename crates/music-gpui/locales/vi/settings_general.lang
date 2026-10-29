@@ -42,8 +42,6 @@ update.up_to_date_version = Bạn đang dùng phiên bản mới nhất ({versio
 update.available_version = Đã có phiên bản {version}.
 update.check_failed = Không thể kiểm tra: {error}
 update.check_now = Kiểm tra ngay
-update.download = Tải xuống…
-update.no_release = không có bản phát hành nào
 update.available_toast = Đã có {app} {version} (Cài đặt → Giới thiệu)
 update.up_to_date_toast = {app} đã được cập nhật
 

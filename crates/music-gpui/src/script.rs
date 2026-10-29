@@ -653,6 +653,7 @@ impl MusicApp {
                     && !self.library_script_action(other, arg, window, cx)
                     && !self.integrations_script_action(other, arg, window, cx)
                     && !self.release_script_action(other, arg, window, cx)
+                    && !self.update_script_action(other, arg, window, cx)
                     && !self.card_script_action(other, arg, window, cx)
                     && !self.theme_script_action(other, arg, window, cx)
                 {

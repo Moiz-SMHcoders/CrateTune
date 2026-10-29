@@ -42,8 +42,6 @@ update.up_to_date_version = Anda memiliki versi terbaru ({version}).
 update.available_version = Versi {version} tersedia.
 update.check_failed = Tidak dapat memeriksa: {error}
 update.check_now = Periksa sekarang
-update.download = Unduh…
-update.no_release = tidak ada rilis yang dipublikasikan
 update.available_toast = {app} {version} tersedia (Pengaturan → Tentang)
 update.up_to_date_toast = {app} sudah versi terbaru
 

@@ -1,0 +1,54 @@
+# ---- Self-update (Settings → About → Updates, notifications, menu; src/update_check.rs,
+# src/settings/about.rs). The older update.* keys are in settings_general.lang.
+
+# Menu item (macOS: app menu under "About"; elsewhere: Help menu). Also a shortcut label.
+menu.check_updates = अपडेट के लिए जाँचें…
+
+# Buttons. {version} = a version number such as 0.2.0.
+update.update_to = {version} पर अपडेट करें
+# Notification button: download and install the update that was found.
+update.update_now = अपडेट करें
+update.restart = पूरा करने के लिए रीस्टार्ट करें
+update.retry = फिर से कोशिश करें
+# Opens the release page in the browser.
+update.download_manually = मैन्युअल रूप से डाउनलोड करें
+
+# Status lines.
+# {progress} = update.progress, or just the amount downloaded ("12.3 MB").
+update.downloading = {version} डाउनलोड हो रहा है… {progress}
+# {done}, {total} = sizes such as "12.3 MB".
+update.progress = {total} में से {done}
+update.ready = वर्शन {version} डाउनलोड और सत्यापित हो गया है। अपडेट पूरा करने के लिए रीस्टार्ट करें।
+update.installing = {version} इंस्टॉल हो रहा है…
+
+# Switches.
+update.auto_check = अपडेट अपने-आप जाँचें
+update.auto_check_detail = जब {app} शुरू होता है, और चलते समय हर 24 घंटे में।
+update.auto_install = अपडेट अपने-आप इंस्टॉल करें
+update.auto_install_detail = अपडेट बैकग्राउंड में डाउनलोड करता है और आपसे रीस्टार्ट करने को कहता है। अगर आप इसके बजाय बंद कर देते हैं, तो अपडेट तभी इंस्टॉल हो जाता है।
+update.prereleases = प्री-रिलीज़ शामिल करें
+update.prereleases_detail = स्थिर रिलीज़ से पहले प्रकाशित टेस्ट वर्शन। जब आप प्री-रिलीज़ (कोई भी 0.x वर्शन) चला रहे हों, तब यह डिफ़ॉल्ट रूप से चालू रहता है।
+
+# Notifications.
+update.ready_toast = {app} {version} तैयार है। अपडेट पूरा करने के लिए रीस्टार्ट करें।
+# {error} = one of the update.error.* messages.
+update.failed_toast = अपडेट विफल रहा। {error}
+
+# Errors, in plain words. "Nothing was installed" = the current version is unchanged.
+# {error} = an English technical detail.
+update.error.network = GitHub से कनेक्ट नहीं हो सका ({error})। अपना इंटरनेट कनेक्शन या प्रॉक्सी जाँचें।
+update.error.bad_response = GitHub ने अनपेक्षित जवाब भेजा ({error})।
+update.error.untrusted = डाउनलोड लिंक इस ऐप के GitHub रिलीज़ की ओर नहीं ले जाता, इसलिए उसे नहीं खोला गया।
+update.error.no_asset = इस रिलीज़ में आपके सिस्टम के लिए कोई पैकेज नहीं है। इसे मैन्युअल रूप से डाउनलोड करें।
+update.error.no_checksums = इस रिलीज़ में कोई चेकसम फ़ाइल नहीं है, इसलिए डाउनलोड को सत्यापित नहीं किया जा सकता। कुछ भी इंस्टॉल नहीं किया गया।
+update.error.not_listed = रिलीज़ की चेकसम फ़ाइल में यह पैकेज नहीं है, इसलिए इसे सत्यापित नहीं किया जा सकता। कुछ भी इंस्टॉल नहीं किया गया।
+update.error.mismatch = डाउनलोड रिलीज़ के चेकसम से मेल नहीं खाता। उसे हटा दिया गया और कुछ भी इंस्टॉल नहीं किया गया।
+update.error.cancelled = डाउनलोड रद्द किया गया।
+# {path} = a folder.
+update.error.not_writable = {app} ख़ुद को बदल नहीं सकता, क्योंकि आपके यूज़र को {path} में लिखने की अनुमति नहीं है। नया वर्शन मैन्युअल रूप से डाउनलोड करें।
+update.error.dev_build = यह कॉपी किसी रिलीज़ पैकेज से इंस्टॉल नहीं की गई थी (उदाहरण के लिए, इसे सोर्स से बनाया गया था), इसलिए यह ख़ुद को अपडेट नहीं कर सकती।
+update.error.translocated = macOS इस कॉपी को एक अस्थायी, केवल-पढ़ने योग्य जगह से चला रहा है। {app} को अपने Applications फ़ोल्डर में ले जाएँ, वहीं से खोलें और फिर से कोशिश करें।
+update.error.system_package = यह कॉपी किसी पैकेज मैनेजर से इंस्टॉल की गई थी। इसे वहीं से अपडेट करें।
+update.error.invalid = डाउनलोड किया गया पैकेज मान्य नहीं है ({error})। कुछ भी इंस्टॉल नहीं किया गया।
+update.error.io = डाउनलोड सेव नहीं हो सका ({error})।
+update.error.install = इंस्टॉल नहीं हो सका और मौजूदा वर्शन पहले जैसा ही है ({error})।

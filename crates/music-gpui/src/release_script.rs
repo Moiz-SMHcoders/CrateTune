@@ -1,4 +1,5 @@
-//! Script actions for recognition, onboarding and the update check (see `script.rs`):
+//! Script actions for recognition and onboarding (see `script.rs`; the update
+//! actions are in `update_script.rs`):
 //!
 //! | action | does |
 //! |---|---|
@@ -8,7 +9,6 @@
 //! | `@recognize-history=N` | show history entry N |
 //! | `@onboarding[=STEP]`, `@onboarding=off` | show the first-run guide (at step N) / close it |
 //! | `@onboarding-next`, `@onboarding-back` | page through it |
-//! | `@update-check` | check for a new release now (needs `UPDATE_REPO`) |
 
 use gpui::{Context, Window};
 
@@ -70,7 +70,6 @@ impl MusicApp {
             },
             "onboarding-next" => self.onboarding_step(1, cx),
             "onboarding-back" => self.onboarding_step(-1, cx),
-            "update-check" => self.check_for_updates(true, cx),
             _ => return false,
         }
         true

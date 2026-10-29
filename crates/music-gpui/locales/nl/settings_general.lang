@@ -45,8 +45,6 @@ update.up_to_date_version = Je hebt de nieuwste versie ({version}).
 update.available_version = Versie {version} is beschikbaar.
 update.check_failed = Kan niet controleren: {error}
 update.check_now = Nu controleren
-update.download = Downloaden…
-update.no_release = geen gepubliceerde release
 update.available_toast = {app} {version} is beschikbaar (Instellingen → Over)
 update.up_to_date_toast = {app} is up-to-date
 

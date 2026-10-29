@@ -1,0 +1,54 @@
+# ---- Self-update (Settings → About → Updates, notifications, menu; src/update_check.rs,
+# src/settings/about.rs). The older update.* keys are in settings_general.lang.
+
+# Menu item (macOS: app menu under "About"; elsewhere: Help menu). Also a shortcut label.
+menu.check_updates = Buscar actualizaciones…
+
+# Buttons. {version} = a version number such as 0.2.0.
+update.update_to = Actualizar a {version}
+# Notification button: download and install the update that was found.
+update.update_now = Actualizar
+update.restart = Reiniciar para terminar
+update.retry = Reintentar
+# Opens the release page in the browser.
+update.download_manually = Descargar manualmente
+
+# Status lines.
+# {progress} = update.progress, or just the amount downloaded ("12.3 MB").
+update.downloading = Descargando {version}… {progress}
+# {done}, {total} = sizes such as "12.3 MB".
+update.progress = {done} de {total}
+update.ready = La versión {version} se descargó y verificó. Reinicia para terminar la actualización.
+update.installing = Instalando {version}…
+
+# Switches.
+update.auto_check = Buscar actualizaciones automáticamente
+update.auto_check_detail = Al iniciar {app} y cada 24 horas mientras se ejecuta.
+update.auto_install = Instalar actualizaciones automáticamente
+update.auto_install_detail = Descarga las actualizaciones en segundo plano y te pide que reinicies. Si en cambio sales de la app, la actualización se instala en ese momento.
+update.prereleases = Incluir versiones preliminares
+update.prereleases_detail = Versiones de prueba publicadas antes de una versión estable. Activado de forma predeterminada mientras usas una versión preliminar (cualquier versión 0.x).
+
+# Notifications.
+update.ready_toast = {app} {version} está listo. Reinicia para terminar la actualización.
+# {error} = one of the update.error.* messages.
+update.failed_toast = La actualización falló. {error}
+
+# Errors, in plain words. "Nothing was installed" = the current version is unchanged.
+# {error} = an English technical detail.
+update.error.network = No se pudo conectar con GitHub ({error}). Comprueba tu conexión a internet o el proxy.
+update.error.bad_response = GitHub envió una respuesta inesperada ({error}).
+update.error.untrusted = El enlace de descarga no apunta a las versiones de esta app en GitHub, así que no se siguió.
+update.error.no_asset = Esta versión no tiene un paquete para tu sistema. Descárgalo manualmente.
+update.error.no_checksums = Esta versión no tiene archivo de sumas de verificación, así que no se puede verificar la descarga. No se instaló nada.
+update.error.not_listed = El archivo de sumas de verificación de la versión no incluye este paquete, así que no se puede verificar. No se instaló nada.
+update.error.mismatch = La descarga no coincide con la suma de verificación de la versión. Se eliminó y no se instaló nada.
+update.error.cancelled = Descarga cancelada.
+# {path} = a folder.
+update.error.not_writable = {app} no puede reemplazarse a sí mismo porque tu usuario no puede escribir en {path}. Descarga la nueva versión manualmente.
+update.error.dev_build = Esta copia no se instaló desde un paquete de versión (por ejemplo, se compiló desde el código fuente), así que no puede actualizarse sola.
+update.error.translocated = macOS ejecuta esta copia desde una ubicación temporal de solo lectura. Mueve {app} a tu carpeta Aplicaciones, ábrelo desde allí y vuelve a intentarlo.
+update.error.system_package = Esta copia se instaló con un gestor de paquetes. Actualízala desde allí.
+update.error.invalid = El paquete descargado no es válido ({error}). No se instaló nada.
+update.error.io = No se pudo guardar la descarga ({error}).
+update.error.install = La instalación falló y la versión actual sigue intacta ({error}).

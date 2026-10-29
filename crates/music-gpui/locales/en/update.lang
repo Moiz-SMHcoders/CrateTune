@@ -1,0 +1,54 @@
+# ---- Self-update (Settings → About → Updates, notifications, menu; src/update_check.rs,
+# src/settings/about.rs). The older update.* keys are in settings_general.lang.
+
+# Menu item (macOS: app menu under "About"; elsewhere: Help menu). Also a shortcut label.
+menu.check_updates = Check for Updates…
+
+# Buttons. {version} = a version number such as 0.2.0.
+update.update_to = Update to {version}
+# Notification button: download and install the update that was found.
+update.update_now = Update
+update.restart = Restart to finish
+update.retry = Try again
+# Opens the release page in the browser.
+update.download_manually = Download manually
+
+# Status lines.
+# {progress} = update.progress, or just the amount downloaded ("12.3 MB").
+update.downloading = Downloading {version}… {progress}
+# {done}, {total} = sizes such as "12.3 MB".
+update.progress = {done} of {total}
+update.ready = Version {version} is downloaded and verified. Restart to finish the update.
+update.installing = Installing {version}…
+
+# Switches.
+update.auto_check = Check for updates automatically
+update.auto_check_detail = When {app} starts and every 24 hours while it runs.
+update.auto_install = Install updates automatically
+update.auto_install_detail = Downloads updates in the background and asks you to restart. If you quit instead, the update is installed then.
+update.prereleases = Include pre-releases
+update.prereleases_detail = Test versions published before a stable release. On by default while you run a pre-release (any 0.x version).
+
+# Notifications.
+update.ready_toast = {app} {version} is ready. Restart to finish the update.
+# {error} = one of the update.error.* messages.
+update.failed_toast = The update failed. {error}
+
+# Errors, in plain words. "Nothing was installed" = the current version is unchanged.
+# {error} = an English technical detail.
+update.error.network = Couldn't reach GitHub ({error}). Check your internet connection or proxy.
+update.error.bad_response = GitHub sent an unexpected answer ({error}).
+update.error.untrusted = The download link doesn't point to this app's GitHub releases, so it wasn't followed.
+update.error.no_asset = This release has no package for your system. Download it manually.
+update.error.no_checksums = This release has no checksum file, so the download can't be verified. Nothing was installed.
+update.error.not_listed = The release's checksum file doesn't list this package, so it can't be verified. Nothing was installed.
+update.error.mismatch = The download doesn't match the release's checksum. It was deleted and nothing was installed.
+update.error.cancelled = Download cancelled.
+# {path} = a folder.
+update.error.not_writable = {app} can't replace itself because your user can't write to {path}. Download the new version manually.
+update.error.dev_build = This copy wasn't installed from a release package (for example, it was built from source), so it can't update itself.
+update.error.translocated = macOS runs this copy from a temporary read-only location. Move {app} to your Applications folder, open it from there, and try again.
+update.error.system_package = This copy was installed by a package manager. Update it there.
+update.error.invalid = The downloaded package isn't valid ({error}). Nothing was installed.
+update.error.io = Couldn't save the download ({error}).
+update.error.install = Installing failed and the current version is still in place ({error}).

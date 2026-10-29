@@ -75,6 +75,7 @@ mod theme_script;
 mod theme_state;
 mod tray;
 mod update_check;
+mod update_script;
 mod util;
 
 use gpui::{
@@ -125,6 +126,12 @@ fn initial_bounds(saved: Option<WindowGeometry>, cx: &App) -> WindowBounds {
 }
 
 fn main() {
+    // The Windows portable update's helper mode (`--apply-update …`, see
+    // `music_core::updater::apply`): replaces the files once the old app has exited.
+    let args: Vec<std::ffi::OsString> = std::env::args_os().skip(1).collect();
+    if let Some(code) = music_core::updater::run_helper(&args) {
+        std::process::exit(code);
+    }
     // Before anything else: may re-execute the process (see `memory.rs`).
     memory::tune_allocator();
     gpui_platform::application()
