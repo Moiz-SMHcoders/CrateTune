@@ -69,6 +69,7 @@ gpui_kit_assets::icon_assets!(
         Wifi,
         Shield,
         Type,
+        Keyboard,
         // library / account
         Pencil,
         LogOut,

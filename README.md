@@ -1371,11 +1371,56 @@ translations, every screen in every language (five locales were looked at).
 | ⇧⌘R | Recognize: open the page and listen (again: stop) |
 | Esc | close an open menu, popover or dialog; else Now Playing, else the queue panel, else back |
 | ⌘H, ⌥⌘H, ⌘M, ⌘Q | hide, hide others, minimize, quit |
+| ⌘/ (Help → Keyboard Shortcuts) | cheat sheet of the shortcuts in effect |
 
-The menu bar (Music, Edit, View, Controls, Window) carries the same actions with their
+These are the defaults (Ctrl in place of ⌘ on Windows / Linux); every one can be changed.
+The menu bar (Music, Edit, View, Controls, Window, Help) carries the same actions with their
 shortcuts. All shell actions are global listeners that defer to the main window's app,
 so keys, menus, the mini player and scripts share one path. Text inputs keep their own
 bindings (Space, ⌘←/→, ⌘↑/↓ edit text while the search field is focused).
+
+**Editable shortcuts** (Settings → Keyboard shortcuts, `settings/shortcuts_ui.rs`; model in
+`shortcuts/`): 28 actions in four groups (Playback, Navigation, Windows & view, App; Zoom,
+About and Show All start unbound). "Change" records the next combination through a GPUI
+keystroke interceptor (it runs before bindings, so ⌘L while recording is recorded, not
+executed); Esc cancels, Backspace / "Clear" removes the shortcut, per-row reset and "Reset
+all". Shown the platform's way: ⇧⌘M on macOS (Apple's ⌃⌥⇧⌘ order), Ctrl+Shift+M elsewhere
+(key names translated: Strg+Umschalt+M in German). Keys another action has open a "Replace /
+Cancel" prompt (Replace leaves the other action unbound). Refused: a lone modifier; keys
+needed for typing in the search field (letters, digits, Space, editing / cursor keys without
+⌘ / Ctrl, and ⌥ + a character on a Mac), except the old Space (play / pause) and Esc;
+⌘C / ⌘V / ⌘X / ⌘A / ⌘Z / ⇧⌘Z; system keys (⌘Tab, ⌘Space, ⌃Space, ⌥⌘Esc, ⇧⌘3/4/5, ⌘`;
+⌘Q / ⌘H / ⌥⌘H / ⌘M only for Quit / Hide / Hide Others / Minimize; Alt+Tab, Alt+F4,
+Ctrl+Alt+Del on Windows / Linux). One shortcut per action. **Applying** is live:
+`shortcuts::apply` copies every binding of the keymap that isn't the app's (the app's carry
+`KeyBindingMetaIndex(0)`, which GPUI also assumes for untagged bindings, so `NoAction`
+precedence is unchanged), clears the keymap, re-adds those in their order — gpui-component's
+input, list, menu, dialog, select … bindings survive — then the app's bindings with the
+fixed context ones (Space = `NoAction` in `Input`; back / forward also in `Input`, whatever
+they are bound to; Esc in `MusicApp`), and rebuilds the menu bar, whose key equivalents come
+from the keymap (a stale one would keep firing through AppKit). `SettingsPanel::changed`
+calls `shortcuts::sync`, so imports and restored backups apply too. Global media keys and
+headphone buttons are the OS media controls (`services.rs`), not this keymap.
+
+| | |
+|---|---|
+| ![Keyboard shortcuts](docs/screenshots/shortcuts-section.png) | ![Recording, refused key](docs/screenshots/shortcuts-recording.png) |
+| ![Conflict prompt](docs/screenshots/shortcuts-conflict.png) | ![Cheat sheet](docs/screenshots/shortcuts-cheat.png) |
+| ![Linux key names, German](docs/screenshots/shortcuts-section-linux-de.png) | |
+
+**Verified** (release build, macOS, `@key=` through GPUI's key dispatch, temporary
+`MUSIC_CONFIG_DIR`, `MUSIC_TRACE=1` route log): after `@shortcut=go_history:cmd-shift-k`, ⌘Y
+did nothing and ⇧⌘K opened History; `k` was refused (typing), ⌘Q refused (system), ⌘S
+opened the conflict prompt and Replace left Shuffle unbound; while recording, ⌘1 was recorded
+and did not navigate, ⌘L was recorded (conflict prompt), not executed; the overrides were
+saved and applied at the next launch; ⌘F + `h`, Space, `i`, Enter searched "h i" (Space is
+text in the field), ⌘[ inside the field went back; after `@shortcut-reset=all`, ⌘1 / ⌘Y
+worked again and ⇧⌘K did nothing; then ⌘A + Backspace in the search field (gpui-component's
+bindings after the rebuild) cleared it; Esc with the cheat sheet open closed only the dialog,
+the next Esc went back; `@shortcut-menu` showed the menu's key equivalents follow (Quit lost
+⌘Q when cleared, Edit's ⌘C / ⌘V / ⌘A stayed). **Not verified**: a physical keyboard (only
+synthetic keystrokes), the menu bar on screen, Windows / Linux (the Linux screenshot is
+simulated with `MUSIC_SHORTCUTS_OS`), non-US keyboard layouts.
 
 ### Settings file and secrets
 
@@ -1386,13 +1431,17 @@ switch + id + `activity`, theme + text size, shuffle + repeat, `audio`, `lyrics`
 main window and mini player frames, and `library`: privacy switches,
 play-cache limit, music folders, the signed-in YouTube account's name / avatar /
 `auth_user` / channel, `library.downloads` (download liked songs), `sponsorblock`, `together`
-(incl. `relay_url`), `spotify`, `ai_filter`, `cast`, `custom_theme`, `player_bar`) lives in the platform config dir — macOS
+(incl. `relay_url`), `spotify`, `ai_filter`, `cast`, `custom_theme`, `player_bar`, `shortcuts`) lives in the platform config dir — macOS
 `~/Library/Application Support/tunedesk/`, Linux `~/.config/tunedesk/`, Windows
 `%APPDATA%\tunedesk\config\` — or `$MUSIC_CONFIG_DIR`. It is written 500 ms after the last
 change and on quit, atomically (temp file + rename), mode 0600 in a 0700 directory. Missing
 fields fall back to defaults, unknown ones are ignored, out-of-range values are clamped, and a
 file that isn't valid JSON is moved to `settings.json.bad`; an unknown theme / repeat value
-(from a newer version) falls back to the default instead.
+(from a newer version) falls back to the default instead. `shortcuts` holds only changed
+shortcuts, action id → keys (`{"next_track": "secondary-shift-right", "go_history": ""}`;
+`secondary-` = ⌘ on macOS / Ctrl elsewhere, so an export means the same keys on every
+platform; `""` = no shortcut; unknown ids or unreadable keys are ignored). It is part of the
+settings export / import, not of profiles (those carry the look and resource use only).
 
 The Last.fm shared secret and session key, the ListenBrainz token, the Paxsenix /
 BetterLyrics / AI-translation API keys, the proxy password, the YouTube Music sign-in
@@ -1427,6 +1476,7 @@ item's ACL is tied to the binary). Secrets are never logged.
 | `MUSIC_TRACE=1` | log playback transitions, seeks, saves, route changes, artwork downloads; `MUSIC_TIMINGS=1`: renders/s + worst frame gap |
 | `MUSIC_SCRIPT="5:@next,9:@seek=75,30:@quit"` | timed actions (any build) |
 | `MUSIC_ON_TOP=1` | keep the main window above other apps and on every Space (CPU sampling while the machine is in use: macOS sends an occluded or off-Space window no frames) |
+| `MUSIC_SHORTCUTS_OS=linux\|windows\|mac` | screenshot builds only: shortcuts as on that platform (key names, Ctrl as the shortcut modifier) |
 | `MUSIC_GPUI_SCREENSHOT="12:a.png,13:@settings,14:b.png,15:mini:m.png"` | offscreen shots + actions, quits after the last (feature `screenshot`; `mini:` shoots the mini player) |
 
 Actions (`script.rs` has the table): input `@key=cmd-right` (a real keystroke through
@@ -1470,7 +1520,11 @@ windows/appearance `@mini[=on|off] @theme=dark|black|dynamic
 recognition `@recognize` (microphone), `@recognize-file=PATH`,
 `@recognize-cancel`, `@recognize-history=N`; `@onboarding[=STEP|off]`, `@onboarding-next`,
 `@onboarding-back`, `@update-check` (`release_script.rs`); `@lang=CODE|system` (UI language,
-saved); lyrics cards (`lyrics_card.rs`)
+saved); keyboard shortcuts (`shortcuts/script.rs`) `@shortcut=ACTION:KEYS` (as the Change
+button: refused / conflict prompt; empty KEYS = none), `@shortcut-replace`,
+`@shortcut-cancel`, `@shortcut-record=ACTION` (the next `@key=` is recorded),
+`@shortcut-reset=ACTION|all`, `@shortcut-status`, `@shortcut-sheet`, `@shortcut-menu` (the
+macOS menu items' key equivalents); lyrics cards (`lyrics_card.rs`)
 `@card-select=3;4;5 @card-open @card-style=aspect:story|bg:blur|album|dark|light|align:left|size:large|art:off
 @card-save=PATH @card-copy @card-close`; measurement player bar (`bar_script.rs`) `@bar-style=wavy @bar-bg=gradient @bar-gradient=dir:diagonal @bar-hover=0.4 @bar-status`, `@bench-bar=N[:MS]` (only the bar marked dirty), `@bench=N[:MS]` (draws the main window N
 times MS ms apart and prints the draw times: the UI's CPU per frame, also with the screen

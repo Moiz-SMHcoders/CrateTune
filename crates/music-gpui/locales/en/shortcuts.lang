@@ -1,0 +1,46 @@
+# Settings → Keyboard shortcuts, the cheat sheet (⌘/) and the Help menu.
+settings.section.shortcuts = Keyboard shortcuts
+shortcuts.menu.help = Help
+shortcuts.action.show = Keyboard Shortcuts
+shortcuts.action.escape = Close / go back
+shortcuts.group.playback = Playback
+shortcuts.group.navigation = Navigation
+shortcuts.group.view = Windows & view
+shortcuts.group.app = App
+shortcuts.intro = Click “Change”, then press the new key combination. Esc cancels, Backspace removes the shortcut. Changes apply at once.
+shortcuts.media_keys_note = The keyboard’s media keys (play / pause, next, previous) and headphone buttons come from the system’s media controls and work even when {app} is in the background; they aren’t set here.
+shortcuts.change = Change
+shortcuts.replace = Replace
+shortcuts.reset_tooltip = Reset to default
+shortcuts.reset_all = Reset all
+shortcuts.unbound = Not set
+shortcuts.press_keys = Press keys…
+shortcuts.recording_hint = Press the new combination. Esc cancels, Backspace removes the shortcut.
+# {keys}: the combination (⇧⌘K / Ctrl+Shift+K); {reason}: one of shortcuts.reserved.*
+shortcuts.refused = {keys} can’t be used: {reason}
+shortcuts.reserved.modifier = add a key to the modifiers.
+shortcuts.reserved.typing = it’s needed for typing (use ⌘ or Ctrl with it).
+shortcuts.reserved.editing = it’s copy, paste, cut, select all or undo in text fields.
+shortcuts.reserved.system = the system uses it.
+# {keys}: the combination; {action}: the name of the action that has it now
+shortcuts.conflict = {keys} is already used by “{action}”. Replace it (that action will have no shortcut)?
+shortcuts.cheat.open = Cheat sheet
+shortcuts.cheat.title = Keyboard shortcuts
+shortcuts.cheat.edit = Edit shortcuts…
+# Key names as written on Windows / Linux keyboards (Ctrl+Shift+M).
+shortcuts.key.ctrl = Ctrl
+shortcuts.key.alt = Alt
+shortcuts.key.shift = Shift
+shortcuts.key.win = Win
+shortcuts.key.super = Super
+shortcuts.key.space = Space
+shortcuts.key.enter = Enter
+shortcuts.key.escape = Esc
+shortcuts.key.tab = Tab
+shortcuts.key.backspace = Backspace
+shortcuts.key.delete = Delete
+shortcuts.key.home = Home
+shortcuts.key.end = End
+shortcuts.key.page_up = Page Up
+shortcuts.key.page_down = Page Down
+shortcuts.key.insert = Insert
