@@ -393,7 +393,12 @@ cargo run -p music-core --example lyrics -- --raw /tmp/raw "rosalia malamente" #
   from `adPlacements` / `adSlots`). `ResolvedStream::not_before` carries that time and the
   downloader waits; meanwhile it plays the head of the file from the iOS client's URL when
   that is provably the same file (`ResolvedStream::prefix`: same itag, size and `lmt`), so
-  playback starts long before that (see first audio below).
+  playback starts long before that (see first audio below). A seek past those first
+  bytes before the wait is over is deferred by the voice (`Voice::seek_needs_download`:
+  the target's byte offset, estimated linearly from the length and size plus 256 KiB,
+  hasn't downloaded yet): the current audio keeps playing, `PlaybackState` shows the
+  target with `buffering`, and the seek runs once the bytes are in — instead of the deck
+  falling silent and the seek being rejected after 10 s.
 
 Pieces:
 

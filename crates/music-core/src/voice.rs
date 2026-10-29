@@ -30,6 +30,10 @@ const QUEUE_AHEAD: Duration = Duration::from_millis(150);
 const BLOCK_FRAMES: usize = 1024;
 /// A seek into a part of a stream that has not downloaded yet waits this long.
 const SEEK_WAIT: Duration = Duration::from_secs(10);
+/// A seek target counts as downloaded once the bytes up to its estimated offset
+/// (linear in time) plus this much are in — about 16 s of 128 kbps audio, enough
+/// for VBR and the container's index lookups.
+const SEEK_MARGIN_BYTES: u64 = 256 * 1024;
 
 /// Live per-track processing settings.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -80,6 +84,11 @@ struct Queue {
     /// The producer reached the end of the track (until the next seek).
     eof: bool,
     seek: Option<Duration>,
+    /// A seek whose target has not downloaded yet (e.g. while googlevideo still
+    /// waits out the pre-roll ad): the current audio keeps playing until the
+    /// bytes are in, instead of the deck falling silent (or the seek being
+    /// rejected after [`SEEK_WAIT`]).
+    deferred_seek: Option<Duration>,
     stop: bool,
     settings: Settings,
     settings_dirty: bool,
@@ -149,6 +158,7 @@ impl Voice {
                 frames: 0,
                 eof: false,
                 seek: None,
+                deferred_seek: None,
                 stop: false,
                 settings,
                 settings_dirty: false,
@@ -183,7 +193,10 @@ impl Voice {
     }
 
     pub(crate) fn seek(&self, pos: Duration) {
-        lock(&self.queue).seek = Some(pos);
+        let mut q = lock(&self.queue);
+        q.seek = Some(pos);
+        q.deferred_seek = None;
+        drop(q);
         self.played_out.store(false, Ordering::Release);
         self.wake.notify_all();
     }
@@ -195,7 +208,8 @@ impl Voice {
     }
 
     pub(crate) fn pending_seek(&self) -> Option<Duration> {
-        lock(&self.queue).seek
+        let q = lock(&self.queue);
+        q.seek.or(q.deferred_seek)
     }
 
     pub(crate) fn set_settings(&self, settings: Settings) {
@@ -294,8 +308,7 @@ impl Voice {
     pub(crate) fn queued_start(&self) -> Option<Duration> {
         let q = lock(&self.queue);
         let epoch = self.epoch();
-        q.seek
-            .is_none()
+        (q.seek.is_none() && q.deferred_seek.is_none())
             .then(|| q.chunks.iter().find(|c| c.epoch == epoch).map(|c| c.start))
             .flatten()
     }
@@ -313,7 +326,7 @@ impl Voice {
     ) -> Option<(Chunk, usize)> {
         let epoch = self.epoch();
         let mut q = lock(&self.queue);
-        if q.seek.is_some() {
+        if q.seek.is_some() || q.deferred_seek.is_some() {
             return None;
         }
         let mut dropped = false;
@@ -355,7 +368,7 @@ impl Voice {
             return true;
         }
         let q = lock(&self.queue);
-        q.eof && q.chunks.is_empty() && q.seek.is_none()
+        q.eof && q.chunks.is_empty() && q.seek.is_none() && q.deferred_seek.is_none()
     }
 
     pub(crate) fn set_played(&self, pos: Duration) {
@@ -499,11 +512,16 @@ impl Voice {
                     if !end_known && self.end_is_scannable(&chain) {
                         break;
                     }
-                    q = self
+                    let deferred = q.deferred_seek.is_some();
+                    let (guard, waited) = self
                         .wake
                         .wait_timeout(q, Duration::from_millis(100))
-                        .unwrap_or_else(|e| e.into_inner())
-                        .0;
+                        .unwrap_or_else(|e| e.into_inner());
+                    q = guard;
+                    // Re-check a deferred seek's bytes now and then.
+                    if deferred && waited.timed_out() {
+                        break;
+                    }
                 }
                 let new_settings = std::mem::take(&mut q.settings_dirty).then_some(q.settings);
                 (q.seek, new_settings)
@@ -515,8 +533,35 @@ impl Voice {
             }
 
             if let Some(target) = seek {
+                if self.seek_needs_download(target) {
+                    let mut q = lock(&self.queue);
+                    if q.seek == Some(target) {
+                        q.seek = None;
+                        q.deferred_seek = Some(target);
+                    }
+                    continue;
+                }
                 self.do_seek(&mut chain, &mut conform, target);
                 continue;
+            }
+            let deferred = lock(&self.queue).deferred_seek;
+            if let Some(target) = deferred
+                && !self.seek_needs_download(target)
+            {
+                let mut q = lock(&self.queue);
+                if q.deferred_seek == Some(target) && q.seek.is_none() {
+                    q.deferred_seek = None;
+                    q.seek = Some(target);
+                }
+                continue;
+            }
+            if deferred.is_some() {
+                // Woken only to re-check the deferred seek: decode no more than
+                // the deck needs.
+                let q = lock(&self.queue);
+                if q.eof || q.frames >= target_frames {
+                    continue;
+                }
             }
 
             if !end_known && self.end_is_scannable(&chain) {
@@ -578,6 +623,31 @@ impl Voice {
             }
             q.eof |= ended;
         }
+    }
+
+    /// True while a seek to `target` would have to wait for the download: the
+    /// stream is still downloading and hasn't reached `target`'s estimated byte
+    /// offset. Local files, finished (or failed) downloads and streams of
+    /// unknown size or length seek at once, as before.
+    fn seek_needs_download(&self, target: Duration) -> bool {
+        let Some(buffer) = lock(&self.buffer).clone() else {
+            return false;
+        };
+        if buffer.end().is_some() || buffer.is_cancelled() {
+            return false;
+        }
+        let duration = lock(&self.info).duration;
+        let (Some(total), Some(duration)) = (buffer.total_len(), duration) else {
+            return false;
+        };
+        if duration.is_zero() || total == 0 {
+            return false;
+        }
+        let fraction = (target.as_secs_f64() / duration.as_secs_f64()).clamp(0.0, 1.0);
+        let needed = ((total as f64 * fraction) as u64)
+            .saturating_add(SEEK_MARGIN_BYTES)
+            .min(total);
+        buffer.len() < needed
     }
 
     /// The real end of the audio can be found once all data is available and

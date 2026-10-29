@@ -13,6 +13,8 @@ use crate::{ResolvedStream, TrackDecoder};
 const RATE: u32 = 48_000;
 const CHIRP: &[u8] = include_bytes!("../../tests/fixtures/chirp_frag.m4a");
 const PREVIEW_LEN: usize = 50_000;
+/// How long the `adwait` stream's main URL is unusable.
+const AD_WAIT: Duration = Duration::from_millis(2500);
 
 /// Resolves ids against a local server: `full` (the chirp), `preview` (the
 /// chirp cut off after 50 kB with 403s afterwards), `expired` / `expiring`
@@ -88,6 +90,27 @@ impl StreamResolver for FakeResolver {
             "expired" => return Ok(self.module_stream("/stale/expired", hour, true)),
             "expiring" => return Ok(self.module_stream("/stale/expiring", hour, false)),
             _ => {}
+        }
+        if video_id == "adwait" {
+            // googlevideo before the pre-roll ad could be skipped: the URL works
+            // only after `not_before`; the start is available from another URL
+            // for the same file (the iOS client's first MiB, here 40 kB ≈ 9 s).
+            return Ok(ResolvedStream {
+                url: format!("{}/adwait", self.full.base),
+                itag: 140,
+                mime_type: "audio/mp4".into(),
+                content_length: Some(CHIRP.len() as u64),
+                user_agent: "test",
+                full_access: true,
+                not_before: Some(std::time::SystemTime::now() + AD_WAIT),
+                prefix: Some(crate::StreamPrefix {
+                    url: format!("{}/adwait-prefix", self.full.base),
+                    user_agent: "test",
+                    bytes: 40_000,
+                    head: None,
+                }),
+                ..Default::default()
+            });
         }
         let base = match video_id {
             "full" => &self.full.base,
@@ -663,6 +686,44 @@ fn streams_seek_pause_and_replay() {
     );
     std::thread::sleep(Duration::from_millis(150));
     assert!(player.state().position.abs_diff(paused) < Duration::from_millis(40));
+}
+
+#[test]
+fn seek_past_the_download_keeps_playing_until_the_target_arrives() {
+    let (player, mut out, _r) = player();
+    player.play(remote("adwait"));
+    pull_until(&player, &mut out, "playing from the prefix", |s| {
+        s.position > Duration::from_millis(500)
+    });
+    // 15 s is far past the 40 kB prefix: its bytes come only after the ad wait.
+    player.seek(Duration::from_secs(15));
+    let started = Instant::now();
+    pull_until(&player, &mut out, "seek noticed", |s| {
+        s.position == Duration::from_secs(15)
+    });
+    let mut audio = Vec::new();
+    while started.elapsed() < Duration::from_millis(800) {
+        audio.extend(out.by_ref().take(480 * 2).step_by(2));
+        let s = player.state();
+        assert_eq!(s.position, Duration::from_secs(15), "shows the target");
+        assert!(s.buffering, "marked as buffering while it waits");
+        std::thread::sleep(Duration::from_millis(3));
+    }
+    // The current audio played on meanwhile instead of silence.
+    assert!(
+        longest_silence(&audio) < RATE as usize / 10,
+        "silent for {} samples while waiting",
+        longest_silence(&audio)
+    );
+    // Once the bytes are in, playback continues from the target.
+    let s = pull_until(&player, &mut out, "at the target", |s| {
+        !s.buffering && s.position > Duration::from_millis(15_200)
+    })
+    .states
+    .pop()
+    .unwrap();
+    assert!(s.position < Duration::from_secs(17), "{:?}", s.position);
+    assert!(started.elapsed() < AD_WAIT + Duration::from_secs(5));
 }
 
 #[test]

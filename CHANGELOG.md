@@ -162,6 +162,11 @@ versions follow [SemVer](https://semver.org/).
 
 ### Fixed
 
+* **Seeking far ahead right after a song starts** no longer goes silent (or gives up
+  after 10 s and jumps back): YouTube only serves the rest of the file once its
+  pre-roll ad could have been skipped (a few seconds; longer for unskippable ads), so
+  until then the song keeps playing where it was, the bar shows the target with a
+  spinner, and playback moves there as soon as those bytes arrive.
 * **High quality (Opus) playback uses ~100× less CPU for decoding**: the bundled Opus
   decoder computed a key transform the slow way (about a quarter of a CPU core while a
   song played); it now uses an FFT. Output is unchanged (90 dB SNR to the original).
