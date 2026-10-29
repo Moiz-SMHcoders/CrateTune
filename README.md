@@ -951,6 +951,40 @@ locales/<locale>/*.lang  the catalogs (English = source), embedded by build.rs v
   `setVideoId`s) into the database; YouTube wins for likes / saved albums / subscriptions /
   playlist mirrors, local-only items are untouched. The artist page's Subscribe button and the library artist views subscribe /
   unsubscribe (`set_subscribed`).
+* **Account sync, likes and dislikes** (`youtube_sync.rs`, `account.rs`,
+  `music_core::library::ratings`). ArchiveTune runs `SyncUtils.performFullSync` when the
+  app starts signed in, after sign-in and on an account switch (authoritative there), and
+  `syncLikedSongs` when the Liked page opens, all gated by `YtmSyncKey` (default on); it
+  has no dislike and never reads YouTube's `likeStatus`. CrateTune matches those
+  triggers and adds: a sync every 45 min while running and when the window comes back
+  after 30 min; automatic syncs are **liked songs only** (`VLLM` + continuations) unless
+  the last full sync is 6 h old; none at start if the last sync is under 10 min old, a
+  failed attempt waits like a sync. Sign-in, switch and **Sync now** always run a full,
+  authoritative sync. One sync at a time (`SyncSchedule`): a request made meanwhile waits
+  and runs after, unless the finished one covered it. Settings → Account → **Sync with
+  YouTube Music automatically** (`library.auto_sync`, default on) turns the automatic
+  ones off. YouTube stays the source of truth for likes, with guards: local files and
+  ratings still queued keep their state, and an automatic sync with an empty or truncated
+  (60+ pages) list unlikes nothing. **Per-song likes**: 3 s into a song (signed in, sync
+  on, not asked in the last 30 min) its `next` response's like button
+  (`playerOverlays…likeButtonRenderer.likeStatus`, `InnerTube::like_status`) sets the
+  local like / dislike; a radio started from the song carries it already
+  (`WatchQueue::ratings`, also the rows' menu buttons) so no second request goes out.
+  "Neither" is only believed when the response's `responseContext` says `logged_in=1`
+  (an expired session would otherwise unlike every song played); a like or dislike is
+  always. **Dislike** (track menus, Now Playing's Split layout beside the heart, an
+  optional player-bar item off by default): `like/dislike`, `song.disliked_at` (schema
+  v2, additive), unlikes, skips the playing song ("Skip songs you dislike", default on,
+  as YouTube Music does), and disliked songs are left out of radio / autoplay batches;
+  taking it back sends `like/removelike`. **Offline**: a like / dislike YouTube didn't
+  take is saved locally and queued (`pending_rating`, latest wish per song, dropped after
+  20 failures); it is sent every 5 min and before each sync, cleared on sign-out /
+  account switch. The Liked tab shows "Synced with YouTube Music 5 min ago" and a
+  **Sync now** button (liked songs only). **Not verified against a real account**: all of
+  this ran against fixtures (`authed/next_liked.json` is hand-built from the recorded
+  `next.json`) and loopback fakes only; in particular whether WEB_REMIX `next` carries
+  `logged_in` (if not, songs liked elsewhere still turn liked on play, but "unliked
+  elsewhere" waits for the next sync) and whether queue rows carry like buttons.
 * **Privacy**: pause / clear listen history, pause / clear search history (submitted searches
   are stored via `record_search`). **Storage**: file locations, play-cache limit (128 MB–8 GB),
   usage and clear, optional "cache played songs", artwork kept in memory (16–192 MB), download folder + usage, **backup export /

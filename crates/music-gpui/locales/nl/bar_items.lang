@@ -4,6 +4,7 @@ bar_items.title = Tonen in de balk
 bar_items.reset = Herstellen
 bar_items.note = Verborgen onderdelen laten geen gat achter. In smalle vensters verdwijnen de minder belangrijke knoppen nog steeds eerst; een lopende cast of een ingestelde slaaptimer blijft zichtbaar zodat je hem kunt stoppen. De miniplayer houdt zijn eigen knoppen.
 bar_items.item.like = Vind ik leuk
+bar_items.item.dislike = Vind ik niet leuk
 bar_items.item.quality_tag = Bron en kwaliteit
 bar_items.item.shuffle = Shuffle
 bar_items.item.repeat = Herhalen

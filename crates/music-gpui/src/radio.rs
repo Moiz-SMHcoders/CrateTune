@@ -186,6 +186,7 @@ impl MusicApp {
         };
         let continuation = self.radio.continuation.clone();
         let (client, filter) = (self.innertube.clone(), self.content_filter);
+        let asked_at = std::time::Instant::now();
         self.radio.task = Some(cx.spawn(async move |this, cx| {
             let result = off_thread(move || match &continuation {
                 Some(c) => client.next_continuation(&target, c),
@@ -195,7 +196,12 @@ impl MusicApp {
             this.update(cx, |this, cx| {
                 this.radio.task = None;
                 match result {
-                    Ok(queue) => this.on_radio_batch(queue, replace, filter, cx),
+                    Ok(queue) => {
+                        // Signed in, the response carries the seed's like (and maybe
+                        // the rows'): no separate request for them.
+                        this.note_queue_ratings(&queue, asked_at, cx);
+                        this.on_radio_batch(queue, replace, filter, cx)
+                    }
                     Err(e) => {
                         eprintln!("music-gpui: radio: {e}");
                         if replace {
@@ -220,6 +226,8 @@ impl MusicApp {
         let tracks: Vec<Track> = filter
             .tracks(queue.tracks)
             .into_iter()
+            // Thumbs down: kept out of radio and autoplay.
+            .filter(|t| !crate::store::is_disliked(&t.video_id))
             .filter(|t| self.radio.seen.insert(t.video_id.clone()))
             .collect();
         if tracks.is_empty() {

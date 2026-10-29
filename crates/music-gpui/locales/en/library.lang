@@ -48,6 +48,10 @@ library.empty.no_matches_title = No matches
 library.empty.no_matches_detail = Nothing matches the filter.
 library.empty.liked_title = No liked songs
 library.empty.liked_detail = Tap the heart on any song. Signed in, your YouTube Music likes sync here.
+# Liked tab, signed in: when the liked songs were last synced. {when} = "5 min ago"
+# (time.*_ago).
+library.liked.synced = Synced with YouTube Music {when}
+library.liked.not_synced = Not synced with YouTube Music yet
 library.empty.downloaded_title = Nothing downloaded
 library.empty.downloaded_detail = Choose “Download” in a song's menu to keep it on this computer.
 library.empty.local_title = No local files

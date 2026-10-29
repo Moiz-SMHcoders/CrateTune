@@ -877,6 +877,7 @@ impl MusicApp {
     ) -> AnyElement {
         let layout = self.bar_layout_now(window, cx);
         let like = self.settings.read(cx).bar_items().like;
+        let dislike = self.settings.read(cx).bar_items().dislike;
         // Edge: square at the bar's full height, flush left, no outer rounding.
         let edge =
             self.settings.read(cx).settings().player_bar.artwork_style == BarArtworkStyle::Edge;
@@ -961,6 +962,16 @@ impl MusicApp {
                     .custom(bar_button_style(cx))
                     .with_size(Size::Medium)
             }))
+            .children(
+                track
+                    .as_ref()
+                    .filter(|t| dislike && !t.is_local())
+                    .map(|t| {
+                        crate::components::dislike::dislike_button("bar-dislike", t, cx)
+                            .custom(bar_button_style(cx))
+                            .with_size(Size::Medium)
+                    }),
+            )
             .when(layout.add_to_playlist, |this| {
                 this.child(self.bar_add_to_playlist_button(track.as_ref(), cx))
             })
@@ -1362,7 +1373,9 @@ mod tests {
             BarItem::MiniPlayer => l.mini,
             BarItem::NowPlaying => l.now_playing,
             BarItem::Volume => l.slider.is_some(),
-            BarItem::Like | BarItem::SponsorBlock | BarItem::Together => return None,
+            BarItem::Like | BarItem::Dislike | BarItem::SponsorBlock | BarItem::Together => {
+                return None;
+            }
         })
     }
 

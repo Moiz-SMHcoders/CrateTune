@@ -17,6 +17,9 @@ common.add_to_queue = Add to queue
 common.add_to_playlist = Add to playlist…
 common.like = Like
 common.remove_from_liked = Remove from liked songs
+# YouTube Music's thumbs down (menu item, tooltip).
+common.dislike = Dislike
+common.remove_dislike = Remove dislike
 common.download = Download
 common.remove_download = Remove download
 common.go_to_artist = Go to artist

@@ -4,6 +4,7 @@ bar_items.title = Afficher dans la barre
 bar_items.reset = Réinitialiser
 bar_items.note = Les éléments masqués ne laissent pas de vide. Dans une fenêtre étroite, les boutons les moins importants disparaissent toujours en premier ; une diffusion en cours ou un minuteur actif reste visible pour pouvoir l'arrêter. Le mini-lecteur garde ses propres commandes.
 bar_items.item.like = J'aime
+bar_items.item.dislike = Je n'aime pas
 bar_items.item.quality_tag = Source et qualité
 bar_items.item.shuffle = Aléatoire
 bar_items.item.repeat = Répéter

@@ -4,6 +4,7 @@ bar_items.title = Pokazuj na pasku
 bar_items.reset = Przywróć
 bar_items.note = Ukryte elementy nie zostawiają pustych miejsc. W wąskich oknach mniej ważne przyciski nadal znikają jako pierwsze; trwające przesyłanie lub ustawiony wyłącznik czasowy pozostają widoczne, aby można je było zatrzymać. Miniodtwarzacz ma własne przyciski.
 bar_items.item.like = Lubię to
+bar_items.item.dislike = Nie lubię
 bar_items.item.quality_tag = Źródło i jakość
 bar_items.item.shuffle = Losowo
 bar_items.item.repeat = Powtarzanie

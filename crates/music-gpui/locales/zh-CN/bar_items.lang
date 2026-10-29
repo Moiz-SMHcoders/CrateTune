@@ -4,6 +4,7 @@ bar_items.title = 在播放栏中显示
 bar_items.reset = 重置
 bar_items.note = 隐藏的项目不会留下空位。窗口较窄时，仍会先隐藏不太重要的按钮；正在进行的投放或已设置的睡眠定时器会保持可见，方便你停止。迷你播放器保留自己的按钮。
 bar_items.item.like = 喜欢
+bar_items.item.dislike = 不喜欢
 bar_items.item.quality_tag = 来源和音质
 bar_items.item.shuffle = 随机播放
 bar_items.item.repeat = 循环播放

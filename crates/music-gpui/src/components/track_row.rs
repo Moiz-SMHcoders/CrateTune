@@ -287,7 +287,29 @@ pub fn track_menu(menu: PopupMenu, track: &Track, list: ListContext) -> PopupMen
                     update_app(cx, |app, cx| app.toggle_like(t, window, cx));
                 }
             }),
-        );
+        )
+        // YouTube Music's thumbs down (not for local files: YouTube can't rate them,
+        // and their likes are only local anyway).
+        .when(!track.is_local(), |menu| {
+            menu.item(
+                item(
+                    if crate::store::is_disliked(&track.video_id) {
+                        t!("common.remove_dislike")
+                    } else {
+                        t!("common.dislike")
+                    },
+                    Lucide::ThumbsDown,
+                )
+                .disabled(!crate::store::library_open())
+                .on_click({
+                    let t = t.clone();
+                    move |_, window, cx| {
+                        let t = t.clone();
+                        update_app(cx, |app, cx| app.toggle_dislike(t, window, cx));
+                    }
+                }),
+            )
+        });
     let mut menu = download_item(menu, track).separator();
 
     // One "Go to artist" entry per artist with a channel id (disabled without any).

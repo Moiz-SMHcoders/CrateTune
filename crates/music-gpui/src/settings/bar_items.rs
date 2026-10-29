@@ -1,7 +1,7 @@
 //! Which items the player bar shows (`player_bar.items` in `settings.json`):
 //! one switch per button, tag or chip. Everything that existed before is on by
-//! default, so the default bar looks exactly like it did; "Add to playlist" is
-//! new and off. Hidden items take no room: the bar's layout (`bar_layout`)
+//! default, so the default bar looks exactly like it did; "Add to playlist" and
+//! "Dislike" are new and off. Hidden items take no room: the bar's layout (`bar_layout`)
 //! gives their space to the next controls in priority order. The mini player
 //! has its own fixed controls (previous / play / next, back to the main window)
 //! and isn't affected.
@@ -13,6 +13,8 @@ use serde::{Deserialize, Serialize};
 pub enum BarItem {
     /// The heart beside the track info.
     Like,
+    /// The thumbs down beside the heart (new; off by default).
+    Dislike,
     /// The "YouTube · AAC 128 kbps" tag (opens the quality menu).
     QualityTag,
     Shuffle,
@@ -36,8 +38,9 @@ pub enum BarItem {
 
 impl BarItem {
     /// Settings order: left to right on the bar.
-    pub const ALL: [Self; 14] = [
+    pub const ALL: [Self; 15] = [
         Self::Like,
+        Self::Dislike,
         Self::QualityTag,
         Self::Shuffle,
         Self::Repeat,
@@ -58,6 +61,7 @@ impl BarItem {
     pub fn key(self) -> &'static str {
         match self {
             Self::Like => "like",
+            Self::Dislike => "dislike",
             Self::QualityTag => "quality_tag",
             Self::Shuffle => "shuffle",
             Self::Repeat => "repeat",
@@ -83,6 +87,7 @@ impl BarItem {
     pub fn title(self) -> &'static str {
         match self {
             Self::Like => t!("bar_items.item.like"),
+            Self::Dislike => t!("bar_items.item.dislike"),
             Self::QualityTag => t!("bar_items.item.quality_tag"),
             Self::Shuffle => t!("bar_items.item.shuffle"),
             Self::Repeat => t!("bar_items.item.repeat"),
@@ -105,6 +110,7 @@ impl BarItem {
 #[serde(default)]
 pub struct BarItems {
     pub like: bool,
+    pub dislike: bool,
     pub quality_tag: bool,
     pub shuffle: bool,
     pub repeat: bool,
@@ -121,10 +127,11 @@ pub struct BarItems {
 }
 
 impl Default for BarItems {
-    /// Today's bar: everything but the new "Add to playlist".
+    /// Today's bar: everything but the new "Add to playlist" and "Dislike".
     fn default() -> Self {
         Self {
             like: true,
+            dislike: false,
             quality_tag: true,
             shuffle: true,
             repeat: true,
@@ -155,6 +162,7 @@ impl BarItems {
     fn slot(&mut self, item: BarItem) -> &mut bool {
         match item {
             BarItem::Like => &mut self.like,
+            BarItem::Dislike => &mut self.dislike,
             BarItem::QualityTag => &mut self.quality_tag,
             BarItem::Shuffle => &mut self.shuffle,
             BarItem::Repeat => &mut self.repeat,
@@ -213,7 +221,7 @@ mod tests {
         assert!(
             BarItem::ALL
                 .into_iter()
-                .all(|i| d.shows(i) == (i != BarItem::AddToPlaylist))
+                .all(|i| d.shows(i) == !matches!(i, BarItem::AddToPlaylist | BarItem::Dislike))
         );
         assert_eq!(BarItems::none().shown().count(), 0);
         // Older files have no `items`; newer ones may lack a field.

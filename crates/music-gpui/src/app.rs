@@ -363,6 +363,7 @@ impl MusicApp {
         this.apply_artwork_budget(cx);
         this.sync_browse_client(cx);
         this.start_radio_watch(window, cx);
+        this.start_youtube_sync_watch(window, cx);
         this.rebuild_lyrics_service(cx);
         this.use_library_lyrics_cache(cx);
         this.restore_queue();

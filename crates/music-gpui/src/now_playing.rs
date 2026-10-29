@@ -1144,7 +1144,8 @@ impl MusicApp {
             height: viewport.height.as_f32() as i32,
             extra: side.as_f32() as u64
                 | u64::from(self.engine.is_some()) << 32
-                | u64::from(self.queue.has_next()) << 33,
+                | u64::from(self.queue.has_next()) << 33
+                | u64::from(track.is_some_and(|t| crate::store::is_disliked(&t.video_id))) << 34,
         }
     }
 
@@ -1185,7 +1186,17 @@ impl MusicApp {
                             )
                             .child(div().text_color(white(0.65)).truncate().child(artists)),
                     )
-                    // Like (library + YouTube Music when signed in).
+                    // Dislike, then like (library + YouTube Music when signed in).
+                    .children(track.filter(|t| !t.is_local()).map(|t| {
+                        crate::components::dislike::dislike_icon_button(
+                            "np-dislike",
+                            t,
+                            px(36.),
+                            white(0.8),
+                            white(0.12),
+                            cx,
+                        )
+                    }))
                     .children(track.map(|t| like_icon_button("np-like", t, px(36.), cx))),
             )
             .child(self.progress_view(position, cx))

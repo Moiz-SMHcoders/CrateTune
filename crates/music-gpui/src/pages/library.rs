@@ -8,11 +8,11 @@
 use std::rc::Rc;
 
 use gpui::{
-    AppContext as _, Context, Entity, IntoElement, ParentElement as _, Render, ScrollHandle,
+    App, AppContext as _, Context, Entity, IntoElement, ParentElement as _, Render, ScrollHandle,
     SharedString, Styled as _, Subscription, Task, Window, div, prelude::FluentBuilder as _,
 };
 use gpui_component::{
-    Selectable as _, Sizable as _,
+    ActiveTheme as _, Disableable as _, Selectable as _, Sizable as _,
     button::{Button, ButtonVariants as _},
     h_flex,
     input::InputState,
@@ -135,6 +135,14 @@ impl LibraryPage {
         } else {
             scroll
         };
+        if tab == LibraryTab::Liked {
+            // ArchiveTune syncs the liked songs when their page opens (throttled).
+            cx.defer(|cx| {
+                update_app(cx, |app, cx| {
+                    app.request_sync(crate::youtube_sync::Trigger::LikedPage, cx)
+                });
+            });
+        }
         PageView::new(page, Some(handle))
     }
 
@@ -414,6 +422,9 @@ impl LibraryPage {
             })
             .flatten();
         let podcasts = self.tab == LibraryTab::Podcasts;
+        let liked_sync = (self.tab == LibraryTab::Liked)
+            .then(|| liked_sync_status(cx))
+            .flatten();
         h_flex()
             .w_full()
             .gap_2()
@@ -422,6 +433,7 @@ impl LibraryPage {
             .children(download)
             .children(new_playlist)
             .child(div().flex_1())
+            .children(liked_sync)
             .children(saved_toggle)
             .when(!podcasts, |this| this.child(sort))
             .when(
@@ -566,6 +578,62 @@ impl LibraryPage {
         };
         page_scroll("library-grid", &self.scroll, body).into_any_element()
     }
+}
+
+/// Liked tab, signed in: when the liked songs were last synced with YouTube Music,
+/// and a button that syncs them now.
+fn liked_sync_status(cx: &App) -> Option<gpui::AnyElement> {
+    let (syncing, last) = read_app(cx, |app, _| {
+        let account = &app.store.account;
+        account.is_signed_in().then(|| {
+            let config = account.config.as_ref();
+            (
+                account.is_syncing(),
+                config.and_then(|c| c.last_liked_sync_at.or(c.last_sync_at)),
+            )
+        })
+    })
+    .flatten()?;
+    let status: SharedString = match last {
+        Some(at) => {
+            let secs = (music_core::library::now_ms() - at).max(0) as u64 / 1000;
+            t!(
+                "library.liked.synced",
+                when = crate::i18n::format::ago(secs)
+            )
+            .into()
+        }
+        None => t!("library.liked.not_synced").into(),
+    };
+    Some(
+        h_flex()
+            .gap_2()
+            .child(
+                div()
+                    .text_xs()
+                    .text_color(cx.theme().muted_foreground)
+                    .child(status),
+            )
+            .child(
+                Button::new("library-liked-sync")
+                    .ghost()
+                    .small()
+                    .icon(gpui_component::IconName::RefreshCw)
+                    .loading(syncing)
+                    .disabled(syncing)
+                    .label(if syncing {
+                        t!("settings.account.syncing")
+                    } else {
+                        t!("settings.account.sync_now")
+                    })
+                    .on_click(|_, window, cx| {
+                        update_app(cx, |app, cx| {
+                            app.sync_youtube(crate::youtube_sync::Trigger::ManualLiked, window, cx)
+                        });
+                    }),
+            )
+            .into_any_element(),
+    )
 }
 
 fn is_song_tab(tab: LibraryTab) -> bool {

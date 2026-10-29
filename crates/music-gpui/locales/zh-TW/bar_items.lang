@@ -4,6 +4,7 @@ bar_items.title = 在播放列中顯示
 bar_items.reset = 重設
 bar_items.note = 隱藏的項目不會留下空位。視窗較窄時，仍會先隱藏較不重要的按鈕；進行中的投放或已設定的睡眠計時器會保持顯示，方便你停止。迷你播放器保留自己的按鈕。
 bar_items.item.like = 喜歡
+bar_items.item.dislike = 不喜歡
 bar_items.item.quality_tag = 來源與品質
 bar_items.item.shuffle = 隨機播放
 bar_items.item.repeat = 重複播放

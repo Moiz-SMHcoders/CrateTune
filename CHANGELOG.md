@@ -27,6 +27,28 @@ versions follow [SemVer](https://semver.org/).
 
 * The saved window frame is no longer replaced while the window is in full screen, so the
   next launch opens the normal window, not one the size of the screen.
+* **Likes stay in sync with YouTube Music** (signed in): the liked songs sync at start
+  (unless the last sync is under 10 min old), every 45 min, when the window comes back
+  after 30 min and when the Liked tab opens; the whole library every 6 h and on sign-in /
+  account switch / **Sync now**. Syncs never overlap. Settings → Account → **Sync with
+  YouTube Music automatically** (on by default, like ArchiveTune) turns the background
+  syncs off. The Liked tab shows the last sync time and a **Sync now** button.
+* **A song's like from YouTube when it plays**: a few seconds in, its like or dislike is
+  read from YouTube Music's own like button (reusing the radio's response when there is
+  one), so a song liked on the phone shows the filled heart right away.
+* **Dislike** (thumbs down): song menus, Now Playing (Split design) and an optional
+  player-bar item (off by default). Rates the song on YouTube Music, removes a like,
+  skips the playing song (**Skip songs you dislike**, on by default) and keeps disliked
+  songs out of radio and autoplay. **Remove dislike** takes it back.
+* **Offline likes**: a like or dislike YouTube Music didn't take is kept and retried
+  every 5 min and before each sync, instead of staying local only.
+
+### Changed
+
+* Library database schema v2 (adds `song.disliked_at` and `pending_rating`; older builds
+  refuse a v2 database, as for every schema bump).
+* Automatic and liked-only syncs no longer unlike everything when YouTube's liked list
+  comes back empty or truncated; ratings still queued and local files keep their state.
 
 ## [0.2.0] — 2026-10-29
 

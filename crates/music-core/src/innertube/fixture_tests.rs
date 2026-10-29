@@ -900,3 +900,120 @@ fn google_accounts_from_a_fake_server() {
     // No cookie: nothing is sent.
     assert!(super::InnerTube::default().google_accounts().is_err());
 }
+
+/// `likeStatus` of the current video (`playerOverlays`) and of queue rows.
+#[test]
+fn like_status_from_next() {
+    use super::Rating;
+    let rating = |v: &Value| pages::like_status(v).map(|r| (r.video_id, r.rating));
+    let video = || "sVx1mJDeUjY".to_owned();
+
+    // Anonymous (the recorded response): indifferent.
+    let anon = fixture("next");
+    assert_eq!(rating(&anon), Some((video(), Rating::Indifferent)));
+    let q = pages::watch_queue(&anon).unwrap();
+    assert_eq!(q.ratings.len(), 1);
+    assert_eq!(q.ratings[0].rating, Rating::Indifferent);
+    // The recorded response doesn't say whether it was signed in: "neither" isn't
+    // trusted (an expired session would unlike everything played).
+    assert_eq!(q.logged_in, None);
+    assert_eq!(q.trusted_ratings().count(), 0);
+
+    // Signed in, liked elsewhere (phone, browser).
+    let liked = fixture("authed/next_liked");
+    assert_eq!(rating(&liked), Some((video(), Rating::Like)));
+    let q = pages::watch_queue(&liked).unwrap();
+    assert_eq!(q.ratings[0].video_id, q.tracks[0].video_id);
+    assert_eq!(q.ratings[0].rating, Rating::Like);
+    assert_eq!(q.logged_in, Some(true));
+    assert_eq!(q.trusted_ratings().count(), 1);
+
+    // Signed in and "neither": trusted. Marked signed out: nothing is.
+    let mut neither = liked.clone();
+    neither["playerOverlays"]["playerOverlayRenderer"]["actions"][0]["likeButtonRenderer"]["likeStatus"] =
+        "INDIFFERENT".into();
+    let q = pages::watch_queue(&neither).unwrap();
+    assert_eq!(
+        q.trusted_ratings().next().unwrap().rating,
+        Rating::Indifferent
+    );
+    let mut signed_out = liked.clone();
+    signed_out["responseContext"]["serviceTrackingParams"][0]["params"][0]["value"] = "0".into();
+    let q = pages::watch_queue(&signed_out).unwrap();
+    assert_eq!(q.logged_in, Some(false));
+    assert_eq!(q.trusted_ratings().count(), 0);
+
+    // Disliked; and the video id from `currentVideoEndpoint` when the button has no target.
+    let mut disliked = liked.clone();
+    let button = disliked
+        .pointer_mut("/playerOverlays/playerOverlayRenderer/actions/0/likeButtonRenderer")
+        .unwrap();
+    button["likeStatus"] = "DISLIKE".into();
+    button.as_object_mut().unwrap().remove("target");
+    assert_eq!(rating(&disliked), Some((video(), Rating::Dislike)));
+
+    // Unknown status, or no like button: nothing.
+    let mut odd = liked.clone();
+    odd["playerOverlays"]["playerOverlayRenderer"]["actions"][0]["likeButtonRenderer"]["likeStatus"] =
+        "SOMETHING_NEW".into();
+    assert_eq!(rating(&odd), None);
+    assert_eq!(rating(&fixture("next_continuation")), None);
+    assert_eq!(rating(&serde_json::json!({})), None);
+
+    // Rows carry a like button in their menu when signed in.
+    let mut rows = fixture("next");
+    let panel = rows
+        .pointer_mut("/contents/singleColumnMusicWatchNextResultsRenderer/tabbedRenderer/watchNextTabbedResultsRenderer/tabs/0/tabRenderer/content/musicQueueRenderer/content/playlistPanelRenderer/contents")
+        .unwrap()
+        .as_array_mut()
+        .unwrap();
+    let second = panel
+        .iter_mut()
+        .filter_map(|r| r.get_mut("playlistPanelVideoRenderer"))
+        .nth(1)
+        .unwrap();
+    let second_id = second["videoId"].as_str().unwrap().to_owned();
+    second["menu"] = serde_json::json!({ "menuRenderer": { "topLevelButtons": [
+        { "likeButtonRenderer": { "likeStatus": "LIKE", "target": { "videoId": second_id } } }
+    ] } });
+    let q = pages::watch_queue(&rows).unwrap();
+    assert_eq!(q.ratings.len(), 2);
+    assert_eq!(q.ratings[1].video_id, second_id);
+    assert_eq!(q.ratings[1].rating, Rating::Like);
+
+    assert_eq!(Rating::from_like_status("LIKE"), Some(Rating::Like));
+    for r in [Rating::Like, Rating::Dislike, Rating::Indifferent] {
+        assert_eq!(Rating::parse(r.as_str()), Some(r));
+    }
+    assert_eq!(Rating::parse("love"), None);
+}
+
+/// `InnerTube::like_status` asks `next` signed in and reads the like button.
+#[test]
+fn like_status_from_a_fake_server() {
+    use super::Rating;
+    use crate::testutil::{Reply, TestServer};
+    let server = TestServer::start_http(|req| {
+        assert!(req.path.starts_with("/youtubei/v1/next"), "{}", req.path);
+        assert!(req.header("Cookie").is_some_and(|c| c.contains("SAPISID")));
+        let body: Value = serde_json::from_slice(&req.body).unwrap();
+        let name = match body["videoId"].as_str() {
+            Some("sVx1mJDeUjY") => "authed/next_liked",
+            Some("anon") => "next",
+            _ => "next_continuation",
+        };
+        Reply::Full {
+            status: 200,
+            headers: vec!["Content-Type: application/json".into()],
+            body: serde_json::to_vec(&fixture(name)).unwrap(),
+        }
+    });
+    let it = probing_client(&server.base);
+    assert_eq!(it.like_status("sVx1mJDeUjY").unwrap(), Some(Rating::Like));
+    // The answer is about another video (the request was redirected): nothing.
+    assert_eq!(it.like_status("anon").unwrap(), None);
+    assert_eq!(it.like_status("other").unwrap(), None, "no like button");
+    // Signed out: refused before any request.
+    let anon = super::InnerTube::default().with_api_base(&server.base);
+    assert!(anon.like_status("sVx1mJDeUjY").is_err());
+}
