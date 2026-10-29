@@ -1,0 +1,31 @@
+# Home: personal sections, their options (Content & region → Home) and the speed
+# dial menu entries (see en/home.lang).
+
+home.quick_picks = Hızlı seçimler
+home.section.community = Topluluk çalma listeleri
+home.section.speed_dial = Hızlı arama
+home.section.keep_listening = Dinlemeye devam et
+home.section.account_playlists = YouTube çalma listelerin
+home.section.forgotten_favorites = Unutulan favoriler
+home.section.similar = Şuna benzer…
+home.section.feed = YouTube Music akışı
+home.similar_to = Şuna benzer
+home.playlists_word = çalma listeleri
+home.speed_dial.pin = Hızlı aramaya sabitle
+home.speed_dial.unpin = Hızlı aramadan kaldır
+settings.home.group = Ana sayfa
+settings.home.quick_picks = Hızlı seçimler
+settings.home.quick_picks_description = En çok dinlediğin şarkılarla ya da son dinlediğinle ilgili şarkılar. Dinleme geçmişi oluşana kadar YouTube Music'in kendi hızlı seçimleri gösterilir.
+home.options.quick_picks.mix = Favorilerinden
+home.options.quick_picks.last = Son şarkından
+home.options.quick_picks.hidden = Gösterme
+settings.home.display = Hızlı seçim düzeni
+settings.home.display_description = Kapaklı şarkı kartları ya da dört satırlık kompakt bir liste.
+home.options.display.cards = Kartlar
+home.options.display.list = Liste
+settings.home.chips = Kategori çipleri
+settings.home.chips_description = YouTube Music'in ruh hâlleri ve türleri (Enerji, Rahatla, …) ana sayfanın üstünde. Birini seçmek YouTube'un hızlı seçimlerini ve akışını değiştirir.
+settings.home.backdrop = Tonlu arka plan
+settings.home.backdrop_description = Ana sayfanın üst kısmının arkasında vurgu renginde yumuşak bir geçiş. Uygulama genelindeki kapak görünümü pencereyi renklendirirken çizilmez.
+settings.home.sections = Bölümler
+settings.home.sections_description = Vurgulanan bölümler ana sayfada görünür. Hızlı aramada bağlam menüsünden sabitlediklerin bulunur.

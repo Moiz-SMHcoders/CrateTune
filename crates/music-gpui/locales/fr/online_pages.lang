@@ -1,9 +1,5 @@
 # Online browse pages (French).
 
-# ---- Home
-home.recent.title = Écoutés pendant cette session
-home.recent.subtitle = À réécouter
-
 # ---- Explore
 explore.new_releases_detail = Albums et singles tout frais
 explore.charts_detail = Les tendances, par pays

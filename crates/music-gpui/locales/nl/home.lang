@@ -1,0 +1,31 @@
+# Home: personal sections, their options (Content & region → Home) and the speed
+# dial menu entries (see en/home.lang).
+
+home.quick_picks = Snelle keuzes
+home.section.community = Community-playlists
+home.section.speed_dial = Snelkiezer
+home.section.keep_listening = Verder luisteren
+home.section.account_playlists = Je YouTube-playlists
+home.section.forgotten_favorites = Vergeten favorieten
+home.section.similar = Vergelijkbaar met…
+home.section.feed = YouTube Music-feed
+home.similar_to = Vergelijkbaar met
+home.playlists_word = playlists
+home.speed_dial.pin = Vastzetten in snelkiezer
+home.speed_dial.unpin = Verwijderen uit snelkiezer
+settings.home.group = Start
+settings.home.quick_picks = Snelle keuzes
+settings.home.quick_picks_description = Nummers die passen bij wat je het meest luistert, of bij je laatste nummer. Zolang er nog geen luistergeschiedenis is, zie je de snelle keuzes van YouTube Music.
+home.options.quick_picks.mix = Uit je favorieten
+home.options.quick_picks.last = Uit je laatste nummer
+home.options.quick_picks.hidden = Niet tonen
+settings.home.display = Indeling van snelle keuzes
+settings.home.display_description = Nummerkaarten met hoes, of een compacte lijst van vier rijen hoog.
+home.options.display.cards = Kaarten
+home.options.display.list = Lijst
+settings.home.chips = Categoriechips
+settings.home.chips_description = De stemmingen en genres van YouTube Music (Energie, Ontspannen, …) boven aan Start. Een keuze verandert de snelle keuzes en de feed van YouTube.
+settings.home.backdrop = Tonale achtergrond
+settings.home.backdrop_description = Een zachte waas in de accentkleur achter de bovenkant van Start. Niet getekend zolang de app-brede hoeslook het venster kleurt.
+settings.home.sections = Onderdelen
+settings.home.sections_description = Gemarkeerde onderdelen staan op Start. In de snelkiezer staat wat je vastzet via een contextmenu.

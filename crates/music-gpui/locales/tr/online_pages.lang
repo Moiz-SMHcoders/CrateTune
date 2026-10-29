@@ -1,9 +1,5 @@
 # Online browse pages (Turkish).
 
-# ---- Home
-home.recent.title = Bu oturumda çalınanlar
-home.recent.subtitle = Yeniden dinle
-
 # ---- Explore
 explore.new_releases_detail = Yeni albümler ve single'lar
 explore.charts_detail = Ülkelere göre popüler olanlar

@@ -1,9 +1,5 @@
 # Online browse pages (ja).
 
-# ---- Home
-home.recent.title = このセッションで再生
-home.recent.subtitle = もう一度聴く
-
 # ---- Explore
 explore.new_releases_detail = 最新のアルバムとシングル
 explore.charts_detail = 国別の人気曲

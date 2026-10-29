@@ -1,9 +1,5 @@
 # Online browse pages (Russian).
 
-# ---- Home
-home.recent.title = Слушали в этом сеансе
-home.recent.subtitle = Послушать снова
-
 # ---- Explore
 explore.new_releases_detail = Свежие альбомы и синглы
 explore.charts_detail = Популярное по странам

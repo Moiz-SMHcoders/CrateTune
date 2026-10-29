@@ -24,6 +24,8 @@ mod bar_ui;
 mod content;
 mod equalizer;
 pub mod file;
+pub mod home_prefs;
+mod home_ui;
 mod integrations;
 mod integrations_ui;
 mod language;
@@ -141,7 +143,7 @@ pub const SECTIONS: &[Section] = &[
         id: SectionId::Content,
         title: k!("settings.section.content"),
         icon: IconName::Languages,
-        render: content::render,
+        render: home_ui::render_section,
     },
     Section {
         id: SectionId::Network,

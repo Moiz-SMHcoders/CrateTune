@@ -1,0 +1,31 @@
+# Home: personal sections, their options (Content & region → Home) and the speed
+# dial menu entries (see en/home.lang).
+
+home.quick_picks = 快速精選
+home.section.community = 社群播放清單
+home.section.speed_dial = 快速撥號
+home.section.keep_listening = 繼續收聽
+home.section.account_playlists = 你的 YouTube 播放清單
+home.section.forgotten_favorites = 被遺忘的最愛
+home.section.similar = 類似於…
+home.section.feed = YouTube Music 動態
+home.similar_to = 類似於
+home.playlists_word = 播放清單
+home.speed_dial.pin = 釘選到快速撥號
+home.speed_dial.unpin = 從快速撥號移除
+settings.home.group = 首頁
+settings.home.quick_picks = 快速精選
+settings.home.quick_picks_description = 與你最常聽的歌曲或最近一首相關的歌曲。在有收聽紀錄之前，會顯示 YouTube Music 本身的快速精選。
+home.options.quick_picks.mix = 來自你的最愛
+home.options.quick_picks.last = 來自最近一首
+home.options.quick_picks.hidden = 不顯示
+settings.home.display = 快速精選版面
+settings.home.display_description = 附封面的歌曲卡片，或四列高的精簡清單。
+home.options.display.cards = 卡片
+home.options.display.list = 清單
+settings.home.chips = 分類標籤
+settings.home.chips_description = 在首頁頂端顯示 YouTube Music 的心情與曲風（活力、放鬆等）。選擇其中一個會改變 YouTube 的快速精選與動態。
+settings.home.backdrop = 色調背景
+settings.home.backdrop_description = 在首頁頂端後方繪製柔和的強調色漸層。當全應用程式封面外觀為視窗上色時不繪製。
+settings.home.sections = 區塊
+settings.home.sections_description = 醒目標示的區塊會顯示在首頁。快速撥號裡是你從右鍵選單釘選的內容。

@@ -27,6 +27,7 @@
 //! | `@shuffle=on\|off`, `@repeat=off\|all\|one` | queue modes (saved) |
 //! | `@mini[=on\|off]` | mini player window |
 //! | `@theme=dark\|black\|dynamic`, `@font-scale=1.125` | appearance (saved) |
+//! | `@home=OPTION:VALUE` | Home options (`quick_picks:last_listen`, `display:list`, `chips:off`, `backdrop:off`, `hide:feed`, `show:feed`; saved) or `pin:N` (search result N to the speed dial; `settings/home_ui.rs`) |
 //! | `@settings[=SECTION]`, `@close-settings` | settings page (`eq`, `integrations`/`accounts`, `appearance`, `about`, …) |
 //! | `@settings-search=QUERY`, `@settings-search-pick=N` | settings search: type QUERY into the field (opens Settings) and print the ranked results; pick result N (0-based) of the list |
 //! | `@settings-anchors` | open every settings section in turn and print which search-index rows it draws (and where hidden ones fall back to) |
@@ -710,6 +711,7 @@ impl MusicApp {
                     && !self.update_script_action(other, arg, window, cx)
                     && !self.card_script_action(other, arg, window, cx)
                     && !self.theme_script_action(other, arg, window, cx)
+                    && !self.home_script_action(other, arg, cx)
                 {
                     eprintln!("music-gpui: unknown script action @{other}");
                 }

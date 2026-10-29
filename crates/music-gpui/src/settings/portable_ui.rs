@@ -84,7 +84,7 @@ fn section_title(key: &str) -> String {
         "playback" | "audio" | "volume" => Some(SectionId::Playback),
         "equalizer" => Some(SectionId::Equalizer),
         "lyrics" => Some(SectionId::Lyrics),
-        "content" => Some(SectionId::Content),
+        "content" | "home" => Some(SectionId::Content),
         "network" => Some(SectionId::Network),
         "library" => Some(SectionId::Storage),
         "lastfm" | "listenbrainz" | "discord" | "scrobble_rules" => Some(SectionId::Integrations),

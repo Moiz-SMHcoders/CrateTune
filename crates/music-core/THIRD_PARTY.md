@@ -195,3 +195,17 @@ MIT), `url` (MIT OR Apache-2.0), `sha2` (MIT OR Apache-2.0), `icu_normalizer` (U
 (`decodeUploadImage`, `compressWithinLimit`: centre-square crop, 1080 px, JPEG quality 92
 → 60 in steps of 8 until ≤ 2 MiB), © Rukamori and ArchiveTune contributors, GPL-3.0,
 with the `image` crate instead of Android's `Bitmap`.
+
+## ArchiveTune (feat/home-parity: Home)
+
+Home's sections, their order, data and options are ported from ArchiveTune (© Rukamori and
+ArchiveTune contributors, GPL-3.0); each file names its upstream source in its header.
+
+| File | Upstream file(s) | Changes |
+|---|---|---|
+| `crates/music-core/src/library/home.rs` | `db/DatabaseDao.kt` (`forgottenFavorites`, `mostPlayedSongs`, `recentSongs`, `librarySongIds`) | Forgotten favourites as a `ForgottenRule` (30 days, < 20 % of the earlier listening time, as upstream) that also admits songs not played at all lately and needs 3 earlier plays; recent songs by the time of the last play; no artist blocking. |
+| `crates/music-gpui/src/pages/home/model.rs` | `home/HomeUseCases.kt` (`LoadPersonalizedQuickPicksUseCase`, `PrepareCommunityHomePageUseCase`, `QuickPickSeed`), `home/HomeRepository.kt` (`loadQuickPickSeeds`, `loadRemoteQuickPickSeeds`, `validRecommendationsFor`), `viewmodels/HomeViewModel.kt` (`extractQuickPicks`), `ui/screens/HomeScreen.kt` (section order) | Same seed choice, scoring (seed weight 100, position, artist affinity 80), rotation pool and community-shelf matching; 4 seeds instead of 6; a structural fallback for YouTube's quick picks shelf in other languages; the section order as a testable list. |
+| `crates/music-gpui/src/pages/home/load.rs` | `viewmodels/HomeViewModel.kt` (`loadInternal`, `loadSimilarRecommendations`, `refreshAccountPlaylistsInternal`), `home/HomeRepository.kt` (`loadRelatedSongs`) | Related songs from the seed's radio (`next`) only (no `related` + search + cached-related fallbacks); 2 artists + 1 song for "Similar to" (upstream 3 + 2); requests on a pool of 3 threads; no playlist previews for the community section. |
+| `crates/music-gpui/src/pages/home/mod.rs` | `ui/screens/HomeScreen.kt`, `viewmodels/HomeViewModel.kt` | Shelves, cards and quick-picks grids of this app instead of Compose decks; a refresh button instead of pull-to-refresh; a 20-minute cache per account (refreshed when Home is shown after it expired). |
+| `crates/music-gpui/src/pages/home/speed_dial.rs` | `utils/SpeedDialPins.kt`, `viewmodels/HomeViewModel.kt` (`loadSpeedDialItems`) | Pins stored as items in the library's key/value table (24, newest first) instead of a preferences string resolved against the database; a Shuffle button instead of the random tile. |
+| `crates/music-gpui/src/settings/home_prefs.rs` | `constants/PreferenceKeys.kt` (`QuickPicks`, `QuickPicksDisplayMode`, `ShowHomeCategoryChipsKey`, `DisableBlurKey`), `home/HomeRepository.kt` | Same defaults; the tonal backdrop is its own switch (skipped while the app-wide artwork look is on); hidden sections added. |

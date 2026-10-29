@@ -1,0 +1,31 @@
+# Home: personal sections, their options (Content & region → Home) and the speed
+# dial menu entries (see en/home.lang).
+
+home.quick_picks = Швидкий вибір
+home.section.community = Плейлисти спільноти
+home.section.speed_dial = Швидкий набір
+home.section.keep_listening = Слухати далі
+home.section.account_playlists = Ваші плейлисти YouTube
+home.section.forgotten_favorites = Забуті улюблені
+home.section.similar = Схоже на…
+home.section.feed = Стрічка YouTube Music
+home.similar_to = Схоже на
+home.playlists_word = плейлисти
+home.speed_dial.pin = Закріпити у швидкому наборі
+home.speed_dial.unpin = Прибрати зі швидкого набору
+settings.home.group = Головна
+settings.home.quick_picks = Швидкий вибір
+settings.home.quick_picks_description = Пісні, пов'язані з тими, що ви слухаєте найчастіше, або з останньою прослуханою. Поки немає історії прослуховування, показується швидкий вибір YouTube Music.
+home.options.quick_picks.mix = За вашими улюбленими
+home.options.quick_picks.last = За останньою піснею
+home.options.quick_picks.hidden = Не показувати
+settings.home.display = Вигляд швидкого вибору
+settings.home.display_description = Картки пісень з обкладинками або компактний список на чотири рядки.
+home.options.display.cards = Картки
+home.options.display.list = Список
+settings.home.chips = Категорії
+settings.home.chips_description = Настрої та жанри YouTube Music («Енергія», «Релакс» тощо) вгорі головної. Вибір одного змінює швидкий вибір і стрічку YouTube.
+settings.home.backdrop = Тональне тло
+settings.home.backdrop_description = М'який відтінок акцентного кольору за верхньою частиною головної. Не малюється, поки оформлення за обкладинкою для всього застосунку фарбує вікно.
+settings.home.sections = Розділи
+settings.home.sections_description = Виділені розділи показано на головній. У швидкому наборі — те, що ви закріпили з контекстного меню.

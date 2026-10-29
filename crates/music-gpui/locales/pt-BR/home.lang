@@ -1,0 +1,31 @@
+# Home: personal sections, their options (Content & region → Home) and the speed
+# dial menu entries (see en/home.lang).
+
+home.quick_picks = Seleção rápida
+home.section.community = Playlists da comunidade
+home.section.speed_dial = Discagem rápida
+home.section.keep_listening = Continue ouvindo
+home.section.account_playlists = Suas playlists do YouTube
+home.section.forgotten_favorites = Favoritas esquecidas
+home.section.similar = Parecido com…
+home.section.feed = Feed do YouTube Music
+home.similar_to = Parecido com
+home.playlists_word = playlists
+home.speed_dial.pin = Fixar na discagem rápida
+home.speed_dial.unpin = Remover da discagem rápida
+settings.home.group = Início
+settings.home.quick_picks = Seleção rápida
+settings.home.quick_picks_description = Músicas relacionadas às que você mais ouve ou à última que tocou. Enquanto não houver histórico, aparece a seleção rápida do YouTube Music.
+home.options.quick_picks.mix = Das suas favoritas
+home.options.quick_picks.last = Da sua última música
+home.options.quick_picks.hidden = Não mostrar
+settings.home.display = Layout da seleção rápida
+settings.home.display_description = Cartões de músicas com capa ou uma lista compacta de quatro linhas.
+home.options.display.cards = Cartões
+home.options.display.list = Lista
+settings.home.chips = Chips de categorias
+settings.home.chips_description = Os climas e gêneros do YouTube Music (Energia, Relaxar, …) no topo do Início. Escolher um muda a seleção rápida e o feed do YouTube.
+settings.home.backdrop = Fundo tonal
+settings.home.backdrop_description = Um degradê suave da cor de destaque atrás do topo do Início. Não aparece enquanto o visual de capa do app inteiro colore a janela.
+settings.home.sections = Seções
+settings.home.sections_description = As seções destacadas aparecem no Início. A discagem rápida guarda o que você fixa por um menu de contexto.

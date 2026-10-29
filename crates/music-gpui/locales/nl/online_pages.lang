@@ -1,9 +1,5 @@
 # Online browse pages (YouTube Music).
 
-# ---- Home
-home.recent.title = Gespeeld tijdens deze sessie
-home.recent.subtitle = Opnieuw luisteren
-
 # ---- Explore
 explore.new_releases_detail = Verse albums en singles
 explore.charts_detail = Wat populair is, per land

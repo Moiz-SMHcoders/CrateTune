@@ -1,9 +1,5 @@
 # Online browse pages (Ukrainian).
 
-# ---- Home
-home.recent.title = Відтворено в цьому сеансі
-home.recent.subtitle = Послухати знову
-
 # ---- Explore
 explore.new_releases_detail = Свіжі альбоми й сингли
 explore.charts_detail = Що популярне в різних країнах

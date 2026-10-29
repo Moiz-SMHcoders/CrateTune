@@ -324,7 +324,7 @@ pub fn track_menu(menu: PopupMenu, track: &Track, list: ListContext) -> PopupMen
         let name = track.album.clone();
         (id, name.unwrap_or_else(|| t!("common.album").into()))
     });
-    menu.item(
+    let menu = menu.item(
         item(t!("common.go_to_album"), Lucide::Disc3)
             .disabled(album.is_none())
             .on_click(move |_, window, cx| {
@@ -333,6 +333,15 @@ pub fn track_menu(menu: PopupMenu, track: &Track, list: ListContext) -> PopupMen
                     update_app(cx, |app, cx| app.navigate(route, window, cx));
                 }
             }),
+    );
+    // Local files can't be pinned (their page is the library's).
+    if track.is_local() {
+        return menu;
+    }
+    crate::pages::speed_dial_menu_item(
+        menu,
+        &music_core::innertube::Item::Song(track.clone()),
+        false,
     )
 }
 

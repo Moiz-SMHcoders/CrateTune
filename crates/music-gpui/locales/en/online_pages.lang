@@ -3,11 +3,6 @@
 # subtitles come from YouTube Music itself (already in the content language) and are
 # not in this file.
 
-# ---- Home
-# Shelf of songs played since the app started (title / small subtitle above it).
-home.recent.title = Played this session
-home.recent.subtitle = Listen again
-
 # ---- Explore (tiles linking to the other pages; the tile title is the page name)
 explore.new_releases_detail = Fresh albums and singles
 explore.charts_detail = What's popular, by country

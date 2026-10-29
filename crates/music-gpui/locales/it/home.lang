@@ -1,0 +1,31 @@
+# Home: personal sections, their options (Content & region → Home) and the speed
+# dial menu entries (see en/home.lang).
+
+home.quick_picks = Scelte rapide
+home.section.community = Playlist della community
+home.section.speed_dial = Accesso rapido
+home.section.keep_listening = Continua ad ascoltare
+home.section.account_playlists = Le tue playlist YouTube
+home.section.forgotten_favorites = Preferiti dimenticati
+home.section.similar = Simili a…
+home.section.feed = Feed di YouTube Music
+home.similar_to = Simili a
+home.playlists_word = playlist
+home.speed_dial.pin = Fissa nell'accesso rapido
+home.speed_dial.unpin = Rimuovi dall'accesso rapido
+settings.home.group = Home
+settings.home.quick_picks = Scelte rapide
+settings.home.quick_picks_description = Brani legati a quelli che ascolti di più o all'ultimo che hai ascoltato. Finché non c'è una cronologia, compaiono le scelte rapide di YouTube Music.
+home.options.quick_picks.mix = Dai tuoi preferiti
+home.options.quick_picks.last = Dal tuo ultimo brano
+home.options.quick_picks.hidden = Non mostrare
+settings.home.display = Layout delle scelte rapide
+settings.home.display_description = Schede dei brani con copertina o un elenco compatto alto quattro righe.
+home.options.display.cards = Schede
+home.options.display.list = Elenco
+settings.home.chips = Chip delle categorie
+settings.home.chips_description = Mood e generi di YouTube Music (Energia, Relax, …) in cima alla Home. Sceglierne uno cambia le scelte rapide e il feed di YouTube.
+settings.home.backdrop = Sfondo tonale
+settings.home.backdrop_description = Una leggera sfumatura del colore d'accento dietro la parte alta della Home. Non viene disegnata mentre l'aspetto copertina dell'intera app colora la finestra.
+settings.home.sections = Sezioni
+settings.home.sections_description = Le sezioni evidenziate compaiono nella Home. L'accesso rapido contiene ciò che fissi da un menu contestuale.

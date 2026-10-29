@@ -701,10 +701,10 @@ locales/<locale>/*.lang  the catalogs (English = source), embedded by build.rs v
   playlist, like, go to artist (one entry per artist with an id), go to album.
   Album / playlist / artist / podcast rows and cards open their page; their menu has
   Open, Play, Shuffle, Play next, Add to queue, Start radio and Go to artist.
-* **Home:** the YouTube Music home feed: mood chips (Energize, Relax, …; click again for
-  the full feed), song shelves as a quick-picks grid (four rows, scrolling sideways),
-  albums / playlists / artists as cards, "See all" where YouTube offers it, more shelves
-  as you scroll. "Played this session" stays on top until a persistent history exists.
+* **Home:** personal sections from your listening above the YouTube Music feed, as in
+  ArchiveTune (see [Home](#home) below): quick picks, community playlists, speed dial,
+  keep listening, your YouTube playlists, forgotten favourites, "Similar to …" rows, then
+  the feed with its mood chips, quick-picks grids, cards, "See all" and infinite scroll.
 * **Explore** (new releases / charts / moods shortcuts, a two-row moods carousel, the
   explore shelves), **Charts** (country picker with search; song and video charts as
   numbered lists of 20, artists as cards), **Moods & genres** (tiles per category →
@@ -852,6 +852,65 @@ locales/<locale>/*.lang  the catalogs (English = source), embedded by build.rs v
   and a percentage bubble, lyrics button; static by default — see
   [Player bar](#player-bar-redesign-progress-styles-backgrounds).
 * **OS media controls**, **Equalizer**, **volume**: unchanged (history below).
+
+### Home
+
+Home is ported from ArchiveTune's (`HomeViewModel`, `HomeUseCases`, `HomeRepository`,
+`HomeScreen`): personal sections built from the library database and recommendations made
+from them, above YouTube Music's own feed. In order:
+
+| Section | Made from |
+|---|---|
+| Category chips | YouTube's mood / genre chips (Energize, Relax, …). Picking one reloads the feed and YouTube's quick picks for it; the personal sections stay. |
+| Quick picks | *From your favourites* (default): up to 4 seeds — the most played songs of all time, one per artist (the most recent songs before any play counts; signed in with too few, songs of the artists you hear most in the account's YouTube history) — and each seed's radio (`next`). Songs related to several seeds rank first, then by seed rank, position and a shared artist; seeds and songs saved to the library are left out; 20 are drawn from the best 60 not shown last time, so a refresh brings new ones. *From your last song*: the radio of the last song played (recent songs while it loads or fails). Before there is history: YouTube's own quick picks shelf, taken out of the feed. |
+| Community playlists | The feed's community playlists shelf, moved up (title match in the content or UI language, else the one playlists-only shelf without "See all"). |
+| Speed dial | Songs, albums, artists and playlists pinned with **Pin to speed dial** in their context menu (24, newest first; kept in the library database); **Shuffle** plays the pinned songs. |
+| Keep listening | The most played songs of the last two weeks after the top five (those seed the quick picks), albums 3–10 and the artists you heard most (with artwork), mixed: up to 10 + 5 + 5. |
+| Your YouTube playlists | Signed in: the account's library playlists, titled with the account name. |
+| Forgotten favourites | Songs with at least 3 plays before the last 30 days whose listening time since is under 20 % of the time before (none at all counts), most listened first; 20 at random, as a quick-picks grid. |
+| Similar to … | Two of the artists you heard most in the last two weeks (their artist page's last two shelves: fans also like, featured on) and one song (its "Related" tab: 8 songs, 4 albums, 4 artists, 4 playlists); **Open** goes to the artist or the song's album. |
+| YouTube Music feed | `FEmusic_home` in the content language and country, signed in when you are, with infinite scroll. |
+
+**Loading.** The library sections are read on a worker thread first (a few ms) and drawn
+at once; the feed and the recommendations follow as they arrive. A refresh makes at most
+about 8 recommendation requests (4 radios, 2 artist pages, 1 `next` + 1 `related`, plus one
+history request when signed in with too few seeds), at most 3 at a time, plus the feed and,
+signed in, the playlists. Everything is cached for 20 minutes per account (the same
+`PageCache` as the other pages); **Refresh** (next to the title) reloads it, opening Home
+after the cache expired reloads it, and so do signing in or out, switching account or
+channel, and changing the content language, country or filters. Hide explicit, Hide music
+videos and the AI filter apply to every section.
+
+**Why the feed looked unrelated.** Two things made the feed generic: Home was fetched at
+startup before the keychain had returned the YouTube cookie, so even signed in the feed was
+the anonymous one and stayed cached (nothing reloaded Home when the account arrived), and
+the anonymous `visitorData` YouTube assigns was kept only for the running process, so every
+launch started as a brand-new visitor and its first request (Home) carried none. Home now
+follows the account (it reloads, with its own cache, when the account or channel changes)
+and the anonymous visitor is kept in the library database across launches. The content
+language / country were sent correctly (`context.client.hl` / `gl` from Content & region;
+a first run takes them from the UI language and the system region).
+
+**Options** (Settings → Content & region → Home, `home` in `settings.json`; all in the
+settings search): **Quick picks** — From your favourites / From your last song / Don't
+show; **Quick picks layout** — Cards (song cards with artwork) / List (compact rows, four
+per column); **Category chips**; **Tonal backdrop** — a soft accent-coloured wash behind the
+top of Home, not drawn while the app-wide artwork look (Appearance) colours the window; and
+**Sections** — buttons that show or hide speed dial, keep listening, your YouTube
+playlists, forgotten favourites, "Similar to …", community playlists and the YouTube feed.
+
+| | |
+|---|---|
+| ![Home for a new user](docs/screenshots/home-new-user.png) | ![Home with history](docs/screenshots/home-history.png) |
+| ![Home with history, further down](docs/screenshots/home-history-2.png) | ![Home options](docs/screenshots/home-settings.png) |
+
+Differences from ArchiveTune: 4 quick-pick seeds instead of 6 and related songs from each
+seed's radio only (ArchiveTune also asks `related`, then search, then a local cache), 2 + 1
+"Similar to" rows instead of 3 + 2 — fewer requests per refresh; the community section
+without its three-song previews per playlist; a refresh button and a 20-minute cache
+instead of pull-to-refresh; and forgotten favourites also include songs not played at all
+lately (ArchiveTune's query needs a recent play) with a minimum of 3 earlier plays. Shelves,
+cards, grids and menus are this app's own (hover effects and play buttons included).
 
 ### Library, account, downloads, local files
 

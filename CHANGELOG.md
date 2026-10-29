@@ -5,6 +5,38 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+* **Home like ArchiveTune's**: personal sections from your listening above the YouTube
+  Music feed, in ArchiveTune's order — category chips, **Quick picks** (up to four of your
+  most played songs, one per artist, each seeding a radio; songs related to several rank
+  first, songs already in the library are left out, and a refresh draws new ones), the
+  community playlists shelf, **Speed dial** (pin songs, albums, artists and playlists from
+  their context menu; Shuffle plays the pinned songs), **Keep listening** (songs, albums and
+  artists of the last two weeks), **Your YouTube playlists** (signed in), **Forgotten
+  favourites** (at least 3 plays before the last 30 days, under 20 % of that listening
+  since) and **Similar to …** rows for two artists and a song you play a lot. New users get
+  YouTube's quick picks and feed for their content language and country. The library
+  sections show at once; the recommendations follow (about 8 requests per refresh, at most
+  3 at a time), cached for 20 minutes per account, with a **Refresh** button. Content
+  filters (explicit, videos, AI filter) apply everywhere.
+* **Settings → Content & region → Home**: quick picks from your favourites / your last song
+  / off, cards or list layout, category chips, a tonal backdrop (skipped while the app-wide
+  artwork look is on) and which sections show. In the settings search; `home` in
+  `settings.json`; script hook `@home=OPTION:VALUE` (and `@home=pin:N`).
+
+### Fixed
+
+* **Home showed a generic feed**: it was fetched before the keychain returned the YouTube
+  cookie, so a signed-in user got the anonymous feed (and kept it, cached), and the
+  anonymous visitor YouTube assigns was forgotten at every launch. Home now reloads for the
+  signed-in account (and on account or channel switches), and the visitor is kept across
+  launches.
+
+### Removed
+
+* "Played this session" on Home (Keep listening replaces it).
+
 ## [0.2.0] — 2026-10-29
 
 ### Added

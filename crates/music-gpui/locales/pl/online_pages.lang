@@ -1,9 +1,5 @@
 # Online browse pages (Polish).
 
-# ---- Home
-home.recent.title = Odtworzone w tej sesji
-home.recent.subtitle = Posłuchaj ponownie
-
 # ---- Explore
 explore.new_releases_detail = Świeże albumy i single
 explore.charts_detail = Co jest popularne w poszczególnych krajach
