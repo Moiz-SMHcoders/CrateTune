@@ -241,8 +241,9 @@ fn pull_fast_until(
         }
         assert!(
             Instant::now() < deadline,
-            "timed out pulling until {what}: {:?}",
-            run.states.last()
+            "timed out pulling until {what}: {:?}\n{}",
+            run.states.last(),
+            player.debug_dump()
         );
         run.audio
             .extend(output.by_ref().take(frames * 2).step_by(2));

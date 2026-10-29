@@ -199,6 +199,9 @@ enum Command {
         request: u64,
         present: bool,
     },
+    /// Internal state as text, for test failure messages.
+    #[cfg(test)]
+    Debug(Sender<String>),
 }
 
 /// Background audio engine. Cloning shares the same engine.
@@ -395,6 +398,15 @@ impl Player {
     /// output moves to the default.
     pub fn set_output_device(&self, id: Option<String>) {
         self.send(Command::SetOutputDevice(id));
+    }
+
+    /// Engine, deck and voice state as text, for test failure messages.
+    #[cfg(test)]
+    pub(crate) fn debug_dump(&self) -> String {
+        let (tx, rx) = mpsc::channel();
+        self.send(Command::Debug(tx));
+        rx.recv_timeout(Duration::from_secs(2))
+            .unwrap_or_else(|_| "engine did not answer".into())
     }
 
     pub fn state(&self) -> PlaybackState {
@@ -936,6 +948,23 @@ impl Engine {
                 }
             }
             Command::DeviceOpened { request, result } => self.device_opened(request, result),
+            #[cfg(test)]
+            Command::Debug(reply) => {
+                let mut lines = vec![self.deck.debug_state()];
+                for (what, voice) in [("current", &self.current), ("next", &self.next)] {
+                    if let Some(v) = voice {
+                        lines.push(format!("{what}: {}", v.debug_state()));
+                    }
+                }
+                if let Some(r) = &self.replacement {
+                    lines.push(format!(
+                        "replacement (armed={}): {}",
+                        r.armed,
+                        r.voice.debug_state()
+                    ));
+                }
+                let _ = reply.send(lines.join("\n"));
+            }
             Command::DeviceChecked { request, present } => {
                 if let Output::Device(out) = &mut self.output
                     && request == out.request

@@ -359,6 +359,22 @@ impl Deck {
         std::mem::take(&mut self.lock().held)
     }
 
+    /// Internal state, for test failure messages.
+    #[cfg(test)]
+    pub(crate) fn debug_state(&self) -> String {
+        let st = self.lock();
+        format!(
+            "deck paused={} master={} current={:?} next={:?} handoff={:?} fading={:?} advances={}",
+            st.paused,
+            st.master,
+            st.current.as_ref().map(|a| (a.voice.id, a.fade.is_some())),
+            st.next.as_ref().map(|v| v.id),
+            st.handoff.as_ref().map(|h| (h.voice.id, h.replaces)),
+            st.fading.iter().map(|a| a.voice.id).collect::<Vec<_>>(),
+            st.advances,
+        )
+    }
+
     pub(crate) fn snapshot(&self) -> DeckSnapshot {
         let st = self.lock();
         DeckSnapshot {
