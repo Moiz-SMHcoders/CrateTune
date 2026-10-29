@@ -5,6 +5,8 @@
 //! secondary controls (lyrics, queue, sleep timer, Cast, mini player, Now
 //! Playing, volume with mute, scroll and a percentage tooltip). Narrow windows
 //! drop secondary controls by priority ([`bar_layout`]) instead of overlapping.
+//! Every optional item can be hidden (`settings/bar_items.rs`); the quality menu,
+//! "Add to playlist" and the right-click menu are in `bar_menu.rs`.
 //!
 //! Rendering cost: the bar is its own view ([`PlayerBar`]). Its static parts —
 //! the three zones' buttons — are [`AppRegion`]s, rendered from the app and

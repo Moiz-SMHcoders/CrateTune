@@ -1533,7 +1533,9 @@ button: refused / conflict prompt; empty KEYS = none), `@shortcut-replace`,
 `@shortcut-reset=ACTION|all`, `@shortcut-status`, `@shortcut-sheet`, `@shortcut-menu` (the
 macOS menu items' key equivalents); lyrics cards (`lyrics_card.rs`)
 `@card-select=3;4;5 @card-open @card-style=aspect:story|bg:blur|album|dark|light|align:left|size:large|art:off
-@card-save=PATH @card-copy @card-close`; measurement player bar (`bar_script.rs`) `@bar-style=wavy @bar-bg=gradient @bar-gradient=dir:diagonal @bar-hover=0.4 @bar-status`, `@bench-bar=N[:MS]` (only the bar marked dirty), `@bench=N[:MS]` (draws the main window N
+@card-save=PATH @card-copy @card-close`; measurement player bar (`bar_script.rs`) `@bar-style=wavy @bar-bg=gradient @bar-gradient=dir:diagonal @bar-hover=0.4 @bar-status`,
+bar items (`bar_items_script.rs`) `@bar-item=KEY:on|off @bar-items=default|none|all @bar-items-status
+@quality-menu @bar-menu @bar-customize @bar-add-to-playlist`, `@bench-bar=N[:MS]` (only the bar marked dirty), `@bench=N[:MS]` (draws the main window N
 times MS ms apart and prints the draw times: the UI's CPU per frame, also with the screen
 locked); `@quit`.
 
@@ -1682,6 +1684,7 @@ profile sets, `PlayerBarConfig::least_resources`):
 | `scroll_volume` | `true` | any |
 | `mini_follows_bar` | `true` | any |
 | `np_visualizer` | `false` | `false` |
+| `items.*` (see below) | today's bar; `add_to_playlist` off | unchanged (hidden buttons save nothing) |
 
 **Script actions** (`bar_script.rs`): `@bar-style=standard|thick|simple|wavy|equalizer`,
 `@bar-bg=glow|gradient|pulse|off`, `@bar-gradient=dir:…|intensity:0.7|animate:on|dim:off`,
@@ -1702,6 +1705,89 @@ tests carry `player_bar`; Minimal / Fast sets `least_resources()` (unit test).
 handlers ran through dispatched events and scripts), keyboard-only operation beyond the
 buttons' tab order (the tracks themselves aren't focusable), Windows / Linux, a 120 Hz
 display, a light theme (the app has none; "dim" darkness is the lightest).
+
+### Player bar items and the quality menu
+
+| | |
+|---|---|
+| ![Default bar, 1280 pt](docs/screenshots/bar-items-default-1280.png) | ![With "Add to playlist"](docs/screenshots/bar-items-add-to-playlist-1280.png) |
+| ![Minimal bar, 1280 pt](docs/screenshots/bar-items-minimal-1280.png) | ![Minimal bar + mini player, 880 pt](docs/screenshots/bar-items-minimal-880.png) |
+| ![Quality menu on the source tag](docs/screenshots/bar-quality-menu.png) | ![Right-click menu on the bar](docs/screenshots/bar-items-menu.png) |
+| ![Settings → Appearance → Player bar → Show on the bar](docs/screenshots/bar-items-settings.png) | |
+
+**Show or hide each item** (`player_bar.items`, `settings/bar_items.rs`): like, the
+source / quality tag, shuffle, repeat, the SponsorBlock "Skip" chip, the Music Together
+chip, lyrics, **Add to playlist** (new: a button beside the heart that opens the
+existing playlist picker, `components/playlist_dialog.rs`, for the song on the bar — a
+download is added as the song, not the file; disabled without a song or without the
+library database), queue, sleep timer, Cast, mini player, the Now Playing chevron and
+the volume slider (the mute button stays and still scrolls the volume). Play / pause,
+previous / next, the progress row and mute can't be hidden; the times already have
+"Show remaining time". Defaults are today's bar; "Add to playlist" is off. Toggles live
+in Settings → Appearance → Player bar → *Show on the bar* (check boxes, *Reset*) and in a
+right-click menu on the bar (check items + *Customize player bar…*, which opens that
+group). Changes apply at once and are saved like every `player_bar` field, so profiles
+and settings exports carry them; missing fields load as defaults.
+
+**Layout**: `bar_layout(width, casting, sleep_armed, cast_available, items)` skips hidden
+items entirely — they take no room and leave no gap — and gives the room to the next
+controls in the usual priority (at 880 pt without lyrics and Cast the sleep timer fits;
+at 1180 pt without shuffle / repeat the source tag does). A running Cast session and an
+armed sleep timer still show even when hidden (they are how you stop them). "Add to
+playlist" needs a track-info zone of 240 pt (windows from ~890 pt). The side zones keep
+their width so the transport stays centred. Unit tests run 700–2400 pt with casting /
+sleep on and off and every item hidden alone, shown alone, all and none: zones fit,
+right-zone buttons fit beside the volume, hidden items never show, and hiding one item
+never hides another.
+
+**Mini player**: not affected — it only has previous / play / next and "back to the main
+window", none of which are optional on the bar either.
+
+**Quality menu**: the source tag ("YouTube · AAC 128 kbps", now with a caret) opens Low /
+Normal / High (`Quality`, with what each means), the current choice ticked, what is
+actually playing, and *Playback settings…*. Picking one calls the same
+`SettingsPanel::set_quality` as Settings → Playback (saved, `audio.quality`), which now
+also emits `SettingsEvent::Quality`; the app then calls `Player::reload_stream`, so the
+**playing song switches immediately** — from anywhere the quality is changed (menu,
+settings, `@quality=`). The old stream keeps playing while the new one resolves; the deck
+hands over at the same track time with a 40 ms cross-fade, so there is no gap or
+repeat. The tag shows a spinner meanwhile. If YouTube returns the same format the switch
+is dropped. Files and downloads keep their format (the menu says the choice applies to
+streamed songs); while casting, or on the demo clock, the menu says "Applies from the
+next song". A preloaded next song is loaded again at the new quality (unless the current
+one ends within 12 s).
+
+**Measured** (release, real device at `MUSIC_VOLUME=0.0`, "Despacito" video
+`kJQP7kiw5Fk` seeked to 1:10, `MUSIC_TRACE=1`): Normal → High at 76.49 s: tag
+"Opus 160 kbps" after 6.7 s, position 83.28 s at 23.89 s wall vs 76.49 s at 17.14 s
+(+6.79 s position for +6.75 s wall); High → Low at 85.37 s: "Opus 50 kbps" 6.8 s later,
++7.22 s position for +7.23 s wall; paused at 94.56 s → Normal, resumed 5 s later from
+94.56 s, "AAC 128 kbps" 2.5 s into playback. No "Buffering" status, the position never
+jumped, `settings.json` had the last choice. The switch takes as long as YouTube needs
+to hand out the new stream (here ~7 s, because the position lies beyond the first MiB
+that is fetched early; the old stream covers the wait). Engine tests
+(`reload_stream_*`, `handoff_continues_at_the_same_track_time`) check sample-exact
+continuity, monotonic positions, position advance equal to the audio pulled, no gap,
+the paused case and that local files are left alone.
+
+**Cost**: nothing new per frame (the tag's bounds are recorded in the prepaint that
+already runs, for `@quality-menu`). First audio (play → Playing, 3 songs × 2 runs):
+main 0.55–0.80 s, this branch 0.54–1.03 s (network noise). Static bar CPU with Now
+Playing closed, 1180 pt, `MUSIC_ON_TOP=1`, 12 samples from 1:16: main 0.9 %, branch 0.6 % and
+1.5 % (averages of runs where the window was drawn, 2–3 renders / s in both; other agents
+were building on the machine; runs where the tiling window manager left the window
+undrawn: 0.1–0.5 % for both).
+
+**Script actions** (`bar_items_script.rs`): `@bar-item=lyrics:off` (any key below, `-`
+or `_`), `@bar-items=default|none|all`, `@bar-items-status` (items shown, the layout,
+quality saved / playing / switching, position), `@quality-menu` (a real click on the
+tag), `@bar-menu` (a real right-click on the bar), `@bar-customize`,
+`@bar-add-to-playlist`; `@quality=low|normal|high` (`script.rs`) switches now too.
+
+| `player_bar.items.` key | Default |
+|---|---|
+| `like`, `quality_tag`, `shuffle`, `repeat`, `sponsorblock`, `together`, `lyrics`, `queue`, `sleep_timer`, `cast`, `mini_player`, `now_playing`, `volume_slider` | `true` |
+| `add_to_playlist` | `false` |
 
 ### Theming round: Customize theme, dynamic colours, profiles, downloads
 
