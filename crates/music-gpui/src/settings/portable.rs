@@ -20,8 +20,9 @@
 //! user confirms.
 //!
 //! **Theme files** carry `appearance.theme` / `font_scale`, `custom_theme`,
-//! `now_playing` (layout, background, mini player style) and the player bar's
-//! style sections ([`BAR_STYLE_KEYS`]); importing one replaces exactly those.
+//! `now_playing` (layout, background, mini player style), the player bar's
+//! style sections ([`BAR_STYLE_KEYS`]) and the app-wide look / Motion & effects
+//! ([`LOOK_KEYS`]); importing one replaces exactly those.
 
 use serde_json::{Map, Value, json};
 
@@ -937,6 +938,15 @@ mod tests {
         assert_eq!(plan.settings.appearance.language, "ja");
         let sections: Vec<&str> = plan.diff.iter().map(|d| d.section.as_str()).collect();
         assert_eq!(sections, ["appearance", "custom_theme", "now_playing"]);
+
+        // The app-wide look and Motion & effects travel with a theme too.
+        let mut c = a.clone();
+        c.app_look.style = super::super::look_prefs::AppLookStyle::Glow;
+        c.effects.card_size = super::super::look_prefs::CardSize::Large;
+        let plan = plan_theme_import(&export_theme(&c, "Glow", 0), &b).unwrap();
+        assert_eq!(plan.settings.app_look, c.app_look);
+        assert_eq!(plan.settings.effects, c.effects);
+        assert_eq!(plan.settings.volume, 0.1);
 
         // An older theme file without some sections: those get defaults; unknown
         // keys are reported.

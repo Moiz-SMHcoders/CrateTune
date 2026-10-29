@@ -218,6 +218,47 @@ round 2](../README.md#integrations-round-2-relay-host-transfer-chromecast-ai-fil
 
 Right-to-left UI languages, which ArchiveTune also has, are under [Translations](#7-translations-low-priority).
 
+**M6. Look & motion ideas considered but not built (app-look round)**
+Looked at Spotify, Apple Music, YouTube Music, Plexamp and ArchiveTune; these were left out
+of [README: App-wide look & motion](../README.md#app-wide-look--motion):
+* *Smooth (animated) wheel scrolling.* GPUI scrolls by the deltas the OS sends; trackpads
+  already get the system's momentum, a mouse wheel moves in steps. Smoothing wheel steps
+  needs a per-scroll-view animation driving `ScrollHandle` offsets (frames while
+  scrolling, interaction with virtual lists). · Size: medium · Priority: low
+* *Card "lift" by moving or scaling tiles on hover, and rows that smoothly expand.* GPUI
+  has no transforms on arbitrary subtrees (T3); an offset would be clipped by the shelves'
+  horizontal scroll areas, and animating it means frames per hover. Tiles get a raised
+  background, a shadow under the art and the play button instead (one render per hover
+  change). · Size: small after T3 · Priority: low
+* *An app-wide Pulse (the whole window breathing with the music)* and *an animated glow.*
+  They would redraw the backdrop at ~30 fps while playing; following the bar's Pulse gives
+  the static glow instead. · Size: small · Priority: low
+* *Blur-based looks* (frosted cards, blurred artwork behind every page, Apple Music's
+  animated artwork background app-wide). No backdrop filters in GPUI (T3); a CPU-blurred
+  image behind cached content would cost memory per window size. · Size: large ·
+  Priority: low
+* *Marquee (scrolling) long titles* in rows and the bar. Continuous frames for any
+  truncated title on screen. · Size: small · Priority: low
+* *A separate compact list mode.* Customize theme → Density → Compact already gives 50 pt
+  rows and tighter paddings everywhere. · Won't do unless asked
+* *Windows "Show animations in Windows" for the System animations level.* Needs
+  `SystemParametersInfo(SPI_GETCLIENTAREAANIMATION)` (a new `windows-sys` dependency),
+  untestable here; Windows users can pick Reduced or Off by hand. KDE's animation speed
+  isn't read either (only GNOME's `enable-animations`). · Size: small · Priority: low
+* *Translucent sidebar on Windows (Mica) and Linux.* GPUI has `MicaBackdrop` for Windows 11
+  and transparency on Wayland/X11 compositors, but neither was tried on a real desktop
+  (P2); the switch is shown on macOS only. · Size: small · Priority: low
+
+**M7. Translucent sidebar: real-desktop check**
+The macOS blur (GPUI's `WindowBackgroundAppearance::Blurred`, an `NSVisualEffectView`)
+can't be captured by the offscreen screenshot hook, and the display was asleep when it
+could have been checked on screen, so it is unverified: confirm the sidebar shows the
+blurred desktop, the content area and bar stay opaque, and Now Playing / dialogs cover it.
+WindowServer does the blur, so it costs GPU time, not app CPU. Also sample live CPU with
+page transitions / hover off and Animations Reduced / Off (that run lost its display
+frames). Details: `look_state.rs`, [README: App-wide look &
+motion](../README.md#app-wide-look--motion). · Size: small · Priority: low
+
 ## 5. Performance ideas
 
 **F1. Memory footprint: look into the GPU and graphics buffers**

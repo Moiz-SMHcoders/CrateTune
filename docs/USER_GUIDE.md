@@ -283,7 +283,8 @@ and **Reset to default** brings back the standard look:
   **strength** tones the colours down; **smooth transitions** fades between songs.
 
 **Theme files**: **Export theme…** saves the look (theme, Customize theme, Now Playing
-design and background, mini player and player bar style) as a small
+design and background, mini player and player bar style, app-wide look, Motion & effects)
+as a small
 `.cratetune-theme.json` file; **Import theme…** shows what would change and replaces only
 the look.
 
@@ -295,15 +296,58 @@ are imported with their unknown settings ignored (the preview lists them).
 
 **Profiles** (top of Appearance) are named looks you switch with one click — for
 example a colourful one for the evening and a quiet one for work. A profile holds the
-theme, Customize theme, Now Playing, lyrics display and player bar style (never accounts,
+theme, Customize theme, Now Playing, lyrics display, player bar style, app-wide look and
+Motion & effects (never accounts,
 library, downloads or passwords). Whatever you change is saved to the active profile.
 **New…** makes a profile from the current look; **Duplicate**, **Rename**, **Delete**,
 **Import…** and **Export…** manage them (profile files are settings files, so they can
 also be imported with Import settings). Two profiles are built in and can't be deleted:
 **Default** and **Minimal / Fast**, which switches off everything that costs extra CPU or
 memory (dynamic colours and their artwork analysis, colour transitions, blurred and
-animated Now Playing backgrounds, lyrics animations, translation and romanization). When
+animated Now Playing backgrounds, lyrics animations, translation and romanization, the
+app-wide look, animations, page transitions and hover effects). When
 you change a built-in profile it shows a dot and **Reset** restores it.
+
+## App-wide look and motion
+
+![Gradient wash on an album page](screenshots/look-gradient-album-1.png)
+
+**Settings → Appearance → App-wide look** lets the whole window match the song that is
+playing, the way the player bar's background can. It is off until you pick a style:
+
+* **Tint** — the sidebar, panels, menus and cards take the artwork's hue.
+* **Gradient wash** — a large, soft gradient in the artwork's colours behind everything,
+  fading into the normal background. **Gradient direction** picks where it starts.
+* **Glow** — a soft light in the artwork's colour along the top of the window.
+
+**Intensity** sets how strong the colour is, **Dim when paused** softens it while music is
+paused, and **Tint menus and panels too** adds the Tint to the gradient or glow. With
+**Follow the player bar's style** on, the window uses the bar's background style,
+direction, intensity and animation whenever the bar's background effect is on. The colours
+change once per song with a short fade; text always keeps its contrast. **Animate**
+(gradient only) lets the gradient drift slowly while music plays; it stops when you pause
+and uses a little CPU, so it is off by default.
+
+**Motion & effects** (below it):
+
+* **Animations** — *System* follows your computer's "Reduce motion" setting (macOS:
+  System Settings → Accessibility → Display). *Reduced* keeps short fades but stops
+  slides, zooms and moving backgrounds. *Off* makes every change instant; visualizers
+  rest and lyrics light up line by line.
+* **Page transitions** — a short fade when a new page opens.
+* **Hover effects on tiles** — album, playlist and song tiles light up and show a play
+  button; click it to play without opening the page.
+* **Artwork-coloured page headers** — album, playlist and artist pages take the cover's
+  colour.
+* **Artwork corners**, **Artwork shadows** and **Tile size** — the shape of covers and
+  how big the tiles in shelves and grids are. (For tighter lists use **Density** in
+  Customize theme.)
+* **Translucent sidebar** (macOS) — the desktop shows through the sidebar, blurred.
+
+**Player bar → Artwork**: *Edge to edge* makes the cover fill the bar's full height at
+its left edge, like a mini player; *Standard* is the padded thumbnail.
+
+The **Minimal / Fast** profile turns all of this off.
 
 ## Keyboard shortcuts
 
