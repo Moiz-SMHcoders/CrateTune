@@ -69,4 +69,6 @@ jobs:
 
       - name: test
         shell: bash
-        run: scripts/ci-run.sh cargo test --workspace
+        # Release: the engine tests play audio against the clock, too slow unoptimized
+        # on the hosted runners.
+        run: scripts/ci-run.sh cargo test --workspace --release

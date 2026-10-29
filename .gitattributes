@@ -1,0 +1,3 @@
+# Test fixtures are compared byte for byte (e.g. the packed echo module against its
+# source files): no CRLF conversion on Windows checkouts.
+crates/music-core/tests/fixtures/** -text

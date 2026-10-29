@@ -377,9 +377,12 @@ fn gapless_aac_tracks_join_without_priming_or_padding() {
     player.play(local("gapless_a.m4a"));
     player.set_next(Some(local("gapless_b.m4a")));
     wait_for(&player, "preload", |s| s.next_preloaded);
-    let run = pull_until(&player, &mut out, "end of b", |s| {
+    let mut run = pull_until(&player, &mut out, "end of b", |s| {
         s.advance_count == 1 && s.status == PlaybackStatus::Ended
     });
+    // `Ended` can be reported while the deck still hands out the last block.
+    run.audio
+        .extend(out.by_ref().take(AAC_RATE as usize / 4 * 2).step_by(2));
     let a = player_track_duration(&run, "gapless_a.m4a");
     assert_eq!(a, Some(Duration::from_millis(600)));
 
