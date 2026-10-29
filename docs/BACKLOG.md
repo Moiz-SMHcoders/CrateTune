@@ -245,11 +245,6 @@ alpha or gradient masks, or radial gradients. The app works around this with CPU
 [README: History](../README.md#history-benchmark-rounds-condensed), [Now Playing
 round](../README.md#now-playing-round-cpu-designs-lyrics-cards). · Size: large · Priority: low
 
-**T4. Stale THIRD_PARTY note on Together host transfer**
-`crates/music-core/THIRD_PARTY.md` (row `src/together/messages.rs`) still says "host transfer
-not implemented", but host transfer shipped in Integrations round 2. · Size: small ·
-Priority: low
-
 **T5. YouTube stream access is fragile**
 Full streams depend on YouTube's current client behaviour (TV client, PoToken, the
 `n`/signature solver from yt-dlp/ejs 0.8.0). When YouTube changes something, the app falls
