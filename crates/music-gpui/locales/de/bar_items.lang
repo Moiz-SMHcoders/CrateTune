@@ -4,6 +4,7 @@ bar_items.title = In der Leiste zeigen
 bar_items.reset = Zurücksetzen
 bar_items.note = Ausgeblendetes hinterlässt keine Lücke. In schmalen Fenstern verschwinden weniger wichtige Tasten weiterhin zuerst; eine laufende Übertragung oder ein gestellter Sleep-Timer bleibt sichtbar, damit du ihn beenden kannst. Der Miniplayer behält seine eigenen Tasten.
 bar_items.item.like = Gefällt mir
+bar_items.item.dislike = Mag ich nicht
 bar_items.item.quality_tag = Quelle und Qualität
 bar_items.item.shuffle = Zufallswiedergabe
 bar_items.item.repeat = Wiederholen

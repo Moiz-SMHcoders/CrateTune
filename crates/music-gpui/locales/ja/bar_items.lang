@@ -4,6 +4,7 @@ bar_items.title = バーに表示
 bar_items.reset = リセット
 bar_items.note = 非表示にした項目の場所は詰められます。ウィンドウが狭いときは、これまでどおり重要度の低いボタンから隠れます。キャスト中やスリープタイマー作動中は、止められるように表示されたままです。ミニプレーヤーには独自のボタンがあります。
 bar_items.item.like = 高評価
+bar_items.item.dislike = 低評価
 bar_items.item.quality_tag = ソースと音質
 bar_items.item.shuffle = シャッフル
 bar_items.item.repeat = リピート

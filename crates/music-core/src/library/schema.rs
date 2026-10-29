@@ -143,4 +143,17 @@ pub(super) const MIGRATIONS: &[&str] = &[
     );
     CREATE INDEX local_file_song ON local_file(song_id);
     "#,
+    // v2: dislikes (YouTube Music's thumbs down) and ratings waiting to reach YouTube.
+    r#"
+    ALTER TABLE song ADD COLUMN disliked_at INTEGER;
+    CREATE INDEX song_disliked_at ON song(disliked_at);
+
+    CREATE TABLE pending_rating (
+        song_id    TEXT PRIMARY KEY NOT NULL,
+        rating     TEXT NOT NULL,
+        queued_at  INTEGER NOT NULL,
+        attempts   INTEGER NOT NULL DEFAULT 0,
+        last_error TEXT
+    );
+    "#,
 ];

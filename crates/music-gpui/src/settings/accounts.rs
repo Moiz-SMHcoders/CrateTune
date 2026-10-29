@@ -15,12 +15,13 @@ use gpui_component::{
     h_flex,
     input::{Input, InputState},
     spinner::Spinner,
+    switch::Switch,
     v_flex,
 };
 use music_core::innertube::GoogleAccount;
 
 use super::SettingsPanel;
-use super::widgets::{group, group_at, note, row, status_line};
+use super::widgets::{group, group_at, note, row, row_at, status_line};
 use crate::account::{Busy, GoogleAccountsView};
 use crate::app::{read_app, update_app};
 use crate::components::artwork::artwork;
@@ -284,6 +285,19 @@ pub(super) fn render(
                 .on_click(|_, window, cx| {
                     update_app(cx, |app, cx| app.sync_youtube_library(window, cx));
                 });
+            let library = &panel.settings.library;
+            let auto_sync = Switch::new("account-auto-sync")
+                .checked(library.auto_sync)
+                .on_click(cx.listener(|this, checked: &bool, _, cx| {
+                    let on = *checked;
+                    this.update_library(|l| l.auto_sync = on, cx);
+                }));
+            let skip_disliked = Switch::new("account-skip-disliked")
+                .checked(library.skip_disliked)
+                .on_click(cx.listener(|this, checked: &bool, _, cx| {
+                    let on = *checked;
+                    this.update_library(|l| l.skip_disliked = on, cx);
+                }));
             content = content.child(
                 group_at("account.sync", t!("settings.account.sync_group"), cx)
                     .child(row(
@@ -293,7 +307,21 @@ pub(super) fn render(
                         cx,
                     ))
                     .child(note(last_sync, cx))
-                    .children(busy_line(&sync, cx)),
+                    .children(busy_line(&sync, cx))
+                    .child(row_at(
+                        "account.sync.auto",
+                        t!("settings.account.auto_sync"),
+                        Some(t!("settings.account.auto_sync_desc")),
+                        auto_sync,
+                        cx,
+                    ))
+                    .child(row_at(
+                        "account.sync.skip_disliked",
+                        t!("settings.account.skip_disliked"),
+                        Some(t!("settings.account.skip_disliked_desc")),
+                        skip_disliked,
+                        cx,
+                    )),
             );
 
             let channel_rows: Vec<AnyElement> = channels

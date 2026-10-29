@@ -615,6 +615,8 @@ pub struct NowPlayingConfig {
     pub background: NowPlayingBackground,
     #[serde(deserialize_with = "lenient")]
     pub mini_player: MiniPlayerStyle,
+    /// "Full screen when Now Playing opens" (off by default; `np_fullscreen.rs`).
+    pub fullscreen: bool,
 }
 
 // ---- Discord activity ---------------------------------------------------------------
@@ -871,6 +873,40 @@ mod tests {
         // An unknown design (from a newer version) falls back to the default.
         let back: NowPlayingConfig = serde_json::from_str(r#"{"layout":"vinyl"}"#).unwrap();
         assert_eq!(back.layout, NowPlayingLayout::Split);
+    }
+
+    #[test]
+    fn now_playing_full_screen_defaults_off_and_round_trips() {
+        assert!(!NowPlayingConfig::default().fullscreen);
+        // Files from before the setting load with it off.
+        let old: NowPlayingConfig = serde_json::from_str(r#"{"layout":"card"}"#).unwrap();
+        assert!(!old.fullscreen);
+        let on = NowPlayingConfig {
+            fullscreen: true,
+            ..NowPlayingConfig::default()
+        };
+        let json = serde_json::to_value(on).unwrap();
+        assert_eq!(json["fullscreen"], true);
+        assert_eq!(
+            serde_json::from_value::<NowPlayingConfig>(json).unwrap(),
+            on
+        );
+        // Part of profiles (the `now_playing` section) and of the settings export.
+        let settings = crate::settings::Settings {
+            now_playing: on,
+            ..Default::default()
+        };
+        let profile = crate::settings::profiles::snapshot(&settings);
+        assert_eq!(profile["now_playing"]["fullscreen"], true);
+        let export = crate::settings::portable::export_settings(&settings, 0);
+        let doc: serde_json::Value = serde_json::from_str(&export).unwrap();
+        assert_eq!(doc["settings"]["now_playing"]["fullscreen"], true);
+        // Minimal / Fast keeps it off.
+        assert!(
+            !crate::settings::profiles::minimal_settings()
+                .now_playing
+                .fullscreen
+        );
     }
 
     #[test]

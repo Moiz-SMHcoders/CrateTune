@@ -106,6 +106,32 @@ pub enum Rating {
 }
 
 impl Rating {
+    /// The `likeStatus` of a `likeButtonRenderer` (`LIKE`, `DISLIKE`, `INDIFFERENT`).
+    pub fn from_like_status(status: &str) -> Option<Self> {
+        match status {
+            "LIKE" => Some(Rating::Like),
+            "DISLIKE" => Some(Rating::Dislike),
+            "INDIFFERENT" => Some(Rating::Indifferent),
+            _ => None,
+        }
+    }
+
+    /// Stable lower-case name (`like`, `dislike`, `indifferent`), e.g. for storage.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Rating::Like => "like",
+            Rating::Dislike => "dislike",
+            Rating::Indifferent => "indifferent",
+        }
+    }
+
+    /// Inverse of [`Rating::as_str`].
+    pub fn parse(s: &str) -> Option<Self> {
+        [Rating::Like, Rating::Dislike, Rating::Indifferent]
+            .into_iter()
+            .find(|r| r.as_str() == s)
+    }
+
     fn endpoint(self) -> &'static str {
         match self {
             Rating::Like => "like/like",
@@ -669,6 +695,19 @@ impl InnerTube {
     /// Listening history, newest day first.
     pub fn history(&self) -> Result<Vec<HistorySection>> {
         Ok(parse_history(&self.browse_authed(HISTORY)?))
+    }
+
+    /// The signed-in account's rating of a song or video, from the `next` response's
+    /// like button (what YouTube Music's own player shows). `None` when the response
+    /// has no like button for `video_id`, or when the answer can't be trusted (see
+    /// [`WatchQueue::trusted_ratings`](super::WatchQueue::trusted_ratings)).
+    pub fn like_status(&self, video_id: &str) -> Result<Option<Rating>> {
+        let resp = self.post_authed("next", json!({ "videoId": video_id, "isAudioOnly": true }))?;
+        let logged_in = super::pages::logged_in(&resp);
+        Ok(super::pages::like_status(&resp)
+            .filter(|v| v.video_id == video_id)
+            .map(|v| v.rating)
+            .filter(|r| super::trusted_rating(*r, logged_in)))
     }
 
     /// Like / dislike / un-rate a song or video.

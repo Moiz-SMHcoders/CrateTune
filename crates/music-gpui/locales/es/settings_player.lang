@@ -62,6 +62,8 @@ settings.appearance.font_scale = {percent} %
 settings.appearance.text_size_note = Escala todo el texto de la interfaz; las letras tienen su propio tamaño (Letras).
 settings.appearance.background = Fondo
 settings.appearance.np_note = Degradado, sólido y brillo toman sus colores de la portada. El brillo solo se mueve mientras suena música. El diseño y el fondo también están en el menú de diseño de la pantalla Reproduciendo.
+settings.appearance.np_fullscreen = Pantalla completa al abrir Reproduciendo
+settings.appearance.np_fullscreen_note = Al abrir Reproduciendo o la letra, la ventana pasa a pantalla completa, y al cerrarlos sale de ella. Si la ventana ya estaba en pantalla completa, se queda así.
 settings.appearance.mini_player = Minirreproductor
 
 # ---- Playback

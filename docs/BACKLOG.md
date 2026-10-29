@@ -15,7 +15,7 @@ Last reviewed: 2026-10-29, against `main` at `bdb3625`.
 **B1. Windows: guests see "Connection lost" when the host ends a Listen Together session**
 Guests should see "Session ended". The server flushes the close frame, waits up to 1 s for
 the reply, then half-closes and drains the socket; that fixed Linux, but on Windows the close
-frame is still lost now and then. The CI test accepts either message on Windows until this is
+frame is still lost now and then (also seen on Linux CI under load). The CI test accepts either message until this is
 looked at on a real Windows machine. Details: `together::tests::session_end_to_end`,
 `Conn::close` in `crates/music-core/src/together/conn.rs`. · Size: medium · Priority: low
 
@@ -126,6 +126,21 @@ Details: the "Not verified" paragraphs of the [Content
 round](../README.md#content-round-video-types-podcasts-long-albums-dns-over-https-covers),
 [Theming round](../README.md#theming-round-customize-theme-dynamic-colours-profiles-downloads)
 and [Player UI round](../README.md#player-ui-round-verification). · Size: small · Priority: low
+
+**U16. Automatic sync and per-song likes against a real account**
+The sync triggers, throttle and guard (`youtube_sync.rs`), the liked-songs rules, the
+offline rating queue and `like/dislike` were checked with unit tests, fixtures and loopback
+fakes only. To confirm with a real account: (1) a song liked on the phone turns liked here
+on play (`next` → `playerOverlays…likeButtonRenderer.likeStatus` = `LIKE` when signed in);
+(2) whether WEB_REMIX `next` carries `responseContext…GFEEDBACK logged_in` (without it,
+"neither" is ignored and un-likes made elsewhere wait for the next sync); (3) whether
+queue rows of a signed-in radio carry `menu…likeButtonRenderer` (saves requests); (4)
+`like/dislike` shows the dislike on YouTube Music and the song stays out of the account's
+radio there; (5) a like made offline arrives after reconnecting; (6) a sync of a few
+thousand liked songs (60-page cap) and its unlike guard. `authed/next_liked.json` is
+hand-built from the recorded anonymous `next.json`. Details: [README: Account sync, likes
+and dislikes](../README.md#library-account-downloads-local-files). · Size: small ·
+Priority: high
 
 ## 3. Platform & distribution
 

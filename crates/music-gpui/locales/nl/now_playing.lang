@@ -9,6 +9,10 @@ np.preview = Voorbeeld
 np.speed = {speed}×
 np.sleep_tooltip = Slaaptimer
 np.layout_tooltip = Ontwerp en achtergrond
+np.fullscreen_enter = Volledig scherm
+np.fullscreen_exit = Volledig scherm verlaten
+np.fullscreen_enter_keys = Volledig scherm ({keys})
+np.fullscreen_exit_keys = Volledig scherm verlaten ({keys})
 np.menu.design = Ontwerp
 np.menu.background = Achtergrond
 

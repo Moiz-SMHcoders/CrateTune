@@ -207,6 +207,14 @@ pub fn valid_for(seed_id: &str, songs: Vec<Track>) -> Vec<Track> {
     distinct_by(songs, |s| s.video_id.clone())
 }
 
+/// `items` without the songs (and videos) `disliked` says are disliked.
+pub fn drop_disliked(items: Vec<Item>, disliked: impl Fn(&str) -> bool) -> Vec<Item> {
+    items
+        .into_iter()
+        .filter(|i| !(matches!(i, Item::Song(_) | Item::Video(_)) && disliked(i.id())))
+        .collect()
+}
+
 // ---- ranking -------------------------------------------------------------------------
 
 struct Candidate {
@@ -569,6 +577,23 @@ mod tests {
         assert_eq!(next[0].video_id, vid(13));
         // Nothing related: nothing.
         assert!(rank_quick_picks(&seeds, &[], &library, &shown, 5, &mut rng).is_empty());
+    }
+
+    #[test]
+    fn disliked_songs_are_dropped() {
+        let items = vec![
+            Item::Song(song(&vid(1), "A")),
+            Item::Video(song(&vid(2), "A")),
+            Item::Song(song(&vid(3), "A")),
+            // Not a song: an album with the same id stays.
+            playlist(&vid(1)),
+        ];
+        let disliked: HashSet<String> = [vid(1), vid(2)].into();
+        let kept: Vec<String> = drop_disliked(items, |id| disliked.contains(id))
+            .iter()
+            .map(|i| i.id().to_owned())
+            .collect();
+        assert_eq!(kept, [vid(3), vid(1)]);
     }
 
     #[test]

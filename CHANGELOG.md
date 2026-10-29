@@ -19,11 +19,55 @@ versions follow [SemVer](https://semver.org/).
   YouTube's quick picks and feed for their content language and country. The library
   sections show at once; the recommendations follow (about 8 requests per refresh, at most
   3 at a time), cached for 20 minutes per account, with a **Refresh** button. Content
-  filters (explicit, videos, AI filter) apply everywhere.
+  filters (explicit, videos, AI filter) apply everywhere, and disliked songs are left out
+  of every section.
 * **Settings → Content & region → Home**: quick picks from your favourites / your last song
   / off, cards or list layout, category chips, a tonal backdrop (skipped while the app-wide
   artwork look is on) and which sections show. In the settings search; `home` in
   `settings.json`; script hook `@home=OPTION:VALUE` (and `@home=pin:N`).
+
+* **Full screen for Now Playing and lyrics**: a Maximize / Minimize button in the Now
+  Playing header (every design and the lyrics view; its tooltip shows the shortcut) puts
+  the window in full screen and back, on macOS as native full screen in its own Space.
+  New **Toggle full screen** action, ⌃⌘F on macOS and F11 on Windows / Linux, editable
+  in Settings → Keyboard shortcuts and in the View menu; it works anywhere. Settings →
+  Appearance → Now Playing → **Full screen when Now Playing opens** (off by default, off
+  in the Minimal / Fast profile, part of profiles and the settings export) enters full
+  screen whenever Now Playing or the lyrics view opens. Closing Now Playing (Esc, the
+  close button, ⌘L, navigating away) leaves full screen again, but only if CrateTune
+  entered it for Now Playing: a window that was already in full screen stays there, and
+  leaving full screen yourself (green button, the system) is never undone. Esc leaves
+  the full screen entered with the button first, then closes Now Playing. The mini player
+  keeps working over the full-screen window. Script hooks: `@np-fullscreen[=on|off]`,
+  `@np-fullscreen-auto=on|off`, `@lyrics-view`, `@fullscreen-external`,
+  `@fullscreen-status`.
+
+### Changed
+
+* The saved window frame is no longer replaced while the window is in full screen, so the
+  next launch opens the normal window, not one the size of the screen.
+* **Likes stay in sync with YouTube Music** (signed in): the liked songs sync at start
+  (unless the last sync is under 10 min old), every 45 min, when the window comes back
+  after 30 min and when the Liked tab opens; the whole library every 6 h and on sign-in /
+  account switch / **Sync now**. Syncs never overlap. Settings → Account → **Sync with
+  YouTube Music automatically** (on by default, like ArchiveTune) turns the background
+  syncs off. The Liked tab shows the last sync time and a **Sync now** button.
+* **A song's like from YouTube when it plays**: a few seconds in, its like or dislike is
+  read from YouTube Music's own like button (reusing the radio's response when there is
+  one), so a song liked on the phone shows the filled heart right away.
+* **Dislike** (thumbs down): song menus, Now Playing (Split design) and an optional
+  player-bar item (off by default). Rates the song on YouTube Music, removes a like,
+  skips the playing song (**Skip songs you dislike**, on by default) and keeps disliked
+  songs out of radio and autoplay. **Remove dislike** takes it back.
+* **Offline likes**: a like or dislike YouTube Music didn't take is kept and retried
+  every 5 min and before each sync, instead of staying local only.
+
+### Changed
+
+* Library database schema v2 (adds `song.disliked_at` and `pending_rating`; older builds
+  refuse a v2 database, as for every schema bump).
+* Automatic and liked-only syncs no longer unlike everything when YouTube's liked list
+  comes back empty or truncated; ratings still queued and local files keep their state.
 
 ### Fixed
 

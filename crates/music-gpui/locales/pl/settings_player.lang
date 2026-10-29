@@ -61,6 +61,8 @@ settings.appearance.font_scale = {percent}%
 settings.appearance.text_size_note = Skaluje cały tekst interfejsu; teksty piosenek mają własny rozmiar (Teksty).
 settings.appearance.background = Tło
 settings.appearance.np_note = Gradient, jednolity kolor i poświata biorą kolory z okładki. Poświata porusza się tylko podczas odtwarzania. Układ i tło są też dostępne w menu ekranu Teraz odtwarzane.
+settings.appearance.np_fullscreen = Pełny ekran po otwarciu Teraz odtwarzane
+settings.appearance.np_fullscreen_note = Otwarcie ekranu Teraz odtwarzane lub tekstu przełącza okno na pełny ekran, a zamknięcie z niego wychodzi. Okno, które już było na pełnym ekranie, takie pozostaje.
 settings.appearance.mini_player = Miniodtwarzacz
 
 # ---- Playback

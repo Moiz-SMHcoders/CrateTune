@@ -22,7 +22,7 @@ use std::time::{Duration, Instant};
 
 use gpui::{AppContext as _, Context, Entity, Window};
 use music_core::downloads::{DownloadKind, DownloadManager, DownloadStatus};
-use music_core::innertube::{Auth, InnerTube};
+use music_core::innertube::{Auth, InnerTube, Rating};
 use music_core::library::{Library, PlaylistSort, SavedQueue, SongQuery, SongScope, now_ms};
 use music_core::local_files::{ScanConfig, scan_with_progress};
 use music_core::{PlaybackState, PlaybackStatus, StreamResolver, Track};
@@ -56,6 +56,7 @@ pub enum DownloadFlag {
 #[derive(Default)]
 struct Flags {
     liked: HashSet<String>,
+    disliked: HashSet<String>,
     downloads: HashMap<String, DownloadFlag>,
     library_open: bool,
     /// Bumped whenever `downloads` is rebuilt (list headers cache on it).
@@ -69,6 +70,11 @@ thread_local! {
 /// Whether the song is liked in the local library.
 pub fn is_liked(video_id: &str) -> bool {
     FLAGS.with(|f| f.borrow().liked.contains(video_id))
+}
+
+/// Whether the song is disliked (thumbs down) in the local library.
+pub fn is_disliked(video_id: &str) -> bool {
+    FLAGS.with(|f| f.borrow().disliked.contains(video_id))
 }
 
 /// The user download state of a song (`None`: not downloaded).
@@ -91,10 +97,36 @@ fn set_liked_flag(video_id: &str, liked: bool) {
         let mut f = f.borrow_mut();
         if liked {
             f.liked.insert(video_id.to_owned());
+            f.disliked.remove(video_id);
         } else {
             f.liked.remove(video_id);
         }
     });
+}
+
+/// Mirrors a rating (like / dislike / neither) into the flags.
+pub(crate) fn set_rating_flag(video_id: &str, rating: Rating) {
+    FLAGS.with(|f| {
+        let mut f = f.borrow_mut();
+        f.liked.remove(video_id);
+        f.disliked.remove(video_id);
+        match rating {
+            Rating::Like => f.liked.insert(video_id.to_owned()),
+            Rating::Dislike => f.disliked.insert(video_id.to_owned()),
+            Rating::Indifferent => false,
+        };
+    });
+}
+
+/// The local rating the flags show.
+pub(crate) fn rating_flag(video_id: &str) -> Rating {
+    if is_liked(video_id) {
+        Rating::Like
+    } else if is_disliked(video_id) {
+        Rating::Dislike
+    } else {
+        Rating::Indifferent
+    }
 }
 
 // ---- state --------------------------------------------------------------------------------
@@ -190,9 +222,14 @@ impl Store {
             })
             .map(|songs| songs.into_iter().map(|s| s.track.video_id).collect())
             .unwrap_or_default();
+        let disliked = library
+            .as_ref()
+            .and_then(|lib| lib.disliked_ids().ok())
+            .unwrap_or_default();
         FLAGS.with(|f| {
             let mut f = f.borrow_mut();
             f.liked = liked;
+            f.disliked = disliked;
             f.library_open = library.is_some();
         });
         let search_writer = library
@@ -425,45 +462,90 @@ impl MusicApp {
         }
         for t in &tracks {
             set_liked_flag(&t.video_id, like);
+            self.store.account.yt.rated_here(&t.video_id);
         }
         self.liked_downloads(&tracks, like, window, cx);
-        let remote = self.account_client();
-        let signed_in = remote.is_signed_in();
         let message = match (tracks.as_slice(), like) {
             ([one], true) => t!("store.toast.liked_one", title = one.title),
             ([one], false) => t!("store.toast.unliked_one", title = one.title),
             (many, true) => tp!("store.toast.liked_many", many.len()),
             (many, false) => tp!("store.toast.unliked_many", many.len()),
         };
+        let rating = if like {
+            Rating::Like
+        } else {
+            Rating::Indifferent
+        };
+        self.rate(tracks, rating, message, window, cx);
+        cx.notify();
+    }
+
+    /// Thumbs down (or takes it back): YouTube Music's dislike, which also unlikes.
+    /// Disliking the playing song skips it when "Skip songs you dislike" is on.
+    pub fn set_disliked(
+        &mut self,
+        track: Track,
+        dislike: bool,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        if self.store.library.is_none() {
+            notify(window, cx, t!("store.library_db_unavailable"));
+            return;
+        }
+        let rating = if dislike {
+            Rating::Dislike
+        } else {
+            Rating::Indifferent
+        };
+        if dislike && is_liked(&track.video_id) {
+            self.liked_downloads(std::slice::from_ref(&track), false, window, cx);
+        }
+        set_rating_flag(&track.video_id, rating);
+        self.store.account.yt.rated_here(&track.video_id);
+        let message = if dislike {
+            t!("store.toast.disliked_one", title = track.title)
+        } else {
+            t!("store.toast.undisliked_one", title = track.title)
+        };
+        let skip = dislike
+            && self.store.prefs.skip_disliked
+            && self.current_video_id() == Some(track.video_id.as_str());
+        self.rate(vec![track], rating, message, window, cx);
+        if skip {
+            self.next_track(cx);
+        }
+        cx.notify();
+    }
+
+    /// Thumbs down on / off for one song.
+    pub fn toggle_dislike(&mut self, track: Track, window: &mut Window, cx: &mut Context<Self>) {
+        let dislike = !is_disliked(&track.video_id);
+        self.set_disliked(track, dislike, window, cx);
+    }
+
+    /// Saves `rating` for `tracks` in the library and, when signed in, on YouTube
+    /// Music; what YouTube didn't take waits in the library's rating queue
+    /// (retried by `youtube_sync.rs`). Toasts `message`.
+    fn rate(
+        &mut self,
+        tracks: Vec<Track>,
+        rating: Rating,
+        message: String,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let remote = self.account_client();
+        let signed_in = remote.is_signed_in();
         self.with_library(
             t!("store.action.saving_like"),
-            move |lib| {
-                let mut remote_errors = Vec::new();
-                for t in &tracks {
-                    if like {
-                        lib.like(t)?;
-                    } else {
-                        lib.unlike(&t.video_id)?;
-                    }
-                    if signed_in && !t.is_local() {
-                        let rating = if like {
-                            music_core::innertube::Rating::Like
-                        } else {
-                            music_core::innertube::Rating::Indifferent
-                        };
-                        if let Err(e) = remote.rate_song(&t.video_id, rating) {
-                            remote_errors.push(e.to_string());
-                        }
-                    }
-                }
-                Ok(remote_errors)
-            },
+            move |lib| rate_tracks(lib, &remote, signed_in, &tracks, rating),
             move |_, remote_errors, window, cx| {
                 match remote_errors.first() {
                     Some(e) => notify(
                         window,
                         cx,
-                        t!("store.toast.only_locally", message = message, error = e),
+                        t!("store.toast.rating_queued", message = message, error = e),
                     ),
                     None => notify(window, cx, message),
                 };
@@ -471,7 +553,6 @@ impl MusicApp {
             window,
             cx,
         );
-        cx.notify();
     }
 
     /// Removes songs from the library (which also unlikes them, as in ArchiveTune).
@@ -957,6 +1038,8 @@ impl MusicApp {
                     last_tick: now,
                     recorded: false,
                 });
+                // Liked on the phone? (`youtube_sync.rs`)
+                self.check_like_on_play(track, cx);
             }
             return;
         }
@@ -1291,6 +1374,37 @@ impl MusicApp {
 /// Replaces the liked-id mirror (after a sync or a backup restore).
 pub fn replace_liked(ids: HashSet<String>) {
     FLAGS.with(|f| f.borrow_mut().liked = ids);
+}
+
+/// Replaces the disliked-id mirror (after a backup restore).
+pub fn replace_disliked(ids: HashSet<String>) {
+    FLAGS.with(|f| f.borrow_mut().disliked = ids);
+}
+
+/// Blocking: rates `tracks` locally, then on YouTube Music when `signed_in` (local
+/// files never). A rating YouTube didn't take is queued; one it took replaces
+/// whatever was queued. Returns YouTube's errors.
+pub(crate) fn rate_tracks(
+    lib: &Library,
+    remote: &InnerTube,
+    signed_in: bool,
+    tracks: &[Track],
+    rating: Rating,
+) -> music_core::Result<Vec<String>> {
+    let mut remote_errors = Vec::new();
+    for t in tracks {
+        lib.set_rating(t, rating)?;
+        if signed_in && !t.is_local() {
+            match remote.rate_song(&t.video_id, rating) {
+                Ok(()) => lib.finish_pending_rating(&t.video_id, None)?,
+                Err(e) => {
+                    lib.queue_rating(&t.video_id, rating)?;
+                    remote_errors.push(e.to_string());
+                }
+            }
+        }
+    }
+    Ok(remote_errors)
 }
 
 /// Lyrics cache in the library database (`lyrics` table): fetched lyrics survive

@@ -61,6 +61,8 @@ settings.appearance.font_scale = {percent}%
 settings.appearance.text_size_note = Ridimensiona tutto il testo dell'interfaccia; i testi delle canzoni mantengono la loro dimensione (Testi).
 settings.appearance.background = Sfondo
 settings.appearance.np_note = Sfumatura, tinta unita e bagliore prendono i colori dalla copertina. Il bagliore si muove solo durante la riproduzione. Layout e sfondo si trovano anche nel menu layout della schermata In riproduzione.
+settings.appearance.np_fullscreen = Schermo intero all'apertura di In riproduzione
+settings.appearance.np_fullscreen_note = Aprendo In riproduzione o il testo, la finestra passa a schermo intero; chiudendoli ne esce. Una finestra già a schermo intero resta così.
 settings.appearance.mini_player = Mini player
 
 # ---- Playback

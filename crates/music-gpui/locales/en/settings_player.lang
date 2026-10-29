@@ -80,6 +80,8 @@ settings.appearance.font_scale = {percent} %
 settings.appearance.text_size_note = Scales all interface text; lyrics keep their own size (Lyrics).
 settings.appearance.background = Background
 settings.appearance.np_note = Gradient, solid and glow take their colours from the artwork. The glow only moves while music plays. Layout and background are also in the Now Playing screen's layout menu.
+settings.appearance.np_fullscreen = Full screen when Now Playing opens
+settings.appearance.np_fullscreen_note = Opening Now Playing or the lyrics also puts the window in full screen, and closing them leaves it again. A window that was already in full screen stays that way.
 settings.appearance.mini_player = Mini player
 
 # ---- Playback

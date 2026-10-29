@@ -9,6 +9,10 @@ np.preview = Önizleme
 np.speed = {speed}×
 np.sleep_tooltip = Uyku zamanlayıcısı
 np.layout_tooltip = Tasarım ve arka plan
+np.fullscreen_enter = Tam ekran
+np.fullscreen_exit = Tam ekrandan çık
+np.fullscreen_enter_keys = Tam ekran ({keys})
+np.fullscreen_exit_keys = Tam ekrandan çık ({keys})
 np.menu.design = Tasarım
 np.menu.background = Arka plan
 

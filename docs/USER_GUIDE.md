@@ -165,6 +165,16 @@ header or Settings → Appearance:
 Four backgrounds (blurred artwork, gradient, solid, glow) apply to the designs that don't
 bring their own colours (Immersive, Minimal and Editorial do).
 
+**Full screen**: the full-screen button in the header (four corners, top right) (or ⌃⌘F on macOS, F11 on Windows and Linux)
+puts the window in full screen and back; on a Mac that is native full screen, in its own
+Space. To have it every time, turn on Settings → Appearance → Now Playing → **Full screen
+when Now Playing opens** (also for the lyrics view). Closing Now Playing (Esc, the close
+button, ⌘L or going to another page) leaves full screen again, but only when the app
+entered it for Now Playing: if the window was already in full screen, it stays. With the
+button, the first Esc leaves full screen and the second closes Now Playing; with the
+setting, one Esc does both. If you leave full screen yourself (the green button), the app
+doesn't put it back. The mini player keeps working on top of the full-screen window.
+
 **Lyrics cards**: click the share button above the lyrics, click up to six lines, then
 **Create card…**. Pick a background (blurred artwork, album colour, dark, light), the text
 alignment and size, square / portrait / story shape and whether the cover shows, then
@@ -251,6 +261,33 @@ account → Add account), then sign out in CrateTune and use **Paste cookie…**
 browser's cookie (the sign-in window keeps only the first account). **Channels** (brand
 accounts) of the Google account in use are listed below it and are separate from this.
 If a switch fails, CrateTune stays on the account you had and tells you why.
+
+### Likes and YouTube
+
+Signed in, the heart and YouTube Music's thumbs up are the same thing, both ways:
+
+* **Liking here** likes the song on YouTube Music (and adds it to your library). If
+  YouTube Music can't be reached, the like is kept here and sent later (every few
+  minutes, and before each sync) — the toast says so.
+* **Liked elsewhere** (phone, browser, ArchiveTune) shows up here by itself: CrateTune
+  syncs your liked songs when it starts (unless it just did), every 45 minutes, when you
+  come back to the window after a while and when you open the Liked tab; the whole
+  library every 6 hours, and right after signing in or switching account. A song you
+  play also asks YouTube Music for its like or dislike a few seconds in, so a song liked
+  on your phone shows the filled heart as soon as you play it.
+* **Unliked elsewhere**: the next sync removes it from Liked songs. YouTube Music is the
+  source of truth; your local files keep their likes.
+* **Dislike** (thumbs down): in a song's menu, beside the heart on Now Playing (Split
+  design), and as an optional player-bar button (Settings → Player bar). It dislikes the
+  song on YouTube Music, removes a like, skips the song if it is playing (turn off with
+  **Skip songs you dislike**), and keeps it out of radio and autoplay. Choose **Remove
+  dislike** to take it back. YouTube Music has no list of disliked songs, so dislikes made
+  elsewhere arrive when you play the song.
+* The Liked tab shows when your likes were last synced, with a **Sync now** button.
+  Settings → Account → **Sync with YouTube Music automatically** (on by default) turns
+  the background syncs off; **Sync now**, signing in and switching account still sync.
+
+This was built against YouTube Music's web API but not yet tried with a real account.
 
 ## Settings
 
@@ -395,11 +432,12 @@ macOS keys shown. On Windows and Linux use **Ctrl** in place of ⌘ and Alt for 
 | ⌘L | Now Playing |
 | ⌥⌘Q | queue |
 | ⇧⌘M | mini player |
+| ⌃⌘F (Windows / Linux: F11) | full screen (also the full-screen button in Now Playing) |
 | ⇧⌘R | recognize a song |
 | ⌘S / ⌘R | shuffle / repeat |
 | ⌘[ / ⌘] | back / forward (also the mouse's back / forward buttons) |
 | ⌘1 / ⌘2 / ⌘3 / ⌘Y | Home / Explore / Library / History |
-| Esc | close an open menu or dialog first; else the welcome guide, Now Playing or the queue; else back |
+| Esc | close an open menu or dialog first; else the welcome guide, the full screen entered with Now Playing's button, Now Playing or the queue; else back |
 | ⌘Q | quit |
 | ⌘/ | show all shortcuts (also Help → Keyboard Shortcuts) |
 

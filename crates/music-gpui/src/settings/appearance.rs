@@ -1,5 +1,5 @@
 //! Appearance section: theme (dark / pure black / dynamic accent), font size,
-//! Now Playing layout + background, and the mini player style.
+//! Now Playing layout + background + full screen on open, and the mini player style.
 
 use gpui::{
     AnyElement, Context, FontWeight, InteractiveElement as _, IntoElement, ParentElement as _,
@@ -9,7 +9,9 @@ use gpui::{
 use gpui_component::{
     ActiveTheme as _, Selectable as _, Sizable as _,
     button::{Button, ButtonVariants as _},
-    h_flex, v_flex,
+    h_flex,
+    switch::Switch,
+    v_flex,
 };
 
 use super::SettingsPanel;
@@ -287,6 +289,9 @@ pub(super) fn render(
         |this, b, cx| this.set_np_background(b, cx),
         cx,
     );
+    let np_fullscreen = Switch::new("np-fullscreen-auto")
+        .checked(np.fullscreen)
+        .on_click(cx.listener(|this, on: &bool, _, cx| this.set_np_fullscreen(*on, cx)));
     let mini = choice(
         "mini-style",
         &MiniPlayerStyle::ALL,
@@ -332,6 +337,13 @@ pub(super) fn render(
                     t!("settings.appearance.background"),
                     None,
                     backgrounds,
+                    cx,
+                ))
+                .child(row_at(
+                    "appearance.now_playing.fullscreen",
+                    t!("settings.appearance.np_fullscreen"),
+                    Some(t!("settings.appearance.np_fullscreen_note")),
+                    np_fullscreen,
                     cx,
                 ))
                 .child(note(t!("settings.appearance.np_note"), cx)),

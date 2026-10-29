@@ -26,6 +26,7 @@ menu.volume_down = Volume Down
 menu.window = Window
 menu.minimize = Minimize
 menu.zoom = Zoom
+menu.fullscreen = Toggle Full Screen
 
 # Menu-bar item
 tray.next = Next

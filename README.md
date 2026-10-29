@@ -549,6 +549,8 @@ src/
   tray.rs            menu-bar item (macOS)
   now_playing.rs     Now Playing: screen, header, backgrounds, transport, the first three
                      designs, lyrics pane; np_designs.rs (the other five designs),
+                     np_fullscreen.rs (full screen button / shortcut / setting, who
+                     entered it),
                      np_lyrics.rs (synced lyrics list: own layout, frame pacing, card
                      selection), np_region.rs / snapshot.rs (cached sub-views)
   card_render.rs     lyrics card image (tiny-skia + resvg, pure Rust); lyrics_card.rs its
@@ -754,7 +756,7 @@ locales/<locale>/*.lang  the catalogs (English = source), embedded by build.rs v
   saved. "Previous" restarts past 3 s; the end of a track (including a ~60 s preview)
   plays the next one. Queue panel: now playing, up next, history (click to play again).
 * **Settings page** with sections: Appearance (theme, text size, Now Playing layout +
-  background, mini player style), Playback (queue modes, quality, normalization, skip
+  background + full screen on open, mini player style), Playback (queue modes, quality, normalization, skip
   silence, auto-skip, crossfade, speed + pitch, output device, sleep timer), Equalizer,
   Modules (provider modules, playback source), Lyrics (look, providers, translation,
   romanization), Content & region, Network, Privacy,
@@ -779,7 +781,17 @@ locales/<locale>/*.lang  the catalogs (English = source), embedded by build.rs v
 * **Menu-bar item** (macOS, `tray-icon`): current track, play/pause, next, previous,
   mini player, show window, quit. It coexists with GPUI's run loop (the status item is
   just AppKit; menu events are drained by the poll). Not built on Linux/Windows.
-* **Window frame** saved (content size, position, maximized) and restored if on screen.
+* **Window frame** saved (content size, position, maximized) and restored if on screen
+  (not while in full screen).
+* **Full screen** (`np_fullscreen.rs`): Now Playing's header button, the "Toggle full
+  screen" action (⌃⌘F on macOS, F11 elsewhere; View menu; editable) and "Full screen
+  when Now Playing opens" (Settings → Appearance, off by default). A small tracker
+  remembers whether the app entered full screen *for Now Playing*; only then does
+  closing Now Playing leave it. `Window::toggle_fullscreen` only toggles and macOS
+  animates the transition, so requests set a target and toggles are sent once nothing
+  of ours is in flight (bounds observer + re-check timer, give-up after 3 s); a change
+  nobody asked for (green button) drops target and ownership, so the user is never
+  fought. Scripts: `@np-fullscreen[=on|off]`, `@np-fullscreen-auto`, `@fullscreen-status`.
 * **Engine wiring** (`playback.rs`): the engine's `set_next` follows the queue on every
   poll and after `play` (shuffle, repeat-all wrap, repeat-one = the same track again,
   edits); when `PlaybackState::advance_count` grows (gapless / crossfade switch,
@@ -879,7 +891,9 @@ signed in, the playlists. Everything is cached for 20 minutes per account (the s
 `PageCache` as the other pages); **Refresh** (next to the title) reloads it, opening Home
 after the cache expired reloads it, and so do signing in or out, switching account or
 channel, and changing the content language, country or filters. Hide explicit, Hide music
-videos and the AI filter apply to every section.
+videos and the AI filter apply to every section, and disliked songs never show (not as
+seeds, quick picks, "Similar to" items, keep listening, forgotten favourites or in the
+feed; a song disliked from Home leaves its shelves at once).
 
 **Why the feed looked unrelated.** Two things made the feed generic: Home was fetched at
 startup before the keychain had returned the YouTube cookie, so even signed in the feed was
@@ -998,6 +1012,40 @@ cards, grids and menus are this app's own (hover effects and play buttons includ
   `setVideoId`s) into the database; YouTube wins for likes / saved albums / subscriptions /
   playlist mirrors, local-only items are untouched. The artist page's Subscribe button and the library artist views subscribe /
   unsubscribe (`set_subscribed`).
+* **Account sync, likes and dislikes** (`youtube_sync.rs`, `account.rs`,
+  `music_core::library::ratings`). ArchiveTune runs `SyncUtils.performFullSync` when the
+  app starts signed in, after sign-in and on an account switch (authoritative there), and
+  `syncLikedSongs` when the Liked page opens, all gated by `YtmSyncKey` (default on); it
+  has no dislike and never reads YouTube's `likeStatus`. CrateTune matches those
+  triggers and adds: a sync every 45 min while running and when the window comes back
+  after 30 min; automatic syncs are **liked songs only** (`VLLM` + continuations) unless
+  the last full sync is 6 h old; none at start if the last sync is under 10 min old, a
+  failed attempt waits like a sync. Sign-in, switch and **Sync now** always run a full,
+  authoritative sync. One sync at a time (`SyncSchedule`): a request made meanwhile waits
+  and runs after, unless the finished one covered it. Settings → Account → **Sync with
+  YouTube Music automatically** (`library.auto_sync`, default on) turns the automatic
+  ones off. YouTube stays the source of truth for likes, with guards: local files and
+  ratings still queued keep their state, and an automatic sync with an empty or truncated
+  (60+ pages) list unlikes nothing. **Per-song likes**: 3 s into a song (signed in, sync
+  on, not asked in the last 30 min) its `next` response's like button
+  (`playerOverlays…likeButtonRenderer.likeStatus`, `InnerTube::like_status`) sets the
+  local like / dislike; a radio started from the song carries it already
+  (`WatchQueue::ratings`, also the rows' menu buttons) so no second request goes out.
+  "Neither" is only believed when the response's `responseContext` says `logged_in=1`
+  (an expired session would otherwise unlike every song played); a like or dislike is
+  always. **Dislike** (track menus, Now Playing's Split layout beside the heart, an
+  optional player-bar item off by default): `like/dislike`, `song.disliked_at` (schema
+  v2, additive), unlikes, skips the playing song ("Skip songs you dislike", default on,
+  as YouTube Music does), and disliked songs are left out of radio / autoplay batches;
+  taking it back sends `like/removelike`. **Offline**: a like / dislike YouTube didn't
+  take is saved locally and queued (`pending_rating`, latest wish per song, dropped after
+  20 failures); it is sent every 5 min and before each sync, cleared on sign-out /
+  account switch. The Liked tab shows "Synced with YouTube Music 5 min ago" and a
+  **Sync now** button (liked songs only). **Not verified against a real account**: all of
+  this ran against fixtures (`authed/next_liked.json` is hand-built from the recorded
+  `next.json`) and loopback fakes only; in particular whether WEB_REMIX `next` carries
+  `logged_in` (if not, songs liked elsewhere still turn liked on play, but "unliked
+  elsewhere" waits for the next sync) and whether queue rows carry like buttons.
 * **Privacy**: pause / clear listen history, pause / clear search history (submitted searches
   are stored via `record_search`). **Storage**: file locations, play-cache limit (128 MB–8 GB),
   usage and clear, optional "cache played songs", artwork kept in memory (16–192 MB), download folder + usage, **backup export /

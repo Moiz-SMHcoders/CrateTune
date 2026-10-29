@@ -30,6 +30,7 @@ mod backup;
 mod history;
 mod home;
 mod playlists;
+mod ratings;
 mod schema;
 mod songs;
 mod stats;
@@ -49,6 +50,7 @@ pub use backup::{
 pub use history::{CachedLyrics, HistoryDay, HistoryEntry, SearchHistoryEntry, group_by_day};
 pub use home::ForgottenRule;
 pub use playlists::{Playlist, PlaylistEntry, PlaylistSort, RemotePlaylist};
+pub use ratings::{MAX_RATING_ATTEMPTS, PendingRating, RatingPush};
 pub use schema::SCHEMA_VERSION;
 pub(crate) use songs::upsert_track_tx;
 pub use songs::{

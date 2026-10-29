@@ -64,6 +64,8 @@ pub struct Local {
     pub last_played: Option<Seed>,
     pub similar_sources: Vec<Source>,
     pub library_ids: HashSet<String>,
+    /// Songs the user disliked: never recommended.
+    pub disliked: HashSet<String>,
     pub speed_dial: Vec<Item>,
 }
 
@@ -104,7 +106,9 @@ pub fn load_local(
 ) -> music_core::Result<Local> {
     let now = now_ms();
     let recent = TimeRange::last_days(RECENT_DAYS, now);
-    let keep = |t: &Track| filter.keep_track(t) && !t.is_episode();
+    let disliked = lib.disliked_ids()?;
+    let liked = |t: &Track| !disliked.contains(&t.video_id);
+    let keep = |t: &Track| filter.keep_track(t) && !t.is_episode() && liked(t);
 
     // Keep listening: songs 6–20 of the last two weeks (the top five seed the quick
     // picks), albums 3–10 and the most heard artists. With fewer plays, from the top.
@@ -149,8 +153,14 @@ pub fn load_local(
         .most_played_songs(TimeRange::ALL, (SEED_LIMIT * 3) as u32, 0)?
         .into_iter()
         .map(|s| s.song.track)
+        .filter(liked)
         .collect();
-    let recent_songs: Vec<Track> = lib.recent_songs(60)?.into_iter().map(|s| s.track).collect();
+    let recent_songs: Vec<Track> = lib
+        .recent_songs(60)?
+        .into_iter()
+        .map(|s| s.track)
+        .filter(liked)
+        .collect();
     let seeds = model::pick_seeds(&most, &recent_songs, SEED_LIMIT);
     let last_played = recent_songs
         .iter()
@@ -172,7 +182,7 @@ pub fn load_local(
         .most_played_songs(recent, 10, 0)?
         .into_iter()
         .map(|s| s.song.track)
-        .filter(|t| model::is_seed_song(t) && t.album_id.is_some())
+        .filter(|t| model::is_seed_song(t) && t.album_id.is_some() && liked(t))
         .collect();
     similar_sources.extend(
         rng.sample(songs, SIMILAR_SONGS)
@@ -189,13 +199,17 @@ pub fn load_local(
         similar_sources,
         library_ids: lib.library_song_ids()?.into_iter().collect(),
         speed_dial: speed_dial::load(lib),
+        disliked,
     })
 }
 
+/// A request run by [`parallel`].
+pub type Work<'a, R> = Box<dyn FnOnce() -> R + Send + 'a>;
+
 /// Runs `jobs` on at most `cap` threads; results in job order.
-pub fn parallel<R: Send>(jobs: Vec<Box<dyn FnOnce() -> R + Send + '_>>, cap: usize) -> Vec<R> {
+pub fn parallel<R: Send>(jobs: Vec<Work<'_, R>>, cap: usize) -> Vec<R> {
     let n = jobs.len();
-    let slots: Vec<Mutex<Option<Box<dyn FnOnce() -> R + Send + '_>>>> =
+    let slots: Vec<Mutex<Option<Work<'_, R>>>> =
         jobs.into_iter().map(|j| Mutex::new(Some(j))).collect();
     let results: Vec<Mutex<Option<R>>> = (0..n).map(|_| Mutex::new(None)).collect();
     let next = AtomicUsize::new(0);
@@ -231,6 +245,8 @@ pub struct RecsInput {
     pub last_played: Option<Seed>,
     pub sources: Vec<Source>,
     pub library_ids: HashSet<String>,
+    /// Disliked songs (left out of everything).
+    pub disliked: HashSet<String>,
     /// Picks shown before (drawn last, so a refresh brings new ones).
     pub shown: HashSet<String>,
     pub rng: Rng,
@@ -303,6 +319,7 @@ pub fn load_recommendations(client: &InnerTube, filter: ContentFilter, input: Re
         last_played,
         sources,
         library_ids,
+        disliked,
         shown,
         mut rng,
     } = input;
@@ -317,6 +334,7 @@ pub fn load_recommendations(client: &InnerTube, filter: ContentFilter, input: Re
                 .map(|days| {
                     days.into_iter()
                         .flat_map(|d| d.tracks.into_iter().map(|e| e.track))
+                        .filter(|t| !disliked.contains(&t.video_id))
                         .collect()
                 })
                 .unwrap_or_default();
@@ -334,9 +352,9 @@ pub fn load_recommendations(client: &InnerTube, filter: ContentFilter, input: Re
         }
     }
     requests += jobs.len();
-    let work: Vec<Box<dyn FnOnce() -> Answer + Send + '_>> = jobs
+    let work: Vec<Work<'_, Answer>> = jobs
         .into_iter()
-        .map(|job| -> Box<dyn FnOnce() -> Answer + Send + '_> {
+        .map(|job| -> Work<'_, Answer> {
             match job {
                 Job::Radio(seed) => {
                     Box::new(move || Answer::Radio(client.next(&WatchTarget::radio(&seed.id)).ok()))
@@ -372,10 +390,12 @@ pub fn load_recommendations(client: &InnerTube, filter: ContentFilter, input: Re
                     (Some(seed), Some(q)) => related_songs(seed, &q),
                     _ => Vec::new(),
                 };
-                related.push(filter.tracks(songs));
+                let mut songs = filter.tracks(songs);
+                songs.retain(|t| !disliked.contains(&t.video_id));
+                related.push(songs);
             }
             Answer::Artist(a, items) => {
-                let items = filter.items(items);
+                let items = model::drop_disliked(filter.items(items), |id| disliked.contains(id));
                 if !items.is_empty() {
                     let mut items = items;
                     rng.shuffle(&mut items);
@@ -392,22 +412,22 @@ pub fn load_recommendations(client: &InnerTube, filter: ContentFilter, input: Re
     // The "Related" tabs of the similar songs (one request each, after their `next`).
     if !song_related.is_empty() {
         requests += song_related.len();
-        let work: Vec<Box<dyn FnOnce() -> (Track, Vec<Shelf>) + Send + '_>> = song_related
+        let work: Vec<Work<'_, (Track, Vec<Shelf>)>> = song_related
             .into_iter()
-            .map(
-                |(t, target)| -> Box<dyn FnOnce() -> (Track, Vec<Shelf>) + Send + '_> {
-                    Box::new(move || {
-                        let shelves = client
-                            .related(&target)
-                            .map(|p| p.shelves)
-                            .unwrap_or_default();
-                        (t, shelves)
-                    })
-                },
-            )
+            .map(|(t, target)| -> Work<'_, (Track, Vec<Shelf>)> {
+                Box::new(move || {
+                    let shelves = client
+                        .related(&target)
+                        .map(|p| p.shelves)
+                        .unwrap_or_default();
+                    (t, shelves)
+                })
+            })
             .collect();
         for (track, shelves) in parallel(work, MAX_PARALLEL) {
-            let items = filter.items(related_mix(&shelves, &mut rng));
+            let items = model::drop_disliked(filter.items(related_mix(&shelves, &mut rng)), |id| {
+                disliked.contains(id)
+            });
             if !items.is_empty() {
                 let mut items = items;
                 rng.shuffle(&mut items);

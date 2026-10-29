@@ -4,6 +4,7 @@ bar_items.title = Tampilkan di bilah
 bar_items.reset = Atur ulang
 bar_items.note = Item yang disembunyikan tidak meninggalkan celah. Di jendela sempit, tombol yang kurang penting tetap disembunyikan lebih dulu; transmisi yang berjalan atau pengatur waktu tidur yang aktif tetap terlihat agar bisa dihentikan. Pemutar mini tetap memakai kontrolnya sendiri.
 bar_items.item.like = Suka
+bar_items.item.dislike = Tidak suka
 bar_items.item.quality_tag = Sumber dan kualitas
 bar_items.item.shuffle = Acak
 bar_items.item.repeat = Ulangi

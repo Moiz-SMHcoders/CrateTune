@@ -26,6 +26,7 @@ menu.volume_down = Baisser le volume
 menu.window = Fenêtre
 menu.minimize = Placer dans le Dock
 menu.zoom = Réduire/agrandir
+menu.fullscreen = Activer/désactiver le plein écran
 
 # Menu-bar item
 tray.next = Suivant

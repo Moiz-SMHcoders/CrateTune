@@ -9,6 +9,10 @@ np.preview = प्रीव्यू
 np.speed = {speed}×
 np.sleep_tooltip = स्लीप टाइमर
 np.layout_tooltip = डिज़ाइन और बैकग्राउंड
+np.fullscreen_enter = पूर्ण स्क्रीन
+np.fullscreen_exit = पूर्ण स्क्रीन से बाहर निकलें
+np.fullscreen_enter_keys = पूर्ण स्क्रीन ({keys})
+np.fullscreen_exit_keys = पूर्ण स्क्रीन से बाहर निकलें ({keys})
 np.menu.design = डिज़ाइन
 np.menu.background = बैकग्राउंड
 

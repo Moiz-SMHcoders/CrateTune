@@ -477,6 +477,18 @@ pub const ENTRIES: &[Entry] = &[
         "glow"
     ),
     entry!(
+        "appearance.now_playing.fullscreen",
+        Appearance,
+        "common.now_playing",
+        "settings.appearance.np_fullscreen",
+        "settings.appearance.np_fullscreen_note",
+        "fullscreen",
+        "full",
+        "screen",
+        "maximize",
+        "immersive"
+    ),
+    entry!(
         "appearance.mini_player",
         Appearance,
         -,
@@ -1271,6 +1283,31 @@ pub const ENTRIES: &[Entry] = &[
         "library",
         "likes",
         "playlists"
+    ),
+    entry!(
+        "account.sync.auto",
+        Account,
+        "settings.account.sync_group",
+        "settings.account.auto_sync",
+        "settings.account.auto_sync_desc",
+        "sync",
+        "automatic",
+        "background",
+        "likes",
+        "liked",
+        "youtube"
+    ),
+    entry!(
+        "account.sync.skip_disliked",
+        Account,
+        "settings.account.sync_group",
+        "settings.account.skip_disliked",
+        "settings.account.skip_disliked_desc",
+        "dislike",
+        "thumbs",
+        "down",
+        "skip",
+        "radio"
     ),
     // ---- Scrobbling & Discord
     named!(

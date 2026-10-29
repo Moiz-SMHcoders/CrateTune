@@ -4,6 +4,7 @@ bar_items.title = बार में दिखाएँ
 bar_items.reset = रीसेट करें
 bar_items.note = छिपाए गए आइटम कोई खाली जगह नहीं छोड़ते। संकरी विंडो में कम ज़रूरी बटन अब भी पहले छिपते हैं; चल रहा कास्ट या चालू स्लीप टाइमर दिखता रहता है ताकि आप उसे रोक सकें। मिनी प्लेयर के अपने कंट्रोल रहते हैं।
 bar_items.item.like = पसंद करें
+bar_items.item.dislike = नापसंद करें
 bar_items.item.quality_tag = स्रोत और क्वालिटी
 bar_items.item.shuffle = शफ़ल
 bar_items.item.repeat = दोहराएँ

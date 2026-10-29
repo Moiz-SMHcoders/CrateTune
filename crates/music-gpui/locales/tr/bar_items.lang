@@ -4,6 +4,7 @@ bar_items.title = Çubukta göster
 bar_items.reset = Sıfırla
 bar_items.note = Gizlenen öğeler boşluk bırakmaz. Dar pencerelerde daha az önemli düğmeler yine önce gizlenir; devam eden bir yayın veya kurulu uyku zamanlayıcısı, durdurabilmen için görünür kalır. Mini oynatıcı kendi düğmelerini korur.
 bar_items.item.like = Beğen
+bar_items.item.dislike = Beğenme
 bar_items.item.quality_tag = Kaynak ve kalite
 bar_items.item.shuffle = Karıştır
 bar_items.item.repeat = Tekrarla

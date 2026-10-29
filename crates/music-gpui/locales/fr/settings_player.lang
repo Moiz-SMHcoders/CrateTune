@@ -61,6 +61,8 @@ settings.appearance.font_scale = {percent} %
 settings.appearance.text_size_note = Met à l'échelle tout le texte de l'interface ; les paroles gardent leur propre taille (Paroles).
 settings.appearance.background = Arrière-plan
 settings.appearance.np_note = Dégradé, couleur unie et halo reprennent les couleurs de la pochette. Le halo ne bouge que pendant la lecture. La disposition et l'arrière-plan se règlent aussi dans le menu de disposition de l'écran À l'écoute.
+settings.appearance.np_fullscreen = Plein écran à l'ouverture d'À l'écoute
+settings.appearance.np_fullscreen_note = Ouvrir l'écran À l'écoute ou les paroles passe la fenêtre en plein écran, et les fermer en sort. Une fenêtre déjà en plein écran le reste.
 settings.appearance.mini_player = Mini-lecteur
 
 # ---- Playback

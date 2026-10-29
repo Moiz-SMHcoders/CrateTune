@@ -133,6 +133,9 @@ fn render(panel: &mut SettingsPanel, cx: &mut Context<SettingsPanel>) -> AnyElem
         .into_any_element()
 }
 
+/// One change of the Home options (`@home`).
+type HomeEdit = Box<dyn FnOnce(&mut HomeConfig)>;
+
 impl crate::app::MusicApp {
     /// `@home=OPTION:VALUE`: `quick_picks:quick_picks|last_listen|hidden`,
     /// `display:cards|list`, `chips:on|off`, `backdrop:on|off`, `hide:SECTION`,
@@ -163,7 +166,7 @@ impl crate::app::MusicApp {
             }
             return true;
         }
-        let edit: Option<Box<dyn FnOnce(&mut HomeConfig)>> = match option {
+        let edit: Option<HomeEdit> = match option {
             "quick_picks" => QuickPicksMode::parse(value)
                 .map(|m| Box::new(move |h: &mut HomeConfig| h.quick_picks = m) as _),
             "display" => QuickPicksDisplay::parse(value)

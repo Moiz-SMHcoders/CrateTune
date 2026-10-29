@@ -91,6 +91,8 @@ pub struct HomePage {
     /// Quick picks mode the recommendations are loaded / loading for.
     mode: QuickPicksMode,
     speed_dial: Option<(u64, ShelfModel)>,
+    /// Library revision the shelves were last checked for disliked songs at.
+    revision: u64,
     /// The first render starts loading (building happens inside the app's update, where
     /// the app can't be read).
     started: bool,
@@ -105,6 +107,21 @@ fn shelf(items: Vec<Item>) -> Option<ShelfModel> {
         ShelfModel::new(Shelf {
             items,
             ..Shelf::default()
+        })
+    })
+}
+
+/// `model` without the songs disliked since it was made (`None`: nothing left).
+fn without_disliked(model: &ShelfModel) -> Option<ShelfModel> {
+    let disliked = |id: &str| crate::store::is_disliked(id);
+    if !model.songs.tracks.iter().any(|t| disliked(&t.video_id)) {
+        return Some(model.clone());
+    }
+    let items = model::drop_disliked(model.shelf.items.clone(), disliked);
+    (!items.is_empty()).then(|| {
+        ShelfModel::new(Shelf {
+            items,
+            ..model.shelf.clone()
         })
     })
 }
@@ -151,6 +168,7 @@ impl HomePage {
             mode: QuickPicksMode::default(),
             speed_dial: None,
             started: false,
+            revision: 0,
             local_task: None,
             recs_task: None,
             playlists_task: None,
@@ -267,6 +285,7 @@ impl HomePage {
             last_played: local.last_played.clone(),
             sources: local.similar_sources.clone(),
             library_ids: local.library_ids.clone(),
+            disliked: local.disliked.clone(),
             shown,
             rng: Rng::from_time(),
         };
@@ -365,9 +384,15 @@ impl HomePage {
                         } else {
                             page.chips
                         },
-                        shelves: ShelfModel::all(page.shelves),
+                        shelves: ShelfModel::all(page.shelves)
+                            .iter()
+                            .filter_map(without_disliked)
+                            .collect(),
                         paging: Paging::new(page.continuation),
-                        quick: quick.map(ShelfModel::new),
+                        quick: quick
+                            .map(ShelfModel::new)
+                            .as_ref()
+                            .and_then(without_disliked),
                         community: community.map(ShelfModel::new),
                     };
                     this.apply_feed(feed.clone());
@@ -418,7 +443,8 @@ impl HomePage {
             |this: &mut Self, result, cx| match result {
                 Ok(page) => {
                     if let Some(shelves) = this.feed.ready_mut() {
-                        shelves.extend(ShelfModel::all(page.shelves));
+                        let more = ShelfModel::all(page.shelves);
+                        shelves.extend(more.iter().filter_map(without_disliked));
                     }
                     this.paging.finish(Ok(page.continuation));
                     this.store_feed(cx);
@@ -455,6 +481,30 @@ impl HomePage {
             self.start(true, cx);
             cx.notify();
         }
+    }
+
+    /// A song was disliked (or the library changed otherwise): it leaves every shelf.
+    fn drop_disliked(&mut self, cx: &mut Context<Self>) {
+        let opt = |m: &mut Option<ShelfModel>| *m = m.as_ref().and_then(without_disliked);
+        if let Some(shelves) = self.feed.ready_mut() {
+            *shelves = shelves.iter().filter_map(without_disliked).collect();
+        }
+        opt(&mut self.feed_quick);
+        if let Some(p) = &mut self.personal {
+            opt(&mut p.keep_listening);
+            opt(&mut p.forgotten);
+            opt(&mut p.recent);
+            p.quick = p
+                .quick
+                .take()
+                .and_then(|(mode, m)| without_disliked(&m).map(|m| (mode, m)));
+            p.similar = std::mem::take(&mut p.similar)
+                .into_iter()
+                .filter_map(|(source, m)| without_disliked(&m).map(|m| (source, m)))
+                .collect();
+        }
+        self.store_personal(cx);
+        self.store_feed(cx);
     }
 
     // ---- rendering --------------------------------------------------------------------
@@ -598,6 +648,11 @@ impl Render for HomePage {
         {
             // Shown again after the cache expired: fresh recommendations.
             self.start(true, cx);
+        }
+        let revision = read_app(cx, |app, _| app.store.revision).unwrap_or_default();
+        if revision != self.revision {
+            self.revision = revision;
+            self.drop_disliked(cx);
         }
         let cfg = home_config(cx);
         if cfg.quick_picks != self.mode && self.personal.is_some() && self.recs_task.is_none() {

@@ -26,6 +26,7 @@ menu.volume_down = Тише
 menu.window = Окно
 menu.minimize = Свернуть
 menu.zoom = Изменить масштаб
+menu.fullscreen = Полноэкранный режим вкл./выкл.
 
 tray.next = Следующий трек
 tray.previous = Предыдущий трек

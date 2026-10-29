@@ -584,6 +584,33 @@ pub struct WatchQueue {
     pub chips: Vec<QueueChip>,
     /// Endless "automix" continuation offered after a finite playlist.
     pub automix: Option<WatchTarget>,
+    /// The signed-in account's ratings, from the like buttons: the current video's
+    /// (`playerOverlays`) first, then any the rows' menus carry. Anonymous responses
+    /// always say [`Rating::Indifferent`](super::Rating), so only trust them signed in.
+    pub ratings: Vec<VideoRating>,
+    /// `responseContext`'s `logged_in` flag: whether YouTube took the request as
+    /// signed in (`None` if the response doesn't say).
+    pub logged_in: Option<bool>,
+}
+
+impl WatchQueue {
+    /// [`WatchQueue::ratings`] that can be relied on: a like or dislike always (a
+    /// signed-out answer never has one), "neither" only when YouTube confirmed the
+    /// request as signed in (an expired session reads like an account that rated
+    /// nothing). Nothing at all from a response marked signed out.
+    pub fn trusted_ratings(&self) -> impl Iterator<Item = &VideoRating> {
+        let logged_in = self.logged_in;
+        self.ratings
+            .iter()
+            .filter(move |r| super::trusted_rating(r.rating, logged_in))
+    }
+}
+
+/// A video's rating by the signed-in account, as a `likeButtonRenderer` reports it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct VideoRating {
+    pub video_id: String,
+    pub rating: super::Rating,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]

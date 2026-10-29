@@ -4,6 +4,7 @@ bar_items.title = Mostra nella barra
 bar_items.reset = Ripristina
 bar_items.note = Gli elementi nascosti non lasciano spazi vuoti. Nelle finestre strette i pulsanti meno importanti spariscono comunque per primi; una trasmissione in corso o un timer attivo restano visibili per poterli fermare. Il mini player mantiene i propri comandi.
 bar_items.item.like = Mi piace
+bar_items.item.dislike = Non mi piace
 bar_items.item.quality_tag = Origine e qualità
 bar_items.item.shuffle = Casuale
 bar_items.item.repeat = Ripeti

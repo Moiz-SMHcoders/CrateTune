@@ -88,6 +88,9 @@ struct HeaderSnap {
     source: Option<SharedString>,
     sleep: Option<String>,
     sleep_custom: Duration,
+    /// The window is (or is going) full screen; the button's tooltip.
+    fullscreen: bool,
+    fullscreen_tip: SharedString,
 }
 
 #[derive(Clone, PartialEq)]
@@ -186,6 +189,7 @@ impl MusicApp {
         self.np.open = true;
         self.np.reveal.animate_to(1., OPEN, Instant::now());
         window.focus(&self.np.focus, cx);
+        self.fullscreen_on_np_open(window, cx);
         cx.notify();
     }
 
@@ -194,6 +198,7 @@ impl MusicApp {
         self.np.lyrics_view = false;
         self.np.reveal.animate_to(0., CLOSE, Instant::now());
         window.focus(&self.focus, cx);
+        self.fullscreen_on_np_close(window, cx);
         cx.notify();
     }
 
@@ -366,7 +371,8 @@ impl MusicApp {
         // Designs with a backdrop of their own draw it over the regular one.
         let design_backdrop =
             self.design_backdrop(config.layout, track.as_ref(), position, viewport, frame, cx);
-        let header_state = self.header_snap(config.layout, config.background, cx);
+        let fullscreen = self.fullscreen_target(window);
+        let header_state = self.header_snap(config.layout, config.background, fullscreen, cx);
         let header = snapshot::sync(
             &mut self.np.header,
             header_state,
@@ -520,9 +526,17 @@ impl MusicApp {
         &self,
         layout: NowPlayingLayout,
         background: NowPlayingBackground,
+        fullscreen: bool,
         cx: &App,
     ) -> HeaderSnap {
         let state = &self.playback;
+        let keys = crate::shortcuts::display("toggle_fullscreen", cx);
+        let fullscreen_tip = match (fullscreen, keys) {
+            (false, Some(keys)) => t!("np.fullscreen_enter_keys", keys = keys),
+            (true, Some(keys)) => t!("np.fullscreen_exit_keys", keys = keys),
+            (false, None) => t!("np.fullscreen_enter").to_owned(),
+            (true, None) => t!("np.fullscreen_exit").to_owned(),
+        };
         HeaderSnap {
             layout,
             background,
@@ -536,6 +550,8 @@ impl MusicApp {
                 .map(SharedString::from),
             sleep: self.sleep_timer_label(),
             sleep_custom: self.settings.read(cx).sleep_custom(),
+            fullscreen,
+            fullscreen_tip: fullscreen_tip.into(),
         }
     }
 
@@ -645,6 +661,20 @@ impl MusicApp {
                             );
                         }
                         menu
+                    }),
+            )
+            .child(
+                Button::new("np-fullscreen")
+                    .ghost()
+                    .rounded(px(999.))
+                    .icon(if s.fullscreen {
+                        Lucide::Minimize
+                    } else {
+                        Lucide::Maximize
+                    })
+                    .tooltip(s.fullscreen_tip.clone())
+                    .on_click(|_, window, cx| {
+                        update_app(cx, |app, cx| app.toggle_fullscreen(window, cx));
                     }),
             )
             .child(
@@ -1114,7 +1144,8 @@ impl MusicApp {
             height: viewport.height.as_f32() as i32,
             extra: side.as_f32() as u64
                 | u64::from(self.engine.is_some()) << 32
-                | u64::from(self.queue.has_next()) << 33,
+                | u64::from(self.queue.has_next()) << 33
+                | u64::from(track.is_some_and(|t| crate::store::is_disliked(&t.video_id))) << 34,
         }
     }
 
@@ -1155,7 +1186,17 @@ impl MusicApp {
                             )
                             .child(div().text_color(white(0.65)).truncate().child(artists)),
                     )
-                    // Like (library + YouTube Music when signed in).
+                    // Dislike, then like (library + YouTube Music when signed in).
+                    .children(track.filter(|t| !t.is_local()).map(|t| {
+                        crate::components::dislike::dislike_icon_button(
+                            "np-dislike",
+                            t,
+                            px(36.),
+                            white(0.8),
+                            white(0.12),
+                            cx,
+                        )
+                    }))
                     .children(track.map(|t| like_icon_button("np-like", t, px(36.), cx))),
             )
             .child(self.progress_view(position, cx))

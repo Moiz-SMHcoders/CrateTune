@@ -26,6 +26,11 @@ settings.account.syncing = Syncing…
 settings.account.sync_group = Library sync
 settings.account.sync_row = Sync your YouTube Music library
 settings.account.sync_row_desc = Liked songs, library songs, saved albums, subscriptions, playlists.
+# Switch row (on by default).
+settings.account.auto_sync = Sync with YouTube Music automatically
+settings.account.auto_sync_desc = At start, every 45 minutes and when you come back after a while: your liked songs, and the whole library every 6 hours. A song you play also takes its like or dislike from YouTube Music.
+settings.account.skip_disliked = Skip songs you dislike
+settings.account.skip_disliked_desc = Disliking the playing song moves on to the next one. Disliked songs are left out of radio and autoplay either way.
 settings.account.accounts_group = Accounts
 settings.account.channels = Channels (brand accounts) of this Google account:
 # Row label; below it, one button per Google account of the login (avatar, name, e-mail).

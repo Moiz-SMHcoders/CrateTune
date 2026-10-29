@@ -659,6 +659,10 @@ impl SettingsPanel {
         self.update_now_playing(cx, |n| n.mini_player = style);
     }
 
+    pub fn set_np_fullscreen(&mut self, on: bool, cx: &mut Context<Self>) {
+        self.update_now_playing(cx, |n| n.fullscreen = on);
+    }
+
     // ---- Discord activity / scrobble rules -------------------------------------------------
 
     fn update_activity(

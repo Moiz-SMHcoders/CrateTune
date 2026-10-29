@@ -26,6 +26,7 @@ menu.volume_down = 調低音量
 menu.window = 視窗
 menu.minimize = 縮到最小
 menu.zoom = 縮放
+menu.fullscreen = 切換全螢幕
 
 # Menu-bar item
 tray.next = 下一首

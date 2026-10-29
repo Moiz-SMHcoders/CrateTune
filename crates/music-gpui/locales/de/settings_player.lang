@@ -61,6 +61,8 @@ settings.appearance.font_scale = {percent} %
 settings.appearance.text_size_note = Skaliert den gesamten Text der Oberfläche; Songtexte behalten ihre eigene Größe (Songtexte).
 settings.appearance.background = Hintergrund
 settings.appearance.np_note = Verlauf, Einfarbig und Leuchten übernehmen ihre Farben aus dem Cover. Das Leuchten bewegt sich nur, während Musik läuft. Layout und Hintergrund findest du auch im Layout-Menü von „Läuft gerade“.
+settings.appearance.np_fullscreen = Vollbild beim Öffnen von „Läuft gerade“
+settings.appearance.np_fullscreen_note = Wenn du „Läuft gerade“ oder den Songtext öffnest, wechselt das Fenster ins Vollbild; beim Schließen verlässt es das Vollbild wieder. Ein Fenster, das schon im Vollbild war, bleibt es.
 settings.appearance.mini_player = Miniplayer
 
 # ---- Playback

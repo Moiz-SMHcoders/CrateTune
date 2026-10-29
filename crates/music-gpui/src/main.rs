@@ -51,6 +51,7 @@ mod mini_player;
 mod module_service;
 mod now_playing;
 mod np_designs;
+mod np_fullscreen;
 mod np_lyrics;
 mod np_region;
 mod pages;
@@ -80,6 +81,7 @@ mod tray;
 mod update_check;
 mod update_script;
 mod util;
+mod youtube_sync;
 
 use gpui::{
     App, AppContext as _, Bounds, Pixels, TitlebarOptions, WindowBounds, WindowOptions, point, px,
