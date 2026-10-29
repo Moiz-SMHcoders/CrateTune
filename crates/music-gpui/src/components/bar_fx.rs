@@ -6,6 +6,10 @@
 //! (~400 ms) have settled. While playing, Wavy and Equalizer redraw at ~30 fps,
 //! the Pulse glow at ~30 fps, the drifting gradient at ~15 fps; Standard /
 //! Thick / Simple only redraw on input and on the app's own updates.
+//!
+//! Motion & effects → Animations: with Reduced the Wavy line rests flat, the
+//! gradient doesn't drift and Pulse doesn't follow the music (`effects.rs`);
+//! with Off the Equalizer bars rest too.
 
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
@@ -136,7 +140,8 @@ impl TrackFx {
         let engaged = self.engaged();
         self.reveal
             .animate_to(if engaged { 1. } else { 0. }, REVEAL, now);
-        let calm = !playing || self.dragging();
+        // Reduced / no motion: the Wavy line rests flat.
+        let calm = !playing || self.dragging() || !crate::effects::ambient_motion();
         self.amplitude
             .animate_to(if calm { 0. } else { 1. }, CALM, now);
         let reveal = frame.get(&self.reveal);
@@ -463,7 +468,7 @@ impl BackgroundFx {
                 let mut angle = look.direction.angle();
                 let (mut lo, mut hi) = (0., 1.);
                 if look.animate_gradient {
-                    if playing && mix >= 0.999 {
+                    if playing && mix >= 0.999 && crate::effects::ambient_motion() {
                         // One slow cycle every ~12 s: the stops sway, the hues breathe.
                         self.drift = (self.drift + dt * DRIFT_RATE) % std::f32::consts::TAU;
                         frame.wake_in(GRADIENT_INTERVAL);

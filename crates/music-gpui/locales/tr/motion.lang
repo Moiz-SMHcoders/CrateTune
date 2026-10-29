@@ -1,0 +1,59 @@
+# App-wide artwork look, Motion & effects (Appearance), and the player bar's
+# artwork style (tr).
+
+look.style.off = Kapalı
+look.style.tint = Renk tonu
+look.style.gradient = Gradyan
+look.style.glow = Parıltı
+
+settings.look.group = Uygulama genelinde görünüm
+settings.look.style = Kapağa uydur
+settings.look.style_note = Tüm pencere renklerini, oynatıcı çubuğunun arka planı gibi şarkının kapağından alır.
+settings.look.follow_bar = Oynatıcı çubuğunun stilini izle
+settings.look.follow_bar_note = Çubuğun arka plan efekti açıkken stili, yönü, yoğunluğu ve animasyonu burada da kullanılır.
+settings.look.following = Oynatıcı çubuğu izleniyor: {style}.
+settings.look.direction = Gradyan yönü
+settings.look.intensity = Yoğunluk
+settings.look.dim_when_paused = Duraklatınca karart
+settings.look.tint_surfaces = Menüleri ve panelleri de renklendir
+settings.look.tint_surfaces_note = Menüler, kenar çubuğu, paneller ve kartlar da kapağın renk tonunu alır.
+settings.look.animate = Canlandır
+settings.look.animate_note = Müzik çalarken gradyanın yavaşça kayması (saniyede yaklaşık 13 kare; duraklatınca durur).
+settings.look.cpu_note = Canlandır açık değilse statiktir: renkler şarkı başına bir kez kısa bir geçişle değişir ve metin kontrastını korur.
+
+motion.level.system = Sistem
+motion.level.full = Tam
+motion.level.reduced = Azaltılmış
+motion.level.off = Kapalı
+
+settings.motion.group = Hareket ve efektler
+settings.motion.animations = Animasyonlar
+settings.motion.animations_note = Azaltılmış kısa geçişleri korur ve ortam hareketini durdurur; Kapalı her değişikliği anında yapar.
+settings.motion.system_reduced = Sisteminiz hareketin azaltılmasını istiyor, bu yüzden animasyonlar azaltıldı.
+settings.motion.system_full = Sisteminiz tam harekete izin veriyor.
+settings.motion.page_transitions = Sayfa geçişleri
+settings.motion.page_transitions_note = Yeni bir sayfa açıldığında kısa bir geçiş.
+settings.motion.card_hover = Kutucuklarda üzerine gelme efektleri
+settings.motion.card_hover_note = Albüm, çalma listesi ve şarkı kutucukları parlar ve bir oynat düğmesi gösterir.
+settings.motion.artwork_headers = Kapak renginde sayfa başlıkları
+settings.motion.artwork_headers_note = Albüm, çalma listesi ve sanatçı sayfaları kapağın rengini alır.
+settings.motion.artwork_corners = Kapak köşeleri
+settings.motion.artwork_shadow = Kapak gölgeleri
+settings.motion.card_size = Kutucuk boyutu
+settings.motion.translucent_sidebar = Yarı saydam kenar çubuğu
+settings.motion.translucent_sidebar_note = Masaüstü, kenar çubuğunun arkasından bulanık olarak görünür.
+settings.motion.cpu_note = Üzerine gelme efektleri ve sayfa geçişleri her biri bir kısa yeniden çizime mal olur; buradaki hiçbir şey sürekli çizilmez.
+
+effects.corners.theme = Temaya uy
+effects.corners.square = Keskin
+effects.corners.rounded = Yumuşak
+effects.corners.round = Yuvarlak
+
+effects.card_size.small = Küçük
+effects.card_size.regular = Normal
+effects.card_size.large = Büyük
+
+bar.artwork.standard = Standart
+bar.artwork.edge = Kenardan kenara
+settings.bar.artwork_style = Kapak
+settings.bar.artwork_style_note = Kenardan kenara: kapak, çubuğun sol kenarında çubuğun yüksekliğini doldurur.

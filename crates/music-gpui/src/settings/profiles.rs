@@ -4,7 +4,8 @@
 //!
 //! * **What a profile holds:** whole top-level sections ([`PROFILE_SECTIONS`]:
 //!   `appearance`, `custom_theme`, `now_playing`, `lyrics` and the player bar's
-//!   style sections, [`super::portable::BAR_STYLE_KEYS`]) serialized as JSON, so
+//!   style sections, [`super::portable::BAR_STYLE_KEYS`], plus the app-wide look
+//!   and Motion & effects, [`super::portable::LOOK_KEYS`]) serialized as JSON, so
 //!   a field added to one of those structs later is part of every profile without
 //!   touching this file. Left out ([`PROFILE_EXCLUDE`] + `portable::LOCAL_ONLY`):
 //!   the UI language, lyrics providers and translation endpoints, secrets and
@@ -28,7 +29,7 @@ use std::path::{Path, PathBuf};
 use serde_json::{Map, Value, json};
 
 use super::file::Settings;
-use super::portable::{BAR_STYLE_KEYS, ImportError, LOCAL_ONLY};
+use super::portable::{ImportError, LOCAL_ONLY, style_keys};
 use super::prefs::{LyricsAnimation, MiniPlayerStyle, NowPlayingBackground, NowPlayingLayout};
 use crate::theme::ThemeChoice;
 
@@ -51,7 +52,7 @@ pub const PROFILE_EXCLUDE: &[&str] = &[
 ];
 
 fn sections() -> impl Iterator<Item = &'static str> {
-    PROFILE_SECTIONS.iter().chain(BAR_STYLE_KEYS).copied()
+    PROFILE_SECTIONS.iter().chain(style_keys()).copied()
 }
 
 fn excluded(path: &str) -> bool {
@@ -151,6 +152,10 @@ pub fn minimal_settings() -> Settings {
     // Player bar: static track, no background effect / gradient animation, no
     // visualizer — nothing asks for frames or the spectrum tap while playing.
     s.player_bar = super::bar_prefs::PlayerBarConfig::least_resources();
+    // No app-wide artwork look; animations off (every transition instant), no
+    // page transitions, hover renders, header colours, shadows or blur.
+    s.app_look = super::look_prefs::AppLookConfig::least_resources();
+    s.effects = super::look_prefs::EffectsConfig::least_resources();
     s
 }
 
@@ -534,8 +539,10 @@ mod tests {
         assert_eq!(
             keys,
             [
+                "app_look",
                 "appearance",
                 "custom_theme",
+                "effects",
                 "lyrics",
                 "now_playing",
                 "player_bar"
@@ -586,6 +593,19 @@ mod tests {
         assert_eq!(m.now_playing.background, NowPlayingBackground::Solid);
         assert_eq!(m.lyrics.animation, LyricsAnimation::None);
         assert!(!m.lyrics.translate);
+        assert_eq!(
+            m.app_look.style,
+            super::super::look_prefs::AppLookStyle::Off
+        );
+        assert!(!m.app_look.animate);
+        assert_eq!(
+            m.effects,
+            super::super::look_prefs::EffectsConfig::least_resources()
+        );
+        assert_eq!(m.effects.motion, super::super::look_prefs::MotionPref::Off);
+        // Both look sections are part of a profile.
+        let snap = snapshot(&m);
+        assert!(snap.contains_key("app_look") && snap.contains_key("effects"));
         assert_ne!(builtin_values(MINIMAL_ID), builtin_values(DEFAULT_ID));
         assert!(builtin_values("mine").is_none());
     }

@@ -171,7 +171,14 @@ pub fn song_cards(prefix: &str, tracks: &[Track]) -> Vec<AnyElement> {
             )
             .subtitle(track.artists.clone())
             .artwork(track.artwork_url(320))
-            .on_click(move |_, _, cx| {
+            .on_click({
+                let play = play.clone();
+                move |_, _, cx| {
+                    let track = play.clone();
+                    update_app(cx, |app, cx| app.play_now(track, cx));
+                }
+            })
+            .on_play(move |_, _, cx| {
                 let track = play.clone();
                 update_app(cx, |app, cx| app.play_now(track, cx));
             })

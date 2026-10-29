@@ -38,6 +38,7 @@ pub(super) fn render(
             font_scale: 1.0,
             custom: custom.clone(),
             art: None,
+            art_tint: 0.,
         });
         let dot = if choice == ThemeChoice::Dynamic && current == ThemeChoice::Dynamic {
             accent
@@ -307,6 +308,8 @@ pub(super) fn render(
                 .child(note(t!("settings.appearance.theme_note"), cx)),
         )
         .child(super::theme_ui::render(panel, window, cx))
+        .child(super::look_ui::render_app_look(panel, cx))
+        .child(super::look_ui::render_effects(panel, cx))
         .child(
             group(t!("settings.appearance.text_size"), cx)
                 .child(scales)

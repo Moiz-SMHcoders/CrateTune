@@ -1,0 +1,59 @@
+# App-wide artwork look, Motion & effects (Appearance), and the player bar's
+# artwork style (it).
+
+look.style.off = No
+look.style.tint = Tinta
+look.style.gradient = Gradiente
+look.style.glow = Alone
+
+settings.look.group = Aspetto dell'app
+settings.look.style = Abbina alla copertina
+settings.look.style_note = L'intera finestra prende i colori dalla copertina del brano, come lo sfondo della barra del lettore.
+settings.look.follow_bar = Segui lo stile della barra del lettore
+settings.look.follow_bar_note = Finché l'effetto di sfondo della barra è attivo, il suo stile, direzione, intensità e animazione vengono usati anche qui.
+settings.look.following = Segue la barra del lettore: {style}.
+settings.look.direction = Direzione del gradiente
+settings.look.intensity = Intensità
+settings.look.dim_when_paused = Attenua in pausa
+settings.look.tint_surfaces = Colora anche menu e pannelli
+settings.look.tint_surfaces_note = Anche menu, barra laterale, pannelli e schede prendono la tinta della copertina.
+settings.look.animate = Anima
+settings.look.animate_note = Un lento movimento del gradiente durante la riproduzione (circa 13 fotogrammi al secondo; si ferma in pausa).
+settings.look.cpu_note = Statico se Anima è disattivato: i colori cambiano una volta per brano con una breve dissolvenza, e il testo mantiene il suo contrasto.
+
+motion.level.system = Sistema
+motion.level.full = Complete
+motion.level.reduced = Ridotte
+motion.level.off = No
+
+settings.motion.group = Movimento ed effetti
+settings.motion.animations = Animazioni
+settings.motion.animations_note = Ridotte mantiene brevi dissolvenze e ferma il movimento di sfondo; No rende ogni cambiamento immediato.
+settings.motion.system_reduced = Il sistema richiede movimento ridotto, quindi le animazioni sono ridotte.
+settings.motion.system_full = Il sistema consente il movimento completo.
+settings.motion.page_transitions = Transizioni di pagina
+settings.motion.page_transitions_note = Una breve dissolvenza all'apertura di una nuova pagina.
+settings.motion.card_hover = Effetti al passaggio sui riquadri
+settings.motion.card_hover_note = I riquadri di album, playlist e brani si illuminano e mostrano un pulsante di riproduzione.
+settings.motion.artwork_headers = Intestazioni nel colore della copertina
+settings.motion.artwork_headers_note = Le pagine di album, playlist e artisti prendono il colore della copertina.
+settings.motion.artwork_corners = Angoli delle copertine
+settings.motion.artwork_shadow = Ombre delle copertine
+settings.motion.card_size = Dimensione riquadri
+settings.motion.translucent_sidebar = Barra laterale traslucida
+settings.motion.translucent_sidebar_note = La scrivania si intravede, sfocata, attraverso la barra laterale.
+settings.motion.cpu_note = Effetti al passaggio e transizioni di pagina costano un breve ridisegno ciascuno; nulla qui viene disegnato di continuo.
+
+effects.corners.theme = Come tema
+effects.corners.square = Squadrati
+effects.corners.rounded = Smussati
+effects.corners.round = Arrotondati
+
+effects.card_size.small = Piccoli
+effects.card_size.regular = Normali
+effects.card_size.large = Grandi
+
+bar.artwork.standard = Standard
+bar.artwork.edge = A filo
+settings.bar.artwork_style = Copertina
+settings.bar.artwork_style_note = A filo: la copertina riempie l'altezza della barra sul bordo sinistro.

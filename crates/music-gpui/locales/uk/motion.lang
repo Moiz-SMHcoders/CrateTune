@@ -1,0 +1,59 @@
+# App-wide artwork look, Motion & effects (Appearance), and the player bar's
+# artwork style (uk).
+
+look.style.off = Вимк.
+look.style.tint = Відтінок
+look.style.gradient = Градієнт
+look.style.glow = Сяйво
+
+settings.look.group = Вигляд усього застосунку
+settings.look.style = Під колір обкладинки
+settings.look.style_note = Усе вікно бере кольори з обкладинки пісні, як фон панелі плеєра.
+settings.look.follow_bar = Як у панелі плеєра
+settings.look.follow_bar_note = Поки фоновий ефект панелі ввімкнено, його стиль, напрямок, інтенсивність і анімація використовуються й тут.
+settings.look.following = Як у панелі плеєра: {style}.
+settings.look.direction = Напрямок градієнта
+settings.look.intensity = Інтенсивність
+settings.look.dim_when_paused = Приглушувати на паузі
+settings.look.tint_surfaces = Також фарбувати меню й панелі
+settings.look.tint_surfaces_note = Меню, бічна панель, панелі й картки теж набувають відтінку обкладинки.
+settings.look.animate = Анімувати
+settings.look.animate_note = Повільний рух градієнта під час відтворення (близько 13 кадрів на секунду; зупиняється на паузі).
+settings.look.cpu_note = Статично, якщо анімацію вимкнено: кольори змінюються раз на пісню з коротким переходом, а текст зберігає контраст.
+
+motion.level.system = Система
+motion.level.full = Повні
+motion.level.reduced = Менше
+motion.level.off = Вимк.
+
+settings.motion.group = Рух і ефекти
+settings.motion.animations = Анімації
+settings.motion.animations_note = «Менше» залишає короткі переходи й зупиняє фоновий рух; «Вимк.» робить кожну зміну миттєвою.
+settings.motion.system_reduced = Система просить зменшити рух, тому анімації зменшено.
+settings.motion.system_full = Система дозволяє повні анімації.
+settings.motion.page_transitions = Переходи між сторінками
+settings.motion.page_transitions_note = Коротке згасання під час відкриття нової сторінки.
+settings.motion.card_hover = Ефекти наведення на плитки
+settings.motion.card_hover_note = Плитки альбомів, плейлистів і пісень підсвічуються й показують кнопку відтворення.
+settings.motion.artwork_headers = Заголовки сторінок у колір обкладинки
+settings.motion.artwork_headers_note = Сторінки альбомів, плейлистів і виконавців набувають кольору обкладинки.
+settings.motion.artwork_corners = Кути обкладинок
+settings.motion.artwork_shadow = Тіні обкладинок
+settings.motion.card_size = Розмір плиток
+settings.motion.translucent_sidebar = Напівпрозора бічна панель
+settings.motion.translucent_sidebar_note = Робочий стіл просвічує крізь бічну панель, розмито.
+settings.motion.cpu_note = Ефекти наведення й переходи сторінок коштують по одному короткому перемальовуванню; тут нічого не малюється безперервно.
+
+effects.corners.theme = Як у темі
+effects.corners.square = Гострі
+effects.corners.rounded = М'які
+effects.corners.round = Заокруглені
+
+effects.card_size.small = Малі
+effects.card_size.regular = Звичайні
+effects.card_size.large = Великі
+
+bar.artwork.standard = Стандартна
+bar.artwork.edge = На всю висоту
+settings.bar.artwork_style = Обкладинка
+settings.bar.artwork_style_note = На всю висоту: обкладинка заповнює висоту панелі біля її лівого краю.

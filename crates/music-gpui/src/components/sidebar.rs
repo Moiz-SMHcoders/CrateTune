@@ -20,10 +20,11 @@ pub const SIDEBAR_WIDTH: f32 = 216.;
 impl MusicApp {
     pub(crate) fn render_sidebar(&mut self, cx: &mut Context<Self>) -> impl IntoElement + use<> {
         let current = self.router.route().clone();
-        let theme = cx.theme();
         let colors = AppColors::get(cx);
+        let chrome = self.chrome_bg(cx);
+        let theme = cx.theme();
         let (bg, border, muted, fg, hover, active_bg) = (
-            theme.sidebar,
+            chrome,
             theme.sidebar_border,
             theme.muted_foreground,
             theme.sidebar_foreground,

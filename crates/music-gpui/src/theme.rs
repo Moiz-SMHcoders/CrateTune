@@ -124,7 +124,7 @@ impl AppPalette {
             .unwrap_or_else(|| AppPalette::from_resolved(&Resolved::default()))
     }
 
-    fn from_resolved(r: &Resolved) -> AppPalette {
+    pub(crate) fn from_resolved(r: &Resolved) -> AppPalette {
         let accent = r.accent.unwrap_or(AppColors::stock().accent);
         AppPalette {
             accent,
@@ -177,8 +177,12 @@ pub struct Look {
     pub choice: ThemeChoice,
     pub font_scale: f32,
     pub custom: CustomTheme,
-    /// The current artwork's colours (used by [`ThemeChoice::Dynamic`]).
+    /// The current artwork's colours (used by [`ThemeChoice::Dynamic`] and the
+    /// app-wide artwork tint).
     pub art: Option<ArtColors>,
+    /// App-wide look (`look_prefs.rs`): surfaces tinted with the artwork's hue
+    /// at this strength (0 = off; 0..1 like `custom.surface_tint`).
+    pub art_tint: f32,
 }
 
 impl Look {
@@ -206,6 +210,9 @@ pub struct Resolved {
     pub tertiary: Option<Hsla>,
     /// Hue source of the surface tint (its strength comes from the settings).
     pub tint: Option<Hsla>,
+    /// Strength of the app-wide artwork tint (0 = none; the larger of this and
+    /// `custom.surface_tint` is used). Here so transitions fade it.
+    pub art_tint: f32,
 }
 
 fn mix(a: Hsla, b: Hsla, t: f32) -> Hsla {
@@ -239,6 +246,9 @@ impl Resolved {
         };
         let tint = match (self.tint, to.tint) {
             (Some(a), Some(b)) => Some(mix(a, b, t)),
+            // The artwork tint fading in / out keeps its hue while its strength moves.
+            (None, Some(b)) if self.art_tint == 0. && to.art_tint > 0. => Some(b),
+            (Some(a), None) if to.art_tint == 0. && self.art_tint > 0. => Some(a),
             _ if t < 0.5 => self.tint,
             _ => to.tint,
         };
@@ -247,6 +257,7 @@ impl Resolved {
             secondary: f(self.secondary, to.secondary, stock.secondary),
             tertiary: f(self.tertiary, to.tertiary, stock.tertiary),
             tint,
+            art_tint: self.art_tint + (to.art_tint - self.art_tint) * t,
         }
     }
 }
@@ -302,6 +313,23 @@ fn rgb_hsla([r, g, b]: [u8; 3]) -> Hsla {
 
 /// Turns a look into its colours.
 pub fn resolve(look: &Look) -> Resolved {
+    let mut r = resolve_theme(look);
+    // The app-wide artwork tint: the artwork's main hue on the surfaces.
+    if look.art_tint > 0.
+        && let Some(art) = look.art
+    {
+        let p = art.primary();
+        if p.c > 0.01 {
+            if look.choice != ThemeChoice::Dynamic || r.tint.is_none() {
+                r.tint = Some(TonalPalette::new(p.h, p.c.max(0.04)).tone(50.));
+            }
+            r.art_tint = look.art_tint.clamp(0., 1.);
+        }
+    }
+    r
+}
+
+fn resolve_theme(look: &Look) -> Resolved {
     let bg = background_of(look);
     let min = look.custom.contrast.min_ratio();
     let custom = look.custom.accent_rgb().map(rgb_hsla);
@@ -316,6 +344,7 @@ pub fn resolve(look: &Look) -> Resolved {
                 secondary: Some(ensure_contrast(scheme.secondary.tone(80.), bg, min)),
                 tertiary: Some(ensure_contrast(scheme.tertiary.tone(80.), bg, min)),
                 tint,
+                art_tint: 0.,
             }
         }
         _ => match custom {
@@ -327,6 +356,7 @@ pub fn resolve(look: &Look) -> Resolved {
                     secondary: Some(TonalPalette::new(lch.h, lch.c * 0.45).tone(80.)),
                     tertiary: Some(TonalPalette::new(lch.h + 60., lch.c * 0.7).tone(78.)),
                     tint: Some(accent),
+                    art_tint: 0.,
                 }
             }
             None => Resolved::default(),
@@ -484,7 +514,7 @@ fn themed_colors(stock: &ThemeColor, look: &Look, r: &Resolved) -> ThemeColor {
     if darkness == Darkness::Black {
         pure_black(&mut c);
     }
-    let strength = look.custom.surface_tint;
+    let strength = look.custom.surface_tint.max(r.art_tint);
     if matches!(darkness, Darkness::Dim | Darkness::Deep) || (strength > 0. && r.tint.is_some()) {
         for s in surfaces(&mut c) {
             *s = surface(*s, darkness, r.tint, strength);
@@ -632,6 +662,7 @@ mod tests {
             font_scale: 1.0,
             custom: CustomTheme::default(),
             art: None,
+            art_tint: 0.,
         }
     }
 
@@ -793,6 +824,33 @@ mod tests {
             Resolved::default().lerp(&Resolved::default(), 0.5),
             Resolved::default()
         );
+    }
+
+    #[test]
+    fn app_wide_artwork_tint() {
+        let stock = stock_colors();
+        let mut l = look(ThemeChoice::Dark);
+        l.art = Some(art([30, 60, 200]));
+        // Without the app-wide look the dark theme ignores the artwork.
+        assert_eq!(resolve(&l), Resolved::default());
+        l.art_tint = 0.7;
+        let r = resolve(&l);
+        assert!(r.accent.is_none(), "the accent stays the theme's");
+        assert_eq!(r.art_tint, 0.7);
+        let tinted = themed_colors(&stock, &l, &r);
+        assert!(tinted.secondary.s > 0.1);
+        assert!(
+            (tinted.secondary.l - stock.secondary.l).abs() < 1e-4,
+            "same lightness"
+        );
+        assert_eq!(tinted.foreground, stock.foreground);
+        // Fading in from no tint keeps the hue; the strength ramps.
+        let mid = Resolved::default().lerp(&r, 0.3);
+        assert_eq!(mid.tint, r.tint);
+        assert!((mid.art_tint - 0.21).abs() < 1e-4);
+        // Grey art: nothing.
+        l.art = None;
+        assert_eq!(resolve(&l).art_tint, 0.);
     }
 
     #[test]

@@ -328,7 +328,12 @@ impl MusicApp {
             return div().size_full().child(recorder).into_any_element();
         }
 
-        let look = Look::of(display.animation);
+        // Animations off (Motion & effects): whole lines light up, nothing sweeps.
+        let look = Look::of(if crate::effects::any_motion() {
+            display.animation
+        } else {
+            crate::settings::prefs::LyricsAnimation::None
+        });
         let word_synced = prepared.kind == SyncKind::Word;
         let size = display.text_size;
         let mut font = window.text_style().font();

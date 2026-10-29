@@ -15,7 +15,8 @@ use gpui_component::{
 };
 
 use super::bar_prefs::{
-    BarBackground, GRADIENT_INTENSITIES, GradientDirection, PlayerBarConfig, ProgressStyle,
+    BarArtworkStyle, BarBackground, GRADIENT_INTENSITIES, GradientDirection, PlayerBarConfig,
+    ProgressStyle,
 };
 use super::panel::{SettingsEvent, SettingsPanel};
 use super::prefs_ui::choice;
@@ -88,6 +89,10 @@ impl SettingsPanel {
     pub fn set_np_visualizer(&mut self, on: bool, cx: &mut Context<Self>) {
         self.update_player_bar(cx, |b| b.np_visualizer = on);
     }
+
+    pub fn set_bar_artwork_style(&mut self, style: BarArtworkStyle, cx: &mut Context<Self>) {
+        self.update_player_bar(cx, |b| b.artwork_style = style);
+    }
 }
 
 /// The "Player bar" group of the Appearance section.
@@ -107,6 +112,14 @@ pub(super) fn render(panel: &mut SettingsPanel, cx: &mut Context<SettingsPanel>)
         bar.progress_style,
         ProgressStyle::title,
         |this, s, cx| this.set_progress_style(s, cx),
+        cx,
+    );
+    let artwork = choice(
+        "bar-artwork-style",
+        &BarArtworkStyle::ALL,
+        bar.artwork_style,
+        BarArtworkStyle::title,
+        |this, a, cx| this.set_bar_artwork_style(a, cx),
         cx,
     );
     let backgrounds = choice(
@@ -202,6 +215,12 @@ pub(super) fn render(panel: &mut SettingsPanel, cx: &mut Context<SettingsPanel>)
                     (bar.progress_style == ProgressStyle::Waveform)
                         .then(|| t!("settings.bar.waveform_note")),
                     styles,
+                    cx,
+                ))
+                .child(row(
+                    t!("settings.bar.artwork_style"),
+                    Some(t!("settings.bar.artwork_style_note")),
+                    artwork,
                     cx,
                 ))
                 .child(row(

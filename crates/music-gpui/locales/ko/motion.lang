@@ -1,0 +1,59 @@
+# App-wide artwork look, Motion & effects (Appearance), and the player bar's
+# artwork style (ko).
+
+look.style.off = 끔
+look.style.tint = 색조
+look.style.gradient = 그라데이션
+look.style.glow = 빛
+
+settings.look.group = 앱 전체 모양
+settings.look.style = 앨범 아트에 맞추기
+settings.look.style_note = 플레이어 바 배경처럼 창 전체가 노래의 앨범 아트에서 색을 가져옵니다.
+settings.look.follow_bar = 플레이어 바 스타일 따르기
+settings.look.follow_bar_note = 바의 배경 효과가 켜져 있는 동안 그 스타일, 방향, 강도, 애니메이션이 여기에도 사용됩니다.
+settings.look.following = 플레이어 바를 따르는 중: {style}.
+settings.look.direction = 그라데이션 방향
+settings.look.intensity = 강도
+settings.look.dim_when_paused = 일시정지 시 어둡게
+settings.look.tint_surfaces = 메뉴와 패널에도 색조 적용
+settings.look.tint_surfaces_note = 메뉴, 사이드바, 패널, 카드에도 앨범 아트의 색조가 적용됩니다.
+settings.look.animate = 애니메이션
+settings.look.animate_note = 음악이 재생되는 동안 그라데이션이 천천히 움직입니다(초당 약 13프레임, 일시정지 시 멈춤).
+settings.look.cpu_note = 애니메이션이 꺼져 있으면 정적입니다. 색은 노래마다 한 번 짧은 크로스페이드로 바뀌고 텍스트는 대비를 유지합니다.
+
+motion.level.system = 시스템
+motion.level.full = 전체
+motion.level.reduced = 줄임
+motion.level.off = 끔
+
+settings.motion.group = 동작 및 효과
+settings.motion.animations = 애니메이션
+settings.motion.animations_note = 줄임은 짧은 페이드는 유지하고 배경 움직임은 멈춥니다. 끔은 모든 변화를 즉시 적용합니다.
+settings.motion.system_reduced = 시스템에서 동작 줄이기를 요청하므로 애니메이션이 줄어듭니다.
+settings.motion.system_full = 시스템에서 전체 동작을 허용합니다.
+settings.motion.page_transitions = 페이지 전환
+settings.motion.page_transitions_note = 새 페이지가 열릴 때 짧게 페이드됩니다.
+settings.motion.card_hover = 타일 호버 효과
+settings.motion.card_hover_note = 앨범, 재생목록, 노래 타일이 밝아지고 재생 버튼을 표시합니다.
+settings.motion.artwork_headers = 앨범 아트 색 페이지 헤더
+settings.motion.artwork_headers_note = 앨범, 재생목록, 아티스트 페이지가 커버의 색을 띱니다.
+settings.motion.artwork_corners = 앨범 아트 모서리
+settings.motion.artwork_shadow = 앨범 아트 그림자
+settings.motion.card_size = 타일 크기
+settings.motion.translucent_sidebar = 반투명 사이드바
+settings.motion.translucent_sidebar_note = 사이드바 너머로 데스크톱이 흐릿하게 보입니다.
+settings.motion.cpu_note = 호버 효과와 페이지 전환은 각각 짧은 다시 그리기 한 번만 사용합니다. 여기서는 아무것도 계속 그려지지 않습니다.
+
+effects.corners.theme = 테마에 맞춤
+effects.corners.square = 각지게
+effects.corners.rounded = 살짝 둥글게
+effects.corners.round = 둥글게
+
+effects.card_size.small = 작게
+effects.card_size.regular = 기본
+effects.card_size.large = 크게
+
+bar.artwork.standard = 기본
+bar.artwork.edge = 가장자리까지
+settings.bar.artwork_style = 앨범 아트
+settings.bar.artwork_style_note = 가장자리까지: 커버가 바의 왼쪽 가장자리에서 바 높이를 가득 채웁니다.

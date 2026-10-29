@@ -14,6 +14,7 @@
 //!   animates them and the bar's play / pause background.
 //! * [`like::like_button`] – the heart; [`playlist_dialog`] – "Add to playlist".
 
+pub mod app_backdrop;
 pub mod artwork;
 pub mod bar_fx;
 pub mod bar_menu;

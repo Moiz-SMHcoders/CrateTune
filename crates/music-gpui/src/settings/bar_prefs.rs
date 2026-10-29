@@ -150,6 +150,40 @@ impl GradientDirection {
     }
 }
 
+/// How the song's artwork sits in the bar's track info.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum BarArtworkStyle {
+    /// A padded, rounded 56 pt thumbnail.
+    #[default]
+    Standard,
+    /// Square at the bar's full height, flush with the left edge (no padding
+    /// or rounding on the outer edges), like a mini player bar.
+    Edge,
+}
+
+impl BarArtworkStyle {
+    pub const ALL: [Self; 2] = [Self::Standard, Self::Edge];
+
+    pub fn title(self) -> &'static str {
+        match self {
+            Self::Standard => t!("bar.artwork.standard"),
+            Self::Edge => t!("bar.artwork.edge"),
+        }
+    }
+
+    pub fn key(self) -> &'static str {
+        match self {
+            Self::Standard => "standard",
+            Self::Edge => "edge",
+        }
+    }
+
+    pub fn parse(s: &str) -> Option<Self> {
+        Self::ALL.into_iter().find(|v| v.key() == s)
+    }
+}
+
 /// Intensities offered in the settings (opacity of the gradient over the bar).
 pub const GRADIENT_INTENSITIES: [f32; 4] = [0.3, 0.5, 0.7, 0.9];
 
@@ -181,6 +215,10 @@ pub struct PlayerBarConfig {
     pub np_visualizer: bool,
     /// Which buttons, tags and chips the bar shows (`bar_items.rs`).
     pub items: BarItems,
+    /// Padded thumbnail or full-height edge artwork. The mini player keeps its
+    /// own layout (it has no room for a bar-height cover).
+    #[serde(deserialize_with = "lenient")]
+    pub artwork_style: BarArtworkStyle,
 }
 
 impl Default for PlayerBarConfig {
@@ -199,6 +237,7 @@ impl Default for PlayerBarConfig {
             mini_follows_bar: true,
             np_visualizer: false,
             items: BarItems::default(),
+            artwork_style: BarArtworkStyle::Standard,
         }
     }
 }
@@ -287,6 +326,15 @@ mod tests {
                 format!("\"{}\"", b.key())
             );
         }
+        for a in BarArtworkStyle::ALL {
+            assert_eq!(BarArtworkStyle::parse(a.key()), Some(a));
+            assert_eq!(
+                serde_json::to_string(&a).unwrap(),
+                format!("\"{}\"", a.key())
+            );
+        }
+        let c: PlayerBarConfig = serde_json::from_str(r#"{"artwork_style": "huge"}"#).unwrap();
+        assert_eq!(c.artwork_style, BarArtworkStyle::Standard);
         for d in GradientDirection::ALL {
             assert_eq!(GradientDirection::parse(d.key()), Some(d));
             assert_eq!(

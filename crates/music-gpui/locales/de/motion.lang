@@ -1,0 +1,59 @@
+# App-wide artwork look, Motion & effects (Appearance), and the player bar's
+# artwork style (de).
+
+look.style.off = Aus
+look.style.tint = Tönung
+look.style.gradient = Verlauf
+look.style.glow = Schimmer
+
+settings.look.group = Look der ganzen App
+settings.look.style = An das Cover anpassen
+settings.look.style_note = Das ganze Fenster übernimmt seine Farben vom Cover des Songs, wie der Hintergrund der Player-Leiste.
+settings.look.follow_bar = Stil der Player-Leiste übernehmen
+settings.look.follow_bar_note = Solange der Hintergrundeffekt der Leiste an ist, werden Stil, Richtung, Stärke und Animation auch hier verwendet.
+settings.look.following = Folgt der Player-Leiste: {style}.
+settings.look.direction = Verlaufsrichtung
+settings.look.intensity = Stärke
+settings.look.dim_when_paused = Bei Pause abdunkeln
+settings.look.tint_surfaces = Auch Menüs und Bereiche tönen
+settings.look.tint_surfaces_note = Menüs, Seitenleiste, Bereiche und Karten übernehmen ebenfalls den Farbton des Covers.
+settings.look.animate = Animieren
+settings.look.animate_note = Ein langsames Wandern des Verlaufs während der Wiedergabe (etwa 13 Bilder pro Sekunde; stoppt bei Pause).
+settings.look.cpu_note = Statisch, solange Animieren aus ist: Die Farben wechseln einmal pro Song mit kurzer Überblendung, und Text behält seinen Kontrast.
+
+motion.level.system = System
+motion.level.full = Voll
+motion.level.reduced = Reduziert
+motion.level.off = Aus
+
+settings.motion.group = Bewegung & Effekte
+settings.motion.animations = Animationen
+settings.motion.animations_note = Reduziert behält kurze Überblendungen und stoppt Hintergrundbewegung; Aus macht jede Änderung sofort.
+settings.motion.system_reduced = Dein System verlangt reduzierte Bewegung, daher sind Animationen reduziert.
+settings.motion.system_full = Dein System erlaubt volle Bewegung.
+settings.motion.page_transitions = Seitenübergänge
+settings.motion.page_transitions_note = Eine kurze Überblendung, wenn sich eine neue Seite öffnet.
+settings.motion.card_hover = Hover-Effekte auf Kacheln
+settings.motion.card_hover_note = Album-, Playlist- und Song-Kacheln leuchten auf und zeigen eine Wiedergabetaste.
+settings.motion.artwork_headers = Seitenköpfe in Cover-Farbe
+settings.motion.artwork_headers_note = Album-, Playlist- und Künstlerseiten übernehmen die Farbe des Covers.
+settings.motion.artwork_corners = Cover-Ecken
+settings.motion.artwork_shadow = Cover-Schatten
+settings.motion.card_size = Kachelgröße
+settings.motion.translucent_sidebar = Durchscheinende Seitenleiste
+settings.motion.translucent_sidebar_note = Der Schreibtisch scheint verschwommen durch die Seitenleiste.
+settings.motion.cpu_note = Hover-Effekte und Seitenübergänge kosten je ein kurzes Neuzeichnen; hier wird nichts dauerhaft gezeichnet.
+
+effects.corners.theme = Wie Design
+effects.corners.square = Eckig
+effects.corners.rounded = Abgerundet
+effects.corners.round = Rund
+
+effects.card_size.small = Klein
+effects.card_size.regular = Normal
+effects.card_size.large = Groß
+
+bar.artwork.standard = Standard
+bar.artwork.edge = Randlos
+settings.bar.artwork_style = Cover
+settings.bar.artwork_style_note = Randlos: Das Cover füllt die Höhe der Leiste am linken Rand.

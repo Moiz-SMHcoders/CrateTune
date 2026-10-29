@@ -1,0 +1,59 @@
+# App-wide artwork look, Motion & effects (Appearance), and the player bar's
+# artwork style (vi).
+
+look.style.off = Tắt
+look.style.tint = Phủ màu
+look.style.gradient = Dải màu
+look.style.glow = Ánh sáng
+
+settings.look.group = Giao diện toàn ứng dụng
+settings.look.style = Theo ảnh bìa
+settings.look.style_note = Toàn bộ cửa sổ lấy màu từ ảnh bìa bài hát, giống như nền của thanh trình phát.
+settings.look.follow_bar = Theo kiểu của thanh trình phát
+settings.look.follow_bar_note = Khi hiệu ứng nền của thanh đang bật, kiểu, hướng, cường độ và chuyển động của nó cũng được dùng ở đây.
+settings.look.following = Đang theo thanh trình phát: {style}.
+settings.look.direction = Hướng dải màu
+settings.look.intensity = Cường độ
+settings.look.dim_when_paused = Làm tối khi tạm dừng
+settings.look.tint_surfaces = Phủ màu cả menu và bảng
+settings.look.tint_surfaces_note = Menu, thanh bên, các bảng và thẻ cũng mang sắc màu của ảnh bìa.
+settings.look.animate = Chuyển động
+settings.look.animate_note = Dải màu trôi chậm khi nhạc đang phát (khoảng 13 khung hình mỗi giây; dừng khi tạm dừng).
+settings.look.cpu_note = Tĩnh trừ khi bật Chuyển động: màu đổi một lần mỗi bài với hiệu ứng chuyển ngắn, và chữ vẫn giữ độ tương phản.
+
+motion.level.system = Hệ thống
+motion.level.full = Đầy đủ
+motion.level.reduced = Giảm bớt
+motion.level.off = Tắt
+
+settings.motion.group = Chuyển động & hiệu ứng
+settings.motion.animations = Hoạt ảnh
+settings.motion.animations_note = Giảm bớt giữ các hiệu ứng mờ dần ngắn và dừng chuyển động nền; Tắt làm mọi thay đổi diễn ra tức thì.
+settings.motion.system_reduced = Hệ thống của bạn yêu cầu giảm chuyển động, nên hoạt ảnh được giảm bớt.
+settings.motion.system_full = Hệ thống của bạn cho phép chuyển động đầy đủ.
+settings.motion.page_transitions = Chuyển trang
+settings.motion.page_transitions_note = Hiệu ứng mờ dần ngắn khi mở trang mới.
+settings.motion.card_hover = Hiệu ứng khi di chuột lên ô
+settings.motion.card_hover_note = Ô album, danh sách phát và bài hát sáng lên và hiện nút phát.
+settings.motion.artwork_headers = Đầu trang theo màu ảnh bìa
+settings.motion.artwork_headers_note = Trang album, danh sách phát và nghệ sĩ mang màu của ảnh bìa.
+settings.motion.artwork_corners = Góc ảnh bìa
+settings.motion.artwork_shadow = Bóng ảnh bìa
+settings.motion.card_size = Kích thước ô
+settings.motion.translucent_sidebar = Thanh bên trong mờ
+settings.motion.translucent_sidebar_note = Màn hình nền hiện qua thanh bên, được làm mờ.
+settings.motion.cpu_note = Hiệu ứng di chuột và chuyển trang mỗi lần chỉ tốn một lần vẽ lại ngắn; không có gì ở đây được vẽ liên tục.
+
+effects.corners.theme = Theo chủ đề
+effects.corners.square = Vuông
+effects.corners.rounded = Bo nhẹ
+effects.corners.round = Bo tròn
+
+effects.card_size.small = Nhỏ
+effects.card_size.regular = Thường
+effects.card_size.large = Lớn
+
+bar.artwork.standard = Tiêu chuẩn
+bar.artwork.edge = Tràn viền
+settings.bar.artwork_style = Ảnh bìa
+settings.bar.artwork_style_note = Tràn viền: ảnh bìa lấp đầy chiều cao của thanh ở mép trái.

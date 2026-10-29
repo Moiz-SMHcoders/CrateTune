@@ -1,0 +1,59 @@
+# App-wide artwork look, Motion & effects (Appearance), and the player bar's
+# artwork style (nl).
+
+look.style.off = Uit
+look.style.tint = Tint
+look.style.gradient = Verloop
+look.style.glow = Gloed
+
+settings.look.group = Uiterlijk van de hele app
+settings.look.style = Afstemmen op de hoes
+settings.look.style_note = Het hele venster neemt zijn kleuren over van de hoes van het nummer, net als de achtergrond van de spelerbalk.
+settings.look.follow_bar = Stijl van de spelerbalk volgen
+settings.look.follow_bar_note = Zolang het achtergrondeffect van de balk aan staat, worden de stijl, richting, sterkte en animatie ook hier gebruikt.
+settings.look.following = Volgt de spelerbalk: {style}.
+settings.look.direction = Richting van het verloop
+settings.look.intensity = Sterkte
+settings.look.dim_when_paused = Dimmen bij pauze
+settings.look.tint_surfaces = Ook menu's en panelen kleuren
+settings.look.tint_surfaces_note = Menu's, de zijbalk, panelen en kaarten nemen ook de kleurtint van de hoes over.
+settings.look.animate = Animeren
+settings.look.animate_note = Een langzame beweging van het verloop tijdens het afspelen (ongeveer 13 beelden per seconde; stopt bij pauze).
+settings.look.cpu_note = Statisch tenzij Animeren aan staat: de kleuren wisselen één keer per nummer met een korte overgang, en tekst behoudt zijn contrast.
+
+motion.level.system = Systeem
+motion.level.full = Volledig
+motion.level.reduced = Beperkt
+motion.level.off = Uit
+
+settings.motion.group = Beweging & effecten
+settings.motion.animations = Animaties
+settings.motion.animations_note = Beperkt houdt korte overgangen en stopt achtergrondbeweging; Uit maakt elke wijziging direct.
+settings.motion.system_reduced = Je systeem vraagt om minder beweging, dus animaties zijn beperkt.
+settings.motion.system_full = Je systeem staat volledige beweging toe.
+settings.motion.page_transitions = Paginaovergangen
+settings.motion.page_transitions_note = Een korte overgang wanneer een nieuwe pagina opent.
+settings.motion.card_hover = Hover-effecten op tegels
+settings.motion.card_hover_note = Album-, playlist- en nummertegels lichten op en tonen een afspeelknop.
+settings.motion.artwork_headers = Paginakoppen in hoeskleur
+settings.motion.artwork_headers_note = Album-, playlist- en artiestpagina's nemen de kleur van de hoes over.
+settings.motion.artwork_corners = Hoeken van hoezen
+settings.motion.artwork_shadow = Schaduwen van hoezen
+settings.motion.card_size = Tegelgrootte
+settings.motion.translucent_sidebar = Doorschijnende zijbalk
+settings.motion.translucent_sidebar_note = Het bureaublad schijnt wazig door de zijbalk heen.
+settings.motion.cpu_note = Hover-effecten en paginaovergangen kosten elk één korte hertekening; niets hier wordt continu getekend.
+
+effects.corners.theme = Als thema
+effects.corners.square = Hoekig
+effects.corners.rounded = Afgerond
+effects.corners.round = Rond
+
+effects.card_size.small = Klein
+effects.card_size.regular = Normaal
+effects.card_size.large = Groot
+
+bar.artwork.standard = Standaard
+bar.artwork.edge = Randloos
+settings.bar.artwork_style = Hoes
+settings.bar.artwork_style_note = Randloos: de hoes vult de hoogte van de balk aan de linkerrand.

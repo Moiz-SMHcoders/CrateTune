@@ -6,7 +6,9 @@
 //! artwork (`now_playing::ensure_hires` → `palette::cached_art_colors`); this
 //! file only resolves them into a scheme (microseconds) and applies it. During a
 //! transition the theme is re-applied ~30 times a second for 400 ms, then
-//! nothing runs until the next song.
+//! nothing runs until the next song. The app-wide artwork tint (Appearance →
+//! App-wide look → Tint) goes through the same path and fades the same way
+//! (also when it dims on pause); with animations off nothing fades.
 
 use std::time::{Duration, Instant};
 
@@ -41,6 +43,11 @@ impl MusicApp {
     /// The look the settings and the current artwork ask for.
     pub(crate) fn current_look(&self, cx: &gpui::App) -> Look {
         let settings = self.settings.read(cx).settings();
+        let playing = self.playback.status == music_core::PlaybackStatus::Playing;
+        let art_tint = settings
+            .app_look
+            .effective(&settings.player_bar)
+            .surface_tint(playing);
         Look {
             choice: settings.appearance.theme,
             font_scale: settings.appearance.font_scale,
@@ -48,7 +55,8 @@ impl MusicApp {
             art: self
                 .theme_state
                 .art
-                .filter(|_| settings.appearance.theme == ThemeChoice::Dynamic),
+                .filter(|_| settings.appearance.theme == ThemeChoice::Dynamic || art_tint > 0.),
+            art_tint,
         }
     }
 
@@ -56,6 +64,11 @@ impl MusicApp {
     /// "dynamic") when it differs from what is applied; a new song's colours
     /// fade in when transitions are on.
     pub(crate) fn apply_theme(&mut self, cx: &mut Context<Self>) {
+        // Motion & effects first: they decide whether the colours below fade.
+        let effects = self.settings.read(cx).settings().effects;
+        if crate::effects::sync(&effects, cx) {
+            cx.refresh_windows();
+        }
         self.ensure_art_colors(cx);
         let look = self.current_look(cx);
         let previous = self.theme_state.applied.take();
@@ -69,8 +82,15 @@ impl MusicApp {
         let density_changed = previous
             .as_ref()
             .is_some_and(|(applied, _)| applied.custom.density != look.custom.density);
-        let animate = look.choice == ThemeChoice::Dynamic
-            && look.custom.dynamic.transitions
+        // The dynamic theme fades when its transitions are on; the app-wide
+        // artwork tint always does (one 400 ms fade per song / play-pause).
+        let art_tinted = look.art_tint > 0.
+            || previous
+                .as_ref()
+                .is_some_and(|(applied, _)| applied.art_tint > 0.);
+        let animate = ((look.choice == ThemeChoice::Dynamic && look.custom.dynamic.transitions)
+            || art_tinted)
+            && crate::effects::any_motion()
             && previous
                 .as_ref()
                 .is_some_and(|(applied, _)| applied.same_but_art(&look))
@@ -116,10 +136,7 @@ impl MusicApp {
     /// extracts the current artwork's colours if they weren't (artwork loaded
     /// while neither was on), off the UI thread.
     pub(crate) fn ensure_art_colors(&mut self, cx: &mut Context<Self>) {
-        let settings = self.settings.read(cx).settings();
-        if settings.appearance.theme != ThemeChoice::Dynamic
-            && !settings.player_bar.background_effect
-        {
+        if !crate::look_state::wants_art_colors(self.settings.read(cx).settings()) {
             return;
         }
         let Some(track) = self.playback.track.clone() else {

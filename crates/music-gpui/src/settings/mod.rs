@@ -29,6 +29,8 @@ mod integrations_ui;
 mod language;
 pub mod library_config;
 mod library_glue;
+pub mod look_prefs;
+mod look_ui;
 mod lyrics;
 pub mod modules;
 mod network;

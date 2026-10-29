@@ -32,6 +32,7 @@ mod browse;
 mod card_render;
 mod clock;
 mod components;
+mod effects;
 mod icons;
 mod identity;
 mod integrations;
@@ -40,6 +41,8 @@ mod library_script;
 #[cfg(target_os = "macos")]
 mod login_webview;
 mod logo;
+mod look_script;
+mod look_state;
 mod lyrics;
 mod lyrics_card;
 mod memory;

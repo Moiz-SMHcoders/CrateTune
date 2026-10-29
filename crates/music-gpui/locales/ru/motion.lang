@@ -1,0 +1,59 @@
+# App-wide artwork look, Motion & effects (Appearance), and the player bar's
+# artwork style (ru).
+
+look.style.off = Выкл.
+look.style.tint = Оттенок
+look.style.gradient = Градиент
+look.style.glow = Свечение
+
+settings.look.group = Вид всего приложения
+settings.look.style = Под цвет обложки
+settings.look.style_note = Всё окно берёт цвета из обложки песни, как фон панели плеера.
+settings.look.follow_bar = Как у панели плеера
+settings.look.follow_bar_note = Пока фоновый эффект панели включён, его стиль, направление, интенсивность и анимация используются и здесь.
+settings.look.following = Как у панели плеера: {style}.
+settings.look.direction = Направление градиента
+settings.look.intensity = Интенсивность
+settings.look.dim_when_paused = Приглушать на паузе
+settings.look.tint_surfaces = Окрашивать также меню и панели
+settings.look.tint_surfaces_note = Меню, боковая панель, панели и карточки тоже принимают оттенок обложки.
+settings.look.animate = Анимировать
+settings.look.animate_note = Медленное движение градиента во время воспроизведения (около 13 кадров в секунду; останавливается на паузе).
+settings.look.cpu_note = Статично, если анимация выключена: цвета меняются раз за песню с коротким переходом, а текст сохраняет контраст.
+
+motion.level.system = Система
+motion.level.full = Полные
+motion.level.reduced = Меньше
+motion.level.off = Выкл.
+
+settings.motion.group = Движение и эффекты
+settings.motion.animations = Анимации
+settings.motion.animations_note = «Меньше» оставляет короткие переходы и останавливает фоновое движение; «Выкл.» делает каждое изменение мгновенным.
+settings.motion.system_reduced = Система просит уменьшить движение, поэтому анимации уменьшены.
+settings.motion.system_full = Система разрешает полные анимации.
+settings.motion.page_transitions = Переходы между страницами
+settings.motion.page_transitions_note = Короткое затухание при открытии новой страницы.
+settings.motion.card_hover = Эффекты при наведении на плитки
+settings.motion.card_hover_note = Плитки альбомов, плейлистов и песен подсвечиваются и показывают кнопку воспроизведения.
+settings.motion.artwork_headers = Заголовки страниц в цвет обложки
+settings.motion.artwork_headers_note = Страницы альбомов, плейлистов и исполнителей принимают цвет обложки.
+settings.motion.artwork_corners = Углы обложек
+settings.motion.artwork_shadow = Тени обложек
+settings.motion.card_size = Размер плиток
+settings.motion.translucent_sidebar = Полупрозрачная боковая панель
+settings.motion.translucent_sidebar_note = Рабочий стол просвечивает сквозь боковую панель, размыто.
+settings.motion.cpu_note = Эффекты наведения и переходы страниц стоят по одной короткой перерисовке; здесь ничего не рисуется непрерывно.
+
+effects.corners.theme = Как в теме
+effects.corners.square = Острые
+effects.corners.rounded = Мягкие
+effects.corners.round = Скруглённые
+
+effects.card_size.small = Маленькие
+effects.card_size.regular = Обычные
+effects.card_size.large = Большие
+
+bar.artwork.standard = Стандартная
+bar.artwork.edge = Во всю высоту
+settings.bar.artwork_style = Обложка
+settings.bar.artwork_style_note = Во всю высоту: обложка заполняет высоту панели у её левого края.

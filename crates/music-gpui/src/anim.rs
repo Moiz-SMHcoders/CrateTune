@@ -12,6 +12,10 @@
 //!   whether it is still moving, and [`Frame::finish`] requests exactly one more
 //!   animation frame if anything is. When everything settles, rendering stops;
 //!   [`Frame::wake_at`] asks for one later render instead (a timer, not frames).
+//!
+//! Every transition started through a `Tween` follows Settings → Appearance →
+//! Motion & effects → Animations (`effects.rs`): capped at 150 ms with reduced
+//! motion, instant with animations off.
 
 use std::time::{Duration, Instant};
 
@@ -108,7 +112,7 @@ impl<T: Interpolate + Copy + PartialEq> Tween<T> {
             self.from = self.value(now);
             self.to = target;
             self.start = now;
-            self.spec = spec;
+            self.spec = crate::effects::motion().adjust(spec);
         }
     }
 
@@ -117,7 +121,7 @@ impl<T: Interpolate + Copy + PartialEq> Tween<T> {
         self.from = from;
         self.to = to;
         self.start = now;
-        self.spec = spec;
+        self.spec = crate::effects::motion().adjust(spec);
     }
 }
 

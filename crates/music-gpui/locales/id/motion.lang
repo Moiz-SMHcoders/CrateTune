@@ -1,0 +1,59 @@
+# App-wide artwork look, Motion & effects (Appearance), and the player bar's
+# artwork style (id).
+
+look.style.off = Mati
+look.style.tint = Rona
+look.style.gradient = Gradien
+look.style.glow = Pendar
+
+settings.look.group = Tampilan seluruh aplikasi
+settings.look.style = Sesuaikan dengan sampul
+settings.look.style_note = Seluruh jendela mengambil warnanya dari sampul lagu, seperti latar bilah pemutar.
+settings.look.follow_bar = Ikuti gaya bilah pemutar
+settings.look.follow_bar_note = Selama efek latar bilah aktif, gaya, arah, intensitas, dan animasinya juga dipakai di sini.
+settings.look.following = Mengikuti bilah pemutar: {style}.
+settings.look.direction = Arah gradien
+settings.look.intensity = Intensitas
+settings.look.dim_when_paused = Redupkan saat dijeda
+settings.look.tint_surfaces = Warnai juga menu dan panel
+settings.look.tint_surfaces_note = Menu, bilah samping, panel, dan kartu juga mengambil rona sampul.
+settings.look.animate = Animasikan
+settings.look.animate_note = Gradien bergeser perlahan saat musik diputar (sekitar 13 bingkai per detik; berhenti saat dijeda).
+settings.look.cpu_note = Statis kecuali Animasikan aktif: warna berubah sekali per lagu dengan transisi singkat, dan teks tetap kontras.
+
+motion.level.system = Sistem
+motion.level.full = Penuh
+motion.level.reduced = Dikurangi
+motion.level.off = Mati
+
+settings.motion.group = Gerakan & efek
+settings.motion.animations = Animasi
+settings.motion.animations_note = Dikurangi mempertahankan transisi singkat dan menghentikan gerakan latar; Mati membuat setiap perubahan instan.
+settings.motion.system_reduced = Sistem Anda meminta gerakan dikurangi, jadi animasi dikurangi.
+settings.motion.system_full = Sistem Anda mengizinkan gerakan penuh.
+settings.motion.page_transitions = Transisi halaman
+settings.motion.page_transitions_note = Transisi memudar singkat saat halaman baru dibuka.
+settings.motion.card_hover = Efek arahkan kursor pada ubin
+settings.motion.card_hover_note = Ubin album, playlist, dan lagu menyala dan menampilkan tombol putar.
+settings.motion.artwork_headers = Header halaman berwarna sampul
+settings.motion.artwork_headers_note = Halaman album, playlist, dan artis mengambil warna sampul.
+settings.motion.artwork_corners = Sudut sampul
+settings.motion.artwork_shadow = Bayangan sampul
+settings.motion.card_size = Ukuran ubin
+settings.motion.translucent_sidebar = Bilah samping tembus pandang
+settings.motion.translucent_sidebar_note = Desktop terlihat samar melalui bilah samping.
+settings.motion.cpu_note = Efek arahkan kursor dan transisi halaman masing-masing hanya butuh satu gambar ulang singkat; tidak ada yang digambar terus-menerus di sini.
+
+effects.corners.theme = Ikuti tema
+effects.corners.square = Tajam
+effects.corners.rounded = Melengkung
+effects.corners.round = Bulat
+
+effects.card_size.small = Kecil
+effects.card_size.regular = Biasa
+effects.card_size.large = Besar
+
+bar.artwork.standard = Standar
+bar.artwork.edge = Penuh tepi
+settings.bar.artwork_style = Sampul
+settings.bar.artwork_style_note = Penuh tepi: sampul mengisi tinggi bilah di tepi kirinya.

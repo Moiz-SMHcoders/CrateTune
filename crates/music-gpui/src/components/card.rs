@@ -1,5 +1,11 @@
 //! Album / playlist / artist / song tiles for shelves and grids (ArchiveTune's
 //! `ItemGrid` style: square art, title, one muted subtitle line; artists round).
+//!
+//! Motion & effects: tiles are scaled by "Tile size"; with "Hover effects on
+//! tiles" (default on) a hovered tile gets a raised highlight, a shadow under
+//! its artwork and — when it can play — a round play button over the art
+//! (Spotify-style). That is plain hover styling: one render per hover change,
+//! no animation frames.
 
 use std::rc::Rc;
 
@@ -8,7 +14,7 @@ use gpui::{
     ParentElement as _, RenderOnce, SharedString, StatefulInteractiveElement as _, Styled as _,
     Window, div, prelude::FluentBuilder as _, px,
 };
-use gpui_component::{ActiveTheme as _, menu::ContextMenuExt as _, menu::PopupMenu, v_flex};
+use gpui_component::{ActiveTheme as _, Icon, menu::ContextMenuExt as _, menu::PopupMenu, v_flex};
 
 use super::artwork::artwork;
 
@@ -32,8 +38,14 @@ pub struct Card {
     artwork_url: Option<String>,
     width: f32,
     on_click: Option<ClickHandler>,
+    /// The hover play button (plays without opening the page).
+    on_play: Option<ClickHandler>,
     menu: Option<MenuBuilder>,
 }
+
+/// Group name of a tile (hover styles of its parts).
+const GROUP: &str = "card-hover";
+const PLAY_BUTTON: f32 = 40.;
 
 impl Card {
     pub fn new(id: impl Into<ElementId>, kind: CardKind, title: impl Into<SharedString>) -> Self {
@@ -45,6 +57,7 @@ impl Card {
             artwork_url: None,
             width: 160.,
             on_click: None,
+            on_play: None,
             menu: None,
         }
     }
@@ -64,6 +77,12 @@ impl Card {
         self
     }
 
+    /// What the hover play button does (no button without it).
+    pub fn on_play(mut self, f: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static) -> Self {
+        self.on_play = Some(Rc::new(f));
+        self
+    }
+
     /// Right-click menu (e.g. [`super::track_row::track_menu`] for song cards).
     pub fn context_menu(
         mut self,
@@ -76,8 +95,9 @@ impl Card {
 
 impl RenderOnce for Card {
     fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
-        let side = px(self.width);
+        let side = px((self.width * crate::effects::card_scale()).round());
         let round = self.kind == CardKind::Artist;
+        let fancy = crate::effects::card_hover() && self.on_click.is_some();
         let art = artwork(
             self.artwork_url,
             side,
@@ -88,9 +108,45 @@ impl RenderOnce for Card {
             },
             cx,
         );
+        let palette = crate::theme::AppPalette::get(cx);
         let theme = cx.theme();
         let hover = theme.list_hover;
+        let raised = theme.secondary_hover;
         let muted = theme.muted_foreground;
+        let art = if fancy {
+            // A shadow under the art and the play button, on hover only.
+            let play = self.on_play.map(|f| {
+                div()
+                    .id("card-play")
+                    .absolute()
+                    .right(px(8.))
+                    .bottom(px(8.))
+                    .size(px(PLAY_BUTTON))
+                    .rounded_full()
+                    .bg(palette.accent)
+                    .text_color(palette.on_accent)
+                    .shadow_md()
+                    .flex()
+                    .items_center()
+                    .justify_center()
+                    .cursor_pointer()
+                    .invisible()
+                    .group_hover(GROUP, |s| s.visible())
+                    .hover(|s| s.opacity(0.88))
+                    .child(Icon::new(crate::icons::Lucide::Play).size(px(18.)))
+                    .on_click(move |e, w, cx| {
+                        cx.stop_propagation();
+                        f(e, w, cx)
+                    })
+            });
+            div()
+                .relative()
+                .flex_none()
+                .child(art.group_hover(GROUP, |s| s.shadow_lg()))
+                .children(play)
+        } else {
+            div().flex_none().child(art)
+        };
         let card = v_flex()
             .id(self.id)
             .w(side + px(16.))
@@ -99,9 +155,10 @@ impl RenderOnce for Card {
             .gap_2()
             .rounded(crate::theme::radius(10.))
             .when(round, |this| this.items_center())
+            .when(fancy, |this| this.group(GROUP))
             .when_some(self.on_click, |this, f| {
                 this.cursor_pointer()
-                    .hover(move |s| s.bg(hover))
+                    .hover(move |s| if fancy { s.bg(raised) } else { s.bg(hover) })
                     .on_click(move |e, w, cx| f(e, w, cx))
             })
             .child(art)
