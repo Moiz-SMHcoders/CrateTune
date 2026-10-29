@@ -1,0 +1,111 @@
+# Plan: continue listening on another device
+
+Goal: start a song on one device (CrateTune on a Mac, a Windows PC or Linux, or ArchiveTune
+on a phone) and carry on from where you left off on another, like Spotify Connect.
+
+Status: plan only. Nothing here is built yet.
+
+## What exists today
+
+- **ArchiveTune** (Android) has no cross-device resume.
+  - It keeps its queue in a local, Java-serialised file (`PersistQueue`).
+  - The GMS build can back up to Google Drive.
+  - It has Music Together: a JSON protocol over WebSockets, on the LAN or through its own
+    hosted relay. We must not use that relay.
+  - When signed in, it **reports plays to YouTube** (`registerPlayback`, the player
+    response's `videostatsPlaybackUrl`), so its plays show up in the account's YouTube
+    Music history.
+- **CrateTune**
+  - Restores its own queue and position on the same machine.
+  - Has Music Together, using ArchiveTune's protocol (LAN and a self-hosted `music-relay`).
+    It also supports host transfer.
+  - Signs in to YouTube Music and reads the account's history.
+  - **Doesn't report plays to YouTube yet.**
+
+Only two things are shared with ArchiveTune without changing ArchiveTune:
+- the **YouTube Music account**
+- the **Music Together protocol**
+
+Anything more exact, such as the position to the second or the whole queue, needs CrateTune
+on both ends.
+
+## Phase 1: account history (works with ArchiveTune, YouTube Music and the web). Size: medium.
+
+1. **Report plays to YouTube when signed in**, as ArchiveTune does.
+   - Ping the player response's `playbackTracking` URLs: `videostatsPlaybackUrl` at the
+     start, then `videostatsWatchtimeUrl` with the played ranges.
+   - Gate it behind an "Add plays to my YouTube history" setting, on when signed in.
+   - Plays then appear in YouTube Music history on every device, and recommendations
+     improve.
+2. **Home → "Continue from another device"**: a card for the newest account-history item
+   that isn't the last thing played locally.
+   - It shows the title and the device type if known ("played on YouTube Music", otherwise
+     just "recently").
+   - Clicking **Resume** plays the song and its radio as the queue. Podcasts and long videos
+     resume at YouTube's saved position.
+3. **Limits**
+   - Songs restart from the beginning: YouTube doesn't expose the resume position for music.
+   - The queue isn't carried over.
+   - It needs the same Google account on both devices.
+
+## Phase 2: CrateTune ↔ CrateTune "Devices" (exact position and queue). Size: large.
+
+A **Devices** button on the player bar (Spotify-style) lists your other CrateTune
+installations, each showing what it's playing ("MacBook: Song · 1:23"). Each entry offers:
+- **Continue here**: take over at the exact position, with the queue, shuffle and repeat;
+  the other device pauses.
+- **Play on …**: send playback to that device.
+
+The state sent is the same as Together's `RoomState`: queue, index, position, playing,
+repeat and shuffle.
+
+Transports, in order:
+
+1. **Same network (no setup).**
+   - Each installation announces itself with mDNS (`_cratetune._tcp`). The app already uses
+     `mdns-sd` for Chromecast discovery.
+   - Each one answers a small authenticated request for its state, plus "pause" and "take
+     this".
+   - Devices are paired once by entering a 6-digit code, or automatically when signed in to
+     the same Google account.
+2. **Different networks.**
+   - **Option A, self-hosted `music-relay`:** add a per-user "mailbox". Each paired device
+     posts its state, end-to-end encrypted with the pairing key, every ~10 s while playing
+     and on pause or quit. Other devices fetch it when they start or gain focus. The relay
+     never sees what you play.
+   - **Option B, no server: a synced folder.** The user picks iCloud Drive, Dropbox,
+     OneDrive or Syncthing. Each device writes `cratetune-handoff.json` (encrypted) there.
+     Latency depends on the sync service, from seconds to minutes. This works everywhere
+     with zero infrastructure.
+   - Option B is cheap to build first, and Option A gives an instant experience.
+3. **On launch**, if another device was playing more recently, show "Continue 'Song' from
+   MacBook at 1:23?".
+
+## Phase 3: ArchiveTune on the phone → CrateTune (exact, today's protocol). Size: small to medium.
+
+Through Music Together, which already shares ArchiveTune's protocol. This has **not been
+verified** against a real ArchiveTune build.
+
+1. Start a Music Together session in ArchiveTune on the phone, on the same Wi-Fi network.
+2. Join it from CrateTune, which then plays in sync at the same position.
+3. New: **"Keep playing here when I leave"**. When CrateTune leaves the session, or the
+   phone ends it, CrateTune carries on locally with the room's queue and position instead
+   of stopping.
+
+The other direction, CrateTune → ArchiveTune, depends on ArchiveTune keeping playback after
+it leaves a session. We can't change that from here.
+
+## Phase 4 (optional): one-time library import from ArchiveTune
+
+- Read an ArchiveTune backup (the zip with its Room database) to import liked songs,
+  playlists and history.
+- This is migration, not resume, but it makes switching apps painless.
+
+## Suggested order
+
+1. Phase 1, step 1: play reporting. It's useful on its own.
+2. Phase 3: verify compatibility, then add "keep playing here".
+3. Phase 1, step 2: the Continue card.
+4. Phase 2 with the synced folder.
+5. Phase 2 with the relay mailbox, then LAN Devices.
+6. Phase 4 if wanted.

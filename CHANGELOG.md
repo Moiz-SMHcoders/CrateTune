@@ -5,6 +5,8 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-10-29
+
 ### Added
 
 * **App-wide look** (Settings → Appearance → App-wide look; off by default): the whole
