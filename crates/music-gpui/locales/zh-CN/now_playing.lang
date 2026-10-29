@@ -9,6 +9,10 @@ np.preview = 试听
 np.speed = {speed}×
 np.sleep_tooltip = 睡眠定时器
 np.layout_tooltip = 样式与背景
+np.fullscreen_enter = 全屏
+np.fullscreen_exit = 退出全屏
+np.fullscreen_enter_keys = 全屏（{keys}）
+np.fullscreen_exit_keys = 退出全屏（{keys}）
 np.menu.design = 样式
 np.menu.background = 背景
 

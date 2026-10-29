@@ -127,6 +127,10 @@ pub struct MusicApp {
 
     // ---- overlays & windows
     pub(crate) np: NowPlaying,
+    /// Who put the window in full screen (`np_fullscreen.rs`).
+    pub(crate) fullscreen: crate::np_fullscreen::FullScreen,
+    /// Re-checks a full-screen transition in flight.
+    pub(crate) fullscreen_task: Option<Task<()>>,
     pub(crate) queue_open: bool,
     pub(crate) queue_scroll: ScrollHandle,
     pub(crate) mini: Option<AnyWindowHandle>,
@@ -207,7 +211,8 @@ impl MusicApp {
                 |_, _, cx| cx.notify(),
             ),
             cx.observe_window_bounds(window, |this, window, cx| {
-                this.save_window_bounds(window, cx)
+                this.save_window_bounds(window, cx);
+                this.sync_fullscreen(window, cx);
             }),
             cx.on_app_quit(|this, cx| {
                 this.flush_listening();
@@ -326,6 +331,8 @@ impl MusicApp {
             seen_advance: 0,
             last_failure: None,
             np,
+            fullscreen: crate::np_fullscreen::FullScreen::new(window.is_fullscreen()),
+            fullscreen_task: None,
             queue_open: false,
             queue_scroll: ScrollHandle::new(),
             mini: None,
@@ -601,7 +608,8 @@ impl MusicApp {
     }
 
     /// Esc (menus and popovers handle it first): close a dialog, else end a lyrics
-    /// card selection, else Now Playing, else the queue panel, else go back.
+    /// card selection, else leave the full screen entered from Now Playing's button
+    /// (`np_fullscreen.rs`), else Now Playing, else the queue panel, else go back.
     pub fn escape(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         if window.has_active_dialog(cx) {
             window.close_dialog(cx);
@@ -610,6 +618,8 @@ impl MusicApp {
         } else if self.np.open && self.np.list.selecting {
             // Picking lines for a lyrics card.
             self.set_lyrics_selecting(false, cx);
+        } else if self.np.open && self.fullscreen_escape(window, cx) {
+            // Left the full screen the Now Playing button entered; Esc again closes.
         } else if self.np.open {
             self.close_now_playing(window, cx);
         } else if self.queue_open {
@@ -704,7 +714,9 @@ impl MusicApp {
     fn save_window_bounds(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let (bounds, maximized) = match window.window_bounds() {
             WindowBounds::Windowed(b) => (b, false),
-            WindowBounds::Maximized(b) | WindowBounds::Fullscreen(b) => (b, true),
+            WindowBounds::Maximized(b) => (b, true),
+            // Keep the windowed geometry: the next launch opens a normal window.
+            WindowBounds::Fullscreen(_) => return,
         };
         // `open_window` takes the content size; `window_bounds` reports the frame
         // (with the title bar), so store the viewport size to avoid drift.

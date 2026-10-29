@@ -9,6 +9,10 @@ np.preview = Extrait
 np.speed = {speed}×
 np.sleep_tooltip = Minuteur de veille
 np.layout_tooltip = Style et arrière-plan
+np.fullscreen_enter = Plein écran
+np.fullscreen_exit = Quitter le plein écran
+np.fullscreen_enter_keys = Plein écran ({keys})
+np.fullscreen_exit_keys = Quitter le plein écran ({keys})
 np.menu.design = Style
 np.menu.background = Arrière-plan
 

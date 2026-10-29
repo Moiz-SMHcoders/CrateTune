@@ -16,6 +16,11 @@ np.preview = Preview
 np.speed = {speed}×
 np.sleep_tooltip = Sleep timer
 np.layout_tooltip = Design and background
+# Full-screen button (tooltips); the _keys forms add the shortcut, {keys} = ⌃⌘F / F11.
+np.fullscreen_enter = Full screen
+np.fullscreen_exit = Exit full screen
+np.fullscreen_enter_keys = Full screen ({keys})
+np.fullscreen_exit_keys = Exit full screen ({keys})
 # Headings inside the layout menu.
 np.menu.design = Design
 np.menu.background = Background

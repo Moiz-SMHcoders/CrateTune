@@ -314,6 +314,36 @@ fn bindings_before(primary: &str) -> Vec<(String, &'static str, Option<&'static 
     ]
 }
 
+fn fullscreen_default(os: Os) -> Combo {
+    combo(if os == Os::Mac { "ctrl-cmd-f" } else { "f11" }, os)
+}
+
+#[test]
+fn fullscreen_defaults_per_platform() {
+    let action = find("toggle_fullscreen").unwrap();
+    assert_eq!(action.group, Group::View);
+    assert_eq!(action.context, None);
+    let mac = action.default_combo(Os::Mac).unwrap();
+    assert!(mac.ctrl && mac.platform && !mac.alt && !mac.shift && mac.key == "f");
+    assert_eq!(mac.display(Os::Mac), "⌃⌘F");
+    for os in [Os::Windows, Os::Linux] {
+        let f11 = action.default_combo(os).unwrap();
+        assert_eq!(f11, combo("f11", os));
+        assert_eq!(f11.display(os), "F11");
+    }
+    // An override replaces the platform default; resetting brings it back.
+    let mut o = Overrides::new();
+    set(
+        &mut o,
+        "toggle_fullscreen",
+        Some(&combo("secondary-shift-f", Os::Mac)),
+        Os::Mac,
+    );
+    assert_eq!(o["toggle_fullscreen"], "secondary-shift-f");
+    set(&mut o, "toggle_fullscreen", Some(&mac), Os::Mac);
+    assert!(o.is_empty());
+}
+
 #[test]
 fn default_keymap_is_the_old_one() {
     for (os, primary) in [(Os::Mac, "cmd"), (Os::Linux, "ctrl"), (Os::Windows, "ctrl")] {
@@ -321,8 +351,9 @@ fn default_keymap_is_the_old_one() {
             .into_iter()
             .map(|(keys, id, ctx)| (combo(&keys, os), id, ctx))
             .collect();
-        // New: the cheat sheet.
+        // New: the cheat sheet, full screen (⌃⌘F on a Mac, F11 elsewhere).
         expected.push((combo(&format!("{primary}-/"), os), "show_shortcuts", None));
+        expected.push((fullscreen_default(os), "toggle_fullscreen", None));
         let entries = keymap(&Overrides::new(), os);
         let mut actual: Vec<(Combo, &str, Option<&str>)> = entries
             .iter()
@@ -384,9 +415,13 @@ fn gpui_bindings_match_the_old_construction() {
             b.meta(),
         )
     };
+    let fullscreen = fullscreen_default(Os::current()).to_keymap();
     let mut expected: Vec<_> = bindings_before(primary)
         .into_iter()
-        .chain([(format!("{primary}-/"), "show_shortcuts", None)])
+        .chain([
+            (format!("{primary}-/"), "show_shortcuts", None),
+            (fullscreen, "toggle_fullscreen", None),
+        ])
         .map(|(keys, id, ctx)| {
             (
                 vec![combo(&keys, Os::current())],

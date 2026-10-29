@@ -5,6 +5,29 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+* **Full screen for Now Playing and lyrics**: a Maximize / Minimize button in the Now
+  Playing header (every design and the lyrics view; its tooltip shows the shortcut) puts
+  the window in full screen and back, on macOS as native full screen in its own Space.
+  New **Toggle full screen** action, ⌃⌘F on macOS and F11 on Windows / Linux, editable
+  in Settings → Keyboard shortcuts and in the View menu; it works anywhere. Settings →
+  Appearance → Now Playing → **Full screen when Now Playing opens** (off by default, off
+  in the Minimal / Fast profile, part of profiles and the settings export) enters full
+  screen whenever Now Playing or the lyrics view opens. Closing Now Playing (Esc, the
+  close button, ⌘L, navigating away) leaves full screen again, but only if CrateTune
+  entered it for Now Playing: a window that was already in full screen stays there, and
+  leaving full screen yourself (green button, the system) is never undone. Esc leaves
+  the full screen entered with the button first, then closes Now Playing. The mini player
+  keeps working over the full-screen window. Script hooks: `@np-fullscreen[=on|off]`,
+  `@np-fullscreen-auto=on|off`, `@lyrics-view`, `@fullscreen-external`,
+  `@fullscreen-status`.
+
+### Changed
+
+* The saved window frame is no longer replaced while the window is in full screen, so the
+  next launch opens the normal window, not one the size of the screen.
+
 ## [0.2.0] — 2026-10-29
 
 ### Added

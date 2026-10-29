@@ -7,6 +7,10 @@ np.preview = Pratinjau
 np.speed = {speed}×
 np.sleep_tooltip = Pengatur waktu tidur
 np.layout_tooltip = Desain dan latar
+np.fullscreen_enter = Layar penuh
+np.fullscreen_exit = Keluar dari layar penuh
+np.fullscreen_enter_keys = Layar penuh ({keys})
+np.fullscreen_exit_keys = Keluar dari layar penuh ({keys})
 np.menu.design = Desain
 np.menu.background = Latar
 

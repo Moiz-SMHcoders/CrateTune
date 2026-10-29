@@ -61,6 +61,8 @@ settings.appearance.font_scale = {percent} %
 settings.appearance.text_size_note = इंटरफ़ेस का सारा टेक्स्ट बड़ा-छोटा करता है; बोल का अपना साइज़ रहता है (बोल)।
 settings.appearance.background = बैकग्राउंड
 settings.appearance.np_note = ग्रेडिएंट, एक रंग और चमक अपने रंग आर्टवर्क से लेते हैं। चमक सिर्फ़ संगीत चलते समय हिलती है। लेआउट और बैकग्राउंड “अभी चल रहा है” स्क्रीन के लेआउट मेन्यू में भी हैं।
+settings.appearance.np_fullscreen = “अभी चल रहा है” खुलने पर पूर्ण स्क्रीन
+settings.appearance.np_fullscreen_note = “अभी चल रहा है” या बोल खोलने पर विंडो पूर्ण स्क्रीन में चली जाती है, और बंद करने पर उससे बाहर आ जाती है। जो विंडो पहले से पूर्ण स्क्रीन में थी, वह वैसी ही रहती है।
 settings.appearance.mini_player = मिनी प्लेयर
 
 # ---- Playback

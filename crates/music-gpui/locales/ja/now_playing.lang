@@ -9,6 +9,10 @@ np.preview = プレビュー
 np.speed = {speed}×
 np.sleep_tooltip = スリープタイマー
 np.layout_tooltip = デザインと背景
+np.fullscreen_enter = フルスクリーン
+np.fullscreen_exit = フルスクリーンを終了
+np.fullscreen_enter_keys = フルスクリーン（{keys}）
+np.fullscreen_exit_keys = フルスクリーンを終了（{keys}）
 np.menu.design = デザイン
 np.menu.background = 背景
 

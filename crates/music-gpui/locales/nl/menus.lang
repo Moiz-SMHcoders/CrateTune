@@ -26,6 +26,7 @@ menu.volume_down = Volume omlaag
 menu.window = Venster
 menu.minimize = Minimaliseer
 menu.zoom = Zoom
+menu.fullscreen = Volledig scherm aan/uit
 
 # Menu-bar item
 tray.next = Volgende

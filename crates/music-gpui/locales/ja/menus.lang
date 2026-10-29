@@ -25,6 +25,7 @@ menu.volume_down = 音量を下げる
 menu.window = ウインドウ
 menu.minimize = しまう
 menu.zoom = 拡大／縮小
+menu.fullscreen = フルスクリーンの切り替え
 
 # Menu-bar item
 tray.next = 次へ

@@ -9,6 +9,10 @@ np.preview = Превью
 np.speed = {speed}×
 np.sleep_tooltip = Таймер сна
 np.layout_tooltip = Оформление и фон
+np.fullscreen_enter = Полный экран
+np.fullscreen_exit = Выйти из полноэкранного режима
+np.fullscreen_enter_keys = Полный экран ({keys})
+np.fullscreen_exit_keys = Выйти из полноэкранного режима ({keys})
 np.menu.design = Оформление
 np.menu.background = Фон
 

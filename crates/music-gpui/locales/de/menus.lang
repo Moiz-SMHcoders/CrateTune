@@ -26,6 +26,7 @@ menu.volume_down = Leiser
 menu.window = Fenster
 menu.minimize = Im Dock ablegen
 menu.zoom = Zoomen
+menu.fullscreen = Vollbild ein/aus
 
 # Menu-bar item
 tray.next = Nächster Titel

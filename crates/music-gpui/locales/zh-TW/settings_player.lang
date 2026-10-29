@@ -61,6 +61,8 @@ settings.appearance.font_scale = {percent}%
 settings.appearance.text_size_note = 縮放所有介面文字；歌詞使用自己的大小設定（歌詞）。
 settings.appearance.background = 背景
 settings.appearance.np_note = 漸層、純色和光暈背景的色彩取自封面。光暈只會在播放音樂時流動。樣式和背景也能在「正在播放」畫面的樣式選單中設定。
+settings.appearance.np_fullscreen = 開啟正在播放時進入全螢幕
+settings.appearance.np_fullscreen_note = 開啟「正在播放」或歌詞時，視窗會進入全螢幕，關閉後結束全螢幕。原本就是全螢幕的視窗會維持不變。
 settings.appearance.mini_player = 迷你播放器
 
 # ---- Playback

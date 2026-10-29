@@ -26,6 +26,7 @@ menu.volume_down = Ciszej
 menu.window = Okno
 menu.minimize = Minimalizuj
 menu.zoom = Powiększ
+menu.fullscreen = Przełącz pełny ekran
 
 tray.next = Następny
 tray.previous = Poprzedni

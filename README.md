@@ -549,6 +549,8 @@ src/
   tray.rs            menu-bar item (macOS)
   now_playing.rs     Now Playing: screen, header, backgrounds, transport, the first three
                      designs, lyrics pane; np_designs.rs (the other five designs),
+                     np_fullscreen.rs (full screen button / shortcut / setting, who
+                     entered it),
                      np_lyrics.rs (synced lyrics list: own layout, frame pacing, card
                      selection), np_region.rs / snapshot.rs (cached sub-views)
   card_render.rs     lyrics card image (tiny-skia + resvg, pure Rust); lyrics_card.rs its
@@ -754,7 +756,7 @@ locales/<locale>/*.lang  the catalogs (English = source), embedded by build.rs v
   saved. "Previous" restarts past 3 s; the end of a track (including a ~60 s preview)
   plays the next one. Queue panel: now playing, up next, history (click to play again).
 * **Settings page** with sections: Appearance (theme, text size, Now Playing layout +
-  background, mini player style), Playback (queue modes, quality, normalization, skip
+  background + full screen on open, mini player style), Playback (queue modes, quality, normalization, skip
   silence, auto-skip, crossfade, speed + pitch, output device, sleep timer), Equalizer,
   Modules (provider modules, playback source), Lyrics (look, providers, translation,
   romanization), Content & region, Network, Privacy,
@@ -779,7 +781,17 @@ locales/<locale>/*.lang  the catalogs (English = source), embedded by build.rs v
 * **Menu-bar item** (macOS, `tray-icon`): current track, play/pause, next, previous,
   mini player, show window, quit. It coexists with GPUI's run loop (the status item is
   just AppKit; menu events are drained by the poll). Not built on Linux/Windows.
-* **Window frame** saved (content size, position, maximized) and restored if on screen.
+* **Window frame** saved (content size, position, maximized) and restored if on screen
+  (not while in full screen).
+* **Full screen** (`np_fullscreen.rs`): Now Playing's header button, the "Toggle full
+  screen" action (⌃⌘F on macOS, F11 elsewhere; View menu; editable) and "Full screen
+  when Now Playing opens" (Settings → Appearance, off by default). A small tracker
+  remembers whether the app entered full screen *for Now Playing*; only then does
+  closing Now Playing leave it. `Window::toggle_fullscreen` only toggles and macOS
+  animates the transition, so requests set a target and toggles are sent once nothing
+  of ours is in flight (bounds observer + re-check timer, give-up after 3 s); a change
+  nobody asked for (green button) drops target and ownership, so the user is never
+  fought. Scripts: `@np-fullscreen[=on|off]`, `@np-fullscreen-auto`, `@fullscreen-status`.
 * **Engine wiring** (`playback.rs`): the engine's `set_next` follows the queue on every
   poll and after `play` (shuffle, repeat-all wrap, repeat-one = the same track again,
   edits); when `PlaybackState::advance_count` grows (gapless / crossfade switch,

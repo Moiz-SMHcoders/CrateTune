@@ -62,6 +62,8 @@ settings.appearance.font_scale = {percent} %
 settings.appearance.text_size_note = Ajusta todo o texto da interface; as letras mantêm o próprio tamanho (Letras).
 settings.appearance.background = Fundo
 settings.appearance.np_note = Gradiente, sólido e brilho pegam as cores da capa. O brilho só se move enquanto a música toca. O visual e o fundo também ficam no menu de visual da tela Tocando agora.
+settings.appearance.np_fullscreen = Tela cheia ao abrir Tocando agora
+settings.appearance.np_fullscreen_note = Abrir Tocando agora ou a letra coloca a janela em tela cheia, e fechar sai dela. Uma janela que já estava em tela cheia continua assim.
 settings.appearance.mini_player = Miniplayer
 
 # ---- Playback

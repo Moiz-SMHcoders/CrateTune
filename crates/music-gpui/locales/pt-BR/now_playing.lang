@@ -9,6 +9,10 @@ np.preview = Prévia
 np.speed = {speed}×
 np.sleep_tooltip = Timer de suspensão
 np.layout_tooltip = Visual e fundo
+np.fullscreen_enter = Tela cheia
+np.fullscreen_exit = Sair da tela cheia
+np.fullscreen_enter_keys = Tela cheia ({keys})
+np.fullscreen_exit_keys = Sair da tela cheia ({keys})
 np.menu.design = Visual
 np.menu.background = Fundo
 

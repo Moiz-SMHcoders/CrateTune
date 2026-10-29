@@ -61,6 +61,8 @@ settings.appearance.font_scale = {percent}%
 settings.appearance.text_size_note = 인터페이스의 모든 텍스트 크기를 조절합니다. 가사는 별도 크기를 사용합니다(가사).
 settings.appearance.background = 배경
 settings.appearance.np_note = 그라데이션, 단색, 글로우는 아트워크에서 색상을 가져옵니다. 글로우는 음악이 재생될 때만 움직입니다. 레이아웃과 배경은 지금 재생 중 화면의 레이아웃 메뉴에서도 바꿀 수 있습니다.
+settings.appearance.np_fullscreen = 지금 재생 중을 열 때 전체 화면
+settings.appearance.np_fullscreen_note = 지금 재생 중 화면이나 가사를 열면 창이 전체 화면으로 전환되고, 닫으면 다시 돌아옵니다. 이미 전체 화면이던 창은 그대로 유지됩니다.
 settings.appearance.mini_player = 미니 플레이어
 
 # ---- Playback

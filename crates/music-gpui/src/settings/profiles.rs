@@ -136,6 +136,7 @@ pub fn minimal_settings() -> Settings {
     s.now_playing.layout = NowPlayingLayout::Centered;
     s.now_playing.background = NowPlayingBackground::Solid;
     s.now_playing.mini_player = MiniPlayerStyle::Theme;
+    s.now_playing.fullscreen = false;
     // Lyrics: whole lines light up, no per-word animation; no translation
     // requests, no romanization (the kanji dictionary is ~45 MB mapped).
     s.lyrics.animation = LyricsAnimation::None;
