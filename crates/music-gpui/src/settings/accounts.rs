@@ -71,12 +71,13 @@ fn google_account_buttons(
 /// Linux has the cookie dialog only.
 const SIGN_IN_WINDOW: bool = cfg!(any(target_os = "macos", target_os = "windows"));
 
-/// The browser's developer-tools shortcut and browsers named in the cookie steps.
+/// The browser's developer-tools shortcut and browsers named in the cookie steps (key and
+/// browser names, not translated).
 fn devtools_hint() -> (&'static str, &'static str) {
     if cfg!(target_os = "macos") {
-        ("⌥⌘I", "Safari / Chrome") // i18n-ignore: key and browser names
+        ("⌥⌘I", "Safari / Chrome") // i18n-ignore
     } else {
-        ("F12", "Chrome / Edge / Firefox") // i18n-ignore: key and browser names
+        ("F12", "Chrome / Edge / Firefox") // i18n-ignore
     }
 }
 

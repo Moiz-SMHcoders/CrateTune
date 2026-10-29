@@ -29,7 +29,8 @@ const LOGIN_URL: &str = "https://accounts.google.com/ServiceLogin?ltmpl=music&se
 #[cfg_attr(not(target_os = "windows"), allow(dead_code))]
 const MUSIC_URL: &str = "https://music.youtube.com";
 
-/// (name, value, domain) of one cookie.
+/// (name, value, domain) of one cookie (Windows: `webview2::Cookies`).
+#[cfg(target_os = "macos")]
 type Cookies = Vec<(String, String, String)>;
 
 /// Opens the sign-in window (`window`: the main window, to center on).
