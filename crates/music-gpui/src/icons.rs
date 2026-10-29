@@ -70,6 +70,7 @@ gpui_kit_assets::icon_assets!(
         Shield,
         Type,
         Keyboard,
+        ArchiveRestore,
         // library / account
         Pencil,
         LogOut,
