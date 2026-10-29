@@ -229,7 +229,9 @@ impl Link for Conn {
         // sends meanwhile. Dropping a socket with unread data makes Linux and
         // Windows reset the connection, and the peer then sees "Connection
         // lost" instead of this close frame and its reason.
-        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(1);
+        // Generous: this runs on the connection's own thread, and on a busy machine the peer
+        // can take a while to answer; dropping early is what causes the reset.
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
         // Make sure the close frame itself went out (a write that timed out
         // leaves it queued inside tungstenite).
         while std::time::Instant::now() < deadline {
