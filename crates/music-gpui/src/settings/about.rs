@@ -96,17 +96,31 @@ pub(super) fn render(
     v_flex()
         .gap_5()
         .child(
-            group(crate::identity::APP_NAME, cx)
-                .child(note(
-                    SharedString::from(t!(
-                        "settings.about.version_summary",
-                        version = env!("CARGO_PKG_VERSION"),
-                        summary = summary
-                    )),
-                    cx,
-                ))
-                .child(note(t!("settings.about.not_affiliated"), cx))
-                .child(welcome),
+            h_flex()
+                .gap_4()
+                .items_center()
+                .child(crate::logo::logo(64.))
+                .child(
+                    v_flex()
+                        .gap_1()
+                        .min_w_0()
+                        .child(
+                            div()
+                                .text_xl()
+                                .font_weight(FontWeight::BOLD)
+                                .child(crate::identity::APP_NAME),
+                        )
+                        .child(note(
+                            SharedString::from(t!(
+                                "settings.about.version_summary",
+                                version = env!("CARGO_PKG_VERSION"),
+                                summary = summary
+                            )),
+                            cx,
+                        ))
+                        .child(note(t!("settings.about.not_affiliated"), cx))
+                        .child(welcome),
+                ),
         )
         .children(updates)
         .child(

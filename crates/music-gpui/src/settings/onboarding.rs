@@ -168,7 +168,9 @@ impl Render for Onboarding {
         }));
         let header = h_flex()
             .gap_3()
-            .child(
+            .child(if step == Step::Welcome {
+                crate::logo::logo(40.).into_any_element()
+            } else {
                 div()
                     .size(px(40.))
                     .rounded(px(10.))
@@ -176,8 +178,9 @@ impl Render for Onboarding {
                     .flex()
                     .items_center()
                     .justify_center()
-                    .child(Icon::new(step.icon()).size(px(20.))),
-            )
+                    .child(Icon::new(step.icon()).size(px(20.)))
+                    .into_any_element()
+            })
             .child(
                 v_flex()
                     .flex_1()

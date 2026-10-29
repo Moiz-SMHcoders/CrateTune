@@ -4,6 +4,7 @@
 #   packaging/macos/AppIcon.icns       (iconutil)
 #   packaging/windows/app.ico          (16–256 px)
 #   packaging/linux/icons/<n>x<n>.png  (hicolor sizes) and packaging/icons/app-icon-512.png
+#   packaging/icons/app-logo-256.png   (in-app logo, embedded in the binary)
 # Needs rsvg-convert (librsvg) and, on macOS, iconutil; ImageMagick (`magick`) for the .ico.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -31,6 +32,11 @@ for size in 32 48 64 128 256 512; do
   render "$size" "packaging/linux/icons/${size}x${size}.png"
 done
 cp packaging/linux/icons/512x512.png packaging/icons/app-icon-512.png
+
+# In-app logo (sidebar, About, welcome guide): the tile edge to edge, no drop shadow.
+sed -e 's/viewBox="0 0 512 512"/viewBox="40 40 432 432"/' -e 's/ filter="url(#shadow)"//' \
+  "$SVG" > "$TMP/logo.svg"
+rsvg-convert -w 256 -h 256 "$TMP/logo.svg" -o packaging/icons/app-logo-256.png
 
 # Windows .ico
 mkdir -p packaging/windows

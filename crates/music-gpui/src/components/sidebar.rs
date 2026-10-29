@@ -105,17 +105,7 @@ impl MusicApp {
                     .px_3()
                     .pb_2()
                     .gap_2()
-                    .child(
-                        div()
-                            .size(px(26.))
-                            .rounded(crate::theme::radius(7.))
-                            .bg(colors.accent)
-                            .flex()
-                            .items_center()
-                            .justify_center()
-                            .text_color(crate::theme::on_color(colors.accent))
-                            .child(Icon::new(Lucide::Music).small()),
-                    )
+                    .child(crate::logo::logo(26.))
                     .child(
                         div()
                             .text_lg()

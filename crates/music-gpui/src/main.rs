@@ -38,6 +38,7 @@ mod karaoke;
 mod library_script;
 #[cfg(target_os = "macos")]
 mod login_webview;
+mod logo;
 mod lyrics;
 mod lyrics_card;
 mod memory;
@@ -129,6 +130,7 @@ fn main() {
         .run(|cx: &mut App| {
             gpui_component::init(cx);
             ArtworkCache::init(cx);
+            logo::set_dock_icon();
 
             // Only the UI language and the window frame are needed before the window
             // exists; the settings panel loads (and owns) the full file.
