@@ -16,6 +16,7 @@ name or branding.
 (Windows) from the releases, see [docs/USER_GUIDE.md](docs/USER_GUIDE.md) (features,
 shortcuts, settings, sign-in, limitations) and [CHANGELOG.md](CHANGELOG.md). Testers: see
 [docs/TESTING.md](docs/TESTING.md) (Windows build, .exe / installer, manual checklist).
+Open bugs, unverified areas and missing features: [docs/BACKLOG.md](docs/BACKLOG.md).
 
 **From source** (Rust 1.99 via `rust-toolchain.toml`; no Xcode needed on macOS — the
 Command Line Tools suffice, GPUI's shaders are compiled at runtime):

@@ -246,3 +246,4 @@ versions follow [SemVer](https://semver.org/).
 * YouTube songs play as ~1-minute previews without a PoToken (fixed in 0.1.0).
 * Account features and the Linux / Windows builds are not verified on real accounts /
   machines yet; builds are not signed with a Developer ID / Authenticode certificate.
+* The full, maintained list is in [docs/BACKLOG.md](docs/BACKLOG.md).
