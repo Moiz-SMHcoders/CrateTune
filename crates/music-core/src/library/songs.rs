@@ -115,11 +115,17 @@ pub struct LibrarySong {
     pub downloaded_at: Option<i64>,
     /// False for downloads that are only the ~1 MiB preview.
     pub download_complete: bool,
+    /// Thumbs down (YouTube Music's dislike); never set together with `liked_at`.
+    pub disliked_at: Option<i64>,
 }
 
 impl LibrarySong {
     pub fn liked(&self) -> bool {
         self.liked_at.is_some()
+    }
+
+    pub fn disliked(&self) -> bool {
+        self.disliked_at.is_some()
     }
 
     pub fn in_library(&self) -> bool {
@@ -131,8 +137,8 @@ pub(crate) const SONG_COLS: &str = "s.id, s.title, s.artists, s.artist_refs, s.a
     s.album_id, s.duration_secs, s.thumbnail_url, s.explicit, s.local_path, s.album_artist, \
     s.track_number, s.disc_number, s.year, s.rg_track_gain, s.rg_track_peak, s.rg_album_gain, \
     s.rg_album_peak, s.liked_at, s.in_library_at, s.created_at, s.total_play_ms, s.play_count, \
-    s.last_played_at, s.downloaded_at, s.download_complete";
-pub(crate) const SONG_COL_COUNT: usize = 26;
+    s.last_played_at, s.downloaded_at, s.download_complete, s.disliked_at";
+pub(crate) const SONG_COL_COUNT: usize = 27;
 
 pub(crate) fn song_from_row(row: &Row<'_>, base: usize) -> rusqlite::Result<LibrarySong> {
     let c = |i: usize| base + i;
@@ -172,6 +178,7 @@ pub(crate) fn song_from_row(row: &Row<'_>, base: usize) -> rusqlite::Result<Libr
         last_played_at: row.get(c(23))?,
         downloaded_at: row.get(c(24))?,
         download_complete: row.get(c(25))?,
+        disliked_at: row.get(c(26))?,
     })
 }
 
@@ -548,7 +555,7 @@ impl Library {
             upsert_track_tx(tx, track, None, now_ms())?;
             match at {
                 Some(at) => tx.execute(
-                    "UPDATE song SET liked_at = COALESCE(liked_at, ?2),
+                    "UPDATE song SET liked_at = COALESCE(liked_at, ?2), disliked_at = NULL,
                         in_library_at = CASE WHEN local_path IS NULL
                                              THEN COALESCE(in_library_at, ?2)
                                              ELSE in_library_at END

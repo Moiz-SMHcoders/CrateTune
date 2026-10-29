@@ -4,6 +4,7 @@ bar_items.title = Mostrar en la barra
 bar_items.reset = Restablecer
 bar_items.note = Lo oculto no deja huecos. En ventanas estrechas se siguen ocultando primero los botones menos importantes; una transmisión en curso o un temporizador activo siguen visibles para poder detenerlos. El minirreproductor conserva sus propios controles.
 bar_items.item.like = Me gusta
+bar_items.item.dislike = No me gusta
 bar_items.item.quality_tag = Origen y calidad
 bar_items.item.shuffle = Aleatorio
 bar_items.item.repeat = Repetir

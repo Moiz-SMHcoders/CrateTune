@@ -34,6 +34,7 @@ use music_core::{Result, Track};
 use crate::app::{MusicApp, notify};
 use crate::settings::library_config::AccountConfig;
 use crate::util::off_thread;
+use crate::youtube_sync::{SyncKind, SyncRequest, Trigger};
 
 /// Continuation pages followed per list (≈ 100 items each).
 const MAX_PAGES: usize = 60;
@@ -59,6 +60,8 @@ pub struct Account {
     pub status: Busy,
     /// Library sync.
     pub sync: Busy,
+    /// Automatic syncs, the sync guard and per-song likes (`youtube_sync.rs`).
+    pub(crate) yt: crate::youtube_sync::YtSync,
 }
 
 /// What Settings → Account shows for the Google accounts of the login.
@@ -82,6 +85,7 @@ impl Account {
             probing: false,
             status: Busy::Idle,
             sync: Busy::Idle,
+            yt: Default::default(),
         }
     }
 
@@ -93,6 +97,7 @@ impl Account {
         self.cookie = cookie;
         // Another cookie is another browser session with its own accounts.
         self.google_accounts = None;
+        self.yt.forget_account();
         if self.cookie.is_none() {
             self.channels.clear();
         }
@@ -179,7 +184,7 @@ impl Account {
     }
 
     pub fn is_syncing(&self) -> bool {
-        matches!(self.sync, Busy::Working(_))
+        self.yt.schedule.running().is_some()
     }
 
     /// `@account-index-status`: the Google account in use, the login's accounts (names
@@ -254,6 +259,7 @@ fn fetch_account_on(it: InnerTube, auth: Auth) -> Result<(AccountConfig, Vec<Acc
         auth_user: auth.auth_user,
         data_sync_id: auth.data_sync_id,
         last_sync_at: None,
+        last_liked_sync_at: None,
     };
     Ok((config, channels))
 }
@@ -324,7 +330,8 @@ impl MusicApp {
                     this.sync_account_auth(cx);
                     notify(window, cx, t!("account.toast.signed_in", name = name));
                     // Also finds the Google accounts of the login (in the background).
-                    this.sync_youtube_library(window, cx);
+                    this.refresh_google_accounts(cx);
+                    this.request_sync(Trigger::SignIn, cx);
                 }
                 Err(e) => {
                     this.store.account.status =
@@ -343,6 +350,8 @@ impl MusicApp {
         self.store.account.set_cookie(None);
         self.store.account.status = Busy::Idle;
         self.store.account.sync = Busy::Idle;
+        // Ratings still owed to YouTube were that account's.
+        self.forget_queued_ratings();
         self.sync_account_auth(cx);
         self.settings.update(cx, |panel, cx| {
             panel.update_library(|l| l.account = None, cx);
@@ -368,6 +377,7 @@ impl MusicApp {
                             && !reset
                         {
                             config.last_sync_at = old.last_sync_at;
+                            config.last_liked_sync_at = old.last_liked_sync_at;
                         }
                         if this.store.account.config.as_ref() != Some(&config) {
                             this.store.account.config = Some(config.clone());
@@ -382,6 +392,9 @@ impl MusicApp {
                             Busy::Idle
                         };
                         this.refresh_google_accounts(cx);
+                        // ArchiveTune syncs on every start signed in; here unless the
+                        // last sync is recent (`youtube_sync.rs`).
+                        this.request_sync(Trigger::Startup, cx);
                     }
                     Err(e) => {
                         this.store.account.status =
@@ -463,7 +476,11 @@ impl MusicApp {
                             panel.update_library(|l| l.account = Some(config), cx)
                         });
                         notify(window, cx, t!("account.toast.switched", name = name));
-                        this.sync_youtube_library(window, cx);
+                        // Another library: what this one owed YouTube isn't its.
+                        this.store.account.yt.forget_account();
+                        this.forget_queued_ratings();
+                        this.refresh_google_accounts(cx);
+                        this.request_sync(Trigger::AccountSwitch, cx);
                     }
                     None => {
                         // The list may be out of date (an account signed out since).
@@ -480,20 +497,36 @@ impl MusicApp {
         cx.notify();
     }
 
-    /// Copies the account's library into the local database.
+    /// "Sync now": copies the account's library into the local database.
     pub fn sync_youtube_library(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        if self.store.account.is_syncing() {
-            return;
-        }
-        let (Some(auth), Some(library)) = (self.store.account.auth(), self.store.library.clone())
-        else {
+        self.sync_youtube(Trigger::Manual, window, cx);
+    }
+
+    /// An explicit sync (`Trigger::Manual`, `Trigger::ManualLiked`).
+    pub fn sync_youtube(&mut self, trigger: Trigger, window: &mut Window, cx: &mut Context<Self>) {
+        if !self.store.account.is_signed_in() || self.store.library.is_none() {
             notify(window, cx, t!("account.sign_in_first"));
             return;
-        };
+        }
         // Accounts may have been added to / removed from the login since.
         self.refresh_google_accounts(cx);
-        let progress = Arc::new(Mutex::new(String::from(t!("account.sync.starting"))));
-        self.store.account.sync = Busy::Working(t!("account.sync.starting").into());
+        self.request_sync(trigger, cx);
+        cx.notify();
+    }
+
+    /// Runs `req` (already marked running by the schedule) in the background.
+    pub(crate) fn run_sync(&mut self, req: SyncRequest, cx: &mut Context<Self>) {
+        let (Some(auth), Some(library)) = (self.store.account.auth(), self.store.library.clone())
+        else {
+            self.sync_finished(cx);
+            return;
+        };
+        let start = match req.kind {
+            SyncKind::Full => t!("account.sync.starting"),
+            SyncKind::Liked => t!("account.sync.step.liked"),
+        };
+        let progress = Arc::new(Mutex::new(String::from(start)));
+        self.store.account.sync = Busy::Working(start.into());
         let shared = progress.clone();
         let executor = cx.background_executor().clone();
         let ticker = cx.spawn(async move |this, cx| {
@@ -516,61 +549,110 @@ impl MusicApp {
                 }
             }
         });
-        cx.spawn_in(window, async move |this, cx| {
+        let cookie = auth.cookie.clone();
+        cx.spawn(async move |this, cx| {
             let report = off_thread(move || {
                 let it = InnerTube::default().with_auth(auth);
-                sync_library(&library, &it, &|step| {
+                sync_library(&library, &it, req, &|step| {
                     *shared.lock().unwrap_or_else(|e| e.into_inner()) = step.to_owned();
                 })
             })
             .await;
             drop(ticker);
-            this.update_in(cx, |this, window, cx| {
-                let summary = report.summary();
-                this.store.account.sync = if report.errors.is_empty() {
-                    Busy::Done(summary.clone())
-                } else {
-                    Busy::Failed(t!(
-                        "account.sync.failed",
-                        summary = summary,
-                        errors = report.errors.join("; ")
-                    ))
-                };
-                if report.errors.len() < 5 {
-                    let now = now_ms();
-                    if let Some(config) = &mut this.store.account.config {
-                        config.last_sync_at = Some(now);
+            let toast = this
+                .update(cx, |this, cx| {
+                    let summary = report.summary(req.kind);
+                    // Signed out (or another login) meanwhile: the account's state isn't
+                    // this result's.
+                    let same_login = this
+                        .store
+                        .account
+                        .auth()
+                        .is_some_and(|a| a.cookie == cookie);
+                    if same_login {
+                        this.store.account.sync = if report.errors.is_empty() {
+                            Busy::Done(summary.clone())
+                        } else {
+                            Busy::Failed(t!(
+                                "account.sync.failed",
+                                summary = summary,
+                                errors = report.errors.join("; ")
+                            ))
+                        };
+                        this.save_sync_times(req.kind, &report, cx);
                     }
-                    this.settings.update(cx, |panel, cx| {
-                        panel.update_library(
-                            |l| {
-                                if let Some(a) = &mut l.account {
-                                    a.last_sync_at = Some(now)
-                                }
-                            },
-                            cx,
-                        )
-                    });
-                }
-                // Liked flags for the hearts.
-                this.reload_liked_flags();
-                notify(window, cx, t!("account.toast.synced", summary = summary));
-                this.library_changed(cx);
-            })
-            .ok();
+                    // Hearts and thumbs everywhere.
+                    this.reload_liked_flags();
+                    this.library_changed(cx);
+                    let announce = this.sync_finished(cx);
+                    (announce && same_login).then(|| t!("account.toast.synced", summary = summary))
+                })
+                .ok()
+                .flatten();
+            if let Some(message) = toast {
+                cx.update(|cx| {
+                    crate::actions::with_main_window(cx, move |_, window, cx| {
+                        notify(window, cx, message)
+                    })
+                });
+            }
         })
         .detach();
         cx.notify();
     }
 
-    pub(crate) fn reload_liked_flags(&mut self) {
+    /// Remembers when the library / the liked songs were last synced (a sync with a
+    /// few failed parts still counts; one where the liked songs failed doesn't for them).
+    fn save_sync_times(&mut self, kind: SyncKind, report: &SyncReport, cx: &mut Context<Self>) {
+        let now = now_ms();
+        let full = kind == SyncKind::Full && report.errors.len() < 5;
+        let liked = report.liked_ok;
+        if !full && !liked {
+            return;
+        }
+        let apply = |a: &mut AccountConfig| {
+            if full {
+                a.last_sync_at = Some(now);
+            }
+            if liked {
+                a.last_liked_sync_at = Some(now);
+            }
+        };
+        if let Some(config) = &mut self.store.account.config {
+            apply(config);
+        }
+        self.settings.update(cx, |panel, cx| {
+            panel.update_library(
+                |l| {
+                    if let Some(a) = &mut l.account {
+                        apply(a)
+                    }
+                },
+                cx,
+            )
+        });
+    }
+
+    /// Drops the ratings still owed to YouTube (sign-out, another account).
+    fn forget_queued_ratings(&mut self) {
         if let Some(lib) = &self.store.library
-            && let Ok(songs) = lib.songs(&SongQuery {
+            && let Err(e) = lib.clear_pending_ratings()
+        {
+            eprintln!("music-gpui: clearing queued ratings: {e}");
+        }
+    }
+
+    pub(crate) fn reload_liked_flags(&mut self) {
+        if let Some(lib) = &self.store.library {
+            if let Ok(songs) = lib.songs(&SongQuery {
                 scope: SongScope::Liked,
                 ..Default::default()
-            })
-        {
-            crate::store::replace_liked(songs.into_iter().map(|s| s.track.video_id).collect());
+            }) {
+                crate::store::replace_liked(songs.into_iter().map(|s| s.track.video_id).collect());
+            }
+            if let Ok(ids) = lib.disliked_ids() {
+                crate::store::replace_disliked(ids);
+            }
         }
     }
 
@@ -613,9 +695,13 @@ impl MusicApp {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 struct SyncReport {
     liked: usize,
+    /// The liked songs were synced.
+    liked_ok: bool,
+    /// Local likes removed because YouTube no longer lists them.
+    unliked: usize,
     songs: usize,
     albums: usize,
     artists: usize,
@@ -624,7 +710,10 @@ struct SyncReport {
 }
 
 impl SyncReport {
-    fn summary(&self) -> String {
+    fn summary(&self, kind: SyncKind) -> String {
+        if kind == SyncKind::Liked {
+            return tp!("account.sync.liked", self.liked);
+        }
         t!(
             "account.sync.summary",
             liked = tp!("account.sync.liked", self.liked),
@@ -680,8 +769,18 @@ fn playlist_rows(it: &InnerTube, playlist_id: &str) -> Result<(bool, Option<Stri
 
 /// Port of ArchiveTune's `SyncUtils`: YouTube is the source of truth for liked songs,
 /// saved albums, subscriptions and playlists; local-only items (local files, local
-/// playlists, artists without a channel) are left alone.
-fn sync_library(lib: &Library, it: &InnerTube, progress: &dyn Fn(&str)) -> SyncReport {
+/// playlists, artists without a channel) are left alone. `SyncKind::Liked` stops
+/// after the liked songs.
+///
+/// Ratings still queued for YouTube are sent first; those that stay queued (offline)
+/// win over YouTube's list. Unless `authoritative`, an empty or truncated liked list
+/// unlikes nothing (ArchiveTune: "Remote playlist is empty" → skip).
+fn sync_library(
+    lib: &Library,
+    it: &InnerTube,
+    req: SyncRequest,
+    progress: &dyn Fn(&str),
+) -> SyncReport {
     let mut report = SyncReport::default();
     let now = now_ms();
     let fail = |what: &str, e: music_core::Error, report: &mut SyncReport| {
@@ -691,11 +790,14 @@ fn sync_library(lib: &Library, it: &InnerTube, progress: &dyn Fn(&str)) -> SyncR
     };
 
     progress(t!("account.sync.step.liked"));
+    if let Err(e) = lib.push_pending_ratings(it, 200) {
+        eprintln!("music-gpui: queued ratings: {e}");
+    }
     match it.liked_songs().and_then(|mut page| {
         let mut tracks: Vec<Track> = page.tracks.drain(..).map(|e| e.track).collect();
         let mut continuation = page.continuation.take();
         let mut pages = 1;
-        while let Some(token) = continuation
+        while let Some(token) = continuation.take()
             && pages < MAX_PAGES
         {
             let more = it.playlist_continuation(&token)?;
@@ -703,31 +805,23 @@ fn sync_library(lib: &Library, it: &InnerTube, progress: &dyn Fn(&str)) -> SyncR
             continuation = more.continuation;
             pages += 1;
         }
-        Ok(tracks)
+        Ok((tracks, continuation.is_none()))
     }) {
-        Ok(tracks) => {
-            let remote: HashSet<&str> = tracks.iter().map(|t| t.video_id.as_str()).collect();
-            let result = (|| {
-                for (i, track) in tracks.iter().enumerate() {
-                    lib.set_liked_at(track, Some(now - i as i64))?;
-                }
-                let local = lib.songs(&SongQuery {
-                    scope: SongScope::Liked,
-                    ..Default::default()
-                })?;
-                for song in local {
-                    if !song.track.is_local() && !remote.contains(song.track.video_id.as_str()) {
-                        lib.unlike(&song.track.video_id)?;
-                    }
-                }
-                Ok::<_, music_core::Error>(())
-            })();
+        Ok((tracks, complete)) => {
+            let result = apply_liked(lib, &tracks, complete, req.authoritative, now);
             match result {
-                Ok(()) => report.liked = tracks.len(),
+                Ok(unliked) => {
+                    report.liked = tracks.len();
+                    report.unliked = unliked;
+                    report.liked_ok = true;
+                }
                 Err(e) => fail(t!("account.sync.part.liked"), e, &mut report),
             }
         }
         Err(e) => fail(t!("account.sync.part.liked"), e, &mut report),
+    }
+    if req.kind == SyncKind::Liked {
+        return report;
     }
 
     progress(t!("account.sync.step.songs"));
@@ -887,6 +981,43 @@ fn sync_library(lib: &Library, it: &InnerTube, progress: &dyn Fn(&str)) -> SyncR
         Err(e) => fail(t!("account.sync.part.playlists"), e, &mut report),
     }
     report
+}
+
+/// Makes the local likes YouTube's `remote` list (newest first). Returns how many
+/// local likes were removed. A rating still queued for YouTube is kept as it is;
+/// local files keep their likes; with an empty (and not `authoritative`) or
+/// incomplete list nothing is unliked.
+fn apply_liked(
+    lib: &Library,
+    remote: &[Track],
+    complete: bool,
+    authoritative: bool,
+    now: i64,
+) -> Result<usize> {
+    let pending = lib.pending_rating_map()?;
+    let waiting = |id: &str| pending.contains_key(id);
+    for (i, track) in remote.iter().enumerate() {
+        if !waiting(&track.video_id) {
+            lib.set_liked_at(track, Some(now - i as i64))?;
+        }
+    }
+    if !complete || (remote.is_empty() && !authoritative) {
+        return Ok(0);
+    }
+    let ids: HashSet<&str> = remote.iter().map(|t| t.video_id.as_str()).collect();
+    let local = lib.songs(&SongQuery {
+        scope: SongScope::Liked,
+        ..Default::default()
+    })?;
+    let mut unliked = 0;
+    for song in local {
+        let id = song.track.video_id.as_str();
+        if !song.track.is_local() && !ids.contains(id) && !waiting(id) {
+            lib.unlike(id)?;
+            unliked += 1;
+        }
+    }
+    Ok(unliked)
 }
 
 #[cfg(test)]
@@ -1153,12 +1284,174 @@ mod tests {
         assert!(refresh_account_on(InnerTube::default().with_api_base(&none), saved(0)).is_err());
     }
 
+    fn song(id: &str) -> Track {
+        Track {
+            video_id: id.into(),
+            title: format!("Song {id}"),
+            artists: "Artist".into(),
+            ..Track::default()
+        }
+    }
+
+    fn liked_ids(lib: &Library) -> Vec<String> {
+        let mut ids: Vec<String> = lib
+            .songs(&SongQuery {
+                scope: SongScope::Liked,
+                ..Default::default()
+            })
+            .unwrap()
+            .into_iter()
+            .map(|s| s.track.video_id)
+            .collect();
+        ids.sort();
+        ids
+    }
+
+    /// YouTube's liked list wins, except over queued ratings, local files, and
+    /// (unless authoritative) an empty or truncated list.
+    #[test]
+    fn liked_songs_follow_youtube_with_guards() {
+        use music_core::innertube::Rating;
+        let lib = Library::open_in_memory().unwrap();
+        for id in ["stale", "kept-offline"] {
+            lib.like(&song(id)).unwrap();
+        }
+        let mut file = song("file");
+        file.local_path = Some("/music/file.mp3".into());
+        lib.like(&file).unwrap();
+        // Unliked here while offline; YouTube still lists it.
+        lib.unlike("queued-unlike").unwrap();
+        lib.queue_rating("queued-unlike", Rating::Indifferent)
+            .unwrap();
+        // Liked here while offline; YouTube doesn't list it yet.
+        lib.queue_rating("kept-offline", Rating::Like).unwrap();
+        // Disliked here earlier, liked on the phone since.
+        lib.set_rating(&song("was-disliked"), Rating::Dislike)
+            .unwrap();
+
+        let remote: Vec<Track> = ["new", "queued-unlike", "was-disliked"]
+            .into_iter()
+            .map(song)
+            .collect();
+        // Truncated list: likes are added, none removed.
+        assert_eq!(apply_liked(&lib, &remote, false, false, 100).unwrap(), 0);
+        assert!(liked_ids(&lib).contains(&"stale".to_owned()));
+        // Complete list: "stale" goes; the file and the queued ratings stay as they are.
+        assert_eq!(apply_liked(&lib, &remote, true, false, 100).unwrap(), 1);
+        assert_eq!(
+            liked_ids(&lib),
+            ["file", "kept-offline", "new", "was-disliked"]
+        );
+        assert_eq!(lib.rating("was-disliked").unwrap(), Rating::Like);
+        assert_eq!(lib.rating("queued-unlike").unwrap(), Rating::Indifferent);
+        // Newest first: the first remote song gets the latest time.
+        let at = |id| lib.song(id).unwrap().unwrap().liked_at.unwrap();
+        assert!(at("new") > at("was-disliked"));
+
+        // An empty answer from an automatic sync unlikes nothing; asked for, it does.
+        assert_eq!(apply_liked(&lib, &[], true, false, 200).unwrap(), 0);
+        assert_eq!(liked_ids(&lib).len(), 4);
+        assert_eq!(apply_liked(&lib, &[], true, true, 200).unwrap(), 2);
+        assert_eq!(liked_ids(&lib), ["file", "kept-offline"]);
+    }
+
+    /// A liked-songs-only sync against a fake music.youtube.com: queued ratings go
+    /// first, then `VLLM` is mirrored; nothing else is requested.
+    #[test]
+    fn liked_only_sync_from_a_fake_server() {
+        use std::io::{BufRead, BufReader, Read, Write};
+        use std::sync::{Arc, Mutex};
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let base = format!("http://{}", listener.local_addr().unwrap());
+        let seen = Arc::new(Mutex::new(Vec::<String>::new()));
+        let log = seen.clone();
+        std::thread::spawn(move || {
+            for mut stream in listener.incoming().flatten() {
+                let mut reader = BufReader::new(stream.try_clone().unwrap());
+                let mut line = String::new();
+                reader.read_line(&mut line).unwrap();
+                let path = line.split_whitespace().nth(1).unwrap_or("/").to_owned();
+                let mut len = 0usize;
+                loop {
+                    let mut header = String::new();
+                    if reader.read_line(&mut header).unwrap_or(0) == 0 || header.trim().is_empty() {
+                        break;
+                    }
+                    if let Some(v) = header.to_ascii_lowercase().strip_prefix("content-length:") {
+                        len = v.trim().parse().unwrap_or(0);
+                    }
+                }
+                let mut body = vec![0; len];
+                let _ = reader.read_exact(&mut body);
+                let body: serde_json::Value = serde_json::from_slice(&body).unwrap_or_default();
+                let endpoint = path
+                    .trim_start_matches("/youtubei/v1/")
+                    .split('?')
+                    .next()
+                    .unwrap_or_default()
+                    .to_owned();
+                let what = match endpoint.as_str() {
+                    "browse" => format!("browse {}", body["browseId"].as_str().unwrap_or("?")),
+                    other => format!(
+                        "{other} {}",
+                        body["target"]["videoId"].as_str().unwrap_or("?")
+                    ),
+                };
+                log.lock().unwrap().push(what.clone());
+                let (status, json) = match what.as_str() {
+                    "browse VLLM" => (200, fixture("liked_songs")),
+                    w if w.starts_with("like/") => (200, "{}".to_owned()),
+                    _ => (404, "{}".to_owned()),
+                };
+                let _ = write!(
+                    stream,
+                    "HTTP/1.1 {status} X\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{json}",
+                    json.len()
+                );
+            }
+        });
+        let it = InnerTube::default()
+            .with_api_base(&base)
+            .with_auth(Auth::new(COOKIE));
+        let lib = Library::open_in_memory().unwrap();
+        lib.like(&song("gone-from-youtube")).unwrap();
+        lib.queue_rating("offline-dislike", music_core::innertube::Rating::Dislike)
+            .unwrap();
+        let req = SyncRequest {
+            kind: SyncKind::Liked,
+            authoritative: false,
+            announce: false,
+        };
+        let report = sync_library(&lib, &it, req, &|_| {});
+        assert!(report.errors.is_empty(), "{:?}", report.errors);
+        assert!(report.liked_ok);
+        assert_eq!((report.liked, report.unliked), (2, 1));
+        assert_eq!(liked_ids(&lib), ["5NV6Rdv1a3I", "khnokW3Mw24"]);
+        assert!(lib.pending_ratings().unwrap().is_empty(), "delivered");
+        assert_eq!(
+            *seen.lock().unwrap(),
+            ["like/dislike offline-dislike", "browse VLLM"]
+        );
+    }
+
     /// Syncing against an anonymous client fails cleanly for every step.
     #[test]
     fn sync_without_cookie_reports_errors() {
         let lib = Library::open_in_memory().unwrap();
-        let report = sync_library(&lib, &InnerTube::default(), &|_| {});
+        let full = SyncRequest {
+            kind: SyncKind::Full,
+            authoritative: true,
+            announce: true,
+        };
+        let report = sync_library(&lib, &InnerTube::default(), full, &|_| {});
         assert_eq!(report.errors.len(), 5, "{:?}", report.errors);
         assert_eq!(report.liked, 0);
+        assert!(!report.liked_ok);
+        let liked = SyncRequest {
+            kind: SyncKind::Liked,
+            ..full
+        };
+        let report = sync_library(&lib, &InnerTube::default(), liked, &|_| {});
+        assert_eq!(report.errors.len(), 1, "only the liked songs");
     }
 }

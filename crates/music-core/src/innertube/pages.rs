@@ -8,7 +8,7 @@ use super::models::{
     ChartCountry, ChartsPage, Episode, EpisodePage, ExplorePage, HomePage, Item, LyricsText,
     MoodCategory, MoodsPage, PlaylistContinuation, PlaylistEntry, PlaylistPage, PlaylistSummary,
     PodcastContinuation, PodcastPage, PodcastSummary, QueueChip, RelatedPage, SearchCorrection,
-    SearchResults, SearchSuggestions, SearchSummary, Shelf, WatchQueue,
+    SearchResults, SearchSuggestions, SearchSummary, Shelf, VideoRating, WatchQueue,
 };
 use super::parse::{
     PAGE_PODCAST, analyze_runs, arr_at, browse_target, card_item, continuation_item_token,
@@ -976,6 +976,51 @@ pub(crate) fn search_suggestions(resp: &Value) -> SearchSuggestions {
 
 // ---------------------------------------------------------------- next / related / lyrics
 
+/// The current video's like button in a `next` response (`playerOverlays`), with the
+/// video it belongs to (its `target`, else `currentVideoEndpoint`).
+pub(crate) fn like_status(resp: &Value) -> Option<VideoRating> {
+    let current = resp
+        .pointer("/currentVideoEndpoint/watchEndpoint/videoId")
+        .and_then(Value::as_str);
+    arr_at(resp, "/playerOverlays/playerOverlayRenderer/actions")
+        .iter()
+        .filter_map(|a| a.get("likeButtonRenderer"))
+        .find_map(|b| {
+            let rating =
+                super::Rating::from_like_status(b.get("likeStatus").and_then(Value::as_str)?)?;
+            let video_id = b
+                .pointer("/target/videoId")
+                .and_then(Value::as_str)
+                .or(current)?;
+            Some(VideoRating {
+                video_id: video_id.to_owned(),
+                rating,
+            })
+        })
+}
+
+/// `responseContext.serviceTrackingParams` → `GFEEDBACK` → `logged_in` (`"1"` / `"0"`).
+pub(crate) fn logged_in(resp: &Value) -> Option<bool> {
+    arr_at(resp, "/responseContext/serviceTrackingParams")
+        .iter()
+        .filter(|s| s.get("service").and_then(Value::as_str) == Some("GFEEDBACK"))
+        .flat_map(|s| arr_at(s, "/params"))
+        .find(|p| p.get("key").and_then(Value::as_str) == Some("logged_in"))
+        .and_then(|p| match p.get("value")?.as_str()? {
+            "1" => Some(true),
+            "0" => Some(false),
+            _ => None,
+        })
+}
+
+/// A queue row's like button (`menu.menuRenderer.topLevelButtons`), when it has one.
+fn row_rating(row: &Value) -> Option<super::Rating> {
+    arr_at(row, "/menu/menuRenderer/topLevelButtons")
+        .iter()
+        .find_map(|b| b.pointer("/likeButtonRenderer/likeStatus")?.as_str())
+        .and_then(super::Rating::from_like_status)
+}
+
 pub(crate) fn watch_queue(resp: &Value) -> Result<WatchQueue> {
     let tabs = arr_at(
         resp,
@@ -1007,6 +1052,8 @@ pub(crate) fn watch_queue(resp: &Value) -> Result<WatchQueue> {
         lyrics: tab_target("MUSIC_PAGE_TYPE_TRACK_LYRICS"),
         related: tab_target("MUSIC_PAGE_TYPE_TRACK_RELATED"),
         continuation: continuation_of(panel),
+        ratings: like_status(resp).into_iter().collect(),
+        logged_in: logged_in(resp),
         ..WatchQueue::default()
     };
     for row in arr_at(panel, "/contents") {
@@ -1020,6 +1067,14 @@ pub(crate) fn watch_queue(resp: &Value) -> Result<WatchQueue> {
             if let Some((track, set_id)) = parse_panel_video(r) {
                 if r.get("selected").and_then(Value::as_bool) == Some(true) {
                     out.current_index = Some(out.tracks.len());
+                }
+                if let Some(rating) = row_rating(r)
+                    && out.ratings.iter().all(|v| v.video_id != track.video_id)
+                {
+                    out.ratings.push(VideoRating {
+                        video_id: track.video_id.clone(),
+                        rating,
+                    });
                 }
                 out.tracks.push(track);
                 out.set_video_ids.push(set_id);

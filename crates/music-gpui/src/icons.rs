@@ -112,7 +112,13 @@ pub enum AppIcon {
     Muted,
     /// Filled heart (liked); the outline is `Lucide::Heart`.
     HeartFilled,
+    /// Filled thumbs down (disliked); the outline is `Lucide::ThumbsDown`.
+    ThumbsDownFilled,
 }
+
+/// Lucide's thumbs down, filled.
+const THUMBS_DOWN_FILLED_PATH: &str = "icons/app-thumbs-down-filled.svg";
+const THUMBS_DOWN_FILLED_SVG: &[u8] = br#"<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z"/></svg>"#;
 
 /// Lucide's heart, filled.
 const HEART_FILLED_PATH: &str = "icons/app-heart-filled.svg";
@@ -127,6 +133,7 @@ impl IconNamed for AppIcon {
             AppIcon::VolumeLow => Lucide::Volume1,
             AppIcon::Muted => Lucide::VolumeX,
             AppIcon::HeartFilled => return HEART_FILLED_PATH.into(),
+            AppIcon::ThumbsDownFilled => return THUMBS_DOWN_FILLED_PATH.into(),
         }
         .path()
     }
@@ -139,6 +146,9 @@ impl AssetSource for Assets {
     fn load(&self, path: &str) -> gpui::Result<Option<Cow<'static, [u8]>>> {
         if path == HEART_FILLED_PATH {
             return Ok(Some(Cow::Borrowed(HEART_FILLED_SVG)));
+        }
+        if path == THUMBS_DOWN_FILLED_PATH {
+            return Ok(Some(Cow::Borrowed(THUMBS_DOWN_FILLED_SVG)));
         }
         match ExtraIcons.load(path)? {
             Some(bytes) => Ok(Some(bytes)),

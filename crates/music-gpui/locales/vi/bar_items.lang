@@ -4,6 +4,7 @@ bar_items.title = Hiện trên thanh
 bar_items.reset = Đặt lại
 bar_items.note = Mục bị ẩn không để lại khoảng trống. Ở cửa sổ hẹp, các nút ít quan trọng vẫn ẩn trước; phiên truyền đang chạy hoặc hẹn giờ ngủ đang bật vẫn hiện để bạn có thể dừng. Trình phát mini giữ các nút riêng.
 bar_items.item.like = Thích
+bar_items.item.dislike = Không thích
 bar_items.item.quality_tag = Nguồn và chất lượng
 bar_items.item.shuffle = Trộn bài
 bar_items.item.repeat = Lặp lại

@@ -217,8 +217,12 @@ store.toast.liked_many.one = Liked {count} song
 store.toast.liked_many.other = Liked {count} songs
 store.toast.unliked_many.one = Removed {count} song from liked songs
 store.toast.unliked_many.other = Removed {count} songs from liked songs
-# Saved in the local library but YouTube Music refused. {message} is one of the toasts above.
-store.toast.only_locally = {message} (only locally; YouTube Music: {error})
+# {title} is a song title (thumbs down, and taking it back).
+store.toast.disliked_one = Disliked “{title}”
+store.toast.undisliked_one = Removed the dislike from “{title}”
+# Saved in the local library; YouTube Music failed, the like / dislike is retried
+# later. {message} is one of the toasts above, {error} a technical message (English).
+store.toast.rating_queued = {message} (saved here; YouTube Music didn't answer, retrying later: {error})
 store.toast.removed_from_library.one = Removed {count} song from the library
 store.toast.removed_from_library.other = Removed {count} songs from the library
 # {playlist} is the playlist's name.

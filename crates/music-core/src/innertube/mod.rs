@@ -406,6 +406,15 @@ impl InnerTube {
     }
 }
 
+/// Whether a like button's `rating` can be believed (see [`WatchQueue::trusted_ratings`]).
+pub(crate) fn trusted_rating(rating: Rating, logged_in: Option<bool>) -> bool {
+    match logged_in {
+        Some(false) => false,
+        Some(true) => true,
+        None => rating != Rating::Indifferent,
+    }
+}
+
 /// "Did you mean" carries no original query; it is the one sent.
 fn with_original(mut summary: SearchSummary, query: &str) -> SearchSummary {
     if let Some(c) = &mut summary.correction

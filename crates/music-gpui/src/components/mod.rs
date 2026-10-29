@@ -19,6 +19,7 @@ pub mod artwork;
 pub mod bar_fx;
 pub mod bar_menu;
 pub mod card;
+pub mod dislike;
 pub mod download_header;
 pub mod items;
 pub mod like;

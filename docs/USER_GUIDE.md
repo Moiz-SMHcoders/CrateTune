@@ -242,6 +242,33 @@ browser's cookie (the sign-in window keeps only the first account). **Channels**
 accounts) of the Google account in use are listed below it and are separate from this.
 If a switch fails, CrateTune stays on the account you had and tells you why.
 
+### Likes and YouTube
+
+Signed in, the heart and YouTube Music's thumbs up are the same thing, both ways:
+
+* **Liking here** likes the song on YouTube Music (and adds it to your library). If
+  YouTube Music can't be reached, the like is kept here and sent later (every few
+  minutes, and before each sync) — the toast says so.
+* **Liked elsewhere** (phone, browser, ArchiveTune) shows up here by itself: CrateTune
+  syncs your liked songs when it starts (unless it just did), every 45 minutes, when you
+  come back to the window after a while and when you open the Liked tab; the whole
+  library every 6 hours, and right after signing in or switching account. A song you
+  play also asks YouTube Music for its like or dislike a few seconds in, so a song liked
+  on your phone shows the filled heart as soon as you play it.
+* **Unliked elsewhere**: the next sync removes it from Liked songs. YouTube Music is the
+  source of truth; your local files keep their likes.
+* **Dislike** (thumbs down): in a song's menu, beside the heart on Now Playing (Split
+  design), and as an optional player-bar button (Settings → Player bar). It dislikes the
+  song on YouTube Music, removes a like, skips the song if it is playing (turn off with
+  **Skip songs you dislike**), and keeps it out of radio and autoplay. Choose **Remove
+  dislike** to take it back. YouTube Music has no list of disliked songs, so dislikes made
+  elsewhere arrive when you play the song.
+* The Liked tab shows when your likes were last synced, with a **Sync now** button.
+  Settings → Account → **Sync with YouTube Music automatically** (on by default) turns
+  the background syncs off; **Sync now**, signing in and switching account still sync.
+
+This was built against YouTube Music's web API but not yet tried with a real account.
+
 ## Settings
 
 ⌘, or the sidebar.

@@ -30,6 +30,12 @@ pub struct LibraryConfig {
     pub account: Option<AccountConfig>,
     /// Downloading liked songs (Storage → Downloads).
     pub downloads: DownloadPrefs,
+    /// Sync with YouTube Music in the background (at start, every while, on focus,
+    /// and each played song's like from YouTube). ArchiveTune's `YtmSyncKey`, on by
+    /// default. Off: only "Sync now", sign-in and account switches sync.
+    pub auto_sync: bool,
+    /// Disliking the playing song skips to the next one (as in YouTube Music).
+    pub skip_disliked: bool,
 }
 
 /// Automatic downloads of liked songs (ArchiveTune's "auto download on like").
@@ -54,6 +60,8 @@ impl Default for LibraryConfig {
             local_min_secs: 30,
             account: None,
             downloads: DownloadPrefs::default(),
+            auto_sync: true,
+            skip_disliked: true,
         }
     }
 }
@@ -86,6 +94,8 @@ pub struct AccountConfig {
     pub data_sync_id: Option<String>,
     /// Last successful library sync (Unix ms).
     pub last_sync_at: Option<i64>,
+    /// Last successful sync of the liked songs, alone or as part of a full sync.
+    pub last_liked_sync_at: Option<i64>,
 }
 
 #[cfg(test)]
@@ -106,6 +116,10 @@ mod tests {
         assert!(c.downloads.auto_download_liked && !c.downloads.remove_when_unliked);
         let c: LibraryConfig = serde_json::from_str("{}").unwrap();
         assert_eq!(c, LibraryConfig::default());
+        // Older files: syncing automatically and skipping dislikes start on.
+        assert!(c.auto_sync && c.skip_disliked);
+        let c: LibraryConfig = serde_json::from_str(r#"{"auto_sync": false}"#).unwrap();
+        assert!(!c.auto_sync && c.skip_disliked);
         assert_eq!(c.cache_limit_bytes(), 512 * 1024 * 1024);
     }
 }

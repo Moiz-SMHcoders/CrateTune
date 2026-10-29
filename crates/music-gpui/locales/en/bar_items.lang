@@ -7,6 +7,8 @@ bar_items.title = Show on the bar
 bar_items.reset = Reset
 bar_items.note = Hidden items leave no gap. Narrow windows still hide the less important buttons first; a Cast session or an armed sleep timer stays visible so you can stop it. The mini player keeps its own controls.
 bar_items.item.like = Like
+# The thumbs down beside the heart (new; off by default).
+bar_items.item.dislike = Dislike
 # The small tag that says where the audio comes from, e.g. "YouTube · AAC 128 kbps".
 bar_items.item.quality_tag = Source and quality
 bar_items.item.shuffle = Shuffle
