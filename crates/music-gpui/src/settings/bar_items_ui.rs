@@ -12,7 +12,7 @@ use gpui_component::{
 
 use super::bar_items::{BarItem, BarItems};
 use super::panel::{SettingsEvent, SettingsPanel};
-use super::widgets::note;
+use super::widgets::{Anchor as _, note};
 
 impl SettingsPanel {
     pub fn bar_items(&self) -> BarItems {
@@ -50,6 +50,7 @@ pub(super) fn render(panel: &mut SettingsPanel, cx: &mut Context<SettingsPanel>)
     });
     v_flex()
         .gap_2()
+        .anchor("appearance.bar.items")
         .pt_3()
         .border_t_1()
         .border_color(cx.theme().border)

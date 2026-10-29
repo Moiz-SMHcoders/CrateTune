@@ -15,7 +15,7 @@ use gpui_component::{
 use super::SettingsPanel;
 use super::prefs::{MiniPlayerStyle, NowPlayingBackground, NowPlayingLayout};
 use super::prefs_ui::choice;
-use super::widgets::{group, note, row};
+use super::widgets::{group_at, note, row_at};
 use crate::theme::{AppColors, FONT_SCALES, ThemeChoice};
 
 pub(super) fn render(
@@ -301,9 +301,9 @@ pub(super) fn render(
     v_flex()
         .gap_5()
         .child(super::profiles_ui::render(panel, window, cx))
-        .child(group(t!("settings.language.group"), cx).child(language))
+        .child(group_at("appearance.language", t!("settings.language.group"), cx).child(language))
         .child(
-            group(t!("settings.appearance.theme"), cx)
+            group_at("appearance.theme", t!("settings.appearance.theme"), cx)
                 .child(themes)
                 .child(note(t!("settings.appearance.theme_note"), cx)),
         )
@@ -311,19 +311,24 @@ pub(super) fn render(
         .child(super::look_ui::render_app_look(panel, cx))
         .child(super::look_ui::render_effects(panel, cx))
         .child(
-            group(t!("settings.appearance.text_size"), cx)
-                .child(scales)
-                .child(
-                    div()
-                        .text_xs()
-                        .text_color(muted)
-                        .child(t!("settings.appearance.text_size_note")),
-                ),
+            group_at(
+                "appearance.text_size",
+                t!("settings.appearance.text_size"),
+                cx,
+            )
+            .child(scales)
+            .child(
+                div()
+                    .text_xs()
+                    .text_color(muted)
+                    .child(t!("settings.appearance.text_size_note")),
+            ),
         )
         .child(
-            group(t!("common.now_playing"), cx)
+            group_at("appearance.now_playing", t!("common.now_playing"), cx)
                 .child(layouts)
-                .child(row(
+                .child(row_at(
+                    "appearance.now_playing.background",
                     t!("settings.appearance.background"),
                     None,
                     backgrounds,
@@ -331,12 +336,20 @@ pub(super) fn render(
                 ))
                 .child(note(t!("settings.appearance.np_note"), cx)),
         )
-        .child(group(t!("settings.appearance.mini_player"), cx).child(row(
-            t!("settings.appearance.background"),
-            None,
-            mini,
-            cx,
-        )))
+        .child(
+            group_at(
+                "appearance.mini_player",
+                t!("settings.appearance.mini_player"),
+                cx,
+            )
+            .child(row_at(
+                "appearance.mini_player.background",
+                t!("settings.appearance.background"),
+                None,
+                mini,
+                cx,
+            )),
+        )
         .child(player_bar)
         .into_any_element()
 }

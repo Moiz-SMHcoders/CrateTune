@@ -1,0 +1,6 @@
+# ---- Settings search.
+settings_search.placeholder = 설정 검색
+settings_search.suggested = 추천
+settings_search.recent = 최근에 연 설정
+settings_search.no_results = “{query}”와(과) 일치하는 설정이 없습니다
+settings_search.no_results_hint = 더 짧은 단어나 다른 표현으로 검색해 보세요. 예: “색상”, “볼륨”, “단축키”.

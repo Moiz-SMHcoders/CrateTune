@@ -771,6 +771,18 @@ pub(super) fn choice<T: Copy + PartialEq + 'static>(
         }))
 }
 
+/// [`slider_row`] with a scroll anchor (an `anchor` of the search index).
+pub(super) fn slider_row_at(
+    id: &'static str,
+    label: &'static str,
+    value: String,
+    slider: &Entity<SliderState>,
+    cx: &gpui::App,
+) -> gpui::Div {
+    use super::widgets::Anchor as _;
+    slider_row(label, value, slider, cx).anchor(id)
+}
+
 /// Label, slider and the formatted value on one line.
 pub(super) fn slider_row(
     label: &'static str,

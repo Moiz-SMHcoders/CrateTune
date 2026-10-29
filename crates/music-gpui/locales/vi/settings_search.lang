@@ -1,0 +1,6 @@
+# ---- Settings search.
+settings_search.placeholder = Tìm trong cài đặt
+settings_search.suggested = Gợi ý
+settings_search.recent = Mở gần đây
+settings_search.no_results = Không có cài đặt nào khớp với “{query}”
+settings_search.no_results_hint = Hãy thử một từ ngắn hơn hoặc tên khác, ví dụ “màu”, “âm lượng” hoặc “phím tắt”.

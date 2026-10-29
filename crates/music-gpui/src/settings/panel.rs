@@ -17,8 +17,8 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use gpui::{
-    AppContext as _, Context, Entity, EventEmitter, FontWeight, InteractiveElement as _,
-    IntoElement, ParentElement as _, Render, ScrollHandle, SharedString,
+    AppContext as _, Context, Entity, EventEmitter, FocusHandle, FontWeight,
+    InteractiveElement as _, IntoElement, ParentElement as _, Render, ScrollHandle, SharedString,
     StatefulInteractiveElement as _, Styled as _, Subscription, Task, Window, div,
     prelude::FluentBuilder as _, px,
 };
@@ -35,6 +35,9 @@ use music_core::{EqPreset, EqualizerSettings};
 
 use super::file::{self, EQ_RANGE_DB, Settings, WindowGeometry};
 use super::prefs_ui::PrefsUi;
+use super::reveal;
+use super::search_index::{Entry, Kind};
+use super::search_ui::{SearchEvent, SettingsSearch};
 use super::{SECTIONS, SectionId};
 use crate::queue::Repeat;
 use crate::secrets::{self, Backend, Secret, Stored};
@@ -185,6 +188,11 @@ pub struct SettingsPanel {
     pub(super) profiles: super::profiles::ProfileStore,
     /// Keyboard shortcuts section (recording, conflict prompt).
     pub(super) shortcuts_ui: super::shortcuts_ui::ShortcutsUi,
+    /// The search field at the top of the sidebar (`search_ui.rs`).
+    search: Entity<SettingsSearch>,
+    /// A tab stop put on a revealed row, so focus can move on to its control.
+    reveal_focus: FocusHandle,
+    reveal_task: Option<Task<()>>,
     _subscriptions: Vec<Subscription>,
 }
 
@@ -311,6 +319,14 @@ impl SettingsPanel {
         let (theme_ui, theme_subscriptions) =
             super::theme_ui::ThemeUi::new(&settings.custom_theme, window, cx);
         subscriptions.extend(theme_subscriptions);
+        let search = cx.new(|cx| SettingsSearch::new(window, cx));
+        subscriptions.push(cx.subscribe_in(
+            &search,
+            window,
+            |this, _, event: &SearchEvent, window, cx| match event {
+                SearchEvent::Pick(entry) => this.reveal(entry, window, cx),
+            },
+        ));
         subscriptions.push(cx.on_app_quit(|this, _| {
             this.flush();
             async {}
@@ -355,6 +371,9 @@ impl SettingsPanel {
             theme_ui,
             profiles,
             shortcuts_ui: Default::default(),
+            search,
+            reveal_focus: cx.focus_handle().tab_stop(true),
+            reveal_task: None,
             _subscriptions: subscriptions,
         };
         // Before any page loads (the password, if any, follows once read).
@@ -484,6 +503,181 @@ impl SettingsPanel {
 
     pub fn scroll_handle(&self) -> ScrollHandle {
         self.scroll.clone()
+    }
+
+    // ---- search ------------------------------------------------------------------
+
+    /// The settings search field has the keyboard focus.
+    pub fn search_focused(&self, window: &Window, cx: &gpui::App) -> bool {
+        self.search.read(cx).is_focused(window, cx)
+    }
+
+    /// ⌘F / Ctrl+F while the settings page shows.
+    pub fn focus_search(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        self.search.update(cx, |s, cx| s.focus(window, cx));
+    }
+
+    /// `@settings-search=QUERY`: the ranked results as text.
+    pub fn script_search(
+        &mut self,
+        query: &str,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Vec<String> {
+        self.search
+            .update(cx, |s, cx| s.script_query(query, window, cx))
+    }
+
+    /// `@settings-search-pick=N`.
+    pub fn script_search_pick(&mut self, index: usize, cx: &mut Context<Self>) -> bool {
+        self.search.update(cx, |s, cx| s.script_pick(index, cx))
+    }
+
+    /// `@settings-anchors`: shows every section in turn and prints the index
+    /// entries whose rows it didn't draw (and the anchor a reveal falls back to).
+    pub fn audit_anchors(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let executor = cx.background_executor().clone();
+        let start = self.section;
+        cx.spawn_in(window, async move |this, cx| {
+            let (mut drawn_total, mut hidden_total) = (0, 0);
+            for section in SECTIONS.iter().map(|s| s.id) {
+                let ok = this.update(cx, |this, cx| {
+                    this.show_section(section, cx);
+                    // The whole section, not just what's in view.
+                    reveal::start_audit();
+                    cx.notify();
+                });
+                if ok.is_err() {
+                    return;
+                }
+                executor.timer(Duration::from_millis(250)).await;
+                let drawn = reveal::take_audit();
+                let mut hidden = Vec::new();
+                let entries = super::search_index::all()
+                    .iter()
+                    .filter(|e| e.section == section && e.kind == Kind::Setting);
+                let mut count = 0;
+                for entry in entries {
+                    count += 1;
+                    if drawn.contains(&entry.anchor) {
+                        continue;
+                    }
+                    let mut fallback = entry.anchor;
+                    while let Some((parent, _)) = fallback.rsplit_once('.') {
+                        fallback = parent;
+                        if drawn.contains(&fallback) {
+                            break;
+                        }
+                    }
+                    hidden.push(format!("{} → {fallback}", entry.anchor));
+                }
+                drawn_total += count - hidden.len();
+                hidden_total += hidden.len();
+                eprintln!(
+                    "music-gpui: anchors {}: {}/{count} drawn{}",
+                    section.key(),
+                    count - hidden.len(),
+                    if hidden.is_empty() {
+                        String::new()
+                    } else {
+                        format!("; not shown now: {}", hidden.join(", "))
+                    }
+                );
+            }
+            eprintln!("music-gpui: anchors: {drawn_total} drawn, {hidden_total} not shown now");
+            this.update(cx, |this, cx| {
+                this.show_section(start, cx);
+                cx.emit(SettingsEvent::Section(start));
+            })
+            .ok();
+        })
+        .detach();
+    }
+
+    /// Opens a search result's section, scrolls its row into view, flashes it
+    /// and moves the focus to its control (see `reveal.rs`).
+    fn reveal(&mut self, entry: &'static Entry, window: &mut Window, cx: &mut Context<Self>) {
+        self.show_section(entry.section, cx);
+        cx.emit(SettingsEvent::Section(entry.section));
+        if entry.kind == Kind::Section {
+            reveal::cancel();
+            self.scroll.set_offset(gpui::point(px(0.), px(0.)));
+            cx.notify();
+            return;
+        }
+        let color = crate::theme::AppColors::get(cx).accent.alpha(0.2);
+        let animate = crate::effects::motion() == crate::effects::Motion::Full;
+        reveal::start(
+            entry.anchor,
+            self.scroll.clone(),
+            self.reveal_focus.clone(),
+            color,
+            animate,
+        );
+        cx.notify();
+        let executor = cx.background_executor().clone();
+        self.reveal_task = Some(cx.spawn_in(window, async move |this, cx| {
+            // Wait for the row to be drawn (a frame or two after the section
+            // switch, whenever frames come); a row that isn't drawn hands over to
+            // its parent anchor.
+            let mut found = false;
+            for _ in 0..200 {
+                executor.timer(Duration::from_millis(16)).await;
+                let done = this
+                    .update_in(cx, |_, window, cx| {
+                        if reveal::take_revealed().is_some() {
+                            if let Some(handle) = reveal::focus_handle() {
+                                window.focus(&handle, cx);
+                                window.focus_next(cx);
+                                let control = handle.contains_focused(window, cx)
+                                    && !handle.is_focused(window);
+                                if !control {
+                                    window.focus(&handle, cx);
+                                }
+                                if std::env::var_os("MUSIC_TRACE").is_some() {
+                                    eprintln!(
+                                        "music-gpui: revealed {}, focus on {}",
+                                        reveal::flashing().unwrap_or("?"),
+                                        if control { "its control" } else { "the row" }
+                                    );
+                                }
+                            }
+                            cx.notify();
+                            return true;
+                        }
+                        cx.notify();
+                        false
+                    })
+                    .unwrap_or(true);
+                if done {
+                    found = true;
+                    break;
+                }
+                // Drawn twice without the target: it isn't on the page now.
+                if reveal::renders_since_target() >= 2 {
+                    match reveal::pending().and_then(|id| id.rsplit_once('.')) {
+                        Some((parent, _)) => reveal::retarget(parent),
+                        None => break,
+                    }
+                }
+            }
+            if !found {
+                reveal::cancel();
+                return;
+            }
+            executor
+                .timer(reveal::FLASH + Duration::from_millis(50))
+                .await;
+            this.update_in(cx, |_, window, cx| {
+                reveal::end_flash();
+                // The row stays a tab stop only while it holds the focus itself.
+                if reveal::focus_handle().is_some_and(|h| !h.is_focused(window)) {
+                    reveal::cancel();
+                }
+                cx.notify();
+            })
+            .ok();
+        }));
     }
 
     pub fn set_theme(&mut self, theme: ThemeChoice, cx: &mut Context<Self>) {
@@ -889,29 +1083,15 @@ impl SettingsPanel {
         let theme = cx.theme();
         let (active_bg, hover_bg) = (theme.sidebar_accent, theme.list_hover);
         let (fg, muted) = (theme.foreground, theme.muted_foreground);
-        v_flex()
+        let list = v_flex()
             .id("settings-nav")
-            .w(px(232.))
-            .flex_none()
-            .h_full()
+            .flex_1()
+            .min_h_0()
             // 18 sections don't fit a short window.
             .overflow_y_scroll()
-            .py_4()
+            .pb_4()
             .px_2()
             .gap_0p5()
-            .border_r_1()
-            .border_color(theme.border)
-            .child(
-                div()
-                    // Items keep their height (the list scrolls instead of shrinking).
-                    .flex_none()
-                    .px_3()
-                    .pb_3()
-                    .text_xl()
-                    .font_weight(FontWeight::BOLD)
-                    .truncate()
-                    .child(t!("nav.settings")),
-            )
             .children(SECTIONS.iter().map(|section| {
                 let id = section.id;
                 let active = self.section == id;
@@ -939,12 +1119,38 @@ impl SettingsPanel {
                         this.show_section(id, cx);
                         cx.emit(SettingsEvent::Section(id));
                     }))
-            }))
+            }));
+        v_flex()
+            .w(px(232.))
+            .flex_none()
+            .h_full()
+            .border_r_1()
+            .border_color(theme.border)
+            .child(
+                v_flex()
+                    .flex_none()
+                    .px_2()
+                    .pt_4()
+                    .pb_3()
+                    .gap_3()
+                    .child(
+                        div()
+                            .px_3()
+                            .text_xl()
+                            .font_weight(FontWeight::BOLD)
+                            .truncate()
+                            .child(t!("nav.settings")),
+                    )
+                    // Outside the scrolling list, so its dropdown isn't clipped.
+                    .child(div().px_1().child(self.search.clone())),
+            )
+            .child(list)
     }
 }
 
 impl Render for SettingsPanel {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        reveal::rendering();
         let nav = self.render_nav(cx);
         let section = self.section.section();
         let body = (section.render)(self, window, cx);

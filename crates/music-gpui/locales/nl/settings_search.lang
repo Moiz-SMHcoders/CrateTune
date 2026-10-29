@@ -1,0 +1,6 @@
+# ---- Settings search.
+settings_search.placeholder = Instellingen zoeken
+settings_search.suggested = Suggesties
+settings_search.recent = Recent geopend
+settings_search.no_results = Geen instelling past bij ‘{query}’
+settings_search.no_results_hint = Probeer een korter woord of een andere naam, zoals ‘kleur’, ‘volume’ of ‘sneltoets’.

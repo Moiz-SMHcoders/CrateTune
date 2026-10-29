@@ -1,0 +1,6 @@
+# ---- Settings search.
+settings_search.placeholder = Ayarlarda ara
+settings_search.suggested = Öneriler
+settings_search.recent = Son açılanlar
+settings_search.no_results = “{query}” ile eşleşen ayar yok
+settings_search.no_results_hint = Daha kısa bir sözcük ya da başka bir ad deneyin; örneğin “renk”, “ses” veya “kısayol”.

@@ -42,7 +42,7 @@ use music_core::modules::{
 use serde_json::Value;
 
 use super::SettingsPanel;
-use super::widgets::{group, note, row, status_line};
+use super::widgets::{group, group_at, note, row, status_line};
 use crate::icons::Lucide;
 use crate::module_service::ModuleService;
 use crate::util::off_thread;
@@ -971,7 +971,7 @@ pub(super) fn render(
         .map(|b| (false, b))
         .or(panel.modules.status.clone());
     let add =
-        group(t!("modules.add.group"), cx)
+        group_at("modules.add", t!("modules.add.group"), cx)
             .child(
                 h_flex()
                     .gap_2()
@@ -1152,7 +1152,11 @@ pub(super) fn render(
     // ---- installed ----
     let installed: Vec<InstalledModule> = panel.modules.snapshot.modules.clone();
     let count = installed.len();
-    let mut list = group(t!("modules.installed_group", count = count), cx);
+    let mut list = group_at(
+        "modules.installed",
+        t!("modules.installed_group", count = count),
+        cx,
+    );
     if installed.is_empty() {
         list = list.child(note(t!("modules.nothing_installed"), cx));
     }
@@ -1330,7 +1334,7 @@ pub(super) fn render(
         .map(|m| (m.manifest.id.clone(), m.manifest.version.clone()))
         .collect();
     let catalog_group = (!catalogs.is_empty()).then(|| {
-        let mut g = group(t!("modules.catalogs"), cx);
+        let mut g = group_at("modules.catalogs", t!("modules.catalogs"), cx);
         for (ci, catalog) in catalogs.iter().enumerate() {
             let (refresh_id, remove_id) = (catalog.id.clone(), catalog.id.clone());
             g = g.child(
@@ -1437,7 +1441,7 @@ pub(super) fn render(
     v_flex()
         .gap_5()
         .child(
-            group(t!("modules.source.group"), cx)
+            group_at("modules.source", t!("modules.source.group"), cx)
                 .child(source_buttons)
                 .child(note(source_note, cx))
                 .child(note(t!("modules.source.note"), cx)),

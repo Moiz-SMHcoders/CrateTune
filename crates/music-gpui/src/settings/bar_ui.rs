@@ -20,7 +20,7 @@ use super::bar_prefs::{
 };
 use super::panel::{SettingsEvent, SettingsPanel};
 use super::prefs_ui::choice;
-use super::widgets::{group, note, row};
+use super::widgets::{group_at, note, row_at};
 
 impl SettingsPanel {
     fn update_player_bar(&mut self, cx: &mut Context<Self>, f: impl FnOnce(&mut PlayerBarConfig)) {
@@ -206,66 +206,99 @@ pub(super) fn render(panel: &mut SettingsPanel, cx: &mut Context<SettingsPanel>)
         SettingsPanel::set_np_visualizer,
         cx,
     );
-    group(t!("settings.bar.group"), cx)
+    group_at("appearance.bar", t!("settings.bar.group"), cx)
         .child(
             v_flex()
                 .gap_2()
-                .child(row(
+                .child(row_at(
+                    "appearance.bar.progress_style",
                     t!("settings.bar.progress_style"),
                     (bar.progress_style == ProgressStyle::Waveform)
                         .then(|| t!("settings.bar.waveform_note")),
                     styles,
                     cx,
                 ))
-                .child(row(
+                .child(row_at(
+                    "appearance.bar.artwork",
                     t!("settings.bar.artwork_style"),
                     Some(t!("settings.bar.artwork_style_note")),
                     artwork,
                     cx,
                 ))
-                .child(row(
+                .child(row_at(
+                    "appearance.bar.peak_caps",
                     t!("settings.bar.peak_caps"),
                     Some(t!("settings.bar.peak_caps_note")),
                     peaks,
                     cx,
                 ))
-                .child(row(
+                .child(row_at(
+                    "appearance.bar.background_effect",
                     t!("settings.bar.background_effect"),
                     Some(t!("settings.bar.background_effect_note")),
                     effect,
                     cx,
                 ))
-                .child(row(
+                .child(row_at(
+                    "appearance.bar.background_style",
                     t!("settings.bar.background_style"),
                     None,
                     backgrounds,
                     cx,
                 ))
-                .child(row(t!("settings.bar.dim_when_paused"), None, dim, cx))
+                .child(row_at(
+                    "appearance.bar.dim",
+                    t!("settings.bar.dim_when_paused"),
+                    None,
+                    dim,
+                    cx,
+                ))
                 .when(gradient, |this| {
-                    this.child(row(
+                    this.child(row_at(
+                        "appearance.bar.gradient_direction",
                         t!("settings.bar.gradient_direction"),
                         None,
                         directions,
                         cx,
                     ))
-                    .child(row(
+                    .child(row_at(
+                        "appearance.bar.gradient_intensity",
                         t!("settings.bar.gradient_intensity"),
                         None,
                         intensities,
                         cx,
                     ))
-                    .child(row(
+                    .child(row_at(
+                        "appearance.bar.animate_gradient",
                         t!("settings.bar.animate_gradient"),
                         Some(t!("settings.bar.animate_gradient_note")),
                         animate,
                         cx,
                     ))
                 })
-                .child(row(t!("settings.bar.show_remaining"), None, remaining, cx))
-                .child(row(t!("settings.bar.scroll_volume"), None, scroll, cx))
-                .child(row(t!("settings.bar.mini_follows"), None, mini, cx))
-                .child(row(
+                .child(row_at(
+                    "appearance.bar.show_remaining",
+                    t!("settings.bar.show_remaining"),
+                    None,
+                    remaining,
+                    cx,
+                ))
+                .child(row_at(
+                    "appearance.bar.scroll_volume",
+                    t!("settings.bar.scroll_volume"),
+                    None,
+                    scroll,
+                    cx,
+                ))
+                .child(row_at(
+                    "appearance.bar.mini_follows",
+                    t!("settings.bar.mini_follows"),
+                    None,
+                    mini,
+                    cx,
+                ))
+                .child(row_at(
+                    "appearance.bar.np_visualizer",
                     t!("settings.bar.np_visualizer"),
                     Some(t!("settings.bar.np_visualizer_note")),
                     np,

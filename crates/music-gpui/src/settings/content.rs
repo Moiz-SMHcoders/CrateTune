@@ -17,7 +17,7 @@ use gpui_component::{
 use super::SettingsPanel;
 use super::file::{ContentConfig, Settings};
 use super::panel::SettingsEvent;
-use super::widgets::{group, note, row};
+use super::widgets::{group_at, note, row_at};
 use crate::i18n::Key;
 
 /// Content languages offered (YouTube Music `hl` values).
@@ -351,14 +351,16 @@ pub(super) fn render(
     v_flex()
         .gap_5()
         .child(
-            group(t!("settings.content.group_region"), cx)
-                .child(row(
+            group_at("content.region", t!("settings.content.group_region"), cx)
+                .child(row_at(
+                    "content.language",
                     t!("settings.content.language"),
                     Some(t!("settings.content.language_description")),
                     language,
                     cx,
                 ))
-                .child(row(
+                .child(row_at(
+                    "content.country",
                     t!("settings.content.country"),
                     Some(t!("settings.content.country_description")),
                     country,
@@ -367,26 +369,31 @@ pub(super) fn render(
                 .child(note(t!("settings.content.region_note"), cx)),
         )
         .child(
-            group(t!("settings.content.group_filters"), cx)
-                .child(row(
+            group_at("content.filters", t!("settings.content.group_filters"), cx)
+                .child(row_at(
+                    "content.hide_explicit",
                     t!("settings.content.hide_explicit"),
                     Some(t!("settings.content.hide_explicit_description")),
                     explicit,
                     cx,
                 ))
-                .child(row(
+                .child(row_at(
+                    "content.hide_videos",
                     t!("settings.content.hide_videos"),
                     Some(t!("settings.content.hide_videos_description")),
                     videos,
                     cx,
                 )),
         )
-        .child(group(t!("settings.content.group_radio"), cx).child(row(
-            t!("settings.content.autoplay"),
-            Some(t!("settings.content.autoplay_description")),
-            autoplay,
-            cx,
-        )))
+        .child(
+            group_at("content.radio", t!("settings.content.group_radio"), cx).child(row_at(
+                "content.autoplay",
+                t!("settings.content.autoplay"),
+                Some(t!("settings.content.autoplay_description")),
+                autoplay,
+                cx,
+            )),
+        )
         .into_any_element()
 }
 

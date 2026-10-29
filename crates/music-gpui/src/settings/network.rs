@@ -29,7 +29,7 @@ use music_core::HttpConfig;
 use super::SettingsPanel;
 use super::file::{DnsConfig, DnsMode, NetworkConfig, ProxyKind, Settings};
 use super::panel::SettingsEvent;
-use super::widgets::{field, group, note, status_line};
+use super::widgets::{field, field_at, group_at, note, status_line};
 use crate::secrets::Secret;
 use crate::util::off_thread;
 
@@ -393,10 +393,11 @@ pub(super) fn render(
     v_flex()
         .gap_5()
         .child(
-            group(t!("settings.network.proxy"), cx)
+            group_at("network.proxy", t!("settings.network.proxy"), cx)
                 .child(kinds)
                 .when(!off, |this| {
-                    this.child(field(
+                    this.child(field_at(
+                        "network.proxy.host",
                         t!("settings.network.host"),
                         Input::new(&state.host).small(),
                         cx,
@@ -443,10 +444,11 @@ pub(super) fn render(
                 .child(note(t!("settings.network.proxy_note"), cx)),
         )
         .child(
-            group(t!("settings.network.dns"), cx)
+            group_at("network.dns", t!("settings.network.dns"), cx)
                 .child(dns_modes)
                 .when(dns_mode == DnsMode::Custom, |this| {
-                    this.child(field(
+                    this.child(field_at(
+                        "network.dns.url",
                         t!("settings.network.doh_url"),
                         Input::new(&state.dns_url).small(),
                         cx,

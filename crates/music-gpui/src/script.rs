@@ -28,6 +28,8 @@
 //! | `@mini[=on\|off]` | mini player window |
 //! | `@theme=dark\|black\|dynamic`, `@font-scale=1.125` | appearance (saved) |
 //! | `@settings[=SECTION]`, `@close-settings` | settings page (`eq`, `integrations`/`accounts`, `appearance`, `about`, …) |
+//! | `@settings-search=QUERY`, `@settings-search-pick=N` | settings search: type QUERY into the field (opens Settings) and print the ranked results; pick result N (0-based) of the list |
+//! | `@settings-anchors` | open every settings section in turn and print which search-index rows it draws (and where hidden ones fall back to) |
 //! | `@eq=Bass`, `@eq=off`, `@eq=on` | equalizer preset / switch |
 //! | `@field=lastfm-key:VALUE` (also `lastfm-secret`, `lb-token`, `discord-id`) | type into a settings field |
 //! | `@lastfm-connect`, `@lastfm-finish`, `@lastfm-disconnect`, `@lastfm-clear` | Last.fm auth flow |
@@ -490,6 +492,31 @@ impl MusicApp {
                 if matches!(self.router.route(), Route::Settings { .. }) {
                     self.go_back(window, cx);
                 }
+            }
+            "settings-search" => {
+                if !matches!(self.router.route(), Route::Settings { .. }) {
+                    self.open_settings(None, window, cx);
+                }
+                let query = arg.unwrap_or("");
+                let lines = panel.update(cx, |p, cx| p.script_search(query, window, cx));
+                eprintln!(
+                    "music-gpui: settings search {query:?}: {} result(s)",
+                    lines.len()
+                );
+                for line in lines {
+                    eprintln!("music-gpui:   {line}");
+                }
+            }
+            "settings-search-pick" => {
+                if !panel.update(cx, |p, cx| p.script_search_pick(index(), cx)) {
+                    eprintln!("music-gpui: @settings-search-pick: no entry {}", index());
+                }
+            }
+            "settings-anchors" => {
+                if !matches!(self.router.route(), Route::Settings { .. }) {
+                    self.open_settings(None, window, cx);
+                }
+                panel.update(cx, |p, cx| p.audit_anchors(window, cx));
             }
             "eq" => match arg.unwrap_or("") {
                 "off" => panel.update(cx, |p, cx| p.set_eq_enabled(false, cx)),

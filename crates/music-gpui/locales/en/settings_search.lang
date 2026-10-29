@@ -1,0 +1,9 @@
+# ---- Settings search (the field at the top of the settings sidebar; src/settings/search_ui.rs).
+# Placeholder of the field.
+settings_search.placeholder = Search settings
+# Headers of the dropdown while the field is empty.
+settings_search.suggested = Suggested
+settings_search.recent = Recently opened
+# Nothing found; {query} = what was typed.
+settings_search.no_results = No settings match “{query}”
+settings_search.no_results_hint = Try a shorter word or another name for it, like “colour”, “volume” or “shortcut”.

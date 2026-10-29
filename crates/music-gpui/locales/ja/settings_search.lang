@@ -1,0 +1,6 @@
+# ---- Settings search.
+settings_search.placeholder = 設定を検索
+settings_search.suggested = おすすめ
+settings_search.recent = 最近開いた設定
+settings_search.no_results = 「{query}」に一致する設定はありません
+settings_search.no_results_hint = 短い言葉や別の言い方で試してください（例：「色」「音量」「ショートカット」）。

@@ -1,0 +1,6 @@
+# ---- Settings search.
+settings_search.placeholder = सेटिंग खोजें
+settings_search.suggested = सुझाव
+settings_search.recent = हाल में खोली गईं
+settings_search.no_results = “{query}” से कोई सेटिंग मेल नहीं खाती
+settings_search.no_results_hint = छोटा शब्द या कोई दूसरा नाम आज़माएँ, जैसे “रंग”, “आवाज़” या “शॉर्टकट”।

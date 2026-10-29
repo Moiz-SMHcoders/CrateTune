@@ -5,6 +5,8 @@ use gpui::{
 };
 use gpui_component::{ActiveTheme as _, h_flex, input::Input, v_flex};
 
+pub use super::reveal::Anchor;
+
 /// A titled group inside a section.
 pub fn group(title: impl Into<SharedString>, cx: &App) -> gpui::Div {
     v_flex()
@@ -14,6 +16,11 @@ pub fn group(title: impl Into<SharedString>, cx: &App) -> gpui::Div {
         .border_1()
         .border_color(cx.theme().border)
         .child(section_title(title))
+}
+
+/// [`group`] with a scroll anchor (an `anchor` of the search index).
+pub fn group_at(id: &'static str, title: impl Into<SharedString>, cx: &App) -> gpui::Div {
+    group(title, cx).anchor(id)
 }
 
 pub fn section_title(title: impl Into<SharedString>) -> impl IntoElement {
@@ -33,7 +40,7 @@ pub fn status_line(text: SharedString, color: Hsla) -> impl IntoElement {
 }
 
 /// A labelled text input row.
-pub fn field(label: impl Into<SharedString>, input: Input, cx: &App) -> impl IntoElement {
+pub fn field(label: impl Into<SharedString>, input: Input, cx: &App) -> gpui::Div {
     h_flex()
         .gap_3()
         .child(
@@ -56,7 +63,7 @@ pub fn row(
     description: Option<&'static str>,
     control: impl IntoElement,
     cx: &App,
-) -> impl IntoElement {
+) -> gpui::Div {
     h_flex()
         .gap_4()
         .justify_between()
@@ -74,6 +81,27 @@ pub fn row(
                 })),
         )
         .child(div().flex_none().child(control))
+}
+
+/// [`row`] with a scroll anchor (an `anchor` of the search index).
+pub fn row_at(
+    id: &'static str,
+    label: impl Into<SharedString>,
+    description: Option<&'static str>,
+    control: impl IntoElement,
+    cx: &App,
+) -> gpui::Div {
+    row(label, description, control, cx).anchor(id)
+}
+
+/// [`field`] with a scroll anchor.
+pub fn field_at(
+    id: &'static str,
+    label: impl Into<SharedString>,
+    input: Input,
+    cx: &App,
+) -> gpui::Div {
+    field(label, input, cx).anchor(id)
 }
 
 pub fn band_label(hz: f64) -> String {

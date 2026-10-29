@@ -20,8 +20,8 @@ use music_core::{Quality, SleepTimer};
 
 use super::SettingsPanel;
 use super::prefs::{SLEEP_PRESETS, StreamSourceMode, quality_title};
-use super::prefs_ui::{Devices, choice, slider_row};
-use super::widgets::{group, note, row};
+use super::prefs_ui::{Devices, choice, slider_row_at};
+use super::widgets::{group_at, note, row_at};
 use crate::app::{read_app, update_app};
 use crate::i18n::format::decimal;
 use crate::queue::Repeat;
@@ -254,14 +254,16 @@ pub(super) fn render(
     v_flex()
         .gap_5()
         .child(
-            group(t!("settings.playback.queue"), cx)
-                .child(row(
+            group_at("playback.queue", t!("settings.playback.queue"), cx)
+                .child(row_at(
+                    "playback.shuffle",
                     t!("settings.playback.shuffle"),
                     Some(t!("settings.playback.shuffle_desc")),
                     shuffle,
                     cx,
                 ))
-                .child(row(
+                .child(row_at(
+                    "playback.repeat",
                     t!("settings.playback.repeat"),
                     Some(t!("settings.playback.repeat_desc")),
                     repeat,
@@ -269,32 +271,37 @@ pub(super) fn render(
                 )),
         )
         .child(
-            group(t!("settings.playback.audio"), cx)
-                .child(row(
+            group_at("playback.audio", t!("settings.playback.audio"), cx)
+                .child(row_at(
+                    "playback.streams",
                     t!("settings.playback.streams"),
                     Some(stream_source_note(a.stream_source)),
                     stream_source,
                     cx,
                 ))
-                .child(row(
+                .child(row_at(
+                    "playback.quality",
                     t!("settings.playback.quality"),
                     Some(t!("settings.playback.quality_desc")),
                     quality,
                     cx,
                 ))
-                .child(row(
+                .child(row_at(
+                    "playback.normalize",
                     t!("settings.playback.normalize"),
                     Some(t!("settings.playback.normalize_desc")),
                     normalize,
                     cx,
                 ))
-                .child(row(
+                .child(row_at(
+                    "playback.skip_silence",
                     t!("settings.playback.skip_silence"),
                     Some(t!("settings.playback.skip_silence_desc")),
                     silence,
                     cx,
                 ))
-                .child(row(
+                .child(row_at(
+                    "playback.auto_skip",
                     t!("settings.playback.auto_skip"),
                     Some(t!("settings.playback.auto_skip_desc")),
                     auto_skip,
@@ -302,43 +309,54 @@ pub(super) fn render(
                 )),
         )
         .child(
-            group(t!("settings.playback.transitions"), cx)
-                .child(slider_row(
-                    t!("settings.playback.crossfade"),
-                    crossfade_label,
-                    &panel.prefs.crossfade,
-                    cx,
-                ))
-                .child(note(t!("settings.playback.transitions_note"), cx)),
+            group_at(
+                "playback.transitions",
+                t!("settings.playback.transitions"),
+                cx,
+            )
+            .child(slider_row_at(
+                "playback.crossfade",
+                t!("settings.playback.crossfade"),
+                crossfade_label,
+                &panel.prefs.crossfade,
+                cx,
+            ))
+            .child(note(t!("settings.playback.transitions_note"), cx)),
         )
         .child(
-            group(t!("settings.playback.speed_pitch"), cx)
-                .child(slider_row(
-                    t!("settings.playback.speed"),
-                    speed_label,
-                    &panel.prefs.speed,
-                    cx,
-                ))
-                .child(slider_row(
-                    t!("settings.playback.pitch"),
-                    pitch_label,
-                    &panel.prefs.pitch,
-                    cx,
-                ))
-                .child(
-                    h_flex()
-                        .gap_2()
-                        .justify_between()
-                        .child(
-                            div()
-                                .min_w_0()
-                                .child(note(t!("settings.playback.speed_pitch_note"), cx)),
-                        )
-                        .child(div().flex_none().child(reset)),
-                ),
+            group_at(
+                "playback.speed_pitch",
+                t!("settings.playback.speed_pitch"),
+                cx,
+            )
+            .child(slider_row_at(
+                "playback.speed",
+                t!("settings.playback.speed"),
+                speed_label,
+                &panel.prefs.speed,
+                cx,
+            ))
+            .child(slider_row_at(
+                "playback.pitch",
+                t!("settings.playback.pitch"),
+                pitch_label,
+                &panel.prefs.pitch,
+                cx,
+            ))
+            .child(
+                h_flex()
+                    .gap_2()
+                    .justify_between()
+                    .child(
+                        div()
+                            .min_w_0()
+                            .child(note(t!("settings.playback.speed_pitch_note"), cx)),
+                    )
+                    .child(div().flex_none().child(reset)),
+            ),
         )
         .child(
-            group(t!("settings.playback.output"), cx)
+            group_at("playback.output", t!("settings.playback.output"), cx)
                 .child(
                     h_flex()
                         .gap_2()
@@ -352,7 +370,7 @@ pub(super) fn render(
                 .child(note(t!("settings.playback.output_note"), cx)),
         )
         .child(
-            group(t!("settings.playback.sleep"), cx)
+            group_at("playback.sleep", t!("settings.playback.sleep"), cx)
                 .child(muted_text(
                     Some(match &sleep {
                         Some(label) => t!("settings.playback.sleep_armed", when = label),
@@ -361,7 +379,8 @@ pub(super) fn render(
                     muted,
                 ))
                 .child(sleep_buttons)
-                .child(slider_row(
+                .child(slider_row_at(
+                    "playback.sleep.custom",
                     t!("settings.playback.custom_length"),
                     t!("time.minutes", minutes = custom.as_secs() / 60),
                     &panel.prefs.sleep_custom,

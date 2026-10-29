@@ -14,7 +14,7 @@ use gpui_component::{
     h_flex, v_flex,
 };
 
-use super::widgets::{group, note};
+use super::widgets::{Anchor as _, group, note};
 use super::{SectionId, SettingsPanel};
 use crate::app::read_app;
 use crate::icons::Lucide;
@@ -277,6 +277,7 @@ pub(super) fn render(
     let header = h_flex()
         .gap_2()
         .justify_between()
+        .anchor("shortcuts.main")
         .child(
             div()
                 .flex_1()
@@ -310,6 +311,7 @@ pub(super) fn render(
         .child(header)
         .children(Group::ALL.into_iter().map(|g| {
             group(g.title(), cx)
+                .anchor(g.anchor())
                 .children(
                     ACTIONS
                         .iter()
@@ -402,6 +404,8 @@ fn shortcut_row(
     let row = h_flex()
         .gap_4()
         .justify_between()
+        // The search index has one entry per action (`search_index.rs`).
+        .anchor(action.id)
         .child(div().flex_1().min_w_0().text_sm().child(label))
         .child(div().flex_none().child(controls));
 

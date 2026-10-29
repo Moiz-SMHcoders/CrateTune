@@ -20,7 +20,7 @@ use super::SettingsPanel;
 use super::panel::{LastFmFlow, Validation};
 use super::prefs::{ActivityType, ButtonTarget, ImageSource};
 use super::prefs_ui::{ActivityField, choice, slider_row};
-use super::widgets::{field, note, row, section_title, status_line};
+use super::widgets::{Anchor as _, field, note, row, row_at, section_title, status_line};
 
 pub(super) fn render(
     panel: &mut SettingsPanel,
@@ -96,6 +96,7 @@ pub(super) fn render(
     };
     let lastfm = v_flex()
         .gap_2()
+        .anchor("integrations.lastfm")
         .child(
             h_flex()
                 .justify_between()
@@ -140,6 +141,7 @@ pub(super) fn render(
     };
     let listenbrainz = v_flex()
         .gap_2()
+        .anchor("integrations.listenbrainz")
         .child(
             h_flex()
                 .justify_between()
@@ -172,6 +174,7 @@ pub(super) fn render(
     };
     let discord = v_flex()
         .gap_2()
+        .anchor("integrations.discord")
         .child(
             h_flex()
                 .justify_between()
@@ -258,6 +261,7 @@ pub(super) fn render(
         .pl_3()
         .border_l_2()
         .border_color(theme.border)
+        .anchor("integrations.discord.activity")
         .child(section_title(t!("discord.activity.title")))
         .child(row(t!("discord.activity.type"), None, kind, cx))
         .child(field(
@@ -315,7 +319,8 @@ pub(super) fn render(
         }
     }
     let activity = activity
-        .child(row(
+        .child(row_at(
+            "integrations.discord.activity.show_paused",
             t!("discord.activity.show_paused"),
             Some(t!("discord.activity.show_paused_desc")),
             paused,
@@ -328,6 +333,7 @@ pub(super) fn render(
     let r = s.scrobble_rules;
     let rules = v_flex()
         .gap_2()
+        .anchor("integrations.rules")
         .child(section_title(t!("scrobble.rules.title")))
         .child(slider_row(
             t!("scrobble.rules.played"),
