@@ -249,7 +249,7 @@ impl Player {
                             let rate = opened.sink.config().sample_rate().get();
                             let jobs = spawn_device_worker(engine_tx.clone());
                             (
-                                Output::Device(DeviceOutput::new(opened, None, jobs)),
+                                Output::Device(Box::new(DeviceOutput::new(opened, None, jobs))),
                                 Deck::new(rate),
                             )
                         }
@@ -499,7 +499,8 @@ impl Player {
 
 enum Output {
     Headless,
-    Device(DeviceOutput),
+    // Boxed: the device side is a few hundred bytes (more on Linux / Windows).
+    Device(Box<DeviceOutput>),
 }
 
 /// The output device, managed without ever blocking the engine thread: every
@@ -1365,9 +1366,8 @@ impl Engine {
     // ---- output device ----
 
     fn attach_output(&mut self) {
-        if let Output::Device(DeviceOutput {
-            sink: Some(sink), ..
-        }) = &self.output
+        if let Output::Device(out) = &self.output
+            && let Some(sink) = &out.sink
         {
             // The deck keeps its rate; the mixer converts if the device differs.
             sink.mixer().add(HeadlessOutput::new(self.deck.clone()));
