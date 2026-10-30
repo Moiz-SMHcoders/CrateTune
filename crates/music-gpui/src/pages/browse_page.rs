@@ -51,7 +51,7 @@ impl BrowsePage {
                 },
                 name,
                 scroll: scroll.clone(),
-                sections: Sections::default(),
+                sections: Sections::new(cx.entity_id()),
                 data: Load::Loading,
                 _task: None,
             };

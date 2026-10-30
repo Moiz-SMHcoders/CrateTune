@@ -66,7 +66,7 @@ impl ChartsPage {
         let page = cx.new(|cx| {
             let mut page = Self {
                 scroll: scroll.clone(),
-                sections: Sections::default(),
+                sections: Sections::new(cx.entity_id()),
                 country,
                 data: Load::Loading,
                 picker: None,

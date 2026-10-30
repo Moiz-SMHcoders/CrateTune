@@ -160,7 +160,7 @@ impl HomePage {
         let scroll = ScrollHandle::new();
         let page = cx.new(|cx| Self {
             scroll: scroll.clone(),
-            sections: Sections::default(),
+            sections: Sections::new(cx.entity_id()),
             account: account_key(cx),
             params: None,
             chips: Vec::new(),

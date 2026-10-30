@@ -46,7 +46,7 @@ impl ExplorePage {
         let page = cx.new(|cx| {
             let mut page = Self {
                 scroll: scroll.clone(),
-                sections: Sections::default(),
+                sections: Sections::new(cx.entity_id()),
                 data: Load::Loading,
                 _task: None,
             };
