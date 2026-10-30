@@ -5,6 +5,8 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.4] — 2026-10-30
+
 ### Added
 
 * `scripts/perf-macos.sh`, the macOS counterpart of `perf-windows.ps1` (CPU from `ps`,
