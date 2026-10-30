@@ -491,8 +491,9 @@ frames, the scrolling, bar and Now Playing rates do.
 of the macOS and Windows jobs (Linux runners have no display or GPU). It opens Home with
 `MUSIC_FIXTURES` pointing at the recorded InnerTube responses
 (`crates/music-core/tests/fixtures/innertube`): Home, then the recorded continuation 20
-times, each shelf filled to 12 cards, generated artwork, and an HTTP agent that can't reach
-the network. It times full window draws (`@bench`: build, layout and paint, not presenting)
+times (each page with its own ids), every shelf filled to 12 distinct cards (as wide as a
+real shelf), generated artwork (~60 different images, within the artwork memory budget),
+and an HTTP agent that can't reach the network. It times full window draws (`@bench`: build, layout and paint, not presenting)
 at the top, scrolls to the end of the feed (~60 shelves) and times them again:
 
 ```sh
