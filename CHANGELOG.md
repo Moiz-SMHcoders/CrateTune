@@ -5,6 +5,9 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.5] — 2026-10-31
+
+
 ### Fixed
 
 * **Now Playing opens right after a fresh start.** With the queue restored from last time and
