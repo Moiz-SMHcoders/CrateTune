@@ -5,6 +5,12 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+* Changing the **content country** (Settings → Content & region) now also starts a new
+  anonymous YouTube visitor, so the signed-out Home feed follows the new region instead of
+  the old visitor's history (the visitor is otherwise kept across launches).
+
 ## [0.2.3] — 2026-10-30
 
 ### Added

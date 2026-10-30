@@ -477,6 +477,16 @@ pub fn restore_visitor(lib: Option<&Library>) {
     }
 }
 
+/// The content country changed: start over as a new anonymous visitor (in this process
+/// and for the next launch), so YouTube's anonymous feed follows the new region instead
+/// of the old visitor's history.
+pub fn forget_visitor(lib: Option<&Library>) {
+    InnerTube::reset_anonymous_visitor();
+    if let Some(lib) = lib {
+        let _ = lib.remove_value(VISITOR_KEY);
+    }
+}
+
 /// After a request: keeps the anonymous visitor for the next launch.
 pub fn save_visitor(lib: Option<&Library>) {
     let (Some(lib), Some(vd)) = (lib, InnerTube::anonymous_visitor_data()) else {
@@ -484,5 +494,24 @@ pub fn save_visitor(lib: Option<&Library>) {
     };
     if lib.get_value(VISITOR_KEY).ok().flatten().as_deref() != Some(vd.as_str()) {
         let _ = lib.set_value(VISITOR_KEY, &vd);
+    }
+}
+
+#[cfg(test)]
+mod visitor_tests {
+    use super::*;
+
+    #[test]
+    fn a_new_country_forgets_the_saved_visitor() {
+        let lib = Library::open_in_memory().unwrap();
+        lib.set_value(VISITOR_KEY, "CgtPTERfVklTSVRPUg").unwrap();
+        forget_visitor(Some(&lib));
+        assert_eq!(lib.get_value(VISITOR_KEY).unwrap(), None);
+        // Nothing saved: the next launch doesn't restore an old visitor.
+        restore_visitor(Some(&lib));
+        assert_ne!(
+            InnerTube::anonymous_visitor_data().as_deref(),
+            Some("CgtPTERfVklTSVRPUg")
+        );
     }
 }
