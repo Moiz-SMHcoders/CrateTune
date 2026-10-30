@@ -61,6 +61,7 @@ use crate::icons::Lucide as IconName;
 use gpui::{AnyElement, Context, Window};
 
 pub use accounts::open_cookie_dialog;
+pub use content::country_name;
 pub use file::{APP_ID, Settings, WindowGeometry};
 pub use panel::{SettingsEvent, SettingsPanel};
 pub use shortcuts_ui::{Outcome as ShortcutOutcome, open_cheat_sheet};

@@ -9,6 +9,22 @@ versions follow [SemVer](https://semver.org/).
 
 ### Added
 
+* **Sideways rows scroll every way**, like YouTube Music and Spotify: **‹ ›** at the right
+  of every shelf's title (one window-width per click, stopping on a card's edge; gliding
+  unless Motion is Off; dimmed at the ends, hidden when everything fits), **Shift + wheel**
+  and horizontal wheels / trackpad swipes over a row (smooth on Windows and Linux), **click
+  and drag** (after 6 px; the card under the pointer then doesn't open), and a thin
+  scrollbar under a hovered row. Rows without a title (Home's category chips when they
+  don't fit) show round ‹ › on their ends while hovered. Applies to Home (quick picks too,
+  as cards or as the list grid), artist, album, Explore (moods and shelves), Charts, mood /
+  genre pages and Stats.
+* **"From YouTube Music · <country>"** on Home above YouTube Music's own feed, with
+  **Change region** (opens Settings → Content & region on the country) and **Hide** (hides
+  the feed section); YouTube's own quick picks and the community shelf say so too. On a
+  first run whose content country came from the system's region, Home says which country
+  it shows, with **Change**, until dismissed.
+* Script hooks: `@shelf-status`, `@shelf-scroll=N:next|prev|start|end`,
+  `@drag=X1;Y1;X2;Y2`; `@scroll` / `@wheel` take an optional DX and `shift`.
 * `scripts/perf-windows.ps1`: CPU, memory and frame-rate check of a release build on
   Windows (idle, scrolling Home, playing, Now Playing), with pass / fail checks; see
   docs/TESTING.md, "Performance".
@@ -17,6 +33,14 @@ versions follow [SemVer](https://semver.org/).
 
 ### Fixed
 
+* **Shelves couldn't be scrolled sideways** at all (no wheel, swipe, drag or button):
+  each row wrapped its cards in one flex box that layout stretched to the row's width, so
+  GPUI measured the content as no wider than the view and the largest offset stayed 0.
+  The cards are now the scroll container's own children. GPUI's own wheel handling would
+  then have turned the vertical wheel over a row into sideways scrolling (and still
+  scrolled the page); rows now read the wheel themselves and leave vertical scrolling to
+  the page.
+* Home's feed cache key includes the content country and language.
 * **Stutter on Windows** while scrolling and changing pages: every shelf on Home (and on
   artist, Explore, Charts and mood pages) was built, laid out and painted on every frame,
   visible or not, and the endless feed made each frame heavier the further it was

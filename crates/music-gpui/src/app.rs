@@ -571,6 +571,20 @@ impl MusicApp {
         self.navigate(Route::Settings { section }, window, cx);
     }
 
+    /// Opens settings `section` and reveals the row with search-index anchor `anchor`
+    /// (scrolled into view, flashed, focused), as a settings search pick does.
+    pub fn open_settings_at(
+        &mut self,
+        section: SectionId,
+        anchor: &str,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.open_settings(Some(section), window, cx);
+        self.settings
+            .update(cx, |panel, cx| panel.reveal_anchor(anchor, window, cx));
+    }
+
     // ---- search -----------------------------------------------------------------
 
     /// Fills the search field and searches right away (startup env, scripts).

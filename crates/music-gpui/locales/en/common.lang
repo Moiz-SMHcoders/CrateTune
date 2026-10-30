@@ -44,6 +44,9 @@ common.import = Import
 common.search = Search
 common.search_placeholder = Search…
 common.see_all = See all
+# The ‹ › buttons of a row that scrolls sideways (shelves, chips): tooltips.
+common.scroll_back = Scroll back
+common.scroll_forward = Scroll forward
 common.load_more = Load more
 common.show_more = Show more
 common.back = Back
