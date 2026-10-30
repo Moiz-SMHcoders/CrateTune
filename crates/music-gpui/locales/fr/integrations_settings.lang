@@ -86,12 +86,15 @@ settings.together.port_error = Les ports doivent être compris entre 1024 et 655
 settings.together.allow_add_desc = Leurs suggestions vont dans votre file d'attente.
 settings.together.allow_control_desc = Lecture, pause, avance et saut pour tout le monde.
 settings.together.approval = Approuver les invités avant qu'ils rejoignent
-settings.together.hosting_note = Les sessions fonctionnent sur votre réseau local : les invités se connectent directement à cet ordinateur (autorisez les connexions entrantes si le pare-feu le demande). Le lien contient une clé aléatoire ; seules les personnes disposant du lien peuvent rejoindre. Les changements s'appliquent immédiatement à une session en cours. Sur la page Écouter ensemble, « Nommer hôte » confie la session à un invité : tout le monde suit le nouvel hôte.
+settings.together.hosting_note = Sur le même réseau, les invités se connectent directement à cet ordinateur (autorisez les connexions entrantes si le pare-feu le demande). Les liens et les codes de salon mènent à une clé aléatoire : seules les personnes qui en ont une peuvent rejoindre, et vous pouvez approuver chaque invité. Les changements s'appliquent immédiatement. Sur la page Écouter ensemble, « Nommer hôte » confie la session à un invité.
 settings.together.across_networks = Entre réseaux
 settings.together.relay = Serveur relais
-settings.together.relay_placeholder = wss://relay.example.com (vide : réseau local uniquement)
+settings.together.relay_placeholder = wss://relay.example.com (vide : relais par défaut)
 settings.together.relay_error = Adresse ws:// ou wss:// requise (sans nom d'utilisateur ni paramètres de requête)
-settings.together.relay_note = « Héberger via un relais » fait passer la session par un serveur music-relay que vous hébergez vous-même (voir le README : un petit binaire, à placer derrière un proxy inverse TLS pour wss://). Les invités peuvent alors rejoindre depuis n'importe où avec le lien. Le relais transmet les messages de la session (ID de titres, titres, noms) mais ne décide jamais rien ; vide = réseau local uniquement.
+settings.together.relay_note = Les sessions via Internet passent par ce relais. Vide : le relais par défaut, dont l'application lit l'adresse dans son dépôt (il peut ainsi changer sans mise à jour). Indiquez ici votre propre music-relay (voir le README ; derrière un proxy TLS pour wss://). Le relais transmet les messages et distribue les codes de salon, mais ne décide jamais rien : c'est toujours l'hôte qui admet les invités.
+settings.together.host_mode = Héberger les sessions
+settings.together.host_mode_desc = Via Internet par le relais (invités sur n'importe quel réseau, avec un code de salon) ou sur ce réseau uniquement (les invités se connectent directement à cet ordinateur).
+settings.together.relay_privacy = Confidentialité : les sessions via le relais font passer les titres, les artistes et les noms affichés par le serveur relais, qui ne stocke rien et ne voit jamais votre compte. Les sessions sur le même réseau ne l'utilisent pas.
 settings.together.open = Ouvrir Écouter ensemble
 
 # ---- Spotify import

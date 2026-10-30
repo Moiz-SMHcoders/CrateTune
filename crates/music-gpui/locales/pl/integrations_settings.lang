@@ -88,12 +88,15 @@ settings.together.port_error = Port musi mieścić się w zakresie 1024–65535
 settings.together.allow_add_desc = Ich propozycje trafiają do Twojej kolejki.
 settings.together.allow_control_desc = Odtwarzanie, pauza, przewijanie i przełączanie dla wszystkich.
 settings.together.approval = Zatwierdzaj gości przed dołączeniem
-settings.together.hosting_note = Sesje działają w Twojej sieci lokalnej: goście łączą się bezpośrednio z tym komputerem (zezwól na połączenia przychodzące, jeśli zapyta zapora). Link zawiera losowy klucz; dołączyć mogą tylko osoby, które go mają. Zmiany od razu obowiązują w trwającej sesji. Na stronie „Słuchaj razem” przycisk „Ustaw jako hosta” przekazuje sesję gościowi: wszyscy podążają za nowym hostem.
+settings.together.hosting_note = W tej samej sieci goście łączą się bezpośrednio z tym komputerem (zezwól na połączenia przychodzące, jeśli zapyta zapora). Linki i kody pokoi prowadzą do losowego klucza: dołączyć mogą tylko osoby, które go mają, a każdego gościa możesz zatwierdzić. Zmiany obowiązują od razu. Przycisk „Ustaw jako hosta” na stronie „Słuchaj razem” przekazuje sesję gościowi.
 settings.together.across_networks = Między sieciami
 settings.together.relay = Serwer przekaźnikowy
-settings.together.relay_placeholder = wss://relay.example.com (puste: tylko LAN)
+settings.together.relay_placeholder = wss://relay.example.com (puste: domyślny przekaźnik)
 settings.together.relay_error = Wymagany adres ws:// lub wss:// (bez nazwy użytkownika i parametrów zapytania)
-settings.together.relay_note = „Hostuj przez przekaźnik” prowadzi sesję przez serwer music-relay hostowany przez Ciebie (zobacz README: jeden mały plik wykonywalny; dla wss:// umieść go za odwrotnym proxy z TLS). Goście mogą wtedy dołączyć z dowolnego miejsca przez link. Przekaźnik przekazuje wiadomości sesji (ID utworów, tytuły, imiona), ale niczego nie rozstrzyga; puste = tylko LAN.
+settings.together.relay_note = Sesje przez internet działają przez ten przekaźnik. Puste: domyślny przekaźnik, którego adres aplikacja odczytuje ze swojego repozytorium (dzięki temu może się zmienić bez aktualizacji). Tutaj wpisz własny music-relay (zobacz README; dla wss:// za proxy z TLS). Przekaźnik przekazuje wiadomości i wydaje kody pokoi, ale niczego nie rozstrzyga: to host wpuszcza gości.
+settings.together.host_mode = Hostowanie sesji
+settings.together.host_mode_desc = Przez internet za pośrednictwem przekaźnika (goście w dowolnej sieci, z kodem pokoju) lub tylko w tej sieci (goście łączą się bezpośrednio z tym komputerem).
+settings.together.relay_privacy = Prywatność: sesje przez przekaźnik przesyłają tytuły utworów, wykonawców i wyświetlane nazwy przez serwer przekaźnikowy, który niczego nie przechowuje i nigdy nie widzi Twojego konta. Sesje w tej samej sieci z niego nie korzystają.
 settings.together.open = Otwórz „Słuchaj razem”
 
 # ---- Spotify import

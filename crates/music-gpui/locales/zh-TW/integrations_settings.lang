@@ -85,12 +85,15 @@ settings.together.port_error = 連接埠必須介於 1024 到 65535 之間
 settings.together.allow_add_desc = 他們推薦的歌曲會加入你的佇列。
 settings.together.allow_control_desc = 為所有人播放、暫停、跳轉和切換歌曲。
 settings.together.approval = 來賓加入前需經核准
-settings.together.hosting_note = 工作階段在你的區域網路上執行：來賓會直接連線到這部電腦（如果防火牆詢問，請允許傳入連線）。連結中包含隨機金鑰，只有取得連結的人才能加入。變更會立即套用到進行中的工作階段。在「一起聽」頁面中，「設為主持人」可將工作階段移交給某位來賓：所有人都會跟隨新的主持人。
+settings.together.hosting_note = 在同一網路上，來賓會直接連線到這部電腦（如果防火牆詢問，請允許傳入連線）。連結和房間代碼都對應到一組隨機金鑰：只有取得的人才能加入，你也可以逐一核准來賓。變更會立即套用。在「一起聽」頁面中，「設為主持人」可將工作階段移交給某位來賓。
+settings.together.host_mode = 工作階段主持方式
+settings.together.host_mode_desc = 透過中繼經由網際網路主持（來賓可憑房間代碼從任何網路加入），或僅在此網路上主持（來賓直接連線到這部電腦）。
 settings.together.across_networks = 跨網路
 settings.together.relay = 中繼伺服器
-settings.together.relay_placeholder = wss://relay.example.com（留空：僅限區域網路）
+settings.together.relay_placeholder = wss://relay.example.com（留空：預設中繼）
 settings.together.relay_error = 必須是 ws:// 或 wss:// 位址（不含使用者名稱或查詢參數）
-settings.together.relay_note = 「透過中繼主持」會讓工作階段經由你自己架設的 music-relay 伺服器執行（請參閱 README：只需一個小型執行檔，若要使用 wss://，請將其置於 TLS 反向代理伺服器之後）。之後來賓就能透過連結從任何地方加入。中繼只會轉送工作階段的訊息（歌曲 ID、標題、名稱），從不做任何決定；留空 = 僅限區域網路。
+settings.together.relay_note = 透過網際網路的工作階段會經由此中繼執行。留空則使用預設中繼，其位址由應用程式從程式碼存放庫讀取（因此無須更新即可變更）。若要使用你自己的 music-relay（請參閱 README；若要使用 wss://，請將其置於 TLS 代理伺服器之後），請在此填寫。中繼負責轉送訊息並分發房間代碼，但從不做任何決定：仍由主持人決定是否讓來賓加入。
+settings.together.relay_privacy = 隱私權：透過中繼的工作階段會將歌曲標題、演出者和顯示名稱經由中繼伺服器傳遞；中繼伺服器不會儲存任何內容，也絕不會看到你的帳號。同一網路上的工作階段不會使用中繼。
 settings.together.open = 開啟「一起聽」
 
 # ---- Spotify import

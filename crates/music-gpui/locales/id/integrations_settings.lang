@@ -83,12 +83,15 @@ settings.together.port_error = Port harus antara 1024 dan 65535
 settings.together.allow_add_desc = Saran mereka masuk ke antrean Anda.
 settings.together.allow_control_desc = Putar, jeda, lompat, dan lewati untuk semua orang.
 settings.together.approval = Setujui tamu sebelum bergabung
-settings.together.hosting_note = Sesi berjalan di jaringan lokal Anda: tamu terhubung langsung ke komputer ini (izinkan koneksi masuk jika firewall meminta). Tautan berisi kunci acak; hanya orang yang memiliki tautan yang dapat bergabung. Perubahan langsung berlaku pada sesi yang sedang berjalan. Di halaman Dengar bersama, “Jadikan host” menyerahkan sesi ke tamu: semua orang mengikuti host baru.
+settings.together.host_mode = Jadi host sesi
+settings.together.host_mode_desc = Lewat internet melalui relay (tamu di jaringan mana pun, dengan kode ruang), atau hanya di jaringan ini (tamu terhubung langsung ke komputer ini).
+settings.together.hosting_note = Di jaringan yang sama, tamu terhubung langsung ke komputer ini (izinkan koneksi masuk jika firewall meminta). Tautan dan kode ruang mengarah ke kunci acak: hanya orang yang memilikinya yang dapat bergabung, dan Anda dapat menyetujui setiap tamu. Perubahan langsung berlaku. Di halaman Dengar bersama, “Jadikan host” menyerahkan sesi ke tamu.
 settings.together.across_networks = Lintas jaringan
 settings.together.relay = Server relay
-settings.together.relay_placeholder = wss://relay.example.com (kosong: hanya LAN)
+settings.together.relay_placeholder = wss://relay.example.com (kosong: relay default)
 settings.together.relay_error = Memerlukan alamat ws:// atau wss:// (tanpa nama pengguna atau query)
-settings.together.relay_note = “Host melalui relay” menjalankan sesi melalui server music-relay yang Anda host sendiri (lihat README: satu biner kecil, tempatkan di belakang reverse proxy TLS untuk wss://). Tamu lalu dapat bergabung dari mana saja dengan tautan. Relay meneruskan pesan sesi (ID lagu, judul, nama) tetapi tidak pernah memutuskan apa pun; kosong = hanya LAN.
+settings.together.relay_note = Sesi lewat internet berjalan melalui relay ini. Kosong: relay default, yang alamatnya dibaca aplikasi dari repositorinya (sehingga dapat berpindah tanpa pembaruan). Masukkan music-relay Anda sendiri di sini (lihat README; di belakang proxy TLS untuk wss://). Relay meneruskan pesan dan membagikan kode ruang, tetapi tidak pernah memutuskan apa pun: host tetap yang mengizinkan tamu masuk.
+settings.together.relay_privacy = Privasi: sesi melalui relay meneruskan judul lagu, artis, dan nama tampilan lewat server relay, yang tidak menyimpan apa pun dan tidak pernah melihat akun Anda. Sesi di jaringan yang sama tidak menggunakannya.
 settings.together.open = Buka Dengar bersama
 
 # ---- Spotify import

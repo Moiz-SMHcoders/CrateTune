@@ -15,15 +15,23 @@
 //! * Limits ([`Config`]): rooms, guests per room, connections, message size,
 //!   messages per second (guests over the limit are disconnected; a host's excess
 //!   frames are dropped), handshake and idle timeouts.
+//! * Room codes (see [`codes`]): the host registers its live room with
+//!   `POST /v1/together/sessions` (session id, guest key, host key — the room's
+//!   secret, checked against its hash) and gets a short code; a guest trades the
+//!   code for the session id, guest key and WebSocket path with
+//!   `POST /v1/together/sessions/resolve` (rate-limited per address). The code
+//!   goes with the room. The host key is never stored or returned.
 //! * `GET /health` answers `{"status":"ok","rooms":…,"guests":…,"connections":…}`.
 //! * Plain `ws://` only: put it behind a TLS reverse proxy (Caddy, nginx) for
 //!   `wss://` (see the README).
 //!
 //! Std threads + `tungstenite`, one thread per connection; no async runtime.
 
+pub mod codes;
+
 use std::collections::HashMap;
 use std::io::{ErrorKind, Read as _, Write};
-use std::net::{SocketAddr, TcpListener, TcpStream};
+use std::net::{IpAddr, SocketAddr, TcpListener, TcpStream};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::mpsc::{Receiver, Sender, channel};
 use std::sync::{Arc, Mutex, MutexGuard};
@@ -44,6 +52,10 @@ pub const APP_NAME: &str = env!("MUSIC_APP_NAME");
 pub const PROTOCOL_VERSION: u32 = 1;
 pub const DEFAULT_PORT: u16 = 42118;
 const POLL: Duration = Duration::from_millis(40);
+/// Largest request body the code endpoints read.
+const MAX_BODY: usize = 4 * 1024;
+/// Where guests connect, relative to the relay's base URL (any path works).
+const WS_PATH: &str = "/";
 
 #[derive(Debug, Clone)]
 pub struct Config {
@@ -62,6 +74,11 @@ pub struct Config {
     /// A connection that sends nothing for this long is closed (hosts send room
     /// states twice a second, guests ping every few seconds).
     pub idle_timeout: Duration,
+    /// Code look-ups (`/v1/together/sessions/resolve`) per minute per address.
+    pub resolve_per_minute: u32,
+    /// Reverse proxies whose `X-Forwarded-For` names the client (for the rate
+    /// limit); requests from anywhere else count against their own address.
+    pub trusted_proxies: Vec<IpAddr>,
     /// Log connections and rooms to stderr.
     pub verbose: bool,
 }
@@ -78,6 +95,8 @@ impl Default for Config {
             burst: 60,
             handshake_timeout: Duration::from_secs(10),
             idle_timeout: Duration::from_secs(60),
+            resolve_per_minute: 10,
+            trusted_proxies: Vec::new(),
             verbose: false,
         }
     }
@@ -88,6 +107,8 @@ pub struct Stats {
     pub rooms: usize,
     pub guests: usize,
     pub connections: usize,
+    /// Rooms with a code.
+    pub codes: usize,
 }
 
 /// Relay ↔ host envelopes (the same shape as `music_core::together::relay::RelayFrame`).
@@ -159,11 +180,19 @@ struct Room {
     host_conn: u64,
     host: Sender<HostIn>,
     guests: usize,
+    /// The room's short code, once the host asked for one.
+    code: Option<String>,
+    /// The guest key, given out for the code (it never sees the host key).
+    guest_key: Option<String>,
 }
 
 struct Shared {
     config: Config,
+    /// Locked before `codes` when both are needed.
     rooms: Mutex<HashMap<String, Room>>,
+    /// Code → session id, for the live rooms that have one.
+    codes: Mutex<HashMap<String, String>>,
+    limiter: Mutex<codes::RateLimiter>,
     connections: AtomicUsize,
     next_conn: AtomicUsize,
     shutdown: AtomicBool,
@@ -186,6 +215,7 @@ impl Shared {
             rooms: rooms.len(),
             guests: rooms.values().map(|r| r.guests).sum(),
             connections: self.connections.load(Ordering::Relaxed),
+            codes: lock(&self.codes).len(),
         }
     }
 }
@@ -203,8 +233,10 @@ impl Relay {
         listener.set_nonblocking(true)?;
         let addr = listener.local_addr()?;
         let shared = Arc::new(Shared {
+            limiter: Mutex::new(codes::RateLimiter::new(config.resolve_per_minute)),
             config,
             rooms: Mutex::new(HashMap::new()),
+            codes: Mutex::new(HashMap::new()),
             connections: AtomicUsize::new(0),
             next_conn: AtomicUsize::new(1),
             shutdown: AtomicBool::new(false),
@@ -265,7 +297,7 @@ fn accept_loop(listener: &TcpListener, shared: &Arc<Shared>) {
                     std::thread::Builder::new()
                         .name("relay-conn".into())
                         .spawn(move || {
-                            if let Err(e) = serve(stream, &conn_shared) {
+                            if let Err(e) = serve(stream, peer.ip(), &conn_shared) {
                                 conn_shared.log(|| format!("{peer}: {e}"));
                             }
                             conn_shared.connections.fetch_sub(1, Ordering::SeqCst);
@@ -283,22 +315,33 @@ fn accept_loop(listener: &TcpListener, shared: &Arc<Shared>) {
 }
 
 fn http_reply(
+    stream: impl Write,
+    status: &str,
+    content_type: &str,
+    body: &str,
+) -> std::io::Result<()> {
+    http_reply_with(stream, status, content_type, "", body)
+}
+
+/// `extra`: more header lines, each ending in `\r\n`.
+fn http_reply_with(
     mut stream: impl Write,
     status: &str,
     content_type: &str,
+    extra: &str,
     body: &str,
 ) -> std::io::Result<()> {
     write!(
         stream,
         "HTTP/1.1 {status}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\n\
-         Cache-Control: no-store\r\nConnection: close\r\n\r\n{body}",
+         Cache-Control: no-store\r\nConnection: close\r\n{extra}\r\n{body}",
         body.len()
     )?;
     stream.flush()
 }
 
 /// Peeks at the request head without consuming it (the WebSocket handshake reads it again).
-fn peek_head(stream: &TimedTcp, timeout: Duration) -> std::io::Result<(String, usize)> {
+fn peek_head(stream: &TimedTcp, timeout: Duration) -> std::io::Result<Vec<u8>> {
     let deadline = Instant::now() + timeout;
     let mut buf = vec![0u8; 8192];
     loop {
@@ -308,7 +351,8 @@ fn peek_head(stream: &TimedTcp, timeout: Duration) -> std::io::Result<(String, u
         }
         let head = &buf[..n];
         if head.windows(4).any(|w| w == b"\r\n\r\n") || n == buf.len() {
-            return Ok((String::from_utf8_lossy(head).into_owned(), n));
+            buf.truncate(n);
+            return Ok(buf);
         }
         if Instant::now() >= deadline {
             return Err(ErrorKind::TimedOut.into());
@@ -317,40 +361,17 @@ fn peek_head(stream: &TimedTcp, timeout: Duration) -> std::io::Result<(String, u
     }
 }
 
-fn serve(stream: TcpStream, shared: &Shared) -> std::io::Result<()> {
+fn serve(stream: TcpStream, peer: IpAddr, shared: &Shared) -> std::io::Result<()> {
     stream.set_nodelay(true)?;
     let mut stream = TimedTcp::new(stream)?;
     let timeout = shared.config.handshake_timeout;
     stream.set_read_timeout(Some(timeout))?;
     stream.set_write_timeout(Some(timeout))?;
-    let (head, head_len) = peek_head(&stream, timeout)?;
-    let lower = head.to_ascii_lowercase();
-    let path = head.split_whitespace().nth(1).unwrap_or("");
+    let head = peek_head(&stream, timeout)?;
+    let head_end = header_end(&head).unwrap_or(head.len());
+    let lower = String::from_utf8_lossy(&head[..head_end]).to_ascii_lowercase();
     if !lower.contains("upgrade: websocket") {
-        // Consume the request (closing with unread bytes would reset the connection).
-        let mut sink = vec![0u8; head_len];
-        let _ = stream.read_exact(&mut sink);
-        let _ = stream.shutdown(std::net::Shutdown::Read);
-        return if head.starts_with("GET ") && matches!(path, "/health" | "/healthz") {
-            let body = json!({ "status": "ok", "app": APP_NAME });
-            let mut body = body.as_object().cloned().unwrap_or_default();
-            if let Value::Object(stats) = serde_json::to_value(shared.stats()).unwrap_or_default() {
-                body.extend(stats);
-            }
-            http_reply(
-                &mut stream,
-                "200 OK",
-                "application/json",
-                &Value::Object(body).to_string(),
-            )
-        } else {
-            http_reply(
-                &mut stream,
-                "426 Upgrade Required",
-                "text/plain",
-                "music-relay: WebSocket only (GET /health for status)\n",
-            )
-        };
+        return serve_http(stream, &head, peer, shared);
     }
     let max = shared.config.max_message_bytes;
     let ws_config = WebSocketConfig::default()
@@ -392,6 +413,249 @@ fn serve(stream: TcpStream, shared: &Shared) -> std::io::Result<()> {
         _ => ws.close("Handshake required"),
     }
     Ok(())
+}
+
+/// Index just past the blank line that ends the request head.
+fn header_end(bytes: &[u8]) -> Option<usize> {
+    bytes
+        .windows(4)
+        .position(|w| w == b"\r\n\r\n")
+        .map(|p| p + 4)
+}
+
+/// A plain HTTP request: health check, room codes, or a pointer to the WebSocket.
+fn serve_http(
+    mut stream: TimedTcp,
+    peeked: &[u8],
+    peer: IpAddr,
+    shared: &Shared,
+) -> std::io::Result<()> {
+    let Some(head_len) = header_end(peeked) else {
+        // No end of the head in 8 KiB.
+        let mut sink = vec![0u8; peeked.len()];
+        let _ = stream.read_exact(&mut sink);
+        let _ = stream.shutdown(std::net::Shutdown::Read);
+        return http_reply(
+            &mut stream,
+            "431 Request Header Fields Too Large",
+            "text/plain",
+            "music-relay: request head too large\n",
+        );
+    };
+    // Consume the request (closing with unread bytes would reset the connection).
+    let mut head = vec![0u8; head_len];
+    stream.read_exact(&mut head)?;
+    let head = String::from_utf8_lossy(&head).into_owned();
+    let mut lines = head.split("\r\n");
+    let mut request = lines.next().unwrap_or("").split_whitespace();
+    let method = request.next().unwrap_or("").to_owned();
+    let target = request.next().unwrap_or("");
+    let path = target.split(['?', '#']).next().unwrap_or("");
+    let header = |name: &str| {
+        head.split("\r\n").skip(1).find_map(|line| {
+            let (key, value) = line.split_once(':')?;
+            key.trim()
+                .eq_ignore_ascii_case(name)
+                .then(|| value.trim().to_owned())
+        })
+    };
+    let length = header("content-length")
+        .and_then(|v| v.parse::<usize>().ok())
+        .unwrap_or(0);
+    if length > MAX_BODY {
+        // Drain some of it, so the answer isn't lost to a reset.
+        let mut sink = vec![0u8; length.min(64 * 1024)];
+        let _ = stream.read_exact(&mut sink);
+        let _ = stream.shutdown(std::net::Shutdown::Read);
+        return reply_json(
+            &mut stream,
+            "413 Payload Too Large",
+            &error_body("Request too large", "too_large"),
+            "",
+        );
+    }
+    let mut body = vec![0u8; length];
+    stream.read_exact(&mut body)?;
+    let _ = stream.shutdown(std::net::Shutdown::Read);
+    let api = path.trim_end_matches('/');
+    let resolve = api.ends_with("/v1/together/sessions/resolve");
+    let create = api.ends_with("/v1/together/sessions");
+    if (resolve || create) && method != "POST" {
+        return reply_json(
+            &mut stream,
+            "405 Method Not Allowed",
+            &error_body("Use POST", "method"),
+            "Allow: POST\r\n",
+        );
+    }
+    if resolve {
+        let client = client_ip(peer, header("x-forwarded-for").as_deref(), shared);
+        let (status, body, extra) = resolve_code(&body, client, shared);
+        return reply_json(&mut stream, status, &body, &extra);
+    }
+    if create {
+        let (status, body) = create_code(&body, shared);
+        return reply_json(&mut stream, status, &body, "");
+    }
+    if method == "GET" && matches!(path, "/health" | "/healthz") {
+        let body = json!({ "status": "ok", "app": APP_NAME });
+        let mut body = body.as_object().cloned().unwrap_or_default();
+        if let Value::Object(stats) = serde_json::to_value(shared.stats()).unwrap_or_default() {
+            body.extend(stats);
+        }
+        return http_reply(
+            &mut stream,
+            "200 OK",
+            "application/json",
+            &Value::Object(body).to_string(),
+        );
+    }
+    http_reply(
+        &mut stream,
+        "426 Upgrade Required",
+        "text/plain",
+        "music-relay: WebSocket only (GET /health for status)\n",
+    )
+}
+
+fn reply_json(stream: impl Write, status: &str, body: &Value, extra: &str) -> std::io::Result<()> {
+    http_reply_with(stream, status, "application/json", extra, &body.to_string())
+}
+
+fn error_body(message: &str, code: &str) -> Value {
+    json!({ "ok": false, "error": message, "code": code })
+}
+
+/// The address a request counts against: the peer, or, behind a trusted reverse
+/// proxy, the last address it put into `X-Forwarded-For`.
+fn client_ip(peer: IpAddr, forwarded: Option<&str>, shared: &Shared) -> IpAddr {
+    let canonical = |ip: IpAddr| match ip {
+        IpAddr::V6(v6) => v6.to_ipv4_mapped().map_or(ip, IpAddr::V4),
+        v4 => v4,
+    };
+    let peer = canonical(peer);
+    if !shared
+        .config
+        .trusted_proxies
+        .iter()
+        .any(|p| canonical(*p) == peer)
+    {
+        return peer;
+    }
+    forwarded
+        .and_then(|list| list.rsplit(',').next())
+        .map(str::trim)
+        .and_then(|last| {
+            last.parse::<IpAddr>()
+                .ok()
+                .or_else(|| last.parse::<SocketAddr>().ok().map(|a| a.ip()))
+        })
+        .map_or(peer, canonical)
+}
+
+fn json_field(body: &Value, name: &str) -> Option<String> {
+    body.get(name)
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|s| !s.is_empty() && s.len() <= 128)
+        .map(str::to_owned)
+}
+
+/// `POST /v1/together/sessions` `{sessionId, guestKey, hostKey}` from the room's
+/// host (its connection is up): the room's code, made on first ask.
+fn create_code(body: &[u8], shared: &Shared) -> (&'static str, Value) {
+    let body: Value = serde_json::from_slice(body).unwrap_or_default();
+    let (Some(session_id), Some(guest_key), Some(host_key)) = (
+        json_field(&body, "sessionId"),
+        json_field(&body, "guestKey"),
+        json_field(&body, "hostKey"),
+    ) else {
+        return (
+            "400 Bad Request",
+            error_body("sessionId, guestKey and hostKey are needed", "bad_request"),
+        );
+    };
+    let mut rooms = lock(&shared.rooms);
+    let Some(room) = rooms.get_mut(&session_id).filter(|room| {
+        room.key_hash == sha256_hex(&guest_key) && room.secret_hash == sha256_hex(&host_key)
+    }) else {
+        // Same answer for an unknown session and wrong keys (no probing).
+        return (
+            "403 Forbidden",
+            error_body("Invalid session", "invalid_session"),
+        );
+    };
+    let code = match &room.code {
+        Some(code) => code.clone(),
+        None => {
+            let mut codes = lock(&shared.codes);
+            let code = loop {
+                let code = codes::new_code();
+                if !codes.contains_key(&code) {
+                    break code;
+                }
+            };
+            codes.insert(code.clone(), session_id.clone());
+            room.code = Some(code.clone());
+            shared.log(|| format!("room {session_id}: has a code now"));
+            code
+        }
+    };
+    room.guest_key = Some(guest_key);
+    (
+        "200 OK",
+        json!({ "ok": true, "sessionId": session_id, "code": code, "wsUrl": WS_PATH }),
+    )
+}
+
+/// `POST /v1/together/sessions/resolve` `{code}`: what a guest needs to join.
+fn resolve_code(body: &[u8], client: IpAddr, shared: &Shared) -> (&'static str, Value, String) {
+    if let Err(wait) = lock(&shared.limiter).check(client, Instant::now()) {
+        let secs = wait.as_secs_f64().ceil().max(1.0) as u64;
+        return (
+            "429 Too Many Requests",
+            error_body("Too many attempts, try again later", "rate_limited"),
+            format!("Retry-After: {secs}\r\n"),
+        );
+    }
+    let body: Value = serde_json::from_slice(body).unwrap_or_default();
+    let Some(code) = body
+        .get("code")
+        .and_then(Value::as_str)
+        .and_then(codes::normalize_code)
+    else {
+        return (
+            "400 Bad Request",
+            error_body("Not a room code", "bad_code"),
+            String::new(),
+        );
+    };
+    let session_id = lock(&shared.codes).get(&code).cloned();
+    let found = session_id.and_then(|sid| {
+        let rooms = lock(&shared.rooms);
+        let key = rooms.get(&sid)?.guest_key.clone()?;
+        Some((sid, key))
+    });
+    match found {
+        Some((session_id, guest_key)) => {
+            shared.log(|| format!("room {session_id}: code resolved"));
+            (
+                "200 OK",
+                json!({
+                    "ok": true,
+                    "sessionId": session_id,
+                    "guestKey": guest_key,
+                    "wsUrl": WS_PATH,
+                }),
+                String::new(),
+            )
+        }
+        None => (
+            "404 Not Found",
+            error_body("No session with that code", "not_found"),
+            String::new(),
+        ),
+    }
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -452,6 +716,8 @@ fn serve_host(
                         host_conn: conn,
                         host: tx,
                         guests: 0,
+                        code: None,
+                        guest_key: None,
                     },
                 );
             }
@@ -472,8 +738,12 @@ fn serve_host(
     let current = rooms
         .get(&session_id)
         .is_some_and(|room| room.host_conn == conn);
-    if current {
-        rooms.remove(&session_id);
+    if current
+        && let Some(room) = rooms.remove(&session_id)
+        && let Some(code) = room.code
+    {
+        // The code is free again (another room may draw it).
+        lock(&shared.codes).remove(&code);
     }
     drop(rooms);
     let goodbye = if current {
@@ -786,4 +1056,64 @@ impl Ws {
 
 fn is_timeout(kind: ErrorKind) -> bool {
     matches!(kind, ErrorKind::WouldBlock | ErrorKind::TimedOut)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn shared(trusted: &[&str]) -> Shared {
+        let config = Config {
+            trusted_proxies: trusted.iter().map(|p| p.parse().unwrap()).collect(),
+            ..Config::default()
+        };
+        Shared {
+            limiter: Mutex::new(codes::RateLimiter::new(config.resolve_per_minute)),
+            config,
+            rooms: Mutex::new(HashMap::new()),
+            codes: Mutex::new(HashMap::new()),
+            connections: AtomicUsize::new(0),
+            next_conn: AtomicUsize::new(1),
+            shutdown: AtomicBool::new(false),
+        }
+    }
+
+    #[test]
+    fn client_address_behind_a_trusted_proxy() {
+        let ip = |s: &str| s.parse::<IpAddr>().unwrap();
+        let open = shared(&[]);
+        // Nobody trusted: the header is ignored (anyone could send it).
+        assert_eq!(
+            client_ip(ip("203.0.113.5"), Some("198.51.100.1"), &open),
+            ip("203.0.113.5")
+        );
+        let proxied = shared(&["192.168.0.52"]);
+        // The proxy's last entry is the address that connected to it.
+        assert_eq!(
+            client_ip(ip("192.168.0.52"), Some("10.9.9.9, 198.51.100.1"), &proxied),
+            ip("198.51.100.1")
+        );
+        assert_eq!(
+            client_ip(ip("::ffff:192.168.0.52"), Some("2001:db8::7"), &proxied),
+            ip("2001:db8::7")
+        );
+        assert_eq!(
+            client_ip(ip("192.168.0.52"), Some("198.51.100.1:5555"), &proxied),
+            ip("198.51.100.1")
+        );
+        // No (or a broken) header: the proxy itself.
+        assert_eq!(
+            client_ip(ip("192.168.0.52"), None, &proxied),
+            ip("192.168.0.52")
+        );
+        assert_eq!(
+            client_ip(ip("192.168.0.52"), Some("garbage"), &proxied),
+            ip("192.168.0.52")
+        );
+        // Someone else sending the header: their own address.
+        assert_eq!(
+            client_ip(ip("203.0.113.5"), Some("198.51.100.1"), &proxied),
+            ip("203.0.113.5")
+        );
+    }
 }

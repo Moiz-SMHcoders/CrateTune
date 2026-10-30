@@ -1474,6 +1474,19 @@ pub const ENTRIES: &[Entry] = &[
         "host"
     ),
     entry!(
+        "together.host_mode",
+        Together,
+        "settings.together.hosting",
+        "settings.together.host_mode",
+        "settings.together.host_mode_desc",
+        "together",
+        "internet",
+        "relay",
+        "lan",
+        "direct",
+        "network"
+    ),
+    entry!(
         "together.allow_add",
         Together,
         "settings.together.hosting",
@@ -1512,7 +1525,20 @@ pub const ENTRIES: &[Entry] = &[
         "together",
         "internet",
         "remote",
-        "server"
+        "server",
+        "code"
+    ),
+    entry!(
+        "together.relay_privacy",
+        Together,
+        "settings.together.across_networks",
+        "settings.together.relay",
+        "settings.together.relay_privacy",
+        "together",
+        "privacy",
+        "relay",
+        "titles",
+        "names"
     ),
     // ---- Spotify import
     entry!(

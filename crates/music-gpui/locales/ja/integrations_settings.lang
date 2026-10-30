@@ -85,12 +85,15 @@ settings.together.port_error = ポートは 1024〜65535 の範囲で指定し�
 settings.together.allow_add_desc = ゲストの提案があなたのキューに追加されます。
 settings.together.allow_control_desc = 全員の再生、一時停止、シーク、スキップを操作できます。
 settings.together.approval = 参加前にゲストを承認
-settings.together.hosting_note = セッションはローカルネットワーク上で動作し、ゲストはこのコンピュータに直接接続します（ファイアウォールで確認された場合は受信接続を許可してください）。リンクにはランダムなキーが含まれ、リンクを知っている人だけが参加できます。変更は実行中のセッションにすぐ適用されます。「一緒に聴く」ページの「ホストにする」でセッションをゲストに引き渡すと、全員が新しいホストに従います。
+settings.together.hosting_note = 同じネットワーク上では、ゲストはこのコンピュータに直接接続します（ファイアウォールで確認された場合は受信接続を許可してください）。リンクとルームコードはランダムなキーにつながっており、それを持っている人だけが参加できます。ゲストはそれぞれ承認することもできます。変更はすぐに適用されます。「一緒に聴く」ページの「ホストにする」でセッションをゲストに引き渡せます。
+settings.together.host_mode = セッションのホスト方法
+settings.together.host_mode_desc = リレーを介してインターネット経由で（ゲストはルームコードを使ってどのネットワークからでも参加）、またはこのネットワークのみで（ゲストはこのコンピュータに直接接続）ホストします。
 settings.together.across_networks = ネットワーク間
 settings.together.relay = リレーサーバ
-settings.together.relay_placeholder = wss://relay.example.com（空欄：LAN のみ）
+settings.together.relay_placeholder = wss://relay.example.com（空欄：デフォルトのリレー）
 settings.together.relay_error = ws:// または wss:// のアドレスが必要です（ユーザー名やクエリは不可）
-settings.together.relay_note = 「リレー経由でホスト」では、自分で運用する music-relay サーバを経由してセッションを実行します（README 参照：小さなバイナリ1つで、wss:// 用に TLS リバースプロキシの背後に配置します）。ゲストはリンクを使ってどこからでも参加できます。リレーはセッションのメッセージ（曲 ID、タイトル、名前）を転送するだけで、何も決定しません。空欄の場合は LAN のみです。
+settings.together.relay_note = インターネット経由のセッションはこのリレーを通じて実行されます。空欄の場合はデフォルトのリレーを使用します。そのアドレスはアプリがリポジトリから読み込むため、アップデートなしで変更できます。自分で運用する music-relay（README 参照：wss:// 用に TLS プロキシの背後に配置します）を使う場合はここに入力してください。リレーはメッセージを転送し、ルームコードを発行しますが、何も決定しません。ゲストを参加させるのは引き続きホストです。
+settings.together.relay_privacy = プライバシー：リレー経由のセッションでは、曲名、アーティスト名、表示名がリレーサーバを経由します。リレーサーバは何も保存せず、あなたのアカウントを見ることもありません。同じネットワーク内のセッションではリレーを使用しません。
 settings.together.open = 「一緒に聴く」を開く
 
 # ---- Spotify import

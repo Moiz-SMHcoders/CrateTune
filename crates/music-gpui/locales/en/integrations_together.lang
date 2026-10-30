@@ -11,6 +11,19 @@ together.toast.started_relay = Music Together session started (relay)
 together.error.start_failed = Couldn't start on port {port}: {error}
 together.error.no_relay = Set a relay server in Settings → Music Together first.
 together.error.relay_failed = Couldn't host through {relay}: {error}
+# {relay}: the relay's address; {error}: the network's reason (English).
+together.log.relay_unreachable = Couldn't reach the relay {relay}: {error}
+# Shown when "Over the internet" was chosen but the relay didn't answer: the session runs on the LAN.
+together.error.relay_unreachable = Relay unreachable, guests must be on the same network
+together.log.no_code = The relay gave no room code ({error}); share the link instead.
+# {code}: the room code, like ABCD-EFGH.
+together.log.code = Room code {code}
+# Keep "ABCD-EFGH" (an example code: 8 letters and digits).
+together.error.bad_code = That isn't a room code: 8 letters and digits, like ABCD-EFGH.
+together.error.code_not_found = No session has that code. Check it, or ask the host for the current one.
+together.error.code_rate_limited = Too many tries. Wait a minute, then try again.
+together.error.code_unsupported = The relay {relay} doesn't support room codes; ask the host for the link.
+together.error.relay_join_failed = Couldn't look up the code at {relay}: {error}
 together.log.handing_over = Handing the session to {name}…
 together.log.hand_over_failed = Couldn't hand the session over
 together.log.wants_to_join = {name} wants to join
@@ -87,15 +100,23 @@ together.host.approval = You approve each guest.
 # The three sentences above in a row ({approval} may be empty).
 together.host.summary = {intro} {guests} {approval}
 together.host.start = Start session
-together.host.via_relay = Host via relay
-together.host.via_relay_tooltip = Through your relay server: guests can join from any network
-together.host.no_relay_tooltip = Set a relay server in Settings → Music Together
+# How to host (two choices, keep short).
+together.host.mode_relay = Over the internet (relay)
+together.host.mode_direct = Same network only (direct)
+# {relay}: the relay server's name, e.g. relay.example.com.
+together.host.mode_relay_note = Guests join from any network with a room code. Song titles and display names pass via the relay server ({relay}).
+together.host.mode_direct_note = Guests connect straight to this computer and must be on the same network.
 # Button that opens the Music Together settings.
 together.host.settings = Settings…
 together.join.title = Join a session
 together.join.hint = Paste the link the host shared with you.
 # Button.
 together.join.button = Join
+together.join.code_title = Join with code
+together.join.code_hint = Enter the room code the host gave you (letters and digits; case, spaces and dashes don't matter).
+# An example code; keep it as is.
+together.join.code_placeholder = ABCD-EFGH
+together.join.link_title = Or paste a link
 together.connecting = Connecting to {host}…
 together.hosting.title.one = Hosting · {count} guest
 together.hosting.title.other = Hosting · {count} guests
@@ -105,6 +126,11 @@ together.hosting.share_lan = Share this link with people on the same network ({h
 together.hosting.copy_link = Copy link
 together.hosting.link_copied = Link copied
 together.hosting.copy_code = Copy code
+# Heading above the big room code.
+together.hosting.code_label = Room code
+together.hosting.code_hint = Guests enter it under “Join with code”, from any network.
+together.hosting.code_copied = Code copied
+together.hosting.relay_privacy = Song titles and display names pass via the relay server.
 # Keep "relay URL|session|key" / "host|port|session|key" recognizable: it's the code's format.
 together.hosting.copy_code_tooltip_relay = relay URL|session|key, for typing on another device
 together.hosting.copy_code_tooltip = host|port|session|key, for typing on another device

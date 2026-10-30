@@ -238,12 +238,15 @@ its own executor.
   cancel).
 * `spotify` — Spotify Web API with the user's own Client ID: Authorization Code + PKCE with
   a loopback redirect, playlists, liked songs, playlist items (read-only scopes).
-* `together` — Music Together on the LAN or through a self-hosted relay: ArchiveTune's JSON
+* `together` — Music Together on the LAN or through a relay: ArchiveTune's JSON
   protocol over WebSockets (`tungstenite` on std threads, `wss://` via rustls),
   `TogetherServer` (`start` on a port, `start_relay` through a `music-relay` server) /
   `TogetherClient`, heartbeat clock sync, `GuestSync` (drift / play-state planner), join
   links, host transfer (`transfer_host`: the guest starts its own server with the room's
-  state, everyone reconnects). See [Relay server](#relay-server-music-relay).
+  state, everyone reconnects); `online`: room codes (`register_code` / `resolve_code`), the
+  relay's health probe, which relay to use (setting → `packaging/relay.txt` → built-in) and
+  the 6 h cache of `relay.txt`. See [Relay server](#relay-server-music-relay) and
+  [Together online](#together-online-room-codes-and-the-default-relay).
 * `cast` — Chromecast / Google Cast: mDNS discovery (`discover`, `_googlecast._tcp`),
   `CastSession` (CASTV2 over TLS: Default Media Receiver, LOAD / PLAY / PAUSE / SEEK /
   STOP / volume, status), `MediaProxy` (serves a `ResolvedStream` or a local file to the
@@ -1329,7 +1332,8 @@ progress bar by a guest (it is overridden by the host's state), physical input.
   name, waits for the welcome, retries refusals for 15 s, resets its clock and the sync
   planner), the old host stops its server and joins as a guest. ArchiveTune's bare
   `host_transfer` / `host_transferred` messages still decode.
-* **Relay** (Settings → Music Together → Relay server, then **Host via relay**): the
+* **Relay** (now the default way to host, see [Together
+  online](#together-online-room-codes-and-the-default-relay)): the
   host keeps one WebSocket to a [`music-relay`](#relay-server-music-relay) server and
   serves the guests it tunnels in; the link is `music-together://join?url=wss…&sid=…&key=…`
   and works from any network. Guests speak the normal protocol to the relay URL, so the
@@ -1403,6 +1407,46 @@ device certificate are untested), PoToken on real Windows (WebView2) and Linux
 (WebKitGTK) machines, the relay behind a real TLS reverse proxy and across the internet,
 a host transfer between two different machines, a real LLM endpoint (only stubs).
 
+### Together online: room codes and the default relay
+
+Like ArchiveTune's online mode, but on our own relay and without accounts:
+
+* **Which relay.** The user's *Relay server* setting; else the address in
+  [`packaging/relay.txt`](packaging/relay.txt) on `main` of `UPDATE_REPO`
+  (`https://raw.githubusercontent.com/<UPDATE_REPO>/main/packaging/relay.txt`, first non-comment
+  line, `ws`/`wss`/`http`/`https` scheme and a host required), fetched when needed and cached for
+  6 h in `relay.json` in the cache dir (`$MUSIC_CONFIG_DIR/cache/` when set); if the fetch fails,
+  the last good address (no new fetch for 10 minutes); else the built-in `RELAY_URL` from
+  [`packaging/app.env`](packaging/app.env) (`identity::RELAY_URL`, now
+  `wss://relay.smhcoders.click`). Moving the relay is a one-line commit to `relay.txt`, no app update.
+* **Hosting.** Listen together → **Host a session** offers *Over the internet (relay)*
+  (default) and *Same network only (direct)* (also Settings → Music Together → *Host sessions*,
+  `together.host_mode`). Over the internet: `GET /health` on the relay (4 s), then the session
+  through it and a room code (`TogetherServer::register_code`). If the relay doesn't answer, the
+  session starts on the LAN instead with "Relay unreachable, guests must be on the same network"
+  (and the reason in the activity log). A relay without code endpoints still hosts; the link is
+  then the only way in.
+* **Codes.** 8 characters from `23456789ABCDEFGHJKLMNPQRSTUVWXYZ` (no 0 / O / 1 / I), shown as
+  `ABCD-EFGH`. Guests type them in **Join with code** (or the link field, or `@together-join-code`);
+  the app asks the relay (`POST …/resolve`) for the session id, guest key and WebSocket path, then
+  joins normally. The host still approves guests if the room asks for it. Join links of relayed
+  sessions carry the code (`…&sid=…&key=…&code=ABCDEFGH`, older versions ignore it), and
+  `music-together://join?url=wss%3A…&code=…` (or `?code=…` alone: the app's relay) is a link with
+  only the code.
+* **Privacy.** Sessions through the relay pass song ids and titles, artists and display names via
+  the relay server (one line on the page while hosting, a note in Settings → Music Together).
+  Same-network sessions don't touch it.
+* **Checked** (31 Oct 2026, two app instances on one Mac, demo clocks, temp config dirs): host
+  through `ws://dev.home:42118` (code `XCPJ-SYL2`) and through the default
+  `wss://relay.smhcoders.click` behind Caddy (code `YYBM-7ER6`), the guest joined by code each
+  time and followed the song (room state, clock offset, the same position); with the relay set
+  to a closed port the host started on the LAN with the note within a second. Tests:
+  `together::online` (codes, `relay.txt` parsing, the cache and its fallbacks, the setting →
+  directory → built-in order, an unreachable relay failing fast), `link` (links with codes),
+  `integrations::together` (the LAN fallback), `music-relay` (`codes`: generation, normalization,
+  rate limit, IPv6 /64, proxy addresses) and `relay_e2e.rs` (a guest joins by code, the code
+  survives a host transfer and goes with the room, the host key never comes back, the limit).
+
 ### Relay server (`music-relay`)
 
 `crates/music-relay`: one small binary (std threads + tungstenite, ~0.9 MB release) for
@@ -1421,6 +1465,25 @@ Options: `--max-rooms 100`, `--max-guests 20` (per room), `--max-connections 100
 (messages / s per guest, burst 3×; over it a guest is disconnected, a host's excess frames
 are dropped — room states repeat), `--idle-timeout 60`; `MUSIC_RELAY_LISTEN` sets the
 address. Rooms live while their host is connected (a host transfer moves them).
+`--resolve-per-minute 10` limits code look-ups per client address; `--trust-proxy IP`
+(repeatable, or `MUSIC_RELAY_TRUST_PROXY=ip,ip`) names reverse proxies whose
+`X-Forwarded-For` (its last entry) is the client.
+
+Room codes (plain HTTP next to the WebSocket, any path prefix; JSON in and out; errors are
+`{"ok":false,"error":"…","code":"…"}`):
+
+| Request | Answer |
+|---|---|
+| `POST /v1/together/sessions` `{"sessionId","guestKey","hostKey"}` | `200 {"ok":true,"sessionId","code":"ABCDEFGH","wsUrl":"/"}`: the room's code, made on first ask, the same afterwards (also for a host that took the room over). Only for a live room whose `guestKey` / `hostKey` (the room secret) match the hashes it registered with; else `403 invalid_session`, `400 bad_request`. |
+| `POST /v1/together/sessions/resolve` `{"code":"abcd-efgh"}` | `200 {"ok":true,"sessionId","guestKey","wsUrl":"/"}` (`wsUrl`: relative to the relay's address); `404 not_found`, `400 bad_code`, `429 rate_limited` with `Retry-After`. Never the host key. |
+| `GET /health` | also `"codes"`: rooms with a code |
+
+Codes: 8 characters from 32 symbols (32⁸ ≈ 1.1 × 10¹²), unique among live rooms, freed when the
+room ends. At 10 look-ups a minute per address (an IPv6 /64 counts as one), hitting any room of
+a full relay (100 rooms) takes about 2,000 years of guessing per address; and a code only gets
+as far as the session key: approval in the room settings is still the gatekeeper. The relay
+keeps the guest key for the code (it sees it in every guest's hello anyway) and only a hash of
+the host key; it still decides nothing.
 
 TLS is left to a reverse proxy; give the app the `wss://` URL. Caddy:
 
@@ -1429,6 +1492,9 @@ relay.example.com {
     reverse_proxy 127.0.0.1:42118
 }
 ```
+
+(With the proxy on another machine, start the relay with `--trust-proxy <proxy's IP>` so the
+code look-up limit counts each client, not the proxy.)
 
 nginx:
 
@@ -1443,7 +1509,8 @@ location / {
 ```
 
 The relay sees what the session sends (song ids and titles, display names, the session
-key in each guest's hello), like any host would; run your own.
+key in each guest's hello), like any host would; run your own, or use the default one
+(`wss://relay.smhcoders.click`).
 
 ### Content round: video types, podcasts, long albums, DNS-over-HTTPS, covers
 
@@ -1894,7 +1961,8 @@ windows/appearance `@mini[=on|off] @theme=dark|black|dynamic
 @together-host[=FILE] @together-join=LINK|file:PATH @together-leave @together-approve
 @together-deny @together-kick=NAME @together-ban=NAME @together-allow=add|control|approval:on|off
 @together-suggest=N @together-control=play|pause|next|prev|seek:S @together-status
-@together-host-relay[=FILE] @together-transfer=NAME @ai-filter=on|off @ai-category=KEY:on|off
+@together-host-relay[=FILE] @together-join-code=CODE|file:PATH @together-transfer=NAME
+@ai-filter=on|off @ai-category=KEY:on|off
 @ai-filter-status @ai-filter-clear @cast-scan @cast=NAME|IP:PORT[:NAME] @cast-stop[=off]
 @cast-status
 @import-file=PATH @spotify-playlist=URL @spotify-liked @spotify-playlists @import-accept=N

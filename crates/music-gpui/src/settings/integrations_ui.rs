@@ -8,10 +8,10 @@ use std::time::Duration;
 
 use gpui::{
     AnyElement, AppContext as _, Context, Entity, IntoElement, ParentElement as _, SharedString,
-    Styled as _, Subscription, Window, div,
+    Styled as _, Subscription, Window, div, prelude::FluentBuilder as _,
 };
 use gpui_component::{
-    ActiveTheme as _, Disableable as _, Sizable as _,
+    ActiveTheme as _, Disableable as _, Selectable as _, Sizable as _,
     button::{Button, ButtonVariants as _},
     h_flex,
     input::{Input, InputEvent, InputState},
@@ -25,10 +25,10 @@ use music_core::spotify;
 use super::SettingsPanel;
 use super::file::Settings;
 use super::prefs_ui::choice;
-use super::widgets::{field, field_at, group_at, note, row, row_at, status_line};
+use super::widgets::{Anchor as _, field, field_at, group_at, note, row, row_at, status_line};
 use crate::app::update_app;
 use crate::icons::Lucide;
-use crate::integrations::config::{SkipMode, ai_category_label, sponsorblock_label};
+use crate::integrations::config::{HostMode, SkipMode, ai_category_label, sponsorblock_label};
 use crate::router::Route;
 use crate::secrets::Secret;
 use crate::util::off_thread;
@@ -608,6 +608,32 @@ pub(super) fn render_together(
         )
         .child(
             group_at("together.hosting", t!("settings.together.hosting"), cx)
+                .child(row_at(
+                    "together.host_mode",
+                    t!("settings.together.host_mode"),
+                    Some(t!("settings.together.host_mode_desc")),
+                    h_flex().gap_1().flex_wrap().children(
+                        [
+                            (HostMode::Relay, t!("together.host.mode_relay")),
+                            (HostMode::Direct, t!("together.host.mode_direct")),
+                        ]
+                        .map(|(mode, label)| {
+                            let selected = t.host_mode == mode;
+                            Button::new(match mode {
+                                HostMode::Relay => "together-mode-relay",
+                                HostMode::Direct => "together-mode-direct",
+                            })
+                            .small()
+                            .map(|b| if selected { b.primary() } else { b.outline() })
+                            .selected(selected)
+                            .label(label)
+                            .on_click(cx.listener(
+                                move |p, _, _, cx| p.set_together(|t| t.host_mode = mode, cx),
+                            ))
+                        }),
+                    ),
+                    cx,
+                ))
                 .child(field_at(
                     "together.port",
                     t!("settings.together.port"),
@@ -666,7 +692,12 @@ pub(super) fn render_together(
                 cx,
             ))
             .children(relay_error.map(|e| status_line(e.into(), cx.theme().danger)))
-            .child(note(t!("settings.together.relay_note"), cx)),
+            .child(note(t!("settings.together.relay_note"), cx))
+            .child(
+                div()
+                    .anchor("together.relay_privacy")
+                    .child(note(t!("settings.together.relay_privacy"), cx)),
+            ),
         )
         .child(
             h_flex().child(

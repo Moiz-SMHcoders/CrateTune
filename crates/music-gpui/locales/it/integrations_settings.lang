@@ -86,12 +86,15 @@ settings.together.port_error = Le porte devono essere comprese tra 1024 e 65535
 settings.together.allow_add_desc = I loro suggerimenti finiscono nella tua coda.
 settings.together.allow_control_desc = Riproduzione, pausa, avanzamento e salto per tutti.
 settings.together.approval = Approva gli ospiti prima che entrino
-settings.together.hosting_note = Le sessioni funzionano sulla tua rete locale: gli ospiti si collegano direttamente a questo computer (consenti le connessioni in entrata se il firewall lo chiede). Il link contiene una chiave casuale; solo chi ha il link può entrare. Le modifiche si applicano subito a una sessione in corso. Nella pagina Ascolta insieme, “Rendi host” passa la sessione a un ospite: tutti seguono il nuovo host.
+settings.together.hosting_note = Sulla stessa rete, gli ospiti si collegano direttamente a questo computer (consenti le connessioni in entrata se il firewall lo chiede). Link e codici stanza portano a una chiave casuale: solo chi ne ha una può entrare, e puoi approvare ogni ospite. Le modifiche si applicano subito. Nella pagina Ascolta insieme, “Rendi host” passa la sessione a un ospite.
 settings.together.across_networks = Tra reti diverse
 settings.together.relay = Server relay
-settings.together.relay_placeholder = wss://relay.example.com (vuoto: solo LAN)
+settings.together.relay_placeholder = wss://relay.example.com (vuoto: relay predefinito)
 settings.together.relay_error = Serve un indirizzo ws:// o wss:// (senza nome utente né parametri di query)
-settings.together.relay_note = “Ospita tramite relay” fa passare la sessione attraverso un server music-relay ospitato da te (vedi il README: un piccolo binario, da mettere dietro un reverse proxy TLS per wss://). Gli ospiti possono quindi entrare da ovunque con il link. Il relay inoltra i messaggi della sessione (ID dei brani, titoli, nomi) ma non decide mai nulla; vuoto = solo LAN.
+settings.together.relay_note = Le sessioni via internet passano da questo relay. Vuoto: il relay predefinito, il cui indirizzo l'app legge dal suo repository (così può cambiare senza un aggiornamento). Qui va il tuo music-relay (vedi il README; dietro un proxy TLS per wss://). Il relay inoltra i messaggi e distribuisce i codici stanza, ma non decide mai nulla: è sempre l'host a far entrare gli ospiti.
+settings.together.host_mode = Ospita sessioni
+settings.together.host_mode_desc = Via internet tramite il relay (ospiti su qualsiasi rete, con un codice stanza) o solo su questa rete (gli ospiti si collegano direttamente a questo computer).
+settings.together.relay_privacy = Privacy: le sessioni tramite relay fanno passare titoli dei brani, artisti e nomi visualizzati dal server relay, che non memorizza nulla e non vede mai il tuo account. Le sessioni sulla stessa rete non lo usano.
 settings.together.open = Apri Ascolta insieme
 
 # ---- Spotify import

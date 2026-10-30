@@ -4874,6 +4874,7 @@ version = "0.2.5"
 name = "music-relay"
 version = "0.2.5"
 dependencies = [
+ "getrandom 0.3.4",
  "music-core",
  "music-net",
  "serde",

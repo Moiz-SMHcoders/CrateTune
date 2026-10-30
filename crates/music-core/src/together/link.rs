@@ -3,7 +3,9 @@
 //! Join links: `music-together://join?host=…&port=…&sid=…&key=…` (a host on the
 //! LAN), `music-together://join?url=wss%3A…&sid=…&key=…` (a session through a relay),
 //! a WebSocket URL (`ws://host:port/together?sid=…&key=…`, `wss://relay…?sid=…&key=…`)
-//! or the compact `host|port|sid|key` / `wss://relay…|sid|key`.
+//! or the compact `host|port|sid|key` / `wss://relay…|sid|key`. A relayed link may
+//! also carry the room code (`&code=ABCDEFGH`), or only the code
+//! (`music-together://join?url=wss%3A…&code=…`): see [`JoinRequest`].
 
 use std::net::{IpAddr, UdpSocket};
 
@@ -69,6 +71,14 @@ impl JoinInfo {
                 percent_encode(&self.session_id),
                 percent_encode(&self.session_key)
             ),
+        }
+    }
+
+    /// [`Self::to_link`] plus the room code (ignored by older versions).
+    pub fn to_link_with_code(&self, code: Option<&str>) -> String {
+        match code {
+            Some(code) => format!("{}&code={}", self.to_link(), percent_encode(code)),
+            None => self.to_link(),
         }
     }
 
@@ -160,6 +170,57 @@ impl JoinInfo {
                 session_key,
                 url: None,
             })
+    }
+}
+
+/// What a guest typed or clicked: a full join link, or a room code to look up
+/// (at the relay named in the link, else the app's relay).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum JoinRequest {
+    Direct(JoinInfo),
+    Code { relay: Option<String>, code: String },
+}
+
+impl JoinRequest {
+    /// A join link / URL / compact form ([`JoinInfo::parse`]), a bare code
+    /// (`abcd-efgh`, any case, spaces and dashes ignored), or a code link
+    /// `music-together://join?code=…[&url=wss%3A…]`.
+    pub fn parse(raw: &str) -> Option<Self> {
+        if let Some(info) = JoinInfo::parse(raw) {
+            return Some(Self::Direct(info));
+        }
+        let raw = raw.trim();
+        if let Some(code) = super::online::normalize_code(raw) {
+            return Some(Self::Code { relay: None, code });
+        }
+        let (scheme, rest) = raw.split_once("://")?;
+        if !scheme.eq_ignore_ascii_case(LINK_SCHEME) {
+            return None;
+        }
+        let query = rest.split_once('?').map_or("", |(_, q)| q);
+        let params = parse_query(query.split('#').next().unwrap_or(""));
+        let get = |k: &str| {
+            params
+                .iter()
+                .find(|(key, _)| key == k)
+                .map(|(_, v)| v.trim().to_owned())
+                .filter(|v| !v.is_empty())
+        };
+        let code = super::online::normalize_code(&get("code")?)?;
+        let relay = match get("url") {
+            Some(url) => Some(relay_url_normalized(&url)?),
+            None => None,
+        };
+        Some(Self::Code { relay, code })
+    }
+
+    /// `music-together://join?url=…&code=…` (a link with just the code).
+    pub fn code_link(relay: &str, code: &str) -> Option<String> {
+        Some(format!(
+            "{LINK_SCHEME}://join?url={}&code={}",
+            percent_encode(&relay_url_normalized(relay)?),
+            percent_encode(code)
+        ))
     }
 }
 
@@ -293,6 +354,61 @@ mod tests {
             ("", None),
         ] {
             assert_eq!(relay_url(raw).as_deref(), want, "{raw}");
+        }
+    }
+
+    #[test]
+    fn join_requests_with_codes() {
+        let full =
+            JoinInfo::via_relay("wss://relay.example.com", "s1".into(), "k1".into()).unwrap();
+        // A full link that also carries the code joins directly.
+        let link = full.to_link_with_code(Some("ABCDEFGH"));
+        assert!(link.ends_with("&code=ABCDEFGH"), "{link}");
+        assert_eq!(JoinInfo::parse(&link), Some(full.clone()));
+        assert_eq!(
+            JoinRequest::parse(&link),
+            Some(JoinRequest::Direct(full.clone()))
+        );
+        assert_eq!(full.to_link_with_code(None), full.to_link());
+        // A bare code, however typed.
+        for raw in ["ABCDEFGH", "abcd-efgh", " Abcd Efgh "] {
+            assert_eq!(
+                JoinRequest::parse(raw),
+                Some(JoinRequest::Code {
+                    relay: None,
+                    code: "ABCDEFGH".into()
+                }),
+                "{raw:?}"
+            );
+        }
+        // A code link, with and without the relay.
+        let only = JoinRequest::code_link("https://relay.example.com", "ABCDEFGH").unwrap();
+        assert_eq!(
+            only,
+            "music-together://join?url=wss%3A%2F%2Frelay.example.com%2F&code=ABCDEFGH"
+        );
+        assert_eq!(
+            JoinRequest::parse(&only),
+            Some(JoinRequest::Code {
+                relay: Some("wss://relay.example.com/".into()),
+                code: "ABCDEFGH".into()
+            })
+        );
+        assert_eq!(
+            JoinRequest::parse("music-together://join?code=abcd-efgh"),
+            Some(JoinRequest::Code {
+                relay: None,
+                code: "ABCDEFGH".into()
+            })
+        );
+        for bad in [
+            "music-together://join?code=ABCD-EFG0",
+            "music-together://join?url=ftp%3A%2F%2Fx&code=ABCDEFGH",
+            "https://example.com/?code=ABCDEFGH",
+            "ABCDEFG",
+            "",
+        ] {
+            assert_eq!(JoinRequest::parse(bad), None, "{bad}");
         }
     }
 

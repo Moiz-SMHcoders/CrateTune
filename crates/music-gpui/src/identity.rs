@@ -12,6 +12,9 @@ pub const BUNDLE_ID: &str = env!("MUSIC_BUNDLE_ID");
 pub const APP_SUMMARY: &str = env!("MUSIC_APP_SUMMARY");
 /// `owner/repo` on GitHub for the update check; empty = no update check.
 pub const UPDATE_REPO: &str = env!("MUSIC_UPDATE_REPO");
+/// The built-in Music Together relay (`wss://…`), after the user's setting and
+/// `packaging/relay.txt` in [`UPDATE_REPO`]; empty = none.
+pub const RELAY_URL: &str = env!("MUSIC_RELAY_URL");
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 /// Ids the app had before (newest first). Their settings / cache folders are moved to
 /// [`APP_ID`]'s on the first start, and their keychain items are taken over when read.

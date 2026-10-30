@@ -85,12 +85,15 @@ settings.together.port_error = 端口必须在 1024 到 65535 之间
 settings.together.allow_add_desc = 他们推荐的歌曲会加入你的队列。
 settings.together.allow_control_desc = 为所有人播放、暂停、跳转和切歌。
 settings.together.approval = 访客加入前需要批准
-settings.together.hosting_note = 会话在你的局域网中运行：访客直接连接到这台电脑（如果防火墙询问，请允许传入连接）。链接中包含随机密钥，只有拥有链接的人才能加入。更改会立即应用到正在进行的会话。在“一起听”页面中，“设为房主”可将会话移交给某位访客：所有人都会跟随新房主。
+settings.together.hosting_note = 在同一网络中，访客直接连接到这台电脑（如果防火墙询问，请允许传入连接）。链接和房间码都指向一个随机密钥：只有拥有它们的人才能加入，你还可以逐一批准访客。更改会立即生效。在“一起听”页面中，“设为房主”可将会话移交给某位访客。
+settings.together.host_mode = 会话主持方式
+settings.together.host_mode_desc = 通过中继经互联网主持（访客可凭房间码从任何网络加入），或仅在此网络中主持（访客直接连接到这台电脑）。
 settings.together.across_networks = 跨网络
 settings.together.relay = 中继服务器
-settings.together.relay_placeholder = wss://relay.example.com（留空：仅限局域网）
+settings.together.relay_placeholder = wss://relay.example.com（留空：默认中继）
 settings.together.relay_error = 需要一个 ws:// 或 wss:// 地址（不含用户名或查询参数）
-settings.together.relay_note = “通过中继主持”会让会话经由你自己搭建的 music-relay 服务器运行（参见 README：只需一个小型可执行文件，如需 wss:// 请将其置于 TLS 反向代理之后）。之后访客可以通过链接从任何地方加入。中继只转发会话消息（歌曲 ID、标题、名称），从不做任何决定；留空 = 仅限局域网。
+settings.together.relay_note = 通过互联网的会话经由此中继运行。留空则使用默认中继，其地址由应用从代码仓库读取（因此无需更新应用即可更换）。如需使用你自己的 music-relay（参见 README；如需 wss:// 请将其置于 TLS 代理之后），请在此填写。中继负责转发消息和分发房间码，但从不做任何决定：仍由房主决定是否让访客加入。
+settings.together.relay_privacy = 隐私：通过中继的会话会将歌曲标题、艺人和显示名称经由中继服务器传递；中继服务器不存储任何内容，也永远看不到你的账号。同一网络中的会话不使用中继。
 settings.together.open = 打开“一起听”
 
 # ---- Spotify import

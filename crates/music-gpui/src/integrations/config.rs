@@ -51,6 +51,17 @@ impl SponsorBlockPrefs {
     }
 }
 
+/// How "Host a session" runs it.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum HostMode {
+    /// Through the relay (any network); on the LAN if the relay can't be reached.
+    #[default]
+    Relay,
+    /// Guests connect straight to this computer (same network only).
+    Direct,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct TogetherPrefs {
@@ -65,8 +76,10 @@ pub struct TogetherPrefs {
     pub last_join: String,
     /// Random id that identifies this app to hosts (bans stick to it).
     pub client_id: String,
-    /// A self-hosted `music-relay` server (`wss://…`); empty = LAN only.
+    /// A `music-relay` server (`wss://…`) instead of the default one (empty: the
+    /// address in the app's `relay.txt`, else the built-in one).
     pub relay_url: String,
+    pub host_mode: HostMode,
 }
 
 impl Default for TogetherPrefs {
@@ -80,6 +93,7 @@ impl Default for TogetherPrefs {
             last_join: String::new(),
             client_id: String::new(),
             relay_url: String::new(),
+            host_mode: HostMode::default(),
         }
     }
 }
@@ -91,11 +105,6 @@ impl TogetherPrefs {
             allow_guests_to_control_playback: self.allow_guests_to_control_playback,
             require_host_approval_to_join: self.require_host_approval,
         }
-    }
-
-    /// The relay's WebSocket URL, if one is set and valid.
-    pub fn relay(&self) -> Option<String> {
-        music_core::together::relay_url(&self.relay_url)
     }
 
     pub fn name(&self) -> String {
@@ -262,10 +271,18 @@ mod tests {
         assert_eq!(t.port, 5000);
         assert!(t.allow_guests_to_add_tracks && !t.allow_guests_to_control_playback);
         assert!(!t.name().is_empty());
-        assert_eq!(t.relay(), None);
-        let t: TogetherPrefs =
-            serde_json::from_str(r#"{"relay_url":"https://relay.example.com"}"#).unwrap();
-        assert_eq!(t.relay().as_deref(), Some("wss://relay.example.com/"));
+        assert_eq!(music_core::together::relay_url(&t.relay_url), None);
+        // Older files: hosting goes through the relay by default.
+        assert_eq!(t.host_mode, HostMode::Relay);
+        let t: TogetherPrefs = serde_json::from_str(
+            r#"{"relay_url":"https://relay.example.com","host_mode":"direct"}"#,
+        )
+        .unwrap();
+        assert_eq!(
+            music_core::together::relay_url(&t.relay_url).as_deref(),
+            Some("wss://relay.example.com/")
+        );
+        assert_eq!(t.host_mode, HostMode::Direct);
         let s: SpotifyPrefs = serde_json::from_str("{}").unwrap();
         assert_eq!(s.redirect_port, 43819);
         let ai: AiFilterPrefs = serde_json::from_str("{}").unwrap();
