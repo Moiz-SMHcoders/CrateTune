@@ -108,7 +108,18 @@ if [[ $DMG == 1 ]]; then
   ln -s /Applications "$STAGE/Applications"
   DMG_PATH="$OUT/${APP_ID}-${APP_VERSION}-macos-${APP_ARCH}.dmg"
   rm -f "$DMG_PATH"
-  hdiutil create -quiet -volname "$APP_NAME" -srcfolder "$STAGE" -ov -format UDZO "$DMG_PATH"
+  # hdiutil fails now and then on CI runners ("Resource busy"), a retry gets through.
+  # Not `-quiet`: that hides its error message, leaving only exit code 1 in the log.
+  DMG_TRIES=5
+  for ((try = 1; ; try++)); do
+    status=0
+    hdiutil create -volname "$APP_NAME" -srcfolder "$STAGE" -ov -format UDZO "$DMG_PATH" || status=$?
+    [[ $status == 0 ]] && break
+    echo "hdiutil create failed with exit code $status (try $try of $DMG_TRIES)" >&2
+    [[ $try -lt $DMG_TRIES ]] || exit "$status"
+    rm -f "$DMG_PATH"
+    sleep $((try * 10))
+  done
   if [[ -n "${MACOS_SIGN_IDENTITY:-}" ]]; then
     codesign --force --sign "$MACOS_SIGN_IDENTITY" "$DMG_PATH"
   fi

@@ -24,6 +24,17 @@ versions follow [SemVer](https://semver.org/).
 * Script hooks: `@shelf-status`, `@shelf-scroll=N:next|prev|start|end`,
   `@drag=X1;Y1;X2;Y2`; `@scroll` / `@wheel` take an optional DX and `shift`.
 
+### Fixed
+
+* **Listen Together: a guest could miss being banned or removed, or the end of the session**,
+  and see "Connection lost" instead. When a message from the guest (a heartbeat, every few
+  hundred ms) arrived just as the host acted, the server dropped the connection without
+  sending what it had queued. In a stress test 1 in 40 goodbyes was lost, 1 in 8 under CPU
+  load; now none are.
+* **Windows: Listen Together and relay connections could drop, lose data or crash the
+  app** while idle. Polling a socket with a read timeout sometimes fails with error 997
+  and loses bytes; a new `music-net` crate waits with `WSAPoll` instead.
+
 ## [0.2.2] — 2026-10-30
 
 ### Added
