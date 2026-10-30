@@ -310,6 +310,17 @@ own. Details: [README: Now Playing round](../README.md#now-playing-round-cpu-des
 [Measurements (app shell round)](../README.md#measurements-app-shell-round). · Size: small ·
 Priority: low
 
+**F3. Scrolling slows down when a page holds more artwork than the image cache**
+When every shelf of a long Home brings its own covers (~700 images, more than the 48 MB
+artwork budget), drawing the end of the feed got up to 1.8x slower on the Windows CI runner
+even with culling on, most likely because the artwork cache evicts and re-decodes images as
+they scroll back into view. Normal use stays well under the budget, so the CI frame-time
+gate keeps its fixture artwork within it. Ideas: decode at display size before caching,
+evict by distance from the viewport rather than LRU, keep small thumbnails for culled
+shelves, or raise the budget on machines with plenty of memory. Repro: `MUSIC_FIXTURES`
+with per-page artwork in `scripts/perf-frames.sh` (see the comment in
+`crates/music-core/src/fixtures.rs` and docs/TESTING.md 6.3). · Size: medium · Priority: low
+
 ## 6. Technical debt
 
 **T1. Vendored `opus-decoder`**
