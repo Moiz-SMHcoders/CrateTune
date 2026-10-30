@@ -8,6 +8,7 @@ settings.account.not_signed_in = साइन इन नहीं है। स�
 settings.account.sign_in_google = Google से साइन इन करें…
 settings.account.paste_cookie = कुकी पेस्ट करें…
 settings.account.google_refused = अगर Google साइन-इन विंडो को मना कर दे (“यह ब्राउज़र या ऐप सुरक्षित नहीं हो सकता”), तो “कुकी पेस्ट करें” इस्तेमाल करें।
+settings.account.profile_note = साइन-इन विंडो अपनी अलग ब्राउज़र प्रोफ़ाइल रखती है, ताकि {app} बैकग्राउंड में आपका सत्र नवीनीकृत कर सके। साइन आउट करने पर यह हटा दी जाती है।
 settings.account.last_synced = आखिरी सिंक {date}
 settings.account.not_synced = अभी तक सिंक नहीं हुआ
 settings.account.sync_now = अभी सिंक करें

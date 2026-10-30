@@ -294,15 +294,25 @@ likes, library, playlists, subscriptions and personalized recommendations.
 * **macOS and Windows:** Settings → Account → **Sign in with Google…** opens Google's
   sign-in page in a window; when you reach YouTube Music the window closes. On Windows the
   window uses the Microsoft Edge WebView2 Runtime (part of Windows 10/11); if it is
-  missing, the app says so and opens **Paste cookie…** instead. The window keeps nothing
-  of the Google session.
+  missing, the app says so and opens **Paste cookie…** instead. The window keeps its own
+  browser profile with your Google session (like a browser would), so CrateTune can renew
+  your YouTube Music sign-in in the background; **Sign out** deletes it.
 * **Everywhere (and on Linux):** **Paste cookie…** — copy the `Cookie` request header of
   music.youtube.com from your browser's developer tools (step-by-step instructions are in
   the dialog).
 
 The sign-in cookie is stored in the system keychain and only sent to YouTube. **Sync now**
 copies your YouTube Music library into the local one; **Sign out** forgets the cookie
-(the synced data stays).
+and the sign-in window's Google session (the synced data stays).
+
+**Staying signed in.** Google keeps renewing parts of the sign-in cookie while you use
+YouTube Music; CrateTune takes those updates like a browser and saves them (at most once a
+minute). If YouTube Music still rejects the sign-in, CrateTune first tries to renew it in
+the background from the sign-in window's profile, without showing anything. Only if that
+fails does it say **"Your YouTube Music sign-in expired"**, with a **Sign in again** button
+(also in Settings → Account). Until then likes and dislikes are kept here and sent after you
+sign in again; browsing keeps working, signed out. On Linux (paste-cookie sign-in) there is
+no background renewal: paste a fresh cookie when asked.
 
 **Several Google accounts.** Like youtube.com, one browser login can hold several Google
 accounts. If yours does, Settings → Account → Accounts lists them by name and e-mail;
@@ -319,7 +329,8 @@ Signed in, the heart and YouTube Music's thumbs up are the same thing, both ways
 
 * **Liking here** likes the song on YouTube Music (and adds it to your library). If
   YouTube Music can't be reached, the like is kept here and sent later (every few
-  minutes, and before each sync) — the toast says so.
+  minutes, and before each sync) — the toast says so. If your sign-in expired, the toast
+  says that instead and the like waits until you sign in again.
 * **Liked elsewhere** (phone, browser, ArchiveTune) shows up here by itself: CrateTune
   syncs your liked songs when it starts (unless it just did), every 45 minutes, when you
   come back to the window after a while and when you open the Liked tab; the whole

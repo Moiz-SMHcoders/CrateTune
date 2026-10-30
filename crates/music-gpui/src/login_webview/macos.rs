@@ -1,13 +1,18 @@
 //! macOS sign-in window: a GPUI window whose content below a small status bar
 //! is a WKWebView (wry, `build_as_child` on the window's NSView) showing Google's
-//! sign-in page. The web view uses a non-persistent data store. The cookie store is
-//! read with `getAllCookies` + a channel polled from a GPUI timer instead of wry's
-//! `cookies()`, which spins the main run loop and would re-enter GPUI from inside an
-//! update.
+//! sign-in page. The cookie store is read with `getAllCookies` + a channel polled
+//! from a GPUI timer instead of wry's `cookies()`, which spins the main run loop and
+//! would re-enter GPUI from inside an update.
+//!
+//! The web view's data store is persistent ([`sign_in_store`]): its own
+//! `WKWebsiteDataStore` ([`STORE_ID`]) on macOS 14+, the app's default store before.
+//! [`silent_refresh`] loads music.youtube.com in a WKWebView on that store that is
+//! never put in a window; [`clear_profile`] empties the store (sign-out).
 
+use std::cell::RefCell;
 use std::ptr::NonNull;
 use std::sync::mpsc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use block2::RcBlock;
 use gpui::{
@@ -19,11 +24,201 @@ use gpui_component::{
     button::{Button, ButtonVariants as _},
     h_flex,
 };
-use objc2_foundation::{NSArray, NSHTTPCookie};
+use objc2::rc::Retained;
+use objc2::runtime::AnyObject;
+use objc2::{MainThreadMarker, MainThreadOnly as _};
+use objc2_core_foundation::{CGPoint, CGRect, CGSize};
+use objc2_foundation::{
+    NSArray, NSDate, NSError, NSHTTPCookie, NSProcessInfo, NSString, NSURL, NSURLRequest, NSUUID,
+};
+use objc2_web_kit::{WKWebView, WKWebViewConfiguration, WKWebsiteDataStore};
 use wry::dpi::{LogicalPosition, LogicalSize};
-use wry::{Rect, WebView, WebViewBuilder, WebViewExtMacOS as _};
+use wry::{Rect, WebView, WebViewBuilder, WebViewBuilderExtDarwin as _, WebViewExtMacOS as _};
 
-use super::{Cookies, LOGIN_URL, hand_over, youtube_cookie};
+use super::{
+    Cookies, LOGIN_URL, MUSIC_URL, Probe, RefreshResult, SIGNED_IN_PROBE, SILENT_TIMEOUT,
+    hand_over, read_probe, youtube_cookie,
+};
+
+/// The sign-in data store's identifier (macOS 14+; any fixed UUID of this app).
+pub(super) const STORE_ID: [u8; 16] = [
+    0x28, 0xEE, 0x6E, 0xD9, 0x6C, 0xE3, 0x4D, 0x48, 0xBA, 0x81, 0x15, 0xF5, 0x55, 0x84, 0xB7, 0x63,
+];
+
+/// Whether `WKWebsiteDataStore(forIdentifier:)` exists (macOS 14+), as wry decides.
+fn identified_stores() -> bool {
+    NSProcessInfo::processInfo()
+        .operatingSystemVersion()
+        .majorVersion
+        >= 14
+}
+
+/// The persistent store the sign-in web views use (the same one wry picks for
+/// `with_data_store_identifier(STORE_ID)`).
+fn sign_in_store(mtm: MainThreadMarker) -> Retained<WKWebsiteDataStore> {
+    // SAFETY: main thread; the identifier is non-zero.
+    unsafe {
+        if identified_stores() {
+            WKWebsiteDataStore::dataStoreForIdentifier(&NSUUID::from_bytes(STORE_ID), mtm)
+        } else {
+            WKWebsiteDataStore::defaultDataStore(mtm)
+        }
+    }
+}
+
+/// Reads every cookie of `store`; the answer arrives on the returned channel.
+fn all_cookies(store: &WKWebsiteDataStore) -> mpsc::Receiver<Cookies> {
+    let (tx, rx) = mpsc::channel::<Cookies>();
+    let block = RcBlock::new(move |cookies: NonNull<NSArray<NSHTTPCookie>>| {
+        // SAFETY: WebKit passes a valid array for the duration of the callback.
+        let cookies = unsafe { cookies.as_ref() };
+        let list = cookies
+            .to_vec()
+            .into_iter()
+            .map(|c| {
+                (
+                    c.name().to_string(),
+                    c.value().to_string(),
+                    c.domain().to_string(),
+                )
+            })
+            .collect();
+        let _ = tx.send(list);
+    });
+    // SAFETY: main thread; the store outlives the call (WebKit retains the block).
+    unsafe { store.httpCookieStore().getAllCookies(&block) };
+    rx
+}
+
+/// Empties the sign-in data store: cookies, storage, caches (sign-out).
+pub(super) fn clear_profile() {
+    let Some(mtm) = MainThreadMarker::new() else {
+        return;
+    };
+    let store = sign_in_store(mtm);
+    let done = RcBlock::new(|| {});
+    // SAFETY: main thread; WebKit retains the block until it runs.
+    unsafe {
+        store.removeDataOfTypes_modifiedSince_completionHandler(
+            &WKWebsiteDataStore::allWebsiteDataTypes(mtm),
+            &NSDate::distantPast(),
+            &done,
+        );
+    }
+}
+
+thread_local! {
+    /// A background renewal is running (one at a time).
+    static SILENT_BUSY: RefCell<bool> = const { RefCell::new(false) };
+}
+
+/// Loads music.youtube.com in a hidden WKWebView on the sign-in store and reads its
+/// cookies once the page says it is signed in. Main thread (GPUI's).
+pub(super) fn silent_refresh(cx: &mut App) -> futures_channel::oneshot::Receiver<RefreshResult> {
+    let (tx, rx) = futures_channel::oneshot::channel();
+    let Some(mtm) = MainThreadMarker::new() else {
+        let _ = tx.send(Err("not on the main thread".into()));
+        return rx;
+    };
+    if SILENT_BUSY.with(|b| b.replace(true)) {
+        let _ = tx.send(Err("already renewing".into()));
+        return rx;
+    }
+    // SAFETY: plain WebKit object creation on the main thread.
+    let view = unsafe {
+        let config = WKWebViewConfiguration::new(mtm);
+        config.setWebsiteDataStore(&sign_in_store(mtm));
+        let frame = CGRect::new(CGPoint::new(0.0, 0.0), CGSize::new(1024.0, 768.0));
+        let view = WKWebView::initWithFrame_configuration(WKWebView::alloc(mtm), frame, &config);
+        view.setCustomUserAgent(Some(&NSString::from_str(USER_AGENT)));
+        if let Some(url) = NSURL::URLWithString(&NSString::from_str(MUSIC_URL)) {
+            view.loadRequest(&NSURLRequest::requestWithURL(&url));
+        }
+        view
+    };
+    let executor = cx.background_executor().clone();
+    cx.spawn(async move |_| {
+        let started = Instant::now();
+        let mut probe: Option<mpsc::Receiver<String>> = None;
+        let mut cookies: Option<mpsc::Receiver<Cookies>> = None;
+        let mut unknown_seen = 0;
+        let result = loop {
+            executor.timer(Duration::from_millis(1000)).await;
+            if started.elapsed() > SILENT_TIMEOUT {
+                break Err("timed out".to_owned());
+            }
+            if let Some(rx) = &cookies {
+                match rx.try_recv() {
+                    Ok(list) => {
+                        break youtube_cookie(&list)
+                            .ok_or_else(|| "no sign-in cookie in the profile".to_owned());
+                    }
+                    Err(mpsc::TryRecvError::Empty) => continue,
+                    Err(mpsc::TryRecvError::Disconnected) => {
+                        break Err("the cookie store didn't answer".to_owned());
+                    }
+                }
+            }
+            // SAFETY: property reads on the live web view, on the main thread.
+            let url = unsafe { view.URL() }
+                .and_then(|u| u.absoluteString())
+                .map(|s| s.to_string())
+                .unwrap_or_default();
+            if url.starts_with("https://accounts.google.com") {
+                break Err("the profile is signed out".to_owned());
+            }
+            // SAFETY: as above.
+            if !url.starts_with(MUSIC_URL) || unsafe { view.isLoading() } {
+                continue;
+            }
+            match probe.as_ref().map(|rx| rx.try_recv()) {
+                None => probe = Some(evaluate(&view, SIGNED_IN_PROBE)),
+                Some(Err(mpsc::TryRecvError::Empty)) => {}
+                Some(answer) => {
+                    probe = None;
+                    match read_probe(&answer.unwrap_or_default(), &mut unknown_seen) {
+                        Probe::Wait => {}
+                        Probe::SignedOut => break Err("the profile is signed out".to_owned()),
+                        // SAFETY: main thread (this task runs on GPUI's).
+                        Probe::SignedIn => {
+                            let store = unsafe { view.configuration().websiteDataStore() };
+                            cookies = Some(all_cookies(&store));
+                        }
+                    }
+                }
+            }
+        };
+        // SAFETY: main thread.
+        unsafe { view.stopLoading() };
+        drop(view);
+        SILENT_BUSY.with(|b| *b.borrow_mut() = false);
+        let _ = tx.send(result);
+    })
+    .detach();
+    rx
+}
+
+/// Runs `script` in the page; its string result arrives on the channel ("" on errors).
+fn evaluate(view: &WKWebView, script: &str) -> mpsc::Receiver<String> {
+    let (tx, rx) = mpsc::channel();
+    let tx = RefCell::new(Some(tx));
+    let handler = RcBlock::new(move |value: *mut AnyObject, _error: *mut NSError| {
+        let Some(tx) = tx.borrow_mut().take() else {
+            return;
+        };
+        // SAFETY: WebKit passes a valid (or null) object for the duration of the call.
+        let text = unsafe { value.as_ref() }
+            .and_then(|v| v.downcast_ref::<NSString>())
+            .map(|s| s.to_string())
+            .unwrap_or_default();
+        let _ = tx.send(text);
+    });
+    // SAFETY: main thread; WebKit retains the handler until it runs.
+    unsafe {
+        view.evaluateJavaScript_completionHandler(&NSString::from_str(script), Some(&handler))
+    };
+    rx
+}
 
 /// Safari's user agent: Google serves its normal sign-in flow to WebKit with it.
 const USER_AGENT: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 \
@@ -66,10 +261,13 @@ impl LoginWindow {
     fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         let viewport = window.viewport_size();
         let (w, h) = (f32::from(viewport.width), f32::from(viewport.height));
+        // Persistent store (see the module docs): the Google session stays for
+        // background renewals until sign-out.
         let built = WebViewBuilder::new()
             .with_url(LOGIN_URL)
             .with_user_agent(USER_AGENT)
-            .with_incognito(true)
+            .with_incognito(false)
+            .with_data_store_identifier(STORE_ID)
             .with_bounds(bounds(w, h))
             .build_as_child(&*window);
         let (webview, status) = match built {
@@ -110,31 +308,10 @@ impl LoginWindow {
     /// Asks WebKit for every cookie; the answer arrives on `self.cookies`.
     fn request_cookies(&mut self) {
         let Some(webview) = &self.webview else { return };
-        let (tx, rx) = mpsc::channel::<Cookies>();
-        let block = RcBlock::new(move |cookies: NonNull<NSArray<NSHTTPCookie>>| {
-            // SAFETY: WebKit passes a valid array for the duration of the callback.
-            let cookies = unsafe { cookies.as_ref() };
-            let list = cookies
-                .to_vec()
-                .into_iter()
-                .map(|c| {
-                    (
-                        c.name().to_string(),
-                        c.value().to_string(),
-                        c.domain().to_string(),
-                    )
-                })
-                .collect();
-            let _ = tx.send(list);
-        });
         let wk = webview.webview();
-        // SAFETY: main thread; the configuration's data store and its cookie store are
-        // owned by the web view, which outlives the call (the block is retained by WebKit).
-        unsafe {
-            let store = wk.configuration().websiteDataStore().httpCookieStore();
-            store.getAllCookies(&block);
-        }
-        self.cookies = Some(rx);
+        // SAFETY: main thread; the data store is owned by the live web view.
+        let store = unsafe { wk.configuration().websiteDataStore() };
+        self.cookies = Some(all_cookies(&store));
     }
 
     /// Returns whether to keep polling.

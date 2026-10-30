@@ -145,6 +145,17 @@ impl Auth {
         }
     }
 
+    /// A copy that signs with the session's current cookie but outside the session:
+    /// its failures neither renew nor expire it. For probing another Google account
+    /// of the login (`X-Goog-AuthUser`), where a 401 may only mean "not this index".
+    pub fn detached(&self) -> Auth {
+        Auth {
+            cookie: self.cookie_header(),
+            session: None,
+            ..self.clone()
+        }
+    }
+
     /// The cookie to sign with and the session revision it belongs to.
     pub(crate) fn signing_cookie(&self) -> (String, Option<u64>) {
         match &self.session {
@@ -343,6 +354,9 @@ mod tests {
             b.authorization("https://music.youtube.com", 1),
             Some(sapisid_hash("new", "https://music.youtube.com", 1))
         );
+        let probe = b.detached();
+        assert!(probe.session.is_none());
+        assert_eq!(probe.cookie, "SAPISID=new");
         // Without a session nothing is merged.
         assert!(!Auth::new("SAPISID=s").absorb_set_cookies(
             "https://music.youtube.com",

@@ -229,6 +229,8 @@ impl MusicApp {
             // The top bar's controls dim in an inactive window.
             cx.observe_window_activation(window, |_, _, cx| cx.notify()),
             cx.on_app_quit(|this, cx| {
+                // A rotated YouTube cookie not saved yet (throttled) goes in now.
+                this.persist_session_cookie(true, cx);
                 this.flush_listening();
                 this.save_queue_now();
                 this.flush_searches();
@@ -382,6 +384,7 @@ impl MusicApp {
         this.apply_artwork_budget(cx);
         this.sync_browse_client(cx);
         this.start_radio_watch(window, cx);
+        this.start_session_keeper(cx);
         this.start_youtube_sync_watch(window, cx);
         this.rebuild_lyrics_service(cx);
         this.use_library_lyrics_cache(cx);

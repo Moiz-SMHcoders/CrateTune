@@ -150,6 +150,16 @@ account.toast.signed_in = Signed in as {name}
 account.sign_in_failed = Sign-in failed: {error}
 account.toast.signed_out = Signed out of YouTube Music
 account.unreachable = Couldn't reach the account: {error}
+# The sign-in was rejected and renewing it in the background failed (notification).
+account.expired.message = Your YouTube Music sign-in expired. Sign in again to keep likes and playlists in sync.
+# Button in that notification and in Settings → Account.
+account.expired.sign_in_again = Sign in again
+# Settings → Account while the sign-in is expired.
+account.expired.status = Your YouTube Music sign-in expired. Likes and playlist changes are saved here and sent once you sign in again.
+# Short reason inside other messages (e.g. a sync error: “{part}: …”).
+account.error.signed_out = sign-in expired
+# YouTube couldn't be reached (offline, server error); {error} is a technical message (English).
+account.error.network = couldn't reach YouTube Music ({error})
 account.switching = Switching…
 # After switching to another channel / brand account or Google account of the login.
 account.toast.switched = Now using {name}
@@ -227,6 +237,8 @@ store.toast.undisliked_one = Removed the dislike from “{title}”
 # Saved in the local library; YouTube Music failed, the like / dislike is retried
 # later. {message} is one of the toasts above, {error} a technical message (English).
 store.toast.rating_queued = {message} (saved here; YouTube Music didn't answer, retrying later: {error})
+# Saved locally; YouTube rejected the sign-in, so the like waits for a new one. {message} is one of the like toasts.
+store.toast.rating_signed_out = {message} (saved here; your YouTube Music sign-in expired, it's sent once you sign in again)
 store.toast.removed_from_library.one = Removed {count} song from the library
 store.toast.removed_from_library.other = Removed {count} songs from the library
 # {playlist} is the playlist's name.

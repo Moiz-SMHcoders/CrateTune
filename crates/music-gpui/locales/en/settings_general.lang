@@ -19,6 +19,8 @@ settings.account.sign_in_google = Sign in with Google…
 settings.account.paste_cookie = Paste cookie…
 # “Paste cookie” refers to the button settings.account.paste_cookie.
 settings.account.google_refused = If Google refuses the sign-in window (“This browser or app may not be secure”), use “Paste cookie”.
+# Under the sign-in buttons (macOS, Windows): the sign-in web view's persistent profile.
+settings.account.profile_note = The sign-in window keeps its own browser profile so {app} can renew your session in the background. Signing out deletes it.
 # {date} = a formatted date ("28 October 2026").
 settings.account.last_synced = Last synced {date}
 settings.account.not_synced = Not synced yet

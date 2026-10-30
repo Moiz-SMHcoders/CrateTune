@@ -8,6 +8,7 @@ settings.account.not_signed_in = Oturum açılmadı. Her şey anonim olarak çal
 settings.account.sign_in_google = Google ile oturum aç…
 settings.account.paste_cookie = Çerez yapıştır…
 settings.account.google_refused = Google oturum açma penceresini reddederse (“Bu tarayıcı veya uygulama güvenli olmayabilir”), “Çerez yapıştır” seçeneğini kullanın.
+settings.account.profile_note = Oturum açma penceresi kendi tarayıcı profilini tutar; böylece {app} oturumunuzu arka planda yenileyebilir. Oturumu kapatmak bu profili siler.
 settings.account.last_synced = Son eşitleme: {date}
 settings.account.not_synced = Henüz eşitlenmedi
 settings.account.sync_now = Şimdi eşitle

@@ -188,7 +188,7 @@ pub(super) fn render(
     _: &mut Window,
     cx: &mut Context<SettingsPanel>,
 ) -> AnyElement {
-    let Some((signed_in, status, sync, channels, google)) = read_app(cx, |app, _| {
+    let Some((signed_in, status, sync, channels, google, expired)) = read_app(cx, |app, _| {
         let a = &app.store.account;
         (
             a.is_signed_in(),
@@ -196,6 +196,7 @@ pub(super) fn render(
             a.sync.clone(),
             a.channels.clone(),
             a.google_accounts_view(),
+            a.expired,
         )
     }) else {
         return note(t!("common.loading"), cx).into_any_element();
@@ -236,7 +237,9 @@ pub(super) fn render(
                         ),
                 );
             if SIGN_IN_WINDOW {
-                sign_in = sign_in.child(note(t!("settings.account.google_refused"), cx));
+                sign_in = sign_in
+                    .child(note(t!("settings.account.google_refused"), cx))
+                    .child(note(t!("settings.account.profile_note"), cx));
             }
             content = content.child(sign_in.children(busy_line(&status, cx)));
         }
@@ -287,11 +290,35 @@ pub(super) fn render(
                             update_app(cx, |app, cx| app.sign_out(window, cx));
                         }),
                 );
-            content = content.child(
-                group_at("account.youtube", t!("common.youtube_music"), cx)
-                    .child(header)
-                    .children(busy_line(&status, cx)),
-            );
+            // YouTube rejected the session and it couldn't be renewed in the background.
+            let expired_line = expired.then(|| {
+                v_flex()
+                    .gap_2()
+                    .child(status_line(
+                        t!("account.expired.status").into(),
+                        cx.theme().danger,
+                    ))
+                    .child(
+                        h_flex().child(
+                            Button::new("account-sign-in-again")
+                                .primary()
+                                .small()
+                                .icon(gpui_component::IconName::Globe)
+                                .label(t!("account.expired.sign_in_again"))
+                                .on_click(|_, window, cx| {
+                                    crate::session_keeper::sign_in_again(window, cx)
+                                }),
+                        ),
+                    )
+            });
+            let mut youtube = group_at("account.youtube", t!("common.youtube_music"), cx)
+                .child(header)
+                .children(expired_line)
+                .children(busy_line(&status, cx));
+            if SIGN_IN_WINDOW {
+                youtube = youtube.child(note(t!("settings.account.profile_note"), cx));
+            }
+            content = content.child(youtube);
 
             let sync_button = Button::new("account-sync")
                 .primary()

@@ -627,6 +627,13 @@ impl InnerTube {
                 data_sync_id: None,
                 ..auth.clone()
             };
+            // Another index failing may just mean it isn't in the login: that must not
+            // renew or expire the session.
+            let probe = if auth_user == auth.auth_user {
+                probe
+            } else {
+                probe.detached()
+            };
             self.clone().with_auth(probe).account_info()
         })
     }

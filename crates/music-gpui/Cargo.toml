@@ -15,6 +15,8 @@ gpui-component = "=0.8.1"
 gpui-kit-assets = "=0.8.1"
 # oneshot channel for work run on dedicated threads (already in GPUI's graph).
 futures-channel = "0.3"
+# `StreamExt::next` for channels read on the main thread (already in GPUI's graph).
+futures-util = { version = "0.3", default-features = false, features = ["std"] }
 # Decoding + blurring the Now Playing background (GPUI already links image 0.25 with these codecs).
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp"] }
 # Lyrics cards: text (rustybuzz shaping, system-font fallback) + drawing; already
@@ -70,8 +72,10 @@ objc2 = "0.6"
 # YouTube Music sign-in window: a WKWebView child of a GPUI window (wry), and its cookie
 # store read directly (wry's `cookies()` spins the run loop, re-entering GPUI).
 wry = { version = "0.57", default-features = false }
-objc2-web-kit = { version = "0.3.2", default-features = false, features = ["std", "objc2-app-kit", "block2", "WKWebView", "WKWebViewConfiguration", "WKWebsiteDataStore", "WKHTTPCookieStore"] }
-objc2-foundation = { version = "0.3.2", default-features = false, features = ["std", "NSArray", "NSHTTPCookie", "NSString", "NSURL"] }
+# Background session renewal: a WKWebView on the persistent sign-in store, never in a window.
+objc2-web-kit = { version = "0.3.2", default-features = false, features = ["std", "objc2-app-kit", "objc2-core-foundation", "block2", "WKNavigation", "WKWebView", "WKWebViewConfiguration", "WKWebsiteDataStore", "WKHTTPCookieStore"] }
+objc2-foundation = { version = "0.3.2", default-features = false, features = ["std", "NSArray", "NSDate", "NSError", "NSHTTPCookie", "NSProcessInfo", "NSSet", "NSString", "NSURL", "NSURLRequest", "NSUUID"] }
+objc2-core-foundation = { version = "0.3", default-features = false, features = ["std", "CFCGTypes"] }
 block2 = "0.6"
 
 [features]

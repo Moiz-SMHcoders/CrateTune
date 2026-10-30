@@ -8,6 +8,7 @@ settings.account.not_signed_in = Вход не выполнен. Всё рабо
 settings.account.sign_in_google = Войти через Google…
 settings.account.paste_cookie = Вставить cookie…
 settings.account.google_refused = Если Google отклоняет окно входа («Этот браузер или приложение может быть небезопасным»), используйте «Вставить cookie».
+settings.account.profile_note = Окно входа хранит собственный профиль браузера, чтобы {app} мог продлевать сеанс в фоне. При выходе он удаляется.
 settings.account.last_synced = Последняя синхронизация: {date}
 settings.account.not_synced = Ещё не синхронизировано
 settings.account.sync_now = Синхронизировать

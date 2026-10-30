@@ -5,6 +5,32 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+* **Signed-in session going stale** (likes failing with "HTTP status 401" until you signed
+  out and in again). CrateTune stored the sign-in cookie once and never updated it, while
+  Google rotates parts of it (`__Secure-1PSIDTS`, `SIDCC`, …) through `Set-Cookie`.
+  Signed-in responses now update the cookie like a browser (only from YouTube / Google over
+  HTTPS, only youtube.com cookies); the browse client, account features and playback share
+  the updated cookie, and it is saved to the keychain at most once a minute and on quit.
+  Requests are signed like YouTube's web client (`SAPISIDHASH`, `SAPISID1PHASH`,
+  `SAPISID3PHASH`).
+* A rejected sign-in (401) is renewed in the background first: the sign-in window, never
+  shown, loads YouTube Music from its profile (at most every 10 minutes) and the request is
+  retried once. If that fails, one notification says "Your YouTube Music sign-in expired"
+  with **Sign in again** (also in Settings → Account), instead of repeated "retrying" toasts.
+  Queued likes wait for a working sign-in instead of using up their 20 attempts, and are
+  sent after signing in again; syncs stop at the first rejected request.
+* Sign-in problems and network problems are now told apart in toasts and sync errors
+  ("sign-in expired" vs "couldn't reach YouTube Music").
+
+### Changed
+
+* The "Sign in with Google" window (macOS, Windows) keeps a persistent browser profile
+  (Windows: `%LOCALAPPDATA%\cratetune\data\SignIn` instead of InPrivate; macOS: its own
+  WebKit data store instead of a non-persistent one), so the session can be renewed in the
+  background. **Sign out** deletes it.
+
 ## [0.2.4] — 2026-10-30
 
 ### Added

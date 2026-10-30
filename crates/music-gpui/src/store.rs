@@ -382,7 +382,11 @@ impl MusicApp {
                 Err(e) => notify(
                     window,
                     cx,
-                    t!("store.toast.action_failed", action = what, error = e),
+                    t!(
+                        "store.toast.action_failed",
+                        action = what,
+                        error = crate::account::describe_error(&e)
+                    ),
                 ),
             })
             .ok();
@@ -542,6 +546,12 @@ impl MusicApp {
             move |lib| rate_tracks(lib, &remote, signed_in, &tracks, rating),
             move |_, remote_errors, window, cx| {
                 match remote_errors.first() {
+                    // The sign-in expired: the like waits for a new one (no "retrying").
+                    Some(e) if e.is_auth() => notify(
+                        window,
+                        cx,
+                        t!("store.toast.rating_signed_out", message = message),
+                    ),
                     Some(e) => notify(
                         window,
                         cx,
@@ -644,7 +654,7 @@ impl MusicApp {
                                 lib.set_playlist_entry_set_video_id(*entry, Some(&set_id))?;
                             }
                         }
-                        Err(e) => remote_error = Some(e.to_string()),
+                        Err(e) => remote_error = Some(crate::account::describe_error(&e)),
                     }
                 }
                 Ok((playlist.name, remote_error))
@@ -1383,23 +1393,38 @@ pub fn replace_disliked(ids: HashSet<String>) {
 
 /// Blocking: rates `tracks` locally, then on YouTube Music when `signed_in` (local
 /// files never). A rating YouTube didn't take is queued; one it took replaces
-/// whatever was queued. Returns YouTube's errors.
+/// whatever was queued. Returns YouTube's errors. While the sign-in is known to be
+/// expired YouTube isn't asked: the ratings go to the queue (an [`Error::Auth`]
+/// each), which waits for a working session.
+///
+/// [`Error::Auth`]: music_core::Error::Auth
 pub(crate) fn rate_tracks(
     lib: &Library,
     remote: &InnerTube,
     signed_in: bool,
     tracks: &[Track],
     rating: Rating,
-) -> music_core::Result<Vec<String>> {
+) -> music_core::Result<Vec<music_core::Error>> {
     let mut remote_errors = Vec::new();
+    let mut expired = remote
+        .auth
+        .as_ref()
+        .is_some_and(music_core::innertube::Auth::is_expired);
     for t in tracks {
         lib.set_rating(t, rating)?;
         if signed_in && !t.is_local() {
+            if expired {
+                lib.queue_rating(&t.video_id, rating)?;
+                remote_errors.push(music_core::Error::Auth(401));
+                continue;
+            }
             match remote.rate_song(&t.video_id, rating) {
                 Ok(()) => lib.finish_pending_rating(&t.video_id, None)?,
                 Err(e) => {
                     lib.queue_rating(&t.video_id, rating)?;
-                    remote_errors.push(e.to_string());
+                    // One rejected sign-in is enough for the batch.
+                    expired |= e.is_auth();
+                    remote_errors.push(e);
                 }
             }
         }

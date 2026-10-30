@@ -6,6 +6,7 @@ settings.account.not_signed_in = Chưa đăng nhập. Mọi thứ đều hoạt 
 settings.account.sign_in_google = Đăng nhập bằng Google…
 settings.account.paste_cookie = Dán cookie…
 settings.account.google_refused = Nếu Google từ chối cửa sổ đăng nhập (“Trình duyệt hoặc ứng dụng này có thể không an toàn”), hãy dùng “Dán cookie”.
+settings.account.profile_note = Cửa sổ đăng nhập giữ một hồ sơ trình duyệt riêng để {app} có thể gia hạn phiên của bạn ở chế độ nền. Đăng xuất sẽ xóa hồ sơ này.
 settings.account.last_synced = Đồng bộ lần cuối {date}
 settings.account.not_synced = Chưa đồng bộ
 settings.account.sync_now = Đồng bộ ngay

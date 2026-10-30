@@ -9,6 +9,7 @@ settings.account.not_signed_in = Não conectado. Tudo funciona de forma anônima
 settings.account.sign_in_google = Entrar com o Google…
 settings.account.paste_cookie = Colar cookie…
 settings.account.google_refused = Se o Google recusar a janela de login (“Este navegador ou app pode não ser seguro”), use “Colar cookie”.
+settings.account.profile_note = A janela de login mantém um perfil de navegador próprio para que o {app} possa renovar sua sessão em segundo plano. Sair o apaga.
 settings.account.last_synced = Última sincronização: {date}
 settings.account.not_synced = Ainda não sincronizado
 settings.account.sync_now = Sincronizar

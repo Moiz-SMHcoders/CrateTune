@@ -8,6 +8,7 @@ settings.account.not_signed_in = Accesso non effettuato. Tutto funziona in modo 
 settings.account.sign_in_google = Accedi con Google…
 settings.account.paste_cookie = Incolla cookie…
 settings.account.google_refused = Se Google rifiuta la finestra di accesso (“Questo browser o questa app potrebbero non essere sicuri”), usa “Incolla cookie”.
+settings.account.profile_note = La finestra di accesso conserva un proprio profilo del browser, così {app} può rinnovare la sessione in background. Disconnettendoti viene eliminato.
 settings.account.last_synced = Ultima sincronizzazione: {date}
 settings.account.not_synced = Non ancora sincronizzato
 settings.account.sync_now = Sincronizza ora

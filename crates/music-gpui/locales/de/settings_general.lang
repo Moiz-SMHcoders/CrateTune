@@ -9,6 +9,7 @@ settings.account.not_signed_in = Nicht angemeldet. Alles funktioniert anonym; mi
 settings.account.sign_in_google = Mit Google anmelden…
 settings.account.paste_cookie = Cookie einfügen…
 settings.account.google_refused = Wenn Google das Anmeldefenster ablehnt („Dieser Browser oder diese App ist möglicherweise nicht sicher“), nutze „Cookie einfügen“.
+settings.account.profile_note = Das Anmeldefenster hat ein eigenes Browserprofil, damit {app} deine Sitzung im Hintergrund erneuern kann. Beim Abmelden wird es gelöscht.
 settings.account.last_synced = Zuletzt synchronisiert am {date}
 settings.account.not_synced = Noch nicht synchronisiert
 settings.account.sync_now = Abgleichen

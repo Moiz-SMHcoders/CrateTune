@@ -9,6 +9,7 @@ settings.account.not_signed_in = Niet ingelogd. Alles werkt anoniem; met inlogge
 settings.account.sign_in_google = Inloggen met Google…
 settings.account.paste_cookie = Cookie plakken…
 settings.account.google_refused = Als Google het inlogvenster weigert (‘Deze browser of app is mogelijk niet veilig’), gebruik dan ‘Cookie plakken’.
+settings.account.profile_note = Het inlogvenster houdt een eigen browserprofiel bij zodat {app} je sessie op de achtergrond kan vernieuwen. Uitloggen verwijdert het.
 settings.account.last_synced = Laatst gesynchroniseerd op {date}
 settings.account.not_synced = Nog niet gesynchroniseerd
 settings.account.sync_now = Nu syncen

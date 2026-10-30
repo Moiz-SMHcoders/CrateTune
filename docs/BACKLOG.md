@@ -36,6 +36,19 @@ round](../README.md#content-round-video-types-podcasts-long-albums-dns-over-http
 [TESTING.md 5.7](TESTING.md#57-playlist-covers-signed-in-untested-so-far),
 `crates/music-core/src/innertube/account.rs`. · Size: medium · Priority: high
 
+**U1a. Keeping the YouTube session alive**
+`Set-Cookie` rotation, the silent renewal through the sign-in web view and the "sign-in
+expired" flow were checked against fake servers and unit tests only. Still to confirm with a
+real account: that InnerTube responses carry rotating `Set-Cookie` lines at all (Google may
+rotate only through `accounts.google.com/RotateCookies`, which the page's script calls), and
+that loading music.youtube.com hidden on the persistent profile renews an expired session
+(`LOGGED_IN` flag, cookies). Deferred: calling `RotateCookies` ourselves on a schedule (an
+undocumented endpoint, and it rotates `.google.com` cookies the app doesn't keep); a
+background renewal on Linux (no sign-in web view there). [TESTING.md
+5.8a](TESTING.md#58a-staying-signed-in-windows-first-also-macos),
+`crates/music-core/src/innertube/session.rs`, `crates/music-gpui/src/session_keeper.rs`.
+· Size: small · Priority: high
+
 **U2. Physical input: mouse, trackpad, keyboard and media keys**
 Every interaction test used synthetic events (`@key`, `@click`, scripts). Still untested by
 hand: drag and drop in the queue, volume drag and trackpad scrolling, OS media keys and Control

@@ -6,6 +6,7 @@ settings.account.not_signed_in = Belum masuk. Semua fitur berfungsi secara anoni
 settings.account.sign_in_google = Masuk dengan Google…
 settings.account.paste_cookie = Tempel cookie…
 settings.account.google_refused = Jika Google menolak jendela masuk (“Browser atau aplikasi ini mungkin tidak aman”), gunakan “Tempel cookie”.
+settings.account.profile_note = Jendela masuk menyimpan profil browsernya sendiri agar {app} dapat memperbarui sesi Anda di latar belakang. Keluar akan menghapusnya.
 settings.account.last_synced = Terakhir disinkronkan {date}
 settings.account.not_synced = Belum disinkronkan
 settings.account.sync_now = Sinkronkan

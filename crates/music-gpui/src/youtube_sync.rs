@@ -367,7 +367,9 @@ impl MusicApp {
     pub(crate) fn retry_queued_ratings(&mut self, force: bool, cx: &mut Context<Self>) {
         let yt = &self.store.account.yt;
         let due = force || yt.last_retry.is_none_or(|t| t.elapsed() >= RETRY_EVERY);
-        if !due || yt.retrying || yt.schedule.running().is_some() {
+        // An expired sign-in pauses the queue until it works again
+        // (`session_keeper.rs` sends it then).
+        if !due || yt.retrying || yt.schedule.running().is_some() || self.store.account.expired {
             return;
         }
         let Some(library) = self.store.library.clone() else {
@@ -391,6 +393,10 @@ impl MusicApp {
             this.update(cx, |this, _| {
                 this.store.account.yt.retrying = false;
                 match result {
+                    Ok(Some(push)) if push.auth_failed => eprintln!(
+                        "music-gpui: queued ratings: {} left, waiting for a working sign-in",
+                        push.left
+                    ),
                     Ok(Some(push)) if this.trace.is_some() || push.error.is_some() => eprintln!(
                         "music-gpui: queued ratings: {} sent, {} left, {} dropped{}",
                         push.sent,

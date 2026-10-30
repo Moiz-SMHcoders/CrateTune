@@ -39,6 +39,20 @@ impl SettingsPanel {
         cx.emit(SettingsEvent::Library);
     }
 
+    /// Stores the (rotated) sign-in cookie synchronously, without telling the app:
+    /// on quit, when a background write might not finish.
+    pub fn store_youtube_cookie_now(&mut self, cookie: String, _cx: &mut Context<Self>) {
+        let stored = crate::secrets::store(self.backend.as_deref(), Secret::YouTubeCookie, &cookie);
+        crate::secrets::apply(
+            &mut self.settings.secrets.0,
+            Secret::YouTubeCookie,
+            Some(&cookie),
+            &stored,
+        );
+        self.secrets.insert(Secret::YouTubeCookie, cookie);
+        self.flush();
+    }
+
     /// Settings for a backup: no secrets, no window frames (they belong to this machine).
     pub fn backup_json(&self) -> String {
         backup_settings(&self.settings).to_json()
