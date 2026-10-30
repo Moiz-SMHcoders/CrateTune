@@ -110,7 +110,8 @@ fn drop_continuations(value: &mut Value) {
 
 /// Repeats the cards of every carousel shelf in `value` up to [`SHELF_ITEMS`]: the
 /// recorded feed keeps 3–4 per shelf, the real one has 10–20 (and all of a shelf's
-/// cards are built, scrolled into view sideways or not).
+/// cards are built, scrolled into view sideways or not). Each copy gets its own ids,
+/// artwork URL and title (a shelf drops repeated ids).
 fn fill_shelves(value: &mut Value) {
     match value {
         Value::Object(map) => {
@@ -121,12 +122,39 @@ fn fill_shelves(value: &mut Value) {
             {
                 let recorded = items.len();
                 for i in recorded..SHELF_ITEMS {
-                    items.push(items[i % recorded].clone());
+                    let mut copy = items[i % recorded].clone();
+                    retag(&mut copy, &format!("-{i}"));
+                    if let Some(Value::String(title)) =
+                        copy.pointer_mut("/musicTwoRowItemRenderer/title/runs/0/text")
+                    {
+                        title.push_str(&format!(" {}", i + 1));
+                    }
+                    items.push(copy);
                 }
             }
             map.values_mut().for_each(fill_shelves);
         }
         Value::Array(items) => items.iter_mut().for_each(fill_shelves),
+        _ => {}
+    }
+}
+
+/// Appends `suffix` to every id (`browseId`, `videoId`, `playlistId`) and image URL in
+/// `value`, so a copied item or page is new to the app (its own cards and artwork).
+fn retag(value: &mut Value, suffix: &str) {
+    match value {
+        Value::Object(map) => {
+            for (key, v) in map.iter_mut() {
+                match (key.as_str(), v) {
+                    ("browseId" | "videoId" | "playlistId", Value::String(id)) => {
+                        id.push_str(suffix);
+                    }
+                    ("url", Value::String(url)) => url.push_str(&format!("#{suffix}")),
+                    (_, v) => retag(v, suffix),
+                }
+            }
+        }
+        Value::Array(items) => items.iter_mut().for_each(|v| retag(v, suffix)),
         _ => {}
     }
 }
@@ -148,6 +176,8 @@ pub(crate) fn innertube(dir: &Path, endpoint: &str, body: &Value) -> Result<Valu
     if name == "home_continuation.json" {
         let page = SERVED.fetch_add(1, Ordering::Relaxed) + 1;
         eprintln!("music-core: fixture feed page {page}/{}", pages());
+        // Every page its own items, as a real feed has.
+        retag(&mut value, &format!("-p{page}"));
         if page >= pages() {
             drop_continuations(&mut value);
         }
@@ -188,5 +218,16 @@ mod tests {
         let home = innertube(&dir, "browse", &json!({ "browseId": "FEmusic_home" })).unwrap();
         assert!(token(&home));
         assert!(innertube(&dir, "player", &json!({})).is_err());
+    }
+
+    #[test]
+    fn filled_shelves_have_distinct_items() {
+        let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/innertube");
+        let home = innertube(&dir, "browse", &json!({ "browseId": "FEmusic_home" })).unwrap();
+        let page = crate::innertube::pages::home(&home).unwrap();
+        assert!(!page.shelves.is_empty());
+        for shelf in &page.shelves {
+            assert_eq!(shelf.items.len(), SHELF_ITEMS, "{}", shelf.title);
+        }
     }
 }
