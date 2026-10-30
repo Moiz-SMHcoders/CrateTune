@@ -43,7 +43,11 @@ music-relay` ([Relay server](#relay-server-music-relay)).
 | Windows | `pwsh scripts/bundle-windows.ps1` | `.zip` and an Inno Setup 6 per-user installer (`packaging/windows/installer.iss`); the `.exe` gets its icon + version resource from `build.rs` (`embed-resource`, native Windows builds). An MSI could be made with `cargo-wix` instead. |
 
 CI (`.github/workflows/ci.yml`) runs fmt, clippy (also with `--features screenshot`) and
-tests on macOS, Ubuntu and Windows; `release.yml` builds every package on a `v*` tag and
+tests on macOS, Ubuntu and Windows, and on macOS and Windows a frame-time check (step
+"perf: frame-time", `scripts/perf-frames.sh`: Home from recorded responses, offline; a
+frame must not get more expensive down a long feed). `scripts/perf-macos.sh` and
+`scripts/perf-windows.ps1` measure CPU, memory and frame rate of a release build on a real
+desktop ([docs/TESTING.md](docs/TESTING.md), "Performance"); `release.yml` builds every package on a `v*` tag and
 attaches them to a draft release with `SHA256SUMS.txt`. How to cut a release:
 [docs/RELEASING.md](docs/RELEASING.md). The app updates itself from those releases
 ([Self-update](#self-update)).
@@ -1796,6 +1800,8 @@ item's ACL is tied to the binary). Secrets are never logged.
 | `MUSIC_UPDATE_API=http://127.0.0.1:PORT` | a stand-in for the GitHub API (`GET /repos/<repo>/releases`; assets from the same origin are allowed) |
 | `MUSIC_UPDATE_FAKE_VERSION=0.0.1` | pretend to run that version (update checks only) |
 | `MUSIC_UPDATE_FAIL=copy\|swap\|verify\|launch` | make that install step fail (rollback tests) |
+| `MUSIC_FIXTURES=crates/music-core/tests/fixtures/innertube` | offline fixture mode (`music_core::fixtures`): InnerTube answered from the recorded JSON files (Home + its continuation, Explore, Charts, moods, new releases, album / artist / playlist pages, search, next), every feed shelf filled to 12 cards, generated artwork, and the shared HTTP agent pointed at a closed local port; for perf checks and screenshots without network. `MUSIC_FIXTURE_PAGES=N`: feed pages after the first (default 40) |
+| `MUSIC_NO_CULL=1` | build every page section on every frame, as before `components/cull.rs` (measuring what culling saves; `scripts/perf-frames.sh` must fail with it) |
 | `MUSIC_NO_TRANSITIONS=1` | switch dynamic colours at once (no 400 ms cross-fade) |
 | `MUSIC_REDUCE_MOTION=1\|0` | pretend the OS asks for reduced motion (or doesn't); Animations → System follows it |
 | `MUSIC_BAR_SPECTRUM_DUMP=1` | print the player bar analyzer's band statistics once a second (tuning the Equalizer style) |

@@ -12,6 +12,16 @@ versions follow [SemVer](https://semver.org/).
   docs/TESTING.md, "Performance".
 * `MUSIC_TIMINGS=1` also prints the player bar's frame rate, and frame intervals
   (p50 / p95 / max) for the window and the bar.
+* `scripts/perf-macos.sh`: the same check on macOS (CPU from `ps`, memory from
+  `footprint`, the display's refresh rate from `system_profiler`), plus a 6 ms budget for a
+  full draw of Home (a 180 Hz frame is 5.5 ms).
+* CI: a frame-time check on macOS and Windows ("perf: frame-time",
+  `scripts/perf-frames.sh`). It draws Home offline from recorded responses at the top and
+  at the end of a long feed and fails if a frame costs more than 1.5x further down (the
+  Windows stutter fixed below) or exceeds a ceiling for the runners.
+* `MUSIC_FIXTURES=DIR`: offline fixture mode (InnerTube from recorded JSON files,
+  generated artwork, no network) for perf checks and screenshots; `MUSIC_NO_CULL=1` turns
+  section culling off for comparisons.
 
 ### Fixed
 

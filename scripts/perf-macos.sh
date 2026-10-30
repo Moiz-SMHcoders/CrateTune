@@ -12,6 +12,11 @@
 # What each number means: docs/TESTING.md, "Performance".
 set -euo pipefail
 
+# Keep the display (and so the window's display-link frames) awake throughout.
+if [ -z "${PERF_CAFFEINATED:-}" ]; then
+  PERF_CAFFEINATED=1 exec caffeinate -d -i -u "$0" "$@"
+fi
+
 root=$(cd "$(dirname "$0")/.." && pwd)
 binary=""
 settings=""
@@ -30,11 +35,6 @@ while [ $# -gt 0 ]; do
   esac
 done
 [ "$(uname -s)" = Darwin ] || { echo "macOS only (Windows: scripts/perf-windows.ps1)" >&2; exit 2; }
-
-# Keep the display (and so the window's display-link frames) awake throughout.
-if [ -z "${PERF_CAFFEINATED:-}" ]; then
-  PERF_CAFFEINATED=1 exec caffeinate -d -i -u "$0" "$@"
-fi
 
 if [ -z "$binary" ]; then
   (cd "$root" && cargo build --release -p music-gpui)

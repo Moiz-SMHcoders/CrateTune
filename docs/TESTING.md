@@ -340,7 +340,17 @@ scaling, and after moving the window to a monitor with other scaling.
       without a compositor) the desktop's own title bar shows above the bar and the bar has
       no buttons of its own.
 
-## 6. Performance (Windows)
+## 6. Performance
+
+Three scripts, all on release builds with a throw-away settings folder:
+
+| Script | Where | Network | What it checks |
+|---|---|---|---|
+| `scripts/perf-windows.ps1` | Windows desktop | yes | CPU, memory, frame rate and draw cost (6.1) |
+| `scripts/perf-macos.sh` | Mac with an awake display | yes | the same, plus a draw budget for 180 Hz (6.2) |
+| `scripts/perf-frames.sh` | CI (macOS, Windows), any desktop | no | draw cost must not grow down a long page (6.3) |
+
+### 6.1 Windows
 
 `scripts/perf-windows.ps1` runs a release build through three scripted sessions (Home:
 idle, two draw benchmarks, 40 mouse-wheel notches; a song played muted with the
@@ -400,6 +410,82 @@ its element arena, layout, the Windows heap); the GPU sat at ~14 %. Profiled wit
 Windows) on a build with `CARGO_PROFILE_RELEASE_DEBUG=line-tables-only` and
 `CARGO_PROFILE_RELEASE_STRIP=none`. A different allocator (mimalloc) made no measurable
 difference and used ~100 MB more.
+
+### 6.2 macOS
+
+`scripts/perf-macos.sh` is the macOS counterpart of `perf-windows.ps1`: the same three
+sessions, numbers and checks. It needs internet and a display that is awake (it runs under
+`caffeinate`; the window is kept above others with `MUSIC_ON_TOP=1`, since macOS sends a
+covered window no frames). Settings go to a temporary folder (`MUSIC_CONFIG_DIR`,
+`MUSIC_SECRET_STORE=file`), volume is 0, there is no menu-bar item (`MUSIC_TRAY=0`), and the
+folder is deleted at the end.
+
+```sh
+scripts/perf-macos.sh                                     # builds release, default settings, checks
+scripts/perf-macos.sh --binary /Applications/CrateTune.app/Contents/MacOS/cratetune --no-checks
+scripts/perf-macos.sh --settings ~/Library/Application\ Support/cratetune/settings.json --no-checks
+```
+
+`--report out.md` also writes the table to a file, `--keep` keeps the sessions' logs. The
+wheel glide that Windows and Linux have is turned on for the scrolling session
+(`MUSIC_SMOOTH_WHEEL=1`), so `@wheel` notches produce frames as on Windows. CPU is the
+process's CPU time per second from `ps` (100 % = one core), averaged over the phase;
+memory is `footprint` (what Activity Monitor shows as Memory), not the resident size. The
+display's refresh rate comes from `system_profiler SPDisplaysDataType` (the main display).
+
+Checks: the four of 6.1 with the same thresholds, plus **Home draw p50 ≤ 6 ms** (top and
+scrolled down). At 180 Hz a frame has 5.5 ms; an M-series Mac draws Home in ~3.2 ms, so
+6 ms still passes on slower Macs (and noisy runs) but fails if a change makes a frame about
+twice as expensive.
+
+**Measured** (2026-10-30, M4 MacBook Air, 10 cores, built-in 60 Hz display, macOS 26.6;
+release build of this branch, default settings, two runs):
+
+| Measure | Result |
+|---|---|
+| Idle on Home (nothing playing): CPU | 1.0 % of one core |
+| Idle on Home: memory (footprint) | 144–147 MB |
+| Full window draw, top of Home | p50 3.21 ms, p95 3.8–4.0 ms |
+| Full window draw, scrolled down Home | p50 3.39–3.42 ms, p95 4.0–4.1 ms |
+| Scrolling Home (wheel glide) | 60–61 fps (display 60 Hz), interval p95 17.3 ms |
+| Playing, Equalizer bar, Home: bar | 20–22 fps, interval p95 51 ms |
+| Playing, Home: CPU / memory | 8.0–8.2 % of one core, 199–203 MB |
+| Now Playing open while playing | 9 app renders/s (lyrics and visualizer redraw as cached regions), 3.3–3.6 % of one core, 192–194 MB |
+
+### 6.3 Frame-time check (offline; CI)
+
+`scripts/perf-frames.sh` needs no network and runs in CI as the step **perf: frame-time**
+of the macOS and Windows jobs (Linux runners have no display or GPU). It opens Home with
+`MUSIC_FIXTURES` pointing at the recorded InnerTube responses
+(`crates/music-core/tests/fixtures/innertube`): Home, then the recorded continuation 40
+times, each shelf filled to 12 cards, generated artwork, and an HTTP agent that can't reach
+the network. It times full window draws (`@bench`: build, layout and paint, not presenting)
+at the top, scrolls to the end of the feed (~120 shelves) and times them again:
+
+```sh
+scripts/perf-frames.sh                         # builds release first
+scripts/perf-frames.sh --binary target/release/music-gpui --keep
+MUSIC_NO_CULL=1 scripts/perf-frames.sh         # without culling: must FAIL
+```
+
+It fails when
+
+* **the end-of-feed draw p50 > 1.5 × the top-of-Home p50.** Runner speed cancels out. This
+  is the regression the Windows stutter was: every section was built on every frame, so a
+  frame cost more the longer the page got (`components/cull.rs` skips sections far outside
+  the viewport);
+* **either p50 is above the ceiling** (`--max-ms`; CI: 25 ms on macOS, 40 ms on Windows),
+  only for gross slowdowns on the slow runners;
+* the feed didn't load to its end, Home wasn't up before the first bench, or a bench
+  didn't run (a broken setup is a failure, not a pass).
+
+The draws run back to back (1 ms apart, after 60 warm-up draws): spaced 16 ms apart, macOS
+moves the UI thread between efficiency and performance cores and the same build measured
+1.4–5 ms from one run to the next.
+
+**Calibration.** On the M4 (culling on): top 1.7–2.0 ms, end of feed 1.6–2.4 ms, ratio
+0.88–1.35 over eight runs. With `MUSIC_NO_CULL=1`: top 2.0–2.3 ms, end 11.6–12.2 ms, ratio
+5.4–6.3, so the check fails as it should.
 
 ## 7. Reporting a problem
 

@@ -79,7 +79,7 @@ jobs:
       - name: "perf: frame-time"
         if: runner.os != 'Linux'
         shell: bash
-        run: scripts/perf-frames.sh --max-ms ${{ runner.os == 'Windows' && '40' || '25' }}
+        run: scripts/perf-frames.sh --max-ms ${{ runner.os == 'Windows' && '20' || '15' }}
 
       # TEMPORARY (calibration on ci/perf-checks): repeat the check, and once without
       # culling, to see the spread on these runners. Removed before merging.
