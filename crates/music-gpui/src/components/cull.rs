@@ -18,7 +18,8 @@
 //! width or the font size changed.
 //!
 //! Horizontal shelves inside a culled section lose GPUI's element state while
-//! skipped; [`Sections::x_scroll`] hands out handles that keep their offset.
+//! skipped; [`Sections::x_scroll`] hands out row states (`hrow.rs`) that keep their
+//! offset.
 //!
 //! `MUSIC_NO_CULL=1` builds every section on every frame (as before culling), to
 //! measure what culling saves and to check that the frame-time gate
@@ -33,6 +34,7 @@ use gpui::{
     SharedString, Styled as _, Window, canvas, div, px,
 };
 
+use super::hrow::RowScroll;
 use super::items::{ShelfModel, ShelfStyle, shelf_view_scrolled};
 
 /// Where a section was last drawn, in page coordinates (0 = top of the content).
@@ -92,7 +94,7 @@ struct State {
     /// The page view, notified when a box needs building.
     view: EntityId,
     placed: HashMap<SharedString, Placed>,
-    x_scroll: HashMap<SharedString, ScrollHandle>,
+    x_scroll: HashMap<SharedString, RowScroll>,
 }
 
 impl Sections {
@@ -195,8 +197,8 @@ impl Sections {
         )
     }
 
-    /// A scroll handle for horizontal shelf `id` that outlives culling.
-    pub fn x_scroll(&self, id: &str) -> ScrollHandle {
+    /// The scroll state of horizontal shelf `id`, which outlives culling.
+    pub fn x_scroll(&self, id: &str) -> RowScroll {
         self.0
             .borrow_mut()
             .x_scroll

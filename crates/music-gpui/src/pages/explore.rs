@@ -10,7 +10,7 @@ use gpui::{
 use gpui_component::{
     ActiveTheme as _, Icon, Sizable as _,
     button::{Button, ButtonVariants as _},
-    h_flex, v_flex,
+    v_flex,
 };
 use music_core::innertube::NavButton;
 
@@ -18,8 +18,9 @@ use super::PageView;
 use crate::app::{MusicApp, update_app};
 use crate::browse::{Load, PageCache, fetch, on_view};
 use crate::components::cull::Sections;
+use crate::components::hrow::{HRow, RowHeader};
 use crate::components::items::{ShelfModel, ShelfStyle, load_state, mood_tile};
-use crate::components::{grid, page_scroll, page_title, section_header};
+use crate::components::{grid, page_scroll, page_title};
 use crate::icons::Lucide;
 use crate::router::Route;
 use crate::theme::AppColors;
@@ -157,34 +158,28 @@ impl Render for ExplorePage {
                             });
                         })
                         .into_any_element();
-                    content = content.child(
+                    // Two rows, scrolling sideways (as on YouTube Music).
+                    let columns = data.moods.chunks(2).enumerate().map(|(c, pair)| {
                         v_flex()
-                            .gap_3()
-                            .child(section_header(t!("nav.moods"), None, Some(all), cx))
-                            .child(
-                                div()
-                                    .id("explore-moods-scroll")
-                                    .w_full()
-                                    .overflow_x_scroll()
-                                    .child(
-                                        // Two rows, scrolling sideways (as on YouTube Music).
-                                        h_flex().gap_2().pb_2().children(
-                                            data.moods.chunks(2).enumerate().map(|(c, pair)| {
-                                                v_flex().gap_2().children(
-                                                    pair.iter().enumerate().map(|(r, button)| {
-                                                        mood_tile(
-                                                            SharedString::from(format!(
-                                                                "explore-mood-{c}-{r}"
-                                                            )),
-                                                            button,
-                                                            cx,
-                                                        )
-                                                    }),
-                                                )
-                                            }),
-                                        ),
-                                    ),
-                            ),
+                            .flex_none()
+                            .gap_2()
+                            .children(pair.iter().enumerate().map(|(r, button)| {
+                                mood_tile(
+                                    SharedString::from(format!("explore-mood-{c}-{r}")),
+                                    button,
+                                    cx,
+                                )
+                            }))
+                            .into_any_element()
+                    });
+                    content = content.child(
+                        HRow::new("explore-moods-scroll", columns)
+                            .scroll(Some(&self.sections.x_scroll("explore-moods")))
+                            .header(RowHeader {
+                                title: t!("nav.moods").into(),
+                                subtitle: None,
+                                trailing: Some(all),
+                            }),
                     );
                 }
                 for (i, model) in data.shelves.iter().enumerate() {
