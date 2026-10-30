@@ -38,10 +38,7 @@ versions follow [SemVer](https://semver.org/).
 
 * A shelf skipped because it is far outside the window is now a single empty element
   (it was two), so a long feed adds next to nothing to a frame: on GitHub's Windows
-  runner the end of a 60-shelf offline feed draws as fast as the top of Home.
-
-### Changed
-
+  runner the end of a 60-shelf offline feed draws about as fast as the top of Home.
 * Changing the **content country** (Settings → Content & region) now also starts a new
   anonymous YouTube visitor, so the signed-out Home feed follows the new region instead of
   the old visitor's history (the visitor is otherwise kept across launches).
