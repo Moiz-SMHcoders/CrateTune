@@ -10,7 +10,9 @@
 //! Notches in quick succession add up and keep the glide going; reversing drops
 //! what was left. Every container (`overflow_y_scroll` divs, `uniform_list`,
 //! `list`, gpui-component's scroll areas, the lyrics) gets the same smooth deltas
-//! without knowing about it.
+//! without knowing about it; so do sideways rows (`components/hrow.rs`): the platform
+//! layers report Shift + wheel and tilt wheels as horizontal lines, which glide here
+//! and reach the hovered row with the modifiers kept.
 //!
 //! Left alone: precise pixel deltas (trackpads, touch), Ctrl / ⌘ + wheel, and
 //! controls that read the wheel themselves (volume, seek bars) — they

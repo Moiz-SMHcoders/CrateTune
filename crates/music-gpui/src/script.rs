@@ -38,8 +38,11 @@
 //! | `@discord=on\|off` | Discord presence switch |
 //! | `@resize=W;H` | resize the main window (frame is saved) |
 //! | `@radio=N` | start a radio from search result N |
-//! | `@scroll=X;Y;DY` | synthetic scroll wheel at window coordinates (DY < 0 scrolls down) |
-//! | `@wheel=X;Y;LINES` | a mouse-wheel event of LINES lines (−3 = one notch down; smooth with `MUSIC_SMOOTH_WHEEL`) |
+//! | `@scroll=X;Y;DY[;DX][;shift]` | synthetic scroll (trackpad pixels) at window coordinates (DY < 0 scrolls down, DX < 0 scrolls a row forward); `shift` holds Shift |
+//! | `@wheel=X;Y;LINES[;DX][;shift]` | a mouse-wheel event of LINES lines (−3 = one notch down; smooth with `MUSIC_SMOOTH_WHEEL`); `shift` holds Shift |
+//! | `@drag=X1;Y1;X2;Y2` | mouse down at X1;Y1, moves to X2;Y2 in 12 steps, mouse up (panning a row) |
+//! | `@shelf-status` | print every sideways row on screen (top to bottom): offset, max, view width, position, ‹ › state |
+//! | `@shelf-scroll=N:next\|prev\|start\|end` | press › / ‹ on row N of `@shelf-status` (glides), or glide to its start / end |
 //! | `@locale=de:DE` | Content & region: content language and country |
 //! | `@suggest` | print the search dropdown's entries and the recent searches |
 //! | `@proxy=KIND:HOST:PORT`, `@proxy=off` | Network section: apply a proxy (no credentials) |
@@ -348,36 +351,135 @@ fn input_event(name: &str, arg: Option<&str>, window: &mut Window, cx: &mut App)
             }
         }
         "scroll" | "wheel" => {
-            let mut parts = arg
-                .unwrap_or("")
-                .split(';')
-                .map(|p| p.trim().parse::<f32>());
-            let (Some(Ok(x)), Some(Ok(y)), Some(Ok(dy))) =
-                (parts.next(), parts.next(), parts.next())
-            else {
-                eprintln!("music-gpui: @{name} wants X;Y;DY");
+            // X;Y;DY[;DX][;shift]
+            let parts: Vec<&str> = arg.unwrap_or("").split(';').map(str::trim).collect();
+            let num = |i: usize| parts.get(i).and_then(|p| p.parse::<f32>().ok());
+            let (Some(x), Some(y), Some(dy)) = (num(0), num(1), num(2)) else {
+                eprintln!("music-gpui: @{name} wants X;Y;DY[;DX][;shift]");
                 return true;
+            };
+            let dx = num(3).unwrap_or(0.);
+            let modifiers = Modifiers {
+                shift: parts.contains(&"shift"),
+                ..Modifiers::default()
             };
             window.dispatch_event(
                 PlatformInput::Scroll(ScrollEvent {
                     position: point(px(x), px(y)),
                     // `@wheel`: DY lines, as a mouse wheel (not a trackpad) reports them.
                     delta: if name == "wheel" {
-                        ScrollDelta::Lines(point(0., dy))
+                        ScrollDelta::Lines(point(dx, dy))
                     } else {
-                        ScrollDelta::Pixels(point(px(0.), px(dy)))
+                        ScrollDelta::Pixels(point(px(dx), px(dy)))
                     },
-                    modifiers: Modifiers::default(),
+                    modifiers,
                     touch_phase: TouchPhase::Moved,
                     source: ScrollSource::default(),
                 }),
                 cx,
             );
         }
+        // Press at X1;Y1, move to X2;Y2 in steps, release there (a mouse drag).
+        "drag" => {
+            let n: Vec<f32> = arg
+                .unwrap_or("")
+                .split(';')
+                .filter_map(|p| p.trim().parse().ok())
+                .collect();
+            let [x1, y1, x2, y2] = n[..] else {
+                eprintln!("music-gpui: @drag wants X1;Y1;X2;Y2");
+                return true;
+            };
+            let modifiers = Modifiers::default();
+            let at = |t: f32| point(px(x1 + (x2 - x1) * t), px(y1 + (y2 - y1) * t));
+            window.dispatch_event(
+                PlatformInput::MouseMove(MouseMoveEvent {
+                    position: at(0.),
+                    pressed_button: None,
+                    modifiers,
+                }),
+                cx,
+            );
+            window.dispatch_event(
+                PlatformInput::MouseDown(MouseDownEvent {
+                    button: MouseButton::Left,
+                    position: at(0.),
+                    modifiers,
+                    click_count: 1,
+                    first_mouse: false,
+                }),
+                cx,
+            );
+            const STEPS: u32 = 12;
+            for i in 1..=STEPS {
+                window.dispatch_event(
+                    PlatformInput::MouseMove(MouseMoveEvent {
+                        position: at(i as f32 / STEPS as f32),
+                        pressed_button: Some(MouseButton::Left),
+                        modifiers,
+                    }),
+                    cx,
+                );
+            }
+            window.dispatch_event(
+                PlatformInput::MouseUp(MouseUpEvent {
+                    button: MouseButton::Left,
+                    position: at(1.),
+                    modifiers,
+                    click_count: 1,
+                }),
+                cx,
+            );
+        }
+        // Rows that scroll sideways (`components/hrow.rs`), top to bottom.
+        "shelf-status" | "shelf-scroll" => {
+            let rows = painted_rows(window, cx);
+            if name == "shelf-status" {
+                for (i, (id, row, bounds)) in rows.iter().enumerate() {
+                    eprintln!(
+                        "music-gpui: shelf {i} {id}: x {:.0} / max {:.0}, view {:.0} at {:.0};{:.0}, edges {:?}",
+                        row.x() + 0.,
+                        row.max_x(),
+                        row.view_width(),
+                        f32::from(bounds.left()),
+                        f32::from(bounds.top()),
+                        row.edges(),
+                    );
+                }
+                eprintln!("music-gpui: shelves: {}", rows.len());
+                return true;
+            }
+            let (index, how) = arg.and_then(|a| a.split_once(':')).unwrap_or(("0", "next"));
+            let Some((id, row, _)) = index.parse::<usize>().ok().and_then(|i| rows.get(i)) else {
+                eprintln!(
+                    "music-gpui: @shelf-scroll: no row {index} ({} shown)",
+                    rows.len()
+                );
+                return true;
+            };
+            match how {
+                "next" | "prev" => row.page(how == "next", window, cx),
+                "start" => row.glide_to(0., window, cx),
+                "end" => row.glide_to(row.max_x(), window, cx),
+                other => eprintln!("music-gpui: @shelf-scroll: {other}? (next|prev|start|end)"),
+            }
+            eprintln!("music-gpui: shelf-scroll {id} {how}");
+        }
         _ => return false,
     }
     window.refresh();
     true
+}
+
+/// The rows that scroll sideways as drawn now (`@shelf-status`, `@shelf-scroll`).
+fn painted_rows(window: &mut Window, cx: &mut App) -> Vec<crate::components::hrow::PaintedRow> {
+    crate::components::hrow::record_painted();
+    // Everything rebuilt, so every row on screen paints (cached views would not).
+    if let Some(app) = crate::app::app_entity(cx) {
+        app.update(cx, |_, cx| cx.notify());
+    }
+    window.draw(cx).clear(cx);
+    crate::components::hrow::take_painted()
 }
 
 /// Screenshot builds: draw both windows every 200 ms. With the screen locked

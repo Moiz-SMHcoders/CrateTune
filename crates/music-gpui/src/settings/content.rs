@@ -167,6 +167,14 @@ fn language_choices() -> Vec<Choice> {
 }
 
 /// Content countries, named in the current UI language.
+/// The name of content country `code` in the UI language (`None`: not listed).
+pub fn country_name(code: &str) -> Option<&'static str> {
+    COUNTRIES
+        .iter()
+        .find(|(c, _)| c.eq_ignore_ascii_case(code))
+        .map(|(_, key)| crate::i18n::text(*key))
+}
+
 fn country_choices() -> Vec<Choice> {
     COUNTRIES
         .iter()
@@ -267,6 +275,10 @@ impl SettingsPanel {
         edit(&mut self.settings.content);
         self.settings.normalize();
         if self.settings.content != before {
+            if self.settings.content.country != before.country {
+                // The first-run "Showing YouTube Music for …" note has done its job.
+                self.region_nudge = None;
+            }
             cx.emit(SettingsEvent::Content);
             self.changed(false, cx);
         }

@@ -29,7 +29,7 @@ use gpui::{
     prelude::FluentBuilder as _, px,
 };
 use gpui_component::{
-    Disableable as _, Sizable as _,
+    ActiveTheme as _, Disableable as _, Sizable as _,
     button::{Button, ButtonVariants as _},
     h_flex, v_flex,
 };
@@ -42,11 +42,13 @@ use super::PageView;
 use crate::app::{MusicApp, read_app, update_app};
 use crate::browse::{CACHE_TTL, Load, PageCache, Paging, client, fetch, trace_enabled};
 use crate::components::cull::Sections;
+use crate::components::hrow::RowHeader;
 use crate::components::items::{
-    ShelfModel, ShelfStyle, chip_row, load_state, more_footer, shelf_body_scrolled, target_route,
+    ShelfModel, ShelfStyle, chip_row, load_state, more_footer, see_all, target_route, titled_shelf,
 };
-use crate::components::{page_scroll, page_title, section_header};
+use crate::components::{page_scroll, page_title};
 use crate::icons::Lucide;
+use crate::settings::SectionId;
 use crate::settings::home_prefs::{HomeConfig, HomeSection, QuickPicksDisplay, QuickPicksMode};
 use crate::settings::look_prefs::AppLookStyle;
 use crate::util::off_thread;
@@ -143,8 +145,16 @@ fn account_key(cx: &gpui::App) -> String {
         .unwrap_or_default()
 }
 
-fn feed_key(params: &Option<String>, account: &str) -> String {
-    format!("home:{}:{account}", params.as_deref().unwrap_or(""))
+/// Cache key of a feed page: chip, account, and the content country and language it
+/// was requested in (changing them in settings also clears the cache, `browse.rs`).
+fn feed_key(params: &Option<String>, account: &str, cx: &gpui::App) -> String {
+    let client = client(cx).0;
+    format!(
+        "home:{}:{}:{}:{account}",
+        client.gl,
+        client.hl,
+        params.as_deref().unwrap_or("")
+    )
 }
 
 fn personal_key(account: &str) -> String {
@@ -202,7 +212,7 @@ impl HomePage {
         }
         if force {
             PageCache::remove(&personal_key(&self.account), cx);
-            PageCache::remove(&feed_key(&self.params, &self.account), cx);
+            PageCache::remove(&feed_key(&self.params, &self.account, cx), cx);
         }
         match PageCache::get::<Personal>(&personal_key(&self.account), cx) {
             Some(p) if !force => self.personal = Some(p),
@@ -350,7 +360,7 @@ impl HomePage {
 
     /// Shows the feed for `self.params` (cached, else fetched).
     fn load_feed(&mut self, cx: &mut Context<Self>) {
-        let key = feed_key(&self.params, &self.account);
+        let key = feed_key(&self.params, &self.account, cx);
         if let Some(feed) = PageCache::get::<Feed>(&key, cx) {
             self.apply_feed(feed);
             return;
@@ -400,7 +410,7 @@ impl HomePage {
                         community: community.map(ShelfModel::new),
                     };
                     this.apply_feed(feed.clone());
-                    PageCache::put(&feed_key(&this.params, &this.account), feed, cx);
+                    PageCache::put(&feed_key(&this.params, &this.account, cx), feed, cx);
                 }
                 Err(e) => this.feed = Load::Failed(e),
             },
@@ -429,7 +439,7 @@ impl HomePage {
                 quick: self.feed_quick.clone(),
                 community: self.community.clone(),
             };
-            PageCache::put(&feed_key(&self.params, &self.account), feed, cx);
+            PageCache::put(&feed_key(&self.params, &self.account, cx), feed, cx);
         }
     }
 
@@ -567,12 +577,12 @@ impl HomePage {
         let x_scroll = self.sections.x_scroll(id);
         self.sections
             .cull(id, model.layout_key(style), &self.scroll, window, || {
-                v_flex()
-                    .w_full()
-                    .gap_3()
-                    .child(section_header(title, subtitle, trailing, cx))
-                    .child(shelf_body_scrolled(id, model, style, Some(&x_scroll), cx))
-                    .into_any_element()
+                let header = RowHeader {
+                    title: title.into(),
+                    subtitle,
+                    trailing,
+                };
+                titled_shelf(id, header, model, style, Some(&x_scroll), cx)
             })
     }
 
@@ -597,6 +607,9 @@ impl HomePage {
     ) -> gpui::Div {
         match &self.feed {
             Load::Ready(shelves) => {
+                if !shelves.is_empty() {
+                    content = content.child(feed_header(cx));
+                }
                 for (i, model) in shelves.iter().enumerate() {
                     content = content.child(self.feed_shelf(
                         &format!("home-{i}"),
@@ -647,6 +660,125 @@ impl HomePage {
     }
 }
 
+/// The content country's name (Settings → Content & region), or its code.
+fn content_country(cx: &gpui::App) -> String {
+    let gl = client(cx).0.gl;
+    crate::settings::country_name(&gl)
+        .map(str::to_owned)
+        .unwrap_or(gl)
+}
+
+fn open_region_setting(window: &mut Window, cx: &mut gpui::App) {
+    update_app(cx, |app, cx| {
+        app.settings
+            .update(cx, |panel, _| panel.region_nudge = None);
+        app.open_settings_at(SectionId::Content, "content.country", window, cx);
+    });
+}
+
+/// "From YouTube Music · <country>" above YouTube Music's own feed: where the shelves
+/// below come from, with the way to change the region or hide the feed.
+fn feed_header(cx: &gpui::App) -> AnyElement {
+    let theme = cx.theme();
+    let muted = theme.muted_foreground;
+    let change = HomePage::header_button(
+        "home-feed-region",
+        t!("home.feed.change_region"),
+        Lucide::Globe,
+        open_region_setting,
+    );
+    let hide = HomePage::header_button(
+        "home-feed-hide",
+        t!("home.feed.hide"),
+        Lucide::EyeOff,
+        |_, cx| {
+            update_app(cx, |app, cx| {
+                app.settings.update(cx, |panel, cx| {
+                    panel.set_home(|h| h.set_shown(HomeSection::Feed, false), cx)
+                });
+                cx.notify();
+            });
+        },
+    );
+    v_flex()
+        .w_full()
+        .gap_1()
+        .pt_4()
+        .border_t_1()
+        .border_color(theme.border)
+        .child(
+            h_flex()
+                .w_full()
+                .justify_between()
+                .gap_4()
+                .child(
+                    div()
+                        .min_w_0()
+                        .truncate()
+                        .text_sm()
+                        .font_weight(gpui::FontWeight::SEMIBOLD)
+                        .text_color(muted)
+                        .child(t!("home.feed.header", country = content_country(cx))),
+                )
+                .child(h_flex().flex_none().gap_1().child(change).child(hide)),
+        )
+        .child(
+            div()
+                .text_xs()
+                .text_color(muted)
+                .child(t!("home.feed.detail")),
+        )
+        .into_any_element()
+}
+
+/// First run, content country taken from the system's region: says so once, with a
+/// way to change it (`SettingsPanel::region_nudge`).
+fn region_nudge(cx: &gpui::App) -> Option<AnyElement> {
+    read_app(cx, |app, cx| app.settings.read(cx).region_nudge.is_some())
+        .unwrap_or(false)
+        .then(|| {
+            let theme = cx.theme();
+            let change = Button::new("home-region-change")
+                .small()
+                .primary()
+                .label(t!("home.region_nudge.change"))
+                .on_click(|_, window, cx| open_region_setting(window, cx));
+            let dismiss = Button::new("home-region-dismiss")
+                .small()
+                .ghost()
+                .label(t!("home.region_nudge.dismiss"))
+                .on_click(|_, _, cx| {
+                    update_app(cx, |app, cx| {
+                        app.settings
+                            .update(cx, |panel, _| panel.region_nudge = None);
+                        cx.notify();
+                    });
+                });
+            h_flex()
+                .w_full()
+                .gap_3()
+                .px_4()
+                .py_2()
+                .rounded(crate::theme::radius(10.))
+                .bg(theme.secondary)
+                .child(
+                    gpui_component::Icon::new(Lucide::Globe)
+                        .size(px(16.))
+                        .text_color(theme.muted_foreground),
+                )
+                .child(
+                    div()
+                        .flex_1()
+                        .min_w_0()
+                        .text_sm()
+                        .child(t!("home.region_nudge", country = content_country(cx))),
+                )
+                .child(change)
+                .child(dismiss)
+                .into_any_element()
+        })
+}
+
 /// Where a "Similar to" row's header leads: the artist, or the song's album.
 fn source_route(source: &Source) -> Option<crate::router::Route> {
     match source {
@@ -693,7 +825,15 @@ impl Render for HomePage {
         }
 
         let speed = self.speed_dial_shelf();
-        let quick = self.quick_picks(&cfg).cloned();
+        let quick_ref = self.quick_picks(&cfg);
+        // YouTube's own quick picks (no listening history yet, or a chip): labelled so.
+        let quick_from_feed = matches!(
+            (quick_ref, &self.feed_quick),
+            (Some(q), Some(f)) if std::ptr::eq(q, f)
+        );
+        let quick = quick_ref.cloned();
+        let from_youtube: SharedString =
+            t!("home.feed.header", country = content_country(cx)).into();
         let personal = self.personal.clone();
         let p = personal.as_ref();
         let available = Available {
@@ -729,6 +869,9 @@ impl Render for HomePage {
                 .child(page_title(t!("nav.home"), None, cx))
                 .child(refresh),
         );
+        if let Some(nudge) = region_nudge(cx) {
+            content = content.child(nudge);
+        }
 
         for slot in model::layout(&cfg, &available) {
             match slot {
@@ -753,7 +896,7 @@ impl Render for HomePage {
                         content = content.child(self.section(
                             "home-quick",
                             t!("home.quick_picks"),
-                            None,
+                            quick_from_feed.then(|| from_youtube.clone()),
                             None,
                             model,
                             style,
@@ -764,8 +907,12 @@ impl Render for HomePage {
                 }
                 Slot::Community => {
                     if let Some(model) = &self.community {
-                        content = content.child(self.feed_shelf(
+                        // A shelf of YouTube Music's feed shown early: labelled so.
+                        content = content.child(self.section(
                             "home-community",
+                            model.shelf.title.clone(),
+                            Some(from_youtube.clone()),
+                            see_all("home-community-all".into(), &model.shelf),
                             model,
                             ShelfStyle::Cards,
                             window,

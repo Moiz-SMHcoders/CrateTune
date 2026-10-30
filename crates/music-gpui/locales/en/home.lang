@@ -21,6 +21,18 @@ home.similar_to = Similar to
 # "Community playlists" to find the community shelf in the feed. Lower case.
 home.playlists_word = playlists
 
+# Header above YouTube Music's own feed on Home ({country} = the content country,
+# Settings → Content & region); its buttons open that setting or hide the feed.
+home.feed.header = From YouTube Music · {country}
+home.feed.detail = YouTube Music's own shelves for this region and language. Your listening fills the sections above.
+home.feed.change_region = Change region
+home.feed.hide = Hide
+# Shown on Home in the first session when the content country was taken from the
+# system's region; "Change" opens Content & region.
+home.region_nudge = Showing YouTube Music for {country}, from your system's region.
+home.region_nudge.change = Change
+home.region_nudge.dismiss = Got it
+
 # Context menu entries of songs, albums, artists and playlists.
 home.speed_dial.pin = Pin to speed dial
 home.speed_dial.unpin = Remove from speed dial
