@@ -35,6 +35,31 @@ impl Engine {
         }
     }
 
+    /// Loads `track` paused at `position` (a restored queue opened in Now Playing):
+    /// the stream resolves and the screen has the track, but nothing is heard until play.
+    /// Returns false where that isn't possible (casting); the caller then waits for play.
+    pub fn cue(&mut self, track: Track, position: Duration) -> bool {
+        match self {
+            Engine::Audio(player) => {
+                // Processed in order on the engine thread: the deck is paused before
+                // the voice has any audio, and the seek waits for the stream.
+                player.play(track);
+                if !position.is_zero() {
+                    player.seek(position);
+                }
+                player.pause();
+                true
+            }
+            Engine::Demo(demo) => {
+                demo.play(track);
+                demo.seek(position);
+                demo.toggle_pause();
+                true
+            }
+            Engine::Cast(_) => false,
+        }
+    }
+
     pub fn toggle_pause(&mut self) {
         match self {
             Engine::Audio(player) => player.toggle_pause(),

@@ -181,7 +181,13 @@ pub(crate) fn deep(color: Hsla, lightness: f32, alpha: f32) -> Hsla {
 
 impl MusicApp {
     pub fn open_now_playing(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        let Some(track) = self.playback.track.clone() else {
+        // A restored queue at a fresh start: load its track paused, then open.
+        let Some(track) = self
+            .playback
+            .track
+            .clone()
+            .or_else(|| self.cue_restored(cx))
+        else {
             return;
         };
         self.ensure_lyrics(&track, cx);

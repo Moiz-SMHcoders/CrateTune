@@ -5,6 +5,12 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+* **Now Playing opens right after a fresh start.** With the queue restored from last time and
+  nothing played yet, opening Now Playing (⌘L, the artwork, the lyrics button) did nothing until
+  play was pressed once. It now loads the restored song paused where it was, then opens.
+
 ## [0.2.4] — 2026-10-30
 
 ### Added

@@ -1246,6 +1246,42 @@ impl MusicApp {
         }
     }
 
+    /// Now Playing opened with a restored queue and nothing loaded: load its track paused
+    /// where it was, so the screen has the track (and its lyrics, artwork, length) at once
+    /// and play continues from there. `None` if there is nothing restored or the engine
+    /// can't cue (no engine yet, casting); the caller then behaves as before.
+    pub(crate) fn cue_restored(&mut self, cx: &mut Context<Self>) -> Option<Track> {
+        if self.playback.track.is_some() {
+            return None;
+        }
+        let (id, position) = self.store.resume_at.clone()?;
+        let track = self.queue.current().cloned()?;
+        if track.video_id != id {
+            return None;
+        }
+        // Like `resume_restored_position`: from the start if it was barely begun or
+        // nearly over.
+        let fits = track
+            .duration_secs
+            .is_none_or(|d| position + Duration::from_secs(5) < Duration::from_secs(d.into()));
+        let at = if position > Duration::from_secs(3) && fits {
+            position
+        } else {
+            Duration::ZERO
+        };
+        let engine_track = self.engine_track(track.clone());
+        if !self.engine.as_mut()?.cue(engine_track, at) {
+            return None;
+        }
+        self.store.resume_at = None;
+        self.ensure_lyrics(&track, cx);
+        self.ensure_hires(&track, cx);
+        self.next_sent = None;
+        self.sync_engine_next();
+        self.refresh_soon(cx);
+        Some(track)
+    }
+
     fn resume_restored_position(&mut self, state: &PlaybackState, cx: &mut Context<Self>) {
         let Some((id, position)) = &self.store.resume_at else {
             return;
