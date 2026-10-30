@@ -222,9 +222,13 @@ mod tests {
         // Ban Bob: he is told, and can't come back.
         server.kick(&pending.id, None, true);
         wait_for(|| {
-            bob.poll_events()
-                .into_iter()
-                .find(|e| matches!(e, ClientEvent::Kicked { banned: true, .. }))
+            bob.poll_events().into_iter().find_map(|e| match e {
+                ClientEvent::Kicked { banned: true, .. } => Some(()),
+                ClientEvent::Disconnected { reason } => {
+                    panic!("disconnected without the ban: {reason:?}")
+                }
+                _ => None,
+            })
         });
         let again = TogetherClient::connect(&join(&server, &key), "Bob", "bob").unwrap();
         wait_for(|| {
@@ -259,13 +263,7 @@ mod tests {
                 _ => None,
             })
         });
-        // The close frame is still lost now and then under load (docs/BACKLOG.md, B1;
-        // seen on Linux and Windows CI): the guest is then told the connection was lost
-        // instead. Either way the guest is out of the session.
-        assert!(
-            matches!(reason.as_deref(), Some("Session ended" | "Connection lost")),
-            "{reason:?}"
-        );
+        assert_eq!(reason.as_deref(), Some("Session ended"));
     }
 
     /// Host → guest hand-over on the LAN: Ann takes over, Bob and the old host

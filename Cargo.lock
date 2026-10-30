@@ -4801,6 +4801,7 @@ dependencies = [
  "md5",
  "mdns-sd",
  "mpris-server",
+ "music-net",
  "objc2 0.6.5",
  "objc2-app-kit 0.3.2",
  "objc2-core-foundation",
@@ -4864,10 +4865,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "music-net"
+version = "0.2.1"
+
+[[package]]
 name = "music-relay"
 version = "0.2.1"
 dependencies = [
  "music-core",
+ "music-net",
  "serde",
  "serde_json",
  "sha2 0.10.9",

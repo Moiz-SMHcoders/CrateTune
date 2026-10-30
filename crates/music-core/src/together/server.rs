@@ -16,6 +16,8 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
+use music_net::TimedTcp;
+
 use super::conn::{Conn, Link, POLL, Recv, Stream};
 use super::link::JoinInfo;
 use super::messages::{
@@ -538,8 +540,8 @@ fn accept_loop(listener: TcpListener, inner: Arc<Inner>) {
 }
 
 fn serve_guest(stream: TcpStream, inner: &Inner) -> Result<()> {
-    stream.set_nonblocking(false)?;
     stream.set_nodelay(true)?;
+    let mut stream = TimedTcp::new(stream)?;
     stream.set_read_timeout(Some(HANDSHAKE_TIMEOUT))?;
     let ws = tungstenite::accept(Stream::Plain(stream))
         .map_err(|e| Error::Parse(format!("handshake: {e}")))?;
@@ -707,11 +709,11 @@ fn handle(
     participant_id: &str,
     message: Message,
 ) -> Option<String> {
-    let Some((participant, pending)) =
-        inner.with_client(participant_id, |c| (c.participant(), c.pending))
-    else {
-        return Some("Removed".into());
-    };
+    // Removed by a kick / deny / stop while this message was on its way: nothing to do for
+    // it, and the connection must stay up. The outbox holds the goodbye (`Ban`, `Kick`, the
+    // close frame), which the loop sends next; ending here would lose it.
+    let (participant, pending) =
+        inner.with_client(participant_id, |c| (c.participant(), c.pending))?;
     let settings = *lock(&inner.settings);
     let denied = |conn: &mut dyn Link, what: &str| {
         conn.send(&Message::ServerError {
@@ -807,4 +809,142 @@ fn handle(
         _ => {}
     }
     None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A guest connection driven by the test, which knows when the guest loop is inside
+    /// `recv` (past its look at the outbox) and decides what that `recv` returns.
+    struct ScriptedLink {
+        polled: Sender<()>,
+        incoming: Receiver<Recv>,
+        sent: Sender<Sent>,
+    }
+
+    #[derive(Debug)]
+    enum Sent {
+        Text(Message),
+        Close(String),
+    }
+
+    impl Link for ScriptedLink {
+        fn send_text(&mut self, text: String) -> bool {
+            self.sent
+                .send(Sent::Text(Message::decode(&text).unwrap()))
+                .is_ok()
+        }
+
+        fn recv(&mut self) -> Recv {
+            let _ = self.polled.send(());
+            self.incoming.recv().unwrap_or(Recv::Closed(None))
+        }
+
+        fn close(&mut self, reason: &str) {
+            let _ = self.sent.send(Sent::Close(reason.to_owned()));
+        }
+    }
+
+    /// The host says goodbye while a message from the guest (here a heartbeat, every few
+    /// hundred ms) is arriving. The guest loop then finds the guest gone from the list
+    /// while handling that message; it must still send what is in the outbox. `goodbye`
+    /// gets the server and the guest's participant id, `expected` is what the guest gets.
+    fn goodbye_during_a_recv(
+        goodbye: impl FnOnce(&mut TogetherServer, &str),
+        expected: impl FnOnce(&[Sent]) -> bool,
+    ) {
+        let mut server = TogetherServer::start(
+            0,
+            "session".into(),
+            "key".into(),
+            "Host".into(),
+            RoomSettings::default(),
+        )
+        .unwrap();
+        let (polled_tx, polled) = channel();
+        let (incoming_tx, incoming) = channel();
+        let (sent_tx, sent) = channel();
+        let link = ScriptedLink {
+            polled: polled_tx,
+            incoming,
+            sent: sent_tx,
+        };
+        let inner = server.inner.clone();
+        let guest = std::thread::spawn(move || serve_link(link, &inner));
+
+        polled.recv().unwrap();
+        incoming_tx
+            .send(Recv::Message(Message::ClientHello {
+                protocol_version: PROTOCOL_VERSION,
+                session_id: "session".into(),
+                session_key: "key".into(),
+                client_id: "client".into(),
+                display_name: "Ann".into(),
+            }))
+            .unwrap();
+        // Welcomed, and blocked in `recv` with the outbox behind it.
+        polled.recv().unwrap();
+        let Ok(Sent::Text(Message::ServerWelcome { participant_id, .. })) = sent.recv() else {
+            panic!("no welcome");
+        };
+
+        goodbye(&mut server, &participant_id);
+        incoming_tx
+            .send(Recv::Message(Message::HeartbeatPing {
+                session_id: "session".into(),
+                ping_id: 1,
+                client_elapsed_realtime_ms: 0,
+            }))
+            .unwrap();
+
+        // The loop ends by itself; or, if it missed the goodbye, is back in `recv`, where
+        // the disconnect below ends it.
+        let _ = polled.recv();
+        drop(incoming_tx);
+        guest.join().unwrap().unwrap();
+        let sent: Vec<Sent> = sent.try_iter().collect();
+        assert!(expected(&sent), "{sent:?}");
+    }
+
+    #[test]
+    fn a_ban_during_a_recv_still_reaches_the_guest() {
+        goodbye_during_a_recv(
+            |server, id| server.kick(id, None, true),
+            |sent| {
+                matches!(sent, [Sent::Text(Message::Ban { .. }), Sent::Close(reason)]
+                    if reason == "Banned")
+            },
+        );
+    }
+
+    #[test]
+    fn a_kick_during_a_recv_still_reaches_the_guest() {
+        goodbye_during_a_recv(
+            |server, id| server.kick(id, None, false),
+            |sent| {
+                matches!(sent, [Sent::Text(Message::Kick { .. }), Sent::Close(reason)]
+                    if reason == "Removed by the host")
+            },
+        );
+    }
+
+    #[test]
+    fn a_refusal_during_a_recv_still_reaches_the_guest() {
+        goodbye_during_a_recv(
+            |server, id| server.approve(id, false),
+            |sent| {
+                matches!(sent, [Sent::Text(Message::JoinDecision { approved: false, .. }), Sent::Close(reason)]
+                    if reason == "Not approved")
+            },
+        );
+    }
+
+    #[test]
+    fn the_end_of_the_session_during_a_recv_still_reaches_the_guest() {
+        goodbye_during_a_recv(
+            |server, _| server.stop(),
+            |sent| matches!(sent, [Sent::Close(reason)] if reason == "Session ended"),
+        );
+    }
 }

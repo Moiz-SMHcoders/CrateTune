@@ -15,6 +15,14 @@ versions follow [SemVer](https://semver.org/).
 
 ### Fixed
 
+* **Listen Together: a guest could miss being banned or removed, or the end of the session**,
+  and see "Connection lost" instead. When a message from the guest (a heartbeat, every few
+  hundred ms) arrived just as the host acted, the server dropped the connection without
+  sending what it had queued. In a stress test 1 in 40 goodbyes was lost, 1 in 8 under CPU
+  load; now none are.
+* **Windows: Listen Together and relay connections could drop, lose data or crash the
+  app** while idle. Polling a socket with a read timeout sometimes fails with error 997
+  and loses bytes; a new `music-net` crate waits with `WSAPoll` instead.
 * **Stutter on Windows** while scrolling and changing pages: every shelf on Home (and on
   artist, Explore, Charts and mood pages) was built, laid out and painted on every frame,
   visible or not, and the endless feed made each frame heavier the further it was
