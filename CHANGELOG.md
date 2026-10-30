@@ -31,7 +31,8 @@ versions follow [SemVer](https://semver.org/).
   scrolled. Shelves more than half a screen outside the window are now skipped (an empty
   box of the same height). On a Ryzen 7 6800H with a 180 Hz display: a full frame of Home
   10.6 → 6.5 ms, scrolling ~100 → 165–180 fps in a normal window, 60–73 → 90–170 fps
-  maximized. Shelves keep their sideways scroll position while skipped.
+  maximized. Shelves keep their sideways scroll position while skipped, and a skipped
+  shelf is a single empty element, so a long feed adds next to nothing to a frame.
 
 ## [0.2.1] — 2026-10-30
 
