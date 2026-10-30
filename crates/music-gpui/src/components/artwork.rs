@@ -374,6 +374,8 @@ impl Pool {
             // Local files' cover art is extracted to disk (`file://` URLs).
             let result = match music_core::local_files::artwork_path_from_url(&job.url) {
                 Some(path) => std::fs::read(path).map_err(|e| e.to_string()),
+                // Fixture mode (`MUSIC_FIXTURES`): no network, a tile per URL.
+                None if music_core::fixtures::enabled() => Ok(fixture_art(&job.url)),
                 None => music_core::fetch_bytes(&job.url).map_err(|e| e.to_string()),
             };
             let result = result.map(|mut bytes| {
@@ -385,6 +387,27 @@ impl Pool {
             let _ = job.done.send(result);
         }
     }
+}
+
+/// A 226 px PNG for `url` in fixture mode: a diagonal gradient between two colours
+/// taken from the URL's hash, the size of YouTube Music's card thumbnails.
+fn fixture_art(url: &str) -> Vec<u8> {
+    use std::hash::{Hash as _, Hasher as _};
+    const SIZE: u32 = 226;
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    url.hash(&mut hasher);
+    let [a0, a1, a2, b0, b1, b2, ..] = hasher.finish().to_le_bytes();
+    let mix = |a: u8, b: u8, t: u32| {
+        ((u32::from(a) * (2 * SIZE - t) + u32::from(b) * t) / (2 * SIZE)) as u8
+    };
+    let tile = image::RgbaImage::from_fn(SIZE, SIZE, |x, y| {
+        let t = x + y;
+        image::Rgba([mix(a0, b0, t), mix(a1, b1, t), mix(a2, b2, t), 255])
+    });
+    let mut png = std::io::Cursor::new(Vec::new());
+    tile.write_to(&mut png, image::ImageFormat::Png)
+        .expect("encoding a PNG into memory");
+    png.into_inner()
 }
 
 /// Decoded size (width × height × 4) from the image header; a generous

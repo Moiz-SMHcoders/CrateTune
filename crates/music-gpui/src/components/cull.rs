@@ -19,6 +19,10 @@
 //!
 //! Horizontal shelves inside a culled section lose GPUI's element state while
 //! skipped; [`Sections::x_scroll`] hands out handles that keep their offset.
+//!
+//! `MUSIC_NO_CULL=1` builds every section on every frame (as before culling), to
+//! measure what culling saves and to check that the frame-time gate
+//! (`scripts/perf-frames.sh`) catches its loss.
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -47,6 +51,12 @@ struct Placed {
 /// dragging the scrollbar) can land on boxes; they ask for the next frame, which
 /// builds them.
 const MARGIN: f32 = 0.5;
+
+/// `MUSIC_NO_CULL=1`: never skip a section.
+fn disabled() -> bool {
+    static OFF: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *OFF.get_or_init(|| std::env::var_os("MUSIC_NO_CULL").is_some_and(|v| v != "0"))
+}
 
 impl Placed {
     /// Whether the section can be skipped: measured for this content, width and
@@ -117,7 +127,8 @@ impl Sections {
             .placed
             .get(&id)
             .copied()
-            .filter(|p| p.far_off(key, width, rem, scroll_top, f32::from(view.size.height)));
+            .filter(|p| p.far_off(key, width, rem, scroll_top, f32::from(view.size.height)))
+            .filter(|_| !disabled());
         let state = self.0.clone();
         let handle = scroll.clone();
         let skipped = skip.is_some();

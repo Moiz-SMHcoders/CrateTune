@@ -188,6 +188,9 @@ impl InnerTube {
             }
         };
         let body = self.body(extra, use_login);
+        if let Some(dir) = crate::fixtures::dir() {
+            return crate::fixtures::innertube(dir, endpoint, &body);
+        }
         let origin = self.api_base.as_deref().unwrap_or(ORIGIN);
         let mut req = agent()
             .post(format!("{origin}{API_PATH}/{endpoint}"))
