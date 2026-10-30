@@ -10,10 +10,10 @@
 //! [`Sections::cull`] wraps one section. A tiny `canvas` records where the section
 //! sits in the page and how tall it is each time it is drawn; while it is more than
 //! half a viewport above or below what is visible ([`MARGIN`]), the next frames draw
-//! an empty box of that height instead of building it. The page's layout and
-//! scrollbar stay the same, and the box keeps recording its position, so sections
-//! above it can grow or shrink, and a box that a jump brings into view asks for the
-//! next frame at once. A section is always built when its position is unknown or
+//! an empty box of that height (the canvas itself) instead of building it. The page's
+//! layout and scrollbar stay the same, and the box keeps recording its position, so
+//! sections above it can grow or shrink, and a box that a jump brings into view asks
+//! for the next frame at once. A section is always built when its position is unknown or
 //! stale: the first frame, after its content changed (`key`), after the viewport
 //! width or the font size changed.
 //!
@@ -161,17 +161,18 @@ impl Sections {
             },
             |_, _, _, _| {},
         )
-        .absolute()
-        .top_0()
-        .left_0()
-        .size_full();
-        let section = div().w_full().relative();
+        .w_full();
         match skip {
-            Some(placed) => section.h(px(placed.height)),
-            None => section.child(build()),
+            // A skipped section is the measuring box alone (one element: a long page
+            // has many of them, and each costs a little on every frame).
+            Some(placed) => measure.h(px(placed.height)).into_any_element(),
+            None => div()
+                .w_full()
+                .relative()
+                .child(build())
+                .child(measure.absolute().top_0().left_0().h_full())
+                .into_any_element(),
         }
-        .child(measure)
-        .into_any_element()
     }
 
     /// A titled shelf (`items::shelf_view`), culled.
