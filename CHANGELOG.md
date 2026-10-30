@@ -5,8 +5,6 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
-## [0.2.2] — 2026-10-30
-
 ### Added
 
 * **Sideways rows scroll every way**, like YouTube Music and Spotify: **‹ ›** at the right
@@ -25,6 +23,11 @@ versions follow [SemVer](https://semver.org/).
   it shows, with **Change**, until dismissed.
 * Script hooks: `@shelf-status`, `@shelf-scroll=N:next|prev|start|end`,
   `@drag=X1;Y1;X2;Y2`; `@scroll` / `@wheel` take an optional DX and `shift`.
+
+## [0.2.2] — 2026-10-30
+
+### Added
+
 * `scripts/perf-windows.ps1`: CPU, memory and frame-rate check of a release build on
   Windows (idle, scrolling Home, playing, Now Playing), with pass / fail checks; see
   docs/TESTING.md, "Performance".
