@@ -7,22 +7,6 @@ versions follow [SemVer](https://semver.org/).
 
 ### Added
 
-* **Sideways rows scroll every way**, like YouTube Music and Spotify: **‹ ›** at the right
-  of every shelf's title (one window-width per click, stopping on a card's edge; gliding
-  unless Motion is Off; dimmed at the ends, hidden when everything fits), **Shift + wheel**
-  and horizontal wheels / trackpad swipes over a row (smooth on Windows and Linux), **click
-  and drag** (after 6 px; the card under the pointer then doesn't open), and a thin
-  scrollbar under a hovered row. Rows without a title (Home's category chips when they
-  don't fit) show round ‹ › on their ends while hovered. Applies to Home (quick picks too,
-  as cards or as the list grid), artist, album, Explore (moods and shelves), Charts, mood /
-  genre pages and Stats.
-* **"From YouTube Music · <country>"** on Home above YouTube Music's own feed, with
-  **Change region** (opens Settings → Content & region on the country) and **Hide** (hides
-  the feed section); YouTube's own quick picks and the community shelf say so too. On a
-  first run whose content country came from the system's region, Home says which country
-  it shows, with **Change**, until dismissed.
-* Script hooks: `@shelf-status`, `@shelf-scroll=N:next|prev|start|end`,
-  `@drag=X1;Y1;X2;Y2`; `@scroll` / `@wheel` take an optional DX and `shift`.
 * `scripts/perf-macos.sh`, the macOS counterpart of `perf-windows.ps1` (CPU from `ps`,
   memory from `footprint`, the display's refresh rate from `system_profiler`), plus a 6 ms
   budget for a full draw of Home (a 180 Hz frame is 5.5 ms).
@@ -42,6 +26,27 @@ versions follow [SemVer](https://semver.org/).
 * Changing the **content country** (Settings → Content & region) now also starts a new
   anonymous YouTube visitor, so the signed-out Home feed follows the new region instead of
   the old visitor's history (the visitor is otherwise kept across launches).
+
+## [0.2.3] — 2026-10-30
+
+### Added
+
+* **Sideways rows scroll every way**, like YouTube Music and Spotify: **‹ ›** at the right
+  of every shelf's title (one window-width per click, stopping on a card's edge; gliding
+  unless Motion is Off; dimmed at the ends, hidden when everything fits), **Shift + wheel**
+  and horizontal wheels / trackpad swipes over a row (smooth on Windows and Linux), **click
+  and drag** (after 6 px; the card under the pointer then doesn't open), and a thin
+  scrollbar under a hovered row. Rows without a title (Home's category chips when they
+  don't fit) show round ‹ › on their ends while hovered. Applies to Home (quick picks too,
+  as cards or as the list grid), artist, album, Explore (moods and shelves), Charts, mood /
+  genre pages and Stats.
+* **"From YouTube Music · <country>"** on Home above YouTube Music's own feed, with
+  **Change region** (opens Settings → Content & region on the country) and **Hide** (hides
+  the feed section); YouTube's own quick picks and the community shelf say so too. On a
+  first run whose content country came from the system's region, Home says which country
+  it shows, with **Change**, until dismissed.
+* Script hooks: `@shelf-status`, `@shelf-scroll=N:next|prev|start|end`,
+  `@drag=X1;Y1;X2;Y2`; `@scroll` / `@wheel` take an optional DX and `shift`.
 
 ### Fixed
 
