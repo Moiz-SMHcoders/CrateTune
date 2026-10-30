@@ -1057,7 +1057,7 @@ impl Render for MusicApp {
             root = root.child(edges);
         }
         if let Some(rate) = &mut self.render_rate {
-            rate.record(frame.now, frame.is_animating());
+            rate.record(frame.now, frame.is_animating() || self.wheel.gliding());
         }
         if let Some(at) = frame.finish(window) {
             self.schedule_np_wake(at, cx);
