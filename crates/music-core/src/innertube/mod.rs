@@ -24,11 +24,13 @@
 mod account;
 mod auth;
 mod client;
+mod cookies;
 #[cfg(test)]
 mod fixture_tests;
 mod models;
 pub(crate) mod pages;
 mod parse;
+mod session;
 
 use serde_json::{Value, json};
 
@@ -36,8 +38,10 @@ pub use account::{
     AccountChannel, AccountInfo, GoogleAccount, HistorySection, LibraryPage, MAX_COVER_BYTES,
     MAX_GOOGLE_ACCOUNTS, PlaylistAction, PlaylistPrivacy, Rating,
 };
+pub(crate) use auth::authorization_for;
 pub use auth::{Auth, sapisid_hash};
 pub use models::*;
+pub use session::{PERSIST_MIN_INTERVAL, REFRESH_MIN_INTERVAL, Session, SessionHooks};
 
 use crate::{Error, Result, Track};
 
