@@ -12,12 +12,11 @@ Last reviewed: 2026-10-29, against `main` at `bdb3625`.
 
 ## 1. Bugs
 
-**B1. Windows: guests see "Connection lost" when the host ends a Listen Together session**
-Guests should see "Session ended". The server flushes the close frame, waits up to 1 s for
-the reply, then half-closes and drains the socket; that fixed Linux, but on Windows the close
-frame is still lost now and then (also seen on Linux CI under load). The CI test accepts either message until this is
-looked at on a real Windows machine. Details: `together::tests::session_end_to_end`,
-`Conn::close` in `crates/music-core/src/together/conn.rs`. · Size: medium · Priority: low
+**B2. Windows: the Chromecast connection polls with socket read timeouts**
+`crates/music-core/src/cast/session.rs` polls its TLS connection every 50 ms through
+`SO_RCVTIMEO`. On Windows such a read can fail with error 997, lose bytes or crash the process
+(see `crates/music-net`). Listen Together and the relay moved to `music_net::TimedTcp`; Cast
+should too. · Size: small · Priority: medium
 
 ## 2. Unverified / needs real-world testing
 

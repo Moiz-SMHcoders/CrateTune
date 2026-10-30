@@ -1,0 +1,8 @@
+[package]
+name = "music-net"
+edition.workspace = true
+version.workspace = true
+license = "GPL-3.0-only"
+description = "A TcpStream whose timeouts are safe to hit all the time, for poll-style connection loops"
+
+[dependencies]

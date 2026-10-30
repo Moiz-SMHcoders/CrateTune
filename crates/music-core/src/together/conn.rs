@@ -4,10 +4,11 @@
 //! to (a direct connection, or a guest tunnelled through a relay).
 
 use std::io::{ErrorKind, Read, Write};
-use std::net::{TcpStream, ToSocketAddrs};
+use std::net::{Shutdown, TcpStream, ToSocketAddrs};
 use std::sync::Arc;
 use std::time::Duration;
 
+use music_net::TimedTcp;
 use tungstenite::protocol::CloseFrame;
 use tungstenite::protocol::frame::coding::CloseCode;
 use tungstenite::{Message as WsMessage, WebSocket};
@@ -47,15 +48,15 @@ pub(super) trait Link: Send {
 /// Plain TCP, or TLS for `wss://` (client side only; the relay leaves TLS to a
 /// reverse proxy).
 pub(super) enum Stream {
-    Plain(TcpStream),
-    Tls(Box<rustls::StreamOwned<rustls::ClientConnection, TcpStream>>),
+    Plain(TimedTcp),
+    Tls(Box<rustls::StreamOwned<rustls::ClientConnection, TimedTcp>>),
 }
 
 impl Stream {
-    fn tcp(&self) -> &TcpStream {
+    fn tcp(&mut self) -> &mut TimedTcp {
         match self {
             Self::Plain(s) => s,
-            Self::Tls(s) => &s.sock,
+            Self::Tls(s) => &mut s.sock,
         }
     }
 }
@@ -136,6 +137,7 @@ impl Conn {
             None => Error::Parse(format!("no address for {host}")),
         })?;
         tcp.set_nodelay(true)?;
+        let mut tcp = TimedTcp::new(tcp)?;
         tcp.set_read_timeout(Some(timeout))?;
         tcp.set_write_timeout(Some(timeout))?;
         let stream = if tls {
@@ -149,7 +151,7 @@ impl Conn {
     }
 
     pub(super) fn set_timeout(&mut self, timeout: Duration) {
-        let _ = self.ws.get_ref().tcp().set_read_timeout(Some(timeout));
+        let _ = self.ws.get_mut().tcp().set_read_timeout(Some(timeout));
     }
 
     pub(super) fn recv_text(&mut self) -> RecvText {
@@ -249,11 +251,11 @@ impl Link for Conn {
         }
         // Then a graceful TCP close: send FIN after the close frame and drain
         // until the peer closes too, so nothing unread is left to trigger a reset.
-        let tcp = self.ws.get_ref().tcp();
-        let _ = tcp.shutdown(std::net::Shutdown::Write);
+        let tcp = self.ws.get_mut().tcp();
+        let _ = tcp.shutdown(Shutdown::Write);
         let mut sink = [0u8; 512];
         while std::time::Instant::now() < deadline {
-            match (&*tcp).read(&mut sink) {
+            match tcp.read(&mut sink) {
                 Ok(0) => break,
                 Ok(_) => continue,
                 Err(e) if is_timeout(e.kind()) => continue,
