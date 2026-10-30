@@ -40,6 +40,31 @@ versions follow [SemVer](https://semver.org/).
   (it was two), so a long feed adds next to nothing to a frame: on GitHub's Windows
   runner the end of a 60-shelf offline feed draws as fast as the top of Home.
 
+### Changed
+
+* Changing the **content country** (Settings → Content & region) now also starts a new
+  anonymous YouTube visitor, so the signed-out Home feed follows the new region instead of
+  the old visitor's history (the visitor is otherwise kept across launches).
+
+### Fixed
+
+* **Listen Together: a guest could miss being banned or removed, or the end of the session**,
+  and see "Connection lost" instead. When a message from the guest (a heartbeat, every few
+  hundred ms) arrived just as the host acted, the server dropped the connection without
+  sending what it had queued. In a stress test 1 in 40 goodbyes was lost, 1 in 8 under CPU
+  load; now none are.
+* **Windows: Listen Together and relay connections could drop, lose data or crash the
+  app** while idle. Polling a socket with a read timeout sometimes fails with error 997
+  and loses bytes; a new `music-net` crate waits with `WSAPoll` instead.
+* **Shelves couldn't be scrolled sideways** at all (no wheel, swipe, drag or button):
+  each row wrapped its cards in one flex box that layout stretched to the row's width, so
+  GPUI measured the content as no wider than the view and the largest offset stayed 0.
+  The cards are now the scroll container's own children. GPUI's own wheel handling would
+  then have turned the vertical wheel over a row into sideways scrolling (and still
+  scrolled the page); rows now read the wheel themselves and leave vertical scrolling to
+  the page.
+* Home's feed cache key includes the content country and language.
+
 ## [0.2.2] — 2026-10-30
 
 ### Added
@@ -52,14 +77,6 @@ versions follow [SemVer](https://semver.org/).
 
 ### Fixed
 
-* **Shelves couldn't be scrolled sideways** at all (no wheel, swipe, drag or button):
-  each row wrapped its cards in one flex box that layout stretched to the row's width, so
-  GPUI measured the content as no wider than the view and the largest offset stayed 0.
-  The cards are now the scroll container's own children. GPUI's own wheel handling would
-  then have turned the vertical wheel over a row into sideways scrolling (and still
-  scrolled the page); rows now read the wheel themselves and leave vertical scrolling to
-  the page.
-* Home's feed cache key includes the content country and language.
 * **Stutter on Windows** while scrolling and changing pages: every shelf on Home (and on
   artist, Explore, Charts and mood pages) was built, laid out and painted on every frame,
   visible or not, and the endless feed made each frame heavier the further it was

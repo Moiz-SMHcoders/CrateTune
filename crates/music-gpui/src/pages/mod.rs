@@ -39,6 +39,7 @@ mod stats;
 mod together;
 pub mod widgets;
 
+pub(crate) use home::forget_visitor;
 pub use home::speed_dial::{
     menu_item as speed_dial_menu_item, set_pinned_in as speed_dial_set_pinned,
 };

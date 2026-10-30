@@ -107,6 +107,13 @@ impl InnerTube {
         true
     }
 
+    /// Forgets the anonymous `visitorData`, so the next anonymous request starts as a new
+    /// visitor. YouTube ties its anonymous feed to the visitor as well as to `gl`, so after a
+    /// change of content country the old visitor keeps the old region's recommendations.
+    pub fn reset_anonymous_visitor() {
+        *ANON_VISITOR.lock().unwrap_or_else(PoisonError::into_inner) = None;
+    }
+
     fn signed_in(&self) -> bool {
         self.auth.as_ref().is_some_and(|a| a.is_signed_in())
     }

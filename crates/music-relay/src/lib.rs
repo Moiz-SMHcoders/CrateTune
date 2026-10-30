@@ -22,7 +22,7 @@
 //! Std threads + `tungstenite`, one thread per connection; no async runtime.
 
 use std::collections::HashMap;
-use std::io::{ErrorKind, Read as _, Write as _};
+use std::io::{ErrorKind, Read as _, Write};
 use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::mpsc::{Receiver, Sender, channel};
@@ -30,6 +30,7 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
+use music_net::TimedTcp;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
@@ -282,7 +283,7 @@ fn accept_loop(listener: &TcpListener, shared: &Arc<Shared>) {
 }
 
 fn http_reply(
-    mut stream: &TcpStream,
+    mut stream: impl Write,
     status: &str,
     content_type: &str,
     body: &str,
@@ -297,7 +298,7 @@ fn http_reply(
 }
 
 /// Peeks at the request head without consuming it (the WebSocket handshake reads it again).
-fn peek_head(stream: &TcpStream, timeout: Duration) -> std::io::Result<(String, usize)> {
+fn peek_head(stream: &TimedTcp, timeout: Duration) -> std::io::Result<(String, usize)> {
     let deadline = Instant::now() + timeout;
     let mut buf = vec![0u8; 8192];
     loop {
@@ -317,8 +318,8 @@ fn peek_head(stream: &TcpStream, timeout: Duration) -> std::io::Result<(String, 
 }
 
 fn serve(stream: TcpStream, shared: &Shared) -> std::io::Result<()> {
-    stream.set_nonblocking(false)?;
     stream.set_nodelay(true)?;
+    let mut stream = TimedTcp::new(stream)?;
     let timeout = shared.config.handshake_timeout;
     stream.set_read_timeout(Some(timeout))?;
     stream.set_write_timeout(Some(timeout))?;
@@ -328,7 +329,7 @@ fn serve(stream: TcpStream, shared: &Shared) -> std::io::Result<()> {
     if !lower.contains("upgrade: websocket") {
         // Consume the request (closing with unread bytes would reset the connection).
         let mut sink = vec![0u8; head_len];
-        let _ = (&stream).read_exact(&mut sink);
+        let _ = stream.read_exact(&mut sink);
         let _ = stream.shutdown(std::net::Shutdown::Read);
         return if head.starts_with("GET ") && matches!(path, "/health" | "/healthz") {
             let body = json!({ "status": "ok", "app": APP_NAME });
@@ -337,14 +338,14 @@ fn serve(stream: TcpStream, shared: &Shared) -> std::io::Result<()> {
                 body.extend(stats);
             }
             http_reply(
-                &stream,
+                &mut stream,
                 "200 OK",
                 "application/json",
                 &Value::Object(body).to_string(),
             )
         } else {
             http_reply(
-                &stream,
+                &mut stream,
                 "426 Upgrade Required",
                 "text/plain",
                 "music-relay: WebSocket only (GET /health for status)\n",
@@ -715,12 +716,12 @@ enum Recv {
 }
 
 struct Ws {
-    ws: WebSocket<TcpStream>,
+    ws: WebSocket<TimedTcp>,
     closed: bool,
 }
 
 impl Ws {
-    fn new(ws: WebSocket<TcpStream>) -> Self {
+    fn new(ws: WebSocket<TimedTcp>) -> Self {
         Self { ws, closed: false }
     }
 
