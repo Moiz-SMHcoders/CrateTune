@@ -494,7 +494,8 @@ of the macOS and Windows jobs (Linux runners have no display or GPU). It opens H
 times (each page with its own ids), every shelf filled to 12 distinct cards (as wide as a
 real shelf), generated artwork (~60 different images, within the artwork memory budget),
 and an HTTP agent that can't reach the network. It times full window draws (`@bench`: build, layout and paint, not presenting)
-at the top, scrolls to the end of the feed (~60 shelves) and times them again:
+near the top (one screen down, while the feed is still short), scrolls to the end of the
+feed (~60 shelves) and times them again:
 
 ```sh
 scripts/perf-frames.sh                         # builds release first
@@ -504,10 +505,13 @@ MUSIC_NO_CULL=1 scripts/perf-frames.sh         # without culling: must FAIL
 
 It fails when
 
-* **the end-of-feed draw p50 > 1.5 × the top-of-Home p50.** Runner speed cancels out. This
+* **the end-of-feed draw p50 > 1.5 × the near-top p50.** Runner speed cancels out. This
   is the regression the Windows stutter was: every section was built on every frame, so a
   frame cost more the longer the page got (`components/cull.rs` skips sections far outside
-  the viewport);
+  the viewport). The reference is one screen down rather than the very top, where the
+  title and chips fill a third of the window: there both views show only shelves, while
+  against the very top the end drew 1.2–1.4x slower on the CI runners just for having more
+  shelves in view, too close to 1.5;
 * **either p50 is above the ceiling** (`--max-ms`, default 25; CI: 20 ms), only for gross
   slowdowns: 4–7x what the runners measure;
 * the feed didn't load to its end, Home wasn't up before the first bench, or a bench

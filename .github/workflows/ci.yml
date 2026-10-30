@@ -89,5 +89,5 @@ jobs:
         shell: bash
         run: |
           exe=target/release/music-gpui; [ "$RUNNER_OS" = Windows ] && exe=$exe.exe
-          for i in 1 2 3 4 5 6; do scripts/perf-frames.sh --binary $exe --attempts 1 --max-ms 1000 | grep -E '^\| (top|end)|1.5 x' || true; done
-          for i in 1 2; do MUSIC_NO_CULL=1 scripts/perf-frames.sh --binary $exe --attempts 1 --max-ms 1000 | grep -E '^\| (top|end)|1.5 x' || true; done
+          for i in 1 2 3 4 5 6; do scripts/perf-frames.sh --binary $exe --attempts 1 --max-ms 1000 | grep -E '^\| (near|end)|1.5 x' || true; done
+          for i in 1 2; do MUSIC_NO_CULL=1 scripts/perf-frames.sh --binary $exe --attempts 1 --max-ms 1000 | grep -E '^\| (near|end)|1.5 x' || true; done

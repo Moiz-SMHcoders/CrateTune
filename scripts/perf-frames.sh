@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Frame-time regression check, offline (CI step "perf: frame-time"; macOS and Windows).
 # Opens a release build on Home filled from the recorded InnerTube responses
-# (`MUSIC_FIXTURES`: no network, generated artwork), times full window draws at the
-# top (`@bench`), scrolls through a long feed (~60 shelves) to its end and times
-# them again. Fails when
-#   * a draw at the end costs more than RATIO (1.5) x one at the top: a frame must
+# (`MUSIC_FIXTURES`: no network, generated artwork), times full window draws near the
+# top (`@bench`, one screen down), scrolls through a long feed (~60 shelves) to its end
+# and times them again. Fails when
+#   * a draw at the end costs more than RATIO (1.5) x one near the top: a frame must
 #     not get more expensive the further a page is scrolled (sections far outside
 #     the viewport aren't built, `components/cull.rs`); runner speed cancels out;
 #   * either p50 is above MAX_MS (25): a ceiling for gross slowdowns (docs/TESTING.md 6.3).
@@ -64,11 +64,14 @@ trap cleanup EXIT
 # Each bench draws 60 frames to warm up, then the 300 that count, GAP (1) ms apart:
 # with draws back to back the UI thread stays busy, so the system keeps it on a fast
 # core at a steady clock (16 ms apart, macOS moves it between efficiency and
-# performance cores and the times jump 3x between runs). The top bench waits for
-# Home and its artwork; then 40 scroll steps of 1500 px, each followed by two forced
-# draws, so the feed keeps loading (and layout catching up) even where the system sends the window no
-# frames; the deep bench runs at the end of the feed (2 + 20 pages, ~60 shelves).
-script="6:@bench=60:$gap,6.1:@bench=300:$gap"
+# performance cores and the times jump 3x between runs). The first bench waits for
+# Home and its artwork and runs one screen down: there the window shows shelves only,
+# as at the end (at the very top the title and chips take a third of it, and the end
+# drew 1.2-1.4x slower than that on the CI runners just for having more shelves in
+# view). Then 40 scroll steps of 1500 px, each followed by two forced draws, so the
+# feed keeps loading (and layout catching up) even where the system sends the window
+# no frames; the deep bench runs at the end of the feed (2 + 20 pages, ~60 shelves).
+script="5:@scroll=640;420;-700,5.1:@bench=2,6:@bench=60:$gap,6.1:@bench=300:$gap"
 t=9
 for _ in $(seq 1 40); do
   script="$script,$t:@scroll=640;420;-1500,$(awk "BEGIN { print $t + 0.1 }"):@bench=2"
@@ -109,7 +112,7 @@ evaluate() { # n
   top=$(printf '%s\n' "$benches" | sed -n 1p)
   deep=$(printf '%s\n' "$benches" | sed -n 2p)
   pages=$(sed -n 's/.*fixture feed page \([0-9]*\)\/\([0-9]*\).*/\1 \2/p' "$log" | tail -n 1)
-  # The feed asks for its first continuation once Home is drawn: before the top bench?
+  # The feed asks for its first continuation once Home is drawn: before the first bench?
   loaded=$(awk '/fixture feed page 1\// { print 1; exit } /bench 300 draws/ { print 0; exit }' "$log")
   cull=on
   [ -n "${MUSIC_NO_CULL:-}" ] && [ "${MUSIC_NO_CULL}" != 0 ] && cull="OFF (MUSIC_NO_CULL)"
@@ -121,16 +124,16 @@ evaluate() { # n
   BEGIN {
     split(top, t, " "); split(deep, d, " "); split(pages, p, " ")
     printf "| Run %s: full window draw (offline Home, culling %s) | p50 | p95 |\n|---|---|---|\n", n, cull
-    printf "| top of Home | %s ms | %s ms |\n", na(t[1]), na(t[2])
+    printf "| near the top (one screen down) | %s ms | %s ms |\n", na(t[1]), na(t[2])
     printf "| end of the feed | %s ms | %s ms |\n\n", na(d[1]), na(d[2])
-    fail = check(loaded == 1, "Home was showing the feed when the top bench started")
+    fail = check(loaded == 1, "Home was showing the feed when the first bench started")
     fail += check(p[1] != "" && p[1] == p[2], \
       sprintf("feed loaded to its end (%s of %s pages)", na(p[1]), na(p[2])))
     missing = check(t[1] != "" && d[1] != "", "both benchmarks ran")
     fail += missing
     if (!missing) {
       fail += check(d[1] <= ratio * t[1], \
-        sprintf("end-of-feed draw p50 <= %s x top p50 (%.2fx)", ratio, d[1] / t[1]))
+        sprintf("end-of-feed draw p50 <= %s x near-top p50 (%.2fx)", ratio, d[1] / t[1]))
       fail += check(t[1] <= max && d[1] <= max, sprintf("draw p50 <= %s ms", max))
     }
     exit (fail > 0 ? 1 : 0)
