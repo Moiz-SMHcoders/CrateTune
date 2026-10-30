@@ -39,7 +39,7 @@ use music_core::{PlaybackStatus, format_duration};
 
 use super::bar_fx::{BackgroundArt, BackgroundFx, BackgroundGeometry, BackgroundLook, TrackFx};
 use super::progress::{ProgressTrack, TrackEvent, TrackLook, TrackParams};
-use crate::anim::{Frame, Spec, Tween, ease_out_cubic};
+use crate::anim::{Frame, RenderRate, Spec, Tween, ease_out_cubic};
 use crate::app::{MusicApp, app_entity, read_app, update_app};
 use crate::components::artwork::ArtworkCache;
 use crate::icons::{AppIcon, Lucide};
@@ -238,6 +238,8 @@ pub struct PlayerBar {
     /// The last render asked for more frames soon (an animation or a fade runs).
     animating: Cell<bool>,
     wake: Option<(Instant, Task<()>)>,
+    /// `MUSIC_TIMINGS`: the bar's frame rate and intervals.
+    rate: Option<RenderRate>,
     _observe: Option<Subscription>,
 }
 
@@ -255,6 +257,7 @@ impl PlayerBar {
             right: None,
             animating: Cell::new(false),
             wake: None,
+            rate: RenderRate::from_env("bar"),
             _observe: observe,
         }
     }
@@ -725,6 +728,9 @@ impl Render for PlayerBar {
         );
         if let Some(at) = wake {
             self.schedule(at, cx);
+        }
+        if let Some(rate) = &mut self.rate {
+            rate.record(now, self.animating.get());
         }
         element
     }

@@ -16,7 +16,8 @@ use music_core::innertube::ChartCountry;
 use super::PageView;
 use crate::app::MusicApp;
 use crate::browse::{Load, PageCache, fetch, on_view};
-use crate::components::items::{ShelfModel, ShelfStyle, load_state, shelf_view};
+use crate::components::cull::Sections;
+use crate::components::items::{ShelfModel, ShelfStyle, load_state};
 use crate::components::{empty_state, page_scroll, page_title};
 use crate::icons::Lucide;
 
@@ -49,6 +50,8 @@ struct Data {
 
 pub struct ChartsPage {
     scroll: ScrollHandle,
+    /// Shelves far outside the viewport aren't built (`components/cull.rs`).
+    sections: Sections,
     country: String,
     data: Load<Data>,
     picker: Option<Entity<SelectState<SearchableVec<CountryItem>>>>,
@@ -63,6 +66,7 @@ impl ChartsPage {
         let page = cx.new(|cx| {
             let mut page = Self {
                 scroll: scroll.clone(),
+                sections: Sections::new(cx.entity_id()),
                 country,
                 data: Load::Loading,
                 picker: None,
@@ -180,10 +184,12 @@ impl Render for ChartsPage {
             }
             Load::Ready(data) => {
                 for (i, model) in data.shelves.iter().enumerate() {
-                    content = content.child(shelf_view(
+                    content = content.child(self.sections.shelf(
                         &format!("charts-{i}"),
                         model,
                         ShelfStyle::List(CHART_ROWS),
+                        &self.scroll,
+                        window,
                         cx,
                     ));
                 }

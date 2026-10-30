@@ -181,3 +181,59 @@ impl Frame {
         }
     }
 }
+
+/// `MUSIC_TIMINGS=1`: how often one view renders and how even the intervals are,
+/// printed once a second (`bar 21 renders/s, interval p50 44.8 / p95 50.3 / max 61.0 ms`).
+/// Only intervals after a render that asked for more frames soon count: the time
+/// after an idle render is not a slow frame.
+pub struct RenderRate {
+    label: &'static str,
+    window_start: Option<Instant>,
+    /// The last render, if it expected the next one soon.
+    last: Option<Instant>,
+    frames: u32,
+    gaps: Vec<f64>,
+}
+
+impl RenderRate {
+    pub fn from_env(label: &'static str) -> Option<Self> {
+        std::env::var_os("MUSIC_TIMINGS").map(|_| Self {
+            label,
+            window_start: None,
+            last: None,
+            frames: 0,
+            gaps: Vec::new(),
+        })
+    }
+
+    /// A render at `now`; `more` says it asked for another frame (or a short timed
+    /// wake-up).
+    pub fn record(&mut self, now: Instant, more: bool) {
+        if let Some(last) = self.last {
+            self.gaps.push((now - last).as_secs_f64() * 1e3);
+        }
+        self.last = more.then_some(now);
+        self.frames += 1;
+        let start = *self.window_start.get_or_insert(now);
+        if now - start < Duration::from_secs(1) {
+            return;
+        }
+        if self.gaps.is_empty() {
+            eprintln!("music-gpui: {} {} renders/s", self.label, self.frames);
+        } else {
+            self.gaps.sort_by(f64::total_cmp);
+            let at = |q: f64| self.gaps[((self.gaps.len() - 1) as f64 * q).round() as usize];
+            eprintln!(
+                "music-gpui: {} {} renders/s, interval p50 {:.1} / p95 {:.1} / max {:.1} ms",
+                self.label,
+                self.frames,
+                at(0.5),
+                at(0.95),
+                at(1.)
+            );
+        }
+        self.window_start = Some(now);
+        self.frames = 0;
+        self.gaps.clear();
+    }
+}

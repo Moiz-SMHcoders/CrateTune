@@ -157,6 +157,11 @@ pub fn claim_area() -> Option<AnyElement> {
 }
 
 impl Wheel {
+    /// A notch is still gliding (frames keep coming; `MUSIC_TIMINGS`).
+    pub fn gliding(&self) -> bool {
+        self.0.borrow().glide.active()
+    }
+
     /// The listener, as an element to add last to the main window's root.
     pub fn listener(&self) -> Option<AnyElement> {
         if !enabled() {

@@ -12,8 +12,8 @@ use std::rc::Rc;
 
 use gpui::{
     AnyElement, App, ElementId, FontWeight, InteractiveElement as _, IntoElement,
-    ParentElement as _, RenderOnce, SharedString, StatefulInteractiveElement as _, Styled as _,
-    Window, div, prelude::FluentBuilder as _, px,
+    ParentElement as _, RenderOnce, ScrollHandle, SharedString, StatefulInteractiveElement as _,
+    Styled as _, Window, div, prelude::FluentBuilder as _, px,
 };
 use gpui_component::{
     ActiveTheme as _, IconName, Sizable as _,
@@ -220,6 +220,17 @@ impl ShelfModel {
     /// Only songs / videos: shown as a quick-picks grid or a track list.
     pub fn is_songs(&self) -> bool {
         !self.shelf.items.is_empty() && self.songs.tracks.len() == self.shelf.items.len()
+    }
+
+    /// What the shelf's height depends on, drawn as `style` (a culled section is
+    /// rebuilt when it changes, `cull.rs`).
+    pub fn layout_key(&self, style: ShelfStyle) -> u64 {
+        let style = match style {
+            ShelfStyle::Auto => 0,
+            ShelfStyle::Cards => 1,
+            ShelfStyle::List(max) => 2 + max as u64,
+        };
+        (self.shelf.items.len() as u64) << 40 | (self.songs.tracks.len() as u64) << 20 | style
     }
 }
 
@@ -504,6 +515,18 @@ fn see_all(id: SharedString, shelf: &Shelf) -> Option<AnyElement> {
 
 /// A titled shelf.
 pub fn shelf_view(prefix: &str, model: &ShelfModel, style: ShelfStyle, cx: &App) -> AnyElement {
+    shelf_view_scrolled(prefix, model, style, None, cx)
+}
+
+/// [`shelf_view`] whose sideways scrolling is kept in `x_scroll` (see
+/// [`shelf_body_scrolled`]).
+pub fn shelf_view_scrolled(
+    prefix: &str,
+    model: &ShelfModel,
+    style: ShelfStyle,
+    x_scroll: Option<&ScrollHandle>,
+    cx: &App,
+) -> AnyElement {
     let shelf = &model.shelf;
     let header = section_header(
         shelf.title.clone(),
@@ -515,12 +538,20 @@ pub fn shelf_view(prefix: &str, model: &ShelfModel, style: ShelfStyle, cx: &App)
         .w_full()
         .gap_3()
         .child(header)
-        .child(shelf_body(prefix, model, style, cx))
+        .child(shelf_body_scrolled(prefix, model, style, x_scroll, cx))
         .into_any_element()
 }
 
 /// A shelf's items without its header (quick-picks grid, track list or cards).
-pub fn shelf_body(prefix: &str, model: &ShelfModel, style: ShelfStyle, cx: &App) -> AnyElement {
+/// With `x_scroll`, the sideways scroll offset is kept there rather than in GPUI's
+/// element state (which is dropped while the shelf isn't drawn, e.g. culled).
+pub fn shelf_body_scrolled(
+    prefix: &str,
+    model: &ShelfModel,
+    style: ShelfStyle,
+    x_scroll: Option<&ScrollHandle>,
+    cx: &App,
+) -> AnyElement {
     let shelf = &model.shelf;
     match style {
         ShelfStyle::List(max) if model.is_songs() => {
@@ -533,11 +564,14 @@ pub fn shelf_body(prefix: &str, model: &ShelfModel, style: ShelfStyle, cx: &App)
                 }))
                 .into_any_element()
         }
-        ShelfStyle::Auto if model.is_songs() => quick_picks(prefix, &model.songs.tracks, cx),
+        ShelfStyle::Auto if model.is_songs() => {
+            quick_picks(prefix, &model.songs.tracks, x_scroll, cx)
+        }
         _ => div()
             .id(SharedString::from(format!("{prefix}-scroll")))
             .w_full()
             .overflow_x_scroll()
+            .when_some(x_scroll, |this, handle| this.track_scroll(handle))
             .child(
                 h_flex()
                     .gap_2()
@@ -555,7 +589,12 @@ pub fn shelf_body(prefix: &str, model: &ShelfModel, style: ShelfStyle, cx: &App)
 }
 
 /// Quick picks: columns of four compact song rows, scrolling sideways.
-pub fn quick_picks(prefix: &str, tracks: &Rc<Vec<Track>>, cx: &App) -> AnyElement {
+pub fn quick_picks(
+    prefix: &str,
+    tracks: &Rc<Vec<Track>>,
+    x_scroll: Option<&ScrollHandle>,
+    cx: &App,
+) -> AnyElement {
     const ROWS: usize = 4;
     let theme = cx.theme();
     let (hover, muted) = (theme.list_hover, theme.muted_foreground);
@@ -618,6 +657,7 @@ pub fn quick_picks(prefix: &str, tracks: &Rc<Vec<Track>>, cx: &App) -> AnyElemen
         .id(SharedString::from(format!("{prefix}-qp-scroll")))
         .w_full()
         .overflow_x_scroll()
+        .when_some(x_scroll, |this, handle| this.track_scroll(handle))
         .child(
             h_flex()
                 .items_start()

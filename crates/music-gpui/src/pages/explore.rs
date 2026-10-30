@@ -17,7 +17,8 @@ use music_core::innertube::NavButton;
 use super::PageView;
 use crate::app::{MusicApp, update_app};
 use crate::browse::{Load, PageCache, fetch, on_view};
-use crate::components::items::{ShelfModel, ShelfStyle, load_state, mood_tile, shelf_view};
+use crate::components::cull::Sections;
+use crate::components::items::{ShelfModel, ShelfStyle, load_state, mood_tile};
 use crate::components::{grid, page_scroll, page_title, section_header};
 use crate::icons::Lucide;
 use crate::router::Route;
@@ -33,6 +34,8 @@ struct Data {
 
 pub struct ExplorePage {
     scroll: ScrollHandle,
+    /// Shelves far outside the viewport aren't built (`components/cull.rs`).
+    sections: Sections,
     data: Load<Data>,
     _task: Option<Task<()>>,
 }
@@ -43,6 +46,7 @@ impl ExplorePage {
         let page = cx.new(|cx| {
             let mut page = Self {
                 scroll: scroll.clone(),
+                sections: Sections::new(cx.entity_id()),
                 data: Load::Loading,
                 _task: None,
             };
@@ -79,7 +83,7 @@ impl ExplorePage {
 }
 
 impl Render for ExplorePage {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = cx.theme();
         let (bg, hover) = (theme.secondary, theme.secondary_hover);
         let accent = AppColors::get(cx).accent;
@@ -184,10 +188,12 @@ impl Render for ExplorePage {
                     );
                 }
                 for (i, model) in data.shelves.iter().enumerate() {
-                    content = content.child(shelf_view(
+                    content = content.child(self.sections.shelf(
                         &format!("explore-{i}"),
                         model,
                         ShelfStyle::Auto,
+                        &self.scroll,
+                        window,
                         cx,
                     ));
                 }

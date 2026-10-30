@@ -19,9 +19,8 @@ use music_core::innertube::ArtistPage as ArtistData;
 use super::PageView;
 use crate::app::{MusicApp, update_app};
 use crate::browse::{Load, PageCache, fetch, on_view};
-use crate::components::items::{
-    Hero, ShelfModel, ShelfStyle, action_button, hero, load_state, shelf_view,
-};
+use crate::components::cull::Sections;
+use crate::components::items::{Hero, ShelfModel, ShelfStyle, action_button, hero, load_state};
 use crate::components::{page_scroll, page_title};
 use crate::icons::Lucide;
 use crate::radio::CollectionAction;
@@ -39,6 +38,8 @@ pub struct ArtistPage {
     id: String,
     name: String,
     scroll: ScrollHandle,
+    /// Shelves far outside the viewport aren't built (`components/cull.rs`).
+    sections: Sections,
     data: Load<Rc<Data>>,
     /// Set after (un)subscribing here (the fetched page keeps the old state).
     subscribed: Option<bool>,
@@ -53,6 +54,7 @@ impl ArtistPage {
                 id,
                 name,
                 scroll: scroll.clone(),
+                sections: Sections::new(cx.entity_id()),
                 data: Load::Loading,
                 subscribed: None,
                 _task: None,
@@ -210,17 +212,19 @@ impl ArtistPage {
 }
 
 impl Render for ArtistPage {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let mut content = v_flex().gap_8();
         match &self.data {
             Load::Ready(data) => {
                 let data = data.clone();
                 content = content.child(self.header(&data, cx));
                 for (i, model) in data.shelves.iter().enumerate() {
-                    content = content.child(shelf_view(
+                    content = content.child(self.sections.shelf(
                         &format!("artist-{i}"),
                         model,
                         ShelfStyle::List(TOP_SONGS),
+                        &self.scroll,
+                        window,
                         cx,
                     ));
                 }
