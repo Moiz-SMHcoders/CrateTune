@@ -8,17 +8,18 @@
 //! | `@sb-status` | print the current song's segments |
 //! | `@play-id=VIDEO_ID[:TITLE]` | play one YouTube video id (e.g. a music video with segments) |
 //! | `@set=FIELD:VALUE` | type into `sb-url`, `together-name`, `together-port`, `together-relay`, `spotify-client`, `spotify-port`, `ai-endpoint`, `ai-model`, `ai-custom`, `ai-key` |
-//! | `@together-host[=FILE]` | start a session (and write the join link to FILE) |
-//! | `@together-host-relay[=FILE]` | start a session through the relay from the settings |
+//! | `@together-host[=FILE]` | start a session on the LAN (and write the join link to FILE) |
+//! | `@together-host-relay[=FILE]` | start a session through the relay (setting → `relay.txt` → built-in; LAN if unreachable); FILE gets the link, `FILE.code` the room code |
 //! | `@together-transfer=NAME` | hand the session to a guest |
-//! | `@together-join=LINK` / `@together-join=file:PATH` | join a session |
+//! | `@together-join=LINK` / `@together-join=file:PATH` | join a session (a link or a room code) |
+//! | `@together-join-code=CODE` / `@together-join-code=file:PATH` | join with a room code through the relay |
 //! | `@together-leave` | leave / end the session |
 //! | `@together-approve`, `@together-deny` | decide on every pending guest |
 //! | `@together-kick=NAME`, `@together-ban=NAME` | remove a guest |
 //! | `@together-allow=add\|control\|approval:on\|off` | room settings |
 //! | `@together-suggest=N` | as a guest: suggest search result N (play next) |
 //! | `@together-control=play\|pause\|next\|prev\|seek:SECS` | as a guest: ask the host |
-//! | `@together-status` | print role, participants, room and clock |
+//! | `@together-status` | print role, room code, participants, room and clock |
 //! | `@import-file=PATH`, `@spotify-playlist=URL`, `@spotify-liked` | start an import |
 //! | `@import-accept=N`, `@import-save[=NAME]`, `@import-cancel`, `@import-status` | the import job |
 //! | `@spotify-playlists`, `@spotify-connect` | Spotify account |
@@ -122,12 +123,18 @@ impl MusicApp {
             }
             "together-host-relay" => {
                 let path = arg.map(str::to_owned);
-                self.together_host_relay(window, cx, move |link| {
-                    eprintln!("music-gpui: together link {link:?}");
-                    if let Some(path) = path
-                        && let Err(e) = std::fs::write(&path, link)
-                    {
-                        eprintln!("music-gpui: writing {path}: {e}");
+                self.together_host_relay(window, cx, move |link, code| {
+                    eprintln!("music-gpui: together link {link:?} code {code:?}");
+                    if let Some(path) = path {
+                        if let Err(e) = std::fs::write(&path, link) {
+                            eprintln!("music-gpui: writing {path}: {e}");
+                        }
+                        let code_path = format!("{path}.code");
+                        if let Some(code) = code
+                            && let Err(e) = std::fs::write(&code_path, code)
+                        {
+                            eprintln!("music-gpui: writing {code_path}: {e}");
+                        }
                     }
                 });
             }
@@ -155,6 +162,17 @@ impl MusicApp {
                     None => raw.to_owned(),
                 };
                 self.together_join(&link, window, cx);
+            }
+            "together-join-code" => {
+                let raw = arg.unwrap_or("");
+                let code = match raw.strip_prefix("file:") {
+                    Some(path) => std::fs::read_to_string(path).unwrap_or_else(|e| {
+                        eprintln!("music-gpui: reading {path}: {e}");
+                        String::new()
+                    }),
+                    None => raw.to_owned(),
+                };
+                self.together_join_code(&code, window, cx);
             }
             "together-leave" => self.together_leave(cx),
             "together-approve" | "together-deny" => {
@@ -374,11 +392,18 @@ impl MusicApp {
         let role = match &t.role {
             Role::Idle => "idle".to_owned(),
             Role::Joining(host) => format!("joining {host}"),
-            Role::Hosting(h) => format!("hosting {}", h.join.to_link()),
+            Role::Hosting(h) => format!(
+                "hosting {} relay={:?} code={:?} notice={:?}",
+                h.link(),
+                h.server.relay_url(),
+                h.code.as_deref().map(music_core::together::display_code),
+                h.notice
+            ),
             Role::Guest(g) => format!(
-                "guest of {}:{} pending={} clock={:?}",
+                "guest of {}:{} relay={:?} pending={} clock={:?}",
                 g.join.host,
                 g.join.port,
+                g.join.url,
                 g.pending,
                 g.client.clock()
             ),

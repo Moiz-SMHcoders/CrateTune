@@ -86,12 +86,15 @@ settings.together.port_error = Poorten moeten tussen 1024 en 65535 liggen
 settings.together.allow_add_desc = Hun suggesties komen in je wachtrij.
 settings.together.allow_control_desc = Afspelen, pauzeren, spoelen en overslaan voor iedereen.
 settings.together.approval = Gasten goedkeuren voordat ze deelnemen
-settings.together.hosting_note = Sessies draaien op je lokale netwerk: gasten verbinden rechtstreeks met deze computer (sta inkomende verbindingen toe als de firewall erom vraagt). De link bevat een willekeurige sleutel; alleen mensen met de link kunnen deelnemen. Wijzigingen gelden meteen voor een lopende sessie. Op de pagina Samen luisteren geeft ‘Host maken’ de sessie aan een gast: iedereen volgt de nieuwe host.
+settings.together.hosting_note = Op hetzelfde netwerk verbinden gasten rechtstreeks met deze computer (sta inkomende verbindingen toe als de firewall erom vraagt). Links en ruimtecodes leiden naar een willekeurige sleutel: alleen mensen die er een hebben kunnen deelnemen, en je kunt elke gast goedkeuren. Wijzigingen gelden meteen. ‘Host maken’ op de pagina Samen luisteren geeft de sessie aan een gast.
 settings.together.across_networks = Over netwerken heen
 settings.together.relay = Relayserver
-settings.together.relay_placeholder = wss://relay.example.com (leeg: alleen LAN)
+settings.together.relay_placeholder = wss://relay.example.com (leeg: de standaardrelay)
 settings.together.relay_error = Vereist een ws://- of wss://-adres (geen gebruikersnaam of query)
-settings.together.relay_note = ‘Hosten via relay’ laat de sessie lopen via een music-relay-server die je zelf host (zie de README: één klein programma, zet het achter een TLS-reverse-proxy voor wss://). Gasten nemen dan overal vandaan deel met de link. De relay stuurt de berichten van de sessie door (nummer-ID's, titels, namen) maar beslist nooit iets; leeg = alleen LAN.
+settings.together.relay_note = Sessies via internet lopen via deze relay. Leeg: de standaardrelay, waarvan de app het adres uit zijn repository leest (zodat het kan veranderen zonder update). Je eigen music-relay (zie de README; achter een TLS-proxy voor wss://) vul je hier in. De relay stuurt berichten door en deelt ruimtecodes uit, maar beslist nooit iets: de host laat gasten nog steeds binnen.
+settings.together.host_mode = Sessies hosten
+settings.together.host_mode_desc = Via internet met de relay (gasten op elk netwerk, met een ruimtecode), of alleen op dit netwerk (gasten verbinden rechtstreeks met deze computer).
+settings.together.relay_privacy = Privacy: sessies via de relay sturen nummertitels, artiesten en weergavenamen via de relayserver, die niets opslaat en je account nooit ziet. Sessies op hetzelfde netwerk gebruiken hem niet.
 settings.together.open = Samen luisteren openen
 
 # ---- Spotify import

@@ -5,6 +5,35 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+* **Listen together over the internet, with room codes.** Hosting now goes through a relay
+  by default (*Over the internet (relay)*; *Same network only (direct)* is one click away, and in
+  Settings → Music Together → *Host sessions*), so guests on any network can join without setup.
+  The host sees a short room code (`ABCD-EFGH`) in big letters with **Copy code**, next to the
+  link; guests type it under **Join with code** (case, spaces and dashes don't matter). Links
+  still work and now also carry the code. If the relay doesn't answer within a few seconds, the
+  session starts on the local network with "Relay unreachable, guests must be on the same
+  network". The page and Settings say that sessions through the relay pass song titles and
+  display names via the relay server.
+* **Default relay** `wss://relay.smhcoders.click`. Which relay: your *Relay server* setting,
+  else `packaging/relay.txt` in the app's GitHub repository (fetched when needed, cached 6 h, so
+  the relay can move without an app update), else the built-in `RELAY_URL` in
+  `packaging/app.env`.
+* **music-relay: room codes.** `POST /v1/together/sessions` gives a live room's host a code
+  (8 characters, no 0 / O / 1 / I; unique among live rooms, freed when the room ends);
+  `POST /v1/together/sessions/resolve` gives a guest the session id, guest key and WebSocket
+  path for it, never the host key. Look-ups are rate-limited per client address
+  (`--resolve-per-minute`, default 10; `--trust-proxy` for a reverse proxy's
+  `X-Forwarded-For`). The WebSocket protocol is unchanged.
+* Script actions `@together-join-code=CODE`; `@together-host-relay=FILE` also writes the code
+  to `FILE.code`; `@together-status` prints the code.
+
+### Changed
+
+* Listen together: "Host via relay" is gone; **Start session** hosts the way chosen above it
+  (relay by default). An empty *Relay server* setting now means the default relay, not "LAN only".
+
 ## [0.2.5] — 2026-10-31
 
 

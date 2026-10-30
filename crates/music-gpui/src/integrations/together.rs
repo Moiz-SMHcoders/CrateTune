@@ -6,17 +6,22 @@
 //! everyone reconnects to it, the old host rejoins as a guest).
 
 use std::collections::VecDeque;
-use std::time::{Duration, Instant};
+use std::path::PathBuf;
+use std::sync::Mutex;
+use std::time::{Duration, Instant, SystemTime};
 
 use gpui::{AnyElement, Context, IntoElement as _, ParentElement as _, Window};
 use gpui_component::{Sizable as _, tag::Tag};
+use music_core::together::online::{self, RelaySource};
 use music_core::together::{
-    AddTrackMode, ClientEvent, ControlAction, GuestSync, HostOptions, JoinInfo, LocalPlayback,
-    Participant, RoomSettings, RoomState, ServerEvent, TogetherClient, TogetherServer,
-    TogetherTrack, is_shareable_id, local_ip, new_id, sync, sync::BROADCAST_INTERVAL_MS,
+    AddTrackMode, ClientEvent, CodeError, ControlAction, GuestSync, HostOptions, JoinInfo,
+    JoinRequest, LocalPlayback, Participant, RoomSettings, RoomState, ServerEvent, TogetherClient,
+    TogetherServer, TogetherTrack, display_code, is_shareable_id, local_ip, new_id, normalize_code,
+    sync, sync::BROADCAST_INTERVAL_MS,
 };
 use music_core::{PlaybackState, PlaybackStatus, Track};
 
+use super::config::HostMode;
 use crate::app::{MusicApp, notify};
 use crate::queue::Repeat;
 use crate::util::off_thread;
@@ -32,6 +37,10 @@ pub struct HostSession {
     pub transferring: Option<String>,
     /// After taking over: a seek to apply once the track plays (video id, ms).
     pending_seek: Option<(String, u64)>,
+    /// The room code (relayed sessions, when the relay gives one).
+    pub code: Option<String>,
+    /// Why the session isn't what was asked for (the relay was unreachable).
+    pub notice: Option<String>,
 }
 
 impl HostSession {
@@ -42,8 +51,196 @@ impl HostSession {
             last: None,
             transferring: None,
             pending_seek: None,
+            code: None,
+            notice: None,
         }
     }
+
+    /// The join link to share (with the room code, when there is one).
+    pub fn link(&self) -> String {
+        self.join.to_link_with_code(self.code.as_deref())
+    }
+}
+
+/// How long hosting or joining waits for the relay (and for `relay.txt`).
+const RELAY_TIMEOUT: Duration = Duration::from_secs(4);
+const CODE_TIMEOUT: Duration = Duration::from_secs(6);
+
+/// `packaging/relay.txt` on the main branch of the app's repository.
+fn directory_url() -> Option<String> {
+    let repo = crate::identity::UPDATE_REPO.trim();
+    (!repo.is_empty())
+        .then(|| format!("https://raw.githubusercontent.com/{repo}/main/packaging/relay.txt"))
+}
+
+/// Where the fetched `relay.txt` is cached: `$MUSIC_CONFIG_DIR/cache/relay.json`,
+/// else the platform cache dir.
+fn directory_cache() -> Option<PathBuf> {
+    if let Some(dir) = std::env::var_os("MUSIC_CONFIG_DIR").filter(|d| !d.is_empty()) {
+        return Some(PathBuf::from(dir).join("cache").join("relay.json"));
+    }
+    crate::identity::project_dirs().map(|d| d.cache_dir().join("relay.json"))
+}
+
+/// The last relay `relay.txt` gave (`None` until first asked: read from the cache).
+static DIRECTORY: Mutex<Option<Option<String>>> = Mutex::new(None);
+
+fn remember_directory(url: Option<String>) -> Option<String> {
+    *DIRECTORY.lock().unwrap_or_else(|e| e.into_inner()) = Some(url.clone());
+    url
+}
+
+/// The relay sessions use: the user's setting, else `relay.txt` from the app's
+/// repository (cached for 6 h; fetched here when stale, so blocking), else the
+/// built-in default.
+pub fn relay_for(user_setting: &str) -> Option<(String, RelaySource)> {
+    online::effective_relay(
+        user_setting,
+        || {
+            let url = directory_url()?;
+            remember_directory(online::directory_relay(
+                directory_cache().as_deref(),
+                SystemTime::now(),
+                || online::fetch_text(&url, RELAY_TIMEOUT),
+            ))
+        },
+        crate::identity::RELAY_URL,
+    )
+}
+
+/// [`relay_for`] without the network (what it would most likely say), for display.
+pub fn relay_hint(user_setting: &str) -> Option<String> {
+    online::effective_relay(
+        user_setting,
+        || {
+            let mut known = DIRECTORY.lock().unwrap_or_else(|e| e.into_inner());
+            known
+                .get_or_insert_with(|| online::cached_directory_relay(directory_cache().as_deref()))
+                .clone()
+        },
+        crate::identity::RELAY_URL,
+    )
+    .map(|(url, _)| url)
+}
+
+/// `wss://relay.example.com/x` → `relay.example.com` (with the port, if any).
+pub fn relay_host_name(url: &str) -> Option<String> {
+    let url = music_core::together::relay_url(url)?;
+    let rest = url.split_once("://")?.1;
+    let authority = rest.split('/').next()?;
+    (!authority.is_empty()).then(|| authority.to_owned())
+}
+
+/// Why a session runs on the LAN although the relay was asked for.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct RelayFailure {
+    pub relay: String,
+    pub error: String,
+}
+
+/// Why joining failed (translated on the UI thread).
+enum JoinError {
+    /// No relay to look a code up at (none set, none built in).
+    NoRelay,
+    /// The code look-up at the relay (host name) failed.
+    Code(CodeError, String),
+    Connect(String),
+}
+
+impl JoinError {
+    fn message(&self) -> String {
+        match self {
+            Self::NoRelay => t!("together.error.no_relay").into(),
+            Self::Code(CodeError::BadCode, _) => t!("together.error.bad_code").into(),
+            Self::Code(CodeError::NotFound, _) => t!("together.error.code_not_found").into(),
+            Self::Code(CodeError::RateLimited(_), _) => {
+                t!("together.error.code_rate_limited").into()
+            }
+            Self::Code(CodeError::Unsupported, relay) => {
+                t!("together.error.code_unsupported", relay = relay)
+            }
+            Self::Code(e, relay) => {
+                t!("together.error.relay_join_failed", relay = relay, error = e)
+            }
+            Self::Connect(e) => t!("together.error.join_failed", error = e),
+        }
+    }
+}
+
+/// A session just started (off the UI thread).
+pub(crate) struct Hosted {
+    pub server: TogetherServer,
+    pub join: JoinInfo,
+    pub code: Option<String>,
+    /// The relay gave no code (an older relay, say); the link still works.
+    pub code_error: Option<CodeError>,
+    /// Asked for the relay, but it couldn't be reached: this is a LAN session.
+    pub fallback: Option<RelayFailure>,
+}
+
+/// Starts a session: through the relay when `relay_setting` is `Some` (the
+/// user's relay setting, see [`relay_for`]) and it answers within a few seconds,
+/// else (or on any relay failure) on the LAN at `port`. Blocking.
+pub(crate) fn host_blocking(
+    relay_setting: Option<&str>,
+    port: u16,
+    name: String,
+    room: RoomSettings,
+) -> music_core::Result<Hosted> {
+    let mut fallback = None;
+    if let Some(setting) = relay_setting {
+        match host_relayed(setting, name.clone(), room) {
+            Ok(hosted) => return Ok(hosted),
+            Err(failure) => fallback = Some(failure),
+        }
+    }
+    let (session_id, session_key) = (new_id(), new_id());
+    let server = TogetherServer::start(port, session_id.clone(), session_key.clone(), name, room)?;
+    let join = lan_join(&server, session_id, session_key);
+    Ok(Hosted {
+        server,
+        join,
+        code: None,
+        code_error: None,
+        fallback,
+    })
+}
+
+fn host_relayed(setting: &str, name: String, room: RoomSettings) -> Result<Hosted, RelayFailure> {
+    let Some((relay, _)) = relay_for(setting) else {
+        return Err(RelayFailure {
+            relay: String::new(),
+            error: "no relay configured".into(), // i18n-ignore
+        });
+    };
+    let fail = |error: String| RelayFailure {
+        relay: relay.clone(),
+        error,
+    };
+    online::probe(&relay, RELAY_TIMEOUT).map_err(|e| fail(e.to_string()))?;
+    let (session_id, session_key) = (new_id(), new_id());
+    let join = JoinInfo::via_relay(&relay, session_id.clone(), session_key.clone())
+        .ok_or_else(|| fail("not a relay address".into()))?; // i18n-ignore
+    let server = TogetherServer::start_relay(
+        &relay,
+        session_id,
+        session_key,
+        name,
+        room,
+        HostOptions::default(),
+    )
+    .map_err(|e| fail(e.to_string()))?;
+    let (code, code_error) = match server.register_code(CODE_TIMEOUT) {
+        Ok(code) => (Some(code), None),
+        Err(e) => (None, Some(e)),
+    };
+    Ok(Hosted {
+        server,
+        join,
+        code,
+        code_error,
+        fallback: None,
+    })
 }
 
 pub struct GuestSession {
@@ -112,75 +309,53 @@ impl MusicApp {
 
     // ---- hosting ---------------------------------------------------------------------
 
-    /// Starts a session on the configured port. Returns the join link.
-    pub fn together_host(&mut self, window: &mut Window, cx: &mut Context<Self>) -> Option<String> {
-        self.together_leave(cx);
-        let prefs = self.settings.read(cx).settings().together.clone();
-        let (session_id, session_key) = (new_id(), new_id());
-        match TogetherServer::start(
-            prefs.port,
-            session_id.clone(),
-            session_key.clone(),
-            prefs.name(),
-            prefs.room(),
-        ) {
-            Ok(server) => {
-                let join = lan_join(&server, session_id, session_key);
-                let link = join.to_link();
-                self.integrations
-                    .together
-                    .log(t!("together.log.started_port", port = join.port));
-                self.together_start_hosting(HostSession::new(server, join), window, cx);
-                notify(window, cx, t!("together.toast.started"));
-                Some(link)
-            }
-            Err(e) => {
-                self.integrations.together.error = Some(t!(
-                    "together.error.start_failed",
-                    port = prefs.port,
-                    error = e
-                ));
-                cx.notify();
-                None
+    /// "Host a session" as the settings say: through the relay (falling back to
+    /// the LAN when it can't be reached) or straight on the LAN.
+    pub fn together_host_session(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        match self.settings.read(cx).settings().together.host_mode {
+            HostMode::Relay => self.together_host_relay(window, cx, |_, _| {}),
+            HostMode::Direct => {
+                self.together_host(window, cx);
             }
         }
     }
 
-    /// Starts a session through the relay server from the settings (works across
-    /// networks). `on_link` gets the join link once the relay accepted the room.
+    /// Starts a session on the LAN, on the configured port. Returns the join link.
+    pub fn together_host(&mut self, window: &mut Window, cx: &mut Context<Self>) -> Option<String> {
+        self.together_leave(cx);
+        let prefs = self.settings.read(cx).settings().together.clone();
+        let hosted = host_blocking(None, prefs.port, prefs.name(), prefs.room());
+        self.together_hosted(hosted, prefs.port, window, cx)
+    }
+
+    /// Starts a session through the relay (the user's, else `relay.txt`'s, else the
+    /// built-in one), so guests can join from any network; if it can't be reached,
+    /// on the LAN with a note saying so. `on_ready` gets the join link and the room
+    /// code once the session is up.
     pub fn together_host_relay(
         &mut self,
         window: &mut Window,
         cx: &mut Context<Self>,
-        on_link: impl FnOnce(&str) + 'static,
+        on_ready: impl FnOnce(&str, Option<&str>) + 'static,
     ) {
         let prefs = self.settings.read(cx).settings().together.clone();
-        let Some(relay) = prefs.relay() else {
-            self.integrations.together.error = Some(t!("together.error.no_relay").into());
-            cx.notify();
-            return;
-        };
         self.together_leave(cx);
-        let (session_id, session_key) = (new_id(), new_id());
-        let Some(join) = JoinInfo::via_relay(&relay, session_id.clone(), session_key.clone())
-        else {
-            return;
-        };
+        let shown = relay_hint(&prefs.relay_url)
+            .as_deref()
+            .and_then(relay_host_name)
+            .unwrap_or_default();
         let together = &mut self.integrations.together;
         together.error = None;
-        together.role = Role::Joining(join.host.clone());
+        together.role = Role::Joining(shown);
         cx.notify();
         cx.spawn_in(window, async move |this, cx| {
-            let (name, room) = (prefs.name(), prefs.room());
-            let url = relay.clone();
-            let result = off_thread(move || {
-                TogetherServer::start_relay(
-                    &url,
-                    session_id,
-                    session_key,
-                    name,
-                    room,
-                    HostOptions::default(),
+            let port = prefs.port;
+            let hosted = off_thread(move || {
+                host_blocking(
+                    Some(&prefs.relay_url),
+                    prefs.port,
+                    prefs.name(),
+                    prefs.room(),
                 )
             })
             .await;
@@ -188,27 +363,68 @@ impl MusicApp {
                 if !matches!(this.integrations.together.role, Role::Joining(_)) {
                     return; // cancelled meanwhile (dropping the server ends it)
                 }
-                match result {
-                    Ok(server) => {
-                        let link = join.to_link();
-                        this.integrations
-                            .together
-                            .log(t!("together.log.started_relay", relay = join.host));
-                        this.together_start_hosting(HostSession::new(server, join), window, cx);
-                        notify(window, cx, t!("together.toast.started_relay"));
-                        on_link(&link);
-                    }
-                    Err(e) => {
-                        this.integrations.together.role = Role::Idle;
-                        this.integrations.together.error =
-                            Some(t!("together.error.relay_failed", relay = relay, error = e));
-                    }
+                this.integrations.together.role = Role::Idle;
+                if let Some(link) = this.together_hosted(hosted, port, window, cx) {
+                    let code = match &this.integrations.together.role {
+                        Role::Hosting(host) => host.code.clone(),
+                        _ => None,
+                    };
+                    on_ready(&link, code.as_deref());
                 }
-                cx.notify();
             })
             .ok();
         })
         .detach();
+    }
+
+    /// Takes a started session (or its failure) into the app. Returns the join link.
+    fn together_hosted(
+        &mut self,
+        hosted: music_core::Result<Hosted>,
+        port: u16,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Option<String> {
+        let hosted = match hosted {
+            Ok(hosted) => hosted,
+            Err(e) => {
+                self.integrations.together.error =
+                    Some(t!("together.error.start_failed", port = port, error = e));
+                cx.notify();
+                return None;
+            }
+        };
+        let together = &mut self.integrations.together;
+        if let Some(failure) = &hosted.fallback {
+            together.log(t!(
+                "together.log.relay_unreachable",
+                relay = failure.relay,
+                error = failure.error
+            ));
+        }
+        if let Some(e) = &hosted.code_error {
+            together.log(t!("together.log.no_code", error = e));
+        }
+        let mut host = HostSession::new(hosted.server, hosted.join);
+        host.code = hosted.code;
+        let link = host.link();
+        if host.join.is_relay() {
+            together.log(t!("together.log.started_relay", relay = host.join.host));
+            if let Some(code) = &host.code {
+                together.log(t!("together.log.code", code = display_code(code)));
+            }
+            notify(window, cx, t!("together.toast.started_relay"));
+        } else {
+            together.log(t!("together.log.started_port", port = host.join.port));
+            if hosted.fallback.is_some() {
+                host.notice = Some(t!("together.error.relay_unreachable").into());
+                notify(window, cx, t!("together.error.relay_unreachable"));
+            } else {
+                notify(window, cx, t!("together.toast.started"));
+            }
+        }
+        self.together_start_hosting(host, window, cx);
+        Some(link)
     }
 
     fn together_start_hosting(
@@ -451,7 +667,8 @@ impl MusicApp {
                     notify(window, cx, line);
                     // End this server (guests are reconnecting) and follow as a guest.
                     self.together_leave(cx);
-                    self.together_join_info(join, None, window, cx);
+                    let shown = join.host.clone();
+                    self.together_connect(shown, None, move || Ok(join), window, cx);
                     return;
                 }
                 ServerEvent::TransferFailed {
@@ -538,21 +755,70 @@ impl MusicApp {
 
     // ---- joining ----------------------------------------------------------------------
 
-    /// Connects to a host (link, `ws(s)://` URL or `host|port|sid|key`).
+    /// Connects to a host: a link, `ws(s)://` URL or `host|port|sid|key`, or a
+    /// room code (bare, or in a `music-together://join?code=…` link).
     pub fn together_join(&mut self, link: &str, window: &mut Window, cx: &mut Context<Self>) {
-        let Some(join) = JoinInfo::parse(link) else {
-            self.integrations.together.error = Some(t!("together.error.bad_link").into());
-            cx.notify();
-            return;
-        };
-        self.together_join_info(join, Some(link.trim()), window, cx);
+        match JoinRequest::parse(link) {
+            Some(JoinRequest::Direct(join)) => {
+                let shown = join.host.clone();
+                self.together_connect(shown, Some(link.trim()), move || Ok(join), window, cx);
+            }
+            Some(JoinRequest::Code { relay, code }) => {
+                self.together_join_code_at(relay, &code, Some(link.trim()), window, cx);
+            }
+            None => {
+                self.integrations.together.error = Some(t!("together.error.bad_link").into());
+                cx.notify();
+            }
+        }
     }
 
-    /// Joins `join`; `link` (what the user typed) pre-fills the field next time.
-    fn together_join_info(
+    /// Joins with a room code (any case; spaces and dashes are ignored) through
+    /// the app's relay.
+    pub fn together_join_code(&mut self, raw: &str, window: &mut Window, cx: &mut Context<Self>) {
+        match normalize_code(raw) {
+            Some(code) => self.together_join_code_at(None, &code, None, window, cx),
+            None => {
+                self.integrations.together.error = Some(t!("together.error.bad_code").into());
+                cx.notify();
+            }
+        }
+    }
+
+    fn together_join_code_at(
         &mut self,
-        join: JoinInfo,
+        relay: Option<String>,
+        code: &str,
         link: Option<&str>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let setting = self.settings.read(cx).settings().together.relay_url.clone();
+        let code = code.to_owned();
+        let shown = display_code(&code);
+        self.together_connect(
+            shown,
+            link,
+            move || {
+                let relay = relay
+                    .or_else(|| relay_for(&setting).map(|(url, _)| url))
+                    .ok_or(JoinError::NoRelay)?;
+                online::resolve_code(&relay, &code, CODE_TIMEOUT)
+                    .map_err(|e| JoinError::Code(e, relay_host_name(&relay).unwrap_or(relay)))
+            },
+            window,
+            cx,
+        );
+    }
+
+    /// Finds the session with `resolve` and joins it (both off the UI thread);
+    /// `shown` names it meanwhile, `link` (what the user typed) pre-fills the
+    /// field next time.
+    fn together_connect(
+        &mut self,
+        shown: String,
+        link: Option<&str>,
+        resolve: impl FnOnce() -> Result<JoinInfo, JoinError> + Send + 'static,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
@@ -565,18 +831,22 @@ impl MusicApp {
             panel.settings().together.name()
         });
         self.integrations.together.error = None;
-        self.integrations.together.role = Role::Joining(join.host.clone());
+        self.integrations.together.role = Role::Joining(shown);
         cx.notify();
         cx.spawn_in(window, async move |this, cx| {
-            let target = join.clone();
-            let result =
-                off_thread(move || TogetherClient::connect(&target, &name, &client_id)).await;
+            let result = off_thread(move || {
+                let join = resolve()?;
+                let client = TogetherClient::connect(&join, &name, &client_id)
+                    .map_err(|e| JoinError::Connect(e.to_string()))?;
+                Ok::<_, JoinError>((client, join))
+            })
+            .await;
             this.update_in(cx, |this, window, cx| {
                 if !matches!(this.integrations.together.role, Role::Joining(_)) {
                     return; // cancelled meanwhile
                 }
                 match result {
-                    Ok(client) => {
+                    Ok((client, join)) => {
                         // The host decides the order; local shuffle would reorder it.
                         this.queue.set_shuffle(false);
                         this.integrations
@@ -595,8 +865,7 @@ impl MusicApp {
                     }
                     Err(e) => {
                         this.integrations.together.role = Role::Idle;
-                        this.integrations.together.error =
-                            Some(t!("together.error.join_failed", error = e));
+                        this.integrations.together.error = Some(e.message());
                     }
                 }
                 cx.notify();
@@ -637,36 +906,46 @@ impl MusicApp {
         cx.notify();
         cx.spawn_in(window, async move |this, cx| {
             let target = join.clone();
-            let result = off_thread(move || match &target.url {
-                Some(url) => TogetherServer::start_relay(
-                    url,
-                    target.session_id.clone(),
-                    target.session_key.clone(),
-                    name,
-                    room,
-                    options,
-                ),
-                None => TogetherServer::start_with(
-                    port,
-                    target.session_id.clone(),
-                    target.session_key.clone(),
-                    name,
-                    room,
-                    options,
-                ),
+            let (result, code) = off_thread(move || {
+                let result = match &target.url {
+                    Some(url) => TogetherServer::start_relay(
+                        url,
+                        target.session_id.clone(),
+                        target.session_key.clone(),
+                        name,
+                        room,
+                        options,
+                    ),
+                    None => TogetherServer::start_with(
+                        port,
+                        target.session_id.clone(),
+                        target.session_key.clone(),
+                        name,
+                        room,
+                        options,
+                    ),
+                };
+                // The room keeps its code on the relay; ask for it.
+                let code = match (&result, target.is_relay()) {
+                    (Ok(server), true) => server.register_code(CODE_TIMEOUT).ok(),
+                    _ => None,
+                };
+                (result, code)
             })
             .await;
             this.update_in(cx, |this, window, cx| {
-                this.together_took_over(result, join, state, room, window, cx);
+                this.together_took_over(result, code, join, state, room, window, cx);
             })
             .ok();
         })
         .detach();
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn together_took_over(
         &mut self,
         result: music_core::Result<TogetherServer>,
+        code: Option<String>,
         join: JoinInfo,
         state: Option<RoomState>,
         room: RoomSettings,
@@ -753,6 +1032,7 @@ impl MusicApp {
         self.queue.set_shuffle(shuffle);
         let mut host = HostSession::new(server, new_join);
         host.pending_seek = pending_seek;
+        host.code = code;
         self.integrations
             .together
             .log(t!("together.log.you_are_host").into());
@@ -1062,5 +1342,84 @@ fn lan_join(server: &TogetherServer, session_id: String, session_key: String) ->
         session_id,
         session_key,
         url: None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn closed_port() -> u16 {
+        std::net::TcpListener::bind("127.0.0.1:0")
+            .unwrap()
+            .local_addr()
+            .unwrap()
+            .port()
+    }
+
+    /// The relay can't be reached: within a few seconds the session runs on the
+    /// LAN instead, and says why.
+    #[test]
+    fn falls_back_to_the_lan_when_the_relay_is_unreachable() {
+        let relay = format!("ws://127.0.0.1:{}", closed_port());
+        let start = Instant::now();
+        let hosted = host_blocking(Some(&relay), 0, "Hana".into(), RoomSettings::default())
+            .expect("the LAN session starts");
+        assert!(
+            start.elapsed() < Duration::from_secs(8),
+            "{:?}",
+            start.elapsed()
+        );
+        assert!(!hosted.join.is_relay());
+        assert!(hosted.server.port() > 0);
+        assert_eq!(hosted.code, None);
+        let failure = hosted.fallback.expect("the fallback is reported");
+        assert_eq!(failure.relay, format!("{relay}/"));
+        assert!(!failure.error.is_empty());
+    }
+
+    #[test]
+    fn direct_hosting_never_tries_the_relay() {
+        let hosted = host_blocking(None, 0, "Hana".into(), RoomSettings::default()).unwrap();
+        assert!(!hosted.join.is_relay() && hosted.fallback.is_none());
+        assert!(
+            hosted
+                .join
+                .to_link()
+                .starts_with("music-together://join?host=")
+        );
+    }
+
+    #[test]
+    fn relay_names_and_the_directory_address() {
+        assert_eq!(
+            relay_host_name("wss://relay.smhcoders.click/").as_deref(),
+            Some("relay.smhcoders.click")
+        );
+        assert_eq!(
+            relay_host_name("ws://dev.home:42118/").as_deref(),
+            Some("dev.home:42118")
+        );
+        // The user's setting always wins over relay.txt and the built-in default.
+        assert_eq!(
+            relay_for("ws://10.1.2.3:42118"),
+            Some(("ws://10.1.2.3:42118/".into(), RelaySource::Settings))
+        );
+        let repo = crate::identity::UPDATE_REPO;
+        if !repo.is_empty() {
+            assert_eq!(
+                directory_url().unwrap(),
+                format!("https://raw.githubusercontent.com/{repo}/main/packaging/relay.txt")
+            );
+        }
+        // The built-in default (packaging/app.env) and relay.txt are valid relays.
+        if !crate::identity::RELAY_URL.is_empty() {
+            assert!(music_core::together::relay_url(crate::identity::RELAY_URL).is_some());
+        }
+        let txt = std::fs::read_to_string(
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packaging/relay.txt"),
+        )
+        .unwrap();
+        assert!(online::parse_relay_txt(&txt).is_some(), "{txt:?}");
     }
 }

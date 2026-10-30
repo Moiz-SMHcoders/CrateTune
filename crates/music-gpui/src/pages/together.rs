@@ -1,5 +1,6 @@
-//! Listen together (Music Together on the LAN or through a relay): host or join a
-//! session, the join link, participants (approve / remove / make host), room
+//! Listen together (Music Together on the LAN or through a relay): host (over the
+//! internet or on this network) or join a session (with a room code or a link),
+//! the room code and join link, participants (approve / remove / make host), room
 //! settings, the room's queue and requests to the host.
 
 use std::rc::Rc;
@@ -7,10 +8,11 @@ use std::time::Duration;
 
 use gpui::{
     AnyElement, AppContext as _, ClipboardItem, Context, Entity, FontWeight, IntoElement,
-    ParentElement as _, Render, ScrollHandle, SharedString, Styled as _, Task, Window, div, px,
+    ParentElement as _, Render, ScrollHandle, SharedString, Styled as _, Task, Window, div,
+    prelude::FluentBuilder as _, px,
 };
 use gpui_component::{
-    ActiveTheme as _, Disableable as _, Sizable as _,
+    ActiveTheme as _, Disableable as _, Selectable as _, Sizable as _,
     button::{Button, ButtonVariants as _},
     h_flex,
     input::{Input, InputState},
@@ -20,20 +22,22 @@ use gpui_component::{
     v_flex,
 };
 use music_core::Track;
-use music_core::together::{ControlAction, Participant, RoomState, TogetherTrack};
+use music_core::together::{ControlAction, Participant, RoomState, TogetherTrack, display_code};
 
 use super::PageView;
 use crate::app::{MusicApp, read_app, update_app};
 use crate::components::track_row::TrackRow;
 use crate::components::{page_scroll, page_title, section_header};
 use crate::icons::Lucide;
-use crate::integrations::together::Role;
+use crate::integrations::config::HostMode;
+use crate::integrations::together::{Role, relay_hint, relay_host_name};
 use crate::router::Route;
 use crate::settings::SectionId;
 
 pub struct TogetherPage {
     scroll: ScrollHandle,
     link: Entity<InputState>,
+    code: Entity<InputState>,
     _tick: Task<()>,
 }
 
@@ -44,6 +48,8 @@ impl TogetherPage {
         let page = cx.new(|cx: &mut Context<Self>| {
             let link = cx.new(|cx| InputState::new(window, cx).default_value(last));
             crate::i18n::track_placeholder(&link, k!("together.join.placeholder"), window, cx);
+            let code = cx.new(|cx| InputState::new(window, cx));
+            crate::i18n::track_placeholder(&code, k!("together.join.code_placeholder"), window, cx);
             let executor = cx.background_executor().clone();
             // Participants / room change on the app's poll; refresh twice a second.
             let tick = cx.spawn(async move |this, cx| {
@@ -57,11 +63,25 @@ impl TogetherPage {
             Self {
                 scroll: scroll.clone(),
                 link,
+                code,
                 _tick: tick,
             }
         });
         PageView::new(page, Some(scroll))
     }
+}
+
+/// What the hosting card shows.
+#[derive(Default)]
+struct Hosting {
+    link: String,
+    compact: String,
+    host: String,
+    port: u16,
+    relayed: bool,
+    transferring: Option<String>,
+    code: Option<String>,
+    notice: Option<String>,
 }
 
 fn card(cx: &gpui::App) -> gpui::Div {
@@ -211,14 +231,16 @@ impl Render for TogetherPage {
                 Role::Guest(_) => 3,
             };
             let link = match &t.role {
-                Role::Hosting(h) => Some((
-                    h.join.to_link(),
-                    h.join.to_compact(),
-                    h.join.host.clone(),
-                    h.join.port,
-                    h.join.is_relay(),
-                    h.transferring.clone(),
-                )),
+                Role::Hosting(h) => Some(Hosting {
+                    link: h.link(),
+                    compact: h.join.to_compact(),
+                    host: h.join.host.clone(),
+                    port: h.join.port,
+                    relayed: h.join.is_relay(),
+                    transferring: h.transferring.clone(),
+                    code: h.code.clone(),
+                    notice: h.notice.clone(),
+                }),
                 _ => None,
             };
             let guest = match &t.role {
@@ -259,6 +281,27 @@ impl Render for TogetherPage {
             // ---- idle: host or join
             0 => {
                 let link_input = self.link.clone();
+                let code_input = self.code.clone();
+                let mode = prefs.host_mode;
+                let relay_name = relay_hint(&prefs.relay_url)
+                    .as_deref()
+                    .and_then(relay_host_name)
+                    .unwrap_or_default();
+                let mode_button = |id: &'static str, label: &'static str, m: HostMode| {
+                    let selected = mode == m;
+                    Button::new(id)
+                        .small()
+                        .map(|b| if selected { b.primary() } else { b.outline() })
+                        .selected(selected)
+                        .label(label)
+                        .on_click(move |_, _, cx| {
+                            update_app(cx, |app, cx| {
+                                app.settings.update(cx, |panel, cx| {
+                                    panel.set_together(|t| t.host_mode = m, cx)
+                                });
+                            });
+                        })
+                };
                 let host = card(cx)
                     .flex_1()
                     .min_w(px(300.))
@@ -271,30 +314,43 @@ impl Render for TogetherPage {
                     .child(muted(host_summary(&prefs), cx))
                     .child(
                         h_flex()
+                            .gap_1()
+                            .flex_wrap()
+                            .child(mode_button(
+                                "tg-mode-relay",
+                                t!("together.host.mode_relay"),
+                                HostMode::Relay,
+                            ))
+                            .child(mode_button(
+                                "tg-mode-direct",
+                                t!("together.host.mode_direct"),
+                                HostMode::Direct,
+                            )),
+                    )
+                    .child(muted(
+                        match mode {
+                            HostMode::Relay => {
+                                t!("together.host.mode_relay_note", relay = relay_name)
+                            }
+                            HostMode::Direct => t!("together.host.mode_direct_note").to_owned(),
+                        },
+                        cx,
+                    ))
+                    .child(
+                        h_flex()
                             .gap_2()
                             .flex_wrap()
                             .child(
                                 Button::new("tg-host")
                                     .primary()
-                                    .icon(Lucide::UsersRound)
+                                    .icon(match mode {
+                                        HostMode::Relay => Lucide::Globe,
+                                        HostMode::Direct => Lucide::UsersRound,
+                                    })
                                     .label(t!("together.host.start"))
                                     .on_click(|_, window, cx| {
-                                        update_app(cx, |app, cx| app.together_host(window, cx));
-                                    }),
-                            )
-                            .child(
-                                Button::new("tg-host-relay")
-                                    .outline()
-                                    .icon(Lucide::Globe)
-                                    .label(t!("together.host.via_relay"))
-                                    .tooltip(match prefs.relay() {
-                                        Some(_) => t!("together.host.via_relay_tooltip"),
-                                        None => t!("together.host.no_relay_tooltip"),
-                                    })
-                                    .disabled(prefs.relay().is_none())
-                                    .on_click(|_, window, cx| {
                                         update_app(cx, |app, cx| {
-                                            app.together_host_relay(window, cx, |_| {})
+                                            app.together_host_session(window, cx)
                                         });
                                     }),
                             )
@@ -324,16 +380,50 @@ impl Render for TogetherPage {
                             .font_weight(FontWeight::SEMIBOLD)
                             .child(t!("together.join.title")),
                     )
-                    .child(muted(t!("together.join.hint"), cx))
-                    .child(Input::new(&self.link))
                     .child(
-                        Button::new("tg-join")
-                            .primary()
-                            .label(t!("together.join.button"))
-                            .on_click(move |_, window, cx| {
-                                let link = link_input.read(cx).value().to_string();
-                                update_app(cx, |app, cx| app.together_join(&link, window, cx));
-                            }),
+                        div()
+                            .font_weight(FontWeight::SEMIBOLD)
+                            .child(t!("together.join.code_title")),
+                    )
+                    .child(muted(t!("together.join.code_hint"), cx))
+                    .child(
+                        h_flex()
+                            .gap_2()
+                            .child(div().flex_1().min_w_0().child(Input::new(&self.code)))
+                            .child(
+                                Button::new("tg-join-code")
+                                    .primary()
+                                    .label(t!("together.join.button"))
+                                    .on_click(move |_, window, cx| {
+                                        let code = code_input.read(cx).value().to_string();
+                                        update_app(cx, |app, cx| {
+                                            app.together_join_code(&code, window, cx)
+                                        });
+                                    }),
+                            ),
+                    )
+                    .child(
+                        div()
+                            .pt_2()
+                            .font_weight(FontWeight::SEMIBOLD)
+                            .child(t!("together.join.link_title")),
+                    )
+                    .child(muted(t!("together.join.hint"), cx))
+                    .child(
+                        h_flex()
+                            .gap_2()
+                            .child(div().flex_1().min_w_0().child(Input::new(&self.link)))
+                            .child(
+                                Button::new("tg-join")
+                                    .outline()
+                                    .label(t!("together.join.button"))
+                                    .on_click(move |_, window, cx| {
+                                        let link = link_input.read(cx).value().to_string();
+                                        update_app(cx, |app, cx| {
+                                            app.together_join(&link, window, cx)
+                                        });
+                                    }),
+                            ),
                     );
                 content = content.child(
                     h_flex()
@@ -368,9 +458,50 @@ impl Render for TogetherPage {
             }
             // ---- hosting
             2 => {
-                let (link, compact, host, port, relayed, transferring) = link.unwrap_or_default();
+                let Hosting {
+                    link,
+                    compact,
+                    host,
+                    port,
+                    relayed,
+                    transferring,
+                    code,
+                    notice,
+                } = link.unwrap_or_default();
                 let (copy_link, copy_compact) = (link.clone(), compact.clone());
                 let guests = participants.iter().filter(|p| !p.is_host).count();
+                let warning = theme.warning;
+                let has_code = code.is_some();
+                let code_block = code.map(|code| {
+                    let shown = display_code(&code);
+                    let copy = shown.clone();
+                    v_flex()
+                        .gap_1()
+                        .child(muted(t!("together.hosting.code_label"), cx))
+                        .child(
+                            h_flex()
+                                .gap_3()
+                                .flex_wrap()
+                                .child(div().text_3xl().font_weight(FontWeight::BOLD).child(shown))
+                                .child(
+                                    Button::new("tg-copy-room-code")
+                                        .small()
+                                        .outline()
+                                        .label(t!("together.hosting.copy_code"))
+                                        .on_click(move |_, window, cx| {
+                                            cx.write_to_clipboard(ClipboardItem::new_string(
+                                                copy.clone(),
+                                            ));
+                                            crate::app::notify(
+                                                window,
+                                                cx,
+                                                t!("together.hosting.code_copied"),
+                                            );
+                                        }),
+                                ),
+                        )
+                        .child(muted(t!("together.hosting.code_hint"), cx))
+                });
                 content = content.child(
                     card(cx)
                         .child(
@@ -392,6 +523,14 @@ impl Render for TogetherPage {
                                         }),
                                 ),
                         )
+                        .children(notice.map(|notice| {
+                            div()
+                                .text_sm()
+                                .font_weight(FontWeight::SEMIBOLD)
+                                .text_color(warning)
+                                .child(notice)
+                        }))
+                        .children(code_block)
                         .child(muted(
                             if relayed {
                                 t!("together.hosting.share_relay", host = host)
@@ -436,23 +575,28 @@ impl Render for TogetherPage {
                                             );
                                         }),
                                 )
-                                .child(
-                                    Button::new("tg-copy-compact")
-                                        .small()
-                                        .ghost()
-                                        .label(t!("together.hosting.copy_code"))
-                                        .tooltip(if relayed {
-                                            t!("together.hosting.copy_code_tooltip_relay")
-                                        } else {
-                                            t!("together.hosting.copy_code_tooltip")
-                                        })
-                                        .on_click(move |_, _, cx| {
-                                            cx.write_to_clipboard(ClipboardItem::new_string(
-                                                copy_compact.clone(),
-                                            ));
-                                        }),
-                                ),
+                                .when(!has_code, |row| {
+                                    row.child(
+                                        Button::new("tg-copy-compact")
+                                            .small()
+                                            .ghost()
+                                            .label(t!("together.hosting.copy_code"))
+                                            .tooltip(if relayed {
+                                                t!("together.hosting.copy_code_tooltip_relay")
+                                            } else {
+                                                t!("together.hosting.copy_code_tooltip")
+                                            })
+                                            .on_click(move |_, _, cx| {
+                                                cx.write_to_clipboard(ClipboardItem::new_string(
+                                                    copy_compact.clone(),
+                                                ));
+                                            }),
+                                    )
+                                }),
                         )
+                        .when(relayed, |card| {
+                            card.child(muted(t!("together.hosting.relay_privacy"), cx))
+                        })
                         .child(
                             h_flex()
                                 .gap_6()

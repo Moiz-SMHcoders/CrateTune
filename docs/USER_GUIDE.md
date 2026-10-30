@@ -382,7 +382,7 @@ Sections:
 | Account | YouTube Music sign-in, channels, sync |
 | Scrobbling & Discord | Last.fm, ListenBrainz, scrobble rules, Discord Rich Presence |
 | SponsorBlock | skip non-music sections and other segments |
-| Music Together | your name, port, guest permissions, relay server |
+| Music Together | your name, how to host (over the internet / same network), port, guest permissions, relay server, relay privacy |
 | Spotify import | your Spotify app's Client ID for importing playlists |
 | AI content filter | endpoint, model, key, categories to hide |
 | Chromecast | devices, stop casting, direct fetch |
@@ -565,17 +565,30 @@ of this app and the packaging tool.
 
 Play the same music in sync with others (sidebar → **Listen together**).
 
-* **Start session** hosts on your network; **Host via relay** hosts through a relay server
-  (set one in Settings → Music Together → *Relay server*, e.g. `wss://relay.example.com`),
-  so people on other networks can join. Share the link; it contains a random key.
-* Guests paste the link and press **Join**. Their player follows yours; "Play next" /
+* **Host a session**: choose **Over the internet (relay)** (the default) or **Same network
+  only (direct)**, then **Start session**.
+  * Over the internet, the session runs through a relay server, so people on any network can
+    join. You get a **room code** in big letters (like `ABCD-EFGH`) with **Copy code**, and a link.
+    Tell people the code, or send them the link.
+  * If the relay can't be reached within a few seconds, the session starts on your network
+    instead, and the page says "Relay unreachable, guests must be on the same network".
+  * Same network only: guests connect straight to your computer (allow incoming connections if
+    the firewall asks). You get a link, no code.
+* Guests type the code under **Join with code** (capitals, spaces and dashes don't matter) and
+  press **Join**, or paste the link under it. Their player follows yours; "Play next" /
   "Add to queue" become suggestions to the host, and, if you allow it, they can play,
   pause, seek and skip.
 * In the people list you can let people in (with approval on), remove or ban them, or
   **Make host**: that guest takes over the session with your queue and position, and
   everyone, including you, follows them from then on.
-* The relay server is a small program you run yourself (see the README, "Relay server");
-  this app doesn't come with a public one.
+* **The relay.** By default the app uses the project's relay (`wss://relay.smhcoders.click`;
+  the address can move without an app update). To use your own, run the small `music-relay`
+  program (see the README, "Relay server") and enter its address in Settings → Music Together →
+  *Relay server*. Codes only work with the relay that made them.
+* **Privacy.** Through the relay, song titles, artists and the names of the people in the
+  session pass via the relay server. It stores nothing and never sees your account. Same
+  network sessions don't use it. Codes stop working when the session ends; if you want to be
+  sure who joins, turn on approval in the room settings.
 
 ## Cast to a TV or speaker
 
@@ -698,8 +711,11 @@ Builds signed with a Developer ID keep the same identity, and neither prompt com
   or in the background if you turned on **Install updates automatically**.
 * The **AI content filter** (off by default) sends the titles, artists and albums of the
   songs on the pages you open to the service you configured, and nothing while it is off.
-* A **relay server** (only if you set one) forwards your Listen together session: song
-  titles, names in the session, the session key.
+* A **relay server** forwards your Listen together sessions over the internet (the default
+  way to host; the project's relay unless you set your own): song titles, artists, names in the
+  session, the session key and room code. Same-network sessions don't use it. To find the relay,
+  the app reads one line (`packaging/relay.txt`) from the project's GitHub repository, at most
+  every 6 hours, when you host or join with a code.
 * **Casting** looks for devices on your network only when you open the Cast menu or the
   Chromecast settings.
 

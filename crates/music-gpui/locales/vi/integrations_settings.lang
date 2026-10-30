@@ -83,12 +83,15 @@ settings.together.port_error = Cổng phải nằm trong khoảng 1024 đến 65
 settings.together.allow_add_desc = Đề xuất của họ được đưa vào danh sách chờ của bạn.
 settings.together.allow_control_desc = Phát, tạm dừng, tua và chuyển bài cho mọi người.
 settings.together.approval = Duyệt khách trước khi họ tham gia
-settings.together.hosting_note = Phiên chạy trên mạng cục bộ của bạn: khách kết nối thẳng tới máy tính này (hãy cho phép kết nối đến nếu tường lửa hỏi). Liên kết chứa một khóa ngẫu nhiên; chỉ người có liên kết mới tham gia được. Thay đổi áp dụng ngay cho phiên đang chạy. Trên trang Nghe cùng nhau, “Đặt làm chủ phòng” sẽ trao phiên cho một khách: mọi người sẽ theo chủ phòng mới.
+settings.together.host_mode = Cách tổ chức phiên
+settings.together.host_mode_desc = Qua internet thông qua máy chủ chuyển tiếp (khách ở mạng bất kỳ, dùng mã phòng), hoặc chỉ trong mạng này (khách kết nối thẳng tới máy tính này).
+settings.together.hosting_note = Trong cùng mạng, khách kết nối thẳng tới máy tính này (hãy cho phép kết nối đến nếu tường lửa hỏi). Liên kết và mã phòng dẫn tới một khóa ngẫu nhiên: chỉ người có nó mới tham gia được, và bạn có thể duyệt từng khách. Thay đổi áp dụng ngay. Trên trang Nghe cùng nhau, “Đặt làm chủ phòng” sẽ trao phiên cho một khách.
 settings.together.across_networks = Qua nhiều mạng
 settings.together.relay = Máy chủ chuyển tiếp
-settings.together.relay_placeholder = wss://relay.example.com (để trống: chỉ LAN)
+settings.together.relay_placeholder = wss://relay.example.com (để trống: máy chủ chuyển tiếp mặc định)
 settings.together.relay_error = Cần địa chỉ ws:// hoặc wss:// (không có tên người dùng hay chuỗi truy vấn)
-settings.together.relay_note = “Tổ chức qua máy chủ chuyển tiếp” chạy phiên qua một máy chủ music-relay do bạn tự vận hành (xem README: một tệp thực thi nhỏ, đặt sau reverse proxy TLS để dùng wss://). Khi đó khách có thể tham gia từ bất cứ đâu bằng liên kết. Máy chủ chuyển tiếp chỉ chuyển tiếp tin nhắn của phiên (ID bài hát, tiêu đề, tên) và không bao giờ tự quyết định gì; để trống = chỉ LAN.
+settings.together.relay_note = Phiên qua internet chạy qua máy chủ chuyển tiếp này. Để trống: máy chủ chuyển tiếp mặc định, có địa chỉ được ứng dụng đọc từ kho mã nguồn của nó (để có thể đổi mà không cần cập nhật). Điền music-relay của riêng bạn vào đây (xem README; đặt sau proxy TLS để dùng wss://). Máy chủ chuyển tiếp chuyển tiếp tin nhắn và cấp mã phòng, nhưng không bao giờ tự quyết định gì: chủ phòng vẫn là người cho khách vào.
+settings.together.relay_privacy = Quyền riêng tư: phiên qua máy chủ chuyển tiếp gửi tên bài hát, nghệ sĩ và tên hiển thị qua máy chủ chuyển tiếp; máy chủ này không lưu gì và không bao giờ thấy tài khoản của bạn. Phiên cùng mạng không dùng nó.
 settings.together.open = Mở Nghe cùng nhau
 
 # ---- Spotify import

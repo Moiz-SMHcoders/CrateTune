@@ -96,9 +96,11 @@ Details: [README: Release round](../README.md#release-round-recognition-onboardi
 · Size: small · Priority: medium
 
 **U10. Listen Together across real machines and networks**
-All tests ran on one machine with demo clocks. Untested: two machines, a firewall prompt, real
-audio on both sides, a host transfer between machines, and the relay behind a TLS reverse
-proxy across the internet. Details: [README: Integrations
+All tests ran on one machine with demo clocks. The relay behind a TLS reverse proxy now works
+(two instances on one Mac through `wss://relay.smhcoders.click` with Caddy, joining by room
+code), but both ran on the same home network. Untested: two machines, guests on a different
+network (e.g. a phone hotspot), a firewall prompt, real audio on both sides, a host transfer
+between machines. Room codes exist only for relayed sessions (a LAN session has a link only). Details: [README: Integrations
 round 2](../README.md#integrations-round-2-relay-host-transfer-chromecast-ai-filter-potoken),
 [Relay server](../README.md#relay-server-music-relay). · Size: medium · Priority: medium
 

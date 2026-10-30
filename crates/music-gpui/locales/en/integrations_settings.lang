@@ -104,13 +104,16 @@ settings.together.port_error = Ports must be between 1024 and 65535
 settings.together.allow_add_desc = Their suggestions go into your queue.
 settings.together.allow_control_desc = Play, pause, seek and skip for everyone.
 settings.together.approval = Approve guests before they join
-settings.together.hosting_note = Sessions run on your local network: guests connect straight to this computer (allow incoming connections if the firewall asks). The link contains a random key; only people with the link can join. Changes apply to a running session right away. On the Listen together page, “Make host” hands the session to a guest: everyone follows the new host.
+settings.together.host_mode = Host sessions
+settings.together.host_mode_desc = Over the internet through the relay (guests on any network, with a room code), or on this network only (guests connect straight to this computer).
+settings.together.hosting_note = On the same network, guests connect straight to this computer (allow incoming connections if the firewall asks). Links and room codes lead to a random key: only people who have one can join, and you can approve each guest. Changes apply right away. “Make host” on the Listen together page hands the session to a guest.
 settings.together.across_networks = Across networks
 settings.together.relay = Relay server
 # Keep the address.
-settings.together.relay_placeholder = wss://relay.example.com (empty: LAN only)
+settings.together.relay_placeholder = wss://relay.example.com (empty: the default relay)
 settings.together.relay_error = Needs a ws:// or wss:// address (no user name or query)
-settings.together.relay_note = “Host via relay” runs the session through a music-relay server you host yourself (see the README: one small binary, put it behind a TLS reverse proxy for wss://). Guests then join from anywhere with the link. The relay forwards the session's messages (song ids, titles, names) but never decides anything; empty = LAN only.
+settings.together.relay_note = Sessions over the internet run through this relay. Empty: the default relay, whose address the app reads from its repository (so it can move without an update). Your own music-relay (see the README; behind a TLS proxy for wss://) goes here. The relay forwards messages and hands out room codes, but never decides anything: the host still lets guests in.
+settings.together.relay_privacy = Privacy: sessions through the relay pass song titles, artists and display names via the relay server, which stores nothing and never sees your account. Same-network sessions don't use it.
 settings.together.open = Open Listen together
 
 # ---- Spotify import

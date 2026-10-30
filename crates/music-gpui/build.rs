@@ -18,6 +18,7 @@ fn main() {
         "BUNDLE_ID",
         "APP_SUMMARY",
         "UPDATE_REPO",
+        "RELAY_URL",
     ] {
         let value = text
             .lines()
