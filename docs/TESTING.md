@@ -340,6 +340,32 @@ scaling, and after moving the window to a monitor with other scaling.
       without a compositor) the desktop's own title bar shows above the bar and the bar has
       no buttons of its own.
 
+### 5.12 Sideways rows: arrows, wheel, drag (Windows mouse; also Linux)
+
+Rows that scroll sideways (`components/hrow.rs`): Home's shelves and quick picks, the
+category chips when they don't fit, artist / album / Explore / Charts / mood pages, Stats.
+Use a normal wheel mouse (not a touchpad) with smooth scrolling on (the default).
+
+* [ ] **Arrows:** a shelf whose cards don't fit has **‹ ›** at the right of its title (after
+      "See all"). › glides about one window-width and stops with a card at the left edge;
+      ‹ goes back. ‹ is dimmed at the start, › at the end; a shelf that fits has neither.
+      With Settings → Appearance → Motion **Off** they jump instead of gliding.
+* [ ] **Shift + wheel** over a row scrolls that row sideways (smoothly, ~1 card per notch)
+      and not the page. A **tilt wheel** (or a horizontal wheel, e.g. MX Master's thumb
+      wheel) does the same without Shift.
+* [ ] **Plain wheel** over a row scrolls the **page**, as before; the row doesn't move.
+* [ ] **Drag:** press on a card and drag sideways: the row follows the pointer with a
+      closed-hand cursor; releasing doesn't open or play the card. A click without moving
+      (or moving only a few pixels) still opens the album / plays the song.
+* [ ] **Scrollbar:** hovering a row shows a thin bar under it; dragging the bar's thumb
+      scrolls the row (and doesn't start a drag of the cards).
+* [ ] **Chips:** in a narrow window, Home's category chips scroll the same way; hovering
+      them shows round ‹ › on their ends.
+* [ ] **Position kept:** scroll a shelf to the middle, scroll the page far down and back:
+      the shelf is still where you left it.
+* [ ] **Touchpad** (if the laptop has one): a two-finger sideways swipe over a row scrolls
+      it; a vertical swipe scrolls the page.
+
 ## 6. Performance (Windows)
 
 `scripts/perf-windows.ps1` runs a release build through three scripted sessions (Home:

@@ -23,6 +23,7 @@ pub mod card;
 pub mod cull;
 pub mod dislike;
 pub mod download_header;
+pub mod hrow;
 pub mod items;
 pub mod like;
 pub mod np_visualizer;
@@ -138,26 +139,22 @@ pub fn empty_state(
         )
 }
 
-/// A horizontally scrolling row of cards under a section header.
+/// A horizontally scrolling row of cards under a section header (‹ › in the
+/// header, wheel, drag: `hrow.rs`).
 pub fn shelf(
     id: impl Into<SharedString>,
     title: impl Into<SharedString>,
     subtitle: Option<SharedString>,
     items: Vec<AnyElement>,
-    cx: &App,
+    _cx: &App,
 ) -> impl IntoElement {
-    let id: SharedString = id.into();
-    v_flex()
-        .w_full()
-        .gap_3()
-        .child(section_header(title, subtitle, None, cx))
-        .child(
-            div()
-                .id(id)
-                .w_full()
-                .overflow_x_scroll()
-                .child(h_flex().gap_4().pb_2().children(items)),
-        )
+    hrow::HRow::new(id, items)
+        .gap(px(16.))
+        .header(hrow::RowHeader {
+            title: title.into(),
+            subtitle,
+            trailing: None,
+        })
 }
 
 /// Cards wrapped into rows.

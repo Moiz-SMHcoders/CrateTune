@@ -707,6 +707,12 @@ locales/<locale>/*.lang  the catalogs (English = source), embedded by build.rs v
   ArchiveTune (see [Home](#home) below): quick picks, community playlists, speed dial,
   keep listening, your YouTube playlists, forgotten favourites, "Similar to …" rows, then
   the feed with its mood chips, quick-picks grids, cards, "See all" and infinite scroll.
+* **Sideways rows** (`components/hrow.rs`; every shelf, quick picks, chips, the Explore
+  moods carousel): **‹ ›** next to the title (a page per click, snapped to a card, gliding
+  per Motion), Shift + wheel / horizontal wheel / trackpad swipe over the row (smooth on
+  Windows and Linux; the plain wheel stays with the page), click-and-drag with a 6 px
+  threshold (the click on the card under the pointer is then dropped), a thin scrollbar on
+  hover, and edge arrows on rows without a title.
 * **Explore** (new releases / charts / moods shortcuts, a two-row moods carousel, the
   explore shelves), **Charts** (country picker with search; song and video charts as
   numbered lists of 20, artists as cards), **Moods & genres** (tiles per category →
@@ -901,7 +907,7 @@ from them, above YouTube Music's own feed. In order:
 | Your YouTube playlists | Signed in: the account's library playlists, titled with the account name. |
 | Forgotten favourites | Songs with at least 3 plays before the last 30 days whose listening time since is under 20 % of the time before (none at all counts), most listened first; 20 at random, as a quick-picks grid. |
 | Similar to … | Two of the artists you heard most in the last two weeks (their artist page's last two shelves: fans also like, featured on) and one song (its "Related" tab: 8 songs, 4 albums, 4 artists, 4 playlists); **Open** goes to the artist or the song's album. |
-| YouTube Music feed | `FEmusic_home` in the content language and country, signed in when you are, with infinite scroll. |
+| YouTube Music feed | `FEmusic_home` in the content language and country, signed in when you are, with infinite scroll. Headed **From YouTube Music · <country>** with **Change region** (Settings → Content & region, the country row) and **Hide**; YouTube's own quick picks and the community shelf carry the same label. |
 
 **Loading.** The library sections are read on a worker thread first (a few ms) and drawn
 at once; the feed and the recommendations follow as they arrive. A refresh makes at most
@@ -925,6 +931,18 @@ and the anonymous visitor is kept in the library database across launches. The c
 language / country were sent correctly (`context.client.hl` / `gl` from Content & region;
 a first run takes them from the UI language and the system region).
 
+**Where unfamiliar shelves come from.** With no listening history the personal sections
+are empty, so the feed starts right after quick picks. It is YouTube Music's home for the
+content country and language: a first run takes the country from the system region
+(`i18n::system_region`, e.g. en-AE → `AE`, the UAE feed with shelves such as "Old School
+Romance"), as ArchiveTune takes `gl` from the phone's locale. The header above the feed
+says so; on a first run with a detected country Home also shows "Showing YouTube Music
+for <country>, from your system's region" with **Change** (that session only,
+`SettingsPanel::region_nudge`). Changing the country clears the page cache and refetches
+Home; the feed's cache key also includes `gl` / `hl`. YouTube also weighs the request's
+IP and the remembered anonymous `visitorData`, so an anonymous feed can stay close to the
+local one after switching countries; signed in, the feed is the account's own.
+
 **Options** (Settings → Content & region → Home, `home` in `settings.json`; all in the
 settings search): **Quick picks** — From your favourites / From your last song / Don't
 show; **Quick picks layout** — Cards (song cards with artwork) / List (compact rows, four
@@ -937,6 +955,8 @@ playlists, forgotten favourites, "Similar to …", community playlists and the Y
 |---|---|
 | ![Home for a new user](docs/screenshots/home-new-user.png) | ![Home with history](docs/screenshots/home-history.png) |
 | ![Home with history, further down](docs/screenshots/home-history-2.png) | ![Home options](docs/screenshots/home-settings.png) |
+| ![Shelf ‹ › buttons](docs/screenshots/shelf-arrows.png) | ![A row scrolled to the middle](docs/screenshots/shelf-scrolled.png) |
+| ![From YouTube Music header](docs/screenshots/home-from-youtube.png) | |
 
 Differences from ArchiveTune: 4 quick-pick seeds instead of 6 and related songs from each
 seed's radio only (ArchiveTune also asks `related`, then search, then a local cache), 2 + 1

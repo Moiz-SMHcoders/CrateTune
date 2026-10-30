@@ -12,8 +12,8 @@ use std::rc::Rc;
 
 use gpui::{
     AnyElement, App, ElementId, FontWeight, InteractiveElement as _, IntoElement,
-    ParentElement as _, RenderOnce, ScrollHandle, SharedString, StatefulInteractiveElement as _,
-    Styled as _, Window, div, prelude::FluentBuilder as _, px,
+    ParentElement as _, RenderOnce, SharedString, StatefulInteractiveElement as _, Styled as _,
+    Window, div, prelude::FluentBuilder as _, px,
 };
 use gpui_component::{
     ActiveTheme as _, IconName, Sizable as _,
@@ -28,6 +28,7 @@ use music_core::innertube::{BrowseTarget, Item, NavButton, Shelf};
 
 use super::artwork::artwork;
 use super::card::{Card, CardKind};
+use super::hrow::{HRow, RowHeader, RowScroll};
 use super::track_row::{ListContext, TrackRow, explicit_badge, track_menu};
 use super::{empty_state, section_header};
 use crate::app::update_app;
@@ -497,7 +498,7 @@ pub enum ShelfStyle {
 }
 
 /// "See all" for a shelf's `more` target.
-fn see_all(id: SharedString, shelf: &Shelf) -> Option<AnyElement> {
+pub fn see_all(id: SharedString, shelf: &Shelf) -> Option<AnyElement> {
     let target = shelf.more.clone()?;
     let title = shelf.title.clone();
     Some(
@@ -519,37 +520,33 @@ pub fn shelf_view(prefix: &str, model: &ShelfModel, style: ShelfStyle, cx: &App)
 }
 
 /// [`shelf_view`] whose sideways scrolling is kept in `x_scroll` (see
-/// [`shelf_body_scrolled`]).
+/// [`titled_shelf`]).
 pub fn shelf_view_scrolled(
     prefix: &str,
     model: &ShelfModel,
     style: ShelfStyle,
-    x_scroll: Option<&ScrollHandle>,
+    x_scroll: Option<&RowScroll>,
     cx: &App,
 ) -> AnyElement {
     let shelf = &model.shelf;
-    let header = section_header(
-        shelf.title.clone(),
-        shelf.subtitle.clone().map(Into::into),
-        see_all(format!("{prefix}-all").into(), shelf),
-        cx,
-    );
-    v_flex()
-        .w_full()
-        .gap_3()
-        .child(header)
-        .child(shelf_body_scrolled(prefix, model, style, x_scroll, cx))
-        .into_any_element()
+    let header = RowHeader {
+        title: shelf.title.clone().into(),
+        subtitle: shelf.subtitle.clone().map(Into::into),
+        trailing: see_all(format!("{prefix}-all").into(), shelf),
+    };
+    titled_shelf(prefix, header, model, style, x_scroll, cx)
 }
 
-/// A shelf's items without its header (quick-picks grid, track list or cards).
-/// With `x_scroll`, the sideways scroll offset is kept there rather than in GPUI's
-/// element state (which is dropped while the shelf isn't drawn, e.g. culled).
-pub fn shelf_body_scrolled(
+/// A shelf under `header`: a quick-picks grid or cards scrolling sideways (‹ › in
+/// the header, `hrow.rs`), or a track list. With `x_scroll`, the sideways scroll
+/// offset is kept there rather than in GPUI's element state (which is dropped while
+/// the shelf isn't drawn, e.g. culled).
+pub fn titled_shelf(
     prefix: &str,
+    header: RowHeader,
     model: &ShelfModel,
     style: ShelfStyle,
-    x_scroll: Option<&ScrollHandle>,
+    x_scroll: Option<&RowScroll>,
     cx: &App,
 ) -> AnyElement {
     let shelf = &model.shelf;
@@ -558,33 +555,42 @@ pub fn shelf_body_scrolled(
             let tracks = model.songs.tracks.clone();
             v_flex()
                 .w_full()
-                .children((0..tracks.len().min(max)).map(|i| {
-                    let active = crate::pages::is_playing(&tracks[i].video_id, cx);
-                    TrackRow::new(prefix, tracks.clone(), i).active(active)
-                }))
+                .gap_3()
+                .child(section_header(
+                    header.title,
+                    header.subtitle,
+                    header.trailing,
+                    cx,
+                ))
+                .child(
+                    v_flex()
+                        .w_full()
+                        .children((0..tracks.len().min(max)).map(|i| {
+                            let active = crate::pages::is_playing(&tracks[i].video_id, cx);
+                            TrackRow::new(prefix, tracks.clone(), i).active(active)
+                        })),
+                )
                 .into_any_element()
         }
         ShelfStyle::Auto if model.is_songs() => {
             quick_picks(prefix, &model.songs.tracks, x_scroll, cx)
+                .header(header)
+                .into_any_element()
         }
-        _ => div()
-            .id(SharedString::from(format!("{prefix}-scroll")))
-            .w_full()
-            .overflow_x_scroll()
-            .when_some(x_scroll, |this, handle| this.track_scroll(handle))
-            .child(
-                h_flex()
-                    .gap_2()
-                    .pb_2()
-                    .children(shelf.items.iter().enumerate().map(|(i, item)| {
-                        item_card(
-                            SharedString::from(format!("{prefix}-{i}")),
-                            item,
-                            model.songs.context(i),
-                        )
-                    })),
-            )
-            .into_any_element(),
+        _ => HRow::new(
+            format!("{prefix}-scroll"),
+            shelf.items.iter().enumerate().map(|(i, item)| {
+                item_card(
+                    SharedString::from(format!("{prefix}-{i}")),
+                    item,
+                    model.songs.context(i),
+                )
+                .into_any_element()
+            }),
+        )
+        .scroll(x_scroll)
+        .header(header)
+        .into_any_element(),
     }
 }
 
@@ -592,9 +598,9 @@ pub fn shelf_body_scrolled(
 pub fn quick_picks(
     prefix: &str,
     tracks: &Rc<Vec<Track>>,
-    x_scroll: Option<&ScrollHandle>,
+    x_scroll: Option<&RowScroll>,
     cx: &App,
-) -> AnyElement {
+) -> HRow {
     const ROWS: usize = 4;
     let theme = cx.theme();
     let (hover, muted) = (theme.list_hover, theme.muted_foreground);
@@ -653,23 +659,18 @@ pub fn quick_picks(
             )
             .context_menu(move |m, _, _| track_menu(m, &menu_track, menu_list.clone()))
     };
-    div()
-        .id(SharedString::from(format!("{prefix}-qp-scroll")))
-        .w_full()
-        .overflow_x_scroll()
-        .when_some(x_scroll, |this, handle| this.track_scroll(handle))
-        .child(
-            h_flex()
-                .items_start()
-                .gap_2()
-                .pb_2()
-                .children((0..columns).map(|c| {
-                    v_flex().gap_0p5().children(
-                        (c * ROWS..((c + 1) * ROWS).min(tracks.len())).map(|i| row(i, cx)),
-                    )
-                })),
-        )
-        .into_any_element()
+    HRow::new(
+        format!("{prefix}-qp-scroll"),
+        (0..columns).map(|c| {
+            v_flex()
+                .flex_none()
+                .gap_0p5()
+                .children((c * ROWS..((c + 1) * ROWS).min(tracks.len())).map(|i| row(i, cx)))
+                .into_any_element()
+        }),
+    )
+    .items_start()
+    .scroll(x_scroll)
 }
 
 /// Artwork drawn at render time (when `&mut App` is available).
@@ -691,36 +692,34 @@ impl RenderOnce for LazyArt {
 }
 
 /// A row of pill buttons (mood chips, search categories). `on_pick(index)`.
+/// Scrolls sideways when the chips don't fit (‹ › on its edges while hovered).
 pub fn chip_row(
     id: &str,
     labels: impl IntoIterator<Item = (SharedString, bool)>,
     on_pick: impl Fn(usize, &mut Window, &mut App) + 'static,
 ) -> AnyElement {
     let on_pick = Rc::new(on_pick);
-    div()
-        .id(SharedString::from(format!("{id}-chips")))
-        .w_full()
-        .overflow_x_scroll()
-        .child(
-            h_flex()
-                .gap_2()
-                .pb_1()
-                .children(
-                    labels
-                        .into_iter()
-                        .enumerate()
-                        .map(|(i, (label, selected))| {
-                            let on_pick = on_pick.clone();
-                            Button::new(SharedString::from(format!("{id}-chip-{i}")))
-                                .small()
-                                .rounded(ButtonRounded::Large)
-                                .map(|b| if selected { b.primary() } else { b.outline() })
-                                .label(label)
-                                .on_click(move |_, window, cx| on_pick(i, window, cx))
-                        }),
-                ),
-        )
-        .into_any_element()
+    HRow::new(
+        format!("{id}-chips"),
+        labels
+            .into_iter()
+            .enumerate()
+            .map(|(i, (label, selected))| {
+                let on_pick = on_pick.clone();
+                div()
+                    .flex_none()
+                    .child(
+                        Button::new(SharedString::from(format!("{id}-chip-{i}")))
+                            .small()
+                            .rounded(ButtonRounded::Large)
+                            .map(|b| if selected { b.primary() } else { b.outline() })
+                            .label(label)
+                            .on_click(move |_, window, cx| on_pick(i, window, cx)),
+                    )
+                    .into_any_element()
+            }),
+    )
+    .into_any_element()
 }
 
 /// A mood / genre tile: colour bar + title; opens its browse page.

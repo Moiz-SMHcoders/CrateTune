@@ -172,6 +172,9 @@ pub struct SettingsPanel {
     pub(super) scrobble_errors: VecDeque<String>,
     /// Content & region section (language / country pickers).
     pub(super) content: super::content::ContentState,
+    /// The content country taken from the system's region on this first run: Home
+    /// says so until dismissed, the country is changed, or the app restarts.
+    pub region_nudge: Option<String>,
     /// UI language picker (Appearance, onboarding).
     pub(super) language: super::language::LanguagePicker,
     /// Network section (proxy draft fields, status).
@@ -214,6 +217,7 @@ impl SettingsPanel {
         if let Some(e) = &file_error {
             eprintln!("music-gpui: settings: {e}");
         }
+        let mut region_nudge = None;
         if first_run {
             settings.onboarded = false;
             // YouTube Music content in the UI language (and the system's region)
@@ -223,7 +227,8 @@ impl SettingsPanel {
             if let Some(region) = crate::i18n::system_region()
                 && super::content::COUNTRIES.iter().any(|(c, _)| *c == region)
             {
-                settings.content.country = region;
+                settings.content.country = region.clone();
+                region_nudge = Some(region);
             }
         }
 
@@ -363,6 +368,7 @@ impl SettingsPanel {
             discord_status: DiscordStatus::Idle,
             scrobble_errors: VecDeque::new(),
             content,
+            region_nudge,
             language,
             network,
             prefs,
@@ -592,6 +598,18 @@ impl SettingsPanel {
             .ok();
         })
         .detach();
+    }
+
+    /// Opens the section of the settings row with search-index anchor `anchor` and
+    /// reveals the row as a search pick would (Home's "Change region").
+    pub fn reveal_anchor(&mut self, anchor: &str, window: &mut Window, cx: &mut Context<Self>) {
+        match super::search_index::all()
+            .iter()
+            .find(|e| e.anchor == anchor)
+        {
+            Some(entry) => self.reveal(entry, window, cx),
+            None => eprintln!("music-gpui: no settings row {anchor:?}"),
+        }
     }
 
     /// Opens a search result's section, scrolls its row into view, flashes it

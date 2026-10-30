@@ -113,6 +113,22 @@ page. It takes effect the next time the app starts; **Restart now** does it righ
   picks; Home also refreshes by itself when you open it after 20 minutes. Choose what
   quick picks are based on, their layout, the chips, the tonal backdrop and which sections
   show in **Settings → Content & region → Home**.
+  Below your own sections, **From YouTube Music · <country>** marks where YouTube Music's
+  feed starts: those shelves (and YouTube's quick picks before you have history) are what
+  YouTube Music shows in your **content country and language**. A first run takes the
+  country from your system's region (e.g. a Mac set to English (UAE) gets the UAE feed);
+  **Change region** opens Settings → Content & region, **Hide** hides the feed (show it
+  again under Settings → Content & region → Home → Sections).
+* **Rows that scroll sideways** (shelves, quick picks, chips): use the **‹ ›** buttons
+  next to a shelf's title, **Shift + mouse wheel** or a sideways trackpad swipe / tilt
+  wheel over the row, **drag** the row with the mouse (a click without moving still opens
+  or plays the card), or the thin scrollbar that appears under a hovered row. The plain
+  wheel scrolls the page.
+
+  ![Quick picks scrolled with ›: both buttons active, the scrollbar under the hovered row](screenshots/shelf-scrolled.png)
+
+  ![Where YouTube Music's feed starts on Home](screenshots/home-from-youtube.png)
+
 * **Explore**, **Charts** (pick a country), **Moods & genres** and **New releases** show
   the rest.
 * Artist, album and playlist pages have Play, Shuffle, Radio and Add to queue. Long
