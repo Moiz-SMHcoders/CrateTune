@@ -512,8 +512,8 @@ It fails when
   title and chips fill a third of the window: there both views show only shelves, while
   against the very top the end drew 1.2–1.4x slower on the CI runners just for having more
   shelves in view, too close to 1.5;
-* **either p50 is above the ceiling** (`--max-ms`, default 25; CI: 20 ms), only for gross
-  slowdowns: 4–7x what the runners measure;
+* **either p50 is above the ceiling** (`--max-ms`, default 25; CI: 30 ms), only for gross
+  slowdowns: about 3x the slowest culled draw the runners measured;
 * the feed didn't load to its end, Home wasn't up before the first bench, or a bench
   didn't run (a broken setup is a failure, not a pass).
 
@@ -526,19 +526,25 @@ The draws run back to back (1 ms apart, after 60 warm-up draws): spaced 16 ms ap
 moves the UI thread between efficiency and performance cores and the same build measured
 1.4–5 ms from one run to the next.
 
-**Calibration** (p50s, top → end of feed, and their ratio; each line is several runs):
+**Calibration** (final setup: p50s near the top → at the end of the feed, and their
+ratio; seven app runs per CI runner, three to five on the Mac):
 
 | Machine | Culling on | `MUSIC_NO_CULL=1` |
 |---|---|---|
-| GitHub `macos-14` (M1 VM) | 2.1–4.1 → 2.4–4.8 ms, 0.84–1.31x | 2.95–3.5 → 25–35 ms, 8.5–10.4x |
-| GitHub `windows-2022` (no GPU) | 3.0–3.5 → 3.4–4.3 ms, 1.06–1.27x | 4.1–4.2 → 51 ms, 12.2–12.5x |
-| M4 MacBook Air (other builds running) | 1.7–3.8 → 1.6–3.2 ms, 0.74–1.35x | 2.0–3.6 → 10.4–12.2 ms, 2.9–6.3x |
+| GitHub `macos-14` (M1 VM) | 5.8–8.4 → 4.8–7.2 ms, 0.64–1.16x | 8.9–11.2 → 55–61 ms, 4.9–6.9x |
+| GitHub `windows-2022` (no GPU) | 9.7–10.2 → 6.8–8.6 ms, 0.68–0.87x | 16.5–16.6 → 99–100 ms, 6.0–6.1x |
+| M4 MacBook Air (other builds running) | 2.1–4.1 → 1.9–4.0 ms, 0.73–1.11x | 2.8–3.3 → 23–25 ms, 7.2–8.9x |
 
-(GitHub numbers: two CI runs, five app runs each per OS.) So 1.5x sits above what culling
-gives and far below what its loss costs, and 20 ms is 4–7x the slowest culled draw seen on
-the runners (the runs without culling exceed it too). If the check starts failing for an unrelated change, look at the
-step summary first: a ratio near 1 with a high p50 is a slow runner (raise the ceiling),
-a ratio above 1.5 is a frame that grows with the page.
+The near-top bench is the slower one with culling on (it has the chips, the first shelf
+and the feed header within half a screen above it), so culling passes with a wide margin
+and its loss fails by 5–9x. Earlier setups were too close for comfort: compared with the
+very top, the end drew 1.2–1.4x slower on the runners; with every page bringing its own
+artwork (~700 images, beyond the artwork memory budget) up to 1.8x on Windows (a separate
+cost, probably the artwork cache evicting; worth a look on long sessions); and with a
+skipped section built from two elements instead of one, the end grew with the length of
+the feed. If the check starts failing for an unrelated change, look at the step summary
+first: a ratio near 1 with a high p50 is a slow runner (raise the ceiling), a ratio above
+1.5 is a frame that grows with the page.
 
 ## 7. Reporting a problem
 

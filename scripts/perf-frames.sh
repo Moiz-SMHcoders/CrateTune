@@ -64,20 +64,20 @@ trap cleanup EXIT
 # Each bench draws 60 frames to warm up, then the 300 that count, GAP (1) ms apart:
 # with draws back to back the UI thread stays busy, so the system keeps it on a fast
 # core at a steady clock (16 ms apart, macOS moves it between efficiency and
-# performance cores and the times jump 3x between runs). The first bench waits for
-# Home and its artwork and runs one screen down: there the window shows shelves only,
-# as at the end (at the very top the title and chips take a third of it, and the end
-# drew 1.2-1.4x slower than that on the CI runners just for having more shelves in
-# view). Then 40 scroll steps of 1500 px, each followed by two forced draws, so the
+# performance cores and the times jump 3x between runs). The first bench runs one
+# screen down, after Home, its artwork and the feed page that scrolling asks for have
+# arrived: there the window shows shelves only, as at the end (at the very top the
+# title and chips take a third of it, and the end drew 1.2-1.4x slower than that on
+# the CI runners just for having more shelves in view). Then 40 scroll steps of 1500 px, each followed by two forced draws, so the
 # feed keeps loading (and layout catching up) even where the system sends the window
 # no frames; the deep bench runs at the end of the feed (2 + 20 pages, ~60 shelves).
-script="5:@scroll=640;420;-700,5.1:@bench=2,6:@bench=60:$gap,6.1:@bench=300:$gap"
-t=9
+script="5:@scroll=640;420;-700,5.1:@bench=2,8:@bench=60:$gap,8.1:@bench=300:$gap"
+t=11
 for _ in $(seq 1 40); do
   script="$script,$t:@scroll=640;420;-1500,$(awk "BEGIN { print $t + 0.1 }"):@bench=2"
   t=$(awk "BEGIN { print $t + 0.25 }")
 done
-script="$script,26:@bench=60:$gap,26.1:@bench=300:$gap,32:@quit"
+script="$script,28:@bench=60:$gap,28.1:@bench=300:$gap,34:@quit"
 
 # One run of the app, logging to $work/app-N.log.
 run() { # n
