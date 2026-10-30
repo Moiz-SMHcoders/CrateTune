@@ -153,7 +153,7 @@ pub struct SettingsPanel {
     /// Emit `Integrations` when the pending save fires (typed ids/keys).
     integrations_dirty: bool,
 
-    backend: Option<Arc<dyn Backend>>,
+    pub(super) backend: Option<Arc<dyn Backend>>,
     pub(super) secrets: BTreeMap<Secret, String>,
     pub(super) secrets_loaded: bool,
     /// Where secrets go / came from, for the status line.

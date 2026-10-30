@@ -8,6 +8,7 @@ settings.account.not_signed_in = Nie zalogowano. Wszystko działa anonimowo; po 
 settings.account.sign_in_google = Zaloguj się przez Google…
 settings.account.paste_cookie = Wklej cookie…
 settings.account.google_refused = Jeśli Google odrzuca okno logowania („Ta przeglądarka lub aplikacja może nie być bezpieczna”), użyj „Wklej cookie”.
+settings.account.profile_note = Okno logowania ma własny profil przeglądarki, dzięki czemu {app} może odnawiać sesję w tle. Wylogowanie go usuwa.
 settings.account.last_synced = Ostatnia synchronizacja: {date}
 settings.account.not_synced = Jeszcze nie zsynchronizowano
 settings.account.sync_now = Synchronizuj

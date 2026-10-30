@@ -8,6 +8,7 @@ settings.account.not_signed_in = Non connecté. Tout fonctionne de manière anon
 settings.account.sign_in_google = Se connecter avec Google…
 settings.account.paste_cookie = Coller un cookie…
 settings.account.google_refused = Si Google refuse la fenêtre de connexion (« Ce navigateur ou cette application ne sont peut-être pas sécurisés »), utilisez « Coller un cookie ».
+settings.account.profile_note = La fenêtre de connexion garde son propre profil de navigateur pour que {app} puisse renouveler votre session en arrière-plan. La déconnexion le supprime.
 settings.account.last_synced = Dernière synchronisation le {date}
 settings.account.not_synced = Pas encore synchronisé
 settings.account.sync_now = Synchroniser

@@ -1032,15 +1032,15 @@ cards, grids and menus are this app's own (hover effects and play buttons includ
   (`local_files::scan_with_progress`, new in music-core), the scanned tracks (filter,
   select); local cover art (`file://`) goes through the artwork cache.
 * **Account** (Settings → Account, `login_webview/`): on macOS **"Sign in with Google…"** opens a window with a
-  WKWebView child (wry `build_as_child` on the GPUI window's NSView, non-persistent data
-  store, Safari user agent) on Google's sign-in page continuing to music.youtube.com; once
+  WKWebView child (wry `build_as_child` on the GPUI window's NSView, a persistent data
+  store of its own, Safari user agent) on Google's sign-in page continuing to music.youtube.com; once
   there with a SAPISID cookie, the `.youtube.com` cookies are read from WebKit's cookie store
   (`getAllCookies` + a channel polled by a GPUI timer — wry's `cookies()` spins the run loop
   and would re-enter GPUI) and the window closes. On Windows the same flow runs in a plain
   Win32 window with a WebView2 on a thread of its own (`login_webview/webview2.rs`): a
   child of a GPUI window would be covered by GPUI's topmost DirectComposition target, and
-  creating WebView2 waits by pumping messages, which would re-enter GPUI. InPrivate
-  controller, user data in `<local data>\SignIn`; once a second the address is checked
+  creating WebView2 waits by pumping messages, which would re-enter GPUI. Persistent
+  profile, user data in `<local data>\SignIn`; once a second the address is checked
   and on music.youtube.com `ICoreWebView2CookieManager::GetCookies` is asked
   (asynchronously); GPUI awaits a oneshot with the result. No WebView2 runtime → a
   notification and the cookie dialog. Everywhere: **"Paste cookie…"** with
@@ -1058,7 +1058,33 @@ cards, grids and menus are this app's own (hover effects and play buttons includ
   after the new account answered (failure: previous account kept, "That Google account
   isn't signed in in this session"); a saved index that left the login is reset to 0 at
   startup. Sign out forgets cookie and account
-  (synced data stays). **Sync now** (also right after signing in / switching) mirrors liked
+  (synced data stays) and clears the sign-in web view's profile.
+  **Keeping the session alive** (`innertube/session.rs`, `innertube/cookies.rs`,
+  `session_keeper.rs`): every `Auth` handed out shares one `Session`, so the browse client,
+  the account client and the playback resolver sign with the same current cookie.
+  Signed-in responses' `Set-Cookie` lines (Google rotates `__Secure-1PSIDTS`,
+  `__Secure-3PSIDTS`, `SIDCC`, `__Secure-1PSIDCC`, `__Secure-3PSIDCC`) are merged into it
+  like a browser does (replace by name, `Max-Age=0` / past `Expires` deletes, only from
+  `https://` YouTube / Google hosts, only youtube.com cookies) and written back to the
+  keychain at most once a minute and on quit, only when the value changed. Requests are
+  signed `SAPISIDHASH … SAPISID1PHASH … SAPISID3PHASH …` like the web client (the 1P / 3P
+  parts from `__Secure-1PAPISID` / `__Secure-3PAPISID` when present). A request YouTube
+  rejects as signed out (401, or a 403 / error body saying so) triggers one **silent
+  renewal** at most every 10 minutes: the sign-in web view, never shown (macOS: a
+  WKWebView outside any window; Windows: a hidden WebView2 window), loads
+  music.youtube.com on the persistent profile, waits for the page's `LOGGED_IN` flag and
+  reads the cookies like the sign-in does; the request is then retried once. Pages that
+  may be signed in fall back to anonymous meanwhile. If the renewal fails (always on
+  Linux, which has no sign-in web view), one notification says "Your YouTube Music sign-in
+  expired" with **Sign in again** (Settings → Account shows it too), likes wait in the
+  rating queue without using up their attempts, syncs stop at the first rejected request,
+  and the queue is sent once the session works again. Profile locations: Windows
+  `%LOCALAPPDATA%\cratetune\data\SignIn` (deleted on sign-out; if WebView2 still holds
+  it, a `SignIn.clear` marker gets it deleted before its next use); macOS 14+ a
+  `WKWebsiteDataStore` with its own identifier under `~/Library/WebKit/<bundle id>/`,
+  macOS 11–13 the app's default WebKit store (emptied on sign-out). **Unverified against
+  Google:** whether YouTube's InnerTube responses actually carry rotating `Set-Cookie`
+  lines, and whether a background page load renews an expired session. **Sync now** (also right after signing in / switching) mirrors liked
   songs, library songs, saved albums, subscriptions and playlists (with entries and
   `setVideoId`s) into the database; YouTube wins for likes / saved albums / subscriptions /
   playlist mirrors, local-only items are untouched. The artist page's Subscribe button and the library artist views subscribe /

@@ -8,12 +8,19 @@
 //! GPUI from inside an update. On its own thread, everything can wait freely and
 //! GPUI only awaits the [`Outcome`].
 //!
-//! The controller runs InPrivate (nothing of the session is written to disk) with a
-//! user-data folder of its own (the app's local data folder, `SignIn`). Once a second
-//! the page's address is checked; on music.youtube.com the cookies for it are read
-//! through `ICoreWebView2CookieManager::GetCookies` (asynchronously, the answer
+//! The profile is persistent: a user-data folder of its own (the app's local data
+//! folder, `SignIn`; deleted on sign-out, see `profile.rs`), so the Google session
+//! survives and the app can renew YouTube Music's cookies in the background. Once a
+//! second the page's address is checked; on music.youtube.com the cookies for it are
+//! read through `ICoreWebView2CookieManager::GetCookies` (asynchronously, the answer
 //! arrives through this thread's loop) and offered to [`Request::accept`]; the first
 //! accepted set is sent back and the window closes.
+//!
+//! **Silent mode** ([`Request::silent`]): the window is never shown. The page
+//! (music.youtube.com) is asked whether it is signed in (YouTube's `LOGGED_IN` flag,
+//! through `ExecuteScript`); signed in, the cookies are read as above; signed out (or
+//! sent to accounts.google.com), [`Outcome::SignedOut`]; after
+//! `SILENT_TIMEOUT`, a failure. An interactive request cancels a silent one.
 //!
 //! Plain Win32 / WebView2 only (no GPUI types), so it type-checks for a Windows
 //! target without GPUI's C dependencies.
@@ -22,17 +29,19 @@ use std::cell::{Cell, RefCell};
 use std::path::PathBuf;
 use std::sync::Mutex;
 use std::sync::mpsc;
+use std::time::Instant;
 
 use futures_channel::oneshot;
 use webview2_com::Microsoft::Web::WebView2::Win32::{
     COREWEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC, CreateCoreWebView2EnvironmentWithOptions,
     GetAvailableCoreWebView2BrowserVersionString, ICoreWebView2, ICoreWebView2_2,
     ICoreWebView2Controller, ICoreWebView2CookieList, ICoreWebView2Environment,
-    ICoreWebView2Environment10, ICoreWebView2EnvironmentOptions,
+    ICoreWebView2EnvironmentOptions,
 };
 use webview2_com::{
     CoreWebView2EnvironmentOptions, CreateCoreWebView2ControllerCompletedHandler,
-    CreateCoreWebView2EnvironmentCompletedHandler, GetCookiesCompletedHandler,
+    CreateCoreWebView2EnvironmentCompletedHandler, ExecuteScriptCompletedHandler,
+    GetCookiesCompletedHandler,
 };
 use windows::Win32::Foundation::{E_POINTER, HWND, LPARAM, LRESULT, RECT, WPARAM};
 use windows::Win32::System::Com::{COINIT_APARTMENTTHREADED, CoInitializeEx, CoUninitialize};
@@ -40,11 +49,14 @@ use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows::Win32::UI::HiDpi::GetDpiForWindow;
 use windows::Win32::UI::WindowsAndMessaging::{
     CW_USEDEFAULT, CreateWindowExW, DefWindowProcW, DestroyWindow, DispatchMessageW, GetClientRect,
-    GetMessageW, GetWindowRect, IDC_ARROW, KillTimer, LoadCursorW, LoadIconW, MSG, PostQuitMessage,
-    RegisterClassW, SW_SHOW, SetForegroundWindow, SetTimer, ShowWindow, TranslateMessage,
-    WINDOW_EX_STYLE, WM_DESTROY, WM_MOVE, WM_SIZE, WM_TIMER, WNDCLASSW, WS_OVERLAPPEDWINDOW,
+    GetMessageW, GetWindowRect, IDC_ARROW, KillTimer, LoadCursorW, LoadIconW, MSG, PostMessageW,
+    PostQuitMessage, RegisterClassW, SW_SHOW, SetForegroundWindow, SetTimer, ShowWindow,
+    TranslateMessage, WINDOW_EX_STYLE, WM_CLOSE, WM_DESTROY, WM_MOVE, WM_SIZE, WM_TIMER, WNDCLASSW,
+    WS_EX_TOOLWINDOW, WS_OVERLAPPEDWINDOW,
 };
 use windows::core::{HSTRING, Interface as _, PCWSTR, PWSTR, w};
+
+use super::{Probe, SIGNED_IN_PROBE, SILENT_TIMEOUT, read_probe};
 
 /// (name, value, domain) of each cookie.
 pub type Cookies = Vec<(String, String, String)>;
@@ -62,6 +74,8 @@ pub struct Request {
     pub center_on: Option<isize>,
     /// Whether a set of cookies completes the sign-in.
     pub accept: fn(&[(String, String, String)]) -> bool,
+    /// Never shown: renew the session from the profile (see the module docs).
+    pub silent: bool,
     /// `MUSIC_TRACE`: log the pages visited (paths only, no query strings).
     pub trace: bool,
 }
@@ -74,41 +88,92 @@ pub enum Failure {
 
 pub enum Outcome {
     Cookies(Cookies),
-    /// Closed by the user before signing in.
+    /// Closed by the user before signing in (or a silent run was cancelled).
     Closed,
+    /// Silent: the profile's Google session is signed out.
+    SignedOut,
     Failed(Failure),
 }
 
-/// The open sign-in window (one at a time).
-static OPEN: Mutex<Option<isize>> = Mutex::new(None);
+/// The web view running (one at a time): its window (0 while it is being made) and
+/// whether it is silent.
+struct Open {
+    hwnd: isize,
+    silent: bool,
+    cancelled: bool,
+}
 
-/// Opens the window on a new thread; `done` gets the outcome. `false` if one is
-/// already open (it is brought to the front instead).
-pub fn start(request: Request, done: oneshot::Sender<Outcome>) -> bool {
-    {
-        let open = OPEN.lock().unwrap_or_else(|e| e.into_inner());
-        if let Some(hwnd) = *open {
-            if hwnd != 0 {
-                // SAFETY: a stale handle just fails.
+static OPEN: Mutex<Option<Open>> = Mutex::new(None);
+
+fn open_slot() -> std::sync::MutexGuard<'static, Option<Open>> {
+    OPEN.lock().unwrap_or_else(|e| e.into_inner())
+}
+
+pub enum Start {
+    Started,
+    /// An interactive window is open; it was brought to the front.
+    BroughtToFront,
+    /// Busy (a silent run is asked to stop when this request is interactive): try
+    /// again shortly.
+    Busy(Request, oneshot::Sender<Outcome>),
+}
+
+/// Asks a running silent web view to stop. Returns whether one was running.
+pub fn cancel_silent() -> bool {
+    let mut open = open_slot();
+    match open.as_mut() {
+        Some(o) if o.silent => {
+            o.cancelled = true;
+            if o.hwnd != 0 {
+                // SAFETY: posting to a stale handle just fails.
                 unsafe {
-                    let _ = SetForegroundWindow(HWND(hwnd as *mut _));
+                    let _ =
+                        PostMessageW(Some(HWND(o.hwnd as *mut _)), WM_CLOSE, WPARAM(0), LPARAM(0));
                 }
             }
-            return false;
+            true
+        }
+        _ => false,
+    }
+}
+
+/// Opens the web view on a new thread; `done` gets the outcome.
+pub fn start(request: Request, done: oneshot::Sender<Outcome>) -> Start {
+    {
+        let open = open_slot();
+        if let Some(running) = open.as_ref() {
+            if running.silent || request.silent {
+                drop(open);
+                if !request.silent {
+                    cancel_silent();
+                }
+                return Start::Busy(request, done);
+            }
+            if running.hwnd != 0 {
+                // SAFETY: a stale handle just fails.
+                unsafe {
+                    let _ = SetForegroundWindow(HWND(running.hwnd as *mut _));
+                }
+            }
+            return Start::BroughtToFront;
         }
     }
-    *OPEN.lock().unwrap_or_else(|e| e.into_inner()) = Some(0);
+    *open_slot() = Some(Open {
+        hwnd: 0,
+        silent: request.silent,
+        cancelled: false,
+    });
     let spawned = std::thread::Builder::new()
         .name("sign-in-webview2".into())
         .spawn(move || {
             let outcome = run(&request);
-            *OPEN.lock().unwrap_or_else(|e| e.into_inner()) = None;
+            *open_slot() = None;
             let _ = done.send(outcome);
         });
     if spawned.is_err() {
-        *OPEN.lock().unwrap_or_else(|e| e.into_inner()) = None;
+        *open_slot() = None;
     }
-    true
+    Start::Started
 }
 
 thread_local! {
@@ -139,8 +204,21 @@ fn run(request: &Request) -> Outcome {
     let outcome = if runtime_installed() {
         match create_window(request) {
             Ok(hwnd) => {
-                *OPEN.lock().unwrap_or_else(|e| e.into_inner()) = Some(hwnd.0 as isize);
-                let outcome = browse(hwnd, request);
+                let cancelled = {
+                    let mut open = open_slot();
+                    match open.as_mut() {
+                        Some(o) => {
+                            o.hwnd = hwnd.0 as isize;
+                            o.cancelled
+                        }
+                        None => false,
+                    }
+                };
+                let outcome = if cancelled {
+                    Outcome::Closed
+                } else {
+                    browse(hwnd, request)
+                };
                 CONTROLLER.with(|c| {
                     if let Some(controller) = c.borrow_mut().take() {
                         // SAFETY: our controller, on its thread.
@@ -240,8 +318,14 @@ fn create_window(request: &Request) -> Result<HWND, Failure> {
             }
         }
         let title = HSTRING::from(request.title.as_str());
+        // Silent: never shown, and kept off the taskbar / Alt+Tab even so.
+        let ex_style = if request.silent {
+            WS_EX_TOOLWINDOW
+        } else {
+            WINDOW_EX_STYLE(0)
+        };
         let hwnd = CreateWindowExW(
-            WINDOW_EX_STYLE(0),
+            ex_style,
             CLASS,
             &title,
             WS_OVERLAPPEDWINDOW,
@@ -255,13 +339,21 @@ fn create_window(request: &Request) -> Result<HWND, Failure> {
             None,
         )
         .map_err(|e| error("window", e))?;
-        let _ = ShowWindow(hwnd, SW_SHOW);
-        let _ = SetForegroundWindow(hwnd);
+        if !request.silent {
+            let _ = ShowWindow(hwnd, SW_SHOW);
+            let _ = SetForegroundWindow(hwnd);
+        }
         Ok(hwnd)
     }
 }
 
 fn create_environment(request: &Request) -> Result<ICoreWebView2Environment, Failure> {
+    // A sign-out whose profile deletion failed (files in use) finishes first.
+    if !super::profile::finish_pending_clear(&request.data_dir) {
+        return Err(Failure::Error(
+            "the previous sign-in profile couldn't be deleted yet".into(),
+        ));
+    }
     let _ = std::fs::create_dir_all(&request.data_dir);
     let data = HSTRING::from(request.data_dir.as_os_str());
     let (tx, rx) = mpsc::channel();
@@ -298,18 +390,12 @@ fn create_controller(
             Ok(())
         },
     ));
+    // A regular (persistent) profile: the Google session stays in the user-data
+    // folder for background renewals; sign-out deletes the folder.
     // SAFETY: COM on this thread; the completion runs through its message loop.
     unsafe {
-        // InPrivate where the runtime supports it (1.0.1185+): no cookies on disk.
-        let private = env.cast::<ICoreWebView2Environment10>().and_then(|env10| {
-            let options = env10.CreateCoreWebView2ControllerOptions()?;
-            options.SetIsInPrivateModeEnabled(true)?;
-            env10.CreateCoreWebView2ControllerWithOptions(hwnd, &options, &handler)
-        });
-        if private.is_err() {
-            env.CreateCoreWebView2Controller(hwnd, &handler)
-                .map_err(|e| error("controller", e))?;
-        }
+        env.CreateCoreWebView2Controller(hwnd, &handler)
+            .map_err(|e| error("controller", e))?;
     }
     webview2_com::wait_with_pump(rx)
         .map_err(|e| error("controller", e))?
@@ -341,6 +427,20 @@ fn request_cookies(webview: &ICoreWebView2, url: &str, tx: mpsc::Sender<Cookies>
             .cast::<ICoreWebView2_2>()
             .and_then(|w2| w2.CookieManager())
             .and_then(|manager| manager.GetCookies(&url, &handler))
+            .is_ok()
+    }
+}
+
+/// Runs [`SIGNED_IN_PROBE`]; the (JSON-encoded) answer arrives on `tx` through the loop.
+fn probe_signed_in(webview: &ICoreWebView2, tx: mpsc::Sender<String>) -> bool {
+    let handler = ExecuteScriptCompletedHandler::create(Box::new(move |result, json| {
+        let _ = tx.send(if result.is_ok() { json } else { String::new() });
+        Ok(())
+    }));
+    // SAFETY: COM on this thread.
+    unsafe {
+        webview
+            .ExecuteScript(&HSTRING::from(SIGNED_IN_PROBE), &handler)
             .is_ok()
     }
 }
@@ -410,11 +510,19 @@ fn browse(hwnd: HWND, request: &Request) -> Outcome {
         if let Err(e) = webview.Navigate(&HSTRING::from(request.url)) {
             return Outcome::Failed(error("navigate", e));
         }
-        let _ = controller.MoveFocus(COREWEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC);
+        if !request.silent {
+            let _ = controller.MoveFocus(COREWEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC);
+        }
         SetTimer(Some(hwnd), 1, 1000, None);
     }
     let (cookies_tx, cookies_rx) = mpsc::channel::<Cookies>();
+    let (probe_tx, probe_rx) = mpsc::channel::<String>();
     let mut asking = false;
+    let mut probing = false;
+    // Silent: whether the page said it is signed in (cookies may be read).
+    let mut signed_in = !request.silent;
+    let mut unknown_seen = 0;
+    let started = Instant::now();
     let mut traced: Option<String> = None;
     let mut msg = MSG::default();
     loop {
@@ -437,7 +545,27 @@ fn browse(hwnd: HWND, request: &Request) -> Outcome {
                     traced = path;
                 }
             }
-            if !asking && page.is_some_and(|p| p.starts_with(request.cookies_url)) {
+            if request.silent {
+                if started.elapsed() > SILENT_TIMEOUT {
+                    // SAFETY: our timer, on this thread.
+                    unsafe {
+                        let _ = KillTimer(Some(hwnd), 1);
+                    }
+                    return Outcome::Failed(Failure::Error("timed out".into()));
+                }
+                if page
+                    .as_deref()
+                    .is_some_and(|p| p.starts_with("https://accounts.google.com"))
+                {
+                    // Google wants a sign-in: the profile is signed out.
+                    return Outcome::SignedOut;
+                }
+            }
+            let on_music = page.is_some_and(|p| p.starts_with(request.cookies_url));
+            if on_music && !signed_in && !probing {
+                probing = probe_signed_in(&webview, probe_tx.clone());
+            }
+            if on_music && signed_in && !asking {
                 asking = request_cookies(&webview, request.cookies_url, cookies_tx.clone());
             }
         } else {
@@ -445,6 +573,14 @@ fn browse(hwnd: HWND, request: &Request) -> Outcome {
             unsafe {
                 let _ = TranslateMessage(&msg);
                 DispatchMessageW(&msg);
+            }
+        }
+        if let Ok(answer) = probe_rx.try_recv() {
+            probing = false;
+            match read_probe(&answer, &mut unknown_seen) {
+                Probe::SignedIn => signed_in = true,
+                Probe::SignedOut => return Outcome::SignedOut,
+                Probe::Wait => {}
             }
         }
         if let Ok(cookies) = cookies_rx.try_recv() {

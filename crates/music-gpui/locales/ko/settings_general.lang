@@ -8,6 +8,7 @@ settings.account.not_signed_in = 로그인하지 않았습니다. 모든 기능�
 settings.account.sign_in_google = Google로 로그인…
 settings.account.paste_cookie = 쿠키 붙여넣기…
 settings.account.google_refused = Google에서 로그인 창을 거부하는 경우(“이 브라우저 또는 앱은 안전하지 않을 수 있습니다”) ‘쿠키 붙여넣기’를 사용하세요.
+settings.account.profile_note = 로그인 창은 자체 브라우저 프로필을 유지하므로 {app}이(가) 백그라운드에서 세션을 갱신할 수 있습니다. 로그아웃하면 삭제됩니다.
 settings.account.last_synced = 마지막 동기화: {date}
 settings.account.not_synced = 아직 동기화 안 됨
 settings.account.sync_now = 지금 동기화

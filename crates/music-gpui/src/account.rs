@@ -15,6 +15,12 @@
 //! (in memory and in the settings file). A saved index that is no longer signed in
 //! (left over from an older version) is reset to the first account at startup.
 //!
+//! **Session.** One `music_core::innertube::Session` per sign-in is attached to every
+//! `Auth` handed out ([`Account::auth`]): rotated cookies (`Set-Cookie`) and renewed
+//! ones (silent re-login) reach every client at once, and are written back to the
+//! keychain, throttled (`session_keeper.rs`). A value written back is the same login,
+//! not a new sign-in ([`Account::set_cookie`]).
+//!
 //! **Not verified against a real account** in this round: every request here is
 //! music-core's cookie layer, whose request bodies are unit-tested but which was
 //! never run signed-in. Errors are shown in the Account section.
@@ -24,7 +30,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use gpui::{Context, Window};
-use music_core::innertube::{AccountChannel, Auth, GoogleAccount, InnerTube, Item};
+use music_core::innertube::{AccountChannel, Auth, GoogleAccount, InnerTube, Item, Session};
 use music_core::library::{
     AlbumMeta, AlbumQuery, ArtistMeta, ArtistQuery, Library, PlaylistSort, RemotePlaylist,
     SongQuery, SongScope, now_ms,
@@ -50,7 +56,15 @@ pub enum Busy {
 
 pub struct Account {
     pub config: Option<AccountConfig>,
+    /// The cookie this login started with (its identity; requests use `session`'s
+    /// current one).
     cookie: Option<String>,
+    /// The live session of `cookie` (rotation, renewal, expiry).
+    session: Option<Arc<Session>>,
+    /// YouTube rejected the session and a background renewal failed: "Sign in again".
+    pub expired: bool,
+    /// Where new sessions report to (`session_keeper.rs`); `None` in tests.
+    pub(crate) hooks: Option<Arc<dyn music_core::innertube::SessionHooks>>,
     pub channels: Vec<AccountChannel>,
     /// Google accounts of the cookie's browser session; `None` until probed.
     pub google_accounts: Option<Vec<GoogleAccount>>,
@@ -80,6 +94,9 @@ impl Account {
         Self {
             config,
             cookie: None,
+            session: None,
+            expired: false,
+            hooks: None,
             channels: Vec::new(),
             google_accounts: None,
             probing: false,
@@ -89,12 +106,26 @@ impl Account {
         }
     }
 
-    /// Returns whether the cookie changed.
+    /// Returns whether the cookie changed (a new login). The session's own newer
+    /// value (rotated or renewed, written back to the keychain) is not a change.
     pub fn set_cookie(&mut self, cookie: Option<String>) -> bool {
+        if let (Some(session), Some(new)) = (&self.session, &cookie)
+            && session.is_known_value(new)
+        {
+            return false;
+        }
         if self.cookie == cookie {
             return false;
         }
         self.cookie = cookie;
+        self.expired = false;
+        self.session = self.cookie.as_ref().map(|c| {
+            let session = Session::new(c.clone());
+            if let Some(hooks) = &self.hooks {
+                session.set_hooks(hooks.clone());
+            }
+            session
+        });
         // Another cookie is another browser session with its own accounts.
         self.google_accounts = None;
         self.yt.forget_account();
@@ -104,12 +135,29 @@ impl Account {
         true
     }
 
+    /// The live session of the signed-in cookie.
+    pub fn session(&self) -> Option<&Arc<Session>> {
+        self.session.as_ref()
+    }
+
+    /// Signed in again with `cookie` while this login was expired: the same cookie
+    /// renews the session (a new one replaces it in [`Account::set_cookie`]).
+    pub fn renew(&mut self, cookie: &str) {
+        if let Some(session) = &self.session
+            && session.is_known_value(cookie)
+        {
+            session.replace_cookie(cookie);
+        }
+        self.expired = false;
+    }
+
     /// Credentials for acting as `auth_user` / `data_sync_id` with the current cookie,
     /// without touching the config.
     pub fn auth_as(&self, auth_user: u32, data_sync_id: Option<String>) -> Option<Auth> {
         let auth = Auth {
             auth_user,
             data_sync_id,
+            session: self.session.clone(),
             ..Auth::new(self.cookie.clone()?)
         };
         auth.is_signed_in().then_some(auth)
@@ -154,7 +202,11 @@ impl Account {
                 self.status = Busy::Failed(if known_missing {
                     t!("account.switch_not_signed_in", name = previous.name)
                 } else {
-                    t!("account.switch_failed", error = e, name = previous.name)
+                    t!(
+                        "account.switch_failed",
+                        error = describe_error(&e),
+                        name = previous.name
+                    )
                 });
                 // Back to the previous Google account / channel (other fields, e.g. a
                 // sync finishing meanwhile, are kept).
@@ -185,6 +237,7 @@ impl Account {
             visitor_data: None,
             data_sync_id: config.and_then(|c| c.data_sync_id.clone()),
             auth_user: config.map_or(0, |c| c.auth_user),
+            session: self.session.clone(),
         };
         auth.is_signed_in().then_some(auth)
     }
@@ -228,6 +281,18 @@ impl Account {
             },
             config.map(|c| c.name.as_str()).unwrap_or_default(),
         )
+    }
+}
+
+/// A YouTube error as the user reads it: a rejected sign-in and an unreachable
+/// server are told apart (both localized); anything else is the technical message.
+pub(crate) fn describe_error(e: &music_core::Error) -> String {
+    if e.is_auth() {
+        t!("account.error.signed_out").to_owned()
+    } else if e.is_network() {
+        t!("account.error.network", error = e)
+    } else {
+        e.to_string()
     }
 }
 
@@ -277,7 +342,15 @@ fn refresh_account_on(
     it: InnerTube,
     auth: Auth,
 ) -> Result<((AccountConfig, Vec<AccountChannel>), bool)> {
-    let err = match fetch_account_on(it.clone(), auth.clone()) {
+    // A saved index other than 0 may have left the login (then YouTube may answer
+    // 401): asked outside the session, so that alone doesn't count as an expired
+    // sign-in. Index 0 below decides.
+    let first_try = if auth.auth_user == 0 {
+        auth.clone()
+    } else {
+        auth.detached()
+    };
+    let err = match fetch_account_on(it.clone(), first_try) {
         Ok(found) => return Ok((found, false)),
         Err(e) if auth.auth_user == 0 => return Err(e),
         Err(e) => e,
@@ -332,16 +405,24 @@ impl MusicApp {
                         panel.update_library(|l| l.account = Some(config), cx);
                         panel.set_youtube_cookie(Some(cookie.clone()), cx);
                     });
-                    this.store.account.set_cookie(Some(cookie));
+                    let was_expired = this.store.account.expired;
+                    this.store.account.set_cookie(Some(cookie.clone()));
+                    // Signed in again to the same login: its session works again.
+                    this.store.account.renew(&cookie);
+                    if was_expired {
+                        this.hide_expired_notification(cx);
+                    }
                     this.sync_account_auth(cx);
                     notify(window, cx, t!("account.toast.signed_in", name = name));
+                    // Likes that waited for a working sign-in.
+                    this.retry_queued_ratings(true, cx);
                     // Also finds the Google accounts of the login (in the background).
                     this.refresh_google_accounts(cx);
                     this.request_sync(Trigger::SignIn, cx);
                 }
                 Err(e) => {
                     this.store.account.status =
-                        Busy::Failed(t!("account.sign_in_failed", error = e));
+                        Busy::Failed(t!("account.sign_in_failed", error = describe_error(&e)));
                     cx.notify();
                 }
             })
@@ -350,10 +431,15 @@ impl MusicApp {
         .detach();
     }
 
-    /// Forgets the cookie and the account (the synced library stays).
+    /// Forgets the cookie and the account (the synced library stays), and the Google
+    /// session of the sign-in web view's profile.
     pub fn sign_out(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        if self.store.account.expired {
+            self.hide_expired_notification(cx);
+        }
         self.store.account.config = None;
         self.store.account.set_cookie(None);
+        crate::login_webview::clear_profile(cx);
         self.store.account.status = Busy::Idle;
         self.store.account.sync = Busy::Idle;
         // Ratings still owed to YouTube were that account's.
@@ -404,7 +490,7 @@ impl MusicApp {
                     }
                     Err(e) => {
                         this.store.account.status =
-                            Busy::Failed(t!("account.unreachable", error = e));
+                            Busy::Failed(t!("account.unreachable", error = describe_error(&e)));
                     }
                 }
                 cx.notify();
@@ -469,6 +555,13 @@ impl MusicApp {
         };
         account.status = Busy::Working(t!("account.switching").into());
         let cookie = auth.cookie.clone();
+        // Another Google account of the login: a rejection means "not signed in to
+        // that one", not an expired session.
+        let auth = if auth_user == previous.auth_user {
+            auth
+        } else {
+            auth.detached()
+        };
         cx.spawn_in(window, async move |this, cx| {
             let result = off_thread(move || fetch_account(auth)).await;
             this.update_in(cx, |this, window, cx| {
@@ -576,7 +669,10 @@ impl MusicApp {
                         .auth()
                         .is_some_and(|a| a.cookie == cookie);
                     if same_login {
-                        this.store.account.sync = if report.errors.is_empty() {
+                        this.store.account.sync = if report.auth_failed {
+                            // The sign-in notification says the rest.
+                            Busy::Failed(t!("account.expired.status").to_owned())
+                        } else if report.errors.is_empty() {
                             Busy::Done(summary.clone())
                         } else {
                             Busy::Failed(t!(
@@ -590,7 +686,7 @@ impl MusicApp {
                     // Hearts and thumbs everywhere.
                     this.reload_liked_flags();
                     this.library_changed(cx);
-                    let announce = this.sync_finished(cx);
+                    let announce = this.sync_finished(cx) && !report.auth_failed;
                     (announce && same_login).then(|| t!("account.toast.synced", summary = summary))
                 })
                 .ok()
@@ -713,6 +809,8 @@ struct SyncReport {
     artists: usize,
     playlists: usize,
     errors: Vec<String>,
+    /// YouTube rejected the sign-in: the sync stopped there.
+    auth_failed: bool,
 }
 
 impl SyncReport {
@@ -790,14 +888,23 @@ fn sync_library(
     let mut report = SyncReport::default();
     let now = now_ms();
     let fail = |what: &str, e: music_core::Error, report: &mut SyncReport| {
-        report
-            .errors
-            .push(t!("account.sync.error", part = what, error = e));
+        report.auth_failed |= e.is_auth();
+        report.errors.push(t!(
+            "account.sync.error",
+            part = what,
+            error = describe_error(&e)
+        ));
     };
 
     progress(t!("account.sync.step.liked"));
-    if let Err(e) = lib.push_pending_ratings(it, 200) {
-        eprintln!("music-gpui: queued ratings: {e}");
+    match lib.push_pending_ratings(it, 200) {
+        // The session is gone: every request after this would fail the same way.
+        Ok(push) if push.auth_failed => {
+            report.auth_failed = true;
+            return report;
+        }
+        Ok(_) => {}
+        Err(e) => eprintln!("music-gpui: queued ratings: {e}"),
     }
     match it.liked_songs().and_then(|mut page| {
         let mut tracks: Vec<Track> = page.tracks.drain(..).map(|e| e.track).collect();
@@ -826,7 +933,7 @@ fn sync_library(
         }
         Err(e) => fail(t!("account.sync.part.liked"), e, &mut report),
     }
-    if req.kind == SyncKind::Liked {
+    if req.kind == SyncKind::Liked || report.auth_failed {
         return report;
     }
 
@@ -850,6 +957,9 @@ fn sync_library(
             }
         }
         Err(e) => fail(t!("account.sync.part.songs"), e, &mut report),
+    }
+    if report.auth_failed {
+        return report;
     }
 
     progress(t!("account.sync.step.albums"));
@@ -896,6 +1006,9 @@ fn sync_library(
         }
         Err(e) => fail(t!("account.sync.part.albums"), e, &mut report),
     }
+    if report.auth_failed {
+        return report;
+    }
 
     progress(t!("account.sync.step.artists"));
     match all_items(it, || it.library_subscriptions()) {
@@ -929,6 +1042,9 @@ fn sync_library(
         }
         Err(e) => fail(t!("account.sync.part.artists"), e, &mut report),
     }
+    if report.auth_failed {
+        return report;
+    }
 
     progress(t!("account.sync.step.playlists"));
     match all_items(it, || it.library_playlists()) {
@@ -944,6 +1060,9 @@ fn sync_library(
                 .collect();
             let total = playlists.len();
             for (n, p) in playlists.into_iter().enumerate() {
+                if report.auth_failed {
+                    return report;
+                }
                 progress(&t!(
                     "account.sync.step.playlist",
                     current = n + 1,
@@ -1151,7 +1270,17 @@ mod tests {
     fn switch(a: &mut Account, base: &str, to: u32) -> Option<AccountConfig> {
         let previous = a.config.clone().unwrap();
         let auth = a.auth_as(to, None).unwrap();
+        // As `switch_account` does: another index is asked outside the session.
+        let auth = if to == previous.auth_user {
+            auth
+        } else {
+            auth.detached()
+        };
         let result = fetch_account_on(InnerTube::default().with_api_base(base), auth);
+        assert!(
+            !a.session().unwrap().is_expired(),
+            "a probe doesn't expire it"
+        );
         a.finish_switch(COOKIE, previous, to, result)
     }
 
@@ -1186,7 +1315,7 @@ mod tests {
         };
         assert!(message.contains("Couldn't switch"), "{message}");
         assert!(
-            message.contains("401") || message.contains("invalid"),
+            message.contains(t!("account.error.signed_out")) || message.contains("invalid"),
             "{message}"
         );
 
@@ -1459,5 +1588,145 @@ mod tests {
         };
         let report = sync_library(&lib, &InnerTube::default(), liked, &|_| {});
         assert_eq!(report.errors.len(), 1, "only the liked songs");
+    }
+
+    /// A tiny fake music.youtube.com: answers every request with `status` and `{}`,
+    /// and logs the endpoints asked.
+    fn status_server(status: u16) -> (String, Arc<Mutex<Vec<String>>>) {
+        use std::io::{BufRead, BufReader, Read, Write};
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let base = format!("http://{}", listener.local_addr().unwrap());
+        let seen = Arc::new(Mutex::new(Vec::<String>::new()));
+        let log = seen.clone();
+        std::thread::spawn(move || {
+            for mut stream in listener.incoming().flatten() {
+                let mut reader = BufReader::new(stream.try_clone().unwrap());
+                let mut line = String::new();
+                reader.read_line(&mut line).unwrap();
+                let path = line.split_whitespace().nth(1).unwrap_or("/").to_owned();
+                let mut len = 0usize;
+                loop {
+                    let mut header = String::new();
+                    if reader.read_line(&mut header).unwrap_or(0) == 0 || header.trim().is_empty() {
+                        break;
+                    }
+                    if let Some(v) = header.to_ascii_lowercase().strip_prefix("content-length:") {
+                        len = v.trim().parse().unwrap_or(0);
+                    }
+                }
+                let mut body = vec![0; len];
+                let _ = reader.read_exact(&mut body);
+                let endpoint = path.trim_start_matches("/youtubei/v1/");
+                log.lock()
+                    .unwrap()
+                    .push(endpoint.split('?').next().unwrap_or_default().to_owned());
+                let _ = write!(
+                    stream,
+                    "HTTP/1.1 {status} X\r\nContent-Type: application/json\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{{}}"
+                );
+            }
+        });
+        (base, seen)
+    }
+
+    /// The keychain copy of a rotated cookie is the same login, not a new sign-in.
+    #[test]
+    fn rotated_cookie_written_back_keeps_the_session() {
+        let mut account = Account::new(Some(AccountConfig::default()));
+        assert!(account.set_cookie(Some("SAPISID=a; TS=1".into())));
+        let session = account.session().unwrap().clone();
+        let auth = account.auth().unwrap();
+        // Rotation (here: by hand) reaches every Auth handed out.
+        session.replace_cookie("SAPISID=a; TS=2");
+        assert_eq!(auth.cookie_header(), "SAPISID=a; TS=2");
+        let saved = session.take_persist_now().unwrap();
+        // The settings event brings the saved value back: nothing changes.
+        assert!(!account.set_cookie(Some(saved)));
+        assert!(Arc::ptr_eq(account.session().unwrap(), &session));
+        assert_eq!(account.auth().unwrap(), auth, "same session, same Auth");
+        // Another cookie is another login with a session of its own.
+        account.expired = true;
+        assert!(account.set_cookie(Some("SAPISID=b".into())));
+        assert!(!Arc::ptr_eq(account.session().unwrap(), &session));
+        assert!(!account.expired);
+        // Signing in again with the same cookie renews it.
+        account.expired = true;
+        assert!(!account.set_cookie(Some("SAPISID=b".into())));
+        account.renew("SAPISID=b");
+        assert!(!account.expired);
+        assert!(account.set_cookie(None));
+        assert!(account.session().is_none());
+    }
+
+    /// A rejected sign-in stops the sync at the first request instead of failing
+    /// every part, and queued ratings keep their attempts.
+    #[test]
+    fn sync_stops_at_a_rejected_sign_in() {
+        let (base, seen) = status_server(401);
+        let session = Session::new(COOKIE);
+        let it = InnerTube::default()
+            .with_api_base(&base)
+            .with_auth(Auth::new(COOKIE).with_session(session.clone()));
+        let lib = Library::open_in_memory().unwrap();
+        let full = SyncRequest {
+            kind: SyncKind::Full,
+            authoritative: true,
+            announce: true,
+        };
+        let report = sync_library(&lib, &it, full, &|_| {});
+        assert!(report.auth_failed);
+        assert_eq!(report.errors.len(), 1, "{:?}", report.errors);
+        assert!(report.errors[0].contains(t!("account.error.signed_out")));
+        assert_eq!(seen.lock().unwrap().len(), 1, "nothing after the first 401");
+        assert!(session.is_expired(), "no hooks: recovery fails");
+
+        // With ratings queued, the push already finds out; nothing is used up.
+        lib.queue_rating("v", music_core::innertube::Rating::Like)
+            .unwrap();
+        seen.lock().unwrap().clear();
+        let report = sync_library(&lib, &it, full, &|_| {});
+        assert!(report.auth_failed);
+        assert_eq!(seen.lock().unwrap().len(), 1);
+        assert_eq!(lib.pending_ratings().unwrap()[0].attempts, 0);
+    }
+
+    /// While the session is known to be expired, a like is saved and queued without
+    /// asking YouTube (and reported as a sign-in problem, not a network one).
+    #[test]
+    fn likes_wait_while_the_sign_in_is_expired() {
+        let (base, seen) = status_server(401);
+        let session = Session::new(COOKIE);
+        let it = InnerTube::default()
+            .with_api_base(&base)
+            .with_auth(Auth::new(COOKIE).with_session(session.clone()));
+        let lib = Library::open_in_memory().unwrap();
+        let errors = crate::store::rate_tracks(
+            &lib,
+            &it,
+            true,
+            &[song("a"), song("b")],
+            music_core::innertube::Rating::Like,
+        )
+        .unwrap();
+        assert_eq!(errors.len(), 2);
+        assert!(errors.iter().all(music_core::Error::is_auth));
+        assert_eq!(seen.lock().unwrap().len(), 1, "only the first like asked");
+        assert!(session.is_expired());
+        let errors = crate::store::rate_tracks(
+            &lib,
+            &it,
+            true,
+            &[song("c")],
+            music_core::innertube::Rating::Like,
+        )
+        .unwrap();
+        assert!(errors[0].is_auth());
+        assert_eq!(
+            seen.lock().unwrap().len(),
+            1,
+            "expired: YouTube isn't asked"
+        );
+        assert_eq!(lib.pending_ratings().unwrap().len(), 3);
+        assert_eq!(describe_error(&errors[0]), t!("account.error.signed_out"));
     }
 }

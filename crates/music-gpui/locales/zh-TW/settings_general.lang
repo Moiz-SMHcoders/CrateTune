@@ -8,6 +8,7 @@ settings.account.not_signed_in = 尚未登入。所有功能都能以匿名方�
 settings.account.sign_in_google = 使用 Google 登入…
 settings.account.paste_cookie = 貼上 Cookie…
 settings.account.google_refused = 如果 Google 拒絕登入視窗（「這個瀏覽器或應用程式可能不安全」），請使用「貼上 Cookie」。
+settings.account.profile_note = 登入視窗保留自己的瀏覽器設定檔，讓 {app} 能在背景續期你的工作階段。登出時會將其刪除。
 settings.account.last_synced = 上次同步：{date}
 settings.account.not_synced = 尚未同步
 settings.account.sync_now = 立即同步

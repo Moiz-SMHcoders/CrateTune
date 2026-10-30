@@ -8,6 +8,7 @@ settings.account.not_signed_in = ログインしていません。すべての�
 settings.account.sign_in_google = Google でログイン…
 settings.account.paste_cookie = Cookie を貼り付け…
 settings.account.google_refused = Google にログインウインドウを拒否された場合（「このブラウザまたはアプリは安全でない可能性があります」）は、「Cookie を貼り付け」を使用してください。
+settings.account.profile_note = ログインウィンドウは専用のブラウザプロファイルを保持し、{app} がバックグラウンドでセッションを更新できるようにします。ログアウトすると削除されます。
 settings.account.last_synced = 最終同期：{date}
 settings.account.not_synced = 未同期
 settings.account.sync_now = 今すぐ同期

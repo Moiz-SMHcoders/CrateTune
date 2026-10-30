@@ -8,6 +8,7 @@ settings.account.not_signed_in = 未登录。所有功能都可以匿名使用�
 settings.account.sign_in_google = 使用 Google 登录…
 settings.account.paste_cookie = 粘贴 Cookie…
 settings.account.google_refused = 如果 Google 拒绝了登录窗口（“此浏览器或应用可能不安全”），请使用“粘贴 Cookie”。
+settings.account.profile_note = 登录窗口保留自己的浏览器配置文件，以便 {app} 在后台续期你的会话。退出登录时会将其删除。
 settings.account.last_synced = 上次同步：{date}
 settings.account.not_synced = 尚未同步
 settings.account.sync_now = 立即同步

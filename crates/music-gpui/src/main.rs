@@ -49,7 +49,6 @@ mod identity;
 mod integrations;
 mod karaoke;
 mod library_script;
-#[cfg(any(target_os = "macos", target_os = "windows"))]
 mod login_webview;
 mod logo;
 mod look_script;
@@ -80,6 +79,7 @@ mod search_box;
 mod search_history;
 mod secrets;
 mod services;
+mod session_keeper;
 mod settings;
 mod shortcuts;
 mod smooth_scroll;

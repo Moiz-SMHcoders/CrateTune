@@ -9,6 +9,7 @@ settings.account.not_signed_in = No has iniciado sesión. Todo funciona de forma
 settings.account.sign_in_google = Iniciar sesión con Google…
 settings.account.paste_cookie = Pegar cookie…
 settings.account.google_refused = Si Google rechaza la ventana de inicio de sesión (“Es posible que este navegador o esta app no sean seguros”), usa “Pegar cookie”.
+settings.account.profile_note = La ventana de inicio de sesión guarda su propio perfil de navegador para que {app} pueda renovar tu sesión en segundo plano. Al cerrar sesión se borra.
 settings.account.last_synced = Última sincronización: {date}
 settings.account.not_synced = Aún sin sincronizar
 settings.account.sync_now = Sincronizar

@@ -246,6 +246,26 @@ then closes the app).
 * [ ] **Fonts**: no missing glyphs (boxes) in titles with accents / CJK characters.
 * [ ] **Folder picker**: Local files → add a music folder → Rescan finds MP3 / FLAC / M4A.
 
+### 5.8a Staying signed in (Windows first; also macOS)
+
+The session upkeep is checked against fake servers only (see README, "Keeping the session
+alive"). With a real account:
+
+* [ ] Sign in with **Sign in with Google…**, leave the app running (or closed) for a day,
+      then like a song. It should work without any message. With `MUSIC_TRACE=1`, a line
+      "saving the updated YouTube Music cookie" now and then means Google's `Set-Cookie`
+      rotation arrives (unverified so far).
+* [ ] If YouTube rejects the sign-in, the console says "renewing it in the background" and
+      no window appears; then either the like goes through, or **one** notification "Your
+      YouTube Music sign-in expired" with **Sign in again** appears (no repeated toasts).
+      Settings → Account shows the same message and button. Likes made meanwhile are kept;
+      after **Sign in again** they reach YouTube Music (check on the phone).
+* [ ] **Sign out clears the profile**: sign out, then check that
+      `%LOCALAPPDATA%\cratetune\data\SignIn` is gone (or goes at the next sign-in; a
+      `SignIn.clear` file next to it means it was in use). **Sign in with Google…** then
+      asks for the Google account again instead of signing straight in.
+* [ ] macOS: same flow; after sign-out, **Sign in with Google…** asks for the account again.
+
 ### 5.9 Player bar (Settings → Appearance → Player bar)
 
 * [ ] Hover the progress bar: a thumb and the time under the pointer appear; drag seeks.

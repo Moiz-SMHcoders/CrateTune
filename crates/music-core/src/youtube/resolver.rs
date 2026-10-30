@@ -435,15 +435,28 @@ impl WebResolver {
                 .duration_since(SystemTime::UNIX_EPOCH)
                 .unwrap_or_default()
                 .as_secs();
-            if let Some(authorization) = auth.authorization(client.origin(), now) {
+            // The session's current cookie (shared with the browse client).
+            let (cookie, _) = auth.signing_cookie();
+            if let Some(authorization) =
+                crate::innertube::authorization_for(&cookie, client.origin(), now)
+            {
                 req = req
-                    .header("Cookie", auth.cookie.as_str())
+                    .header("Cookie", cookie)
                     .header("Authorization", authorization)
                     .header("X-Goog-AuthUser", auth.auth_user.to_string())
                     .header("X-Origin", client.origin());
             }
         }
         let mut resp = req.send_json(&body)?;
+        if let Some(auth) = &auth {
+            // Rotated session cookies, as for every signed-in InnerTube response.
+            let lines = resp
+                .headers()
+                .get_all(ureq::http::header::SET_COOKIE)
+                .iter()
+                .filter_map(|v| v.to_str().ok());
+            auth.absorb_set_cookies("https://www.youtube.com", false, lines);
+        }
         let player: Value = resp.body_mut().read_json()?;
         let status = player
             .pointer("/playabilityStatus/status")

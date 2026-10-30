@@ -38,6 +38,9 @@ pub struct RatingPush {
     pub left: usize,
     /// The first error (the push stops there: offline, every request would fail).
     pub error: Option<String>,
+    /// The push stopped because YouTube rejected the sign-in; nothing was counted as
+    /// an attempt. Retry once the session works again.
+    pub auth_failed: bool,
 }
 
 impl Library {
@@ -182,7 +185,8 @@ impl Library {
     }
 
     /// Sends queued ratings with `it` (signed in), oldest first, at most `limit`.
-    /// Stops at the first failure (that one is counted as an attempt).
+    /// Stops at the first failure (counted as an attempt, unless it was a rejected
+    /// sign-in: see [`RatingPush::auth_failed`]).
     pub fn push_pending_ratings(&self, it: &InnerTube, limit: usize) -> Result<RatingPush> {
         let pending = self.pending_ratings()?;
         let mut report = RatingPush::default();
@@ -194,7 +198,10 @@ impl Library {
                 }
                 Err(e) => {
                     let error = e.to_string();
-                    if self.pending_rating_failed(&p.video_id, &error)? {
+                    if e.is_auth() {
+                        // Not this rating's fault: it waits for a working session.
+                        report.auth_failed = true;
+                    } else if self.pending_rating_failed(&p.video_id, &error)? {
                         report.dropped += 1;
                     }
                     report.error = Some(error);
@@ -403,5 +410,46 @@ mod tests {
         );
         assert_eq!(lib.rating("a").unwrap(), Rating::Like, "local state kept");
         assert_eq!(lib.rating("b").unwrap(), Rating::Dislike);
+    }
+
+    /// An expired sign-in pauses the queue: no attempt is counted, nothing is
+    /// dropped, and it all goes out once the session works again.
+    #[test]
+    fn expired_sign_in_pauses_the_queue() {
+        use std::sync::Arc;
+        use std::sync::atomic::{AtomicBool, Ordering};
+        let signed_in = Arc::new(AtomicBool::new(false));
+        let ok = signed_in.clone();
+        let server = TestServer::start_http(move |_| {
+            let status = if ok.load(Ordering::SeqCst) { 200 } else { 401 };
+            Reply::Full {
+                status,
+                headers: vec!["Content-Type: application/json".into()],
+                body: b"{}".to_vec(),
+            }
+        });
+        let it = InnerTube::default()
+            .with_api_base(&server.base)
+            .with_auth(crate::innertube::Auth::new("SAPISID=fake; SID=fake"));
+        let lib = Library::open_in_memory().unwrap();
+        lib.queue_rating("a", Rating::Like).unwrap();
+        lib.queue_rating("b", Rating::Like).unwrap();
+        // Far more pushes than the attempt budget.
+        for _ in 0..MAX_RATING_ATTEMPTS + 5 {
+            let push = lib.push_pending_ratings(&it, 50).unwrap();
+            assert!(push.auth_failed);
+            assert_eq!((push.sent, push.dropped, push.left), (0, 0, 2));
+        }
+        assert!(
+            lib.pending_ratings()
+                .unwrap()
+                .iter()
+                .all(|p| p.attempts == 0)
+        );
+
+        signed_in.store(true, Ordering::SeqCst);
+        let push = lib.push_pending_ratings(&it, 50).unwrap();
+        assert!(!push.auth_failed);
+        assert_eq!((push.sent, push.left), (2, 0));
     }
 }
