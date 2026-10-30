@@ -33,7 +33,7 @@ use gpui_component::{
 };
 use music_core::{InnerTube, PlaybackState, Player, Track};
 
-use crate::anim::Frame;
+use crate::anim::{Frame, RenderRate};
 use crate::browse::ContentFilter;
 use crate::clock::{Engine, SmoothClock};
 use crate::lyrics::LyricsHub;
@@ -139,8 +139,8 @@ pub struct MusicApp {
     pub(crate) mini: Option<AnyWindowHandle>,
     /// Menu-bar item (macOS; `MUSIC_TRAY=0` disables it).
     pub(crate) tray: Option<crate::tray::Tray>,
-    /// `MUSIC_TIMINGS=1`: prints renders/s and the worst frame gap once a second.
-    frame_stats: Option<FrameStats>,
+    /// `MUSIC_TIMINGS=1`: renders/s and frame intervals once a second.
+    render_rate: Option<RenderRate>,
     /// Lyrics service, per-track lyrics and translations (`lyrics.rs`).
     pub(crate) lyrics: LyricsHub,
     /// Per video id, for the last few tracks (see `now_playing::ensure_hires`).
@@ -355,7 +355,7 @@ impl MusicApp {
                 .map_or(true, |v| v != "0")
                 .then(crate::tray::Tray::new)
                 .flatten(),
-            frame_stats: std::env::var_os("MUSIC_TIMINGS").map(|_| FrameStats::default()),
+            render_rate: RenderRate::from_env("app"),
             lyrics: LyricsHub::default(),
             hires: HashMap::new(),
             hires_order: VecDeque::new(),
@@ -1056,8 +1056,8 @@ impl Render for MusicApp {
         if custom && let Some(edges) = self.resize_edges(window) {
             root = root.child(edges);
         }
-        if let Some(stats) = &mut self.frame_stats {
-            stats.record(frame.now, frame.is_animating());
+        if let Some(rate) = &mut self.render_rate {
+            rate.record(frame.now, frame.is_animating());
         }
         if let Some(at) = frame.finish(window) {
             self.schedule_np_wake(at, cx);
@@ -1070,41 +1070,6 @@ impl Render for MusicApp {
 impl gpui::Focusable for MusicApp {
     fn focus_handle(&self, _: &App) -> FocusHandle {
         self.focus.clone()
-    }
-}
-
-#[derive(Default)]
-struct FrameStats {
-    window_start: Option<Instant>,
-    last: Option<Instant>,
-    /// The last render asked for the next frame (gaps after idle renders, while
-    /// waiting for a timed wake-up, aren't dropped frames).
-    last_animating: bool,
-    frames: u32,
-    worst_gap: Duration,
-}
-
-impl FrameStats {
-    fn record(&mut self, now: Instant, animating: bool) {
-        if let Some(last) = self.last.filter(|_| self.last_animating) {
-            self.worst_gap = self.worst_gap.max(now - last);
-        }
-        self.last = Some(now);
-        self.last_animating = animating;
-        self.frames += 1;
-        let start = *self.window_start.get_or_insert(now);
-        if now - start >= Duration::from_secs(1) {
-            eprintln!(
-                "music-gpui: {} renders/s, worst gap {:.1} ms",
-                self.frames,
-                self.worst_gap.as_secs_f64() * 1e3
-            );
-            *self = Self {
-                last: Some(now),
-                last_animating: animating,
-                ..Self::default()
-            };
-        }
     }
 }
 

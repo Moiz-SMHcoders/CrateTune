@@ -1800,7 +1800,7 @@ item's ACL is tied to the binary). Secrets are never logged.
 | `MUSIC_REDUCE_MOTION=1\|0` | pretend the OS asks for reduced motion (or doesn't); Animations → System follows it |
 | `MUSIC_BAR_SPECTRUM_DUMP=1` | print the player bar analyzer's band statistics once a second (tuning the Equalizer style) |
 | `MUSIC_MALLOC=system` | keep macOS's default allocator behaviour (no re-exec with `MallocSpaceEfficient=1`, see `memory.rs`; for comparisons) |
-| `MUSIC_TRACE=1` | log playback transitions, seeks, saves, route changes, artwork downloads; `MUSIC_TIMINGS=1`: renders/s + worst frame gap |
+| `MUSIC_TRACE=1` | log playback transitions, seeks, saves, route changes, artwork downloads; `MUSIC_TIMINGS=1`: renders/s and frame intervals (p50 / p95 / max) of the window (`app`) and the player bar (`bar`), once a second |
 | `MUSIC_SCRIPT="5:@next,9:@seek=75,30:@quit"` | timed actions (any build) |
 | `MUSIC_TITLEBAR=system\|custom` | this session: the system title bar + old header, or the custom top bar (overrides Appearance → Window) |
 | `MUSIC_TITLEBAR_STYLE=windows\|linux\|mac` | debug / screenshot builds: draw that platform's window controls in the top bar |
