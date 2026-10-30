@@ -117,13 +117,16 @@ fn relay_host_two_guests_and_a_transfer() {
     // Two guests through the relay; approval runs on the host as on the LAN.
     let ann = TogetherClient::connect(&join, "Ann", "ann-client").unwrap();
     let bob = TogetherClient::connect(&join, "Bob", "bob-client").unwrap();
-    for _ in 0..2 {
-        let p = wait_for(|| {
-            host.poll_events().into_iter().find_map(|e| match e {
-                ServerEvent::JoinRequested(p) => Some(p),
-                _ => None,
-            })
-        });
+    // Both requests can arrive in one poll: keep every one seen.
+    let mut requests = Vec::new();
+    wait_for(|| {
+        requests.extend(host.poll_events().into_iter().filter_map(|e| match e {
+            ServerEvent::JoinRequested(p) => Some(p),
+            _ => None,
+        }));
+        (requests.len() >= 2).then_some(())
+    });
+    for p in &requests {
         host.approve(&p.id, true);
     }
     let ann_id = wait_for(|| ann.participant_id());
