@@ -249,6 +249,26 @@ impl TogetherServer {
         })
     }
 
+    /// A relayed session's short room code (see [`super::online`]): the relay
+    /// makes one on first ask and gives the same one back later (also to a host
+    /// that took the room over). Proves the room with its secret, which the relay
+    /// only knows hashed. Blocking (one HTTP request, `timeout` at most).
+    pub fn register_code(
+        &self,
+        timeout: Duration,
+    ) -> std::result::Result<String, super::CodeError> {
+        let Some((url, secret)) = &self.inner.relay else {
+            return Err(super::CodeError::Unsupported);
+        };
+        super::online::register_code(
+            url,
+            &self.inner.session_id,
+            &self.inner.session_key,
+            secret,
+            timeout,
+        )
+    }
+
     /// The relay this session runs through (normalized `ws(s)://` URL).
     pub fn relay_url(&self) -> Option<&str> {
         self.inner.relay.as_ref().map(|(url, _)| url.as_str())

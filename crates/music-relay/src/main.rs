@@ -6,7 +6,7 @@
 //!
 //! Plain WebSockets; put it behind a TLS reverse proxy for `wss://` (README).
 
-use std::net::SocketAddr;
+use std::net::{IpAddr, SocketAddr};
 use std::process::ExitCode;
 use std::time::Duration;
 
@@ -26,10 +26,14 @@ USAGE: music-relay [OPTIONS]
   --max-message-kib N    largest guest message in KiB (default 1024)
   --rate N               messages per second per guest (default 20; burst 3×)
   --idle-timeout SECS    close silent connections (default 60)
+  --resolve-per-minute N room-code look-ups per minute per address (default 10)
+  --trust-proxy IP       a reverse proxy whose X-Forwarded-For names the client
+                         (repeatable; env MUSIC_RELAY_TRUST_PROXY, comma-separated)
   -v, --verbose          log rooms and connections
   -h, --help             this text
 
 Health check: GET /health → {\"status\":\"ok\",\"rooms\":…,\"guests\":…,\"connections\":…}
+Room codes: POST /v1/together/sessions (host), POST /v1/together/sessions/resolve (guest).
 TLS: run it behind a reverse proxy (Caddy, nginx) and give the app the wss:// URL."
 );
 
@@ -39,6 +43,14 @@ fn parse(args: &[String]) -> Result<Config, String> {
         config.listen = listen
             .parse()
             .map_err(|e| format!("MUSIC_RELAY_LISTEN: {e}"))?;
+    }
+    if let Ok(list) = std::env::var("MUSIC_RELAY_TRUST_PROXY") {
+        for ip in list.split(',').map(str::trim).filter(|s| !s.is_empty()) {
+            config.trusted_proxies.push(
+                ip.parse()
+                    .map_err(|e| format!("MUSIC_RELAY_TRUST_PROXY: {ip}: {e}"))?,
+            );
+        }
     }
     let mut it = args.iter();
     while let Some(arg) = it.next() {
@@ -71,6 +83,15 @@ fn parse(args: &[String]) -> Result<Config, String> {
             "--idle-timeout" => {
                 config.idle_timeout = Duration::from_secs(number(arg, value(arg)?)? as u64)
             }
+            "--resolve-per-minute" => {
+                let n = number(arg, value(arg)?)?;
+                config.resolve_per_minute = u32::try_from(n).unwrap_or(u32::MAX);
+            }
+            "--trust-proxy" => config.trusted_proxies.push(
+                value(arg)?
+                    .parse::<IpAddr>()
+                    .map_err(|e| format!("--trust-proxy: {e}"))?,
+            ),
             "-v" | "--verbose" => config.verbose = true,
             other => return Err(format!("unknown option {other}")),
         }
@@ -124,9 +145,24 @@ mod tests {
             "5",
             "--rate",
             "10",
+            "--resolve-per-minute",
+            "4",
+            "--trust-proxy",
+            "192.168.0.52",
+            "--trust-proxy",
+            "::1",
             "-v",
         ]))
         .unwrap();
+        assert_eq!(c.resolve_per_minute, 4);
+        assert_eq!(
+            c.trusted_proxies,
+            vec![
+                "192.168.0.52".parse::<IpAddr>().unwrap(),
+                "::1".parse().unwrap()
+            ]
+        );
+        assert!(parse(&args(&["--trust-proxy", "proxy.lan"])).is_err());
         assert_eq!(c.listen.port(), 9000);
         assert_eq!(
             (c.max_guests_per_room, c.rate_per_sec, c.burst),

@@ -6,6 +6,7 @@ license = "GPL-3.0-only"
 description = "Self-hostable relay server for Music Together sessions across networks"
 
 [dependencies]
+getrandom = "0.3"
 music-net = { path = "../music-net" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

@@ -1,14 +1,18 @@
 //! Relay + host + two guests on localhost, over real sockets: joining through the
 //! relay (wrong key, full room), room state, clock, suggestions, the health
-//! endpoint, a host transfer the relay re-routes, and the end of the session.
+//! endpoint, a host transfer the relay re-routes, and the end of the session;
+//! room codes (a guest joins by code, the code survives the transfer and goes
+//! with the room, the host key never comes back, look-ups are rate-limited).
 
 use std::io::{Read as _, Write as _};
 use std::net::TcpStream;
 use std::time::{Duration, Instant};
 
+use music_core::together::online::resolve_code;
+use music_core::together::relay::sha256_hex;
 use music_core::together::{
-    AddTrackMode, ClientEvent, HostOptions, JoinInfo, RoomSettings, RoomState, ServerEvent,
-    TogetherClient, TogetherServer, TogetherTrack, new_id,
+    AddTrackMode, ClientEvent, CodeError, HostOptions, JoinInfo, RoomSettings, RoomState,
+    ServerEvent, TogetherClient, TogetherServer, TogetherTrack, display_code, new_id,
 };
 use music_relay::{Config, Relay};
 
@@ -53,6 +57,29 @@ fn refused(client: &TogetherClient) -> String {
             _ => None,
         })
     })
+}
+
+const T: Duration = Duration::from_secs(5);
+
+/// A raw `POST` to the relay: (status, body).
+fn post(relay: &Relay, path: &str, body: &str) -> (u16, String) {
+    let mut stream = TcpStream::connect(relay.addr()).unwrap();
+    write!(
+        stream,
+        "POST {path} HTTP/1.1\r\nHost: relay\r\nContent-Type: application/json\r\n\
+         Content-Length: {}\r\n\r\n{body}",
+        body.len()
+    )
+    .unwrap();
+    let mut out = String::new();
+    stream.read_to_string(&mut out).unwrap();
+    let status = out
+        .split_whitespace()
+        .nth(1)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(0);
+    let body = out.split_once("\r\n\r\n").map_or("", |(_, b)| b).to_owned();
+    (status, body)
 }
 
 fn health(relay: &Relay) -> String {
@@ -115,8 +142,13 @@ fn relay_host_two_guests_and_a_transfer() {
     assert_eq!(refused(&mallory), "invalid_session");
 
     // Two guests through the relay; approval runs on the host as on the LAN.
+    // Ann has the link; Bob types the room code.
+    let code = host.register_code(T).unwrap();
+    assert_eq!(host.register_code(T).unwrap(), code, "one code per room");
+    let by_code = resolve_code(&url, &display_code(&code).to_lowercase(), T).unwrap();
+    assert_eq!(by_code, join, "the code leads to the same session");
     let ann = TogetherClient::connect(&join, "Ann", "ann-client").unwrap();
-    let bob = TogetherClient::connect(&join, "Bob", "bob-client").unwrap();
+    let bob = TogetherClient::connect(&by_code, "Bob", "bob-client").unwrap();
     // Both requests can arrive in one poll: keep every one seen.
     let mut requests = Vec::new();
     wait_for(|| {
@@ -214,6 +246,9 @@ fn relay_host_two_guests_and_a_transfer() {
         })
     });
     assert_eq!(moved, join, "the same relay link keeps working");
+    // The room keeps its code with the new host.
+    assert_eq!(new_host.register_code(T).unwrap(), code);
+    assert_eq!(relay.stats().codes, 1);
     ann.leave();
     // Bob is re-routed to Ann without approval.
     wait_for(|| {
@@ -252,4 +287,122 @@ fn relay_host_two_guests_and_a_transfer() {
         assert_eq!(reason.as_deref(), Some("Session ended"));
     }
     wait_for(|| (relay.stats().rooms == 0).then_some(()));
+    // The code went with the room.
+    assert_eq!(relay.stats().codes, 0);
+    assert_eq!(resolve_code(&url, &code, T), Err(CodeError::NotFound));
+}
+
+#[test]
+fn room_codes_keep_the_host_key_and_are_rate_limited() {
+    let relay = Relay::start(Config {
+        listen: "127.0.0.1:0".parse().unwrap(),
+        resolve_per_minute: 6,
+        ..Config::default()
+    })
+    .unwrap();
+    let url = format!("ws://{}", relay.addr());
+    let (sid, key, secret) = (new_id(), new_id(), new_id());
+    let mut host = TogetherServer::start_relay(
+        &url,
+        sid.clone(),
+        key.clone(),
+        "Hana".into(),
+        RoomSettings::default(),
+        HostOptions {
+            relay_secret: Some(secret.clone()),
+            ..HostOptions::default()
+        },
+    )
+    .unwrap();
+    // Only the room's host (guest key + host key) gets a code.
+    let create = |guest: &str, host_key: &str| {
+        post(
+            &relay,
+            "/v1/together/sessions",
+            &format!(r#"{{"sessionId":"{sid}","guestKey":"{guest}","hostKey":"{host_key}"}}"#),
+        )
+    };
+    assert_eq!(create(&key, "wrong").0, 403);
+    assert_eq!(create("wrong", &secret).0, 403);
+    assert_eq!(
+        post(
+            &relay,
+            "/v1/together/sessions",
+            r#"{"sessionId":"nope","guestKey":"a","hostKey":"b"}"#
+        )
+        .0,
+        403
+    );
+    assert_eq!(post(&relay, "/v1/together/sessions", "{}").0, 400);
+    assert_eq!(relay.stats().codes, 0);
+    let (status, created) = create(&key, &secret);
+    assert_eq!(status, 200, "{created}");
+    let code = host.register_code(T).unwrap();
+    assert!(created.contains(&code), "{created}");
+    assert_eq!(code.len(), 8);
+    assert!(!created.contains(&secret) && !created.contains(&sha256_hex(&secret)));
+
+    // Resolving gives the guest key and the WebSocket path, never the host key.
+    // (Attempt 1.)
+    let (status, resolved) = post(
+        &relay,
+        "/v1/together/sessions/resolve",
+        &format!(r#"{{"code":"{}"}}"#, display_code(&code).to_lowercase()),
+    );
+    assert_eq!(status, 200, "{resolved}");
+    let value: serde_json::Value = serde_json::from_str(&resolved).unwrap();
+    assert_eq!(value["sessionId"], sid.as_str());
+    assert_eq!(value["guestKey"], key.as_str());
+    assert_eq!(value["wsUrl"], "/");
+    assert!(value.get("hostKey").is_none());
+    assert!(!resolved.contains(&secret) && !resolved.contains(&sha256_hex(&secret)));
+
+    // A guest joins with the code alone (attempt 2); the host still decides.
+    let join = resolve_code(&url, &code, T).unwrap();
+    let ann = TogetherClient::connect(&join, "Ann", "ann").unwrap();
+    assert_eq!(joined(&host), "Ann");
+    wait_for(|| ann.participant_id());
+
+    // Wrong and malformed codes (attempts 3–5), the method and the size.
+    let other = if code.starts_with('A') {
+        "BBBBBBBB"
+    } else {
+        "AAAAAAAA"
+    };
+    assert_eq!(resolve_code(&url, other, T), Err(CodeError::NotFound));
+    let (status, body) = post(&relay, "/v1/together/sessions/resolve", r#"{"code":"x"}"#);
+    assert_eq!((status, body.contains("bad_code")), (400, true), "{body}");
+    let (status, _) = post(&relay, "/v1/together/sessions/resolve", "{}");
+    assert_eq!(status, 400);
+    let mut stream = TcpStream::connect(relay.addr()).unwrap();
+    stream
+        .write_all(b"GET /v1/together/sessions/resolve HTTP/1.1\r\nHost: relay\r\n\r\n")
+        .unwrap();
+    let mut out = String::new();
+    stream.read_to_string(&mut out).unwrap();
+    assert!(out.starts_with("HTTP/1.1 405"), "{out}");
+    let big = format!(r#"{{"code":"{}"}}"#, "A".repeat(5000));
+    assert_eq!(post(&relay, "/v1/together/sessions/resolve", &big).0, 413);
+
+    // Attempt 6 is the last this minute; then even the right code is refused.
+    assert!(resolve_code(&url, &code, T).is_ok());
+    match resolve_code(&url, &code, T) {
+        Err(CodeError::RateLimited(Some(secs))) => assert!((1..=10).contains(&secs), "{secs}"),
+        other => panic!("expected a rate limit, got {other:?}"),
+    }
+    let (status, body) = post(
+        &relay,
+        "/v1/together/sessions/resolve",
+        &format!(r#"{{"code":"{code}"}}"#),
+    );
+    assert_eq!(status, 429, "{body}");
+    // The host's own requests aren't limited.
+    assert_eq!(host.register_code(T).unwrap(), code);
+
+    // The room ends: its code is gone.
+    host.stop();
+    wait_for(|| (relay.stats().rooms == 0).then_some(()));
+    assert_eq!(relay.stats().codes, 0);
+    assert_eq!(create(&key, &secret).0, 403);
+    drop(ann);
 }

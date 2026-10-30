@@ -23,16 +23,18 @@ mod client;
 mod conn;
 pub mod link;
 pub mod messages;
+pub mod online;
 pub mod relay;
 mod server;
 pub mod sync;
 
 pub use client::{ClientEvent, TogetherClient};
-pub use link::{JoinInfo, local_ip, relay_url};
+pub use link::{JoinInfo, JoinRequest, local_ip, relay_url};
 pub use messages::{
     AddTrackMode, ControlAction, Message, PROTOCOL_VERSION, Participant, Role, RoomSettings,
     RoomState, TogetherTrack, queue_hash,
 };
+pub use online::{CodeError, RelaySource, display_code, normalize_code};
 pub use server::{HOST_ID, HostOptions, ServerEvent, TogetherServer};
 pub use sync::{ClockSnapshot, GuestSync, LocalPlayback, SyncPlan, TogetherClock};
 
