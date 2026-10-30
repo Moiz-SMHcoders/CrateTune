@@ -5,6 +5,8 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.2] — 2026-10-30
+
 ### Added
 
 * `scripts/perf-windows.ps1`: CPU, memory and frame-rate check of a release build on
