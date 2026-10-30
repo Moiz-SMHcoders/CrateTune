@@ -48,10 +48,14 @@ fn shared() -> &'static RwLock<Shared> {
     static SHARED: OnceLock<RwLock<Shared>> = OnceLock::new();
     SHARED.get_or_init(|| {
         // Until `configure` is called: ureq defaults (incl. proxy env vars) + 30 s timeout.
-        let agent = ureq::Agent::config_builder()
-            .timeout_global(Some(DEFAULT_TIMEOUT))
-            .build()
-            .into();
+        let agent = match build_agent(&HttpConfig::default()) {
+            // Fixture mode: through the closed proxy.
+            Ok((agent, _)) if crate::fixtures::enabled() => agent,
+            _ => ureq::Agent::config_builder()
+                .timeout_global(Some(DEFAULT_TIMEOUT))
+                .build()
+                .into(),
+        };
         RwLock::new(Shared {
             config: HttpConfig::default(),
             agent,
@@ -61,7 +65,13 @@ fn shared() -> &'static RwLock<Shared> {
 }
 
 fn proxy_of(config: &HttpConfig) -> Result<Option<ureq::Proxy>> {
-    Ok(match config.proxy.as_deref().map(str::trim) {
+    // Fixture mode (`MUSIC_FIXTURES`): nothing leaves the machine.
+    let proxy = if crate::fixtures::enabled() {
+        Some(crate::fixtures::DEAD_PROXY)
+    } else {
+        config.proxy.as_deref()
+    };
+    Ok(match proxy.map(str::trim) {
         Some(url) if !url.is_empty() => Some(
             ureq::Proxy::new(url)
                 .map_err(|e| Error::Parse(format!("invalid proxy {url:?}: {e}")))?,

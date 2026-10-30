@@ -23,9 +23,22 @@ versions follow [SemVer](https://semver.org/).
   it shows, with **Change**, until dismissed.
 * Script hooks: `@shelf-status`, `@shelf-scroll=N:next|prev|start|end`,
   `@drag=X1;Y1;X2;Y2`; `@scroll` / `@wheel` take an optional DX and `shift`.
+* `scripts/perf-macos.sh`, the macOS counterpart of `perf-windows.ps1` (CPU from `ps`,
+  memory from `footprint`, the display's refresh rate from `system_profiler`), plus a 6 ms
+  budget for a full draw of Home (a 180 Hz frame is 5.5 ms).
+* CI: a frame-time check on macOS and Windows ("perf: frame-time",
+  `scripts/perf-frames.sh`). It draws Home offline from recorded responses at the top and
+  at the end of a long feed and fails if a frame costs more than 1.5x further down (the
+  Windows stutter fixed in 0.2.2) or exceeds a ceiling for the runners.
+* `MUSIC_FIXTURES=DIR`: offline fixture mode (InnerTube from recorded JSON files,
+  generated artwork, no network) for perf checks and screenshots; `MUSIC_NO_CULL=1` turns
+  section culling off for comparisons.
 
 ### Changed
 
+* A shelf skipped because it is far outside the window is now a single empty element
+  (it was two), so a long feed adds next to nothing to a frame: on GitHub's Windows
+  runner the end of a 60-shelf offline feed draws about as fast as the top of Home.
 * Changing the **content country** (Settings → Content & region) now also starts a new
   anonymous YouTube visitor, so the signed-out Home feed follows the new region instead of
   the old visitor's history (the visitor is otherwise kept across launches).

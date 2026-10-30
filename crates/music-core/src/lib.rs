@@ -49,6 +49,7 @@ pub mod downloads;
 mod dsp;
 pub mod equalizer;
 mod error;
+pub mod fixtures;
 pub mod http;
 pub mod innertube;
 pub mod library;
