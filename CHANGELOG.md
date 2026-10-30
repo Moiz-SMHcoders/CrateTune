@@ -5,6 +5,8 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.3] — 2026-10-30
+
 ### Added
 
 * **Sideways rows scroll every way**, like YouTube Music and Spotify: **‹ ›** at the right
