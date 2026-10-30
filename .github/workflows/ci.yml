@@ -71,3 +71,12 @@ jobs:
         # Release: the engine tests play audio against the clock, too slow unoptimized
         # on the hosted runners.
         run: scripts/ci-run.sh cargo test --workspace --release
+
+      # Offline Home (InnerTube fixtures), full window draws near the top and at the end
+      # of a long feed: fails if a frame costs more the further the page is scrolled,
+      # or exceeds a ceiling for these runners (docs/TESTING.md, 6.3).
+      # Linux runners have no display or GPU; skipped there.
+      - name: "perf: frame-time"
+        if: runner.os != 'Linux'
+        shell: bash
+        run: scripts/perf-frames.sh --max-ms 30

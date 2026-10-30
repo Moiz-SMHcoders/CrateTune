@@ -27,7 +27,7 @@ mod client;
 #[cfg(test)]
 mod fixture_tests;
 mod models;
-mod pages;
+pub(crate) mod pages;
 mod parse;
 
 use serde_json::{Value, json};

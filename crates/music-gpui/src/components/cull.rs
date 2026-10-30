@@ -10,16 +10,20 @@
 //! [`Sections::cull`] wraps one section. A tiny `canvas` records where the section
 //! sits in the page and how tall it is each time it is drawn; while it is more than
 //! half a viewport above or below what is visible ([`MARGIN`]), the next frames draw
-//! an empty box of that height instead of building it. The page's layout and
-//! scrollbar stay the same, and the box keeps recording its position, so sections
-//! above it can grow or shrink, and a box that a jump brings into view asks for the
-//! next frame at once. A section is always built when its position is unknown or
+//! an empty box of that height (the canvas itself) instead of building it. The page's
+//! layout and scrollbar stay the same, and the box keeps recording its position, so
+//! sections above it can grow or shrink, and a box that a jump brings into view asks
+//! for the next frame at once. A section is always built when its position is unknown or
 //! stale: the first frame, after its content changed (`key`), after the viewport
 //! width or the font size changed.
 //!
 //! Horizontal shelves inside a culled section lose GPUI's element state while
 //! skipped; [`Sections::x_scroll`] hands out row states (`hrow.rs`) that keep their
 //! offset.
+//!
+//! `MUSIC_NO_CULL=1` builds every section on every frame (as before culling), to
+//! measure what culling saves and to check that the frame-time gate
+//! (`scripts/perf-frames.sh`) catches its loss.
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -49,6 +53,12 @@ struct Placed {
 /// dragging the scrollbar) can land on boxes; they ask for the next frame, which
 /// builds them.
 const MARGIN: f32 = 0.5;
+
+/// `MUSIC_NO_CULL=1`: never skip a section.
+fn disabled() -> bool {
+    static OFF: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *OFF.get_or_init(|| std::env::var_os("MUSIC_NO_CULL").is_some_and(|v| v != "0"))
+}
 
 impl Placed {
     /// Whether the section can be skipped: measured for this content, width and
@@ -119,7 +129,8 @@ impl Sections {
             .placed
             .get(&id)
             .copied()
-            .filter(|p| p.far_off(key, width, rem, scroll_top, f32::from(view.size.height)));
+            .filter(|p| p.far_off(key, width, rem, scroll_top, f32::from(view.size.height)))
+            .filter(|_| !disabled());
         let state = self.0.clone();
         let handle = scroll.clone();
         let skipped = skip.is_some();
@@ -152,17 +163,18 @@ impl Sections {
             },
             |_, _, _, _| {},
         )
-        .absolute()
-        .top_0()
-        .left_0()
-        .size_full();
-        let section = div().w_full().relative();
+        .w_full();
         match skip {
-            Some(placed) => section.h(px(placed.height)),
-            None => section.child(build()),
+            // A skipped section is the measuring box alone (one element: a long page
+            // has many of them, and each costs a little on every frame).
+            Some(placed) => measure.h(px(placed.height)).into_any_element(),
+            None => div()
+                .w_full()
+                .relative()
+                .child(build())
+                .child(measure.absolute().top_0().left_0().h_full())
+                .into_any_element(),
         }
-        .child(measure)
-        .into_any_element()
     }
 
     /// A titled shelf (`items::shelf_view`), culled.
