@@ -111,7 +111,7 @@ fn drop_continuations(value: &mut Value) {
 /// Repeats the cards of every carousel shelf in `value` up to [`SHELF_ITEMS`]: the
 /// recorded feed keeps 3–4 per shelf, the real one has 10–20 (and all of a shelf's
 /// cards are built, scrolled into view sideways or not). Each copy gets its own ids,
-/// artwork URL and title (a shelf drops repeated ids).
+/// artwork and title (a shelf drops repeated ids).
 fn fill_shelves(value: &mut Value) {
     match value {
         Value::Object(map) => {
@@ -123,7 +123,7 @@ fn fill_shelves(value: &mut Value) {
                 let recorded = items.len();
                 for i in recorded..SHELF_ITEMS {
                     let mut copy = items[i % recorded].clone();
-                    retag(&mut copy, &format!("-{i}"));
+                    retag(&mut copy, &format!("-{i}"), true);
                     if let Some(Value::String(title)) =
                         copy.pointer_mut("/musicTwoRowItemRenderer/title/runs/0/text")
                     {
@@ -139,9 +139,10 @@ fn fill_shelves(value: &mut Value) {
     }
 }
 
-/// Appends `suffix` to every id (`browseId`, `videoId`, `playlistId`) and image URL in
-/// `value`, so a copied item or page is new to the app (its own cards and artwork).
-fn retag(value: &mut Value, suffix: &str) {
+/// Appends `suffix` to every id (`browseId`, `videoId`, `playlistId`) in `value`, and
+/// to every image URL with `art`, so a copied item or page is new to the app (its own
+/// cards, and with `art` its own artwork).
+fn retag(value: &mut Value, suffix: &str, art: bool) {
     match value {
         Value::Object(map) => {
             for (key, v) in map.iter_mut() {
@@ -149,12 +150,12 @@ fn retag(value: &mut Value, suffix: &str) {
                     ("browseId" | "videoId" | "playlistId", Value::String(id)) => {
                         id.push_str(suffix);
                     }
-                    ("url", Value::String(url)) => url.push_str(&format!("#{suffix}")),
-                    (_, v) => retag(v, suffix),
+                    ("url", Value::String(url)) if art => url.push_str(&format!("#{suffix}")),
+                    (_, v) => retag(v, suffix, art),
                 }
             }
         }
-        Value::Array(items) => items.iter_mut().for_each(|v| retag(v, suffix)),
+        Value::Array(items) => items.iter_mut().for_each(|v| retag(v, suffix, art)),
         _ => {}
     }
 }
@@ -176,8 +177,11 @@ pub(crate) fn innertube(dir: &Path, endpoint: &str, body: &Value) -> Result<Valu
     if name == "home_continuation.json" {
         let page = SERVED.fetch_add(1, Ordering::Relaxed) + 1;
         eprintln!("music-core: fixture feed page {page}/{}", pages());
-        // Every page its own items, as a real feed has.
-        retag(&mut value, &format!("-p{page}"));
+        // Every page its own items, as a real feed has, but the same ~60 images: with
+        // every page's artwork (~700 images, past the artwork memory budget) the end of
+        // the feed drew 1.2–1.8x slower than the top on GitHub's Windows runner with
+        // culling on: a separate cost (probably the artwork cache evicting, `artwork.rs`).
+        retag(&mut value, &format!("-p{page}"), false);
         if page >= pages() {
             drop_continuations(&mut value);
         }

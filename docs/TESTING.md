@@ -465,18 +465,25 @@ scrolled down). At 180 Hz a frame has 5.5 ms; an M-series Mac draws Home in ~3.2
 twice as expensive.
 
 **Measured** (2026-10-30, M4 MacBook Air, 10 cores, built-in 60 Hz display, macOS 26.6;
-release build of this branch, default settings, two runs):
+release builds of this branch before and after merging 0.2.2 + the sideways rows, default
+settings; runs where the window got its frames):
 
 | Measure | Result |
 |---|---|
-| Idle on Home (nothing playing): CPU | 1.0 % of one core |
-| Idle on Home: memory (footprint) | 144–147 MB |
-| Full window draw, top of Home | p50 3.21 ms, p95 3.8–4.0 ms |
-| Full window draw, scrolled down Home | p50 3.39–3.42 ms, p95 4.0–4.1 ms |
-| Scrolling Home (wheel glide) | 60–61 fps (display 60 Hz), interval p95 17.3 ms |
+| Idle on Home (nothing playing): CPU | 0.5–1.0 % of one core |
+| Idle on Home: memory (footprint) | 144–185 MB |
+| Full window draw, top of Home | p50 3.0–3.2 ms, p95 3.8–4.0 ms |
+| Full window draw, scrolled down Home | p50 3.4–3.6 ms, p95 4.0–4.1 ms |
+| Scrolling Home (wheel glide) | 60–61 fps (display 60 Hz), interval p95 16.8–17.3 ms |
 | Playing, Equalizer bar, Home: bar | 20–22 fps, interval p95 51 ms |
-| Playing, Home: CPU / memory | 8.0–8.2 % of one core, 199–203 MB |
-| Now Playing open while playing | 9 app renders/s (lyrics and visualizer redraw as cached regions), 3.3–3.6 % of one core, 192–194 MB |
+| Playing, Home: CPU / memory | 7–8 % of one core, 192–203 MB |
+| Now Playing open while playing | 9–10 app renders/s (lyrics and visualizer redraw as cached regions), 2–3.6 % of one core, 170–194 MB |
+
+If a frame rate says **n/a** (and the draws are slower, ~5 ms, with a low footprint), the
+window got no display-link frames for that session: it was covered (e.g. by another
+always-on-top window, such as a second copy of this script), on another Space, or the
+display slept. Run it again with the window unobstructed; the draw benchmarks don't need
+frames, the scrolling, bar and Now Playing rates do.
 
 ### 6.3 Frame-time check (offline; CI)
 
