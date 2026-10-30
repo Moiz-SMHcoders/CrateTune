@@ -340,7 +340,68 @@ scaling, and after moving the window to a monitor with other scaling.
       without a compositor) the desktop's own title bar shows above the bar and the bar has
       no buttons of its own.
 
-## 6. Reporting a problem
+## 6. Performance (Windows)
+
+`scripts/perf-windows.ps1` runs a release build through three scripted sessions (Home:
+idle, two draw benchmarks, 40 mouse-wheel notches; a song played muted with the
+Equalizer bar; Now Playing open) and prints how heavy the app is and how smoothly it
+draws. It needs internet (Home feed, one song) and uses a throw-away settings folder.
+
+```powershell
+cargo build --release -p music-gpui
+pwsh scripts\perf-windows.ps1                                   # default settings, with checks
+pwsh scripts\perf-windows.ps1 -Settings "$env:APPDATA\cratetune\config\settings.json" -NoChecks
+pwsh scripts\perf-windows.ps1 -Exe path\to\cratetune.exe -NoChecks   # e.g. an installed release
+```
+
+`-Report out.md` also writes the table to a file; the sessions' logs stay in
+`%TEMP%\cratetune-perf`. It exits 1 when a check fails (run it with default settings
+for that; your own look and window size can legitimately be slower):
+
+* **Scrolling ≥ 90 % of the display's refresh rate** (capped at 120 Hz): wheel frames
+  per second while scrolling Home (`MUSIC_TIMINGS`, see below).
+* **Scrolled-down draw ≤ 1.5 × top-of-Home draw**: a full frame must not get more
+  expensive the further the endless feed is scrolled (page sections far outside the
+  viewport aren't built, `components/cull.rs`).
+* **Idle CPU ≤ 5 % of one core** on Home with nothing playing.
+
+What the numbers mean:
+
+* **Full window draw** (`@bench`): CPU to build, lay out and paint the whole window
+  once, without presenting. At 180 Hz a frame has ~5.5 ms (less in practice, since
+  Windows composes before the refresh); a frame that misses waits for the next one, so
+  scrolling then runs at half the refresh rate (steadily, not stuttering).
+* **Scrolling**: `app N renders/s, interval p50 / p95 / max` lines of `MUSIC_TIMINGS=1`
+  while wheel notches glide. An even interval (p95 close to p50) is smooth; mixed 2- and
+  3-refresh intervals are the stutter.
+* **Bar**: the Equalizer / Wavy styles redraw on a ~40 ms timer by design (~22 fps), to
+  keep CPU low while playing.
+* CPU "% of one core" is the process's CPU time per second; Task Manager shows the same
+  divided by the number of logical processors ("% of the machine").
+
+**Measured** (2026-10-30, Ryzen 7 6800H, 16 threads, RTX 3050 Laptop driving a
+1920 × 1080 180 Hz display, Windows 11; release builds; one song muted):
+
+| | 0.2.1 | after culling |
+|---|---|---|
+| Full window draw, top of Home (default look, 1200 × 768) | 9.7–10.7 ms | 6.1–6.8 ms |
+| Scrolling Home (default look, 1200 × 768) | ~100 fps, uneven | 165–180 fps |
+| Scrolling Home (maximized, dynamic theme, tint, font 1.125) | 60–73 fps, uneven | 90–170 fps, even |
+| Idle on Home (nothing playing) | 3–4 % of one core | 2–4 % of one core (≈ 0.2 % of the machine) |
+| Playing, Equalizer bar + glow, Home | 9–13 % of one core | 6–12 % of one core (< 1 % of the machine) |
+| Now Playing open (lyrics animating) | ~26 % of one core | about the same (not changed) |
+| Memory | 190–270 MB private | 155–250 MB private |
+
+The maximized range depends on how much the feed shows (it differs per run): when a
+frame needs more than ~4 ms the window draws every other refresh (90 fps at 180 Hz).
+What is left per frame is GPUI building and laying out the visible elements (memcpy into
+its element arena, layout, the Windows heap); the GPU sat at ~14 %. Profiled with
+[samply](https://github.com/mstange/samply) (`samply record` needs an elevated prompt on
+Windows) on a build with `CARGO_PROFILE_RELEASE_DEBUG=line-tables-only` and
+`CARGO_PROFILE_RELEASE_STRIP=none`. A different allocator (mimalloc) made no measurable
+difference and used ~100 MB more.
+
+## 7. Reporting a problem
 
 For each failed check, send:
 

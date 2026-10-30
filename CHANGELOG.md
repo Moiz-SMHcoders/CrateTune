@@ -5,6 +5,24 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+* `scripts/perf-windows.ps1`: CPU, memory and frame-rate check of a release build on
+  Windows (idle, scrolling Home, playing, Now Playing), with pass / fail checks; see
+  docs/TESTING.md, "Performance".
+* `MUSIC_TIMINGS=1` also prints the player bar's frame rate, and frame intervals
+  (p50 / p95 / max) for the window and the bar.
+
+### Fixed
+
+* **Stutter on Windows** while scrolling and changing pages: every shelf on Home (and on
+  artist, Explore, Charts and mood pages) was built, laid out and painted on every frame,
+  visible or not, and the endless feed made each frame heavier the further it was
+  scrolled. Shelves more than half a screen outside the window are now skipped (an empty
+  box of the same height). On a Ryzen 7 6800H with a 180 Hz display: a full frame of Home
+  10.6 → 6.5 ms, scrolling ~100 → 165–180 fps in a normal window, 60–73 → 90–170 fps
+  maximized. Shelves keep their sideways scroll position while skipped.
+
 ## [0.2.1] — 2026-10-30
 
 
