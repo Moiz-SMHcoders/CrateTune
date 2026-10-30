@@ -41,8 +41,9 @@ use self::model::{Available, Rng, Slot};
 use super::PageView;
 use crate::app::{MusicApp, read_app, update_app};
 use crate::browse::{CACHE_TTL, Load, PageCache, Paging, client, fetch, trace_enabled};
+use crate::components::cull::Sections;
 use crate::components::items::{
-    ShelfModel, ShelfStyle, chip_row, load_state, more_footer, shelf_body, shelf_view, target_route,
+    ShelfModel, ShelfStyle, chip_row, load_state, more_footer, shelf_body_scrolled, target_route,
 };
 use crate::components::{page_scroll, page_title, section_header};
 use crate::icons::Lucide;
@@ -78,6 +79,8 @@ struct Personal {
 
 pub struct HomePage {
     scroll: ScrollHandle,
+    /// Shelves far outside the viewport aren't built (`components/cull.rs`).
+    sections: Sections,
     /// The account the data is for (`""` = anonymous).
     account: String,
     /// Chip params of the feed shown (`None` = the unfiltered home).
@@ -157,6 +160,7 @@ impl HomePage {
         let scroll = ScrollHandle::new();
         let page = cx.new(|cx| Self {
             scroll: scroll.clone(),
+            sections: Sections::default(),
             account: account_key(cx),
             params: None,
             chips: Vec::new(),
@@ -548,31 +552,57 @@ impl HomePage {
             .into_any_element()
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn section(
+        &self,
         id: &str,
         title: impl Into<SharedString>,
         subtitle: Option<SharedString>,
         trailing: Option<AnyElement>,
         model: &ShelfModel,
         style: ShelfStyle,
+        window: &Window,
         cx: &gpui::App,
     ) -> AnyElement {
-        v_flex()
-            .w_full()
-            .gap_3()
-            .child(section_header(title, subtitle, trailing, cx))
-            .child(shelf_body(id, model, style, cx))
-            .into_any_element()
+        let x_scroll = self.sections.x_scroll(id);
+        self.sections
+            .cull(id, model.layout_key(style), &self.scroll, window, || {
+                v_flex()
+                    .w_full()
+                    .gap_3()
+                    .child(section_header(title, subtitle, trailing, cx))
+                    .child(shelf_body_scrolled(id, model, style, Some(&x_scroll), cx))
+                    .into_any_element()
+            })
     }
 
-    fn render_feed(&self, mut content: gpui::Div, cx: &mut Context<Self>) -> gpui::Div {
+    /// A feed shelf with its own header, culled like [`Self::section`].
+    fn feed_shelf(
+        &self,
+        id: &str,
+        model: &ShelfModel,
+        style: ShelfStyle,
+        window: &Window,
+        cx: &gpui::App,
+    ) -> AnyElement {
+        self.sections
+            .shelf(id, model, style, &self.scroll, window, cx)
+    }
+
+    fn render_feed(
+        &self,
+        mut content: gpui::Div,
+        window: &Window,
+        cx: &mut Context<Self>,
+    ) -> gpui::Div {
         match &self.feed {
             Load::Ready(shelves) => {
                 for (i, model) in shelves.iter().enumerate() {
-                    content = content.child(shelf_view(
+                    content = content.child(self.feed_shelf(
                         &format!("home-{i}"),
                         model,
                         ShelfStyle::Auto,
+                        window,
                         cx,
                     ));
                 }
@@ -635,7 +665,7 @@ fn source_route(source: &Source) -> Option<crate::router::Route> {
 }
 
 impl Render for HomePage {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         // Signed in or out, another account or channel: that account's Home.
         if !self.started || account_key(cx) != self.account {
             self.started = true;
@@ -720,23 +750,25 @@ impl Render for HomePage {
                             QuickPicksDisplay::Cards => ShelfStyle::Cards,
                             QuickPicksDisplay::List => ShelfStyle::Auto,
                         };
-                        content = content.child(Self::section(
+                        content = content.child(self.section(
                             "home-quick",
                             t!("home.quick_picks"),
                             None,
                             None,
                             model,
                             style,
+                            window,
                             cx,
                         ));
                     }
                 }
                 Slot::Community => {
                     if let Some(model) = &self.community {
-                        content = content.child(shelf_view(
+                        content = content.child(self.feed_shelf(
                             "home-community",
                             model,
                             ShelfStyle::Cards,
+                            window,
                             cx,
                         ));
                     }
@@ -756,26 +788,28 @@ impl Render for HomePage {
                                 },
                             )
                         });
-                        content = content.child(Self::section(
+                        content = content.child(self.section(
                             "home-speed",
                             t!("home.section.speed_dial"),
                             None,
                             shuffle,
                             model,
                             ShelfStyle::Cards,
+                            window,
                             cx,
                         ));
                     }
                 }
                 Slot::KeepListening => {
                     if let Some(model) = p.and_then(|p| p.keep_listening.as_ref()) {
-                        content = content.child(Self::section(
+                        content = content.child(self.section(
                             "home-keep",
                             t!("home.section.keep_listening"),
                             None,
                             None,
                             model,
                             ShelfStyle::Cards,
+                            window,
                             cx,
                         ));
                     }
@@ -794,26 +828,28 @@ impl Render for HomePage {
                             ),
                             None => (t!("home.section.account_playlists").into(), None),
                         };
-                        content = content.child(Self::section(
+                        content = content.child(self.section(
                             "home-playlists",
                             title,
                             subtitle,
                             None,
                             model,
                             ShelfStyle::Cards,
+                            window,
                             cx,
                         ));
                     }
                 }
                 Slot::ForgottenFavorites => {
                     if let Some(model) = p.and_then(|p| p.forgotten.as_ref()) {
-                        content = content.child(Self::section(
+                        content = content.child(self.section(
                             "home-forgotten",
                             t!("home.section.forgotten_favorites"),
                             None,
                             None,
                             model,
                             ShelfStyle::Auto,
+                            window,
                             cx,
                         ));
                     }
@@ -832,18 +868,19 @@ impl Render for HomePage {
                                 },
                             )
                         });
-                        content = content.child(Self::section(
+                        content = content.child(self.section(
                             &format!("home-similar-{i}"),
                             source.item().title().to_owned(),
                             Some(t!("home.similar_to").into()),
                             open,
                             model,
                             ShelfStyle::Cards,
+                            window,
                             cx,
                         ));
                     }
                 }
-                Slot::Feed => content = self.render_feed(content, cx),
+                Slot::Feed => content = self.render_feed(content, window, cx),
             }
         }
         // Feed hidden: a spinner until the library sections are read.

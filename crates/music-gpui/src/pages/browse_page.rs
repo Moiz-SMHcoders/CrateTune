@@ -12,7 +12,8 @@ use music_core::innertube::BrowseTarget;
 use super::PageView;
 use crate::app::MusicApp;
 use crate::browse::{Load, PageCache, Paging, fetch, on_view};
-use crate::components::items::{ShelfModel, ShelfStyle, load_state, more_footer, shelf_view};
+use crate::components::cull::Sections;
+use crate::components::items::{ShelfModel, ShelfStyle, load_state, more_footer};
 use crate::components::{empty_state, page_scroll, page_title};
 use crate::icons::Lucide;
 
@@ -27,6 +28,8 @@ pub struct BrowsePage {
     target: BrowseTarget,
     name: String,
     scroll: ScrollHandle,
+    /// Shelves far outside the viewport aren't built (`components/cull.rs`).
+    sections: Sections,
     data: Load<Data>,
     _task: Option<Task<()>>,
 }
@@ -48,6 +51,7 @@ impl BrowsePage {
                 },
                 name,
                 scroll: scroll.clone(),
+                sections: Sections::default(),
                 data: Load::Loading,
                 _task: None,
             };
@@ -129,7 +133,7 @@ impl BrowsePage {
 }
 
 impl Render for BrowsePage {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         if self
             .data
             .ready()
@@ -154,10 +158,12 @@ impl Render for BrowsePage {
             }
             Load::Ready(data) => {
                 for (i, model) in data.shelves.iter().enumerate() {
-                    content = content.child(shelf_view(
+                    content = content.child(self.sections.shelf(
                         &format!("browse-{i}"),
                         model,
                         ShelfStyle::Auto,
+                        &self.scroll,
+                        window,
                         cx,
                     ));
                 }

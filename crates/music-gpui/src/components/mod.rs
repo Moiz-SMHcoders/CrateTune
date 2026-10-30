@@ -13,12 +13,14 @@
 //!   [`progress`] draws the progress / volume tracks (every bar style), [`bar_fx`]
 //!   animates them and the bar's play / pause background.
 //! * [`like::like_button`] – the heart; [`playlist_dialog`] – "Add to playlist".
+//! * [`cull::Sections`] – skips building page sections far outside the viewport.
 
 pub mod app_backdrop;
 pub mod artwork;
 pub mod bar_fx;
 pub mod bar_menu;
 pub mod card;
+pub mod cull;
 pub mod dislike;
 pub mod download_header;
 pub mod items;
