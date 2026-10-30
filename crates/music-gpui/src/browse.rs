@@ -143,6 +143,9 @@ impl MusicApp {
         let locale_changed =
             self.innertube.hl != content.language || self.innertube.gl != content.country;
         if locale_changed {
+            if self.innertube.gl != content.country {
+                crate::pages::forget_visitor(self.library());
+            }
             self.innertube.set_locale(content.language, content.country);
             // Suggestions are language-specific.
             self.search_box.clear_cache();

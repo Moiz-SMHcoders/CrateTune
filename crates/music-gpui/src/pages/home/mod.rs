@@ -16,6 +16,7 @@
 //! button, a change of account and opening Home after the cache expired load it again.
 
 mod load;
+pub(crate) use load::forget_visitor;
 mod model;
 pub mod speed_dial;
 

@@ -24,6 +24,12 @@ versions follow [SemVer](https://semver.org/).
 * Script hooks: `@shelf-status`, `@shelf-scroll=N:next|prev|start|end`,
   `@drag=X1;Y1;X2;Y2`; `@scroll` / `@wheel` take an optional DX and `shift`.
 
+### Changed
+
+* Changing the **content country** (Settings → Content & region) now also starts a new
+  anonymous YouTube visitor, so the signed-out Home feed follows the new region instead of
+  the old visitor's history (the visitor is otherwise kept across launches).
+
 ## [0.2.2] — 2026-10-30
 
 ### Added
