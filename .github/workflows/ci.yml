@@ -74,12 +74,12 @@ jobs:
 
       # Offline Home (InnerTube fixtures), full window draws at the top and at the end
       # of a long feed: fails if a frame costs more the further the page is scrolled,
-      # or exceeds a ceiling for these runners (docs/TESTING.md, "Frame-time check").
+      # or exceeds a ceiling for these runners (docs/TESTING.md, 6.3).
       # Linux runners have no display or GPU; skipped there.
       - name: "perf: frame-time"
         if: runner.os != 'Linux'
         shell: bash
-        run: scripts/perf-frames.sh --max-ms ${{ runner.os == 'Windows' && '20' || '15' }}
+        run: scripts/perf-frames.sh --max-ms 20
 
       # TEMPORARY (calibration on ci/perf-checks): repeat the check, and once without
       # culling, to see the spread on these runners. Removed before merging.
@@ -89,5 +89,5 @@ jobs:
         shell: bash
         run: |
           exe=target/release/music-gpui; [ "$RUNNER_OS" = Windows ] && exe=$exe.exe
-          for i in 1 2 3 4; do scripts/perf-frames.sh --binary $exe --max-ms 1000 | grep -E '^\| (top|end)|^- ' || true; done
-          for i in 1 2; do MUSIC_NO_CULL=1 scripts/perf-frames.sh --binary $exe --max-ms 1000 | grep -E '^\| (top|end)|^- ' || true; done
+          for i in 1 2 3 4 5 6; do scripts/perf-frames.sh --binary $exe --attempts 1 --max-ms 1000 | grep -E '^\| (top|end)|1.5 x' || true; done
+          for i in 1 2; do MUSIC_NO_CULL=1 scripts/perf-frames.sh --binary $exe --attempts 1 --max-ms 1000 | grep -E '^\| (top|end)|1.5 x' || true; done

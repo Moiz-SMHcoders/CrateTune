@@ -457,10 +457,10 @@ release build of this branch, default settings, two runs):
 `scripts/perf-frames.sh` needs no network and runs in CI as the step **perf: frame-time**
 of the macOS and Windows jobs (Linux runners have no display or GPU). It opens Home with
 `MUSIC_FIXTURES` pointing at the recorded InnerTube responses
-(`crates/music-core/tests/fixtures/innertube`): Home, then the recorded continuation 40
+(`crates/music-core/tests/fixtures/innertube`): Home, then the recorded continuation 20
 times, each shelf filled to 12 cards, generated artwork, and an HTTP agent that can't reach
 the network. It times full window draws (`@bench`: build, layout and paint, not presenting)
-at the top, scrolls to the end of the feed (~120 shelves) and times them again:
+at the top, scrolls to the end of the feed (~60 shelves) and times them again:
 
 ```sh
 scripts/perf-frames.sh                         # builds release first
@@ -474,18 +474,33 @@ It fails when
   is the regression the Windows stutter was: every section was built on every frame, so a
   frame cost more the longer the page got (`components/cull.rs` skips sections far outside
   the viewport);
-* **either p50 is above the ceiling** (`--max-ms`; CI: 25 ms on macOS, 40 ms on Windows),
-  only for gross slowdowns on the slow runners;
+* **either p50 is above the ceiling** (`--max-ms`, default 25; CI: 20 ms), only for gross
+  slowdowns: 4–7x what the runners measure;
 * the feed didn't load to its end, Home wasn't up before the first bench, or a bench
   didn't run (a broken setup is a failure, not a pass).
+
+A failed run is repeated with a fresh app, up to three runs (`--attempts`), and the check
+fails only if every run fails: a shared runner (or a desktop busy with builds) can be slow
+for a few seconds, which skews one bench but not three runs in a row, while a frame that
+grows with the page fails every run by a wide margin.
 
 The draws run back to back (1 ms apart, after 60 warm-up draws): spaced 16 ms apart, macOS
 moves the UI thread between efficiency and performance cores and the same build measured
 1.4–5 ms from one run to the next.
 
-**Calibration.** On the M4 (culling on): top 1.7–2.0 ms, end of feed 1.6–2.4 ms, ratio
-0.88–1.35 over eight runs. With `MUSIC_NO_CULL=1`: top 2.0–2.3 ms, end 11.6–12.2 ms, ratio
-5.4–6.3, so the check fails as it should.
+**Calibration** (p50s, top → end of feed, and their ratio; each line is several runs):
+
+| Machine | Culling on | `MUSIC_NO_CULL=1` |
+|---|---|---|
+| GitHub `macos-14` (M1 VM) | 2.1–4.1 → 2.4–4.8 ms, 0.84–1.31x | 2.95–3.5 → 25–35 ms, 8.5–10.4x |
+| GitHub `windows-2022` (no GPU) | 3.0–3.5 → 3.4–4.3 ms, 1.06–1.27x | 4.1–4.2 → 51 ms, 12.2–12.5x |
+| M4 MacBook Air (other builds running) | 1.7–3.8 → 1.6–3.2 ms, 0.74–1.35x | 2.0–3.6 → 10.4–12.2 ms, 2.9–6.3x |
+
+(GitHub numbers: two CI runs, five app runs each per OS.) So 1.5x sits above what culling
+gives and far below what its loss costs, and 20 ms is 4–7x the slowest culled draw seen on
+the runners (the runs without culling exceed it too). If the check starts failing for an unrelated change, look at the
+step summary first: a ratio near 1 with a high p50 is a slow runner (raise the ceiling),
+a ratio above 1.5 is a frame that grows with the page.
 
 ## 7. Reporting a problem
 

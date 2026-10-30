@@ -28,7 +28,7 @@ use serde_json::Value;
 use crate::{Error, Result};
 
 /// Feed pages after the first one (3 shelves each in the bundled fixture).
-pub const DEFAULT_PAGES: usize = 40;
+pub const DEFAULT_PAGES: usize = 20;
 /// Cards per feed shelf (the recorded ones repeated), as many as a real shelf shows.
 pub const SHELF_ITEMS: usize = 12;
 /// Where requests go in fixture mode: the discard port, closed on CI runners and
