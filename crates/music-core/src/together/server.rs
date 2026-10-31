@@ -22,7 +22,7 @@ use super::conn::{Conn, Link, POLL, Recv, Stream};
 use super::link::JoinInfo;
 use super::messages::{
     AddTrackMode, ControlAction, Message, PROTOCOL_VERSION, Participant, Role, RoomSettings,
-    RoomState, TogetherTrack, queue_hash,
+    RoomState, SuggestionState, TogetherTrack, queue_hash,
 };
 use crate::{Error, Result};
 
@@ -33,6 +33,8 @@ const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(5);
 /// How long the guest asked to take over has to answer.
 const TRANSFER_TIMEOUT: Duration = Duration::from_secs(15);
 const RELAY_TIMEOUT: Duration = Duration::from_secs(8);
+/// Suggestions one guest may have waiting for approval; more are turned down.
+pub const MAX_PENDING_PER_GUEST: usize = 20;
 
 /// Extras for starting a session ([`TogetherServer::start_with`] /
 /// [`TogetherServer::start_relay`]); a host transfer fills them in.
@@ -67,6 +69,9 @@ pub enum ServerEvent {
         track: TogetherTrack,
         mode: AddTrackMode,
     },
+    /// A suggestion waits for [`TogetherServer::decide_suggestion`] (the room requires
+    /// approval for suggestions).
+    SuggestionPending(Suggestion),
     /// The guest asked to take over is ready and everyone has been told to
     /// reconnect to `join`: stop this server (and join `join` as a guest).
     HostTransferred {
@@ -83,6 +88,17 @@ pub enum ServerEvent {
         reason: String,
     },
     Error(String),
+}
+
+/// A guest's song suggestion waiting for the host (after Limusic's suggestion flow,
+/// GPL-3.0, `crates/listen-protocol`).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Suggestion {
+    /// Unique in the session.
+    pub id: String,
+    pub participant: Participant,
+    pub track: TogetherTrack,
+    pub mode: AddTrackMode,
 }
 
 struct PendingTransfer {
@@ -128,6 +144,8 @@ pub(super) struct Inner {
     /// Relayed sessions: (relay URL, room secret).
     relay: Option<(String, String)>,
     transfer: Mutex<Option<PendingTransfer>>,
+    /// Suggestions waiting for the host, oldest first.
+    suggestions: Mutex<Vec<Suggestion>>,
     events: Mutex<Sender<ServerEvent>>,
     pub(super) shutdown: AtomicBool,
 }
@@ -139,6 +157,28 @@ fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
 impl Inner {
     pub(super) fn emit(&self, event: ServerEvent) {
         let _ = lock(&self.events).send(event);
+    }
+
+    /// Tells a guest what became of its suggestion (skipped by peers that don't know
+    /// the message).
+    fn send_status(
+        &self,
+        participant_id: &str,
+        track_id: &str,
+        state: SuggestionState,
+        reason: Option<String>,
+    ) {
+        let message = Message::SuggestionStatus {
+            session_id: self.session_id.clone(),
+            participant_id: participant_id.to_owned(),
+            track_id: track_id.to_owned(),
+            state,
+            reason,
+        }
+        .encode();
+        self.with_client(participant_id, |c| {
+            let _ = c.outbox.send(Outgoing::Text(message));
+        });
     }
 
     fn elapsed_ms(&self) -> u64 {
@@ -456,6 +496,34 @@ impl TogetherServer {
         }
     }
 
+    /// Suggestions waiting for approval, oldest first.
+    pub fn suggestions(&self) -> Vec<Suggestion> {
+        lock(&self.inner.suggestions).clone()
+    }
+
+    /// Approves (or rejects) a waiting suggestion and tells the guest who made it.
+    /// Returns it, for the host app to queue when approved; `None` if there is no such
+    /// suggestion (already decided).
+    pub fn decide_suggestion(&self, id: &str, approved: bool) -> Option<Suggestion> {
+        let suggestion = {
+            let mut list = lock(&self.inner.suggestions);
+            let ix = list.iter().position(|s| s.id == id)?;
+            list.remove(ix)
+        };
+        let state = if approved {
+            SuggestionState::Approved
+        } else {
+            SuggestionState::Rejected
+        };
+        self.inner.send_status(
+            &suggestion.participant.id,
+            &suggestion.track.id,
+            state,
+            None,
+        );
+        Some(suggestion)
+    }
+
     /// Disconnects a guest (`ban`: their client id can't rejoin this session).
     pub fn kick(&self, participant_id: &str, reason: Option<&str>, ban: bool) {
         let Some(client) = self.inner.remove(participant_id) else {
@@ -522,6 +590,7 @@ impl Inner {
             trusted: Mutex::new(options.trusted_client_ids.into_iter().collect()),
             relay,
             transfer: Mutex::new(None),
+            suggestions: Mutex::new(Vec::new()),
             events: Mutex::new(tx),
             shutdown: AtomicBool::new(false),
         });
@@ -768,12 +837,44 @@ fn handle(
         Message::AddTrackRequest { track, mode, .. } if !pending => {
             if !settings.allow_guests_to_add_tracks {
                 denied(conn, "add songs");
-            } else if super::is_shareable_id(&track.id) {
+            } else if !super::is_shareable_id(&track.id) {
+                // Local files can't be played by the others: dropped.
+            } else if settings.require_approval_for_suggestions {
+                let mut list = lock(&inner.suggestions);
+                let waiting = list
+                    .iter()
+                    .filter(|s| s.participant.id == participant.id)
+                    .count();
+                let state = if waiting >= MAX_PENDING_PER_GUEST {
+                    SuggestionState::Rejected
+                } else {
+                    SuggestionState::Pending
+                };
+                let track_id = track.id.clone();
+                if state == SuggestionState::Pending {
+                    let suggestion = Suggestion {
+                        id: super::new_id(),
+                        participant: participant.clone(),
+                        track,
+                        mode,
+                    };
+                    list.push(suggestion.clone());
+                    drop(list);
+                    inner.emit(ServerEvent::SuggestionPending(suggestion));
+                } else {
+                    drop(list);
+                }
+                let reason = (state == SuggestionState::Rejected)
+                    .then(|| "Too many suggestions are waiting".to_owned());
+                inner.send_status(&participant.id, &track_id, state, reason);
+            } else {
+                let track_id = track.id.clone();
                 inner.emit(ServerEvent::AddTrack {
-                    participant,
+                    participant: participant.clone(),
                     track,
                     mode,
                 });
+                inner.send_status(&participant.id, &track_id, SuggestionState::Approved, None);
             }
         }
         Message::ClientLeave { .. } => {

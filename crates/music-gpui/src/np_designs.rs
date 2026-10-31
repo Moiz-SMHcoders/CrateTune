@@ -33,7 +33,7 @@ use crate::app::MusicApp;
 use crate::components::artwork::artwork;
 use crate::icons::{AppIcon, Lucide};
 use crate::now_playing::{deep, like_icon_button, white};
-use crate::queue::Repeat;
+use crate::queue::{Repeat, Source};
 use crate::settings::prefs::NowPlayingLayout;
 
 /// Text colour of the Editorial design (warm off-white).
@@ -820,62 +820,99 @@ impl MusicApp {
         let side = (viewport.height * 0.44)
             .min((viewport.width - px(176.)) * 0.4)
             .clamp(px(140.), px(380.));
-        let upcoming: Vec<(u64, Track)> = self
+        let upcoming: Vec<(u64, Track, Source)> = self
             .queue
             .upcoming()
             .iter()
             .take(8)
-            .map(|item| (item.uid, item.track.clone()))
+            .map(|item| (item.uid, item.track.clone(), item.source))
             .collect();
         let more = self.queue.upcoming().len().saturating_sub(upcoming.len());
-        let rows = upcoming.into_iter().enumerate().map(|(i, (uid, t))| {
-            let art = artwork(t.artwork_url(120), px(44.), px(6.), cx);
-            h_flex()
-                .id(("np-queue", i))
-                .w_full()
-                .gap_3()
-                .p_2()
-                .rounded(px(10.))
-                .cursor_pointer()
-                .hover(|s| s.bg(white(0.08)))
-                .on_click(cx.listener(move |this, _, _, cx| this.queue_jump(uid, cx)))
-                .child(
-                    div()
-                        .w(px(18.))
-                        .text_xs()
-                        .text_right()
-                        .text_color(white(0.45))
-                        .child(format!("{}", i + 1)),
-                )
-                .child(art)
-                .child(
-                    v_flex()
-                        .flex_1()
-                        .min_w_0()
-                        .child(
-                            div()
-                                .text_sm()
-                                .font_weight(FontWeight::SEMIBOLD)
-                                .truncate()
-                                .child(t.title.clone()),
-                        )
-                        .child(
+        // Your queued songs and the rest get a heading each once you queued something.
+        let split = !self.queue.user_upcoming().is_empty();
+        let context_heading: Option<String> = match self.queue.context() {
+            Some(c) if !c.name.is_empty() && c.radio => {
+                Some(t!("np.queue.next_from_radio", name = c.name))
+            }
+            Some(c) if !c.name.is_empty() => Some(t!("np.queue.next_from", name = c.name)),
+            _ => None,
+        };
+        let heading = |text: String| {
+            div()
+                .px_2()
+                .pt_2()
+                .text_xs()
+                .font_weight(FontWeight::SEMIBOLD)
+                .text_color(white(0.45))
+                .truncate()
+                .child(text)
+                .into_any_element()
+        };
+        let mut previous: Option<Source> = None;
+        let rows = upcoming
+            .into_iter()
+            .enumerate()
+            .flat_map(|(i, (uid, t, source))| {
+                let head = (split && previous != Some(source))
+                    .then(|| match source {
+                        Source::User => Some(t!("np.queue.next_in_queue").to_owned()),
+                        Source::Context => context_heading.clone(),
+                    })
+                    .flatten()
+                    .map(heading);
+                previous = Some(source);
+                let art = artwork(t.artwork_url(120), px(44.), px(6.), cx);
+                let row = h_flex()
+                    .id(("np-queue", i))
+                    .w_full()
+                    .gap_3()
+                    .p_2()
+                    .rounded(px(10.))
+                    .cursor_pointer()
+                    .hover(|s| s.bg(white(0.08)))
+                    .on_click(cx.listener(move |this, _, _, cx| this.queue_jump(uid, cx)))
+                    .child(
+                        div()
+                            .w(px(18.))
+                            .text_xs()
+                            .text_right()
+                            .text_color(white(0.45))
+                            .child(format!("{}", i + 1)),
+                    )
+                    .child(art)
+                    .child(
+                        v_flex()
+                            .flex_1()
+                            .min_w_0()
+                            .child(
+                                div()
+                                    .text_sm()
+                                    .font_weight(FontWeight::SEMIBOLD)
+                                    .truncate()
+                                    .child(t.title.clone()),
+                            )
+                            .child(
+                                div()
+                                    .text_xs()
+                                    .text_color(white(0.6))
+                                    .truncate()
+                                    .child(t.artists.clone()),
+                            ),
+                    )
+                    .when_some(t.duration_secs, |this, d| {
+                        this.child(
                             div()
                                 .text_xs()
-                                .text_color(white(0.6))
-                                .truncate()
-                                .child(t.artists.clone()),
-                        ),
-                )
-                .when_some(t.duration_secs, |this, d| {
-                    this.child(
-                        div()
-                            .text_xs()
-                            .text_color(white(0.5))
-                            .child(format_duration(u64::from(d))),
-                    )
-                })
-        });
+                                .text_color(white(0.5))
+                                .child(format_duration(u64::from(d))),
+                        )
+                    })
+                    .into_any_element();
+                head.into_iter()
+                    .chain(std::iter::once(row))
+                    .collect::<Vec<_>>()
+            });
+        let rows: Vec<AnyElement> = rows.collect();
         let queue = v_flex()
             .flex_1()
             .min_w_0()

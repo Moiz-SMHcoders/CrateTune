@@ -16,7 +16,8 @@ use music_core::{PlaybackState, PlaybackStatus, SleepTimer, Track, format_durati
 
 use crate::app::{MusicApp, notify, update_app};
 use crate::now_playing::HiRes;
-use crate::queue::{Ended, Previous, Repeat};
+use crate::queue::{Ended, Previous, QueueContext, Repeat, Source};
+use crate::router::Route;
 use crate::settings::prefs::SLEEP_PRESETS;
 use crate::tray::TrayCommand;
 
@@ -26,11 +27,33 @@ pub const VOLUME_STEP: f32 = 0.05;
 impl MusicApp {
     // ---- starting playback ----------------------------------------------------
 
-    /// Plays `list[index]` with the whole list as the queue.
+    /// Plays `list[index]` with the whole list as the queue's context (named after
+    /// the page it was started from); your queued songs stay ahead of it.
     pub fn play_list(&mut self, list: Rc<Vec<Track>>, index: usize, cx: &mut Context<Self>) {
+        let context = self.page_context();
+        self.play_list_in(list, index, context, cx);
+    }
+
+    /// [`Self::play_list`] with the context's name given.
+    pub fn play_list_in(
+        &mut self,
+        list: Rc<Vec<Track>>,
+        index: usize,
+        context: Option<QueueContext>,
+        cx: &mut Context<Self>,
+    ) {
         let tracks = Rc::try_unwrap(list).unwrap_or_else(|rc| (*rc).clone());
-        if let Some(track) = self.queue.replace(tracks, index) {
+        if let Some(track) = self.queue.play_context(tracks, index, context) {
             self.play(track, cx);
+        }
+    }
+
+    /// What a list started from the current page is called in the queue ("Next from
+    /// <album>"): the page's title.
+    fn page_context(&self) -> Option<QueueContext> {
+        match self.router.route() {
+            Route::Settings { .. } | Route::Together | Route::Import => None,
+            route => Some(QueueContext::list(route.title())),
         }
     }
 
@@ -106,6 +129,17 @@ impl MusicApp {
         cx.notify();
     }
 
+    /// Clears "Next in queue" or "Next from …" only.
+    pub fn queue_clear_part(&mut self, source: Source, cx: &mut Context<Self>) {
+        if self.queue.clear_part(source) {
+            if source == Source::Context {
+                // The radio's refills would bring the context back.
+                self.radio.target = None;
+            }
+            cx.notify();
+        }
+    }
+
     pub fn set_shuffle(&mut self, on: bool, cx: &mut Context<Self>) {
         self.queue.set_shuffle(on);
         self.save_modes(cx);
@@ -177,6 +211,21 @@ impl MusicApp {
             None => self.pending_play = Some(track),
         }
         cx.notify();
+    }
+
+    /// Plays `track` from `position` (a queue tab continued where it was left): from
+    /// the start if it was barely begun or nearly over, as a restored queue does.
+    pub(crate) fn play_at(&mut self, track: Track, position: Duration, cx: &mut Context<Self>) {
+        let fits = track
+            .duration_secs
+            .is_none_or(|d| position + Duration::from_secs(5) < Duration::from_secs(d.into()));
+        let seek = position > Duration::from_secs(3) && fits;
+        self.play(track, cx);
+        if seek && let Some(engine) = &mut self.engine {
+            // Handled in order on the engine thread: the seek waits for the stream.
+            engine.seek(position);
+            self.clock.seek(position, Instant::now());
+        }
     }
 
     /// Hook for what the engine gets for a queue track (e.g. a downloaded copy's

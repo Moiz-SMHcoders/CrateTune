@@ -88,6 +88,40 @@ queue.tooltip.clear_up_next = Clear up next
 queue.tooltip.close = Close (Esc)
 queue.tooltip.move_up = Move up
 queue.tooltip.move_down = Move down
+# Songs you queued yourself ("Play next" / "Add to queue"); they play before the
+# rest. {count} is how many.
+queue.section.next_in_queue = NEXT IN QUEUE · {count}
+# The rest of the queue: what was started. {name} is an album, playlist or page
+# title (keep it as is, not in capitals), {count} how many songs.
+queue.section.next_from = NEXT FROM {name} · {count}
+# The same for a radio / autoplay mix; {name} is the song or artist it started from.
+queue.section.next_from_radio = NEXT FROM {name} RADIO · {count}
+# Small button next to a section heading (keep short), and its tooltip.
+queue.clear_section = Clear
+queue.tooltip.clear_section = Remove these songs, keep the rest
+# ---- Queue tabs: several saved queues side by side in the queue panel.
+# Name of the first tab.
+queue.tabs.main = Main
+# Name of a new tab; {n} is its number.
+queue.tabs.new_name = Queue {n}
+queue.tabs.new = New queue tab
+queue.tabs.tooltip_playing = Playing from this queue
+queue.tabs.tooltip_other = Show this queue
+# Tab context menu.
+queue.tabs.rename = Rename…
+queue.tabs.remove = Remove tab
+queue.tabs.rename_title = Rename queue tab
+queue.tabs.name_placeholder = Tab name
+# A tab that isn't playing: where it was left. {time} like 1:23, {title} a song title.
+queue.tabs.left_at = Left at {time} in “{title}”
+queue.tabs.empty = This queue is empty. Use it, then play something to fill it.
+# Buttons (keep short).
+queue.tabs.continue = Continue this queue
+queue.tabs.use = Use this queue
+# Section heading above the song a tab was left at (capitals).
+queue.tabs.paused = PAUSED
+queue.tabs.toast_switched = Now playing from “{name}”
+queue.tabs.toast_guest = The host decides what plays while you're a guest in Music Together.
 
 # ---- Song rows and the song context menu
 # Tooltip of the "…" button that opens the song menu.
@@ -233,6 +267,8 @@ store.toast.unliked_many.one = Removed {count} song from liked songs
 store.toast.unliked_many.other = Removed {count} songs from liked songs
 # {title} is a song title (thumbs down, and taking it back).
 store.toast.disliked_one = Disliked “{title}”
+store.toast.disliked_many.one = Disliked {count} song
+store.toast.disliked_many.other = Disliked {count} songs
 store.toast.undisliked_one = Removed the dislike from “{title}”
 # Saved in the local library; YouTube Music failed, the like / dislike is retried
 # later. {message} is one of the toasts above, {error} a technical message (English).

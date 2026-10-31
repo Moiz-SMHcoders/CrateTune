@@ -45,6 +45,11 @@ np.queue.title = UP NEXT
 # "With queue" design: how many more songs follow the listed ones.
 np.queue.more.one = +{count} more
 np.queue.more.other = +{count} more
+# "With queue" design: headings of songs you queued yourself and of the rest
+# ({name}: album / playlist title, kept as is).
+np.queue.next_in_queue = NEXT IN QUEUE
+np.queue.next_from = NEXT FROM {name}
+np.queue.next_from_radio = NEXT FROM {name} RADIO
 np.queue.empty = Nothing queued. Add songs from a list, or turn on autoplay.
 
 # ---- Lyrics pane

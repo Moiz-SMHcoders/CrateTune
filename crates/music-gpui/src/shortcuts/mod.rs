@@ -268,6 +268,16 @@ pub const ACTIONS: &[ShortcutAction] = &[
         false
     ),
     shortcut!(
+        "select_all_rows",
+        Navigation,
+        "shortcuts.action.select_all_rows",
+        SelectAllRows,
+        "secondary-a",
+        // Outside text fields (they keep ⌘A / Ctrl+A for their text).
+        Some("MusicApp"),
+        false
+    ),
+    shortcut!(
         "toggle_now_playing",
         View,
         "common.now_playing",

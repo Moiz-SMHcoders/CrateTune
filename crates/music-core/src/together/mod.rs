@@ -32,10 +32,10 @@ pub use client::{ClientEvent, TogetherClient};
 pub use link::{JoinInfo, JoinRequest, local_ip, relay_url};
 pub use messages::{
     AddTrackMode, ControlAction, Message, PROTOCOL_VERSION, Participant, Role, RoomSettings,
-    RoomState, TogetherTrack, queue_hash,
+    RoomState, SuggestionState, TogetherTrack, queue_hash,
 };
 pub use online::{CodeError, RelaySource, display_code, normalize_code};
-pub use server::{HOST_ID, HostOptions, ServerEvent, TogetherServer};
+pub use server::{HOST_ID, HostOptions, ServerEvent, Suggestion, TogetherServer};
 pub use sync::{ClockSnapshot, GuestSync, LocalPlayback, SyncPlan, TogetherClock};
 
 pub const DEFAULT_PORT: u16 = 42117;
@@ -103,6 +103,7 @@ mod tests {
                 allow_guests_to_add_tracks: true,
                 allow_guests_to_control_playback: false,
                 require_host_approval_to_join: false,
+                require_approval_for_suggestions: false,
             },
         )
         .unwrap();
@@ -266,6 +267,98 @@ mod tests {
             })
         });
         assert_eq!(reason.as_deref(), Some("Session ended"));
+    }
+
+    /// "Suggestions need my approval": a guest's song waits for the host, the guest
+    /// hears "pending" and then the decision; without the setting it goes straight in
+    /// (and the guest hears "approved").
+    #[test]
+    fn suggestions_wait_for_the_host() {
+        let server = TogetherServer::start(
+            0,
+            new_id(),
+            new_id(),
+            "Host".into(),
+            RoomSettings {
+                require_approval_for_suggestions: true,
+                ..RoomSettings::default()
+            },
+        )
+        .unwrap();
+        let key = server.session_key().to_owned();
+        let guest = TogetherClient::connect(&join(&server, &key), "Ann", "ann").unwrap();
+        wait_for(|| {
+            server
+                .poll_events()
+                .into_iter()
+                .find(|e| matches!(e, ServerEvent::Joined(_)))
+        });
+        let status = |want: SuggestionState| {
+            wait_for(|| {
+                guest.poll_events().into_iter().find_map(|e| match e {
+                    ClientEvent::SuggestionStatus {
+                        track_id, state, ..
+                    } if state == want => Some(track_id),
+                    _ => None,
+                })
+            })
+        };
+
+        // Two suggestions wait; nothing is added yet.
+        assert!(guest.request_add_track(track("aaaaaaaaaaa"), AddTrackMode::AddToQueue));
+        assert!(guest.request_add_track(track("bbbbbbbbbbb"), AddTrackMode::PlayNext));
+        let mut pending = Vec::new();
+        wait_for(|| {
+            for e in server.poll_events() {
+                match e {
+                    ServerEvent::SuggestionPending(s) => pending.push(s),
+                    ServerEvent::AddTrack { .. } => panic!("added without approval"),
+                    _ => {}
+                }
+            }
+            (pending.len() == 2).then_some(())
+        });
+        assert_eq!(status(SuggestionState::Pending), "aaaaaaaaaaa");
+        assert_eq!(server.suggestions().len(), 2);
+        assert_eq!(pending[0].participant.name, "Ann");
+        assert_eq!(pending[1].mode, AddTrackMode::PlayNext);
+
+        // Approve one, reject the other; each is decided once.
+        let approved = server.decide_suggestion(&pending[0].id, true).unwrap();
+        assert_eq!(approved.track.id, "aaaaaaaaaaa");
+        assert_eq!(status(SuggestionState::Approved), "aaaaaaaaaaa");
+        assert!(server.decide_suggestion(&pending[0].id, false).is_none());
+        server.decide_suggestion(&pending[1].id, false).unwrap();
+        assert_eq!(status(SuggestionState::Rejected), "bbbbbbbbbbb");
+        assert!(server.suggestions().is_empty());
+
+        // Approval off: straight in, reported as approved.
+        server.update_settings(RoomSettings::default());
+        assert!(guest.request_add_track(track("ccccccccccc"), AddTrackMode::AddToQueue));
+        let added = wait_for(|| {
+            server.poll_events().into_iter().find_map(|e| match e {
+                ServerEvent::AddTrack { track, .. } => Some(track),
+                ServerEvent::SuggestionPending(_) => panic!("approval is off"),
+                _ => None,
+            })
+        });
+        assert_eq!(added.id, "ccccccccccc");
+        assert_eq!(status(SuggestionState::Approved), "ccccccccccc");
+
+        // A guest can't flood the host: past the cap, suggestions are turned down.
+        server.update_settings(RoomSettings {
+            require_approval_for_suggestions: true,
+            ..RoomSettings::default()
+        });
+        for i in 0..=server::MAX_PENDING_PER_GUEST {
+            let id = format!("{:0>11}", i);
+            assert!(guest.request_add_track(track(&id), AddTrackMode::AddToQueue));
+        }
+        assert_eq!(
+            status(SuggestionState::Rejected),
+            format!("{:0>11}", server::MAX_PENDING_PER_GUEST)
+        );
+        assert_eq!(server.suggestions().len(), server::MAX_PENDING_PER_GUEST);
     }
 
     /// Host → guest hand-over on the LAN: Ann takes over, Bob and the old host

@@ -259,7 +259,11 @@ impl Combo {
             } else {
                 self.platform
             };
+            // ⌘A / Ctrl+A selecting every song is bound in the app's own context
+            // only, so text fields still select their text with it.
+            let rows = action == "select_all_rows" && key == "a" && !self.shift;
             if !other
+                && !rows
                 && (matches!((self.shift, key), (false, "c" | "v" | "x" | "a" | "z"))
                     || (self.shift && key == "z"))
             {

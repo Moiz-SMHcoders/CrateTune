@@ -212,6 +212,7 @@ impl MusicApp {
                             "add" => t.allow_guests_to_add_tracks = on,
                             "control" => t.allow_guests_to_control_playback = on,
                             "approval" => t.require_host_approval = on,
+                            "suggestions" => t.approve_suggestions = on,
                             other => eprintln!("music-gpui: unknown together setting {other:?}"),
                         },
                         cx,

@@ -349,9 +349,7 @@ impl Render for LocalPlaylistPage {
                 });
             (t!("library.playlist.remove_from"), handler)
         });
-        let bar = self
-            .list
-            .selection_bar("pl", |p: &mut Self| &mut p.list, remove, cx);
+        self.list.register_remove("pl-songs", remove, cx);
         let body = if self.list.is_empty() {
             let (title, detail) = match (&self.playlist, self.loaded) {
                 (_, false) => (t!("common.loading"), ""),
@@ -373,10 +371,6 @@ impl Render for LocalPlaylistPage {
             self.list
                 .render("pl-songs", |p: &mut Self| &mut p.list, controls, cx)
         };
-        v_flex()
-            .size_full()
-            .child(header)
-            .children(bar.map(|b| div().px_8().pb_2().child(b)))
-            .child(body)
+        v_flex().size_full().child(header).child(body)
     }
 }

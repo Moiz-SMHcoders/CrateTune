@@ -93,6 +93,15 @@ pub struct RoomSettings {
     pub allow_guests_to_add_tracks: bool,
     pub allow_guests_to_control_playback: bool,
     pub require_host_approval_to_join: bool,
+    /// Guests' suggestions wait for the host to approve or reject them (ours; after
+    /// Limusic's suggestion flow). Only sent when on: peers without it ignore it and
+    /// treat suggestions as before.
+    #[serde(skip_serializing_if = "is_false")]
+    pub require_approval_for_suggestions: bool,
+}
+
+fn is_false(b: &bool) -> bool {
+    !b
 }
 
 impl Default for RoomSettings {
@@ -101,6 +110,7 @@ impl Default for RoomSettings {
             allow_guests_to_add_tracks: true,
             allow_guests_to_control_playback: false,
             require_host_approval_to_join: false,
+            require_approval_for_suggestions: false,
         }
     }
 }
@@ -156,6 +166,17 @@ pub enum Role {
 pub enum AddTrackMode {
     PlayNext,
     AddToQueue,
+}
+
+/// What became of a guest's suggestion ([`Message::SuggestionStatus`]).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum SuggestionState {
+    /// Waiting for the host (the room requires approval).
+    Pending,
+    /// In the queue.
+    Approved,
+    Rejected,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -300,6 +321,18 @@ pub enum Message {
         #[serde(default)]
         error: Option<String>,
     },
+    /// Host → the guest who suggested `track_id`: it waits for approval, or was
+    /// approved / rejected. Our addition to the protocol, so it needs no version bump:
+    /// a peer that doesn't know the type can't decode it and skips it (both ours and
+    /// ArchiveTune's), and a guest that never hears it just doesn't show a status.
+    SuggestionStatus {
+        session_id: String,
+        participant_id: String,
+        track_id: String,
+        state: SuggestionState,
+        #[serde(default)]
+        reason: Option<String>,
+    },
     /// Host → everyone: `participant_id` is the new host; reconnect to it (`host` /
     /// `port` on the LAN, the same relay URL when both are absent).
     HostTransferred {
@@ -401,6 +434,42 @@ mod tests {
                 participant_id: "p".into(),
                 reason: None
             })
+        );
+    }
+
+    #[test]
+    fn suggestion_messages_are_graceful_additions() {
+        let status = Message::SuggestionStatus {
+            session_id: "s".into(),
+            participant_id: "p".into(),
+            track_id: "dQw4w9WgXcQ".into(),
+            state: SuggestionState::Pending,
+            reason: None,
+        };
+        assert_eq!(
+            status.encode(),
+            r#"{"type":"suggestion_status","sessionId":"s","participantId":"p","trackId":"dQw4w9WgXcQ","state":"PENDING","reason":null}"#
+        );
+        assert_eq!(Message::decode(&status.encode()), Some(status));
+        // The new room setting is only on the wire when on, and defaults to off when a
+        // peer (ArchiveTune, an older build) doesn't send it.
+        let off = serde_json::to_string(&RoomSettings::default()).unwrap();
+        assert!(!off.contains("requireApprovalForSuggestions"), "{off}");
+        let on = RoomSettings {
+            require_approval_for_suggestions: true,
+            ..RoomSettings::default()
+        };
+        let json = serde_json::to_string(&on).unwrap();
+        assert!(
+            json.contains(r#""requireApprovalForSuggestions":true"#),
+            "{json}"
+        );
+        let old: RoomSettings = serde_json::from_str(r#"{"allowGuestsToAddTracks":true}"#).unwrap();
+        assert!(!old.require_approval_for_suggestions);
+        // A message type a peer doesn't know is skipped, not an error.
+        assert_eq!(
+            Message::decode(r#"{"type":"suggestion_status_v2","sessionId":"s"}"#),
+            None
         );
     }
 

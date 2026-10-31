@@ -12,7 +12,7 @@ use gpui::{
     prelude::FluentBuilder as _, px,
 };
 use gpui_component::{
-    ActiveTheme as _, Disableable as _, Selectable as _, Sizable as _,
+    ActiveTheme as _, Disableable as _, IconName, Selectable as _, Sizable as _,
     button::{Button, ButtonVariants as _},
     h_flex,
     input::{Input, InputState},
@@ -22,7 +22,9 @@ use gpui_component::{
     v_flex,
 };
 use music_core::Track;
-use music_core::together::{ControlAction, Participant, RoomState, TogetherTrack, display_code};
+use music_core::together::{
+    ControlAction, Participant, RoomState, Suggestion, TogetherTrack, display_code,
+};
 
 use super::PageView;
 use crate::app::{MusicApp, read_app, update_app};
@@ -30,7 +32,7 @@ use crate::components::track_row::TrackRow;
 use crate::components::{page_scroll, page_title, section_header};
 use crate::icons::Lucide;
 use crate::integrations::config::HostMode;
-use crate::integrations::together::{Role, relay_hint, relay_host_name};
+use crate::integrations::together::{Role, SentState, SentSuggestion, relay_hint, relay_host_name};
 use crate::router::Route;
 use crate::settings::SectionId;
 
@@ -253,17 +255,22 @@ impl Render for TogetherPage {
                 Role::Joining(host) => Some((host.clone(), false, None, Default::default())),
                 _ => None,
             };
+            // Host: suggestions waiting for approval; guest: what it suggested.
+            let waiting = app.together_suggestions();
+            let sent: Vec<SentSuggestion> = match &t.role {
+                Role::Guest(g) => g.suggestions.iter().rev().cloned().collect(),
+                _ => Vec::new(),
+            };
             (
-                role,
-                link,
-                guest,
-                t.participants(),
+                (role, link, guest, t.participants()),
                 t.error.clone(),
                 t.log.iter().rev().take(12).cloned().collect::<Vec<_>>(),
                 prefs,
+                (waiting, sent),
             )
         });
-        let Some((role, link, guest, participants, error, log, prefs)) = data else {
+        let Some(((role, link, guest, participants), error, log, prefs, (waiting, sent))) = data
+        else {
             return div().into_any_element();
         };
         let theme = cx.theme();
@@ -618,9 +625,18 @@ impl Render for TogetherPage {
                                     t!("together.room.approve"),
                                     prefs.require_host_approval,
                                     |t, on| t.require_host_approval = on,
+                                ))
+                                .child(setting_switch(
+                                    "tg-approve-suggestions",
+                                    t!("together.room.approve_suggestions"),
+                                    prefs.approve_suggestions,
+                                    |t, on| t.approve_suggestions = on,
                                 )),
                         ),
                 );
+                if !waiting.is_empty() {
+                    content = content.child(suggestions_card(&waiting, cx));
+                }
             }
             // ---- guest
             _ => {
@@ -741,6 +757,9 @@ impl Render for TogetherPage {
                         ));
                 }
                 content = content.child(session);
+                if !sent.is_empty() {
+                    content = content.child(sent_card(&sent, cx));
+                }
                 if let Some(room) = room.filter(|r| !r.queue.is_empty()) {
                     content = content.child(room_queue(&room, cx));
                 }
@@ -780,6 +799,108 @@ impl Render for TogetherPage {
         }
         page_scroll("together-page", &self.scroll, content).into_any_element()
     }
+}
+
+/// Host: guests' suggestions waiting for Approve / Reject.
+fn suggestions_card(waiting: &[Suggestion], cx: &gpui::App) -> AnyElement {
+    let rows = waiting.iter().map(|s| {
+        let (approve, reject) = (s.id.clone(), s.id.clone());
+        h_flex()
+            .gap_3()
+            .py_1()
+            .child(
+                v_flex()
+                    .flex_1()
+                    .min_w_0()
+                    .child(
+                        div()
+                            .truncate()
+                            .font_weight(FontWeight::MEDIUM)
+                            .child(s.track.title.clone()),
+                    )
+                    .child(muted(
+                        t!(
+                            "together.suggestions.from",
+                            artists = s.track.artists.join(", "),
+                            name = s.participant.name
+                        ),
+                        cx,
+                    )),
+            )
+            .child(
+                Button::new(SharedString::from(format!("tg-sug-ok-{}", s.id)))
+                    .small()
+                    .primary()
+                    .icon(IconName::Check)
+                    .label(t!("together.suggestions.approve"))
+                    .on_click(move |_, window, cx| {
+                        let id = approve.clone();
+                        update_app(cx, |app, cx| {
+                            app.together_decide_suggestion(&id, true, window, cx)
+                        });
+                    }),
+            )
+            .child(
+                Button::new(SharedString::from(format!("tg-sug-no-{}", s.id)))
+                    .small()
+                    .ghost()
+                    .icon(IconName::Close)
+                    .label(t!("together.suggestions.reject"))
+                    .on_click(move |_, window, cx| {
+                        let id = reject.clone();
+                        update_app(cx, |app, cx| {
+                            app.together_decide_suggestion(&id, false, window, cx)
+                        });
+                    }),
+            )
+    });
+    card(cx)
+        .child(
+            div()
+                .text_lg()
+                .font_weight(FontWeight::SEMIBOLD)
+                .child(tp!("together.suggestions.title", waiting.len())),
+        )
+        .child(muted(t!("together.suggestions.hint"), cx))
+        .children(rows)
+        .into_any_element()
+}
+
+/// Guest: the songs it suggested and what the host decided.
+fn sent_card(sent: &[SentSuggestion], cx: &gpui::App) -> AnyElement {
+    let theme = cx.theme();
+    let (ok, bad, muted_color) = (theme.success, theme.danger, theme.muted_foreground);
+    let rows = sent.iter().map(|s| {
+        let (label, color) = match &s.state {
+            SentState::Sent => (t!("together.suggestions.sent").to_owned(), muted_color),
+            SentState::Pending => (t!("together.suggestions.pending").to_owned(), muted_color),
+            SentState::Approved => (t!("together.suggestions.approved").to_owned(), ok),
+            SentState::Rejected(None) => (t!("together.suggestions.rejected").to_owned(), bad),
+            SentState::Rejected(Some(reason)) => (
+                t!("together.suggestions.rejected_because", reason = reason),
+                bad,
+            ),
+        };
+        h_flex()
+            .gap_3()
+            .child(
+                div()
+                    .flex_1()
+                    .min_w_0()
+                    .truncate()
+                    .text_sm()
+                    .child(s.track.title.clone()),
+            )
+            .child(div().flex_none().text_sm().text_color(color).child(label))
+    });
+    card(cx)
+        .child(
+            div()
+                .font_weight(FontWeight::SEMIBOLD)
+                .child(t!("together.suggestions.yours")),
+        )
+        .children(rows)
+        .into_any_element()
 }
 
 /// "Others follow what you play, as … on port …. Guests can … You approve each guest."

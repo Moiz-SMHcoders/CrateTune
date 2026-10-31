@@ -255,9 +255,6 @@ impl Render for LibraryItemPage {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         self.load(cx);
         let header = self.header(cx);
-        let bar = self
-            .list
-            .selection_bar("item", |p: &mut Self| &mut p.list, None, cx);
         let body = if self.list.is_empty() {
             let (title, detail) = if self.loaded {
                 (
@@ -275,10 +272,6 @@ impl Render for LibraryItemPage {
             self.list
                 .render("item-songs", |p: &mut Self| &mut p.list, None, cx)
         };
-        v_flex()
-            .size_full()
-            .child(header)
-            .children(bar.map(|b| div().px_8().pb_2().child(b)))
-            .child(body)
+        v_flex().size_full().child(header).child(body)
     }
 }

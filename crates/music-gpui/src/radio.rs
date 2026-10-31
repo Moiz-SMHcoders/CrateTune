@@ -21,7 +21,7 @@ use music_core::{InnerTube, Track};
 
 use crate::app::{MusicApp, notify};
 use crate::browse::ContentFilter;
-use crate::queue::Repeat;
+use crate::queue::{QueueContext, Repeat};
 use crate::util::off_thread;
 
 /// Load more radio tracks when at most this many are left after the current one.
@@ -31,7 +31,9 @@ const WATCH_INTERVAL: Duration = Duration::from_secs(2);
 /// The queue's radio, while it is the current queue.
 #[derive(Default)]
 pub struct RadioState {
-    target: Option<WatchTarget>,
+    pub(crate) target: Option<WatchTarget>,
+    /// The queue context the radio's songs are shown under ("Next from <name> radio").
+    context: Option<QueueContext>,
     continuation: Option<String>,
     /// Queue items that came from the radio (the radio is "current" while the
     /// current queue item is one of them).
@@ -128,6 +130,14 @@ impl MusicApp {
         }));
     }
 
+    /// Forgets the radio (its refills belong to a queue that was put away).
+    pub(crate) fn reset_radio(&mut self) {
+        self.radio = RadioState {
+            watch: self.radio.watch.take(),
+            ..RadioState::default()
+        };
+    }
+
     /// Whether the current queue item came from the radio.
     pub fn radio_active(&self) -> bool {
         self.radio.target.is_some()
@@ -140,14 +150,18 @@ impl MusicApp {
     /// Plays `track` and queues its radio mix after it.
     pub fn start_radio(&mut self, track: Track, window: &mut Window, cx: &mut Context<Self>) {
         if self.current_video_id() == Some(track.video_id.as_str()) {
-            // Keep the song playing; only the queue after it changes.
-            self.queue.clear();
+            // Keep the song playing; only the context after it changes (your queued
+            // songs stay, as when a new list starts).
+            self.queue.clear_part(crate::queue::Source::Context);
         } else {
             self.play_list(Rc::new(vec![track.clone()]), 0, cx);
         }
         let uid = self.queue.current_item().map(|i| i.uid);
+        let context = QueueContext::radio(track.title.clone());
+        self.queue.set_context(Some(context.clone()));
         self.radio = RadioState {
             target: Some(WatchTarget::radio(&track.video_id)),
+            context: Some(context),
             uids: uid.into_iter().collect(),
             seen: HashSet::from([track.video_id.clone()]),
             watch: self.radio.watch.take(),
@@ -172,6 +186,7 @@ impl MusicApp {
     ) {
         self.radio = RadioState {
             target: Some(target),
+            context: Some(QueueContext::radio(label)),
             watch: self.radio.watch.take(),
             ..RadioState::default()
         };
@@ -244,10 +259,11 @@ impl MusicApp {
             );
         }
         if replace {
-            self.play_list(Rc::new(tracks), 0, cx);
+            let context = self.radio.context.clone();
+            self.play_list_in(Rc::new(tracks), 0, context, cx);
             self.radio.uids = self.queue.items().iter().map(|i| i.uid).collect();
         } else {
-            if let Some(track) = self.queue.add(tracks) {
+            if let Some(track) = self.queue.append_context(tracks) {
                 self.play(track, cx);
             }
             let items = self.queue.items();
@@ -281,14 +297,17 @@ impl MusicApp {
             return;
         }
         let (uid, seed) = (item.uid, item.track.video_id.clone());
+        let context = QueueContext::radio(item.track.title.clone());
         let seen: HashSet<String> = self
             .queue
             .items()
             .iter()
             .map(|i| i.track.video_id.clone())
             .collect();
+        self.queue.set_context(Some(context.clone()));
         self.radio = RadioState {
             target: Some(WatchTarget::radio(&seed)),
+            context: Some(context),
             uids: HashSet::from([uid]),
             seen,
             autoplay_done_for: Some(uid),
@@ -317,17 +336,18 @@ impl MusicApp {
                 Ok(Loaded::Radio(target, label)) => {
                     this.start_radio_target(target, &label, window, cx)
                 }
-                Ok(loaded @ (Loaded::Tracks(_) | Loaded::AlbumTracks(_))) => {
-                    let tracks = match loaded {
-                        Loaded::AlbumTracks(t) => filter.album_tracks(t),
-                        Loaded::Tracks(t) => filter.tracks(t),
-                        Loaded::Radio(..) => Vec::new(),
+                Ok(loaded @ (Loaded::Tracks(..) | Loaded::AlbumTracks(..))) => {
+                    let (tracks, name) = match loaded {
+                        Loaded::AlbumTracks(t, name) => (filter.album_tracks(t), name),
+                        Loaded::Tracks(t, name) => (filter.tracks(t), name),
+                        Loaded::Radio(..) => (Vec::new(), String::new()),
                     };
                     if tracks.is_empty() {
                         notify(window, cx, t!("radio.nothing_to_play"));
                         return;
                     }
-                    this.play_tracks(tracks, action, window, cx);
+                    let context = Some(QueueContext::list(name));
+                    this.play_tracks_in(tracks, action, context, window, cx);
                 }
                 Err(e) => notify(window, cx, t!("radio.load_failed", error = e)),
             })
@@ -361,7 +381,8 @@ impl MusicApp {
         .detach();
     }
 
-    /// Applies a [`CollectionAction`] (except `Radio`) to loaded tracks.
+    /// Applies a [`CollectionAction`] (except `Radio`) to loaded tracks of the
+    /// current page.
     pub fn play_tracks(
         &mut self,
         tracks: Vec<Track>,
@@ -369,19 +390,35 @@ impl MusicApp {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        self.play_tracks_in(tracks, action, None, window, cx);
+    }
+
+    /// [`Self::play_tracks`] with the queue context's name given (`None`: the page's).
+    pub fn play_tracks_in(
+        &mut self,
+        tracks: Vec<Track>,
+        action: CollectionAction,
+        context: Option<QueueContext>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         if tracks.is_empty() {
             return;
         }
-        match action {
-            CollectionAction::Play | CollectionAction::Radio => {
-                self.play_list(Rc::new(tracks), 0, cx)
+        let play = |this: &mut Self, tracks: Vec<Track>, start: usize, cx: &mut Context<Self>| {
+            match context {
+                Some(context) => this.play_list_in(Rc::new(tracks), start, Some(context), cx),
+                None => this.play_list(Rc::new(tracks), start, cx),
             }
+        };
+        match action {
+            CollectionAction::Play | CollectionAction::Radio => play(self, tracks, 0, cx),
             CollectionAction::Shuffle => {
                 let start = random_index(tracks.len());
                 if !self.queue.shuffle() {
                     self.set_shuffle(true, cx);
                 }
-                self.play_list(Rc::new(tracks), start, cx);
+                play(self, tracks, start, cx);
             }
             CollectionAction::PlayNext => self.queue_play_next(tracks, window, cx),
             CollectionAction::AddToQueue => self.queue_add(tracks, window, cx),
@@ -391,9 +428,10 @@ impl MusicApp {
 }
 
 enum Loaded {
-    Tracks(Vec<Track>),
-    /// An album's tracks (filtered with `ContentFilter::album_tracks`).
-    AlbumTracks(Vec<Track>),
+    /// Tracks and the name of what they are (the queue's "Next from …").
+    Tracks(Vec<Track>, String),
+    /// An album's tracks (filtered with `ContentFilter::album_tracks`) and its title.
+    AlbumTracks(Vec<Track>, String),
     Radio(WatchTarget, String),
 }
 
@@ -413,9 +451,10 @@ fn load_collection(
             let id = album.album.playlist_id.ok_or_else(no_radio)?;
             Ok(Loaded::Radio(playlist_radio(&id), album.album.title))
         }
-        (Collection::Album { browse_id, .. }, _) => Ok(Loaded::AlbumTracks(
-            client.album_complete(browse_id)?.tracks,
-        )),
+        (Collection::Album { browse_id, .. }, _) => {
+            let page = client.album_complete(browse_id)?;
+            Ok(Loaded::AlbumTracks(page.tracks, page.album.title))
+        }
         (Collection::Playlist { id }, CollectionAction::Radio) => Ok(Loaded::Radio(
             playlist_radio(id),
             t!("radio.playlist_label").into(),
@@ -424,6 +463,7 @@ fn load_collection(
             let page = client.playlist_complete(id, PLAYLIST_PAGES)?;
             Ok(Loaded::Tracks(
                 page.tracks.into_iter().map(|e| e.track).collect(),
+                page.playlist.title,
             ))
         }
         (Collection::Artist { id }, action) => {
@@ -435,7 +475,7 @@ fn load_collection(
                 }
                 CollectionAction::Shuffle if artist.shuffle.is_some() => {
                     let target = artist.shuffle.unwrap_or_default();
-                    Ok(Loaded::Tracks(client.next(&target)?.tracks))
+                    Ok(Loaded::Tracks(client.next(&target)?.tracks, name))
                 }
                 _ => Ok(Loaded::Tracks(
                     artist
@@ -447,6 +487,7 @@ fn load_collection(
                             _ => None,
                         })
                         .collect(),
+                    name,
                 )),
             }
         }

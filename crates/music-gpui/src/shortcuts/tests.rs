@@ -307,6 +307,7 @@ fn bindings_before(primary: &str) -> Vec<(String, &'static str, Option<&'static 
         (p("y"), "go_history", None),
         (p("shift-r"), "recognize_song", None),
         ("escape".into(), "escape", Some("MusicApp")),
+        (p("a"), "select_all_rows", Some("MusicApp")),
         (p("h"), "hide", None),
         (p("alt-h"), "hide_others", None),
         (p("m"), "minimize", None),

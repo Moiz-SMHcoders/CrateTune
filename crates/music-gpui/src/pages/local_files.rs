@@ -316,9 +316,6 @@ impl Render for LocalFilesPage {
                     .child(div().flex_1())
                     .child(filter_field(&self.filter)),
             );
-        let bar = self
-            .list
-            .selection_bar("local", |p: &mut Self| &mut p.list, None, cx);
         let body = if self.list.is_empty() {
             let (title, detail) = match (self.loaded, prefs.local_folders.is_empty()) {
                 (false, _) => (t!("common.loading"), ""),
@@ -343,10 +340,6 @@ impl Render for LocalFilesPage {
             self.list
                 .render("local-songs", |p: &mut Self| &mut p.list, None, cx)
         };
-        v_flex()
-            .size_full()
-            .child(header)
-            .children(bar.map(|b| div().px_8().pb_2().child(b)))
-            .child(body)
+        v_flex().size_full().child(header).child(body)
     }
 }

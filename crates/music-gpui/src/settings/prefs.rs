@@ -48,6 +48,9 @@ pub struct AudioConfig {
     pub output_device: Option<String>,
     /// Display name of the saved device, shown while the list loads / if it is missing.
     pub output_device_name: Option<String>,
+    /// The device picker lists every device, ALSA's virtual and duplicate ones too
+    /// (`music_core::tidy_output_devices`).
+    pub show_all_devices: bool,
     /// Last custom sleep timer length in minutes.
     pub sleep_custom_minutes: u32,
     /// Where full-length YouTube streams come from.
@@ -67,6 +70,7 @@ impl Default for AudioConfig {
             normalize: true,
             output_device: None,
             output_device_name: None,
+            show_all_devices: false,
             sleep_custom_minutes: 20,
             stream_source: StreamSourceMode::Auto,
         }

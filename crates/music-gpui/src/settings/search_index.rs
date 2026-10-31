@@ -781,6 +781,18 @@ pub const ENTRIES: &[Entry] = &[
         "bluetooth"
     ),
     entry!(
+        "playback.show_all_devices",
+        Playback,
+        "settings.playback.output",
+        "settings.playback.show_all_devices",
+        "settings.playback.show_all_devices_desc",
+        "alsa",
+        "dmix",
+        "virtual",
+        "hidden",
+        "devices"
+    ),
+    entry!(
         "playback.sleep",
         Playback,
         -,
@@ -1514,6 +1526,17 @@ pub const ENTRIES: &[Entry] = &[
         -,
         "together",
         "guests",
+        "approve"
+    ),
+    entry!(
+        "together.approve_suggestions",
+        Together,
+        "settings.together.hosting",
+        "together.room.approve_suggestions",
+        "settings.together.approve_suggestions_desc",
+        "together",
+        "guests",
+        "suggestions",
         "approve"
     ),
     entry!(

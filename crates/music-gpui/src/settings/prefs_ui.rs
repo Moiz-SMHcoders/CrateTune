@@ -457,6 +457,16 @@ impl SettingsPanel {
         });
     }
 
+    /// The device picker lists every device (not only the useful ones).
+    pub fn set_show_all_devices(&mut self, on: bool, cx: &mut Context<Self>) {
+        if self.settings.audio.show_all_devices != on {
+            // Display only: nothing for the engine.
+            self.settings.audio.show_all_devices = on;
+            self.changed(false, cx);
+            cx.notify();
+        }
+    }
+
     /// Lists output devices off the UI thread.
     pub fn refresh_devices(&mut self, cx: &mut Context<Self>) {
         if matches!(self.prefs.devices, Devices::Loading) {

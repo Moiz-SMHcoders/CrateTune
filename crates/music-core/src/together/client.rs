@@ -15,7 +15,8 @@ use std::time::{Duration, Instant};
 use super::conn::{Conn, Link, POLL, Recv};
 use super::link::JoinInfo;
 use super::messages::{
-    AddTrackMode, ControlAction, Message, PROTOCOL_VERSION, RoomSettings, RoomState, TogetherTrack,
+    AddTrackMode, ControlAction, Message, PROTOCOL_VERSION, RoomSettings, RoomState,
+    SuggestionState, TogetherTrack,
 };
 use super::sync::{ClockSnapshot, TogetherClock};
 use crate::{Error, Result};
@@ -41,6 +42,12 @@ pub enum ClientEvent {
     /// The host decided on a pending join.
     JoinDecision {
         approved: bool,
+    },
+    /// What became of a song this guest suggested (hosts that support approvals).
+    SuggestionStatus {
+        track_id: String,
+        state: SuggestionState,
+        reason: Option<String>,
     },
     /// The host refused something (`code`: `not_allowed`, `invalid_session`, …).
     ServerError {
@@ -342,6 +349,16 @@ fn run(
                     Message::JoinDecision { approved, .. } => {
                         emit(ClientEvent::JoinDecision { approved });
                     }
+                    Message::SuggestionStatus {
+                        track_id,
+                        state,
+                        reason,
+                        ..
+                    } => emit(ClientEvent::SuggestionStatus {
+                        track_id,
+                        state,
+                        reason,
+                    }),
                     Message::HeartbeatPong {
                         ping_id,
                         server_elapsed_realtime_ms,
