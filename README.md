@@ -13,8 +13,25 @@ name or branding.
 ## Install / build
 
 **Users:** download the DMG (macOS), the AppImage / tarball (Linux) or the installer / zip
-(Windows) from the releases, see [docs/USER_GUIDE.md](docs/USER_GUIDE.md) (features,
-shortcuts, settings, sign-in, limitations) and [CHANGELOG.md](CHANGELOG.md). Testers: see
+(Windows) from the [releases](https://github.com/Moiz-SMHcoders/CrateTune/releases), or use a
+package manager (below); see [docs/USER_GUIDE.md](docs/USER_GUIDE.md) (features,
+shortcuts, settings, sign-in, limitations) and [CHANGELOG.md](CHANGELOG.md). What the app
+connects to and stores: [PRIVACY.md](PRIVACY.md) (no telemetry).
+
+| Package manager | Install | Update |
+|---|---|---|
+| Homebrew (macOS) | `brew install --cask moiz-smhcoders/tap/cratetune` | `brew upgrade --cask cratetune` |
+| Scoop (Windows) | `scoop bucket add cratetune https://github.com/Moiz-SMHcoders/scoop-bucket`, then `scoop install cratetune` | `scoop update cratetune` |
+| AUR (Arch) | `yay -S cratetune-bin` (release binary) or `yay -S cratetune` (built from source) | `yay -Syu` |
+| Flatpak (Linux) | `flatpak install flathub io.github.moiz_smhcoders.cratetune` | `flatpak update` |
+
+The tap, bucket, AUR packages and Flathub entry are being set up (manifests in `packaging/`,
+steps in [docs/RELEASING.md](docs/RELEASING.md#package-managers)); until they are live,
+use the release downloads. A copy installed by a package manager doesn't update itself:
+Settings → About says "Updates come from Homebrew" (or Scoop, AUR, Flatpak), and the package
+manager updates it. The DMG, installer, zip, AppImage and tarball update themselves
+([Self-update](#self-update)). The Homebrew cask removes macOS's quarantine flag after
+checking the download, because the app isn't notarized yet. Testers: see
 [docs/TESTING.md](docs/TESTING.md) (Windows build, .exe / installer, manual checklist).
 Open bugs, unverified areas and missing features: [docs/BACKLOG.md](docs/BACKLOG.md).
 
@@ -40,6 +57,7 @@ music-relay` ([Relay server](#relay-server-music-relay)).
 |---|---|---|
 | macOS | `scripts/bundle-macos.sh [--no-build] [--no-dmg]` | `CrateTune.app` (Info.plist with bundle id, version from Cargo, `LSMinimumSystemVersion` 11.0, `NSMicrophoneUsageDescription`, high-res, music category; ad-hoc signed, or Developer ID + hardened runtime with `MACOS_SIGN_IDENTITY`), `cratetune-<ver>-macos-<arch>.dmg` (first installs) and `cratetune-<ver>-macos-<arch>.app.zip` (the updater's package, `ditto -c -k --keepParent`) |
 | Linux | `scripts/bundle-linux.sh [--no-build] [--appimage]` | `.tar.gz` with `bin/`, `.desktop`, hicolor icons, AppStream metainfo, `install.sh`; AppImage via `appimagetool` |
+| Package managers | `scripts/update-packages.sh [--version X.Y.Z] [--in-place]` | Homebrew cask, Scoop manifest, AUR `PKGBUILD` + `.SRCINFO` (`-bin` and source), Flatpak manifest + metainfo + desktop file, from a release's `SHA256SUMS.txt` (`target/packages/`, or `packaging/` with `--in-place`) |
 | Windows | `pwsh scripts/bundle-windows.ps1` | `.zip` and an Inno Setup 6 per-user installer (`packaging/windows/installer.iss`); the `.exe` gets its icon + version resource from `build.rs` (`embed-resource`, native Windows builds). An MSI could be made with `cargo-wix` instead. |
 
 CI (`.github/workflows/ci.yml`) runs fmt, clippy (also with `--features screenshot`) and
@@ -2556,7 +2574,14 @@ in [docs/USER_GUIDE.md → Updates](docs/USER_GUIDE.md#updates); cutting a relea
     renamed over it.
   * **Tarball** (`<prefix>/bin/cratetune` + `share/applications/cratetune.desktop`):
     `tar -xzf`, then `bin/` + `share/` are replaced all-or-nothing as on Windows. A
-    read-only or `/usr` prefix, Flatpak and Snap get the link only.
+    read-only or `/usr` prefix gets the link only.
+  * **Package managers** (`ManualReason::PackageManager`): `CRATETUNE_PACKAGED=<name>`
+    (`<APP_ID>_PACKAGED`), the Flatpak / Snap sandbox (`FLATPAK_ID`, `SNAP`), a one-word
+    `packaged` marker (`<prefix>/share/<id>/packaged`, next to the Windows exe, or in the
+    bundle's `Contents/Resources`), or the path (`/opt/homebrew/Caskroom/<id>` or
+    `/usr/local/Caskroom/<id>` for a bundle; `…\scoop\apps\<id>\…`). Such a copy never
+    checks (no request to GitHub); About shows "Updates come from <manager>" and the
+    "Check for Updates…" menu items are hidden (`update_check::checks_enabled`).
 * **UI** (`update_check.rs`, `settings/about.rs`):
   * The status line has a step button: Update to X.Y.Z → progress + Cancel → Restart to
     finish (or Try again / Download manually). The button sits next to **Check now**,
