@@ -78,6 +78,8 @@ pub(crate) struct MfDecoder {
     /// The decoder allocates its output samples.
     provides_samples: bool,
     output_size: u32,
+    /// Drained at the end of the video: a flush alone doesn't bring it back.
+    drained: bool,
 }
 
 // SAFETY: the transform is created in the multi-threaded apartment and only
@@ -119,6 +121,7 @@ impl MfDecoder {
             stride: init.width,
             provides_samples: false,
             output_size: 0,
+            drained: false,
         };
         decoder.negotiate_output()?;
         // SAFETY: valid transform.
@@ -338,6 +341,17 @@ impl Decoder for MfDecoder {
     }
 
     fn flush(&mut self) {
+        // After a drain (the end of the video) the decoder gives no more
+        // output for new input, so a seek back from the end starts a fresh one.
+        if self.drained {
+            match Self::new(&self.init) {
+                Ok(fresh) => {
+                    *self = fresh;
+                    return;
+                }
+                Err(e) => log::warn!("video: restarting the decoder: {e}"),
+            }
+        }
         // SAFETY: valid transform.
         let _ = unsafe { self.transform.ProcessMessage(MFT_MESSAGE_COMMAND_FLUSH, 0) };
     }
@@ -346,6 +360,7 @@ impl Decoder for MfDecoder {
         // SAFETY: valid transform.
         unsafe { self.transform.ProcessMessage(MFT_MESSAGE_COMMAND_DRAIN, 0) }
             .map_err(|e| mf_err("drain", e))?;
+        self.drained = true;
         let mut out = Vec::new();
         self.drain_output(&mut out)?;
         Ok(out)
