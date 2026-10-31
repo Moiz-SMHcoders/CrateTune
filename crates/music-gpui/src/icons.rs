@@ -83,6 +83,8 @@ gpui_kit_assets::icon_assets!(
         ArrowUpDown,
         HardDriveDownload,
         Bookmark,
+        UserPlus,
+        Smartphone,
         // browse & search
         CloudOff,
         ArrowUpLeft,

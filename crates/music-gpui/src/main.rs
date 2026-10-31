@@ -33,6 +33,7 @@
 #[macro_use]
 mod i18n;
 mod account;
+mod account_list;
 mod actions;
 mod anim;
 mod app;
@@ -40,9 +41,11 @@ mod backdrop;
 mod bar_items_script;
 mod bar_script;
 mod browse;
+mod browser_import;
 mod card_render;
 mod clock;
 mod components;
+mod continue_card;
 mod effects;
 mod icons;
 mod identity;
@@ -66,6 +69,7 @@ mod np_lyrics;
 mod np_region;
 mod pages;
 mod palette;
+mod play_report;
 mod playback;
 mod playlist_cover;
 mod playlist_ops;

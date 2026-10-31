@@ -4782,8 +4782,10 @@ dependencies = [
 name = "music-core"
 version = "0.2.6"
 dependencies = [
+ "aes 0.8.4",
  "base64 0.22.1",
  "block2 0.6.2",
+ "cbc 0.1.2",
  "crc32fast",
  "csv",
  "deunicode",
@@ -4809,8 +4811,10 @@ dependencies = [
  "objc2-media-player",
  "objc2-web-kit",
  "opus-decoder",
+ "pbkdf2",
  "pinyin",
  "regex",
+ "ring",
  "rodio",
  "roxmltree 0.21.2",
  "rquickjs",
@@ -4819,6 +4823,7 @@ dependencies = [
  "rustls",
  "serde",
  "serde_json",
+ "sha1",
  "sha1_smol",
  "sha2 0.10.9",
  "symphonia",

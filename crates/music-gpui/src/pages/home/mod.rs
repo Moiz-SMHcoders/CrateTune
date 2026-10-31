@@ -873,6 +873,10 @@ impl Render for HomePage {
         if let Some(nudge) = region_nudge(cx) {
             content = content.child(nudge);
         }
+        // "Continue from another device" (`continue_card.rs`).
+        if let Some(card) = crate::continue_card::render(cx) {
+            content = content.child(card);
+        }
 
         for slot in model::layout(&cfg, &available) {
             match slot {

@@ -15,6 +15,7 @@
 //! app has to react.
 
 mod about;
+mod account_secrets;
 mod accounts;
 mod appearance;
 pub mod bar_items;

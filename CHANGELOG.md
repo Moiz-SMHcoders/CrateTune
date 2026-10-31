@@ -5,6 +5,35 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+* **Several YouTube Music accounts, switched in one click.** Add accounts from Settings →
+  Account → *Your accounts* or the top bar's account menu (**Add account…**); switch from
+  either. Each account keeps its own sign-in in the keychain, its name, avatar, Google account
+  index / channel, and (when signed in through the window) its own sign-in profile, so
+  background renewals never mix accounts. A switch swaps the session at once, reloads Home and
+  the pages, and syncs that account's library. Liked songs, saved albums, subscriptions and
+  YouTube playlists follow the account in use; local files, local playlists, play history,
+  downloads and settings are shared. Likes still owed to YouTube stay with their account.
+  Signing out of one switches to another. (After Zuno and Limusic.)
+* **Sign in from your browser.** Takes the YouTube sign-in of Chrome, Edge, Brave, Firefox,
+  Safari (macOS), Arc, Vivaldi, Opera or Chromium on this computer: pick a profile, CrateTune
+  reads only its youtube.com cookies and checks the account. macOS asks for the browser's
+  "Safe Storage" keychain key; Safari needs Full Disk Access; on Windows, browsers with
+  app-bound encryption (recent Chrome, Edge, Brave) are shown as locked, with the reason.
+  (After refryt.)
+* **Add plays to my YouTube history** (Settings → Account, on by default): signed in, the
+  songs you play are reported to your YouTube Music history like ArchiveTune does
+  (`videostatsPlaybackUrl` and watch-time pings), so they show up on your phone.
+* **Home → "Jump back in"**: a small card for the newest song in your YouTube Music history
+  when it was played on another device, with **Resume** (song + radio; episodes and long
+  videos at YouTube's saved position) and dismiss.
+
+### Changed
+
+* A background sign-in renewal is used only if it is still the same login; a sign-in
+  profile holding another account is never used to switch accounts silently.
+
 ## [0.2.6] — 2026-10-31
 
 

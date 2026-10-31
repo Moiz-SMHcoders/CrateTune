@@ -2,7 +2,9 @@
 //!
 //! Secrets are the Last.fm API secret and session key, the ListenBrainz user
 //! token, the proxy password, the YouTube Music sign-in cookie and the Spotify
-//! refresh token. They are stored with the `keyring` crate (macOS Keychain, Windows
+//! refresh token. Accounts that are signed in but not in use keep their cookies
+//! under keys of their own ([`account_cookie_key`]; "Several accounts" in
+//! `account_list.rs`), read and written with the `*_key` functions. They are stored with the `keyring` crate (macOS Keychain, Windows
 //! Credential Manager, Secret Service on Linux) under service [`SERVICE`], one
 //! entry per [`Secret`].
 //!
@@ -243,6 +245,61 @@ pub fn delete(backend: Option<&dyn Backend>, secret: Secret) -> Result<(), Strin
     backend.map_or(Ok(()), |b| b.delete(secret.key()))
 }
 
+/// The keychain entry / settings-file key of a saved (not active) account's cookie.
+pub fn account_cookie_key(account_id: &str) -> String {
+    format!("{}@{account_id}", Secret::YouTubeCookie.key())
+}
+
+/// Reads one entry by key: keychain first, then the file copy. Blocking.
+pub fn load_key(
+    backend: Option<&dyn Backend>,
+    file: &BTreeMap<String, String>,
+    key: &str,
+) -> Option<String> {
+    let from_keychain = match backend.map(|b| b.get(key)) {
+        Some(Ok(value)) => value,
+        Some(Err(e)) => {
+            eprintln!("music-gpui: keychain read failed for {key} ({e}); using the settings file");
+            None
+        }
+        None => None,
+    };
+    from_keychain.or_else(|| file.get(key).cloned())
+}
+
+/// [`store`] by key. Blocking.
+pub fn store_key(backend: Option<&dyn Backend>, key: &str, value: &str) -> Stored {
+    match backend {
+        Some(b) => match b.set(key, value) {
+            Ok(()) => Stored::Keychain,
+            Err(e) => Stored::File(format!("{}: {e}", b.name())),
+        },
+        None => Stored::File("keychain disabled".into()),
+    }
+}
+
+/// [`delete`] by key. Blocking.
+pub fn delete_key(backend: Option<&dyn Backend>, key: &str) -> Result<(), String> {
+    backend.map_or(Ok(()), |b| b.delete(key))
+}
+
+/// [`apply`] by key.
+pub fn apply_key(
+    file: &mut BTreeMap<String, String>,
+    key: &str,
+    value: Option<&str>,
+    stored: &Stored,
+) {
+    match (value, stored) {
+        (Some(value), Stored::File(_)) => {
+            file.insert(key.to_owned(), value.to_owned());
+        }
+        _ => {
+            file.remove(key);
+        }
+    }
+}
+
 /// Updates the settings-file copy after [`store`] / [`delete`]: the file only
 /// keeps a secret when the keychain refused it.
 pub fn apply(
@@ -380,6 +437,43 @@ mod tests {
                 .values
                 .is_empty()
         );
+    }
+
+    /// Saved accounts' cookies live under keys of their own, in the keychain or (when
+    /// it refuses) the settings file, and never collide with the active cookie.
+    #[test]
+    fn account_cookies_by_key() {
+        let keychain = Fake::default();
+        let mut file = BTreeMap::new();
+        let key = account_cookie_key("0123456789abcdef");
+        assert_eq!(key, "youtube-cookie@0123456789abcdef");
+        let stored = store_key(Some(&keychain), &key, "SAPISID=saved");
+        apply_key(&mut file, &key, Some("SAPISID=saved"), &stored);
+        assert!(file.is_empty());
+        put(
+            Some(&keychain),
+            &mut file,
+            Secret::YouTubeCookie,
+            "SAPISID=active",
+        );
+        assert_eq!(
+            load_key(Some(&keychain), &file, &key).as_deref(),
+            Some("SAPISID=saved")
+        );
+        assert_eq!(
+            load_all(Some(&keychain), &file, &[Secret::YouTubeCookie]).values
+                [&Secret::YouTubeCookie],
+            "SAPISID=active"
+        );
+        delete_key(Some(&keychain), &key).unwrap();
+        assert_eq!(load_key(Some(&keychain), &file, &key), None);
+
+        // No keychain (MUSIC_SECRET_STORE=file): the settings file holds it.
+        let stored = store_key(None, &key, "SAPISID=f");
+        apply_key(&mut file, &key, Some("SAPISID=f"), &stored);
+        assert_eq!(load_key(None, &file, &key).as_deref(), Some("SAPISID=f"));
+        apply_key(&mut file, &key, None, &Stored::Keychain);
+        assert_eq!(load_key(None, &file, &key), None);
     }
 
     /// Talks to the real OS keychain (may prompt on macOS); run with `--ignored`.

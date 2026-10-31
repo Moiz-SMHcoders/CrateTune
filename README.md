@@ -1132,6 +1132,67 @@ cards, grids and menus are this app's own (hover effects and play buttons includ
   restore** (library database + settings JSON without secrets, window frames or account;
   restoring keeps the current sign-in) followed by a "Restart now" prompt (`cx.restart()`).
 
+### Several accounts, browser sign-in, YouTube history
+
+* **Several accounts** (`account_list.rs`, after Zuno and Limusic). `library.account` is the
+  account in use, `library.saved_accounts` the other signed-in ones (name, avatar, e-mail,
+  `auth_user`, `data_sync_id`, a local `id`, `login_key` = a hash of the cookie's `SAPISID`,
+  the sign-in `profile`, `added_at`, ratings still owed to YouTube). The active cookie stays
+  in `Secret::YouTubeCookie`; each saved one is the keychain entry `youtube-cookie@<id>`
+  (`secrets::account_cookie_key`, settings-file fallback as for every secret). A sign-in
+  while signed in is planned by `account::plan_sign_in`: the same identity (login + Google
+  index, or e-mail + channel) renews the account in use, a saved one is signed in again and
+  switched to, anything else is added and switched to. A switch (`activate_account`) reads
+  the saved cookie off the UI thread, then at once: the outgoing account goes to the list
+  with its *current* (rotated) cookie, the incoming one gets a new `Session` (hooks
+  attached), the pending rating queue moves to the outgoing account's config and the
+  incoming account's queued ratings go back into the queue, pages are rebuilt
+  (`refresh_pages`: Home's cache is per account), `account_after_cookie` refreshes the
+  profile and an authoritative `Trigger::AccountSwitch` sync replaces the YouTube-owned
+  parts of the library. The keychain moves run in one background job in a safe order
+  (outgoing saved first, then the active entry, then the incoming key deleted;
+  `settings/account_secrets.rs`). **Per account vs shared:** one library database; liked
+  songs, library songs, saved albums, subscriptions and YouTube playlist mirrors are
+  YouTube's and re-synced on a switch; local files (and their likes), local playlists,
+  history, stats, downloads and search history are shared and never touched by a switch.
+  **Sign-in profiles** (`login_webview::plan_profile`): each account that signed in through
+  the window has its own WebView2 folder (`SignIn` for the first, `SignIn-<id>`) or macOS 14+
+  `WKWebsiteDataStore` identifier; macOS 11–13 have one store, emptied before another
+  account signs in there. Silent renewals load the account in use's profile and are
+  accepted only if the renewed cookie is the same login (`innertube::login_key`).
+  Accounts saved before this have no `login_key` and keep the old profile
+  (`AccountConfig::sign_in_profile`).
+* **Sign in from your browser** (`music_core::browser_cookies`, `browser_import.rs`, after
+  refryt). Discovery looks at file names only (per OS: Chrome, Edge, Brave, Arc, Vivaldi,
+  Opera, Chromium profiles with `Network/Cookies`; Firefox profiles with `cookies.sqlite`;
+  Safari's `Cookies.binarycookies`), newest first, with profile names from `Local State` /
+  `profiles.ini`. The chosen store is copied to a private temp folder (deleted after) and
+  only `host_key = 'youtube.com' OR LIKE '%.youtube.com'` rows are read. Chromium values:
+  `v10`/`v11` AES-128-CBC with PBKDF2-HMAC-SHA1(`saltysalt`; 1003 rounds with the macOS
+  Keychain's "<Browser> Safe Storage" password, 1 round with libsecret / KWallet /
+  `peanuts` on Linux), `v10` AES-256-GCM on Windows with `Local State`'s DPAPI-sealed key,
+  the SHA-256 host prefix of database version 24 dropped; `v20` (app-bound encryption) is
+  reported, and Windows profiles whose `Local State` has `app_bound_encrypted_key` are
+  listed as locked. The header is then signed in like a pasted cookie (`sign_in_from`), which
+  checks the account. Tested with fixture databases encrypted with test keys only.
+* **YouTube history** (`innertube/playback_report.rs`, `play_report.rs`, after ArchiveTune's
+  `registerPlayback` and Zuno's play report). `library.report_plays` (default on; off while
+  the listening history is paused, for local files and while the session is expired):
+  5 s into a song a signed-in `player` request (with `playbackContext`) gives
+  `playbackTracking`; `videostatsPlaybackUrl` is pinged (`ver=2`, `c=WEB_REMIX`, `cver`, a
+  fresh 16-character `cpn`, `rtn=0`), then `videostatsWatchtimeUrl` every 30 s and at the
+  end (`st`/`et` = the ranges actually heard, clamped to the wall time; `final=1` last).
+  Pings are signed like InnerTube calls and only ever sent to `*.youtube.com`.
+* **Home → "Jump back in"** (`continue_card.rs`): `history_items` (`FEmusic_history`, with
+  `startTimeSeconds` / `playbackProgressPercentage` as a resume position) is read when Home
+  is shown, at most every 3 minutes; the card offers the newest entry unless it is the last
+  local play, playing now, dismissed (`library.continue_dismissed`) or a local file.
+  **Resume** starts the song's radio and seeks to the saved position once it plays.
+* **Unverified against Google / real browsers:** real multi-account switching, whether
+  YouTube accepts and files the reported plays, whether history entries carry a position,
+  and real browser imports (macOS Keychain prompt, Windows DPAPI and app-bound encryption,
+  libsecret / KWallet, Safari's Full Disk Access).
+
 ### Provider modules (`.arch`)
 
 | ![Modules section](docs/screenshots/modules-installed.png) | ![Install review](docs/screenshots/modules-review.png) |

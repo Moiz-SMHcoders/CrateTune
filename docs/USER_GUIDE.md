@@ -297,6 +297,9 @@ likes, library, playlists, subscriptions and personalized recommendations.
   missing, the app says so and opens **Paste cookie…** instead. The window keeps its own
   browser profile with your Google session (like a browser would), so CrateTune can renew
   your YouTube Music sign-in in the background; **Sign out** deletes it.
+* **Everywhere:** **Sign in from your browser…** takes the sign-in of a browser on this
+  computer where you're signed in to YouTube Music (see
+  [Sign in from your browser](#sign-in-from-your-browser)).
 * **Everywhere (and on Linux):** **Paste cookie…** — copy the `Cookie` request header of
   music.youtube.com from your browser's developer tools (step-by-step instructions are in
   the dialog).
@@ -314,14 +317,86 @@ fails does it say **"Your YouTube Music sign-in expired"**, with a **Sign in aga
 sign in again; browsing keeps working, signed out. On Linux (paste-cookie sign-in) there is
 no background renewal: paste a fresh cookie when asked.
 
-**Several Google accounts.** Like youtube.com, one browser login can hold several Google
-accounts. If yours does, Settings → Account → Accounts lists them by name and e-mail;
-pick the one CrateTune should use. If it holds just one, a note says so instead. To add
-another: sign in to each account on music.youtube.com in your browser (avatar → Switch
-account → Add account), then sign out in CrateTune and use **Paste cookie…** with that
-browser's cookie (the sign-in window keeps only the first account). **Channels** (brand
-accounts) of the Google account in use are listed below it and are separate from this.
-If a switch fails, CrateTune stays on the account you had and tells you why.
+**Several Google accounts in one login.** Like youtube.com, one browser login can hold
+several Google accounts. If yours does, Settings → Account → Accounts lists them by name and
+e-mail; pick the one CrateTune should use. If it holds just one, a note says so instead.
+**Channels** (brand accounts) of the Google account in use are listed below it. If a switch
+fails, CrateTune stays on the account you had and tells you why. To keep accounts of
+*different* logins side by side, see [Several accounts](#several-accounts).
+
+### Several accounts
+
+You can stay signed in to several YouTube Music accounts and switch between them in one
+click:
+
+* **Add one:** Settings → Account → **Your accounts** → *Add an account*, or **Add
+  account…** in the account menu of the top bar. Sign in with any of the usual ways
+  (**Sign in with Google…**, **Sign in from your browser…**, **Paste cookie…**). The new
+  account is added and becomes the one in use; the previous one stays in the list. Signing in
+  again to an account that is already in the list just renews it.
+* **Switch:** click another account in the top bar's account menu, or **Switch** next to it
+  in Settings → Account. The switch is instant: Home, your library pages and recommendations
+  reload for that account, and its liked songs, saved albums, subscriptions and playlists are
+  synced from YouTube Music.
+* **Remove:** the **×** next to an account in Settings → Account deletes its saved sign-in.
+  **Sign out** removes the account in use and switches to the most recently added other one.
+
+What belongs to which account: **liked songs, the library songs, saved albums,
+subscriptions and your YouTube playlists** follow the account in use (YouTube Music keeps
+them, and a switch syncs them again). **Local files, local playlists, play history and
+statistics, downloads, search history and settings** are shared by all accounts, and a
+switch never deletes them. Likes or dislikes that couldn't reach YouTube yet stay with the
+account they were made with and are sent when you switch back to it.
+
+Each account that signed in with **Sign in with Google…** keeps its own sign-in profile, so
+its session can be renewed in the background without mixing up accounts (on macOS 11–13
+there is one profile for the app: only the account that signed in through the window last
+can be renewed there). Each account's sign-in is kept in the system keychain on its own.
+
+### Sign in from your browser
+
+If you're already signed in to music.youtube.com in a browser on this computer,
+**Sign in from your browser…** (Settings → Account) signs you in with that browser's YouTube
+sign-in: pick the browser and profile from the list, CrateTune reads only its youtube.com
+cookies (on this computer, nothing is uploaded), checks the account with YouTube and keeps
+the sign-in in the keychain.
+
+| | macOS | Windows | Linux |
+|---|---|---|---|
+| Chrome, Edge, Brave, Vivaldi, Opera, Chromium | ✓ (asks for keychain access) | only browsers without app-bound encryption (see below) | ✓ |
+| Arc | ✓ (asks for keychain access) | only without app-bound encryption | — |
+| Firefox | ✓ | ✓ | ✓ |
+| Safari | ✓ with Full Disk Access | — | — |
+
+* **macOS** asks whether CrateTune may use "*Browser* Safe Storage" from your keychain. That
+  is expected: it's the key the browser encrypts its cookies with. Choose **Allow**. Safari
+  keeps its cookies where apps need **Full Disk Access** (System Settings → Privacy &
+  Security → Full Disk Access).
+* **Windows:** recent Chrome, Edge and Brave lock their cookies to themselves (*app-bound
+  encryption*), so no other app can read them. Such profiles are listed as locked; use
+  Firefox, **Sign in with Google…** or **Paste cookie…** instead. A Chromium browser that is
+  running may keep its cookies locked: quit it and try again.
+* **Linux:** the cookie key comes from the keyring (GNOME Keyring via `secret-tool`, or
+  KWallet), else Chromium's built-in fallbacks.
+
+This was tested with sample cookie files only, not yet with real browser profiles.
+
+### Plays on your other devices
+
+Signed in, **Add plays to my YouTube history** (Settings → Account → Library sync; on by
+default) adds the songs you play in CrateTune to your YouTube Music history, as YouTube
+Music and ArchiveTune do: they show up on your phone and in your recommendations. Nothing is
+sent for local files or while your listening history is paused (Settings → Privacy).
+
+The other way round, **Home** shows a small **"Jump back in"** card when the newest song in
+your YouTube Music history was played somewhere else (your phone, another computer): it
+says "played on another device", and **Resume** plays it with its radio as the queue.
+Podcast episodes and long videos continue where YouTube says you stopped, when it says so;
+songs start from the beginning (YouTube doesn't keep a position for them). Dismiss the card
+with **×**. Both need the same Google account on both devices.
+
+Not yet tried with a real account: whether YouTube files these plays, and whether its
+history carries the saved positions.
 
 ### Likes and YouTube
 
@@ -718,6 +793,12 @@ Builds signed with a Developer ID keep the same identity, and neither prompt com
   every 6 hours, when you host or join with a code.
 * **Casting** looks for devices on your network only when you open the Cast menu or the
   Chromecast settings.
+* Signed in, **Add plays to my YouTube history** (on by default; off while your listening
+  history is paused) tells YouTube which songs you play and how long, like YouTube Music's
+  own apps; Home's "Jump back in" card reads your YouTube Music history.
+* **Sign in from your browser** reads the youtube.com cookies of the browser profile you
+  pick, only when you click it, on this computer; they are stored in the keychain like any
+  sign-in and sent only to YouTube. Other accounts you keep signed in are stored the same way.
 
 ## Known limitations
 

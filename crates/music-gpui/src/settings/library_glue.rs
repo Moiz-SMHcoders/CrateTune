@@ -83,6 +83,7 @@ fn backup_settings(settings: &Settings) -> Settings {
     s.window = None;
     s.mini_player = None;
     s.library.account = None;
+    s.library.saved_accounts.clear();
     s
 }
 
@@ -91,6 +92,7 @@ fn merge_restored(current: &Settings, mut restored: Settings) -> Settings {
     restored.window = current.window;
     restored.mini_player = current.mini_player;
     restored.library.account = current.library.account.clone();
+    restored.library.saved_accounts = current.library.saved_accounts.clone();
     restored
 }
 

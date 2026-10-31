@@ -458,6 +458,78 @@ pub(crate) fn parse_history(resp: &Value) -> Vec<HistorySection> {
         .collect()
 }
 
+/// One entry of the account's listening history, newest first, with where YouTube
+/// says playback stopped when the entry carries it (podcast episodes, long videos).
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(default)]
+pub struct HistoryItem {
+    pub track: crate::Track,
+    /// The day it belongs to ("Today", "Yesterday", …).
+    pub section: String,
+    /// YouTube's saved position in seconds (`watchEndpoint.startTimeSeconds`, or the
+    /// progress bar's percentage of the duration); `None` for songs.
+    pub resume_secs: Option<u32>,
+}
+
+/// Where a history row says playback stopped: an explicit `startTimeSeconds` of its
+/// play endpoint, else `musicPlaybackProgressRenderer.playbackProgressPercentage` of
+/// `duration` (only partly played: 1–99 %).
+pub(crate) fn resume_position(renderer: &Value, duration: Option<u32>) -> Option<u32> {
+    fn find<'a>(v: &'a Value, key: &str, depth: usize) -> Option<&'a Value> {
+        if depth == 0 {
+            return None;
+        }
+        match v {
+            Value::Object(map) => map
+                .get(key)
+                .or_else(|| map.values().find_map(|c| find(c, key, depth - 1))),
+            Value::Array(list) => list.iter().find_map(|c| find(c, key, depth - 1)),
+            _ => None,
+        }
+    }
+    let number = |v: &Value| {
+        v.as_u64()
+            .or_else(|| v.as_str().and_then(|s| s.trim().parse().ok()))
+    };
+    if let Some(start) = find(renderer, "startTimeSeconds", 12).and_then(number)
+        && start > 0
+    {
+        return u32::try_from(start).ok();
+    }
+    let percent = find(renderer, "playbackProgressPercentage", 12).and_then(number)?;
+    let duration = u64::from(duration?);
+    (1..100)
+        .contains(&percent)
+        .then(|| u32::try_from(duration * percent / 100).ok())
+        .flatten()
+        .filter(|s| *s > 0)
+}
+
+/// [`parse_history`] flattened into rows, with resume positions.
+pub(crate) fn parse_history_items(resp: &Value) -> Vec<HistoryItem> {
+    let mut out = Vec::new();
+    for section in primary_sections(resp) {
+        let Some(shelf) = section.get("musicShelfRenderer") else {
+            continue;
+        };
+        let title = text(shelf.get("title")).unwrap_or_default();
+        for row in arr_at(shelf, "/contents") {
+            let Some(entry) = parse_playlist_entry(row) else {
+                continue;
+            };
+            let resume_secs = row
+                .get("musicResponsiveListItemRenderer")
+                .and_then(|r| resume_position(r, entry.track.duration_secs));
+            out.push(HistoryItem {
+                track: entry.track,
+                section: title.clone(),
+                resume_secs,
+            });
+        }
+    }
+    out
+}
+
 /// `encryptedBlobId` of an upload's finalize response.
 pub(crate) fn parse_cover_blob(body: &str) -> Result<String> {
     let v: Value = serde_json::from_str(body)
@@ -704,6 +776,12 @@ impl InnerTube {
         Ok(parse_history(&self.browse_authed(HISTORY)?))
     }
 
+    /// Listening history as rows, newest first, with YouTube's saved positions
+    /// (the "Continue from another device" card).
+    pub fn history_items(&self) -> Result<Vec<HistoryItem>> {
+        Ok(parse_history_items(&self.browse_authed(HISTORY)?))
+    }
+
     /// The signed-in account's rating of a song or video, from the `next` response's
     /// like button (what YouTube Music's own player shows). `None` when the response
     /// has no like button for `video_id`, or when the answer can't be trusted (see
@@ -841,6 +919,36 @@ impl InnerTube {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn history_rows_with_saved_positions() {
+        let path = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/fixtures/innertube/authed/history.json"
+        );
+        let resp: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+        let items = parse_history_items(&resp);
+        let sections = parse_history(&resp);
+        assert_eq!(
+            items.len(),
+            sections.iter().map(|s| s.tracks.len()).sum::<usize>()
+        );
+        assert_eq!(items[0].section, "Today");
+        assert_eq!(items.last().unwrap().section, "Yesterday");
+        assert!(items.iter().all(|i| i.resume_secs.is_none()), "songs");
+
+        // An episode half heard; a video with an explicit start; a finished one.
+        let half = json!({"playbackProgress": {"musicPlaybackProgressRenderer": {
+            "playbackProgressPercentage": 50}}});
+        assert_eq!(resume_position(&half, Some(3600)), Some(1800));
+        assert_eq!(resume_position(&half, None), None);
+        let done = json!({"x": {"playbackProgressPercentage": 100}});
+        assert_eq!(resume_position(&done, Some(3600)), None);
+        let start = json!({"overlay": {"a": [{"watchEndpoint": {"videoId": "v", "startTimeSeconds": "754"}}]},
+            "playbackProgressPercentage": 10});
+        assert_eq!(resume_position(&start, Some(3600)), Some(754));
+        assert_eq!(resume_position(&json!({}), Some(10)), None);
+    }
 
     #[test]
     fn rating_bodies() {

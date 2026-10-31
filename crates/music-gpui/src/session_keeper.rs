@@ -7,10 +7,13 @@
 //!   login: `Account::set_cookie` ignores it.
 //! * **Rejected session.** music-core calls [`AppHooks::refresh`] on the worker
 //!   thread of the failed request; the main thread renews the cookie from the sign-in
-//!   web view's persistent profile without showing anything
+//!   web view profile of the account in use without showing anything
 //!   (`login_webview::silent_refresh`) and the request is retried once. At most one
-//!   renewal per 10 minutes (music-core's rate limit). Linux has no sign-in web view:
-//!   the renewal fails right away.
+//!   renewal per 10 minutes (music-core's rate limit). A renewal must stay the same
+//!   login (`innertube::login_key`): a profile holding another Google session is
+//!   never used to switch accounts behind the user's back. Linux has no sign-in web
+//!   view, and an account signed in without it (a pasted or imported cookie) has no
+//!   profile: the renewal fails right away.
 //! * **Expired.** When the renewal fails, one notification says so with a "Sign in
 //!   again" button (Settings → Account says it too), likes wait in the rating queue
 //!   without using up their attempts, and when the session works again (renewed,
@@ -140,7 +143,14 @@ impl MusicApp {
             let _ = reply.send(false);
             return;
         };
-        let Some(answer) = crate::login_webview::silent_refresh(cx) else {
+        let profile = self
+            .store
+            .account
+            .config
+            .as_ref()
+            .and_then(|c| c.sign_in_profile());
+        let answer = profile.and_then(|p| crate::login_webview::silent_refresh(&p, cx));
+        let Some(answer) = answer else {
             eprintln!(
                 "music-gpui: YouTube Music rejected the sign-in; this platform can't renew it in the background"
             );
@@ -160,7 +170,18 @@ impl MusicApp {
                         .is_some_and(|s| Arc::ptr_eq(s, &session))
                 })
                 .unwrap_or(false);
+            // The profile must still hold this login, not another account's.
+            let same_login = |cookie: &str| {
+                music_core::innertube::login_key(cookie)
+                    == music_core::innertube::login_key(&session.cookie())
+            };
             let renewed = match result {
+                Ok(cookie) if still_current && !same_login(&cookie) => {
+                    eprintln!(
+                        "music-gpui: the sign-in profile holds another account; not used to renew"
+                    );
+                    false
+                }
                 Ok(cookie) if still_current => {
                     session.replace_cookie(cookie);
                     eprintln!("music-gpui: sign-in renewed in the background");

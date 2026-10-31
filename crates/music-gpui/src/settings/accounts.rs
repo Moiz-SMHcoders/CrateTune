@@ -1,7 +1,9 @@
 //! Account section: YouTube Music sign-in (embedded Google sign-in window on
-//! macOS, or a pasted `cookie` header everywhere), the signed-in account with
-//! its channels / Google account index, library sync and sign-out
-//! (`account.rs` does the work).
+//! macOS / Windows, the cookies of an installed browser, or a pasted `cookie`
+//! header everywhere), the signed-in account with its channels / Google account
+//! index, the other signed-in accounts (switch, add, remove), library sync, play
+//! reporting and sign-out (`account.rs`, `account_list.rs`, `browser_import.rs` and
+//! `play_report.rs` do the work).
 
 use std::cell::Cell;
 
@@ -23,6 +25,7 @@ use music_core::innertube::GoogleAccount;
 use super::SettingsPanel;
 use super::widgets::{group, group_at, note, row, row_at, status_line};
 use crate::account::{Busy, GoogleAccountsView};
+use crate::account_list::AccountChoice;
 use crate::app::{read_app, update_app};
 use crate::components::artwork::artwork;
 use crate::icons::Lucide;
@@ -158,6 +161,141 @@ pub fn open_cookie_dialog(window: &mut Window, cx: &mut App) {
     });
 }
 
+/// The ways to sign in, as buttons; `add`: for another account (a fresh sign-in
+/// profile in the window).
+fn sign_in_buttons(add: bool) -> gpui::Div {
+    h_flex()
+        .gap_2()
+        .flex_wrap()
+        .pt_1()
+        .children(SIGN_IN_WINDOW.then(|| {
+            Button::new(if add {
+                "account-add-google"
+            } else {
+                "account-google"
+            })
+            .when(!add, |b| b.primary())
+            .when(add, |b| b.outline())
+            .small()
+            .icon(gpui_component::IconName::Globe)
+            .label(t!("settings.account.sign_in_google"))
+            .on_click(move |_, window, cx| {
+                #[cfg(any(target_os = "macos", target_os = "windows"))]
+                if add {
+                    crate::login_webview::open_new(window, cx);
+                } else {
+                    crate::login_webview::open(window, cx);
+                }
+                #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+                let _ = (window, cx, add);
+            })
+        }))
+        .child(
+            Button::new(if add {
+                "account-add-browser"
+            } else {
+                "account-browser"
+            })
+            .outline()
+            .small()
+            .icon(gpui_component::IconName::Inbox)
+            .label(t!("settings.account.from_browser"))
+            .on_click(|_, window, cx| crate::browser_import::open_dialog(window, cx)),
+        )
+        .child(
+            Button::new(if add {
+                "account-add-cookie"
+            } else {
+                "account-cookie"
+            })
+            .outline()
+            .small()
+            .icon(Lucide::Cookie)
+            .label(t!("settings.account.paste_cookie"))
+            .on_click(|_, window, cx| open_cookie_dialog(window, cx)),
+        )
+}
+
+/// "Your accounts": every signed-in account (switch, remove) and the ways to add one.
+fn account_list(choices: &[AccountChoice], busy: bool, cx: &mut App) -> gpui::Div {
+    let muted = cx.theme().muted_foreground;
+    let rows: Vec<AnyElement> = choices
+        .iter()
+        .enumerate()
+        .map(|(ix, a)| {
+            let avatar = artwork(a.avatar.clone(), px(28.), px(14.), cx);
+            let action = if a.active {
+                div()
+                    .text_xs()
+                    .text_color(muted)
+                    .child(t!("settings.account.in_use"))
+                    .into_any_element()
+            } else {
+                let (switch_id, remove_id) = (a.id.clone(), a.id.clone());
+                h_flex()
+                    .gap_1()
+                    .child(
+                        Button::new(("account-switch", ix))
+                            .small()
+                            .outline()
+                            .disabled(busy)
+                            .label(t!("settings.account.switch"))
+                            .on_click(move |_, window, cx| {
+                                let id = switch_id.clone();
+                                update_app(cx, |app, cx| app.switch_to_saved(id, window, cx));
+                            }),
+                    )
+                    .child(
+                        Button::new(("account-remove", ix))
+                            .small()
+                            .ghost()
+                            .disabled(busy)
+                            .icon(Lucide::X)
+                            .tooltip(t!("settings.account.remove"))
+                            .on_click(move |_, window, cx| {
+                                let id = remove_id.clone();
+                                update_app(cx, |app, cx| app.remove_saved_account(id, window, cx));
+                            }),
+                    )
+                    .into_any_element()
+            };
+            h_flex()
+                .gap_3()
+                .child(avatar)
+                .child(
+                    v_flex()
+                        .flex_1()
+                        .min_w_0()
+                        .child(
+                            div()
+                                .text_sm()
+                                .truncate()
+                                .child(SharedString::from(a.name.clone())),
+                        )
+                        .children(a.detail.clone().map(|d| {
+                            div()
+                                .text_xs()
+                                .text_color(muted)
+                                .truncate()
+                                .child(SharedString::from(d))
+                        })),
+                )
+                .child(action)
+                .into_any_element()
+        })
+        .collect();
+    group_at("account.list", t!("settings.account.list_group"), cx)
+        .child(v_flex().gap_2().children(rows))
+        .child(row(
+            t!("settings.account.add"),
+            Some(t!("settings.account.add_desc")),
+            div(),
+            cx,
+        ))
+        .child(sign_in_buttons(true))
+        .child(note(t!("settings.account.list_note"), cx))
+}
+
 fn busy_line(busy: &Busy, cx: &App) -> Option<AnyElement> {
     let theme = cx.theme();
     match busy {
@@ -188,17 +326,21 @@ pub(super) fn render(
     _: &mut Window,
     cx: &mut Context<SettingsPanel>,
 ) -> AnyElement {
-    let Some((signed_in, status, sync, channels, google, expired)) = read_app(cx, |app, _| {
-        let a = &app.store.account;
-        (
-            a.is_signed_in(),
-            a.status.clone(),
-            a.sync.clone(),
-            a.channels.clone(),
-            a.google_accounts_view(),
-            a.expired,
-        )
-    }) else {
+    let Some((signed_in, status, sync, channels, google, expired, choices, switching)) =
+        read_app(cx, |app, cx| {
+            let a = &app.store.account;
+            (
+                a.is_signed_in(),
+                a.status.clone(),
+                a.sync.clone(),
+                a.channels.clone(),
+                a.google_accounts_view(),
+                a.expired,
+                app.account_choices(cx),
+                a.switching,
+            )
+        })
+    else {
         return note(t!("common.loading"), cx).into_any_element();
     };
     let config = panel.settings.library.account.clone();
@@ -209,39 +351,19 @@ pub(super) fn render(
         None => {
             let mut sign_in = group_at("account.youtube", t!("common.youtube_music"), cx)
                 .child(note(t!("settings.account.not_signed_in"), cx))
-                .child(
-                    h_flex()
-                        .gap_2()
-                        .flex_wrap()
-                        .pt_1()
-                        .children(SIGN_IN_WINDOW.then(|| {
-                            Button::new("account-google")
-                                .primary()
-                                .small()
-                                .icon(gpui_component::IconName::Globe)
-                                .label(t!("settings.account.sign_in_google"))
-                                .on_click(|_, window, cx| {
-                                    #[cfg(any(target_os = "macos", target_os = "windows"))]
-                                    crate::login_webview::open(window, cx);
-                                    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
-                                    let _ = (window, cx);
-                                })
-                        }))
-                        .child(
-                            Button::new("account-cookie")
-                                .outline()
-                                .small()
-                                .icon(Lucide::Cookie)
-                                .label(t!("settings.account.paste_cookie"))
-                                .on_click(|_, window, cx| open_cookie_dialog(window, cx)),
-                        ),
-                );
+                .child(sign_in_buttons(false));
             if SIGN_IN_WINDOW {
                 sign_in = sign_in
                     .child(note(t!("settings.account.google_refused"), cx))
                     .child(note(t!("settings.account.profile_note"), cx));
             }
+            sign_in = sign_in.child(note(t!("settings.account.browser_note"), cx));
             content = content.child(sign_in.children(busy_line(&status, cx)));
+            // Accounts saved while none is in use (a switch that failed).
+            if !choices.is_empty() {
+                let busy = switching || matches!(status, Busy::Working(_));
+                content = content.child(account_list(&choices, busy, cx));
+            }
         }
         Some(account) => {
             let theme = cx.theme();
@@ -319,6 +441,7 @@ pub(super) fn render(
                 youtube = youtube.child(note(t!("settings.account.profile_note"), cx));
             }
             content = content.child(youtube);
+            content = content.child(account_list(&choices, busy || switching, cx));
 
             let sync_button = Button::new("account-sync")
                 .primary()
@@ -339,6 +462,12 @@ pub(super) fn render(
                 .on_click(cx.listener(|this, checked: &bool, _, cx| {
                     let on = *checked;
                     this.update_library(|l| l.auto_sync = on, cx);
+                }));
+            let report_plays = Switch::new("account-report-plays")
+                .checked(library.report_plays)
+                .on_click(cx.listener(|this, checked: &bool, _, cx| {
+                    let on = *checked;
+                    this.update_library(|l| l.report_plays = on, cx);
                 }));
             let skip_disliked = Switch::new("account-skip-disliked")
                 .checked(library.skip_disliked)
@@ -361,6 +490,13 @@ pub(super) fn render(
                         t!("settings.account.auto_sync"),
                         Some(t!("settings.account.auto_sync_desc")),
                         auto_sync,
+                        cx,
+                    ))
+                    .child(row_at(
+                        "account.sync.report_plays",
+                        t!("settings.account.report_plays"),
+                        Some(t!("settings.account.report_plays_desc")),
+                        report_plays,
                         cx,
                     ))
                     .child(row_at(

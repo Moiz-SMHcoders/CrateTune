@@ -21,6 +21,11 @@
 //! keychain, throttled (`session_keeper.rs`). A value written back is the same login,
 //! not a new sign-in ([`Account::set_cookie`]).
 //!
+//! **Several accounts** (`account_list.rs`): other signed-in accounts are kept
+//! with their own cookies and switched to in one click; the sign-in here decides
+//! whether a cookie renews the account in use, signs a saved one in again or adds a
+//! new one ([`plan_sign_in`]).
+//!
 //! **Not verified against a real account** in this round: every request here is
 //! music-core's cookie layer, whose request bodies are unit-tested but which was
 //! never run signed-in. Errors are shown in the Account section.
@@ -76,6 +81,12 @@ pub struct Account {
     pub sync: Busy,
     /// Automatic syncs, the sync guard and per-song likes (`youtube_sync.rs`).
     pub(crate) yt: crate::youtube_sync::YtSync,
+    /// A switch to a saved account is reading its cookie (`account_list.rs`).
+    pub(crate) switching: bool,
+    /// The play being reported to the account's history (`play_report.rs`).
+    pub(crate) report: Option<crate::play_report::PlayReport>,
+    /// Home's "Continue from another device" card (`continue_card.rs`).
+    pub(crate) resume: crate::continue_card::ResumeState,
 }
 
 /// What Settings → Account shows for the Google accounts of the login.
@@ -103,6 +114,18 @@ impl Account {
             status: Busy::Idle,
             sync: Busy::Idle,
             yt: Default::default(),
+            switching: false,
+            report: None,
+            resume: Default::default(),
+        }
+    }
+
+    /// The cookie requests sign with now (the session's, rotated or renewed), to keep
+    /// when another account takes over.
+    pub fn current_cookie(&self) -> Option<String> {
+        match &self.session {
+            Some(s) => Some(s.cookie()),
+            None => self.cookie.clone(),
         }
     }
 
@@ -129,6 +152,9 @@ impl Account {
         // Another cookie is another browser session with its own accounts.
         self.google_accounts = None;
         self.yt.forget_account();
+        // Its plays and history are its own.
+        self.report = None;
+        self.resume = Default::default();
         if self.cookie.is_none() {
             self.channels.clear();
         }
@@ -187,7 +213,12 @@ impl Account {
             return None;
         }
         match result {
-            Ok((config, channels)) => {
+            Ok((mut config, channels)) => {
+                // The same entry of the account list, now acting as another account.
+                config.id = previous.id.clone();
+                config.login_key = previous.login_key.clone();
+                config.profile = previous.profile.clone();
+                config.added_at = previous.added_at;
                 self.channels = channels;
                 self.config = Some(config.clone());
                 self.status = Busy::Idle;
@@ -312,6 +343,52 @@ pub fn normalize_cookie(raw: &str) -> String {
         .join(" ")
 }
 
+/// What a successful sign-in does to the account list.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) enum SignInPlan {
+    /// Nobody was signed in, or it is the account in use (signed in again): it is
+    /// the account in use.
+    Active,
+    /// A saved account signed in again (`id`): its cookie is replaced and it is
+    /// switched to.
+    Saved(String),
+    /// Another account: added, and switched to; the one in use is kept.
+    Added,
+}
+
+/// Which account a sign-in with `new` is (see [`SignInPlan`]).
+pub(crate) fn plan_sign_in(
+    active: Option<&AccountConfig>,
+    saved: &[AccountConfig],
+    new: &AccountConfig,
+) -> SignInPlan {
+    if active.is_some_and(|a| a.same_identity(new)) {
+        return SignInPlan::Active;
+    }
+    match saved.iter().find(|s| s.same_identity(new)) {
+        Some(s) => SignInPlan::Saved(s.id.clone()),
+        None if active.is_none() => SignInPlan::Active,
+        None => SignInPlan::Added,
+    }
+}
+
+/// A freshly fetched config for the account in use, keeping what is local to its
+/// entry (id, when it was added, sync times, a profile when the sign-in had none).
+pub(crate) fn merge_local(old: Option<&AccountConfig>, mut new: AccountConfig) -> AccountConfig {
+    if let Some(old) = old.filter(|o| o.same_identity(&new)) {
+        new.id = old.id.clone();
+        new.added_at = old.added_at;
+        new.last_sync_at = old.last_sync_at;
+        new.last_liked_sync_at = old.last_liked_sync_at;
+        new.queued_ratings = old.queued_ratings.clone();
+        if new.profile.is_none() {
+            new.profile = old.profile.clone();
+        }
+    }
+    new.ensure_id();
+    new
+}
+
 /// Account name, avatar, channels, data sync id for `auth`. Blocking.
 fn fetch_account(auth: Auth) -> Result<(AccountConfig, Vec<AccountChannel>)> {
     fetch_account_on(InnerTube::default(), auth)
@@ -331,6 +408,7 @@ fn fetch_account_on(it: InnerTube, auth: Auth) -> Result<(AccountConfig, Vec<Acc
         data_sync_id: auth.data_sync_id,
         last_sync_at: None,
         last_liked_sync_at: None,
+        ..Default::default()
     };
     Ok((config, channels))
 }
@@ -380,6 +458,20 @@ impl MusicApp {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        self.sign_in_from(cookie, auth_user, None, window, cx);
+    }
+
+    /// Signs in with `cookie`, which came from sign-in web view `profile` (if any).
+    /// The account found renews the one in use, signs a saved one in again, or is
+    /// added and switched to ([`plan_sign_in`], `account_list.rs`).
+    pub fn sign_in_from(
+        &mut self,
+        cookie: String,
+        auth_user: u32,
+        profile: Option<String>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         let cookie = normalize_cookie(&cookie);
         let auth = Auth {
             auth_user,
@@ -395,7 +487,26 @@ impl MusicApp {
         cx.spawn_in(window, async move |this, cx| {
             let result = off_thread(move || fetch_account(auth)).await;
             this.update_in(cx, |this, window, cx| match result {
-                Ok((config, channels)) => {
+                Ok((mut config, channels)) => {
+                    config.login_key = music_core::innertube::login_key(&cookie);
+                    config.profile = profile;
+                    config.added_at = now_ms();
+                    let plan = plan_sign_in(
+                        this.store.account.config.as_ref(),
+                        &this.settings.read(cx).settings().library.saved_accounts,
+                        &config,
+                    );
+                    let config = match plan {
+                        SignInPlan::Active => {
+                            merge_local(this.store.account.config.as_ref(), config)
+                        }
+                        other => {
+                            this.store.account.status = Busy::Idle;
+                            this.finish_sign_in(other, config, channels, cookie, window, cx);
+                            return;
+                        }
+                    };
+                    this.release_profile(&config, cx);
                     let name = config.name.clone();
                     this.store.account.status = Busy::Idle;
                     this.store.account.channels = channels;
@@ -431,15 +542,30 @@ impl MusicApp {
         .detach();
     }
 
-    /// Forgets the cookie and the account (the synced library stays), and the Google
-    /// session of the sign-in web view's profile.
+    /// Forgets the cookie and the account in use (the synced library stays), and the
+    /// Google session of its sign-in web view profile. With other accounts saved, the
+    /// most recently added one takes over (`account_list.rs`).
     pub fn sign_out(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        if !self.sign_out_to_saved(window, cx) {
+            self.sign_out_now(window, cx);
+        }
+    }
+
+    /// [`Self::sign_out`] without another account taking over.
+    pub(crate) fn sign_out_now(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         if self.store.account.expired {
             self.hide_expired_notification(cx);
         }
-        self.store.account.config = None;
+        let profile = self
+            .store
+            .account
+            .config
+            .take()
+            .and_then(|c| c.sign_in_profile());
         self.store.account.set_cookie(None);
-        crate::login_webview::clear_profile(cx);
+        if let Some(profile) = profile {
+            crate::login_webview::clear_profile(&profile, cx);
+        }
         self.store.account.status = Busy::Idle;
         self.store.account.sync = Busy::Idle;
         // Ratings still owed to YouTube were that account's.
@@ -465,12 +591,23 @@ impl MusicApp {
                 match result {
                     Ok(((mut config, channels), reset)) => {
                         this.store.account.channels = channels;
-                        if let Some(old) = &this.store.account.config
-                            && !reset
-                        {
-                            config.last_sync_at = old.last_sync_at;
-                            config.last_liked_sync_at = old.last_liked_sync_at;
+                        if let Some(old) = &this.store.account.config {
+                            if !reset {
+                                config.last_sync_at = old.last_sync_at;
+                                config.last_liked_sync_at = old.last_liked_sync_at;
+                            }
+                            // The same entry of the account list.
+                            config.id = old.id.clone();
+                            // (An older version's account: its one profile.)
+                            config.profile = old.sign_in_profile();
+                            config.added_at = old.added_at;
+                            config.queued_ratings = old.queued_ratings.clone();
                         }
+                        config.login_key = this
+                            .store
+                            .account
+                            .current_cookie()
+                            .and_then(|c| music_core::innertube::login_key(&c));
                         if this.store.account.config.as_ref() != Some(&config) {
                             this.store.account.config = Some(config.clone());
                             this.settings.update(cx, |panel, cx| {
@@ -736,7 +873,7 @@ impl MusicApp {
     }
 
     /// Drops the ratings still owed to YouTube (sign-out, another account).
-    fn forget_queued_ratings(&mut self) {
+    pub(crate) fn forget_queued_ratings(&mut self) {
         if let Some(lib) = &self.store.library
             && let Err(e) = lib.clear_pending_ratings()
         {

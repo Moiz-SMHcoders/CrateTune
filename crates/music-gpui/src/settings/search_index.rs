@@ -1299,6 +1299,23 @@ pub const ENTRIES: &[Entry] = &[
         "account"
     ),
     entry!(
+        "account.list",
+        Account,
+        -,
+        "settings.account.list_group",
+        "settings.account.add_desc",
+        "accounts",
+        "switch",
+        "add",
+        "several",
+        "multiple",
+        "browser",
+        "import",
+        "chrome",
+        "firefox",
+        "safari"
+    ),
+    entry!(
         "account.sync",
         Account,
         "settings.account.sync_group",
@@ -1320,6 +1337,19 @@ pub const ENTRIES: &[Entry] = &[
         "background",
         "likes",
         "liked",
+        "youtube"
+    ),
+    entry!(
+        "account.sync.report_plays",
+        Account,
+        "settings.account.sync_group",
+        "settings.account.report_plays",
+        "settings.account.report_plays_desc",
+        "history",
+        "plays",
+        "devices",
+        "phone",
+        "scrobble",
         "youtube"
     ),
     entry!(
