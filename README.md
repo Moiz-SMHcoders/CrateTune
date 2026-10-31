@@ -873,8 +873,8 @@ locales/<locale>/*.lang  the catalogs (English = source), embedded by build.rs v
   saved. "Previous" restarts past 3 s; the end of a track (including a ~60 s preview)
   plays the next one. Queue panel: now playing, up next, history (click to play again).
 * **Settings page** with sections: Appearance (theme, text size, Now Playing layout +
-  background + full screen on open, mini player style), Playback (queue modes, quality, normalization, skip
-  silence, auto-skip, crossfade, speed + pitch, output device, sleep timer), Equalizer,
+  background + full screen on open, mini player layout + style), Playback (queue modes, quality, normalization, skip
+  silence, auto-skip, crossfade, speed + pitch, output device, sleep timer), Equalizer (+ reverb, sound presets),
   Modules (provider modules, playback source), Lyrics (look, providers, translation,
   romanization), Content & region, Network, Privacy,
   Storage (file locations), Account (YouTube sign-in, planned), Scrobbling & Discord,
@@ -892,8 +892,9 @@ locales/<locale>/*.lang  the catalogs (English = source), embedded by build.rs v
   Playing are never evicted. 4 dedicated fetch threads taking the newest request first,
   failed URLs retried after 30 s. Now Playing's 544 px art comes from it too (blur +
   accent for the last 8 tracks).
-* **Mini player** (⇧⌘M, View menu, bar button): floating 400×124 window, artwork, title,
-  previous / play / next, progress; stays visible over other apps (macOS panel with
+* **Mini player** (⇧⌘M, View menu, bar button): floating window in five layouts (bar
+  400×124, compact, artwork card, lyrics, turntable — see [Now Playing extras](#now-playing-extras-round-sound-effects-mini-player-layouts-turntable)),
+  artwork, title, previous / play / next, progress, the wheel for the volume; stays visible over other apps (macOS panel with
   `hidesOnDeactivate` off; Windows: made topmost with `SetWindowPos(HWND_TOPMOST)`, and
   as GPUI draws no title bar there, the top strip has a close button and is the drag area
   — `WindowControlArea::Drag` on Windows, `start_window_move` on Linux); position saved.
@@ -943,7 +944,7 @@ locales/<locale>/*.lang  the catalogs (English = source), embedded by build.rs v
 * **Sleep timer**: 5 / 15 / 30 / 45 / 60 min, end of track, a custom length (slider), off —
   in the bar (moon icon, remaining time as its label), the Now Playing header and the
   Playback section. "End of track" moves on to the next song and waits there paused.
-* **Now Playing**: eight designs — split (artwork + controls | lyrics), big artwork
+* **Now Playing**: nine designs — split (artwork + controls | lyrics), big artwork
   (centered, the current and next lyric line below the controls), lyrics first (lyrics
   across the screen, artwork / title / progress / transport in a bottom strip), and,
   after ArchiveTune's player designs (`np_designs.rs`): **immersive** (full-bleed artwork
@@ -953,7 +954,8 @@ locales/<locale>/*.lang  the catalogs (English = source), embedded by build.rs v
   huge title and time, the window fills with colour from the left as the song plays),
   **editorial** (two tones from the artwork, a round cut-out cover, serif headline, a
   "bento" of PLAY / PAUSE pill, next / previous circles, progress, toggles) and **with
-  queue** (artwork and controls beside the next eight songs, click to jump) — and four
+  queue** (artwork and controls beside the next eight songs, click to jump), **turntable**
+  (a record with the artwork as its label and a tonearm that follows the song) — and four
   backgrounds: blurred artwork, gradient between two artwork colours, solid colour,
   animated glow (three soft lights in the artwork's colours that drift only while
   playing; pre-rendered images, since GPUI has no radial gradients). Immersive, minimal
@@ -1009,7 +1011,8 @@ locales/<locale>/*.lang  the catalogs (English = source), embedded by build.rs v
   pulse), elapsed / remaining time, hover thumb + time bubble, volume with mute, scroll
   and a percentage bubble, lyrics button; static by default — see
   [Player bar](#player-bar-redesign-progress-styles-backgrounds).
-* **OS media controls**, **Equalizer**, **volume**: unchanged (history below).
+* **OS media controls**, **Equalizer**, **volume**: unchanged (history below); the
+  equalizer gained Warm and Night presets, a reverb and sound presets (Now Playing extras round).
 
 ### Home
 
@@ -2093,7 +2096,7 @@ item's ACL is tied to the binary). Secrets are never logged.
 | `MUSIC_REDUCE_MOTION=1\|0` | pretend the OS asks for reduced motion (or doesn't); Animations → System follows it |
 | `MUSIC_BAR_SPECTRUM_DUMP=1` | print the player bar analyzer's band statistics once a second (tuning the Equalizer style) |
 | `MUSIC_MALLOC=system` | keep macOS's default allocator behaviour (no re-exec with `MallocSpaceEfficient=1`, see `memory.rs`; for comparisons) |
-| `MUSIC_TRACE=1` | log playback transitions, seeks, saves, route changes, artwork downloads; `MUSIC_TIMINGS=1`: renders/s and frame intervals (p50 / p95 / max) of the window (`app`) and the player bar (`bar`), once a second |
+| `MUSIC_TRACE=1` | log playback transitions, seeks, saves, route changes, artwork downloads; `MUSIC_TIMINGS=1`: renders/s and frame intervals (p50 / p95 / max) of the window (`app`), the player bar (`bar`) and the mini player (`mini`), once a second |
 | `MUSIC_SCRIPT="5:@next,9:@seek=75,30:@quit"` | timed actions (any build) |
 | `MUSIC_TITLEBAR=system\|custom` | this session: the system title bar + old header, or the custom top bar (overrides Appearance → Window) |
 | `MUSIC_TITLEBAR_STYLE=windows\|linux\|mac` | debug / screenshot builds: draw that platform's window controls in the top bar |
@@ -3137,6 +3140,117 @@ Linux / Windows fonts for cards (fallback depends on installed fonts), the cache
 under a 120 Hz display, CPU of the final build with the screen awake (the screen locked
 before the last run; the final code equals the measured one plus the bar and Esc
 changes). Not measured: the Lyrics-first strip region separately.
+
+### Now Playing extras round: sound effects, mini player layouts, turntable
+
+| ![Turntable design, paused (arm lifted), sound menu button lit](docs/screenshots/npx-np-turntable-paused.png) | ![Sound menu in the Now Playing header](docs/screenshots/npx-np-sound-menu.png) |
+|---|---|
+| ![Settings: reverb under the equalizer (Warm preset)](docs/screenshots/npx-settings-reverb.png) | ![Settings: mini player layout](docs/screenshots/npx-settings-mini-layout.png) |
+| ![Ambient lights visualizer (live song, muted)](docs/screenshots/npx-np-lights.png) | ![Mini player: lyrics (live lyrics)](docs/screenshots/npx-mini-lyrics.png) |
+| ![Mini player: bar](docs/screenshots/npx-mini-bar.png) ![Mini player: compact](docs/screenshots/npx-mini-compact.png) | ![Mini player: artwork card](docs/screenshots/npx-mini-card.png) ![Mini player: turntable](docs/screenshots/npx-mini-turntable.png) |
+
+Ideas from four other desktop clients — Zuno (Apache-2.0), Limusic (GPL-3.0), refryt (GPL-3.0)
+and Deviload (MIT) — surveyed for Now Playing, the mini player and the sound; what was built
+is below, what was left out and why is BACKLOG M11. Sources per file: `THIRD_PARTY.md` of
+both crates.
+
+* **Reverb** (`music_core::reverb`, `Player::set_reverb`): a Freeverb-style room (eight
+  lowpass-feedback combs and four allpasses per channel, the right channel's lines 23
+  samples longer) with a pre-delay, on the deck's mix — after the per-track equalizer, the
+  crossfade and the pause ramp, before the spectrum tap and the volume — so a crossfade
+  shares one room and the visualizers show what is heard. Four rooms (room size / damping /
+  width / pre-delay): **Small room** 0.42 / 0.62 / 0.65 / 4 ms, **Hall** 0.80 / 0.42 / 1 /
+  22 ms, **Plate** 0.70 / 0.12 / 1 / 0 ms, **Cathedral** 0.95 / 0.30 / 1 / 45 ms, and a
+  **wet mix** 0–100 % (the song is lowered by up to half as the mix rises). Delay lengths
+  follow the output rate; wet / dry gains glide (~10 ms at 48 kHz). **Off costs nothing**:
+  the deck holds no reverb at all (`Option<Box<Reverb>>`); turning it off lets the wet part
+  fade, then drops it. The delay lines are allocated on the engine thread, not in the audio
+  callback. Paused, the tail rings out (the callback keeps feeding it silence until its
+  output stays under −120 dB once the input has been silent longer than the delay lines,
+  then clears it and stops). Values below 1e-20 are flushed to zero so the tail never
+  decays into subnormal floats. Settings → Equalizer → *Reverb*; `audio.reverb` /
+  `audio.reverb_mix` in settings.json. Unit tests (offline buffers, nothing played):
+  silence in → exact silence out for every room, 20 s of full-scale noise stays finite and
+  bounded, a Cathedral tail decays to exact zeros without a subnormal in any line and then
+  stops ringing, Small room < Hall < Cathedral in decay time, the pre-delay holds the first
+  echo back by 45 ms + the shortest comb, lengths double at twice the rate, off glides back
+  to the dry signal and finishes, and in the deck: off = untouched output and no reverb
+  allocated, on → audible, off again → dropped and bit-exact, the tail after a pause.
+* **Sound presets** (after Limusic's effect presets): *Original*, *Slowed + reverb* (0.85×,
+  −3 st, Hall 40 %), *Nightcore* (1.2×, +3 st, Plate 15 %), *Practice* (0.75×) and *Concert
+  hall* (Hall 25 %) set speed, pitch and reverb in one click; anything else shows *Custom*.
+* **EQ presets** *Warm* (Zuno) and *Night* (Deviload's six-band curve on our ten bands).
+* **Sound menu** (`components/sound_menu.rs`): Equalizer / Reverb / Sound presets submenus
+  and *Sound settings…*, in the player bar's quality menu (the source tag) and behind a new
+  sliders button in the Now Playing header, highlighted while the EQ is not flat, a reverb
+  is on, or the speed / pitch differ (Limusic lights its effects button the same way).
+* **Mini player layouts** (`MiniPlayerSkin`, Settings → Appearance → Mini player → *Layout*,
+  `now_playing.mini_skin`): **Bar** 400×124 (as before), **Compact** 320×84 (40 px art, title,
+  play / next, a 2 px progress line along the bottom edge), **Artwork card** 240×352 (the 544 px
+  art at 176 px, centred type, progress, transport), **Lyrics** 440×176 (the bar plus the
+  line being sung and the next one; it wakes at line starts like Now Playing's snippet) and
+  **Turntable** 264×376 (`turntable.rs`: a record with grooves and the artwork as its label;
+  the tonearm's needle travels from the outer groove to the label as the song plays, about
+  4° → 28°, and glides off the record while paused). A layout change reopens the window at
+  the same spot (size and title-bar placement are fixed at creation). The wheel over the
+  mini player changes the volume as over the bar's volume control.
+* **Turntable** Now Playing design: the same deck large on the left, the title, artists, the
+  line being sung, progress and transport beside it. The record does not spin (GPUI cannot
+  rotate images, and spinning would mean frames all the time); the arm wakes the screen once
+  per pixel of its travel, like the Minimal fill.
+* **Ambient lights** visualizer (`NpVisualizerStyle::Lights`, after Deviload): three of the
+  pre-rendered glow images in the artwork's colours behind the content (bottom left / right /
+  centre for the lows / mids / highs of the analyzer's 16 bands), opacity 0.17 + level × 0.76,
+  up to 28 % larger with the level; 20 fps while playing, still once the levels fall.
+* Scripts: `@reverb=off|small-room|hall|plate|cathedral`, `@reverb-mix=0.4`,
+  `@sound=original|slowed-reverb|nightcore|practice|concert-hall`,
+  `@mini-skin=bar|compact|card|lyrics|turntable`, `@np-viz-style=bars|lights`; settings
+  search finds *Reverb*, *Wet mix*, *Sound presets*, the mini player *Layout* and the
+  visualizer style.
+
+**Verified** (macOS, `MUSIC_SECRET_STORE=file`, temporary `MUSIC_CONFIG_DIR`, `MUSIC_VOLUME=0.0`
+everywhere): the DSP unit tests above (`cargo test -p music-core reverb deck`); every new
+script action changing and saving its setting (`settings.json`: `audio.reverb = "plate"`,
+`reverb_mix`, speed / pitch from `@sound=nightcore`, `now_playing.mini_skin`,
+`player_bar.np_visualizer_style`, the Warm gains); the screenshots above (release
+`screenshot` build; `MUSIC_FIXTURES` + demo clock, except the lights and the lyrics mini
+player, which used a live song played muted and live lyrics); the mini player reopening in
+each layout at the same spot; the turntable arm on the record while playing and off it while
+paused; settings search for *reverb* and *mini player layout*. Reverb cost offline (60 s of
+48 kHz stereo noise, release, `reverb_cost`): Small room 0.36 %, Hall 0.28 %, Plate 0.28 %,
+Cathedral 0.46 % of one core (the shared machine was busy; an idle Mac should be lower).
+
+**CPU / renders** (release builds of this branch and of main at `cd4c6ec`, real audio muted,
+`MUSIC_ON_TOP=1`, "daft punk" song 0, CPU over seconds 24–36, renders/s of the main window
+from `MUSIC_TIMINGS`; a second round of main and branch back to back — the machine had a load
+average of ~60 on 10 cores from other builds, so single runs varied by up to 15 points and
+some runs lost display frames; the second round was the quiet one):
+
+| Scenario | main | branch |
+|---|---|---|
+| Idle on Home | 1.1 % | 0.8 % |
+| Playing, Home | 1.9 %, 1 r/s | 1.4 %, 1 r/s |
+| Playing, Home, reverb Hall | — | 2.1–2.2 %, 1 r/s |
+| Now Playing (split) open | 3.0 %, 8–9 r/s | 2.5 %, 8–9 r/s |
+| Now Playing, visualizer bars | 2.0–3.3 %, 26–27 r/s | 0.7–7.0 %, 26–27 r/s |
+| Now Playing, ambient lights | — | 26–30 r/s while playing (CPU runs too noisy to quote) |
+| Now Playing, Turntable, playing / paused | — | 1.1–1.9 %, 5 r/s / 0.8 %, 0 r/s after the pause |
+| Mini player bar (main window) | 2.3 %, 1 r/s | 2.3 %, 1 r/s |
+| Mini player compact / card / lyrics / turntable | — | 0.8–2.5 % each, main window 1–2 r/s |
+| Mini player turntable, paused | — | 0.7 % |
+
+Nothing redraws continuously when paused or idle (demo clock, `MUSIC_TIMINGS`, which now also
+counts the mini player's renders as `mini N renders/s`): the turntable mini player renders
+once a second while playing, 7–9 frames for the arm's lift after a pause and then nothing;
+the lyrics layout 1–2 a second while playing (line changes, the poll), nothing paused; the
+Turntable design 5 a second while playing (the time label and one wake-up per pixel of arm
+travel), ~30 for the lift, nothing paused. The mini player still re-renders whenever the app
+notifies (as before this round), so it follows Now Playing's rate while that is open.
+
+**Not verified:** how the rooms sound (no audio was listened to; BACKLOG U19), the wet level
+on loud masters at a high mix (no limiter), the mini player layouts on Windows and Linux, a
+real mouse wheel over the mini player (the handler is the bar's), the lights on a 120 Hz
+display.
 
 ### Measurements (app shell round)
 

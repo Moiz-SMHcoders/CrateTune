@@ -144,3 +144,9 @@ card.align.right = Right
 card.size.small = Small
 card.size.medium = Medium
 card.size.large = Large
+
+# ---- Sound menu (Now Playing header button and the player bar's quality menu)
+# Tooltip of the sliders button: equalizer, reverb and sound presets.
+sound_menu.tooltip = Sound: equalizer, reverb, presets
+# Last item: opens Settings → Equalizer.
+sound_menu.settings = Sound settings…

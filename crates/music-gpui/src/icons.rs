@@ -149,6 +149,9 @@ impl AssetSource for Assets {
         if path == HEART_FILLED_PATH {
             return Ok(Some(Cow::Borrowed(HEART_FILLED_SVG)));
         }
+        if path == crate::turntable::TONEARM_PATH {
+            return Ok(Some(Cow::Borrowed(crate::turntable::TONEARM_SVG)));
+        }
         if path == THUMBS_DOWN_FILLED_PATH {
             return Ok(Some(Cow::Borrowed(THUMBS_DOWN_FILLED_SVG)));
         }

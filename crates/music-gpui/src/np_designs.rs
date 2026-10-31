@@ -12,6 +12,9 @@
 //! * **Editorial** — two tones taken from the artwork, a round cut-out cover,
 //!   a serif headline and a "bento" of controls (its editorial design).
 //! * **With queue** — artwork and controls beside the upcoming songs.
+//! * **Turntable** — a record with the artwork as its label and a tonearm that
+//!   follows the song (after Zuno's vinyl mini player and Deviload's picture
+//!   disc; `turntable.rs`), the title, the line being sung and the controls.
 //!
 //! None of them animates continuously: the time label and progress wake the
 //! screen once a second (or once per pixel of the Minimal fill); tweens and
@@ -1002,6 +1005,83 @@ impl MusicApp {
                     .child(self.transport_view(0.9, frame, cx)),
             )
             .child(queue)
+            .into_any_element()
+    }
+
+    /// Turntable: the deck on the left, type, the sung line and controls on the right.
+    pub(crate) fn render_turntable(
+        &mut self,
+        track: Option<&Track>,
+        position: Duration,
+        viewport: gpui::Size<Pixels>,
+        frame: &mut Frame,
+        cx: &mut Context<Self>,
+    ) -> AnyElement {
+        let side = (viewport.height * 0.66)
+            .min(viewport.width * 0.42)
+            .clamp(px(200.), px(560.));
+        let playing = self.playback.status == PlaybackStatus::Playing;
+        self.np.arm.animate_to(
+            if playing { 0. } else { 1. },
+            crate::turntable::LIFT,
+            frame.now,
+        );
+        let lift = frame.get(&self.np.arm);
+        // The needle travels about 0.4 rad along an arm of ~0.5 × side.
+        self.wake_per_pixel(side * 0.2, frame);
+        let angle = crate::turntable::arm_angle(self.played(position), lift);
+        let art = self.art_image(track, cx);
+        let deck = crate::turntable::deck(side, art, angle, &crate::turntable::DeckLook::default());
+        let (title, artists) = Self::titles(track);
+        let lyric = self
+            .lyric_snippet(track, position, frame)
+            .and_then(|(now, _)| now)
+            .filter(|l| !l.trim().is_empty());
+        let column = (viewport.width - side - px(160.)).clamp(px(240.), px(520.));
+        let fill = crate::theme::AppColors::get(cx).np_progress;
+        h_flex()
+            .flex_1()
+            .min_h_0()
+            .px(px(48.))
+            .gap(px(56.))
+            .items_center()
+            .justify_center()
+            .child(deck)
+            .child(
+                v_flex()
+                    .w(column)
+                    .gap_3()
+                    .child(
+                        div()
+                            .text_3xl()
+                            .font_weight(FontWeight::BOLD)
+                            .line_clamp(2)
+                            .child(title),
+                    )
+                    .child(
+                        div()
+                            .text_lg()
+                            .text_color(white(0.65))
+                            .truncate()
+                            .child(artists),
+                    )
+                    .child(
+                        div()
+                            .min_h(px(56.))
+                            .text_xl()
+                            .font_weight(FontWeight::SEMIBOLD)
+                            .text_color(white(0.88))
+                            .line_clamp(2)
+                            .children(lyric),
+                    )
+                    .child(self.progress_bar(position, px(4.), white(0.2), fill, cx))
+                    .child(self.times_row(position, white(0.6)))
+                    .child(
+                        h_flex()
+                            .justify_start()
+                            .child(self.transport_view(1., frame, cx)),
+                    ),
+            )
             .into_any_element()
     }
 }

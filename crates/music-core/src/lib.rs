@@ -13,6 +13,7 @@
 //!   gets full-length streams (TV client, or web client + BotGuard PoToken).
 //! * [`Player`] – background audio engine with a pollable [`PlaybackState`].
 //! * [`equalizer`] – parametric EQ applied live via [`Player::set_equalizer`].
+//! * [`reverb`] – reverb presets on the output via [`Player::set_reverb`].
 //! * [`Spectrum`] – real-time spectrum / level of the output for visualizers
 //!   ([`Player::spectrum`], [`SpectrumAnalyzer`]).
 //! * [`media_controls`] – OS now-playing info + media keys (macOS, Windows, Linux).
@@ -66,6 +67,7 @@ mod output;
 mod player;
 pub mod playlist_import;
 pub mod recognition;
+pub mod reverb;
 pub mod scrobble;
 mod silence;
 mod sleep;
@@ -98,6 +100,7 @@ pub use lyrics::{
 pub use model::{EntityRef, MusicVideoType, Track, format_duration};
 pub use output::{OutputDevice, tidy as tidy_output_devices};
 pub use player::{PlaybackState, PlaybackStatus, Player, WaveformState, WaveformStatus};
+pub use reverb::{ReverbPreset, ReverbSettings};
 pub use silence::{SilenceConfig, SkipSilence};
 pub use sleep::{SleepTimer, SleepTimerState};
 pub use spectrum::{

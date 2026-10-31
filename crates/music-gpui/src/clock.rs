@@ -117,8 +117,8 @@ impl Engine {
         }
     }
 
-    /// Quality, crossfade, skip silence, speed, pitch, auto-skip, normalization
-    /// and the output device. The demo clock only honours the speed.
+    /// Quality, crossfade, skip silence, speed, pitch, auto-skip, normalization,
+    /// reverb and the output device. The demo clock only honours the speed.
     pub fn apply_audio(&mut self, audio: &AudioConfig) {
         match self {
             Engine::Audio(player) => {
@@ -129,6 +129,7 @@ impl Engine {
                 player.set_pitch(audio.pitch);
                 player.set_auto_skip(audio.auto_skip);
                 player.set_normalization(audio.normalize);
+                player.set_reverb(audio.reverb());
                 player.set_output_device(audio.output_device.clone());
             }
             Engine::Demo(demo) => {

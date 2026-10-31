@@ -26,12 +26,14 @@
 //! | `@queue-move=FROM:TO`, `@queue-remove=N`, `@queue-jump=N`, `@queue-clear` | edit "up next" (0-based indices) |
 //! | `@shuffle=on\|off`, `@repeat=off\|all\|one` | queue modes (saved) |
 //! | `@mini[=on\|off]` | mini player window |
+//! | `@mini-skin=bar\|compact\|card\|lyrics\|turntable` | mini player layout (saved; an open mini player reopens in it) |
 //! | `@theme=dark\|black\|dynamic`, `@font-scale=1.125` | appearance (saved) |
 //! | `@home=OPTION:VALUE` | Home options (`quick_picks:last_listen`, `display:list`, `chips:off`, `backdrop:off`, `hide:feed`, `show:feed`; saved) or `pin:N` (search result N to the speed dial; `settings/home_ui.rs`) |
 //! | `@settings[=SECTION]`, `@close-settings` | settings page (`eq`, `integrations`/`accounts`, `appearance`, `about`, …) |
 //! | `@settings-search=QUERY`, `@settings-search-pick=N` | settings search: type QUERY into the field (opens Settings) and print the ranked results; pick result N (0-based) of the list |
 //! | `@settings-anchors` | open every settings section in turn and print which search-index rows it draws (and where hidden ones fall back to) |
 //! | `@eq=Bass`, `@eq=off`, `@eq=on` | equalizer preset / switch |
+//! | `@reverb=off\|small-room\|hall\|plate\|cathedral`, `@reverb-mix=0.4`, `@sound=original\|slowed-reverb\|nightcore\|practice\|concert-hall` | reverb room, wet mix (0–1), sound preset (saved) |
 //! | `@field=lastfm-key:VALUE` (also `lastfm-secret`, `lb-token`, `discord-id`) | type into a settings field |
 //! | `@lastfm-connect`, `@lastfm-finish`, `@lastfm-disconnect`, `@lastfm-clear` | Last.fm auth flow |
 //! | `@lb-validate`, `@lb-disconnect` | ListenBrainz |
@@ -711,6 +713,10 @@ impl MusicApp {
                     self.toggle_mini_player(cx);
                 }
             }
+            "mini-skin" => match arg.and_then(crate::settings::prefs::MiniPlayerSkin::parse) {
+                Some(skin) => panel.update(cx, |p, cx| p.set_mini_skin(skin, cx)),
+                None => eprintln!("music-gpui: @mini-skin wants bar|compact|card|lyrics|turntable"),
+            },
             "theme" => match arg.and_then(ThemeChoice::parse) {
                 Some(theme) => panel.update(cx, |p, cx| p.set_theme(theme, cx)),
                 None => eprintln!("music-gpui: unknown theme {arg:?}"),
@@ -940,6 +946,20 @@ impl MusicApp {
                 let secs = num().unwrap_or(0.) as f32;
                 panel.update(cx, |p, cx| p.set_crossfade(secs, window, cx));
             }
+            "reverb" => match arg.and_then(music_core::ReverbPreset::parse) {
+                Some(preset) => panel.update(cx, |p, cx| p.set_reverb(preset, cx)),
+                None => eprintln!("music-gpui: @reverb wants off|small-room|hall|plate|cathedral"),
+            },
+            "reverb-mix" => {
+                let mix = num().unwrap_or(0.3) as f32;
+                panel.update(cx, |p, cx| p.set_reverb_mix(mix, window, cx));
+            }
+            "sound" => match arg.and_then(crate::settings::prefs::SoundPreset::parse) {
+                Some(preset) => panel.update(cx, |p, cx| p.apply_sound_preset(preset, window, cx)),
+                None => eprintln!(
+                    "music-gpui: @sound wants original|slowed-reverb|nightcore|practice|concert-hall"
+                ),
+            },
             "quality" => {
                 let quality = match arg {
                     Some("low") => Quality::Low,

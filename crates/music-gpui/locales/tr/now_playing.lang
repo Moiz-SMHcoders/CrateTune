@@ -109,3 +109,5 @@ card.size.large = Büyük
 np.queue.next_in_queue = SIRADA SONRAKİ
 np.queue.next_from = SIRADA {name} İÇİNDEN
 np.queue.next_from_radio = SIRADA {name} RADYOSUNDAN
+sound_menu.tooltip = Ses: ekolayzır, yankı, ön ayarlar
+sound_menu.settings = Ses ayarları…

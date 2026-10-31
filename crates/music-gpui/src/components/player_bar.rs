@@ -61,7 +61,7 @@ const TRANSPORT_WIDTH: f32 = 2. * ICON_BUTTON + 2. * SKIP_BUTTON + PLAY_BUTTON +
 /// Width of the time labels beside the progress track.
 const TIME_WIDTH: f32 = 46.;
 /// Volume change per scroll line.
-const SCROLL_VOLUME_STEP: f32 = 0.04;
+pub(crate) const SCROLL_VOLUME_STEP: f32 = 0.04;
 
 // ---- layout -------------------------------------------------------------------
 
@@ -736,7 +736,7 @@ impl Render for PlayerBar {
     }
 }
 
-fn scroll_lines(e: &ScrollEvent) -> f32 {
+pub(crate) fn scroll_lines(e: &ScrollEvent) -> f32 {
     match e.delta {
         gpui::ScrollDelta::Lines(p) => p.y,
         gpui::ScrollDelta::Pixels(p) => f32::from(p.y) / 20.,

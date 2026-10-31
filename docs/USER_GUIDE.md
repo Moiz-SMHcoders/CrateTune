@@ -195,7 +195,23 @@ page. It takes effect the next time the app starts; **Restart now** does it righ
   **Autoplay similar songs** (Settings → Content & region) keeps playing related songs
   when the queue ends.
 * **Mini player** (⇧⌘M): a small window that stays on top; click or drag its progress
-  bar to seek. On Windows and Linux, drag its top strip to move it; × closes it.
+  bar to seek, scroll over it to change the volume. On Windows and Linux, drag its top
+  strip to move it; × closes it. Five layouts (Settings → Appearance → Mini player →
+  **Layout**): **Bar** (artwork, title, controls and progress in a row), **Compact** (a slim
+  strip with a hairline of progress at the bottom), **Artwork card** (big square artwork
+  with the controls under it), **Lyrics** (the bar plus the line being sung and the next
+  one) and **Turntable** (a record with the artwork as its label; the tonearm moves across
+  the record as the song plays and lifts off while paused). Each layout has its own window
+  size; an open mini player switches at once and stays where it was.
+* **Sound effects**: the sliders button in the Now Playing header, or the source / quality
+  tag in the bar (its menu), has quick submenus for the **equalizer** presets, the
+  **reverb** rooms and the **sound presets**; the button is highlighted while the sound is
+  changed. Reverb (Settings → Equalizer): **Small room**, **Hall**, **Plate** or
+  **Cathedral**, with a **Wet mix** slider for how much of the room you hear; off by default.
+  When you pause, the echo rings out instead of stopping dead. **Sound presets** set speed,
+  pitch and reverb in one click: *Original*, *Slowed + reverb*, *Nightcore*, *Practice*
+  (slower, same pitch) and *Concert hall*; change any of them afterwards and the preset
+  shows as *Custom*.
 * **Sleep timer**: the moon button in the bar — 5 to 60 minutes, end of the song, or a
   custom length.
 * **Media keys** and the system's now-playing controls work on all three systems; on
@@ -209,7 +225,7 @@ page. It takes effect the next time the app starts; **Restart now** does it righ
 
 ## Now Playing and lyrics
 
-Open with ⌘L or by clicking the bar's title. Eight designs, from the design menu in its
+Open with ⌘L or by clicking the bar's title. Nine designs, from the design menu in its
 header or Settings → Appearance:
 
 * **Split** — artwork and controls beside the lyrics; **Big artwork** — centered, with the
@@ -218,10 +234,17 @@ header or Settings → Appearance:
 * **Card** — a floating card with the artwork, the audio format and a volume slider;
 * **Minimal** — just the title and the time; the window fills with colour as the song plays;
 * **Editorial** — two colours from the artwork, a round cover, a large PLAY / PAUSE button;
-* **With queue** — artwork and controls beside the next songs (click one to play it).
+* **With queue** — artwork and controls beside the next songs (click one to play it);
+* **Turntable** — a record with the artwork as its label and a tonearm that follows the
+  song (it lifts off while paused), with the title, the line being sung and the controls.
 
 Four backgrounds (blurred artwork, gradient, solid, glow) apply to the designs that don't
 bring their own colours (Immersive, Minimal and Editorial do).
+
+**Visualizer** (Settings → Appearance → Player bar → *Visualizer in Now Playing*): spectrum
+**Bars** along the bottom edge, or **Ambient lights** — three soft lights in the artwork's
+colours behind the screen that brighten with the bass, the mids and the highs. Both move
+only while music plays.
 
 **Full screen**: the full-screen button in the header (four corners, top right) (or ⌃⌘F on macOS, F11 on Windows and Linux)
 puts the window in full screen and back; on a Mac that is native full screen, in its own
@@ -478,10 +501,10 @@ Sections:
 
 | Section | What's there |
 |---|---|
-| Appearance | profiles, interface language, **Window** (use the system title bar instead of the top bar), theme (dark, pure black, dynamic colours from the artwork), **Customize theme** (presets, accent, darkness, surface tint, contrast, corners, density, font, dynamic colour style), text size, Now Playing design (eight) and background, mini player style |
+| Appearance | profiles, interface language, **Window** (use the system title bar instead of the top bar), theme (dark, pure black, dynamic colours from the artwork), **Customize theme** (presets, accent, darkness, surface tint, contrast, corners, density, font, dynamic colour style), text size, Now Playing design (nine) and background, mini player layout and style |
 | Playback | shuffle / repeat, quality, loudness normalization, skip silence, skip failing songs, crossfade, speed and pitch, output device (the system default first; on Linux without ALSA's virtual and duplicate devices unless **Show all devices** is on), sleep timer |
 | Modules | provider modules (alternative audio sources) and where songs play from |
-| Equalizer | 10-band equalizer with presets |
+| Equalizer | 10-band equalizer with presets (Flat, Bass, Vocal, Treble, Loudness, Warm, Night), reverb (four rooms and the wet mix), sound presets (speed, pitch and reverb together) |
 | Lyrics | look, animation style, providers and their order, translation, romanization |
 | Content & region | content language and country, hide explicit, hide videos (also inside playlists, albums, radio and queues), autoplay similar songs |
 | Network | HTTP / HTTPS / SOCKS proxy with test; DNS-over-HTTPS (Cloudflare, Google, Quad9 or your own URL, with optional fallback to the system resolver) and **Test DNS** |
@@ -713,7 +736,7 @@ Play the same music in sync with others (sidebar → **Listen together**).
 * **Stop casting** (in the same menu or Settings → Chromecast) continues the song on this
   computer.
 * The audio is streamed from this app to the device, so keep the app running and both on
-  the same network; if the system asks whether to accept incoming connections, allow it. The sleep timer, equalizer and speed don't apply while casting.
+  the same network; if the system asks whether to accept incoming connections, allow it. The sleep timer, equalizer, reverb and speed don't apply while casting.
 * Not yet tested with real devices; please report problems.
 
 ## AI content filter

@@ -27,7 +27,7 @@ use gpui_component::{
 use music_core::{PlaybackStatus, format_duration};
 
 use crate::actions::with_main_window;
-use crate::anim::Frame;
+use crate::anim::{Frame, RenderRate, Tween};
 use crate::app::{MusicApp, read_app, update_app};
 use crate::components::artwork::{ArtworkCache, artwork};
 use crate::components::bar_fx::{
@@ -37,14 +37,19 @@ use crate::components::progress::{ProgressTrack, TrackEvent, TrackLook, TrackPar
 use crate::icons::AppIcon;
 use crate::settings::WindowGeometry;
 use crate::settings::bar_prefs::ProgressStyle;
-
-pub const SIZE: (f32, f32) = (400., 124.);
+use crate::settings::prefs::MiniPlayerSkin;
 
 pub struct MiniPlayer {
     focus: FocusHandle,
+    /// The layout this window was opened with (another one reopens it).
+    skin: MiniPlayerSkin,
+    /// Turntable: 0 = needle on the record, 1 = arm lifted beside it.
+    arm: Tween<f32>,
     progress: TrackFx,
     background: BackgroundFx,
     wake: Option<(std::time::Instant, gpui::Task<()>)>,
+    /// `MUSIC_TIMINGS`: renders per second of this window ("mini").
+    rate: Option<RenderRate>,
     _subscriptions: Vec<Subscription>,
 }
 
@@ -62,9 +67,10 @@ impl MusicApp {
             return;
         }
         let geometry = self.settings.read(cx).settings().mini_player;
+        let skin = self.settings.read(cx).settings().now_playing.mini_skin;
         // Opening a window builds its view, which reads the app: do it after this update.
         cx.defer(move |cx| {
-            let handle = open(geometry, cx);
+            let handle = open(geometry, skin, cx);
             update_app(cx, |app, cx| {
                 app.mini = handle;
                 cx.notify();
@@ -73,8 +79,13 @@ impl MusicApp {
     }
 }
 
-fn open(geometry: Option<WindowGeometry>, cx: &mut App) -> Option<AnyWindowHandle> {
-    let size = size(px(SIZE.0), px(SIZE.1));
+fn open(
+    geometry: Option<WindowGeometry>,
+    skin: MiniPlayerSkin,
+    cx: &mut App,
+) -> Option<AnyWindowHandle> {
+    let (width, height) = skin.size();
+    let size = size(px(width), px(height));
     let bounds = geometry
         .map(|g| Bounds::new(point(px(g.x), px(g.y)), size))
         .filter(|b| crate::on_screen(b, cx))
@@ -113,7 +124,7 @@ fn open(geometry: Option<WindowGeometry>, cx: &mut App) -> Option<AnyWindowHandl
             if let Some(hwnd) = crate::services::hwnd(window) {
                 crate::win::set_topmost(hwnd.get());
             }
-            let view = cx.new(|cx| MiniPlayer::new(window, cx));
+            let view = cx.new(|cx| MiniPlayer::new(skin, window, cx));
             cx.new(|cx| Root::new(view, window, cx))
         })
         .map_err(|e| eprintln!("music-gpui: mini player: {e}"))
@@ -122,7 +133,7 @@ fn open(geometry: Option<WindowGeometry>, cx: &mut App) -> Option<AnyWindowHandl
 }
 
 impl MiniPlayer {
-    fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
+    fn new(skin: MiniPlayerSkin, window: &mut Window, cx: &mut Context<Self>) -> Self {
         let mut subscriptions = vec![
             cx.observe(&ArtworkCache::global(cx), |_, _, cx| cx.notify()),
             cx.observe_window_bounds(window, |_, window, cx| {
@@ -143,11 +154,16 @@ impl MiniPlayer {
         if let Some(app) = crate::app::app_entity(cx) {
             subscriptions.push(cx.observe(&app, |_, _, cx| cx.notify()));
         }
+        let playing =
+            read_app(cx, |app, _| app.playback.status == PlaybackStatus::Playing).unwrap_or(false);
         Self {
             focus: cx.focus_handle(),
+            skin,
+            arm: Tween::new(if playing { 0. } else { 1. }),
             progress: TrackFx::default(),
             background: BackgroundFx::default(),
             wake: None,
+            rate: RenderRate::from_env("mini"),
             _subscriptions: subscriptions,
         }
     }
@@ -159,16 +175,25 @@ impl Render for MiniPlayer {
         let now = frame.now;
         let info = read_app(cx, |app, cx| {
             let bar = app.settings.read(cx).settings().player_bar;
+            let skin = app.settings.read(cx).settings().now_playing.mini_skin;
             let hires_art = app
                 .current_video_id()
                 .and_then(|id| match app.hires.get(id) {
                     Some(crate::now_playing::HiRes::Ready {
                         backdrop,
                         art_colors,
+                        art,
                         ..
-                    }) => Some((backdrop.clone(), *art_colors)),
+                    }) => Some((backdrop.clone(), *art_colors, art.clone())),
                     _ => None,
                 });
+            // The line being sung (wakes this window when the next one starts).
+            let lyric = (skin == MiniPlayerSkin::Lyrics)
+                .then(|| {
+                    let track = app.playback.track.as_ref();
+                    app.lyric_snippet(track, app.clock.position(now), &mut frame)
+                })
+                .flatten();
             (
                 (
                     app.playback.track.clone(),
@@ -187,22 +212,38 @@ impl Render for MiniPlayer {
                         .track
                         .as_ref()
                         .and_then(|t| app.waveform.ready_for(&t.video_id).cloned()),
+                    skin,
+                    lyric,
                 ),
             )
         });
         let Some((
             (track, status, position, duration, has_next, has_engine, backdrop),
-            (bar, hires_art, scrub, waveform),
+            (bar, hires_art, scrub, waveform, skin, lyric),
         )) = info
         else {
             return div().size_full().into_any_element();
         };
-        let art = artwork(
-            track.as_ref().and_then(|t| t.artwork_url(226)),
-            px(72.),
-            px(8.),
-            cx,
-        );
+        if skin != self.skin {
+            // Another layout needs another window size (and title bar spot):
+            // open the mini player again where it is.
+            self.skin = skin;
+            cx.defer(|cx| {
+                update_app(cx, |app, cx| {
+                    app.toggle_mini_player(cx);
+                    app.toggle_mini_player(cx);
+                });
+            });
+        }
+        let art_size = if skin == MiniPlayerSkin::Card {
+            544
+        } else {
+            226
+        };
+        let art_url = track.as_ref().and_then(|t| t.artwork_url(art_size));
+        let art = |side: f32, radius: f32, cx: &mut Context<Self>| {
+            artwork(art_url.clone(), px(side), px(radius), cx)
+        };
         let theme = cx.theme();
         let (mut fg, mut muted, bg, mut track_bg) = (
             theme.foreground,
@@ -267,9 +308,9 @@ impl Render for MiniPlayer {
             0.
         };
         let surface = bg;
-        let (backdrop_img, art_colors) = match hires_art {
-            Some((b, c)) => (Some(b), c),
-            None => (None, None),
+        let (backdrop_img, art_colors, hires_image) = match hires_art {
+            Some((b, c, a)) => (Some(b), c, Some(a)),
+            None => (None, None, None),
         };
         let tones = crate::components::bar_fx::ArtTones::new(
             art_colors.as_ref(),
@@ -289,9 +330,9 @@ impl Render for MiniPlayer {
                 surface,
             },
             BackgroundGeometry {
-                width: SIZE.0,
+                width: skin.size().0,
                 info_end: 96.,
-                center: (96., SIZE.0 - 110.),
+                center: (96., skin.size().0 - 110.),
             },
         );
         let total_secs = total.as_secs_f32();
@@ -350,12 +391,6 @@ impl Render for MiniPlayer {
                 }
             }
         }));
-        let animating = frame.is_animating();
-        if let Some(at) = frame.finish(window) {
-            self.schedule(at, cx);
-        } else if !animating {
-            self.wake = None;
-        }
         let (title, artists) = match &track {
             Some(t) => (t.title.clone(), t.artists.clone()),
             None => (
@@ -363,6 +398,170 @@ impl Render for MiniPlayer {
                 crate::identity::APP_NAME.into(),
             ),
         };
+        let parts = Parts {
+            playing,
+            loading: status == PlaybackStatus::Loading,
+            can_toggle,
+            has_track: track.is_some(),
+            has_next,
+        };
+        let shown_label = format_duration(shown as u64);
+        let total_label = if total.is_zero() {
+            "--:--".to_owned()
+        } else {
+            format_duration(total.as_secs())
+        };
+        let titles = |align_center: bool, size_title: Option<gpui::Pixels>| {
+            v_flex()
+                .min_w_0()
+                .gap_0p5()
+                .when(align_center, |this| this.items_center())
+                .child(
+                    div()
+                        .max_w_full()
+                        .truncate()
+                        .font_weight(FontWeight::SEMIBOLD)
+                        .when_some(size_title, |this, size| this.text_size(size))
+                        .child(title.clone()),
+                )
+                .child(
+                    div()
+                        .max_w_full()
+                        .truncate()
+                        .text_sm()
+                        .text_color(muted)
+                        .child(artists.clone()),
+                )
+        };
+        let times_with = |track_el: gpui::AnyElement| {
+            h_flex()
+                .w_full()
+                .gap_2()
+                .text_xs()
+                .text_color(muted)
+                .items_center()
+                .child(shown_label.clone())
+                .child(div().flex_1().min_w_0().child(track_el))
+                .child(total_label.clone())
+        };
+        let track_el = track_el.into_any_element();
+        let body = match skin {
+            MiniPlayerSkin::Bar => h_flex()
+                .px_3()
+                .gap_3()
+                .child(art(72., 8., cx))
+                .child(
+                    v_flex()
+                        .flex_1()
+                        .min_w_0()
+                        .gap_0p5()
+                        .child(titles(false, None))
+                        .child(div().pt_1().child(times_with(track_el))),
+                )
+                .child(parts.transport(None, cx))
+                .into_any_element(),
+            MiniPlayerSkin::Compact => h_flex()
+                .px_3()
+                .gap_3()
+                .child(art(40., 6., cx))
+                .child(div().flex_1().min_w_0().child(titles(false, None)))
+                .child(parts.transport(Some(false), cx))
+                .into_any_element(),
+            MiniPlayerSkin::Card => v_flex()
+                .px_4()
+                .pt_1()
+                .gap_2()
+                .items_center()
+                .child(art(176., 12., cx))
+                .child(div().w_full().child(titles(true, None)))
+                .child(times_with(track_el))
+                .child(parts.transport(None, cx))
+                .into_any_element(),
+            MiniPlayerSkin::Lyrics => {
+                let (now_line, next_line) = lyric.unwrap_or((None, None));
+                v_flex()
+                    .px_3()
+                    .gap_2()
+                    .child(
+                        h_flex()
+                            .gap_3()
+                            .child(art(44., 6., cx))
+                            .child(div().flex_1().min_w_0().child(titles(false, None)))
+                            .child(parts.transport(None, cx)),
+                    )
+                    .child(
+                        v_flex()
+                            .h(px(58.))
+                            .justify_center()
+                            .gap_0p5()
+                            .child(
+                                div()
+                                    .text_size(px(17.))
+                                    .line_height(px(22.))
+                                    .font_weight(FontWeight::BOLD)
+                                    .line_clamp(2)
+                                    .child(
+                                        now_line.filter(|l| !l.trim().is_empty()).unwrap_or_else(
+                                            || {
+                                                if track.is_some() {
+                                                    "♪".to_owned()
+                                                } else {
+                                                    String::new()
+                                                }
+                                            },
+                                        ),
+                                    ),
+                            )
+                            .child(
+                                div()
+                                    .text_sm()
+                                    .text_color(muted)
+                                    .truncate()
+                                    .children(next_line),
+                            ),
+                    )
+                    .child(times_with(track_el))
+                    .into_any_element()
+            }
+            MiniPlayerSkin::Turntable => {
+                let rest = if playing { 0. } else { 1. };
+                self.arm.animate_to(rest, crate::turntable::LIFT, now);
+                let lift = frame.get(&self.arm);
+                let angle = crate::turntable::arm_angle(frac, lift);
+                v_flex()
+                    .px_4()
+                    .gap_2()
+                    .items_center()
+                    .child(crate::turntable::deck(
+                        px(196.),
+                        hires_image.clone(),
+                        angle,
+                        &crate::turntable::DeckLook::default(),
+                    ))
+                    .child(div().w_full().child(titles(true, None)))
+                    .child(times_with(track_el))
+                    .child(parts.transport(None, cx))
+                    .into_any_element()
+            }
+        };
+        let compact_line = (skin == MiniPlayerSkin::Compact).then(|| {
+            div()
+                .absolute()
+                .left_0()
+                .bottom_0()
+                .h(px(2.))
+                .w(gpui::relative(frac))
+                .bg(accent)
+        });
+        let animating = frame.is_animating();
+        if let Some(at) = frame.finish(window) {
+            self.schedule(at, cx);
+        } else if !animating {
+            self.wake = None;
+        }
+        if let Some(rate) = &mut self.rate {
+            rate.record(now, animating);
+        }
 
         div()
             .id("mini-player")
@@ -386,81 +585,76 @@ impl Render for MiniPlayer {
             })
             .children(layers)
             .child(title_strip(cx))
-            .child(
-                h_flex()
-                    .px_3()
-                    .gap_3()
-                    .child(art)
-                    .child(
-                        v_flex()
-                            .flex_1()
-                            .min_w_0()
-                            .gap_0p5()
-                            .child(
-                                div()
-                                    .truncate()
-                                    .font_weight(FontWeight::SEMIBOLD)
-                                    .child(title),
-                            )
-                            .child(div().truncate().text_sm().text_color(muted).child(artists))
-                            .child(
-                                h_flex()
-                                    .pt_1()
-                                    .gap_2()
-                                    .text_xs()
-                                    .text_color(muted)
-                                    .items_center()
-                                    .child(format_duration(shown as u64))
-                                    .child(div().flex_1().min_w_0().child(track_el))
-                                    .child(if total.is_zero() {
-                                        "--:--".to_owned()
-                                    } else {
-                                        format_duration(total.as_secs())
-                                    }),
-                            ),
-                    )
-                    .child(
-                        h_flex()
-                            .flex_none()
-                            .gap_1()
-                            .child(
-                                Button::new("mini-prev")
-                                    .custom(crate::components::player_bar::bar_button_style(cx))
-                                    .small()
-                                    .icon(AppIcon::Previous)
-                                    .disabled(track.is_none())
-                                    .on_click(|_, _, cx| {
-                                        update_app(cx, |app, cx| app.previous_track(cx));
-                                    }),
-                            )
-                            .child(
-                                Button::new("mini-play")
-                                    .primary()
-                                    .rounded(px(999.))
-                                    .icon(if playing {
-                                        IconName::Pause
-                                    } else {
-                                        IconName::Play
-                                    })
-                                    .loading(status == PlaybackStatus::Loading)
-                                    .disabled(!can_toggle)
-                                    .on_click(|_, _, cx| {
-                                        update_app(cx, |app, cx| app.toggle_playback(cx));
-                                    }),
-                            )
-                            .child(
-                                Button::new("mini-next")
-                                    .custom(crate::components::player_bar::bar_button_style(cx))
-                                    .small()
-                                    .icon(AppIcon::Next)
-                                    .disabled(!has_next)
-                                    .on_click(|_, _, cx| {
-                                        update_app(cx, |app, cx| app.next_track(cx));
-                                    }),
-                            ),
-                    ),
-            )
+            .child(body)
+            .children(compact_line)
+            // The wheel changes the volume, as over the bar's volume control.
+            .on_scroll(|event, _, cx| {
+                let lines = crate::components::player_bar::scroll_lines(event);
+                if lines == 0. {
+                    return;
+                }
+                with_main_window(cx, |app, window, cx| {
+                    let step = crate::components::player_bar::SCROLL_VOLUME_STEP;
+                    let target = (app.volume + lines * step).clamp(0., 1.);
+                    app.set_volume((target * 100.).round() / 100., window, cx);
+                });
+            })
             .into_any_element()
+    }
+}
+
+/// What the transport buttons need.
+struct Parts {
+    playing: bool,
+    loading: bool,
+    can_toggle: bool,
+    has_track: bool,
+    has_next: bool,
+}
+
+impl Parts {
+    /// Previous / play / next; `Some(false)` leaves out "previous" (compact).
+    fn transport(&self, previous: Option<bool>, cx: &App) -> gpui::Div {
+        h_flex()
+            .flex_none()
+            .gap_1()
+            .when(previous != Some(false), |this| {
+                this.child(
+                    Button::new("mini-prev")
+                        .custom(crate::components::player_bar::bar_button_style(cx))
+                        .small()
+                        .icon(AppIcon::Previous)
+                        .disabled(!self.has_track)
+                        .on_click(|_, _, cx| {
+                            update_app(cx, |app, cx| app.previous_track(cx));
+                        }),
+                )
+            })
+            .child(
+                Button::new("mini-play")
+                    .primary()
+                    .rounded(px(999.))
+                    .icon(if self.playing {
+                        IconName::Pause
+                    } else {
+                        IconName::Play
+                    })
+                    .loading(self.loading)
+                    .disabled(!self.can_toggle)
+                    .on_click(|_, _, cx| {
+                        update_app(cx, |app, cx| app.toggle_playback(cx));
+                    }),
+            )
+            .child(
+                Button::new("mini-next")
+                    .custom(crate::components::player_bar::bar_button_style(cx))
+                    .small()
+                    .icon(AppIcon::Next)
+                    .disabled(!self.has_next)
+                    .on_click(|_, _, cx| {
+                        update_app(cx, |app, cx| app.next_track(cx));
+                    }),
+            )
     }
 }
 

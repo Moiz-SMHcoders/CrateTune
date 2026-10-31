@@ -115,3 +115,5 @@ card.size.large = Крупный
 np.queue.next_in_queue = ДАЛЕЕ В ОЧЕРЕДИ
 np.queue.next_from = ДАЛЕЕ ИЗ «{name}»
 np.queue.next_from_radio = ДАЛЕЕ ИЗ РАДИО «{name}»
+sound_menu.tooltip = Звук: эквалайзер, реверберация, пресеты
+sound_menu.settings = Настройки звука…

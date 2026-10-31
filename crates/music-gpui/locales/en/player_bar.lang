@@ -58,5 +58,11 @@ settings.bar.show_remaining = Show remaining time
 settings.bar.scroll_volume = Scroll to change the volume
 settings.bar.mini_follows = Same look in the mini player
 settings.bar.np_visualizer = Visualizer in Now Playing
-settings.bar.np_visualizer_note = A thin spectrum strip along the bottom edge.
+settings.bar.np_visualizer_note = Spectrum bars along the bottom edge, or soft lights behind the screen that follow the music.
 settings.bar.cpu_note = The bar is static by default. Wavy, Equalizer, Pulse, an animated gradient and the Now Playing visualizer redraw about 13–22 times a second while music plays (a few percent of CPU) and stop when it pauses.
+
+# ---- Now Playing visualizer style (shown when the visualizer is on)
+settings.bar.np_visualizer_style = Visualizer style
+bar.np_viz.bars = Bars
+# Soft coloured lights that brighten with the bass, mids and highs.
+bar.np_viz.lights = Ambient lights

@@ -109,3 +109,5 @@ card.size.large = Groot
 np.queue.next_in_queue = VOLGENDE IN DE WACHTRIJ
 np.queue.next_from = HIERNA UIT {name}
 np.queue.next_from_radio = HIERNA UIT RADIO {name}
+sound_menu.tooltip = Geluid: equalizer, galm, presets
+sound_menu.settings = Geluidsinstellingen…

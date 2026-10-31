@@ -8,8 +8,10 @@
 //! (crossfade). Runs in the audio callback, so it never blocks on anything
 //! but short mutex sections; all decoding happens on voice threads.
 //!
-//! Each block is mixed at unity volume, ramped for pause/resume, copied into
-//! the [`SpectrumTap`] (when enabled), and only then scaled by the user volume.
+//! Each block is mixed at unity volume, ramped for pause/resume, run through
+//! the reverb (only while one is on; its tail rings out after a pause), copied
+//! into the [`SpectrumTap`] (when enabled), and only then scaled by the user
+//! volume.
 
 use std::num::NonZero;
 use std::sync::{Arc, Mutex, MutexGuard};
@@ -17,6 +19,7 @@ use std::time::Duration;
 
 use rodio::{ChannelCount, SampleRate, Source};
 
+use crate::reverb::{Reverb, ReverbSettings};
 use crate::spectrum::SpectrumTap;
 use crate::voice::{Chunk, Voice};
 
@@ -222,6 +225,8 @@ struct DeckState {
     /// Pause ramp gain, 0..=1.
     master: f32,
     scratch: Vec<f32>,
+    /// Present only while a reverb is on or still fading out (`Deck::set_reverb`).
+    reverb: Option<Box<Reverb>>,
 }
 
 /// What the engine needs to know about the deck.
@@ -338,6 +343,28 @@ impl Deck {
         self.lock().crossfade = crossfade.min(MAX_CROSSFADE);
     }
 
+    /// Turns the reverb on, changes it, or lets it fade out (then it is dropped
+    /// and the callback skips it). The delay lines are allocated here, not in
+    /// the audio callback.
+    pub(crate) fn set_reverb(&self, settings: ReverbSettings) {
+        let settings = settings.sanitized();
+        let fresh = settings
+            .is_on()
+            .then(|| Box::new(Reverb::new(self.rate, settings)));
+        let mut st = self.lock();
+        match (&mut st.reverb, fresh) {
+            (Some(reverb), _) => reverb.set(settings),
+            (None, Some(fresh)) => st.reverb = Some(fresh),
+            (None, None) => {}
+        }
+    }
+
+    /// The reverb's settings while one runs (tests).
+    #[cfg(test)]
+    pub(crate) fn reverb_settings(&self) -> Option<ReverbSettings> {
+        self.lock().reverb.as_ref().map(|r| r.settings())
+    }
+
     /// Sleep timer "end of track": pause right after the next advance.
     pub(crate) fn set_hold_at_end(&self, hold: bool) {
         self.lock().hold_at_end = hold;
@@ -405,12 +432,23 @@ impl Deck {
         if !silent {
             self.mix_block(st, out);
         }
+        // The reverb, also over silence while its tail still rings.
+        let mut reverb_tail = false;
+        if let Some(reverb) = st.reverb.as_mut()
+            && (!silent || reverb.is_ringing())
+        {
+            reverb.process(out);
+            reverb_tail = silent;
+            if reverb.is_finished() {
+                st.reverb = None;
+            }
+        }
         // What the listener hears, before the volume (muted playback still
         // animates a visualizer). Paused blocks feed zeros so bars fall at once.
         if self.tap.is_enabled() {
             self.tap.push_stereo(out);
         }
-        if !silent {
+        if !silent || reverb_tail {
             apply_volume(st, out);
         }
     }
@@ -926,5 +964,55 @@ mod tests {
             0,
             "user switches are not advances"
         );
+    }
+
+    #[test]
+    fn reverb_runs_only_while_on() {
+        use crate::reverb::{ReverbPreset, ReverbSettings};
+        let deck = Deck::new(RATE);
+        deck.set_current(Some(voice(1, 0.5, 20_000)));
+        // Off (the default): nothing allocated, output untouched.
+        deck.set_reverb(ReverbSettings::new(ReverbPreset::Off, 0.5));
+        assert!(deck.reverb_settings().is_none());
+        assert!(render(&deck, 200).iter().all(|&s| s == 0.5));
+
+        deck.set_reverb(ReverbSettings::new(ReverbPreset::Hall, 0.5));
+        assert_eq!(
+            deck.reverb_settings().map(|s| s.preset),
+            Some(ReverbPreset::Hall)
+        );
+        let wet = render(&deck, 1000);
+        assert!(
+            wet[500..].iter().any(|&s| (s - 0.5).abs() > 1e-3),
+            "audible"
+        );
+
+        // Off again: the wet part fades out, then the deck drops the reverb
+        // (the glide is per frame: ~6 s at this test rate, ~120 ms at 48 kHz).
+        deck.set_reverb(ReverbSettings::new(ReverbPreset::Off, 0.5));
+        render(&deck, 8000);
+        assert!(deck.reverb_settings().is_none(), "dropped after the fade");
+        assert!(
+            render(&deck, 200).iter().all(|&s| s == 0.5),
+            "bit-exact again"
+        );
+    }
+
+    #[test]
+    fn reverb_tail_rings_out_after_a_pause() {
+        use crate::reverb::{ReverbPreset, ReverbSettings};
+        let deck = Deck::new(RATE);
+        deck.set_reverb(ReverbSettings::new(ReverbPreset::Cathedral, 1.0));
+        deck.set_current(Some(voice(1, 0.5, 5000)));
+        render(&deck, 1000);
+        deck.set_paused(true);
+        let after = render(&deck, 300);
+        assert!(
+            after[100..].iter().any(|&s| s.abs() > 1e-4),
+            "tail after the ramp"
+        );
+        // Long enough for the tail to die: exact silence, nothing processed.
+        let later = render(&deck, 60_000);
+        assert!(later[later.len() - 100..].iter().all(|&s| s == 0.0));
     }
 }
