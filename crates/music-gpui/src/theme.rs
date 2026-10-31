@@ -143,6 +143,7 @@ impl AppPalette {
 
 static RADIUS_SCALE: AtomicU32 = AtomicU32::new(1.0f32.to_bits());
 static DENSITY_SCALE: AtomicU32 = AtomicU32::new(1.0f32.to_bits());
+static WINDOW_ALPHA: AtomicU32 = AtomicU32::new(1.0f32.to_bits());
 
 fn load(a: &AtomicU32) -> f32 {
     f32::from_bits(a.load(Ordering::Relaxed))
@@ -164,6 +165,12 @@ pub fn space(base: f32) -> Pixels {
     px((base * density()).round())
 }
 
+/// Opacity of the window's background (1 = opaque; below 1 over a window
+/// material, Appearance → Window).
+pub fn window_alpha() -> f32 {
+    load(&WINDOW_ALPHA)
+}
+
 /// Height of track rows (60 px at regular density).
 pub fn row_height() -> f32 {
     (BASE_ROW_HEIGHT * density()).round()
@@ -183,9 +190,24 @@ pub struct Look {
     /// App-wide look (`look_prefs.rs`): surfaces tinted with the artwork's hue
     /// at this strength (0 = off; 0..1 like `custom.surface_tint`).
     pub art_tint: f32,
+    /// Opacity of the window's background over a window material (1 = opaque;
+    /// already raised to [`readable_window_alpha`]).
+    pub window_alpha: f32,
 }
 
 impl Look {
+    /// A look of these settings alone (no artwork, opaque window, 100 % text).
+    pub fn plain(choice: ThemeChoice, custom: CustomTheme) -> Look {
+        Look {
+            choice,
+            font_scale: 1.0,
+            custom,
+            art: None,
+            art_tint: 0.,
+            window_alpha: 1.,
+        }
+    }
+
     fn darkness(&self) -> Darkness {
         if self.choice == ThemeChoice::Black {
             Darkness::Black
@@ -295,6 +317,9 @@ const STOCK_SURFACE: Hsla = Hsla {
 
 /// The window background a look ends up with (for contrast checks).
 pub fn background_of(look: &Look) -> Hsla {
+    if let Some(bg) = file_color(&look.custom, "background") {
+        return bg.opacity(1.);
+    }
     if look.darkness() == Darkness::Black {
         return hsla(0., 0., 0., 1.);
     }
@@ -382,6 +407,69 @@ fn surface(c: Hsla, darkness: Darkness, tint: Option<Hsla>, strength: f32) -> Hs
     }
 }
 
+/// Secondary text over a see-through window: moved towards the foreground as
+/// the window gets clearer (25 % of the way at 50 % opacity), so it stays
+/// readable on a light desktop (idea from refryt's `with_opacity`).
+pub fn lifted_muted(muted: Hsla, foreground: Hsla, alpha: f32) -> Hsla {
+    let k = ((1. - alpha.clamp(0., 1.)) * 0.5).min(0.5);
+    if k <= 0. {
+        return muted;
+    }
+    crate::components::app_backdrop::over(muted, foreground, k).opacity(muted.a)
+}
+
+/// The lowest window opacity ≥ `chosen` at which text stays readable on the
+/// worst desktop behind the window (white; a blur doesn't make it darker):
+/// `foreground` ≥ 4.5:1 and the (lifted) muted text ≥ 3:1 on the background
+/// drawn at that opacity over white. `lift`: the muted text is [`lifted_muted`]
+/// (the whole see-through window; the translucent sidebar's isn't).
+pub fn readable_window_alpha(
+    chosen: f32,
+    bg: Hsla,
+    foreground: Hsla,
+    muted: Hsla,
+    lift: bool,
+) -> f32 {
+    use crate::components::app_backdrop::over;
+    let white = hsla(0., 0., 1., 1.);
+    let readable = |a: f32| {
+        let shown = over(white, bg.opacity(1.), a);
+        contrast(foreground, shown) >= 4.5
+            && contrast(
+                if lift {
+                    lifted_muted(muted, foreground, a)
+                } else {
+                    muted
+                },
+                shown,
+            ) >= 3.0
+    };
+    let mut a = chosen.clamp(0., 1.);
+    while a < 1. && !readable(a) {
+        a = (a + 0.01).min(1.);
+    }
+    a
+}
+
+/// The text colours a look ends up with (for the readable window opacity):
+/// a theme file's, else the stock ones with the contrast setting's lift.
+pub fn text_of(look: &Look) -> (Hsla, Hsla) {
+    let lift = match look.custom.contrast {
+        Contrast::Standard => 0.,
+        Contrast::Medium => 0.1,
+        Contrast::High => 0.2,
+    };
+    let stock_fg = if lift > 0. {
+        hsla(0., 0., 1., 1.)
+    } else {
+        hsla(0., 0., 0.98, 1.)
+    };
+    (
+        file_color(&look.custom, "foreground").unwrap_or(stock_fg),
+        file_color(&look.custom, "muted_foreground").unwrap_or(hsla(0., 0., 0.64 + lift, 1.)),
+    )
+}
+
 /// Background, surface and accent for a theme card / preset preview.
 pub fn preview(look: &Look) -> (Hsla, Hsla, Hsla) {
     let resolved = resolve(look);
@@ -398,9 +486,13 @@ pub fn preview(look: &Look) -> (Hsla, Hsla, Hsla) {
         (ThemeChoice::Dynamic, None) => hsla(0.93, 0.7, 0.62, 1.),
         (_, None) => AppColors::stock().accent,
     };
+    let custom = &look.custom;
     (
-        surface(bg, darkness, resolved.tint, strength),
-        surface(raised, darkness, resolved.tint, strength),
+        file_color(custom, "background")
+            .unwrap_or_else(|| surface(bg, darkness, resolved.tint, strength)),
+        file_color(custom, "secondary")
+            .or_else(|| file_color(custom, "sidebar"))
+            .unwrap_or_else(|| surface(raised, darkness, resolved.tint, strength)),
         accent,
     )
 }
@@ -507,6 +599,63 @@ fn pure_black(theme: &mut ThemeColor) {
     theme.skeleton = hsla(0., 0., 0.07, 1.);
 }
 
+macro_rules! tokens {
+    ($($name:ident),+ $(,)?) => {
+        /// Colour tokens a theme file may set (`[colors]`, `settings/theme_files.rs`):
+        /// gpui-component's `ThemeColor` fields under their own names.
+        pub const TOKENS: &[&str] = &[$(stringify!($name)),+];
+
+        /// The token `name` of `c`.
+        pub fn token_mut<'a>(c: &'a mut ThemeColor, name: &str) -> Option<&'a mut Hsla> {
+            match name {
+                $(stringify!($name) => Some(&mut c.$name),)+
+                _ => None,
+            }
+        }
+    };
+}
+
+tokens! {
+    background, foreground, muted, muted_foreground, border, input, ring,
+    accent, accent_foreground, primary, primary_hover, primary_active, primary_foreground,
+    secondary, secondary_hover, secondary_active, secondary_foreground,
+    popover, popover_foreground, sidebar, sidebar_foreground, sidebar_border,
+    sidebar_accent, sidebar_accent_foreground, sidebar_primary, sidebar_primary_foreground,
+    title_bar, title_bar_border, window_border, list, list_hover, list_even, list_head,
+    list_active, list_active_border, table, table_hover, table_even, table_head,
+    table_head_foreground, table_row_border, tab_bar, tab, tab_active, tab_foreground,
+    tab_active_foreground, scrollbar, scrollbar_thumb, scrollbar_thumb_hover, skeleton,
+    selection, caret, link, link_hover, link_active, slider_bar, slider_thumb,
+    progress_bar, switch, switch_thumb, danger, danger_foreground, success,
+    success_foreground, warning, warning_foreground, info, info_foreground, overlay,
+}
+
+/// A theme file's colour (`#RRGGBB[AA]`).
+pub fn token_color(hex: &str) -> Option<Hsla> {
+    let [r, g, b, a] = crate::settings::theme_prefs::parse_color(hex)?;
+    Some(
+        Rgba {
+            r: r as f32 / 255.,
+            g: g as f32 / 255.,
+            b: b as f32 / 255.,
+            a: a as f32 / 255.,
+        }
+        .into(),
+    )
+}
+
+/// `#RRGGBB`, or `#RRGGBBAA` when translucent.
+pub fn hex_of(c: Hsla) -> String {
+    let rgba = Rgba::from(c);
+    let b = |v: f32| (v.clamp(0., 1.) * 255.).round() as u8;
+    crate::settings::theme_prefs::color_hex([b(rgba.r), b(rgba.g), b(rgba.b), b(rgba.a)])
+}
+
+/// The colour a theme file sets for `name`, if any.
+fn file_color(custom: &CustomTheme, name: &str) -> Option<Hsla> {
+    custom.colors.get(name).and_then(|v| token_color(v))
+}
+
 /// Our overrides on top of the stock colours (pure; also used by tests).
 fn themed_colors(stock: &ThemeColor, look: &Look, r: &Resolved) -> ThemeColor {
     let mut c = *stock;
@@ -577,6 +726,15 @@ fn themed_colors(stock: &ThemeColor, look: &Look, r: &Resolved) -> ThemeColor {
         c.drag_border = accent;
         c.drop_target = accent.opacity(0.1);
     }
+    // A theme file's tokens, over everything else.
+    for (name, value) in &look.custom.colors {
+        if let (Some(slot), Some(color)) = (token_mut(&mut c, name), token_color(value)) {
+            *slot = color;
+        }
+    }
+    if look.window_alpha < 1. {
+        c.muted_foreground = lifted_muted(c.muted_foreground, c.foreground, look.window_alpha);
+    }
     c
 }
 
@@ -599,6 +757,7 @@ pub fn apply(look: &Look, resolved: &Resolved, cx: &mut App) {
     };
     RADIUS_SCALE.store(custom.corners.scale().to_bits(), Ordering::Relaxed);
     DENSITY_SCALE.store(custom.density.scale().to_bits(), Ordering::Relaxed);
+    WINDOW_ALPHA.store(look.window_alpha.clamp(0., 1.).to_bits(), Ordering::Relaxed);
     Theme::update(cx, |theme| {
         theme.colors = colors;
         theme.font_size = px(BASE_FONT_SIZE * font_scale.clamp(0.75, 1.5));
@@ -662,13 +821,7 @@ mod tests {
     use crate::palette::DynamicStyle;
 
     fn look(choice: ThemeChoice) -> Look {
-        Look {
-            choice,
-            font_scale: 1.0,
-            custom: CustomTheme::default(),
-            art: None,
-            art_tint: 0.,
-        }
+        Look::plain(choice, CustomTheme::default())
     }
 
     fn stock_colors() -> ThemeColor {
@@ -715,6 +868,69 @@ mod tests {
         }
         let black = themed_colors(&stock, &look(ThemeChoice::Black), &Resolved::default());
         assert_eq!(black.background, hsla(0., 0., 0., 1.));
+    }
+
+    #[test]
+    fn see_through_windows_keep_text_readable() {
+        use crate::components::app_backdrop::over;
+        let bg = STOCK_BACKGROUND;
+        let (fg, muted) = text_of(&look(ThemeChoice::Dark));
+        let white = hsla(0., 0., 1., 1.);
+        for chosen in [0.5, 0.6, 0.7, 0.8, 0.9, 1.0] {
+            let a = readable_window_alpha(chosen, bg, fg, muted, true);
+            assert!(a >= chosen && a <= 1.);
+            let shown = over(white, bg, a);
+            assert!(contrast(fg, shown) >= 4.5, "{chosen} → {a}");
+            assert!(
+                contrast(lifted_muted(muted, fg, a), shown) >= 3.0,
+                "{chosen} → {a}"
+            );
+            // Over a black desktop it's only better.
+            let dark = over(hsla(0., 0., 0., 1.), bg, a);
+            assert!(contrast(fg, dark) >= 4.5);
+        }
+        // 80 % and above are readable as chosen; lower levels get raised a bit.
+        assert_eq!(readable_window_alpha(0.8, bg, fg, muted, true), 0.8);
+        let low = readable_window_alpha(0.5, bg, fg, muted, true);
+        // Without the lift the floor is higher.
+        assert!(readable_window_alpha(0.5, bg, fg, muted, false) > low);
+        assert!(low > 0.5 && low < 0.75, "{low}");
+        // An opaque window changes nothing; a translucent one lifts muted text.
+        let mut l = look(ThemeChoice::Dark);
+        let stock = stock_colors();
+        assert_eq!(themed_colors(&stock, &l, &Resolved::default()), stock);
+        l.window_alpha = 0.7;
+        let c = themed_colors(&stock, &l, &Resolved::default());
+        assert!(c.muted_foreground.l > stock.muted_foreground.l);
+    }
+
+    #[test]
+    fn theme_file_tokens_override_last() {
+        let stock = stock_colors();
+        let mut l = look(ThemeChoice::Dark);
+        l.custom
+            .colors
+            .insert("background".into(), "#2E3440".into());
+        l.custom.colors.insert("sidebar".into(), "#3B425280".into());
+        // A dark accent is still raised to the contrast level against the file's background.
+        l.custom.accent = "#202840".into();
+        let r = resolve(&l);
+        let c = themed_colors(&stock, &l, &r);
+        assert_eq!(c.background, token_color("#2E3440").unwrap());
+        assert!((c.sidebar.a - 128. / 255.).abs() < 1e-3);
+        assert_eq!(background_of(&l), token_color("#2E3440").unwrap());
+        assert!(contrast(r.accent.unwrap(), background_of(&l)) >= 4.49);
+        assert_eq!(preview(&l).0, token_color("#2E3440").unwrap());
+        // Every token name maps to a field, and unknown names to none.
+        let mut colors = stock;
+        for name in TOKENS {
+            assert!(token_mut(&mut colors, name).is_some(), "{name}");
+        }
+        assert!(token_mut(&mut colors, "backgrond").is_none());
+        let mut names = TOKENS.to_vec();
+        names.sort();
+        names.dedup();
+        assert_eq!(names.len(), TOKENS.len());
     }
 
     #[test]

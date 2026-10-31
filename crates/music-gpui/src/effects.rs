@@ -255,6 +255,50 @@ fn platform_reduce_motion() -> bool {
     crate::win::reduce_motion()
 }
 
+static OS_REDUCE_TRANSPARENCY: AtomicBool = AtomicBool::new(false);
+
+/// The OS asks for less transparency (macOS: Accessibility → Display → Reduce
+/// transparency): window materials and the translucent sidebar are then off.
+/// Remembered from the last [`poll_os_reduce_transparency`];
+/// `MUSIC_REDUCE_TRANSPARENCY=1|0` overrides it.
+pub fn os_reduce_transparency() -> bool {
+    OS_REDUCE_TRANSPARENCY.load(Ordering::Relaxed)
+}
+
+/// Asks the OS again (polled with reduced motion, ~every 4 s); returns whether
+/// the answer changed.
+pub fn poll_os_reduce_transparency() -> bool {
+    let now = match std::env::var_os("MUSIC_REDUCE_TRANSPARENCY") {
+        Some(forced) => forced != "0",
+        None => platform_reduce_transparency(),
+    };
+    OS_REDUCE_TRANSPARENCY.swap(now, Ordering::Relaxed) != now
+}
+
+#[cfg(target_os = "macos")]
+fn platform_reduce_transparency() -> bool {
+    use objc2::msg_send;
+    use objc2::runtime::{AnyClass, AnyObject, Bool};
+    let Some(class) = AnyClass::get(c"NSWorkspace") else {
+        return false;
+    };
+    // SAFETY: as in `platform_reduce_motion`; `accessibilityDisplayShouldReduceTransparency`
+    // is a BOOL property (macOS 10.10+).
+    unsafe {
+        let workspace: *mut AnyObject = msg_send![class, sharedWorkspace];
+        if workspace.is_null() {
+            return false;
+        }
+        let reduce: Bool = msg_send![workspace, accessibilityDisplayShouldReduceTransparency];
+        reduce.as_bool()
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
+fn platform_reduce_transparency() -> bool {
+    false
+}
+
 #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
 fn platform_reduce_motion() -> bool {
     false

@@ -1,0 +1,63 @@
+# Theme files, window translucency, the music-reactive look, UI zoom and the
+# app icon (es).
+
+# ---- Theme files (Customize theme)
+themes.files = Archivos de tema
+themes.files_note = Temas de la carpeta de temas: edita uno en un editor de texto y guárdalo para ver el cambio al instante.
+themes.open_folder = Abrir carpeta de temas
+themes.export_file = Exportar el tema actual como archivo
+themes.export_name = Mi tema
+themes.toast.exported = Guardado como {file} en la carpeta de temas.
+themes.invalid = {file} se ha omitido: {reason}
+themes.low_contrast = {name}: parte del texto tiene poco contraste ({ratio}:1); puede costar leerlo.
+themes.empty = Aún no hay archivos de tema. Exporta el tema actual o abre la carpeta para añadir uno.
+# ---- Reasons a theme file was left out
+themes.error.read = no se pudo leer ({error})
+themes.error.too_large = el archivo pesa más de 256 KB
+themes.error.syntax = línea {line}: {message}
+themes.error.choice = línea {line}: {key} = «{value}» no es ninguno de {expected}
+themes.error.range = línea {line}: {key} debe estar entre 0 y 1
+themes.error.unknown_color = línea {line}: no existe ningún color llamado «{key}»
+themes.error.bad_color = línea {line}: {key} = «{value}» no es un color (#RGB, #RRGGBB o #RRGGBBAA)
+
+# ---- Window translucency (Appearance → Window)
+window.material.off = Opaco
+window.material.blur = Difuminado
+window.material.transparent = Transparente
+window.material.mica = Mica
+window.material.mica_alt = Mica Alt
+settings.window.material = Fondo de la ventana
+settings.window.material_note = El escritorio se ve a través de toda la ventana. El texto sigue siendo legible: la opacidad se sube donde hace falta.
+settings.window.opacity = Opacidad
+settings.window.opacity_value = {percent} %
+settings.window.opacity_raised = Subida al {percent} % para que el texto se lea sobre un escritorio claro.
+settings.window.note_macos = Difuminado usa el desenfoque de ventanas de macOS. Los menús, diálogos y Reproduciendo siguen opacos.
+settings.window.note_windows = Difuminado es acrílico. Mica y Mica Alt necesitan Windows 11 (22H2 o posterior).
+settings.window.note_linux = Necesita un gestor de ventanas con composición. Difuminado necesita KDE Plasma en Wayland; en otros casos se ve como Transparente.
+settings.window.reduced_by_os = Tu sistema pide menos transparencia (Accesibilidad), así que la ventana sigue opaca.
+settings.window.cpu_note = El sistema dibuja el desenfoque, así que no gasta CPU extra de la app y nada se redibuja en reposo.
+
+# ---- React to the music (App-wide look)
+settings.look.react = Reaccionar a la música
+settings.look.react_note = El degradado o el brillo respiran con la energía de la música mientras suena (hasta 30 fotogramas por segundo; se detiene en pausa, con la ventana oculta o con movimiento reducido).
+
+# ---- UI zoom (Appearance → Text size, shortcuts)
+settings.appearance.zoom_note = Ctrl o ⌘ con + / − / 0, o Ctrl / ⌘ y la rueda del ratón, también hacen zoom en la interfaz.
+zoom.toast = Zoom {percent} %
+shortcuts.action.zoom_in = Acercar
+shortcuts.action.zoom_out = Alejar
+shortcuts.action.zoom_reset = Tamaño real
+
+# ---- App icon (Appearance → Window)
+settings.app_icon = Icono de la app
+settings.app_icon_note = Se muestra en el Dock y el selector de apps (macOS) o en la ventana y la barra de tareas (Windows, Linux en X11).
+settings.app_icon.linux_note = En Linux se aplica en el próximo inicio (X11); los escritorios Wayland muestran el icono instalado.
+settings.app_icon.choose = Elegir una imagen…
+app_icon.custom = Tu imagen
+app_icon.default = Medianoche
+app_icon.light = Papel
+app_icon.sunset = Atardecer
+app_icon.mint = Menta
+app_icon.mono = Mono
+app_icon.error = Esa imagen no se puede usar como icono: {error}
+app_icon.error.not_png = elige una imagen PNG, JPEG o WebP

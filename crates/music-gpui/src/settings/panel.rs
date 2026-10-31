@@ -173,6 +173,8 @@ pub struct SettingsPanel {
     /// About → Logs: the most detailed level shown, and the log generation drawn.
     pub(super) log_level: crate::logs::Level,
     pub log_seen: u64,
+    /// Bumped when a new custom app icon image is stored (the app re-applies it).
+    pub app_icon_generation: u32,
     /// Content & region section (language / country pickers).
     pub(super) content: super::content::ContentState,
     /// The content country taken from the system's region on this first run: Home
@@ -190,6 +192,8 @@ pub struct SettingsPanel {
     pub(super) extras: super::integrations_ui::ExtrasUi,
     /// Customize theme widgets, pending settings / theme import (`theme_ui.rs`).
     pub(super) theme_ui: super::theme_ui::ThemeUi,
+    /// Theme files in `<config>/themes` (`theme_library.rs`).
+    pub(super) theme_files: super::theme_library::ThemeLibrary,
     /// Appearance / behaviour profiles (`profiles.rs`).
     pub(super) profiles: super::profiles::ProfileStore,
     /// Keyboard shortcuts section (recording, conflict prompt).
@@ -327,6 +331,7 @@ impl SettingsPanel {
         let (theme_ui, theme_subscriptions) =
             super::theme_ui::ThemeUi::new(&settings.custom_theme, window, cx);
         subscriptions.extend(theme_subscriptions);
+        let theme_files = super::theme_library::ThemeLibrary::start(cx);
         let search = cx.new(|cx| SettingsSearch::new(window, cx));
         subscriptions.push(cx.subscribe_in(
             &search,
@@ -380,6 +385,8 @@ impl SettingsPanel {
             modules,
             extras,
             theme_ui,
+            theme_files,
+            app_icon_generation: 0,
             profiles,
             shortcuts_ui: Default::default(),
             search,

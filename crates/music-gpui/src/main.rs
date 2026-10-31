@@ -37,6 +37,8 @@ mod account_list;
 mod actions;
 mod anim;
 mod app;
+mod app_icon;
+mod appearance_script;
 mod backdrop;
 mod bar_items_script;
 mod bar_script;
@@ -105,6 +107,7 @@ mod util;
 #[cfg(windows)]
 mod win;
 mod youtube_sync;
+mod zoom;
 
 use gpui::{
     App, AppContext as _, Bounds, Pixels, TitlebarOptions, WindowBounds, WindowOptions, point, px,
@@ -180,6 +183,8 @@ fn main() {
             gpui_component::init(cx);
             ArtworkCache::init(cx);
             logo::set_dock_icon();
+            // Before the window opens: whether the OS asks for less transparency.
+            effects::poll_os_reduce_transparency();
 
             // Only the UI language and the window frame are needed before the window
             // exists; the settings panel loads (and owns) the full file.
@@ -200,6 +205,10 @@ fn main() {
                     .as_ref()
                     .is_some_and(|s| s.appearance.system_title_bar),
             );
+            let icon = saved
+                .as_ref()
+                .map(|s| s.appearance.app_icon)
+                .unwrap_or_default();
             let saved = saved.and_then(|s| s.window);
             let mut options = WindowOptions {
                 window_bounds: Some(initial_bounds(saved, cx)),
@@ -217,12 +226,24 @@ fn main() {
                 ..Default::default()
             };
             titlebar::apply_window_options(&mut options, chrome);
+            // X11 takes the window icon only when the window opens.
+            #[cfg(any(target_os = "linux", target_os = "freebsd"))]
+            {
+                options.icon = app_icon::window_icon(icon);
+            }
+            #[cfg(not(any(target_os = "linux", target_os = "freebsd")))]
+            let _ = icon;
             let mut app = None;
             let window = cx
                 .open_window(options, |window, cx| {
                     let view = cx.new(|cx| MusicApp::new(window, cx));
                     app = Some(view.clone());
-                    cx.new(|cx| Root::new(view, window, cx))
+                    // The app paints its own background (see-through windows
+                    // paint it translucent); gpui-component's root would paint
+                    // an opaque one under it.
+                    cx.new(|cx| {
+                        gpui::Styled::bg(Root::new(view, window, cx), gpui::transparent_black())
+                    })
                 })
                 .expect("failed to open window");
             let app = app.expect("window built");

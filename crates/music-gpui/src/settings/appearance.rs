@@ -36,13 +36,8 @@ pub(super) fn render(
     let swatch = |choice: ThemeChoice| {
         // Background / surface / accent preview of each theme (with the
         // Customize-theme options; the dynamic card shows the current accent).
-        let (bg, surface, dot) = crate::theme::preview(&crate::theme::Look {
-            choice,
-            font_scale: 1.0,
-            custom: custom.clone(),
-            art: None,
-            art_tint: 0.,
-        });
+        let (bg, surface, dot) =
+            crate::theme::preview(&crate::theme::Look::plain(choice, custom.clone()));
         let dot = if choice == ThemeChoice::Dynamic && current == ThemeChoice::Dynamic {
             accent
         } else {
@@ -349,6 +344,7 @@ pub(super) fn render(
         .on_click(cx.listener(|this, on: &bool, _, cx| this.set_system_title_bar(*on, cx)));
     // The running window keeps the chrome it opened with.
     let pending = system_title_bar == crate::titlebar::custom();
+    let window_look = super::look_ui::render_window(panel, cx);
     let window_group = group_at(
         "appearance.window",
         t!("settings.appearance.window_group"),
@@ -381,7 +377,8 @@ pub(super) fn render(
                         .on_click(|_, _, cx| cx.restart()),
                 ),
         )
-    });
+    })
+    .child(window_look);
 
     let language = super::language::language_row(panel, window, cx);
     let player_bar = super::bar_ui::render(panel, cx);
@@ -409,7 +406,8 @@ pub(super) fn render(
                     .text_xs()
                     .text_color(muted)
                     .child(t!("settings.appearance.text_size_note")),
-            ),
+            )
+            .child(note(t!("settings.appearance.zoom_note"), cx)),
         )
         .child(window_group)
         .child(

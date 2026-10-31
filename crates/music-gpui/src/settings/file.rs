@@ -27,7 +27,7 @@ use super::prefs::{
     ActivityConfig, AudioConfig, LyricsConfig, NowPlayingConfig, ScrobbleRulesConfig,
 };
 use crate::queue::Repeat;
-use crate::theme::{FONT_SCALES, ThemeChoice};
+use crate::theme::ThemeChoice;
 
 /// From `packaging/app.env` (see `identity.rs`).
 pub const APP_ID: &str = crate::identity::APP_ID;
@@ -230,7 +230,8 @@ pub struct DiscordConfig {
 pub struct AppearanceConfig {
     #[serde(deserialize_with = "lenient")]
     pub theme: ThemeChoice,
-    /// One of [`FONT_SCALES`] (other values are snapped to the nearest).
+    /// One of the zoom levels (`zoom::STEPS`, which include [`FONT_SCALES`];
+    /// other values are snapped to the nearest).
     pub font_scale: f32,
     /// UI language: a catalog code (`de`, `pt-BR`, `zh-CN`) or `system` (the OS's
     /// preferred languages). An unknown code (e.g. from a newer version) also means
@@ -243,6 +244,9 @@ pub struct AppearanceConfig {
     /// forward, search) instead of the custom top bar (`titlebar.rs`). Read when
     /// the main window opens, so a change applies on the next launch.
     pub system_title_bar: bool,
+    /// The app icon (Dock, taskbar, window; `app_icon.rs`).
+    #[serde(deserialize_with = "lenient")]
+    pub app_icon: crate::app_icon::AppIconChoice,
 }
 
 impl Default for AppearanceConfig {
@@ -253,6 +257,7 @@ impl Default for AppearanceConfig {
             language: SYSTEM_LANGUAGE.into(),
             artwork_memory_mb: crate::components::artwork::DEFAULT_BUDGET_MB,
             system_title_bar: false,
+            app_icon: Default::default(),
         }
     }
 }
@@ -605,14 +610,8 @@ impl Settings {
                 0.0
             };
         }
-        let scale = self.appearance.font_scale;
-        self.appearance.font_scale = FONT_SCALES
-            .into_iter()
-            .min_by(|a, b| (a - scale).abs().total_cmp(&(b - scale).abs()))
-            .unwrap_or(1.0);
-        if !scale.is_finite() {
-            self.appearance.font_scale = 1.0;
-        }
+        // A zoom level (the Appearance buttons and ⌘+ / ⌘−, `zoom.rs`).
+        self.appearance.font_scale = crate::zoom::snap(self.appearance.font_scale);
         let mb = self.appearance.artwork_memory_mb;
         self.appearance.artwork_memory_mb = crate::components::artwork::BUDGETS_MB
             .into_iter()
@@ -642,6 +641,7 @@ impl Settings {
         self.player_bar.normalize();
         self.custom_theme.normalize();
         self.app_look.normalize();
+        self.effects.normalize();
     }
 
     pub fn from_json(text: &str) -> serde_json::Result<Self> {

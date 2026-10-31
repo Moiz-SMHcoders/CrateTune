@@ -1,0 +1,63 @@
+# Theme files, window translucency, the music-reactive look, UI zoom and the
+# app icon (ja).
+
+# ---- Theme files (Customize theme)
+themes.files = テーマファイル
+themes.files_note = テーマフォルダのテーマです。テキストエディタで編集して保存すると、すぐに反映されます。
+themes.open_folder = テーマフォルダを開く
+themes.export_file = 現在のテーマをファイルに書き出す
+themes.export_name = マイテーマ
+themes.toast.exported = テーマフォルダに {file} として保存しました。
+themes.invalid = {file} は読み込まれませんでした：{reason}
+themes.low_contrast = {name}：一部の文字のコントラストが低すぎます（{ratio}:1）。読みにくい場合があります。
+themes.empty = テーマファイルはまだありません。現在のテーマを書き出すか、フォルダを開いて追加してください。
+# ---- Reasons a theme file was left out
+themes.error.read = 読み込めませんでした（{error}）
+themes.error.too_large = ファイルが 256 KB を超えています
+themes.error.syntax = {line} 行目：{message}
+themes.error.choice = {line} 行目：{key} = 「{value}」は {expected} のいずれでもありません
+themes.error.range = {line} 行目：{key} は 0 から 1 の間にしてください
+themes.error.unknown_color = {line} 行目：「{key}」という色はありません
+themes.error.bad_color = {line} 行目：{key} = 「{value}」は色ではありません（#RGB、#RRGGBB、#RRGGBBAA）
+
+# ---- Window translucency (Appearance → Window)
+window.material.off = 不透明
+window.material.blur = ぼかし
+window.material.transparent = 透過
+window.material.mica = Mica
+window.material.mica_alt = Mica Alt
+settings.window.material = ウインドウの背景
+settings.window.material_note = ウインドウ全体からデスクトップが透けて見えます。文字が読めるよう、必要に応じて不透明度を上げます。
+settings.window.opacity = 不透明度
+settings.window.opacity_value = {percent}%
+settings.window.opacity_raised = 明るいデスクトップでも文字が読めるよう、{percent}% に上げています。
+settings.window.note_macos = 「ぼかし」は macOS のウインドウぼかしを使います。メニュー、ダイアログ、再生中画面は不透明のままです。
+settings.window.note_windows = 「ぼかし」はアクリルです。Mica と Mica Alt には Windows 11（22H2 以降）が必要です。
+settings.window.note_linux = コンポジット対応のウインドウマネージャが必要です。「ぼかし」は Wayland 上の KDE Plasma が必要で、それ以外では「透過」と同じ表示になります。
+settings.window.reduced_by_os = システムで「透明度を下げる」がオンになっているため（アクセシビリティ）、ウインドウは不透明のままです。
+settings.window.cpu_note = ぼかしはシステムが描画するため、アプリの CPU は増えず、待機中に再描画もしません。
+
+# ---- React to the music (App-wide look)
+settings.look.react = 音楽に反応
+settings.look.react_note = 再生中、グラデーションや光が音楽のエネルギーに合わせて呼吸します（最大 30 fps。一時停止中、ウインドウが隠れているとき、視差効果を減らす設定では止まります）。
+
+# ---- UI zoom (Appearance → Text size, shortcuts)
+settings.appearance.zoom_note = Ctrl または ⌘ と + / − / 0、または Ctrl / ⌘ とマウスホイールでも画面全体を拡大・縮小できます。
+zoom.toast = ズーム {percent}%
+shortcuts.action.zoom_in = 拡大
+shortcuts.action.zoom_out = 縮小
+shortcuts.action.zoom_reset = 実際のサイズ
+
+# ---- App icon (Appearance → Window)
+settings.app_icon = アプリアイコン
+settings.app_icon_note = Dock とアプリ切り替え（macOS）、またはウインドウとタスクバー（Windows、X11 の Linux）に表示されます。
+settings.app_icon.linux_note = Linux では次回の起動から反映されます（X11）。Wayland のデスクトップではインストール済みのアイコンが表示されます。
+settings.app_icon.choose = 画像を選択…
+app_icon.custom = 自分の画像
+app_icon.default = ミッドナイト
+app_icon.light = ペーパー
+app_icon.sunset = サンセット
+app_icon.mint = ミント
+app_icon.mono = モノ
+app_icon.error = その画像はアイコンに使えません：{error}
+app_icon.error.not_png = PNG、JPEG、WebP の画像を選んでください

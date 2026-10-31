@@ -190,6 +190,21 @@ the "Jump back in" card. Details: [README: Several accounts, browser sign-in, Yo
 history](../README.md#several-accounts-browser-sign-in-youtube-history). · Size: small ·
 Priority: high
 
+**U20. Look round on Windows, Linux and real hardware**
+Checked on macOS only (unit tests, scripts, offscreen screenshots, window captures of the
+blur): (1) the window materials on real desktops — Windows 10 (acrylic only; Mica hidden
+below build 22621) and Windows 11 (acrylic, Mica, Mica Alt, with DirectComposition and
+with `disable_direct_composition`), KDE Plasma on Wayland (blur), GNOME / Sway / X11 with a
+compositor (see-through) and without one; (2) the Windows window icon (`WM_SETICON` from
+PNG data through `CreateIconFromResourceEx`) on the title bar, Alt+Tab and the taskbar
+button, and the X11 icon at the next start; (3) theme-file watching on Windows
+(`ReadDirectoryChangesW`) and Linux (inotify) with editors that save through a temp file
+and rename; (4) Ctrl + wheel zoom with real mice and touchpads on Windows / Linux (scripts
+dispatch synthetic events); (5) React to the music by ear and eye on real music (only
+the envelope's tests and frame counts were checked). Details: [README: Look
+round](../README.md#look-round-theme-files-see-through-window-music-reactive-look-zoom-app-icon).
+· Size: small · Priority: medium
+
 **U18. Queue / selection round (`feat/queue-ux`) on real systems**
 Checked with unit tests, scripts and offscreen screenshots on macOS only: (1) the in-app
 log's stderr capture on Windows (`SetStdHandle` to a pipe; release builds without a
@@ -349,33 +364,64 @@ of [README: App-wide look & motion](../README.md#app-wide-look--motion):
   horizontal scroll areas, and animating it means frames per hover. Tiles get a raised
   background, a shadow under the art and the play button instead (one render per hover
   change). · Size: small after T3 · Priority: low
-* *An app-wide Pulse (the whole window breathing with the music)* and *an animated glow.*
-  They would redraw the backdrop at ~30 fps while playing; following the bar's Pulse gives
-  the static glow instead. · Size: small · Priority: low
 * *Blur-based looks* (frosted cards, blurred artwork behind every page, Apple Music's
   animated artwork background app-wide). No backdrop filters in GPUI (T3); a CPU-blurred
   image behind cached content would cost memory per window size. · Size: large ·
   Priority: low
 * *Marquee (scrolling) long titles* in rows and the bar. Continuous frames for any
-  truncated title on screen. · Size: small · Priority: low
+  truncated title on screen (F4: none exist today, titles truncate). · Size: small ·
+  Priority: low
 * *A separate compact list mode.* Customize theme → Density → Compact already gives 50 pt
   rows and tighter paddings everywhere. · Won't do unless asked
 * *KDE's animation speed for the System animations level.* Only GNOME's
   `enable-animations` (and Windows' "Animation effects") are read. · Size: small ·
   Priority: low
-* *Translucent sidebar on Windows (Mica) and Linux.* GPUI has `MicaBackdrop` for Windows 11
-  and transparency on Wayland/X11 compositors, but neither was tried on a real desktop
-  (P2); the switch is shown on macOS only. · Size: small · Priority: low
+* *Translucent sidebar on Windows (Mica) and Linux.* The look round added a see-through
+  window on every platform (Appearance → Window → Window background, U20); the
+  sidebar-only switch stays macOS-only. · Size: small · Priority: low
 
-**M7. Translucent sidebar: real-desktop check**
-The macOS blur (GPUI's `WindowBackgroundAppearance::Blurred`, an `NSVisualEffectView`)
-can't be captured by the offscreen screenshot hook, and the display was asleep when it
-could have been checked on screen, so it is unverified: confirm the sidebar shows the
-blurred desktop, the content area and bar stay opaque, and Now Playing / dialogs cover it.
-WindowServer does the blur, so it costs GPU time, not app CPU. Also sample live CPU with
+The look round (refryt, Limusic, Zuno, Deviload; [README: Look
+round](../README.md#look-round-theme-files-see-through-window-music-reactive-look-zoom-app-icon))
+built theme files, the see-through window, React to the music, zoom, the app icon and
+"Reduce transparency"; these ideas from the same survey were left out:
+* *A light theme and a dark / light pair per mode* (all four apps). Theme files can set
+  light `[colors]`, but Now Playing, the lyrics card, the bar's backgrounds and several
+  schematic previews draw white on dark on purpose; see M1. · Size: medium · Priority:
+  medium
+* *Wallpaper palette sync* (Limusic's Matugen file, watched). A Matugen template that
+  writes our theme TOML would work with the watcher as is; needs a template and docs.
+  · Size: small · Priority: low
+* *A quick theme switcher in the top bar* (Deviload's popover with swatches). · Size:
+  small · Priority: low
+* *Scroll fades at list edges* (refryt, recommended with transparency). Needs alpha masks
+  (T3). · Size: small after T3 · Priority: low
+* *Card outlines and a window edge hairline* (refryt, Zuno). · Size: small · Priority: low
+* *Sidebar modes* — a collapsed icon rail, expand on hover, a drag-resizable sidebar and
+  queue panel (Zuno, refryt, Limusic). The shell's fixed widths are in many layout
+  computations (`SIDEBAR_WIDTH`, the top bar's drag regions). · Size: medium · Priority:
+  low
+* *Window control styles* (macOS / Windows look on any system, Zuno) and *hiding single
+  top-bar buttons*. · Size: small · Priority: low
+* *Track list columns to show or hide* (album, added, plays, duration; Limusic). · Size:
+  medium · Priority: low
+* *Fonts from files and a separate heading font* (Limusic). GPUI can register font bytes
+  at runtime; the font picker lists installed families only. · Size: small · Priority: low
+* *A one-run theme from the command line* (refryt `--scheme`), e.g. `MUSIC_THEME=nord`.
+  · Size: small · Priority: low
+* *Shortcuts that follow the key position on non-Latin layouts* (Limusic). · Size: medium ·
+  Priority: low
+* *Fake liquid glass* (Deviload's WebGL refraction over a wallpaper). No shaders or
+  backdrop filters in GPUI (T3). · Won't do
+
+**M7. Translucent sidebar: the rest of the real-desktop check**
+Checked on a macOS desktop in the look round (window captures with `screencapture -l`):
+it showed nothing before, because gpui-component's `Root` painted an opaque background
+under the whole app; the root is transparent now, the sidebar shows the blurred desktop,
+the content area and bar stay opaque, and its opacity is raised until the sidebar's text
+stays readable on a light desktop (45 % → about 74 %). Still to do: sample live CPU with
 page transitions / hover off and Animations Reduced / Off (that run lost its display
-frames). Details: `look_state.rs`, [README: App-wide look &
-motion](../README.md#app-wide-look--motion). · Size: small · Priority: low
+frames), and check Now Playing / dialogs covering it. Details: `look_state.rs`, [README:
+App-wide look & motion](../README.md#app-wide-look--motion). · Size: small · Priority: low
 
 **M8. Sync settings and library between devices (Automerge)**
 After the iroh device hand-off: keep settings, likes, playlists, speed-dial pins and queue
@@ -469,10 +515,6 @@ shelves, or raise the budget on machines with plenty of memory. Repro: `MUSIC_FI
 with per-page artwork in `scripts/perf-frames.sh` (see the comment in
 `crates/music-core/src/fixtures.rs` and docs/TESTING.md 6.3). · Size: medium · Priority: low
 
-**F4. Check the CPU cost of scrolling (marquee) titles**
-tono.fm's GPUI client lists "reimplement marquee to lessen CPU load". Measure whether any
-CrateTune marquee or auto-scrolling title keeps the window redrawing, and make it static
-or frame-capped if so. · Size: small · Priority: medium
 
 ## 6. Technical debt
 

@@ -1,12 +1,15 @@
 //! Appearance → "App-wide look" and "Motion & effects" (`look_prefs.rs`), plus
 //! the panel methods that change them.
 
+use std::path::PathBuf;
+
 use gpui::{
-    AnyElement, Context, IntoElement, ParentElement as _, SharedString, Styled as _,
-    prelude::FluentBuilder as _,
+    AnyElement, Context, FontWeight, InteractiveElement as _, IntoElement, ParentElement as _,
+    SharedString, StatefulInteractiveElement as _, Styled as _, Window, div,
+    prelude::FluentBuilder as _, px,
 };
 use gpui_component::{
-    Disableable as _, Selectable as _, Sizable as _,
+    ActiveTheme as _, Disableable as _, Selectable as _, Sizable as _,
     button::{Button, ButtonVariants as _},
     h_flex,
     switch::Switch,
@@ -16,10 +19,12 @@ use gpui_component::{
 use super::bar_prefs::GradientDirection;
 use super::look_prefs::{
     AppLookConfig, AppLookStyle, ArtCorners, CardSize, EffectsConfig, LOOK_INTENSITIES, MotionPref,
+    WINDOW_OPACITIES, WindowMaterial,
 };
 use super::panel::{SettingsEvent, SettingsPanel};
 use super::prefs_ui::choice;
-use super::widgets::{group_at, note, row_at};
+use super::widgets::{Anchor as _, group_at, note, row_at};
+use crate::app_icon::AppIconChoice;
 
 impl SettingsPanel {
     fn update_app_look(&mut self, cx: &mut Context<Self>, f: impl FnOnce(&mut AppLookConfig)) {
@@ -103,6 +108,71 @@ impl SettingsPanel {
     pub fn set_translucent_sidebar(&mut self, on: bool, cx: &mut Context<Self>) {
         self.update_effects(cx, |e| e.translucent_sidebar = on);
     }
+
+    pub fn set_app_look_react(&mut self, on: bool, cx: &mut Context<Self>) {
+        self.update_app_look(cx, |l| l.react = on);
+    }
+
+    pub fn set_window_material(&mut self, m: WindowMaterial, cx: &mut Context<Self>) {
+        self.update_effects(cx, |e| e.window_material = m);
+    }
+
+    pub fn set_window_opacity(&mut self, v: f32, cx: &mut Context<Self>) {
+        self.update_effects(cx, |e| {
+            e.window_opacity = v;
+            e.normalize();
+        });
+    }
+
+    pub fn set_app_icon(&mut self, choice: AppIconChoice, cx: &mut Context<Self>) {
+        if self.settings.appearance.app_icon != choice {
+            self.settings.appearance.app_icon = choice;
+            cx.emit(SettingsEvent::Appearance);
+            self.changed(false, cx);
+        }
+    }
+
+    /// Stores `path` as the custom app icon and picks it (also `@app-icon=PATH`).
+    pub fn import_app_icon(&mut self, path: PathBuf, window: &mut Window, cx: &mut Context<Self>) {
+        let Some(dest) = crate::app_icon::custom_path() else {
+            return;
+        };
+        cx.spawn_in(window, async move |this, cx| {
+            let result =
+                crate::util::off_thread(move || crate::app_icon::import_custom(&path, &dest)).await;
+            this.update_in(cx, |this, window, cx| match result {
+                Ok(()) => {
+                    this.app_icon_generation += 1;
+                    this.set_app_icon(AppIconChoice::Custom, cx);
+                    cx.emit(SettingsEvent::Appearance);
+                    cx.notify();
+                }
+                Err(e) => crate::app::notify(window, cx, t!("app_icon.error", error = e)),
+            })
+            .ok();
+        })
+        .detach();
+    }
+
+    fn pick_app_icon(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let picked = cx.prompt_for_paths(gpui::PathPromptOptions {
+            files: true,
+            directories: false,
+            multiple: false,
+            prompt: Some(t!("settings.app_icon.choose").into()),
+        });
+        cx.spawn_in(window, async move |this, cx| {
+            let Ok(Ok(Some(mut paths))) = picked.await else {
+                return;
+            };
+            let Some(path) = paths.pop() else { return };
+            this.update_in(cx, |this, window, cx| {
+                this.import_app_icon(path, window, cx)
+            })
+            .ok();
+        })
+        .detach();
+    }
 }
 
 type Setter = fn(&mut SettingsPanel, bool, &mut Context<SettingsPanel>);
@@ -182,6 +252,13 @@ pub(super) fn render_app_look(
         SettingsPanel::set_app_look_animate,
         cx,
     );
+    let react = switch(
+        "app-look-react",
+        look.react,
+        SettingsPanel::set_app_look_react,
+        cx,
+    )
+    .disabled(crate::effects::motion() != crate::effects::Motion::Full);
     let own = on && !following;
     group_at("appearance.look", t!("settings.look.group"), cx)
         .child(
@@ -249,6 +326,15 @@ pub(super) fn render_app_look(
                         t!("settings.look.animate"),
                         Some(t!("settings.look.animate_note")),
                         animate,
+                        cx,
+                    ))
+                })
+                .when(on && effective.draws_backdrop(), |this| {
+                    this.child(row_at(
+                        "appearance.look.react",
+                        t!("settings.look.react"),
+                        Some(t!("settings.look.react_note")),
+                        react,
                         cx,
                     ))
                 }),
@@ -390,5 +476,144 @@ pub(super) fn render_effects(
                 }),
         )
         .child(note(t!("settings.motion.cpu_note"), cx))
+        .into_any_element()
+}
+
+/// Appearance → Window: the window background (material, opacity) and the app
+/// icon, below the title bar switch (`appearance.rs`).
+pub(super) fn render_window(
+    panel: &mut SettingsPanel,
+    cx: &mut Context<SettingsPanel>,
+) -> AnyElement {
+    let fx = panel.settings.effects;
+    let materials: Vec<WindowMaterial> = WindowMaterial::ALL
+        .iter()
+        .copied()
+        .filter(|m| m.available())
+        .collect();
+    let shown = fx.material();
+    let picker = choice(
+        "window-material",
+        &materials,
+        shown,
+        WindowMaterial::title,
+        |this, m, cx| this.set_window_material(m, cx),
+        cx,
+    );
+    let opacities = h_flex()
+        .gap_1()
+        .flex_wrap()
+        .children(WINDOW_OPACITIES.iter().enumerate().map(|(i, &value)| {
+            let selected = (fx.window_opacity - value).abs() < 0.01;
+            Button::new(SharedString::from(format!("window-opacity-{i}")))
+                .small()
+                .map(|b| if selected { b.primary() } else { b.outline() })
+                .selected(selected)
+                .label(t!(
+                    "settings.window.opacity_value",
+                    percent = (value * 100.).round()
+                ))
+                .on_click(cx.listener(move |this, _, _, cx| this.set_window_opacity(value, cx)))
+        }));
+    let used = crate::theme::window_alpha();
+    let raised = shown != WindowMaterial::Off && used > fx.window_opacity + 0.005;
+    let platform_note = if cfg!(target_os = "macos") {
+        t!("settings.window.note_macos")
+    } else if cfg!(windows) {
+        t!("settings.window.note_windows")
+    } else {
+        t!("settings.window.note_linux")
+    };
+
+    // ---- app icon
+    let current = panel.settings.appearance.app_icon;
+    let (border, ring) = (cx.theme().border, cx.theme().ring);
+    let has_custom = crate::app_icon::custom_path().is_some_and(|p| p.is_file());
+    let icons = h_flex().flex_wrap().gap_2().children(
+        AppIconChoice::ALL
+            .iter()
+            .copied()
+            .filter(|c| *c != AppIconChoice::Custom || has_custom)
+            .map(|choice| {
+                let selected = current == choice;
+                let image = std::sync::Arc::new(gpui::Image::from_bytes(
+                    gpui::ImageFormat::Png,
+                    crate::app_icon::png(choice).into_owned(),
+                ));
+                v_flex()
+                    .id(SharedString::from(format!("app-icon-{}", choice.key())))
+                    .w(px(76.))
+                    .p_1()
+                    .gap_1()
+                    .items_center()
+                    .rounded(crate::theme::radius(9.))
+                    .border_2()
+                    .border_color(if selected { ring } else { border })
+                    .cursor_pointer()
+                    .child(gpui::img(image).size(px(52.)))
+                    .child(
+                        div()
+                            .text_xs()
+                            .truncate()
+                            .when(selected, |this| this.font_weight(FontWeight::SEMIBOLD))
+                            .child(choice.title()),
+                    )
+                    .on_click(cx.listener(move |this, _, _, cx| this.set_app_icon(choice, cx)))
+            }),
+    );
+    let choose = Button::new("app-icon-choose")
+        .outline()
+        .small()
+        .icon(crate::icons::Lucide::ImageUp)
+        .label(t!("settings.app_icon.choose"))
+        .disabled(crate::app_icon::custom_path().is_none())
+        .on_click(cx.listener(|this, _, window, cx| this.pick_app_icon(window, cx)));
+
+    v_flex()
+        .gap_2()
+        .child(row_at(
+            "appearance.window.material",
+            t!("settings.window.material"),
+            Some(t!("settings.window.material_note")),
+            picker,
+            cx,
+        ))
+        .when(shown != WindowMaterial::Off, |this| {
+            this.child(row_at(
+                "appearance.window.opacity",
+                t!("settings.window.opacity"),
+                None,
+                opacities,
+                cx,
+            ))
+            .when(raised, |this| {
+                this.child(note(
+                    t!(
+                        "settings.window.opacity_raised",
+                        percent = (used * 100.).round()
+                    ),
+                    cx,
+                ))
+            })
+        })
+        .when(crate::effects::os_reduce_transparency(), |this| {
+            this.child(note(t!("settings.window.reduced_by_os"), cx))
+        })
+        .child(note(platform_note, cx))
+        .child(note(t!("settings.window.cpu_note"), cx))
+        .child(
+            v_flex()
+                .gap_2()
+                .pt_2()
+                .anchor("appearance.window.app_icon")
+                .child(div().text_sm().child(t!("settings.app_icon")))
+                .child(note(t!("settings.app_icon_note"), cx))
+                .child(icons)
+                .child(h_flex().child(choose))
+                .when(
+                    cfg!(any(target_os = "linux", target_os = "freebsd")),
+                    |this| this.child(note(t!("settings.app_icon.linux_note"), cx)),
+                ),
+        )
         .into_any_element()
 }

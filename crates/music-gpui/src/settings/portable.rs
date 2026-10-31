@@ -715,6 +715,9 @@ impl ThemePreset {
         c.contrast = self.contrast;
         c.corners = self.corners;
         c.dynamic.style = self.style;
+        // A built-in look replaces a theme file's colours.
+        c.colors.clear();
+        c.file.clear();
         c.normalize();
         c
     }

@@ -8,6 +8,8 @@
 //! * [`set_topmost`] – the mini player stays above other windows (as the floating
 //!   panel does on macOS).
 //! * [`reduce_motion`] – the system's "Show animations in Windows" switch.
+//! * [`build_number`] – which window materials the system has (Mica, acrylic).
+//! * [`set_window_icon`] – the chosen app icon on a window (title bar, taskbar).
 
 use std::sync::atomic::{AtomicIsize, Ordering};
 use std::time::{Duration, Instant};
@@ -299,6 +301,88 @@ pub fn reduce_motion() -> bool {
         )
     };
     ok.is_ok() && !enabled.as_bool()
+}
+
+/// The Windows build (22621 = Windows 11 22H2), from `RtlGetVersion` (which,
+/// unlike `GetVersionEx`, isn't capped by the manifest); 0 if unknown.
+pub fn build_number() -> u32 {
+    use std::sync::OnceLock;
+    static BUILD: OnceLock<u32> = OnceLock::new();
+    *BUILD.get_or_init(|| {
+        #[repr(C)]
+        struct OsVersionInfo {
+            size: u32,
+            major: u32,
+            minor: u32,
+            build: u32,
+            platform: u32,
+            csd: [u16; 128],
+        }
+        let mut info = OsVersionInfo {
+            size: std::mem::size_of::<OsVersionInfo>() as u32,
+            major: 0,
+            minor: 0,
+            build: 0,
+            platform: 0,
+            csd: [0; 128],
+        };
+        // SAFETY: ntdll is always loaded; RtlGetVersion takes a pointer to an
+        // OSVERSIONINFOW (this layout) with its size set and returns an NTSTATUS.
+        unsafe {
+            let Ok(ntdll) = GetModuleHandleW(w!("ntdll.dll")) else {
+                return 0;
+            };
+            let Some(f) = windows::Win32::System::LibraryLoader::GetProcAddress(
+                ntdll,
+                windows::core::s!("RtlGetVersion"),
+            ) else {
+                return 0;
+            };
+            let rtl_get_version: unsafe extern "system" fn(*mut OsVersionInfo) -> i32 =
+                std::mem::transmute(f);
+            if rtl_get_version(&mut info) == 0 {
+                info.build
+            } else {
+                0
+            }
+        }
+    })
+}
+
+/// Sets `png` (any size; Windows scales it) as the window's big and small icon:
+/// the title bar, Alt+Tab and the taskbar button. `None` restores the icon of
+/// the executable's resources.
+pub fn set_window_icon(hwnd: isize, png: Option<&[u8]>) {
+    use windows::Win32::UI::WindowsAndMessaging::{
+        CreateIconFromResourceEx, ICON_BIG, ICON_SMALL, IMAGE_FLAGS, LoadIconW, SendMessageW,
+        WM_SETICON,
+    };
+    // SAFETY: `CreateIconFromResourceEx` reads `png` (PNG-compressed icon data is
+    // accepted since Vista) and returns a new icon handle owned by the window
+    // once set; `LoadIconW` with the module handle loads the resource icon 1
+    // (`packaging/windows/app.rc`); WM_SETICON on a window of this process.
+    unsafe {
+        let icon = match png {
+            Some(bytes) => {
+                CreateIconFromResourceEx(bytes, true, 0x0003_0000, 0, 0, IMAGE_FLAGS(0)).ok()
+            }
+            None => GetModuleHandleW(None).ok().and_then(|m| {
+                LoadIconW(Some(m.into()), PCWSTR(std::ptr::without_provenance(1))).ok()
+            }),
+        };
+        let Some(icon) = icon else {
+            return;
+        };
+        let hwnd = HWND(hwnd as *mut _);
+        for kind in [ICON_BIG, ICON_SMALL] {
+            SendMessageW(
+                hwnd,
+                WM_SETICON,
+                Some(WPARAM(kind as usize)),
+                Some(LPARAM(icon.0 as isize)),
+            );
+        }
+    }
 }
 
 #[cfg(test)]

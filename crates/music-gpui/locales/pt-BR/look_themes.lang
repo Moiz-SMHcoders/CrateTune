@@ -1,0 +1,63 @@
+# Theme files, window translucency, the music-reactive look, UI zoom and the
+# app icon (pt-BR).
+
+# ---- Theme files (Customize theme)
+themes.files = Arquivos de tema
+themes.files_note = Temas da pasta de temas: edite um em um editor de texto e salve para ver a mudança na hora.
+themes.open_folder = Abrir pasta de temas
+themes.export_file = Exportar o tema atual como arquivo
+themes.export_name = Meu tema
+themes.toast.exported = Salvo como {file} na pasta de temas.
+themes.invalid = {file} foi deixado de fora: {reason}
+themes.low_contrast = {name}: parte do texto tem pouco contraste ({ratio}:1) e pode ser difícil de ler.
+themes.empty = Ainda não há arquivos de tema. Exporte o tema atual ou abra a pasta para adicionar um.
+# ---- Reasons a theme file was left out
+themes.error.read = não foi possível ler ({error})
+themes.error.too_large = o arquivo tem mais de 256 KB
+themes.error.syntax = linha {line}: {message}
+themes.error.choice = linha {line}: {key} = “{value}” não é nenhum de {expected}
+themes.error.range = linha {line}: {key} precisa estar entre 0 e 1
+themes.error.unknown_color = linha {line}: não existe cor chamada “{key}”
+themes.error.bad_color = linha {line}: {key} = “{value}” não é uma cor (#RGB, #RRGGBB ou #RRGGBBAA)
+
+# ---- Window translucency (Appearance → Window)
+window.material.off = Opaco
+window.material.blur = Desfocado
+window.material.transparent = Transparente
+window.material.mica = Mica
+window.material.mica_alt = Mica Alt
+settings.window.material = Fundo da janela
+settings.window.material_note = A área de trabalho aparece através da janela inteira. O texto continua legível: a opacidade sobe onde for preciso.
+settings.window.opacity = Opacidade
+settings.window.opacity_value = {percent} %
+settings.window.opacity_raised = Aumentada para {percent} % para o texto continuar legível em uma área de trabalho clara.
+settings.window.note_macos = Desfocado usa o desfoque de janelas do macOS. Menus, diálogos e Tocando agora continuam opacos.
+settings.window.note_windows = Desfocado é o acrílico. Mica e Mica Alt precisam do Windows 11 (22H2 ou mais recente).
+settings.window.note_linux = Precisa de um gerenciador de janelas com composição. Desfocado precisa do KDE Plasma no Wayland; em outros casos aparece como Transparente.
+settings.window.reduced_by_os = Seu sistema pede menos transparência (Acessibilidade), então a janela continua opaca.
+settings.window.cpu_note = O sistema desenha o desfoque, então ele não gasta CPU extra do app e nada é redesenhado em repouso.
+
+# ---- React to the music (App-wide look)
+settings.look.react = Reagir à música
+settings.look.react_note = O degradê ou o brilho respiram com a energia da música enquanto toca (até 30 quadros por segundo; para na pausa, com a janela oculta ou com movimento reduzido).
+
+# ---- UI zoom (Appearance → Text size, shortcuts)
+settings.appearance.zoom_note = Ctrl ou ⌘ com + / − / 0, ou Ctrl / ⌘ e a roda do mouse, também dão zoom na interface.
+zoom.toast = Zoom {percent} %
+shortcuts.action.zoom_in = Aumentar zoom
+shortcuts.action.zoom_out = Diminuir zoom
+shortcuts.action.zoom_reset = Tamanho real
+
+# ---- App icon (Appearance → Window)
+settings.app_icon = Ícone do app
+settings.app_icon_note = Aparece no Dock e no alternador de apps (macOS) ou na janela e na barra de tarefas (Windows, Linux no X11).
+settings.app_icon.linux_note = No Linux vale a partir da próxima abertura (X11); áreas de trabalho Wayland mostram o ícone instalado.
+settings.app_icon.choose = Escolher uma imagem…
+app_icon.custom = Sua imagem
+app_icon.default = Meia-noite
+app_icon.light = Papel
+app_icon.sunset = Pôr do sol
+app_icon.mint = Menta
+app_icon.mono = Mono
+app_icon.error = Essa imagem não pode ser usada como ícone: {error}
+app_icon.error.not_png = escolha uma imagem PNG, JPEG ou WebP

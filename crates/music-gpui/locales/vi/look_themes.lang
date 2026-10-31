@@ -1,0 +1,63 @@
+# Theme files, window translucency, the music-reactive look, UI zoom and the
+# app icon (vi).
+
+# ---- Theme files (Customize theme)
+themes.files = Tệp giao diện
+themes.files_note = Giao diện trong thư mục giao diện: sửa một tệp bằng trình soạn thảo văn bản rồi lưu để thấy thay đổi ngay.
+themes.open_folder = Mở thư mục giao diện
+themes.export_file = Xuất giao diện hiện tại thành tệp
+themes.export_name = Giao diện của tôi
+themes.toast.exported = Đã lưu thành {file} trong thư mục giao diện.
+themes.invalid = Đã bỏ qua {file}: {reason}
+themes.low_contrast = {name}: một số chữ có độ tương phản quá thấp ({ratio}:1), có thể khó đọc.
+themes.empty = Chưa có tệp giao diện nào. Hãy xuất giao diện hiện tại hoặc mở thư mục để thêm.
+# ---- Reasons a theme file was left out
+themes.error.read = không đọc được ({error})
+themes.error.too_large = tệp lớn hơn 256 KB
+themes.error.syntax = dòng {line}: {message}
+themes.error.choice = dòng {line}: {key} = “{value}” không thuộc {expected}
+themes.error.range = dòng {line}: {key} phải nằm trong khoảng 0 đến 1
+themes.error.unknown_color = dòng {line}: không có màu nào tên “{key}”
+themes.error.bad_color = dòng {line}: {key} = “{value}” không phải màu (#RGB, #RRGGBB hoặc #RRGGBBAA)
+
+# ---- Window translucency (Appearance → Window)
+window.material.off = Đục
+window.material.blur = Mờ
+window.material.transparent = Trong suốt
+window.material.mica = Mica
+window.material.mica_alt = Mica Alt
+settings.window.material = Nền cửa sổ
+settings.window.material_note = Màn hình nền hiện qua toàn bộ cửa sổ. Chữ vẫn dễ đọc: độ đục được tăng khi cần.
+settings.window.opacity = Độ đục
+settings.window.opacity_value = {percent} %
+settings.window.opacity_raised = Đã tăng lên {percent} % để chữ vẫn đọc được trên màn hình nền sáng.
+settings.window.note_macos = Mờ dùng hiệu ứng làm mờ cửa sổ của macOS. Menu, hộp thoại và Đang phát vẫn đục.
+settings.window.note_windows = Mờ là acrylic. Mica và Mica Alt cần Windows 11 (22H2 trở lên).
+settings.window.note_linux = Cần trình quản lý cửa sổ có compositing. Mờ cần KDE Plasma trên Wayland; nơi khác sẽ trông như Trong suốt.
+settings.window.reduced_by_os = Hệ thống yêu cầu giảm độ trong suốt (Trợ năng), nên cửa sổ vẫn đục.
+settings.window.cpu_note = Hệ thống vẽ hiệu ứng mờ nên ứng dụng không tốn thêm CPU và không vẽ lại gì khi rảnh.
+
+# ---- React to the music (App-wide look)
+settings.look.react = Phản ứng theo nhạc
+settings.look.react_note = Dải màu hoặc ánh sáng “thở” theo năng lượng của nhạc khi phát (tối đa 30 khung hình mỗi giây; dừng khi tạm dừng, cửa sổ bị ẩn hoặc giảm chuyển động).
+
+# ---- UI zoom (Appearance → Text size, shortcuts)
+settings.appearance.zoom_note = Ctrl hoặc ⌘ cùng + / − / 0, hoặc Ctrl / ⌘ và con lăn chuột, cũng phóng to giao diện.
+zoom.toast = Thu phóng {percent} %
+shortcuts.action.zoom_in = Phóng to
+shortcuts.action.zoom_out = Thu nhỏ
+shortcuts.action.zoom_reset = Kích thước thật
+
+# ---- App icon (Appearance → Window)
+settings.app_icon = Biểu tượng ứng dụng
+settings.app_icon_note = Hiện trong Dock và trình chuyển ứng dụng (macOS) hoặc trên cửa sổ và thanh tác vụ (Windows, Linux trên X11).
+settings.app_icon.linux_note = Trên Linux, thay đổi áp dụng ở lần mở tiếp theo (X11); màn hình Wayland hiện biểu tượng đã cài.
+settings.app_icon.choose = Chọn ảnh…
+app_icon.custom = Ảnh của bạn
+app_icon.default = Nửa đêm
+app_icon.light = Giấy
+app_icon.sunset = Hoàng hôn
+app_icon.mint = Bạc hà
+app_icon.mono = Đơn sắc
+app_icon.error = Không thể dùng ảnh này làm biểu tượng: {error}
+app_icon.error.not_png = hãy chọn ảnh PNG, JPEG hoặc WebP

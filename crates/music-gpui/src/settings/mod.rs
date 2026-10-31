@@ -53,6 +53,8 @@ mod search_match;
 mod search_ui;
 mod shortcuts_ui;
 mod storage;
+pub mod theme_files;
+mod theme_library;
 pub mod theme_prefs;
 mod theme_ui;
 mod widgets;

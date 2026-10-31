@@ -1,0 +1,63 @@
+# Theme files, window translucency, the music-reactive look, UI zoom and the
+# app icon (ko).
+
+# ---- Theme files (Customize theme)
+themes.files = 테마 파일
+themes.files_note = 테마 폴더의 테마입니다. 텍스트 편집기에서 수정하고 저장하면 바로 반영됩니다.
+themes.open_folder = 테마 폴더 열기
+themes.export_file = 현재 테마를 파일로 내보내기
+themes.export_name = 내 테마
+themes.toast.exported = 테마 폴더에 {file}(으)로 저장했습니다.
+themes.invalid = {file}을(를) 건너뛰었습니다: {reason}
+themes.low_contrast = {name}: 일부 텍스트의 대비가 너무 낮아({ratio}:1) 읽기 어려울 수 있습니다.
+themes.empty = 아직 테마 파일이 없습니다. 현재 테마를 내보내거나 폴더를 열어 추가하세요.
+# ---- Reasons a theme file was left out
+themes.error.read = 읽을 수 없습니다({error})
+themes.error.too_large = 파일이 256KB보다 큽니다
+themes.error.syntax = {line}번째 줄: {message}
+themes.error.choice = {line}번째 줄: {key} = “{value}”은(는) {expected} 중 하나가 아닙니다
+themes.error.range = {line}번째 줄: {key}은(는) 0에서 1 사이여야 합니다
+themes.error.unknown_color = {line}번째 줄: “{key}”라는 색은 없습니다
+themes.error.bad_color = {line}번째 줄: {key} = “{value}”은(는) 색이 아닙니다(#RGB, #RRGGBB, #RRGGBBAA)
+
+# ---- Window translucency (Appearance → Window)
+window.material.off = 불투명
+window.material.blur = 흐림
+window.material.transparent = 투명
+window.material.mica = Mica
+window.material.mica_alt = Mica Alt
+settings.window.material = 창 배경
+settings.window.material_note = 창 전체로 바탕 화면이 비쳐 보입니다. 글자는 읽기 쉽게 유지되며, 필요하면 불투명도를 높입니다.
+settings.window.opacity = 불투명도
+settings.window.opacity_value = {percent}%
+settings.window.opacity_raised = 밝은 바탕 화면에서도 글자가 읽히도록 {percent}%로 높였습니다.
+settings.window.note_macos = 흐림은 macOS의 창 흐림 효과를 사용합니다. 메뉴, 대화상자, 지금 재생 중 화면은 불투명하게 유지됩니다.
+settings.window.note_windows = 흐림은 아크릴입니다. Mica와 Mica Alt는 Windows 11(22H2 이상)이 필요합니다.
+settings.window.note_linux = 컴포지팅 창 관리자가 필요합니다. 흐림은 Wayland의 KDE Plasma가 필요하며, 그 외에는 투명처럼 보입니다.
+settings.window.reduced_by_os = 시스템에서 투명도 줄이기가 켜져 있어(손쉬운 사용) 창이 불투명하게 유지됩니다.
+settings.window.cpu_note = 흐림은 시스템이 그리므로 앱 CPU를 더 쓰지 않으며, 대기 중에는 아무것도 다시 그리지 않습니다.
+
+# ---- React to the music (App-wide look)
+settings.look.react = 음악에 반응
+settings.look.react_note = 재생 중 그라데이션이나 빛이 음악의 에너지에 맞춰 숨 쉬듯 움직입니다(초당 최대 30프레임, 일시 정지·창 숨김·동작 줄이기에서는 멈춤).
+
+# ---- UI zoom (Appearance → Text size, shortcuts)
+settings.appearance.zoom_note = Ctrl 또는 ⌘와 + / − / 0, 또는 Ctrl / ⌘와 마우스 휠로도 화면을 확대/축소할 수 있습니다.
+zoom.toast = 확대/축소 {percent}%
+shortcuts.action.zoom_in = 확대
+shortcuts.action.zoom_out = 축소
+shortcuts.action.zoom_reset = 실제 크기
+
+# ---- App icon (Appearance → Window)
+settings.app_icon = 앱 아이콘
+settings.app_icon_note = Dock과 앱 전환기(macOS) 또는 창과 작업 표시줄(Windows, X11의 Linux)에 표시됩니다.
+settings.app_icon.linux_note = Linux에서는 다음 실행부터 적용됩니다(X11). Wayland 데스크톱은 설치된 아이콘을 표시합니다.
+settings.app_icon.choose = 이미지 선택…
+app_icon.custom = 내 이미지
+app_icon.default = 미드나이트
+app_icon.light = 페이퍼
+app_icon.sunset = 선셋
+app_icon.mint = 민트
+app_icon.mono = 모노
+app_icon.error = 이 이미지는 아이콘으로 쓸 수 없습니다: {error}
+app_icon.error.not_png = PNG, JPEG 또는 WebP 이미지를 선택하세요

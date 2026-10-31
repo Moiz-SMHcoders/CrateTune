@@ -1,8 +1,11 @@
 //! "Customize theme" settings (`custom_theme` in `settings.json`): accent colour,
 //! surface tint and darkness, contrast, corners, density, font family and the
-//! dynamic-colour options. Every default reproduces the stock look, so a file
+//! dynamic-colour options, plus the colour tokens a theme file sets
+//! (`theme_files.rs`). Every default reproduces the stock look, so a file
 //! without the object (or with unknown values from a newer version) looks
 //! exactly as before. Applied by `theme.rs`.
+
+use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 
@@ -158,6 +161,14 @@ pub struct CustomTheme {
     /// A system font family; empty = the system UI font.
     pub font_family: String,
     pub dynamic: DynamicPrefs,
+    /// Colour tokens set by a theme file: token name (`theme::TOKENS`) →
+    /// `#RRGGBB` or `#RRGGBBAA`, applied over everything else.
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub colors: BTreeMap<String, String>,
+    /// The theme file (its id, the file name without `.toml`) these values came
+    /// from; empty = none. Saving that file applies it again.
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub file: String,
 }
 
 impl Default for CustomTheme {
@@ -171,6 +182,8 @@ impl Default for CustomTheme {
             density: Density::Regular,
             font_family: String::new(),
             dynamic: DynamicPrefs::default(),
+            colors: BTreeMap::new(),
+            file: String::new(),
         }
     }
 }
@@ -194,6 +207,14 @@ impl CustomTheme {
         unit(&mut self.dynamic.strength, 1.0);
         self.accent = parse_hex(&self.accent).map(to_hex).unwrap_or_default();
         self.font_family = self.font_family.trim().to_owned();
+        // Unknown tokens (a newer version's) and unreadable colours are dropped.
+        let colors = std::mem::take(&mut self.colors);
+        self.colors = colors
+            .into_iter()
+            .filter(|(name, _)| crate::theme::TOKENS.contains(&name.as_str()))
+            .filter_map(|(name, v)| Some((name, color_hex(parse_color(&v)?))))
+            .collect();
+        self.file = self.file.trim().to_owned();
     }
 
     /// The custom accent, if one is set.
@@ -224,6 +245,25 @@ pub fn to_hex([r, g, b]: [u8; 3]) -> String {
     format!("#{r:02X}{g:02X}{b:02X}")
 }
 
+/// A colour with alpha: `#rgb`, `#rrggbb` or `#rrggbbaa` (`#` optional).
+pub fn parse_color(s: &str) -> Option<[u8; 4]> {
+    let t = s.trim().trim_start_matches('#');
+    if t.len() == 8 && t.chars().all(|c| c.is_ascii_hexdigit()) {
+        let v = |i: usize| u8::from_str_radix(&t[i..i + 2], 16).ok();
+        return Some([v(0)?, v(2)?, v(4)?, v(6)?]);
+    }
+    parse_hex(s).map(|[r, g, b]| [r, g, b, 255])
+}
+
+/// `#RRGGBB`, or `#RRGGBBAA` when not opaque.
+pub fn color_hex([r, g, b, a]: [u8; 4]) -> String {
+    if a == 255 {
+        to_hex([r, g, b])
+    } else {
+        format!("#{r:02X}{g:02X}{b:02X}{a:02X}")
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -237,6 +277,11 @@ mod tests {
             assert_eq!(parse_hex(bad), None, "{bad}");
         }
         assert_eq!(to_hex([91, 140, 255]), "#5B8CFF");
+        assert_eq!(parse_color("#11223344"), Some([0x11, 0x22, 0x33, 0x44]));
+        assert_eq!(parse_color("abc"), Some([0xAA, 0xBB, 0xCC, 255]));
+        assert_eq!(parse_color("#1122334"), None);
+        assert_eq!(color_hex([1, 2, 3, 255]), "#010203");
+        assert_eq!(color_hex([1, 2, 3, 4]), "#01020304");
         for preset in ACCENT_PRESETS {
             assert!(parse_hex(preset).is_some());
         }

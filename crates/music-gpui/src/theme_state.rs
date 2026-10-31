@@ -48,7 +48,7 @@ impl MusicApp {
             .app_look
             .effective(&settings.player_bar)
             .surface_tint(playing);
-        Look {
+        let mut look = Look {
             choice: settings.appearance.theme,
             font_scale: settings.appearance.font_scale,
             custom: settings.custom_theme.clone(),
@@ -57,7 +57,20 @@ impl MusicApp {
                 .art
                 .filter(|_| settings.appearance.theme == ThemeChoice::Dynamic || art_tint > 0.),
             art_tint,
+            window_alpha: 1.,
+        };
+        // Over a window material: the chosen opacity, raised until text is readable.
+        if settings.effects.material() != crate::settings::look_prefs::WindowMaterial::Off {
+            let (fg, muted) = theme::text_of(&look);
+            look.window_alpha = theme::readable_window_alpha(
+                settings.effects.window_opacity,
+                theme::background_of(&look),
+                fg,
+                muted,
+                true,
+            );
         }
+        look
     }
 
     /// Applies the theme from settings (and the current artwork colours for

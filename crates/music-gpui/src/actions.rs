@@ -47,6 +47,9 @@ gpui::actions!(
         ShowAll,
         Minimize,
         Zoom,
+        ZoomIn,
+        ZoomOut,
+        ZoomReset,
         Quit,
         ShowShortcuts,
         CheckForUpdates,
@@ -113,6 +116,10 @@ pub fn init(overrides: &crate::shortcuts::Overrides, cx: &mut App) {
     on::<SelectAllRows>(cx, |app, window, cx| app.select_all_rows(window, cx));
     on::<Minimize>(cx, |_, window, _| window.minimize_window());
     on::<Zoom>(cx, |_, window, _| window.zoom_window());
+    // The interface zoom (`zoom.rs`).
+    on::<ZoomIn>(cx, |app, window, cx| app.zoom_step(1, window, cx));
+    on::<ZoomOut>(cx, |app, window, cx| app.zoom_step(-1, window, cx));
+    on::<ZoomReset>(cx, |app, window, cx| app.zoom_step(0, window, cx));
     cx.on_action(|_: &Hide, cx| cx.hide());
     cx.on_action(|_: &HideOthers, cx| cx.hide_other_apps());
     cx.on_action(|_: &ShowAll, cx| cx.unhide_other_apps());
@@ -220,6 +227,10 @@ fn menus() -> Vec<Menu> {
             MenuItem::action(t!("common.now_playing"), ToggleNowPlaying),
             MenuItem::action(t!("common.queue"), ToggleQueue),
             MenuItem::action(t!("tray.mini_player"), ToggleMiniPlayer),
+            MenuItem::separator(),
+            MenuItem::action(t!("shortcuts.action.zoom_in"), ZoomIn),
+            MenuItem::action(t!("shortcuts.action.zoom_out"), ZoomOut),
+            MenuItem::action(t!("shortcuts.action.zoom_reset"), ZoomReset),
             MenuItem::separator(),
             MenuItem::action(t!("menu.fullscreen"), ToggleFullscreen),
         ]),

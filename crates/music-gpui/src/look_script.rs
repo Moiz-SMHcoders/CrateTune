@@ -1,6 +1,6 @@
 //! Script actions for the app-wide look and Motion & effects (see `script.rs`
 //! for the runner): `@app-look=off|tint|gradient|glow`,
-//! `@app-look-opt=follow:on|intensity:0.7|dir:diagonal|dim:off|tint:on|animate:on`,
+//! `@app-look-opt=follow:on|intensity:0.7|dir:diagonal|dim:off|tint:on|animate:on|react:on`,
 //! `@motion=system|full|reduced|off`,
 //! `@effects=transitions:on|hover:off|headers:on|corners:square|shadow:on|cards:large|translucent:on`,
 //! `@bar-art=standard|edge` and `@look-status` (prints the settings, the
@@ -45,8 +45,9 @@ impl MusicApp {
                     "dim" => panel.update(cx, |p, cx| p.set_app_look_dim(flag, cx)),
                     "tint" => panel.update(cx, |p, cx| p.set_app_look_tint_surfaces(flag, cx)),
                     "animate" => panel.update(cx, |p, cx| p.set_app_look_animate(flag, cx)),
+                    "react" => panel.update(cx, |p, cx| p.set_app_look_react(flag, cx)),
                     _ => eprintln!(
-                        "music-gpui: @app-look-opt wants follow:|intensity:|dir:|dim:|tint:|animate:"
+                        "music-gpui: @app-look-opt wants follow:|intensity:|dir:|dim:|tint:|animate:|react:"
                     ),
                 }
             }

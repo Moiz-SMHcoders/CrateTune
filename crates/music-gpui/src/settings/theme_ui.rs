@@ -31,7 +31,7 @@ use super::theme_prefs::{
     ACCENT_PRESETS, Contrast, Corners, CustomTheme, Darkness, Density, DynamicStyle, parse_hex,
     to_hex,
 };
-use super::widgets::{group_at, note, row_at};
+use super::widgets::{Anchor as _, group_at, note, row_at};
 use crate::icons::Lucide;
 use crate::theme::{self, AppPalette, Look, ThemeChoice};
 
@@ -387,13 +387,7 @@ fn swatch(bg: Hsla, surface: Hsla, dot: Hsla, h: f32) -> gpui::Div {
 }
 
 fn look_of(choice: ThemeChoice, custom: CustomTheme) -> Look {
-    Look {
-        choice,
-        font_scale: 1.0,
-        custom,
-        art: None,
-        art_tint: 0.,
-    }
+    Look::plain(choice, custom)
 }
 
 /// The live preview: a few elements drawn with the applied tokens.
@@ -547,6 +541,80 @@ pub(super) fn render(
                 )
                 .on_click(cx.listener(move |this, _, _, cx| this.apply_theme_preset(preset, cx)))
         }));
+    // ---- theme files (`<config>/themes/*.toml`)
+    let warning_color = cx.theme().warning;
+    let file_cards = h_flex()
+        .flex_wrap()
+        .gap_2()
+        .children(panel.theme_files.files.iter().map(|file| {
+            let selected = file.matches(&panel.settings);
+            let (bg, surface, dot) = theme::preview(&look_of(file.choice, file.custom(&custom)));
+            let id = file.id.clone();
+            v_flex()
+                .id(SharedString::from(format!("theme-file-{}", file.id)))
+                .w(px(96.))
+                .p_1p5()
+                .gap_1p5()
+                .rounded(theme::radius(9.))
+                .border_2()
+                .border_color(if selected { ring } else { border })
+                .cursor_pointer()
+                .child(swatch(bg, surface, dot, 36.))
+                .child(
+                    div()
+                        .text_xs()
+                        .truncate()
+                        .when(selected, |this| this.font_weight(FontWeight::SEMIBOLD))
+                        .child(file.name.clone()),
+                )
+                .on_click(cx.listener(move |this, _, _, cx| {
+                    this.apply_file_theme_id(&id, cx);
+                }))
+        }));
+    let file_notes = v_flex()
+        .gap_1()
+        .children(panel.theme_files.invalid.iter().map(|bad| {
+            div().text_xs().text_color(danger).child(t!(
+                "themes.invalid",
+                file = bad.file,
+                reason = bad.problem.to_string()
+            ))
+        }))
+        .children(panel.theme_files.files.iter().flat_map(|file| {
+            file.warnings.iter().take(1).map(|w| {
+                div().text_xs().text_color(warning_color).child(t!(
+                    "themes.low_contrast",
+                    name = file.name,
+                    ratio = format!("{:.1}", w.ratio)
+                ))
+            })
+        }))
+        .when(panel.theme_files.files.is_empty(), |this| {
+            this.child(note(t!("themes.empty"), cx))
+        });
+    let folder_buttons = h_flex()
+        .gap_1()
+        .flex_wrap()
+        .child(
+            Button::new("theme-files-folder")
+                .outline()
+                .small()
+                .icon(Lucide::FolderOpen)
+                .label(t!("themes.open_folder"))
+                .disabled(panel.theme_files.dir.is_none())
+                .on_click(cx.listener(|this, _, _, cx| this.open_themes_folder(cx))),
+        )
+        .child(
+            Button::new("theme-files-export")
+                .outline()
+                .small()
+                .icon(Lucide::FilePlus)
+                .label(t!("themes.export_file"))
+                .disabled(panel.theme_files.dir.is_none())
+                .on_click(
+                    cx.listener(|this, _, window, cx| this.export_theme_to_folder_ui(window, cx)),
+                ),
+        );
     let file_buttons = h_flex()
         .gap_1()
         .flex_wrap()
@@ -775,6 +843,16 @@ pub(super) fn render(
                 )
                 .child(presets)
                 .child(file_buttons)
+                .child(
+                    v_flex()
+                        .gap_2()
+                        .anchor("appearance.custom_theme.files")
+                        .child(div().text_sm().text_color(muted).child(t!("themes.files")))
+                        .child(note(t!("themes.files_note"), cx))
+                        .child(file_cards)
+                        .child(file_notes)
+                        .child(folder_buttons),
+                )
                 .child(preview(cx)),
         )
         .child(group_at("appearance.accent", t!("theme.custom.accent"), cx).child(accent_body))

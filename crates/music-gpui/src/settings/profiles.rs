@@ -45,6 +45,8 @@ pub const PROFILE_EXCLUDE: &[&str] = &[
     "appearance.language",
     // Window chrome, read at launch: switching profiles shouldn't restart the window.
     "appearance.system_title_bar",
+    // The app's identity (and a custom image is a file on this machine).
+    "appearance.app_icon",
     "lyrics.provider_order",
     "lyrics.disabled",
     "lyrics.translator",

@@ -550,6 +550,51 @@ as a small
 `.cratetune-theme.json` file; **Import theme…** shows what would change and replaces only
 the look.
 
+**Editable theme files.** Below the presets, **Theme files** lists the themes in the
+*themes folder* (`themes/` in the settings folder; **Open themes folder** shows it). The
+first time it is created it gets a commented `example.toml` and four starter themes (Nord,
+Catppuccin Mocha, Gruvbox Dark, Dracula); delete the ones you don't want. Click a theme to
+apply it. To make your own, use **Export current theme as file** (it writes
+`my-theme.toml` with the current settings and every colour on screen, commented out), open
+it in any text editor, change it and save: the app applies the change at once. A theme
+file with a mistake is listed in red with the line and the reason (for example *line 4:
+darkness = "pitch" is not one of dim, standard, deep, black*) and left out until it is
+fixed; one whose text would be hard to read gets a warning.
+
+```toml
+name = "Nord"
+base = "dark"            # dark | black | dynamic
+accent = "#88C0D0"       # buttons, sliders, the playing row ("" = the theme's own)
+surface_tint = 0.0       # 0.0–1.0: how much backgrounds take the accent's hue
+darkness = "standard"    # dim | standard | deep | black
+contrast = "standard"    # standard | medium | high
+corners = "round"        # sharp | regular | round
+# density = "regular"    # compact | regular | comfortable (yours stays when missing)
+# font = "Inter"         # an installed font ("" = the system font)
+# dynamic_style = "vibrant"  # vibrant | muted | monochrome | content
+
+[colors]                 # any of the colour tokens below: "#RRGGBB" or "#RRGGBBAA"
+background = "#2E3440"
+foreground = "#ECEFF4"
+muted_foreground = "#AEB7C6"
+sidebar = "#2A2F3A"
+```
+
+Every key is optional. The colour tokens are gpui-component's: `background`, `foreground`,
+`muted`, `muted_foreground`, `border`, `input`, `ring`, `accent`, `accent_foreground`,
+`primary` (+ `_hover`, `_active`, `_foreground`), `secondary` (+ `_hover`, `_active`,
+`_foreground`), `popover`, `popover_foreground`, `sidebar` (+ `_foreground`, `_border`,
+`_accent`, `_accent_foreground`, `_primary`, `_primary_foreground`), `title_bar`,
+`title_bar_border`, `window_border`, `list` (+ `_hover`, `_even`, `_head`, `_active`,
+`_active_border`), `table` (+ `_hover`, `_even`, `_head`, `_head_foreground`,
+`_row_border`), `tab_bar`, `tab`, `tab_active`, `tab_foreground`, `tab_active_foreground`,
+`scrollbar`, `scrollbar_thumb`, `scrollbar_thumb_hover`, `skeleton`, `selection`, `caret`,
+`link` (+ `_hover`, `_active`), `slider_bar`, `slider_thumb`, `progress_bar`, `switch`,
+`switch_thumb`, `danger`, `danger_foreground`, `success`, `success_foreground`, `warning`,
+`warning_foreground`, `info`, `info_foreground`, `overlay`. Changing an option in the app
+after applying a theme file keeps your change until the file is saved again; picking a
+preset leaves the theme file.
+
 **Settings files** (Settings → Backup & sync): **Export settings…** saves every setting
 except passwords, keys, cookies, the signed-in account and window positions as JSON;
 **Import settings…** shows the changes section by section before anything is applied.
@@ -609,7 +654,36 @@ and uses a little CPU, so it is off by default.
 **Player bar → Artwork**: *Edge to edge* makes the cover fill the bar's full height at
 its left edge, like a mini player; *Standard* is the padded thumbnail.
 
-The **Minimal / Fast** profile turns all of this off.
+**React to the music** (Gradient wash and Glow): the colour breathes with the music while
+it plays — stronger on loud passages and kicks, softer in quiet ones (it never gets
+stronger than the Intensity you picked, so text keeps its contrast). It redraws up to 30
+times a second while playing, stops when you pause, hide the window or open Now Playing,
+and is off with Animations set to Reduced or Off.
+
+**Window** (Settings → Appearance → Window):
+
+* **Window background** — *Opaque* (default), *Blurred* (the desktop behind the window,
+  blurred: macOS's window blur, acrylic on Windows, KDE Plasma on Wayland), *See-through*,
+  and on Windows 11 *Mica* / *Mica Alt*. Options your system can't draw aren't shown.
+  **Opacity** (60–90 %) sets how much of the desktop shows; where light desktops would
+  make text hard to read it is raised automatically (the setting says so). Menus,
+  dialogs, the player bar and Now Playing stay opaque. On Linux it needs a compositing
+  window manager.
+* **App icon** — *Midnight* (the standard icon), *Paper*, *Sunset*, *Mint*, *Mono*, or
+  **Choose an image…** (PNG, JPEG or WebP; it is fitted into a square and kept in the
+  settings folder). macOS shows it in the Dock and the app switcher while the app runs
+  (the Dock shows the standard icon again after quitting); Windows on the window and its
+  taskbar button; Linux on X11 from the next start (Wayland desktops use the installed
+  icon).
+
+**Zoom**: ⌘= (or ⌘+) / ⌘− / ⌘0 — Ctrl on Windows and Linux — or ⌘ / Ctrl and the mouse
+wheel make the interface's text and controls bigger or smaller (75–150 %; artwork and row
+heights keep their size), also from the View menu. It is the same setting as **Text
+size**, so it is remembered. Over the volume and seek bars the
+wheel keeps controlling them.
+
+The **Minimal / Fast** profile turns the app-wide look, React to the music, Motion &
+effects and the window background off (the icon and zoom stay).
 
 ## Keyboard shortcuts
 
@@ -630,6 +704,7 @@ macOS keys shown. On Windows and Linux use **Ctrl** in place of ⌘ and Alt for 
 | ⌘S / ⌘R | shuffle / repeat |
 | ⌘[ / ⌘] | back / forward (also the mouse's back / forward buttons) |
 | ⌘1 / ⌘2 / ⌘3 / ⌘Y | Home / Explore / Library / History |
+| ⌘= (or ⌘+) / ⌘− / ⌘0 | zoom in / out / actual size (also ⌘ + mouse wheel) |
 | ⌘A | select every song of the list under the pointer (not in text fields) |
 | Esc | close an open menu or dialog first; else clear a song selection, the welcome guide, the full screen entered with Now Playing's button, Now Playing or the queue; else back |
 | ⌘Q | quit |

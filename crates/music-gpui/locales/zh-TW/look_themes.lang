@@ -1,0 +1,63 @@
+# Theme files, window translucency, the music-reactive look, UI zoom and the
+# app icon (zh-TW).
+
+# ---- Theme files (Customize theme)
+themes.files = 主題檔案
+themes.files_note = 主題資料夾中的主題：用文字編輯器修改並儲存，即可立刻看到變化。
+themes.open_folder = 開啟主題資料夾
+themes.export_file = 將目前主題匯出為檔案
+themes.export_name = 我的主題
+themes.toast.exported = 已在主題資料夾中儲存為 {file}。
+themes.invalid = 已略過 {file}：{reason}
+themes.low_contrast = {name}：部分文字對比度過低（{ratio}:1），可能不易閱讀。
+themes.empty = 還沒有主題檔案。匯出目前主題或開啟資料夾來新增。
+# ---- Reasons a theme file was left out
+themes.error.read = 無法讀取（{error}）
+themes.error.too_large = 檔案大於 256 KB
+themes.error.syntax = 第 {line} 行：{message}
+themes.error.choice = 第 {line} 行：{key} = 「{value}」不是 {expected} 其中之一
+themes.error.range = 第 {line} 行：{key} 必須介於 0 到 1
+themes.error.unknown_color = 第 {line} 行：沒有名為「{key}」的顏色
+themes.error.bad_color = 第 {line} 行：{key} = 「{value}」不是顏色（#RGB、#RRGGBB 或 #RRGGBBAA）
+
+# ---- Window translucency (Appearance → Window)
+window.material.off = 不透明
+window.material.blur = 模糊
+window.material.transparent = 透明
+window.material.mica = Mica
+window.material.mica_alt = Mica Alt
+settings.window.material = 視窗背景
+settings.window.material_note = 桌面會透過整個視窗顯示。文字保持清晰易讀：必要時會提高不透明度。
+settings.window.opacity = 不透明度
+settings.window.opacity_value = {percent}%
+settings.window.opacity_raised = 已提高到 {percent}%，讓文字在淺色桌面上也清楚可讀。
+settings.window.note_macos = 「模糊」使用 macOS 的視窗模糊。選單、對話框和「正在播放」維持不透明。
+settings.window.note_windows = 「模糊」即壓克力效果。Mica 和 Mica Alt 需要 Windows 11（22H2 或更新版本）。
+settings.window.note_linux = 需要支援合成的視窗管理員。「模糊」需要 Wayland 上的 KDE Plasma；其他環境會顯示為「透明」。
+settings.window.reduced_by_os = 系統要求降低透明度（輔助使用），因此視窗維持不透明。
+settings.window.cpu_note = 模糊由系統繪製，不會增加 App 的 CPU 用量，閒置時也不會重繪。
+
+# ---- React to the music (App-wide look)
+settings.look.react = 隨音樂律動
+settings.look.react_note = 播放時，漸層或光暈會隨音樂的能量起伏（每秒最多 30 格；暫停、視窗隱藏或減少動態效果時停止）。
+
+# ---- UI zoom (Appearance → Text size, shortcuts)
+settings.appearance.zoom_note = Ctrl 或 ⌘ 加 + / − / 0，或 Ctrl / ⌘ 加滑鼠滾輪，也能縮放介面。
+zoom.toast = 縮放 {percent}%
+shortcuts.action.zoom_in = 放大
+shortcuts.action.zoom_out = 縮小
+shortcuts.action.zoom_reset = 實際大小
+
+# ---- App icon (Appearance → Window)
+settings.app_icon = App 圖示
+settings.app_icon_note = 顯示在 Dock 和 App 切換器中（macOS），或視窗和工作列上（Windows、X11 上的 Linux）。
+settings.app_icon.linux_note = 在 Linux 上下次啟動時生效（X11）；Wayland 桌面顯示已安裝的圖示。
+settings.app_icon.choose = 選擇圖片…
+app_icon.custom = 你的圖片
+app_icon.default = 午夜
+app_icon.light = 紙白
+app_icon.sunset = 日落
+app_icon.mint = 薄荷
+app_icon.mono = 黑白
+app_icon.error = 這張圖片無法作為圖示：{error}
+app_icon.error.not_png = 請選擇 PNG、JPEG 或 WebP 圖片

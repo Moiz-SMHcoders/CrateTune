@@ -1,0 +1,76 @@
+# Theme files, window translucency, the music-reactive look, UI zoom and the app
+# icon (Settings → Appearance).
+
+# ---- Theme files (Customize theme)
+# Heading above the list of theme files from the themes folder.
+themes.files = Theme files
+themes.files_note = Themes from the themes folder: edit one in a text editor and save it to see the change at once.
+themes.open_folder = Open themes folder
+themes.export_file = Export current theme as file
+# The name an exported theme file gets (the user can rename it in the file).
+themes.export_name = My theme
+# Notification after exporting; {file} is the file name (my-theme.toml).
+themes.toast.exported = Saved as {file} in the themes folder.
+# Shown under a theme file that was left out; {file} is its name, {reason} why.
+themes.invalid = {file} was left out: {reason}
+# Shown when a theme's text has too little contrast; {name} is the theme, {ratio} e.g. 2.8.
+themes.low_contrast = {name}: some text has too little contrast ({ratio}:1); it may be hard to read.
+themes.empty = No theme files yet. Export the current theme or open the folder to add one.
+# ---- Reasons a theme file was left out
+themes.error.read = could not be read ({error})
+themes.error.too_large = the file is larger than 256 KB
+# {message} comes from the TOML parser (in English).
+themes.error.syntax = line {line}: {message}
+themes.error.choice = line {line}: {key} = “{value}” is not one of {expected}
+themes.error.range = line {line}: {key} must be between 0 and 1
+themes.error.unknown_color = line {line}: there is no colour called “{key}”
+themes.error.bad_color = line {line}: {key} = “{value}” is not a colour (#RGB, #RRGGBB or #RRGGBBAA)
+
+# ---- Window translucency (Appearance → Window)
+# Buttons in a row (keep short): what shows behind the window.
+window.material.off = Opaque
+window.material.blur = Blurred
+window.material.transparent = See-through
+window.material.mica = Mica
+window.material.mica_alt = Mica Alt
+settings.window.material = Window background
+settings.window.material_note = The desktop shows through the whole window. Text stays readable: the opacity is raised where needed.
+settings.window.opacity = Opacity
+# {percent} is a number (e.g. 80).
+settings.window.opacity_value = {percent} %
+# {percent} is the opacity actually used, e.g. 72.
+settings.window.opacity_raised = Raised to {percent} % so text stays readable on a light desktop.
+settings.window.note_macos = Blurred uses the macOS window blur. Menus, dialogs and Now Playing stay opaque.
+settings.window.note_windows = Blurred is acrylic. Mica and Mica Alt need Windows 11 (22H2 or later).
+settings.window.note_linux = Needs a compositing window manager. Blurred needs KDE Plasma on Wayland; elsewhere it shows as See-through.
+# The OS's "Reduce transparency" accessibility setting is on.
+settings.window.reduced_by_os = Your system asks for less transparency (Accessibility), so the window stays opaque.
+settings.window.cpu_note = The system draws the blur, so it costs no extra app CPU and nothing redraws while idle.
+
+# ---- React to the music (App-wide look)
+settings.look.react = React to the music
+settings.look.react_note = The gradient or glow breathes with the music's energy while it plays (up to 30 frames a second; stops when paused, hidden or with reduced motion).
+
+# ---- UI zoom (Appearance → Text size, shortcuts)
+settings.appearance.zoom_note = Ctrl or ⌘ with + / − / 0, or Ctrl / ⌘ and the mouse wheel, zoom the interface too.
+# {percent} is the zoom level, e.g. 125.
+zoom.toast = Zoom {percent} %
+shortcuts.action.zoom_in = Zoom in
+shortcuts.action.zoom_out = Zoom out
+shortcuts.action.zoom_reset = Actual size
+
+# ---- App icon (Appearance → Window)
+settings.app_icon = App icon
+settings.app_icon_note = Shown in the Dock and the app switcher (macOS) or on the window and taskbar (Windows, Linux on X11).
+settings.app_icon.linux_note = On Linux it applies on the next start (X11); Wayland desktops show the installed icon.
+settings.app_icon.choose = Choose an image…
+# The user's own PNG picked with "Choose an image…".
+app_icon.custom = Your image
+app_icon.default = Midnight
+app_icon.light = Paper
+app_icon.sunset = Sunset
+app_icon.mint = Mint
+app_icon.mono = Mono
+# Notification when the picked file can't be used; {error} is the reason.
+app_icon.error = That image can't be used as the icon: {error}
+app_icon.error.not_png = choose a PNG, JPEG or WebP image
