@@ -30,7 +30,7 @@ use gpui_component::{
 use crate::anim::{Frame, Spec, Tween, ease_in_out_cubic};
 use crate::app::{MusicApp, update_app};
 use crate::icons::Lucide;
-use crate::now_playing::{HiRes, white};
+use crate::now_playing::{HiRes, ink};
 
 /// Controls fade out this long after the last pointer movement (while playing).
 pub const CONTROLS_IDLE: Duration = Duration::from_millis(3000);
@@ -150,6 +150,17 @@ impl MusicApp {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> AnyElement {
+        // A cinema: black in light mode too, so the Now Playing parts it reuses
+        // draw their dark-mode colours.
+        crate::theme::on_dark(|| self.render_theater_dark(frame, window, cx))
+    }
+
+    fn render_theater_dark(
+        &mut self,
+        frame: &mut Frame,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> AnyElement {
         let track = self.playback.track.clone();
         let position = self.clock.position(frame.now);
         let playing = self.clock.is_running();
@@ -223,7 +234,7 @@ impl MusicApp {
                     .max_w(px(1000.))
                     .text_center()
                     .text_size(px(20.))
-                    .text_color(white(0.55))
+                    .text_color(ink(0.55))
                     .child(line)
             }));
 
@@ -232,6 +243,7 @@ impl MusicApp {
             let showing = !self.video.session_off;
             Button::new("theater-video")
                 .ghost()
+                .text_color(gpui::white())
                 .rounded(px(999.))
                 .icon(if showing {
                     Lucide::VideoOff
@@ -268,6 +280,7 @@ impl MusicApp {
             .child(
                 Button::new("theater-exit")
                     .ghost()
+                    .text_color(gpui::white())
                     .rounded(px(999.))
                     .icon(IconName::Close)
                     .tooltip(t!("video.theater_exit"))
@@ -288,13 +301,18 @@ impl MusicApp {
                     .child(
                         div()
                             .text_sm()
-                            .text_color(white(0.7))
+                            .text_color(ink(0.7))
                             .truncate()
                             .child(artists),
                     ),
             )
             .children(video_toggle);
-        let fill = crate::theme::AppColors::get(cx).np_progress;
+        // Light mode's accent is a dark tone: on black, white reads.
+        let fill = if crate::theme::AppPalette::get(cx).light {
+            ink(0.92)
+        } else {
+            crate::theme::AppColors::get(cx).np_progress
+        };
         let bottom = v_flex()
             .absolute()
             .left_0()
@@ -309,8 +327,8 @@ impl MusicApp {
                 linear_color_stop(gpui::black().opacity(0.6), 0.),
                 linear_color_stop(gpui::black().opacity(0.), 1.),
             ))
-            .child(self.progress_bar(position, px(4.), white(0.25), fill, cx))
-            .child(self.times_row(position, white(0.65)))
+            .child(self.progress_bar(position, px(4.), ink(0.25), fill, cx))
+            .child(self.times_row(position, ink(0.65)))
             .child(
                 h_flex()
                     .w_full()

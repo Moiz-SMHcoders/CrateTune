@@ -128,6 +128,85 @@ impl WindowMaterial {
     }
 }
 
+choice_enum! {
+    /// Smooth (gliding) mouse-wheel scrolling (`smooth_scroll.rs`).
+    SmoothWheel {
+        /// On except on macOS (whose wheel events come with acceleration).
+        #[default]
+        System = "system" => "effects.smooth_wheel.system",
+        On = "on" => "effects.smooth_wheel.on",
+        Off = "off" => "effects.smooth_wheel.off",
+    }
+}
+
+choice_enum! {
+    /// How the sidebar shows.
+    SidebarMode {
+        /// Icons and titles (its width can be dragged).
+        #[default]
+        Full = "full" => "effects.sidebar.full",
+        /// Icons only.
+        Rail = "rail" => "effects.sidebar.rail",
+        /// Icons only; the titles slide out over the page on hover.
+        Hover = "hover" => "effects.sidebar.hover",
+    }
+}
+
+/// Which columns song rows show (Appearance → Layout → Song list columns).
+/// "Added" and "Plays" need the library's data: library songs, liked, local
+/// files and downloads show them; other lists don't have them.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct TrackColumns {
+    /// The album after the artists.
+    pub album: bool,
+    /// The date the song came into the library (or was liked).
+    pub added: bool,
+    /// How often it was played.
+    pub plays: bool,
+    pub duration: bool,
+}
+
+impl Default for TrackColumns {
+    fn default() -> Self {
+        Self {
+            album: true,
+            added: false,
+            plays: false,
+            duration: true,
+        }
+    }
+}
+
+choice_enum! {
+    /// The top bar's window buttons (Appearance → Layout; read at launch).
+    WindowControlsStyle {
+        /// The platform's own: traffic lights on macOS, caption buttons on
+        /// Windows, round buttons on Linux.
+        #[default]
+        System = "system" => "window.controls.system",
+        /// Three coloured circles on the left.
+        Mac = "mac" => "window.controls.mac",
+        /// Minimise / maximise / close boxes on the right.
+        Windows = "windows" => "window.controls.windows",
+    }
+}
+
+/// Top-bar buttons that can be hidden (Appearance → Layout), by key.
+pub const BAR_BUTTONS: &[(&str, crate::i18n::Key)] = &[
+    ("menu", k!("layout.bar_button.menu")),
+    ("back", k!("layout.bar_button.back")),
+    ("forward", k!("layout.bar_button.forward")),
+    ("home", k!("layout.bar_button.home")),
+    ("themes", k!("layout.bar_button.themes")),
+    ("account", k!("layout.bar_button.account")),
+];
+
+/// The sidebar's width range (drag its edge), px; the default is the classic 216.
+pub const SIDEBAR_WIDTHS: (f32, f32) = (176., 360.);
+/// The queue panel's width range, px; the default is the classic 340.
+pub const QUEUE_WIDTHS: (f32, f32) = (280., 560.);
+
 /// Window opacities offered with a material (the readable floor may raise it,
 /// `theme::readable_window_alpha`).
 pub const WINDOW_OPACITIES: [f32; 4] = [0.6, 0.7, 0.8, 0.9];
@@ -286,13 +365,27 @@ pub struct EffectsConfig {
     pub artwork_shadow: bool,
     #[serde(deserialize_with = "lenient")]
     pub card_size: CardSize,
-    /// macOS: the sidebar shows the desktop through a system blur.
+    /// The sidebar shows the desktop through a system blur (macOS; Windows'
+    /// acrylic / Mica and Linux compositors' blur, where available).
     pub translucent_sidebar: bool,
     /// The whole window over the desktop (blur, transparency, Mica).
     #[serde(deserialize_with = "lenient")]
     pub window_material: WindowMaterial,
     /// Opacity of the window's surfaces over the material (0.5..=1).
     pub window_opacity: f32,
+    /// A thin outline around album / playlist / artist tiles.
+    pub card_outlines: bool,
+    /// A hairline along the window's edge.
+    pub window_hairline: bool,
+    #[serde(deserialize_with = "lenient")]
+    pub smooth_wheel: SmoothWheel,
+    #[serde(deserialize_with = "lenient")]
+    pub sidebar: SidebarMode,
+    /// The full sidebar's width, px ([`SIDEBAR_WIDTHS`]).
+    pub sidebar_width: f32,
+    /// The queue panel's width, px ([`QUEUE_WIDTHS`]).
+    pub queue_width: f32,
+    pub columns: TrackColumns,
 }
 
 impl Default for EffectsConfig {
@@ -308,6 +401,13 @@ impl Default for EffectsConfig {
             translucent_sidebar: false,
             window_material: WindowMaterial::Off,
             window_opacity: 0.8,
+            card_outlines: false,
+            window_hairline: false,
+            smooth_wheel: SmoothWheel::System,
+            sidebar: SidebarMode::Full,
+            sidebar_width: crate::components::sidebar::SIDEBAR_WIDTH,
+            queue_width: 340.,
+            columns: TrackColumns::default(),
         }
     }
 }
@@ -335,6 +435,19 @@ impl EffectsConfig {
         } else {
             0.8
         };
+        let width = |v: f32, (lo, hi): (f32, f32), default: f32| {
+            if v.is_finite() {
+                v.clamp(lo, hi).round()
+            } else {
+                default
+            }
+        };
+        self.sidebar_width = width(
+            self.sidebar_width,
+            SIDEBAR_WIDTHS,
+            crate::components::sidebar::SIDEBAR_WIDTH,
+        );
+        self.queue_width = width(self.queue_width, QUEUE_WIDTHS, 340.);
     }
 
     /// The material drawn on this platform (`Off` when it can't be, or when the
@@ -414,6 +527,24 @@ mod tests {
         assert!(!fx.artwork_shadow && !fx.translucent_sidebar);
         assert_eq!(fx.window_material, WindowMaterial::Off);
         assert!(!least.reacts() && !AppLookConfig::default().react);
+    }
+
+    #[test]
+    fn layout_options_default_and_clamp() {
+        let fx: EffectsConfig = serde_json::from_str(
+            r#"{"sidebar": "rail", "sidebar_width": 9000, "queue_width": -3, "smooth_wheel": "fast"}"#,
+        )
+        .unwrap();
+        let mut fx = fx;
+        fx.normalize();
+        assert_eq!(fx.sidebar, SidebarMode::Rail);
+        assert_eq!(fx.sidebar_width, SIDEBAR_WIDTHS.1);
+        assert_eq!(fx.queue_width, QUEUE_WIDTHS.0);
+        assert_eq!(fx.smooth_wheel, SmoothWheel::System, "unknown value");
+        let d = EffectsConfig::default();
+        assert!(!d.card_outlines && !d.window_hairline);
+        assert_eq!((d.sidebar_width, d.queue_width), (216., 340.));
+        assert_eq!(d.sidebar, SidebarMode::Full);
     }
 
     #[test]

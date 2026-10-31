@@ -183,6 +183,10 @@ pub struct MusicApp {
     pub(crate) titlebar_layout: crate::titlebar::Layout,
     /// The left button went down on the empty bar: the next move drags the window.
     pub(crate) titlebar_drag: bool,
+    /// The top bar's theme switcher is open (`theme_switcher.rs`).
+    pub(crate) theme_switcher_open: bool,
+    /// Sidebar modes and panel widths (`components/sidebar.rs`).
+    pub(crate) panels: crate::components::sidebar::Panels,
     /// `@titlebar-account=NAME`: a fake signed-in account shown in the bar
     /// (screenshots; nothing else sees it).
     pub(crate) titlebar_fake_account: Option<String>,
@@ -218,6 +222,7 @@ impl MusicApp {
         queue.set_shuffle(saved.playback.shuffle);
         queue.set_repeat(saved.playback.repeat);
 
+        crate::theme::set_system_light(appearance_is_light(window.appearance()));
         let subscriptions = vec![
             cx.subscribe_in(&search_input, window, Self::on_search_input),
             cx.subscribe_in(&progress, window, Self::on_progress_event),
@@ -234,6 +239,12 @@ impl MusicApp {
             }),
             // The top bar's controls dim in an inactive window.
             cx.observe_window_activation(window, |_, _, cx| cx.notify()),
+            // Appearance → Mode → Follow system: the OS switched light / dark.
+            cx.observe_window_appearance(window, |this, window, cx| {
+                if crate::theme::set_system_light(appearance_is_light(window.appearance())) {
+                    this.apply_theme(cx);
+                }
+            }),
             cx.on_app_quit(|this, cx| {
                 // A rotated YouTube cookie not saved yet (throttled) goes in now.
                 this.persist_session_cookie(true, cx);
@@ -390,6 +401,8 @@ impl MusicApp {
             titlebar: None,
             titlebar_layout: Default::default(),
             titlebar_drag: false,
+            theme_switcher_open: false,
+            panels: Default::default(),
             titlebar_fake_account: None,
             _poll: poll,
             _subscriptions: subscriptions,
@@ -1020,10 +1033,26 @@ impl Render for MusicApp {
                 this.bg(cx.theme().background.opacity(see_through.unwrap_or(1.)))
             })
             .text_color(cx.theme().foreground)
+            // Motion & effects → Line along the window's edge.
+            .when(
+                crate::effects::window_hairline() && !window.is_fullscreen(),
+                |this| this.border_1().border_color(cx.theme().window_border),
+            )
             .on_mouse_down(
                 MouseButton::Navigate(NavigationDirection::Back),
                 cx.listener(|this, _, window, cx| this.go_back(window, cx)),
             )
+            // Dragging the sidebar's or the queue panel's edge.
+            .when(self.panels.resizing(), |this| {
+                this.cursor(gpui::CursorStyle::ResizeLeftRight)
+                    .on_mouse_move(cx.listener(|this, e: &gpui::MouseMoveEvent, _, cx| {
+                        this.drag_panel_edge(e, cx)
+                    }))
+                    .on_mouse_up(
+                        MouseButton::Left,
+                        cx.listener(|this, _, _, cx| this.end_panel_resize(cx)),
+                    )
+            })
             .on_mouse_down(
                 MouseButton::Navigate(NavigationDirection::Forward),
                 cx.listener(|this, _, window, cx| this.go_forward(window, cx)),
@@ -1094,7 +1123,7 @@ impl Render for MusicApp {
                     .top(under_bar)
                     .bottom_0()
                     .right_0()
-                    .left(px(crate::components::sidebar::SIDEBAR_WIDTH))
+                    .left(px(self.sidebar_width(cx)))
                     .bg(cx.theme().background)
             });
             root = root.child(
@@ -1115,7 +1144,7 @@ impl Render for MusicApp {
                                     .bottom_0()
                                     .right_0()
                                     .left(px(if translucent {
-                                        crate::components::sidebar::SIDEBAR_WIDTH
+                                        self.sidebar_width(cx)
                                     } else {
                                         0.
                                     }))
@@ -1174,6 +1203,20 @@ impl gpui::Focusable for MusicApp {
     fn focus_handle(&self, _: &App) -> FocusHandle {
         self.focus.clone()
     }
+}
+
+/// The OS shows light windows (`MUSIC_SYSTEM_APPEARANCE=light|dark` overrides
+/// it, for tests and screenshots).
+fn appearance_is_light(appearance: gpui::WindowAppearance) -> bool {
+    match std::env::var("MUSIC_SYSTEM_APPEARANCE").as_deref() {
+        Ok("light") => return true,
+        Ok("dark") => return false,
+        _ => {}
+    }
+    matches!(
+        appearance,
+        gpui::WindowAppearance::Light | gpui::WindowAppearance::VibrantLight
+    )
 }
 
 /// Lets `WindowExt` notifications be pushed from app methods.

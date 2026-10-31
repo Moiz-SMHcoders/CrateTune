@@ -56,18 +56,27 @@ pub fn over(bg: Hsla, c: Hsla, alpha: f32) -> Hsla {
     .into()
 }
 
-/// `c` darkened (hue and chroma kept) until `text` has `min` contrast on `c`
-/// drawn at `alpha` over `bg`.
+/// `c` darkened (lightened under a light theme's dark text; hue and chroma
+/// kept) until `text` has `min` contrast on `c` drawn at `alpha` over `bg`.
 pub fn readable_wash(c: Hsla, alpha: f32, bg: Hsla, text: Hsla, min: f32) -> Hsla {
     use crate::palette::{Lch, solve, tone_of};
     if contrast(text, over(bg, c, alpha)) >= min {
         return c;
     }
+    let step = if crate::theme::is_light_color(text) {
+        -2.
+    } else {
+        2.
+    };
     let lch = Lch::from_hsla(c);
     let mut tone = tone_of(c);
     let mut out = c;
-    while contrast(text, over(bg, out, alpha)) < min && tone > 0. {
-        tone = (tone - 2.).max(0.);
+    while contrast(text, over(bg, out, alpha)) < min {
+        let next = (tone + step).clamp(0., 100.);
+        if next == tone {
+            break;
+        }
+        tone = next;
         out = solve(lch.h, lch.c, tone);
     }
     out
@@ -442,6 +451,45 @@ mod tests {
         // Dark colours are kept as they are.
         let dark = hsla(0.6, 0.5, 0.12, 1.);
         assert_eq!(readable_wash(dark, 0.5, bg, muted, 4.5), dark);
+    }
+
+    #[test]
+    fn light_washes_keep_dark_text_readable() {
+        // gpui-component's light background and muted text (neutral-500).
+        let bg = hsla(0., 0., 1., 1.);
+        let muted = hsla(0., 0., 0.451, 1.);
+        let mut palette =
+            crate::theme::AppPalette::from_resolved(&crate::theme::Resolved::default());
+        palette.light = true;
+        for rgb in [
+            [230, 40, 40],
+            [250, 230, 60],
+            [40, 200, 255],
+            [0, 0, 0],
+            [90, 40, 200],
+        ] {
+            let art = crate::palette::art_colors_from_pixels(&vec![rgb; 900]);
+            let tones = ArtTones::new(art.as_ref(), &palette);
+            for alpha in [0.3, 0.55, 0.9, 1.0] {
+                // Even a dark colour at this alpha.
+                let dark = [tones.start, tones.end, tones.light].map(|c| hsla(c.h, c.s, 0.2, 1.));
+                for c in dark {
+                    let w = readable_wash(c, alpha, bg, muted, MIN_TEXT_CONTRAST);
+                    assert!(
+                        contrast(muted, over(bg, w, alpha)) >= MIN_TEXT_CONTRAST - 0.01,
+                        "{rgb:?} {alpha}"
+                    );
+                }
+                for c in backdrop_colors(&tones, alpha, bg, muted) {
+                    assert!(contrast(muted, over(bg, c, alpha)) >= MIN_TEXT_CONTRAST - 0.01);
+                }
+            }
+            // The bar's gradient ends and light are pale enough for its text as they are.
+            let fg = hsla(0., 0., 0.039, 1.);
+            for c in [tones.start, tones.end, tones.light] {
+                assert!(contrast(fg, over(bg, c, 0.9)) >= 4.5, "{rgb:?}");
+            }
+        }
     }
 
     #[test]

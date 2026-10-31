@@ -236,6 +236,9 @@ pub struct DiscordConfig {
 pub struct AppearanceConfig {
     #[serde(deserialize_with = "lenient")]
     pub theme: ThemeChoice,
+    /// Light, dark or the system's appearance.
+    #[serde(deserialize_with = "lenient")]
+    pub mode: crate::settings::theme_prefs::ColorMode,
     /// One of the zoom levels (`zoom::STEPS`, which include [`FONT_SCALES`];
     /// other values are snapped to the nearest).
     pub font_scale: f32,
@@ -253,17 +256,27 @@ pub struct AppearanceConfig {
     /// The app icon (Dock, taskbar, window; `app_icon.rs`).
     #[serde(deserialize_with = "lenient")]
     pub app_icon: crate::app_icon::AppIconChoice,
+    /// The top bar's window buttons: the platform's, or another's look (read
+    /// when the main window opens).
+    #[serde(deserialize_with = "lenient")]
+    pub window_controls: crate::settings::look_prefs::WindowControlsStyle,
+    /// Top-bar buttons left out (`look_prefs::BAR_BUTTONS` keys).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub hidden_bar_buttons: Vec<String>,
 }
 
 impl Default for AppearanceConfig {
     fn default() -> Self {
         Self {
             theme: ThemeChoice::Dark,
+            mode: Default::default(),
             font_scale: 1.0,
             language: SYSTEM_LANGUAGE.into(),
             artwork_memory_mb: crate::components::artwork::DEFAULT_BUDGET_MB,
             system_title_bar: false,
             app_icon: Default::default(),
+            window_controls: Default::default(),
+            hidden_bar_buttons: Vec::new(),
         }
     }
 }

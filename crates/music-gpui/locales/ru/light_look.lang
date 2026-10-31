@@ -1,0 +1,60 @@
+# Light mode, the theme switcher and the other look options (ru).
+
+theme.mode.dark = Тёмная
+theme.mode.light = Светлая
+theme.mode.system = Системная
+settings.appearance.mode = Режим
+settings.appearance.mode_note = Светлое или тёмное везде, либо как в оформлении системы (переключается вместе с системой).
+settings.appearance.mode_system_now = Сейчас в системе: {mode}.
+theme.darkness.soft = Мягкая
+theme.darkness.bright = Яркая
+theme.darkness.white = Чисто белая
+theme.white = Белая
+themes.low_contrast_light = {name}: в светлом режиме у части текста слишком низкий контраст ({ratio}:1), его может быть трудно читать.
+
+# ---- Motion & effects
+settings.motion.card_outlines = Контуры карточек
+settings.motion.window_hairline = Линия по краю окна
+settings.motion.smooth_wheel = Плавная прокрутка колесом
+settings.motion.smooth_wheel_note = Колесо мыши прокручивает плавно, а не рывками; тачпады сохраняют системную прокрутку. Система: вкл., кроме macOS. При уменьшенной анимации снова рывками.
+effects.smooth_wheel.system = Система
+effects.smooth_wheel.on = Вкл.
+effects.smooth_wheel.off = Выкл.
+settings.motion.translucent_sidebar_note_other = Сквозь боковую панель виден рабочий стол под системным размытием (Windows 11: Mica, Windows 10: акрил; Linux: только где размывает композитор, например KDE Plasma на Wayland).
+effects.sidebar.full = Полная
+effects.sidebar.rail = Только значки
+effects.sidebar.hover = Раскрывать при наведении
+
+# ---- Theme switcher
+themes.switcher = Темы
+themes.switcher_note = Встроенные темы и ваши файлы тем в текущем режиме. Больше — в Настройки → Оформление.
+
+# ---- Layout
+settings.layout.group = Макет
+settings.layout.sidebar = Боковая панель
+settings.layout.sidebar_note = Перетащите край боковой панели или очереди, чтобы изменить ширину.
+settings.layout.columns = Столбцы списка треков
+settings.layout.columns_note = «Добавлено» и «Прослушивания» показываются в списках медиатеки (треки, понравившиеся, загрузки, локальные файлы).
+layout.column.album = Альбом
+layout.column.added = Добавлено
+layout.column.plays = Прослушивания
+layout.column.duration = Длительность
+settings.layout.bar_buttons = Кнопки верхней панели
+settings.layout.bar_buttons_note = Действия скрытых кнопок остаются в меню и сочетаниях клавиш.
+layout.bar_button.menu = Меню
+layout.bar_button.back = Назад
+layout.bar_button.forward = Вперёд
+layout.bar_button.home = Главная
+layout.bar_button.themes = Темы
+layout.bar_button.account = Аккаунт
+settings.layout.window_controls = Кнопки окна
+settings.layout.window_controls_note = Вид кнопок свернуть, развернуть и закрыть. Действует после перезапуска.
+window.controls.system = Системные
+window.controls.mac = macOS
+window.controls.windows = Windows
+
+# ---- Fonts
+theme.custom.heading_font = Шрифт заголовков
+theme.custom.heading_font_detail = Заголовки страниц, шапки альбомов и плейлистов, название в «Сейчас играет».
+theme.custom.fonts_folder = Открыть папку шрифтов
+theme.custom.fonts_folder_note = Файлы шрифтов (.ttf, .otf, .ttc) из папки шрифтов тоже появятся в списке, со следующего запуска.

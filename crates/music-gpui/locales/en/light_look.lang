@@ -1,0 +1,68 @@
+# Light mode, the quick theme switcher and the other look options of the
+# light-look round (Settings → Appearance, the top bar).
+
+# Appearance → Theme → Mode: light, dark or follow the OS.
+theme.mode.dark = Dark
+theme.mode.light = Light
+theme.mode.system = System
+settings.appearance.mode = Mode
+settings.appearance.mode_note = Light or dark everywhere, or follow your system's appearance (it switches when the system does).
+# Shown under Mode when it follows the system: what the system shows now.
+settings.appearance.mode_system_now = The system shows {mode} now.
+# Customize theme → darkness, in light mode (the scale runs the other way).
+theme.darkness.soft = Soft
+theme.darkness.bright = Bright
+theme.darkness.white = Pure white
+# The "Pure black" theme's title in light mode.
+theme.white = Pure white
+# A theme file's light colours ([colors.light]) leave text hard to read.
+themes.low_contrast_light = {name}: some text has too little contrast in light mode ({ratio}:1); it may be hard to read.
+
+# ---- Motion & effects
+settings.motion.card_outlines = Card outlines
+settings.motion.window_hairline = Line along the window's edge
+settings.motion.smooth_wheel = Smooth wheel scrolling
+settings.motion.smooth_wheel_note = A mouse wheel glides instead of jumping; trackpads keep the system's own scrolling. System: on except on macOS. Steps again with reduced animations.
+effects.smooth_wheel.system = System
+effects.smooth_wheel.on = On
+effects.smooth_wheel.off = Off
+# Translucent sidebar on Windows and Linux.
+settings.motion.translucent_sidebar_note_other = The sidebar shows the desktop through the system's blur (Windows 11: Mica, Windows 10: acrylic; Linux: only where the compositor blurs, such as KDE Plasma on Wayland).
+# Appearance → Layout → Sidebar.
+effects.sidebar.full = Full
+effects.sidebar.rail = Icons only
+effects.sidebar.hover = Expand on hover
+
+# ---- The top bar's theme switcher (a palette button)
+themes.switcher = Themes
+themes.switcher_note = Built-in themes and your theme files, shown in the current mode. More in Settings → Appearance.
+
+# ---- Appearance → Layout
+settings.layout.group = Layout
+settings.layout.sidebar = Sidebar
+settings.layout.sidebar_note = Drag the sidebar's or the queue's edge to change its width.
+settings.layout.columns = Song list columns
+settings.layout.columns_note = Added and Plays show in library lists (songs, liked, downloads, local files).
+layout.column.album = Album
+layout.column.added = Added
+layout.column.plays = Plays
+layout.column.duration = Duration
+settings.layout.bar_buttons = Top-bar buttons
+settings.layout.bar_buttons_note = Hidden buttons' actions stay in the menus and keyboard shortcuts.
+layout.bar_button.menu = Menu
+layout.bar_button.back = Back
+layout.bar_button.forward = Forward
+layout.bar_button.home = Home
+layout.bar_button.themes = Themes
+layout.bar_button.account = Account
+settings.layout.window_controls = Window buttons
+settings.layout.window_controls_note = The look of the minimise, maximise and close buttons. Applies after a restart.
+window.controls.system = System
+window.controls.mac = macOS
+window.controls.windows = Windows
+
+# ---- Customize theme → fonts
+theme.custom.heading_font = Heading font
+theme.custom.heading_font_detail = Page titles, album and playlist headers, the title in Now Playing.
+theme.custom.fonts_folder = Open fonts folder
+theme.custom.fonts_folder_note = Font files (.ttf, .otf, .ttc) in the fonts folder are listed too, from the next start.

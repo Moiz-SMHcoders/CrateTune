@@ -1,0 +1,60 @@
+# Light mode, the theme switcher and the other look options (vi).
+
+theme.mode.dark = Tối
+theme.mode.light = Sáng
+theme.mode.system = Hệ thống
+settings.appearance.mode = Chế độ
+settings.appearance.mode_note = Sáng hoặc tối ở mọi nơi, hoặc theo giao diện của hệ thống (đổi khi hệ thống đổi).
+settings.appearance.mode_system_now = Hệ thống hiện đang ở chế độ {mode}.
+theme.darkness.soft = Dịu nhẹ
+theme.darkness.bright = Sáng rõ
+theme.darkness.white = Trắng tinh
+theme.white = Trắng thuần
+themes.low_contrast_light = {name}: ở chế độ sáng, một số chữ có độ tương phản quá thấp ({ratio}:1), có thể khó đọc.
+
+# ---- Motion & effects
+settings.motion.card_outlines = Viền thẻ
+settings.motion.window_hairline = Đường kẻ dọc mép cửa sổ
+settings.motion.smooth_wheel = Cuộn mượt bằng con lăn
+settings.motion.smooth_wheel_note = Con lăn chuột trượt mượt thay vì nhảy; bàn di chuột vẫn dùng cách cuộn của hệ thống. Hệ thống: bật, trừ trên macOS. Cuộn theo nấc trở lại khi giảm hoạt ảnh.
+effects.smooth_wheel.system = Hệ thống
+effects.smooth_wheel.on = Bật
+effects.smooth_wheel.off = Tắt
+settings.motion.translucent_sidebar_note_other = Thanh bên hiện màn hình nền qua lớp làm mờ của hệ thống (Windows 11: Mica, Windows 10: acrylic; Linux: chỉ khi trình tổng hợp hỗ trợ làm mờ, như KDE Plasma trên Wayland).
+effects.sidebar.full = Đầy đủ
+effects.sidebar.rail = Chỉ biểu tượng
+effects.sidebar.hover = Mở rộng khi di chuột qua
+
+# ---- Theme switcher
+themes.switcher = Giao diện
+themes.switcher_note = Giao diện có sẵn và tệp giao diện của bạn, hiển thị ở chế độ hiện tại. Xem thêm trong Cài đặt → Giao diện.
+
+# ---- Layout
+settings.layout.group = Bố cục
+settings.layout.sidebar = Thanh bên
+settings.layout.sidebar_note = Kéo mép thanh bên hoặc danh sách chờ để đổi độ rộng.
+settings.layout.columns = Cột của danh sách bài hát
+settings.layout.columns_note = Ngày thêm và Lượt phát hiện trong các danh sách của thư viện (bài hát, đã thích, đã tải xuống, tệp cục bộ).
+layout.column.album = Album
+layout.column.added = Ngày thêm
+layout.column.plays = Lượt phát
+layout.column.duration = Thời lượng
+settings.layout.bar_buttons = Nút trên thanh trên cùng
+settings.layout.bar_buttons_note = Thao tác của các nút bị ẩn vẫn có trong menu và phím tắt.
+layout.bar_button.menu = Menu
+layout.bar_button.back = Quay lại
+layout.bar_button.forward = Tiến tới
+layout.bar_button.home = Trang chủ
+layout.bar_button.themes = Giao diện
+layout.bar_button.account = Tài khoản
+settings.layout.window_controls = Nút cửa sổ
+settings.layout.window_controls_note = Kiểu dáng của các nút thu nhỏ, phóng to và đóng. Có hiệu lực sau khi khởi động lại.
+window.controls.system = Hệ thống
+window.controls.mac = macOS
+window.controls.windows = Windows
+
+# ---- Fonts
+theme.custom.heading_font = Phông chữ tiêu đề
+theme.custom.heading_font_detail = Tiêu đề trang, phần đầu album và danh sách phát, tiêu đề trong Đang phát.
+theme.custom.fonts_folder = Mở thư mục phông chữ
+theme.custom.fonts_folder_note = Các tệp phông chữ (.ttf, .otf, .ttc) trong thư mục phông chữ cũng được liệt kê, từ lần mở tiếp theo.

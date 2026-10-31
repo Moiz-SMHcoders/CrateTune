@@ -551,6 +551,21 @@ and keys in the system keychain.
 
 ![Customize theme](screenshots/theme-customize.png)
 
+**Light or dark**: Settings → Appearance → Theme → **Mode** — *Dark* (the default),
+*Light*, or *System*, which follows your computer's appearance (macOS, Windows and Linux
+desktops that tell apps, such as GNOME and KDE Plasma) and switches the moment it does.
+The **palette button** in the top bar opens the same choice plus a swatch of every theme
+for a quick switch. Everything follows the mode: Now Playing and its designs take light,
+artwork-coloured washes with dark text, the player bar's backgrounds and the app-wide look
+use light tones, the mini player lightens its artwork instead of darkening it; theater
+mode stays dark (it shows video). In light mode the darkness scale runs the other way
+(*Soft*, Standard, *Bright*, *Pure white*), and "Pure black" becomes Pure white.
+
+To try a theme without changing your settings, start the app with `MUSIC_THEME=nord`
+(or `--theme nord`): a preset (`midnight`), a base theme (`dark`, `black`, `dynamic`), a
+theme file's name and / or a mode (`light`, `dark`, `system`), e.g. `MUSIC_THEME=nord:light`.
+It lasts for that run; picking a theme in the app keeps what you picked.
+
 **Settings → Appearance → Customize theme** changes the look; everything applies at once
 and **Reset to default** brings back the standard look:
 
@@ -558,10 +573,14 @@ and **Reset to default** brings back the standard look:
 * **Accent colour** — a swatch, a hex value (`#5B8CFF`) or the hue and saturation
   sliders. An accent that would be too dark to read on the background is lightened
   automatically (WCAG contrast).
-* **Darkness** (dim, standard, deep, pure black), **surface tint** (backgrounds, cards and
-  menus take the accent's hue), **contrast** (standard, medium, high: brighter text and
-  borders), **corners** (sharp, regular, round), **density** (row heights and spacing),
-  **font** (any installed font).
+* **Darkness** (dim, standard, deep, pure black; in light mode soft, standard, bright,
+  pure white), **surface tint** (backgrounds, cards and menus take the accent's hue),
+  **contrast** (standard, medium, high: brighter text and borders, darker in light mode),
+  **corners** (sharp, regular, round), **density** (row heights and spacing), **font** (any
+  installed font) and a separate **heading font** for page titles, album and playlist
+  headers and Now Playing's title. Font files (`.ttf`, `.otf`, `.ttc`) you put in the
+  *fonts folder* (`fonts/` in the settings folder; **Open fonts folder**) are listed too,
+  from the next start.
 * **Dynamic colours** — with the Dynamic theme the colours come from the artwork of the
   song that is playing: accent, selection, sliders, Now Playing and, with a surface tint,
   the backgrounds. **Style**: vibrant, muted, monochrome or true to the artwork;
@@ -576,7 +595,8 @@ the look.
 **Editable theme files.** Below the presets, **Theme files** lists the themes in the
 *themes folder* (`themes/` in the settings folder; **Open themes folder** shows it). The
 first time it is created it gets a commented `example.toml` and four starter themes (Nord,
-Catppuccin Mocha, Gruvbox Dark, Dracula); delete the ones you don't want. Click a theme to
+Catppuccin Mocha, Gruvbox Dark, Dracula, each with a light version: Snow Storm, Latte,
+Gruvbox Light, Alucard); delete the ones you don't want. Click a theme to
 apply it. To make your own, use **Export current theme as file** (it writes
 `my-theme.toml` with the current settings and every colour on screen, commented out), open
 it in any text editor, change it and save: the app applies the change at once. A theme
@@ -593,15 +613,25 @@ darkness = "standard"    # dim | standard | deep | black
 contrast = "standard"    # standard | medium | high
 corners = "round"        # sharp | regular | round
 # density = "regular"    # compact | regular | comfortable (yours stays when missing)
-# font = "Inter"         # an installed font ("" = the system font)
+# font = "Inter"         # an installed font or one from the fonts folder ("" = the system font)
+# heading_font = ""      # page titles and headers ("" = the font above)
 # dynamic_style = "vibrant"  # vibrant | muted | monochrome | content
+# mode = "dark"          # what [colors] is for: dark | light (default: by its background)
 
-[colors]                 # any of the colour tokens below: "#RRGGBB" or "#RRGGBBAA"
+[colors]                 # dark mode: any of the colour tokens below, "#RRGGBB" or "#RRGGBBAA"
 background = "#2E3440"
 foreground = "#ECEFF4"
 muted_foreground = "#AEB7C6"
 sidebar = "#2A2F3A"
+
+[colors.light]           # light mode (optional)
+background = "#ECEFF4"
+foreground = "#2E3440"
 ```
+
+A file with only one set of colours uses it in both modes (files made before light mode
+look as they did); with `[colors.light]` (or `[colors.dark]` for a light `[colors]`) it
+switches with the mode. Light colours are checked for readable text too.
 
 Every key is optional. The colour tokens are gpui-component's: `background`, `foreground`,
 `muted`, `muted_foreground`, `border`, `input`, `ring`, `accent`, `accent_foreground`,
@@ -617,6 +647,24 @@ Every key is optional. The colour tokens are gpui-component's: `background`, `fo
 `warning_foreground`, `info`, `info_foreground`, `overlay`. Changing an option in the app
 after applying a theme file keeps your change until the file is saved again; picking a
 preset leaves the theme file.
+
+**Wallpaper colours with Matugen.** [Matugen](https://github.com/InioX/matugen) turns a
+wallpaper into a Material You palette and fills templates with it. The app comes with a
+template that writes a theme file (dark and light colours):
+[`crates/music-gpui/themes/matugen/cratetune.toml`](../crates/music-gpui/themes/matugen/cratetune.toml).
+Copy it to `~/.config/matugen/templates/` and add to Matugen's `config.toml`:
+
+```toml
+[templates.cratetune]
+input_path = "~/.config/matugen/templates/cratetune.toml"
+# The themes folder in the app's settings folder (Linux; macOS:
+# "~/Library/Application Support/cratetune/themes/matugen.toml").
+output_path = "~/.config/cratetune/themes/matugen.toml"
+```
+
+Run `matugen image <wallpaper>`; **Wallpaper (Matugen)** appears under Theme files. Apply
+it once — every later `matugen` run updates the colours on screen at once (the themes
+folder is watched).
 
 **Settings files** (Settings → Backup & sync): **Export settings…** saves every setting
 except passwords, keys, cookies, the signed-in account and window positions as JSON;
@@ -672,7 +720,31 @@ and uses a little CPU, so it is off by default.
 * **Artwork corners**, **Artwork shadows** and **Tile size** — the shape of covers and
   how big the tiles in shelves and grids are. (For tighter lists use **Density** in
   Customize theme.)
-* **Translucent sidebar** (macOS) — the desktop shows through the sidebar, blurred.
+* **Card outlines** and **Line along the window's edge** — a thin outline around tiles,
+  a hairline around the window.
+* **Smooth wheel scrolling** — a mouse wheel glides instead of jumping a step (trackpads
+  keep the system's own scrolling). *System* turns it on everywhere but macOS, whose
+  wheel already accelerates; with Animations Reduced or Off the wheel scrolls in steps.
+* **Translucent sidebar** — the desktop shows through the sidebar, blurred (macOS; Windows
+  11 uses Mica, Windows 10 acrylic; on Linux where the compositor blurs, such as KDE
+  Plasma on Wayland).
+
+On Linux, *System* animations also follow KDE Plasma's animation speed (System Settings →
+General Behavior): faster or slower transitions, and "Instant" counts as reduced motion.
+
+**Layout** (below Motion & effects):
+
+* **Sidebar** — *Full* (icons and names; drag its right edge to make it wider or
+  narrower), *Icons only* (a narrow rail; hover an icon for its name) or *Expand on hover*
+  (the rail, with the full sidebar sliding over the page while the pointer is on it). The
+  queue panel's left edge can be dragged too.
+* **Song list columns** — show or hide the album, *Added* (when the song came into your
+  library), *Plays* and the duration. Added and Plays show in library lists (songs,
+  liked, downloads, local files).
+* **Top-bar buttons** — hide the ⋯ menu, back, forward, Home, the theme switcher or the
+  account button (their actions stay in the menus and shortcuts).
+* **Window buttons** — the macOS look (three circles on the left) or the Windows look
+  (boxes on the right) on any system, from the next start.
 
 **Player bar → Artwork**: *Edge to edge* makes the cover fill the bar's full height at
 its left edge, like a mini player; *Standard* is the padded thumbnail.

@@ -147,6 +147,7 @@ impl RenderOnce for Card {
         } else {
             div().flex_none().child(art)
         };
+        let outline = crate::effects::card_outlines().then_some(theme.border);
         let card = v_flex()
             .id(self.id)
             .w(side + px(16.))
@@ -154,6 +155,8 @@ impl RenderOnce for Card {
             .p_2()
             .gap_2()
             .rounded(crate::theme::radius(10.))
+            // Motion & effects → Card outlines (inside the tile's width).
+            .when_some(outline, |this, c| this.p(px(7.)).border_1().border_color(c))
             .when(round, |this| this.items_center())
             .when(fancy, |this| this.group(GROUP))
             .when_some(self.on_click, |this, f| {

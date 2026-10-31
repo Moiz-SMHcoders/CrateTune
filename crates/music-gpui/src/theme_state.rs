@@ -50,6 +50,7 @@ impl MusicApp {
             .surface_tint(playing);
         let mut look = Look {
             choice: settings.appearance.theme,
+            light: settings.appearance.mode.is_light(theme::system_is_light()),
             font_scale: settings.appearance.font_scale,
             custom: settings.custom_theme.clone(),
             art: self

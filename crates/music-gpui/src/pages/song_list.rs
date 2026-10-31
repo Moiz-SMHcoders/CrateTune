@@ -21,7 +21,7 @@ use music_core::Track;
 
 use super::is_playing;
 use crate::app::update_app;
-use crate::components::track_row::TrackRow;
+use crate::components::track_row::{RowMeta, TrackRow};
 use crate::icons::Lucide;
 
 /// Extra controls at the end of a row (e.g. reorder / remove in a playlist).
@@ -29,6 +29,8 @@ pub type RowExtra<P> = Rc<dyn Fn(&mut P, usize, &mut Window, &mut Context<P>) ->
 
 pub struct SongList {
     pub tracks: Rc<Vec<Track>>,
+    /// The library's data per row (Added / Plays columns), when the page has it.
+    meta: Rc<Vec<RowMeta>>,
     sizes: Rc<Vec<Size<Pixels>>>,
     /// The checkbox column is shown ("Select"); ⌘ / Shift-click select without it.
     pub selecting: bool,
@@ -45,6 +47,7 @@ impl SongList {
     pub fn new() -> Self {
         Self {
             tracks: Rc::default(),
+            meta: Rc::default(),
             sizes: Rc::default(),
             selecting: false,
             scroll: VirtualListScrollHandle::new(),
@@ -60,6 +63,14 @@ impl SongList {
         let n = tracks.len();
         self.sizes = Rc::new(vec![size(px(0.), px(crate::theme::row_height())); n]);
         self.tracks = Rc::new(tracks);
+        self.meta = Rc::default();
+    }
+
+    /// Library songs: their tracks and what the Added / Plays columns show.
+    pub fn set_songs(&mut self, songs: Vec<(Track, RowMeta)>) {
+        let (tracks, meta): (Vec<_>, Vec<_>) = songs.into_iter().unzip();
+        self.set_tracks(tracks);
+        self.meta = Rc::new(meta);
     }
 
     pub fn is_empty(&self) -> bool {
@@ -93,6 +104,7 @@ impl SongList {
         let list = v_virtual_list(cx.entity(), id, sizes, move |page, range, window, cx| {
             let list = get(page);
             let tracks = list.tracks.clone();
+            let meta = list.meta.clone();
             let selecting = list.selecting;
             range
                 .map(|ix| {
@@ -116,10 +128,11 @@ impl SongList {
                         .gap_2()
                         .children(check)
                         .child(
-                            div()
-                                .flex_1()
-                                .min_w_0()
-                                .child(TrackRow::new(id, tracks.clone(), ix).active(active)),
+                            div().flex_1().min_w_0().child(
+                                TrackRow::new(id, tracks.clone(), ix)
+                                    .active(active)
+                                    .meta(meta.get(ix).copied()),
+                            ),
                         )
                         .children(trailing)
                 })

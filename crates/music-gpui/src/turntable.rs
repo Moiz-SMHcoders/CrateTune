@@ -69,7 +69,13 @@ impl Default for DeckLook {
             vinyl: hsla(0., 0., 0.06, 1.),
             rim: hsla(0., 0., 1., 0.16),
             groove: hsla(0., 0., 1., 0.07),
-            arm: hsla(0., 0., 0.86, 1.),
+            // Silver on the dark washes; a darker metal on light mode's.
+            arm: hsla(
+                0.,
+                0.,
+                if crate::theme::is_light() { 0.5 } else { 0.86 },
+                1.,
+            ),
         }
     }
 }

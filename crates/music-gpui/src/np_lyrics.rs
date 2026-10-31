@@ -270,8 +270,8 @@ fn wrapped_rows(text: &SharedString, font: &Font, size: f32, width: Pixels, w: &
         .max(1)
 }
 
-fn white(alpha: f32) -> Hsla {
-    hsla(0., 0., 1., alpha)
+fn ink(alpha: f32) -> Hsla {
+    crate::theme::ink(alpha)
 }
 
 /// One row's text parts: main line, background vocals, romanization / translation.
@@ -568,8 +568,13 @@ impl MusicApp {
             }
             .factor();
             let scale = look.inactive_scale + (1. - look.inactive_scale) * act;
-            let lit = white(dim + (1. - dim) * act);
-            let glow = look.glow.map(|a| white(a * act));
+            let lit = ink(dim + (1. - dim) * act);
+            // A white glow lights the line up; a dark one would only smudge
+            // light mode's dark text.
+            let glow = look
+                .glow
+                .filter(|_| !crate::theme::is_light())
+                .map(|a| ink(a * act));
             let karaoke = |text: SharedString,
                            word_starts: Arc<[usize]>,
                            fill: Fill,
@@ -607,9 +612,9 @@ impl MusicApp {
                 .py(px(pad_y))
                 .when(selected, |this| {
                     this.rounded(px(12.))
-                        .bg(white(0.1))
+                        .bg(ink(0.1))
                         .border_1()
-                        .border_color(white(0.25))
+                        .border_color(ink(0.25))
                 })
                 .child(karaoke(
                     info.text.clone(),
@@ -619,7 +624,7 @@ impl MusicApp {
                     size,
                     geom.parts[0],
                     lit,
-                    white(dim),
+                    ink(dim),
                     lift * act,
                     glow,
                 ));
@@ -642,8 +647,8 @@ impl MusicApp {
                     bg_font.clone(),
                     bg_size,
                     geom.parts[1],
-                    white((dim + (1. - dim) * act) * 0.8),
-                    white(dim * 0.8),
+                    ink((dim + (1. - dim) * act) * 0.8),
+                    ink(dim * 0.8),
                     px(0.),
                     None,
                 ));
@@ -658,8 +663,8 @@ impl MusicApp {
                     sub_font.clone(),
                     sub_size,
                     *height,
-                    white(sub_alpha),
-                    white(sub_alpha),
+                    ink(sub_alpha),
+                    ink(sub_alpha),
                     px(0.),
                     None,
                 )));
@@ -919,12 +924,20 @@ impl MusicApp {
 }
 
 fn tone_color(tone: Tone) -> Hsla {
+    // Darker tones on light mode's light washes.
+    let l = |dark: f32| {
+        if crate::theme::is_light() {
+            dark - 0.25
+        } else {
+            dark
+        }
+    };
     match tone {
-        Tone::Found => hsla(140. / 360., 0.55, 0.55, 1.),
-        Tone::Off => hsla(40. / 360., 0.85, 0.6, 1.),
-        Tone::Miss => white(0.35),
-        Tone::Error => hsla(0., 0.7, 0.62, 1.),
-        Tone::Skipped => white(0.18),
+        Tone::Found => hsla(140. / 360., 0.55, l(0.55), 1.),
+        Tone::Off => hsla(40. / 360., 0.85, l(0.6), 1.),
+        Tone::Miss => ink(0.35),
+        Tone::Error => hsla(0., 0.7, l(0.62), 1.),
+        Tone::Skipped => ink(0.18),
     }
 }
 
