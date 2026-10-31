@@ -239,8 +239,7 @@ versions follow [SemVer](https://semver.org/).
   app stays flat. Scrolling quickly through a long Home peaks at ~370 MB instead of ~600 MB on
   a Mac, and drops back sooner. On displays without high-DPI scaling (most Windows and Linux
   setups) artwork is downloaded and kept at the size it is shown, a quarter of the memory it
-  took. On Linux, memory freed by the artwork cache is handed back to the system. Changing a
-  lyrics card's style no longer keeps the previous preview in memory.
+  took. On Linux, memory freed by the artwork cache is handed back to the system.
 
 ## [0.2.6] — 2026-10-31
 
