@@ -98,6 +98,7 @@ mod theme_script;
 mod theme_state;
 mod titlebar;
 mod tray;
+mod turntable;
 mod update_check;
 mod update_script;
 mod util;

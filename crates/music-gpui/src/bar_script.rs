@@ -1,7 +1,7 @@
 //! Script actions for the player bar look (see `script.rs` for the runner):
 //! `@bar-style=wavy`, `@bar-bg=glow|gradient|pulse|off`, `@bar-peaks=on|off`,
 //! `@bar-remaining=on|off`, `@bar-scroll-volume=on|off`, `@mini-follow=on|off`,
-//! `@np-viz=on|off`, `@bar-gradient=dir:diagonal|intensity:0.7|animate:on|dim:off`,
+//! `@np-viz=on|off`, `@np-viz-style=bars|lights`, `@bar-gradient=dir:diagonal|intensity:0.7|animate:on|dim:off`,
 //! `@bar-status` (prints the settings and whether the spectrum tap is on),
 //! `@waveform-status` (whether the current track's waveform is loaded, its
 //! bucket count, how it was made and what it cost, and its shape as a
@@ -12,7 +12,9 @@
 use gpui::{Context, Modifiers, MouseMoveEvent, PlatformInput, Window, point, px};
 
 use crate::app::MusicApp;
-use crate::settings::bar_prefs::{BarBackground, GradientDirection, ProgressStyle};
+use crate::settings::bar_prefs::{
+    BarBackground, GradientDirection, NpVisualizerStyle, ProgressStyle,
+};
 
 impl MusicApp {
     /// Returns `false` if `name` isn't a bar action.
@@ -76,6 +78,10 @@ impl MusicApp {
             "bar-scroll-volume" => panel.update(cx, |p, cx| p.set_scroll_volume(on, cx)),
             "mini-follow" => panel.update(cx, |p, cx| p.set_mini_follows_bar(on, cx)),
             "np-viz" => panel.update(cx, |p, cx| p.set_np_visualizer(on, cx)),
+            "np-viz-style" => match arg.and_then(NpVisualizerStyle::parse) {
+                Some(style) => panel.update(cx, |p, cx| p.set_np_visualizer_style(style, cx)),
+                None => eprintln!("music-gpui: @np-viz-style wants bars|lights"),
+            },
             "bar-hover" | "bar-volume-hover" => {
                 let Some(bar) = self.bar.clone() else {
                     return true;

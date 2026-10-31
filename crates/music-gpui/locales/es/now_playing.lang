@@ -109,3 +109,5 @@ card.size.large = Grande
 np.queue.next_in_queue = SIGUIENTE EN LA COLA
 np.queue.next_from = SIGUIENTE DE {name}
 np.queue.next_from_radio = SIGUIENTE DE LA RADIO DE {name}
+sound_menu.tooltip = Sonido: ecualizador, reverberación, ajustes
+sound_menu.settings = Ajustes de sonido…

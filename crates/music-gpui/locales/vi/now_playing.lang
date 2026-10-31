@@ -104,3 +104,5 @@ card.size.large = Lớn
 np.queue.next_in_queue = TIẾP THEO TRONG DANH SÁCH CHỜ
 np.queue.next_from = TIẾP THEO TỪ {name}
 np.queue.next_from_radio = TIẾP THEO TỪ RADIO {name}
+sound_menu.tooltip = Âm thanh: bộ chỉnh âm, vang, cấu hình
+sound_menu.settings = Cài đặt âm thanh…

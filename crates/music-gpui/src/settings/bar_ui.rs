@@ -15,8 +15,8 @@ use gpui_component::{
 };
 
 use super::bar_prefs::{
-    BarArtworkStyle, BarBackground, GRADIENT_INTENSITIES, GradientDirection, PlayerBarConfig,
-    ProgressStyle,
+    BarArtworkStyle, BarBackground, GRADIENT_INTENSITIES, GradientDirection, NpVisualizerStyle,
+    PlayerBarConfig, ProgressStyle,
 };
 use super::panel::{SettingsEvent, SettingsPanel};
 use super::prefs_ui::choice;
@@ -88,6 +88,10 @@ impl SettingsPanel {
 
     pub fn set_np_visualizer(&mut self, on: bool, cx: &mut Context<Self>) {
         self.update_player_bar(cx, |b| b.np_visualizer = on);
+    }
+
+    pub fn set_np_visualizer_style(&mut self, style: NpVisualizerStyle, cx: &mut Context<Self>) {
+        self.update_player_bar(cx, |b| b.np_visualizer_style = style);
     }
 
     pub fn set_bar_artwork_style(&mut self, style: BarArtworkStyle, cx: &mut Context<Self>) {
@@ -206,6 +210,14 @@ pub(super) fn render(panel: &mut SettingsPanel, cx: &mut Context<SettingsPanel>)
         SettingsPanel::set_np_visualizer,
         cx,
     );
+    let np_style = choice(
+        "bar-np-visualizer-style",
+        &NpVisualizerStyle::ALL,
+        bar.np_visualizer_style,
+        NpVisualizerStyle::title,
+        |this, s, cx| this.set_np_visualizer_style(s, cx),
+        cx,
+    );
     group_at("appearance.bar", t!("settings.bar.group"), cx)
         .child(
             v_flex()
@@ -303,7 +315,16 @@ pub(super) fn render(panel: &mut SettingsPanel, cx: &mut Context<SettingsPanel>)
                     Some(t!("settings.bar.np_visualizer_note")),
                     np,
                     cx,
-                )),
+                ))
+                .when(bar.np_visualizer, |this| {
+                    this.child(row_at(
+                        "appearance.bar.np_visualizer_style",
+                        t!("settings.bar.np_visualizer_style"),
+                        None,
+                        np_style,
+                        cx,
+                    ))
+                }),
         )
         .child(note(t!("settings.bar.cpu_note"), cx))
         .child(super::bar_items_ui::render(panel, cx))

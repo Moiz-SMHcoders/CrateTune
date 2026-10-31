@@ -7,6 +7,26 @@ versions follow [SemVer](https://semver.org/).
 
 ### Added
 
+* **Reverb.** Four rooms (Small room, Hall, Plate, Cathedral) and a wet mix, in Settings →
+  Equalizer, after the equalizer on the whole output (so crossfades share one room). Off by
+  default and then not run at all; when you pause, the echo rings out. An algorithmic
+  Freeverb-style reverb in `music-core` (`reverb.rs`), about 0.3–0.5 % of one core.
+* **Sound presets** (after Limusic): Original, Slowed + reverb, Nightcore, Practice and Concert
+  hall set speed, pitch and reverb in one click.
+* **Equalizer presets Warm and Night** (after Zuno and Deviload).
+* **Sound menu**: equalizer presets, reverb rooms and sound presets as submenus of the player
+  bar's quality menu and a new sliders button in the Now Playing header, highlighted while the
+  sound is changed.
+* **Mini player layouts**: Bar, Compact, Artwork card, Lyrics (the line being sung) and
+  Turntable (the artwork as a record's label, a tonearm that follows the song), each with its
+  own window size (Settings → Appearance → Mini player → Layout, `@mini-skin=`). Scrolling over
+  the mini player changes the volume.
+* **Turntable** Now Playing design (the ninth).
+* **Ambient lights** visualizer for Now Playing (after Deviload): three lights in the
+  artwork's colours behind the screen that follow the bass, mids and highs (Settings →
+  Appearance → Player bar → Visualizer style, `@np-viz-style=`).
+* Scripts: `@reverb=`, `@reverb-mix=`, `@sound=`, `@mini-skin=`, `@np-viz-style=`.
+
 * **Package managers.** Manifests for a Homebrew cask (`packaging/homebrew/`), a Scoop bucket
   (`packaging/scoop/`), the AUR (`cratetune-bin` from the release tarball and `cratetune` from
   source, `packaging/aur/`) and Flatpak (`packaging/flatpak/`, app id

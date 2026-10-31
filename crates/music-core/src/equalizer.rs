@@ -127,15 +127,21 @@ pub enum EqPreset {
     Vocal,
     Treble,
     Loudness,
+    /// Fuller lows, softer highs (after Zuno's "Warm").
+    Warm,
+    /// Quieter lows and highs for late listening (after Deviload's "Night").
+    Night,
 }
 
 impl EqPreset {
-    pub const ALL: [EqPreset; 5] = [
+    pub const ALL: [EqPreset; 7] = [
         EqPreset::Flat,
         EqPreset::Bass,
         EqPreset::Vocal,
         EqPreset::Treble,
         EqPreset::Loudness,
+        EqPreset::Warm,
+        EqPreset::Night,
     ];
 
     pub fn name(self) -> &'static str {
@@ -145,6 +151,8 @@ impl EqPreset {
             EqPreset::Vocal => "Vocal",
             EqPreset::Treble => "Treble",
             EqPreset::Loudness => "Loudness",
+            EqPreset::Warm => "Warm",
+            EqPreset::Night => "Night",
         }
     }
 
@@ -156,6 +164,10 @@ impl EqPreset {
             EqPreset::Vocal => [-2.0, -2.0, -1.0, 0.0, 1.5, 3.0, 3.5, 2.5, 1.0, 0.0],
             EqPreset::Treble => [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.5, 3.0, 4.5, 5.5],
             EqPreset::Loudness => [5.0, 4.0, 2.0, 0.0, -1.0, 0.0, 0.0, 1.0, 3.0, 4.0],
+            // Zuno's curve (src/ui/settings/equalizer.ts, Apache-2.0).
+            EqPreset::Warm => [2.0, 3.0, 3.0, 2.0, 1.0, 0.0, -1.0, -1.0, -2.0, -2.0],
+            // Deviload's six-band "night" curve (src/music-sound.js, MIT) on ten bands.
+            EqPreset::Night => [-2.0, -2.0, -1.0, 0.0, 0.5, 1.0, 0.0, -1.0, -2.0, -3.0],
         }
     }
 

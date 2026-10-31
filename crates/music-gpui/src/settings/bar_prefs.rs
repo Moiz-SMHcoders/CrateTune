@@ -184,6 +184,40 @@ impl BarArtworkStyle {
     }
 }
 
+/// What the Now Playing visualizer draws.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum NpVisualizerStyle {
+    /// A strip of spectrum bars along the bottom edge.
+    #[default]
+    Bars,
+    /// Three soft lights in the artwork's colours behind the content, brightening
+    /// with the bass, the mids and the highs (after Deviload's ambient lights).
+    Lights,
+}
+
+impl NpVisualizerStyle {
+    pub const ALL: [Self; 2] = [Self::Bars, Self::Lights];
+
+    pub fn title(self) -> &'static str {
+        match self {
+            Self::Bars => t!("bar.np_viz.bars"),
+            Self::Lights => t!("bar.np_viz.lights"),
+        }
+    }
+
+    pub fn key(self) -> &'static str {
+        match self {
+            Self::Bars => "bars",
+            Self::Lights => "lights",
+        }
+    }
+
+    pub fn parse(s: &str) -> Option<Self> {
+        Self::ALL.into_iter().find(|v| v.key() == s)
+    }
+}
+
 /// Intensities offered in the settings (opacity of the gradient over the bar).
 pub const GRADIENT_INTENSITIES: [f32; 4] = [0.3, 0.5, 0.7, 0.9];
 
@@ -213,6 +247,9 @@ pub struct PlayerBarConfig {
     pub mini_follows_bar: bool,
     /// A small spectrum strip along the bottom of Now Playing.
     pub np_visualizer: bool,
+    /// What that visualizer draws.
+    #[serde(deserialize_with = "lenient")]
+    pub np_visualizer_style: NpVisualizerStyle,
     /// Which buttons, tags and chips the bar shows (`bar_items.rs`).
     pub items: BarItems,
     /// Padded thumbnail or full-height edge artwork. The mini player keeps its
@@ -236,6 +273,7 @@ impl Default for PlayerBarConfig {
             scroll_volume: true,
             mini_follows_bar: true,
             np_visualizer: false,
+            np_visualizer_style: NpVisualizerStyle::Bars,
             items: BarItems::default(),
             artwork_style: BarArtworkStyle::Standard,
         }

@@ -106,3 +106,5 @@ card.size.large = 크게
 np.queue.next_in_queue = 대기열의 다음 곡
 np.queue.next_from = {name}의 다음 곡
 np.queue.next_from_radio = {name} 라디오의 다음 곡
+sound_menu.tooltip = 사운드: 이퀄라이저, 리버브, 프리셋
+sound_menu.settings = 사운드 설정…

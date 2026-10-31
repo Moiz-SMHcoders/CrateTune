@@ -33,6 +33,7 @@ pub mod progress;
 pub mod queue_panel;
 pub mod selection_bar;
 pub mod sidebar;
+pub mod sound_menu;
 pub mod track_row;
 
 use gpui::{

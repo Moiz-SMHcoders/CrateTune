@@ -1,4 +1,6 @@
-//! Equalizer section: on/off, presets, ten ±12 dB bands (applied live).
+//! Equalizer section: on/off, presets, ten ±12 dB bands (applied live), then
+//! the reverb (rooms + wet mix) and one-click sound presets (speed, pitch and
+//! reverb together).
 
 use gpui::{
     AnyElement, Context, IntoElement, ParentElement as _, SharedString, Styled as _, Window, div,
@@ -13,11 +15,13 @@ use gpui_component::{
     tag::Tag,
     v_flex,
 };
-use music_core::EqPreset;
 use music_core::equalizer::GRAPHIC_BANDS_HZ;
+use music_core::{EqPreset, ReverbPreset};
 
 use super::SettingsPanel;
-use super::widgets::{Anchor as _, band_label, note, section_title};
+use super::prefs::{SoundPreset, reverb_title};
+use super::prefs_ui::slider_row_at;
+use super::widgets::{Anchor as _, band_label, group_at, note, section_title};
 
 const SLIDER_HEIGHT: f32 = 150.;
 
@@ -37,7 +41,7 @@ pub(super) fn render(
             Button::new(SharedString::from(format!("preset-{}", preset.name())))
                 .small()
                 .map(|b| if selected { b.primary() } else { b.outline() })
-                .label(preset_title(preset))
+                .label(crate::components::sound_menu::eq_title(preset))
                 .selected(selected)
                 .on_click(
                     cx.listener(move |this, _, window, cx| this.apply_preset(preset, window, cx)),
@@ -132,16 +136,73 @@ pub(super) fn render(
                 .child(bands),
         )
         .child(note(t!("settings.eq.note"), cx))
+        .child(effects(panel, cx))
         .into_any_element()
 }
 
-/// A preset's name in the UI language (`EqPreset::name` is the English id).
-fn preset_title(preset: EqPreset) -> &'static str {
-    match preset {
-        EqPreset::Flat => t!("settings.eq.preset.flat"),
-        EqPreset::Bass => t!("settings.eq.preset.bass"),
-        EqPreset::Vocal => t!("settings.eq.preset.vocal"),
-        EqPreset::Treble => t!("settings.eq.preset.treble"),
-        EqPreset::Loudness => t!("settings.eq.preset.loudness"),
-    }
+/// Reverb and sound presets, under the bands.
+fn effects(panel: &SettingsPanel, cx: &mut Context<SettingsPanel>) -> impl IntoElement {
+    let a = &panel.settings.audio;
+    let rooms = h_flex()
+        .flex_wrap()
+        .gap_1()
+        .children(ReverbPreset::ALL.map(|preset| {
+            let selected = a.reverb == preset;
+            Button::new(SharedString::from(format!("reverb-{}", preset.key())))
+                .small()
+                .map(|b| if selected { b.primary() } else { b.outline() })
+                .label(reverb_title(preset))
+                .selected(selected)
+                .on_click(cx.listener(move |this, _, _, cx| this.set_reverb(preset, cx)))
+        }));
+    let current = SoundPreset::current(a);
+    let sounds = h_flex()
+        .flex_wrap()
+        .gap_1()
+        .children(SoundPreset::ALL.map(|preset| {
+            let selected = current == Some(preset);
+            Button::new(SharedString::from(format!("sound-{}", preset.key())))
+                .small()
+                .map(|b| if selected { b.primary() } else { b.outline() })
+                .label(preset.title())
+                .selected(selected)
+                .on_click(cx.listener(move |this, _, window, cx| {
+                    this.apply_sound_preset(preset, window, cx)
+                }))
+        }));
+    let mix = t!(
+        "settings.reverb.mix_value",
+        percent = (a.reverb_mix * 100.).round() as u32
+    );
+    v_flex()
+        .pt_3()
+        .gap_5()
+        .child(
+            group_at("eq.reverb", t!("settings.reverb.title"), cx)
+                .child(div().anchor("eq.reverb.room").child(rooms))
+                .child(
+                    div()
+                        .when(a.reverb == ReverbPreset::Off, |this| this.opacity(0.5))
+                        .child(slider_row_at(
+                            "eq.reverb.mix",
+                            t!("settings.reverb.mix"),
+                            mix,
+                            &panel.prefs.reverb_mix,
+                            cx,
+                        )),
+                )
+                .child(note(t!("settings.reverb.note"), cx)),
+        )
+        .child(
+            group_at("eq.sound_presets", t!("settings.sound.title"), cx)
+                .child(
+                    h_flex()
+                        .gap_2()
+                        .child(sounds)
+                        .when(current.is_none(), |this| {
+                            this.child(Tag::secondary().small().child(t!("common.custom")))
+                        }),
+                )
+                .child(note(t!("settings.sound.note"), cx)),
+        )
 }
