@@ -54,8 +54,7 @@ The signed manifest's fetch, verification, cache and rollback rules are unit-tes
 in-memory sources, and the relay's `--player-fixes` route has an end-to-end test. Both
 published paths are live (2026-10-31): `raw.githubusercontent.com/<UPDATE_REPO>/main/packaging/`
 and the mirror at `relay.smhcoders.click/player-fixes.json` (byte-identical, refreshed by
-`~/cratetune-relay/fetch-player-fixes.sh` on dev.home; an hourly cron entry for it is still
-to be added by the maintainer). Still to do: publish a real fix (serial 2) and watch a running
+`~/cratetune-relay/fetch-player-fixes.sh` on dev.home, hourly by cron). Still to do: publish a real fix (serial 2) and watch a running
 app pick it up from each path. Details:
 [RELEASING.md](RELEASING.md#player-fixes-packagingplayer-fixesjson). · Size: small ·
 Priority: medium
