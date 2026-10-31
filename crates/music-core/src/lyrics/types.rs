@@ -191,6 +191,62 @@ impl LineExtras {
     }
 }
 
+/// Within this many seconds of the playing track, a provider's match is the same
+/// recording ([`DurationFit::Exact`]); further off it is another cut (radio edit,
+/// extended mix, live version) whose timings drift.
+pub const EXACT_DURATION_SECS: f64 = 2.0;
+
+/// What a provider matched the query with, when it says: the candidate's length,
+/// title and artist, or that it looked the lyrics up by video id.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct MatchInfo {
+    /// Length of the matched recording, in seconds.
+    pub duration_secs: Option<f64>,
+    pub title: Option<String>,
+    pub artist: Option<String>,
+    /// Found by the YouTube video id: lyrics filed for exactly this upload.
+    pub by_video_id: bool,
+}
+
+impl MatchInfo {
+    pub fn duration(secs: f64) -> Self {
+        Self {
+            duration_secs: (secs.is_finite() && secs > 0.0).then_some(secs),
+            ..Self::default()
+        }
+    }
+
+    pub fn video_id() -> Self {
+        Self {
+            by_video_id: true,
+            ..Self::default()
+        }
+    }
+
+    pub fn with_names(mut self, title: Option<&str>, artist: Option<&str>) -> Self {
+        let clean = |s: Option<&str>| {
+            s.map(str::trim)
+                .filter(|s| !s.is_empty())
+                .map(str::to_owned)
+        };
+        self.title = clean(title);
+        self.artist = clean(artist);
+        self
+    }
+}
+
+/// How a result's recording length compares with the playing track's. Ordered
+/// worst first, so `max` picks the better fit.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum DurationFit {
+    /// The provider matched a recording of another length (a different cut).
+    Different,
+    /// Not known: the track or the provider has no length.
+    Unknown,
+    /// Within [`EXACT_DURATION_SECS`] of the track, or looked up by video id.
+    Exact,
+}
+
 /// One provider's lyrics, parsed.
 #[derive(Debug, Clone, PartialEq)]
 pub struct LyricsResult {
@@ -209,9 +265,75 @@ pub struct LyricsResult {
     /// The provider payload this was parsed from (what a cache should store).
     pub raw: String,
     pub format: LyricsFormat,
+    /// What the provider matched (length, names), as far as it or the payload says.
+    pub matched: MatchInfo,
 }
 
 impl LyricsResult {
+    /// Adds what the provider knows about its match; fields it leaves empty keep
+    /// what the payload declared (a TTML `dur`, an LRC `[length:]`).
+    pub fn with_match(mut self, info: MatchInfo) -> Self {
+        let m = &mut self.matched;
+        m.duration_secs = info.duration_secs.or(m.duration_secs);
+        m.title = info.title.or(m.title.take());
+        m.artist = info.artist.or(m.artist.take());
+        m.by_video_id |= info.by_video_id;
+        self
+    }
+
+    /// How well the matched recording's length fits `query`'s track.
+    pub fn duration_fit(&self, query: &LyricsQuery) -> DurationFit {
+        if self.matched.by_video_id {
+            return DurationFit::Exact;
+        }
+        match (
+            query.duration_secs.filter(|&d| d > 0),
+            self.matched.duration_secs,
+        ) {
+            (Some(ours), Some(theirs)) => {
+                if (theirs - f64::from(ours)).abs() <= EXACT_DURATION_SECS {
+                    DurationFit::Exact
+                } else {
+                    DurationFit::Different
+                }
+            }
+            // Synced lyrics still singing after the track ended belong to a longer cut.
+            (Some(ours), None)
+                if self
+                    .synced
+                    .as_ref()
+                    .and_then(|l| l.lines.last())
+                    .is_some_and(|l| {
+                        l.start.as_secs_f64() > f64::from(ours) + EXACT_DURATION_SECS
+                    }) =>
+            {
+                DurationFit::Different
+            }
+            _ => DurationFit::Unknown,
+        }
+    }
+
+    /// How closely the matched title and artist resemble `query`'s, 0..=1 (1 when
+    /// the provider does not say: it searched with the query's own names).
+    pub fn name_match(&self, query: &LyricsQuery) -> f64 {
+        use super::providers::string_similarity;
+        let score = |theirs: &Option<String>, ours: &str| {
+            theirs.as_deref().map(|t| {
+                let (t, o) = (base_title(t), base_title(ours));
+                string_similarity(&t, &o)
+            })
+        };
+        match (
+            score(&self.matched.title, &query.title),
+            score(&self.matched.artist, &query.artist),
+        ) {
+            (None, None) => 1.0,
+            (Some(t), None) => t,
+            (None, Some(a)) => a,
+            (Some(t), Some(a)) => (t * 2.0 + a) / 3.0,
+        }
+    }
+
     pub fn sync_kind(&self) -> SyncKind {
         match &self.synced {
             Some(l) if l.word_synced => SyncKind::Word,
@@ -345,6 +467,42 @@ pub(crate) fn synthesize_words(text: &str, start: Duration, end: Duration) -> Ve
         .collect()
 }
 
+/// A title or artist without bracketed asides ("(feat. …)", "[Remastered]",
+/// "- Radio Edit"), lowercased, for comparing names across catalogues.
+pub(crate) fn base_title(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    let mut depth = 0usize;
+    for c in s.chars() {
+        match c {
+            '(' | '[' | '（' | '【' => depth += 1,
+            ')' | ']' | '）' | '】' => depth = depth.saturating_sub(1),
+            _ if depth == 0 => out.push(c),
+            _ => {}
+        }
+    }
+    let cut = out.find(" - ").map_or(out.as_str(), |i| &out[..i]);
+    cut.split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .to_lowercase()
+}
+
+/// Moves every line and word by `delta_ms` (negative = earlier), clamped at zero.
+pub(crate) fn shift_lyrics(lyrics: &mut Lyrics, delta_ms: i64) {
+    let shift = |t: &mut Duration| {
+        let moved = t.as_millis() as i64 + delta_ms;
+        *t = ms(moved);
+    };
+    for line in &mut lyrics.lines {
+        shift(&mut line.start);
+        shift(&mut line.end);
+        for w in &mut line.words {
+            shift(&mut w.start);
+            shift(&mut w.end);
+        }
+    }
+}
+
 pub(crate) fn ms(v: i64) -> Duration {
     Duration::from_millis(v.max(0) as u64)
 }
@@ -392,5 +550,51 @@ mod tests {
         };
         assert!(q.duration_matches(209.0, 2));
         assert!(LyricsQuery::new("t", "a").duration_matches(1.0, 0));
+    }
+
+    #[test]
+    fn duration_fit_and_names() {
+        use super::super::LyricsResult;
+        let q = LyricsQuery::new("Alors on danse (Radio Edit)", "Stromae").with_duration(208);
+        let lrc = "[00:01.00]a\n[00:02.00]b";
+        let r = |info: MatchInfo| {
+            LyricsResult::parse("x", lrc, None)
+                .unwrap()
+                .with_match(info)
+        };
+        assert_eq!(
+            r(MatchInfo::duration(209.9)).duration_fit(&q),
+            DurationFit::Exact
+        );
+        assert_eq!(
+            r(MatchInfo::duration(210.5)).duration_fit(&q),
+            DurationFit::Different
+        );
+        assert_eq!(
+            r(MatchInfo::default()).duration_fit(&q),
+            DurationFit::Unknown
+        );
+        assert_eq!(
+            r(MatchInfo::video_id()).duration_fit(&q),
+            DurationFit::Exact
+        );
+        // Without a track length nothing can be said.
+        let no_len = LyricsQuery::new("Alors on danse", "Stromae");
+        assert_eq!(
+            r(MatchInfo::duration(500.0)).duration_fit(&no_len),
+            DurationFit::Unknown
+        );
+        // Lyrics still going after the track ended come from a longer cut.
+        let long = LyricsResult::parse("x", "[00:01.00]a\n[03:40.00]b", None).unwrap();
+        assert_eq!(long.duration_fit(&q), DurationFit::Different);
+        // Names compare without asides.
+        assert_eq!(
+            base_title("Alors on danse (Radio Edit) - Remastered"),
+            "alors on danse"
+        );
+        let named = r(MatchInfo::default().with_names(Some("Alors On Danse"), Some("Stromae")));
+        assert!(named.name_match(&q) > 0.99);
+        let other = r(MatchInfo::default().with_names(Some("Papaoutai"), Some("Stromae")));
+        assert!(other.name_match(&q) < 0.6);
     }
 }

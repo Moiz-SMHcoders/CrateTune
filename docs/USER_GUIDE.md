@@ -246,6 +246,22 @@ own AI endpoint) and romanization (Japanese, Korean, Chinese, Hindi, Cyrillic, �
 Settings → Lyrics. A song is translated once per language and kept, so opening it again
 doesn't wait for the translator.
 
+**Which lyrics you get.** The fastest, most reliable sources are asked first, all at once
+(BetterLyrics, LRCLIB, SimpMusic, …); the others only if those have no good synced lyrics.
+Lyrics made for the same recording as the song — within 2 seconds of its length — are
+preferred, so a radio edit, extended mix or live version doesn't drift out of step. The
+label above the lyrics says where they come from ("Lyrics from LrcLib · Line-synced").
+Click it to see **Sources tried**: every source in the order it was asked, what it had
+("Word-synced · same length", "Not found", "Slower · stopped", "Not asked", …) and how long it
+took. Click another source to use its lyrics for this song instead — the app remembers your
+choice for the song; **Automatic (best match)** goes back to the app's pick, and **Search all
+sources again** asks everyone again. Both behaviours can be switched off in Settings → Lyrics
+→ Providers (*Match the track's exact length*, *Ask sources in waves*).
+
+**Lyrics a little early or late?** For synced lyrics, the **−** and **+** buttons above them
+move this song's lyrics 0.1 s earlier or later; the value between them (for example
+"+0.3 s") resets it. The nudge is remembered for the song only.
+
 **Kanji in Japanese romanization** need a dictionary: Settings → Lyrics → Romanization →
 **Kanji readings** → Download (10.5 MB, about 45 MB on disk; it also starts when you turn
 Japanese romanization on). Until it is there, only kana are romanized and kanji stay as

@@ -78,7 +78,7 @@ repository root.
 | `src/lyrics/ttml.rs` | `lyrics/betterlyrics/.../betterlyrics/TTMLParser.kt` | `roxmltree` instead of the JDK DOM (DTDs rejected); undeclared prefixes declared generically; output mapped to `Lyrics` + `LineExtras` (background vocals as their own timed line, untimed spans slotted between timed neighbours); Apple's syllable-spaced Korean transliteration rejoined. |
 | `src/lyrics/qrc.rs` | `lyrics/betterlyrics/.../betterlyrics/QRCParser.kt` | `LyricContent` ends at the element's closing quote (unescaped quotes in the wild); more credit-line keywords (English "… by", engineers, CJK credits). |
 | `src/lyrics/format.rs`, `src/lyrics/lrc.rs` (parts) | `app/.../lyrics/LyricsUtils.kt` (normalization, format detection, translation merge of duplicated LRC stamps) | Folded into the existing LRC parser; blank stamps end lines. |
-| `src/lyrics/service.rs` | `app/.../lyrics/LyricsHelper.kt`, `LyricsProviderSettings.kt`, `constants/PreferenceKeys.kt` (`DefaultLyricsProviderOrder`) | Threads + channel instead of coroutines; main-thread dispatch so a sequential run can stop early; per-provider timeouts; caching delegated to a `LyricsCache` hook; `priority_grace` default 2 s (upstream 350 ms). |
+| `src/lyrics/service.rs` | `app/.../lyrics/LyricsHelper.kt`, `LyricsProviderSettings.kt`, `constants/PreferenceKeys.kt` (`DefaultLyricsProviderOrder`) | Threads + channel instead of coroutines; main-thread dispatch so a sequential run can stop early; per-provider timeouts; caching delegated to a `LyricsCache` hook; `priority_grace` default 300 ms (upstream 350 ms) now that providers are asked in waves (see below). |
 | `src/lyrics/providers/lrclib.rs` | `lyrics/lrclib/.../lrclib/LrcLib.kt` | Exact `/api/get` before `/api/search`. |
 | `src/lyrics/providers/kugou.rs` | `lyrics/kugou/.../kugou/KuGou.kt` (+ models) | String or numeric candidate ids; own base64 decoder. |
 | `src/lyrics/providers/simpmusic.rs` | `lyrics/simpmusic/.../simpmusic/SimpMusicLyrics.kt` | Prefers the word-synced `richSyncLyrics`; HTML entities decoded. |
@@ -93,6 +93,29 @@ repository root.
 | `src/lyrics/romanize/japanese.rs` | `app/.../lyrics/LyricsUtils.kt` (`KANA_ROMAJI_MAP`, `katakanaToRomaji`, `romanizeJapanese`) | Hiragana handled directly; extra digraphs; ー repeats the vowel; in-token sokuon; lindera instead of Kuromoji (feature `japanese-dict`). |
 | `src/lyrics/romanize/korean.rs` | `app/.../lyrics/LyricsUtils.kt` (`HANGUL_ROMAJA_MAP`, `romanizeKorean`) | Index tables; context forms replace final + next initial; silent ㅎ before vowels; ㅢ → ui. |
 | `src/lyrics/romanize/mod.rs` | `app/.../lyrics/LyricsUtils.kt` (script detection, provided-romanization preference) | `pinyin`/`deunicode` and own tables instead of ICU `Any-Latin`. |
+
+## Zuno and Limusic (feat/lyrics-race)
+
+Two lyrics ideas come from other desktop YouTube Music clients; the code was written for
+this project in Rust, following their approach (no file was copied):
+
+* **Zuno** (<https://github.com/noFAYZ/zuno>, © noFAYZ, Apache License 2.0, reference commit
+  `1fa9a96`): asking lyric sources in waves (fast, trusted sources raced first, the rest only
+  without a usable result), the per-source attempt log shown in the UI, a preferred source that
+  joins the first wave, and the per-track timing nudge. Apache-2.0 is compatible with this
+  project's GPL-3.0.
+* **Limusic** (<https://github.com/SimoHypers/limusic>, © SimoHypers, GPL-3.0, reference commit
+  `d82372c`): matching search hits on the playing cut's length (closest within a tolerance,
+  unknown lengths last but kept, `best_by_duration`), cancelling providers still in flight
+  once a hit is in, and per-song choices that survive a change of the provider order
+  (`choose_source`, `set_offset`).
+
+| music-core file | Upstream file(s) | What was adapted |
+|---|---|---|
+| `src/lyrics/service.rs` (waves, `SourceAttempt`, `SearchOptions::pinned`, cancellation) | Zuno `src/datasource/youtube/lyricsSources.ts` (`LYRICS_SOURCES` waves, `planLyricsWaves`, `pickBestLyrics`, `skippedAttempt`, `sortAttempts`), `src/datasource/youtube/YouTubeMusicDataSource.ts` (`fetchSyncedLyrics`, `runLyricsSource`); Limusic `src-tauri/src/lyrics.rs` (`fetch`: dropping the in-flight answers on a hit) | Waves per provider (`ProviderId::default_wave`, timed on real tracks) instead of a fixed table; a wave also ends after `wave_timeout`, its slow providers keep running beside the next; results ranked (pinned, synced, length fit, names, word timing, priority) rather than by table rank alone; cancellation through a per-thread flag checked before each HTTP request. |
+| `src/lyrics/types.rs` (`MatchInfo`, `DurationFit`, `EXACT_DURATION_SECS`), `src/lyrics/format.rs` (`declared_length`) | Limusic `src-tauri/src/lyrics.rs` (`best_by_duration`, `MATCH_TOLERANCE_SECS`, `kpoe_to_lyrics` length check) | Providers report the matched recording's length (or a video-id lookup); payload lengths (TTML `<body dur>`, LRC `[length:]`) fill the gaps; ±2 s counts as the same cut; lyrics singing past the track's end count as a longer cut. |
+| `src/lyrics/providers/binimum.rs` (`ranked_lyrics_urls`), `lrclib.rs`, `kugou.rs`, `simpmusic.rs`, `unison.rs`, `youtube.rs` (match info) | Limusic `src-tauri/src/lyrics.rs` (`best_by_duration`, `lrclib_search_by`) | The same cut first, then word timing; each provider passes on the length / names of the candidate it picked. |
+| `src/lyrics/lrc.rs` (`[offset:]`) | — (LRC convention) | Positive offsets show lyrics sooner. |
 
 ## ArchiveTune (feat/playback)
 

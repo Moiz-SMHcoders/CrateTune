@@ -88,10 +88,12 @@ Google's privacy policy applies: <https://policies.google.com/privacy>.
 
 ### Lyrics providers
 
-When a song starts, CrateTune asks the lyrics providers for it (several at once, in the order
-set in Settings → Lyrics → *Providers*). Each enabled provider receives the song's **title,
+When a song starts, CrateTune asks the lyrics providers for it, a few at a time: the fastest
+ones first, the others only if those find nothing good (*Ask sources in waves*), in the order
+set in Settings → Lyrics → *Providers*. Each provider asked receives the song's **title,
 artist, album and length**; some receive its **YouTube video id** instead. Nothing about you
-is sent. Found lyrics are cached on your computer, so a song is looked up once.
+is sent. Found lyrics are cached on your computer, so a song is looked up once; a source you
+pick for a song and your timing nudges are kept in `lyrics-tracks.json` next to the settings.
 
 | Provider | Host | Receives |
 |---|---|---|

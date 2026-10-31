@@ -7,7 +7,7 @@ use regex::Regex;
 use serde_json::Value;
 
 use super::{LyricsProvider, expect_ok, http_get, require_title_artist};
-use crate::lyrics::{LyricsQuery, LyricsResult};
+use crate::lyrics::{LyricsQuery, LyricsResult, MatchInfo};
 use crate::{Error, Result};
 
 const PAGE_SIZE: &str = "8";
@@ -36,7 +36,7 @@ impl LyricsProvider for KuGou {
             return Ok(None);
         };
         let keyword = format!("{} - {}", normalize_title(title), normalize_artist(artist));
-        let Some((id, key)) = self.candidate(&keyword, query)? else {
+        let Some((id, key, matched)) = self.candidate(&keyword, query)? else {
             return Ok(None);
         };
         let resp = http_get(
@@ -53,12 +53,17 @@ impl LyricsProvider for KuGou {
             query.timeout,
         )?;
         let lrc = decode_download(&expect_ok(resp, "kugou download")?.json()?)?;
-        Ok(LyricsResult::parse(self.name(), lrc, query.duration_secs))
+        Ok(LyricsResult::parse(self.name(), lrc, query.duration_secs)
+            .map(|r| r.with_match(matched)))
     }
 }
 
 impl KuGou {
-    fn candidate(&self, keyword: &str, query: &LyricsQuery) -> Result<Option<(String, String)>> {
+    fn candidate(
+        &self,
+        keyword: &str,
+        query: &LyricsQuery,
+    ) -> Result<Option<(String, String, MatchInfo)>> {
         let songs = http_get(
             "https://mobileservice.kugou.com/api/v3/search/song",
             &[
@@ -129,15 +134,22 @@ pub(crate) fn matching_hashes(songs: &Value, query: &LyricsQuery) -> Vec<String>
         .unwrap_or_default()
 }
 
-/// `(id, accesskey)` of the first lyrics candidate (ids come as numbers or strings).
-pub(crate) fn first_candidate(resp: &Value) -> Option<(String, String)> {
+/// `(id, accesskey, match)` of the first lyrics candidate (ids come as numbers or
+/// strings; `duration` is in milliseconds).
+pub(crate) fn first_candidate(resp: &Value) -> Option<(String, String, MatchInfo)> {
     let c = resp.get("candidates")?.as_array()?.first()?;
     let id = match c.get("id")? {
         Value::String(s) => s.clone(),
         Value::Number(n) => n.to_string(),
         _ => return None,
     };
-    Some((id, c.get("accesskey")?.as_str()?.to_owned()))
+    let matched =
+        MatchInfo::duration(c.get("duration").and_then(Value::as_f64).unwrap_or(0.0) / 1000.0)
+            .with_names(
+                c.get("song").and_then(Value::as_str),
+                c.get("singer").and_then(Value::as_str),
+            );
+    Some((id, c.get("accesskey")?.as_str()?.to_owned(), matched))
 }
 
 pub(crate) fn decode_download(resp: &Value) -> Result<String> {
@@ -220,9 +232,11 @@ mod tests {
         let q = LyricsQuery::new("Instant Crush", "Daft Punk").with_duration(337);
         let hashes = matching_hashes(&json("kugou_song_search.json"), &q);
         assert_eq!(hashes.len(), 3); // 337, 337, 334 — not the 230 s Starboy
-        let (id, key) = first_candidate(&json("kugou_lyrics_search.json")).unwrap();
+        let (id, key, matched) = first_candidate(&json("kugou_lyrics_search.json")).unwrap();
         assert_eq!(id, "133543278");
         assert_eq!(key.len(), 32);
+        assert_eq!(matched.duration_secs, Some(337.606));
+        assert_eq!(matched.title.as_deref(), Some("Instant Crush"));
         let lrc = decode_download(&json("kugou_download.json")).unwrap();
         // Credits ("Lyrics by：…") and the title line are filtered when parsing.
         let r = LyricsResult::parse("Kugou", lrc, Some(337)).unwrap();

@@ -96,6 +96,11 @@ struct HeaderSnap {
 #[derive(Clone, PartialEq)]
 struct ToolbarSnap {
     label: SharedString,
+    /// The "sources tried" menu behind the label.
+    sources: Arc<crate::np_lyrics::SourcesSnap>,
+    /// Synced lyrics: the timing nudge controls show.
+    synced: bool,
+    offset_ms: i32,
     translate: bool,
     /// "Translating…" / the failure, and whether it failed (Retry).
     status: Option<(String, bool)>,
@@ -1293,6 +1298,9 @@ impl MusicApp {
         frame: &mut Frame,
     ) -> Option<(Option<String>, Option<String>)> {
         let mut next_start = None;
+        let position = track.map_or(position, |t| {
+            self.lyrics.lyrics_position(&t.video_id, position)
+        });
         let current = track.and_then(|t| match self.lyrics.states.get(&t.video_id) {
             Some(LyricsState::Ready(p)) => p.synced.as_ref().map(|l| {
                 let i = l.lines.partition_point(|line| line.start <= position);
@@ -1436,7 +1444,10 @@ impl MusicApp {
             SyncKind::Plain => t!("lyrics.kind.plain"),
         };
         let toolbar_state = ToolbarSnap {
-            label: t!("lyrics.source", provider = prepared.provider, kind = kind).into(),
+            label: t!("lyrics.from", provider = prepared.provider, kind = kind).into(),
+            sources: self.sources_snap(&track.video_id, &prepared.provider),
+            synced: prepared.synced.is_some(),
+            offset_ms: self.lyrics.tracks.offset_ms(&track.video_id),
             translate: display.translate,
             status: translation_status,
             can_share: prepared.synced.is_some() || !prepared.plain.is_empty(),
@@ -1452,6 +1463,8 @@ impl MusicApp {
         )
         .cached(StyleRefinement::default().w_full().h(px(32.)).flex_none());
 
+        // The track's timing nudge: lyrics time runs that far behind (or ahead).
+        let position = self.lyrics.lyrics_position(&track.video_id, position);
         let body = if prepared.synced.is_some() {
             self.synced_lines(
                 track,
@@ -1520,7 +1533,15 @@ impl MusicApp {
             .gap_2()
             .text_xs()
             .text_color(white(0.5))
-            .child(div().flex_1().min_w_0().truncate().child(s.label.clone()))
+            .child(
+                // A row, so the button keeps its own width (left-aligned, not stretched).
+                h_flex().flex_1().min_w_0().overflow_hidden().child(
+                    crate::np_lyrics::source_button(s.label.clone(), s.sources.clone()),
+                ),
+            )
+            .when(s.synced, |this| {
+                this.child(crate::np_lyrics::nudge_controls(s.offset_ms))
+            })
             .when_some(s.status.clone(), |this, (text, failed)| {
                 this.child(
                     div()

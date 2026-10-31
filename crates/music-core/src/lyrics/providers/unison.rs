@@ -6,7 +6,7 @@ use serde_json::Value;
 
 use super::{LyricsProvider, http_get, require_title_artist};
 use crate::Result;
-use crate::lyrics::{LyricsQuery, LyricsResult};
+use crate::lyrics::{LyricsQuery, LyricsResult, MatchInfo};
 
 const BASE: &str = "https://unison.boidu.dev/";
 const MAX_RESULTS: usize = 5;
@@ -61,7 +61,8 @@ impl LyricsProvider for Unison {
         };
         Ok(self
             .by_path("lyrics", &[("v", video_id)], query)?
-            .and_then(|l| LyricsResult::parse(self.name(), l, query.duration_secs)))
+            .and_then(|l| LyricsResult::parse(self.name(), l, query.duration_secs))
+            .map(|r| r.with_match(MatchInfo::video_id())))
     }
 }
 

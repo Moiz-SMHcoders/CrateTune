@@ -364,9 +364,33 @@ if let Some(result) = service.fetch(&LyricsQuery::from_track(&track))? {
   (`LyricsResult::is_instrumental`); one such answer vetoes line-synced / plain results from
   other providers (for an instrumental they are another song or a fan-written poem), while
   word-synced lyrics still win.
-* Selection: providers run concurrently (`max_concurrent`, 1 = one after another); with
-  `prefer_word_synced` a word-synced result beats a line-synced one from a higher-priority
-  provider; otherwise the highest-priority synced result wins; plain text is the fallback.
+* **Waves** (after Zuno): providers are asked in waves (`ProviderId::default_wave`, timed on
+  real tracks). Wave 1 is BetterLyrics, BetterLyrics Portato, LRCLIB and SimpMusic (usually
+  answer in 0.1–0.9 s), plus whichever provider is first in the user's order; wave 2 is
+  Binimum, KuGou, Unison, YouTube Music and the Paxsenix sources; wave 3 is YouLyPlus and
+  Megalobiz (often 10–20 s, or never anything). The next wave starts only when the current one
+  has no *good* result (synced, not another cut, the right names), or once it has run for
+  `wave_timeout` (2.5 s). At most `max_concurrent` (6) requests run at once. Once a good result
+  is in, the search waits `priority_grace` (300 ms, best possible quality) or `quality_grace`
+  (800 ms) for a better one, then cancels what is still running: a per-thread flag makes the
+  provider's remaining HTTP requests fail at once. `waves: false` asks everyone at once.
+* **Ranking** (length first, after Limusic's `best_by_duration`): a pinned provider, then synced
+  over plain, then `DurationFit` — `Exact` (the matched recording is within ±2 s of the track,
+  or the lyrics were looked up by video id) over `Unknown` over `Different` (a radio edit,
+  extended mix or live cut whose timings drift) —, then whether the matched title / artist
+  resemble the track's (asides like "(feat. …)" or "- Remastered" ignored), then word over
+  line timing (`prefer_word_synced`), then the configured order. Providers report what they
+  matched in `LyricsResult::matched` (`MatchInfo`: LRCLIB's record, KuGou's candidate, Binimum's
+  lookup hit, video-id lookups); payloads fill the gaps (Apple TTML `<body dur="3:53.713">`,
+  LRC `[length:]`). Binimum's own candidates are ranked the same way. `match_duration: false`
+  ranks as before. LRC `[offset:±ms]` tags are applied.
+* `LyricsService::search(&query, &SearchOptions { refresh, pinned })` returns a `LyricsSearch`:
+  the pick, the other usable lyrics that arrived (`alternates`, to switch to), and
+  `attempts` — every provider in the order asked with its `AttemptStatus` (found with sync kind
+  and length fit, not found, unusable, instrumental, error, timed out, stopped because slower,
+  not asked) and time. `pinned` names a provider picked for the track: it joins wave 1, its
+  lyrics win, and a cache entry from another provider is skipped. `fetch_from(&query, name)`
+  asks one provider. `fetch` / `refresh` are `search` without options.
 * Translation: `GoogleTranslator` (free endpoint, batched; requests of one translation are
   spaced 400 ms and capped at 12) or `AiTranslator` (any OpenAI-compatible chat-completions
   endpoint; key, model and custom prompt from the caller). A 429 / 503 blocks that endpoint
@@ -402,6 +426,7 @@ cargo run -p music-core --example lyrics -- "daft punk instant crush"     # ever
 cargo run -p music-core --example lyrics -- --translate en "yoasobi idol" # + romanization and translation
 cargo run -p music-core --example lyrics -- --ja-dict /tmp/ja "yoasobi idol" # download IPADIC: kanji readings
 cargo run -p music-core --example lyrics -- --raw /tmp/raw "rosalia malamente" # + every provider's raw payload
+cargo run --release -p music-core --example lyrics_bench -- --service-only --attempts # search times on 12 songs
 ```
 
 ### Full-length YouTube streams (`youtube` module)
@@ -949,9 +974,18 @@ locales/<locale>/*.lang  the catalogs (English = source), embedded by build.rs v
   fonts (kana / hanzi / hangul come from the system's CJK font). Both crates were already
   linked through GPUI.
 * **Lyrics** (`lyrics.rs`): `LyricsService` with the provider order, switches and
-  Paxsenix / BetterLyrics keys from Settings → Lyrics; results cached in memory; the
-  pane shows provider · word-/line-synced/unsynced, a translate toggle and a reload
-  button (searches again, skipping the cache). Real word timings drive the per-word
+  Paxsenix / BetterLyrics keys from Settings → Lyrics (also *Match the track's exact
+  length* and *Ask sources in waves*); results cached in memory; the pane shows
+  "Lyrics from LrcLib · Line-synced", a translate toggle and a reload button (searches
+  again, skipping the cache). The label opens **Sources tried**: every provider in the
+  order asked, with what it did (sync kind and "same length" / "different length", not
+  found, error, timed out, "slower · stopped", not asked) and how long it took; a source
+  whose lyrics arrived switches at once, any other is asked on click, *Automatic* forgets
+  the choice. The choice is remembered per track (`lyrics-tracks.json` in the settings
+  folder; the picked provider joins the first wave of later searches) and stored in the
+  lyrics cache. Synced lyrics get **− / +** buttons that nudge their timing by 0.1 s for
+  this track (remembered, up to ±10 s; the value between them resets it); clicking a line
+  seeks with the nudge taken into account. Real word timings drive the per-word
   fill; line-synced lyrics light the whole line. Background vocals (smaller, italic,
   their own word timings) and duet singers (other side) when the provider has them.
   Romanization line per script (Japanese — kanji readings once the dictionary is
@@ -2088,6 +2122,7 @@ windows/appearance `@mini[=on|off] @theme=dark|black|dynamic
 @np-bg=blur|gradient|solid|glow @mini-style=theme|artwork
 @lyrics-style=karaoke|apple|slide|glow|fade|none @lyrics-size=40 @lyrics-spacing=1.5
 @lyrics-align=left|center|right @translate=on|off @romanize=SCRIPT:on|off @lyrics-reload
+@lyrics-source=NAME|auto @lyrics-nudge=MS|reset @lyrics-sources
 @kanji-dict[=remove|cancel]
 @sleep=MIN|eot|off|5s @speed=1.25 @pitch=-2 @crossfade=6 @quality=low|normal|high
 @normalize=on|off @skip-silence=on|off`; browse `@radio=N` (radio from search result N),
@@ -2980,6 +3015,51 @@ and verified the real IPADIC in ~1.6 s and loaded it; at the next start it was m
 Settings → Lyrics dictionary row and progress bar on screen (rendered, not looked at),
 in-app cancel of a running download (unit-tested; the real download finished first), a
 successful Google translation, Paxsenix / BetterLyrics keys.
+
+### Lyrics sources round: waves, length match, sources tried
+
+| ![Lyrics from SimpMusic · Word-synced, nudged +0.3 s](docs/screenshots/np-lyrics-source.png) | ![Sources tried](docs/screenshots/np-lyrics-sources-tried.png) |
+|---|---|
+
+Ideas from Zuno (waves, attempt log, per-track nudge) and Limusic (closest-length matching,
+cancel on hit, pinned per-song choice); see `THIRD_PARTY.md`. Limusic does not correct
+offsets for slightly different lengths (it only rejects other cuts), so neither do we; LRC
+`[offset:]` tags are applied and the nudge is manual.
+
+**Fetch times** (`examples/lyrics_bench.rs --service-only`, 12 popular songs, no cache, before =
+main `4c06d54`, the two binaries run alternately twice): median 386 / 160 ms before, 135 /
+140 ms after; the before service started 6 providers at once on every song, the after one 4
+(wave 1 only — no song needed wave 2). Per song in the first pass: Instant Crush 819 → 1080 ms
+(before: Portato's QQ lyrics of unknown length; after: SimpMusic, word-synced, same video),
+Shape of You 211 → 129, アイドル 843 → 489, MALAMENTE 461 → 122, Bohemian Rhapsody 140 → 133,
+BIRDS OF A FEATHER 201 → 149, Blinding Lights 368 → 123, Dynamite 386 → 143, Anti-Hero 419 → 122,
+Tití Me Preguntó 438 → 135, Weird Fishes 136 → 121, Alors on danse (Radio Edit) 141 → 162 ms.
+In the app (`MUSIC_TRACE=1`) a search takes 0.4–1.1 s; tracks without a length (search cards)
+first look it up through `next` (~0.4 s), without which the length match cannot work.
+
+**CPU with lyrics open** (release, Now Playing split · blur · Karaoke, real audio at
+`MUSIC_VOLUME=0.0`, window kept visible with `MUSIC_ON_TOP=1`, CPU time / wall time over 40 s
+starting 5 s after playback began, 3 runs each, before and after alternating; the machine was
+shared with other builds, load average 40–120):
+
+| Song (lyrics before → after) | before | after |
+|---|---|---|
+| Shape of You (BetterLyrics, 97 word-synced lines, both) | 8.4 / 9.7 / 8.4 % | 8.8 / 7.7 / 7.5 % |
+| Instant Crush (Binimum 84 → SimpMusic 82 lines) | 5.5 / 5.4 / 6.0 % | 5.6 / 5.8 / 5.6 % |
+| アイドル (YouLyPlus 74 → SimpMusic 76 lines) | 8.8 / 6.9 / 6.7 % | 9.4 / 10.2 / 8.8 % |
+
+Same lyrics, same cost; アイドル differs because the new pick (SimpMusic, same video) has denser
+word timings, so more frames sweep. Per-frame draw cost (`@bench=600`) 0.63–0.72 ms before,
+0.63–0.76 ms after; physical footprint 159–186 MB in both. The toolbar's sources menu is built
+once per change (not per frame) and compared by pointer; prepared lyrics are kept for the last
+12 tracks instead of every track of the session.
+
+**Verified:** the label, menu and nudge on screen (screenshots above, `@click` on the label);
+`@lyrics-source=LrcLib` + `@lyrics-nudge=-200` wrote `lyrics-tracks.json`, and the next launch
+showed LrcLib from the cache, a reload asked wave 1 again with LrcLib pinned and stopped the
+rest; unit tests for duration scoring, waves, cancellation, the request cap, pinned sources
+and the per-track store. **Not verified:** Paxsenix providers (no key), a song where wave 2
+was needed in the app (the bench's 12 songs never needed it; covered by unit tests).
 
 ### Now Playing round: CPU, designs, lyrics cards
 

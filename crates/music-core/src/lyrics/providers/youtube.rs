@@ -7,7 +7,7 @@ use serde_json::{Value, json};
 
 use super::{LyricsProvider, expect_ok, http_post_json};
 use crate::Result;
-use crate::lyrics::{LyricsQuery, LyricsResult};
+use crate::lyrics::{LyricsQuery, LyricsResult, MatchInfo};
 
 const BASE: &str = "https://music.youtube.com/youtubei/v1";
 const CLIENT_NAME: &str = "WEB_REMIX";
@@ -70,7 +70,9 @@ impl LyricsProvider for YouTubeLyrics {
             body["params"] = Value::String(p);
         }
         let browse = self.post("browse", body, query)?;
-        Ok(lyrics_text(&browse).and_then(|t| LyricsResult::parse(self.name(), t, None)))
+        Ok(lyrics_text(&browse)
+            .and_then(|t| LyricsResult::parse(self.name(), t, None))
+            .map(|r| r.with_match(MatchInfo::video_id())))
     }
 }
 

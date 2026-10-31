@@ -1,7 +1,9 @@
 //! The synced lyrics list of the Now Playing screen: Apple-Music-like staggered
 //! auto-scroll, karaoke lines in six animation styles (variants of the
 //! `KaraokeLine` renderer), background vocals, duet sides, romanization and
-//! translation lines, click to seek, and a selection mode for lyric cards.
+//! translation lines, click to seek, and a selection mode for lyric cards; plus
+//! the toolbar's source label with its "sources tried" menu (switch to another
+//! source's lyrics) and the per-track timing nudge.
 //!
 //! It is drawn at display rate while words are swept, so it is built to be cheap
 //! per frame:
@@ -27,14 +29,20 @@ use gpui::{
     ScrollEvent, SharedString, StatefulInteractiveElement as _, Styled as _, TextRun, Window,
     canvas, div, hsla, prelude::FluentBuilder as _, px,
 };
-use gpui_component::v_flex;
-use music_core::lyrics::SyncKind;
+use gpui_component::{
+    IconName, Sizable as _,
+    button::{Button, ButtonVariants as _},
+    h_flex,
+    menu::{DropdownMenu as _, PopupMenuItem},
+    v_flex,
+};
+use music_core::lyrics::{AttemptStatus, DurationFit, SyncKind};
 use music_core::{LyricWord, Track};
 
 use crate::anim::{Frame, Spec, Tween, ease_in_out_cubic, ease_out_cubic};
-use crate::app::MusicApp;
+use crate::app::{MusicApp, update_app};
 use crate::karaoke::{FEATHER, Fill, KaraokeLine};
-use crate::lyrics::PreparedLyrics;
+use crate::lyrics::{OFFSET_STEP_MS, PreparedLyrics};
 use crate::settings::prefs::{LyricsAnimation, LyricsDisplay, TextAlign};
 
 const LINE_ACTIVATE: Spec = Spec::ms(420, ease_in_out_cubic);
@@ -170,6 +178,8 @@ pub struct LyricsList {
     /// Selection mode for a lyrics card: clicks toggle lines instead of seeking.
     pub selecting: bool,
     pub selected: BTreeSet<usize>,
+    /// The toolbar's "sources tried" list and what it was built from.
+    sources: Option<(SnapKey, Arc<SourcesSnap>)>,
 }
 
 impl LyricsList {
@@ -189,6 +199,7 @@ impl LyricsList {
             bounds: Rc::default(),
             selecting: false,
             selected: BTreeSet::new(),
+            sources: None,
         }
     }
 
@@ -691,7 +702,12 @@ impl MusicApp {
                         this.np.list.toggle_selected(row);
                         cx.notify();
                     } else if let Some(start) = this.synced_line_start(row) {
-                        this.seek_to(start, cx);
+                        // Lyrics time → playback time (the track's nudge undone).
+                        let at =
+                            this.playback.track.as_ref().map_or(start, |t| {
+                                this.lyrics.playback_position(&t.video_id, start)
+                            });
+                        this.seek_to(at, cx);
                     }
                 }),
             )
@@ -709,6 +725,328 @@ impl MusicApp {
             _ => None,
         }
     }
+}
+
+// ---- source label, "sources tried" menu, timing nudge -----------------------
+
+/// How a "sources tried" row reads at a glance (its dot).
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Tone {
+    Found,
+    /// Found, but another cut (a different length).
+    Off,
+    Miss,
+    Error,
+    Skipped,
+}
+
+/// What clicking a row does.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) enum RowAction {
+    /// Show this source's lyrics (already fetched).
+    Switch,
+    /// Ask this source now.
+    Try,
+    None,
+}
+
+#[derive(Clone, PartialEq, Eq)]
+pub(crate) struct SourceRow {
+    pub provider: SharedString,
+    pub status: SharedString,
+    pub elapsed: Option<SharedString>,
+    pub tone: Tone,
+    pub current: bool,
+    pub action: RowAction,
+}
+
+/// What a cached [`SourcesSnap`] was built from.
+pub(crate) struct SnapKey {
+    video_id: String,
+    shown: String,
+    revision: u64,
+    pinned: bool,
+    language: u32,
+}
+
+/// The "sources tried" list as the toolbar shows it (part of its snapshot; `Eq`, so
+/// an unchanged `Arc` compares by pointer).
+#[derive(Clone, PartialEq, Eq, Default)]
+pub(crate) struct SourcesSnap {
+    pub rows: Vec<SourceRow>,
+    /// The lyrics came from the cache: nothing was asked this time.
+    pub from_cache: bool,
+    /// The shown source was picked by hand for this track.
+    pub pinned: bool,
+    /// Total search time.
+    pub elapsed: Option<SharedString>,
+    /// A source being asked on request.
+    pub trying: Option<SharedString>,
+}
+
+fn status_text(status: &AttemptStatus) -> (SharedString, Tone) {
+    let (text, tone): (String, Tone) = match status {
+        AttemptStatus::Found { sync, fit } => {
+            let kind = match sync {
+                SyncKind::Word => t!("lyrics.kind.word"),
+                SyncKind::Line => t!("lyrics.kind.line"),
+                SyncKind::Plain => t!("lyrics.kind.plain"),
+            };
+            let (length, tone) = match (sync, fit) {
+                (SyncKind::Plain, _) => (None, Tone::Found),
+                (_, DurationFit::Exact) => (Some(t!("lyrics.fit.exact")), Tone::Found),
+                (_, DurationFit::Unknown) => (None, Tone::Found),
+                (_, DurationFit::Different) => (Some(t!("lyrics.fit.different")), Tone::Off),
+            };
+            let text = match length {
+                Some(l) => t!("lyrics.sources.found", kind = kind, length = l),
+                None => kind.to_owned(),
+            };
+            (text, tone)
+        }
+        AttemptStatus::NotFound => (t!("lyrics.status.not_found").into(), Tone::Miss),
+        AttemptStatus::Unusable => (t!("lyrics.status.unusable").into(), Tone::Miss),
+        AttemptStatus::Instrumental => (t!("lyrics.status.instrumental").into(), Tone::Miss),
+        AttemptStatus::Failed(_) => (t!("lyrics.status.failed").into(), Tone::Error),
+        AttemptStatus::TimedOut => (t!("lyrics.status.timed_out").into(), Tone::Error),
+        AttemptStatus::Stopped => (t!("lyrics.status.stopped").into(), Tone::Skipped),
+        AttemptStatus::NotAsked => (t!("lyrics.status.not_asked").into(), Tone::Skipped),
+    };
+    (text.into(), tone)
+}
+
+fn millis(d: Duration) -> SharedString {
+    t!(
+        "lyrics.sources.ms",
+        ms = crate::i18n::format::number(d.as_millis() as u64)
+    )
+    .into()
+}
+
+/// `+0.3 s`, `−1.2 s`.
+pub(crate) fn offset_label(offset_ms: i32) -> String {
+    let sign = if offset_ms > 0 { "+" } else { "\u{2212}" };
+    let value = crate::i18n::format::decimal(f64::from(offset_ms.unsigned_abs()) / 1000.0, 1);
+    t!("lyrics.offset.value", offset = format!("{sign}{value}"))
+}
+
+impl MusicApp {
+    /// The "sources tried" list for `video_id`, with the shown provider marked.
+    /// Built once per change (the toolbar asks every frame while lyrics animate).
+    pub(crate) fn sources_snap(&mut self, video_id: &str, shown: &str) -> Arc<SourcesSnap> {
+        let pinned = self.lyrics.tracks.source(video_id) == Some(shown);
+        let revision = self
+            .lyrics
+            .sources_for(video_id)
+            .map_or(0, |info| info.revision);
+        let language = crate::i18n::generation();
+        if let Some((key, snap)) = &self.np.list.sources
+            && key.video_id == video_id
+            && key.shown == shown
+            && key.revision == revision
+            && key.pinned == pinned
+            && key.language == language
+        {
+            return snap.clone();
+        }
+        let snap = Arc::new(self.build_sources_snap(video_id, shown, pinned));
+        let key = SnapKey {
+            video_id: video_id.to_owned(),
+            shown: shown.to_owned(),
+            revision,
+            pinned,
+            language,
+        };
+        self.np.list.sources = Some((key, snap.clone()));
+        snap
+    }
+
+    fn build_sources_snap(&self, video_id: &str, shown: &str, pinned: bool) -> SourcesSnap {
+        let Some(info) = self.lyrics.sources_for(video_id) else {
+            return SourcesSnap {
+                pinned,
+                ..SourcesSnap::default()
+            };
+        };
+        let rows = info
+            .attempts
+            .iter()
+            .map(|a| {
+                let current = a.provider == shown;
+                let trying = info.trying.as_deref() == Some(a.provider.as_str());
+                let (status, tone) = if trying {
+                    (
+                        SharedString::from(t!("lyrics.status.trying")),
+                        Tone::Skipped,
+                    )
+                } else {
+                    status_text(&a.status)
+                };
+                let fetched = info.found.iter().any(|r| r.provider == a.provider);
+                let action = if current || trying {
+                    RowAction::None
+                } else if fetched {
+                    RowAction::Switch
+                } else if matches!(
+                    a.status,
+                    AttemptStatus::NotAsked
+                        | AttemptStatus::Stopped
+                        | AttemptStatus::TimedOut
+                        | AttemptStatus::Failed(_)
+                ) {
+                    RowAction::Try
+                } else {
+                    RowAction::None
+                };
+                SourceRow {
+                    provider: a.provider.clone().into(),
+                    status,
+                    elapsed: a.elapsed.filter(|_| !trying).map(millis),
+                    tone,
+                    current,
+                    action,
+                }
+            })
+            .collect();
+        SourcesSnap {
+            rows,
+            from_cache: info.from_cache,
+            pinned,
+            elapsed: (!info.from_cache).then(|| millis(info.elapsed)),
+            trying: info.trying.clone().map(Into::into),
+        }
+    }
+}
+
+fn tone_color(tone: Tone) -> Hsla {
+    match tone {
+        Tone::Found => hsla(140. / 360., 0.55, 0.55, 1.),
+        Tone::Off => hsla(40. / 360., 0.85, 0.6, 1.),
+        Tone::Miss => white(0.35),
+        Tone::Error => hsla(0., 0.7, 0.62, 1.),
+        Tone::Skipped => white(0.18),
+    }
+}
+
+/// "Lyrics from LrcLib · Line-synced ▾": opens the "sources tried" menu, where
+/// another source's lyrics can be picked for the track (remembered), or the
+/// automatic pick restored.
+pub(crate) fn source_button(label: SharedString, sources: Arc<SourcesSnap>) -> AnyElement {
+    Button::new("np-lyrics-source")
+        .ghost()
+        .xsmall()
+        .label(label)
+        .icon(IconName::ChevronDown)
+        .tooltip(t!("lyrics.sources.tooltip"))
+        .dropdown_menu(move |mut menu, _, _| {
+            let sources = &sources;
+            menu = menu.min_w(px(320.)).max_h(px(460.)).scrollable(true);
+            menu = menu.label(match (&sources.elapsed, sources.from_cache) {
+                (_, true) => SharedString::from(t!("lyrics.sources.cached")),
+                (Some(ms), false) => t!("lyrics.sources.title_in", time = ms).into(),
+                (None, false) => t!("lyrics.sources.title").into(),
+            });
+            for row in &sources.rows {
+                let r = row.clone();
+                let provider = row.provider.to_string();
+                let item = PopupMenuItem::element(move |_, _| {
+                    h_flex()
+                        .w_full()
+                        .gap_2()
+                        .items_center()
+                        .child(
+                            div()
+                                .size(px(7.))
+                                .flex_none()
+                                .rounded_full()
+                                .bg(tone_color(r.tone)),
+                        )
+                        .child(
+                            v_flex()
+                                .flex_1()
+                                .min_w_0()
+                                .child(div().text_sm().truncate().child(r.provider.clone()))
+                                .child(
+                                    div()
+                                        .text_xs()
+                                        .opacity(0.65)
+                                        .truncate()
+                                        .child(r.status.clone()),
+                                ),
+                        )
+                        .when_some(r.elapsed.clone(), |this, ms| {
+                            this.child(div().text_xs().opacity(0.55).flex_none().child(ms))
+                        })
+                })
+                .checked(row.current)
+                .disabled(row.action == RowAction::None && !row.current)
+                .on_click(move |_, _, cx| {
+                    let provider = provider.clone();
+                    update_app(cx, |app, cx| app.choose_lyrics_source(Some(provider), cx));
+                });
+                menu = menu.item(item);
+            }
+            if sources.rows.is_empty() && !sources.from_cache {
+                menu = menu.label(t!("lyrics.sources.none"));
+            }
+            menu.separator()
+                .item(
+                    PopupMenuItem::new(t!("lyrics.sources.automatic"))
+                        .checked(!sources.pinned)
+                        .on_click(|_, _, cx| {
+                            update_app(cx, |app, cx| app.choose_lyrics_source(None, cx));
+                        }),
+                )
+                .item(
+                    PopupMenuItem::new(t!("lyrics.sources.search_again")).on_click(|_, _, cx| {
+                        update_app(cx, |app, cx| app.reload_lyrics(cx));
+                    }),
+                )
+        })
+        .into_any_element()
+}
+
+/// `−` / nudge / `+` for synced lyrics: moves the track's lyrics 0.1 s earlier or
+/// later (remembered per track); the value resets it.
+pub(crate) fn nudge_controls(offset_ms: i32) -> AnyElement {
+    let step = OFFSET_STEP_MS;
+    h_flex()
+        .gap_0p5()
+        .child(
+            Button::new("np-lyrics-earlier")
+                .ghost()
+                .xsmall()
+                .rounded(px(999.))
+                .icon(IconName::Minus)
+                .tooltip(t!("lyrics.offset.earlier"))
+                .on_click(move |_, _, cx| {
+                    update_app(cx, |app, cx| app.nudge_lyrics(-step, cx));
+                }),
+        )
+        .when(offset_ms != 0, |this| {
+            this.child(
+                Button::new("np-lyrics-nudge")
+                    .ghost()
+                    .xsmall()
+                    .label(offset_label(offset_ms))
+                    .tooltip(t!("lyrics.offset.reset"))
+                    .on_click(|_, _, cx| {
+                        update_app(cx, |app, cx| app.reset_lyrics_nudge(cx));
+                    }),
+            )
+        })
+        .child(
+            Button::new("np-lyrics-later")
+                .ghost()
+                .xsmall()
+                .rounded(px(999.))
+                .icon(IconName::Plus)
+                .tooltip(t!("lyrics.offset.later"))
+                .on_click(move |_, _, cx| {
+                    update_app(cx, |app, cx| app.nudge_lyrics(step, cx));
+                }),
+        )
+        .into_any_element()
 }
 
 #[cfg(test)]

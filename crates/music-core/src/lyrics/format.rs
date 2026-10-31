@@ -11,7 +11,7 @@ use super::credits::{CreditContext, CreditLine, credit_block, is_instrumental_ma
 use super::lrc::{is_line_synced, parse_lrc_detailed, strip_word_tags};
 use super::qrc::{is_qrc, parse_qrc, unescape_xml};
 use super::ttml::{is_ttml, parse_ttml};
-use super::types::{LyricsFormat, LyricsQuery, LyricsResult, collapse_spaces};
+use super::types::{LyricsFormat, LyricsQuery, LyricsResult, MatchInfo, collapse_spaces};
 
 impl LyricsResult {
     /// Parses a raw payload from `provider`. Returns `None` when it holds no
@@ -54,6 +54,7 @@ impl LyricsResult {
                     agents: Vec::new(),
                     raw,
                     format: LyricsFormat::Plain,
+                    matched: MatchInfo::default(),
                 })
                 .and_then(|r| r.strip_credits(&CreditContext::default()));
         };
@@ -61,6 +62,10 @@ impl LyricsResult {
             return None;
         }
         let metadata = metadata_context(&normalized);
+        let matched = MatchInfo {
+            duration_secs: declared_length(&normalized),
+            ..MatchInfo::default()
+        };
         LyricsResult {
             provider,
             plain: Some(synced.plain_text()),
@@ -70,6 +75,7 @@ impl LyricsResult {
             agents,
             raw,
             format,
+            matched,
         }
         .strip_credits(&metadata)
     }
@@ -165,6 +171,34 @@ fn metadata_context(src: &str) -> CreditContext {
         }
     }
     CreditContext::from_metadata(title, artist)
+}
+
+/// The recording length a payload declares, in seconds: TTML `<body dur="3:53.713">`
+/// (Apple Music's lyrics carry the song's length there) or LRC `[length: 03:53.71]`.
+pub(crate) fn declared_length(src: &str) -> Option<f64> {
+    static TTML_DUR: LazyLock<Regex> =
+        LazyLock::new(|| Regex::new(r#"(?is)<body\b[^>]*?\bdur\s*=\s*["']([^"']+)["']"#).unwrap());
+    static LRC_LENGTH: LazyLock<Regex> =
+        LazyLock::new(|| Regex::new(r"(?mi)^\s*\[length:\s*([^\]\n]+)\]").unwrap());
+    TTML_DUR
+        .captures(src)
+        .or_else(|| LRC_LENGTH.captures(src))
+        .and_then(|c| parse_clock(c[1].trim()))
+        .filter(|s| *s > 0.0 && *s < 24.0 * 3600.0)
+}
+
+/// `233.7`, `233.7s`, `233700ms`, `3:53.713`, `00:03:53.713` → seconds.
+fn parse_clock(v: &str) -> Option<f64> {
+    if let Some(ms) = v.strip_suffix("ms") {
+        return ms.trim().parse::<f64>().ok().map(|m| m / 1000.0);
+    }
+    let v = v.strip_suffix('s').unwrap_or(v);
+    let mut total = 0.0;
+    for part in v.split(':') {
+        let n: f64 = part.trim().parse().ok()?;
+        total = total * 60.0 + n;
+    }
+    total.is_finite().then_some(total)
 }
 
 /// Strips BOM / zero-width characters, code fences and HTML-escaped TTML.
@@ -270,5 +304,26 @@ mod tests {
         assert!(LyricsResult::parse("x", "   ", None).is_none());
         assert!(LyricsResult::parse("x", "<html><body>404</body></html>", None).is_none());
         assert!(LyricsResult::parse("x", "[ar:Only]\n[ti:Metadata]", None).is_none());
+    }
+
+    #[test]
+    fn declared_lengths() {
+        let ttml = r#"<tt xmlns="http://www.w3.org/ns/ttml"><body dur="3:53.713"><div>
+<p begin="1" end="2">hi</p></div></body></tt>"#;
+        let r = LyricsResult::parse("x", ttml, None).unwrap();
+        assert!((r.matched.duration_secs.unwrap() - 233.713).abs() < 1e-6);
+        let lrc = "[length: 03:37.50]\n[00:01.00]a\n[00:02.00]b";
+        let r = LyricsResult::parse("x", lrc, None).unwrap();
+        assert_eq!(r.matched.duration_secs, Some(217.5));
+        assert_eq!(parse_clock("233700ms"), Some(233.7));
+        assert_eq!(parse_clock("01:00:00"), Some(3600.0));
+        assert_eq!(parse_clock("12.5s"), Some(12.5));
+        assert!(
+            LyricsResult::parse("x", "[00:01.00]a", None)
+                .unwrap()
+                .matched
+                .duration_secs
+                .is_none()
+        );
     }
 }

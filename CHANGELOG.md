@@ -118,6 +118,33 @@ versions follow [SemVer](https://semver.org/).
   friendly names (PipeWire, PulseAudio). On every system: the default first and marked,
   no repeated ids, identical names numbered. **Show all devices** (Settings → Playback)
   lists everything; a device you picked is never hidden.
+* **Lyrics: sources in waves.** The fastest, most reliable lyrics sources (BetterLyrics,
+  BetterLyrics Portato, LRCLIB, SimpMusic) are asked first, in parallel; Binimum, KuGou, Unison,
+  YouTube Music and Paxsenix only when those have no good synced lyrics (or take longer than
+  2.5 s), YouLyPlus and Megalobiz last. Once good lyrics are in, sources still working are
+  cancelled. On 12 popular songs the search took a median 135–140 ms instead of 160–390 ms and
+  asked 4 sources instead of 6 at once. Settings → Lyrics → *Ask sources in waves* (on).
+* **Lyrics: match the track's exact length.** Lyrics made for a recording within 2 s of the
+  playing song win over other cuts (radio edit, extended mix, live version) before word
+  timing and provider order are compared; the matched title and artist must resemble the
+  song's. LRCLIB, KuGou and Binimum report the length of what they matched, Apple-style TTML
+  and LRC `[length:]` tags declare it, and video-id lookups (SimpMusic, Unison, YouTube Music)
+  are exact by definition. LRC `[offset:]` tags are applied. A track without a length (some
+  search cards) first gets it from YouTube Music's watch page, as Limusic does. Settings → Lyrics → *Match the
+  track's exact length* (on).
+* **"Lyrics from LrcLib · Line-synced"** above the lyrics, and behind it **Sources tried**:
+  every source in the order it was asked, with its result (sync kind and same / different
+  length, not found, error, timed out, slower · stopped, not asked) and time. Pick another
+  source's lyrics for the song — remembered per song, and that source is asked first next
+  time — or go back to *Automatic*.
+* **Timing nudge per song**: − / + above synced lyrics move them 0.1 s earlier or later (up to
+  ±10 s), remembered for that song; the value resets it. Clicking a line seeks with the nudge.
+* Script actions `@lyrics-source=NAME|auto`, `@lyrics-nudge=MS|reset`, `@lyrics-sources`;
+  `lyrics_bench` example (search times on real songs).
+* music-core: `LyricsService::search` / `SearchOptions` / `LyricsSearch` (attempts, alternates),
+  `fetch_from`, `with_waved_providers`; `LyricsResult::matched` (`MatchInfo`),
+  `duration_fit` (`DurationFit`), `name_match`; `LyricsServiceConfig::{waves, wave_timeout,
+  match_duration}`.
 
 ### Changed
 
@@ -134,6 +161,9 @@ versions follow [SemVer](https://semver.org/).
 * Starting a list, an album or a radio keeps the songs you queued yourself (they play
   next); Music Together guests still follow the host's queue exactly.
 * Esc first clears a song selection before closing panels or going back.
+* Lyrics `quality_grace` 1.5 s → 0.8 s and `priority_grace` 2 s → 0.3 s (waves make the long
+  wait unnecessary). Binimum ranks the candidate of the same length above a word-timed one of
+  another length.
 
 ## [0.2.6] — 2026-10-31
 

@@ -6,7 +6,7 @@ use std::time::Duration;
 
 use super::types::{
     LAST_LINE_HOLD, LineExtras, LyricLine, LyricWord, Lyrics, collapse_spaces, line_from_words,
-    synthesize_words,
+    shift_lyrics, synthesize_words,
 };
 
 /// Parses (enhanced) LRC. Lines without a timestamp are dropped; empty
@@ -26,9 +26,14 @@ struct RawLine<'a> {
 /// LRC parse that also returns per-line extras (translations from duplicated stamps).
 pub(crate) fn parse_lrc_detailed(src: &str, total: Option<Duration>) -> (Lyrics, Vec<LineExtras>) {
     let mut raw: Vec<RawLine> = Vec::new();
+    let mut offset_ms = 0i64;
     for line in src.lines() {
         // A line may carry several leading tags: "[00:12.00][01:30.00] chorus".
         let mut rest = line.trim();
+        if let Some(ms) = offset_tag(rest) {
+            offset_ms = ms;
+            continue;
+        }
         let mut stamps = Vec::new();
         while let Some(after) = rest.strip_prefix('[') {
             let Some((tag, tail)) = after.split_once(']') else {
@@ -111,7 +116,24 @@ pub(crate) fn parse_lrc_detailed(src: &str, total: Option<Duration>) -> (Lyrics,
     if extras.iter().all(LineExtras::is_empty) {
         extras.clear();
     }
-    (Lyrics { lines, word_synced }, extras)
+    let mut lyrics = Lyrics { lines, word_synced };
+    // `[offset:+500]`: the lyrics come 500 ms sooner (LRC convention).
+    if offset_ms != 0 {
+        shift_lyrics(&mut lyrics, -offset_ms);
+    }
+    (lyrics, extras)
+}
+
+/// The value of an `[offset:±ms]` tag (milliseconds), if `line` is one.
+fn offset_tag(line: &str) -> Option<i64> {
+    let inner = line.strip_prefix('[')?.strip_suffix(']')?;
+    let (key, value) = inner.split_once(':')?;
+    if !key.trim().eq_ignore_ascii_case("offset") {
+        return None;
+    }
+    let v = value.trim();
+    let v = v.strip_prefix('+').unwrap_or(v);
+    v.parse::<i64>().ok().filter(|ms| ms.abs() <= 60_000)
 }
 
 /// `mm:ss`, `mm:ss.xx`, `mm:ss.xxx` or `mm:ss:xx`.
@@ -335,5 +357,22 @@ mod tests {
     fn strips_tags() {
         assert_eq!(strip_word_tags("<00:01.00>a <00:02.00>b<1,2>"), "a b");
         assert_eq!(strip_word_tags("a < b > c"), "a < b > c");
+    }
+
+    #[test]
+    fn offset_tag_moves_lines_and_words() {
+        // +500: the lyrics come half a second sooner; -250: a quarter later.
+        let l = parse_lrc(
+            "[offset:+500]\n[00:02.00]<00:02.00>a <00:03.00>b\n[00:05.00]c",
+            None,
+        );
+        assert_eq!(l.lines[0].start, s(1.5));
+        assert_eq!(l.lines[0].words[1].start, s(2.5));
+        assert_eq!(l.lines[1].start, s(4.5));
+        let l = parse_lrc("[offset: -250]\n[00:00.10]a", None);
+        assert_eq!(l.lines[0].start, s(0.35));
+        // Never before zero.
+        let l = parse_lrc("[offset:+900]\n[00:00.50]a", None);
+        assert_eq!(l.lines[0].start, Duration::ZERO);
     }
 }
