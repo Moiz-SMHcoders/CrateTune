@@ -121,6 +121,7 @@ impl MusicApp {
 
     /// The sign-in profile of the account in use and every profile in use
     /// (`login_webview::plan_profile`).
+    #[cfg_attr(not(any(target_os = "windows", target_os = "macos")), allow(dead_code))]
     pub(crate) fn sign_in_profiles(&self, cx: &gpui::App) -> (Option<String>, Vec<String>) {
         let active = self.store.account.config.as_ref();
         let saved = &self.settings.read(cx).settings().library.saved_accounts;
