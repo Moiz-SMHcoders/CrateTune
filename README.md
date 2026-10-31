@@ -2755,7 +2755,18 @@ Ideas from **Zuno** (Apache-2.0) and **Limusic** (GPL-3.0); what was ported is l
   `@queue-tab-continue=N`, `@queue-tab-rename=N:NAME`, `@queue-tab-remove=N`,
   `@queue-status`, `@log-sample`, `@log-status`, `@together-allow=suggestions:on|off`,
   `@together-approve-suggestion[=N]`, `@together-reject-suggestion[=N]`,
-  `@together-suggestions`.
+  `@together-suggestions`. Entity routes take a display name: `album:ID|Name`.
+
+**Verified** (macOS, release `screenshot` build, `MUSIC_FIXTURES` offline data, demo clock,
+temporary `MUSIC_CONFIG_DIR`, `MUSIC_SECRET_STORE=file`, `MUSIC_VOLUME=0.0`): ⌘-click,
+Shift-click, ⌘A, Esc, a plain click playing, the bar's *Add to queue*; queue parts after
+*Play next* / *Add to queue* on a playing album; a new tab, its preview and *Continue* back
+to the first tab's position; the Logs section with a redacted cookie / API key line; a host
+and a guest on localhost with approval on (two suggestions pending, one approved: the guest
+shows *Added* / *Waiting for the host*). **CPU** (`scripts/perf-macos.sh`, two interleaved
+runs each against the 0.2.6 build): idle on Home 1.1 % of a core (0.2.6: 0.8–1.5 %), playing
+5.8–6.9 % (0.2.6: 5.3 % and an outlier of 29.6 % while other builds ran), Now Playing open
+1.9 % (2.8 %); draw times within run-to-run noise. Not verified: see BACKLOG U17.
 
 ### Player UI round: verification
 
