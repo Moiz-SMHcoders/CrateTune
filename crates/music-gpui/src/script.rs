@@ -61,6 +61,7 @@
 //! | `@module-check=N`, `@module-update=N`, `@module-enable=N:on\|off`, `@module-remove=N` (twice: confirm) | module actions |
 //! | `@card-select=3;4`, `@card-open`, `@card-style=bg:light`, `@card-save=PATH`, `@card-copy`, `@card-close` | lyrics cards (`lyrics_card.rs`) |
 //! | `@mem` | print the process's memory (`memory::usage`: footprint on macOS, private bytes on Windows, resident set on Linux) and the artwork cache's decoded size |
+//! | `@atlas-trim` | empty the sprite atlases of all artwork now and redraw (`ArtworkCache::trim_atlas`; it also runs on its own) |
 //! | `@bench=N[:MS]` | draw the main window N times MS (16) ms apart and print the draw times (UI CPU per frame) |
 //! | `@bench-bar=N[:MS]` | the same, marking only the player bar dirty (the cost of one bar animation frame) |
 //! | `@bench-backdrop=N[:MS]` | the same, marking only the app-wide backdrop dirty (one frame of its fade / drift) |
@@ -716,6 +717,10 @@ impl MusicApp {
                     figures.join(", "),
                     mib(art_bytes as u64)
                 );
+            }
+            "atlas-trim" => {
+                crate::components::artwork::ArtworkCache::global(cx)
+                    .update(cx, |cache, cx| cache.trim_atlas(cx));
             }
             "log-status" => {
                 let lines = crate::logs::lines(crate::logs::Level::Trace, 5);

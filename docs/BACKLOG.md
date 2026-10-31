@@ -529,32 +529,43 @@ was built is listed there. Left out, with the reason:
 
 ## 5. Performance ideas
 
-**F1. Memory footprint: look into the GPU and graphics buffers**
-The footprint is about 60–180 MB since the memory round, which added `MallocSpaceEfficient`, an
-artwork budget by decoded size, and a shorter lifetime for the prepared solver. Most of what
-is left is GPU and graphics buffers (IOSurface). Next step: find out which surfaces GPUI
-keeps, and whether atlases or offscreen layers can shrink. Details:
-`crates/music-gpui/src/memory.rs`, CHANGELOG 0.1.0 "Uses much less memory". · Size: medium ·
-Priority: medium
+**F1. What is left of the footprint: window drawables and the decoded copies**
+Round 3 found where the graphics memory goes (macOS, fixture Home at 1200 × 768 pt on a 2x
+display, ~176 MB footprint): three window drawables of 14 MB each (GPUI's Metal layer keeps
+`maximumDrawableCount` 3), a path texture of the window's size (14 MB, while paths are
+drawn), the sprite atlas (4 MB textures; ~30 MB for 60 cards) and GPUI's decoded CPU copy
+of every image drawn (as large as its atlas tile). Fixed in that round: the atlas kept
+growing with Now Playing open (+95–106 MB over 30 songs; etagere's bucketed allocator,
+used by GPUI on every platform, reuses a freed tile only once its whole bucket is free), so
+the app now empties and refills the atlases (`ArtworkCache::trim_atlas`); a dropped track's
+backdrop and glows, and replaced lyrics-card previews, were never freed from the atlas.
+Left: two drawables instead of three would save 14 MB per window (a GPUI setting; risks
+uneven frames on 120 Hz displays, not tried); the decoded copy could go once uploaded
+(needs GPUI support). Details: [README: Performance round
+3](../README.md#performance-round-3-memory-artwork-cpu), `components/artwork.rs`,
+`crates/music-gpui/src/memory.rs`. · Size: medium · Priority: low
 
-**F2. Re-measure CPU with the screen awake**
-The screen was locked while the final Now Playing build and the app shell round were measured,
-so macOS sent no display-link frames. The Lyrics-first strip region was never measured on its
-own. Details: [README: Now Playing round](../README.md#now-playing-round-cpu-designs-lyrics-cards),
-[Measurements (app shell round)](../README.md#measurements-app-shell-round). · Size: small ·
-Priority: low
+**F4. Video thumbnails and local artwork are kept at full size**
+Artwork from YouTube's image servers is now fetched at the size it is shown, but
+`i.ytimg.com` thumbnails (videos 640 × 360, playlists' 544 px squares, 0.9–1.2 MB decoded
+each) and local files' cover art can't be resized by the server. Decoding them at the shown
+size on the fetch threads (`ImageSource::Render`) would save up to 90 % for those. ·
+Size: medium · Priority: low
 
-**F3. Scrolling slows down when a page holds more artwork than the image cache**
-When every shelf of a long Home brings its own covers (~700 images, more than the 48 MB
-artwork budget), drawing the end of the feed got up to 1.8x slower on the Windows CI runner
-even with culling on, most likely because the artwork cache evicts and re-decodes images as
-they scroll back into view. Normal use stays well under the budget, so the CI frame-time
-gate keeps its fixture artwork within it. Ideas: decode at display size before caching,
-evict by distance from the viewport rather than LRU, keep small thumbnails for culled
-shelves, or raise the budget on machines with plenty of memory. Repro: `MUSIC_FIXTURES`
-with per-page artwork in `scripts/perf-frames.sh` (see the comment in
-`crates/music-core/src/fixtures.rs` and docs/TESTING.md 6.3). · Size: medium · Priority: low
+**F5. A 250 ms timer runs all the time**
+`app.rs` polls the player 4 times a second also when nothing plays and the window is
+hidden (media keys, tray, Music Together and downloads are handled there too). Idle CPU is
+0.8–0.9 % of one core on an M4; backing off while idle would mostly save wake-ups (battery).
+· Size: small · Priority: low
 
+**F6. Fast scrolling still keeps a second of artwork past the budget**
+Images looked up within the last second (`KEEP_RECENT`, was 3 s) are never evicted, so a
+very fast scroll through a long Home still peaks above the budget (~370 MB footprint with
+~700 images, was ~600 MB). Skipping queued downloads that went off screen before they
+started would also save network and decoding on a real feed (the fixtures answer at once,
+so it can't be measured offline yet). Mini player art and cached views can lose their
+artwork when a fast scroll passes the budget (least recently used first); seen as a short
+reload, not reproduced. · Size: small · Priority: low
 
 ## 6. Technical debt
 

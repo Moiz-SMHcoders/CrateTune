@@ -152,6 +152,9 @@ pub struct MusicApp {
     /// Per video id, for the last few tracks (see `now_playing::ensure_hires`).
     pub(crate) hires: HashMap<String, HiRes>,
     pub(crate) hires_order: VecDeque<String>,
+    /// Backdrops / glows of tracks dropped from `hires` that were still shown; freed
+    /// from the GPU once nothing holds them (`now_playing::ensure_hires`).
+    pub(crate) hires_retired: Vec<std::sync::Arc<gpui::RenderImage>>,
     /// Applied theme, the current artwork colours, the colour transition
     /// (`theme_state.rs`).
     pub(crate) theme_state: crate::theme_state::ThemeState,
@@ -376,6 +379,7 @@ impl MusicApp {
             lyrics: LyricsHub::default(),
             hires: HashMap::new(),
             hires_order: VecDeque::new(),
+            hires_retired: Vec::new(),
             theme_state: Default::default(),
             look: Default::default(),
             store: crate::store::Store::open(saved.library.clone(), downloads_resolver),
@@ -998,6 +1002,8 @@ impl Render for MusicApp {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let mut frame = Frame::new();
         let reveal = frame.get(&self.np.reveal);
+        // Artwork is fetched at the size it is shown (`artwork::display_url`).
+        crate::components::artwork::set_scale(window.scale_factor());
         // Music videos: start, stop, free replaced frames (`video.rs`).
         self.sync_video(window, cx);
         let theater = self.theater.open;

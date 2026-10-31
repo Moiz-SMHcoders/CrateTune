@@ -269,7 +269,9 @@ impl MusicApp {
 
     /// Fetches the 544 px artwork (shared cache, fetch threads) and blurs it +
     /// extracts its palette and accent on a worker thread, once per track; keeps
-    /// the last [`HIRES_KEEP`] tracks.
+    /// the last [`HIRES_KEEP`] tracks. A dropped track's backdrop and glows also
+    /// leave the windows' sprite atlases (≈ 450 KB per track that was shown),
+    /// once nothing else holds them.
     pub fn ensure_hires(&mut self, track: &Track, cx: &mut Context<Self>) {
         if self.hires.contains_key(&track.video_id) {
             return;
@@ -277,10 +279,21 @@ impl MusicApp {
         let id = track.video_id.clone();
         self.hires_order.push_back(id.clone());
         while self.hires_order.len() > HIRES_KEEP {
-            if let Some(old) = self.hires_order.pop_front() {
-                self.hires.remove(&old);
+            if let Some(old) = self.hires_order.pop_front()
+                && let Some(HiRes::Ready {
+                    backdrop, glows, ..
+                }) = self.hires.remove(&old)
+            {
+                self.hires_retired.push(backdrop);
+                self.hires_retired.extend(glows);
             }
         }
+        // Still drawn (Now Playing's cross-fade, the bar or mini player): next time.
+        let (free, held): (Vec<_>, Vec<_>) = std::mem::take(&mut self.hires_retired)
+            .into_iter()
+            .partition(|image| Arc::strong_count(image) == 1);
+        self.hires_retired = held;
+        cx.defer(move |cx| crate::components::artwork::drop_from_atlas(free, cx));
         let Some(url) = track.artwork_url(544) else {
             self.hires.insert(id, HiRes::Failed);
             return;
@@ -337,6 +350,15 @@ impl MusicApp {
                 }
             };
             this.update(cx, |this, cx| {
+                // Trimmed from the atlases with the artwork (`ArtworkCache::trim_atlas`).
+                if let HiRes::Ready {
+                    backdrop, glows, ..
+                } = &entry
+                {
+                    for image in std::iter::once(backdrop).chain(glows) {
+                        crate::components::artwork::track_render_image(image, cx);
+                    }
+                }
                 // Dropped from the keep-list meanwhile: don't resurrect it.
                 if let Some(slot) = this.hires.get_mut(&id) {
                     *slot = entry;

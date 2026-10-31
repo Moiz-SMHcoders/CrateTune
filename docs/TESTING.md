@@ -394,7 +394,7 @@ Three scripts, all on release builds with a throw-away settings folder:
 |---|---|---|---|
 | `scripts/perf-windows.ps1` | Windows desktop | yes | CPU, memory, frame rate and draw cost (6.1) |
 | `scripts/perf-macos.sh` | Mac with an awake display | yes | the same, plus a draw budget for 180 Hz (6.2) |
-| `scripts/perf-frames.sh` | CI (macOS, Windows), any desktop | no | draw cost must not grow down a long page (6.3) |
+| `scripts/perf-frames.sh` | CI (macOS, Windows, Linux), any desktop | no | draw cost must not grow down a long page; logs memory (6.3) |
 
 ### 6.1 Windows
 
@@ -513,21 +513,33 @@ frames, the scrolling, bar and Now Playing rates do.
 
 ### 6.3 Frame-time check (offline; CI)
 
-`scripts/perf-frames.sh` needs no network and runs in CI as the step **perf: frame-time**
-of the macOS and Windows jobs (Linux runners have no display or GPU). It opens Home with
-`MUSIC_FIXTURES` pointing at the recorded InnerTube responses
+`scripts/perf-frames.sh` needs no network and runs in CI as the steps **perf: frame-time**
+and **perf: frame-time, artwork past the cache budget** of every job (on Linux under Xvfb,
+drawn by Mesa's software Vulkan, lavapipe: the runners have no display or GPU). It opens
+Home with `MUSIC_FIXTURES` pointing at the recorded InnerTube responses
 (`crates/music-core/tests/fixtures/innertube`): Home, then the recorded continuation 20
 times (each page with its own ids), every shelf filled to 12 distinct cards (as wide as a
-real shelf), generated artwork (~60 different images, within the artwork memory budget),
-and an HTTP agent that can't reach the network. It times full window draws (`@bench`: build, layout and paint, not presenting)
+real shelf), generated artwork (~60 different images, within the artwork memory budget; as
+large as the app asks for, like YouTube's image servers answer), and an HTTP agent that
+can't reach the network. `--page-art` (`MUSIC_FIXTURE_ART=page`) gives every feed page its
+own artwork instead (~700 images, past the budget, like a long session on a real feed). It times full window draws (`@bench`: build, layout and paint, not presenting)
 near the top (one screen down, while the feed is still short), scrolls to the end of the
 feed (~60 shelves) and times them again:
 
 ```sh
 scripts/perf-frames.sh                         # builds release first
 scripts/perf-frames.sh --binary target/release/music-gpui --keep
+scripts/perf-frames.sh --page-art              # every page its own artwork
 MUSIC_NO_CULL=1 scripts/perf-frames.sh         # without culling: must FAIL
+xvfb-run -a -s "-screen 0 1920x1080x24" scripts/perf-frames.sh   # Linux without a desktop
 ```
+
+After each bench the app prints its memory (`@mem`): footprint on macOS (what Activity
+Monitor shows), private bytes and working set on Windows (Task Manager's Memory column),
+resident set, its peak (`VmHWM`) and the anonymous part on Linux, plus the artwork cache's
+decoded size. The step summary shows them next to the draw times. Memory isn't checked (it
+depends on the runner's GPU: the macOS VM and Windows' software renderer count textures
+differently), it is there to compare runs and platforms.
 
 It fails when
 
@@ -560,13 +572,15 @@ ratio; seven app runs per CI runner, three to five on the Mac):
 | GitHub `macos-14` (M1 VM) | 5.8–8.4 → 4.8–7.2 ms, 0.64–1.16x | 8.9–11.2 → 55–61 ms, 4.9–6.9x |
 | GitHub `windows-2022` (no GPU) | 9.7–10.2 → 6.8–8.6 ms, 0.68–0.87x | 16.5–16.6 → 99–100 ms, 6.0–6.1x |
 | M4 MacBook Air (other builds running) | 2.1–4.1 → 1.9–4.0 ms, 0.73–1.11x | 2.8–3.3 → 23–25 ms, 7.2–8.9x |
+| GitHub `ubuntu-24.04` (Xvfb, lavapipe) | 4.4–5.9 → 3.2–4.1 ms, 0.69–0.74x | not measured |
 
 The near-top bench is the slower one with culling on (it has the chips, the first shelf
 and the feed header within half a screen above it), so culling passes with a wide margin
 and its loss fails by 5–9x. Earlier setups were too close for comfort: compared with the
 very top, the end drew 1.2–1.4x slower on the runners; with every page bringing its own
-artwork (~700 images, beyond the artwork memory budget) up to 1.8x on Windows (a separate
-cost, probably the artwork cache evicting; worth a look on long sessions); and with a
+artwork (~700 images, beyond the artwork memory budget) up to 1.8x on Windows (that no
+longer reproduces: `--page-art` measured 0.97x on Windows and macOS and 0.74x on Linux,
+now a step of its own); and with a
 skipped section built from two elements instead of one, the end grew with the length of
 the feed. If the check starts failing for an unrelated change, look at the step summary
 first: a ratio near 1 with a high p50 is a slow runner (raise the ceiling), a ratio above

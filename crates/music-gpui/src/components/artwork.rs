@@ -19,15 +19,19 @@
 //!   never dropped (no re-download loops for what is on screen); the budget is
 //!   exceeded instead.
 //! * Failed URLs are retried after [`RETRY_AFTER`].
+//! * Artwork is fetched at most as large as it is shown ([`display_url`]), and the
+//!   windows' sprite atlases are emptied and refilled with what is on screen now
+//!   and then ([`ArtworkCache::trim_atlas`]): GPUI doesn't reuse their space well.
 
 use std::collections::HashMap;
-use std::sync::{Arc, Condvar, Mutex, OnceLock};
+use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::{Arc, Condvar, Mutex, OnceLock, Weak};
 use std::time::{Duration, Instant};
 
 use futures_channel::oneshot;
 use gpui::{
     App, AppContext as _, Context, Entity, Global, Image, ImageSource, ObjectFit,
-    ParentElement as _, Pixels, Styled as _, StyledImage as _, div, img,
+    ParentElement as _, Pixels, RenderImage, Styled as _, StyledImage as _, div, img,
     prelude::FluentBuilder as _,
 };
 use gpui_component::ActiveTheme as _;
@@ -41,7 +45,12 @@ pub const DEFAULT_BUDGET_MB: u32 = 48;
 pub const BUDGETS_MB: [u32; 5] = [16, 32, 48, 96, 192];
 pub const RETRY_AFTER: Duration = Duration::from_secs(30);
 /// Images looked up this recently are on screen (or just were): never evicted.
-pub const KEEP_RECENT: Duration = Duration::from_secs(3);
+/// Short: everything a fast scroll passes within this time is kept, past the
+/// budget (3 s held ~270 MB of decoded artwork, ~600 MB footprint, scrolling
+/// through a long Home with per-page artwork). What is on screen is looked up
+/// again with every frame and every finished download, and the least recently
+/// used images go first anyway.
+pub const KEEP_RECENT: Duration = Duration::from_secs(1);
 /// While over budget, lookups re-check this often whether images went off
 /// screen (after leaving a page, nothing new may be downloaded for a while).
 const EVICT_EVERY: Duration = Duration::from_secs(2);
@@ -58,6 +67,8 @@ enum Slot {
         cost: usize,
         last_used: u64,
         used_at: Instant,
+        /// Handed out to be drawn (GPUI decoded it), see [`ArtworkCache::trim_atlas`].
+        drawn: bool,
     },
     Failed(Instant),
 }
@@ -76,6 +87,9 @@ struct Slots {
     bytes: usize,
     tick: u64,
     budget: usize,
+    /// Decoded size of the images handed out to be drawn for the first time since
+    /// the last [`ArtworkCache::trim_atlas`]: about what was uploaded to the GPU.
+    drawn_bytes: usize,
 }
 
 impl Slots {
@@ -88,12 +102,17 @@ impl Slots {
         match self.map.get_mut(url) {
             Some(Slot::Ready {
                 image,
+                cost,
                 last_used,
                 used_at,
-                ..
+                drawn,
             }) => {
                 *last_used = self.tick;
                 *used_at = now;
+                if !*drawn {
+                    *drawn = true;
+                    self.drawn_bytes += *cost;
+                }
                 Lookup::Ready(image.clone())
             }
             Some(Slot::Loading(_)) => Lookup::Pending,
@@ -104,15 +123,28 @@ impl Slots {
 
     /// Stores a finished download; returns who was waiting and the image.
     fn finish(&mut self, url: String, result: Fetched) -> (Vec<Waiter>, Option<Arc<Image>>) {
+        let waiters = match self.map.remove(&url) {
+            Some(Slot::Loading(waiters)) => waiters,
+            Some(Slot::Ready { cost, .. }) => {
+                self.bytes = self.bytes.saturating_sub(cost);
+                Vec::new()
+            }
+            _ => Vec::new(),
+        };
         let (slot, image) = match result {
             Ok((bytes, cost)) => {
                 self.bytes += cost;
+                if !waiters.is_empty() {
+                    self.drawn_bytes += cost;
+                }
                 let image = Arc::new(Image::from_bytes(sniff_format(&bytes), bytes));
                 let slot = Slot::Ready {
                     image: image.clone(),
                     cost,
                     last_used: self.tick,
                     used_at: Instant::now(),
+                    // Awaited (`load`): drawn by whoever waited.
+                    drawn: !waiters.is_empty(),
                 };
                 (slot, Some(image))
             }
@@ -121,14 +153,7 @@ impl Slots {
                 (Slot::Failed(Instant::now()), None)
             }
         };
-        let waiters = match self.map.insert(url, slot) {
-            Some(Slot::Loading(waiters)) => waiters,
-            Some(Slot::Ready { cost, .. }) => {
-                self.bytes = self.bytes.saturating_sub(cost);
-                Vec::new()
-            }
-            _ => Vec::new(),
-        };
+        self.map.insert(url, slot);
         (waiters, image)
     }
 
@@ -180,6 +205,9 @@ pub struct ArtworkCache {
     slots: Slots,
     /// Last over-budget check from [`Self::get`] (see [`EVICT_EVERY`]).
     checked_at: Instant,
+    /// Images the app decodes itself (backdrops, glows), for [`Self::trim_atlas`].
+    others: Vec<Weak<RenderImage>>,
+    trimmed_at: Instant,
 }
 
 struct Store(Entity<ArtworkCache>);
@@ -193,6 +221,8 @@ impl ArtworkCache {
                 ..Slots::default()
             },
             checked_at: Instant::now(),
+            others: Vec::new(),
+            trimmed_at: Instant::now(),
         });
         cx.set_global(Store(cache));
     }
@@ -222,8 +252,13 @@ impl ArtworkCache {
                 self.slots.bytes as f64 / (1024. * 1024.)
             );
         }
-        cx.spawn(async move |_, cx| cx.update(|cx| release(evicted, cx)))
-            .detach();
+        cx.spawn(async move |_, cx| {
+            cx.update(|cx| {
+                release(evicted, cx);
+                crate::memory::trim_soon(cx);
+            })
+        })
+        .detach();
     }
 
     /// Decoded size of the cached images and how many there are (`@mem`).
@@ -239,6 +274,7 @@ impl ArtworkCache {
             self.checked_at = Instant::now();
             self.evict(cx);
         }
+        self.trim_if_due(cx);
         match self.slots.lookup(url) {
             Lookup::Ready(image) => Some(image),
             Lookup::Pending => None,
@@ -291,6 +327,7 @@ impl ArtworkCache {
                     let _ = waiter.send(image.clone());
                 }
                 this.evict(cx);
+                this.trim_if_due(cx);
                 cx.notify();
             })
             .ok();
@@ -326,13 +363,153 @@ fn release(images: Vec<Arc<Image>>, cx: &mut App) {
     }
 }
 
-/// A rounded artwork square for `url` (muted placeholder while loading).
+/// After this much artwork was drawn for the first time (uploaded to the GPU),
+/// [`ArtworkCache::trim_atlas`] runs, at most every [`TRIM_EVERY`].
+const TRIM_AFTER: usize = 16 * 1024 * 1024;
+const TRIM_EVERY: Duration = Duration::from_secs(10);
+
+/// Lets [`ArtworkCache::trim_atlas`] drop `image` too (an image the app decoded
+/// itself, e.g. a blurred backdrop); it is still dropped by its owner when replaced.
+pub fn track_render_image(image: &Arc<RenderImage>, cx: &mut App) {
+    let size = image.size(0);
+    let bytes = (size.width.0.max(0) * size.height.0.max(0) * 4) as usize;
+    ArtworkCache::global(cx).update(cx, |cache, cx| {
+        cache.slots.drawn_bytes += bytes;
+        cache.others.retain(|other| other.strong_count() > 0);
+        cache.others.push(Arc::downgrade(image));
+        cache.trim_if_due(cx);
+    });
+}
+
+impl ArtworkCache {
+    /// Empties the windows' sprite atlases of every image the app knows and redraws
+    /// them from scratch, so the images on screen are uploaded again and nothing
+    /// else. GPUI's atlas allocator (etagere's bucketed one, on every platform)
+    /// reuses a dropped image's space only once every image next to it in the
+    /// same bucket is gone too, so with images of mixed sizes coming and going
+    /// (Now Playing's art, backdrops, card and list artwork) its 4 MB textures
+    /// kept piling up: +95 MB over 30 tracks with Now Playing open. A texture is
+    /// freed once its last image is. The decoded copies stay, so re-uploading is
+    /// a copy; a full redraw (not reusing cached views) puts everything back.
+    fn trim_if_due(&mut self, cx: &mut Context<Self>) {
+        if self.slots.drawn_bytes >= TRIM_AFTER && self.trimmed_at.elapsed() >= TRIM_EVERY {
+            self.trim_atlas(cx);
+        }
+    }
+
+    pub fn trim_atlas(&mut self, cx: &mut Context<Self>) {
+        self.slots.drawn_bytes = 0;
+        self.trimmed_at = Instant::now();
+        let images: Vec<Arc<Image>> = self
+            .slots
+            .map
+            .values()
+            .filter_map(|slot| match slot {
+                Slot::Ready {
+                    image, drawn: true, ..
+                } => Some(image.clone()),
+                _ => None,
+            })
+            .collect();
+        self.others.retain(|other| other.strong_count() > 0);
+        let others: Vec<Arc<RenderImage>> = self.others.iter().filter_map(Weak::upgrade).collect();
+        if std::env::var_os("MUSIC_TRACE").is_some() {
+            eprintln!(
+                "music-gpui: artwork: atlas trimmed ({} cached, {} other images)",
+                images.len(),
+                others.len()
+            );
+        }
+        // Not while a window draws (lookups happen then).
+        cx.spawn(async move |_, cx| {
+            cx.update(|cx| {
+                for window in cx.windows() {
+                    window
+                        .update(cx, |_, window, cx| {
+                            for image in &images {
+                                if let Some(decoded) = image.clone().get_render_image(window, cx) {
+                                    let _ = window.drop_image(decoded);
+                                }
+                            }
+                            for image in &others {
+                                let _ = window.drop_image(image.clone());
+                            }
+                            window.refresh();
+                        })
+                        .ok();
+                }
+            })
+        })
+        .detach();
+    }
+}
+
+/// Drops images the app decoded itself (blurred backdrops, glows, previews) from
+/// every window's sprite atlas. GPUI keeps the tiles of every image it has drawn
+/// until it is told otherwise, also after the last `Arc` is gone, so a replaced
+/// image must be dropped or each one stays on the GPU for good. Not while a window
+/// draws (call it deferred, e.g. `cx.defer`).
+pub fn drop_from_atlas(images: Vec<Arc<RenderImage>>, cx: &mut App) {
+    if images.is_empty() {
+        return;
+    }
+    for window in cx.windows() {
+        window
+            .update(cx, |_, window, _| {
+                for image in &images {
+                    let _ = window.drop_image(image.clone());
+                }
+            })
+            .ok();
+    }
+}
+
+/// Device pixels per point of the main window (`f32` bits; set as it draws).
+static SCALE: AtomicU32 = AtomicU32::new(0x4000_0000); // 2.0
+
+/// The main window's scale factor, for [`display_url`] (called as it draws).
+pub fn set_scale(scale: f32) {
+    SCALE.store(scale.to_bits(), Ordering::Relaxed);
+}
+
+/// Sizes artwork is fetched at (device pixels): few, so places that show the
+/// same image at similar sizes share one copy.
+const FETCH_SIZES: [u32; 10] = [64, 96, 128, 160, 192, 256, 320, 384, 512, 768];
+
+/// `url` at most as large as it is shown (`side` points at the main window's
+/// scale). YouTube's image servers scale artwork to any size asked for
+/// (`…=w320-h320…`), so a 160 pt card fetches 160 px at 1x instead of the 320
+/// the card asks for (a quarter of the memory, in the cache and in the GPU's
+/// atlas) and 320 px at 2x as before; a 44 pt row 96 px instead of 120. Never
+/// larger than `url` asks for; other URLs stay as they are.
+fn display_url(url: String, side: Pixels) -> String {
+    let scale = f32::from_bits(SCALE.load(Ordering::Relaxed)).clamp(1., 4.);
+    let shown = (f32::from(side) * scale).ceil() as u32;
+    let fetch = FETCH_SIZES
+        .into_iter()
+        .find(|&size| size >= shown)
+        .unwrap_or(shown);
+    let asked = url
+        .rfind("=w")
+        .or_else(|| url.rfind("=s"))
+        .and_then(|at| url[at + 2..].split(|c: char| !c.is_ascii_digit()).next())
+        .and_then(|digits| digits.parse::<u32>().ok());
+    match asked {
+        Some(asked) if fetch < asked => super::items::sized_art(Some(&url), fetch).unwrap_or(url),
+        _ => url,
+    }
+}
+
+/// A rounded artwork square for `url` (muted placeholder while loading), fetched
+/// at the size it is shown ([`display_url`]).
 ///
 /// The corners follow Motion & effects → Artwork corners (circles stay
 /// circles); larger artwork gets a shadow when Artwork shadows is on.
 pub fn artwork(url: Option<String>, side: Pixels, radius: Pixels, cx: &mut App) -> gpui::Div {
-    let image =
-        url.and_then(|url| ArtworkCache::global(cx).update(cx, |cache, cx| cache.get(&url, cx)));
+    let image = url.and_then(|url| {
+        let url = display_url(url, side);
+        ArtworkCache::global(cx).update(cx, |cache, cx| cache.get(&url, cx))
+    });
     div()
         .size(side)
         .flex_none()
@@ -531,6 +708,27 @@ mod tests {
             .unwrap();
         assert_eq!(decoded_size(&png), 30 * 20 * 4);
         assert_eq!(decoded_size(b"not an image"), 12 * 8);
+    }
+
+    #[test]
+    fn artwork_is_fetched_at_most_as_large_as_shown() {
+        let card = "https://lh3.googleusercontent.com/abc=w320-h320-l90-rj".to_owned();
+        set_scale(1.);
+        assert_eq!(
+            display_url(card.clone(), gpui::px(160.)),
+            "https://lh3.googleusercontent.com/abc=w160-h160-l90-rj"
+        );
+        let row = "https://lh3.googleusercontent.com/abc=w120-h120-l90-rj".to_owned();
+        set_scale(2.);
+        assert_eq!(display_url(card.clone(), gpui::px(160.)), card);
+        assert_eq!(
+            display_url(row.clone(), gpui::px(44.)),
+            "https://lh3.googleusercontent.com/abc=w96-h96-l90-rj"
+        );
+        // Never larger than asked; other hosts untouched.
+        assert_eq!(display_url(row.clone(), gpui::px(300.)), row);
+        let video = "https://i.ytimg.com/vi/x/hqdefault.jpg".to_owned();
+        assert_eq!(display_url(video.clone(), gpui::px(44.)), video);
     }
 
     #[test]

@@ -234,6 +234,13 @@ versions follow [SemVer](https://semver.org/).
 * Lyrics `quality_grace` 1.5 s → 0.8 s and `priority_grace` 2 s → 0.3 s (waves make the long
   wait unnecessary). Binimum ranks the candidate of the same length above a word-timed one of
   another length.
+* **Less memory on long listening sessions and long scrolls.** With Now Playing open, every
+  song used to leave ~3 MB of graphics memory behind (about +100 MB after 30 songs); now the
+  app stays flat. Scrolling quickly through a long Home peaks at ~370 MB instead of ~600 MB on
+  a Mac, and drops back sooner. On displays without high-DPI scaling (most Windows and Linux
+  setups) artwork is downloaded and kept at the size it is shown, a quarter of the memory it
+  took. On Linux, memory freed by the artwork cache is handed back to the system. Changing a
+  lyrics card's style no longer keeps the previous preview in memory.
 
 ## [0.2.6] — 2026-10-31
 

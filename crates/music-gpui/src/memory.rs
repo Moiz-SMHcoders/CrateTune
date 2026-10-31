@@ -48,6 +48,32 @@ pub fn tune_allocator() {
 #[cfg(not(target_os = "macos"))]
 pub fn tune_allocator() {}
 
+/// Hands memory freed in bulk (artwork dropped from the cache) back to the system
+/// a moment later, once per burst. glibc keeps freed blocks for reuse, like the
+/// macOS allocator without `MallocSpaceEfficient` (above): scrolling through a
+/// long Home on Linux left ~370 MB resident with 48 MB of artwork in the cache
+/// (perf-frames.sh `--page-art`). Elsewhere a no-op.
+#[cfg(all(target_os = "linux", target_env = "gnu"))]
+pub fn trim_soon(cx: &gpui::App) {
+    use std::sync::atomic::{AtomicBool, Ordering};
+    static PENDING: AtomicBool = AtomicBool::new(false);
+    if PENDING.swap(true, Ordering::AcqRel) {
+        return;
+    }
+    let executor = cx.background_executor().clone();
+    cx.background_executor()
+        .spawn(async move {
+            executor.timer(std::time::Duration::from_secs(2)).await;
+            PENDING.store(false, Ordering::Release);
+            // SAFETY: plain libc call; returns whether memory was released.
+            unsafe { libc::malloc_trim(0) };
+        })
+        .detach();
+}
+
+#[cfg(not(all(target_os = "linux", target_env = "gnu")))]
+pub fn trim_soon(_: &gpui::App) {}
+
 /// What the process uses now, as `(name, bytes)` pairs, for `@mem` (the perf
 /// scripts log it per platform, so runs on each OS compare like for like):
 ///

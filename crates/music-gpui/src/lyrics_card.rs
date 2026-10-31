@@ -64,6 +64,12 @@ impl LyricsCard {
             status: None,
         };
         card.refresh_preview(cx);
+        // The last preview leaves the GPU with the dialog (`artwork::drop_from_atlas`).
+        cx.on_release(|card, cx| {
+            let previews: Vec<_> = card.preview.take().into_iter().collect();
+            cx.defer(move |cx| crate::components::artwork::drop_from_atlas(previews, cx));
+        })
+        .detach();
         card
     }
 
@@ -114,8 +120,13 @@ impl LyricsCard {
                 card.rendering = false;
                 match result {
                     Ok(image) => {
-                        card.preview =
-                            Some(Arc::new(RenderImage::new(vec![image::Frame::new(image)])));
+                        let image = Arc::new(RenderImage::new(vec![image::Frame::new(image)]));
+                        // Each style change draws a new preview (1–2 MB): free the old one.
+                        if let Some(old) = card.preview.replace(image) {
+                            cx.defer(move |cx| {
+                                crate::components::artwork::drop_from_atlas(vec![old], cx)
+                            });
+                        }
                     }
                     Err(e) => card.status = Some(t!("card.draw_failed", error = e)),
                 }

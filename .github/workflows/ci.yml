@@ -97,5 +97,4 @@ jobs:
       - name: "perf: frame-time, artwork past the cache budget"
         if: ${{ !cancelled() }}
         shell: bash
-        continue-on-error: true
         run: scripts/perf-frames.sh --max-ms 30 --page-art
