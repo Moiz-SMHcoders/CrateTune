@@ -34,6 +34,7 @@ settings.window.opacity_raised = Aumentada para {percent} % para o texto continu
 settings.window.note_macos = Desfocado usa o desfoque de janelas do macOS. Menus, diálogos e Tocando agora continuam opacos.
 settings.window.note_windows = Desfocado é o acrílico. Mica e Mica Alt precisam do Windows 11 (22H2 ou mais recente).
 settings.window.note_linux = Precisa de um gerenciador de janelas com composição. Desfocado precisa do KDE Plasma no Wayland; em outros casos aparece como Transparente.
+settings.window.reduced_by_os = Seu sistema pede menos transparência (Acessibilidade), então a janela continua opaca.
 settings.window.cpu_note = O sistema desenha o desfoque, então ele não gasta CPU extra do app e nada é redesenhado em repouso.
 
 # ---- React to the music (App-wide look)

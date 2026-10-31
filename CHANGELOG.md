@@ -7,6 +7,25 @@ versions follow [SemVer](https://semver.org/).
 
 ### Added
 
+* **Theme files.** Themes as editable TOML files in the settings folder's `themes/`
+  (Settings → Appearance → Customize theme → Theme files): a base theme, the Customize-theme
+  options and any colour token; listed next to the presets, applied again whenever the file
+  is saved, a file with a mistake listed with the line and the reason, low-contrast text
+  flagged. **Open themes folder**, **Export current theme as file**, a commented
+  `example.toml` and four starter themes (Nord, Catppuccin Mocha, Gruvbox Dark, Dracula).
+* **See-through window** (Appearance → Window → Window background): Blurred (macOS window
+  blur, Windows acrylic, KDE Plasma), See-through, and Mica / Mica Alt on Windows 11, with an
+  opacity that is raised automatically so text stays readable on a light desktop. Off when
+  the system asks for reduced transparency.
+* **React to the music** (App-wide look): the gradient wash or glow follows the music's
+  energy while it plays, at up to 30 frames a second; stops when paused, hidden or with
+  reduced motion. Off by default.
+* **Zoom**: ⌘= / ⌘+ / ⌘− / ⌘0 (Ctrl elsewhere), Ctrl / ⌘ + mouse wheel and View menu items
+  step the text size from 75 to 150 %; editable in Keyboard shortcuts.
+* **App icon** (Appearance → Window): Midnight (standard), Paper, Sunset, Mint, Mono or your
+  own image — the Dock icon on macOS, the window and taskbar icon on Windows, X11 from the
+  next start.
+
 * **Package managers.** Manifests for a Homebrew cask (`packaging/homebrew/`), a Scoop bucket
   (`packaging/scoop/`), the AUR (`cratetune-bin` from the release tarball and `cratetune` from
   source, `packaging/aur/`) and Flatpak (`packaging/flatpak/`, app id
@@ -148,6 +167,9 @@ versions follow [SemVer](https://semver.org/).
 
 ### Changed
 
+* **Translucent sidebar (macOS) shows the desktop blur.** It drew an opaque background
+  before (gpui-component's root painted one under the app); its opacity is now raised until
+  the sidebar's text stays readable on a light desktop.
 * **Home is back in the sidebar** as well, next to the top bar's Home button.
 * A background sign-in renewal is used only if it is still the same login; a sign-in
   profile holding another account is never used to switch accounts silently.

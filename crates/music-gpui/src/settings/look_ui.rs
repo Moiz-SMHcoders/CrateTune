@@ -596,6 +596,9 @@ pub(super) fn render_window(
                 ))
             })
         })
+        .when(crate::effects::os_reduce_transparency(), |this| {
+            this.child(note(t!("settings.window.reduced_by_os"), cx))
+        })
         .child(note(platform_note, cx))
         .child(note(t!("settings.window.cpu_note"), cx))
         .child(

@@ -34,6 +34,7 @@ settings.window.opacity_raised = {percent} % तक बढ़ाई गई, त�
 settings.window.note_macos = धुंधला macOS के विंडो ब्लर का इस्तेमाल करता है। मेन्यू, डायलॉग और अभी चल रहा अपारदर्शी रहते हैं।
 settings.window.note_windows = धुंधला यहाँ ऐक्रेलिक है। Mica और Mica Alt के लिए Windows 11 (22H2 या नया) चाहिए।
 settings.window.note_linux = कंपोज़िटिंग विंडो मैनेजर चाहिए। धुंधला के लिए Wayland पर KDE Plasma चाहिए; बाकी जगह यह पारदर्शी जैसा दिखता है।
+settings.window.reduced_by_os = आपका सिस्टम कम पारदर्शिता चाहता है (ऐक्सेसिबिलिटी), इसलिए विंडो अपारदर्शी रहती है।
 settings.window.cpu_note = ब्लर सिस्टम बनाता है, इसलिए ऐप का अतिरिक्त CPU नहीं लगता और खाली बैठे कुछ भी दोबारा नहीं बनता।
 
 # ---- React to the music (App-wide look)

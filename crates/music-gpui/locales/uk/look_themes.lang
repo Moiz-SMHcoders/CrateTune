@@ -34,6 +34,7 @@ settings.window.opacity_raised = Підвищено до {percent} %, щоб т�
 settings.window.note_macos = «Розмиття» використовує розмиття вікон macOS. Меню, діалоги й «Зараз грає» лишаються непрозорими.
 settings.window.note_windows = «Розмиття» — це акрил. Для Mica і Mica Alt потрібна Windows 11 (22H2 або новіша).
 settings.window.note_linux = Потрібен композитний віконний менеджер. Для розмиття потрібен KDE Plasma на Wayland; деінде воно виглядає як «Прозоре».
+settings.window.reduced_by_os = Система просить менше прозорості (Доступність), тому вікно лишається непрозорим.
 settings.window.cpu_note = Розмиття малює система, тож воно не навантажує процесор застосунку, а в спокої нічого не перемальовується.
 
 # ---- React to the music (App-wide look)

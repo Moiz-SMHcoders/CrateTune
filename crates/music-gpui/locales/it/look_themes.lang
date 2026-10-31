@@ -34,6 +34,7 @@ settings.window.opacity_raised = Alzata al {percent} % perché il testo resti le
 settings.window.note_macos = Sfocato usa la sfocatura delle finestre di macOS. Menu, finestre di dialogo e In riproduzione restano opachi.
 settings.window.note_windows = Sfocato è l’acrilico. Mica e Mica Alt richiedono Windows 11 (22H2 o successivo).
 settings.window.note_linux = Serve un window manager con compositing. Sfocato richiede KDE Plasma su Wayland; altrove appare come Trasparente.
+settings.window.reduced_by_os = Il sistema chiede meno trasparenza (Accessibilità), quindi la finestra resta opaca.
 settings.window.cpu_note = La sfocatura la disegna il sistema: nessuna CPU in più per l’app, e a riposo non si ridisegna nulla.
 
 # ---- React to the music (App-wide look)

@@ -34,6 +34,7 @@ settings.window.opacity_raised = Auf {percent} % erhöht, damit Text auf einem h
 settings.window.note_macos = „Unscharf“ nutzt die Fensterunschärfe von macOS. Menüs, Dialoge und „Läuft gerade“ bleiben deckend.
 settings.window.note_windows = „Unscharf“ ist Acryl. Mica und Mica Alt brauchen Windows 11 (22H2 oder neuer).
 settings.window.note_linux = Braucht einen Compositing-Fenstermanager. „Unscharf“ braucht KDE Plasma unter Wayland; sonst wirkt es wie „Durchsichtig“.
+settings.window.reduced_by_os = Dein System verlangt weniger Transparenz (Bedienungshilfen), daher bleibt das Fenster deckend.
 settings.window.cpu_note = Das System zeichnet die Unschärfe, also kostet sie keine zusätzliche CPU der App, und im Leerlauf wird nichts neu gezeichnet.
 
 # ---- React to the music (App-wide look)

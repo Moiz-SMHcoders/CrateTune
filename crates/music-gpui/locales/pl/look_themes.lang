@@ -34,6 +34,7 @@ settings.window.opacity_raised = Zwiększone do {percent} %, aby tekst był czyt
 settings.window.note_macos = Rozmyte korzysta z rozmycia okien w macOS. Menu, okna dialogowe i Teraz odtwarzane pozostają nieprzezroczyste.
 settings.window.note_windows = Rozmyte to akryl. Mica i Mica Alt wymagają Windows 11 (22H2 lub nowszego).
 settings.window.note_linux = Wymaga menedżera okien z kompozycją. Rozmyte wymaga KDE Plasma na Waylandzie; gdzie indziej wygląda jak Przejrzyste.
+settings.window.reduced_by_os = System prosi o mniejszą przezroczystość (Dostępność), więc okno pozostaje nieprzezroczyste.
 settings.window.cpu_note = Rozmycie rysuje system, więc aplikacja nie zużywa dodatkowego CPU i w spoczynku nic się nie przerysowuje.
 
 # ---- React to the music (App-wide look)

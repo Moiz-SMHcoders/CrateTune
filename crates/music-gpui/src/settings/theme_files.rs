@@ -364,7 +364,7 @@ pub fn readability(custom: &CustomTheme, choice: ThemeChoice) -> Vec<LowContrast
     let solid = |c: gpui::Hsla| crate::components::app_backdrop::over(bg, c.opacity(1.), c.a);
     let (fg, muted) = crate::theme::text_of(&look);
     let (fg, muted) = (solid(fg), solid(muted));
-    [
+    let mut out: Vec<LowContrast> = [
         ("foreground", fg, MIN_TEXT),
         ("muted_foreground", muted, MIN_MUTED),
     ]
@@ -373,8 +373,40 @@ pub fn readability(custom: &CustomTheme, choice: ThemeChoice) -> Vec<LowContrast
         let ratio = crate::theme::contrast(c, bg);
         (ratio < min - 0.005).then_some(LowContrast { token, ratio, min })
     })
-    .collect()
+    .collect();
+    // Text on a filled colour, where the file sets both (badges, buttons, menus).
+    let color = |name: &str| {
+        custom
+            .colors
+            .get(name)
+            .and_then(|v| crate::theme::token_color(v))
+    };
+    for (fill, text) in PAIRS {
+        if let (Some(f), Some(t)) = (color(fill), color(text)) {
+            let ratio = crate::theme::contrast(solid(t), solid(f));
+            if ratio < MIN_MUTED - 0.005 {
+                out.push(LowContrast {
+                    token: text,
+                    ratio,
+                    min: MIN_MUTED,
+                });
+            }
+        }
+    }
+    out
 }
+
+/// Filled tokens and the text drawn on them.
+const PAIRS: [(&str, &str); 8] = [
+    ("primary", "primary_foreground"),
+    ("secondary", "secondary_foreground"),
+    ("popover", "popover_foreground"),
+    ("sidebar", "sidebar_foreground"),
+    ("danger", "danger_foreground"),
+    ("success", "success_foreground"),
+    ("warning", "warning_foreground"),
+    ("info", "info_foreground"),
+];
 
 impl ThemeFile {
     /// `base` with this file's look (density and font stay the user's unless
@@ -658,6 +690,9 @@ mod tests {
         );
         let tokens: Vec<_> = f.warnings.iter().map(|w| w.token).collect();
         assert_eq!(tokens, ["foreground"], "{:?}", f.warnings);
+        let f = parse_ok("[colors]\nwarning = \"#FE8019\"\nwarning_foreground = \"#F08010\"");
+        assert_eq!(f.warnings.len(), 1);
+        assert_eq!(f.warnings[0].token, "warning_foreground");
         let f = parse_ok("[colors]\nmuted_foreground = \"#333333\"");
         assert_eq!(f.warnings.len(), 1);
         assert_eq!(f.warnings[0].token, "muted_foreground");

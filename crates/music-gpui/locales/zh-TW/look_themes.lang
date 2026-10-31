@@ -34,6 +34,7 @@ settings.window.opacity_raised = 已提高到 {percent}%，讓文字在淺色桌
 settings.window.note_macos = 「模糊」使用 macOS 的視窗模糊。選單、對話框和「正在播放」維持不透明。
 settings.window.note_windows = 「模糊」即壓克力效果。Mica 和 Mica Alt 需要 Windows 11（22H2 或更新版本）。
 settings.window.note_linux = 需要支援合成的視窗管理員。「模糊」需要 Wayland 上的 KDE Plasma；其他環境會顯示為「透明」。
+settings.window.reduced_by_os = 系統要求降低透明度（輔助使用），因此視窗維持不透明。
 settings.window.cpu_note = 模糊由系統繪製，不會增加 App 的 CPU 用量，閒置時也不會重繪。
 
 # ---- React to the music (App-wide look)

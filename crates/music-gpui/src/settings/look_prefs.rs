@@ -337,10 +337,11 @@ impl EffectsConfig {
         };
     }
 
-    /// The material drawn on this platform (`Off` when it can't be).
+    /// The material drawn on this platform (`Off` when it can't be, or when the
+    /// OS asks for reduced transparency).
     pub fn material(&self) -> WindowMaterial {
         Some(self.window_material)
-            .filter(|m| m.available())
+            .filter(|m| m.available() && !crate::effects::os_reduce_transparency())
             .unwrap_or_default()
     }
 }

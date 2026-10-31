@@ -34,6 +34,7 @@ settings.window.opacity_raised = Dinaikkan ke {percent} % agar teks tetap terbac
 settings.window.note_macos = Kabur memakai efek kabur jendela macOS. Menu, dialog, dan Sedang diputar tetap buram.
 settings.window.note_windows = Kabur adalah akrilik. Mica dan Mica Alt memerlukan Windows 11 (22H2 atau lebih baru).
 settings.window.note_linux = Memerlukan pengelola jendela dengan compositing. Kabur memerlukan KDE Plasma di Wayland; di tempat lain tampil seperti Tembus pandang.
+settings.window.reduced_by_os = Sistem Anda meminta transparansi dikurangi (Aksesibilitas), jadi jendela tetap buram.
 settings.window.cpu_note = Sistem yang menggambar efek kabur, jadi tidak ada CPU tambahan untuk aplikasi dan tidak ada yang digambar ulang saat diam.
 
 # ---- React to the music (App-wide look)

@@ -34,6 +34,7 @@ settings.window.opacity_raised = Đã tăng lên {percent} % để chữ vẫn �
 settings.window.note_macos = Mờ dùng hiệu ứng làm mờ cửa sổ của macOS. Menu, hộp thoại và Đang phát vẫn đục.
 settings.window.note_windows = Mờ là acrylic. Mica và Mica Alt cần Windows 11 (22H2 trở lên).
 settings.window.note_linux = Cần trình quản lý cửa sổ có compositing. Mờ cần KDE Plasma trên Wayland; nơi khác sẽ trông như Trong suốt.
+settings.window.reduced_by_os = Hệ thống yêu cầu giảm độ trong suốt (Trợ năng), nên cửa sổ vẫn đục.
 settings.window.cpu_note = Hệ thống vẽ hiệu ứng mờ nên ứng dụng không tốn thêm CPU và không vẽ lại gì khi rảnh.
 
 # ---- React to the music (App-wide look)

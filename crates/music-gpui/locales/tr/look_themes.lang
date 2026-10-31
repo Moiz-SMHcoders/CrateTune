@@ -34,6 +34,7 @@ settings.window.opacity_raised = Metin açık bir masaüstünde okunur kalsın d
 settings.window.note_macos = Bulanık, macOS’un pencere bulanıklığını kullanır. Menüler, iletişim kutuları ve Şimdi çalıyor opak kalır.
 settings.window.note_windows = Bulanık, akriliktir. Mica ve Mica Alt için Windows 11 (22H2 veya sonrası) gerekir.
 settings.window.note_linux = Birleştirici (compositing) bir pencere yöneticisi gerekir. Bulanık için Wayland’de KDE Plasma gerekir; başka yerlerde Saydam gibi görünür.
+settings.window.reduced_by_os = Sisteminiz daha az saydamlık istiyor (Erişilebilirlik), bu yüzden pencere opak kalıyor.
 settings.window.cpu_note = Bulanıklığı sistem çizer; uygulamaya ek CPU yükü getirmez ve boştayken hiçbir şey yeniden çizilmez.
 
 # ---- React to the music (App-wide look)

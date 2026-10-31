@@ -2091,6 +2091,7 @@ item's ACL is tied to the binary). Secrets are never logged.
 | `MUSIC_NO_CULL=1` | build every page section on every frame, as before `components/cull.rs` (measuring what culling saves; `scripts/perf-frames.sh` must fail with it) |
 | `MUSIC_NO_TRANSITIONS=1` | switch dynamic colours at once (no 400 ms cross-fade) |
 | `MUSIC_REDUCE_MOTION=1\|0` | pretend the OS asks for reduced motion (or doesn't); Animations → System follows it |
+| `MUSIC_REDUCE_TRANSPARENCY=1\|0` | pretend the OS asks for reduced transparency (or doesn't): window backgrounds and the translucent sidebar go opaque |
 | `MUSIC_BAR_SPECTRUM_DUMP=1` | print the player bar analyzer's band statistics once a second (tuning the Equalizer style) |
 | `MUSIC_MALLOC=system` | keep macOS's default allocator behaviour (no re-exec with `MallocSpaceEfficient=1`, see `memory.rs`; for comparisons) |
 | `MUSIC_TRACE=1` | log playback transitions, seeks, saves, route changes, artwork downloads; `MUSIC_TIMINGS=1`: renders/s and frame intervals (p50 / p95 / max) of the window (`app`) and the player bar (`bar`), once a second |
@@ -2633,7 +2634,7 @@ no extra scrim is needed; with no artwork colours yet it uses the theme accent's
 | Artwork corners | **Match theme**, Square, Rounded, Round | Covers in tiles, rows, headers, the queue and the bar (circles stay circles). |
 | Artwork shadows | **off** | A shadow under covers ≥ 96 pt. |
 | Tile size | Small, **Regular**, Large | 128 / 160 / 200 pt tile artwork. |
-| Translucent sidebar | **off** (macOS only) | GPUI's blurred window background (`NSVisualEffectView`); everything but the sidebar paints its own background. |
+| Translucent sidebar | **off** (macOS only) | GPUI's blurred window background (`NSVisualEffectView`); everything but the sidebar paints its own background. Since the look round the sidebar's opacity is raised until its text stays readable on a light desktop, and the whole window can be see-through instead (Appearance → Window). |
 
 **Player bar → Artwork**: *Standard* (default) or *Edge to edge*: square at the bar's
 height (87 pt), flush with the left edge, no outer rounding; the track info zone takes the
@@ -2680,6 +2681,163 @@ live: the display stopped delivering frames during that run (see the Backlog's F
 
 Memory: `footprint` stayed at 203 MB through every style (static and animated) in one
 session; page navigation moved it by the loaded pages (210–267 MB), as on main.
+
+### Look round: theme files, see-through window, music-reactive look, zoom, app icon
+
+| ![Theme files in Customize theme (a file left out, a low-contrast warning)](docs/screenshots/themes-files.png) | ![Nord theme file, Home](docs/screenshots/themes-nord-home.png) |
+|---|---|
+| ![Catppuccin Mocha theme file, album page](docs/screenshots/themes-catppuccin-album.png) | ![Gruvbox Dark theme file, queue panel](docs/screenshots/themes-gruvbox-queue.png) |
+| ![Dracula theme file, Appearance](docs/screenshots/themes-dracula-settings.png) | ![Window background and opacity (raised to 66 %)](docs/screenshots/look-window-settings.png) |
+| ![Blurred window background, 60 % → 66 % (offscreen render over a sample wallpaper; the real blur is drawn by the system)](docs/screenshots/look-window-blur-home.png) | ![React to the music](docs/screenshots/look-react-settings.png) |
+| ![Glow reacting to the music (demo clock: no audio, so at its resting 55 %)](docs/screenshots/look-react-glow.png) | ![Zoom 125 %](docs/screenshots/look-zoom-125.png) |
+| ![App icon variants](docs/screenshots/look-app-icon.png) | |
+
+After refryt (theme files, window translucency), Deviload (the music-reactive ambient look)
+and Limusic (zoom, app icon); ported pieces in `crates/music-gpui/THIRD_PARTY.md`.
+
+* **Theme files** (`settings/theme_files.rs`, `theme_library.rs`): `<config>/themes/*.toml`,
+  listed under Customize theme → **Theme files** next to the presets, applied like a preset
+  (`custom_theme` gets the file's options, its `[colors]` and `file: "<id>"`). TOML because
+  it allows comments; the format (every key optional) is in the [user
+  guide](docs/USER_GUIDE.md#themes-and-profiles) and the commented
+  [`themes/example.toml`](crates/music-gpui/themes/example.toml). `[colors]` sets any of 69
+  gpui-component tokens (`theme::TOKENS`), applied last in `themed_colors`, and the
+  background a file sets is the one the accent's contrast is checked against. Loaded when
+  the settings panel starts; the folder is watched with `notify` (FSEvents /
+  inotify / ReadDirectoryChangesW, already in gpui-component's graph) and re-read 150 ms
+  after the last event, so an editor's save (temp file + rename) is one reload; when the
+  applied theme's file changes, it is applied again (a file that broke keeps the last good
+  look). Files that don't parse are listed with the line and reason (TOML syntax, an
+  unknown key, a value of the wrong kind, an unknown choice, a number out of range, an
+  unknown colour name, an unreadable colour) and left out; files whose text is hard to
+  read (foreground < 4.5:1 or muted < 3:1 on the background) get a warning. **Open themes
+  folder**, **Export current theme as file** (writes `my-theme.toml`: the options, the
+  file's own colours as values and every other token commented out with its colour on
+  screen, and makes it the applied file). The folder is seeded once with the example and
+  four starter themes (Nord, Catppuccin Mocha, Gruvbox Dark, Dracula; no warnings, tested);
+  deleted ones stay deleted. Built-in presets clear a file's colours. The existing
+  `.cratetune-theme.json` export / import carries the colours too.
+* **Window background** (Appearance → Window; `effects.window_material`,
+  `window_opacity`): Opaque (default), Blurred (GPUI's `Blurred`: macOS `NSVisualEffectView`
+  blur, Windows acrylic, KDE's blur protocol on Wayland), See-through (`Transparent`), and
+  Mica / Mica Alt (Windows 11 22H2+, `RtlGetVersion` build ≥ 22621, as GPUI requires);
+  options the platform can't draw are hidden, and a note explains each platform. The root
+  view paints the background at the opacity, the sidebar / top bar a light layer on top;
+  the player bar, menus, dialogs and Now Playing stay opaque. gpui-component's `Root`
+  painted an opaque background under the app (so the old macOS translucent sidebar showed
+  nothing); it is transparent now and the app paints its own. **Readable**: the opacity
+  (60–90 %) is raised until text keeps 4.5:1 and muted text 3:1 over a *white* desktop
+  (a blur doesn't make a light desktop darker), with muted text moved towards the
+  foreground as the window gets clearer (refryt's idea; `theme::readable_window_alpha`,
+  `lifted_muted`, tested from 50 to 100 %). With the stock dark theme 70 % and above are
+  used as chosen, 60 % becomes about 66 %; the settings say when it was raised. The same
+  floor now applies to the translucent sidebar (45 % → about 74 % with the stock sidebar colour). The OS draws the blur:
+  no app CPU, no frames. macOS "Reduce transparency" (Accessibility → Display, polled with
+  "Reduce motion", `MUSIC_REDUCE_TRANSPARENCY=1|0` for tests) turns it and the
+  translucent sidebar off, and the setting says why.
+* **React to the music** (App-wide look, Gradient wash / Glow; `components/ambient.rs`):
+  three bands from the player's spectrum tap (35 Hz–9 kHz) feed Deviload's envelope (bass
+  onset over a 0.24 s baseline, attack 25 ms, release 260 ms); the energy scales the
+  backdrop's opacity between 55 and 100 % of the look's own (so `readable_wash` still
+  holds) and the glow's reach. **Frame cap**: one backdrop frame per 34 ms (≤ 30 fps), only
+  while playing with ambient motion allowed, plus the release tail after a pause (< 1.5 s);
+  nothing with Animations Reduced / Off, while Now Playing covers the window, or while the
+  window is hidden (GPUI sends no frames). The shell and bar are cached while it runs, so a
+  frame repaints only the backdrop (`@bench-backdrop`: ~1 ms). Off by default and in
+  Minimal / Fast.
+* **Zoom** (`zoom.rs`): ⌘= / ⌘+ / ⌘− / ⌘0 (Ctrl elsewhere; three new rows in the editable
+  shortcuts, ⌘+ is an alias while zoom in has its default) and Ctrl / ⌘ + wheel step the
+  existing text size (`appearance.font_scale`, GPUI's rem size) through 75–150 %; saved
+  like the Appearance buttons; a replacing notification shows the level. The wheel goes
+  through `smooth_scroll.rs`'s capture listener, now installed on every platform: Ctrl /
+  ⌘ + wheel over a control that claims the wheel (volume, seek bars) stays that
+  control's; nothing else in the app used Ctrl + wheel. A mouse notch is one step,
+  trackpad pixels one step per 60 px.
+* **App icon** (`app_icon.rs`, Appearance → Window): Midnight (the standard ク, default),
+  Paper, Sunset, Mint, Mono (`packaging/icons/variants/*.png`, rendered by
+  `scripts/make-icons.sh` from `app-icon.svg` with other colours), or **Choose an image…**
+  (PNG / JPEG / WebP, fitted into a transparent 512 px square, kept as
+  `<config>/app-icon.png`). macOS: `NSApplication setApplicationIconImage:` at runtime
+  (the default restores the bundle's icon); Windows: `WM_SETICON` big + small on the main
+  window; X11: GPUI's `WindowOptions::icon` at the next start; Wayland: the `.desktop`
+  icon. Not in profiles (`PROFILE_EXCLUDE`).
+
+**Settings JSON** (new parts, defaults shown):
+
+```json
+"appearance": { …, "font_scale": 1.0, "app_icon": "default" },
+"custom_theme": { …, "colors": { "background": "#2E3440" }, "file": "nord" },
+"app_look": { …, "react": false },
+"effects": { …, "window_material": "off", "window_opacity": 0.8 }
+```
+
+`font_scale`: 0.75, 0.875, 1, 1.125, 1.25, 1.375, 1.5 (others snap); `app_icon`: default |
+light | sunset | mint | mono | custom; `window_material`: off | blur | transparent | mica |
+mica-alt (one the platform can't draw means off); `window_opacity` 0.5–1; `colors` and
+`file` are written only when set. Scripts: `@theme-file=ID`, `@theme-files`,
+`@theme-files-export`, `@theme-files-reload`, `@window-material=…`, `@window-opacity=0.7`,
+`@zoom=in|out|reset|1.25`, `@app-icon=sunset|PATH`, `@app-look-opt=react:on`
+(`appearance_script.rs`, `look_script.rs`); `@look-status` prints the window material,
+the opacity used and the reactive frame count / energy.
+
+Ideas from the same survey that were left out, with the reason: [BACKLOG
+M6](docs/BACKLOG.md#4-missing-features-vs-archivetune). Windows / Linux checks: BACKLOG U19.
+
+**F4 (marquee titles)**: CrateTune has no marquee or auto-scrolling title anywhere (rows,
+cards, the bar, the mini player and Now Playing truncate with an ellipsis; the only
+auto-scroll is the synced lyrics, measured in the Now Playing round). Measured: a song
+playing on Home with Now Playing closed renders the window and the bar once a second (the
+time and progress: 14 renders each in 14 s), the same as main at `cd4c6ec`, and nothing
+while paused. Closed (no marquee to fix).
+
+**Measured** (release, macOS 26.6 on an Apple M4, display awake, `MUSIC_ON_TOP=1`; the
+machine ran other agents' builds the whole time, load average ~90, so CPU is noisy).
+`scripts/perf-macos.sh`, three interleaved runs each, branch at `f20940a` vs main at
+`cd4c6ec`, default settings (best / median of three):
+
+| | main | branch |
+|---|---|---|
+| Idle on Home, CPU | 0.8 / 8.9 % | 0.7 / 0.8 % |
+| Playing (Equalizer bar), Home, CPU | 5.2 / 5.2 % | 4.9 / 8.5 % |
+| Now Playing open while playing, CPU / fps | 2.4 / 2.5 %, 9 fps | 2.4 / 6.5 %, 9 fps |
+| Full window draw, top of Home (p50) | 4.01–4.10 ms | 4.11–4.65 ms |
+
+The medians' outliers (main 8.9 % idle, 28.7 % playing, 411 MB; branch 20.3 % with Now
+Playing, 402 MB) came one per build in runs that overlapped other builds; the best runs and
+the draw times match. Per option (`MUSIC_FIXTURES`, demo clock, a song "playing" on Home
+for 14 s, then paused for 10 s; CPU from `ps` deltas; renders from `MUSIC_TIMINGS`;
+backdrop frames from `@look-status`):
+
+| Settings | CPU playing | CPU paused | Window renders / s playing | Backdrop frames / s |
+|---|---|---|---|---|
+| main, defaults | 1.1 % | 0.6 % | 1 | – |
+| main, Glow | 1.2 % | 0.5 % | 1 | – |
+| Defaults | 1.4 % | 0.4 % | 1 | 0 |
+| Glow | 1.3 % | 0.7 % | 1 | 0 |
+| Glow + React to the music | 4.8 % | 0.6 % | 21 | 20.5 (0 after the 1.4 s tail) |
+| Gradient wash + React | 4.4 % | 0.5 % | 20 | 18.9 (0 after the tail) |
+| React, Animations Reduced | 1.4 % | 0.5 % | 1 | 0 |
+| Window background Blurred, 80 % | 1.2 % | 0.6 % | 1 | 0 |
+
+With real audio (network, muted, "Daft Punk" search): Glow + React 4.8 %, Gradient + React
+4.1 % while playing at 20–27 backdrop frames a second (the cap is 29.4; the machine's load
+took the rest), energy 0.83–0.93 on the chorus, 0 frames from ~2 s after the pause. Runs
+where the window stopped getting display frames (it was covered) analyzed nothing and drew
+nothing for that time, as intended. The theme-folder watcher costs nothing between saves.
+
+**Verified** (macOS): unit tests for theme-file parsing / validation / seeding / export round
+trip, the token table, overrides and contrast, the readable opacity floor (50–100 %, white
+and black desktops), reactive envelope / frame cap / stop conditions, zoom steps and wheel
+deltas, the shortcut table with the ⌘+ alias, app icon variants and the custom-image
+fitting, the new settings' defaults and lenient parsing; a scripted session (seeded folder,
+`@theme-file=nord`, `@window-material=blur` at 60 % → used 75 % with Nord's lighter
+background, `@zoom=in`, `@app-icon=sunset`, `@theme-files-export` → `my-theme.toml` applied,
+the watcher's reloads); window captures (`screencapture -l`, not committed: they show the
+desktop) of the blurred see-through window and of the translucent sidebar before / after
+the readable floor; offscreen screenshots above. **Not verified**: Windows and Linux (U19:
+materials on real desktops, the Windows window icon, the X11 icon, file watching there),
+the Dock icon by eye (set through the same AppKit call as the existing unbundled Dock icon),
+the macOS file picker for "Choose an image…" (the same path ran through `@app-icon=PATH`).
 
 ### Self-update
 

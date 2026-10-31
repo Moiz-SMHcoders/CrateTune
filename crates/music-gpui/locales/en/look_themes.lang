@@ -43,6 +43,8 @@ settings.window.opacity_raised = Raised to {percent} % so text stays readable on
 settings.window.note_macos = Blurred uses the macOS window blur. Menus, dialogs and Now Playing stay opaque.
 settings.window.note_windows = Blurred is acrylic. Mica and Mica Alt need Windows 11 (22H2 or later).
 settings.window.note_linux = Needs a compositing window manager. Blurred needs KDE Plasma on Wayland; elsewhere it shows as See-through.
+# The OS's "Reduce transparency" accessibility setting is on.
+settings.window.reduced_by_os = Your system asks for less transparency (Accessibility), so the window stays opaque.
 settings.window.cpu_note = The system draws the blur, so it costs no extra app CPU and nothing redraws while idle.
 
 # ---- React to the music (App-wide look)

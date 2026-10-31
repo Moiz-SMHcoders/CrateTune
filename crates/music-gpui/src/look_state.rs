@@ -68,10 +68,17 @@ impl MusicApp {
             self.apply_theme(cx);
         }
         self.look.polls = self.look.polls.wrapping_add(1);
-        if self.look.polls % OS_CHECK_POLLS == 1 && crate::effects::poll_os_reduce_motion() {
-            let effects = self.settings.read(cx).settings().effects;
-            if crate::effects::sync(&effects, cx) {
-                cx.refresh_windows();
+        if self.look.polls % OS_CHECK_POLLS == 1 {
+            if crate::effects::poll_os_reduce_motion() {
+                let effects = self.settings.read(cx).settings().effects;
+                if crate::effects::sync(&effects, cx) {
+                    cx.refresh_windows();
+                }
+            }
+            // Reduce transparency: the window background goes opaque (and back).
+            if crate::effects::poll_os_reduce_transparency() {
+                self.apply_theme(cx);
+                cx.notify();
             }
         }
     }
@@ -89,7 +96,10 @@ impl MusicApp {
     /// and the whole window isn't see-through (which includes the sidebar).
     pub(crate) fn translucent_sidebar(&self, cx: &App) -> bool {
         let fx = &self.settings.read(cx).settings().effects;
-        cfg!(target_os = "macos") && fx.translucent_sidebar && fx.material() == WindowMaterial::Off
+        cfg!(target_os = "macos")
+            && fx.translucent_sidebar
+            && fx.material() == WindowMaterial::Off
+            && !crate::effects::os_reduce_transparency()
     }
 
     /// The window's background opacity over a window material (`None`: opaque).

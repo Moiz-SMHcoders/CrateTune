@@ -34,6 +34,7 @@ settings.window.opacity_raised = 밝은 바탕 화면에서도 글자가 읽히�
 settings.window.note_macos = 흐림은 macOS의 창 흐림 효과를 사용합니다. 메뉴, 대화상자, 지금 재생 중 화면은 불투명하게 유지됩니다.
 settings.window.note_windows = 흐림은 아크릴입니다. Mica와 Mica Alt는 Windows 11(22H2 이상)이 필요합니다.
 settings.window.note_linux = 컴포지팅 창 관리자가 필요합니다. 흐림은 Wayland의 KDE Plasma가 필요하며, 그 외에는 투명처럼 보입니다.
+settings.window.reduced_by_os = 시스템에서 투명도 줄이기가 켜져 있어(손쉬운 사용) 창이 불투명하게 유지됩니다.
 settings.window.cpu_note = 흐림은 시스템이 그리므로 앱 CPU를 더 쓰지 않으며, 대기 중에는 아무것도 다시 그리지 않습니다.
 
 # ---- React to the music (App-wide look)

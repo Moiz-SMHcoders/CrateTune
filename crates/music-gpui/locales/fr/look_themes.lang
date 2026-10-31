@@ -34,6 +34,7 @@ settings.window.opacity_raised = Relevée à {percent} % pour que le texte reste
 settings.window.note_macos = Flou utilise le flou de fenêtre de macOS. Les menus, dialogues et l’écran En cours de lecture restent opaques.
 settings.window.note_windows = Flou correspond à l’acrylique. Mica et Mica Alt demandent Windows 11 (22H2 ou plus récent).
 settings.window.note_linux = Demande un gestionnaire de fenêtres composite. Flou demande KDE Plasma sous Wayland ; ailleurs il s’affiche comme Transparent.
+settings.window.reduced_by_os = Votre système demande moins de transparence (Accessibilité) : la fenêtre reste opaque.
 settings.window.cpu_note = C’est le système qui dessine le flou : aucun CPU supplémentaire pour l’app, et rien n’est redessiné au repos.
 
 # ---- React to the music (App-wide look)

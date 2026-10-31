@@ -182,6 +182,8 @@ fn main() {
             gpui_component::init(cx);
             ArtworkCache::init(cx);
             logo::set_dock_icon();
+            // Before the window opens: whether the OS asks for less transparency.
+            effects::poll_os_reduce_transparency();
 
             // Only the UI language and the window frame are needed before the window
             // exists; the settings panel loads (and owns) the full file.

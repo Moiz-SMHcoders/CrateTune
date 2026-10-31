@@ -34,6 +34,7 @@ settings.window.opacity_raised = Verhoogd naar {percent} % zodat tekst leesbaar 
 settings.window.note_macos = Wazig gebruikt de vensterwaas van macOS. Menu’s, dialogen en Speelt nu blijven ondoorzichtig.
 settings.window.note_windows = Wazig is acryl. Mica en Mica Alt vereisen Windows 11 (22H2 of nieuwer).
 settings.window.note_linux = Vereist een compositing-windowmanager. Wazig vereist KDE Plasma op Wayland; elders lijkt het op Doorzichtig.
+settings.window.reduced_by_os = Je systeem vraagt om minder transparantie (Toegankelijkheid), dus het venster blijft ondoorzichtig.
 settings.window.cpu_note = Het systeem tekent de waas, dus het kost de app geen extra CPU en in rust wordt niets opnieuw getekend.
 
 # ---- React to the music (App-wide look)

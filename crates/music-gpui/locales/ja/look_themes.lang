@@ -34,6 +34,7 @@ settings.window.opacity_raised = 明るいデスクトップでも文字が読�
 settings.window.note_macos = 「ぼかし」は macOS のウインドウぼかしを使います。メニュー、ダイアログ、再生中画面は不透明のままです。
 settings.window.note_windows = 「ぼかし」はアクリルです。Mica と Mica Alt には Windows 11（22H2 以降）が必要です。
 settings.window.note_linux = コンポジット対応のウインドウマネージャが必要です。「ぼかし」は Wayland 上の KDE Plasma が必要で、それ以外では「透過」と同じ表示になります。
+settings.window.reduced_by_os = システムで「透明度を下げる」がオンになっているため（アクセシビリティ）、ウインドウは不透明のままです。
 settings.window.cpu_note = ぼかしはシステムが描画するため、アプリの CPU は増えず、待機中に再描画もしません。
 
 # ---- React to the music (App-wide look)

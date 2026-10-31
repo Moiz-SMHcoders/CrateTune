@@ -34,6 +34,7 @@ settings.window.opacity_raised = Повышена до {percent} %, чтобы �
 settings.window.note_macos = «Размытие» использует размытие окон macOS. Меню, диалоги и «Сейчас играет» остаются непрозрачными.
 settings.window.note_windows = «Размытие» — это акрил. Для Mica и Mica Alt нужна Windows 11 (22H2 или новее).
 settings.window.note_linux = Нужен композитный оконный менеджер. Для размытия нужен KDE Plasma на Wayland; в остальных случаях оно выглядит как «Прозрачный».
+settings.window.reduced_by_os = Система просит меньше прозрачности (Универсальный доступ), поэтому окно остаётся непрозрачным.
 settings.window.cpu_note = Размытие рисует система, поэтому оно не нагружает процессор приложения и в простое ничего не перерисовывается.
 
 # ---- React to the music (App-wide look)

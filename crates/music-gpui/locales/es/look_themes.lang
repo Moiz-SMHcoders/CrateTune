@@ -34,6 +34,7 @@ settings.window.opacity_raised = Subida al {percent} % para que el texto se lea 
 settings.window.note_macos = Difuminado usa el desenfoque de ventanas de macOS. Los menús, diálogos y Reproduciendo siguen opacos.
 settings.window.note_windows = Difuminado es acrílico. Mica y Mica Alt necesitan Windows 11 (22H2 o posterior).
 settings.window.note_linux = Necesita un gestor de ventanas con composición. Difuminado necesita KDE Plasma en Wayland; en otros casos se ve como Transparente.
+settings.window.reduced_by_os = Tu sistema pide menos transparencia (Accesibilidad), así que la ventana sigue opaca.
 settings.window.cpu_note = El sistema dibuja el desenfoque, así que no gasta CPU extra de la app y nada se redibuja en reposo.
 
 # ---- React to the music (App-wide look)

@@ -56,7 +56,8 @@ corners = "round"
 #   border, input                   lines and field borders
 #   list_hover, list_active         song rows
 #   scrollbar_thumb, selection      scroll bars, selected text
-#   danger, success, warning        status colours
+#   danger, success, warning        status colours (set the matching
+#                                   danger_foreground, … too: text on them)
 [colors]
 background = "#0B1622"
 sidebar = "#08111B"
