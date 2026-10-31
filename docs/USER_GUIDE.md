@@ -803,16 +803,20 @@ Builds signed with a Developer ID keep the same identity, and neither prompt com
 
 ## Known limitations
 
-* **How YouTube songs are streamed.** Full songs come from YouTube's TV client, or its web
-  client with a PoToken (an anti-abuse token the app makes in a hidden browser view on
-  macOS and Windows). YouTube makes each new stream wait a few seconds; the app plays the start of the
-  song from a preview meanwhile, so songs usually start within a second (two or three for
-  the first song after launch). Choose the
-  route in Settings → Playback → **YouTube streams** (Automatic is best). Windows makes the
-  PoToken with the built-in WebView2 (new, untested); Linux builds can opt in with
-  WebKitGTK; otherwise they use the TV client. If YouTube changes
-  something, songs fall back to ~1-minute previews (marked "preview") until the app is
-  updated. This isn't allowed by YouTube's terms of service.
+* **How YouTube songs are streamed.** Full songs come from YouTube's visionOS client (direct
+  links, the fastest), its TV client, or its TV Simply and web clients with a PoToken (an
+  anti-abuse token the app makes in a hidden browser view on macOS and Windows). Automatic
+  tries them fastest first and skips a route that fails 3 times in a row for 10 minutes.
+  Settings → Playback → **Stream route** shows which one played the last song. Songs usually
+  start within a second. The TV and web routes make each new stream wait a few seconds, so the
+  app plays the start of the song from a preview meanwhile. Choose the route in Settings →
+  Playback → **YouTube streams** (Automatic is best). Windows makes the PoToken with the
+  built-in WebView2 (new, untested); Linux builds can opt in with WebKitGTK; otherwise they use
+  the visionOS and TV clients. When YouTube changes something, the app downloads signed fixes
+  (data only) from its GitHub repository every few hours (Settings → Playback → **Player
+  fixes**), so most breakages are fixed without an update. If every route fails, songs fall
+  back to ~1-minute previews (marked "preview"). This isn't allowed by YouTube's terms of
+  service.
 * The YouTube Music account features are new and not yet tested against many accounts
   (playlist cover upload has not been tried against a real account at all).
 * Quad9's DNS-over-HTTPS is reached on port 5053 (its port-443 server only speaks

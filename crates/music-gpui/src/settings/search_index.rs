@@ -689,7 +689,34 @@ pub const ENTRIES: &[Entry] = &[
         "source",
         "potoken",
         "client",
-        "tv"
+        "tv",
+        "visionos",
+        "route"
+    ),
+    entry!(
+        "playback.stream_status",
+        Playback,
+        "settings.playback.audio",
+        "settings.playback.stream_status",
+        -,
+        "client",
+        "visionos",
+        "breaker",
+        "failing",
+        "status"
+    ),
+    entry!(
+        "playback.player_fixes",
+        Playback,
+        "settings.playback.audio",
+        "settings.playback.player_fixes",
+        "settings.playback.player_fixes_desc",
+        "fix",
+        "update",
+        "signature",
+        "manifest",
+        "cipher",
+        "player"
     ),
     entry!(
         "playback.quality",

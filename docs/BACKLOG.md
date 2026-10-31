@@ -49,6 +49,23 @@ background renewal on Linux (no sign-in web view there). [TESTING.md
 `crates/music-core/src/innertube/session.rs`, `crates/music-gpui/src/session_keeper.rs`.
 · Size: small · Priority: high
 
+**U1b. Player fixes: the published path and the relay mirror**
+The signed manifest's fetch, verification, cache and rollback rules are unit-tested against
+in-memory sources. The relay's `--player-fixes` route has an end-to-end test. Still to
+confirm: that `raw.githubusercontent.com/<UPDATE_REPO>/main/packaging/player-fixes.json` is
+reachable once this is on `main`, and that the production relay serves the mirror
+(`relay.smhcoders.click` needs `--player-fixes DIR` and a job that copies the two files).
+Also still to do: publish a real fix (serial 2) and watch a running app pick it up. Details:
+[RELEASING.md](RELEASING.md#player-fixes-packagingplayer-fixesjson). · Size: small ·
+Priority: medium
+
+**U1c. visionOS and TV Simply over time and on other networks**
+Both were verified on one network in Oct 2026 (visionOS 6/6 songs and TV Simply 5/5, full
+length). refryt and Limusic report that networks and regions differ in which anonymous clients
+YouTube refuses. The breaker covers a refusal, but whether visionOS URLs keep serving
+whole files in 10 MiB ranges, and how often its visitor id needs renewing, has only been seen
+over hours, not weeks. · Size: small · Priority: medium
+
 **U2. Physical input: mouse, trackpad, keyboard and media keys**
 Every interaction test used synthetic events (`@key`, `@click`, scripts). Still untested by
 hand: drag and drop in the queue, volume drag and trackpad scrolling, OS media keys and Control
@@ -199,8 +216,8 @@ Priority: high
 
 **P3. PoToken on Windows (WebView2) and Linux (WebKitGTK)**
 This code is type-checked only and has never run on those systems. On Linux it is also off by
-default (feature `webkitgtk-potoken`). Without it the TV client is used, so full streams still
-work, but with one fewer fallback. Details: [README: Full-length YouTube
+default (feature `webkitgtk-potoken`). Without it the visionOS and TV clients are used, so full
+streams still work, but with two fewer fallbacks (TV Simply and web need a PoToken). Details: [README: Full-length YouTube
 streams](../README.md#full-length-youtube-streams-youtube-module),
 `crates/music-core/src/youtube/webview2.rs`, `webkitgtk.rs`. · Size: medium · Priority: medium
 
@@ -393,10 +410,15 @@ alpha or gradient masks, or radial gradients. The app works around this with CPU
 round](../README.md#now-playing-round-cpu-designs-lyrics-cards). · Size: large · Priority: low
 
 **T4. YouTube stream access is fragile**
-Full streams depend on YouTube's current client behaviour (TV client, PoToken, the
-`n`/signature solver from yt-dlp/ejs 0.8.0). When YouTube changes something, the app falls
-back to previews until it is updated. Keep the vendored solver current and the live examples
-running. Details: [README: Full-length YouTube
+Full streams depend on YouTube's current client behaviour (visionOS, TV, TV Simply + PoToken,
+web + PoToken, and the `n`/signature solver from yt-dlp/ejs 0.8.0). Now a broken
+route costs at most three songs before the circuit breaker skips it. A failed solve refetches
+`player.js` once, and the signed player fixes (`packaging/player-fixes.json`) can change client
+versions, order and player pins without a release. A change that needs code (a new request
+shape, a solver update) still needs an app update, and the preview is the last resort. Keep the
+vendored solver current, run the live examples (`youtube -- auto`), and publish player fixes
+([RELEASING.md](RELEASING.md#player-fixes-packagingplayer-fixesjson)) when a client version
+rotates. Details: [README: Full-length YouTube
 streams](../README.md#full-length-youtube-streams-youtube-module). · Size: medium (ongoing) ·
 Priority: medium
 

@@ -1,8 +1,15 @@
 //! Full-length YouTube audio: the [`WebResolver`] stream resolver.
 //!
-//! * [`WebClient::Tv`] needs only YouTube's JavaScript challenges solved, which
+//! It tries [`WebClient`]s fastest first, each behind a circuit breaker
+//! ([`breaker`]: three failures in a row skip a client for ten minutes):
+//!
+//! * [`WebClient::VisionOs`] gets direct URLs from one request: no JavaScript,
+//!   no PoToken, no ad wait.
+//! * [`WebClient::Tv`] needs YouTube's JavaScript challenges solved, which
 //!   [`jsc`] does with yt-dlp's public-domain solver in an embedded QuickJS.
-//! * [`WebClient::MobileWeb`] additionally needs a PoToken from BotGuard
+//!   A failed solve drops the cached player, fetches it again and retries once.
+//! * [`WebClient::TvSimply`] and [`WebClient::MobileWeb`] additionally need a
+//!   PoToken from BotGuard
 //!   ([`potoken`]): a hidden WKWebView on macOS ([`WebKitBotGuard`]), WebView2
 //!   on Windows (feature `webview2-potoken`, default), WebKitGTK on Linux
 //!   (feature `webkitgtk-potoken`, opt-in). The Windows and Linux engines are
@@ -11,10 +18,16 @@
 //!   been skipped (a few seconds); [`crate::ResolvedStream::not_before`] carries that.
 //!
 //! The iOS-client [`crate::IosClientResolver`] (first ~1 MiB only) stays useful
-//! as the last fallback.
+//! as the last fallback. The signed player-fixes manifest ([`fixes`]) updates
+//! client identities and player hints without an app update, and the next
+//! track's URL is resolved ahead ([`prefetch`]: kept 1 h at most).
 
+pub mod breaker;
+mod client;
+pub mod fixes;
 mod jsc;
 pub mod potoken;
+mod prefetch;
 mod resolver;
 mod session;
 #[cfg(all(target_os = "macos", feature = "webkit-potoken"))]
@@ -32,15 +45,18 @@ mod webview2;
 )]
 mod webview_host;
 
+pub use breaker::{ClientHealth, ResolverStatus};
+pub use client::{ClientOverrides, WebClient};
+pub use fixes::{FixesStore, PlayerFixes};
 pub use potoken::{BotGuardTokenProvider, BotGuardVm, PoTokenProvider};
-pub use resolver::{WebClient, WebResolver};
+pub use resolver::{StatusHook, WebResolver};
 #[cfg(all(target_os = "macos", feature = "webkit-potoken"))]
 pub use webkit::WebKitBotGuard;
 
 /// The default PoToken provider for this platform, if there is one: BotGuard in a
 /// hidden WKWebView on macOS (the host must run the main run loop), in WebView2
 /// on Windows, in WebKitGTK on Linux (with the `webkitgtk-potoken` feature);
-/// none otherwise (the TV client needs none).
+/// none otherwise (the visionOS and TV clients need none).
 pub fn platform_potoken_provider() -> Option<std::sync::Arc<dyn PoTokenProvider>> {
     #[cfg(all(target_os = "macos", feature = "webkit-potoken"))]
     {

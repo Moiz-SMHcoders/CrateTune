@@ -45,7 +45,7 @@ onboarding.local.note = Pindai folder sekarang atau nanti; kelola di File lokal.
 
 # ---- Privacy & limitations step
 onboarding.privacy.streaming.title = Cara lagu di-streaming
-onboarding.privacy.streaming.text = Lagu lengkap berasal dari klien TV YouTube atau klien web-nya dengan PoToken (token anti-penyalahgunaan, dibuat di tampilan browser tersembunyi di macOS / Windows). YouTube membuat stream baru menunggu beberapa detik; sementara itu aplikasi memulai dari pratinjau singkat. Jika YouTube mengubah sesuatu, lagu kembali ke pratinjau ~1 menit (ditandai di pemutar). Pengaturan → Pemutaran → Stream YouTube memilih jalurnya.
+onboarding.privacy.streaming.text = Lagu lengkap berasal dari klien visionOS atau TV YouTube, atau klien web-nya dengan PoToken (token anti-penyalahgunaan, dibuat di tampilan browser tersembunyi di macOS / Windows). Jalur yang gagal berulang kali dilewati untuk sementara. Agar mengikuti perubahan YouTube, aplikasi mengunduh perbaikan bertanda tangan (hanya data) dari repositori GitHub {app}; Pengaturan → Pemutaran → Perbaikan pemutar mematikannya. Jika semua jalur gagal, lagu kembali ke pratinjau ~1 menit (ditandai di pemutar). Pengaturan → Pemutaran → Stream YouTube memilih jalurnya.
 onboarding.privacy.data.title = Data Anda tetap di sini
 onboarding.privacy.data.text = Pustaka, riwayat, statistik, dan pengaturan disimpan di komputer ini. Kata sandi, kunci API, dan cookie masuk YouTube disimpan di rantai kunci sistem. Jeda atau hapus riwayat mendengarkan dan pencarian kapan saja di Pengaturan → Privasi.
 onboarding.privacy.recipients.title = Siapa menerima apa

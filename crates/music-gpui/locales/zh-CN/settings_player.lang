@@ -2,6 +2,7 @@
 
 # ---- Option names
 prefs.stream.tv = TV 客户端
+prefs.stream.visionos = visionOS 客户端
 prefs.stream.web_potoken = 网页 + PoToken
 prefs.stream.preview = 仅试听片段
 prefs.quality.low = 低
@@ -79,10 +80,19 @@ settings.playback.repeat_all = 全部
 settings.playback.repeat_one = 单曲
 settings.playback.audio = 音频
 settings.playback.streams = YouTube 音频流
-settings.playback.stream_auto = 完整歌曲：先用 TV 客户端，再用带 PoToken 的网页客户端，最后使用约 1 分钟的试听片段。
+settings.playback.stream_auto = 通过可用的最快途径获取完整歌曲：visionOS、TV 客户端，然后是 PoToken 客户端；连续失败 3 次的途径会被跳过 10 分钟。最后的办法：约 1 分钟的试听片段。
 settings.playback.stream_tv = 通过 TV 客户端获取完整歌曲（无需 PoToken）；失败时使用试听片段。
+settings.playback.stream_visionos = 通过 visionOS 客户端获取完整歌曲（直接链接：无需 PoToken，无需等待）；失败时使用试听片段。
 settings.playback.stream_web = 通过网页客户端和 BotGuard PoToken 获取完整歌曲（macOS / Windows）；失败时使用试听片段。
 settings.playback.stream_preview = 每首歌只播放前约 1 分钟（旧的行为）。
+settings.playback.stream_status = 音频流途径
+settings.playback.stream_status_none = 尚未播放过歌曲
+settings.playback.stream_status_via = 上一首经由 {client}
+settings.playback.stream_status_preview = 上一首：仅试听片段（所有途径均失败）
+settings.playback.stream_status_skipped = 已跳过 {clients}，还剩 {minutes} 分钟
+settings.playback.stream_status_fixes = 播放器修复 #{serial}
+settings.playback.player_fixes = 播放器修复
+settings.playback.player_fixes_desc = 当 YouTube 做出更改时，从 {app} 的 GitHub 仓库下载已签名的修复（仅数据，每 6 小时检查一次）。关闭：仅使用此版本内置的修复。
 settings.playback.quality = 串流音质
 settings.playback.quality_desc = “低”可节省流量；“高”优先使用 Opus（约 160 kbps）而非 AAC 128。
 settings.playback.normalize = 响度标准化

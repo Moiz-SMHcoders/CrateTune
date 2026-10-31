@@ -1314,6 +1314,17 @@ impl StreamResolver for ModuleResolver {
         }
     }
 
+    /// YouTube resolves ahead for songs no module takes (modules keep their own cache).
+    fn prefetch_track(&self, track: &Track, quality: Quality) {
+        let enabled = {
+            let r = lock(&self.modules.inner.registry);
+            r.enabled && r.modules.iter().any(|m| m.enabled)
+        };
+        if !enabled || !MatchTarget::from_track(track).eligible {
+            self.fallback.prefetch_track(track, quality);
+        }
+    }
+
     fn resolve_track(&self, track: &Track, quality: Quality) -> crate::Result<ResolvedStream> {
         let (enabled, fallback) = {
             let r = lock(&self.modules.inner.registry);

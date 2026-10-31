@@ -2,6 +2,7 @@
 
 # ---- Option names
 prefs.stream.tv = Client TV
+prefs.stream.visionos = Client visionOS
 prefs.stream.web_potoken = Web + PoToken
 prefs.stream.preview = Solo anteprime
 prefs.quality.low = Bassa
@@ -79,10 +80,19 @@ settings.playback.repeat_all = Tutti
 settings.playback.repeat_one = Uno
 settings.playback.audio = Audio
 settings.playback.streams = Stream di YouTube
-settings.playback.stream_auto = Brani completi: client TV, poi client web con un PoToken, poi un'anteprima di circa 1 min.
+settings.playback.stream_auto = Brani completi tramite il metodo più veloce che funziona: visionOS, il client TV, poi i client con PoToken; un metodo che fallisce 3 volte di fila viene saltato per 10 min. Come ultima risorsa: un'anteprima di circa 1 min.
 settings.playback.stream_tv = Brani completi tramite il client TV (senza PoToken); un'anteprima se non funziona.
+settings.playback.stream_visionos = Brani completi tramite il client visionOS (link diretti: senza PoToken né attese); un'anteprima se non funziona.
 settings.playback.stream_web = Brani completi tramite il client web e un PoToken BotGuard (macOS / Windows); un'anteprima se non funziona.
 settings.playback.stream_preview = Solo il primo minuto circa di ogni brano (il vecchio comportamento).
+settings.playback.stream_status = Metodo di streaming
+settings.playback.stream_status_none = Nessun brano ancora in streaming
+settings.playback.stream_status_via = Ultimo brano tramite {client}
+settings.playback.stream_status_preview = Ultimo brano: solo anteprima (nessun metodo ha funzionato)
+settings.playback.stream_status_skipped = {clients} saltato per {minutes} min
+settings.playback.stream_status_fixes = correzioni del player n. {serial}
+settings.playback.player_fixes = Correzioni del player
+settings.playback.player_fixes_desc = Quando YouTube cambia qualcosa, scarica correzioni firmate (solo dati, controllate ogni 6 h) dal repository GitHub di {app}. Disattivato: solo le correzioni incluse in questa versione.
 settings.playback.quality = Qualità dello streaming
 settings.playback.quality_desc = Bassa riduce i dati; Alta preferisce Opus (~160 kbps) ad AAC 128.
 settings.playback.normalize = Normalizzazione del volume

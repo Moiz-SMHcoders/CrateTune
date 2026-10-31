@@ -2,6 +2,7 @@
 
 # ---- Option names (buttons in a row: keep short)
 prefs.stream.tv = TV-Client
+prefs.stream.visionos = visionOS-Client
 prefs.stream.web_potoken = Web + PoToken
 prefs.stream.preview = Nur Vorschau
 prefs.quality.low = Niedrig
@@ -79,10 +80,19 @@ settings.playback.repeat_all = Alle
 settings.playback.repeat_one = Eins
 settings.playback.audio = Audio
 settings.playback.streams = YouTube-Streams
-settings.playback.stream_auto = Ganze Songs: TV-Client, dann Web-Client mit PoToken, dann ca. 1 Min. Vorschau.
+settings.playback.stream_auto = Ganze Songs über den schnellsten funktionierenden Weg: visionOS, TV-Client, dann die PoToken-Clients; ein Weg, der 3-mal hintereinander scheitert, wird 10 Min. übersprungen. Zuletzt: ca. 1 Min. Vorschau.
 settings.playback.stream_tv = Ganze Songs über den TV-Client (ohne PoToken); bei Fehlern eine Vorschau.
+settings.playback.stream_visionos = Ganze Songs über den visionOS-Client (direkte Links: kein PoToken, keine Wartezeit); bei Fehlern eine Vorschau.
 settings.playback.stream_web = Ganze Songs über den Web-Client und ein BotGuard-PoToken (macOS / Windows); bei Fehlern eine Vorschau.
 settings.playback.stream_preview = Nur die erste Minute (ca.) jedes Songs (das alte Verhalten).
+settings.playback.stream_status = Stream-Weg
+settings.playback.stream_status_none = Noch kein Song gestreamt
+settings.playback.stream_status_via = Letzter Song über {client}
+settings.playback.stream_status_preview = Letzter Song: nur Vorschau (alle Wege fehlgeschlagen)
+settings.playback.stream_status_skipped = {clients} {minutes} Min. übersprungen
+settings.playback.stream_status_fixes = Player-Fixes #{serial}
+settings.playback.player_fixes = Player-Fixes
+settings.playback.player_fixes_desc = Wenn YouTube etwas ändert, signierte Fixes (nur Daten, alle 6 Std. geprüft) aus dem GitHub-Repository von {app} laden. Aus: nur die in dieser Version enthaltenen Fixes.
 settings.playback.quality = Streamingqualität
 settings.playback.quality_desc = Niedrig spart Daten; Hoch bevorzugt Opus (~160 kbit/s) gegenüber AAC 128.
 settings.playback.normalize = Lautstärke angleichen

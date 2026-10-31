@@ -47,7 +47,7 @@ onboarding.local.note = 現在或稍後掃描資料夾；可在「本機檔案�
 
 # ---- Privacy & limitations step
 onboarding.privacy.streaming.title = 歌曲如何串流
-onboarding.privacy.streaming.text = 完整歌曲來自 YouTube 的 TV 用戶端，或使用 PoToken（一種防濫用權杖，在 macOS / Windows 上由隱藏的瀏覽器檢視產生）的網頁用戶端。YouTube 會讓新的串流等待幾秒鐘；在此期間，應用程式會先播放一小段試聽片段。如果 YouTube 做了變更，歌曲會改為約 1 分鐘的試聽片段（會在播放器中標示）。可在「設定 → 播放 → YouTube 串流」中選擇取得方式。
+onboarding.privacy.streaming.text = 完整歌曲來自 YouTube 的 visionOS 或 TV 用戶端，或使用 PoToken（一種防濫用權杖，在 macOS / Windows 上由隱藏的瀏覽器檢視產生）的網頁用戶端。反覆失敗的途徑會暫時略過。為了跟上 YouTube 的變更，應用程式會從 {app} 的 GitHub 儲存庫下載已簽署的修正（僅資料）；可在「設定 → 播放 → 播放器修正」中關閉。如果所有途徑都失敗，歌曲會改為約 1 分鐘的試聽片段（會在播放器中標示）。可在「設定 → 播放 → YouTube 串流」中選擇取得方式。
 onboarding.privacy.data.title = 你的資料留在這裡
 onboarding.privacy.data.text = 媒體庫、播放記錄、統計資料和設定都保存在這部電腦上。密碼、API 金鑰和 YouTube 登入 Cookie 會存放在系統鑰匙圈中。你隨時可以在「設定 → 隱私權」中暫停或清除收聽記錄和搜尋記錄。
 onboarding.privacy.recipients.title = 誰會收到哪些資料

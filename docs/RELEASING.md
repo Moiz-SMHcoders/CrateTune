@@ -241,3 +241,69 @@ from `Cargo.lock` (no git dependencies, so it works as is), and build with
 extension's Rust must be at least the `rust-toolchain.toml` version.
 
 **Snap** is detected too (`SNAP` set: "Updates come from Snap") but there is no snap package.
+
+## Player fixes (`packaging/player-fixes.json`)
+
+When YouTube changes something that breaks streaming, a signed data file can fix running apps
+without a release. The app (`music_core::youtube::fixes`, Settings → Playback → *Player fixes*,
+on by default) fetches `packaging/player-fixes.json` and `packaging/player-fixes.json.minisig`
+from `raw.githubusercontent.com/<UPDATE_REPO>/main/`, then from the relay's mirror
+(`https://<relay host>/player-fixes.json`, see below). It checks every 6 hours, and sooner,
+at most every 15 minutes, when every stream route fails. It uses a manifest only if:
+
+* the signature verifies against the public key compiled into the app (`PUBLIC_KEY` in
+  `crates/music-core/src/youtube/fixes.rs`, key id `170691615846FB34`);
+* its `serial` is higher than the one it has (the copy built into the app is the minimum, so an
+  old signed file can't be replayed);
+* every field validates. Unknown fields and clients are ignored, so older apps read newer
+  manifests.
+
+Unsigned, altered or invalid content is ignored, and the cached copy is verified again on every
+start. **It is data only.** Nothing in it is executed. The only JavaScript the app runs is
+YouTube's own player script, in the QuickJS sandbox.
+
+### Fields (schema 1)
+
+| field | meaning |
+|---|---|
+| `serial` | Increase it with every change. |
+| `issued` | A date, for display and logs. |
+| `clients.<KEY>` | Replaces identity fields for a client: `clientVersion`, `userAgent`, `deviceMake`, `deviceModel`, `osName`, `osVersion` (printable ASCII, ≤ 300 chars). Keys: `VISIONOS`, `TVHTML5`, `TVHTML5_SIMPLY`, `MWEB`. |
+| `order` | The preferred client order. Enabled clients are sorted by it; unlisted ones follow. |
+| `disabled` | Clients known to be broken. They are skipped unless the user picked only that one. |
+| `players.sts` | `{ "<player id>": <signatureTimestamp> }`, for when the script's timestamp can't be read. |
+| `players.broken` | Player ids the challenge solver can't solve. The `pin` is used instead. |
+| `players.pin` | `{ "id": "<player id>", "sts": <n>, "force": false }`, a known-good player script. YouTube still serves old ones. With `force: true` it is used even for unlisted players. |
+
+Typical fixes: YouTube bumps a client version (change `clients.*.clientVersion`), visionOS stops
+answering (put it in `disabled`, or move it down in `order`), or a new `player.js` breaks the
+solver (add its id to `players.broken` and pin the last good one). Before publishing, check the
+fix with the live examples: `cargo run --release -p music-core --example youtube -- auto <id>`.
+They read the bundled file, so edit `packaging/player-fixes.json` first.
+
+### Signing
+
+The secret key is **never** in the repository. It lives at
+`~/.config/cratetune/player-fixes.key` on the maintainer's Mac (minisign format, unencrypted,
+mode 0600), or at `$PLAYER_FIXES_KEY`. Back it up somewhere private. If it is lost, rotating the
+key means a new app release, because the public key is compiled in.
+
+```sh
+$EDITOR packaging/player-fixes.json     # bump "serial"
+scripts/sign-player-fixes.sh            # writes packaging/player-fixes.json.minisig and verifies it
+git add packaging/player-fixes.json packaging/player-fixes.json.minisig
+git commit -m "Player fixes N: …" && git push origin main
+```
+
+`scripts/sign-player-fixes.sh --verify` checks the committed pair. Stock minisign verifies it
+too: `minisign -Vm packaging/player-fixes.json -P RWQ0+0ZYYZEGFyPGOq1wauD8dVqHyiGZXtzyBy3GWx66P32t7IwiNrPK`.
+The script refuses to sign a manifest the app would reject. A key of your own is made with
+`scripts/sign-player-fixes.sh --keygen`. It never overwrites an existing key.
+
+### Relay mirror (optional)
+
+`music-relay --player-fixes DIR` (or `MUSIC_RELAY_PLAYER_FIXES=DIR`) serves
+`DIR/player-fixes.json` and `DIR/player-fixes.json.minisig` at `/player-fixes.json` and
+`/player-fixes.json.minisig`. After publishing, copy both files there, for example with a cron
+job that pulls the repository. The relay can't alter them: the signature would no longer
+verify.

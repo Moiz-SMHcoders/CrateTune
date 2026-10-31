@@ -47,7 +47,7 @@ onboarding.local.note = Durchsuche die Ordner jetzt oder später; verwalten kann
 
 # ---- Privacy & limitations step
 onboarding.privacy.streaming.title = So werden Songs gestreamt
-onboarding.privacy.streaming.text = Ganze Songs kommen vom TV-Client von YouTube oder vom Web-Client mit einem PoToken (ein Anti-Missbrauchs-Token, das unter macOS / Windows in einer versteckten Browseransicht erzeugt wird). YouTube lässt neue Streams ein paar Sekunden warten; die App startet in der Zwischenzeit mit einer kurzen Vorschau. Ändert YouTube etwas, fallen Songs auf Vorschauen von ca. 1 Minute zurück (im Player markiert). Unter Einstellungen → Wiedergabe → YouTube-Streams wählst du den Weg.
+onboarding.privacy.streaming.text = Ganze Songs kommen von den visionOS- oder TV-Clients von YouTube oder vom Web-Client mit einem PoToken (ein Anti-Missbrauchs-Token, das unter macOS / Windows in einer versteckten Browseransicht erzeugt wird). Ein Weg, der wiederholt scheitert, wird eine Weile übersprungen. Um mit Änderungen bei YouTube Schritt zu halten, lädt die App signierte Fixes (nur Daten) aus dem GitHub-Repository von {app}; Einstellungen → Wiedergabe → Player-Fixes schaltet das ab. Scheitern alle Wege, fallen Songs auf Vorschauen von ca. 1 Minute zurück (im Player markiert). Unter Einstellungen → Wiedergabe → YouTube-Streams wählst du den Weg.
 onboarding.privacy.data.title = Deine Daten bleiben hier
 onboarding.privacy.data.text = Mediathek, Verlauf, Statistiken und Einstellungen werden auf diesem Computer gespeichert. Passwörter, API-Schlüssel und das YouTube-Anmelde-Cookie landen im Schlüsselbund des Systems. Hör- und Suchverlauf kannst du jederzeit unter Einstellungen → Datenschutz pausieren oder löschen.
 onboarding.privacy.recipients.title = Wer bekommt was

@@ -2,6 +2,7 @@
 
 # ---- Option names (keep short)
 prefs.stream.tv = Klient TV
+prefs.stream.visionos = Klient visionOS
 prefs.stream.web_potoken = Web + PoToken
 prefs.stream.preview = Tylko podglądy
 prefs.quality.low = Niska
@@ -79,10 +80,19 @@ settings.playback.repeat_all = Wszystkie
 settings.playback.repeat_one = Jeden
 settings.playback.audio = Dźwięk
 settings.playback.streams = Strumienie YouTube
-settings.playback.stream_auto = Pełne utwory: klient TV, potem klient web z PoToken, potem podgląd ~1 min.
+settings.playback.stream_auto = Pełne utwory najszybszym działającym sposobem: visionOS, klient TV, potem klienci z PoToken; sposób, który zawiedzie 3 razy z rzędu, jest pomijany przez 10 min. Ostatnia deska ratunku: podgląd ~1 min.
 settings.playback.stream_tv = Pełne utwory przez klienta TV (bez PoToken); w razie błędu podgląd.
+settings.playback.stream_visionos = Pełne utwory przez klienta visionOS (bezpośrednie linki: bez PoToken i czekania); w razie błędu podgląd.
 settings.playback.stream_web = Pełne utwory przez klienta web i PoToken BotGuard (macOS / Windows); w razie błędu podgląd.
 settings.playback.stream_preview = Tylko pierwsza ~1 minuta każdego utworu (dawne zachowanie).
+settings.playback.stream_status = Sposób strumieniowania
+settings.playback.stream_status_none = Jeszcze nic nie odtworzono
+settings.playback.stream_status_via = Ostatni utwór przez {client}
+settings.playback.stream_status_preview = Ostatni utwór: tylko podgląd (wszystkie sposoby zawiodły)
+settings.playback.stream_status_skipped = {clients} pomijany przez {minutes} min
+settings.playback.stream_status_fixes = poprawki odtwarzacza nr {serial}
+settings.playback.player_fixes = Poprawki odtwarzacza
+settings.playback.player_fixes_desc = Gdy YouTube coś zmieni, pobieraj podpisane poprawki (tylko dane, sprawdzane co 6 godz.) z repozytorium GitHub aplikacji {app}. Wyłączone: tylko poprawki wbudowane w tę wersję.
 settings.playback.quality = Jakość strumienia
 settings.playback.quality_desc = Niska oszczędza dane; Wysoka preferuje Opus (~160 kb/s) zamiast AAC 128.
 settings.playback.normalize = Normalizacja głośności

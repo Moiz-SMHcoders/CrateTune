@@ -34,6 +34,7 @@ off. It describes the code in this repository; if a change here makes it wrong, 
 | YouTube / YouTube Music | always (it is a YouTube Music client) | yes |
 | Lyrics providers | when a song starts | yes (each can be turned off) |
 | GitHub (update check) | at start, then every 24 hours | yes, except package-manager installs |
+| GitHub (player fixes), relay as fallback | at start, then every 6 hours | yes (Settings → Playback → *Player fixes*) |
 | GitHub (`relay.txt`) and the Music Together relay | only when you host or join a session | only when used |
 | SponsorBlock | when a song starts | yes |
 | Google Translate or an AI endpoint | when lyrics translation is on | no |
@@ -126,6 +127,11 @@ title or artist) are sent to the translator you choose: **Google Translate**
   is checked against the release's `SHA256SUMS.txt` before it is installed.
 * **Package-manager installs** (Flatpak, Homebrew, Scoop, AUR, Snap) **never check**: they are
   updated by the package manager, and Settings → About says "Updates come from …".
+* **Player fixes:** at start and every 6 hours (sooner when no stream route works), the app
+  downloads `packaging/player-fixes.json` and its signature from this repository
+  (`raw.githubusercontent.com`), or from `relay.smhcoders.click` if GitHub can't be reached.
+  It is a small signed data file with YouTube client settings; nothing about you or what you
+  play is sent. Turn it off with *Player fixes* in Settings → Playback.
 * **`relay.txt`:** when you host or join a Music Together session, the app reads
   `packaging/relay.txt` from this repository (`raw.githubusercontent.com`) to find the current
   relay, and caches the answer for six hours.

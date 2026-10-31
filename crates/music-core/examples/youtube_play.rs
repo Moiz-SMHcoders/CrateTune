@@ -4,6 +4,8 @@
 //! cargo run --release -p music-core --example youtube_play -- tv "daft punk"
 //! ```
 //!
+//! Clients: `tv` (default), `vision`, `tvsimply`, `web`, `auto` (the app's chain).
+//!
 //! Plays the first search result at volume 0, reports time to first audio,
 //! confirms playback continues past the old ~60 s preview limit (by seeking),
 //! then seeks near the end and checks the engine moves on to the next result.
@@ -113,9 +115,13 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let cold = take_flag(&mut args, "--cold").is_some();
     let expire_potoken = take_flag(&mut args, "--expire-potoken").is_some();
     let mut args = args.into_iter();
-    let client = match args.next().as_deref() {
-        Some("web") => WebClient::MobileWeb,
-        _ => WebClient::Tv,
+    let potoken = platform_potoken_provider();
+    let clients = match args.next().as_deref() {
+        Some("web") => vec![WebClient::MobileWeb],
+        Some("vision") => vec![WebClient::VisionOs],
+        Some("tvsimply") => vec![WebClient::TvSimply],
+        Some("auto") => WebClient::automatic(potoken.is_some()),
+        _ => vec![WebClient::Tv],
     };
     let query = args.collect::<Vec<_>>().join(" ");
     let query = if query.is_empty() {
@@ -130,9 +136,8 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let cache = std::env::temp_dir().join("music-core-youtube-example");
-    let potoken = platform_potoken_provider();
     let resolver = Arc::new(WebResolver::new(
-        vec![client],
+        clients,
         potoken.clone(),
         Some(Arc::new(IosClientResolver)),
         Some(cache),

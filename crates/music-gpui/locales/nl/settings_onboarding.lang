@@ -47,7 +47,7 @@ onboarding.local.note = Scan de mappen nu of later; beheer ze onder Lokale besta
 
 # ---- Privacy & limitations step
 onboarding.privacy.streaming.title = Hoe nummers worden gestreamd
-onboarding.privacy.streaming.text = Volledige nummers komen van de tv-client van YouTube of de webclient met een PoToken (een token tegen misbruik, gemaakt in een verborgen browserweergave op macOS / Windows). YouTube laat nieuwe streams een paar seconden wachten; de app begint intussen met een kort voorbeeld. Als YouTube iets verandert, vallen nummers terug op voorbeelden van ~1 minuut (gemarkeerd in de speler). Onder Instellingen → Afspelen → YouTube-streams kies je de route.
+onboarding.privacy.streaming.text = Volledige nummers komen van de visionOS- of tv-clients van YouTube, of van de webclient met een PoToken (een token tegen misbruik, gemaakt in een verborgen browserweergave op macOS / Windows). Een route die herhaaldelijk faalt, wordt een tijdje overgeslagen. Om YouTube-wijzigingen bij te houden, downloadt de app ondertekende fixes (alleen gegevens) uit de GitHub-repository van {app}; Instellingen → Afspelen → Spelerfixes zet dat uit. Als alle routes falen, vallen nummers terug op voorbeelden van ~1 minuut (gemarkeerd in de speler). Onder Instellingen → Afspelen → YouTube-streams kies je de route.
 onboarding.privacy.data.title = Je gegevens blijven hier
 onboarding.privacy.data.text = Bibliotheek, geschiedenis, statistieken en instellingen worden op deze computer opgeslagen. Wachtwoorden, API-sleutels en de YouTube-inlogcookie gaan naar de sleutelhanger van het systeem. Pauzeer of wis luister- en zoekgeschiedenis wanneer je wilt onder Instellingen → Privacy.
 onboarding.privacy.recipients.title = Wie krijgt wat

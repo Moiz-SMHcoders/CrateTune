@@ -1,5 +1,6 @@
 # ---- Option names
 prefs.stream.tv = Ứng dụng TV
+prefs.stream.visionos = Ứng dụng visionOS
 prefs.stream.web_potoken = Web + PoToken
 prefs.stream.preview = Chỉ xem trước
 prefs.quality.low = Thấp
@@ -77,10 +78,19 @@ settings.playback.repeat_all = Tất cả
 settings.playback.repeat_one = Một bài
 settings.playback.audio = Âm thanh
 settings.playback.streams = Luồng YouTube
-settings.playback.stream_auto = Bài hát đầy đủ: ứng dụng TV, sau đó ứng dụng web với PoToken, rồi bản xem trước ~1 phút.
+settings.playback.stream_auto = Bài hát đầy đủ qua cách nhanh nhất còn hoạt động: visionOS, ứng dụng TV, rồi các ứng dụng dùng PoToken; cách nào lỗi 3 lần liên tiếp sẽ bị bỏ qua 10 phút. Cuối cùng: bản xem trước ~1 phút.
 settings.playback.stream_tv = Bài hát đầy đủ qua ứng dụng TV (không cần PoToken); bản xem trước nếu thất bại.
+settings.playback.stream_visionos = Bài hát đầy đủ qua ứng dụng visionOS (liên kết trực tiếp: không cần PoToken, không phải chờ); bản xem trước nếu thất bại.
 settings.playback.stream_web = Bài hát đầy đủ qua ứng dụng web và PoToken BotGuard (macOS / Windows); bản xem trước nếu thất bại.
 settings.playback.stream_preview = Chỉ ~1 phút đầu của mỗi bài hát (cách hoạt động cũ).
+settings.playback.stream_status = Cách phát luồng
+settings.playback.stream_status_none = Chưa phát bài nào
+settings.playback.stream_status_via = Bài gần nhất qua {client}
+settings.playback.stream_status_preview = Bài gần nhất: chỉ bản xem trước (mọi cách đều lỗi)
+settings.playback.stream_status_skipped = Bỏ qua {clients} trong {minutes} phút
+settings.playback.stream_status_fixes = bản sửa trình phát #{serial}
+settings.playback.player_fixes = Bản sửa trình phát
+settings.playback.player_fixes_desc = Khi YouTube thay đổi điều gì, tải các bản sửa có chữ ký (chỉ dữ liệu, kiểm tra mỗi 6 giờ) từ kho GitHub của {app}. Tắt: chỉ dùng các bản sửa có sẵn trong phiên bản này.
 settings.playback.quality = Chất lượng phát trực tuyến
 settings.playback.quality_desc = Thấp tiết kiệm dữ liệu; Cao ưu tiên Opus (~160 kbps) hơn AAC 128.
 settings.playback.normalize = Chuẩn hóa âm lượng

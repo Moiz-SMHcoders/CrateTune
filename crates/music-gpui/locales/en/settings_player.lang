@@ -6,6 +6,7 @@
 # ---- Option names (buttons in a row: keep short)
 # Where full-length YouTube streams come from.
 prefs.stream.tv = TV client
+prefs.stream.visionos = visionOS client
 prefs.stream.web_potoken = Web + PoToken
 prefs.stream.preview = Previews only
 # Streaming quality.
@@ -101,10 +102,19 @@ settings.playback.repeat_all = All
 settings.playback.repeat_one = One
 settings.playback.audio = Audio
 settings.playback.streams = YouTube streams
-settings.playback.stream_auto = Full songs: TV client, then the web client with a PoToken, then a ~1 min preview.
+settings.playback.stream_auto = Full songs from the fastest route that works: visionOS, the TV client, then the PoToken clients; a route that fails 3 times in a row is skipped for 10 min. Last resort: a ~1 min preview.
 settings.playback.stream_tv = Full songs via the TV client (no PoToken); a preview if it fails.
+settings.playback.stream_visionos = Full songs via the visionOS client (direct links: no PoToken, no waiting); a preview if it fails.
 settings.playback.stream_web = Full songs via the web client and a BotGuard PoToken (macOS / Windows); a preview if it fails.
 settings.playback.stream_preview = Only the first ~1 minute of each song (the old behaviour).
+settings.playback.stream_status = Stream route
+settings.playback.stream_status_none = No song streamed yet
+settings.playback.stream_status_via = Last song via {client}
+settings.playback.stream_status_preview = Last song: preview only (every route failed)
+settings.playback.stream_status_skipped = {clients} skipped for {minutes} min
+settings.playback.stream_status_fixes = player fixes #{serial}
+settings.playback.player_fixes = Player fixes
+settings.playback.player_fixes_desc = When YouTube changes something, download signed fixes (data only, checked every 6 h) from {app}'s GitHub repository. Off: only the fixes built into this version.
 settings.playback.quality = Streaming quality
 settings.playback.quality_desc = Low saves data; High prefers Opus (~160 kbps) over AAC 128.
 settings.playback.normalize = Loudness normalization

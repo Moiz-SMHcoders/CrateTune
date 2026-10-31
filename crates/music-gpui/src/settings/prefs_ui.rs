@@ -65,6 +65,11 @@ pub(super) struct PrefsUi {
     pub scrobble_percent: Entity<SliderState>,
     pub scrobble_min: Entity<SliderState>,
     pub scrobble_delay: Entity<SliderState>,
+
+    /// Repaints Settings → Playback while the stream status changes (see
+    /// [`SettingsPanel::stream_status_poll`]).
+    pub stream_poll: Option<gpui::Task<()>>,
+    pub stream_seen: u64,
 }
 
 fn slider_value(event: &SliderEvent) -> f32 {
@@ -231,6 +236,8 @@ impl PrefsUi {
             scrobble_percent: slider(10., 100., 5., r.percent as f32, cx),
             scrobble_min: slider(0., 120., 5., r.min_track_secs as f32, cx),
             scrobble_delay: slider(30., 600., 10., r.max_delay_secs as f32, cx),
+            stream_poll: None,
+            stream_seen: 0,
         };
 
         let mut subs = Vec::new();
@@ -402,6 +409,41 @@ impl SettingsPanel {
         cx: &mut Context<Self>,
     ) {
         self.update_audio(cx, |a| a.stream_source = mode);
+    }
+
+    pub fn set_player_fixes(&mut self, on: bool, cx: &mut Context<Self>) {
+        self.update_audio(cx, |a| a.player_fixes = on);
+    }
+
+    /// Keeps Settings → Playback's stream status current while it is visible.
+    pub fn stream_status_poll(&mut self, cx: &mut Context<Self>) {
+        if self.prefs.stream_poll.is_some() {
+            return;
+        }
+        let executor = cx.background_executor().clone();
+        self.prefs.stream_poll = Some(cx.spawn(async move |this, cx| {
+            loop {
+                executor.timer(Duration::from_secs(1)).await;
+                let keep = this
+                    .update(cx, |this, cx| {
+                        if this.section != super::SectionId::Playback {
+                            this.prefs.stream_poll = None;
+                            return false;
+                        }
+                        let revision = crate::module_service::ModuleService::stream_status(cx)
+                            .map_or(0, |(_, revision)| revision);
+                        if revision != this.prefs.stream_seen {
+                            this.prefs.stream_seen = revision;
+                            cx.notify();
+                        }
+                        true
+                    })
+                    .unwrap_or(false);
+                if !keep {
+                    break;
+                }
+            }
+        }));
     }
 
     pub fn set_skip_silence(&mut self, on: bool, cx: &mut Context<Self>) {

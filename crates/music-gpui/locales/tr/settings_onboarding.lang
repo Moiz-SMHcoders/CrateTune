@@ -47,7 +47,7 @@ onboarding.local.note = Klasörleri şimdi veya daha sonra tarayın; Yerel dosya
 
 # ---- Privacy & limitations step
 onboarding.privacy.streaming.title = Şarkılar nasıl aktarılır
-onboarding.privacy.streaming.text = Tam şarkılar YouTube'un TV istemcisinden ya da PoToken ile web istemcisinden gelir (kötüye kullanımı önleyen bir belirteç; macOS / Windows'ta gizli bir tarayıcı görünümünde oluşturulur). YouTube yeni akışları birkaç saniye bekletir; uygulama bu sırada kısa bir önizlemeyle başlar. YouTube bir şeyi değiştirirse şarkılar ~1 dakikalık önizlemelere geri döner (oynatıcıda işaretlenir). Yol, Ayarlar → Çalma → YouTube akışları bölümünden seçilir.
+onboarding.privacy.streaming.text = Tam şarkılar YouTube'un visionOS veya TV istemcilerinden ya da PoToken ile web istemcisinden gelir (kötüye kullanımı önleyen bir belirteç; macOS / Windows'ta gizli bir tarayıcı görünümünde oluşturulur). Sürekli başarısız olan bir yol bir süre atlanır. YouTube'daki değişikliklere ayak uydurmak için uygulama {app} uygulamasının GitHub deposundan imzalı düzeltmeler (yalnızca veri) indirir; Ayarlar → Çalma → Oynatıcı düzeltmeleri bunu kapatır. Tüm yollar başarısız olursa şarkılar ~1 dakikalık önizlemelere geri döner (oynatıcıda işaretlenir). Yol, Ayarlar → Çalma → YouTube akışları bölümünden seçilir.
 onboarding.privacy.data.title = Verileriniz burada kalır
 onboarding.privacy.data.text = Kitaplık, geçmiş, istatistikler ve ayarlar bu bilgisayarda saklanır. Parolalar, API anahtarları ve YouTube oturum çerezi sistem anahtar zincirine gider. Dinleme ve arama geçmişini istediğiniz zaman Ayarlar → Gizlilik bölümünden duraklatabilir veya temizleyebilirsiniz.
 onboarding.privacy.recipients.title = Kim neyi alır

@@ -3,6 +3,7 @@
 
 # ---- Option names (buttons in a row: keep short)
 prefs.stream.tv = Cliente de TV
+prefs.stream.visionos = Cliente visionOS
 prefs.stream.web_potoken = Web + PoToken
 prefs.stream.preview = Só prévias
 prefs.quality.low = Baixa
@@ -80,10 +81,19 @@ settings.playback.repeat_all = Todas
 settings.playback.repeat_one = Uma
 settings.playback.audio = Áudio
 settings.playback.streams = Streams do YouTube
-settings.playback.stream_auto = Músicas completas: cliente de TV, depois o cliente web com PoToken, depois uma prévia de ~1 min.
+settings.playback.stream_auto = Músicas completas pelo caminho mais rápido que funcione: visionOS, o cliente de TV e depois os clientes com PoToken; um caminho que falha 3 vezes seguidas é ignorado por 10 min. Último recurso: uma prévia de ~1 min.
 settings.playback.stream_tv = Músicas completas pelo cliente de TV (sem PoToken); uma prévia se falhar.
+settings.playback.stream_visionos = Músicas completas pelo cliente visionOS (links diretos: sem PoToken nem espera); uma prévia se falhar.
 settings.playback.stream_web = Músicas completas pelo cliente web e um PoToken do BotGuard (macOS / Windows); uma prévia se falhar.
 settings.playback.stream_preview = Só o primeiro ~1 minuto de cada música (o comportamento antigo).
+settings.playback.stream_status = Caminho do stream
+settings.playback.stream_status_none = Nenhuma música transmitida ainda
+settings.playback.stream_status_via = Última música via {client}
+settings.playback.stream_status_preview = Última música: só prévia (todos os caminhos falharam)
+settings.playback.stream_status_skipped = {clients} ignorado por {minutes} min
+settings.playback.stream_status_fixes = correções do player nº {serial}
+settings.playback.player_fixes = Correções do player
+settings.playback.player_fixes_desc = Quando o YouTube muda algo, baixa correções assinadas (só dados, verificadas a cada 6 h) do repositório do {app} no GitHub. Desligado: só as correções incluídas nesta versão.
 settings.playback.quality = Qualidade do streaming
 settings.playback.quality_desc = Baixa economiza dados; Alta prefere Opus (~160 kbps) a AAC 128.
 settings.playback.normalize = Normalização de volume

@@ -53,6 +53,9 @@ pub struct AudioConfig {
     /// Where full-length YouTube streams come from.
     #[serde(deserialize_with = "lenient")]
     pub stream_source: StreamSourceMode,
+    /// Fetch the signed player fixes from the app's repository (see
+    /// `music_core::youtube::fixes`); off: only the ones built into the app.
+    pub player_fixes: bool,
 }
 
 impl Default for AudioConfig {
@@ -69,6 +72,7 @@ impl Default for AudioConfig {
             output_device_name: None,
             sleep_custom_minutes: 20,
             stream_source: StreamSourceMode::Auto,
+            player_fixes: true,
         }
     }
 }
@@ -104,9 +108,11 @@ impl AudioConfig {
 /// Which YouTube clients the stream resolver tries (see `music_core::youtube`).
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum StreamSourceMode {
-    /// TV client, then web client + PoToken, then the ~1 min preview.
+    /// visionOS, TV, then the PoToken clients (fastest first, failing ones
+    /// skipped for a while), then the ~1 min preview.
     #[default]
     Auto,
+    VisionOs,
     Tv,
     WebPoToken,
     /// Only the iOS client's first ~1 MiB (the old behaviour).
@@ -114,11 +120,18 @@ pub enum StreamSourceMode {
 }
 
 impl StreamSourceMode {
-    pub const ALL: [StreamSourceMode; 4] = [Self::Auto, Self::Tv, Self::WebPoToken, Self::Preview];
+    pub const ALL: [StreamSourceMode; 5] = [
+        Self::Auto,
+        Self::VisionOs,
+        Self::Tv,
+        Self::WebPoToken,
+        Self::Preview,
+    ];
 
     pub fn title(self) -> &'static str {
         match self {
             Self::Auto => t!("common.automatic"),
+            Self::VisionOs => t!("prefs.stream.visionos"),
             Self::Tv => t!("prefs.stream.tv"),
             Self::WebPoToken => t!("prefs.stream.web_potoken"),
             Self::Preview => t!("prefs.stream.preview"),
@@ -128,8 +141,9 @@ impl StreamSourceMode {
     /// Clients for `WebResolver::set_clients` (the preview resolver is always last).
     pub fn clients(self, has_potoken: bool) -> Vec<WebClient> {
         match self {
-            Self::Auto if has_potoken => vec![WebClient::Tv, WebClient::MobileWeb],
-            Self::Auto | Self::Tv => vec![WebClient::Tv],
+            Self::Auto => WebClient::automatic(has_potoken),
+            Self::VisionOs => vec![WebClient::VisionOs],
+            Self::Tv => vec![WebClient::Tv],
             Self::WebPoToken if has_potoken => vec![WebClient::MobileWeb],
             Self::WebPoToken | Self::Preview => vec![],
         }
