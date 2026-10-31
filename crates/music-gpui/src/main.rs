@@ -49,6 +49,7 @@ mod clock;
 mod components;
 mod continue_card;
 mod effects;
+mod font_files;
 mod icons;
 mod identity;
 mod integrations;
@@ -100,6 +101,7 @@ mod theater;
 mod theme;
 mod theme_script;
 mod theme_state;
+mod theme_switcher;
 mod titlebar;
 mod tray;
 mod turntable;
@@ -184,6 +186,8 @@ fn main() {
         .with_assets(icons::Assets)
         .run(move |cx: &mut App| {
             gpui_component::init(cx);
+            // `<config>/fonts`: before the theme picks a font from there.
+            font_files::load(cx);
             ArtworkCache::init(cx);
             logo::set_dock_icon();
             // Before the window opens: whether the OS asks for less transparency.
@@ -207,6 +211,10 @@ fn main() {
                 saved
                     .as_ref()
                     .is_some_and(|s| s.appearance.system_title_bar),
+                saved
+                    .as_ref()
+                    .map(|s| s.appearance.window_controls)
+                    .unwrap_or_default(),
             );
             let icon = saved
                 .as_ref()
@@ -256,6 +264,8 @@ fn main() {
                     if std::env::var_os("MUSIC_ON_TOP").is_some() {
                         mini_player::float_above_others(window);
                     }
+                    // Appearance → Layout → Window buttons: another system's look.
+                    titlebar::hide_native_controls(window);
                     #[cfg(windows)]
                     if let Some(hwnd) = services::hwnd(window) {
                         instance.listen(hwnd.get());

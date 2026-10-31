@@ -1,0 +1,60 @@
+# Light mode, the theme switcher and the other look options (ko).
+
+theme.mode.dark = 다크
+theme.mode.light = 라이트
+theme.mode.system = 시스템
+settings.appearance.mode = 모드
+settings.appearance.mode_note = 어디서나 라이트 또는 다크로, 또는 시스템의 화면 모드를 따릅니다(시스템이 바뀌면 함께 바뀝니다).
+settings.appearance.mode_system_now = 지금 시스템은 {mode} 상태입니다.
+theme.darkness.soft = 부드럽게
+theme.darkness.bright = 밝게
+theme.darkness.white = 완전한 흰색
+theme.white = 트루 화이트
+themes.low_contrast_light = {name}: 라이트 모드에서 일부 텍스트의 대비가 너무 낮아({ratio}:1) 읽기 어려울 수 있습니다.
+
+# ---- Motion & effects
+settings.motion.card_outlines = 카드 윤곽선
+settings.motion.window_hairline = 창 가장자리를 따라 그은 선
+settings.motion.smooth_wheel = 부드러운 휠 스크롤
+settings.motion.smooth_wheel_note = 마우스 휠이 뚝뚝 끊기지 않고 미끄러지듯 움직입니다. 트랙패드는 시스템 스크롤을 그대로 씁니다. 시스템: macOS를 제외하고 켬. 애니메이션을 줄이면 다시 단계별로 움직입니다.
+effects.smooth_wheel.system = 시스템
+effects.smooth_wheel.on = 켬
+effects.smooth_wheel.off = 끔
+settings.motion.translucent_sidebar_note_other = 사이드바 너머로 시스템의 흐림 효과를 통해 데스크톱이 보입니다(Windows 11: Mica, Windows 10: 아크릴, Linux: 컴포지터가 흐림을 지원하는 경우만, 예: Wayland의 KDE Plasma).
+effects.sidebar.full = 전체
+effects.sidebar.rail = 아이콘만
+effects.sidebar.hover = 마우스를 올리면 펼치기
+
+# ---- Theme switcher
+themes.switcher = 테마
+themes.switcher_note = 기본 제공 테마와 내 테마 파일을 현재 모드로 보여 줍니다. 더 보려면 설정 → 화면 설정으로 가세요.
+
+# ---- Layout
+settings.layout.group = 레이아웃
+settings.layout.sidebar = 사이드바
+settings.layout.sidebar_note = 사이드바나 대기열의 가장자리를 끌어 너비를 바꿉니다.
+settings.layout.columns = 곡 목록 열
+settings.layout.columns_note = 추가한 날짜와 재생 횟수는 보관함 목록(노래, 좋아요, 다운로드, 로컬 파일)에 표시됩니다.
+layout.column.album = 앨범
+layout.column.added = 추가한 날짜
+layout.column.plays = 재생 횟수
+layout.column.duration = 길이
+settings.layout.bar_buttons = 상단 바 버튼
+settings.layout.bar_buttons_note = 숨긴 버튼의 동작은 메뉴와 키보드 단축키에 그대로 남습니다.
+layout.bar_button.menu = 메뉴
+layout.bar_button.back = 뒤로
+layout.bar_button.forward = 앞으로
+layout.bar_button.home = 홈
+layout.bar_button.themes = 테마
+layout.bar_button.account = 계정
+settings.layout.window_controls = 창 버튼
+settings.layout.window_controls_note = 최소화, 최대화, 닫기 버튼의 모양입니다. 다시 시작한 뒤에 적용됩니다.
+window.controls.system = 시스템
+window.controls.mac = macOS
+window.controls.windows = Windows
+
+# ---- Fonts
+theme.custom.heading_font = 제목 글꼴
+theme.custom.heading_font_detail = 페이지 제목, 앨범과 재생목록 머리글, 지금 재생 중의 제목.
+theme.custom.fonts_folder = 글꼴 폴더 열기
+theme.custom.fonts_folder_note = 글꼴 폴더의 글꼴 파일(.ttf, .otf, .ttc)도 다음 실행부터 목록에 표시됩니다.

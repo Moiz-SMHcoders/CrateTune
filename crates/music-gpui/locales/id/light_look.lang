@@ -1,0 +1,60 @@
+# Light mode, the theme switcher and the other look options (id).
+
+theme.mode.dark = Gelap
+theme.mode.light = Terang
+theme.mode.system = Sistem
+settings.appearance.mode = Mode
+settings.appearance.mode_note = Terang atau gelap di mana saja, atau ikuti tampilan sistem (berganti saat sistem berganti).
+settings.appearance.mode_system_now = Sistem sekarang menampilkan {mode}.
+theme.darkness.soft = Lembut
+theme.darkness.bright = Cerah
+theme.darkness.white = Putih bersih
+theme.white = Putih bersih
+themes.low_contrast_light = {name}: sebagian teks kontrasnya terlalu rendah dalam mode terang ({ratio}:1); mungkin sulit dibaca.
+
+# ---- Motion & effects
+settings.motion.card_outlines = Garis tepi kartu
+settings.motion.window_hairline = Garis di sepanjang tepi jendela
+settings.motion.smooth_wheel = Gulir roda yang halus
+settings.motion.smooth_wheel_note = Roda mouse meluncur alih-alih melompat; trackpad tetap memakai guliran sistem. Sistem: nyala kecuali di macOS. Kembali bertahap saat animasi dikurangi.
+effects.smooth_wheel.system = Sistem
+effects.smooth_wheel.on = Nyala
+effects.smooth_wheel.off = Mati
+settings.motion.translucent_sidebar_note_other = Bilah samping menampilkan desktop melalui efek kabur sistem (Windows 11: Mica, Windows 10: akrilik; Linux: hanya jika compositor mengaburkan, misalnya KDE Plasma di Wayland).
+effects.sidebar.full = Penuh
+effects.sidebar.rail = Ikon saja
+effects.sidebar.hover = Bentangkan saat kursor di atasnya
+
+# ---- Theme switcher
+themes.switcher = Tema
+themes.switcher_note = Tema bawaan dan file tema Anda, ditampilkan dalam mode saat ini. Selengkapnya di Pengaturan → Tampilan.
+
+# ---- Layout
+settings.layout.group = Tata letak
+settings.layout.sidebar = Bilah samping
+settings.layout.sidebar_note = Seret tepi bilah samping atau antrean untuk mengubah lebarnya.
+settings.layout.columns = Kolom daftar lagu
+settings.layout.columns_note = Ditambahkan dan Diputar tampil di daftar pustaka (lagu, disukai, unduhan, file lokal).
+layout.column.album = Album
+layout.column.added = Ditambahkan
+layout.column.plays = Diputar
+layout.column.duration = Durasi
+settings.layout.bar_buttons = Tombol bilah atas
+settings.layout.bar_buttons_note = Tindakan tombol yang disembunyikan tetap ada di menu dan pintasan keyboard.
+layout.bar_button.menu = Menu
+layout.bar_button.back = Kembali
+layout.bar_button.forward = Maju
+layout.bar_button.home = Beranda
+layout.bar_button.themes = Tema
+layout.bar_button.account = Akun
+settings.layout.window_controls = Tombol jendela
+settings.layout.window_controls_note = Tampilan tombol minimalkan, maksimalkan, dan tutup. Berlaku setelah dimulai ulang.
+window.controls.system = Sistem
+window.controls.mac = macOS
+window.controls.windows = Windows
+
+# ---- Fonts
+theme.custom.heading_font = Font judul
+theme.custom.heading_font_detail = Judul halaman, kepala album dan playlist, judul di Sedang Diputar.
+theme.custom.fonts_folder = Buka folder font
+theme.custom.fonts_folder_note = File font (.ttf, .otf, .ttc) di folder font juga dicantumkan, mulai pembukaan berikutnya.

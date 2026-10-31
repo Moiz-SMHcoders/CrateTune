@@ -11,10 +11,19 @@
 //! accent = "#88C0D0"
 //! corners = "round"
 //!
-//! [colors]
+//! [colors]                 # dark mode (or `mode = "light"` above)
 //! background = "#2E3440"
 //! foreground = "#ECEFF4"
+//!
+//! [colors.light]           # light mode (optional)
+//! background = "#ECEFF4"
+//! foreground = "#2E3440"
 //! ```
+//!
+//! `[colors]` is for the mode the file names with `mode` (default: dark, or
+//! light when its background is light); `[colors.light]` / `[colors.dark]`
+//! give the other mode's set. A file with one set uses it in both modes
+//! (`theme::token_set`), so files from before light mode look as they did.
 //!
 //! A file that doesn't parse (TOML syntax, an unknown key, a value of the wrong
 //! kind, an unknown colour name, an unreadable colour) is listed with the reason
@@ -33,7 +42,8 @@ use serde::Deserialize;
 
 use super::file::Settings;
 use super::theme_prefs::{
-    Contrast, Corners, CustomTheme, Darkness, Density, DynamicStyle, color_hex, parse_color,
+    ColorMode, Contrast, Corners, CustomTheme, Darkness, Density, DynamicStyle, color_hex,
+    parse_color,
 };
 use crate::theme::{Look, ThemeChoice};
 
@@ -74,9 +84,20 @@ struct Raw {
     corners: Option<String>,
     density: Option<String>,
     font: Option<String>,
+    heading_font: Option<String>,
     dynamic_style: Option<String>,
+    /// What `[colors]` is for: "dark" or "light".
+    mode: Option<String>,
     #[serde(default)]
-    colors: BTreeMap<String, String>,
+    colors: BTreeMap<String, ColorEntry>,
+}
+
+/// A `[colors]` entry: a colour, or the `light` / `dark` sub-table.
+#[derive(Debug, Deserialize)]
+#[serde(untagged)]
+enum ColorEntry {
+    Color(String),
+    Set(BTreeMap<String, String>),
 }
 
 /// Why a file was ignored.
@@ -156,6 +177,8 @@ pub struct LowContrast {
     pub token: &'static str,
     pub ratio: f32,
     pub min: f32,
+    /// In the light set (`[colors.light]`).
+    pub light: bool,
 }
 
 /// A theme file that parsed.
@@ -173,8 +196,12 @@ pub struct ThemeFile {
     /// Kept as the user has them when the file doesn't say.
     density: Option<Density>,
     font: Option<String>,
+    heading_font: Option<String>,
     style: DynamicStyle,
+    /// The dark-mode set (or the only one).
     pub colors: BTreeMap<String, String>,
+    /// The light-mode set.
+    pub colors_light: BTreeMap<String, String>,
     pub warnings: Vec<LowContrast>,
 }
 
@@ -185,7 +212,8 @@ fn line_of(text: &str, section: Option<&str>, key: &str) -> usize {
     for (i, line) in text.lines().enumerate() {
         let l = line.trim();
         if l.starts_with('[') {
-            in_section = section.is_some_and(|s| l.trim_start_matches('[').starts_with(s));
+            let name = l.trim_start_matches('[').split(']').next().unwrap_or("");
+            in_section = section.is_some_and(|s| name.trim() == s);
             continue;
         }
         if in_section
@@ -315,22 +343,62 @@ pub fn parse(id: &str, text: &str) -> Result<ThemeFile, Problem> {
             });
         }
     };
-    let mut colors = BTreeMap::new();
-    for (key, value) in &raw.colors {
-        if !crate::theme::TOKENS.contains(&key.as_str()) {
-            return Err(Problem::UnknownColor {
-                line: line_of(text, Some("colors"), key),
-                key: key.clone(),
-            });
+    let mode = match &raw.mode {
+        Some(_) => Some(choice_of(
+            text,
+            "mode",
+            raw.mode.as_ref(),
+            &[ColorMode::Dark, ColorMode::Light],
+            ColorMode::key,
+            ColorMode::Dark,
+        )?),
+        None => None,
+    };
+    // `[colors]`' own colours, and the `light` / `dark` sub-tables.
+    let mut main = BTreeMap::new();
+    let mut sets: [Option<BTreeMap<String, String>>; 2] = [None, None];
+    for (key, entry) in &raw.colors {
+        match entry {
+            ColorEntry::Color(value) => {
+                main.insert(key.clone(), checked_color(text, "colors", key, value)?);
+            }
+            ColorEntry::Set(set) if key == "dark" || key == "light" => {
+                let section = format!("colors.{key}");
+                let mut out = BTreeMap::new();
+                for (k, v) in set {
+                    out.insert(k.clone(), checked_color(text, &section, k, v)?);
+                }
+                sets[usize::from(key == "light")] = Some(out);
+            }
+            ColorEntry::Set(_) => {
+                return Err(Problem::UnknownColor {
+                    line: line_of(text, Some("colors"), key),
+                    key: key.clone(),
+                });
+            }
         }
-        let Some(c) = parse_color(value) else {
-            return Err(Problem::BadColor {
-                line: line_of(text, Some("colors"), key),
-                key: format!("colors.{key}"),
-                value: value.clone(),
-            });
-        };
-        colors.insert(key.clone(), color_hex(c));
+    }
+    // Which mode `[colors]` is for: as the file says, else by its background.
+    let main_light = match mode {
+        Some(m) => m == ColorMode::Light,
+        None => main
+            .get("background")
+            .and_then(|v| crate::theme::token_color(v))
+            .is_some_and(|bg| crate::theme::is_light_color(bg.opacity(1.))),
+    };
+    let [dark_set, light_set] = sets;
+    let (mut colors, mut colors_light) = (BTreeMap::new(), BTreeMap::new());
+    if main_light {
+        colors_light = main;
+    } else {
+        colors = main;
+    }
+    // A sub-table adds to (and wins over) `[colors]` of the same mode.
+    if let Some(set) = dark_set {
+        colors.extend(set);
+    }
+    if let Some(set) = light_set {
+        colors_light.extend(set);
     }
     let name = raw
         .name
@@ -348,17 +416,52 @@ pub fn parse(id: &str, text: &str) -> Result<ThemeFile, Problem> {
         corners,
         density,
         font: raw.font.map(|f| f.trim().to_owned()),
+        heading_font: raw.heading_font.map(|f| f.trim().to_owned()),
         style,
         colors,
+        colors_light,
         warnings: Vec::new(),
     };
     file.warnings = readability(&file.custom(&CustomTheme::default()), choice);
     Ok(file)
 }
 
-/// The text tokens that miss their contrast level on the background.
+/// A `[colors…]` value, checked: a known token and a readable colour.
+fn checked_color(text: &str, section: &str, key: &str, value: &str) -> Result<String, Problem> {
+    if !crate::theme::TOKENS.contains(&key) {
+        return Err(Problem::UnknownColor {
+            line: line_of(text, Some(section), key),
+            key: key.to_owned(),
+        });
+    }
+    match parse_color(value) {
+        Some(c) => Ok(color_hex(c)),
+        None => Err(Problem::BadColor {
+            line: line_of(text, Some(section), key),
+            key: format!("{section}.{key}"),
+            value: value.to_owned(),
+        }),
+    }
+}
+
+/// The text tokens that miss their contrast level on the background, in each
+/// mode the theme has its own colours for (dark when it has none).
 pub fn readability(custom: &CustomTheme, choice: ThemeChoice) -> Vec<LowContrast> {
-    let look = Look::plain(choice, custom.clone());
+    let modes: Vec<bool> = match (custom.colors.is_empty(), custom.colors_light.is_empty()) {
+        (true, true) | (false, true) => vec![false],
+        (true, false) => vec![true],
+        (false, false) => vec![false, true],
+    };
+    modes
+        .into_iter()
+        .flat_map(|light| readability_in(custom, choice, light))
+        .collect()
+}
+
+fn readability_in(custom: &CustomTheme, choice: ThemeChoice, light: bool) -> Vec<LowContrast> {
+    let look = Look::plain(choice, custom.clone()).in_mode(light);
+    let (_, set) = crate::theme::token_set(&look);
+    let set = set.clone();
     let bg = crate::theme::background_of(&look);
     // Translucent text: what it looks like over the background.
     let solid = |c: gpui::Hsla| crate::components::app_backdrop::over(bg, c.opacity(1.), c.a);
@@ -371,16 +474,16 @@ pub fn readability(custom: &CustomTheme, choice: ThemeChoice) -> Vec<LowContrast
     .into_iter()
     .filter_map(|(token, c, min)| {
         let ratio = crate::theme::contrast(c, bg);
-        (ratio < min - 0.005).then_some(LowContrast { token, ratio, min })
+        (ratio < min - 0.005).then_some(LowContrast {
+            token,
+            ratio,
+            min,
+            light,
+        })
     })
     .collect();
     // Text on a filled colour, where the file sets both (badges, buttons, menus).
-    let color = |name: &str| {
-        custom
-            .colors
-            .get(name)
-            .and_then(|v| crate::theme::token_color(v))
-    };
+    let color = |name: &str| set.get(name).and_then(|v| crate::theme::token_color(v));
     for (fill, text) in PAIRS {
         if let (Some(f), Some(t)) = (color(fill), color(text)) {
             let ratio = crate::theme::contrast(solid(t), solid(f));
@@ -389,6 +492,7 @@ pub fn readability(custom: &CustomTheme, choice: ThemeChoice) -> Vec<LowContrast
                     token: text,
                     ratio,
                     min: MIN_MUTED,
+                    light,
                 });
             }
         }
@@ -425,7 +529,11 @@ impl ThemeFile {
         if let Some(f) = &self.font {
             c.font_family = f.clone();
         }
+        if let Some(f) = &self.heading_font {
+            c.heading_font = f.clone();
+        }
         c.colors = self.colors.clone();
+        c.colors_light = self.colors_light.clone();
         c.file = self.id.clone();
         c.normalize();
         c
@@ -529,9 +637,10 @@ fn quoted(s: &str) -> String {
 }
 
 /// The current look as a theme file: the settings, plus every colour token
-/// (`shown`: token → the colour on screen now) — the ones the current theme file
-/// sets as values, the rest commented out, ready to be uncommented and edited.
-pub fn export(name: &str, settings: &Settings, shown: &[(&str, String)]) -> String {
+/// (`shown`: token → the colour on screen now, in light mode when `light`) — the
+/// ones the current theme file sets as values, the rest commented out in the
+/// section of the mode on screen, ready to be uncommented and edited.
+pub fn export(name: &str, settings: &Settings, shown: &[(&str, String)], light: bool) -> String {
     use std::fmt::Write as _;
     let c = &settings.custom_theme;
     let mut out = String::new();
@@ -560,23 +669,43 @@ pub fn export(name: &str, settings: &Settings, shown: &[(&str, String)]) -> Stri
     let _ = writeln!(out, "corners = {}", quoted(c.corners.key()));
     let _ = writeln!(out, "density = {}", quoted(c.density.key()));
     let _ = writeln!(out, "font = {}", quoted(&c.font_family));
+    let _ = writeln!(out, "heading_font = {}", quoted(&c.heading_font));
     let _ = writeln!(out, "dynamic_style = {}", quoted(c.dynamic.style.key()));
-    out.push_str("\n[colors]\n");
-    let _ = writeln!(
-        out,
-        "# Uncomment a line to set that colour (#RRGGBB, or #RRGGBBAA)."
-    );
-    let _ = writeln!(
-        out,
-        "# The values are the ones on screen when this was exported."
-    );
-    for (token, value) in shown {
-        match c.colors.get(*token) {
-            Some(set) => {
-                let _ = writeln!(out, "{token} = {}", quoted(set));
+    // Dark mode's colours in [colors], light mode's in [colors.light]; the mode
+    // on screen lists every other token commented out with its current colour.
+    for (section, set, here) in [
+        ("colors", &c.colors, !light),
+        ("colors.light", &c.colors_light, light),
+    ] {
+        if set.is_empty() && !here {
+            continue;
+        }
+        let _ = writeln!(out, "\n[{section}]");
+        if here {
+            let _ = writeln!(
+                out,
+                "# Uncomment a line to set that colour (#RRGGBB, or #RRGGBBAA)."
+            );
+            let _ = writeln!(
+                out,
+                "# The values are the ones on screen when this was exported."
+            );
+        }
+        for (token, value) in shown {
+            match set.get(*token) {
+                Some(v) => {
+                    let _ = writeln!(out, "{token} = {}", quoted(v));
+                }
+                None if here => {
+                    let _ = writeln!(out, "# {token} = {}", quoted(value));
+                }
+                None => {}
             }
-            None => {
-                let _ = writeln!(out, "# {token} = {}", quoted(value));
+        }
+        // The set's tokens `shown` doesn't list.
+        for (token, v) in set {
+            if !shown.iter().any(|(t, _)| t == token) {
+                let _ = writeln!(out, "{token} = {}", quoted(v));
             }
         }
     }
@@ -757,7 +886,7 @@ mod tests {
             ("background", "#0A0A0A".to_owned()),
             ("border", "#334455".to_owned()),
         ];
-        let text = export("Mine \"quoted\"", &s, &shown);
+        let text = export("Mine \"quoted\"", &s, &shown, false);
         assert!(text.contains("# background = \"#0A0A0A\""));
         let path = new_path(&dir, "Mine \"quoted\"");
         assert!(path.ends_with("mine-quoted.toml"));
@@ -769,6 +898,110 @@ mod tests {
         expected.file = "mine-quoted".into();
         assert_eq!(back.custom(&s.custom_theme), expected);
         std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn light_and_dark_sets() {
+        // [colors] for dark, [colors.light] for light.
+        let f = parse_ok(
+            "[colors]\nbackground = \"#2E3440\"\n\n[colors.light]\nbackground = \"#eceff4\"\n",
+        );
+        assert_eq!(f.colors["background"], "#2E3440");
+        assert_eq!(f.colors_light["background"], "#ECEFF4");
+        let c = f.custom(&CustomTheme::default());
+        assert_eq!(c.colors_light["background"], "#ECEFF4");
+        // `mode = "light"`: [colors] is the light set; [colors.dark] the other.
+        let f = parse_ok(
+            "mode = \"light\"\n[colors]\nbackground = \"#FAFAFA\"\n[colors.dark]\nbackground = \"#111111\"",
+        );
+        assert_eq!(f.colors_light["background"], "#FAFAFA");
+        assert_eq!(f.colors["background"], "#111111");
+        // Without `mode`, a light background makes [colors] the light set
+        // (files written before light mode).
+        let f = parse_ok("[colors]\nbackground = \"#FAF4ED\"\nforeground = \"#575279\"");
+        assert!(f.colors.is_empty());
+        assert_eq!(f.colors_light["foreground"], "#575279");
+        // Mistakes in a sub-table name its line and section.
+        let e = parse(
+            "t",
+            "[colors]\nbackground = \"#000\"\n[colors.light]\nborder = \"#12\"",
+        )
+        .unwrap_err();
+        assert!(
+            matches!(&e, Problem::BadColor { line: 4, key, .. } if key == "colors.light.border"),
+            "{e:?}"
+        );
+        let e = parse("t", "[colors.sepia]\nbackground = \"#000\"").unwrap_err();
+        assert!(
+            matches!(&e, Problem::UnknownColor { key, .. } if key == "sepia"),
+            "{e:?}"
+        );
+        let e = parse("t", "mode = \"dusk\"").unwrap_err();
+        assert!(
+            matches!(&e, Problem::Choice { key, .. } if key == "mode"),
+            "{e:?}"
+        );
+        // A hard-to-read light set is flagged as such.
+        let f = parse_ok(
+            "[colors]\nbackground = \"#101010\"\n[colors.light]\nbackground = \"#FFFFFF\"\nforeground = \"#BBBBBB\"",
+        );
+        assert_eq!(f.warnings.len(), 1, "{:?}", f.warnings);
+        assert!(f.warnings[0].light && f.warnings[0].token == "foreground");
+        // Every starter theme has a readable light set too.
+        for (name, text) in SEED {
+            let f = parse(name, text).unwrap();
+            if *name != "example.toml" {
+                assert!(!f.colors.is_empty() && !f.colors_light.is_empty(), "{name}");
+            }
+            assert!(f.warnings.is_empty(), "{name}: {:?}", f.warnings);
+        }
+        // Export writes both sets and reads back the same.
+        let mut s = Settings::default();
+        s.custom_theme = parse_ok(SEED[1].1).custom(&s.custom_theme);
+        let shown = [
+            ("background", "#ECEFF4".to_owned()),
+            ("ring", "#5E81AC".to_owned()),
+        ];
+        let text = export("Both", &s, &shown, true);
+        assert!(text.contains("[colors.light]") && text.contains("# ring = \"#5E81AC\""));
+        let back = parse("nord", &text).unwrap();
+        assert_eq!(back.colors, s.custom_theme.colors);
+        assert_eq!(back.colors_light, s.custom_theme.colors_light);
+    }
+
+    #[test]
+    fn the_matugen_template_renders_to_a_valid_theme() {
+        // Material You's baseline palette (the roles the template uses).
+        let tone = |role: &str, light: bool| match (role, light) {
+            ("surface", false) => "#141218",
+            ("surface", true) => "#FEF7FF",
+            ("on_surface", false) => "#E6E0E9",
+            ("on_surface", true) => "#1D1B20",
+            ("on_surface_variant", false) => "#CAC4D0",
+            ("on_surface_variant", true) => "#49454F",
+            ("error", false) => "#F2B8B5",
+            ("error", true) => "#B3261E",
+            ("on_error", false) => "#601410",
+            ("on_error", true) => "#FFFFFF",
+            ("primary", _) => "#D0BCFF",
+            (_, false) => "#2B2930",
+            (_, true) => "#ECE6F0",
+        };
+        let template = include_str!("../../themes/matugen/cratetune.toml");
+        let mut text = String::new();
+        let mut rest = template;
+        while let Some(at) = rest.find("{{") {
+            text.push_str(&rest[..at]);
+            let end = rest[at..].find("}}").unwrap() + at;
+            let parts: Vec<&str> = rest[at + 2..end].split('.').collect();
+            assert_eq!((parts[0], parts[3]), ("colors", "hex"), "{parts:?}");
+            text.push_str(tone(parts[1], parts[2] == "light"));
+            rest = &rest[end + 2..];
+        }
+        text.push_str(rest);
+        let f = parse("matugen", &text).unwrap_or_else(|e| panic!("{e:?}"));
+        assert!(!f.colors.is_empty() && !f.colors_light.is_empty());
+        assert!(f.warnings.is_empty(), "{:?}", f.warnings);
     }
 
     #[test]

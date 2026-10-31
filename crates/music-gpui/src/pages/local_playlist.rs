@@ -3,6 +3,7 @@
 //! reordered (up / down per row) and trimmed; edits to the account's own YouTube
 //! playlists go to YouTube Music too (see `playlist_ops.rs`).
 
+use gpui::prelude::FluentBuilder as _;
 use std::rc::Rc;
 
 use gpui::{
@@ -272,6 +273,7 @@ impl LocalPlaylistPage {
                     .child(
                         div()
                             .text_3xl()
+                            .when_some(crate::theme::heading_font(), |this, f| this.font_family(f))
                             .font_weight(FontWeight::BOLD)
                             .line_clamp(2)
                             .child(SharedString::from(self.name.clone())),

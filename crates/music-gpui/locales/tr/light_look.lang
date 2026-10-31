@@ -1,0 +1,60 @@
+# Light mode, the theme switcher and the other look options (tr).
+
+theme.mode.dark = Koyu
+theme.mode.light = Açık
+theme.mode.system = Sistem
+settings.appearance.mode = Mod
+settings.appearance.mode_note = Her yerde açık veya koyu, ya da sistemin görünümünü izle (sistem değişince o da değişir).
+settings.appearance.mode_system_now = Sistem şu anda {mode} gösteriyor.
+theme.darkness.soft = Yumuşak
+theme.darkness.bright = Parlak
+theme.darkness.white = Saf beyaz
+theme.white = Saf beyaz
+themes.low_contrast_light = {name}: açık modda bazı metinlerin kontrastı çok düşük ({ratio}:1); okunması zor olabilir.
+
+# ---- Motion & effects
+settings.motion.card_outlines = Kart kenar çizgileri
+settings.motion.window_hairline = Pencere kenarı boyunca çizgi
+settings.motion.smooth_wheel = Tekerlekle yumuşak kaydırma
+settings.motion.smooth_wheel_note = Fare tekerleği atlamak yerine kayar; izleme dörtgenleri sistemin kendi kaydırmasını korur. Sistem: macOS dışında açık. Azaltılmış animasyonlarda yeniden adım adım kayar.
+effects.smooth_wheel.system = Sistem
+effects.smooth_wheel.on = Açık
+effects.smooth_wheel.off = Kapalı
+settings.motion.translucent_sidebar_note_other = Kenar çubuğu, masaüstünü sistemin bulanıklığı içinden gösterir (Windows 11: Mica, Windows 10: akrilik; Linux: yalnızca birleştiricinin bulanıklaştırdığı yerlerde, ör. Wayland üzerinde KDE Plasma).
+effects.sidebar.full = Tam
+effects.sidebar.rail = Yalnızca simgeler
+effects.sidebar.hover = Üzerine gelince genişlet
+
+# ---- Theme switcher
+themes.switcher = Temalar
+themes.switcher_note = Yerleşik temalar ve tema dosyalarınız, geçerli modda gösterilir. Daha fazlası Ayarlar → Görünüm altında.
+
+# ---- Layout
+settings.layout.group = Düzen
+settings.layout.sidebar = Kenar çubuğu
+settings.layout.sidebar_note = Genişliğini değiştirmek için kenar çubuğunun veya sıranın kenarını sürükleyin.
+settings.layout.columns = Şarkı listesi sütunları
+settings.layout.columns_note = Eklenme ve Dinlenme, kitaplık listelerinde görünür (şarkılar, beğenilenler, indirilenler, yerel dosyalar).
+layout.column.album = Albüm
+layout.column.added = Eklenme
+layout.column.plays = Dinlenme
+layout.column.duration = Süre
+settings.layout.bar_buttons = Üst çubuk düğmeleri
+settings.layout.bar_buttons_note = Gizlenen düğmelerin işlevleri menülerde ve klavye kısayollarında kalır.
+layout.bar_button.menu = Menü
+layout.bar_button.back = Geri
+layout.bar_button.forward = İleri
+layout.bar_button.home = Ana sayfa
+layout.bar_button.themes = Temalar
+layout.bar_button.account = Hesap
+settings.layout.window_controls = Pencere düğmeleri
+settings.layout.window_controls_note = Simge durumuna küçültme, ekranı kaplama ve kapatma düğmelerinin görünümü. Yeniden başlattıktan sonra uygulanır.
+window.controls.system = Sistem
+window.controls.mac = macOS
+window.controls.windows = Windows
+
+# ---- Fonts
+theme.custom.heading_font = Başlık yazı tipi
+theme.custom.heading_font_detail = Sayfa başlıkları, albüm ve çalma listesi üst bilgileri, Şu an çalıyor ekranındaki başlık.
+theme.custom.fonts_folder = Yazı tipi klasörünü aç
+theme.custom.fonts_folder_note = Yazı tipi klasöründeki yazı tipi dosyaları (.ttf, .otf, .ttc) da bir sonraki açılıştan itibaren listelenir.

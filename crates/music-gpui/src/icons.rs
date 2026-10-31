@@ -67,6 +67,7 @@ gpui_kit_assets::icon_assets!(
         Share2,
         ImageDown,
         // settings
+        SunMoon,
         SlidersHorizontal,
         ScrollText,
         Languages,

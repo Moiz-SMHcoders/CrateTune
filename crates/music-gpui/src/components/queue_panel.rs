@@ -28,7 +28,6 @@ use crate::queue::{Repeat, Source};
 use crate::queue_tabs::{QueueTabs, TABS_KEY, TabPreview};
 use crate::theme::AppColors;
 
-pub const PANEL_WIDTH: f32 = 340.;
 const HISTORY_SHOWN: usize = 50;
 
 /// Drag payload for reordering; also its own drag preview.
@@ -193,11 +192,15 @@ impl MusicApp {
         }
         let live = self.queue_tabs.viewing_playing();
 
+        let width = self.queue_width(cx);
         v_flex()
-            .w(px(PANEL_WIDTH))
+            .relative()
+            .w(px(width))
             .flex_none()
             .h_full()
             .bg(bg)
+            // Drag the left edge to resize.
+            .child(self.panel_resize_handle(crate::components::sidebar::PanelEdge::Queue, cx))
             .border_l_1()
             .border_color(border)
             .child(

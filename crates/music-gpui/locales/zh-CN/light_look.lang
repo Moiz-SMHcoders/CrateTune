@@ -1,0 +1,60 @@
+# Light mode, the theme switcher and the other look options (zh-CN).
+
+theme.mode.dark = 深色
+theme.mode.light = 浅色
+theme.mode.system = 跟随系统
+settings.appearance.mode = 模式
+settings.appearance.mode_note = 全部使用浅色或深色，或跟随系统外观（系统切换时随之切换）。
+settings.appearance.mode_system_now = 系统当前为{mode}。
+theme.darkness.soft = 柔和
+theme.darkness.bright = 明亮
+theme.darkness.white = 纯白
+theme.white = 纯白
+themes.low_contrast_light = {name}：浅色模式下部分文字对比度过低（{ratio}:1），可能难以阅读。
+
+# ---- Motion & effects
+settings.motion.card_outlines = 卡片轮廓
+settings.motion.window_hairline = 窗口边缘细线
+settings.motion.smooth_wheel = 滚轮平滑滚动
+settings.motion.smooth_wheel_note = 鼠标滚轮平滑滑动而不是跳动；触控板保留系统自身的滚动。系统：除 macOS 外开启。减弱动画时恢复逐格滚动。
+effects.smooth_wheel.system = 系统
+effects.smooth_wheel.on = 开
+effects.smooth_wheel.off = 关
+settings.motion.translucent_sidebar_note_other = 透过系统模糊效果，可在侧边栏看到桌面（Windows 11：Mica，Windows 10：亚克力；Linux：仅在合成器支持模糊时，例如 Wayland 上的 KDE Plasma）。
+effects.sidebar.full = 完整
+effects.sidebar.rail = 仅图标
+effects.sidebar.hover = 悬停时展开
+
+# ---- Theme switcher
+themes.switcher = 主题
+themes.switcher_note = 内置主题和你的主题文件，按当前模式显示。更多选项见 设置 → 外观。
+
+# ---- Layout
+settings.layout.group = 布局
+settings.layout.sidebar = 侧边栏
+settings.layout.sidebar_note = 拖动侧边栏或队列的边缘可调整宽度。
+settings.layout.columns = 歌曲列表的列
+settings.layout.columns_note = “添加时间”和“播放次数”显示在资料库列表中（歌曲、喜欢、下载、本地文件）。
+layout.column.album = 专辑
+layout.column.added = 添加时间
+layout.column.plays = 播放次数
+layout.column.duration = 时长
+settings.layout.bar_buttons = 顶部栏按钮
+settings.layout.bar_buttons_note = 隐藏按钮的操作仍保留在菜单和键盘快捷键中。
+layout.bar_button.menu = 菜单
+layout.bar_button.back = 后退
+layout.bar_button.forward = 前进
+layout.bar_button.home = 首页
+layout.bar_button.themes = 主题
+layout.bar_button.account = 账号
+settings.layout.window_controls = 窗口按钮
+settings.layout.window_controls_note = 最小化、最大化和关闭按钮的样式。重启后生效。
+window.controls.system = 系统
+window.controls.mac = macOS
+window.controls.windows = Windows
+
+# ---- Fonts
+theme.custom.heading_font = 标题字体
+theme.custom.heading_font_detail = 页面标题、专辑和歌单的页头、正在播放中的标题。
+theme.custom.fonts_folder = 打开字体文件夹
+theme.custom.fonts_folder_note = 字体文件夹中的字体文件（.ttf、.otf、.ttc）也会列出，下次启动起生效。

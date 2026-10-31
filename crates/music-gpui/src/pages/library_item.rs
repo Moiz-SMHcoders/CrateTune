@@ -2,6 +2,7 @@
 //! save / subscribe and a link to the YouTube Music page when the id is a real
 //! one (synthetic `LA:` / `LB:` ids come from local files' tags).
 
+use gpui::prelude::FluentBuilder as _;
 use gpui::{
     AppContext as _, Context, FontWeight, IntoElement, ParentElement as _, Render, SharedString,
     Styled as _, Window, div, px,
@@ -230,6 +231,7 @@ impl LibraryItemPage {
                     .child(
                         div()
                             .text_3xl()
+                            .when_some(crate::theme::heading_font(), |this, f| this.font_family(f))
                             .font_weight(FontWeight::BOLD)
                             .line_clamp(2)
                             .child(SharedString::from(title)),

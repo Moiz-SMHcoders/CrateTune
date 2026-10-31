@@ -33,7 +33,7 @@ use crate::store::ScanState;
 pub struct LocalFilesPage {
     filter: Entity<InputState>,
     filter_text: String,
-    songs: Loaded<Vec<Track>>,
+    songs: Loaded<Vec<(Track, crate::components::track_row::RowMeta)>>,
     loaded: bool,
     list: SongList,
     _subs: Vec<Subscription>,
@@ -238,10 +238,19 @@ impl Render for LocalFilesPage {
             key_of(format!("{query:?}")),
             cx,
             |p| &mut p.songs,
-            move |lib| Ok(lib.songs(&query)?.into_iter().map(|s| s.track).collect()),
+            move |lib| {
+                Ok(lib
+                    .songs(&query)?
+                    .into_iter()
+                    .map(|s| {
+                        let meta = crate::components::track_row::RowMeta::of(&s);
+                        (s.track, meta)
+                    })
+                    .collect())
+            },
         );
-        if let Some(tracks) = self.songs.value.take() {
-            self.list.set_tracks(tracks);
+        if let Some(songs) = self.songs.value.take() {
+            self.list.set_songs(songs);
             self.loaded = true;
         }
         let prefs = read_app(cx, |app, _| app.store.prefs.clone()).unwrap_or_default();

@@ -9,7 +9,7 @@
 use std::time::{Duration, Instant};
 
 use gpui::{
-    Context, IntoElement, ParentElement as _, Render, Styled as _, Task, Window, div, hsla, img,
+    Context, IntoElement, ParentElement as _, Render, Styled as _, Task, Window, div, img,
     prelude::FluentBuilder as _, px,
 };
 use music_core::PlaybackStatus;
@@ -64,7 +64,7 @@ impl Render for NpVisualizer {
             self.schedule(frame, window, cx);
             return element.into_any_element();
         }
-        let bars = hsla(0., 0., 1., 0.22);
+        let bars = crate::theme::ink(0.22);
         let element = div()
             .absolute()
             .left_0()

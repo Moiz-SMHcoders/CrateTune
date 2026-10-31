@@ -1,0 +1,60 @@
+# Light mode, the theme switcher and the other look options (zh-TW).
+
+theme.mode.dark = 深色
+theme.mode.light = 淺色
+theme.mode.system = 跟隨系統
+settings.appearance.mode = 模式
+settings.appearance.mode_note = 全部使用淺色或深色，或跟隨系統外觀（系統切換時隨之切換）。
+settings.appearance.mode_system_now = 系統目前為{mode}。
+theme.darkness.soft = 柔和
+theme.darkness.bright = 明亮
+theme.darkness.white = 純白
+theme.white = 純白
+themes.low_contrast_light = {name}：淺色模式下部分文字對比度過低（{ratio}:1），可能不易閱讀。
+
+# ---- Motion & effects
+settings.motion.card_outlines = 卡片輪廓
+settings.motion.window_hairline = 視窗邊緣細線
+settings.motion.smooth_wheel = 滾輪平滑捲動
+settings.motion.smooth_wheel_note = 滑鼠滾輪平滑滑動而非跳動；觸控板保留系統本身的捲動。系統：除 macOS 外開啟。減少動畫時恢復逐格捲動。
+effects.smooth_wheel.system = 系統
+effects.smooth_wheel.on = 開啟
+effects.smooth_wheel.off = 關閉
+settings.motion.translucent_sidebar_note_other = 透過系統模糊效果，可在側邊欄看到桌面（Windows 11：Mica，Windows 10：壓克力；Linux：僅在合成器支援模糊時，例如 Wayland 上的 KDE Plasma）。
+effects.sidebar.full = 完整
+effects.sidebar.rail = 僅圖示
+effects.sidebar.hover = 游標停留時展開
+
+# ---- Theme switcher
+themes.switcher = 主題
+themes.switcher_note = 內建主題和你的主題檔案，依目前模式顯示。更多選項請見 設定 → 外觀。
+
+# ---- Layout
+settings.layout.group = 版面配置
+settings.layout.sidebar = 側邊欄
+settings.layout.sidebar_note = 拖曳側邊欄或佇列的邊緣即可調整寬度。
+settings.layout.columns = 歌曲清單欄位
+settings.layout.columns_note = 「加入時間」和「播放次數」會顯示在音樂庫清單中（歌曲、喜歡、下載、本機檔案）。
+layout.column.album = 專輯
+layout.column.added = 加入時間
+layout.column.plays = 播放次數
+layout.column.duration = 長度
+settings.layout.bar_buttons = 頂部列按鈕
+settings.layout.bar_buttons_note = 隱藏按鈕的操作仍保留在選單和鍵盤快速鍵中。
+layout.bar_button.menu = 選單
+layout.bar_button.back = 上一頁
+layout.bar_button.forward = 下一頁
+layout.bar_button.home = 首頁
+layout.bar_button.themes = 主題
+layout.bar_button.account = 帳號
+settings.layout.window_controls = 視窗按鈕
+settings.layout.window_controls_note = 最小化、最大化和關閉按鈕的樣式。重新啟動後生效。
+window.controls.system = 系統
+window.controls.mac = macOS
+window.controls.windows = Windows
+
+# ---- Fonts
+theme.custom.heading_font = 標題字型
+theme.custom.heading_font_detail = 頁面標題、專輯和播放清單的頁首、正在播放中的標題。
+theme.custom.fonts_folder = 開啟字型資料夾
+theme.custom.fonts_folder_note = 字型資料夾中的字型檔案（.ttf、.otf、.ttc）也會列出，下次啟動起生效。

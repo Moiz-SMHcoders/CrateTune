@@ -1,0 +1,60 @@
+# Light mode, the theme switcher and the other look options (nl).
+
+theme.mode.dark = Donker
+theme.mode.light = Licht
+theme.mode.system = Systeem
+settings.appearance.mode = Modus
+settings.appearance.mode_note = Overal licht of donker, of volg de weergave van je systeem (wisselt mee als het systeem wisselt).
+settings.appearance.mode_system_now = Het systeem toont nu {mode}.
+theme.darkness.soft = Zacht
+theme.darkness.bright = Helder
+theme.darkness.white = Puur wit
+theme.white = Puur wit
+themes.low_contrast_light = {name}: sommige tekst heeft in de lichte modus te weinig contrast ({ratio}:1) en is misschien slecht leesbaar.
+
+# ---- Motion & effects
+settings.motion.card_outlines = Kaartranden
+settings.motion.window_hairline = Lijn langs de rand van het venster
+settings.motion.smooth_wheel = Vloeiend scrollen met het muiswiel
+settings.motion.smooth_wheel_note = Een muiswiel glijdt in plaats van te springen; trackpads houden het scrollen van het systeem. Systeem: aan, behalve op macOS. Weer in stappen met beperkte animaties.
+effects.smooth_wheel.system = Systeem
+effects.smooth_wheel.on = Aan
+effects.smooth_wheel.off = Uit
+settings.motion.translucent_sidebar_note_other = De zijbalk toont het bureaublad door de vervaging van het systeem (Windows 11: Mica, Windows 10: acryl; Linux: alleen waar de compositor vervaagt, zoals KDE Plasma op Wayland).
+effects.sidebar.full = Volledig
+effects.sidebar.rail = Alleen pictogrammen
+effects.sidebar.hover = Uitklappen bij aanwijzen
+
+# ---- Theme switcher
+themes.switcher = Thema's
+themes.switcher_note = Ingebouwde thema's en je themabestanden, getoond in de huidige modus. Meer in Instellingen → Weergave.
+
+# ---- Layout
+settings.layout.group = Indeling
+settings.layout.sidebar = Zijbalk
+settings.layout.sidebar_note = Sleep de rand van de zijbalk of de wachtrij om de breedte te wijzigen.
+settings.layout.columns = Kolommen van de nummerlijst
+settings.layout.columns_note = Toegevoegd en Afgespeeld verschijnen in bibliotheeklijsten (nummers, leuk gevonden, downloads, lokale bestanden).
+layout.column.album = Album
+layout.column.added = Toegevoegd
+layout.column.plays = Afgespeeld
+layout.column.duration = Duur
+settings.layout.bar_buttons = Knoppen in de bovenste balk
+settings.layout.bar_buttons_note = De acties van verborgen knoppen blijven in de menu's en toetscombinaties.
+layout.bar_button.menu = Menu
+layout.bar_button.back = Terug
+layout.bar_button.forward = Vooruit
+layout.bar_button.home = Home
+layout.bar_button.themes = Thema's
+layout.bar_button.account = Account
+settings.layout.window_controls = Vensterknoppen
+settings.layout.window_controls_note = Het uiterlijk van de knoppen minimaliseren, maximaliseren en sluiten. Werkt na een herstart.
+window.controls.system = Systeem
+window.controls.mac = macOS
+window.controls.windows = Windows
+
+# ---- Fonts
+theme.custom.heading_font = Lettertype voor koppen
+theme.custom.heading_font_detail = Paginatitels, album- en afspeellijstkoppen, de titel in Speelt nu.
+theme.custom.fonts_folder = Lettertypemap openen
+theme.custom.fonts_folder_note = Lettertypebestanden (.ttf, .otf, .ttc) in de lettertypemap worden vanaf de volgende start ook getoond.

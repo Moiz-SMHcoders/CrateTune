@@ -18,6 +18,7 @@ use gpui_component::{
 use super::SettingsPanel;
 use super::prefs::{MiniPlayerSkin, MiniPlayerStyle, NowPlayingBackground, NowPlayingLayout};
 use super::prefs_ui::choice;
+use super::theme_prefs::ColorMode;
 use super::widgets::{group_at, note, row_at};
 use crate::theme::{AppColors, FONT_SCALES, ThemeChoice};
 
@@ -33,11 +34,15 @@ pub(super) fn render(
     let accent = AppColors::get(cx).accent;
 
     let custom = panel.settings.custom_theme.clone();
+    let mode = panel.settings.appearance.mode;
+    let light = mode.is_light(crate::theme::system_is_light());
     let swatch = |choice: ThemeChoice| {
         // Background / surface / accent preview of each theme (with the
-        // Customize-theme options; the dynamic card shows the current accent).
-        let (bg, surface, dot) =
-            crate::theme::preview(&crate::theme::Look::plain(choice, custom.clone()));
+        // Customize-theme options, in the current mode; the dynamic card shows
+        // the current accent).
+        let (bg, surface, dot) = crate::theme::preview(
+            &crate::theme::Look::plain(choice, custom.clone()).in_mode(light),
+        );
         let dot = if choice == ThemeChoice::Dynamic && current == ThemeChoice::Dynamic {
             accent
         } else {
@@ -48,6 +53,9 @@ pub(super) fn render(
             .w_full()
             .rounded(px(8.))
             .bg(bg)
+            // White on a white card needs an edge.
+            .border_1()
+            .border_color(border)
             .p_2()
             .gap_2()
             .items_end()
@@ -73,10 +81,28 @@ pub(super) fn render(
                     div()
                         .text_sm()
                         .when(selected, |this| this.font_weight(FontWeight::SEMIBOLD))
-                        .child(choice.title()),
+                        .child(choice.title_for(light)),
                 )
                 .on_click(cx.listener(move |this, _, _, cx| this.set_theme(choice, cx)))
         }));
+    let modes = choice(
+        "color-mode",
+        ColorMode::ALL,
+        mode,
+        ColorMode::title,
+        |this, m, cx| this.set_color_mode(m, cx),
+        cx,
+    );
+    let system_now = (mode == ColorMode::System).then(|| {
+        t!(
+            "settings.appearance.mode_system_now",
+            mode = if crate::theme::system_is_light() {
+                ColorMode::Light.title()
+            } else {
+                ColorMode::Dark.title()
+            }
+        )
+    });
 
     let scales = h_flex()
         .flex_wrap()
@@ -94,15 +120,18 @@ pub(super) fn render(
                 .on_click(cx.listener(move |this, _, _, cx| this.set_font_scale(value, cx)))
         }));
 
-    // ---- Now Playing: layout cards with a schematic preview
+    // ---- Now Playing: layout cards with a schematic preview (light washes and
+    // dark type in light mode, as Now Playing draws then)
     let np = panel.settings.now_playing;
+    let ink = crate::theme::ink;
+    let wash = |l: f32| crate::theme::shade(hsla(0.62, 0.39, 0.5, 1.), l, 1.);
     let block = |w: f32, h: f32, alpha: f32| {
         div()
             .w(px(w))
             .h(px(h))
             .flex_none()
             .rounded(px(2.))
-            .bg(hsla(0., 0., 1., alpha))
+            .bg(ink(alpha))
     };
     let lines = |n: usize, w: f32| {
         v_flex()
@@ -114,7 +143,7 @@ pub(super) fn render(
             .h(px(70.))
             .w_full()
             .rounded(px(6.))
-            .bg(hsla(0.62, 0.35, 0.22, 1.))
+            .bg(wash(0.22))
             .p_2();
         match layout {
             NowPlayingLayout::Split => frame.child(
@@ -158,7 +187,7 @@ pub(super) fn render(
                     .child(div().h(px(36.)).w_full().bg(gpui::linear_gradient(
                         180.,
                         gpui::linear_color_stop(hsla(0.08, 0.5, 0.6, 0.9), 0.),
-                        gpui::linear_color_stop(hsla(0.62, 0.35, 0.22, 1.), 1.),
+                        gpui::linear_color_stop(wash(0.22), 1.),
                     )))
                     .child(
                         v_flex()
@@ -177,7 +206,7 @@ pub(super) fn render(
                         .p(px(3.))
                         .gap(px(3.))
                         .rounded(px(5.))
-                        .bg(hsla(0., 0., 1., 0.12))
+                        .bg(ink(0.12))
                         .child(block(38., 30., 0.8))
                         .child(block(30., 3., 0.55))
                         .child(block(38., 2., 0.4)),
@@ -194,7 +223,7 @@ pub(super) fn render(
                             .left_0()
                             .h_full()
                             .w(px(50.))
-                            .bg(hsla(0., 0., 1., 0.14)),
+                            .bg(ink(0.14)),
                     )
                     .child(
                         h_flex()
@@ -213,7 +242,7 @@ pub(super) fn render(
                             .child(block(26., 12., 0.7)),
                     ),
             ),
-            NowPlayingLayout::Editorial => frame.bg(hsla(0.62, 0.3, 0.12, 1.)).child(
+            NowPlayingLayout::Editorial => frame.bg(wash(0.12)).child(
                 h_flex()
                     .size_full()
                     .gap_2()
@@ -388,12 +417,21 @@ pub(super) fn render(
         .child(group_at("appearance.language", t!("settings.language.group"), cx).child(language))
         .child(
             group_at("appearance.theme", t!("settings.appearance.theme"), cx)
+                .child(row_at(
+                    "appearance.mode",
+                    t!("settings.appearance.mode"),
+                    Some(t!("settings.appearance.mode_note")),
+                    modes,
+                    cx,
+                ))
+                .children(system_now.map(|text| note(text, cx)))
                 .child(themes)
                 .child(note(t!("settings.appearance.theme_note"), cx)),
         )
         .child(super::theme_ui::render(panel, window, cx))
         .child(super::look_ui::render_app_look(panel, cx))
         .child(super::look_ui::render_effects(panel, cx))
+        .child(super::look_ui::render_layout(panel, cx))
         .child(
             group_at(
                 "appearance.text_size",

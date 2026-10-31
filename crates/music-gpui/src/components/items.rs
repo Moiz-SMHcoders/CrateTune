@@ -783,8 +783,9 @@ pub fn hero(h: Hero, cx: &mut App) -> AnyElement {
     } = h;
     let side = px(196.);
     // Motion & effects → Artwork-coloured page headers: a gradient in the
-    // cover's main colour behind the header, darkened until muted text keeps
-    // 4.5:1 (colours extracted once per cover, off the UI thread).
+    // cover's main colour behind the header, darkened (lightened in light
+    // mode) until muted text keeps 4.5:1 (colours extracted once per cover,
+    // off the UI thread).
     let header_bg = art
         .as_deref()
         .filter(|_| crate::effects::artwork_headers())
@@ -806,7 +807,9 @@ pub fn hero(h: Hero, cx: &mut App) -> AnyElement {
         Some(colors) => {
             let fill = colors.map(|c| {
                 let p = c.primary();
-                let tone = crate::palette::TonalPalette::new(p.h, p.c.max(0.04)).tone(34.);
+                // A dark tone, or a pale one under a light theme's dark text.
+                let tone = crate::palette::TonalPalette::new(p.h, p.c.max(0.04))
+                    .tone(if crate::theme::is_light() { 86. } else { 34. });
                 crate::components::app_backdrop::readable_wash(
                     tone,
                     HEADER_ALPHA,
@@ -840,6 +843,7 @@ pub fn hero(h: Hero, cx: &mut App) -> AnyElement {
                     .child(
                         div()
                             .text_3xl()
+                            .when_some(crate::theme::heading_font(), |this, f| this.font_family(f))
                             .font_weight(FontWeight::BOLD)
                             .line_clamp(2)
                             .child(title),
