@@ -1704,8 +1704,7 @@ translations, every screen in every language (five locales were looked at).
   resize bands (`start_window_resize`) unless maximised, tiled or full screen.
 * **Now Playing** opens below the bar (window controls stay reachable; navigating from the
   bar closes it). In full screen it covers the whole window as before.
-* **Old header:** gone in this mode (back, forward, search and ⋯ are in the bar); Home moved
-  from the sidebar into the bar, so nothing shows twice. Sheets and toasts start below the bar.
+* **Old header:** gone in this mode (back, forward, search and ⋯ are in the bar); Home is in both the bar and the sidebar. Sheets and toasts start below the bar.
 * **Cost:** the bar is a cached region (`np_region.rs`) keyed by a hash of what it shows
   (history, route, search text and dropdown, account, window state, theme colours, density,
   language); entities it reads (the search field, an open menu) re-render it themselves.

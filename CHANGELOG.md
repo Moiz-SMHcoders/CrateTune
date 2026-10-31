@@ -5,6 +5,10 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+* **Home is back in the sidebar** as well, next to the top bar's Home button.
+
 ## [0.2.6] — 2026-10-31
 
 
