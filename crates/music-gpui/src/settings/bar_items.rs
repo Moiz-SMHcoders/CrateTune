@@ -1,7 +1,8 @@
 //! Which items the player bar shows (`player_bar.items` in `settings.json`):
 //! one switch per button, tag or chip. Everything that existed before is on by
 //! default, so the default bar looks exactly like it did; "Add to playlist" and
-//! "Dislike" are new and off. Hidden items take no room: the bar's layout (`bar_layout`)
+//! "Dislike" are new and off; "Devices" is on but only appears once a device is
+//! paired (Settings → Devices). Hidden items take no room: the bar's layout (`bar_layout`)
 //! gives their space to the next controls in priority order. The mini player
 //! has its own fixed controls (previous / play / next, back to the main window)
 //! and isn't affected.
@@ -29,6 +30,9 @@ pub enum BarItem {
     Queue,
     SleepTimer,
     Cast,
+    /// Device hand-off: paired devices, "Continue here" / "Play on …" (shown once a
+    /// device is paired).
+    Devices,
     MiniPlayer,
     /// The chevron that opens Now Playing (the track info opens it too).
     NowPlaying,
@@ -38,7 +42,7 @@ pub enum BarItem {
 
 impl BarItem {
     /// Settings order: left to right on the bar.
-    pub const ALL: [Self; 15] = [
+    pub const ALL: [Self; 16] = [
         Self::Like,
         Self::Dislike,
         Self::QualityTag,
@@ -51,6 +55,7 @@ impl BarItem {
         Self::Queue,
         Self::SleepTimer,
         Self::Cast,
+        Self::Devices,
         Self::MiniPlayer,
         Self::NowPlaying,
         Self::Volume,
@@ -72,6 +77,7 @@ impl BarItem {
             Self::Queue => "queue",
             Self::SleepTimer => "sleep_timer",
             Self::Cast => "cast",
+            Self::Devices => "devices",
             Self::MiniPlayer => "mini_player",
             Self::NowPlaying => "now_playing",
             Self::Volume => "volume_slider",
@@ -98,6 +104,7 @@ impl BarItem {
             Self::Queue => t!("bar_items.item.queue"),
             Self::SleepTimer => t!("bar_items.item.sleep_timer"),
             Self::Cast => t!("bar_items.item.cast"),
+            Self::Devices => t!("bar_items.item.devices"),
             Self::MiniPlayer => t!("bar_items.item.mini_player"),
             Self::NowPlaying => t!("bar_items.item.now_playing"),
             Self::Volume => t!("bar_items.item.volume_slider"),
@@ -121,6 +128,7 @@ pub struct BarItems {
     pub queue: bool,
     pub sleep_timer: bool,
     pub cast: bool,
+    pub devices: bool,
     pub mini_player: bool,
     pub now_playing: bool,
     pub volume_slider: bool,
@@ -142,6 +150,7 @@ impl Default for BarItems {
             queue: true,
             sleep_timer: true,
             cast: true,
+            devices: true,
             mini_player: true,
             now_playing: true,
             volume_slider: true,
@@ -173,6 +182,7 @@ impl BarItems {
             BarItem::Queue => &mut self.queue,
             BarItem::SleepTimer => &mut self.sleep_timer,
             BarItem::Cast => &mut self.cast,
+            BarItem::Devices => &mut self.devices,
             BarItem::MiniPlayer => &mut self.mini_player,
             BarItem::NowPlaying => &mut self.now_playing,
             BarItem::Volume => &mut self.volume_slider,

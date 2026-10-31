@@ -1,0 +1,75 @@
+# Device hand-off (see locales/en/devices.lang).
+
+settings.section.devices = 裝置
+bar_items.item.devices = 裝置
+
+# ---- The Devices button on the player bar and its popover
+devices.tooltip = 裝置
+devices.title = 你的裝置
+devices.refresh = 重新整理
+devices.manage = 管理裝置…
+devices.continue_here = 在這裡繼續
+devices.play_on = 在 {device} 上播放
+devices.status.checking = 正在檢查…
+devices.status.nothing = 未在播放
+devices.status.unreachable = 無法連線（該裝置上的應用程式是否已開啟？）
+devices.status.playing = {title} · {position}
+devices.status.paused = 已暫停 · {title} · {position}
+
+# ---- Pairing errors (Settings → Devices, "Enter a code")
+devices.pair.not_found = 在此網路上找不到正在顯示配對碼的裝置。如果另一部裝置位於其他網路，請使用配對連結。
+devices.pair.wrong_code = 配對碼不符。請檢查後再試一次。
+devices.pair.not_pairing = 該裝置已不再顯示配對碼。請顯示新的配對碼後再試一次。
+devices.pair.failed = 無法配對：{error}
+devices.pair.bad_code = 這不是配對碼。配對碼由 8 個英文字母和數字組成，例如 ABCD-2345。
+
+# ---- Notifications
+devices.toast.nothing_to_send = 沒有可傳送的內容：佇列是空的。
+devices.toast.continued = 正在從 {device} 繼續播放「{title}」
+devices.toast.playing_on = 正在 {device} 上播放
+devices.toast.take_over_failed = 無法從 {device} 繼續播放
+devices.toast.play_on_failed = 無法在 {device} 上播放
+devices.toast.unreachable = 無法連線到 {device}
+devices.toast.paused_by = 已暫停：{device} 繼續播放
+devices.toast.sent_here = 正在播放從 {device} 傳送過來的「{title}」
+devices.toast.paired = 已與 {device} 配對
+devices.toast.unpaired = {device} 已取消與此裝置的配對
+
+# ---- Home: the "continue" card when a paired device played more recently
+home.continue.from_device = 要從 {position} 繼續播放 {device} 上的「{title}」嗎？
+home.continue.device_playing = 正在 {device} 上播放
+home.continue.device_paused = 已在 {device} 上暫停
+home.continue.continue_here = 在這裡繼續
+
+# ---- Settings → Devices
+settings.devices.this_device = 這部裝置
+settings.devices.name = 名稱
+settings.devices.name_note = 你的其他裝置上顯示的這部裝置名稱。
+settings.devices.id = 裝置 ID：{id}
+settings.devices.pair = 配對裝置
+settings.devices.pair_note = 只要將你的電腦配對一次。之後每部電腦都會顯示其他電腦正在播放的內容，你也可以在一部電腦上繼續播放在另一部上開始的內容。兩部電腦上都必須開啟應用程式。
+settings.devices.show_code = 顯示配對碼
+settings.devices.show_code_desc = 在另一部裝置上輸入的配對碼（及連結）。
+settings.devices.show_code_button = 顯示配對碼
+settings.devices.code_shown = 在另一部裝置上開啟「設定 → 裝置」，然後輸入此配對碼：
+settings.devices.code_expires = 10 分鐘內有效，僅能使用一次。如果位於其他網路，請複製連結（或掃描 QR 碼）並改為輸入連結。
+settings.devices.copy_link = 複製連結
+settings.devices.enter_code = 輸入配對碼
+settings.devices.enter_note = 另一部裝置顯示的配對碼，或其配對連結（位於其他網路時需要）。
+settings.devices.pair_button = 配對
+settings.devices.looking = 正在尋找裝置…
+settings.devices.paired_with = 已與 {device} 配對
+settings.devices.paired = 已配對的裝置
+settings.devices.none_paired = 還沒有裝置。配對一部裝置後，播放列上會出現「裝置」按鈕。
+settings.devices.forget = 忘記
+settings.devices.networks = 其他網路
+settings.devices.use_relay = 使用中繼
+settings.devices.use_relay_desc = 當裝置位於不同網路且無法直接連線時使用。在同一網路上，它們一律直接連線。
+settings.devices.relay = 中繼
+settings.devices.relay_note = iroh 中繼（https://…）。留空：使用由應用程式維護者營運的內建中繼。
+settings.devices.relay_error = 不是中繼位址（https://host）。
+settings.devices.privacy = 裝置之間採用端對端加密通訊，並盡可能直接連線。中繼只會轉送它無法讀取的加密資料；它能看到裝置的 IP 位址和 ID。不涉及任何其他人的伺服器。
+
+# ---- Settings → Music Together
+settings.together.keep_playing = 我離開時在這裡繼續播放
+settings.together.keep_playing_desc = 當你離開已加入的工作階段，或主持人結束工作階段時，從目前位置繼續播放其佇列，而不是停止。

@@ -1,0 +1,75 @@
+# Device hand-off (see locales/en/devices.lang).
+
+settings.section.devices = Устройства
+bar_items.item.devices = Устройства
+
+# ---- The Devices button on the player bar and its popover
+devices.tooltip = Устройства
+devices.title = Ваши устройства
+devices.refresh = Обновить
+devices.manage = Управление устройствами…
+devices.continue_here = Продолжить здесь
+devices.play_on = Воспроизвести на {device}
+devices.status.checking = Проверка…
+devices.status.nothing = Ничего не играет
+devices.status.unreachable = Недоступно (приложение на нём открыто?)
+devices.status.playing = {title} · {position}
+devices.status.paused = Пауза · {title} · {position}
+
+# ---- Pairing errors (Settings → Devices, "Enter a code")
+devices.pair.not_found = В этой сети не найдено устройство, показывающее код. Если другое устройство в другой сети, используйте ссылку для сопряжения.
+devices.pair.wrong_code = Код не совпадает. Проверьте его и попробуйте ещё раз.
+devices.pair.not_pairing = Это устройство больше не показывает код. Покажите новый и попробуйте ещё раз.
+devices.pair.failed = Не удалось выполнить сопряжение: {error}
+devices.pair.bad_code = Это не код сопряжения. Код состоит из 8 букв и цифр, например ABCD-2345.
+
+# ---- Notifications
+devices.toast.nothing_to_send = Нечего отправлять: очередь пуста.
+devices.toast.continued = Продолжение «{title}» с устройства {device}
+devices.toast.playing_on = Теперь играет на {device}
+devices.toast.take_over_failed = Не удалось продолжить с устройства {device}
+devices.toast.play_on_failed = Не удалось воспроизвести на {device}
+devices.toast.unreachable = Устройство {device} недоступно
+devices.toast.paused_by = Пауза: продолжает {device}
+devices.toast.sent_here = Играет «{title}», отправлено с устройства {device}
+devices.toast.paired = Сопряжено с {device}
+devices.toast.unpaired = Устройство {device} удалило сопряжение с этим устройством
+
+# ---- Home: the "continue" card when a paired device played more recently
+home.continue.from_device = Продолжить «{title}» с устройства {device} с {position}?
+home.continue.device_playing = Сейчас играет на {device}
+home.continue.device_paused = На паузе на {device}
+home.continue.continue_here = Продолжить здесь
+
+# ---- Settings → Devices
+settings.devices.this_device = Это устройство
+settings.devices.name = Имя
+settings.devices.name_note = Так это устройство видят ваши другие устройства.
+settings.devices.id = ID устройства: {id}
+settings.devices.pair = Сопряжение устройства
+settings.devices.pair_note = Выполните сопряжение компьютеров один раз. После этого каждый показывает, что играет на остальных, и начатое на одном можно продолжить на другом. Приложение должно быть открыто на обоих.
+settings.devices.show_code = Показать код
+settings.devices.show_code_desc = Код (и ссылка) для ввода на другом устройстве.
+settings.devices.show_code_button = Показать код
+settings.devices.code_shown = На другом устройстве откройте «Настройки → Устройства» и введите этот код:
+settings.devices.code_expires = Действует 10 минут, один раз. В другой сети скопируйте ссылку (или отсканируйте QR-код) и введите её вместо кода.
+settings.devices.copy_link = Копировать ссылку
+settings.devices.enter_code = Ввести код
+settings.devices.enter_note = Код, который показывает другое устройство, или его ссылка для сопряжения (нужна, если оно в другой сети).
+settings.devices.pair_button = Подключить
+settings.devices.looking = Поиск устройства…
+settings.devices.paired_with = Сопряжено с {device}
+settings.devices.paired = Сопряжённые устройства
+settings.devices.none_paired = Устройств пока нет. Когда появится сопряжённое устройство, на панели плеера появится кнопка «Устройства».
+settings.devices.forget = Забыть
+settings.devices.networks = Другие сети
+settings.devices.use_relay = Использовать ретранслятор
+settings.devices.use_relay_desc = Когда устройства в разных сетях и не могут подключиться напрямую. В одной сети они всегда подключаются напрямую.
+settings.devices.relay = Ретранслятор
+settings.devices.relay_note = Ретранслятор iroh (https://…). Пусто: встроенный, который поддерживают разработчики приложения.
+settings.devices.relay_error = Это не адрес ретранслятора (https://host).
+settings.devices.privacy = Устройства общаются со сквозным шифрованием и, когда возможно, напрямую. Ретранслятор лишь передаёт зашифрованные данные, которые не может прочитать; он видит IP-адреса и ID устройств. Чужие серверы не участвуют.
+
+# ---- Settings → Music Together
+settings.together.keep_playing = Продолжать здесь, когда я выйду
+settings.together.keep_playing_desc = Когда вы выходите из сеанса, к которому присоединились, или ведущий его завершает, воспроизведение его очереди продолжается с того же места, а не останавливается.

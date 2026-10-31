@@ -18,6 +18,7 @@ Google or Shazam.
 * [Keyboard shortcuts](#keyboard-shortcuts)
 * [Modules](#modules)
 * [Listen together](#listen-together)
+* [Continue on another device](#continue-on-another-device)
 * [Cast to a TV or speaker](#cast-to-a-tv-or-speaker)
 * [AI content filter](#ai-content-filter)
 * [Updates](#updates)
@@ -801,6 +802,39 @@ Play the same music in sync with others (sidebar → **Listen together**).
   session pass via the relay server. It stores nothing and never sees your account. Same
   network sessions don't use it. Codes stop working when the session ends; if you want to be
   sure who joins, turn on approval in the room settings.
+* **Keep playing here when I leave** (Settings → Music Together, on by default): when you
+  leave a session you joined, or the host ends it (say ArchiveTune on your phone), the music
+  carries on here with the session's queue, from where the session was, with its repeat
+  mode. Turn it off to have playback stop instead.
+
+## Continue on another device
+
+Start a song on one computer and carry on with it on another, like Spotify's devices list:
+your own computers only, with no account and no one else's servers.
+
+* **Pair once** (Settings → **Devices**): on one computer press **Show code**. It shows a
+  code like `ABCD-2345` (valid for 10 minutes), a QR code and **Copy link**. On the other,
+  type the code under **Enter a code** and press **Pair**. That finds the first computer on
+  the same network. If it is on another network, enter the link instead (send it to
+  yourself, or scan the QR code with your phone and copy it over). Both now list each other
+  under **Paired devices**.
+* **The Devices button** appears on the player bar once a device is paired (it can be hidden
+  in Settings → Player bar → *Show on the bar*). It lists your devices with what each is
+  playing ("Song · 1:23"; "Not reachable" when the app isn't open there):
+  * **Continue here** takes the other device's queue, song and position (and repeat mode);
+    the other device pauses.
+  * **Play on …** sends what plays here to that device; this one pauses.
+* **When you start the app**, if another paired device played more recently, Home offers
+  **"Continue 'Song' from MacBook at 1:23?"** in the card at the top. **Continue here** does
+  the above; **×** dismisses it.
+* **Names.** Each device shows your computer's name until you set one in Settings → Devices →
+  *Name*.
+* **Other networks.** Devices on the same network talk directly. Across networks they connect
+  directly when they can and otherwise through a relay (*Use a relay*, on by default; the
+  project runs one, or enter your own iroh relay's `https://` address). Everything between
+  your devices is end-to-end encrypted; the relay can't read it.
+* **Forget** removes a device (and tells it to forget this one, if it is open).
+* Both computers need the app open: there is no server keeping your state while one is off.
 
 ## Cast to a TV or speaker
 
@@ -929,6 +963,10 @@ Builds signed with a Developer ID keep the same identity, and neither prompt com
   session, the session key and room code. Same-network sessions don't use it. To find the relay,
   the app reads one line (`packaging/relay.txt`) from the project's GitHub repository, at most
   every 6 hours, when you host or join with a code.
+* **Continue on another device**, once a device is paired: the app announces itself on your
+  network (mDNS) and your paired devices exchange their names and what they play, end-to-end
+  encrypted, directly or through the hand-off relay (which can't read it). Nothing runs until
+  you pair a device.
 * **Casting** looks for devices on your network only when you open the Cast menu or the
   Chromecast settings.
 * Signed in, **Add plays to my YouTube history** (on by default; off while your listening
@@ -973,6 +1011,9 @@ Builds signed with a Developer ID keep the same identity, and neither prompt com
   (other people see it), the input fields' right-click menu in most languages, and
   third-party module names and settings.
 * Builds are not signed with a Developer ID / Authenticode certificate yet (see Install).
+* Continue on another device needs the app open on both computers, and has been tried on one
+  network only (two copies on one Mac); across networks it relies on the relay (see the
+  README).
 
 ## Troubleshooting
 

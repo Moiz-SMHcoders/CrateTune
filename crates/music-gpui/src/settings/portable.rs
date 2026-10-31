@@ -46,6 +46,10 @@ pub const LOCAL_ONLY: &[&str] = &[
     "lyrics.ai_key_set",
     "spotify.user",
     "ai_filter.key_set",
+    // Device hand-off: pairing is between this machine's key and the other devices'.
+    "devices.paired",
+    "devices.key_set",
+    "devices.name",
 ];
 
 /// Top-level sections of the player bar's look that theme files and profiles

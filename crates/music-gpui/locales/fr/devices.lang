@@ -1,0 +1,75 @@
+# Device hand-off (see locales/en/devices.lang).
+
+settings.section.devices = Appareils
+bar_items.item.devices = Appareils
+
+# ---- The Devices button on the player bar and its popover
+devices.tooltip = Appareils
+devices.title = Vos appareils
+devices.refresh = Actualiser
+devices.manage = Gérer les appareils…
+devices.continue_here = Continuer ici
+devices.play_on = Lire sur {device}
+devices.status.checking = Vérification…
+devices.status.nothing = Aucune lecture
+devices.status.unreachable = Injoignable (l'app y est-elle ouverte ?)
+devices.status.playing = {title} · {position}
+devices.status.paused = En pause · {title} · {position}
+
+# ---- Pairing errors (Settings → Devices, "Enter a code")
+devices.pair.not_found = Aucun appareil affichant un code n'a été trouvé sur ce réseau. Utilisez le lien d'association si l'autre appareil est sur un autre réseau.
+devices.pair.wrong_code = Le code ne correspond pas. Vérifiez-le et réessayez.
+devices.pair.not_pairing = Cet appareil n'affiche plus de code. Affichez-en un nouveau et réessayez.
+devices.pair.failed = Association impossible : {error}
+devices.pair.bad_code = Ce n'est pas un code d'association. Un code comporte 8 lettres et chiffres, comme ABCD-2345.
+
+# ---- Notifications
+devices.toast.nothing_to_send = Rien à envoyer : la file d'attente est vide.
+devices.toast.continued = Reprise de « {title} » depuis {device}
+devices.toast.playing_on = Lecture sur {device}
+devices.toast.take_over_failed = Impossible de reprendre depuis {device}
+devices.toast.play_on_failed = Impossible de lire sur {device}
+devices.toast.unreachable = {device} est injoignable
+devices.toast.paused_by = En pause : {device} prend le relais
+devices.toast.sent_here = Lecture de « {title} », envoyé par {device}
+devices.toast.paired = Associé à {device}
+devices.toast.unpaired = {device} a oublié cet appareil
+
+# ---- Home: the "continue" card when a paired device played more recently
+home.continue.from_device = Continuer « {title} » depuis {device} à {position} ?
+home.continue.device_playing = En cours de lecture sur {device}
+home.continue.device_paused = En pause sur {device}
+home.continue.continue_here = Continuer ici
+
+# ---- Settings → Devices
+settings.devices.this_device = Cet appareil
+settings.devices.name = Nom
+settings.devices.name_note = Le nom sous lequel vos autres appareils voient celui-ci.
+settings.devices.id = Identifiant de l'appareil : {id}
+settings.devices.pair = Associer un appareil
+settings.devices.pair_note = Associez vos ordinateurs une seule fois. Chacun affiche ensuite ce que jouent les autres, et vous pouvez continuer sur l'un ce que vous avez commencé sur un autre. L'app doit être ouverte sur les deux.
+settings.devices.show_code = Afficher un code
+settings.devices.show_code_desc = Un code (et un lien) à saisir sur l'autre appareil.
+settings.devices.show_code_button = Afficher le code
+settings.devices.code_shown = Sur l'autre appareil, ouvrez Paramètres → Appareils et saisissez ce code :
+settings.devices.code_expires = Valable 10 minutes, une seule fois. Sur un autre réseau, copiez le lien (ou scannez le code QR) et saisissez-le à la place.
+settings.devices.copy_link = Copier le lien
+settings.devices.enter_code = Saisir un code
+settings.devices.enter_note = Le code affiché par l'autre appareil, ou son lien d'association (nécessaire s'il est sur un autre réseau).
+settings.devices.pair_button = Associer
+settings.devices.looking = Recherche de l'appareil…
+settings.devices.paired_with = Associé à {device}
+settings.devices.paired = Appareils associés
+settings.devices.none_paired = Aucun appareil pour l'instant. Dès qu'un appareil est associé, un bouton Appareils apparaît dans la barre de lecture.
+settings.devices.forget = Oublier
+settings.devices.networks = Autres réseaux
+settings.devices.use_relay = Utiliser un relais
+settings.devices.use_relay_desc = Quand les appareils sont sur des réseaux différents et ne peuvent pas se connecter directement. Sur le même réseau, ils se connectent toujours directement.
+settings.devices.relay = Relais
+settings.devices.relay_note = Un relais iroh (https://…). Vide : le relais intégré, géré par les mainteneurs de l'app.
+settings.devices.relay_error = Ce n'est pas une adresse de relais (https://host).
+settings.devices.privacy = Les appareils communiquent avec un chiffrement de bout en bout, directement dès que possible. Un relais ne fait que transmettre des données chiffrées qu'il ne peut pas lire ; il voit les adresses IP et les identifiants des appareils. Aucun serveur tiers n'intervient.
+
+# ---- Settings → Music Together
+settings.together.keep_playing = Continuer ici quand je pars
+settings.together.keep_playing_desc = Quand vous quittez une session rejointe, ou que l'hôte y met fin, la lecture continue avec sa file d'attente là où elle en était au lieu de s'arrêter.

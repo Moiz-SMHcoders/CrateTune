@@ -15,6 +15,9 @@ pub const UPDATE_REPO: &str = env!("MUSIC_UPDATE_REPO");
 /// The built-in Music Together relay (`wss://…`), after the user's setting and
 /// `packaging/relay.txt` in [`UPDATE_REPO`]; empty = none.
 pub const RELAY_URL: &str = env!("MUSIC_RELAY_URL");
+/// The built-in iroh relay (`https://…`) for device hand-off, after the user's
+/// setting; empty = none.
+pub const IROH_RELAY_URL: &str = env!("MUSIC_IROH_RELAY_URL");
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 /// Ids the app had before (newest first). Their settings / cache folders are moved to
 /// [`APP_ID`]'s on the first start, and their keychain items are taken over when read.

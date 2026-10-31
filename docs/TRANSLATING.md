@@ -6,7 +6,7 @@ English key (a test enforces it, see [Checking](#checking)).
 
 ## Where the strings are
 
-`crates/music-gpui/locales/<language>/<area>.lang`: one folder per language, the same 28 file
+`crates/music-gpui/locales/<language>/<area>.lang`: one folder per language, the same 30 file
 names in each (`update.lang`, `library.lang`, `now_playing.lang`, …). The English files'
 comments explain each string (where it appears, what a placeholder holds); they are the place
 to look when a string is unclear.

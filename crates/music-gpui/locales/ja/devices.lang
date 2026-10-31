@@ -1,0 +1,75 @@
+# Device hand-off (see locales/en/devices.lang).
+
+settings.section.devices = デバイス
+bar_items.item.devices = デバイス
+
+# ---- The Devices button on the player bar and its popover
+devices.tooltip = デバイス
+devices.title = 自分のデバイス
+devices.refresh = 更新
+devices.manage = デバイスを管理…
+devices.continue_here = ここで続ける
+devices.play_on = {device} で再生
+devices.status.checking = 確認中…
+devices.status.nothing = 再生していません
+devices.status.unreachable = 接続できません（アプリは開いていますか？）
+devices.status.playing = {title} · {position}
+devices.status.paused = 一時停止中 · {title} · {position}
+
+# ---- Pairing errors (Settings → Devices, "Enter a code")
+devices.pair.not_found = このネットワーク上でコードを表示しているデバイスが見つかりません。相手のデバイスが別のネットワークにある場合は、ペアリングリンクを使用してください。
+devices.pair.wrong_code = コードが一致しません。確認してもう一度お試しください。
+devices.pair.not_pairing = そのデバイスはもうコードを表示していません。新しいコードを表示してもう一度お試しください。
+devices.pair.failed = ペアリングできませんでした：{error}
+devices.pair.bad_code = ペアリングコードではありません。コードは ABCD-2345 のような8文字の英数字です。
+
+# ---- Notifications
+devices.toast.nothing_to_send = 送信するものがありません：キューが空です。
+devices.toast.continued = {device} から「{title}」の続きを再生中
+devices.toast.playing_on = {device} で再生中
+devices.toast.take_over_failed = {device} から続けられませんでした
+devices.toast.play_on_failed = {device} で再生できませんでした
+devices.toast.unreachable = {device} に接続できません
+devices.toast.paused_by = 一時停止：{device} で再生を続けます
+devices.toast.sent_here = {device} から送られた「{title}」を再生中
+devices.toast.paired = {device} とペアリングしました
+devices.toast.unpaired = {device} がこのデバイスとのペアリングを解除しました
+
+# ---- Home: the "continue" card when a paired device played more recently
+home.continue.from_device = {device} の「{title}」を {position} から続けますか？
+home.continue.device_playing = {device} で再生中
+home.continue.device_paused = {device} で一時停止中
+home.continue.continue_here = ここで続ける
+
+# ---- Settings → Devices
+settings.devices.this_device = このデバイス
+settings.devices.name = 名前
+settings.devices.name_note = ほかのデバイスに表示されるこのデバイスの名前です。
+settings.devices.id = デバイス ID：{id}
+settings.devices.pair = デバイスをペアリング
+settings.devices.pair_note = コンピュータは一度ペアリングするだけです。その後はそれぞれにほかのデバイスで再生中の曲が表示され、あるデバイスで始めた再生を別のデバイスで続けられます。両方でアプリを開いておく必要があります。
+settings.devices.show_code = コードを表示
+settings.devices.show_code_desc = 相手のデバイスで入力するコード（とリンク）です。
+settings.devices.show_code_button = コードを表示
+settings.devices.code_shown = 相手のデバイスで設定 → デバイスを開き、このコードを入力してください：
+settings.devices.code_expires = 10分間、1回だけ有効です。別のネットワークの場合は、代わりにリンクをコピーして（または QR コードを読み取って）入力してください。
+settings.devices.copy_link = リンクをコピー
+settings.devices.enter_code = コードを入力
+settings.devices.enter_note = 相手のデバイスに表示されたコード、またはそのペアリングリンク（別のネットワークにある場合に必要）。
+settings.devices.pair_button = ペアリング
+settings.devices.looking = デバイスを探しています…
+settings.devices.paired_with = {device} とペアリングしました
+settings.devices.paired = ペアリング済みのデバイス
+settings.devices.none_paired = まだデバイスはありません。ペアリングすると、プレーヤーバーに「デバイス」ボタンが表示されます。
+settings.devices.forget = 削除
+settings.devices.networks = 別のネットワーク
+settings.devices.use_relay = リレーを使用
+settings.devices.use_relay_desc = デバイスが別々のネットワークにあり、直接接続できない場合に使います。同じネットワークでは常に直接接続します。
+settings.devices.relay = リレー
+settings.devices.relay_note = iroh リレー（https://…）。空欄：アプリのメンテナが運用する組み込みのリレー。
+settings.devices.relay_error = リレーのアドレスではありません（https://host）。
+settings.devices.privacy = デバイス間の通信はエンドツーエンドで暗号化され、可能な限り直接行われます。リレーは読み取れない暗号化データを中継するだけで、見えるのはデバイスの IP アドレスと ID です。ほかの誰のサーバも関与しません。
+
+# ---- Settings → Music Together
+settings.together.keep_playing = 退出してもここで再生を続ける
+settings.together.keep_playing_desc = 参加したセッションから退出したとき、またはホストがセッションを終了したとき、停止せずにそのキューの続きから再生します。

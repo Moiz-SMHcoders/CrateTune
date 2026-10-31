@@ -44,6 +44,20 @@ versions follow [SemVer](https://semver.org/).
 * **App icon** (Appearance → Window): Midnight (standard), Paper, Sunset, Mint, Mono or your
   own image — the Dock icon on macOS, the window and taskbar icon on Windows, X11 from the
   next start.
+* **Continue on another device** (device hand-off, Spotify-style, self-hosted). Pair two
+  computers once in Settings → **Devices** (a short code on the same network, or a pairing link
+  / QR code across networks; SPAKE2, so the code can't be guessed offline). A **Devices** button
+  on the player bar then lists them with what each plays ("MacBook: Song · 1:23"), with
+  **Continue here** (take over its queue at that position; it pauses) and **Play on …**. At launch,
+  Home's continue card offers "Continue 'Song' from MacBook at 1:23?" when a paired device
+  played more recently. Peer to peer over iroh 1.4 QUIC (end-to-end encrypted, only paired
+  device keys accepted), mDNS on the LAN, and across networks our own `iroh-relay`
+  (`IROH_RELAY_URL` in `packaging/app.env`, `https://relay.smhcoders.click` by path next to
+  music-relay; a setting overrides or turns it off); iroh's public relays and DNS lookup are never
+  used. Deployment files in `deploy/iroh-relay/`. The device key is kept in the keychain.
+* **Keep playing here when I leave** (Settings → Music Together, on by default): a guest that
+  leaves a session, or whose host ends it, carries on with the room's queue, position and repeat
+  mode instead of stopping (works with ArchiveTune hosts: nothing changes on the wire).
 
 * **Package managers.** Manifests for a Homebrew cask (`packaging/homebrew/`), a Scoop bucket
   (`packaging/scoop/`), the AUR (`cratetune-bin` from the release tarball and `cratetune` from

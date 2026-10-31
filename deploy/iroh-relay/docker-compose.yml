@@ -1,0 +1,40 @@
+# CrateTune's iroh relay (device hand-off). Plain HTTP on LAN port 3340; the Caddy
+# proxy at 192.168.0.52 terminates TLS and forwards the relay's paths (README.md).
+#
+#   docker compose up -d --build
+services:
+  iroh-relay:
+    build:
+      context: .
+      args:
+        IROH_RELAY_VERSION: "1.4.1"
+    image: cratetune/iroh-relay:1.4.1
+    container_name: cratetune-iroh-relay
+    restart: unless-stopped
+    ports:
+      # Only Caddy needs to reach it; bind to the LAN address instead of 0.0.0.0 if
+      # this host is also on another network.
+      - "3340:3340/tcp"
+    volumes:
+      - ./iroh-relay.toml:/etc/iroh-relay/iroh-relay.toml:ro
+    environment:
+      RUST_LOG: "info"
+    read_only: true
+    user: "65532:65532"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 128m
+    memswap_limit: 128m
+    pids_limit: 64
+    cpus: 0.5
+    ulimits:
+      nofile:
+        soft: 8192
+        hard: 8192
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

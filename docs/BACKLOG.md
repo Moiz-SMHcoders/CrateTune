@@ -227,6 +227,23 @@ exceed 0 dBFS on loud masters; there is no limiter); (2) the mini player layouts
 screen, reopening on a layout change with a real mouse; (3) the ambient lights on a 120 Hz
 display. · Size: small · Priority: low
 
+**U21. Device hand-off (`feat/device-handoff`) across real machines and networks**
+Checked with in-process tests (pairing, take-over, unknown peer refused, all on localhost
+without a relay), a local `iroh-relay` (two nodes that only know each other's relay URL), and
+two app instances on one Mac (mDNS pairing by code, Devices menu, Continue here, Play on, the
+launch offer). Not yet: (1) two real computers on one Wi-Fi (mDNS through a real access point;
+macOS's "allow incoming connections" / local-network prompt on a signed build); (2) two
+computers on different networks through `https://relay.smhcoders.click` once the coordinator
+has deployed `deploy/iroh-relay/` and Caddy routes `/relay`, `/ping`, `/generate_204`
+(direct paths via hole punching without QUIC address discovery; UPnP/NAT-PMP mappings);
+(3) Windows and Linux: mDNS (`swarm-discovery`) next to the Windows firewall and on Linux with
+avahi running, the UDP port 42119 fallback, and the keychain for the device key; (4) laptops
+sleeping / switching networks mid-session (iroh re-reports its addresses; peers learn them on
+the next request); (5) "Keep playing here when I leave" with a real ArchiveTune host on the
+phone (host ends the session, guest leaves, kicked). A relay "mailbox" so a device that is
+off can still be continued from is not built (both apps must run). · Size: medium ·
+Priority: medium
+
 ## 3. Platform & distribution
 
 **P1. Builds are unsigned**

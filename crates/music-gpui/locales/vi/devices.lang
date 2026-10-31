@@ -1,0 +1,75 @@
+# Device hand-off (see locales/en/devices.lang).
+
+settings.section.devices = Thiết bị
+bar_items.item.devices = Thiết bị
+
+# ---- The Devices button on the player bar and its popover
+devices.tooltip = Thiết bị
+devices.title = Thiết bị của bạn
+devices.refresh = Làm mới
+devices.manage = Quản lý thiết bị…
+devices.continue_here = Tiếp tục ở đây
+devices.play_on = Phát trên {device}
+devices.status.checking = Đang kiểm tra…
+devices.status.nothing = Không phát gì
+devices.status.unreachable = Không kết nối được (ứng dụng có đang mở trên đó không?)
+devices.status.playing = {title} · {position}
+devices.status.paused = Đã tạm dừng · {title} · {position}
+
+# ---- Pairing errors (Settings → Devices, "Enter a code")
+devices.pair.not_found = Không tìm thấy thiết bị nào đang hiện mã trong mạng này. Hãy dùng liên kết ghép nối nếu thiết bị kia ở mạng khác.
+devices.pair.wrong_code = Mã không khớp. Hãy kiểm tra rồi thử lại.
+devices.pair.not_pairing = Thiết bị đó không còn hiện mã nữa. Hãy hiện mã mới rồi thử lại.
+devices.pair.failed = Không ghép nối được: {error}
+devices.pair.bad_code = Đó không phải mã ghép nối. Mã gồm 8 chữ cái và chữ số, ví dụ ABCD-2345.
+
+# ---- Notifications
+devices.toast.nothing_to_send = Không có gì để gửi: danh sách chờ trống.
+devices.toast.continued = Đang tiếp tục “{title}” từ {device}
+devices.toast.playing_on = Đang phát trên {device}
+devices.toast.take_over_failed = Không thể tiếp tục từ {device}
+devices.toast.play_on_failed = Không thể phát trên {device}
+devices.toast.unreachable = Không kết nối được {device}
+devices.toast.paused_by = Đã tạm dừng: {device} phát tiếp
+devices.toast.sent_here = Đang phát “{title}” được gửi từ {device}
+devices.toast.paired = Đã ghép nối với {device}
+devices.toast.unpaired = {device} đã quên thiết bị này
+
+# ---- Home: the "continue" card when a paired device played more recently
+home.continue.from_device = Tiếp tục “{title}” từ {device} tại {position}?
+home.continue.device_playing = Đang phát trên {device}
+home.continue.device_paused = Đã tạm dừng trên {device}
+home.continue.continue_here = Tiếp tục ở đây
+
+# ---- Settings → Devices
+settings.devices.this_device = Thiết bị này
+settings.devices.name = Tên
+settings.devices.name_note = Tên các thiết bị khác của bạn thấy cho thiết bị này.
+settings.devices.id = ID thiết bị: {id}
+settings.devices.pair = Ghép nối thiết bị
+settings.devices.pair_note = Ghép nối các máy tính của bạn một lần. Sau đó mỗi máy sẽ hiện những gì các máy khác đang phát, và bạn có thể tiếp tục trên máy này những gì đã bắt đầu trên máy khác. Ứng dụng phải đang mở trên cả hai.
+settings.devices.show_code = Hiện mã
+settings.devices.show_code_desc = Một mã (và một liên kết) để nhập trên thiết bị kia.
+settings.devices.show_code_button = Hiện mã
+settings.devices.code_shown = Trên thiết bị kia, mở Cài đặt → Thiết bị và nhập mã này:
+settings.devices.code_expires = Có hiệu lực 10 phút, dùng một lần. Ở mạng khác, hãy sao chép liên kết (hoặc quét mã QR) và nhập nó thay cho mã.
+settings.devices.copy_link = Sao chép liên kết
+settings.devices.enter_code = Nhập mã
+settings.devices.enter_note = Mã hiện trên thiết bị kia, hoặc liên kết ghép nối của nó (cần khi nó ở mạng khác).
+settings.devices.pair_button = Ghép nối
+settings.devices.looking = Đang tìm thiết bị…
+settings.devices.paired_with = Đã ghép nối với {device}
+settings.devices.paired = Thiết bị đã ghép nối
+settings.devices.none_paired = Chưa có thiết bị nào. Khi đã ghép nối một thiết bị, nút Thiết bị sẽ xuất hiện trên thanh trình phát.
+settings.devices.forget = Quên
+settings.devices.networks = Mạng khác
+settings.devices.use_relay = Dùng máy chủ chuyển tiếp
+settings.devices.use_relay_desc = Khi các thiết bị ở các mạng khác nhau và không thể kết nối trực tiếp. Trong cùng một mạng, chúng luôn kết nối trực tiếp.
+settings.devices.relay = Máy chủ chuyển tiếp
+settings.devices.relay_note = Một máy chủ chuyển tiếp iroh (https://…). Để trống: máy chủ tích hợp sẵn do những người duy trì ứng dụng vận hành.
+settings.devices.relay_error = Không phải địa chỉ máy chủ chuyển tiếp (https://host).
+settings.devices.privacy = Các thiết bị liên lạc với mã hóa đầu cuối, trực tiếp bất cứ khi nào có thể. Máy chủ chuyển tiếp chỉ chuyển tiếp dữ liệu đã mã hóa mà nó không đọc được; nó thấy địa chỉ IP và ID của các thiết bị. Không có máy chủ của bên nào khác tham gia.
+
+# ---- Settings → Music Together
+settings.together.keep_playing = Tiếp tục phát ở đây khi tôi rời đi
+settings.together.keep_playing_desc = Khi bạn rời một phiên đã tham gia, hoặc chủ phòng kết thúc phiên, danh sách chờ của phiên sẽ tiếp tục phát từ chỗ đang dừng thay vì dừng lại.

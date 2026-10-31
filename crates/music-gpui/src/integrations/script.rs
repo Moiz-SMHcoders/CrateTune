@@ -27,6 +27,12 @@
 //! | `@ai-filter=on\|off`, `@ai-category=KEY:on\|off` | AI content filter (`explicit`, `holiday`, …) |
 //! | `@ai-filter-status`, `@ai-filter-clear` | print / forget its verdicts |
 //! | `@cast-scan`, `@cast=NAME\|IP:PORT[:NAME]`, `@cast-stop[=here\|off]`, `@cast-status` | Chromecast |
+//! | `@devices-show-code[=FILE]`, `@devices-hide-code` | show a pairing code (FILE gets the code, `FILE.link` the pairing link) |
+//! | `@devices-pair=CODE\|LINK` / `@devices-pair=file:PATH` | pair with the device showing that code |
+//! | `@devices-refresh`, `@devices-status` | ask the paired devices what they play; print devices, statuses, offer |
+//! | `@devices-continue=NAME`, `@devices-play-on=NAME`, `@devices-pause=NAME`, `@devices-forget=NAME` | hand-off with a paired device (by name or id) |
+//! | `@devices-menu[=on\|off]`, `@devices-relay=off\|on`, `@devices-offer-dismiss` | the bar's Devices popover; the relay switch; Home's offer |
+//! | `@together-keep-playing=on\|off` | "Keep playing here when I leave" |
 
 use std::path::PathBuf;
 use std::time::Instant;
@@ -107,7 +113,10 @@ impl MusicApp {
             }
             "set" => {
                 let (field, value) = arg.unwrap_or("").split_once(':').unwrap_or(("", ""));
-                let ok = panel.update(cx, |p, cx| p.set_extras_field(field, value, window, cx));
+                let ok = panel.update(cx, |p, cx| {
+                    p.set_extras_field(field, value, window, cx)
+                        || p.set_devices_field(field, value, window, cx)
+                });
                 if !ok {
                     eprintln!("music-gpui: unknown field {field:?}");
                 }
@@ -280,6 +289,57 @@ impl MusicApp {
                 }
             }
             "together-status" => self.print_together_status(),
+            "together-keep-playing" => {
+                panel.update(cx, |p, cx| p.set_together(|t| t.keep_playing = on, cx))
+            }
+            "devices-show-code" => {
+                self.devices_show_code(cx);
+                if let Some(path) = arg {
+                    self.devices_write_code(path.to_owned(), cx);
+                }
+            }
+            "devices-hide-code" => self.devices_hide_code(cx),
+            "devices-pair" => {
+                let raw = arg.unwrap_or("");
+                let input = match raw.strip_prefix("file:") {
+                    Some(path) => std::fs::read_to_string(path).unwrap_or_else(|e| {
+                        eprintln!("music-gpui: reading {path}: {e}");
+                        String::new()
+                    }),
+                    None => raw.to_owned(),
+                };
+                self.devices_pair(input.trim(), cx);
+            }
+            "devices-refresh" => self.devices_refresh(cx),
+            "devices-status" => self.print_devices_status(cx),
+            "devices-continue" | "devices-play-on" | "devices-pause" | "devices-forget" => {
+                let wanted = arg.unwrap_or("");
+                let id = self
+                    .settings
+                    .read(cx)
+                    .settings()
+                    .devices
+                    .paired
+                    .iter()
+                    .find(|d| d.name.eq_ignore_ascii_case(wanted) || d.id == wanted)
+                    .map(|d| d.id.clone());
+                match (name, id) {
+                    (_, None) => eprintln!("music-gpui: no paired device {wanted:?}"),
+                    ("devices-continue", Some(id)) => self.devices_continue_here(&id, cx),
+                    ("devices-play-on", Some(id)) => self.devices_play_on(&id, window, cx),
+                    ("devices-pause", Some(id)) => self.devices_pause(&id),
+                    (_, Some(id)) => self.devices_forget(&id, cx),
+                }
+            }
+            "devices-menu" => {
+                self.integrations.devices.menu_open = on;
+                if on {
+                    self.devices_refresh(cx);
+                }
+                cx.notify();
+            }
+            "devices-relay" => panel.update(cx, |p, cx| p.set_devices(|d| d.use_relay = on, cx)),
+            "devices-offer-dismiss" => self.devices_dismiss_offer(cx),
             "cast-scan" => self.cast_scan(window, cx),
             "cast" => {
                 let raw = arg.unwrap_or("");

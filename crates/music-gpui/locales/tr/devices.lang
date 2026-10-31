@@ -1,0 +1,75 @@
+# Device hand-off (see locales/en/devices.lang).
+
+settings.section.devices = Cihazlar
+bar_items.item.devices = Cihazlar
+
+# ---- The Devices button on the player bar and its popover
+devices.tooltip = Cihazlar
+devices.title = Cihazlarınız
+devices.refresh = Yenile
+devices.manage = Cihazları yönet…
+devices.continue_here = Burada devam et
+devices.play_on = {device} cihazında çal
+devices.status.checking = Denetleniyor…
+devices.status.nothing = Hiçbir şey çalmıyor
+devices.status.unreachable = Ulaşılamıyor (uygulama orada açık mı?)
+devices.status.playing = {title} · {position}
+devices.status.paused = Duraklatıldı · {title} · {position}
+
+# ---- Pairing errors (Settings → Devices, "Enter a code")
+devices.pair.not_found = Bu ağda kod gösteren bir cihaz bulunamadı. Diğer cihaz başka bir ağdaysa eşleme bağlantısını kullanın.
+devices.pair.wrong_code = Kod eşleşmiyor. Kontrol edip yeniden deneyin.
+devices.pair.not_pairing = O cihaz artık kod göstermiyor. Yeni bir kod gösterip yeniden deneyin.
+devices.pair.failed = Eşlenemedi: {error}
+devices.pair.bad_code = Bu bir eşleme kodu değil. Kod, ABCD-2345 gibi 8 harf ve rakamdan oluşur.
+
+# ---- Notifications
+devices.toast.nothing_to_send = Gönderilecek bir şey yok: sıra boş.
+devices.toast.continued = “{title}”, {device} cihazından devam ediyor
+devices.toast.playing_on = Şimdi {device} cihazında çalıyor
+devices.toast.take_over_failed = {device} cihazından devam edilemedi
+devices.toast.play_on_failed = {device} cihazında çalınamadı
+devices.toast.unreachable = {device} cihazına ulaşılamıyor
+devices.toast.paused_by = Duraklatıldı: {device} devam ediyor
+devices.toast.sent_here = {device} cihazından gönderilen “{title}” çalıyor
+devices.toast.paired = {device} ile eşlendi
+devices.toast.unpaired = {device} bu cihazı unuttu
+
+# ---- Home: the "continue" card when a paired device played more recently
+home.continue.from_device = {device} cihazındaki “{title}”, {position} noktasından devam etsin mi?
+home.continue.device_playing = Şu anda {device} cihazında çalıyor
+home.continue.device_paused = {device} cihazında duraklatıldı
+home.continue.continue_here = Burada devam et
+
+# ---- Settings → Devices
+settings.devices.this_device = Bu cihaz
+settings.devices.name = Ad
+settings.devices.name_note = Diğer cihazlarınız bu cihazı bu adla görür.
+settings.devices.id = Cihaz kimliği: {id}
+settings.devices.pair = Cihaz eşle
+settings.devices.pair_note = Bilgisayarlarınızı bir kez eşleyin. Ardından her biri diğerlerinde ne çaldığını gösterir ve birinde başladığınızı diğerinde sürdürebilirsiniz. Uygulama her ikisinde de açık olmalıdır.
+settings.devices.show_code = Kod göster
+settings.devices.show_code_desc = Diğer cihaza girilecek bir kod (ve bir bağlantı).
+settings.devices.show_code_button = Kodu göster
+settings.devices.code_shown = Diğer cihazda Ayarlar → Cihazlar'ı açın ve bu kodu girin:
+settings.devices.code_expires = 10 dakika boyunca, bir kez geçerlidir. Başka bir ağdaysa bağlantıyı kopyalayın (veya QR kodunu tarayın) ve kod yerine onu girin.
+settings.devices.copy_link = Bağlantıyı kopyala
+settings.devices.enter_code = Kod gir
+settings.devices.enter_note = Diğer cihazın gösterdiği kod veya eşleme bağlantısı (başka bir ağdaysa gerekir).
+settings.devices.pair_button = Eşle
+settings.devices.looking = Cihaz aranıyor…
+settings.devices.paired_with = {device} ile eşlendi
+settings.devices.paired = Eşlenen cihazlar
+settings.devices.none_paired = Henüz cihaz yok. Bir cihaz eşlendiğinde oynatıcı çubuğunda Cihazlar düğmesi görünür.
+settings.devices.forget = Unut
+settings.devices.networks = Diğer ağlar
+settings.devices.use_relay = Aktarma sunucusu kullan
+settings.devices.use_relay_desc = Cihazlar farklı ağlarda olup doğrudan bağlanamadığında. Aynı ağda her zaman doğrudan bağlanırlar.
+settings.devices.relay = Aktarma sunucusu
+settings.devices.relay_note = Bir iroh aktarma sunucusu (https://…). Boş: uygulamanın geliştiricilerinin işlettiği yerleşik sunucu.
+settings.devices.relay_error = Aktarma sunucusu adresi değil (https://host).
+settings.devices.privacy = Cihazlar uçtan uca şifreli iletişim kurar, mümkün olduğunda doğrudan. Aktarma sunucusu yalnızca okuyamadığı şifreli verileri iletir; cihazların IP adreslerini ve kimliklerini görür. Başka kimsenin sunucusu işin içinde değildir.
+
+# ---- Settings → Music Together
+settings.together.keep_playing = Ayrıldığımda burada çalmaya devam et
+settings.together.keep_playing_desc = Katıldığınız bir oturumdan ayrıldığınızda veya ev sahibi oturumu sonlandırdığında, durmak yerine oturumun sırası kaldığı yerden çalmaya devam eder.

@@ -288,3 +288,13 @@ file names its source in its header or next to the ported code.
 |---|---|---|
 | `crates/music-core/src/reverb.rs` | Freeverb by Jezar at Dreampoint (2000, public domain): the comb / allpass structure and its tuning constants (delay lengths, stereo spread, gains). The preset idea is [Limusic](https://github.com/SimoHypers/limusic)'s rooms (`crates/player/src/lib.rs`, `reverb_filter`; commit `d82372cdd3016e3c5e28ea8022596b7fefdf681a`, GPL-3.0) | Written for this project, no code copied. Limusic convolves bundled impulse responses with FFmpeg's `afir`; this is an algorithmic reverb on the deck's mix: four presets of our own (room size, damping, width, pre-delay), a pre-delay line, delay lengths scaled to the output rate, smoothed wet / dry gains, denormal flushing, a tail that rings out after a pause and then stops, dropped entirely when off. |
 | `crates/music-core/src/equalizer.rs` (`EqPreset::Warm`, `EqPreset::Night`) | [Zuno](https://github.com/noFAYZ/zuno) `src/ui/settings/equalizer.ts` ("Warm", commit `1fa9a9669e4a526ebe53c0275153feda0c4fcefa`, Apache-2.0); [Deviload](https://github.com/Pronexsteam/deviload) `src/devil-music.js` / `src/music-sound.js` ("night", commit `70d1d951147d8882996c544f4061faea9100752f`, © Samvel Avetisyan, MIT) | Warm's ten gains as Zuno has them; Deviload's six-band night curve (60 Hz – 10 kHz) spread over our ten bands. |
+
+## Device hand-off (feat/device-handoff)
+
+No code was ported. `src/handoff/` is written against the published APIs of these crates
+(dependencies, not copies): `iroh` 1.4.1 and `iroh-mdns-address-lookup` 0.6.1 (© n0, Inc.,
+MIT OR Apache-2.0), `spake2` 0.5.0-pre.0 (RustCrypto, MIT OR Apache-2.0); music-gpui's QR code
+uses `qrcodegen` 1.8.0 (© Project Nayuki, MIT). `together::sync::leave_plan` ("keep playing here
+when I leave") is our own, on top of the ported sync code above; ArchiveTune has no such
+feature. The relay deployed from `deploy/iroh-relay/` is the unmodified `iroh-relay` 1.4.1
+binary (MIT OR Apache-2.0).

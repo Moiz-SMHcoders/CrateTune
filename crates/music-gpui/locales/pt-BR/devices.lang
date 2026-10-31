@@ -1,0 +1,75 @@
+# Device hand-off (see locales/en/devices.lang).
+
+settings.section.devices = Dispositivos
+bar_items.item.devices = Dispositivos
+
+# ---- The Devices button on the player bar and its popover
+devices.tooltip = Dispositivos
+devices.title = Seus dispositivos
+devices.refresh = Atualizar
+devices.manage = Gerenciar dispositivos…
+devices.continue_here = Continuar aqui
+devices.play_on = Tocar em {device}
+devices.status.checking = Verificando…
+devices.status.nothing = Nada tocando
+devices.status.unreachable = Inacessível (o app está aberto nele?)
+devices.status.playing = {title} · {position}
+devices.status.paused = Pausado · {title} · {position}
+
+# ---- Pairing errors (Settings → Devices, "Enter a code")
+devices.pair.not_found = Nenhum dispositivo mostrando um código foi encontrado nesta rede. Use o link de pareamento se o outro dispositivo estiver em outra rede.
+devices.pair.wrong_code = O código não confere. Verifique e tente de novo.
+devices.pair.not_pairing = Esse dispositivo não está mais mostrando um código. Mostre um novo e tente de novo.
+devices.pair.failed = Não foi possível parear: {error}
+devices.pair.bad_code = Isso não é um código de pareamento. Um código tem 8 letras e dígitos, como ABCD-2345.
+
+# ---- Notifications
+devices.toast.nothing_to_send = Nada para enviar: a fila está vazia.
+devices.toast.continued = Continuando “{title}” de {device}
+devices.toast.playing_on = Tocando agora em {device}
+devices.toast.take_over_failed = Não foi possível continuar de {device}
+devices.toast.play_on_failed = Não foi possível tocar em {device}
+devices.toast.unreachable = Não foi possível alcançar {device}
+devices.toast.paused_by = Pausado: {device} continua
+devices.toast.sent_here = Tocando “{title}”, enviado de {device}
+devices.toast.paired = Pareado com {device}
+devices.toast.unpaired = {device} esqueceu este dispositivo
+
+# ---- Home: the "continue" card when a paired device played more recently
+home.continue.from_device = Continuar “{title}” de {device} em {position}?
+home.continue.device_playing = Tocando agora em {device}
+home.continue.device_paused = Pausado em {device}
+home.continue.continue_here = Continuar aqui
+
+# ---- Settings → Devices
+settings.devices.this_device = Este dispositivo
+settings.devices.name = Nome
+settings.devices.name_note = Como seus outros dispositivos veem este.
+settings.devices.id = ID do dispositivo: {id}
+settings.devices.pair = Parear um dispositivo
+settings.devices.pair_note = Pareie seus computadores uma vez. Depois, cada um mostra o que os outros estão tocando, e você pode continuar em um o que começou em outro. O app precisa estar aberto nos dois.
+settings.devices.show_code = Mostrar um código
+settings.devices.show_code_desc = Um código (e um link) para digitar no outro dispositivo.
+settings.devices.show_code_button = Mostrar código
+settings.devices.code_shown = No outro dispositivo, abra Configurações → Dispositivos e digite este código:
+settings.devices.code_expires = Válido por 10 minutos, uma única vez. Em outra rede, copie o link (ou escaneie o código QR) e digite-o no lugar.
+settings.devices.copy_link = Copiar link
+settings.devices.enter_code = Digitar um código
+settings.devices.enter_note = O código que o outro dispositivo mostra, ou o link de pareamento dele (necessário quando ele está em outra rede).
+settings.devices.pair_button = Parear
+settings.devices.looking = Procurando o dispositivo…
+settings.devices.paired_with = Pareado com {device}
+settings.devices.paired = Dispositivos pareados
+settings.devices.none_paired = Nenhum dispositivo ainda. Quando um for pareado, um botão Dispositivos aparece na barra do player.
+settings.devices.forget = Esquecer
+settings.devices.networks = Outras redes
+settings.devices.use_relay = Usar um relay
+settings.devices.use_relay_desc = Quando os dispositivos estão em redes diferentes e não conseguem se conectar diretamente. Na mesma rede, eles sempre se conectam diretamente.
+settings.devices.relay = Relay
+settings.devices.relay_note = Um relay iroh (https://…). Vazio: o integrado, mantido pelos mantenedores do app.
+settings.devices.relay_error = Não é um endereço de relay (https://host).
+settings.devices.privacy = Os dispositivos se comunicam com criptografia de ponta a ponta, diretamente sempre que possível. Um relay só repassa dados criptografados que não consegue ler; ele vê os endereços IP e os IDs dos dispositivos. Nenhum servidor de terceiros está envolvido.
+
+# ---- Settings → Music Together
+settings.together.keep_playing = Continuar tocando aqui quando eu sair
+settings.together.keep_playing_desc = Quando você sai de uma sessão em que entrou, ou o anfitrião a encerra, a fila dela continua de onde estava em vez de parar.

@@ -75,6 +75,8 @@ pub enum SettingsEvent {
     NowPlaying,
     /// The stream quality changed (after `Audio`): switch the playing song to it.
     Quality,
+    /// Device hand-off settings changed (name, relay, paired devices).
+    Devices,
 }
 
 pub(super) enum LastFmFlow {
@@ -190,6 +192,8 @@ pub struct SettingsPanel {
     pub(super) modules: super::modules::ModulesState,
     /// SponsorBlock / Music Together / Spotify inputs (`integrations_ui.rs`).
     pub(super) extras: super::integrations_ui::ExtrasUi,
+    /// Devices section inputs (`devices_ui.rs`).
+    pub(super) devices_ui: super::devices_ui::DevicesUi,
     /// Customize theme widgets, pending settings / theme import (`theme_ui.rs`).
     pub(super) theme_ui: super::theme_ui::ThemeUi,
     /// Theme files in `<config>/themes` (`theme_library.rs`).
@@ -327,6 +331,9 @@ impl SettingsPanel {
         let (extras, extras_subscriptions) =
             super::integrations_ui::ExtrasUi::new(&settings, window, cx);
         subscriptions.extend(extras_subscriptions);
+        let (devices_ui, devices_subscriptions) =
+            super::devices_ui::DevicesUi::new(&settings, window, cx);
+        subscriptions.extend(devices_subscriptions);
         let profiles = super::profiles_ui::load_store(&settings);
         let (theme_ui, theme_subscriptions) =
             super::theme_ui::ThemeUi::new(&settings.custom_theme, window, cx);
@@ -384,6 +391,7 @@ impl SettingsPanel {
             prefs,
             modules,
             extras,
+            devices_ui,
             theme_ui,
             theme_files,
             app_icon_generation: 0,
@@ -419,6 +427,7 @@ impl SettingsPanel {
             (Secret::AiTranslateKey, s.lyrics.ai_key_set),
             (Secret::SpotifyRefreshToken, s.spotify.user.is_some()),
             (Secret::AiFilterKey, s.ai_filter.key_set),
+            (Secret::DeviceKey, s.devices.key_set),
         ]
         .into_iter()
         .filter_map(|(secret, wanted)| wanted.then_some(secret))

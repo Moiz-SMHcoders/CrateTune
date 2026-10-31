@@ -4,8 +4,19 @@ Goal: start a song on one device (CrateTune on a Mac, a Windows PC or Linux, or 
 on a phone) and carry on from where you left off on another, like Spotify Connect.
 
 Status: phase 1 (play reporting and the Continue card) is built (`feat/accounts-plus`:
-`play_report.rs`, `continue_card.rs`), not yet verified against a real account. Phases 2–4
-are a plan only.
+`play_report.rs`, `continue_card.rs`), not yet verified against a real account. Phase 2 (Devices
+over iroh) and phase 3 ("keep playing here") are built (`feat/device-handoff`:
+`music_core::handoff`, `integrations/devices.rs`, `settings/devices_ui.rs`,
+`together::sync::leave_plan`; relay deployment in `deploy/iroh-relay/`), verified with two app
+instances on one Mac and in-process tests; across real networks and against a real ArchiveTune
+host not yet (docs/BACKLOG.md). Phase 4 is a plan only.
+
+As built (differences from the plan below): the relay is served by path on
+`relay.smhcoders.click` (`/relay`, `/ping`, `/generate_204`) next to music-relay instead of a
+new host name; pairing uses a SPAKE2 exchange keyed by the code (8 Crockford base32
+characters), with the pairing link (device id, relay, addresses) for other networks; QUIC
+address discovery is off (the relay sits behind Caddy); the launch offer lives in Home's
+existing continue card; both apps must be running (no mailbox).
 
 ## What exists today
 

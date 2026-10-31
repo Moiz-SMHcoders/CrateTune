@@ -1,0 +1,75 @@
+# Device hand-off (see locales/en/devices.lang).
+
+settings.section.devices = Пристрої
+bar_items.item.devices = Пристрої
+
+# ---- The Devices button on the player bar and its popover
+devices.tooltip = Пристрої
+devices.title = Ваші пристрої
+devices.refresh = Оновити
+devices.manage = Керувати пристроями…
+devices.continue_here = Продовжити тут
+devices.play_on = Відтворити на {device}
+devices.status.checking = Перевірка…
+devices.status.nothing = Нічого не грає
+devices.status.unreachable = Недоступний (чи відкрито на ньому застосунок?)
+devices.status.playing = {title} · {position}
+devices.status.paused = Пауза · {title} · {position}
+
+# ---- Pairing errors (Settings → Devices, "Enter a code")
+devices.pair.not_found = У цій мережі не знайдено пристрою, що показує код. Якщо інший пристрій в іншій мережі, скористайтеся посиланням для сполучення.
+devices.pair.wrong_code = Код не збігається. Перевірте його й спробуйте ще раз.
+devices.pair.not_pairing = Цей пристрій більше не показує код. Покажіть новий і спробуйте ще раз.
+devices.pair.failed = Не вдалося сполучити: {error}
+devices.pair.bad_code = Це не код сполучення. Код має 8 літер і цифр, наприклад ABCD-2345.
+
+# ---- Notifications
+devices.toast.nothing_to_send = Нічого надсилати: черга порожня.
+devices.toast.continued = Продовження «{title}» з пристрою {device}
+devices.toast.playing_on = Тепер грає на {device}
+devices.toast.take_over_failed = Не вдалося продовжити з пристрою {device}
+devices.toast.play_on_failed = Не вдалося відтворити на {device}
+devices.toast.unreachable = Пристрій {device} недоступний
+devices.toast.paused_by = Пауза: продовжує {device}
+devices.toast.sent_here = Грає «{title}», надіслане з пристрою {device}
+devices.toast.paired = Сполучено з {device}
+devices.toast.unpaired = Пристрій {device} забув цей пристрій
+
+# ---- Home: the "continue" card when a paired device played more recently
+home.continue.from_device = Продовжити «{title}» з пристрою {device} з {position}?
+home.continue.device_playing = Зараз грає на {device}
+home.continue.device_paused = На паузі на {device}
+home.continue.continue_here = Продовжити тут
+
+# ---- Settings → Devices
+settings.devices.this_device = Цей пристрій
+settings.devices.name = Назва
+settings.devices.name_note = Так цей пристрій бачать ваші інші пристрої.
+settings.devices.id = ID пристрою: {id}
+settings.devices.pair = Сполучити пристрій
+settings.devices.pair_note = Сполучіть свої комп'ютери один раз. Потім кожен показує, що грає на інших, і почате на одному можна продовжити на іншому. Застосунок має бути відкритий на обох.
+settings.devices.show_code = Показати код
+settings.devices.show_code_desc = Код (і посилання) для введення на іншому пристрої.
+settings.devices.show_code_button = Показати код
+settings.devices.code_shown = На іншому пристрої відкрийте «Налаштування → Пристрої» та введіть цей код:
+settings.devices.code_expires = Дійсний 10 хвилин, один раз. В іншій мережі скопіюйте посилання (або відскануйте QR-код) і введіть його замість коду.
+settings.devices.copy_link = Копіювати посилання
+settings.devices.enter_code = Ввести код
+settings.devices.enter_note = Код, який показує інший пристрій, або його посилання для сполучення (потрібне, якщо він в іншій мережі).
+settings.devices.pair_button = Сполучити
+settings.devices.looking = Пошук пристрою…
+settings.devices.paired_with = Сполучено з {device}
+settings.devices.paired = Сполучені пристрої
+settings.devices.none_paired = Пристроїв поки немає. Щойно один буде сполучено, на панелі плеєра з'явиться кнопка «Пристрої».
+settings.devices.forget = Забути
+settings.devices.networks = Інші мережі
+settings.devices.use_relay = Використовувати ретранслятор
+settings.devices.use_relay_desc = Коли пристрої в різних мережах і не можуть з'єднатися напряму. В одній мережі вони завжди з'єднуються напряму.
+settings.devices.relay = Ретранслятор
+settings.devices.relay_note = Ретранслятор iroh (https://…). Порожньо: вбудований, який підтримують розробники застосунку.
+settings.devices.relay_error = Це не адреса ретранслятора (https://host).
+settings.devices.privacy = Пристрої спілкуються з наскрізним шифруванням і, коли можливо, напряму. Ретранслятор лише передає зашифровані дані, яких не може прочитати; він бачить IP-адреси та ID пристроїв. Чужі сервери не задіяні.
+
+# ---- Settings → Music Together
+settings.together.keep_playing = Продовжувати тут, коли я вийду
+settings.together.keep_playing_desc = Коли ви виходите із сеансу, до якого приєдналися, або хост його завершує, відтворення його черги триває з того самого місця, а не зупиняється.

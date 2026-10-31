@@ -82,6 +82,17 @@ unicode-normalization = "0.1"
 ureq = { version = "3", features = ["json", "socks-proxy"] }
 url = "2.5"
 zip = { version = "9", default-features = false, features = ["deflate-flate2-zlib-rs"] }
+# Device hand-off (`handoff`): peer-to-peer QUIC between paired installations, our own
+# relay only (no n0 relays or DNS), mDNS on the LAN. iroh runs on its own thread with a
+# single-threaded tokio runtime (tokio is already in the graph).
+iroh = { version = "=1.4.1", default-features = false, features = ["tls-ring", "portmapper", "fast-apple-datapath"] }
+iroh-mdns-address-lookup = "=0.6.1"
+# Pairing by a short code: SPAKE2 (password-authenticated key exchange), so the code can't be
+# brute-forced offline; shares iroh's curve25519-dalek 5.
+spake2 = { version = "=0.5.0-pre.0", features = ["getrandom"] }
+tokio = { version = "1.54", default-features = false, features = ["rt", "sync", "time", "macros"] }
+# `StreamExt::next` for iroh's mDNS events (already in the graph).
+futures-util = { version = "0.3", default-features = false, features = ["std"] }
 
 [features]
 default = ["media-controls", "discord", "webkit-potoken", "webview2-potoken"]

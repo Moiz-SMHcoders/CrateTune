@@ -1,0 +1,29 @@
+# iroh-relay 1.4.1 configuration for CrateTune's device hand-off relay.
+#
+# Plain HTTP on the LAN: Caddy (192.168.0.52) terminates TLS for the public name and
+# forwards /relay, /ping and /generate_204 here (README.md). The relay only forwards
+# end-to-end encrypted QUIC packets between devices; it can't read them.
+
+enable_relay = true
+http_bind_addr = "0.0.0.0:3340"
+
+# QUIC address discovery needs TLS on the relay itself and UDP port 7842 reachable
+# from the internet; neither goes through Caddy, so it is off (README.md, "UDP").
+enable_quic_addr_discovery = false
+
+# No Prometheus endpoint (nothing scrapes it; one listener less).
+enable_metrics = false
+
+# Anyone may relay: CrateTune installations are not known in advance. The rate limits
+# below keep one client from hogging the relay; hand-off messages are a few KB.
+access = "everyone"
+
+[limits]
+# New connections per second (all clients), and the burst allowed above that.
+accept_conn_limit = 20.0
+accept_conn_burst = 100
+
+[limits.client.rx]
+# Per client: 1 MiB/s sustained, 4 MiB bursts.
+bytes_per_second = 1048576
+max_burst_bytes = 4194304

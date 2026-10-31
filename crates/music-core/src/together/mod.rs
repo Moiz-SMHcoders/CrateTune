@@ -36,7 +36,9 @@ pub use messages::{
 };
 pub use online::{CodeError, RelaySource, display_code, normalize_code};
 pub use server::{HOST_ID, HostOptions, ServerEvent, Suggestion, TogetherServer};
-pub use sync::{ClockSnapshot, GuestSync, LocalPlayback, SyncPlan, TogetherClock};
+pub use sync::{
+    ClockSnapshot, GuestSync, LeavePlan, LocalPlayback, SyncPlan, TogetherClock, leave_plan,
+};
 
 pub const DEFAULT_PORT: u16 = 42117;
 
@@ -267,6 +269,117 @@ mod tests {
             })
         });
         assert_eq!(reason.as_deref(), Some("Session ended"));
+    }
+
+    /// "Keep playing here when I leave": the host ends the session; the guest still
+    /// has the room as last broadcast and carries on with its queue from the host's
+    /// position (extrapolated with the clock); with the setting off it stops.
+    #[test]
+    fn a_guest_keeps_playing_when_the_host_ends_the_session() {
+        let mut server = TogetherServer::start(
+            0,
+            new_id(),
+            new_id(),
+            "Phone".into(),
+            RoomSettings::default(),
+        )
+        .unwrap();
+        let key = server.session_key().to_owned();
+        let guest = TogetherClient::connect(&join(&server, &key), "Mac", "mac").unwrap();
+        wait_for(|| {
+            server
+                .poll_events()
+                .into_iter()
+                .find(|e| matches!(e, ServerEvent::Joined(_)))
+        });
+        server.broadcast_room_state(RoomState {
+            queue: vec![
+                track("aaaaaaaaaaa"),
+                track("bbbbbbbbbbb"),
+                track("ccccccccccc"),
+            ],
+            current_index: 1,
+            is_playing: true,
+            position_ms: 90_000,
+            repeat_mode: 1,
+            ..RoomState::default()
+        });
+        let mut room = None;
+        let mut ended = false;
+        wait_for(|| {
+            for event in guest.poll_events() {
+                match event {
+                    ClientEvent::RoomState(state) => room = Some(state),
+                    ClientEvent::Disconnected { .. } => ended = true,
+                    _ => {}
+                }
+            }
+            (room.is_some() && guest.clock().samples >= 2).then_some(())
+        });
+        server.stop();
+        wait_for(|| {
+            ended |= guest
+                .poll_events()
+                .iter()
+                .any(|e| matches!(e, ClientEvent::Disconnected { .. }));
+            ended.then_some(())
+        });
+        // The guest was following: same queue, same track, a little behind.
+        let local = LocalPlayback {
+            queue_ids: vec![
+                "aaaaaaaaaaa".into(),
+                "bbbbbbbbbbb".into(),
+                "ccccccccccc".into(),
+            ],
+            current_id: Some("bbbbbbbbbbb".into()),
+            playing: true,
+            loading: false,
+            position_ms: 90_000,
+        };
+        let plan = leave_plan(
+            true,
+            &local,
+            room.as_ref(),
+            Some(guest.clock()),
+            guest.elapsed_ms(),
+        );
+        let LeavePlan::Continue {
+            replace_queue,
+            play_index,
+            playing,
+            repeat_mode,
+            ..
+        } = plan
+        else {
+            panic!("{plan:?}")
+        };
+        assert!(!replace_queue && play_index.is_none() && playing);
+        assert_eq!(repeat_mode, 1);
+        // Joined late (nothing loaded yet): start the room's track at its position.
+        let fresh = LocalPlayback::default();
+        let LeavePlan::Continue {
+            replace_queue,
+            play_index,
+            seek_ms,
+            ..
+        } = leave_plan(
+            true,
+            &fresh,
+            room.as_ref(),
+            Some(guest.clock()),
+            guest.elapsed_ms(),
+        )
+        else {
+            panic!()
+        };
+        assert!(replace_queue);
+        assert_eq!(play_index, Some(1));
+        assert!(seek_ms.is_some_and(|ms| ms >= 90_000), "{seek_ms:?}");
+        // The setting off: stop.
+        assert_eq!(
+            leave_plan(false, &local, room.as_ref(), Some(guest.clock()), 0),
+            LeavePlan::Pause
+        );
     }
 
     /// "Suggestions need my approval": a guest's song waits for the host, the guest

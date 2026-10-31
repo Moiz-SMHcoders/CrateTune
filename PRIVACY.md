@@ -15,6 +15,7 @@ off. It describes the code in this repository; if a change here makes it wrong, 
   * [Lyrics translation](#lyrics-translation)
   * [Updates (GitHub)](#updates-github)
   * [Music Together](#music-together)
+  * [Your other devices (device hand-off)](#your-other-devices-device-hand-off)
   * [SponsorBlock](#sponsorblock)
   * [Last.fm and ListenBrainz](#lastfm-and-listenbrainz)
   * [Discord](#discord)
@@ -36,6 +37,7 @@ off. It describes the code in this repository; if a change here makes it wrong, 
 | GitHub (update check) | at start, then every 24 hours | yes, except package-manager installs |
 | GitHub (player fixes), relay as fallback | at start, then every 6 hours | yes (Settings → Playback → *Player fixes*) |
 | GitHub (`relay.txt`) and the Music Together relay | only when you host or join a session | only when used |
+| Your paired devices (local network, mDNS) and the device hand-off relay | while a device is paired, or while pairing | only when used |
 | SponsorBlock | when a song starts | yes |
 | Google Translate or an AI endpoint | when lyrics translation is on | no |
 | Last.fm, ListenBrainz | while scrobbling is set up | no |
@@ -156,6 +158,32 @@ GitHub's privacy statement applies:
 * **Same network only:** guests connect straight to the host's computer (TCP port 42117).
   Nothing leaves your network.
 
+### Your other devices (device hand-off)
+
+Nothing happens until you pair a device (Settings → Devices). While at least one is paired, or
+while a pairing code is shown or being entered, and only while the app is open:
+
+* **On your network** the app announces itself with mDNS (multicast DNS, the local network
+  only): its **device id** (a public key), its local addresses and, while showing a code, that
+  it is pairing. Devices that aren't paired with it can see this announcement, but it only
+  answers devices it is paired with.
+* **What paired devices exchange**, end-to-end encrypted (QUIC/TLS with the two devices' keys):
+  this device's **name** (Settings → Devices; your computer's name until you change it), its
+  addresses, and when asked, **what it is playing**: the queue's video ids, titles, artists,
+  lengths and artwork links, the position, play / pause, repeat and shuffle, and when it last
+  played. Pairing exchanges the names and addresses once the code has been proven (the code
+  itself is never sent; it is used in a SPAKE2 key exchange).
+* **Across networks** (*Use a relay*, on by default) the devices connect through a relay when
+  they can't reach each other directly: `https://relay.smhcoders.click` unless you set another
+  in Settings → Devices → *Relay*. It is our own `iroh-relay` (`deploy/iroh-relay/`), not a
+  third party's. It only passes on the encrypted packets: it can't read them, and it sees each
+  device's IP address and device id while the app is open. Turn *Use a relay* off to keep
+  everything on your network. iroh's public relays and its DNS lookup service are never used.
+* **The device key** (the private half of the device id) is in the keychain, like the other
+  secrets. The paired devices (their names, ids and last known addresses) are in
+  `settings.json`; they are not part of settings exports. *Forget* removes a device here and
+  asks it to forget this one too.
+
 ### SponsorBlock
 
 **On by default** (Settings → SponsorBlock → *Skip segments*). When a song starts, the app asks
@@ -250,8 +278,8 @@ Everything stays on your computer, in your user account:
 **Keychain.** Secrets go to the operating system's credential store (macOS Keychain, Windows
 Credential Manager, the Secret Service keyring on Linux) under the service name `cratetune`,
 never in plain files: the YouTube sign-in cookie (one per saved account), the Last.fm secret and session, the
-ListenBrainz token, the Spotify refresh token, the proxy password, and API keys for lyrics
-providers and AI endpoints. Only if no keychain is available are they kept in `settings.json`,
+ListenBrainz token, the Spotify refresh token, the proxy password, API keys for lyrics
+providers and AI endpoints, and the device key of device hand-off. Only if no keychain is available are they kept in `settings.json`,
 which only your user can read.
 
 **History** stays on your computer. Settings → Privacy pauses or clears listen and search

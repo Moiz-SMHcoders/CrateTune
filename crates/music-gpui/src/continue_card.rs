@@ -10,6 +10,11 @@
 //! them). The card can be dismissed (per entry; remembered in
 //! `LibraryConfig::continue_dismissed`).
 //!
+//! A paired device (device hand-off, `integrations/devices.rs`) that played more
+//! recently than this one takes the card's place right after launch: "Continue
+//! 'Song' from MacBook at 1:23?" takes over its queue at that position (and pauses
+//! it there).
+//!
 //! The history is read when Home is shown, at most every [`REFETCH_AFTER`].
 //! **Not verified against a real account**: the history response's shape is
 //! ArchiveTune's; whether entries carry a saved position was not seen live.
@@ -199,8 +204,89 @@ impl MusicApp {
     }
 }
 
+/// The card for a paired device's newer playback (device hand-off).
+fn render_device_offer(cx: &mut App) -> Option<AnyElement> {
+    let (id, name, snapshot) = read_app(cx, |app, cx| {
+        let (id, snapshot) = app.integrations.devices.offer.clone()?;
+        Some((id.clone(), app.device_name(&id, cx), snapshot))
+    })??;
+    let track = snapshot.current()?.to_track();
+    let theme = cx.theme();
+    let (muted, secondary) = (theme.muted_foreground, theme.secondary);
+    let art = crate::components::artwork::artwork(track.thumbnail_url.clone(), px(44.), px(6.), cx);
+    let position = music_core::format_duration(snapshot.position_ms / 1000);
+    let take = Button::new("home-continue-device")
+        .small()
+        .primary()
+        .icon(gpui_component::IconName::Play)
+        .label(t!("home.continue.continue_here"))
+        .on_click(move |_, _, cx| {
+            let id = id.clone();
+            update_app(cx, |app, cx| app.devices_continue_here(&id, cx));
+        });
+    let dismiss = Button::new("home-continue-device-dismiss")
+        .small()
+        .ghost()
+        .icon(Lucide::X)
+        .tooltip(t!("home.continue.dismiss"))
+        .on_click(|_, _, cx| {
+            update_app(cx, |app, cx| app.devices_dismiss_offer(cx));
+        });
+    Some(
+        h_flex()
+            .w_full()
+            .gap_3()
+            .px_3()
+            .py_2()
+            .rounded(crate::theme::radius(10.))
+            .bg(secondary)
+            .child(art)
+            .child(
+                v_flex()
+                    .flex_1()
+                    .min_w_0()
+                    .child(
+                        div()
+                            .text_sm()
+                            .font_weight(FontWeight::SEMIBOLD)
+                            .truncate()
+                            .child(SharedString::from(t!(
+                                "home.continue.from_device",
+                                title = track.title,
+                                device = name,
+                                position = position
+                            ))),
+                    )
+                    .child(
+                        h_flex()
+                            .gap_1()
+                            .text_xs()
+                            .text_color(muted)
+                            .child(
+                                gpui_component::Icon::new(Lucide::Laptop)
+                                    .size(px(12.))
+                                    .text_color(muted),
+                            )
+                            .child(div().truncate().child(SharedString::from(
+                                if snapshot.is_playing {
+                                    t!("home.continue.device_playing", device = name)
+                                } else {
+                                    t!("home.continue.device_paused", device = name)
+                                },
+                            ))),
+                    ),
+            )
+            .child(take)
+            .child(dismiss)
+            .into_any_element(),
+    )
+}
+
 /// Home's card, or `None` (the page asks for the history when it's stale).
 pub(crate) fn render(cx: &mut App) -> Option<AnyElement> {
+    if let Some(card) = render_device_offer(cx) {
+        return Some(card);
+    }
     let (item, stale) = read_app(cx, |app, cx| {
         let resume = &app.store.account.resume;
         let stale = app.store.account.is_signed_in()

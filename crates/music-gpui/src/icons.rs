@@ -88,6 +88,9 @@ gpui_kit_assets::icon_assets!(
         Bookmark,
         UserPlus,
         Smartphone,
+        // device hand-off
+        MonitorSmartphone,
+        Laptop,
         // browse & search
         CloudOff,
         ArrowUpLeft,

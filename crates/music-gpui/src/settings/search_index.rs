@@ -1775,6 +1775,111 @@ pub const ENTRIES: &[Entry] = &[
         "titles",
         "names"
     ),
+    entry!(
+        "together.keep_playing",
+        Together,
+        "settings.together.you",
+        "settings.together.keep_playing",
+        "settings.together.keep_playing_desc",
+        "together",
+        "leave",
+        "keep",
+        "continue",
+        "phone",
+        "handoff"
+    ),
+    // ---- Devices (device hand-off)
+    entry!(
+        "devices.name",
+        Devices,
+        "settings.devices.this_device",
+        "settings.devices.name",
+        "settings.devices.name_note",
+        "name",
+        "computer",
+        "device"
+    ),
+    entry!(
+        "devices.pair",
+        Devices,
+        -,
+        "settings.devices.pair",
+        "settings.devices.pair_note",
+        "pair",
+        "code",
+        "connect",
+        "handoff",
+        "continue",
+        "computer",
+        "phone"
+    ),
+    entry!(
+        "devices.show_code",
+        Devices,
+        "settings.devices.pair",
+        "settings.devices.show_code",
+        "settings.devices.show_code_desc",
+        "pair",
+        "code",
+        "qr",
+        "link"
+    ),
+    entry!(
+        "devices.enter_code",
+        Devices,
+        "settings.devices.pair",
+        "settings.devices.enter_code",
+        "settings.devices.enter_note",
+        "pair",
+        "code",
+        "link"
+    ),
+    entry!(
+        "devices.paired",
+        Devices,
+        -,
+        "settings.devices.paired",
+        -,
+        "paired",
+        "forget",
+        "unpair",
+        "remove",
+        "trusted"
+    ),
+    entry!(
+        "devices.use_relay",
+        Devices,
+        "settings.devices.networks",
+        "settings.devices.use_relay",
+        "settings.devices.use_relay_desc",
+        "relay",
+        "internet",
+        "remote",
+        "network"
+    ),
+    entry!(
+        "devices.relay",
+        Devices,
+        "settings.devices.networks",
+        "settings.devices.relay",
+        "settings.devices.relay_note",
+        "relay",
+        "server",
+        "iroh",
+        "url",
+        "selfhosted"
+    ),
+    entry!(
+        "devices.privacy",
+        Devices,
+        "settings.devices.networks",
+        "settings.devices.relay",
+        "settings.devices.privacy",
+        "privacy",
+        "relay",
+        "encrypted",
+        "lan"
+    ),
     // ---- Spotify import
     entry!(
         "spotify.account",
@@ -2039,6 +2144,7 @@ fn section_keywords(id: SectionId) -> &'static [&'static str] {
         SectionId::Spotify => &["import", "playlists"],
         SectionId::AiFilter => &["ai", "filter"],
         SectionId::Cast => &["chromecast", "tv"],
+        SectionId::Devices => &["handoff", "pair", "connect", "phone", "computer"],
         SectionId::Backup => &["export", "import"],
         SectionId::About => &["version", "info"],
         SectionId::Shortcuts => &["keyboard", "hotkeys"],
