@@ -5,6 +5,47 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+* **visionOS stream client, first in line.** YouTube's visionOS `player` request returns
+  direct audio URLs: one request (~0.4 s), no JavaScript challenges, no PoToken and no pre-roll
+  ad wait. Its visitor id is earned once and kept in `<config>/cache/youtube/`. Automatic now
+  tries **visionOS → TV → TV Simply + PoToken → Web + PoToken → ~1 min preview**. TV Simply
+  sends a visitor-bound PoToken in the request and the video-bound one on the URL. Settings →
+  Playback → YouTube streams also offers *visionOS client* on its own.
+* **Circuit breaker per client** (after refryt). A route that fails 3 times in a row is skipped
+  for 10 minutes, then tried once more. Failures that belong to one video (unavailable, private,
+  age- or Premium-gated, blocked in the country) and network outages don't count, and the last
+  enabled client is never skipped. Settings → Playback → *Stream route* shows which client
+  played the last song, which ones are skipped and for how long, and which player fixes apply
+  (`WebResolver::status` / `set_status_hook`). `MUSIC_TRACE=1` prints the winning client and
+  its time for every song.
+* **Signed player fixes** (`packaging/player-fixes.json` + `.minisig`). Running apps pick up
+  new client versions and user agents, a client order, clients to skip, known
+  `signatureTimestamp`s, and broken or pinned `player.js` versions from the app's own
+  repository, with the relay as an optional mirror (`music-relay --player-fixes DIR`). No app
+  update is needed. The file is data only and signed with Ed25519 in minisign format; the public
+  key is compiled in and the private key never enters the repository. Unsigned or altered files
+  are ignored, and a lower `serial` never replaces a higher one. It is checked every 6 h, and
+  sooner when every route fails. Settings → Playback → *Player fixes* turns it off.
+  `scripts/sign-player-fixes.sh` signs; `docs/RELEASING.md` explains it.
+* **The next track's URL is resolved ahead.** When the queue sets the next song, its stream URL
+  is resolved in the background (`StreamResolver::prefetch_track`). The preload near the end of
+  the current song, or a skip, then starts without a resolve or ad wait. A prefetched URL is
+  used at most 1 h after it was resolved and never within 10 min of its `expire` time; older
+  ones are resolved again. Each one is handed out once, and a refresh after a rejected URL never
+  reuses one.
+
+### Changed
+
+* **Self-heal on a failed solve** (after Limusic). When the `n` / signature challenge can't be
+  solved (a solver error, a missing or unchanged `n`, the solver's `enhanced_except` marker),
+  the app drops the cached preprocessed player and its `sts`, fetches the watch page and
+  `player.js` again, and solves once more before moving to the next client. A newer
+  player-fixes manifest is fetched at the same time.
+* Onboarding's privacy page and the stream settings describe the new routes and the player-fixes
+  download.
+
 ## [0.2.6] — 2026-10-31
 
 

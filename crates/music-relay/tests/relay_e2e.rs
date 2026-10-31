@@ -83,13 +83,51 @@ fn post(relay: &Relay, path: &str, body: &str) -> (u16, String) {
 }
 
 fn health(relay: &Relay) -> String {
+    get(relay, "/health")
+}
+
+fn get(relay: &Relay, path: &str) -> String {
     let mut stream = TcpStream::connect(relay.addr()).unwrap();
-    stream
-        .write_all(b"GET /health HTTP/1.1\r\nHost: relay\r\n\r\n")
-        .unwrap();
+    write!(stream, "GET {path} HTTP/1.1\r\nHost: relay\r\n\r\n").unwrap();
     let mut out = String::new();
     stream.read_to_string(&mut out).unwrap();
     out
+}
+
+#[test]
+fn mirrors_the_player_fixes() {
+    let dir = std::env::temp_dir().join(format!("music-relay-fixes-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(dir.join("player-fixes.json"), r#"{"schema":1}"#).unwrap();
+    std::fs::write(
+        dir.join("player-fixes.json.minisig"),
+        "untrusted comment: x\n",
+    )
+    .unwrap();
+    std::fs::write(dir.join("secret.txt"), "no").unwrap();
+    let relay = Relay::start(Config {
+        listen: "127.0.0.1:0".parse().unwrap(),
+        player_fixes_dir: Some(dir.clone()),
+        ..Config::default()
+    })
+    .unwrap();
+    let json = get(&relay, "/player-fixes.json");
+    assert!(json.starts_with("HTTP/1.1 200 OK"), "{json}");
+    assert!(json.contains("application/json") && json.ends_with(r#"{"schema":1}"#));
+    let sig = get(&relay, "/player-fixes.json.minisig");
+    assert!(sig.starts_with("HTTP/1.1 200 OK") && sig.ends_with("untrusted comment: x\n"));
+    // Nothing else is served from there.
+    let other = get(&relay, "/secret.txt");
+    assert!(!other.starts_with("HTTP/1.1 200") && !other.ends_with("\r\n\r\nno"));
+    assert!(!get(&relay, "/../player-fixes.json").starts_with("HTTP/1.1 200"));
+    // Without a directory: 404.
+    let bare = Relay::start(Config {
+        listen: "127.0.0.1:0".parse().unwrap(),
+        ..Config::default()
+    })
+    .unwrap();
+    assert!(get(&bare, "/player-fixes.json").starts_with("HTTP/1.1 404"));
+    let _ = std::fs::remove_dir_all(dir);
 }
 
 #[test]

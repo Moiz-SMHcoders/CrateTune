@@ -389,17 +389,30 @@ cargo run -p music-core --example lyrics -- --raw /tmp/raw "rosalia malamente" #
 ### Full-length YouTube streams (`youtube` module)
 
 `youtube::WebResolver` gets complete streams; `IosClientResolver` (the first 1 MiB only,
-`PlaybackState::preview_only`) is kept as the last fallback. What googlevideo requires
+`PlaybackState::preview_only`) is kept as the last fallback. It tries the clients fastest
+first (`WebClient::automatic`), each behind a circuit breaker. What googlevideo requires
 (verified Oct 2026, with controls for each point):
 
+* **visionOS client** (`WebClient::VisionOs`, `VISIONOS` 1.02, after refryt): one `player`
+  request with a visitor id returns **direct URLs**: no `n`/signature challenge, no PoToken, no
+  pre-roll ad wait. Without a visitor id it answers `LOGIN_REQUIRED` ("not a bot") and issues
+  one in `responseContext.visitorData`. That one is adopted, kept in
+  `<config>/cache/youtube/visionos-visitor.txt`, and earned during `prewarm`. The URLs are
+  served at full speed in ranges (a 10 MiB range: the whole song in ~0.4 s), but one plain GET
+  is throttled (~100 s for 3 MB). The first byte is probed before the URL is handed out
+  (googlevideo sometimes refuses a fresh one), so a refusal moves on to the next client.
 * **TV client** (`WebClient::Tv`, Samsung Tizen `TVHTML5`): the player request carries the
   visitor id from a watch page (`X-Goog-Visitor-Id`) and the player script's
   `signatureTimestamp`; the URL's `n` parameter and signature are transformed with that
   player's own functions. No PoToken.
-* **Mobile web client** (`WebClient::MobileWeb`): the same, plus a **PoToken bound to the
+* **TV Simply** (`WebClient::TvSimply`, `TVHTML5_SIMPLY`, after Limusic): like TV, plus
+  PoTokens. The request carries one bound to the **visitor id** and the URL one bound to the
+  **video id**. With the video's token in the request, or with its own Cobalt user agent for the
+  download, googlevideo answers 403.
+* **Mobile web client** (`WebClient::MobileWeb`): like TV, plus a **PoToken bound to the
   video id**, both in the player request (`serviceIntegrityDimensions.poToken`) and as
   `pot=` on the stream URL. Without it: 403.
-* **Both:** googlevideo answers 403 until the pre-roll ad could have been skipped (5–15 s,
+* **All but visionOS:** googlevideo answers 403 until the pre-roll ad could have been skipped (5–15 s,
   from `adPlacements` / `adSlots`). `ResolvedStream::not_before` carries that time and the
   downloader waits; meanwhile it plays the head of the file from the iOS client's URL when
   that is provably the same file (`ResolvedStream::prefix`: same itag, size and `lmt`), so
@@ -409,6 +422,34 @@ cargo run -p music-core --example lyrics -- --raw /tmp/raw "rosalia malamente" #
   hasn't downloaded yet): the current audio keeps playing, `PlaybackState` shows the
   target with `buffering`, and the seek runs once the bytes are in — instead of the deck
   falling silent and the seek being rejected after 10 s.
+
+Robustness (`youtube::breaker`, `fixes`, `prefetch`):
+
+* **Circuit breaker** (ported from refryt): a client that fails 3 times in a row is skipped for
+  10 min, then tried once more ("half-open"). Video-specific failures (unavailable, private,
+  age / Premium / country gates) and network outages don't count, and the last enabled client
+  is never skipped. `WebResolver::status()` / `set_status_hook` report the last winner, the
+  failing clients and the player fixes in use (Settings → Playback → *Stream route*).
+  `MUSIC_TRACE=1` prints `music-core: youtube <id>: visionOS in 412 ms` (or `… skipped` /
+  `… failed after …`) for every resolve.
+* **Self-heal on a failed solve** (after Limusic): a solver error, a missing or unchanged `n`,
+  or the solver's `enhanced_except_…` marker drops the player from the solver's cache (memory
+  and disk) and the session's (`sts`). The watch page and `player.js` are then fetched and
+  solved again, once, before the next client.
+* **Signed player fixes** (`packaging/player-fixes.json` + `.minisig`, `youtube::fixes`): data
+  only (client identities, order, disabled clients, known `sts`, broken / pinned player ids).
+  They are fetched from this repository's `main` branch (and the relay's mirror), and checked
+  against the Ed25519 key compiled into the app (minisign format). A file is used only if it
+  verifies and its `serial` is higher; the bundled copy is the minimum. Checked every 6 h, or
+  sooner when every route fails; cached and verified again on each start. How to edit and
+  sign it: [docs/RELEASING.md](docs/RELEASING.md#player-fixes-packagingplayer-fixesjson).
+* **The next track's URL is resolved ahead** (`StreamResolver::prefetch_track`, called by
+  `Player::set_next`; `ModuleResolver` passes it on for songs no module takes). A resolved
+  URL is kept at most **1 h** and never used within 10 min of its `expire`; anything older is
+  resolved again. One still in its ad wait is not used yet. It is handed out once, and
+  `refresh_track` (after a rejected URL) never takes it. The downloader still renews any URL 30 s
+  before its `expire` (`Downloader::renew_if_expiring`), including a preloaded track's before its
+  first byte.
 
 Pieces:
 
@@ -446,17 +487,37 @@ Pieces:
   | Web + PoToken, 3 songs | 2806 2170 1055 ms | 726 728 636 ms |
   | TV, cold (no prewarm), first / second song | 3329 / 1439 ms | 2604 / 838 ms |
 
+* **visionOS first** (Oct 31 2026, same machine and searches, muted, `youtube_play
+  --first-audio`; before = Automatic as it was, TV then web, after = `auto`):
+
+  | | before (TV first) | after (visionOS first) |
+  |---|---|---|
+  | warm, "daft punk" × 8 | 1238 1244 1349 835 830 1035 835 937 ms (mean 1.04 s) | 423 420 419 416 425 521 1147 424 ms (mean 0.52 s) |
+  | warm, "taylor swift" × 6 | 1030 1356 1141 930 1331 1040 ms (mean 1.14 s) | 416 523 627 419 1142 1038 ms (mean 0.69 s) |
+  | cold (empty cache, no prewarm), "radiohead" × 3 | 29280 2070 2368 ms | 733 416 420 ms |
+
+  A cold start no longer waits for the player script to be preprocessed (~25 s in QuickJS):
+  visionOS needs none, and `prewarm` still prepares it in the background for the TV fallback.
+  Live checks the same day (`youtube` example, full download plus decode): visionOS 6/6 songs
+  (resolve 0.39–1.37 s, no ad wait); TV Simply + PoToken 5/5; Web + PoToken 4/4 (two more
+  songs had no audio format for MWEB; TV and visionOS played them); TV 3/3. The iOS preview URL
+  answered 403 on 4 of 7 songs, so it is only a weak last resort now. Self-heal, live: with the
+  cached preprocessed player replaced by one that returns `n` unchanged, the TV resolve detected
+  it, dropped the player, fetched and preprocessed `player.js` again (8.3 s), and played the
+  whole song.
 * The PoToken attestation is renewed when its integrity token runs out (~12 h, minus
   10 min): `PoTokenProvider::expire_attestation` forces that (unit test without network;
   `youtube_play --first-audio 3 --expire-potoken web` live: ~1 s BotGuard renewal, then
   full streams again). Age-restricted and unavailable videos fail with a clean error after
   the client chain and the fallback (~0.4 s warm), and the player auto-skips them.
-* Settings → Playback → **YouTube streams**: Automatic (TV, then web + PoToken, then
-  preview), TV client, Web + PoToken, Previews only.
+* Settings → Playback → **YouTube streams**: Automatic (visionOS, TV, TV Simply + PoToken,
+  Web + PoToken, then the preview), visionOS client, TV client, Web + PoToken, Previews only.
+  **Player fixes** (on by default) turns the manifest download off.
 
 ```sh
 cargo run --release -p music-core --example youtube -- tv  "daft punk instant crush"  # resolve + full download + decode
 cargo run --release -p music-core --example youtube -- web khnokW3Mw24                # same with a PoToken (macOS)
+cargo run --release -p music-core --example youtube -- vision khnokW3Mw24             # visionOS (tvsimply, auto: the app's chain)
 cargo run --release -p music-core --example youtube_play -- tv "daft punk"            # muted real-device playback
 cargo run --release -p music-core --example youtube_play -- --first-audio 4 tv "daft punk"  # time to first audio, 4 songs (MUSIC_LOG=debug: timings)
 ```

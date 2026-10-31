@@ -7,6 +7,8 @@ description = "UI-agnostic YouTube Music backend + audio engine shared by every 
 
 [dependencies]
 base64 = "0.22"
+# BLAKE2b-512 prehash of minisign signatures (the signed player-fixes manifest, `youtube::fixes`).
+blake2 = "0.10"
 crc32fast = "1.5"
 deunicode = "1.6"
 discord-rich-presence = { version = "1", optional = true }
@@ -20,6 +22,8 @@ log = "0.4.34"
 md5 = "0.8"
 pinyin = { version = "0.11", default-features = false, features = ["with_tone"] }
 regex = "1.13"
+# Ed25519 for the player-fixes manifest signature (already in the graph through rustls).
+ring = "0.17"
 roxmltree = "0.21"
 rodio = { version = "0.23", default-features = false, features = ["playback"] }
 # QuickJS for provider modules (`modules`): sandboxed, no async runtime, no cmake.

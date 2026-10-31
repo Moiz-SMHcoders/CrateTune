@@ -57,6 +57,8 @@ enum Message {
     Solve(Job),
     /// Load this (preprocessed) player into an engine for the next solve.
     Prepare(String),
+    /// Drop everything kept for this player (see [`ChallengeSolver::forget`]).
+    Forget(String),
 }
 
 /// An engine with a preprocessed player loaded (`globalThis.__ejs.n` / `.sig`).
@@ -133,6 +135,28 @@ impl ChallengeSolver {
         }
     }
 
+    /// Drops `player_id`'s preprocessed copy (memory and disk) and any engine
+    /// prepared with it, so the next solve preprocesses the script afresh: the
+    /// self-heal when a solve failed (YouTube changed the player, or the cached
+    /// copy is damaged).
+    pub(crate) fn forget(&self, player_id: &str) {
+        self.known
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .remove(player_id);
+        if let Some(dir) = &self.cache_dir {
+            let _ = std::fs::remove_file(cache_path(dir, player_id));
+        }
+        let running = self
+            .jobs
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .clone();
+        if let Some(tx) = running {
+            let _ = tx.send(Message::Forget(player_id.to_owned()));
+        }
+    }
+
     fn sender(&self) -> Result<Sender<Message>> {
         let mut slot = self.jobs.lock().unwrap_or_else(PoisonError::into_inner);
         if let Some(tx) = slot.as_ref() {
@@ -189,6 +213,13 @@ impl ChallengeSolver {
                                     }
                                     Err(e) => log::debug!("jsc: preparing {player_id} failed: {e}"),
                                 }
+                            }
+                            continue;
+                        }
+                        Message::Forget(player_id) => {
+                            preprocessed.remove(&player_id);
+                            if prepared.as_ref().is_some_and(|p| p.player_id == player_id) {
+                                prepared = None;
                             }
                             continue;
                         }
@@ -618,6 +649,17 @@ mod tests {
         let direct = solve_prepared(&engine, &job).unwrap();
         assert_eq!(direct.n["xyz"], "zyx");
         assert!(direct.sig.is_empty());
+        // Forgetting it drops the cached copy: it must be preprocessed again.
+        solver.forget("test");
+        assert!(!solver.has_preprocessed("test"));
+        assert!(!cache_path(&dir, "test").exists());
+        assert!(
+            solver
+                .solve("test", None, vec!["abc".into()], vec![])
+                .is_err()
+        );
+        std::fs::write(cache_path(&dir, "test"), PLAYER).unwrap();
+        assert_eq!(solve().n["abc"], "cba");
         // A player that isn't preprocessed is not prepared (and can't be solved).
         solver.prepare("unknown");
         assert!(

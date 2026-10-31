@@ -188,6 +188,19 @@ MIT), `url` (MIT OR Apache-2.0), `sha2` (MIT OR Apache-2.0), `icu_normalizer` (U
 | `src/youtube/webkit.rs` | ArchiveTune `BotGuardTokenGenerator.kt` (WebView engine) | A hidden WKWebView (`callAsyncJavaScript`) instead of Android's WebView + JS bridge. |
 | `src/youtube/resolver.rs`, `session.rs` | yt-dlp `yt_dlp/extractor/youtube/{_base.py,_video.py}` (The Unlicense) | Client definitions (`tv_samsung`, `mweb`), the player request shape, and the "wait for the pre-roll ad" rule (`_get_available_at_timestamp`); reimplemented in Rust. |
 
+## refryt and Limusic (stream resolution robustness)
+
+Ideas and small parts of the stream chain are ported from two GPL-3.0 YouTube Music desktop
+clients: **refryt** (<https://github.com/gridoe/refryt>, © refryt contributors, commit
+`e9685b0b49ff2fd094d60abc565a57494963755d`) and **Limusic** (<https://github.com/SimoHypers/limusic>, © Limusic
+contributors, commit `d82372cdd3016e3c5e28ea8022596b7fefdf681a`). Each ported file carries a header naming its source.
+
+| music-core file | Upstream file(s) | Changes |
+|---|---|---|
+| `src/youtube/breaker.rs` | refryt `crates/refryt-resolve/src/chain.rs` (`Breaker`, `is_video_specific`) | Same rule (3 failures in a row → skipped 10 min, half-open retry, video-specific failures not counted, the last route never skipped), per `WebClient` instead of per resolver; synchronous; network errors not counted either; a `ResolverStatus` snapshot for the UI. |
+| `src/youtube/client.rs` | refryt `crates/refryt-resolve/src/guest.rs` (`VISIONOS` client), Limusic `crates/innertube/clients.json` (`TVHTML5_SIMPLY`) | Client identity strings and the visionOS request body; identities can be replaced by the signed player-fixes manifest. |
+| `src/youtube/resolver.rs` (visionOS path, self-heal) | refryt `guest.rs` (visitor adopted from a `LOGIN_REQUIRED` refusal, first-byte probe); Limusic `src-tauri/src/orchestrator.rs` (`self_heal`), `src-tauri/src/cipher/` (refetch `player.js` on failure) | Rewritten for blocking `ureq` and our QuickJS solver: one retry with the player dropped from the solver and session caches. Limusic's community cipher registries are **not** used; the app reads only its own signed manifest (`src/youtube/fixes.rs`, original). |
+
 ## ArchiveTune (fix/content: playlist covers)
 
 `crates/music-gpui/src/playlist_cover.rs` ports the cover preparation of ArchiveTune's

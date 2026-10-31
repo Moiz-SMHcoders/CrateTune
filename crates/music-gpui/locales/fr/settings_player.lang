@@ -2,6 +2,7 @@
 
 # ---- Option names
 prefs.stream.tv = Client TV
+prefs.stream.visionos = Client visionOS
 prefs.stream.web_potoken = Web + PoToken
 prefs.stream.preview = Extraits seuls
 prefs.quality.low = Basse
@@ -79,10 +80,19 @@ settings.playback.repeat_all = Tout
 settings.playback.repeat_one = Un
 settings.playback.audio = Audio
 settings.playback.streams = Flux YouTube
-settings.playback.stream_auto = Titres complets : client TV, puis client web avec un PoToken, puis un extrait d'environ 1 min.
+settings.playback.stream_auto = Titres complets par la méthode la plus rapide qui fonctionne : visionOS, le client TV, puis les clients avec PoToken ; une méthode qui échoue 3 fois de suite est ignorée 10 min. En dernier recours : un extrait d'environ 1 min.
 settings.playback.stream_tv = Titres complets via le client TV (sans PoToken) ; un extrait en cas d'échec.
+settings.playback.stream_visionos = Titres complets via le client visionOS (liens directs : sans PoToken ni attente) ; un extrait en cas d'échec.
 settings.playback.stream_web = Titres complets via le client web et un PoToken BotGuard (macOS / Windows) ; un extrait en cas d'échec.
 settings.playback.stream_preview = Seulement la première minute environ de chaque titre (l'ancien comportement).
+settings.playback.stream_status = Méthode utilisée
+settings.playback.stream_status_none = Aucun titre diffusé pour l'instant
+settings.playback.stream_status_via = Dernier titre via {client}
+settings.playback.stream_status_preview = Dernier titre : extrait seulement (toutes les méthodes ont échoué)
+settings.playback.stream_status_skipped = {clients} ignoré pendant {minutes} min
+settings.playback.stream_status_fixes = correctifs du lecteur n° {serial}
+settings.playback.player_fixes = Correctifs du lecteur
+settings.playback.player_fixes_desc = Quand YouTube change quelque chose, télécharger des correctifs signés (données uniquement, vérifiés toutes les 6 h) depuis le dépôt GitHub de {app}. Désactivé : uniquement les correctifs inclus dans cette version.
 settings.playback.quality = Qualité du streaming
 settings.playback.quality_desc = Basse économise les données ; Haute préfère Opus (~160 kbit/s) à AAC 128.
 settings.playback.normalize = Normalisation du volume

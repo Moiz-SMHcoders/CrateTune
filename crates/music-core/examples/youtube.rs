@@ -3,7 +3,12 @@
 //! ```sh
 //! cargo run --release -p music-core --example youtube -- tv  "daft punk instant crush"
 //! cargo run --release -p music-core --example youtube -- web khnokW3Mw24   # PoToken (macOS)
+//! cargo run --release -p music-core --example youtube -- vision khnokW3Mw24
+//! cargo run --release -p music-core --example youtube -- auto khnokW3Mw24  # the app's chain
 //! ```
+//!
+//! Clients: `tv` (default), `vision`, `tvsimply`, `web`, `auto`. `MUSIC_PREWARM=1`
+//! prewarms first, as the app does.
 //!
 //! Resolves, waits out the ad, downloads the whole file, checks its size, and
 //! decodes it end to end (plus a seek near the end). Nothing is played.
@@ -17,9 +22,13 @@ use rodio::Source;
 
 fn run() -> Result<(), Box<dyn std::error::Error>> {
     let mut args = std::env::args().skip(1);
-    let client = match args.next().as_deref() {
-        Some("web") => WebClient::MobileWeb,
-        _ => WebClient::Tv,
+    let potoken = platform_potoken_provider();
+    let clients = match args.next().as_deref() {
+        Some("web") => vec![WebClient::MobileWeb],
+        Some("vision") => vec![WebClient::VisionOs],
+        Some("tvsimply") => vec![WebClient::TvSimply],
+        Some("auto") => WebClient::automatic(potoken.is_some()),
+        _ => vec![WebClient::Tv],
     };
     let query = args.collect::<Vec<_>>().join(" ");
     let query = if query.is_empty() {
@@ -40,7 +49,17 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let cache = std::env::temp_dir().join("music-core-youtube-example");
-    let resolver = WebResolver::new(vec![client], platform_potoken_provider(), None, Some(cache));
+    let resolver = WebResolver::new(
+        clients.clone(),
+        potoken,
+        Some(Arc::new(music_core::IosClientResolver)),
+        Some(cache),
+    );
+    if std::env::var_os("MUSIC_PREWARM").is_some() {
+        let t = Instant::now();
+        resolver.prewarm();
+        println!("prewarm took {:?}", t.elapsed());
+    }
     let started = Instant::now();
     let stream = resolver.resolve_with_quality(&video_id, Quality::High)?;
     let wait = stream
@@ -49,7 +68,11 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         .unwrap_or_default();
     println!(
         "resolved via {:?} in {:?}: itag {} {} ({:?} bytes), usable in {:?}",
-        client,
+        stream
+            .source
+            .as_ref()
+            .and_then(|s| s.variant.clone())
+            .unwrap_or_else(|| "preview".into()),
         started.elapsed(),
         stream.itag,
         stream.mime_type,
@@ -76,16 +99,20 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 .find_map(|kv| kv.strip_prefix("lmt="))
                 .map(str::to_owned)
         };
-        let head = ios.download()?;
-        let n = head.bytes.len().min(download.bytes.len());
-        println!(
-            "iOS preview: itag {} clen {:?} lmt match {} | first {} bytes identical: {}",
-            ios.itag,
-            ios.content_length,
-            lmt(&ios.url) == lmt(&stream.url),
-            n,
-            head.bytes[..n] == download.bytes[..n]
-        );
+        match ios.download() {
+            Err(e) => println!("iOS preview: itag {} not downloadable ({e})", ios.itag),
+            Ok(head) => {
+                let n = head.bytes.len().min(download.bytes.len());
+                println!(
+                    "iOS preview: itag {} clen {:?} lmt match {} | first {} bytes identical: {}",
+                    ios.itag,
+                    ios.content_length,
+                    lmt(&ios.url) == lmt(&stream.url),
+                    n,
+                    head.bytes[..n] == download.bytes[..n]
+                );
+            }
+        }
     }
 
     let bytes: Arc<[u8]> = download.bytes.into();

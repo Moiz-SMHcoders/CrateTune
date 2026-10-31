@@ -2,6 +2,7 @@
 
 # ---- Option names (keep short)
 prefs.stream.tv = TV-клиент
+prefs.stream.visionos = Клиент visionOS
 prefs.stream.web_potoken = Веб + PoToken
 prefs.stream.preview = Только превью
 prefs.quality.low = Низкое
@@ -79,10 +80,19 @@ settings.playback.repeat_all = Все
 settings.playback.repeat_one = Один
 settings.playback.audio = Звук
 settings.playback.streams = Потоки YouTube
-settings.playback.stream_auto = Полные треки: TV-клиент, затем веб-клиент с PoToken, затем превью ~1 мин.
+settings.playback.stream_auto = Полные треки самым быстрым рабочим способом: visionOS, TV-клиент, затем клиенты с PoToken; способ, давший сбой 3 раза подряд, пропускается на 10 мин. Крайний случай — превью ~1 мин.
 settings.playback.stream_tv = Полные треки через TV-клиент (без PoToken); при ошибке — превью.
+settings.playback.stream_visionos = Полные треки через клиент visionOS (прямые ссылки: без PoToken и ожидания); при ошибке — превью.
 settings.playback.stream_web = Полные треки через веб-клиент и PoToken от BotGuard (macOS / Windows); при ошибке — превью.
 settings.playback.stream_preview = Только первая ~1 минута каждого трека (старое поведение).
+settings.playback.stream_status = Способ получения потока
+settings.playback.stream_status_none = Пока ни один трек не воспроизводился
+settings.playback.stream_status_via = Последний трек через {client}
+settings.playback.stream_status_preview = Последний трек: только превью (все способы не сработали)
+settings.playback.stream_status_skipped = {clients}: пропуск ещё {minutes} мин
+settings.playback.stream_status_fixes = исправления плеера № {serial}
+settings.playback.player_fixes = Исправления плеера
+settings.playback.player_fixes_desc = Когда YouTube что-то меняет, загружать подписанные исправления (только данные, проверка каждые 6 ч) из репозитория {app} на GitHub. Выкл.: только исправления, встроенные в эту версию.
 settings.playback.quality = Качество потока
 settings.playback.quality_desc = «Низкое» экономит трафик; «Высокое» предпочитает Opus (~160 кбит/с) вместо AAC 128.
 settings.playback.normalize = Нормализация громкости

@@ -2,6 +2,7 @@
 
 # ---- Option names
 prefs.stream.tv = TV クライアント
+prefs.stream.visionos = visionOS クライアント
 prefs.stream.web_potoken = Web + PoToken
 prefs.stream.preview = プレビューのみ
 prefs.quality.low = 低
@@ -79,10 +80,19 @@ settings.playback.repeat_all = すべて
 settings.playback.repeat_one = 1曲
 settings.playback.audio = オーディオ
 settings.playback.streams = YouTube ストリーム
-settings.playback.stream_auto = フル再生：TV クライアント、次に PoToken 付き Web クライアント、最後に約1分のプレビュー。
+settings.playback.stream_auto = 動作する最速の経路でフル再生：visionOS、TV クライアント、次に PoToken クライアント。3回続けて失敗した経路は10分間スキップします。最終手段は約1分のプレビュー。
 settings.playback.stream_tv = TV クライアントでフル再生（PoToken なし）。失敗時はプレビュー。
+settings.playback.stream_visionos = visionOS クライアントでフル再生（直接リンク：PoToken も待ち時間もなし）。失敗時はプレビュー。
 settings.playback.stream_web = Web クライアントと BotGuard PoToken でフル再生（macOS / Windows）。失敗時はプレビュー。
 settings.playback.stream_preview = 各曲の最初の約1分のみ（以前の動作）。
+settings.playback.stream_status = ストリームの経路
+settings.playback.stream_status_none = まだストリーミングした曲はありません
+settings.playback.stream_status_via = 前の曲：{client} 経由
+settings.playback.stream_status_preview = 前の曲：プレビューのみ（すべての経路が失敗）
+settings.playback.stream_status_skipped = {clients} を {minutes} 分間スキップ中
+settings.playback.stream_status_fixes = プレーヤー修正 #{serial}
+settings.playback.player_fixes = プレーヤー修正
+settings.playback.player_fixes_desc = YouTube の仕様が変わったとき、{app} の GitHub リポジトリから署名付きの修正（データのみ、6時間ごとに確認）をダウンロードします。オフ：このバージョンに組み込まれた修正のみ。
 settings.playback.quality = ストリーミング品質
 settings.playback.quality_desc = 「低」はデータ通信量を節約します。「高」は AAC 128 より Opus（約 160 kbps）を優先します。
 settings.playback.normalize = 音量の均一化

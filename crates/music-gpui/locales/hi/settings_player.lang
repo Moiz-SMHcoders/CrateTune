@@ -2,6 +2,7 @@
 
 # ---- Option names
 prefs.stream.tv = TV क्लाइंट
+prefs.stream.visionos = visionOS क्लाइंट
 prefs.stream.web_potoken = वेब + PoToken
 prefs.stream.preview = सिर्फ़ प्रीव्यू
 prefs.quality.low = कम
@@ -79,10 +80,19 @@ settings.playback.repeat_all = सभी
 settings.playback.repeat_one = एक
 settings.playback.audio = ऑडियो
 settings.playback.streams = YouTube स्ट्रीम
-settings.playback.stream_auto = पूरे गाने: TV क्लाइंट, फिर PoToken के साथ वेब क्लाइंट, फिर ~1 मिनट का प्रीव्यू।
+settings.playback.stream_auto = पूरे गाने सबसे तेज़ काम करने वाले रास्ते से: visionOS, TV क्लाइंट, फिर PoToken वाले क्लाइंट; लगातार 3 बार विफल होने वाला रास्ता 10 मिनट के लिए छोड़ा जाता है। आखिरी विकल्प: ~1 मिनट का प्रीव्यू।
 settings.playback.stream_tv = TV क्लाइंट से पूरे गाने (बिना PoToken); विफल होने पर प्रीव्यू।
+settings.playback.stream_visionos = visionOS क्लाइंट से पूरे गाने (सीधे लिंक: न PoToken, न इंतज़ार); विफल होने पर प्रीव्यू।
 settings.playback.stream_web = वेब क्लाइंट और BotGuard PoToken से पूरे गाने (macOS / Windows); विफल होने पर प्रीव्यू।
 settings.playback.stream_preview = हर गाने का सिर्फ़ पहला ~1 मिनट (पुराना तरीका)।
+settings.playback.stream_status = स्ट्रीम का रास्ता
+settings.playback.stream_status_none = अभी तक कोई गाना स्ट्रीम नहीं हुआ
+settings.playback.stream_status_via = पिछला गाना {client} से
+settings.playback.stream_status_preview = पिछला गाना: केवल प्रीव्यू (सभी रास्ते विफल)
+settings.playback.stream_status_skipped = {clients} {minutes} मिनट के लिए छोड़ा गया
+settings.playback.stream_status_fixes = प्लेयर फ़िक्स #{serial}
+settings.playback.player_fixes = प्लेयर फ़िक्स
+settings.playback.player_fixes_desc = जब YouTube कुछ बदलता है, तो {app} की GitHub रिपॉज़िटरी से हस्ताक्षरित फ़िक्स (केवल डेटा, हर 6 घंटे में जाँचे जाते हैं) डाउनलोड करें। बंद: केवल इस संस्करण में शामिल फ़िक्स।
 settings.playback.quality = स्ट्रीमिंग क्वालिटी
 settings.playback.quality_desc = कम से डेटा बचता है; ज़्यादा में AAC 128 के बजाय Opus (~160 kbps) को प्राथमिकता मिलती है।
 settings.playback.normalize = लाउडनेस नॉर्मलाइज़ेशन

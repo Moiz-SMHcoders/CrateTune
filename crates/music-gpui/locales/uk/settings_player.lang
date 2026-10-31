@@ -2,6 +2,7 @@
 
 # ---- Option names
 prefs.stream.tv = TV-клієнт
+prefs.stream.visionos = Клієнт visionOS
 prefs.stream.web_potoken = Веб + PoToken
 prefs.stream.preview = Лише фрагменти
 prefs.quality.low = Низька
@@ -79,10 +80,19 @@ settings.playback.repeat_all = Усі
 settings.playback.repeat_one = Одна
 settings.playback.audio = Аудіо
 settings.playback.streams = Потоки YouTube
-settings.playback.stream_auto = Повні пісні: TV-клієнт, потім вебклієнт з PoToken, потім фрагмент ~1 хв.
+settings.playback.stream_auto = Повні пісні найшвидшим робочим способом: visionOS, TV-клієнт, потім клієнти з PoToken; спосіб, що не спрацював 3 рази поспіль, пропускається на 10 хв. Крайній випадок — фрагмент ~1 хв.
 settings.playback.stream_tv = Повні пісні через TV-клієнт (без PoToken); фрагмент, якщо не вдасться.
+settings.playback.stream_visionos = Повні пісні через клієнт visionOS (прямі посилання: без PoToken і очікування); фрагмент, якщо не вдасться.
 settings.playback.stream_web = Повні пісні через вебклієнт і PoToken від BotGuard (macOS / Windows); фрагмент, якщо не вдасться.
 settings.playback.stream_preview = Лише перша ~1 хвилина кожної пісні (стара поведінка).
+settings.playback.stream_status = Спосіб отримання потоку
+settings.playback.stream_status_none = Ще жодна пісня не транслювалася
+settings.playback.stream_status_via = Остання пісня через {client}
+settings.playback.stream_status_preview = Остання пісня: лише фрагмент (жоден спосіб не спрацював)
+settings.playback.stream_status_skipped = {clients}: пропуск ще {minutes} хв
+settings.playback.stream_status_fixes = виправлення плеєра № {serial}
+settings.playback.player_fixes = Виправлення плеєра
+settings.playback.player_fixes_desc = Коли YouTube щось змінює, завантажувати підписані виправлення (лише дані, перевірка кожні 6 год) з репозиторію {app} на GitHub. Вимк.: лише виправлення, вбудовані в цю версію.
 settings.playback.quality = Якість потоку
 settings.playback.quality_desc = «Низька» заощаджує трафік; «Висока» надає перевагу Opus (~160 кбіт/с) над AAC 128.
 settings.playback.normalize = Нормалізація гучності

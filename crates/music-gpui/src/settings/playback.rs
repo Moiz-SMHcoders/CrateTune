@@ -104,6 +104,15 @@ pub(super) fn render(
         SettingsPanel::set_auto_skip,
         cx,
     );
+    let player_fixes = switch(
+        "settings-player-fixes",
+        a.player_fixes,
+        SettingsPanel::set_player_fixes,
+        cx,
+    );
+    panel.stream_status_poll(cx);
+    let stream_status = crate::module_service::ModuleService::stream_status(cx)
+        .map(|(status, _)| stream_status_text(&status));
 
     // ---- transitions, speed & pitch
     let crossfade_label = if a.crossfade_secs <= 0. {
@@ -279,6 +288,27 @@ pub(super) fn render(
                     stream_source,
                     cx,
                 ))
+                .when_some(stream_status, |group, text| {
+                    group.child(row_at(
+                        "playback.stream_status",
+                        t!("settings.playback.stream_status"),
+                        None,
+                        div()
+                            .max_w(gpui::px(320.))
+                            .text_sm()
+                            .text_color(muted)
+                            .text_right()
+                            .child(text),
+                        cx,
+                    ))
+                })
+                .child(row_at(
+                    "playback.player_fixes",
+                    t!("settings.playback.player_fixes"),
+                    Some(t!("settings.playback.player_fixes_desc")),
+                    player_fixes,
+                    cx,
+                ))
                 .child(row_at(
                     "playback.quality",
                     t!("settings.playback.quality"),
@@ -404,8 +434,42 @@ fn muted_text(text: Option<String>, color: gpui::Hsla) -> impl IntoElement {
 fn stream_source_note(mode: StreamSourceMode) -> &'static str {
     match mode {
         StreamSourceMode::Auto => t!("settings.playback.stream_auto"),
+        StreamSourceMode::VisionOs => t!("settings.playback.stream_visionos"),
         StreamSourceMode::Tv => t!("settings.playback.stream_tv"),
         StreamSourceMode::WebPoToken => t!("settings.playback.stream_web"),
         StreamSourceMode::Preview => t!("settings.playback.stream_preview"),
     }
+}
+
+/// "Last song: visionOS · TV skipped for 9 min · Player fixes #3".
+fn stream_status_text(status: &music_core::youtube::ResolverStatus) -> String {
+    let mut parts = vec![if status.last_was_preview {
+        t!("settings.playback.stream_status_preview").to_owned()
+    } else {
+        match status.last_client {
+            Some(client) => t!(
+                "settings.playback.stream_status_via",
+                client = client.label()
+            ),
+            None => t!("settings.playback.stream_status_none").to_owned(),
+        }
+    }];
+    let skipped: Vec<_> = status.skipped().collect();
+    if !skipped.is_empty() {
+        let names: Vec<&str> = skipped.iter().map(|h| h.client.label()).collect();
+        let minutes = skipped
+            .iter()
+            .filter_map(|h| h.skipped_for)
+            .max()
+            .map_or(1, |d| d.as_secs().div_ceil(60).max(1));
+        parts.push(t!(
+            "settings.playback.stream_status_skipped",
+            clients = names.join(", "),
+            minutes = minutes
+        ));
+    }
+    if let Some(serial) = status.fixes_serial {
+        parts.push(t!("settings.playback.stream_status_fixes", serial = serial));
+    }
+    parts.join(" · ")
 }

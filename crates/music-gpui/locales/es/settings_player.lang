@@ -3,6 +3,7 @@
 
 # ---- Option names (buttons in a row: keep short)
 prefs.stream.tv = Cliente de TV
+prefs.stream.visionos = Cliente de visionOS
 prefs.stream.web_potoken = Web + PoToken
 prefs.stream.preview = Solo avances
 prefs.quality.low = Baja
@@ -80,10 +81,19 @@ settings.playback.repeat_all = Todo
 settings.playback.repeat_one = Una
 settings.playback.audio = Audio
 settings.playback.streams = Transmisiones de YouTube
-settings.playback.stream_auto = Canciones completas: cliente de TV, luego el cliente web con un PoToken y, por último, un avance de ~1 min.
+settings.playback.stream_auto = Canciones completas por la vía más rápida que funcione: visionOS, el cliente de TV y luego los clientes con PoToken; una vía que falla 3 veces seguidas se omite 10 min. Último recurso: un avance de ~1 min.
 settings.playback.stream_tv = Canciones completas mediante el cliente de TV (sin PoToken); un avance si falla.
+settings.playback.stream_visionos = Canciones completas mediante el cliente de visionOS (enlaces directos: sin PoToken ni espera); un avance si falla.
 settings.playback.stream_web = Canciones completas mediante el cliente web y un PoToken de BotGuard (macOS / Windows); un avance si falla.
 settings.playback.stream_preview = Solo el primer ~1 minuto de cada canción (el comportamiento anterior).
+settings.playback.stream_status = Vía de transmisión
+settings.playback.stream_status_none = Aún no se ha transmitido ninguna canción
+settings.playback.stream_status_via = Última canción vía {client}
+settings.playback.stream_status_preview = Última canción: solo avance (fallaron todas las vías)
+settings.playback.stream_status_skipped = {clients} omitido durante {minutes} min
+settings.playback.stream_status_fixes = correcciones del reproductor n.º {serial}
+settings.playback.player_fixes = Correcciones del reproductor
+settings.playback.player_fixes_desc = Cuando YouTube cambia algo, descarga correcciones firmadas (solo datos, revisadas cada 6 h) del repositorio de GitHub de {app}. Desactivado: solo las correcciones incluidas en esta versión.
 settings.playback.quality = Calidad de transmisión
 settings.playback.quality_desc = Baja ahorra datos; Alta prefiere Opus (~160 kbps) a AAC 128.
 settings.playback.normalize = Normalización del volumen

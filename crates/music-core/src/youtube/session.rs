@@ -6,10 +6,12 @@
 //! built for. They are cached for a while and shared by every video.
 
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex, PoisonError};
+use std::sync::{Arc, Mutex, PoisonError, RwLock};
 use std::time::{Duration, Instant};
 
 use regex::Regex;
+
+use super::fixes::PlayerHints;
 
 use crate::http::{agent, read_body};
 use crate::{Error, Result};
@@ -44,6 +46,8 @@ pub(crate) struct SessionCache {
     dir: Option<std::path::PathBuf>,
     /// A background refresh is running.
     refreshing: AtomicBool,
+    /// The player-fixes manifest's hints (known `sts`, broken / pinned players).
+    hints: RwLock<PlayerHints>,
 }
 
 impl SessionCache {
@@ -52,6 +56,25 @@ impl SessionCache {
             current: Mutex::new(None),
             dir,
             refreshing: AtomicBool::new(false),
+            hints: RwLock::default(),
+        }
+    }
+
+    /// Applies the player-fixes manifest's hints to sessions fetched from now on.
+    pub(crate) fn set_hints(&self, hints: PlayerHints) {
+        *self.hints.write().unwrap_or_else(PoisonError::into_inner) = hints;
+    }
+
+    /// Drops everything kept about `player_id` (its cached `sts`, and the
+    /// session if it uses it), so the next session fetches the watch page and
+    /// the player script again (the self-heal after a failed solve).
+    pub(crate) fn forget_player(&self, player_id: &str) {
+        if let Some(dir) = &self.dir {
+            let _ = std::fs::remove_file(dir.join(format!("player-{}.sts", sanitize(player_id))));
+        }
+        let mut current = self.current.lock().unwrap_or_else(PoisonError::into_inner);
+        if current.as_ref().is_some_and(|s| s.player_id == player_id) {
+            *current = None;
         }
     }
 
@@ -149,7 +172,15 @@ impl SessionCache {
             .header("Cookie", PAGE_COOKIES)
             .call()?;
         let page = String::from_utf8_lossy(&read_body(&mut resp)?).into_owned();
-        let (visitor_data, player_id) = parse_watch_page(&page)?;
+        let (visitor_data, page_player) = parse_watch_page(&page)?;
+        let (player_id, known_sts) = self
+            .hints
+            .read()
+            .unwrap_or_else(PoisonError::into_inner)
+            .choose(&page_player);
+        if player_id != page_player {
+            log::info!("youtube: using player {player_id} instead of {page_player} (player fixes)");
+        }
 
         let sts_file = self
             .dir
@@ -159,7 +190,7 @@ impl SessionCache {
             .as_ref()
             .and_then(|p| std::fs::read_to_string(p).ok())
             .and_then(|s| s.trim().parse().ok());
-        let (sts, script) = match cached_sts {
+        let (sts, script) = match cached_sts.or(known_sts) {
             Some(sts) => (sts, None),
             None => {
                 let script = download_player(&player_id)?;
@@ -271,6 +302,26 @@ mod tests {
         assert!(cache.claim_refresh());
         cache.finish_refresh(None);
         assert!(cache.claim_refresh());
+    }
+
+    #[test]
+    fn forgetting_a_player_drops_its_sts_and_the_session() {
+        let dir = std::env::temp_dir().join(format!("music-core-session-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let sts = dir.join("player-p.sts");
+        std::fs::write(&sts, "20000").unwrap();
+        let cache = SessionCache::new(Some(dir.clone()));
+        cache.finish_refresh(Some(session(Duration::ZERO)));
+        cache.forget_player("other");
+        assert!(sts.exists());
+        assert!(cache.current.lock().unwrap().is_some());
+        cache.forget_player("p");
+        assert!(
+            !sts.exists(),
+            "the next session reads the player script again"
+        );
+        assert!(cache.current.lock().unwrap().is_none());
+        let _ = std::fs::remove_dir_all(dir);
     }
 
     #[test]

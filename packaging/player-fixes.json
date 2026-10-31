@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "serial": 1,
+  "issued": "2026-10-31",
+  "note": "Data only, signed (player-fixes.json.minisig). See docs/RELEASING.md before editing.",
+  "clients": {
+    "VISIONOS": {
+      "clientVersion": "1.02",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 15_7_3) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15",
+      "deviceMake": "Apple",
+      "deviceModel": "RealityDevice17,1",
+      "osName": "visionOS",
+      "osVersion": "26.5.23O471"
+    },
+    "TVHTML5": {
+      "clientVersion": "5.20260707"
+    },
+    "TVHTML5_SIMPLY": {
+      "clientVersion": "1.0"
+    },
+    "MWEB": {
+      "clientVersion": "2.20260708.05.00"
+    }
+  },
+  "order": ["VISIONOS", "TVHTML5", "TVHTML5_SIMPLY", "MWEB"],
+  "disabled": [],
+  "players": {
+    "sts": {},
+    "broken": [],
+    "pin": null
+  }
+}

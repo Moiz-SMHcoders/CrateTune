@@ -2,6 +2,7 @@
 
 # ---- Option names
 prefs.stream.tv = TV istemcisi
+prefs.stream.visionos = visionOS istemcisi
 prefs.stream.web_potoken = Web + PoToken
 prefs.stream.preview = Yalnızca önizleme
 prefs.quality.low = Düşük
@@ -79,10 +80,19 @@ settings.playback.repeat_all = Tümü
 settings.playback.repeat_one = Tek
 settings.playback.audio = Ses
 settings.playback.streams = YouTube akışları
-settings.playback.stream_auto = Tam şarkılar: TV istemcisi, sonra PoToken ile web istemcisi, sonra ~1 dk önizleme.
+settings.playback.stream_auto = Çalışan en hızlı yoldan tam şarkılar: visionOS, TV istemcisi, sonra PoToken istemcileri; art arda 3 kez başarısız olan yol 10 dk atlanır. Son çare: ~1 dk önizleme.
 settings.playback.stream_tv = TV istemcisi ile tam şarkılar (PoToken yok); başarısız olursa önizleme.
+settings.playback.stream_visionos = visionOS istemcisi ile tam şarkılar (doğrudan bağlantılar: PoToken yok, bekleme yok); başarısız olursa önizleme.
 settings.playback.stream_web = Web istemcisi ve BotGuard PoToken ile tam şarkılar (macOS / Windows); başarısız olursa önizleme.
 settings.playback.stream_preview = Her şarkının yalnızca ilk ~1 dakikası (eski davranış).
+settings.playback.stream_status = Akış yolu
+settings.playback.stream_status_none = Henüz şarkı akışı yapılmadı
+settings.playback.stream_status_via = Son şarkı {client} ile
+settings.playback.stream_status_preview = Son şarkı: yalnızca önizleme (tüm yollar başarısız)
+settings.playback.stream_status_skipped = {clients} {minutes} dk atlanıyor
+settings.playback.stream_status_fixes = oynatıcı düzeltmeleri #{serial}
+settings.playback.player_fixes = Oynatıcı düzeltmeleri
+settings.playback.player_fixes_desc = YouTube bir şeyi değiştirdiğinde {app} uygulamasının GitHub deposundan imzalı düzeltmeleri (yalnızca veri, 6 saatte bir kontrol edilir) indir. Kapalı: yalnızca bu sürümdeki düzeltmeler.
 settings.playback.quality = Akış kalitesi
 settings.playback.quality_desc = Düşük veri tasarrufu sağlar; Yüksek, AAC 128 yerine Opus'u (~160 kbps) tercih eder.
 settings.playback.normalize = Ses düzeyi normalleştirme

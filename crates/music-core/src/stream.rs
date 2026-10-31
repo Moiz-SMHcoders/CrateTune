@@ -271,6 +271,14 @@ pub trait StreamResolver: Send + Sync {
         let _ = stale;
         self.resolve_track(track, quality)
     }
+
+    /// `track` is likely to play next: resolvers may resolve it now (in the
+    /// background; never blocking) so it starts at once. A URL kept this way
+    /// must be resolved again once old or near its expiry (see
+    /// [`crate::youtube::WebResolver`]). The default does nothing.
+    fn prefetch_track(&self, track: &crate::Track, quality: Quality) {
+        let _ = (track, quality);
+    }
 }
 
 /// Uses the iOS client, which currently returns plain (un-ciphered) URLs

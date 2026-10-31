@@ -45,7 +45,7 @@ onboarding.local.note = Quét thư mục ngay hoặc để sau; quản lý chún
 
 # ---- Privacy & limitations step
 onboarding.privacy.streaming.title = Cách bài hát được phát trực tuyến
-onboarding.privacy.streaming.text = Bài hát đầy đủ đến từ ứng dụng TV của YouTube hoặc ứng dụng web với PoToken (mã chống lạm dụng, được tạo trong một chế độ xem trình duyệt ẩn trên macOS / Windows). YouTube bắt luồng mới phải chờ vài giây; trong lúc đó ứng dụng bắt đầu bằng một đoạn xem trước ngắn. Nếu YouTube thay đổi điều gì, bài hát sẽ quay về bản xem trước ~1 phút (được đánh dấu trong trình phát). Cài đặt → Phát lại → Luồng YouTube chọn cách phát.
+onboarding.privacy.streaming.text = Bài hát đầy đủ đến từ ứng dụng visionOS hoặc TV của YouTube, hoặc ứng dụng web với PoToken (mã chống lạm dụng, được tạo trong một chế độ xem trình duyệt ẩn trên macOS / Windows). Cách nào lỗi liên tục sẽ bị bỏ qua một lúc. Để theo kịp các thay đổi của YouTube, ứng dụng tải các bản sửa có chữ ký (chỉ dữ liệu) từ kho GitHub của {app}; Cài đặt → Phát lại → Bản sửa trình phát để tắt. Nếu mọi cách đều lỗi, bài hát sẽ quay về bản xem trước ~1 phút (được đánh dấu trong trình phát). Cài đặt → Phát lại → Luồng YouTube chọn cách phát.
 onboarding.privacy.data.title = Dữ liệu của bạn ở lại đây
 onboarding.privacy.data.text = Thư viện, lịch sử, thống kê và cài đặt được lưu trên máy tính này. Mật khẩu, khóa API và cookie đăng nhập YouTube được lưu vào chuỗi khóa của hệ thống. Tạm dừng hoặc xóa lịch sử nghe và tìm kiếm bất cứ lúc nào trong Cài đặt → Quyền riêng tư.
 onboarding.privacy.recipients.title = Ai nhận được gì

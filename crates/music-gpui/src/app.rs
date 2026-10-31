@@ -246,7 +246,10 @@ impl MusicApp {
         // wall clock stands in so the Now Playing screen can still be exercised.
         let force_demo = std::env::var("MUSIC_DEMO_CLOCK").is_ok_and(|v| v == "1");
         // Provider modules come first (when enabled), YouTube after them.
-        let module_service = crate::module_service::ModuleService::open(saved.audio.stream_source);
+        let module_service = crate::module_service::ModuleService::open(
+            saved.audio.stream_source,
+            saved.audio.player_fixes,
+        );
         let resolver = module_service.resolver.clone();
         cx.set_global(module_service);
         crate::module_service::ModuleService::prewarm(cx);
@@ -685,6 +688,7 @@ impl MusicApp {
             SettingsEvent::Audio => {
                 let audio = self.settings.read(cx).settings().audio.clone();
                 crate::module_service::ModuleService::set_stream_source(cx, audio.stream_source);
+                crate::module_service::ModuleService::set_player_fixes(cx, audio.player_fixes);
                 if let Some(engine) = &mut self.engine {
                     engine.apply_audio(&audio);
                 }

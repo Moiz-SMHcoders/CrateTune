@@ -22,6 +22,10 @@
 //!   `POST /v1/together/sessions/resolve` (rate-limited per address). The code
 //!   goes with the room. The host key is never stored or returned.
 //! * `GET /health` answers `{"status":"ok","rooms":…,"guests":…,"connections":…}`.
+//! * `GET /player-fixes.json` and `/player-fixes.json.minisig` serve the app's
+//!   signed player fixes from [`Config::player_fixes_dir`] (a mirror of
+//!   `packaging/` in the app's repository; the app checks the signature, so the
+//!   relay can't alter them).
 //! * Plain `ws://` only: put it behind a TLS reverse proxy (Caddy, nginx) for
 //!   `wss://` (see the README).
 //!
@@ -81,6 +85,8 @@ pub struct Config {
     pub trusted_proxies: Vec<IpAddr>,
     /// Log connections and rooms to stderr.
     pub verbose: bool,
+    /// Where `player-fixes.json` and its `.minisig` are served from (`None`: not served).
+    pub player_fixes_dir: Option<std::path::PathBuf>,
 }
 
 impl Default for Config {
@@ -98,6 +104,7 @@ impl Default for Config {
             resolve_per_minute: 10,
             trusted_proxies: Vec::new(),
             verbose: false,
+            player_fixes_dir: None,
         }
     }
 }
@@ -497,6 +504,9 @@ fn serve_http(
         let (status, body) = create_code(&body, shared);
         return reply_json(&mut stream, status, &body, "");
     }
+    if method == "GET" && matches!(path, "/player-fixes.json" | "/player-fixes.json.minisig") {
+        return serve_player_fixes(&mut stream, path, shared);
+    }
     if method == "GET" && matches!(path, "/health" | "/healthz") {
         let body = json!({ "status": "ok", "app": APP_NAME });
         let mut body = body.as_object().cloned().unwrap_or_default();
@@ -516,6 +526,31 @@ fn serve_http(
         "text/plain",
         "music-relay: WebSocket only (GET /health for status)\n",
     )
+}
+
+/// The mirrored player-fixes manifest or its signature (at most 64 KiB, as is).
+fn serve_player_fixes(stream: impl Write, path: &str, shared: &Shared) -> std::io::Result<()> {
+    let file = shared
+        .config
+        .player_fixes_dir
+        .as_ref()
+        .map(|dir| dir.join(path.trim_start_matches('/')))
+        .and_then(|file| std::fs::read_to_string(file).ok())
+        .filter(|text| text.len() <= 64 * 1024);
+    let content_type = if path.ends_with(".json") {
+        "application/json"
+    } else {
+        "text/plain; charset=utf-8"
+    };
+    match file {
+        Some(body) => http_reply(stream, "200 OK", content_type, &body),
+        None => http_reply(
+            stream,
+            "404 Not Found",
+            "text/plain",
+            "music-relay: no player fixes here\n",
+        ),
+    }
 }
 
 fn reply_json(stream: impl Write, status: &str, body: &Value, extra: &str) -> std::io::Result<()> {

@@ -1096,6 +1096,13 @@ impl Engine {
         if let Some(old) = self.deck.set_next(None) {
             old.stop();
         }
+        // Its stream URL is resolved now (in the background), so the preload
+        // near the end of this song, or a skip, needs no resolve.
+        if let Some(next) = &self.next_track {
+            self.config
+                .resolver
+                .prefetch_track(next, self.config.quality);
+        }
     }
 
     /// Moves to `next_track` right away (auto-skip after an error).

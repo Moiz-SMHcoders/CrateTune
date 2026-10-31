@@ -1,5 +1,6 @@
 # ---- Option names
 prefs.stream.tv = Klien TV
+prefs.stream.visionos = Klien visionOS
 prefs.stream.web_potoken = Web + PoToken
 prefs.stream.preview = Hanya pratinjau
 prefs.quality.low = Rendah
@@ -77,10 +78,19 @@ settings.playback.repeat_all = Semua
 settings.playback.repeat_one = Satu
 settings.playback.audio = Audio
 settings.playback.streams = Stream YouTube
-settings.playback.stream_auto = Lagu lengkap: klien TV, lalu klien web dengan PoToken, lalu pratinjau ~1 mnt.
+settings.playback.stream_auto = Lagu lengkap lewat jalur tercepat yang berfungsi: visionOS, klien TV, lalu klien PoToken; jalur yang gagal 3 kali berturut-turut dilewati selama 10 mnt. Pilihan terakhir: pratinjau ~1 mnt.
 settings.playback.stream_tv = Lagu lengkap melalui klien TV (tanpa PoToken); pratinjau jika gagal.
+settings.playback.stream_visionos = Lagu lengkap melalui klien visionOS (tautan langsung: tanpa PoToken, tanpa menunggu); pratinjau jika gagal.
 settings.playback.stream_web = Lagu lengkap melalui klien web dan PoToken BotGuard (macOS / Windows); pratinjau jika gagal.
 settings.playback.stream_preview = Hanya ~1 menit pertama setiap lagu (perilaku lama).
+settings.playback.stream_status = Jalur stream
+settings.playback.stream_status_none = Belum ada lagu yang di-stream
+settings.playback.stream_status_via = Lagu terakhir lewat {client}
+settings.playback.stream_status_preview = Lagu terakhir: hanya pratinjau (semua jalur gagal)
+settings.playback.stream_status_skipped = {clients} dilewati selama {minutes} mnt
+settings.playback.stream_status_fixes = perbaikan pemutar #{serial}
+settings.playback.player_fixes = Perbaikan pemutar
+settings.playback.player_fixes_desc = Saat YouTube mengubah sesuatu, unduh perbaikan bertanda tangan (hanya data, diperiksa setiap 6 jam) dari repositori GitHub {app}. Mati: hanya perbaikan bawaan versi ini.
 settings.playback.quality = Kualitas streaming
 settings.playback.quality_desc = Rendah menghemat data; Tinggi mengutamakan Opus (~160 kbps) daripada AAC 128.
 settings.playback.normalize = Normalisasi kenyaringan

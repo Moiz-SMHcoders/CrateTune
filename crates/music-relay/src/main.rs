@@ -29,6 +29,8 @@ USAGE: music-relay [OPTIONS]
   --resolve-per-minute N room-code look-ups per minute per address (default 10)
   --trust-proxy IP       a reverse proxy whose X-Forwarded-For names the client
                          (repeatable; env MUSIC_RELAY_TRUST_PROXY, comma-separated)
+  --player-fixes DIR     serve DIR/player-fixes.json and its .minisig (a mirror of the
+                         app's signed player fixes; env MUSIC_RELAY_PLAYER_FIXES)
   -v, --verbose          log rooms and connections
   -h, --help             this text
 
@@ -51,6 +53,9 @@ fn parse(args: &[String]) -> Result<Config, String> {
                     .map_err(|e| format!("MUSIC_RELAY_TRUST_PROXY: {ip}: {e}"))?,
             );
         }
+    }
+    if let Some(dir) = std::env::var_os("MUSIC_RELAY_PLAYER_FIXES").filter(|d| !d.is_empty()) {
+        config.player_fixes_dir = Some(dir.into());
     }
     let mut it = args.iter();
     while let Some(arg) = it.next() {
@@ -92,6 +97,7 @@ fn parse(args: &[String]) -> Result<Config, String> {
                     .parse::<IpAddr>()
                     .map_err(|e| format!("--trust-proxy: {e}"))?,
             ),
+            "--player-fixes" => config.player_fixes_dir = Some(value(arg)?.into()),
             "-v" | "--verbose" => config.verbose = true,
             other => return Err(format!("unknown option {other}")),
         }
