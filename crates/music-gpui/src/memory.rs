@@ -1,4 +1,5 @@
-//! Process-wide memory tuning (macOS).
+//! Process-wide memory tuning (macOS), and the memory figures the perf scripts
+//! log ([`usage`], `@mem`).
 //!
 //! The macOS allocator (measured on macOS 26) keeps freed memory for reuse
 //! instead of handing it back, and it all counts towards the footprint that
@@ -46,3 +47,82 @@ pub fn tune_allocator() {
 
 #[cfg(not(target_os = "macos"))]
 pub fn tune_allocator() {}
+
+/// What the process uses now, as `(name, bytes)` pairs, for `@mem` (the perf
+/// scripts log it per platform, so runs on each OS compare like for like):
+///
+/// * macOS: `footprint` (what Activity Monitor shows as Memory; GPU textures and
+///   drawables count in it, the GPU shares the memory), its peak, the resident size;
+/// * Windows: private bytes (Task Manager's Memory column), working set and its peak;
+/// * Linux: resident set, its peak (`VmHWM`), and the anonymous part of it.
+pub fn usage() -> Vec<(&'static str, u64)> {
+    platform_usage().unwrap_or_default()
+}
+
+#[cfg(target_os = "macos")]
+fn platform_usage() -> Option<Vec<(&'static str, u64)>> {
+    let mut info = std::mem::MaybeUninit::<libc::rusage_info_v4>::zeroed();
+    // SAFETY: `info` is a `rusage_info_v4`, the flavour asked for.
+    let status = unsafe {
+        libc::proc_pid_rusage(
+            libc::getpid(),
+            libc::RUSAGE_INFO_V4,
+            info.as_mut_ptr().cast::<libc::rusage_info_t>(),
+        )
+    };
+    if status != 0 {
+        return None;
+    }
+    // SAFETY: filled in by the successful call above.
+    let info = unsafe { info.assume_init() };
+    Some(vec![
+        ("footprint", info.ri_phys_footprint),
+        ("peak", info.ri_lifetime_max_phys_footprint),
+        ("resident", info.ri_resident_size),
+    ])
+}
+
+#[cfg(target_os = "windows")]
+fn platform_usage() -> Option<Vec<(&'static str, u64)>> {
+    use windows::Win32::System::ProcessStatus::{
+        K32GetProcessMemoryInfo, PROCESS_MEMORY_COUNTERS, PROCESS_MEMORY_COUNTERS_EX,
+    };
+    use windows::Win32::System::Threading::GetCurrentProcess;
+
+    let mut counters = PROCESS_MEMORY_COUNTERS_EX {
+        cb: std::mem::size_of::<PROCESS_MEMORY_COUNTERS_EX>() as u32,
+        ..Default::default()
+    };
+    // SAFETY: the EX struct starts with the plain one; `cb` says which it is.
+    let ok = unsafe {
+        K32GetProcessMemoryInfo(
+            GetCurrentProcess(),
+            (&raw mut counters).cast::<PROCESS_MEMORY_COUNTERS>(),
+            counters.cb,
+        )
+    };
+    ok.as_bool().then(|| {
+        vec![
+            ("private", counters.PrivateUsage as u64),
+            ("working set", counters.WorkingSetSize as u64), // i18n-ignore
+            ("peak working set", counters.PeakWorkingSetSize as u64), // i18n-ignore
+        ]
+    })
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "windows")))]
+fn platform_usage() -> Option<Vec<(&'static str, u64)>> {
+    let status = std::fs::read_to_string("/proc/self/status").ok()?;
+    let field = |name: &str| {
+        status.lines().find_map(|line| {
+            let kb = line.strip_prefix(name)?.strip_prefix(':')?;
+            let kb: u64 = kb.trim().trim_end_matches("kB").trim().parse().ok()?;
+            Some(kb * 1024)
+        })
+    };
+    Some(vec![
+        ("resident", field("VmRSS")?),
+        ("peak", field("VmHWM")?),
+        ("anonymous", field("RssAnon")?),
+    ])
+}

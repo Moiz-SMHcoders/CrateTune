@@ -17,7 +17,9 @@
 //! Anything else fails with "no fixture". The feed's shelves get [`SHELF_ITEMS`] cards
 //! each (the recorded ones repeated), and `MUSIC_FIXTURE_PAGES=N` sets how many feed
 //! pages follow the first one (default [`DEFAULT_PAGES`]): a Home as heavy as the real
-//! one, with many shelves and a long scroll.
+//! one, with many shelves and a long scroll. The pages share their artwork (~60 images)
+//! unless `MUSIC_FIXTURE_ART=page` gives every page its own (~700 images, as a real
+//! feed has; [`page_art`]).
 
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
@@ -69,6 +71,14 @@ pub fn pages() -> usize {
             .and_then(|v| v.trim().parse().ok())
             .unwrap_or(DEFAULT_PAGES)
     })
+}
+
+/// `MUSIC_FIXTURE_ART=page`: every feed page brings its own artwork, more than the
+/// artwork memory budget holds (the long-session case of `scripts/perf-frames.sh
+/// --page-art`).
+pub fn page_art() -> bool {
+    static PAGE: OnceLock<bool> = OnceLock::new();
+    *PAGE.get_or_init(|| std::env::var("MUSIC_FIXTURE_ART").is_ok_and(|v| v.trim() == "page"))
 }
 
 /// Continuation pages served so far (process-wide, like the app's single feed).
@@ -141,7 +151,8 @@ fn fill_shelves(value: &mut Value) {
 
 /// Appends `suffix` to every id (`browseId`, `videoId`, `playlistId`) in `value`, and
 /// to every image URL with `art`, so a copied item or page is new to the app (its own
-/// cards, and with `art` its own artwork).
+/// cards, and with `art` its own artwork). In an image URL it goes before the size
+/// (`…=w226-h226-l90-rj`), which the app rewrites to the size it shows.
 fn retag(value: &mut Value, suffix: &str, art: bool) {
     match value {
         Value::Object(map) => {
@@ -150,7 +161,10 @@ fn retag(value: &mut Value, suffix: &str, art: bool) {
                     ("browseId" | "videoId" | "playlistId", Value::String(id)) => {
                         id.push_str(suffix);
                     }
-                    ("url", Value::String(url)) if art => url.push_str(&format!("#{suffix}")),
+                    ("url", Value::String(url)) if art => match url.rfind("=w") {
+                        Some(at) => url.insert_str(at, suffix),
+                        None => url.push_str(&format!("#{suffix}")),
+                    },
                     (_, v) => retag(v, suffix, art),
                 }
             }
@@ -177,11 +191,10 @@ pub(crate) fn innertube(dir: &Path, endpoint: &str, body: &Value) -> Result<Valu
     if name == "home_continuation.json" {
         let page = SERVED.fetch_add(1, Ordering::Relaxed) + 1;
         eprintln!("music-core: fixture feed page {page}/{}", pages());
-        // Every page its own items, as a real feed has, but the same ~60 images: with
-        // every page's artwork (~700 images, past the artwork memory budget) the end of
-        // the feed drew 1.2–1.8x slower than the top on GitHub's Windows runner with
-        // culling on: a separate cost (probably the artwork cache evicting, `artwork.rs`).
-        retag(&mut value, &format!("-p{page}"), false);
+        // Every page its own items, as a real feed has, but by default the same ~60
+        // images, within the artwork memory budget; `MUSIC_FIXTURE_ART=page` gives each
+        // page its own (~700, past the budget: the artwork cache then evicts).
+        retag(&mut value, &format!("-p{page}"), page_art());
         if page >= pages() {
             drop_continuations(&mut value);
         }
@@ -222,6 +235,19 @@ mod tests {
         let home = innertube(&dir, "browse", &json!({ "browseId": "FEmusic_home" })).unwrap();
         assert!(token(&home));
         assert!(innertube(&dir, "player", &json!({})).is_err());
+    }
+
+    #[test]
+    fn copies_get_their_own_artwork_of_any_size() {
+        let mut item = json!({ "url": "https://yt3.googleusercontent.com/abc=w226-h226-l90-rj" });
+        retag(&mut item, "-3", true);
+        assert_eq!(
+            item["url"],
+            "https://yt3.googleusercontent.com/abc-3=w226-h226-l90-rj"
+        );
+        let mut other = json!({ "url": "https://i.ytimg.com/vi/x/hq.jpg" });
+        retag(&mut other, "-p2", true);
+        assert_eq!(other["url"], "https://i.ytimg.com/vi/x/hq.jpg#-p2");
     }
 
     #[test]

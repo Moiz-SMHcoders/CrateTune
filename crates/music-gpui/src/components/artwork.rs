@@ -226,6 +226,13 @@ impl ArtworkCache {
             .detach();
     }
 
+    /// Decoded size of the cached images and how many there are (`@mem`).
+    pub fn stats(&self) -> (usize, usize) {
+        let ready = self.slots.map.values();
+        let images = ready.filter(|slot| matches!(slot, Slot::Ready { .. }));
+        (self.slots.bytes, images.count())
+    }
+
     /// The cached image for `url`, or `None` while it loads (or failed).
     pub fn get(&mut self, url: &str, cx: &mut Context<Self>) -> Option<Arc<Image>> {
         if self.slots.bytes > self.slots.budget && self.checked_at.elapsed() >= EVICT_EVERY {
@@ -389,18 +396,26 @@ impl Pool {
     }
 }
 
-/// A 226 px PNG for `url` in fixture mode: a diagonal gradient between two colours
-/// taken from the URL's hash, the size of YouTube Music's card thumbnails.
+/// A PNG for `url` in fixture mode: a diagonal gradient between two colours taken
+/// from the URL's hash, as large as the URL asks for (`=w320-h320…`, as YouTube's
+/// image servers answer), else 226 px (YouTube Music's card thumbnails).
 fn fixture_art(url: &str) -> Vec<u8> {
     use std::hash::{Hash as _, Hasher as _};
-    const SIZE: u32 = 226;
+    let size = url.rfind("=w").and_then(|at| {
+        let digits = url[at + 2..].split(|c: char| !c.is_ascii_digit()).next()?;
+        digits
+            .parse::<u32>()
+            .ok()
+            .filter(|px| (16..=2048).contains(px))
+    });
+    let size = size.unwrap_or(226);
     let mut hasher = std::collections::hash_map::DefaultHasher::new();
     url.hash(&mut hasher);
     let [a0, a1, a2, b0, b1, b2, ..] = hasher.finish().to_le_bytes();
     let mix = |a: u8, b: u8, t: u32| {
-        ((u32::from(a) * (2 * SIZE - t) + u32::from(b) * t) / (2 * SIZE)) as u8
+        ((u32::from(a) * (2 * size - t) + u32::from(b) * t) / (2 * size)) as u8
     };
-    let tile = image::RgbaImage::from_fn(SIZE, SIZE, |x, y| {
+    let tile = image::RgbaImage::from_fn(size, size, |x, y| {
         let t = x + y;
         image::Rgba([mix(a0, b0, t), mix(a1, b1, t), mix(a2, b2, t), 255])
     });
@@ -516,6 +531,13 @@ mod tests {
             .unwrap();
         assert_eq!(decoded_size(&png), 30 * 20 * 4);
         assert_eq!(decoded_size(b"not an image"), 12 * 8);
+    }
+
+    #[test]
+    fn fixture_art_has_the_size_the_url_asks_for() {
+        let png = fixture_art("https://yt3.googleusercontent.com/a-p2=w64-h64-l90-rj");
+        assert_eq!(decoded_size(&png), 64 * 64 * 4);
+        assert_eq!(decoded_size(&fixture_art("file:///x#-p2")), 226 * 226 * 4);
     }
 
     #[test]

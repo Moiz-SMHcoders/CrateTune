@@ -72,11 +72,27 @@ jobs:
         # on the hosted runners.
         run: scripts/ci-run.sh cargo test --workspace --release
 
+      # Linux runners have no display or GPU: a virtual X server, and Mesa's software
+      # Vulkan (lavapipe) / OpenGL for GPUI's wgpu renderer.
+      - name: "perf: Linux display (Xvfb, Mesa)"
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get install -y --no-install-recommends xvfb mesa-vulkan-drivers libgl1-mesa-dri libegl1
+          # Runs until the job ends.
+          Xvfb :99 -screen 0 1920x1080x24 -nolisten tcp &
+          echo "DISPLAY=:99" >> "$GITHUB_ENV"
+
       # Offline Home (InnerTube fixtures), full window draws near the top and at the end
       # of a long feed: fails if a frame costs more the further the page is scrolled,
-      # or exceeds a ceiling for these runners (docs/TESTING.md, 6.3).
-      # Linux runners have no display or GPU; skipped there.
+      # or exceeds a ceiling for these runners (docs/TESTING.md, 6.3). Logs the app's
+      # memory after each bench (footprint / private bytes / resident set).
       - name: "perf: frame-time"
-        if: runner.os != 'Linux'
         shell: bash
         run: scripts/perf-frames.sh --max-ms 30
+
+      # The same with every feed page bringing its own artwork (~700 images, past the
+      # artwork memory budget), as a long session on a real feed.
+      - name: "perf: frame-time, artwork past the cache budget"
+        shell: bash
+        continue-on-error: true
+        run: scripts/perf-frames.sh --max-ms 30 --page-art

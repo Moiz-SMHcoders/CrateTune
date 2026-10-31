@@ -60,6 +60,7 @@
 //! | `@module-open=N\|ID`, `@module-field=KEY:VALUE`, `@module-save` | a module's settings form (index in playback order or manifest id) |
 //! | `@module-check=N`, `@module-update=N`, `@module-enable=N:on\|off`, `@module-remove=N` (twice: confirm) | module actions |
 //! | `@card-select=3;4`, `@card-open`, `@card-style=bg:light`, `@card-save=PATH`, `@card-copy`, `@card-close` | lyrics cards (`lyrics_card.rs`) |
+//! | `@mem` | print the process's memory (`memory::usage`: footprint on macOS, private bytes on Windows, resident set on Linux) and the artwork cache's decoded size |
 //! | `@bench=N[:MS]` | draw the main window N times MS (16) ms apart and print the draw times (UI CPU per frame) |
 //! | `@bench-bar=N[:MS]` | the same, marking only the player bar dirty (the cost of one bar animation frame) |
 //! | `@bench-backdrop=N[:MS]` | the same, marking only the app-wide backdrop dirty (one frame of its fade / drift) |
@@ -700,6 +701,21 @@ impl MusicApp {
                     "music-gpui: example: request Cookie: SAPISID=abc123; HSID=def456 key=AIzaSyC9XL3ZjWddXya6X74dJoCTL-WEYFDNX30",
                 );
                 eprintln!("music-gpui: [  9.99s] example trace line");
+            }
+            "mem" => {
+                let mib = |bytes: u64| bytes as f64 / (1024. * 1024.);
+                let figures: Vec<String> = crate::memory::usage()
+                    .into_iter()
+                    .map(|(name, bytes)| format!("{name} {:.1}", mib(bytes)))
+                    .collect();
+                let (art_bytes, art_images) = crate::components::artwork::ArtworkCache::global(cx)
+                    .read(cx)
+                    .stats();
+                eprintln!(
+                    "music-gpui: mem {} MiB; artwork {:.1} MiB decoded in {art_images} images",
+                    figures.join(", "),
+                    mib(art_bytes as u64)
+                );
             }
             "log-status" => {
                 let lines = crate::logs::lines(crate::logs::Level::Trace, 5);
