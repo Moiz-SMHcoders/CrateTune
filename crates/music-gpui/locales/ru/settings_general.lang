@@ -29,6 +29,7 @@ settings.account.cookie_note = Для входа используется cookie
 
 # ---- About
 settings.about.show_welcome = Показать приветственное руководство
+settings.about.privacy = Политика конфиденциальности
 settings.about.version_summary = Версия {version} · {summary}
 settings.about.summary = Нативный десктопный клиент для YouTube Music
 settings.about.not_affiliated = Не связан с YouTube или Google и не одобрен и не спонсируется ими.

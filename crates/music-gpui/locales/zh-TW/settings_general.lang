@@ -29,6 +29,7 @@ settings.account.cookie_note = 登入時會使用你瀏覽器中 music.youtube.c
 
 # ---- About
 settings.about.show_welcome = 顯示歡迎導覽
+settings.about.privacy = 隱私權政策
 settings.about.version_summary = 版本 {version} · {summary}
 settings.about.summary = YouTube Music 原生桌面用戶端
 settings.about.not_affiliated = 與 YouTube 或 Google 無關，亦未獲其認可或贊助。

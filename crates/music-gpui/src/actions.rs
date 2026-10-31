@@ -169,8 +169,9 @@ fn register_windows_menu() {
 
 fn menus() -> Vec<Menu> {
     // "Check for Updates…": under About in the app menu on macOS, in Help elsewhere;
-    // only when there is a release repository (`update_check::repo`).
-    let updates = crate::update_check::repo().is_some();
+    // only when the app checks itself (`update_check::checks_enabled`: a release
+    // repository, no package manager in charge).
+    let updates = crate::update_check::checks_enabled();
     let mac_updates = (updates && cfg!(target_os = "macos"))
         .then(|| MenuItem::action(t!("menu.check_updates"), CheckForUpdates));
     let help_updates = (updates && !cfg!(target_os = "macos"))
@@ -250,7 +251,7 @@ pub fn app_menu(menu: gpui_component::menu::PopupMenu) -> gpui_component::menu::
     let menu = menu
         .menu(t!("menu.settings"), Box::new(OpenSettings))
         .menu(t!("shortcuts.action.show"), Box::new(ShowShortcuts));
-    let menu = if crate::update_check::repo().is_some() {
+    let menu = if crate::update_check::checks_enabled() {
         menu.menu(t!("menu.check_updates"), Box::new(CheckForUpdates))
     } else {
         menu

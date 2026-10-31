@@ -27,6 +27,7 @@ settings.account.cookie_note = Việc đăng nhập dùng cookie phiên trình d
 
 # ---- About
 settings.about.show_welcome = Hiện hướng dẫn chào mừng
+settings.about.privacy = Chính sách quyền riêng tư
 settings.about.version_summary = Phiên bản {version} · {summary}
 settings.about.summary = Ứng dụng máy tính gốc cho YouTube Music
 settings.about.not_affiliated = Không liên kết, không được YouTube hay Google chứng thực hoặc tài trợ.

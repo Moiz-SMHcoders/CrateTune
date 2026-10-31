@@ -30,6 +30,7 @@ settings.account.cookie_note = El inicio de sesión usa la cookie de sesión de 
 
 # ---- About
 settings.about.show_welcome = Mostrar la guía de bienvenida
+settings.about.privacy = Política de privacidad
 settings.about.version_summary = Versión {version} · {summary}
 settings.about.summary = Cliente nativo de escritorio para YouTube Music
 settings.about.not_affiliated = Sin afiliación con YouTube ni Google, ni respaldado o patrocinado por ellos.

@@ -29,6 +29,7 @@ settings.account.cookie_note = 登录会使用你浏览器中 music.youtube.com 
 
 # ---- About
 settings.about.show_welcome = 显示欢迎指南
+settings.about.privacy = 隐私政策
 settings.about.version_summary = 版本 {version} · {summary}
 settings.about.summary = YouTube Music 原生桌面客户端
 settings.about.not_affiliated = 与 YouTube 或 Google 无关，也未获得其认可或赞助。

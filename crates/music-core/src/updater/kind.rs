@@ -55,10 +55,99 @@ pub enum ManualReason {
     /// a quarantined app started from where it was downloaded). Moving it to
     /// Applications fixes it.
     Translocated,
-    /// Installed by a package manager, Flatpak or Snap (or system-wide, read-only).
+    /// Installed system-wide (`/usr`, `/opt`) by a package manager we can't name.
     SystemPackage,
+    /// Installed and updated by a known package manager (Flatpak, Homebrew, …):
+    /// the self-updater stays off and defers to it.
+    PackageManager(PackageManager),
     /// No package for this OS / architecture.
     UnsupportedPlatform,
+}
+
+/// A package manager that owns this copy and updates it.
+///
+/// Found by [`InstallKind::detect`] from, in order: the `<APP_ID>_PACKAGED`
+/// environment variable (`CRATETUNE_PACKAGED=flatpak`), the Flatpak / Snap
+/// sandbox, a marker file written by the package ([`MARKER_FILE`]), or the
+/// install path (a Homebrew Caskroom entry, a Scoop `apps` folder).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PackageManager {
+    Flatpak,
+    Snap,
+    /// Arch User Repository (`cratetune-bin`, `cratetune`).
+    Aur,
+    /// The Homebrew cask.
+    Homebrew,
+    Scoop,
+    /// Any other name a package gave (shown as given).
+    Other(String),
+}
+
+/// The marker file a package drops to name its manager (one word, e.g. `aur`):
+/// Linux `<prefix>/share/<APP_ID>/packaged`, Windows next to the exe, macOS
+/// `<bundle>/Contents/Resources/packaged`.
+pub const MARKER_FILE: &str = "packaged";
+
+impl PackageManager {
+    /// Parses an environment variable or marker file value: `flatpak`, `snap`,
+    /// `aur`, `homebrew` (`brew`), `scoop`, or any other short name. Empty, `0`,
+    /// `no`, `false` and `none` mean "not packaged".
+    pub fn parse(value: &str) -> Option<Self> {
+        let word = value.lines().next().unwrap_or_default().trim();
+        let lower = word.to_ascii_lowercase();
+        Some(match lower.as_str() {
+            "" | "0" | "no" | "false" | "none" => return None,
+            "flatpak" | "flathub" => PackageManager::Flatpak,
+            "snap" => PackageManager::Snap,
+            "aur" | "arch" | "pacman" => PackageManager::Aur,
+            "homebrew" | "brew" => PackageManager::Homebrew,
+            "scoop" => PackageManager::Scoop,
+            _ => {
+                let name: String = word.chars().filter(|c| !c.is_control()).take(40).collect();
+                PackageManager::Other(name)
+            }
+        })
+    }
+
+    /// Lower-case id (logs, `@update-status`).
+    pub fn id(&self) -> &str {
+        match self {
+            PackageManager::Flatpak => "flatpak",
+            PackageManager::Snap => "snap",
+            PackageManager::Aur => "aur",
+            PackageManager::Homebrew => "homebrew",
+            PackageManager::Scoop => "scoop",
+            PackageManager::Other(name) => name,
+        }
+    }
+
+    /// The name shown to users ("Updates come from Homebrew").
+    pub fn display_name(&self) -> &str {
+        match self {
+            PackageManager::Flatpak => "Flatpak",
+            PackageManager::Snap => "Snap",
+            PackageManager::Aur => "AUR",
+            PackageManager::Homebrew => "Homebrew",
+            PackageManager::Scoop => "Scoop",
+            PackageManager::Other(name) => name,
+        }
+    }
+
+    /// The environment variable that names the manager: `<APP_ID>_PACKAGED`
+    /// (`CRATETUNE_PACKAGED`).
+    pub fn env_var(app_id: &str) -> String {
+        let id: String = app_id
+            .chars()
+            .map(|c| {
+                if c.is_ascii_alphanumeric() {
+                    c.to_ascii_uppercase()
+                } else {
+                    '_'
+                }
+            })
+            .collect();
+        format!("{id}_PACKAGED")
+    }
 }
 
 /// The install the updater replaces.
@@ -89,13 +178,73 @@ pub struct Environment<'a> {
     pub exe: &'a Path,
     /// `$APPIMAGE` (set by the AppImage runtime).
     pub appimage: Option<&'a Path>,
+    /// `<APP_ID>_PACKAGED` (set by a package's launcher or Flatpak manifest).
+    pub packaged: Option<&'a str>,
     /// Running inside Flatpak (`FLATPAK_ID`) or Snap (`SNAP`).
-    pub sandboxed: bool,
+    pub sandbox: Option<PackageManager>,
     pub exists: &'a dyn Fn(&Path) -> bool,
+    /// Reads a small text file (the [`MARKER_FILE`]).
+    pub read: &'a dyn Fn(&Path) -> Option<String>,
 }
 
 impl InstallKind {
     pub fn detect(env: &Environment) -> Self {
+        match Self::detect_package_manager(env) {
+            Some(manager) => InstallKind::Manual(ManualReason::PackageManager(manager)),
+            None => Self::detect_unmanaged(env),
+        }
+    }
+
+    /// The package manager that owns this copy, if any (see [`PackageManager`]).
+    fn detect_package_manager(env: &Environment) -> Option<PackageManager> {
+        if let Some(manager) = env.packaged.and_then(PackageManager::parse) {
+            return Some(manager);
+        }
+        if let Some(manager) = &env.sandbox {
+            return Some(manager.clone());
+        }
+        let dir = env.exe.parent().unwrap_or(Path::new(""));
+        let marker = match env.os {
+            // <bundle>/Contents/MacOS/<exe> → <bundle>/Contents/Resources/packaged
+            Os::MacOs => dir.parent().map(|c| c.join("Resources").join(MARKER_FILE)),
+            Os::Windows => Some(dir.join(MARKER_FILE)),
+            // <prefix>/bin/<exe> → <prefix>/share/<id>/packaged
+            Os::Linux => dir
+                .parent()
+                .map(|p| p.join("share").join(env.app_id).join(MARKER_FILE)),
+            Os::Other => None,
+        };
+        if let Some(manager) = marker
+            .and_then(|m| (env.read)(&m))
+            .and_then(|v| PackageManager::parse(&v))
+        {
+            return Some(manager);
+        }
+        match env.os {
+            // The cask moves the app to /Applications and keeps its record in the
+            // Caskroom (Apple silicon and Intel prefixes).
+            Os::MacOs => (dir.ends_with("Contents/MacOS")
+                && ["/opt/homebrew/Caskroom", "/usr/local/Caskroom"]
+                    .iter()
+                    .any(|room| (env.exists)(&Path::new(room).join(env.app_id))))
+            .then_some(PackageManager::Homebrew),
+            // `<scoop root>/apps/<id>/<version or current>/<id>.exe`.
+            Os::Windows => {
+                let parts: Vec<String> = env
+                    .exe
+                    .components()
+                    .map(|c| c.as_os_str().to_string_lossy().to_ascii_lowercase())
+                    .collect();
+                parts
+                    .windows(3)
+                    .any(|w| w[0] == "scoop" && w[1] == "apps" && w[2] == env.app_id)
+                    .then_some(PackageManager::Scoop)
+            }
+            Os::Linux | Os::Other => None,
+        }
+    }
+
+    fn detect_unmanaged(env: &Environment) -> Self {
         let exe = env.exe;
         let file_name = exe.file_name().and_then(|n| n.to_str()).unwrap_or_default();
         let dir = exe.parent().unwrap_or(Path::new(""));
@@ -137,9 +286,6 @@ impl InstallKind {
                 }
             }
             Os::Linux => {
-                if env.sandboxed {
-                    return InstallKind::Manual(ManualReason::SystemPackage);
-                }
                 if let Some(path) = env.appimage {
                     return InstallKind::AppImage {
                         path: path.to_owned(),
@@ -182,15 +328,30 @@ impl InstallKind {
         let appimage = std::env::var_os("APPIMAGE")
             .filter(|p| !p.is_empty())
             .map(PathBuf::from);
-        let sandboxed =
-            std::env::var_os("FLATPAK_ID").is_some() || std::env::var_os("SNAP").is_some();
+        let set = |name: &str| std::env::var_os(name).is_some_and(|v| !v.is_empty());
+        let sandbox = if set("FLATPAK_ID") {
+            Some(PackageManager::Flatpak)
+        } else if set("SNAP") {
+            Some(PackageManager::Snap)
+        } else {
+            None
+        };
+        let packaged = std::env::var(PackageManager::env_var(app_id)).ok();
         InstallKind::detect(&Environment {
             os: Os::current(),
             app_id,
             exe: &exe,
             appimage: appimage.as_deref(),
-            sandboxed,
+            packaged: packaged.as_deref(),
+            sandbox,
             exists: &|p: &Path| p.exists(),
+            // A marker is one word; anything big is not ours.
+            read: &|p: &Path| {
+                let meta = std::fs::metadata(p).ok()?;
+                (meta.is_file() && meta.len() < 256)
+                    .then(|| std::fs::read_to_string(p).ok())
+                    .flatten()
+            },
         })
     }
 
@@ -214,6 +375,14 @@ impl InstallKind {
         !matches!(self, InstallKind::Manual(_))
     }
 
+    /// The package manager that updates this copy instead of the app.
+    pub fn package_manager(&self) -> Option<&PackageManager> {
+        match self {
+            InstallKind::Manual(ManualReason::PackageManager(manager)) => Some(manager),
+            _ => None,
+        }
+    }
+
     /// Short English name (logs, `@update-status`).
     pub fn name(&self) -> &'static str {
         match self {
@@ -225,6 +394,7 @@ impl InstallKind {
             InstallKind::Manual(ManualReason::DevBuild) => "unpackaged",
             InstallKind::Manual(ManualReason::Translocated) => "translocated",
             InstallKind::Manual(ManualReason::SystemPackage) => "system-package",
+            InstallKind::Manual(ManualReason::PackageManager(_)) => "package-manager",
             InstallKind::Manual(ManualReason::UnsupportedPlatform) => "unsupported",
         }
     }
@@ -304,8 +474,10 @@ mod tests {
             app_id: "cratetune",
             exe: Path::new(exe),
             appimage: appimage.map(Path::new),
-            sandboxed: false,
+            packaged: None,
+            sandbox: None,
             exists: &exists,
+            read: &|_| None,
         })
     }
 
@@ -415,15 +587,270 @@ mod tests {
             ),
             InstallKind::Manual(ManualReason::SystemPackage)
         );
-        let sandboxed = InstallKind::detect(&Environment {
-            os: Os::Linux,
+    }
+
+    /// [`detect`] with a package environment variable, a sandbox and marker files.
+    fn detect_packaged(
+        os: Os,
+        exe: &str,
+        packaged: Option<&str>,
+        sandbox: Option<PackageManager>,
+        files: &[(&str, &str)],
+    ) -> InstallKind {
+        let files: Vec<(PathBuf, String)> = files
+            .iter()
+            .map(|(p, c)| (PathBuf::from(p), c.to_string()))
+            .collect();
+        let exists = |p: &Path| files.iter().any(|(f, _)| f == p);
+        let read = |p: &Path| files.iter().find(|(f, _)| f == p).map(|(_, c)| c.clone());
+        InstallKind::detect(&Environment {
+            os,
             app_id: "cratetune",
-            exe: Path::new("/app/bin/cratetune"),
+            exe: Path::new(exe),
             appimage: None,
-            sandboxed: true,
-            exists: &|_| true,
-        });
-        assert_eq!(sandboxed, InstallKind::Manual(ManualReason::SystemPackage));
+            packaged,
+            sandbox,
+            exists: &exists,
+            read: &read,
+        })
+    }
+
+    fn managed(manager: PackageManager) -> InstallKind {
+        InstallKind::Manual(ManualReason::PackageManager(manager))
+    }
+
+    #[test]
+    fn parses_package_manager_names() {
+        assert_eq!(
+            PackageManager::parse("flatpak"),
+            Some(PackageManager::Flatpak)
+        );
+        assert_eq!(PackageManager::parse(" AUR\n"), Some(PackageManager::Aur));
+        assert_eq!(
+            PackageManager::parse("brew"),
+            Some(PackageManager::Homebrew)
+        );
+        assert_eq!(PackageManager::parse("Scoop"), Some(PackageManager::Scoop));
+        assert_eq!(PackageManager::parse("snap"), Some(PackageManager::Snap));
+        assert_eq!(
+            PackageManager::parse("Nix\nignored"),
+            Some(PackageManager::Other("Nix".into()))
+        );
+        for off in ["", "  ", "0", "no", "false", "None"] {
+            assert_eq!(PackageManager::parse(off), None, "{off:?}");
+        }
+        assert_eq!(
+            PackageManager::parse(&"x".repeat(100)).unwrap().id().len(),
+            40
+        );
+        assert_eq!(PackageManager::env_var("cratetune"), "CRATETUNE_PACKAGED");
+        assert_eq!(PackageManager::env_var("my-app.x"), "MY_APP_X_PACKAGED");
+        assert_eq!(PackageManager::Aur.display_name(), "AUR");
+    }
+
+    #[test]
+    fn package_managers_turn_self_update_off() {
+        // The environment variable wins over everything, on every OS.
+        let kind = detect_packaged(
+            Os::Linux,
+            "/home/me/.local/bin/cratetune",
+            Some("aur"),
+            None,
+            &[("/home/me/.local/share/applications/cratetune.desktop", "")],
+        );
+        assert_eq!(kind, managed(PackageManager::Aur));
+        assert!(!kind.can_self_update());
+        assert_eq!(kind.package_manager(), Some(&PackageManager::Aur));
+        assert_eq!(kind.name(), "package-manager");
+        assert_eq!(kind.asset_suffix(Arch::X86_64), None);
+        assert!(kind.writable_dirs().is_empty());
+        assert_eq!(
+            detect_packaged(
+                Os::Windows,
+                "C:/Tools/CrateTune/cratetune.exe",
+                Some("scoop"),
+                None,
+                &[]
+            ),
+            managed(PackageManager::Scoop)
+        );
+        // An "off" value falls through to the normal detection.
+        assert_eq!(
+            detect_packaged(
+                Os::Linux,
+                "/home/me/.local/bin/cratetune",
+                Some("0"),
+                None,
+                &[("/home/me/.local/share/applications/cratetune.desktop", "")],
+            ),
+            InstallKind::LinuxTarball {
+                prefix: "/home/me/.local".into(),
+                exe: "/home/me/.local/bin/cratetune".into()
+            }
+        );
+        // Flatpak and Snap sandboxes.
+        assert_eq!(
+            detect_packaged(
+                Os::Linux,
+                "/app/bin/cratetune",
+                None,
+                Some(PackageManager::Flatpak),
+                &[]
+            ),
+            managed(PackageManager::Flatpak)
+        );
+        assert_eq!(
+            detect_packaged(
+                Os::Linux,
+                "/snap/cratetune/12/bin/cratetune",
+                None,
+                Some(PackageManager::Snap),
+                &[]
+            ),
+            managed(PackageManager::Snap)
+        );
+        assert_eq!(
+            detect_packaged(
+                Os::Linux,
+                "/app/bin/cratetune",
+                Some("flatpak"),
+                Some(PackageManager::Snap),
+                &[]
+            ),
+            managed(PackageManager::Flatpak)
+        );
+    }
+
+    #[test]
+    fn package_managers_from_marker_files() {
+        // AUR: /usr/share/cratetune/packaged.
+        assert_eq!(
+            detect_packaged(
+                Os::Linux,
+                "/usr/bin/cratetune",
+                None,
+                None,
+                &[("/usr/share/cratetune/packaged", "aur\n")]
+            ),
+            managed(PackageManager::Aur)
+        );
+        // Without the marker, a /usr install is still a nameless system package.
+        assert_eq!(
+            detect_packaged(Os::Linux, "/usr/bin/cratetune", None, None, &[]),
+            InstallKind::Manual(ManualReason::SystemPackage)
+        );
+        // An empty marker is ignored.
+        assert_eq!(
+            detect_packaged(
+                Os::Linux,
+                "/usr/bin/cratetune",
+                None,
+                None,
+                &[("/usr/share/cratetune/packaged", "")]
+            ),
+            InstallKind::Manual(ManualReason::SystemPackage)
+        );
+        // Windows: next to the exe (Scoop's post_install writes it).
+        assert_eq!(
+            detect_packaged(
+                Os::Windows,
+                "D:/Apps/CrateTune/cratetune.exe",
+                None,
+                None,
+                &[("D:/Apps/CrateTune/packaged", "scoop")]
+            ),
+            managed(PackageManager::Scoop)
+        );
+        // macOS: inside the bundle's Resources.
+        assert_eq!(
+            detect_packaged(
+                Os::MacOs,
+                "/Applications/CrateTune.app/Contents/MacOS/music-gpui",
+                None,
+                None,
+                &[(
+                    "/Applications/CrateTune.app/Contents/Resources/packaged",
+                    "homebrew"
+                )]
+            ),
+            managed(PackageManager::Homebrew)
+        );
+    }
+
+    #[test]
+    fn package_managers_from_install_paths() {
+        // Homebrew cask: a Caskroom entry for the app id, Apple silicon or Intel.
+        for room in [
+            "/opt/homebrew/Caskroom/cratetune",
+            "/usr/local/Caskroom/cratetune",
+        ] {
+            assert_eq!(
+                detect_packaged(
+                    Os::MacOs,
+                    "/Applications/CrateTune.app/Contents/MacOS/music-gpui",
+                    None,
+                    None,
+                    &[(room, "")]
+                ),
+                managed(PackageManager::Homebrew)
+            );
+        }
+        // Another cask, or a build from source next to the cask, is not managed.
+        assert_eq!(
+            detect_packaged(
+                Os::MacOs,
+                "/Applications/CrateTune.app/Contents/MacOS/music-gpui",
+                None,
+                None,
+                &[("/opt/homebrew/Caskroom/other", "")]
+            ),
+            InstallKind::MacBundle {
+                bundle: "/Applications/CrateTune.app".into()
+            }
+        );
+        assert_eq!(
+            detect_packaged(
+                Os::MacOs,
+                "/Users/me/src/target/release/music-gpui",
+                None,
+                None,
+                &[("/opt/homebrew/Caskroom/cratetune", "")]
+            ),
+            InstallKind::Manual(ManualReason::DevBuild)
+        );
+        // Scoop: <root>/apps/<id>/<version>/<id>.exe (`current` resolves to the version).
+        assert_eq!(
+            detect_packaged(
+                Os::Windows,
+                "C:/Users/me/scoop/apps/cratetune/0.2.6/cratetune.exe",
+                None,
+                None,
+                &[]
+            ),
+            managed(PackageManager::Scoop)
+        );
+        assert_eq!(
+            detect_packaged(
+                Os::Windows,
+                "C:/Users/me/Scoop/Apps/CrateTune/current/CrateTune.exe",
+                None,
+                None,
+                &[]
+            ),
+            managed(PackageManager::Scoop)
+        );
+        assert_eq!(
+            detect_packaged(
+                Os::Windows,
+                "C:/Users/me/scoop/apps/other/1.0/cratetune.exe",
+                None,
+                None,
+                &[]
+            ),
+            InstallKind::WindowsPortable {
+                exe: "C:/Users/me/scoop/apps/other/1.0/cratetune.exe".into()
+            }
+        );
     }
 
     #[test]

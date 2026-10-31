@@ -29,6 +29,7 @@ settings.account.cookie_note = Для входу використовуєтьс�
 
 # ---- About
 settings.about.show_welcome = Показати вітальний посібник
+settings.about.privacy = Політика конфіденційності
 settings.about.version_summary = Версія {version} · {summary}
 settings.about.summary = Нативний настільний клієнт для YouTube Music
 settings.about.not_affiliated = Не пов'язаний із YouTube чи Google і не схвалений або спонсорований ними.

@@ -29,6 +29,7 @@ settings.account.cookie_note = साइन इन करने में music.
 
 # ---- About
 settings.about.show_welcome = वेलकम गाइड दिखाएँ
+settings.about.privacy = गोपनीयता नीति
 settings.about.version_summary = वर्शन {version} · {summary}
 settings.about.summary = YouTube Music के लिए नेटिव डेस्कटॉप क्लाइंट
 settings.about.not_affiliated = YouTube या Google से संबद्ध नहीं है, और न ही उनके द्वारा समर्थित या प्रायोजित है।

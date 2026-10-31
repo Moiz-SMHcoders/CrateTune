@@ -29,6 +29,7 @@ settings.account.cookie_note = L'accesso usa il cookie di sessione del browser p
 
 # ---- About
 settings.about.show_welcome = Mostra la guida di benvenuto
+settings.about.privacy = Informativa sulla privacy
 settings.about.version_summary = Versione {version} · {summary}
 settings.about.summary = Client desktop nativo per YouTube Music
 settings.about.not_affiliated = Non affiliato, approvato o sponsorizzato da YouTube o Google.

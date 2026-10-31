@@ -30,6 +30,7 @@ settings.account.cookie_note = Die Anmeldung nutzt das Sitzungs-Cookie deines Br
 
 # ---- About
 settings.about.show_welcome = Willkommensguide zeigen
+settings.about.privacy = Datenschutz
 settings.about.version_summary = Version {version} · {summary}
 settings.about.summary = Nativer Desktop-Client für YouTube Music
 settings.about.not_affiliated = Nicht verbunden mit, unterstützt oder gesponsert von YouTube oder Google.

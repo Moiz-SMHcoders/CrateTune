@@ -29,6 +29,7 @@ settings.account.cookie_note = ログインには music.youtube.com のブラウ
 
 # ---- About
 settings.about.show_welcome = ようこそガイドを表示
+settings.about.privacy = プライバシーポリシー
 settings.about.version_summary = バージョン {version} · {summary}
 settings.about.summary = YouTube Music 用ネイティブデスクトップクライアント
 settings.about.not_affiliated = YouTube および Google とは提携しておらず、承認や後援も受けていません。
