@@ -49,13 +49,14 @@ background renewal on Linux (no sign-in web view there). [TESTING.md
 `crates/music-core/src/innertube/session.rs`, `crates/music-gpui/src/session_keeper.rs`.
 · Size: small · Priority: high
 
-**U1b. Player fixes: the published path and the relay mirror**
+**U1b. Player fixes: publishing a real fix**
 The signed manifest's fetch, verification, cache and rollback rules are unit-tested against
-in-memory sources. The relay's `--player-fixes` route has an end-to-end test. Still to
-confirm: that `raw.githubusercontent.com/<UPDATE_REPO>/main/packaging/player-fixes.json` is
-reachable once this is on `main`, and that the production relay serves the mirror
-(`relay.smhcoders.click` needs `--player-fixes DIR` and a job that copies the two files).
-Also still to do: publish a real fix (serial 2) and watch a running app pick it up. Details:
+in-memory sources, and the relay's `--player-fixes` route has an end-to-end test. Both
+published paths are live (2026-10-31): `raw.githubusercontent.com/<UPDATE_REPO>/main/packaging/`
+and the mirror at `relay.smhcoders.click/player-fixes.json` (byte-identical, refreshed by
+`~/cratetune-relay/fetch-player-fixes.sh` on dev.home; an hourly cron entry for it is still
+to be added by the maintainer). Still to do: publish a real fix (serial 2) and watch a running
+app pick it up from each path. Details:
 [RELEASING.md](RELEASING.md#player-fixes-packagingplayer-fixesjson). · Size: small ·
 Priority: medium
 
@@ -276,6 +277,19 @@ are only unit-tested and type-checked. Also unverified:
 0.1.0 users must install the next version by hand once. Details: [README:
 Self-update](../README.md#self-update), [RELEASING.md](RELEASING.md). · Size: small ·
 Priority: high
+
+**P7. Publish to the package managers (accounts and first submissions)**
+The manifests are generated and validated by every release (`packages` and `flatpak` jobs),
+but nothing is published yet. Once each, by the maintainer: create the public
+`Moiz-SMHcoders/homebrew-tap` repo with `Casks/cratetune.rb`; create
+`Moiz-SMHcoders/scoop-bucket` from ScoopInstaller's BucketTemplate with
+`bucket/cratetune.json` (keep its Excavator workflow); make an AUR account with an SSH key and
+push `cratetune-bin` (and optionally `cratetune`) after `makepkg -si` and namcap, fixing the
+`# Maintainer:` line; fork `flathub/flathub`, branch from `new-pr` and open the submission
+pull request with the three files from `packaging/flatpak/` (consider the 26.08 runtime the
+linter suggests first). After that, each release's `package-manifests` asset is copied into
+each channel. Steps: [RELEASING.md](RELEASING.md#package-managers). · Size: small ·
+Priority: very low
 
 ## 4. Missing features vs ArchiveTune
 
