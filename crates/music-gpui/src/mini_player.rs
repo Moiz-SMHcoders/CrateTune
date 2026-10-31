@@ -252,7 +252,8 @@ impl Render for MiniPlayer {
             theme.muted,
         );
         if backdrop.is_some() {
-            // Text on the darkened artwork, like Now Playing (theme palette).
+            // Text on the darkened (light mode: lightened) artwork, like Now
+            // Playing (theme palette).
             let palette = crate::theme::AppPalette::get(cx);
             fg = palette.on_artwork;
             muted = palette.on_artwork_muted;
@@ -580,7 +581,12 @@ impl Render for MiniPlayer {
                                 .size_full()
                                 .object_fit(gpui::ObjectFit::Cover),
                         )
-                        .child(div().absolute().inset_0().bg(gpui::hsla(0., 0., 0., 0.35))),
+                        // Darkened for white text; lightened for light mode's dark text.
+                        .child(div().absolute().inset_0().bg(if crate::theme::is_light() {
+                            crate::theme::veil(0.62)
+                        } else {
+                            crate::theme::veil(0.35)
+                        })),
                 )
             })
             .children(layers)

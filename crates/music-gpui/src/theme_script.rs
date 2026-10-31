@@ -3,7 +3,7 @@
 //!
 //! | action | does |
 //! |---|---|
-//! | `@custom-theme=FIELD:VALUE` | one Customize-theme option: `accent:#5B8CFF\|none`, `tint:0.4`, `darkness:dim\|standard\|deep\|black`, `contrast:standard\|medium\|high`, `corners:sharp\|regular\|round`, `density:compact\|regular\|comfortable`, `font:NAME\|system`, `style:vibrant\|muted\|monochrome\|content`, `strength:0.6`, `transitions:on\|off` |
+//! | `@custom-theme=FIELD:VALUE` | one Customize-theme option: `accent:#5B8CFF\|none`, `tint:0.4`, `darkness:dim\|standard\|deep\|black`, `contrast:standard\|medium\|high`, `corners:sharp\|regular\|round`, `density:compact\|regular\|comfortable`, `font:NAME\|system`, `heading:NAME\|system`, `style:vibrant\|muted\|monochrome\|content`, `strength:0.6`, `transitions:on\|off` |
 //! | `@theme-preset=ID` | apply a built-in preset (`default`, `midnight`, `rose`, `forest`, `contrast`, `artwork`) |
 //! | `@theme-reset` | Customize theme → Reset to default |
 //! | `@theme-status` | print the applied look: accent, contrast against the background, tint, radius / density |

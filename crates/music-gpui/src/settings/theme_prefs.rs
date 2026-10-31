@@ -59,6 +59,29 @@ choice_enum! {
 }
 
 choice_enum! {
+    /// Light or dark (Appearance → Theme → Mode); `System` follows the OS's
+    /// appearance (macOS, Windows, the XDG portal's colour scheme on Linux) and
+    /// switches live when it changes.
+    ColorMode {
+        #[default]
+        Dark = "dark" => "theme.mode.dark",
+        Light = "light" => "theme.mode.light",
+        System = "system" => "theme.mode.system",
+    }
+}
+
+impl ColorMode {
+    /// Whether this mode means light, given what the OS shows.
+    pub fn is_light(self, system_light: bool) -> bool {
+        match self {
+            ColorMode::Dark => false,
+            ColorMode::Light => true,
+            ColorMode::System => system_light,
+        }
+    }
+}
+
+choice_enum! {
     /// Text / border contrast and the accent's minimum contrast ratio.
     Contrast {
         #[default]
@@ -85,6 +108,19 @@ choice_enum! {
         #[default]
         Regular = "regular" => "theme.density.regular",
         Comfortable = "comfortable" => "theme.density.comfortable",
+    }
+}
+
+impl Darkness {
+    /// The title in light mode, where the scale runs the other way (softer →
+    /// brighter → pure white).
+    pub fn title_for(self, light: bool) -> &'static str {
+        match (self, light) {
+            (Darkness::Dim, true) => t!("theme.darkness.soft"),
+            (Darkness::Deep, true) => t!("theme.darkness.bright"),
+            (Darkness::Black, true) => t!("theme.darkness.white"),
+            _ => self.title(),
+        }
     }
 }
 
@@ -161,10 +197,19 @@ pub struct CustomTheme {
     /// A system font family; empty = the system UI font.
     pub font_family: String,
     pub dynamic: DynamicPrefs,
+    /// A separate heading font family (page titles, Now Playing titles);
+    /// empty = the text font.
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub heading_font: String,
     /// Colour tokens set by a theme file: token name (`theme::TOKENS`) →
-    /// `#RRGGBB` or `#RRGGBBAA`, applied over everything else.
+    /// `#RRGGBB` or `#RRGGBBAA`, applied over everything else. The dark-mode
+    /// set (or a file's only set, whichever mode it is for).
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub colors: BTreeMap<String, String>,
+    /// The light-mode set (`[colors.light]` in a theme file). A file with only
+    /// one set uses it in both modes (`theme::token_set`).
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub colors_light: BTreeMap<String, String>,
     /// The theme file (its id, the file name without `.toml`) these values came
     /// from; empty = none. Saving that file applies it again.
     #[serde(skip_serializing_if = "String::is_empty")]
@@ -181,8 +226,10 @@ impl Default for CustomTheme {
             corners: Corners::Regular,
             density: Density::Regular,
             font_family: String::new(),
+            heading_font: String::new(),
             dynamic: DynamicPrefs::default(),
             colors: BTreeMap::new(),
+            colors_light: BTreeMap::new(),
             file: String::new(),
         }
     }
@@ -207,13 +254,17 @@ impl CustomTheme {
         unit(&mut self.dynamic.strength, 1.0);
         self.accent = parse_hex(&self.accent).map(to_hex).unwrap_or_default();
         self.font_family = self.font_family.trim().to_owned();
+        self.heading_font = self.heading_font.trim().to_owned();
         // Unknown tokens (a newer version's) and unreadable colours are dropped.
-        let colors = std::mem::take(&mut self.colors);
-        self.colors = colors
-            .into_iter()
-            .filter(|(name, _)| crate::theme::TOKENS.contains(&name.as_str()))
-            .filter_map(|(name, v)| Some((name, color_hex(parse_color(&v)?))))
-            .collect();
+        let clean = |colors: &mut BTreeMap<String, String>| {
+            *colors = std::mem::take(colors)
+                .into_iter()
+                .filter(|(name, _)| crate::theme::TOKENS.contains(&name.as_str()))
+                .filter_map(|(name, v)| Some((name, color_hex(parse_color(&v)?))))
+                .collect();
+        };
+        clean(&mut self.colors);
+        clean(&mut self.colors_light);
         self.file = self.file.trim().to_owned();
     }
 

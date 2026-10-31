@@ -161,6 +161,21 @@ pub const ENTRIES: &[Entry] = &[
         "dynamic"
     ),
     entry!(
+        "appearance.mode",
+        Appearance,
+        "settings.appearance.theme",
+        "settings.appearance.mode",
+        "settings.appearance.mode_note",
+        "light",
+        "dark",
+        "white",
+        "day",
+        "night",
+        "system",
+        "auto",
+        "appearance"
+    ),
+    entry!(
         "appearance.custom_theme",
         Appearance,
         -,
@@ -277,6 +292,18 @@ pub const ENTRIES: &[Entry] = &[
         "theme.custom.font_detail",
         "typeface",
         "typography"
+    ),
+    entry!(
+        "appearance.surfaces.heading_font",
+        Appearance,
+        "theme.custom.surfaces",
+        "theme.custom.heading_font",
+        "theme.custom.heading_font_detail",
+        "font",
+        "heading",
+        "title",
+        "typeface",
+        "files"
     ),
     entry!(
         "appearance.dynamic",
@@ -508,6 +535,100 @@ pub const ENTRIES: &[Entry] = &[
         "blur",
         "vibrancy",
         "transparent"
+    ),
+    entry!(
+        "appearance.motion.card_outlines",
+        Appearance,
+        "settings.motion.group",
+        "settings.motion.card_outlines",
+        -,
+        "outline",
+        "border",
+        "cards",
+        "tiles"
+    ),
+    entry!(
+        "appearance.motion.window_hairline",
+        Appearance,
+        "settings.motion.group",
+        "settings.motion.window_hairline",
+        -,
+        "hairline",
+        "border",
+        "edge",
+        "outline",
+        "window"
+    ),
+    entry!(
+        "appearance.motion.smooth_wheel",
+        Appearance,
+        "settings.motion.group",
+        "settings.motion.smooth_wheel",
+        "settings.motion.smooth_wheel_note",
+        "scroll",
+        "scrolling",
+        "wheel",
+        "mouse",
+        "smooth"
+    ),
+    entry!(
+        "appearance.layout",
+        Appearance,
+        -,
+        "settings.layout.group",
+        -,
+        "layout"
+    ),
+    entry!(
+        "appearance.layout.sidebar",
+        Appearance,
+        "settings.layout.group",
+        "settings.layout.sidebar",
+        "settings.layout.sidebar_note",
+        "sidebar",
+        "rail",
+        "collapse",
+        "compact",
+        "icons",
+        "width",
+        "resize"
+    ),
+    entry!(
+        "appearance.layout.columns",
+        Appearance,
+        "settings.layout.group",
+        "settings.layout.columns",
+        "settings.layout.columns_note",
+        "columns",
+        "album",
+        "added",
+        "plays",
+        "duration",
+        "list"
+    ),
+    entry!(
+        "appearance.layout.bar_buttons",
+        Appearance,
+        "settings.layout.group",
+        "settings.layout.bar_buttons",
+        "settings.layout.bar_buttons_note",
+        "toolbar",
+        "buttons",
+        "hide",
+        "titlebar"
+    ),
+    entry!(
+        "appearance.layout.window_controls",
+        Appearance,
+        "settings.layout.group",
+        "settings.layout.window_controls",
+        "settings.layout.window_controls_note",
+        "traffic",
+        "lights",
+        "close",
+        "minimize",
+        "maximize",
+        "buttons"
     ),
     entry!(
         "appearance.text_size",

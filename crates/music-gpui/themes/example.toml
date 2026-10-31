@@ -35,11 +35,20 @@ corners = "round"
 # Row heights and paddings: "compact", "regular", "comfortable".
 # density = "regular"
 
-# An installed font family ("" = the system font).
+# An installed font family, or one from the fonts folder next to this one
+# ("" = the system font).
 # font = ""
+
+# A separate font for headings (page titles, Now Playing's title; "" = the
+# font above).
+# heading_font = ""
 
 # Style of the dynamic theme's colours: "vibrant", "muted", "monochrome", "content".
 # dynamic_style = "vibrant"
+
+# Which mode [colors] below is for: "dark" (the default) or "light". Without
+# it, a light background makes it the light set.
+# mode = "dark"
 
 # Individual colours, over everything above: "#RRGGBB", or "#RRGGBBAA" with
 # alpha. Names are gpui-component's colour tokens; the full list is in the
@@ -65,3 +74,14 @@ title_bar = "#08111B"
 popover = "#12212F"
 secondary = "#14283A"
 border = "#1C3348"
+
+# Light mode's colours (Settings → Appearance → Mode → Light, or the system's
+# light appearance). Optional: a file with one set of colours uses it in both
+# modes. [colors.dark] works the same way for a file whose [colors] is light.
+[colors.light]
+background = "#F3F8FC"
+sidebar = "#E8F1F8"
+title_bar = "#E8F1F8"
+popover = "#FFFFFF"
+secondary = "#DDEAF4"
+border = "#C9DCEB"

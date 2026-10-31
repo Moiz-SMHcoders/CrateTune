@@ -1,0 +1,60 @@
+# Light mode, the theme switcher and the other look options (fr).
+
+theme.mode.dark = Sombre
+theme.mode.light = Clair
+theme.mode.system = Système
+settings.appearance.mode = Mode
+settings.appearance.mode_note = Clair ou sombre partout, ou suivre l’apparence du système (bascule quand le système bascule).
+settings.appearance.mode_system_now = Le système affiche actuellement {mode}.
+theme.darkness.soft = Doux
+theme.darkness.bright = Lumineux
+theme.darkness.white = Blanc pur
+theme.white = Blanc pur
+themes.low_contrast_light = {name} : en mode clair, une partie du texte manque de contraste ({ratio}:1) et peut être difficile à lire.
+
+# ---- Motion & effects
+settings.motion.card_outlines = Contours des cartes
+settings.motion.window_hairline = Liseré le long du bord de la fenêtre
+settings.motion.smooth_wheel = Défilement fluide à la molette
+settings.motion.smooth_wheel_note = La molette de la souris glisse au lieu de sauter ; les pavés tactiles gardent le défilement du système. Système : activé sauf sur macOS. Repasse par crans avec les animations réduites.
+effects.smooth_wheel.system = Système
+effects.smooth_wheel.on = Activé
+effects.smooth_wheel.off = Désactivé
+settings.motion.translucent_sidebar_note_other = La barre latérale laisse voir le bureau à travers le flou du système (Windows 11 : Mica, Windows 10 : acrylique ; Linux : seulement là où le compositeur floute, comme KDE Plasma sous Wayland).
+effects.sidebar.full = Complète
+effects.sidebar.rail = Icônes seules
+effects.sidebar.hover = Déplier au survol
+
+# ---- Theme switcher
+themes.switcher = Thèmes
+themes.switcher_note = Thèmes intégrés et vos fichiers de thème, affichés dans le mode actuel. Plus dans Paramètres → Apparence.
+
+# ---- Layout
+settings.layout.group = Disposition
+settings.layout.sidebar = Barre latérale
+settings.layout.sidebar_note = Faites glisser le bord de la barre latérale ou de la file d'attente pour changer sa largeur.
+settings.layout.columns = Colonnes de la liste des titres
+settings.layout.columns_note = Ajouté et Écoutes apparaissent dans les listes de la bibliothèque (titres, favoris, téléchargements, fichiers locaux).
+layout.column.album = Album
+layout.column.added = Ajouté
+layout.column.plays = Écoutes
+layout.column.duration = Durée
+settings.layout.bar_buttons = Boutons de la barre du haut
+settings.layout.bar_buttons_note = Les actions des boutons masqués restent dans les menus et les raccourcis clavier.
+layout.bar_button.menu = Menu
+layout.bar_button.back = Précédent
+layout.bar_button.forward = Suivant
+layout.bar_button.home = Accueil
+layout.bar_button.themes = Thèmes
+layout.bar_button.account = Compte
+settings.layout.window_controls = Boutons de la fenêtre
+settings.layout.window_controls_note = L’apparence des boutons réduire, agrandir et fermer. Prend effet après un redémarrage.
+window.controls.system = Système
+window.controls.mac = macOS
+window.controls.windows = Windows
+
+# ---- Fonts
+theme.custom.heading_font = Police des titres
+theme.custom.heading_font_detail = Titres des pages, en-têtes d’albums et de playlists, le titre dans À l'écoute.
+theme.custom.fonts_folder = Ouvrir le dossier des polices
+theme.custom.fonts_folder_note = Les fichiers de police (.ttf, .otf, .ttc) du dossier des polices sont aussi proposés, à partir du prochain lancement.

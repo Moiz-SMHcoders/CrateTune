@@ -2458,7 +2458,8 @@ tests carry `player_bar`; Minimal / Fast sets `least_resources()` (unit test).
 **Not verified:** physical mouse dragging and trackpad scrolling over the volume (the same
 handlers ran through dispatched events and scripts), keyboard-only operation beyond the
 buttons' tab order (the tracks themselves aren't focusable), Windows / Linux, a 120 Hz
-display, a light theme (the app has none; "dim" darkness is the lightest).
+display, a light theme (there was none then; the [light-look round](#light-mode-and-layout-round)
+added light tones for the bar's backgrounds).
 
 ### Player bar items and the quality menu
 
@@ -2727,7 +2728,7 @@ no extra scrim is needed; with no artwork colours yet it uses the theme accent's
 | Artwork corners | **Match theme**, Square, Rounded, Round | Covers in tiles, rows, headers, the queue and the bar (circles stay circles). |
 | Artwork shadows | **off** | A shadow under covers ≥ 96 pt. |
 | Tile size | Small, **Regular**, Large | 128 / 160 / 200 pt tile artwork. |
-| Translucent sidebar | **off** (macOS only) | GPUI's blurred window background (`NSVisualEffectView`); everything but the sidebar paints its own background. Since the look round the sidebar's opacity is raised until its text stays readable on a light desktop, and the whole window can be see-through instead (Appearance → Window). |
+| Translucent sidebar | **off** (macOS; Windows / Linux since the light-look round) | GPUI's blurred window background (`NSVisualEffectView`); everything but the sidebar paints its own background. Since the look round the sidebar's opacity is raised until its text stays readable on a light desktop, and the whole window can be see-through instead (Appearance → Window). |
 
 **Player bar → Artwork**: *Standard* (default) or *Edge to edge*: square at the bar's
 height (87 pt), flush with the left edge, no outer rounding; the track info zone takes the
@@ -2874,7 +2875,8 @@ mica-alt (one the platform can't draw means off); `window_opacity` 0.5–1; `col
 the opacity used and the reactive frame count / energy.
 
 Ideas from the same survey that were left out, with the reason: [BACKLOG
-M6](docs/BACKLOG.md#4-missing-features-vs-archivetune). Windows / Linux checks: BACKLOG U20.
+M6](docs/BACKLOG.md#4-missing-features-vs-archivetune) (several were built in the [light-look
+round](#light-mode-and-layout-round)). Windows / Linux checks: BACKLOG U20.
 
 **F4 (marquee titles)**: CrateTune has no marquee or auto-scrolling title anywhere (rows,
 cards, the bar, the mini player and Now Playing truncate with an ellipsis; the only
@@ -2931,6 +2933,129 @@ the readable floor; offscreen screenshots above. **Not verified**: Windows and L
 materials on real desktops, the Windows window icon, the X11 icon, file watching there),
 the Dock icon by eye (set through the same AppKit call as the existing unbundled Dock icon),
 the macOS file picker for "Choose an image…" (the same path ran through `@app-icon=PATH`).
+
+### Light mode and layout round
+
+| ![Light mode, Home](docs/screenshots/lightlook-light-home.png) | ![Light mode, Now Playing (split, blurred artwork)](docs/screenshots/lightlook-light-np-split.png) |
+|---|---|
+| ![Immersive design, light](docs/screenshots/lightlook-light-np-immersive.png) | ![Editorial design, light](docs/screenshots/lightlook-light-np-editorial.png) |
+| ![Card design, light](docs/screenshots/lightlook-light-np-card.png) | ![Turntable design, light](docs/screenshots/lightlook-light-np-turntable.png) |
+| ![Centered design, light](docs/screenshots/lightlook-light-np-centered.png) | ![Minimal design, light](docs/screenshots/lightlook-light-np-minimal.png) |
+| ![Appearance → Theme → Mode](docs/screenshots/lightlook-light-settings.png) | ![The top bar's theme switcher](docs/screenshots/lightlook-light-switcher.png) |
+| ![Song list columns: Added and Plays](docs/screenshots/lightlook-light-columns.png) | ![Sidebar: icons only](docs/screenshots/lightlook-sidebar-rail.png) |
+| ![Sidebar: expand on hover](docs/screenshots/lightlook-sidebar-hover.png) | ![Card outlines, window edge line, queue panel (light)](docs/screenshots/lightlook-light-outlines-queue.png) |
+| ![The same, dark](docs/screenshots/lightlook-dark-outlines-queue.png) | |
+
+BACKLOG M1 (a light theme) and the cheap half of M6 (ideas from refryt, Limusic, Zuno and
+Deviload): everything here costs no continuous frames and no memory unless a file is added
+(fonts). Offscreen `screenshot` build with `MUSIC_FIXTURES` and the demo clock (no audio,
+so the lyrics service failed offline in the shots).
+
+* **Light mode** (`theme.rs`, `settings/theme_prefs.rs::ColorMode`, Appearance → Theme →
+  **Mode**: Dark default, Light, System). gpui-component's light theme is captured next to the
+  dark one (`Stock { colors, light }`) and every override works on either: darkness runs the
+  other way (Soft / Standard / Bright / Pure white; "Pure black" becomes `pure_white`), the
+  contrast option darkens text and lines, a surface tint keeps tinted whites just below white
+  so the hue shows, `ensure_contrast` *lowers* an accent's tone on a light background (hue and
+  chroma kept) to the WCAG level, and the dynamic scheme takes tone 40 for the accent and 36
+  for its companions. Whether the theme on screen is light is decided by the final background
+  (`is_light_color`), stored in an atomic (`theme::is_light`) that views without `cx` read.
+  `Theme::change(mode)` runs first and our tokens after it (one `Theme::update` with a mode
+  change would reload gpui-component's file over them).
+* **System** follows the main window's appearance (`window.appearance()` +
+  `observe_window_appearance`: NSAppearance on macOS, `AppsUseLightTheme` / `WM_SETTINGCHANGE`
+  on Windows, the XDG portal's `color-scheme` on Linux), re-applying the theme only when it
+  flips. `MUSIC_SYSTEM_APPEARANCE=light|dark` and `@system-appearance=` stand in for the OS.
+* **Views that drew white on dark on purpose** now take `theme::ink` (white / near-black),
+  `paper` (its opposite, glyphs on ink buttons), `shade` (an artwork colour as a dark wash, or
+  the matching pale one: `1 − 0.55 l`) and `veil` (the scrim: black / white): Now Playing (base
+  `#F2F2F5`, a white veil 62 → 78 % over the blurred artwork, 10 → 30 % over the pale washes),
+  all nine designs (Editorial's cream becomes a warm near-black, Immersive is black on white,
+  the turntable's arm darker), the lyrics (no white glow in light mode), the lyric status
+  tones, the visualizer strip, the mini player (artwork lightened instead of darkened), the
+  bar's backgrounds (`ArtTones` L\* 88 / 82 / 72 instead of 32 / 24 / 58; the artwork glow at
+  45 %), the app-wide look (`readable_wash` lightens under dark text), artwork-coloured page
+  headers (tone 86), the schematic Now Playing / theme previews in Appearance, onboarding and
+  Customize theme (in the mode on screen). **Theater mode stays dark** (it shows video):
+  `theme::on_dark` renders it with the dark-mode colours, its ghost buttons white, its
+  progress white. The lyrics card *image* keeps its own backgrounds (it has a Light one).
+* **Readability**: the see-through window's opacity floor (`readable_window_alpha`) now checks
+  a black desktop as well as a white one (a light theme's worst case); the translucent
+  sidebar uses the same floor. Tests: light defaults override nothing, accents / dynamic
+  colours reach 4.5 / 5.5 / 7:1 on white, darkness and contrast move the right way, `ink` keeps
+  ≥ 4.5:1 (and 60 % ink ≥ 3:1) on every `shade` the designs use and under the veil over black,
+  white and yellow artwork, light washes keep muted text at 4.5:1, the bar's light tones keep
+  its text at 4.5:1.
+* **Theme files** (`settings/theme_files.rs`): `[colors]` is for the file's `mode` (default
+  dark; without `mode` a light background makes it the light set), `[colors.light]` /
+  `[colors.dark]` the other; `custom_theme.colors_light` holds the light set. A file with one
+  set uses it in both modes and the stock theme under it follows that set's background
+  (`theme::token_set`), so files made before light mode look as they did. Both sets are
+  checked for readable text (the warning names light mode). Export writes both. The four
+  starters gained light sets (Nord Snow Storm, Catppuccin Latte, Gruvbox Light, Dracula's
+  Alucard; no warnings, tested). `heading_font` is a new key.
+* **Quick theme switcher** (`theme_switcher.rs`, after Deviload): a palette button in the top
+  bar; its popover (built only while open) has Light / Dark / System and a swatch per preset
+  and theme file previewed in the current mode.
+* **One-run theme** (`theme_library.rs`): `MUSIC_THEME=nord:light` or `--theme nord` —
+  a preset, base theme, theme file and / or mode. The settings panel shows it but saves the
+  file's own look (`SavedLook`) until a theme is picked in the app.
+* **Card outlines** and **a line along the window's edge** (Motion & effects): a 1 px border
+  inside the tile's width, the root's `window_border`.
+* **Fonts from files** (`font_files.rs`): `.ttf` / `.otf` / `.ttc` in `<config>/fonts`
+  (≤ 32 files, ≤ 24 MiB each) go to `TextSystem::add_fonts` at launch; their family names come
+  from the files (resvg's fontdb) since CoreText's family list doesn't include them.
+  **Heading font** (Customize theme) for page titles, album / playlist headers and Now
+  Playing's titles.
+* **Matugen template** (`crates/music-gpui/themes/matugen/cratetune.toml`, after Limusic's
+  wallpaper sync): dark and light sets from Material You roles; setup in the user guide; the
+  themes-folder watcher applies each run. Tested by rendering it with the baseline palette.
+* **KDE animation speed**: under Animations → System, `[KDE] AnimationDurationFactor` from
+  `kdeglobals` (read once) scales every transition (0.25–2×); 0 counts as reduced motion.
+* **Translucent sidebar on Windows and Linux** (`look_state::sidebar_material`): Mica on
+  Windows 11, acrylic on Windows 10, the compositor's blur on Linux, through the existing
+  see-through window code and readable floor.
+* **Layout** group: sidebar *Full* (drag its edge, 176–360 px) / *Icons only* (68 px rail,
+  tooltips) / *Expand on hover* (the full sidebar `deferred` over the page while hovered, one
+  render per hover change); the queue panel drags too (280–560 px); a drag renders per mouse
+  move and saves once on release. **Song list columns** (album, Added, Plays, duration; Added
+  / Plays from `LibrarySong` in library lists). **Top-bar buttons** to hide. **Window
+  buttons**: the macOS look (drawn circles, click handlers; occluding the Windows caption's
+  drag area) or the Windows look (caption boxes with click handlers; macOS hides its traffic
+  lights through `standardWindowButton:`) on any system, from the next launch.
+* **Smooth wheel scrolling** already existed (`smooth_scroll.rs`: pixel deltas replayed over
+  ~140 ms, so virtual lists scroll as with a trackpad); it is now a setting (System / On /
+  Off; System = all but macOS) and steps again with Animations Reduced / Off.
+
+**Settings JSON** (new parts, defaults shown):
+
+```json
+"appearance": { …, "mode": "dark", "window_controls": "system", "hidden_bar_buttons": [] },
+"custom_theme": { …, "heading_font": "", "colors_light": { "background": "#ECEFF4" } },
+"effects": { …, "card_outlines": false, "window_hairline": false, "smooth_wheel": "system",
+             "sidebar": "full", "sidebar_width": 216, "queue_width": 340,
+             "columns": { "album": true, "added": false, "plays": false, "duration": true } }
+```
+
+`mode`: dark | light | system; `window_controls`: system | mac | windows (not in profiles:
+read at launch); `hidden_bar_buttons`: menu, back, forward, home, themes, account;
+`heading_font`, `colors_light` (and `hidden_bar_buttons`) are written only when set. Scripts
+(`look_script.rs`): `@theme-mode=`, `@system-appearance=`, `@theme-switcher[=off]`,
+`@sidebar=full|rail|hover`, `@sidebar-width=`, `@queue-width=`, `@sidebar-hover[=off]`,
+`@columns=added:on`, `@bar-button=home:off`, `@window-controls=`, `@effects=outlines:on|hairline:on|wheel:on`,
+`@custom-theme=heading:FAMILY`.
+
+PERF_PLACEHOLDER
+
+**Verified** (macOS): the unit tests above plus theme-file sets / `mode` / sub-table errors /
+export round trip, the Matugen template, KDE's file parsing, panel width clamping, the
+layout settings' defaults and lenient parsing, the search index (every new row registered,
+every key in all 18 languages); the screenshots above (light Home, all designs in light,
+settings, switcher, columns with liked songs and seeded plays, rail and hover sidebar,
+outlines in both modes); a one-run `MUSIC_THEME=nord:light` session left `settings.json`
+dark. **Not verified**: BACKLOG U23 (Windows / Linux, a live OS switch with a real window,
+the window-button styles elsewhere, KDE, Matugen, fonts through DirectWrite / fontconfig).
+Left out, with the reasons and numbers: [BACKLOG M6](docs/BACKLOG.md#4-missing-features-vs-archivetune).
 
 ### Self-update
 

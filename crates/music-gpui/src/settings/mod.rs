@@ -55,7 +55,7 @@ mod search_ui;
 mod shortcuts_ui;
 mod storage;
 pub mod theme_files;
-mod theme_library;
+pub mod theme_library;
 pub mod theme_prefs;
 mod theme_ui;
 pub mod video_prefs;

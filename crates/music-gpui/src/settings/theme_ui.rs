@@ -69,6 +69,8 @@ pub struct ThemeUi {
     strength: Entity<SliderState>,
     /// Built on first show (listing system fonts touches the font system).
     fonts: Option<(FontPicker, Subscription)>,
+    /// The heading font's picker (the same list).
+    heading_fonts: Option<(FontPicker, Subscription)>,
     /// The hex field holds text that isn't a colour.
     hex_invalid: bool,
     /// The import shown in the preview dialog (`portable_ui.rs`).
@@ -189,6 +191,7 @@ impl ThemeUi {
                 tint,
                 strength,
                 fonts: None,
+                heading_fonts: None,
                 hex_invalid: false,
                 pending_import: None,
             },
@@ -217,19 +220,24 @@ impl ThemeUi {
                 entity.update(cx, |state, cx| state.set_value(value, window, cx));
             }
         }
-        if let Some((picker, _)) = &self.fonts {
-            let family = SharedString::from(custom.font_family.clone());
-            picker.update(cx, |state, cx| {
-                if state.selected_value() != Some(&family) {
-                    state.set_selected_value(&family, window, cx);
-                }
-            });
+        for (picker, family) in [
+            (&self.fonts, &custom.font_family),
+            (&self.heading_fonts, &custom.heading_font),
+        ] {
+            if let Some((picker, _)) = picker {
+                let family = SharedString::from(family.clone());
+                picker.update(cx, |state, cx| {
+                    if state.selected_value() != Some(&family) {
+                        state.set_selected_value(&family, window, cx);
+                    }
+                });
+            }
         }
     }
 
     fn ensure_fonts(
         &mut self,
-        current: &str,
+        custom: &CustomTheme,
         window: &mut Window,
         cx: &mut Context<SettingsPanel>,
     ) {
@@ -237,6 +245,8 @@ impl ThemeUi {
             return;
         }
         let mut names = cx.text_system().all_font_names();
+        // Fonts from the fonts folder (`font_files.rs`; not in the system's list).
+        names.extend(crate::font_files::loaded(cx));
         names.retain(|n| !n.starts_with('.'));
         names.sort_by_key(|n| n.to_lowercase());
         names.dedup();
@@ -248,12 +258,19 @@ impl ThemeUi {
             family: n.clone().into(),
             title: n.into(),
         }));
-        let selected = items
-            .iter()
-            .position(|f| f.family.as_ref() == current)
-            .map(IndexPath::new);
+        let selected = |current: &str| {
+            items
+                .iter()
+                .position(|f| f.family.as_ref() == current)
+                .map(IndexPath::new)
+        };
+        let (text_at, heading_at) = (
+            selected(&custom.font_family),
+            selected(&custom.heading_font),
+        );
+        let heading_items = items.clone();
         let picker = cx.new(|cx| {
-            SelectState::new(SearchableVec::new(items), selected, window, cx).searchable(true)
+            SelectState::new(SearchableVec::new(items), text_at, window, cx).searchable(true)
         });
         let sub = cx.subscribe(
             &picker,
@@ -265,6 +282,20 @@ impl ThemeUi {
             },
         );
         self.fonts = Some((picker, sub));
+        let picker = cx.new(|cx| {
+            SelectState::new(SearchableVec::new(heading_items), heading_at, window, cx)
+                .searchable(true)
+        });
+        let sub = cx.subscribe(
+            &picker,
+            |this, _, event: &SelectEvent<SearchableVec<FontChoice>>, cx| {
+                if let SelectEvent::Confirm(Some(family)) = event {
+                    let family = family.to_string();
+                    this.update_custom_theme(|c| c.heading_font = family, cx);
+                }
+            },
+        );
+        self.heading_fonts = Some((picker, sub));
     }
 }
 
@@ -283,6 +314,7 @@ impl SettingsPanel {
         f: impl FnOnce(&mut CustomTheme),
         cx: &mut Context<Self>,
     ) {
+        self.end_one_run_theme();
         let before = self.settings.custom_theme.clone();
         f(&mut self.settings.custom_theme);
         self.settings.custom_theme.normalize();
@@ -341,13 +373,17 @@ impl SettingsPanel {
             "density" => Density::parse(value)
                 .map(|v| self.update_custom_theme(|c| c.density = v, cx))
                 .is_some(),
-            "font" => {
+            "font" | "heading" => {
                 let family = if value == "system" {
                     String::new()
                 } else {
                     value.to_owned()
                 };
-                self.update_custom_theme(|c| c.font_family = family, cx);
+                if field == "font" {
+                    self.update_custom_theme(|c| c.font_family = family, cx);
+                } else {
+                    self.update_custom_theme(|c| c.heading_font = family, cx);
+                }
                 true
             }
             "style" => DynamicStyle::parse(value)
@@ -386,8 +422,8 @@ fn swatch(bg: Hsla, surface: Hsla, dot: Hsla, h: f32) -> gpui::Div {
         .child(div().size(px(12.)).rounded_full().bg(dot))
 }
 
-fn look_of(choice: ThemeChoice, custom: CustomTheme) -> Look {
-    Look::plain(choice, custom)
+fn look_of(choice: ThemeChoice, custom: CustomTheme, light: bool) -> Look {
+    Look::plain(choice, custom).in_mode(light)
 }
 
 /// The live preview: a few elements drawn with the applied tokens.
@@ -504,7 +540,13 @@ pub(super) fn render(
 ) -> AnyElement {
     let custom = panel.settings.custom_theme.clone();
     let current_choice = panel.settings.appearance.theme;
-    panel.theme_ui.ensure_fonts(&custom.font_family, window, cx);
+    // Previews in the mode on screen (Appearance → Mode).
+    let light = panel
+        .settings
+        .appearance
+        .mode
+        .is_light(theme::system_is_light());
+    panel.theme_ui.ensure_fonts(&custom, window, cx);
     panel.theme_ui.sync(&custom, window, cx);
     let theme = cx.theme();
     let (border, ring, muted, danger) = (
@@ -521,7 +563,7 @@ pub(super) fn render(
         .children(PRESETS.iter().map(|preset| {
             let selected = preset.matches(&panel.settings);
             let (bg, surface, dot) =
-                theme::preview(&look_of(preset.choice, preset.custom(&custom)));
+                theme::preview(&look_of(preset.choice, preset.custom(&custom), light));
             v_flex()
                 .id(SharedString::from(format!("theme-preset-{}", preset.id)))
                 .w(px(96.))
@@ -548,7 +590,8 @@ pub(super) fn render(
         .gap_2()
         .children(panel.theme_files.files.iter().map(|file| {
             let selected = file.matches(&panel.settings);
-            let (bg, surface, dot) = theme::preview(&look_of(file.choice, file.custom(&custom)));
+            let (bg, surface, dot) =
+                theme::preview(&look_of(file.choice, file.custom(&custom), light));
             let id = file.id.clone();
             v_flex()
                 .id(SharedString::from(format!("theme-file-{}", file.id)))
@@ -582,11 +625,12 @@ pub(super) fn render(
         }))
         .children(panel.theme_files.files.iter().flat_map(|file| {
             file.warnings.iter().take(1).map(|w| {
-                div().text_xs().text_color(warning_color).child(t!(
-                    "themes.low_contrast",
-                    name = file.name,
-                    ratio = format!("{:.1}", w.ratio)
-                ))
+                let ratio = format!("{:.1}", w.ratio);
+                div().text_xs().text_color(warning_color).child(if w.light {
+                    t!("themes.low_contrast_light", name = file.name, ratio = ratio)
+                } else {
+                    t!("themes.low_contrast", name = file.name, ratio = ratio)
+                })
             })
         }))
         .when(panel.theme_files.files.is_empty(), |this| {
@@ -768,7 +812,11 @@ pub(super) fn render(
         "theme-darkness",
         Darkness::ALL,
         custom.darkness,
-        Darkness::title,
+        if light {
+            |d: Darkness| d.title_for(true)
+        } else {
+            Darkness::title
+        },
         |this, v, cx| this.update_custom_theme(|c| c.darkness = v, cx),
         cx,
     );
@@ -796,13 +844,31 @@ pub(super) fn render(
         |this, v, cx| this.update_custom_theme(|c| c.density = v, cx),
         cx,
     );
-    let font = panel.theme_ui.fonts.as_ref().map(|(picker, _)| {
+    let picker = |picker: &FontPicker| {
         div().w(px(240.)).child(
             Select::new(picker)
                 .small()
                 .search_placeholder(t!("common.search_placeholder"))
                 .menu_max_h(px(320.)),
         )
+    };
+    let font = panel.theme_ui.fonts.as_ref().map(|(p, _)| picker(p));
+    let heading_font = panel
+        .theme_ui
+        .heading_fonts
+        .as_ref()
+        .map(|(p, _)| picker(p));
+    let fonts_folder = crate::font_files::dir().map(|dir| {
+        Button::new("fonts-folder")
+            .outline()
+            .small()
+            .icon(Lucide::FolderOpen)
+            .label(t!("theme.custom.fonts_folder"))
+            .on_click(move |_, _, cx| {
+                if std::fs::create_dir_all(&dir).is_ok() {
+                    cx.open_with_system(&dir);
+                }
+            })
     });
 
     // ---- dynamic colours
@@ -902,6 +968,21 @@ pub(super) fn render(
                         font,
                         cx,
                     )
+                }))
+                .children(heading_font.map(|font| {
+                    row_at(
+                        "appearance.surfaces.heading_font",
+                        t!("theme.custom.heading_font"),
+                        Some(t!("theme.custom.heading_font_detail")),
+                        font,
+                        cx,
+                    )
+                }))
+                .children(fonts_folder.map(|b| {
+                    v_flex()
+                        .gap_1()
+                        .child(note(t!("theme.custom.fonts_folder_note"), cx))
+                        .child(h_flex().child(b))
                 })),
         )
         .child(

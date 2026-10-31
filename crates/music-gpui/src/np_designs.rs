@@ -35,13 +35,18 @@ use crate::anim::Frame;
 use crate::app::MusicApp;
 use crate::components::artwork::artwork;
 use crate::icons::{AppIcon, Lucide};
-use crate::now_playing::{deep, like_icon_button, white};
+use crate::now_playing::{ink, like_icon_button, shade};
 use crate::queue::{Repeat, Source};
 use crate::settings::prefs::NowPlayingLayout;
 
-/// Text colour of the Editorial design (warm off-white).
+/// Text colour of the Editorial design (warm off-white; a warm near-black in
+/// light mode).
 fn cream(alpha: f32) -> Hsla {
-    hsla(40. / 360., 0.35, 0.93, alpha)
+    if crate::theme::is_light() {
+        hsla(30. / 360., 0.3, 0.1, alpha)
+    } else {
+        hsla(40. / 360., 0.35, 0.93, alpha)
+    }
 }
 
 /// Round icon button (`side` px) with a translucent fill.
@@ -96,8 +101,13 @@ impl MusicApp {
         match layout {
             NowPlayingLayout::Immersive => {
                 // The artwork across the top two thirds, fading into the background.
-                // White on black, as in ArchiveTune's immersive player.
-                let base = hsla(0., 0., 0.035, 1.);
+                // White on black, as in ArchiveTune's immersive player (black on
+                // white in light mode).
+                let base = if crate::theme::is_light() {
+                    hsla(0., 0., 0.97, 1.)
+                } else {
+                    hsla(0., 0., 0.035, 1.)
+                };
                 let height = viewport.height * 0.72;
                 let art = self.art_image(track, cx);
                 Some(
@@ -117,7 +127,7 @@ impl MusicApp {
                                     .child(img(art).size_full().object_fit(gpui::ObjectFit::Cover))
                                     .child(div().absolute().inset_0().bg(linear_gradient(
                                         180.,
-                                        linear_color_stop(hsla(0., 0., 0., 0.3), 0.),
+                                        linear_color_stop(crate::theme::veil(0.3), 0.),
                                         linear_color_stop(base, 1.),
                                     ))),
                             )
@@ -133,7 +143,7 @@ impl MusicApp {
                     div()
                         .absolute()
                         .inset_0()
-                        .bg(deep(main, 0.16, 1.))
+                        .bg(shade(main, 0.16, 1.))
                         // The played part: a lighter field growing from the left.
                         .child(
                             div()
@@ -153,7 +163,7 @@ impl MusicApp {
                     div()
                         .absolute()
                         .inset_0()
-                        .bg(deep(main, 0.11, 1.))
+                        .bg(shade(main, 0.11, 1.))
                         .into_any_element(),
                 )
             }
@@ -193,7 +203,7 @@ impl MusicApp {
                             div()
                                 .text_xs()
                                 .font_weight(FontWeight::MEDIUM)
-                                .text_color(white(0.6))
+                                .text_color(ink(0.6))
                                 .child(source),
                         )
                     })
@@ -218,7 +228,7 @@ impl MusicApp {
                                     .child(
                                         div()
                                             .text_size(px(19.))
-                                            .text_color(white(0.7))
+                                            .text_color(ink(0.7))
                                             .truncate()
                                             .child(artists),
                                     ),
@@ -230,7 +240,7 @@ impl MusicApp {
                             div()
                                 .text_lg()
                                 .font_weight(FontWeight::SEMIBOLD)
-                                .text_color(white(0.85))
+                                .text_color(ink(0.85))
                                 .line_clamp(2)
                                 .child(line),
                         )
@@ -240,16 +250,10 @@ impl MusicApp {
                             .w_full()
                             .gap_1()
                             .pt_2()
-                            .child(self.progress_bar(
-                                position,
-                                px(3.),
-                                white(0.28),
-                                white(0.95),
-                                cx,
-                            ))
-                            .child(self.times_row(position, white(0.6))),
+                            .child(self.progress_bar(position, px(3.), ink(0.28), ink(0.95), cx))
+                            .child(self.times_row(position, ink(0.6))),
                     )
-                    .child(self.icon_transport(px(44.), px(64.), white(0.95), frame, cx)),
+                    .child(self.icon_transport(px(44.), px(64.), ink(0.95), frame, cx)),
             )
             .into_any_element()
     }
@@ -278,7 +282,7 @@ impl MusicApp {
                 .items_center()
                 .justify_center()
                 .cursor_pointer()
-                .hover(|s| s.bg(white(0.1)))
+                .hover(|s| s.bg(ink(0.1)))
                 .child(svg().size(side).path(icon).text_color(Hsla {
                     a: color.a * alpha,
                     ..color
@@ -378,9 +382,9 @@ impl MusicApp {
                     .p(px(24.))
                     .gap_4()
                     .rounded(px(28.))
-                    .bg(white(0.07))
+                    .bg(ink(0.07))
                     .border_1()
-                    .border_color(white(0.1))
+                    .border_color(ink(0.1))
                     .shadow_2xl()
                     .child(
                         v_flex()
@@ -389,7 +393,7 @@ impl MusicApp {
                             .child(
                                 div()
                                     .text_xs()
-                                    .text_color(white(0.55))
+                                    .text_color(ink(0.55))
                                     .child(t!("np.playing_from")),
                             )
                             .child(
@@ -416,32 +420,32 @@ impl MusicApp {
                                             .truncate()
                                             .child(title),
                                     )
-                                    .child(div().text_color(white(0.65)).truncate().child(artists)),
+                                    .child(div().text_color(ink(0.65)).truncate().child(artists)),
                             )
                             .child(
                                 round_button(
                                     "np-card-shuffle",
                                     Lucide::Shuffle.path(),
                                     px(36.),
-                                    white(if shuffle { 0.3 } else { 0.14 }),
-                                    white(0.9),
+                                    ink(if shuffle { 0.3 } else { 0.14 }),
+                                    ink(0.9),
                                 )
                                 .on_click(cx.listener(|this, _, _, cx| this.toggle_shuffle(cx))),
                             )
                             .children(track.map(|t| {
-                                like_icon_button("np-like", t, px(36.), cx).bg(white(0.14))
+                                like_icon_button("np-like", t, px(36.), cx).bg(ink(0.14))
                             })),
                     )
                     .child(
                         v_flex()
                             .w_full()
                             .gap_1()
-                            .child(self.progress_bar(position, px(6.), white(0.2), white(0.9), cx))
+                            .child(self.progress_bar(position, px(6.), ink(0.2), ink(0.9), cx))
                             .child(
                                 h_flex()
                                     .w_full()
                                     .text_xs()
-                                    .text_color(white(0.6))
+                                    .text_color(ink(0.6))
                                     .child(
                                         div().flex_1().child(format_duration(position.as_secs())),
                                     )
@@ -451,12 +455,12 @@ impl MusicApp {
                                                 .gap_1()
                                                 .px_1p5()
                                                 .rounded(px(6.))
-                                                .bg(white(0.12))
+                                                .bg(ink(0.12))
                                                 .child(
                                                     svg()
                                                         .size(px(11.))
                                                         .path(Lucide::AudioLines.path())
-                                                        .text_color(white(0.7)),
+                                                        .text_color(ink(0.7)),
                                                 )
                                                 .child(format),
                                         )
@@ -477,7 +481,7 @@ impl MusicApp {
                                 svg()
                                     .size(px(14.))
                                     .path(AppIcon::VolumeLow.path())
-                                    .text_color(white(0.6)),
+                                    .text_color(ink(0.6)),
                             )
                             .child(
                                 div()
@@ -488,7 +492,7 @@ impl MusicApp {
                                 svg()
                                     .size(px(14.))
                                     .path(AppIcon::Volume.path())
-                                    .text_color(white(0.6)),
+                                    .text_color(ink(0.6)),
                             ),
                     ),
             )
@@ -516,11 +520,11 @@ impl MusicApp {
                 .py_1p5()
                 .rounded_full()
                 .border_1()
-                .border_color(white(0.35))
+                .border_color(ink(0.35))
                 .text_sm()
                 .font_weight(FontWeight::SEMIBOLD)
                 .cursor_pointer()
-                .hover(|s| s.bg(white(0.12)))
+                .hover(|s| s.bg(ink(0.12)))
                 .child(label)
         };
         let _ = frame;
@@ -552,7 +556,7 @@ impl MusicApp {
                             .child(
                                 div()
                                     .text_size(px(22.))
-                                    .text_color(white(0.7))
+                                    .text_color(ink(0.7))
                                     .truncate()
                                     .child(artists),
                             ),
@@ -568,7 +572,7 @@ impl MusicApp {
                                     .font_weight(FontWeight::LIGHT)
                                     .child(format_duration(position.as_secs())),
                             )
-                            .child(div().text_lg().text_color(white(0.6)).child(
+                            .child(div().text_lg().text_color(ink(0.6)).child(
                                 if total.is_zero() {
                                     t!("np.of_total", total = "--:--")
                                 } else {
@@ -593,9 +597,9 @@ impl MusicApp {
                                 t!("common.play")
                             },
                         )
-                        .bg(white(0.92))
-                        .text_color(hsla(0., 0., 0.08, 1.))
-                        .hover(|s| s.bg(white(0.8)))
+                        .bg(ink(0.92))
+                        .text_color(crate::theme::paper(1.))
+                        .hover(|s| s.bg(ink(0.8)))
                         .on_click(cx.listener(|this, _, _, cx| this.toggle_playback(cx))),
                     )
                     .child(
@@ -619,8 +623,9 @@ impl MusicApp {
     ) -> AnyElement {
         let (title, artists) = Self::titles(track);
         let [_, _, vivid] = self.design_colors(frame);
-        let accent = hsla(vivid.h, (vivid.s * 0.9).clamp(0.25, 0.7), 0.74, 1.);
-        let ink = deep(vivid, 0.12, 1.);
+        let accent_l = if crate::theme::is_light() { 0.36 } else { 0.74 };
+        let accent = hsla(vivid.h, (vivid.s * 0.9).clamp(0.25, 0.7), accent_l, 1.);
+        let dark = shade(vivid, 0.12, 1.);
         let side = (viewport.height * 0.52)
             .min((viewport.width - px(160.)) * 0.42)
             .clamp(px(160.), px(420.));
@@ -646,7 +651,7 @@ impl MusicApp {
                 .items_center()
                 .justify_center()
                 .cursor_pointer()
-                .hover(|s| s.bg(white(0.08)))
+                .hover(|s| s.bg(ink(0.08)))
                 .child(svg().size(side * 0.42).path(icon).text_color(cream(0.95)))
         };
         h_flex()
@@ -719,7 +724,7 @@ impl MusicApp {
                                     .gap_2()
                                     .cursor_pointer()
                                     .hover(|s| s.opacity(0.9))
-                                    .text_color(ink)
+                                    .text_color(dark)
                                     .font_weight(FontWeight::EXTRA_BOLD)
                                     .child(
                                         svg()
@@ -729,7 +734,7 @@ impl MusicApp {
                                             } else {
                                                 IconName::Play.path()
                                             })
-                                            .text_color(ink),
+                                            .text_color(dark),
                                     )
                                     .child(if busy {
                                         t!("np.editorial.loading")
@@ -846,7 +851,7 @@ impl MusicApp {
                 .pt_2()
                 .text_xs()
                 .font_weight(FontWeight::SEMIBOLD)
-                .text_color(white(0.45))
+                .text_color(ink(0.45))
                 .truncate()
                 .child(text)
                 .into_any_element()
@@ -872,14 +877,14 @@ impl MusicApp {
                     .p_2()
                     .rounded(px(10.))
                     .cursor_pointer()
-                    .hover(|s| s.bg(white(0.08)))
+                    .hover(|s| s.bg(ink(0.08)))
                     .on_click(cx.listener(move |this, _, _, cx| this.queue_jump(uid, cx)))
                     .child(
                         div()
                             .w(px(18.))
                             .text_xs()
                             .text_right()
-                            .text_color(white(0.45))
+                            .text_color(ink(0.45))
                             .child(format!("{}", i + 1)),
                     )
                     .child(art)
@@ -897,7 +902,7 @@ impl MusicApp {
                             .child(
                                 div()
                                     .text_xs()
-                                    .text_color(white(0.6))
+                                    .text_color(ink(0.6))
                                     .truncate()
                                     .child(t.artists.clone()),
                             ),
@@ -906,7 +911,7 @@ impl MusicApp {
                         this.child(
                             div()
                                 .text_xs()
-                                .text_color(white(0.5))
+                                .text_color(ink(0.5))
                                 .child(format_duration(u64::from(d))),
                         )
                     })
@@ -934,14 +939,14 @@ impl MusicApp {
                             .flex_1()
                             .text_xs()
                             .font_weight(FontWeight::SEMIBOLD)
-                            .text_color(white(0.6))
+                            .text_color(ink(0.6))
                             .child(t!("np.queue.title")),
                     )
                     .when(more > 0, |this| {
                         this.child(
                             div()
                                 .text_xs()
-                                .text_color(white(0.45))
+                                .text_color(ink(0.45))
                                 .child(tp!("np.queue.more", more)),
                         )
                     }),
@@ -952,7 +957,7 @@ impl MusicApp {
                     div()
                         .px_2()
                         .text_sm()
-                        .text_color(white(0.5))
+                        .text_color(ink(0.5))
                         .child(t!("np.queue.empty")),
                 )
             });
@@ -985,7 +990,7 @@ impl MusicApp {
                                             .truncate()
                                             .child(title),
                                     )
-                                    .child(div().text_color(white(0.65)).truncate().child(artists)),
+                                    .child(div().text_color(ink(0.65)).truncate().child(artists)),
                             )
                             .children(track.map(|t| like_icon_button("np-like", t, px(36.), cx))),
                     )
@@ -993,14 +998,8 @@ impl MusicApp {
                         v_flex()
                             .w_full()
                             .gap_1()
-                            .child(self.progress_bar(
-                                position,
-                                px(4.),
-                                white(0.22),
-                                white(0.92),
-                                cx,
-                            ))
-                            .child(self.times_row(position, white(0.6))),
+                            .child(self.progress_bar(position, px(4.), ink(0.22), ink(0.92), cx))
+                            .child(self.times_row(position, ink(0.6))),
                     )
                     .child(self.transport_view(0.9, frame, cx)),
             )
@@ -1054,6 +1053,7 @@ impl MusicApp {
                     .child(
                         div()
                             .text_3xl()
+                            .when_some(crate::theme::heading_font(), |this, f| this.font_family(f))
                             .font_weight(FontWeight::BOLD)
                             .line_clamp(2)
                             .child(title),
@@ -1061,7 +1061,7 @@ impl MusicApp {
                     .child(
                         div()
                             .text_lg()
-                            .text_color(white(0.65))
+                            .text_color(ink(0.65))
                             .truncate()
                             .child(artists),
                     )
@@ -1070,12 +1070,12 @@ impl MusicApp {
                             .min_h(px(56.))
                             .text_xl()
                             .font_weight(FontWeight::SEMIBOLD)
-                            .text_color(white(0.88))
+                            .text_color(ink(0.88))
                             .line_clamp(2)
                             .children(lyric),
                     )
-                    .child(self.progress_bar(position, px(4.), white(0.2), fill, cx))
-                    .child(self.times_row(position, white(0.6)))
+                    .child(self.progress_bar(position, px(4.), ink(0.2), fill, cx))
+                    .child(self.times_row(position, ink(0.6)))
                     .child(
                         h_flex()
                             .justify_start()

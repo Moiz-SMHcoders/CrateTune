@@ -1,0 +1,60 @@
+# Light mode, the theme switcher and the other look options (uk).
+
+theme.mode.dark = Темна
+theme.mode.light = Світла
+theme.mode.system = Системна
+settings.appearance.mode = Режим
+settings.appearance.mode_note = Світле чи темне всюди, або як у вигляді системи (перемикається разом із системою).
+settings.appearance.mode_system_now = Зараз у системі: {mode}.
+theme.darkness.soft = М’яка
+theme.darkness.bright = Яскрава
+theme.darkness.white = Чисто біла
+theme.white = Чисто біла
+themes.low_contrast_light = {name}: у світлому режимі частина тексту має замалий контраст ({ratio}:1), його може бути важко читати.
+
+# ---- Motion & effects
+settings.motion.card_outlines = Контури карток
+settings.motion.window_hairline = Лінія вздовж краю вікна
+settings.motion.smooth_wheel = Плавне прокручування коліщатком
+settings.motion.smooth_wheel_note = Коліщатко миші прокручує плавно, а не ривками; тачпади зберігають системне прокручування. Система: увімк., крім macOS. Зі зменшеною анімацією знову ривками.
+effects.smooth_wheel.system = Система
+effects.smooth_wheel.on = Увімк.
+effects.smooth_wheel.off = Вимк.
+settings.motion.translucent_sidebar_note_other = Крізь бічну панель видно робочий стіл під системним розмиттям (Windows 11: Mica, Windows 10: акрил; Linux: лише там, де розмиває композитор, наприклад KDE Plasma на Wayland).
+effects.sidebar.full = Повна
+effects.sidebar.rail = Лише значки
+effects.sidebar.hover = Розгортати під курсором
+
+# ---- Theme switcher
+themes.switcher = Теми
+themes.switcher_note = Вбудовані теми та ваші файли тем у поточному режимі. Більше — у Налаштування → Вигляд.
+
+# ---- Layout
+settings.layout.group = Макет
+settings.layout.sidebar = Бічна панель
+settings.layout.sidebar_note = Перетягніть край бічної панелі або черги, щоб змінити ширину.
+settings.layout.columns = Стовпці списку треків
+settings.layout.columns_note = «Додано» і «Прослуховування» показуються у списках медіатеки (треки, вподобані, завантаження, локальні файли).
+layout.column.album = Альбом
+layout.column.added = Додано
+layout.column.plays = Прослуховування
+layout.column.duration = Тривалість
+settings.layout.bar_buttons = Кнопки верхньої панелі
+settings.layout.bar_buttons_note = Дії прихованих кнопок лишаються в меню та клавіатурних скороченнях.
+layout.bar_button.menu = Меню
+layout.bar_button.back = Назад
+layout.bar_button.forward = Вперед
+layout.bar_button.home = Головна
+layout.bar_button.themes = Теми
+layout.bar_button.account = Обліковий запис
+settings.layout.window_controls = Кнопки вікна
+settings.layout.window_controls_note = Вигляд кнопок згорнути, розгорнути й закрити. Діє після перезапуску.
+window.controls.system = Системні
+window.controls.mac = macOS
+window.controls.windows = Windows
+
+# ---- Fonts
+theme.custom.heading_font = Шрифт заголовків
+theme.custom.heading_font_detail = Заголовки сторінок, шапки альбомів і плейлистів, назва в «Зараз грає».
+theme.custom.fonts_folder = Відкрити теку шрифтів
+theme.custom.fonts_folder_note = Файли шрифтів (.ttf, .otf, .ttc) з теки шрифтів теж з’являться у списку, з наступного запуску.

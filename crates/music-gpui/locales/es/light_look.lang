@@ -1,0 +1,60 @@
+# Light mode, the theme switcher and the other look options (es).
+
+theme.mode.dark = Oscuro
+theme.mode.light = Claro
+theme.mode.system = Sistema
+settings.appearance.mode = Modo
+settings.appearance.mode_note = Claro u oscuro en todas partes, o seguir la apariencia del sistema (cambia cuando cambia el sistema).
+settings.appearance.mode_system_now = El sistema muestra ahora {mode}.
+theme.darkness.soft = Suave
+theme.darkness.bright = Brillante
+theme.darkness.white = Blanco puro
+theme.white = Blanco puro
+themes.low_contrast_light = {name}: parte del texto tiene poco contraste en modo claro ({ratio}:1); puede costar leerlo.
+
+# ---- Motion & effects
+settings.motion.card_outlines = Contornos de las tarjetas
+settings.motion.window_hairline = Línea en el borde de la ventana
+settings.motion.smooth_wheel = Desplazamiento suave con la rueda
+settings.motion.smooth_wheel_note = La rueda del ratón se desliza en lugar de saltar; los trackpads mantienen el desplazamiento del sistema. Sistema: activado salvo en macOS. Vuelve a ir a saltos con animaciones reducidas.
+effects.smooth_wheel.system = Sistema
+effects.smooth_wheel.on = Activado
+effects.smooth_wheel.off = Desactivado
+settings.motion.translucent_sidebar_note_other = La barra lateral deja ver el escritorio a través del desenfoque del sistema (Windows 11: Mica, Windows 10: acrílico; Linux: solo donde el compositor desenfoca, como KDE Plasma en Wayland).
+effects.sidebar.full = Completa
+effects.sidebar.rail = Solo iconos
+effects.sidebar.hover = Expandir al pasar el cursor
+
+# ---- Theme switcher
+themes.switcher = Temas
+themes.switcher_note = Temas integrados y tus archivos de tema, en el modo actual. Más en Configuración → Apariencia.
+
+# ---- Layout
+settings.layout.group = Diseño
+settings.layout.sidebar = Barra lateral
+settings.layout.sidebar_note = Arrastra el borde de la barra lateral o de la cola para cambiar su ancho.
+settings.layout.columns = Columnas de la lista de canciones
+settings.layout.columns_note = Añadida y Reproducciones aparecen en las listas de la biblioteca (canciones, me gusta, descargas, archivos locales).
+layout.column.album = Álbum
+layout.column.added = Añadida
+layout.column.plays = Reproducciones
+layout.column.duration = Duración
+settings.layout.bar_buttons = Botones de la barra superior
+settings.layout.bar_buttons_note = Las acciones de los botones ocultos siguen en los menús y los atajos de teclado.
+layout.bar_button.menu = Menú
+layout.bar_button.back = Atrás
+layout.bar_button.forward = Adelante
+layout.bar_button.home = Inicio
+layout.bar_button.themes = Temas
+layout.bar_button.account = Cuenta
+settings.layout.window_controls = Botones de la ventana
+settings.layout.window_controls_note = El aspecto de los botones de minimizar, maximizar y cerrar. Se aplica tras reiniciar.
+window.controls.system = Sistema
+window.controls.mac = macOS
+window.controls.windows = Windows
+
+# ---- Fonts
+theme.custom.heading_font = Fuente de los títulos
+theme.custom.heading_font_detail = Títulos de página, encabezados de álbumes y listas, el título en Reproduciendo.
+theme.custom.fonts_folder = Abrir carpeta de fuentes
+theme.custom.fonts_folder_note = Los archivos de fuente (.ttf, .otf, .ttc) de la carpeta de fuentes también aparecen, a partir del próximo inicio.

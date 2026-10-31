@@ -37,6 +37,7 @@ pub mod sidebar;
 pub mod sound_menu;
 pub mod track_row;
 
+use gpui::prelude::FluentBuilder as _;
 use gpui::{
     AnyElement, App, FontWeight, InteractiveElement as _, IntoElement, ParentElement as _,
     SharedString, StatefulInteractiveElement as _, Styled as _, div, px,
@@ -89,6 +90,7 @@ pub fn page_title(
         .child(
             div()
                 .text_3xl()
+                .when_some(crate::theme::heading_font(), |this, f| this.font_family(f))
                 .font_weight(FontWeight::BOLD)
                 .child(title.into()),
         )

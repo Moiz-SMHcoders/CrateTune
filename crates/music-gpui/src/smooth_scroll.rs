@@ -1,4 +1,4 @@
-//! Smooth mouse-wheel scrolling (Windows, Linux).
+//! Smooth mouse-wheel scrolling (on by default on Windows and Linux; a setting).
 //!
 //! A wheel notch arrives as [`ScrollDelta::Lines`] (Windows: notches × the system's
 //! "lines to scroll at a time", 3 by default), which every GPUI scroll container
@@ -19,9 +19,10 @@
 //! [`claim_wheel`] in the capture phase first and keep getting the notch as is.
 //! Nothing runs between glides: frames are asked for only while one is in flight.
 //!
-//! macOS is unchanged (its wheel events already come with acceleration); elsewhere
-//! `MUSIC_SMOOTH_WHEEL=0` turns this off and `=1` turns it on (also on macOS, for
-//! testing with `@wheel` in scripts).
+//! Motion & effects → Smooth wheel scrolling: System (the default) glides
+//! everywhere but macOS (its wheel events already come with acceleration), On /
+//! Off as chosen; with Animations Reduced or Off notches scroll in steps.
+//! `MUSIC_SMOOTH_WHEEL=0|1` overrides all of that (testing with `@wheel`).
 //!
 //! The same listener (on every platform) turns Ctrl / ⌘ + wheel into the
 //! interface zoom (`zoom.rs`), except over the controls that claim the wheel.
@@ -45,12 +46,13 @@ pub const LINE_PX: f32 = 36.;
 /// `WHEEL_PAGESCROLL` as u32::MAX lines).
 const PAGE_LINES: f32 = 1000.;
 
-/// Whether wheel notches glide (see the module docs).
+/// Whether wheel notches glide (see the module docs): Motion & effects →
+/// Smooth wheel scrolling, with full motion only (`effects::smooth_wheel`).
 pub fn enabled() -> bool {
     match std::env::var("MUSIC_SMOOTH_WHEEL").as_deref() {
         Ok("0") => false,
         Ok("1") => true,
-        _ => !cfg!(target_os = "macos"),
+        _ => crate::effects::smooth_wheel(),
     }
 }
 

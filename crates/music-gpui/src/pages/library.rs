@@ -83,7 +83,7 @@ pub struct LibraryPage {
     /// Albums / artists: only saved ones (bookmarked or synced) instead of every one
     /// that has songs in the collection.
     saved_only: bool,
-    songs: Loaded<Vec<Track>>,
+    songs: Loaded<Vec<(Track, crate::components::track_row::RowMeta)>>,
     have_songs: bool,
     list: SongList,
     albums: Loaded<Vec<LibraryAlbum>>,
@@ -173,10 +173,19 @@ impl LibraryPage {
                 key,
                 cx,
                 |p| &mut p.songs,
-                move |lib| Ok(lib.songs(&query)?.into_iter().map(|s| s.track).collect()),
+                move |lib| {
+                    Ok(lib
+                        .songs(&query)?
+                        .into_iter()
+                        .map(|s| {
+                            let meta = crate::components::track_row::RowMeta::of(&s);
+                            (s.track, meta)
+                        })
+                        .collect())
+                },
             );
-            if let Some(tracks) = self.songs.value.take() {
-                self.list.set_tracks(tracks);
+            if let Some(songs) = self.songs.value.take() {
+                self.list.set_songs(songs);
                 self.have_songs = true;
             }
             return;

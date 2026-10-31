@@ -32,6 +32,14 @@
 //! overrides it for one session; `MUSIC_TITLEBAR_STYLE=windows|linux|mac` draws
 //! another platform's controls (debug and screenshot builds only, for screenshots).
 //!
+//! Appearance → Layout → **Window buttons** (also read at launch) draws macOS's
+//! or Windows' look on any system: the bar then draws the buttons itself with
+//! click handlers (macOS hides its traffic lights; on Windows the drawn circles
+//! occlude the caption's drag area). **Top-bar buttons** hides single ones (⋯,
+//! back, forward, Home, the theme switcher, the account); the app menu stays
+//! in the menu bar / its shortcuts. The **theme switcher** (a palette button)
+//! opens swatches of the built-in themes, the theme files and light / dark.
+//!
 //! **Cost:** the bar is a cached region (`np_region.rs`) re-rendered only when
 //! [`MusicApp::titlebar_key`] — a hash of everything it shows — changes, or when
 //! an entity it reads (the search field, an open menu) notifies. It stays on
@@ -140,15 +148,26 @@ pub struct Chrome {
 
 static CHROME: OnceLock<Chrome> = OnceLock::new();
 
-/// Decides the chrome from the setting (and `MUSIC_TITLEBAR`), once, before
+/// Decides the chrome from the settings (and `MUSIC_TITLEBAR`), once, before
 /// the main window opens.
-pub fn init(system_title_bar: bool) -> Chrome {
+pub fn init(
+    system_title_bar: bool,
+    style: crate::settings::look_prefs::WindowControlsStyle,
+) -> Chrome {
+    use crate::settings::look_prefs::WindowControlsStyle;
     let custom = match std::env::var("MUSIC_TITLEBAR").ok().as_deref() {
         Some("system") => false,
         Some("custom") => true,
         _ => !system_title_bar,
     };
-    let forced = forced_controls().filter(|c| *c != Controls::native());
+    let chosen = match style {
+        WindowControlsStyle::System => None,
+        WindowControlsStyle::Mac => Some(Controls::Mac),
+        WindowControlsStyle::Windows => Some(Controls::Windows),
+    };
+    let forced = forced_controls()
+        .or(chosen)
+        .filter(|c| *c != Controls::native());
     let chrome = Chrome {
         custom,
         controls: forced.unwrap_or_else(Controls::native),
@@ -188,6 +207,44 @@ pub fn custom() -> bool {
 pub fn top_inset() -> f32 {
     if custom() { HEIGHT } else { 0. }
 }
+
+/// macOS with another system's window buttons: hides the native traffic
+/// lights (the bar draws the chosen buttons).
+#[cfg(target_os = "macos")]
+pub fn hide_native_controls(window: &Window) {
+    use objc2::msg_send;
+    use objc2::runtime::AnyObject;
+    use raw_window_handle::{HasWindowHandle, RawWindowHandle};
+    let chrome = chrome();
+    if !chrome.custom || chrome.controls == Controls::Mac {
+        return;
+    }
+    let Ok(handle) = HasWindowHandle::window_handle(window) else {
+        return;
+    };
+    if let RawWindowHandle::AppKit(appkit) = handle.as_raw() {
+        let view = appkit.ns_view.as_ptr().cast::<AnyObject>();
+        // SAFETY: `-[NSView window]` returns the view's window (or nil);
+        // `standardWindowButton:` takes an NSWindowButton (0 close, 1
+        // miniaturize, 2 zoom) and returns an NSButton (or nil), whose `setHidden:`
+        // takes a BOOL. Main thread, like the rest of AppKit here.
+        unsafe {
+            let ns_window: *mut AnyObject = msg_send![view, window];
+            if ns_window.is_null() {
+                return;
+            }
+            for kind in 0usize..3 {
+                let button: *mut AnyObject = msg_send![ns_window, standardWindowButton: kind];
+                if !button.is_null() {
+                    let _: () = msg_send![button, setHidden: true];
+                }
+            }
+        }
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
+pub fn hide_native_controls(_: &Window) {}
 
 /// The main window's title bar options for `chrome`.
 pub fn apply_window_options(options: &mut WindowOptions, chrome: Chrome) {
@@ -387,6 +444,13 @@ impl MusicApp {
         window.is_window_active().hash(&mut h);
         client_decorated(window).hash(&mut h);
         self.np.open.hash(&mut h);
+        self.theme_switcher_open.hash(&mut h);
+        self.settings
+            .read(cx)
+            .settings()
+            .appearance
+            .hidden_bar_buttons
+            .hash(&mut h);
         self.backdrop_shown(cx).hash(&mut h);
         self.translucent_sidebar(cx).hash(&mut h);
         crate::i18n::generation().hash(&mut h);
@@ -447,6 +511,17 @@ impl MusicApp {
             Controls::Mac if !fullscreen && !chrome.forced => Some(px(TRAFFIC_LIGHTS_WIDTH) - edge),
             _ => None,
         };
+        // Drawn circles in the traffic lights' place (the macOS look elsewhere).
+        let drawn_lights = (chrome.controls == Controls::Mac && chrome.forced)
+            .then(|| self.mac_controls(window, &layout, cx));
+        let hidden = self
+            .settings
+            .read(cx)
+            .settings()
+            .appearance
+            .hidden_bar_buttons
+            .clone();
+        let shown = |key: &str| !hidden.iter().any(|h| h == key);
         let gap = crate::theme::space(6.);
 
         // ---- left: ⋯, back, forward
@@ -474,9 +549,16 @@ impl MusicApp {
             .occlude()
             .gap(gap)
             .items_center()
-            .child(measured("menu", &layout, menu))
-            .child(measured("back", &layout, back))
-            .child(measured("forward", &layout, forward));
+            .children(drawn_lights)
+            .when(shown("menu"), |this| {
+                this.child(measured("menu", &layout, menu))
+            })
+            .when(shown("back"), |this| {
+                this.child(measured("back", &layout, back))
+            })
+            .when(shown("forward"), |this| {
+                this.child(measured("forward", &layout, forward))
+            });
 
         // ---- centre: Home, search
         let home_button = Button::new("titlebar-home")
@@ -495,20 +577,27 @@ impl MusicApp {
             .min_w(px(220.))
             .gap(gap)
             .items_center()
-            .child(measured("home", &layout, home_button))
+            .when(shown("home"), |this| {
+                this.child(measured("home", &layout, home_button))
+            })
             .child(div().flex_1().min_w_0().child(search))
             .child(probe("search", &layout));
 
-        // ---- right: account
+        // ---- right: the theme switcher, account
+        let themes = shown("themes").then(|| self.theme_switcher(cx));
         let right = h_flex()
             .id("titlebar-right")
             .occlude()
             .items_center()
-            .child(measured(
-                "account",
-                &layout,
-                self.account_button(&account, cx),
-            ));
+            .gap(gap)
+            .children(themes.map(|t| measured("themes", &layout, t)))
+            .when(shown("account"), |this| {
+                this.child(measured(
+                    "account",
+                    &layout,
+                    self.account_button(&account, cx),
+                ))
+            });
 
         let drag = cx.listener(move |this, e: &MouseDownEvent, window, _| {
             if e.click_count >= 2 {
@@ -522,8 +611,13 @@ impl MusicApp {
                 this.titlebar_drag = true;
             }
         });
+        // Linux under server-side decorations: the window manager's title bar
+        // has the buttons (whatever look was chosen).
+        let draws_controls = !cfg!(any(target_os = "linux", target_os = "freebsd"))
+            || client_decorated(window)
+            || forced_controls().is_some();
         let controls = match chrome.controls {
-            Controls::Windows => Some(self.windows_controls(window, &layout, cx)),
+            Controls::Windows if draws_controls => Some(self.windows_controls(window, &layout, cx)),
             Controls::Linux if client_decorated(window) || chrome.forced => {
                 Some(self.linux_controls(window, &layout, cx))
             }
@@ -537,7 +631,7 @@ impl MusicApp {
             .when(controls.is_none(), |this| this.pr(edge))
             .gap(gap)
             .map(|this| {
-                if chrome.controls == Controls::Windows {
+                if cfg!(target_os = "windows") {
                     // Windows hit-tests it (HTCAPTION): drag, double click, snap.
                     this.window_control_area(WindowControlArea::Drag)
                 } else {
@@ -743,6 +837,61 @@ impl MusicApp {
                     .w_full()
                     .window_control_area(WindowControlArea::Drag),
             )
+            .into_any_element()
+    }
+
+    /// The macOS look on another system: three circles on the left, their
+    /// glyphs showing while the pointer is over the group.
+    fn mac_controls(&self, window: &Window, layout: &Layout, cx: &mut Context<Self>) -> AnyElement {
+        let active = window.is_window_active();
+        let idle = cx.theme().muted_foreground.opacity(0.35);
+        let max = if window.is_maximized() {
+            Caption::Restore
+        } else {
+            Caption::Maximize
+        };
+        let light = |caption: Caption, color: u32, glyph: IconName| {
+            let fill: Hsla = gpui::rgb(color).into();
+            div()
+                .id(caption.id())
+                .occlude()
+                .size(px(TRAFFIC_LIGHT_SIZE - 1.))
+                .rounded_full()
+                .bg(if active { fill } else { idle })
+                .border_1()
+                .border_color(gpui::black().opacity(0.12))
+                .flex()
+                .items_center()
+                .justify_center()
+                .text_color(gpui::black().opacity(0.6))
+                .child(
+                    div()
+                        .invisible()
+                        .group_hover("titlebar-lights", |s| s.visible())
+                        .child(Icon::new(glyph).size(px(8.))),
+                )
+                .on_mouse_down(MouseButton::Left, |_, window, cx| {
+                    window.prevent_default();
+                    cx.stop_propagation();
+                })
+                .on_click(move |_, window, cx| {
+                    cx.stop_propagation();
+                    caption.run(window);
+                })
+        };
+        h_flex()
+            .id("titlebar-lights")
+            .group("titlebar-lights")
+            .occlude()
+            .flex_none()
+            .gap(px(8.))
+            .pl(px(TRAFFIC_LIGHT_X - 12.))
+            .pr(px(10.))
+            .items_center()
+            .child(light(Caption::Close, 0xFF5F57, IconName::Close))
+            .child(light(Caption::Minimize, 0xFEBC2E, IconName::Minus))
+            .child(light(max, 0x28C840, IconName::Plus))
+            .child(probe("controls", layout))
             .into_any_element()
     }
 

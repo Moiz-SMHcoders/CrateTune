@@ -7,6 +7,39 @@ versions follow [SemVer](https://semver.org/).
 
 ### Added
 
+* **Light mode.** Settings → Appearance → Theme → *Mode*: Dark (default), Light, or System,
+  which follows the OS's appearance on macOS, Windows and Linux (the XDG portal's colour
+  scheme) and switches live. gpui-component's light theme is the base; Customize theme works
+  in both modes (darkness runs Soft → Bright → Pure white in light mode, accents are darkened
+  to their WCAG level instead of lightened), and the views that drew white on dark on purpose
+  follow: Now Playing and its designs, the lyrics, the mini player, the player bar's
+  backgrounds, the app-wide look, artwork-coloured headers, the schematic previews in
+  settings and the see-through window's readability floor (now also checked over a black
+  desktop). Theater mode stays dark. Theme files get a light set (`[colors.light]`, or
+  `mode = "light"`); a file with one set looks as before in both modes; the four starter
+  themes gained their light versions (Snow Storm, Latte, Gruvbox Light, Alucard).
+* **Quick theme switcher** in the top bar (a palette button, after Deviload): light / dark /
+  system and a swatch of every preset and theme file.
+* **One-run themes**: `MUSIC_THEME=nord:light` or `--theme nord` shows a preset, base theme,
+  theme file and / or mode for that run without saving it.
+* **Layout** group in Appearance: the sidebar as *Full* (drag its edge, 176–360 px), *Icons
+  only* or *Expand on hover*; a drag-resizable queue panel (280–560 px); song list columns
+  to show or hide (album, *Added*, *Plays*, duration); single top-bar buttons to hide; the
+  macOS or Windows look for the window buttons on any system.
+* **Card outlines** and a **line along the window's edge** (Motion & effects).
+* **Smooth wheel scrolling** is a setting now (System / On / Off; System = on except macOS)
+  and steps again with Animations Reduced or Off.
+* **Fonts from files and a heading font**: `.ttf` / `.otf` / `.ttc` files in the settings
+  folder's `fonts/` are registered at launch and listed in the font pickers; Customize theme
+  → *Heading font* sets page titles, headers and Now Playing's title apart.
+* **Matugen template** (`crates/music-gpui/themes/matugen/cratetune.toml`) that writes a
+  wallpaper-coloured theme file with dark and light colours; the themes folder watcher
+  applies every new run.
+* **Translucent sidebar on Windows and Linux**: Mica on Windows 11, acrylic on Windows 10,
+  the compositor's blur on Linux, with the same readable-opacity floor as on macOS.
+* **KDE Plasma's animation speed** under Animations → System: transitions scale with
+  `AnimationDurationFactor` (0.25–2×), "Instant" counts as reduced motion.
+
 * **Music videos in Now Playing.** Settings → Appearance → Music videos → *Show music videos in
   the artwork* (off by default): when the playing song has a music video, Now Playing shows it,
   muted, in the artwork's place and in step with the music, which keeps coming from the app's

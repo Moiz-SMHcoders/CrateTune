@@ -1,0 +1,60 @@
+# Light mode, the theme switcher and the other look options (pl).
+
+theme.mode.dark = Ciemny
+theme.mode.light = Jasny
+theme.mode.system = System
+settings.appearance.mode = Tryb
+settings.appearance.mode_note = Jasny lub ciemny wszędzie albo zgodnie z wyglądem systemu (przełącza się razem z systemem).
+settings.appearance.mode_system_now = System pokazuje teraz: {mode}.
+theme.darkness.soft = Łagodny
+theme.darkness.bright = Jasny
+theme.darkness.white = Czysta biel
+theme.white = Biały
+themes.low_contrast_light = {name}: w trybie jasnym część tekstu ma za mały kontrast ({ratio}:1) i może być trudna do odczytania.
+
+# ---- Motion & effects
+settings.motion.card_outlines = Obrysy kart
+settings.motion.window_hairline = Linia wzdłuż krawędzi okna
+settings.motion.smooth_wheel = Płynne przewijanie kółkiem
+settings.motion.smooth_wheel_note = Kółko myszy przewija płynnie zamiast skokami; touchpady zachowują przewijanie systemu. System: wł. poza macOS. Przy ograniczonych animacjach znów skokami.
+effects.smooth_wheel.system = System
+effects.smooth_wheel.on = Wł.
+effects.smooth_wheel.off = Wył.
+settings.motion.translucent_sidebar_note_other = Pasek boczny pokazuje pulpit przez rozmycie systemu (Windows 11: Mica, Windows 10: akryl; Linux: tylko tam, gdzie kompozytor rozmywa, np. KDE Plasma na Waylandzie).
+effects.sidebar.full = Pełny
+effects.sidebar.rail = Tylko ikony
+effects.sidebar.hover = Rozwijaj po najechaniu
+
+# ---- Theme switcher
+themes.switcher = Motywy
+themes.switcher_note = Wbudowane motywy i Twoje pliki motywów, pokazane w bieżącym trybie. Więcej w Ustawienia → Wygląd.
+
+# ---- Layout
+settings.layout.group = Układ
+settings.layout.sidebar = Pasek boczny
+settings.layout.sidebar_note = Przeciągnij krawędź paska bocznego lub kolejki, aby zmienić jej szerokość.
+settings.layout.columns = Kolumny listy utworów
+settings.layout.columns_note = Dodano i Odtworzenia są widoczne na listach biblioteki (utwory, polubione, pobrane, pliki lokalne).
+layout.column.album = Album
+layout.column.added = Dodano
+layout.column.plays = Odtworzenia
+layout.column.duration = Czas
+settings.layout.bar_buttons = Przyciski górnego paska
+settings.layout.bar_buttons_note = Akcje ukrytych przycisków pozostają w menu i skrótach klawiszowych.
+layout.bar_button.menu = Menu
+layout.bar_button.back = Wstecz
+layout.bar_button.forward = Dalej
+layout.bar_button.home = Główna
+layout.bar_button.themes = Motywy
+layout.bar_button.account = Konto
+settings.layout.window_controls = Przyciski okna
+settings.layout.window_controls_note = Wygląd przycisków minimalizacji, maksymalizacji i zamknięcia. Działa po ponownym uruchomieniu.
+window.controls.system = System
+window.controls.mac = macOS
+window.controls.windows = Windows
+
+# ---- Fonts
+theme.custom.heading_font = Czcionka nagłówków
+theme.custom.heading_font_detail = Tytuły stron, nagłówki albumów i playlist, tytuł w Teraz odtwarzane.
+theme.custom.fonts_folder = Otwórz folder czcionek
+theme.custom.fonts_folder_note = Pliki czcionek (.ttf, .otf, .ttc) z folderu czcionek też są na liście, od następnego uruchomienia.

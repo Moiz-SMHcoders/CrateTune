@@ -1,0 +1,59 @@
+# Matugen template for a CrateTune theme in your wallpaper's colours.
+#
+# Matugen (https://github.com/InioX/matugen) fills in the placeholders from
+# the wallpaper's Material You palette and writes the result into CrateTune's
+# themes folder; the app picks the file up at once (Settings → Appearance →
+# Customize theme → Theme files) and re-applies it whenever Matugen runs
+# again. Setup: see "Wallpaper colours with Matugen" in docs/USER_GUIDE.md.
+name = "Wallpaper (Matugen)"
+base = "dark"
+accent = "{{colors.primary.dark.hex}}"
+corners = "round"
+
+# Dark mode.
+[colors]
+background = "{{colors.surface.dark.hex}}"
+foreground = "{{colors.on_surface.dark.hex}}"
+muted_foreground = "{{colors.on_surface_variant.dark.hex}}"
+sidebar = "{{colors.surface_container_low.dark.hex}}"
+sidebar_foreground = "{{colors.on_surface.dark.hex}}"
+sidebar_border = "{{colors.outline_variant.dark.hex}}"
+sidebar_accent = "{{colors.surface_container_high.dark.hex}}"
+title_bar = "{{colors.surface_container_low.dark.hex}}"
+title_bar_border = "{{colors.outline_variant.dark.hex}}"
+window_border = "{{colors.outline_variant.dark.hex}}"
+popover = "{{colors.surface_container.dark.hex}}"
+popover_foreground = "{{colors.on_surface.dark.hex}}"
+secondary = "{{colors.surface_container_high.dark.hex}}"
+secondary_hover = "{{colors.surface_container_highest.dark.hex}}"
+secondary_foreground = "{{colors.on_surface.dark.hex}}"
+muted = "{{colors.surface_container_high.dark.hex}}"
+border = "{{colors.outline_variant.dark.hex}}"
+input = "{{colors.outline_variant.dark.hex}}"
+list_hover = "{{colors.surface_container_high.dark.hex}}"
+danger = "{{colors.error.dark.hex}}"
+danger_foreground = "{{colors.on_error.dark.hex}}"
+
+# Light mode.
+[colors.light]
+background = "{{colors.surface.light.hex}}"
+foreground = "{{colors.on_surface.light.hex}}"
+muted_foreground = "{{colors.on_surface_variant.light.hex}}"
+sidebar = "{{colors.surface_container_low.light.hex}}"
+sidebar_foreground = "{{colors.on_surface.light.hex}}"
+sidebar_border = "{{colors.outline_variant.light.hex}}"
+sidebar_accent = "{{colors.surface_container_high.light.hex}}"
+title_bar = "{{colors.surface_container_low.light.hex}}"
+title_bar_border = "{{colors.outline_variant.light.hex}}"
+window_border = "{{colors.outline_variant.light.hex}}"
+popover = "{{colors.surface_container.light.hex}}"
+popover_foreground = "{{colors.on_surface.light.hex}}"
+secondary = "{{colors.surface_container_high.light.hex}}"
+secondary_hover = "{{colors.surface_container_highest.light.hex}}"
+secondary_foreground = "{{colors.on_surface.light.hex}}"
+muted = "{{colors.surface_container_high.light.hex}}"
+border = "{{colors.outline_variant.light.hex}}"
+input = "{{colors.outline_variant.light.hex}}"
+list_hover = "{{colors.surface_container_high.light.hex}}"
+danger = "{{colors.error.light.hex}}"
+danger_foreground = "{{colors.on_error.light.hex}}"

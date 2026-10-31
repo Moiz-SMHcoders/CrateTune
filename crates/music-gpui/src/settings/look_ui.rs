@@ -18,8 +18,9 @@ use gpui_component::{
 
 use super::bar_prefs::GradientDirection;
 use super::look_prefs::{
-    AppLookConfig, AppLookStyle, ArtCorners, CardSize, EffectsConfig, LOOK_INTENSITIES, MotionPref,
-    WINDOW_OPACITIES, WindowMaterial,
+    AppLookConfig, AppLookStyle, ArtCorners, BAR_BUTTONS, CardSize, EffectsConfig,
+    LOOK_INTENSITIES, MotionPref, SidebarMode, SmoothWheel, WINDOW_OPACITIES, WindowControlsStyle,
+    WindowMaterial,
 };
 use super::panel::{SettingsEvent, SettingsPanel};
 use super::prefs_ui::choice;
@@ -107,6 +108,72 @@ impl SettingsPanel {
 
     pub fn set_translucent_sidebar(&mut self, on: bool, cx: &mut Context<Self>) {
         self.update_effects(cx, |e| e.translucent_sidebar = on);
+    }
+
+    pub fn set_card_outlines(&mut self, on: bool, cx: &mut Context<Self>) {
+        self.update_effects(cx, |e| e.card_outlines = on);
+    }
+
+    pub fn set_window_hairline(&mut self, on: bool, cx: &mut Context<Self>) {
+        self.update_effects(cx, |e| e.window_hairline = on);
+    }
+
+    pub fn set_smooth_wheel(&mut self, v: SmoothWheel, cx: &mut Context<Self>) {
+        self.update_effects(cx, |e| e.smooth_wheel = v);
+    }
+
+    pub fn set_sidebar_mode(&mut self, v: SidebarMode, cx: &mut Context<Self>) {
+        self.update_effects(cx, |e| e.sidebar = v);
+    }
+
+    /// The sidebar's / queue panel's width after a drag (saved once, on release).
+    pub fn set_panel_widths(
+        &mut self,
+        sidebar: Option<f32>,
+        queue: Option<f32>,
+        cx: &mut Context<Self>,
+    ) {
+        self.update_effects(cx, |e| {
+            if let Some(w) = sidebar {
+                e.sidebar_width = w;
+            }
+            if let Some(w) = queue {
+                e.queue_width = w;
+            }
+            e.normalize();
+        });
+    }
+
+    pub fn set_track_column(&mut self, key: &str, on: bool, cx: &mut Context<Self>) {
+        self.update_effects(cx, |e| match key {
+            "album" => e.columns.album = on,
+            "added" => e.columns.added = on,
+            "plays" => e.columns.plays = on,
+            "duration" => e.columns.duration = on,
+            _ => {}
+        });
+    }
+
+    /// Shows (`on`) or hides the top-bar button `key` (`look_prefs::BAR_BUTTONS`).
+    pub fn set_bar_button(&mut self, key: &str, on: bool, cx: &mut Context<Self>) {
+        let hidden = &mut self.settings.appearance.hidden_bar_buttons;
+        let before = hidden.clone();
+        hidden.retain(|k| k != key);
+        if !on && BAR_BUTTONS.iter().any(|(k, _)| *k == key) {
+            hidden.push(key.to_owned());
+        }
+        if *hidden != before {
+            cx.emit(SettingsEvent::Appearance);
+            self.changed(false, cx);
+        }
+    }
+
+    pub fn set_window_controls(&mut self, style: WindowControlsStyle, cx: &mut Context<Self>) {
+        if self.settings.appearance.window_controls != style {
+            self.settings.appearance.window_controls = style;
+            self.changed(false, cx);
+            cx.notify();
+        }
     }
 
     pub fn set_app_look_react(&mut self, on: bool, cx: &mut Context<Self>) {
@@ -411,6 +478,26 @@ pub(super) fn render_effects(
         SettingsPanel::set_translucent_sidebar,
         cx,
     );
+    let outlines = switch(
+        "motion-card-outlines",
+        fx.card_outlines,
+        SettingsPanel::set_card_outlines,
+        cx,
+    );
+    let hairline = switch(
+        "motion-window-hairline",
+        fx.window_hairline,
+        SettingsPanel::set_window_hairline,
+        cx,
+    );
+    let smooth = choice(
+        "smooth-wheel",
+        SmoothWheel::ALL,
+        fx.smooth_wheel,
+        SmoothWheel::title,
+        |this, v, cx| this.set_smooth_wheel(v, cx),
+        cx,
+    );
     group_at("appearance.motion", t!("settings.motion.group"), cx)
         .child(
             v_flex()
@@ -465,17 +552,133 @@ pub(super) fn render_effects(
                     sizes,
                     cx,
                 ))
-                .when(cfg!(target_os = "macos"), |this| {
+                .child(row_at(
+                    "appearance.motion.card_outlines",
+                    t!("settings.motion.card_outlines"),
+                    None,
+                    outlines,
+                    cx,
+                ))
+                .child(row_at(
+                    "appearance.motion.window_hairline",
+                    t!("settings.motion.window_hairline"),
+                    None,
+                    hairline,
+                    cx,
+                ))
+                .child(row_at(
+                    "appearance.motion.smooth_wheel",
+                    t!("settings.motion.smooth_wheel"),
+                    Some(t!("settings.motion.smooth_wheel_note")),
+                    smooth,
+                    cx,
+                ))
+                .when(crate::look_state::sidebar_material().is_some(), |this| {
                     this.child(row_at(
                         "appearance.motion.translucent_sidebar",
                         t!("settings.motion.translucent_sidebar"),
-                        Some(t!("settings.motion.translucent_sidebar_note")),
+                        Some(if cfg!(target_os = "macos") {
+                            t!("settings.motion.translucent_sidebar_note")
+                        } else {
+                            t!("settings.motion.translucent_sidebar_note_other")
+                        }),
                         translucent,
                         cx,
                     ))
                 }),
         )
         .child(note(t!("settings.motion.cpu_note"), cx))
+        .into_any_element()
+}
+
+/// Appearance → Layout: the sidebar, song list columns, top-bar buttons and
+/// the window buttons' look.
+pub(super) fn render_layout(
+    panel: &mut SettingsPanel,
+    cx: &mut Context<SettingsPanel>,
+) -> AnyElement {
+    let fx = panel.settings.effects;
+    let sidebar = choice(
+        "sidebar-mode",
+        SidebarMode::ALL,
+        fx.sidebar,
+        SidebarMode::title,
+        |this, v, cx| this.set_sidebar_mode(v, cx),
+        cx,
+    );
+    let toggle = |id: String, label: &'static str, on: bool| {
+        Button::new(SharedString::from(id))
+            .small()
+            .map(|b| if on { b.primary() } else { b.outline() })
+            .selected(on)
+            .label(label)
+    };
+    let c = fx.columns;
+    let columns = h_flex().gap_1().flex_wrap().children(
+        [
+            ("album", t!("layout.column.album"), c.album),
+            ("added", t!("layout.column.added"), c.added),
+            ("plays", t!("layout.column.plays"), c.plays),
+            ("duration", t!("layout.column.duration"), c.duration),
+        ]
+        .map(|(key, label, on)| {
+            toggle(format!("column-{key}"), label, on)
+                .on_click(cx.listener(move |this, _, _, cx| this.set_track_column(key, !on, cx)))
+        }),
+    );
+    let hidden = &panel.settings.appearance.hidden_bar_buttons;
+    let buttons = h_flex()
+        .gap_1()
+        .flex_wrap()
+        .children(BAR_BUTTONS.iter().map(|&(key, label)| {
+            let on = !hidden.iter().any(|h| h == key);
+            toggle(format!("bar-button-{key}"), crate::i18n::text(label), on)
+                .on_click(cx.listener(move |this, _, _, cx| this.set_bar_button(key, !on, cx)))
+        }));
+    let controls = choice(
+        "window-controls",
+        WindowControlsStyle::ALL,
+        panel.settings.appearance.window_controls,
+        WindowControlsStyle::title,
+        |this, v, cx| this.set_window_controls(v, cx),
+        cx,
+    );
+    let custom_bar = crate::titlebar::custom();
+    group_at("appearance.layout", t!("settings.layout.group"), cx)
+        .child(
+            v_flex()
+                .gap_2()
+                .child(row_at(
+                    "appearance.layout.sidebar",
+                    t!("settings.layout.sidebar"),
+                    Some(t!("settings.layout.sidebar_note")),
+                    sidebar,
+                    cx,
+                ))
+                .child(row_at(
+                    "appearance.layout.columns",
+                    t!("settings.layout.columns"),
+                    Some(t!("settings.layout.columns_note")),
+                    columns,
+                    cx,
+                ))
+                .when(custom_bar, |this| {
+                    this.child(row_at(
+                        "appearance.layout.bar_buttons",
+                        t!("settings.layout.bar_buttons"),
+                        Some(t!("settings.layout.bar_buttons_note")),
+                        buttons,
+                        cx,
+                    ))
+                    .child(row_at(
+                        "appearance.layout.window_controls",
+                        t!("settings.layout.window_controls"),
+                        Some(t!("settings.layout.window_controls_note")),
+                        controls,
+                        cx,
+                    ))
+                }),
+        )
         .into_any_element()
 }
 

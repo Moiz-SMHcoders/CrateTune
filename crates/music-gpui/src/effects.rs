@@ -18,8 +18,11 @@
 //!
 //! "System" (the default) is Full, or Reduced when the OS asks for less
 //! motion: macOS "Reduce motion" (`NSWorkspace.accessibilityDisplayShouldReduceMotion`),
-//! GNOME's `enable-animations` on Linux (read once per launch), "Animation effects"
-//! on Windows (`SPI_GETCLIENTAREAANIMATION`).
+//! GNOME's `enable-animations` and KDE Plasma's animation speed on Linux (read
+//! once per launch), "Animation effects" on Windows (`SPI_GETCLIENTAREAANIMATION`).
+//! KDE's speed (`AnimationDurationFactor` in `kdeglobals`) also scales every
+//! transition's length under "System" (0 = instant → Reduced; 0.5 = twice as
+//! fast; capped at 0.25–2×).
 //! `MUSIC_REDUCE_MOTION=1|0` overrides what the OS says (tests).
 
 use std::collections::{HashMap, HashSet, VecDeque};
@@ -29,7 +32,9 @@ use std::time::Duration;
 use gpui::{App, Global, Pixels, px};
 
 use crate::anim::Spec;
-use crate::settings::look_prefs::{ArtCorners, EffectsConfig, MotionPref};
+use crate::settings::look_prefs::{
+    ArtCorners, EffectsConfig, MotionPref, SmoothWheel, TrackColumns,
+};
 use crate::theme::ArtColors;
 
 /// The longest transition with reduced motion.
@@ -64,7 +69,14 @@ impl Motion {
     /// `spec` as this level plays it.
     pub fn adjust(self, mut spec: Spec) -> Spec {
         match self {
-            Motion::Full => {}
+            Motion::Full => {
+                // The desktop's animation speed (KDE), under "System".
+                let speed = f32::from_bits(SPEED.load(Ordering::Relaxed));
+                if speed != 1. {
+                    spec.duration = spec.duration.mul_f32(speed);
+                    spec.delay = spec.delay.mul_f32(speed);
+                }
+            }
             Motion::Reduced => {
                 spec.duration = spec.duration.min(REDUCED_MAX);
                 spec.delay = spec.delay.min(REDUCED_MAX);
@@ -85,8 +97,16 @@ static PAGE_TRANSITIONS: AtomicBool = AtomicBool::new(true);
 static CARD_HOVER: AtomicBool = AtomicBool::new(true);
 static HEADERS: AtomicBool = AtomicBool::new(true);
 static SHADOW: AtomicBool = AtomicBool::new(false);
+static OUTLINES: AtomicBool = AtomicBool::new(false);
+static HAIRLINE: AtomicBool = AtomicBool::new(false);
+/// `SmoothWheel`: 0 system, 1 on, 2 off.
+static SMOOTH_WHEEL: AtomicU8 = AtomicU8::new(0);
+/// `TrackColumns` as bits: album 1, duration 2, added 4, plays 8.
+static COLUMNS: AtomicU8 = AtomicU8::new(1 | 2);
 /// The last OS answer (see [`os_reduce_motion`]).
 static OS_REDUCE: AtomicBool = AtomicBool::new(false);
+/// Factor for transition lengths with full motion (the desktop's speed under "System").
+static SPEED: AtomicU32 = AtomicU32::new(1.0f32.to_bits());
 
 /// The animation level in effect.
 pub fn motion() -> Motion {
@@ -123,6 +143,38 @@ pub fn card_hover() -> bool {
 
 pub fn artwork_headers() -> bool {
     HEADERS.load(Ordering::Relaxed)
+}
+
+/// The columns song rows show.
+pub fn columns() -> TrackColumns {
+    let bits = COLUMNS.load(Ordering::Relaxed);
+    TrackColumns {
+        album: bits & 1 != 0,
+        duration: bits & 2 != 0,
+        added: bits & 4 != 0,
+        plays: bits & 8 != 0,
+    }
+}
+
+/// Tiles get a thin outline (Motion & effects → Card outlines).
+pub fn card_outlines() -> bool {
+    OUTLINES.load(Ordering::Relaxed)
+}
+
+/// The window gets a hairline along its edge.
+pub fn window_hairline() -> bool {
+    HAIRLINE.load(Ordering::Relaxed)
+}
+
+/// Mouse-wheel notches glide (`smooth_scroll.rs`): the setting (System = all
+/// but macOS), and only with full motion.
+pub fn smooth_wheel() -> bool {
+    let on = match SMOOTH_WHEEL.load(Ordering::Relaxed) {
+        1 => true,
+        2 => false,
+        _ => !cfg!(target_os = "macos"),
+    };
+    on && motion() == Motion::Full
 }
 
 pub fn card_scale() -> f32 {
@@ -172,6 +224,12 @@ pub fn sync(fx: &EffectsConfig, cx: &mut App) -> bool {
         Motion::Off => 2,
     };
     let changed = MOTION.swap(code, Ordering::Relaxed) != code;
+    let speed = if fx.motion == MotionPref::System {
+        os_animation_speed()
+    } else {
+        1.
+    };
+    SPEED.store(speed.to_bits(), Ordering::Relaxed);
     CORNERS.store(
         match fx.artwork_corners {
             ArtCorners::Theme => 0,
@@ -186,6 +244,24 @@ pub fn sync(fx: &EffectsConfig, cx: &mut App) -> bool {
     CARD_HOVER.store(fx.card_hover, Ordering::Relaxed);
     HEADERS.store(fx.artwork_headers, Ordering::Relaxed);
     SHADOW.store(fx.artwork_shadow, Ordering::Relaxed);
+    OUTLINES.store(fx.card_outlines, Ordering::Relaxed);
+    let c = fx.columns;
+    COLUMNS.store(
+        u8::from(c.album)
+            | u8::from(c.duration) << 1
+            | u8::from(c.added) << 2
+            | u8::from(c.plays) << 3,
+        Ordering::Relaxed,
+    );
+    HAIRLINE.store(fx.window_hairline, Ordering::Relaxed);
+    SMOOTH_WHEEL.store(
+        match fx.smooth_wheel {
+            SmoothWheel::System => 0,
+            SmoothWheel::On => 1,
+            SmoothWheel::Off => 2,
+        },
+        Ordering::Relaxed,
+    );
     // GPUI's own springs / element animations / GIFs.
     cx.set_reduce_motion(level == Motion::Off);
     changed
@@ -246,7 +322,60 @@ fn platform_reduce_motion() -> bool {
             }
         });
     }
-    answer.load(Ordering::Relaxed)
+    // KDE Plasma's speed slider at "Instant".
+    answer.load(Ordering::Relaxed) || kde_factor().is_some_and(|f| f <= 0.)
+}
+
+/// KDE Plasma's animation speed, read once from `kdeglobals` (a small file).
+#[cfg(target_os = "linux")]
+fn kde_factor() -> Option<f32> {
+    use std::sync::OnceLock;
+    static FACTOR: OnceLock<Option<f32>> = OnceLock::new();
+    *FACTOR.get_or_init(|| {
+        let dir = std::env::var_os("XDG_CONFIG_HOME")
+            .map(std::path::PathBuf::from)
+            .filter(|d| d.is_absolute())
+            .or_else(|| {
+                std::env::var_os("HOME").map(|h| std::path::Path::new(&h).join(".config"))
+            })?;
+        let text = std::fs::read_to_string(dir.join("kdeglobals")).ok()?;
+        kde_animation_factor(&text)
+    })
+}
+
+#[cfg_attr(not(target_os = "linux"), allow(dead_code))]
+/// `[KDE] AnimationDurationFactor` from a `kdeglobals` file: 0 = instant,
+/// 1 = normal (the default when it isn't set), larger = slower.
+pub fn kde_animation_factor(text: &str) -> Option<f32> {
+    let mut in_kde = false;
+    for line in text.lines() {
+        let line = line.trim();
+        if line.starts_with('[') {
+            in_kde = line == "[KDE]";
+            continue;
+        }
+        if in_kde
+            && let Some((key, value)) = line.split_once('=')
+            && key.trim() == "AnimationDurationFactor"
+        {
+            return value
+                .trim()
+                .parse::<f32>()
+                .ok()
+                .filter(|f| f.is_finite() && *f >= 0.);
+        }
+    }
+    None
+}
+
+/// How much longer (> 1) or shorter transitions are with full motion under
+/// "System": KDE's animation speed, 0.25–2×; 1 elsewhere.
+pub fn os_animation_speed() -> f32 {
+    #[cfg(target_os = "linux")]
+    if let Some(f) = kde_factor().filter(|f| *f > 0.) {
+        return f.clamp(0.25, 2.);
+    }
+    1.
 }
 
 /// Windows: Settings → Accessibility → Visual effects → "Animation effects" off.
@@ -387,6 +516,26 @@ mod tests {
         assert_eq!((off.duration, off.delay), (Duration::ZERO, Duration::ZERO));
         let short = Spec::ms(120, linear);
         assert_eq!(Motion::Reduced.adjust(short).duration, short.duration);
+    }
+
+    #[test]
+    fn kde_animation_speed() {
+        let file = "[General]\nAnimationDurationFactor=9\n\n[KDE]\nLookAndFeelPackage=org.kde.breeze\nAnimationDurationFactor=0.5\n";
+        assert_eq!(kde_animation_factor(file), Some(0.5));
+        assert_eq!(
+            kde_animation_factor("[KDE]\nAnimationDurationFactor = 0\n"),
+            Some(0.)
+        );
+        assert_eq!(kde_animation_factor("[KDE]\nSingleClick=false\n"), None);
+        assert_eq!(
+            kde_animation_factor("[KDE]\nAnimationDurationFactor=fast\n"),
+            None
+        );
+        assert_eq!(
+            kde_animation_factor("[KDE]\nAnimationDurationFactor=-1\n"),
+            None
+        );
+        assert_eq!(kde_animation_factor(""), None);
     }
 
     #[test]

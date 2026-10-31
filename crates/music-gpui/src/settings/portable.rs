@@ -721,6 +721,7 @@ impl ThemePreset {
         c.dynamic.style = self.style;
         // A built-in look replaces a theme file's colours.
         c.colors.clear();
+        c.colors_light.clear();
         c.file.clear();
         c.normalize();
         c

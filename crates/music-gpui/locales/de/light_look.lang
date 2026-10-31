@@ -1,0 +1,60 @@
+# Light mode, the theme switcher and the other look options (de).
+
+theme.mode.dark = Dunkel
+theme.mode.light = Hell
+theme.mode.system = System
+settings.appearance.mode = Modus
+settings.appearance.mode_note = Überall hell oder dunkel, oder dem Erscheinungsbild des Systems folgen (wechselt, wenn das System wechselt).
+settings.appearance.mode_system_now = Das System zeigt gerade {mode}.
+theme.darkness.soft = Sanft
+theme.darkness.bright = Hell
+theme.darkness.white = Reines Weiß
+theme.white = Weiß
+themes.low_contrast_light = {name}: Etwas Text hat im hellen Modus zu wenig Kontrast ({ratio}:1) und ist evtl. schwer lesbar.
+
+# ---- Motion & effects
+settings.motion.card_outlines = Kartenumrisse
+settings.motion.window_hairline = Linie am Fensterrand
+settings.motion.smooth_wheel = Weiches Scrollen mit dem Mausrad
+settings.motion.smooth_wheel_note = Das Mausrad gleitet statt zu springen; Trackpads behalten das Scrollen des Systems. System: an, außer unter macOS. Bei reduzierten Animationen wieder in Schritten.
+effects.smooth_wheel.system = System
+effects.smooth_wheel.on = An
+effects.smooth_wheel.off = Aus
+settings.motion.translucent_sidebar_note_other = Die Seitenleiste zeigt den Schreibtisch durch die Unschärfe des Systems (Windows 11: Mica, Windows 10: Acryl; Linux: nur wo der Compositor weichzeichnet, etwa KDE Plasma unter Wayland).
+effects.sidebar.full = Voll
+effects.sidebar.rail = Nur Symbole
+effects.sidebar.hover = Beim Darüberfahren ausklappen
+
+# ---- Theme switcher
+themes.switcher = Designs
+themes.switcher_note = Integrierte Designs und deine Theme-Dateien, im aktuellen Modus. Mehr unter Einstellungen → Darstellung.
+
+# ---- Layout
+settings.layout.group = Layout
+settings.layout.sidebar = Seitenleiste
+settings.layout.sidebar_note = Zieh den Rand der Seitenleiste oder der Warteschlange, um ihre Breite zu ändern.
+settings.layout.columns = Spalten der Titelliste
+settings.layout.columns_note = „Hinzugefügt“ und „Wiedergaben“ erscheinen in Mediathek-Listen (Titel, Lieblingstitel, Downloads, lokale Dateien).
+layout.column.album = Album
+layout.column.added = Hinzugefügt
+layout.column.plays = Wiedergaben
+layout.column.duration = Dauer
+settings.layout.bar_buttons = Schaltflächen der oberen Leiste
+settings.layout.bar_buttons_note = Die Aktionen ausgeblendeter Schaltflächen bleiben in den Menüs und Tastaturkurzbefehlen.
+layout.bar_button.menu = Menü
+layout.bar_button.back = Zurück
+layout.bar_button.forward = Vorwärts
+layout.bar_button.home = Startseite
+layout.bar_button.themes = Designs
+layout.bar_button.account = Konto
+settings.layout.window_controls = Fensterschaltflächen
+settings.layout.window_controls_note = Das Aussehen der Schaltflächen zum Minimieren, Maximieren und Schließen. Wirkt nach einem Neustart.
+window.controls.system = System
+window.controls.mac = macOS
+window.controls.windows = Windows
+
+# ---- Fonts
+theme.custom.heading_font = Schrift für Überschriften
+theme.custom.heading_font_detail = Seitentitel, Album- und Playlist-Köpfe, der Titel in „Läuft gerade“.
+theme.custom.fonts_folder = Schriftenordner öffnen
+theme.custom.fonts_folder_note = Schriftdateien (.ttf, .otf, .ttc) im Schriftenordner werden ab dem nächsten Start ebenfalls aufgeführt.

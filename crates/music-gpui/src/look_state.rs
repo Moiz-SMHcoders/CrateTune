@@ -50,6 +50,20 @@ impl Default for LookState {
     }
 }
 
+/// What the translucent sidebar shows the desktop through, if the platform
+/// can: macOS's blur; Windows 11's Mica (else Windows 10's acrylic blur);
+/// a Linux compositor's blur (KDE Plasma on Wayland; elsewhere it may stay
+/// opaque, see the window background's note).
+pub fn sidebar_material() -> Option<gpui::WindowBackgroundAppearance> {
+    if WindowMaterial::Mica.available() {
+        Some(gpui::WindowBackgroundAppearance::MicaBackdrop)
+    } else if WindowMaterial::Blur.available() {
+        Some(gpui::WindowBackgroundAppearance::Blurred)
+    } else {
+        None
+    }
+}
+
 /// Artwork colours are needed (extracted once per artwork, on a worker).
 pub fn wants_art_colors(s: &Settings) -> bool {
     s.appearance.theme == ThemeChoice::Dynamic
@@ -92,11 +106,12 @@ impl MusicApp {
         }
     }
 
-    /// The translucent sidebar is on (macOS; GPUI's blurred window background),
-    /// and the whole window isn't see-through (which includes the sidebar).
+    /// The translucent sidebar is on (GPUI's blurred / Mica window background,
+    /// [`sidebar_material`]), and the whole window isn't see-through (which
+    /// includes the sidebar).
     pub(crate) fn translucent_sidebar(&self, cx: &App) -> bool {
         let fx = &self.settings.read(cx).settings().effects;
-        cfg!(target_os = "macos")
+        sidebar_material().is_some()
             && fx.translucent_sidebar
             && fx.material() == WindowMaterial::Off
             && !crate::effects::os_reduce_transparency()
@@ -114,8 +129,10 @@ impl MusicApp {
         let material = self.settings.read(cx).settings().effects.material();
         let want = if material != WindowMaterial::Off {
             material.appearance()
-        } else if self.translucent_sidebar(cx) {
-            gpui::WindowBackgroundAppearance::Blurred
+        } else if self.translucent_sidebar(cx)
+            && let Some(m) = sidebar_material()
+        {
+            m
         } else {
             gpui::WindowBackgroundAppearance::Opaque
         };

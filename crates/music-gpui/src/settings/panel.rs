@@ -198,6 +198,8 @@ pub struct SettingsPanel {
     pub(super) theme_ui: super::theme_ui::ThemeUi,
     /// Theme files in `<config>/themes` (`theme_library.rs`).
     pub(super) theme_files: super::theme_library::ThemeLibrary,
+    /// The saved look while a one-run theme (`MUSIC_THEME`, `--theme`) is shown.
+    pub(super) one_run: Option<super::theme_library::SavedLook>,
     /// Appearance / behaviour profiles (`profiles.rs`).
     pub(super) profiles: super::profiles::ProfileStore,
     /// Keyboard shortcuts section (recording, conflict prompt).
@@ -394,6 +396,7 @@ impl SettingsPanel {
             devices_ui,
             theme_ui,
             theme_files,
+            one_run: None,
             app_icon_generation: 0,
             profiles,
             shortcuts_ui: Default::default(),
@@ -402,6 +405,8 @@ impl SettingsPanel {
             reveal_task: None,
             _subscriptions: subscriptions,
         };
+        // `MUSIC_THEME` / `--theme`: shown, not saved.
+        this.apply_one_run_theme();
         // Before any page loads (the password, if any, follows once read).
         if let Err(e) = this.apply_proxy() {
             eprintln!("music-gpui: proxy not applied: {e}");
@@ -720,8 +725,19 @@ impl SettingsPanel {
     }
 
     pub fn set_theme(&mut self, theme: ThemeChoice, cx: &mut Context<Self>) {
+        self.end_one_run_theme();
         if self.settings.appearance.theme != theme {
             self.settings.appearance.theme = theme;
+            cx.emit(SettingsEvent::Appearance);
+            self.changed(false, cx);
+        }
+    }
+
+    /// Appearance → Mode: light, dark or the system's.
+    pub fn set_color_mode(&mut self, mode: super::theme_prefs::ColorMode, cx: &mut Context<Self>) {
+        self.end_one_run_theme();
+        if self.settings.appearance.mode != mode {
+            self.settings.appearance.mode = mode;
             cx.emit(SettingsEvent::Appearance);
             self.changed(false, cx);
         }
@@ -848,11 +864,24 @@ impl SettingsPanel {
             return;
         }
         let Some(path) = &self.path else { return };
-        match self.settings.save(path) {
+        // A one-run theme isn't saved: the file keeps its own look.
+        let shown;
+        let settings = match self.saved_look() {
+            Some(saved) => {
+                let mut s = self.settings.clone();
+                s.appearance.theme = saved.theme;
+                s.appearance.mode = saved.mode;
+                s.custom_theme = saved.custom.clone();
+                shown = s;
+                &shown
+            }
+            None => &self.settings,
+        };
+        match settings.save(path) {
             Ok(()) => {
                 self.file_error = None;
                 // Edits belong to the active profile.
-                self.profiles.sync(&self.settings);
+                self.profiles.sync(settings);
                 if std::env::var_os("MUSIC_TRACE").is_some() {
                     eprintln!("music-gpui: saved {}", path.display());
                 }
@@ -1223,6 +1252,9 @@ impl Render for SettingsPanel {
                                 .child(
                                     div()
                                         .text_2xl()
+                                        .when_some(crate::theme::heading_font(), |this, f| {
+                                            this.font_family(f)
+                                        })
                                         .font_weight(FontWeight::BOLD)
                                         .child(crate::i18n::text(section.title)),
                                 )

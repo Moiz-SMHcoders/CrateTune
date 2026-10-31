@@ -1,0 +1,60 @@
+# Light mode, the theme switcher and the other look options (hi).
+
+theme.mode.dark = गहरा
+theme.mode.light = हल्का
+theme.mode.system = सिस्टम
+settings.appearance.mode = मोड
+settings.appearance.mode_note = हर जगह हल्का या गहरा, या सिस्टम के रूप-रंग के साथ चलें (सिस्टम बदलने पर यह भी बदलता है)।
+settings.appearance.mode_system_now = सिस्टम अभी {mode} दिखा रहा है।
+theme.darkness.soft = नरम
+theme.darkness.bright = उजला
+theme.darkness.white = एकदम सफ़ेद
+theme.white = पूरा सफ़ेद
+themes.low_contrast_light = {name}: हल्के मोड में कुछ टेक्स्ट का कंट्रास्ट बहुत कम है ({ratio}:1); उसे पढ़ना मुश्किल हो सकता है।
+
+# ---- Motion & effects
+settings.motion.card_outlines = कार्ड की रूपरेखा
+settings.motion.window_hairline = विंडो के किनारे पर रेखा
+settings.motion.smooth_wheel = माउस व्हील से स्मूद स्क्रॉलिंग
+settings.motion.smooth_wheel_note = माउस व्हील कूदने के बजाय सरकता है; ट्रैकपैड सिस्टम की अपनी स्क्रॉलिंग रखते हैं। सिस्टम: macOS को छोड़कर चालू। कम एनिमेशन के साथ फिर से कदमों में चलता है।
+effects.smooth_wheel.system = सिस्टम
+effects.smooth_wheel.on = चालू
+effects.smooth_wheel.off = बंद
+settings.motion.translucent_sidebar_note_other = साइडबार सिस्टम के ब्लर से डेस्कटॉप दिखाता है (Windows 11: Mica, Windows 10: ऐक्रेलिक; Linux: सिर्फ़ जहाँ कंपोज़िटर ब्लर करता है, जैसे Wayland पर KDE Plasma)।
+effects.sidebar.full = पूरा
+effects.sidebar.rail = सिर्फ़ आइकन
+effects.sidebar.hover = होवर करने पर फैलाएँ
+
+# ---- Theme switcher
+themes.switcher = थीम
+themes.switcher_note = बिल्ट-इन थीम और आपकी थीम फ़ाइलें, मौजूदा मोड में दिखाई गई। और विकल्प सेटिंग → रूप-रंग में।
+
+# ---- Layout
+settings.layout.group = लेआउट
+settings.layout.sidebar = साइडबार
+settings.layout.sidebar_note = चौड़ाई बदलने के लिए साइडबार या कतार का किनारा खींचें।
+settings.layout.columns = गानों की सूची के कॉलम
+settings.layout.columns_note = जोड़ा गया और प्ले लाइब्रेरी की सूचियों में दिखते हैं (गाने, पसंद किए गए, डाउनलोड, लोकल फ़ाइलें)।
+layout.column.album = एल्बम
+layout.column.added = जोड़ा गया
+layout.column.plays = प्ले
+layout.column.duration = अवधि
+settings.layout.bar_buttons = ऊपरी बार के बटन
+settings.layout.bar_buttons_note = छिपे बटनों की कार्रवाइयाँ मेन्यू और कीबोर्ड शॉर्टकट में बनी रहती हैं।
+layout.bar_button.menu = मेन्यू
+layout.bar_button.back = पीछे
+layout.bar_button.forward = आगे
+layout.bar_button.home = होम
+layout.bar_button.themes = थीम
+layout.bar_button.account = खाता
+settings.layout.window_controls = विंडो बटन
+settings.layout.window_controls_note = छोटा करने, बड़ा करने और बंद करने के बटनों का रूप। रीस्टार्ट के बाद लागू होता है।
+window.controls.system = सिस्टम
+window.controls.mac = macOS
+window.controls.windows = Windows
+
+# ---- Fonts
+theme.custom.heading_font = शीर्षक फ़ॉन्ट
+theme.custom.heading_font_detail = पेज के शीर्षक, एल्बम और प्लेलिस्ट के हेडर, अभी चल रहा है में शीर्षक।
+theme.custom.fonts_folder = फ़ॉन्ट फ़ोल्डर खोलें
+theme.custom.fonts_folder_note = फ़ॉन्ट फ़ोल्डर की फ़ॉन्ट फ़ाइलें (.ttf, .otf, .ttc) भी अगली बार खोलने से सूची में दिखती हैं।

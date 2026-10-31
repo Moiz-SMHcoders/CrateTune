@@ -1,0 +1,60 @@
+# Light mode, the theme switcher and the other look options (ja).
+
+theme.mode.dark = ダーク
+theme.mode.light = ライト
+theme.mode.system = システム
+settings.appearance.mode = モード
+settings.appearance.mode_note = どこでもライトかダーク、またはシステムの外観に合わせます（システムが切り替わると切り替わります）。
+settings.appearance.mode_system_now = システムは現在 {mode} です。
+theme.darkness.soft = やわらか
+theme.darkness.bright = 明るめ
+theme.darkness.white = 純粋な白
+theme.white = ピュアホワイト
+themes.low_contrast_light = {name}：ライトモードで一部の文字のコントラストが低すぎます（{ratio}:1）。読みにくい場合があります。
+
+# ---- Motion & effects
+settings.motion.card_outlines = カードの輪郭線
+settings.motion.window_hairline = ウインドウの縁に沿った線
+settings.motion.smooth_wheel = ホイールのなめらかスクロール
+settings.motion.smooth_wheel_note = マウスホイールで飛ばずになめらかに流れます。トラックパッドはシステムのスクロールのままです。システム：macOS 以外でオン。アニメーションを控えめにすると段階的なスクロールに戻ります。
+effects.smooth_wheel.system = システム
+effects.smooth_wheel.on = オン
+effects.smooth_wheel.off = オフ
+settings.motion.translucent_sidebar_note_other = サイドバー越しに、システムのぼかしを通してデスクトップが見えます（Windows 11：Mica、Windows 10：アクリル。Linux：コンポジターがぼかす環境のみ、例：Wayland 上の KDE Plasma）。
+effects.sidebar.full = フル
+effects.sidebar.rail = アイコンのみ
+effects.sidebar.hover = ホバーで展開
+
+# ---- Theme switcher
+themes.switcher = テーマ
+themes.switcher_note = 内蔵テーマとあなたのテーマファイルを、現在のモードで表示します。詳しくは 設定 → 外観 で。
+
+# ---- Layout
+settings.layout.group = レイアウト
+settings.layout.sidebar = サイドバー
+settings.layout.sidebar_note = サイドバーやキューの端をドラッグすると幅を変えられます。
+settings.layout.columns = 曲リストの列
+settings.layout.columns_note = 「追加日」と「再生回数」はライブラリのリスト（曲、高評価、ダウンロード、ローカルファイル）に表示されます。
+layout.column.album = アルバム
+layout.column.added = 追加日
+layout.column.plays = 再生回数
+layout.column.duration = 長さ
+settings.layout.bar_buttons = 上部バーのボタン
+settings.layout.bar_buttons_note = 非表示にしたボタンの操作は、メニューとキーボードショートカットに残ります。
+layout.bar_button.menu = メニュー
+layout.bar_button.back = 戻る
+layout.bar_button.forward = 進む
+layout.bar_button.home = ホーム
+layout.bar_button.themes = テーマ
+layout.bar_button.account = アカウント
+settings.layout.window_controls = ウインドウボタン
+settings.layout.window_controls_note = 最小化・最大化・閉じるボタンの見た目。再起動後に反映されます。
+window.controls.system = システム
+window.controls.mac = macOS
+window.controls.windows = Windows
+
+# ---- Fonts
+theme.custom.heading_font = 見出しのフォント
+theme.custom.heading_font_detail = ページのタイトル、アルバムとプレイリストのヘッダー、再生中画面のタイトル。
+theme.custom.fonts_folder = フォントフォルダを開く
+theme.custom.fonts_folder_note = フォントフォルダ内のフォントファイル（.ttf、.otf、.ttc）も、次回の起動から一覧に表示されます。

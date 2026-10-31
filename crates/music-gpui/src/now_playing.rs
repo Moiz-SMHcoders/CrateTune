@@ -183,13 +183,16 @@ impl NowPlaying {
     }
 }
 
-pub(crate) fn white(alpha: f32) -> Hsla {
-    hsla(0., 0., 1., alpha)
+/// Text and icons on the Now Playing washes: white, near-black in light mode
+/// (`theme::ink`).
+pub(crate) fn ink(alpha: f32) -> Hsla {
+    crate::theme::ink(alpha)
 }
 
-/// `color`'s hue at a fixed (dark) lightness, saturation capped for readability.
-pub(crate) fn deep(color: Hsla, lightness: f32, alpha: f32) -> Hsla {
-    hsla(color.h, (color.s * 0.9).min(0.75), lightness, alpha)
+/// `color`'s hue as a wash at `lightness` (dark; the matching pale tone in
+/// light mode), saturation capped for readability (`theme::shade`).
+pub(crate) fn shade(color: Hsla, lightness: f32, alpha: f32) -> Hsla {
+    crate::theme::shade(color, lightness, alpha)
 }
 
 impl MusicApp {
@@ -313,9 +316,9 @@ impl MusicApp {
                         backdrop.map(|(backdrop, palette)| {
                             let [a, b, c] = palette;
                             let glows = [
-                                crate::backdrop::glow_blob(deep(c, 0.5, 0.8)),
-                                crate::backdrop::glow_blob(deep(a, 0.42, 0.7)),
-                                crate::backdrop::glow_blob(deep(b, 0.38, 0.65)),
+                                crate::backdrop::glow_blob(shade(c, 0.5, 0.8)),
+                                crate::backdrop::glow_blob(shade(a, 0.42, 0.7)),
+                                crate::backdrop::glow_blob(shade(b, 0.38, 0.65)),
                             ];
                             ((backdrop, palette, glows), accent)
                         })
@@ -541,7 +544,7 @@ impl MusicApp {
             } else {
                 reveal
             })
-            .text_color(gpui::white())
+            .text_color(ink(1.))
             .child(backdrop)
             .children(design_backdrop)
             .children(viz_behind)
@@ -616,7 +619,7 @@ impl MusicApp {
                     .flex_1()
                     .text_xs()
                     .font_weight(FontWeight::SEMIBOLD)
-                    .text_color(white(0.6))
+                    .text_color(ink(0.6))
                     .child(t!("np.header")),
             )
             .when(s.demo, |this| {
@@ -807,7 +810,11 @@ impl MusicApp {
                 }
             }
         }
-        let base = div().absolute().inset_0().bg(gpui::rgb(0x141418));
+        let base = div().absolute().inset_0().bg(if crate::theme::is_light() {
+            gpui::rgb(0xF2F2F5)
+        } else {
+            gpui::rgb(0x141418)
+        });
         let layer = match style {
             NowPlayingBackground::Blur => {
                 let fade = frame.get(&self.np.backdrop_fade);
@@ -831,13 +838,13 @@ impl MusicApp {
                 let [a, b, _] = self.np.colors.each_ref().map(|t| frame.get(t));
                 base.bg(linear_gradient(
                     160.,
-                    linear_color_stop(deep(a, 0.30, 1.), 0.),
-                    linear_color_stop(deep(b, 0.12, 1.), 1.),
+                    linear_color_stop(shade(a, 0.30, 1.), 0.),
+                    linear_color_stop(shade(b, 0.12, 1.), 1.),
                 ))
             }
             NowPlayingBackground::Solid => {
                 let a = frame.get(&self.np.colors[0]);
-                base.bg(deep(a, 0.17, 1.))
+                base.bg(shade(a, 0.17, 1.))
             }
             NowPlayingBackground::Glow => {
                 let a = frame.get(&self.np.colors[0]);
@@ -878,7 +885,7 @@ impl MusicApp {
                         0.85 + 0.10 * (t * 0.29 + 3.).cos(),
                     ),
                 ];
-                base.bg(deep(a, 0.06, 1.))
+                base.bg(shade(a, 0.06, 1.))
                     .when_some(self.np.glows.clone(), |this, glows| {
                         this.children(
                             glows
@@ -893,12 +900,21 @@ impl MusicApp {
             .absolute()
             .inset_0()
             .child(layer)
-            // Dark gradient so white text stays readable on bright colours.
-            .child(div().absolute().inset_0().bg(linear_gradient(
-                180.,
-                linear_color_stop(hsla(0., 0., 0., 0.2), 0.),
-                linear_color_stop(hsla(0., 0., 0., 0.55), 1.),
-            )))
+            // Dark gradient so white text stays readable on bright colours (a
+            // light one for dark text in light mode: strong over the artwork,
+            // faint over the washes, which are pale already).
+            .child(div().absolute().inset_0().bg({
+                let (top, bottom) = match (crate::theme::is_light(), style) {
+                    (false, _) => (0.2, 0.55),
+                    (true, NowPlayingBackground::Blur) => (0.62, 0.78),
+                    (true, _) => (0.1, 0.3),
+                };
+                linear_gradient(
+                    180.,
+                    linear_color_stop(crate::theme::veil(top), 0.),
+                    linear_color_stop(crate::theme::veil(bottom), 1.),
+                )
+            }))
     }
 
     fn artwork_view(&self, track: Option<&Track>, side: Pixels, cx: &mut Context<Self>) -> Div {
@@ -946,7 +962,7 @@ impl MusicApp {
             .bg(if video.is_some() {
                 gpui::black()
             } else {
-                white(0.08)
+                ink(0.08)
             })
             .when_some(video, |this, video| this.overflow_hidden().child(video))
             .when_some(art, |this, art| {
@@ -990,12 +1006,12 @@ impl MusicApp {
     /// Progress bar (click to seek) and elapsed / remaining time.
     fn progress_view(&self, position: Duration, cx: &mut Context<Self>) -> Div {
         let fill = AppColors::get(cx).np_progress;
-        let bar = self.progress_bar(position, px(4.), white(0.22), fill, cx);
+        let bar = self.progress_bar(position, px(4.), ink(0.22), fill, cx);
         v_flex()
             .w_full()
             .gap_1()
             .child(bar)
-            .child(self.times_row(position, white(0.6)))
+            .child(self.times_row(position, ink(0.6)))
     }
 
     /// Played fraction of the current track at `position`.
@@ -1104,7 +1120,7 @@ impl MusicApp {
                 .absolute()
                 .size(px(30. * scale))
                 .path(name.path())
-                .text_color(hsla(0., 0., 0.08, shown))
+                .text_color(crate::theme::paper(shown))
                 .with_transformation(Transformation::scale(size(s, s)).with_rotation(radians(turn)))
         };
         let can_toggle = self.engine.is_some()
@@ -1117,18 +1133,18 @@ impl MusicApp {
             .size(px(68. * scale))
             .flex_none()
             .rounded_full()
-            .bg(white(if can_toggle { 0.95 } else { 0.4 }))
+            .bg(ink(if can_toggle { 0.95 } else { 0.4 }))
             .shadow_lg()
             .flex()
             .items_center()
             .justify_center()
             .when(can_toggle, |this| {
                 this.cursor_pointer()
-                    .hover(|s| s.bg(white(0.82)))
+                    .hover(|s| s.bg(ink(0.82)))
                     .on_click(cx.listener(|this, _, _, cx| this.toggle_playback(cx)))
             })
             .when(busy, |this| {
-                this.child(Spinner::new().large().color(hsla(0., 0., 0.1, 1.)))
+                this.child(Spinner::new().large().color(crate::theme::paper(1.)))
             })
             .when(!busy, |this| {
                 this.child(icon(IconName::Play, 1. - morph, -morph * 1.6))
@@ -1146,13 +1162,13 @@ impl MusicApp {
                 .items_center()
                 .justify_center()
                 .when(enabled, |this| {
-                    this.cursor_pointer().hover(|s| s.bg(white(0.14)))
+                    this.cursor_pointer().hover(|s| s.bg(ink(0.14)))
                 })
                 .child(
                     svg()
                         .size(px(26. * scale))
                         .path(icon.path())
-                        .text_color(white(if enabled { 0.92 } else { 0.35 })),
+                        .text_color(ink(if enabled { 0.92 } else { 0.35 })),
                 )
         };
         let has_track = self.playback.track.is_some();
@@ -1183,14 +1199,14 @@ impl MusicApp {
                 .child(
                     div()
                         .flex_none()
-                        .text_color(white(0.45))
+                        .text_color(ink(0.45))
                         .child(t!("np.up_next")),
                 )
                 .child(
                     div()
                         .min_w_0()
                         .truncate()
-                        .text_color(white(0.7))
+                        .text_color(ink(0.7))
                         .child(format!("{} · {}", next.title, next.artists)),
                 )
         })
@@ -1284,7 +1300,7 @@ impl MusicApp {
                                     .line_clamp(2)
                                     .child(title),
                             )
-                            .child(div().text_color(white(0.65)).truncate().child(artists)),
+                            .child(div().text_color(ink(0.65)).truncate().child(artists)),
                     )
                     // Dislike, then like (library + YouTube Music when signed in).
                     .children(track.filter(|t| !t.is_local()).map(|t| {
@@ -1292,8 +1308,8 @@ impl MusicApp {
                             "np-dislike",
                             t,
                             px(36.),
-                            white(0.8),
-                            white(0.12),
+                            ink(0.8),
+                            ink(0.12),
                             cx,
                         )
                     }))
@@ -1337,12 +1353,13 @@ impl MusicApp {
                         div()
                             .w_full()
                             .text_2xl()
+                            .when_some(crate::theme::heading_font(), |this, f| this.font_family(f))
                             .font_weight(FontWeight::BOLD)
                             .text_center()
                             .truncate()
                             .child(title),
                     )
-                    .child(div().text_color(white(0.65)).truncate().child(artists)),
+                    .child(div().text_color(ink(0.65)).truncate().child(artists)),
             )
             .child(div().w(width).child(self.progress_view(position, cx)))
             .child(self.transport_view(1., frame, cx))
@@ -1358,7 +1375,7 @@ impl MusicApp {
                                 .text_lg()
                                 .font_weight(FontWeight::SEMIBOLD)
                                 .text_center()
-                                .text_color(white(0.92))
+                                .text_color(ink(0.92))
                                 .line_clamp(2)
                                 .child(now.unwrap_or_else(|| "♪".into())),
                         )
@@ -1367,7 +1384,7 @@ impl MusicApp {
                                 div()
                                     .text_sm()
                                     .text_center()
-                                    .text_color(white(0.5))
+                                    .text_color(ink(0.5))
                                     .truncate()
                                     .child(next),
                             )
@@ -1428,7 +1445,7 @@ impl MusicApp {
                     .child(
                         div()
                             .text_sm()
-                            .text_color(white(0.65))
+                            .text_color(ink(0.65))
                             .truncate()
                             .child(artists),
                     ),
@@ -1469,12 +1486,15 @@ impl MusicApp {
                         .items_center()
                         .justify_center()
                         .gap_2()
-                        .when(spinner, |this| this.child(Spinner::new().color(white(0.7))))
+                        .when(spinner, |this| this.child(Spinner::new().color(ink(0.7))))
                         .child(
                             div()
                                 .text_2xl()
+                                .when_some(crate::theme::heading_font(), |this, f| {
+                                    this.font_family(f)
+                                })
                                 .font_weight(FontWeight::BOLD)
-                                .text_color(white(0.75))
+                                .text_color(ink(0.75))
                                 .child(title.to_owned()),
                         )
                         .when_some(detail, |this, detail| {
@@ -1482,7 +1502,7 @@ impl MusicApp {
                                 div()
                                     .text_sm()
                                     .text_center()
-                                    .text_color(white(0.5))
+                                    .text_color(ink(0.5))
                                     .child(detail),
                             )
                         }),
@@ -1586,7 +1606,7 @@ impl MusicApp {
                         .flex_1()
                         .min_w_0()
                         .truncate()
-                        .text_color(white(0.75))
+                        .text_color(ink(0.75))
                         .child(match s.selected {
                             0 => tp!("lyrics.select_hint", MAX_SELECTED),
                             n => tp!("lyrics.selected", n),
@@ -1619,7 +1639,7 @@ impl MusicApp {
             .px_3()
             .gap_2()
             .text_xs()
-            .text_color(white(0.5))
+            .text_color(ink(0.5))
             .child(
                 // A row, so the button keeps its own width (left-aligned, not stretched).
                 h_flex().flex_1().min_w_0().overflow_hidden().child(
@@ -1634,7 +1654,7 @@ impl MusicApp {
                     div()
                         .min_w_0()
                         .truncate()
-                        .text_color(if failed { white(0.7) } else { white(0.5) })
+                        .text_color(if failed { ink(0.7) } else { ink(0.5) })
                         .child(text),
                 )
                 .when(failed, |this| {
@@ -1722,7 +1742,7 @@ impl MusicApp {
                         .text_size(px(size))
                         .line_height(px(size * display.line_spacing))
                         .font_weight(FontWeight::SEMIBOLD)
-                        .text_color(white(0.85))
+                        .text_color(ink(0.85))
                         .child(if text.trim().is_empty() {
                             SharedString::from(" ")
                         } else {
@@ -1733,7 +1753,7 @@ impl MusicApp {
                     align(
                         div()
                             .text_size(px(size * 0.62))
-                            .text_color(white(0.55))
+                            .text_color(ink(0.55))
                             .child(sub),
                     )
                 }))
@@ -1760,7 +1780,7 @@ pub(crate) fn like_icon_button(
     let (path, color) = if liked {
         (AppIcon::HeartFilled.path(), AppColors::get(cx).accent)
     } else {
-        (Lucide::Heart.path(), white(0.8))
+        (Lucide::Heart.path(), ink(0.8))
     };
     let tip = if liked {
         t!("common.remove_from_liked")
@@ -1777,7 +1797,7 @@ pub(crate) fn like_icon_button(
         .items_center()
         .justify_center()
         .cursor_pointer()
-        .hover(|s| s.bg(white(0.12)))
+        .hover(|s| s.bg(ink(0.12)))
         .tooltip(move |window, cx| gpui_component::tooltip::Tooltip::new(tip).build(window, cx))
         .on_click(move |_, window, cx| {
             cx.stop_propagation();

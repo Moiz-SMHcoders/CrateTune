@@ -33,6 +33,28 @@ use crate::theme::AppColors;
 /// Where a track sits, so "Play" can use the surrounding list as the queue.
 pub type ListContext = Option<(Rc<Vec<Track>>, usize)>;
 
+/// What the library knows about a row's song, for the "Added" and "Plays"
+/// columns (Appearance → Layout → Song list columns).
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
+pub struct RowMeta {
+    /// When it came into the library (or was liked), Unix ms.
+    pub added_ms: Option<i64>,
+    pub plays: u64,
+}
+
+impl RowMeta {
+    pub fn of(song: &music_core::library::LibrarySong) -> Self {
+        Self {
+            added_ms: song
+                .in_library_at
+                .or(song.liked_at)
+                .or(song.downloaded_at)
+                .or(Some(song.created_at)),
+            plays: song.play_count,
+        }
+    }
+}
+
 #[derive(IntoElement)]
 pub struct TrackRow {
     id: ElementId,
@@ -43,6 +65,7 @@ pub struct TrackRow {
     index: usize,
     active: bool,
     numbered: bool,
+    meta: Option<RowMeta>,
 }
 
 impl TrackRow {
@@ -57,6 +80,7 @@ impl TrackRow {
             index,
             active: false,
             numbered: true,
+            meta: None,
         }
     }
 
@@ -68,6 +92,12 @@ impl TrackRow {
 
     pub fn numbered(mut self, numbered: bool) -> Self {
         self.numbered = numbered;
+        self
+    }
+
+    /// The library's data for the Added / Plays columns.
+    pub fn meta(mut self, meta: Option<RowMeta>) -> Self {
+        self.meta = meta;
         self
     }
 }
@@ -83,10 +113,20 @@ impl RenderOnce for TrackRow {
         );
         let theme = cx.theme();
         let accent = AppColors::get(cx);
+        let columns = crate::effects::columns();
         let subtitle = match &track.album {
-            Some(album) => format!("{} · {album}", track.artists),
-            None => track.artists.clone(),
+            Some(album) if columns.album => format!("{} · {album}", track.artists),
+            _ => track.artists.clone(),
         };
+        let added = self.meta.filter(|_| columns.added).map(|m| {
+            m.added_ms
+                .map(|ms| crate::i18n::format::iso_date(&crate::util::local_date(ms)))
+                .unwrap_or_default()
+        });
+        let plays = self
+            .meta
+            .filter(|_| columns.plays)
+            .map(|m| crate::i18n::format::number(m.plays));
         let duration = track
             .duration_secs
             .map(|s| format_duration(s.into()))
@@ -228,15 +268,36 @@ impl RenderOnce for TrackRow {
                     })
                     .child(heart),
             )
-            .child(
+            .children(added.map(|text| {
                 div()
-                    .w(px(44.))
+                    .w(px(136.))
+                    .flex_none()
+                    .truncate()
+                    .text_right()
+                    .text_sm()
+                    .text_color(muted)
+                    .child(text)
+            }))
+            .children(plays.map(|text| {
+                div()
+                    .w(px(52.))
                     .flex_none()
                     .text_right()
                     .text_sm()
                     .text_color(muted)
-                    .child(duration),
-            )
+                    .child(text)
+            }))
+            .when(columns.duration, |this| {
+                this.child(
+                    div()
+                        .w(px(44.))
+                        .flex_none()
+                        .text_right()
+                        .text_sm()
+                        .text_color(muted)
+                        .child(duration),
+                )
+            })
             .context_menu(move |menu, _, _| track_menu(menu, &menu_track, menu_ctx.clone()))
     }
 }

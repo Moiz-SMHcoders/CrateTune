@@ -395,6 +395,9 @@ impl BackgroundFx {
         match style {
             BarBackground::ArtworkGlow => {
                 let w = (geo.info_end + 120.).min(geo.width);
+                // Light mode: the image fainter over the light bar, so its dark
+                // text stays readable.
+                let image_alpha = if art.tones.light_mode { 0.45 } else { 1. };
                 match &art.backdrop {
                     Some(image) => layers.push(
                         div()
@@ -403,7 +406,7 @@ impl BackgroundFx {
                             .left_0()
                             .h_full()
                             .w(px(w))
-                            .opacity(mix)
+                            .opacity(mix * image_alpha)
                             .child(img(image.clone()).size_full().object_fit(ObjectFit::Cover))
                             .into_any_element(),
                     ),
@@ -542,17 +545,27 @@ const DRIFT_RATE: f32 = std::f32::consts::TAU / 12.;
 /// has no colour.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ArtTones {
-    /// Gradient ends: dark tones (white text stays readable on them).
+    /// Gradient ends: dark tones (white text stays readable on them; pale ones
+    /// for dark text in light mode).
     pub start: Hsla,
     pub end: Hsla,
     /// A mid tone of the main colour for lights (glow, pulse).
     pub light: Hsla,
+    /// Made for a light theme.
+    pub light_mode: bool,
 }
 
 impl ArtTones {
     pub fn new(art: Option<&crate::theme::ArtColors>, theme: &crate::theme::AppPalette) -> Self {
         use crate::palette::{Lch, TonalPalette};
         let tonal = |c: Lch| TonalPalette::new(c.h, c.c.max(0.04));
+        // CIE L* tones: dark ends and a mid light on dark themes, pale ends and
+        // a softer light on light ones.
+        let [start, end, light, end_fallback] = if theme.light {
+            [88., 82., 72., 84.]
+        } else {
+            [32., 24., 58., 22.]
+        };
         match art {
             Some(art) => {
                 let first = art.primary();
@@ -562,18 +575,20 @@ impl ArtTones {
                     ..first
                 });
                 ArtTones {
-                    start: tonal(first).tone(32.),
-                    end: tonal(second).tone(24.),
-                    light: tonal(first).tone(58.),
+                    start: tonal(first).tone(start),
+                    end: tonal(second).tone(end),
+                    light: tonal(first).tone(light),
+                    light_mode: theme.light,
                 }
             }
             None => {
                 let a = Lch::from_hsla(theme.accent);
                 let b = Lch::from_hsla(theme.tertiary);
                 ArtTones {
-                    start: TonalPalette::new(a.h, a.c).tone(32.),
-                    end: TonalPalette::new(b.h, b.c).tone(22.),
-                    light: TonalPalette::new(a.h, a.c).tone(58.),
+                    start: TonalPalette::new(a.h, a.c).tone(start),
+                    end: TonalPalette::new(b.h, b.c).tone(end_fallback),
+                    light: TonalPalette::new(a.h, a.c).tone(light),
+                    light_mode: theme.light,
                 }
             }
         }
