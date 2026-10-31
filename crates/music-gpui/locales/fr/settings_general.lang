@@ -29,6 +29,7 @@ settings.account.cookie_note = La connexion utilise le cookie de session de votr
 
 # ---- About
 settings.about.show_welcome = Afficher le guide de bienvenue
+settings.about.privacy = Politique de confidentialité
 settings.about.version_summary = Version {version} · {summary}
 settings.about.summary = Client de bureau natif pour YouTube Music
 settings.about.not_affiliated = Non affilié à YouTube ni à Google, ni approuvé ou sponsorisé par eux.

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.moiz_smhcoders.cratetune</id>
+  <name>CrateTune</name>
+  <summary>Native desktop client for YouTube Music</summary>
+  <developer id="io.github.moiz_smhcoders">
+    <name>Moiz-SMHcoders</name>
+  </developer>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-only</project_license>
+  <url type="homepage">https://github.com/Moiz-SMHcoders/CrateTune</url>
+  <url type="bugtracker">https://github.com/Moiz-SMHcoders/CrateTune/issues</url>
+  <url type="vcs-browser">https://github.com/Moiz-SMHcoders/CrateTune</url>
+  <url type="translate">https://github.com/Moiz-SMHcoders/CrateTune/blob/main/docs/TRANSLATING.md</url>
+  <description>
+    <p>
+      CrateTune is a native desktop client for YouTube Music, written in Rust with the GPUI
+      toolkit. There is no browser engine behind it: the interface is drawn on the GPU and
+      songs play through the app's own audio engine.
+    </p>
+    <ul>
+      <li>Home, Explore, search, charts, moods and your YouTube Music library</li>
+      <li>Synced lyrics from several providers, with translation and romanization</li>
+      <li>An editable queue, an equalizer, crossfade and gapless playback</li>
+      <li>Media keys and the desktop's media controls (MPRIS)</li>
+      <li>Listen together with friends, over the internet or on the same network</li>
+      <li>Song recognition, Last.fm and ListenBrainz scrobbling, Discord Rich Presence</li>
+      <li>Themes, dynamic colours from the cover, and eighteen interface languages</li>
+    </ul>
+    <p>
+      CrateTune is an unofficial client. It is not affiliated with, endorsed or sponsored by
+      YouTube or Google. It has no telemetry; see PRIVACY.md in the repository for what it
+      connects to.
+    </p>
+  </description>
+  <launchable type="desktop-id">io.github.moiz_smhcoders.cratetune.desktop</launchable>
+  <provides>
+    <binary>cratetune</binary>
+  </provides>
+  <screenshots>
+    <screenshot type="default">
+      <caption>Home</caption>
+      <image>https://raw.githubusercontent.com/Moiz-SMHcoders/CrateTune/main/docs/screenshots/browse-home.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>An album page</caption>
+      <image>https://raw.githubusercontent.com/Moiz-SMHcoders/CrateTune/main/docs/screenshots/browse-album.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Now Playing with synced lyrics</caption>
+      <image>https://raw.githubusercontent.com/Moiz-SMHcoders/CrateTune/main/docs/screenshots/gpui-now-playing-lyrics.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Search</caption>
+      <image>https://raw.githubusercontent.com/Moiz-SMHcoders/CrateTune/main/docs/screenshots/browse-search.png</image>
+    </screenshot>
+  </screenshots>
+  <categories>
+    <category>AudioVideo</category>
+    <category>Audio</category>
+    <category>Player</category>
+  </categories>
+  <keywords>
+    <keyword>music</keyword>
+    <keyword>youtube</keyword>
+    <keyword>player</keyword>
+    <keyword>lyrics</keyword>
+  </keywords>
+  <branding>
+    <color type="primary" scheme_preference="light">#f2f5fa</color>
+    <color type="primary" scheme_preference="dark">#22436a</color>
+  </branding>
+  <requires>
+    <display_length compare="ge">768</display_length>
+  </requires>
+  <supports>
+    <control>keyboard</control>
+    <control>pointing</control>
+  </supports>
+  <content_rating type="oars-1.1">
+    <content_attribute id="social-chat">mild</content_attribute>
+    <content_attribute id="social-info">mild</content_attribute>
+  </content_rating>
+  <releases>
+    <release version="0.2.6" date="2026-10-31">
+      <url type="details">https://github.com/Moiz-SMHcoders/CrateTune/releases/tag/v0.2.6</url>
+    </release>
+  </releases>
+</component>

@@ -654,6 +654,7 @@ These switches are part of settings export and import, not of profiles.
 | Windows: the portable `.zip` | unpacks the new version, waits for the app to quit, replaces the files, and starts the app again. |
 | Linux: the AppImage | puts the new AppImage in place of the old one (same file name) and starts it. |
 | Linux: the `.tar.gz` (`install.sh`) | replaces `bin/` and `share/` in the install folder, then starts the app again. |
+| Homebrew, Scoop, the AUR, Flatpak (or Snap) | doesn't happen in the app. Settings → About says "Updates come from Homebrew" (or the package manager you used), and the app never checks. Update with the package manager: `brew upgrade --cask cratetune`, `scoop update cratetune`, `yay -Syu`, `flatpak update`. |
 
 **Safety:**
 

@@ -27,6 +27,7 @@ settings.account.cookie_note = Masuk menggunakan cookie sesi browser Anda untuk 
 
 # ---- About
 settings.about.show_welcome = Tampilkan panduan selamat datang
+settings.about.privacy = Kebijakan privasi
 settings.about.version_summary = Versi {version} · {summary}
 settings.about.summary = Klien desktop native untuk YouTube Music
 settings.about.not_affiliated = Tidak berafiliasi dengan, didukung, atau disponsori oleh YouTube atau Google.

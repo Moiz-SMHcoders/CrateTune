@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=CrateTune
+GenericName=Music Player
+Comment=Native desktop client for YouTube Music
+Exec=cratetune %U
+Icon=io.github.moiz_smhcoders.cratetune
+Terminal=false
+Categories=AudioVideo;Audio;Player;
+Keywords=music;youtube;player;lyrics;
+StartupNotify=true
+StartupWMClass=cratetune

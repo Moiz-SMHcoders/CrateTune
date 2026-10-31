@@ -29,6 +29,7 @@ settings.account.cookie_note = 로그인에는 music.youtube.com의 브라우저
 
 # ---- About
 settings.about.show_welcome = 시작 가이드 보기
+settings.about.privacy = 개인정보 처리방침
 settings.about.version_summary = 버전 {version} · {summary}
 settings.about.summary = YouTube Music용 네이티브 데스크톱 클라이언트
 settings.about.not_affiliated = YouTube 또는 Google과 제휴하거나 승인 또는 후원을 받지 않았습니다.

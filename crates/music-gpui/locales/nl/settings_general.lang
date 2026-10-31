@@ -30,6 +30,7 @@ settings.account.cookie_note = Inloggen gebruikt de sessiecookie van je browser 
 
 # ---- About
 settings.about.show_welcome = Welkomstgids tonen
+settings.about.privacy = Privacybeleid
 settings.about.version_summary = Versie {version} · {summary}
 settings.about.summary = Native desktopclient voor YouTube Music
 settings.about.not_affiliated = Niet verbonden aan, goedgekeurd of gesponsord door YouTube of Google.

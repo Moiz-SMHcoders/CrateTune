@@ -39,18 +39,15 @@ for png in packaging/linux/icons/*.png; do
   mkdir -p "$TREE/share/icons/hicolor/$size/apps"
   cp "$png" "$TREE/share/icons/hicolor/$size/apps/$APP_ID.png"
 done
-cat > "$TREE/share/metainfo/$APP_ID.metainfo.xml" <<XML
-<?xml version="1.0" encoding="UTF-8"?>
-<component type="desktop-application">
-  <id>$APP_ID</id>
-  <name>$APP_NAME</name>
-  <summary>$APP_SUMMARY</summary>
-  <metadata_license>CC0-1.0</metadata_license>
-  <project_license>GPL-3.0-only</project_license>
-  <launchable type="desktop-id">$APP_ID.desktop</launchable>
-  <releases><release version="$APP_VERSION"/></releases>
-</component>
-XML
+# AppStream metadata: packaging/linux/app.metainfo.xml.in, shared with the Flatpak (same
+# component id, so software centres see one app).
+RELEASE_DATE="${RELEASE_DATE:-$(date -u +%Y-%m-%d)}"
+sed -e "s|@METAINFO_ID@|$APPSTREAM_ID|g" -e "s|@DESKTOP_ID@|$APP_ID.desktop|g" \
+  -e "s|@APP_NAME@|$APP_NAME|g" -e "s|@APP_SUMMARY@|$APP_SUMMARY|g" -e "s|@APP_ID@|$APP_ID|g" \
+  -e "s|@UPDATE_REPO@|$UPDATE_REPO|g" -e "s|@APP_VERSION@|$APP_VERSION|g" \
+  -e "s|@RELEASE_DATE@|$RELEASE_DATE|g" \
+  packaging/linux/app.metainfo.xml.in | sed '/^<!--$/,/^-->$/d' \
+  > "$TREE/share/metainfo/$APPSTREAM_ID.metainfo.xml"
 cp LICENSE "$TREE/"
 cat > "$TREE/install.sh" <<SH
 #!/bin/sh

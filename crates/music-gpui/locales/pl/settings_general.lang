@@ -29,6 +29,7 @@ settings.account.cookie_note = Logowanie używa pliku cookie sesji przeglądarki
 
 # ---- About
 settings.about.show_welcome = Pokaż przewodnik powitalny
+settings.about.privacy = Polityka prywatności
 settings.about.version_summary = Wersja {version} · {summary}
 settings.about.summary = Natywny klient YouTube Music na komputery
 settings.about.not_affiliated = Niepowiązany z YouTube ani Google, niepopierany ani niesponsorowany przez nie.

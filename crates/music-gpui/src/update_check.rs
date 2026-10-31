@@ -9,6 +9,9 @@
 //!   "Restart to finish", which installs it and starts the new version. Copies that
 //!   can't replace themselves (built from source, a read-only folder, a package
 //!   manager) get "Download manually" (the release page) instead.
+//! * **Package managers:** a copy that Flatpak, Homebrew, Scoop, the AUR or Snap
+//!   installed ([`PackageManager`], `CRATETUNE_PACKAGED=…`) never checks: Settings
+//!   → About says "Updates come from <manager>" and the menu item is hidden.
 //! * **Install automatically** (off by default): a found update is downloaded in
 //!   the background, the app asks to restart, and it is installed on quit if the
 //!   user didn't restart before.
@@ -18,8 +21,8 @@
 //! version), `MUSIC_UPDATE_FAIL=copy|swap|verify|launch` (fail an install step).
 //! Script actions are in `update_script.rs`.
 
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::{Arc, OnceLock};
 use std::time::Duration;
 
 use gpui::{App, Context, Global};
@@ -27,7 +30,7 @@ use gpui_component::button::{Button, ButtonVariants as _};
 use gpui_component::notification::Notification;
 use gpui_component::{Sizable as _, WindowExt as _};
 use music_core::updater::{
-    InstallKind, ManualReason, Offer, Source, Staged, UpdateError, Updater, Version,
+    InstallKind, ManualReason, Offer, PackageManager, Source, Staged, UpdateError, Updater, Version,
 };
 
 use crate::app::MusicApp;
@@ -118,6 +121,23 @@ pub fn repo() -> Option<String> {
         .filter(|r| r.contains('/'))
 }
 
+/// How this copy was installed (detected once).
+fn install_kind() -> &'static InstallKind {
+    static KIND: OnceLock<InstallKind> = OnceLock::new();
+    KIND.get_or_init(|| InstallKind::detect_current(identity::APP_ID))
+}
+
+/// The package manager that updates this copy (no update checks then).
+pub fn package_manager() -> Option<&'static PackageManager> {
+    install_kind().package_manager()
+}
+
+/// The app checks for updates itself: a release repository, and no package
+/// manager in charge. Gates the "Check for Updates…" menu items.
+pub fn checks_enabled() -> bool {
+    repo().is_some() && package_manager().is_none()
+}
+
 /// The running version (`MUSIC_UPDATE_FAKE_VERSION` pretends another one).
 pub fn current_version() -> String {
     std::env::var("MUSIC_UPDATE_FAKE_VERSION")
@@ -151,7 +171,7 @@ fn build_updater() -> Option<Updater> {
         identity::APP_ID,
         current,
         dir,
-        InstallKind::detect_current(identity::APP_ID),
+        install_kind().clone(),
     ))
 }
 
@@ -196,8 +216,9 @@ pub fn diagnostics(cx: &App) -> String {
         return "no updater (no repo or cache dir)".into(); // i18n-ignore
     };
     format!(
-        "kind={} path={} api={} current={} offer={} staged={} blocker={} log={}", // i18n-ignore
+        "kind={} manager={} path={} api={} current={} offer={} staged={} blocker={} log={}", // i18n-ignore
         u.kind.name(),
+        u.kind.package_manager().map(|m| m.id()).unwrap_or("-"),
         u.kind
             .path()
             .map(|p| p.display().to_string())
@@ -235,6 +256,9 @@ pub fn describe(error: &UpdateError) -> String {
         }
         UpdateError::Manual(ManualReason::SystemPackage) => {
             t!("update.error.system_package").to_owned()
+        }
+        UpdateError::Manual(ManualReason::PackageManager(manager)) => {
+            t!("update.managed", manager = manager.display_name())
         }
         UpdateError::Manual(ManualReason::UnsupportedPlatform) => {
             t!("update.error.no_asset").to_owned()
@@ -325,6 +349,13 @@ impl MusicApp {
         let Some(updater) = state(cx).updater.clone() else {
             return;
         };
+        if let Some(manager) = package_manager() {
+            eprintln!(
+                "music-gpui: updates come from {} (no update checks)",
+                manager.id()
+            );
+            return;
+        }
         eprintln!(
             "music-gpui: updates from {} ({}, {})",
             updater.source.releases_url(),
@@ -358,6 +389,9 @@ impl MusicApp {
     /// Fetches the releases (no-op without a repo). `manual`: "Check now" / the
     /// menu item — also reports "up to date".
     pub fn check_for_updates(&mut self, manual: bool, cx: &mut Context<Self>) {
+        if package_manager().is_some() {
+            return;
+        }
         let Some(updater) = state(cx).updater.clone() else {
             return;
         };

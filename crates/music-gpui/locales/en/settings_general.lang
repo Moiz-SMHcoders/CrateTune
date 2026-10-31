@@ -46,6 +46,8 @@ settings.account.cookie_note = Signing in uses your browser session cookie for m
 
 # ---- About (src/settings/about.rs)
 settings.about.show_welcome = Show welcome guide
+# Opens PRIVACY.md (what the app contacts and stores) in the browser.
+settings.about.privacy = Privacy policy
 # {version} = the app's version number, {summary} = settings.about.summary.
 settings.about.version_summary = Version {version} · {summary}
 # The app's one-line description. English shows APP_SUMMARY from packaging/app.env

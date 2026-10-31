@@ -49,6 +49,11 @@ update.error.not_writable = {app} can't replace itself because your user can't w
 update.error.dev_build = This copy wasn't installed from a release package (for example, it was built from source), so it can't update itself.
 update.error.translocated = macOS runs this copy from a temporary read-only location. Move {app} to your Applications folder, open it from there, and try again.
 update.error.system_package = This copy was installed by a package manager. Update it there.
+# Settings → About → Updates when a package manager (Flatpak, Homebrew, Scoop, AUR,
+# Snap) installed the app; the self-updater is off. {manager} = its name, not translated
+# ("Homebrew", "Flatpak", "AUR", "Scoop", "Snap").
+update.managed = Updates come from {manager}.
+update.managed_detail = {app} was installed with {manager}, so it doesn't update itself. Update it there along with your other apps.
 update.error.invalid = The downloaded package isn't valid ({error}). Nothing was installed.
 update.error.io = Couldn't save the download ({error}).
 update.error.install = Installing failed and the current version is still in place ({error}).

@@ -16,4 +16,7 @@ case "$(uname -m)" in
   x86_64|amd64) APP_ARCH=x86_64 ;;
   *) APP_ARCH="$(uname -m)" ;;
 esac
-export APP_NAME APP_ID BUNDLE_ID APP_SUMMARY UPDATE_REPO APP_VERSION APP_EXECUTABLE APP_ARCH ROOT
+# AppStream / Flatpak id, Flathub's rule for GitHub projects: io.github.<owner>.<id>, lower
+# case, '-' → '_' (io.github.moiz_smhcoders.cratetune).
+APPSTREAM_ID="io.github.$(printf '%s' "${UPDATE_REPO%%/*}" | tr 'A-Z-' 'a-z_').$APP_ID"
+export APP_NAME APP_ID BUNDLE_ID APP_SUMMARY UPDATE_REPO APP_VERSION APP_EXECUTABLE APP_ARCH ROOT APPSTREAM_ID

@@ -29,6 +29,7 @@ settings.account.cookie_note = Oturum açmak, music.youtube.com için tarayıcı
 
 # ---- About
 settings.about.show_welcome = Hoş geldiniz rehberini göster
+settings.about.privacy = Gizlilik politikası
 settings.about.version_summary = Sürüm {version} · {summary}
 settings.about.summary = YouTube Music için yerel masaüstü istemcisi
 settings.about.not_affiliated = YouTube veya Google ile bağlantılı değildir; onlar tarafından onaylanmamış veya desteklenmemiştir.

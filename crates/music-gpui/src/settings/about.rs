@@ -28,16 +28,30 @@ pub(super) fn render(
     _: &mut Window,
     cx: &mut Context<SettingsPanel>,
 ) -> AnyElement {
-    let welcome = h_flex().gap_2().anchor("about.welcome").child(
-        Button::new("about-onboarding")
-            .small()
-            .outline()
-            .label(t!("settings.about.show_welcome"))
-            .on_click(|_, window, cx| {
-                crate::app::update_app(cx, |app, cx| app.open_onboarding(0, window, cx));
-            }),
-    );
-    let updates = crate::update_check::repo().map(|repo| updates_group(panel, &repo, cx));
+    let welcome = h_flex()
+        .gap_2()
+        .anchor("about.welcome")
+        .child(
+            Button::new("about-onboarding")
+                .small()
+                .outline()
+                .label(t!("settings.about.show_welcome"))
+                .on_click(|_, window, cx| {
+                    crate::app::update_app(cx, |app, cx| app.open_onboarding(0, window, cx));
+                }),
+        )
+        .children(privacy_url().map(|url| {
+            Button::new("about-privacy")
+                .small()
+                .ghost()
+                .label(t!("settings.about.privacy"))
+                .on_click(move |_, _, cx| cx.open_url(&url))
+        }));
+    let updates =
+        crate::update_check::repo().map(|repo| match crate::update_check::package_manager() {
+            Some(manager) => managed_group(manager, cx),
+            None => updates_group(panel, &repo, cx),
+        });
     // English: the description from packaging/app.env (the one place to rename).
     let summary = if crate::i18n::locale() == crate::i18n::Locale::ENGLISH {
         crate::identity::APP_SUMMARY
@@ -119,6 +133,29 @@ pub(super) fn render(
                 ),
         )
         .into_any_element()
+}
+
+/// PRIVACY.md in the release repository (what the app contacts and stores).
+fn privacy_url() -> Option<String> {
+    let repo = crate::identity::UPDATE_REPO;
+    repo.contains('/')
+        .then(|| format!("https://github.com/{repo}/blob/main/PRIVACY.md"))
+}
+
+/// Settings → About → Updates for a copy a package manager updates: no checks,
+/// no switches, just where updates come from.
+fn managed_group(
+    manager: &music_core::updater::PackageManager,
+    cx: &mut Context<SettingsPanel>,
+) -> gpui::Div {
+    let name = manager.display_name();
+    group_at("about.updates", t!("update.group"), cx)
+        .child(
+            div()
+                .text_sm()
+                .child(SharedString::from(t!("update.managed", manager = name))),
+        )
+        .child(note(t!("update.managed_detail", manager = name), cx))
 }
 
 impl SettingsPanel {

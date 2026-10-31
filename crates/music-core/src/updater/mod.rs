@@ -48,7 +48,7 @@ use std::sync::atomic::AtomicBool;
 pub use apply::{HELPER_FLAG, run_helper};
 pub use download::{GITHUB_API, Source};
 pub use install::INNO_SILENT_FLAGS;
-pub use kind::{Arch, InstallKind, ManualReason, Os};
+pub use kind::{Arch, InstallKind, MARKER_FILE, ManualReason, Os, PackageManager};
 pub use log::UpdateLog;
 pub use release::{Asset, Release, pick_release};
 pub use sums::{SUMS_FILE, parse_sums, sha256_file};
