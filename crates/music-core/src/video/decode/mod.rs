@@ -278,4 +278,45 @@ mod tests {
         assert!(times.iter().all(|t| t % 100 == 0 && *t < 3000), "{times:?}");
         assert!(times.contains(&2000), "{times:?}");
     }
+
+    /// A seek back after the end: decoded to the end and drained, then
+    /// flushed and fed the second fragment again, the decoder still gives its
+    /// frames (Media Foundation needs a fresh decoder after a drain).
+    #[test]
+    fn decodes_again_after_the_end() {
+        if !decoding_supported() {
+            eprintln!("video: no H.264 decoder on this machine, skipped");
+            return;
+        }
+        let init = InitSegment::parse(&clip::CLIP[..=clip::INIT_END]).unwrap();
+        let index = SegmentIndex::parse(
+            &clip::CLIP[clip::INDEX.0..=clip::INDEX.1],
+            clip::INDEX.0 as u64,
+        )
+        .unwrap();
+        let mut decoder = open(&init).unwrap();
+        let samples = |n: usize| {
+            let f = index.fragments[n];
+            parse_fragment(&clip::CLIP[f.start as usize..=f.end as usize], &init).unwrap()
+        };
+        let last = index.fragments.len() - 1;
+        for sample in samples(last) {
+            decoder.decode(&sample).unwrap();
+        }
+        decoder.finish().unwrap();
+        decoder.flush();
+        let mut times = Vec::new();
+        for sample in samples(1) {
+            for (pts, _) in decoder.decode(&sample).unwrap() {
+                times.push(pts.as_millis());
+            }
+        }
+        for (pts, _) in decoder.finish().unwrap() {
+            times.push(pts.as_millis());
+        }
+        times.sort();
+        times.dedup();
+        assert!(times.len() >= 8, "{} frames: {times:?}", times.len());
+        assert!(times.contains(&1000), "{times:?}");
+    }
 }
