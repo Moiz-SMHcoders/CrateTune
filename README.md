@@ -2764,6 +2764,51 @@ Settings → Lyrics dictionary row and progress bar on screen (rendered, not loo
 in-app cancel of a running download (unit-tested; the real download finished first), a
 successful Google translation, Paxsenix / BetterLyrics keys.
 
+### Lyrics sources round: waves, length match, sources tried
+
+| ![Lyrics from SimpMusic · Word-synced, nudged +0.3 s](docs/screenshots/np-lyrics-source.png) | ![Sources tried](docs/screenshots/np-lyrics-sources-tried.png) |
+|---|---|
+
+Ideas from Zuno (waves, attempt log, per-track nudge) and Limusic (closest-length matching,
+cancel on hit, pinned per-song choice); see `THIRD_PARTY.md`. Limusic does not correct
+offsets for slightly different lengths (it only rejects other cuts), so neither do we; LRC
+`[offset:]` tags are applied and the nudge is manual.
+
+**Fetch times** (`examples/lyrics_bench.rs --service-only`, 12 popular songs, no cache, before =
+main `4c06d54`, the two binaries run alternately twice): median 386 / 160 ms before, 135 /
+140 ms after; the before service started 6 providers at once on every song, the after one 4
+(wave 1 only — no song needed wave 2). Per song in the first pass: Instant Crush 819 → 1080 ms
+(before: Portato's QQ lyrics of unknown length; after: SimpMusic, word-synced, same video),
+Shape of You 211 → 129, アイドル 843 → 489, MALAMENTE 461 → 122, Bohemian Rhapsody 140 → 133,
+BIRDS OF A FEATHER 201 → 149, Blinding Lights 368 → 123, Dynamite 386 → 143, Anti-Hero 419 → 122,
+Tití Me Preguntó 438 → 135, Weird Fishes 136 → 121, Alors on danse (Radio Edit) 141 → 162 ms.
+In the app (`MUSIC_TRACE=1`) a search takes 0.4–1.1 s; tracks without a length (search cards)
+first look it up through `next` (~0.4 s), without which the length match cannot work.
+
+**CPU with lyrics open** (release, Now Playing split · blur · Karaoke, real audio at
+`MUSIC_VOLUME=0.0`, window kept visible with `MUSIC_ON_TOP=1`, CPU time / wall time over 40 s
+starting 5 s after playback began, 3 runs each, before and after alternating; the machine was
+shared with other builds, load average 40–120):
+
+| Song (lyrics before → after) | before | after |
+|---|---|---|
+| Shape of You (BetterLyrics, 97 word-synced lines, both) | 8.4 / 9.7 / 8.4 % | 8.8 / 7.7 / 7.5 % |
+| Instant Crush (Binimum 84 → SimpMusic 82 lines) | 5.5 / 5.4 / 6.0 % | 5.6 / 5.8 / 5.6 % |
+| アイドル (YouLyPlus 74 → SimpMusic 76 lines) | 8.8 / 6.9 / 6.7 % | 9.4 / 10.2 / 8.8 % |
+
+Same lyrics, same cost; アイドル differs because the new pick (SimpMusic, same video) has denser
+word timings, so more frames sweep. Per-frame draw cost (`@bench=600`) 0.63–0.72 ms before,
+0.63–0.76 ms after; physical footprint 159–186 MB in both. The toolbar's sources menu is built
+once per change (not per frame) and compared by pointer; prepared lyrics are kept for the last
+12 tracks instead of every track of the session.
+
+**Verified:** the label, menu and nudge on screen (screenshots above, `@click` on the label);
+`@lyrics-source=LrcLib` + `@lyrics-nudge=-200` wrote `lyrics-tracks.json`, and the next launch
+showed LrcLib from the cache, a reload asked wave 1 again with LrcLib pinned and stopped the
+rest; unit tests for duration scoring, waves, cancellation, the request cap, pinned sources
+and the per-track store. **Not verified:** Paxsenix providers (no key), a song where wave 2
+was needed in the app (the bench's 12 songs never needed it; covered by unit tests).
+
 ### Now Playing round: CPU, designs, lyrics cards
 
 | ![Split (default)](docs/screenshots/np-split.png) | ![Immersive](docs/screenshots/np-immersive.png) |

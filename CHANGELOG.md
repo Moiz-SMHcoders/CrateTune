@@ -18,7 +18,8 @@ versions follow [SemVer](https://semver.org/).
   timing and provider order are compared; the matched title and artist must resemble the
   song's. LRCLIB, KuGou and Binimum report the length of what they matched, Apple-style TTML
   and LRC `[length:]` tags declare it, and video-id lookups (SimpMusic, Unison, YouTube Music)
-  are exact by definition. LRC `[offset:]` tags are applied. Settings → Lyrics → *Match the
+  are exact by definition. LRC `[offset:]` tags are applied. A track without a length (some
+  search cards) first gets it from YouTube Music's watch page, as Limusic does. Settings → Lyrics → *Match the
   track's exact length* (on).
 * **"Lyrics from LrcLib · Line-synced"** above the lyrics, and behind it **Sources tried**:
   every source in the order it was asked, with its result (sync kind and same / different

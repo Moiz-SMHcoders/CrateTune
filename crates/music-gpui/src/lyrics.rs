@@ -615,15 +615,35 @@ impl MusicApp {
         );
         let service = self.lyrics.service.clone();
         let generation = self.lyrics.generation;
-        let query = LyricsQuery::from_track(track);
+        let mut query = LyricsQuery::from_track(track);
         let id = track.video_id.clone();
         let options = SearchOptions {
             refresh,
             pinned: self.lyrics.tracks.source(&id).map(str::to_owned),
         };
+        // Tracks from some search cards and queues carry no length; the match on the
+        // exact cut needs it (as Limusic does, from the watch page's own item).
+        let lookup = (query.duration_secs.is_none() && query.video_id.is_some())
+            .then(|| self.innertube.clone());
         let trace = self.trace;
         cx.spawn(async move |this, cx| {
             let (result, info) = off_thread(move || {
+                if let Some(client) = lookup
+                    && let Some(video_id) = query.video_id.clone()
+                {
+                    let target = music_core::innertube::WatchTarget::video(video_id.as_str());
+                    match client.next(&target) {
+                        Ok(queue) => {
+                            if let Some(t) = queue.tracks.iter().find(|t| t.video_id == video_id) {
+                                query.duration_secs = t.duration_secs;
+                                if query.album.is_none() {
+                                    query.album = t.album.clone();
+                                }
+                            }
+                        }
+                        Err(e) => eprintln!("music-gpui: lyrics: no length for {video_id}: {e}"),
+                    }
+                }
                 let search = service.search(&query, &options);
                 let mut found: Vec<RawLyrics> = Vec::new();
                 if let Ok(Some(r)) = &search.result {

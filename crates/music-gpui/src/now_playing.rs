@@ -1533,9 +1533,12 @@ impl MusicApp {
             .gap_2()
             .text_xs()
             .text_color(white(0.5))
-            .child(div().flex_1().min_w_0().overflow_hidden().child(
-                crate::np_lyrics::source_button(s.label.clone(), s.sources.clone()),
-            ))
+            .child(
+                // A row, so the button keeps its own width (left-aligned, not stretched).
+                h_flex().flex_1().min_w_0().overflow_hidden().child(
+                    crate::np_lyrics::source_button(s.label.clone(), s.sources.clone()),
+                ),
+            )
             .when(s.synced, |this| {
                 this.child(crate::np_lyrics::nudge_controls(s.offset_ms))
             })
