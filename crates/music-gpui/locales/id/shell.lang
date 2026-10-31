@@ -214,3 +214,27 @@ store.toast.playlist_renamed = Nama diganti menjadi “{playlist}”
 store.toast.playlist_deleted = “{playlist}” dihapus
 store.toast.removed_from_playlist.other = {count} lagu dihapus dari playlist
 store.toast.playlist_refreshed.other = Playlist disegarkan ({count} lagu)
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+queue.section.next_in_queue = BERIKUTNYA DI ANTREAN · {count}
+queue.section.next_from = BERIKUTNYA DARI {name} · {count}
+queue.section.next_from_radio = BERIKUTNYA DARI RADIO {name} · {count}
+queue.clear_section = Hapus
+queue.tooltip.clear_section = Hapus lagu-lagu ini, sisanya tetap
+queue.tabs.main = Utama
+queue.tabs.new_name = Antrean {n}
+queue.tabs.new = Tab antrean baru
+queue.tabs.tooltip_playing = Diputar dari antrean ini
+queue.tabs.tooltip_other = Tampilkan antrean ini
+queue.tabs.rename = Ganti nama…
+queue.tabs.remove = Hapus tab
+queue.tabs.rename_title = Ganti nama tab antrean
+queue.tabs.name_placeholder = Nama tab
+queue.tabs.left_at = Ditinggalkan di {time} pada “{title}”
+queue.tabs.empty = Antrean ini kosong. Gunakan, lalu putar sesuatu untuk mengisinya.
+queue.tabs.continue = Lanjutkan antrean ini
+queue.tabs.use = Gunakan antrean ini
+queue.tabs.paused = DIJEDA
+queue.tabs.toast_switched = Memutar dari “{name}”
+queue.tabs.toast_guest = Saat Anda menjadi tamu di Dengar bersama, tuan rumah yang menentukan apa yang diputar.
+store.toast.disliked_many.other = {count} lagu tidak disukai

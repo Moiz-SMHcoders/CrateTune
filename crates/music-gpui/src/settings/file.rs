@@ -99,6 +99,8 @@ pub struct Settings {
     /// Update checks and installs (Settings → About; `prefs::UpdatePrefs`). In
     /// settings exports, not in profiles.
     pub updates: super::prefs::UpdatePrefs,
+    /// The app log (Settings → About → Logs; `logs.rs`).
+    pub logs: super::prefs::LogPrefs,
     /// Secrets that could not go to the OS keychain (see `secrets.rs`).
     #[serde(skip_serializing_if = "FileSecrets::is_empty")]
     pub secrets: FileSecrets,
@@ -137,6 +139,7 @@ impl Default for Settings {
             effects: Default::default(),
             shortcuts: Default::default(),
             updates: Default::default(),
+            logs: Default::default(),
             secrets: FileSecrets::default(),
         }
     }

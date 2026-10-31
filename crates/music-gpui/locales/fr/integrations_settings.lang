@@ -145,3 +145,6 @@ settings.cast.streaming = Streaming
 settings.cast.direct = Laisser l'appareil récupérer lui-même l'audio YouTube
 settings.cast.direct_desc = Désactivé : cette app le transmet à l'appareil (fonctionne avec tous les titres).
 settings.cast.note = La diffusion lit la file d'attente sur un Chromecast, un Google TV ou une enceinte Nest de ce réseau (Default Media Receiver de Google). Le bouton Cast de la barre de lecture choisit un appareil ; lecture, pause, avance, saut et volume le contrôlent alors, et Arrêter la diffusion reprend la lecture ici. L'audio YouTube et les fichiers locaux sont transmis de cet ordinateur à l'appareil (laissez l'app ouverte) ; l'appareil et cet ordinateur doivent être sur le même réseau. Les changements s'appliquent au titre suivant.
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.together.approve_suggestions_desc = Les titres des invités attendent sur la page Écouter ensemble jusqu'à ce que vous les acceptiez ou refusiez.

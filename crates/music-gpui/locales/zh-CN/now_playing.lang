@@ -78,3 +78,8 @@ card.align.right = 右对齐
 card.size.small = 小
 card.size.medium = 中
 card.size.large = 大
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+np.queue.next_in_queue = 队列中的下一首
+np.queue.next_from = 接下来来自 {name}
+np.queue.next_from_radio = 接下来来自 {name} 电台

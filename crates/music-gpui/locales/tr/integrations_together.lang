@@ -127,3 +127,23 @@ together.guest.suggest_hint = Bir şarkıyı ev sahibine önermek için “Sonra
 together.guest.no_suggestions = Ev sahibi öneri kabul etmiyor.
 together.guest.clock = Saat farkı {offset} ms · gidiş-dönüş {rtt} ms
 together.activity = Etkinlik
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+together.log.suggestion_waiting = {name}, “{title}” şarkısını öneriyor: Birlikte dinle sayfasında onaylayın
+together.log.suggestion_approved = {name} kişisinin önerdiği “{title}” eklendi
+together.log.suggestion_rejected = {name} kişisinin önerdiği “{title}” reddedildi
+together.toast.suggestion_approved = Ev sahibi “{title}” şarkısını ekledi
+together.toast.suggestion_rejected = Ev sahibi “{title}” şarkısını reddetti
+together.room.approve_suggestions = Öneriler onayımı gerektirir
+together.suggestions.hint = Onaylanan şarkılar sıranıza misafirin istediği gibi (sıradaki ya da sona) eklenir.
+together.suggestions.from = {artists} · {name} önerdi
+together.suggestions.approve = Onayla
+together.suggestions.reject = Reddet
+together.suggestions.yours = Önerileriniz
+together.suggestions.sent = Gönderildi
+together.suggestions.pending = Ev sahibini bekliyor
+together.suggestions.approved = Eklendi
+together.suggestions.rejected = Reddedildi
+together.suggestions.rejected_because = Reddedildi: {reason}
+together.suggestions.title.one = {count} öneri bekliyor
+together.suggestions.title.other = {count} öneri bekliyor

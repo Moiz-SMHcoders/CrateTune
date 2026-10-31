@@ -145,3 +145,6 @@ settings.cast.streaming = Transmissão
 settings.cast.direct = Deixar o dispositivo buscar o áudio do YouTube
 settings.cast.direct_desc = Desativado: este app transmite o áudio para o dispositivo (funciona com todas as músicas).
 settings.cast.note = A transmissão toca a fila em um Chromecast, Google TV ou alto-falante Nest nesta rede (Default Media Receiver do Google). O botão Transmitir da barra do player escolhe um dispositivo; tocar, pausar, avançar/voltar, pular e volume passam a controlá-lo, e Parar transmissão continua aqui. O áudio do YouTube e os arquivos locais são transmitidos deste computador para o dispositivo (mantenha o app aberto); o dispositivo e este computador precisam estar na mesma rede. As alterações valem a partir da próxima música.
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.together.approve_suggestions_desc = As músicas dos convidados esperam na página Ouvir juntos até você aprovar ou recusar.

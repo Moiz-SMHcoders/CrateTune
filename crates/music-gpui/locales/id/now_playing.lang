@@ -76,3 +76,8 @@ card.align.right = Kanan
 card.size.small = Kecil
 card.size.medium = Sedang
 card.size.large = Besar
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+np.queue.next_in_queue = BERIKUTNYA DI ANTREAN
+np.queue.next_from = BERIKUTNYA DARI {name}
+np.queue.next_from_radio = BERIKUTNYA DARI RADIO {name}

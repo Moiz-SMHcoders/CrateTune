@@ -250,3 +250,7 @@ storage.restore_failed = Ripristino non riuscito: {error}
 storage.cache_cleared = Cache di riproduzione svuotata
 storage.clearing_search = Cancellazione della cronologia delle ricerche
 storage.search_cleared = Cronologia delle ricerche cancellata
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+selection.tooltip.select_all = Seleziona tutti i brani di questo elenco
+selection.tooltip.clear = Annulla la selezione (Esc)

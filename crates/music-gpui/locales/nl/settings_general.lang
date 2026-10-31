@@ -125,3 +125,20 @@ login.instructions = Log in met je Google-account. Dit venster sluit zodra YouTu
 login.webview_failed = De webweergave kan niet worden gemaakt ({error}). Gebruik in plaats daarvan ‘Cookie plakken’.
 login.checking = Ingelogd — account controleren…
 login.webview2_missing = Inloggen met Google vereist de Microsoft Edge WebView2 Runtime, die niet is geïnstalleerd. Installeer die via microsoft.com/edge/webview2 of gebruik ‘Cookie plakken’.
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.about.logs = Logboek
+settings.about.logs.note = Wat de app de laatste tijd meldde, nieuwste eerst. Cookies, tokens, sleutels en wachtwoorden worden verwijderd voordat er iets bewaard wordt. Gedetailleerde tracing vraagt MUSIC_TRACE=1 bij het starten.
+settings.about.logs.errors = Fouten
+settings.about.logs.warnings = Waarschuwingen
+settings.about.logs.info = Info
+settings.about.logs.trace = Alles
+settings.about.logs.empty = Op dit niveau is nog niets gelogd.
+settings.about.logs.copy = Kopiëren
+settings.about.logs.copied = Logboek gekopieerd naar het klembord
+settings.about.logs.save = Logboek opslaan…
+settings.about.logs.open_folder = Logmap openen
+settings.about.logs.saved = Logboek opgeslagen in {path}
+settings.about.logs.save_failed = Kon het logboek niet opslaan: {error}
+settings.about.logs.file = Een logbestand schrijven
+settings.about.logs.file_desc = Bewaart het logboek ook in de logmap (tot 2 MB: één huidig en één ouder bestand).

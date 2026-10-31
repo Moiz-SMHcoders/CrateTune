@@ -151,3 +151,6 @@ settings.cast.streaming = Strumieniowanie
 settings.cast.direct = Urządzenie samo pobiera dźwięk z YouTube
 settings.cast.direct_desc = Wył.: aplikacja przesyła dźwięk do urządzenia (działa z każdym utworem).
 settings.cast.note = Przesyłanie odtwarza kolejkę na urządzeniu Chromecast, Google TV lub głośniku Nest w tej sieci (Default Media Receiver Google). Przycisk Cast na pasku odtwarzacza wybiera urządzenie; odtwarzanie, pauza, przewijanie, przełączanie i głośność sterują wtedy nim, a „Zatrzymaj przesyłanie” kontynuuje odtwarzanie tutaj. Dźwięk z YouTube i pliki lokalne są przesyłane strumieniowo z tego komputera do urządzenia (nie zamykaj aplikacji); urządzenie i komputer muszą być w tej samej sieci. Zmiany obowiązują od następnego utworu.
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.together.approve_suggestions_desc = Utwory gości czekają na stronie „Słuchaj razem”, aż je zatwierdzisz lub odrzucisz.

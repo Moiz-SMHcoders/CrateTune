@@ -162,3 +162,11 @@ settings.lyrics.kanji_download = Pobierz ({size})
 settings.lyrics.kanji_downloading = Pobieranie… {done} z {total}
 settings.lyrics.kanji_ready = {name} · {size} na dysku.
 settings.lyrics.kanji_failed = Pobieranie nie powiodło się: {error}
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.playback.show_all_devices = Pokaż wszystkie urządzenia
+settings.playback.show_all_devices_desc = Pokazuj też wirtualne i zduplikowane wyjścia (w Linuksie: dmix, surround, hw / plughw z ALSA i podobne).
+settings.playback.devices_hidden.one = Ukryto {count} wirtualne lub zduplikowane urządzenie.
+settings.playback.devices_hidden.few = Ukryto {count} wirtualne lub zduplikowane urządzenia.
+settings.playback.devices_hidden.many = Ukryto {count} wirtualnych lub zduplikowanych urządzeń.
+settings.playback.devices_hidden.other = Ukryto {count} wirtualnego lub zduplikowanego urządzenia.

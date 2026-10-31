@@ -87,3 +87,8 @@ card.align.right = Праворуч
 card.size.small = Малий
 card.size.medium = Середній
 card.size.large = Великий
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+np.queue.next_in_queue = ДАЛІ В ЧЕРЗІ
+np.queue.next_from = ДАЛІ З «{name}»
+np.queue.next_from_radio = ДАЛІ З РАДІО «{name}»

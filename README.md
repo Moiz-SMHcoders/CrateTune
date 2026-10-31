@@ -1746,7 +1746,8 @@ translations, every screen in every language (five locales were looked at).
 | ⌘[ / ⌘] (also mouse back/forward buttons) | back / forward |
 | ⌘1 / ⌘2 / ⌘3 / ⌘Y | Home / Explore / Library / History |
 | ⇧⌘R | Recognize: open the page and listen (again: stop) |
-| Esc | close an open menu, popover or dialog; else Now Playing, else the queue panel, else back |
+| ⌘A (outside text fields) | select every song of the list under the pointer (multi-select) |
+| Esc | close an open menu, popover or dialog; else drop a song selection, else Now Playing, else the queue panel, else back |
 | ⌘H, ⌥⌘H, ⌘M, ⌘Q | hide, hide others, minimize, quit |
 | ⌘/ (Help → Keyboard Shortcuts) | cheat sheet of the shortcuts in effect |
 
@@ -1757,7 +1758,7 @@ so keys, menus, the mini player and scripts share one path. Text inputs keep the
 bindings (Space, ⌘←/→, ⌘↑/↓ edit text while the search field is focused).
 
 **Editable shortcuts** (Settings → Keyboard shortcuts, `settings/shortcuts_ui.rs`; model in
-`shortcuts/`): 28 actions in four groups (Playback, Navigation, Windows & view, App; Zoom,
+`shortcuts/`): 29 actions in four groups (Playback, Navigation, Windows & view, App; Zoom,
 About and Show All start unbound). "Change" records the next combination through a GPUI
 keystroke interceptor (it runs before bindings, so ⌘L while recording is recorded, not
 executed); Esc cancels, Backspace / "Clear" removes the shortcut, per-row reset and "Reset
@@ -2661,6 +2662,100 @@ triggered on purpose — the screen was locked; the capture code path is the exa
 `--mic`, untested), the Windows resource embedding and installer, the Linux tarball /
 AppImage and `.desktop` integration, the CI workflows (YAML parsed only), notarization,
 clicking the menu-bar item / media keys from the bundle (no input injection possible).
+
+### Queue round: queue parts and tabs, multi-select, devices, logs, suggestions
+
+Ideas from **Zuno** (Apache-2.0) and **Limusic** (GPL-3.0); what was ported is listed in
+[`crates/music-core/THIRD_PARTY.md`](crates/music-core/THIRD_PARTY.md#zuno-and-limusic-featqueue-ux).
+
+| ![Queue parts](docs/screenshots/queue-sections.png) | ![Now Playing: with queue](docs/screenshots/queue-sections-np.png) |
+|---|---|
+| ![Queue tabs](docs/screenshots/queue-tabs.png) | ![Selection bar](docs/screenshots/selection-bar.png) |
+| ![Logs](docs/screenshots/settings-logs.png) | ![Suggestions: host](docs/screenshots/together-suggestions-host.png) |
+| ![Suggestions: guest](docs/screenshots/together-suggestions-guest.png) | |
+
+* **Your queue and the context** (`queue.rs`). Every queue item has a `Source`: `User`
+  ("Play next", "Add to queue", a Together guest's approved song) or `Context` (the list a
+  click started, an album / playlist / artist from a card, a radio, autoplay). Invariant:
+  after the current track the user items come first. "Add to queue" inserts at the end of
+  the user part; `play_context` (every list click, `play_list`) keeps pending user items
+  and puts them after the new current track, while `replace` (Music Together's mirror of
+  the host) drops them; a forward `jump` into the context moves the skipped user items
+  behind the target; a user item that was played turns into context (history), so going
+  back can't split the parts; a moved item takes the part of the place it was dropped in;
+  shuffle shuffles only the context; `clear_part` empties one part. The context carries a
+  name (`QueueContext`: the page title, the album / playlist / artist name for card
+  actions, "<song> radio" for radio and autoplay). The queue panel shows *Next in queue* /
+  *Next from …* with a **Clear** each; Now Playing's *With queue* design shows the same
+  headings once you queued something. Saved queues gain `user_queued`, `context_name`,
+  `context_radio` (`SavedQueue`, all `serde(default)` and skipped when empty: old saves
+  load as all-context, old builds ignore the fields).
+* **Queue tabs** (`queue_tabs.rs`, UI in `components/queue_panel.rs`). Zuno's tabs each
+  own a player *and* a page stack; here only the queue is per tab, because one engine
+  plays, and a second router / page cache per tab would cost memory and touch every page
+  for little gain (BACKLOG M8). One tab is *playing* (its queue is the live `Queue`, saved
+  as before); the others hold a `SavedQueue` (songs, index, position, shuffle order,
+  repeat, parts). Clicking a tab previews it (where it was left, its two parts, read-only);
+  **Continue this queue** stores the live queue with its position in its tab, loads the
+  other and plays its track from the saved position (`play_at`: play + seek, from the
+  start when barely begun or nearly over); the radio's refill state is dropped. **+** adds
+  an empty tab and switches to it; right click renames / removes (not the playing tab, never
+  the last). Up to 8 tabs, stored under `gpui.queue_tabs` in the library database; a
+  library without it has one "Main" tab. Not while a Together guest (the host owns the
+  queue).
+* **Multi-select** (`selection.rs`, `components/selection_bar.rs`). One app-wide selection
+  in a thread-local, for one list at a time, keyed by the rows' id prefix
+  (`TrackRow::new`'s first argument) and matched by index *and* video id (pages that rebuild
+  their `Rc<Vec<Track>>` each frame keep it; a list whose songs changed doesn't show a stale
+  one). `TrackRow`'s click reads the modifiers: ⌘ (macOS) / Ctrl toggles, Shift selects from
+  the anchor (the last row touched in that list), a plain click clears and plays as before.
+  ⌘A (`select_all_rows`, Navigation group, bound in the `MusicApp` context so text fields
+  keep their own ⌘A) selects the list with a selection, else the list last hovered; Esc
+  clears first; navigating clears. The bar floats above the player bar (root view, outside
+  the cached shell); `BatchAction::offered` picks the actions (download / dislike only with
+  YouTube songs, Remove where the page registered one: library songs, liked songs,
+  downloads, local playlists — `SongList::register_remove`). The library lists' **Select**
+  button now only shows checkboxes bound to the same selection.
+* **Output devices** (`music_core::tidy_output_devices`, `output.rs`): ALSA noise types
+  dropped, one entry per card by rank (sysdefault > hdmi > dmix > front > plughw > hw;
+  Zuno drops `hw` / `plughw` outright, which hides cards that only have raw entries),
+  friendly names for bare PCMs, de-duplicated ids, numbered identical names, the default
+  first; *Show all devices* (`audio.show_all_devices`) lists everything, the picked device
+  is always kept, and a note says how many are hidden.
+* **Logs** (`logs.rs`, Settings → About → Logs). `logs::install` (early in `main`) puts a
+  pipe behind fd 2 (`dup2` on Unix, `SetStdHandle` on Windows: Rust's stderr looks the
+  handle up on each write) and installs a `log` logger (music-core's `log::info!` lines,
+  which went nowhere before, and other crates' warnings). A thread reads the pipe, redacts
+  each line, passes it on to the real stderr, keeps it in a 2000-line ring and appends it to
+  `logs/app.log` (cache folder, or `MUSIC_CONFIG_DIR/logs`; rotated at 1 MB to `app.log.1`;
+  *Write a log file*, on by default). Levels are guessed from the text (`classify`). The
+  viewer redraws from the 250 ms poll only while Settings → About is shown and the ring
+  changed. **Redaction** (`logs::redact`, unit-tested): values of secret keys (`key`,
+  `token`, `*_token`, `*_key`, `secret`, `password`, `sessionKey`, `visitorData`, `pot`,
+  `sig`, `lsig`, cookie names ending in `SID` / `PSID` / `APISID`, `sk`, `relay_secret`, …,
+  as `k=v`, `k: v` or JSON), whole `Cookie:` / `Authorization:` values, `Bearer …` and
+  `SAPISIDHASH …` credentials, `AIza…` and `sk-…` keys anywhere, and a stream URL's `ip=`.
+  The audit of the existing log calls found none printing a cookie, token or key directly;
+  the risk is error strings that quote request URLs (API key, PoToken, signatures), which
+  the redaction covers.
+* **Music Together: suggestions need approval** (after Limusic's suggestion flow).
+  `RoomSettings::require_approval_for_suggestions` (sent only when on). With it on,
+  `add_track_request` goes into the server's waiting list (`TogetherServer::suggestions`,
+  `ServerEvent::SuggestionPending`, at most 20 per guest) and the guest gets a new
+  `suggestion_status` message (`PENDING`, then `APPROVED` / `REJECTED` from
+  `decide_suggestion`); with it off, songs are added at once and the guest hears
+  `APPROVED`. No protocol version bump: a peer that doesn't know the type can't decode it
+  and skips it (ours and ArchiveTune's), and a guest that never hears a status keeps showing
+  *Sent*. The host page shows **Suggestions waiting** with Approve / Reject (approved songs
+  are queued as the guest asked: play next or add to queue); the guest page lists **Your
+  suggestions** with their state.
+* **Scripts** (`script.rs`, `integrations/script.rs`): `@cmd-click=X;Y`, `@shift-click=X;Y`,
+  `@select-all`, `@select-clear`, `@select-status`, `@batch=play|next|queue|playlist|like|dislike|download`,
+  `@queue-clear-mine`, `@queue-clear-context`, `@queue-tab=N`, `@queue-tab-new`,
+  `@queue-tab-continue=N`, `@queue-tab-rename=N:NAME`, `@queue-tab-remove=N`,
+  `@queue-status`, `@log-sample`, `@log-status`, `@together-allow=suggestions:on|off`,
+  `@together-approve-suggestion[=N]`, `@together-reject-suggestion[=N]`,
+  `@together-suggestions`.
 
 ### Player UI round: verification
 

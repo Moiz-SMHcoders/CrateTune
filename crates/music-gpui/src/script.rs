@@ -284,31 +284,44 @@ fn input_event(name: &str, arg: Option<&str>, window: &mut Window, cx: &mut App)
             cx,
         );
     };
+    let click_with =
+        |button: MouseButton, modifiers: Modifiers, window: &mut Window, cx: &mut App| {
+            let position = at().unwrap_or_default();
+            mouse_move(window, cx);
+            window.dispatch_event(
+                PlatformInput::MouseDown(MouseDownEvent {
+                    button,
+                    position,
+                    modifiers,
+                    click_count: 1,
+                    first_mouse: false,
+                }),
+                cx,
+            );
+            window.dispatch_event(
+                PlatformInput::MouseUp(MouseUpEvent {
+                    button,
+                    position,
+                    modifiers,
+                    click_count: 1,
+                }),
+                cx,
+            );
+        };
     let click = |button: MouseButton, window: &mut Window, cx: &mut App| {
-        let position = at().unwrap_or_default();
-        let modifiers = Modifiers::default();
-        mouse_move(window, cx);
-        window.dispatch_event(
-            PlatformInput::MouseDown(MouseDownEvent {
-                button,
-                position,
-                modifiers,
-                click_count: 1,
-                first_mouse: false,
-            }),
-            cx,
-        );
-        window.dispatch_event(
-            PlatformInput::MouseUp(MouseUpEvent {
-                button,
-                position,
-                modifiers,
-                click_count: 1,
-            }),
-            cx,
-        );
+        click_with(button, Modifiers::default(), window, cx)
     };
     match name {
+        // ⌘ / Ctrl-click and Shift-click (multi-select of song rows).
+        "cmd-click" => {
+            let modifiers = if cfg!(target_os = "macos") {
+                Modifiers::command()
+            } else {
+                Modifiers::control()
+            };
+            click_with(MouseButton::Left, modifiers, window, cx)
+        }
+        "shift-click" => click_with(MouseButton::Left, Modifiers::shift(), window, cx),
         "key" => {
             // `Keystroke::parse` wants a static string; scripts are tiny and run once.
             let source: &'static str = Box::leak(arg.unwrap_or("").to_owned().into_boxed_str());
@@ -591,6 +604,103 @@ impl MusicApp {
                 }
             }
             "queue-clear" => self.queue_clear(cx),
+            // "Next in queue" / "Next from …" only.
+            "queue-clear-mine" => self.queue_clear_part(crate::queue::Source::User, cx),
+            "queue-clear-context" => self.queue_clear_part(crate::queue::Source::Context, cx),
+            // Queue tabs: show N, continue N, a new tab, rename N:NAME, remove N.
+            "queue-tab" => self.queue_tab_view(index(), cx),
+            "queue-tab-continue" => self.queue_tab_continue(index(), window, cx),
+            "queue-tab-new" => self.queue_tab_new(window, cx),
+            "queue-tab-rename" => {
+                if let Some((n, name)) = arg.and_then(|a| a.split_once(':'))
+                    && let Ok(n) = n.parse::<usize>()
+                    && self.queue_tabs.rename(n, name)
+                {
+                    self.save_queue_tabs(cx);
+                    cx.notify();
+                }
+            }
+            "queue-tab-remove" => self.queue_tab_remove(index(), cx),
+            "queue-status" => {
+                let names = |items: &[crate::queue::QueueItem]| -> Vec<String> {
+                    items.iter().map(|i| i.track.title.clone()).collect()
+                };
+                eprintln!(
+                    "music-gpui: queue current={:?} mine={:?} context={:?} from={:?} tabs={:?} playing={} viewed={}",
+                    self.queue.current().map(|t| t.title.clone()),
+                    names(self.queue.user_upcoming()),
+                    names(self.queue.context_upcoming()),
+                    self.queue.context().map(|c| (c.name.clone(), c.radio)),
+                    self.queue_tabs
+                        .tabs
+                        .iter()
+                        .map(|t| crate::components::queue_panel::tab_name(&t.name))
+                        .collect::<Vec<_>>(),
+                    self.queue_tabs.playing,
+                    self.queue_tabs.viewed,
+                );
+            }
+            // Multi-select: ⌘A, Esc, the bar's actions, and what is selected.
+            "select-all" => window.dispatch_action(Box::new(actions::SelectAllRows), cx),
+            "select-clear" => {
+                crate::selection::clear(window);
+            }
+            "select-status" => crate::selection::with(|s| {
+                let (tracks, indices) = s.selected();
+                eprintln!(
+                    "music-gpui: selection list={:?} rows={indices:?} titles={:?} remove={:?}",
+                    s.list(),
+                    tracks.iter().map(|t| t.title.as_str()).collect::<Vec<_>>(),
+                    s.remove_action().map(|(label, _)| label),
+                );
+            }),
+            "batch" => {
+                use crate::selection::BatchAction as B;
+                let action = match arg.unwrap_or("") {
+                    "play" => Some(B::Play),
+                    "next" => Some(B::PlayNext),
+                    "queue" => Some(B::AddToQueue),
+                    "playlist" => Some(B::AddToPlaylist),
+                    "like" => Some(B::Like),
+                    "dislike" => Some(B::Dislike),
+                    "download" => Some(B::Download),
+                    _ => None,
+                };
+                match action {
+                    Some(action) => {
+                        let tracks = crate::selection::with(|s| s.selected().0);
+                        self.run_batch(action, tracks, window, cx);
+                        if action.clears_selection() {
+                            crate::selection::clear(window);
+                        }
+                    }
+                    None => eprintln!(
+                        "music-gpui: @batch wants play|next|queue|playlist|like|dislike|download"
+                    ),
+                }
+            }
+            // The in-app log: a sample line per level (one with a fake secret).
+            "log-sample" => {
+                crate::logs::push(
+                    crate::logs::Level::Error,
+                    "music-gpui: example: saving the queue failed: disk full",
+                );
+                crate::logs::push(
+                    crate::logs::Level::Warn,
+                    "music-core: stream: download error at byte 1048576, retrying: timed out",
+                );
+                crate::logs::push(
+                    crate::logs::Level::Info,
+                    "music-gpui: example: request Cookie: SAPISID=abc123; HSID=def456 key=AIzaSyC9XL3ZjWddXya6X74dJoCTL-WEYFDNX30",
+                );
+                eprintln!("music-gpui: [  9.99s] example trace line");
+            }
+            "log-status" => {
+                let lines = crate::logs::lines(crate::logs::Level::Trace, 5);
+                for line in lines {
+                    eprintln!("music-gpui: log> {}", line.format());
+                }
+            }
             "shuffle" => self.set_shuffle(on(), cx),
             "repeat" => match arg.and_then(Repeat::parse) {
                 Some(repeat) => self.set_repeat(repeat, cx),

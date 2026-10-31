@@ -120,3 +120,22 @@ together.guest.suggest_hint = Dùng “Phát tiếp theo” hoặc “Thêm vào
 together.guest.no_suggestions = Chủ phòng không nhận đề xuất.
 together.guest.clock = Lệch đồng hồ {offset} ms · khứ hồi {rtt} ms
 together.activity = Hoạt động
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+together.log.suggestion_waiting = {name} đề xuất “{title}”: duyệt ở trang Nghe cùng nhau
+together.log.suggestion_approved = Đã thêm “{title}” của {name}
+together.log.suggestion_rejected = Đã từ chối “{title}” của {name}
+together.toast.suggestion_approved = Chủ phòng đã thêm “{title}”
+together.toast.suggestion_rejected = Chủ phòng đã từ chối “{title}”
+together.room.approve_suggestions = Đề xuất cần tôi duyệt
+together.suggestions.hint = Bài được duyệt sẽ vào danh sách chờ theo cách khách yêu cầu (phát tiếp theo hoặc cuối danh sách).
+together.suggestions.from = {artists} · từ {name}
+together.suggestions.approve = Duyệt
+together.suggestions.reject = Từ chối
+together.suggestions.yours = Đề xuất của bạn
+together.suggestions.sent = Đã gửi
+together.suggestions.pending = Đang chờ chủ phòng
+together.suggestions.approved = Đã thêm
+together.suggestions.rejected = Bị từ chối
+together.suggestions.rejected_because = Bị từ chối: {reason}
+together.suggestions.title.other = {count} đề xuất đang chờ

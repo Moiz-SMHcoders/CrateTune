@@ -209,3 +209,23 @@ ArchiveTune contributors, GPL-3.0); each file names its upstream source in its h
 | `crates/music-gpui/src/pages/home/mod.rs` | `ui/screens/HomeScreen.kt`, `viewmodels/HomeViewModel.kt` | Shelves, cards and quick-picks grids of this app instead of Compose decks; a refresh button instead of pull-to-refresh; a 20-minute cache per account (refreshed when Home is shown after it expired). |
 | `crates/music-gpui/src/pages/home/speed_dial.rs` | `utils/SpeedDialPins.kt`, `viewmodels/HomeViewModel.kt` (`loadSpeedDialItems`) | Pins stored as items in the library's key/value table (24, newest first) instead of a preferences string resolved against the database; a Shuffle button instead of the random tile. |
 | `crates/music-gpui/src/settings/home_prefs.rs` | `constants/PreferenceKeys.kt` (`QuickPicks`, `QuickPicksDisplayMode`, `ShowHomeCategoryChipsKey`, `DisableBlurKey`), `home/HomeRepository.kt` | Same defaults; the tonal backdrop is its own switch (skipped while the app-wide artwork look is on); hidden sections added. |
+
+## Zuno and Limusic (feat/queue-ux)
+
+Ideas and small pieces of logic ported from two other desktop YouTube Music clients; each
+file names its source in its header or next to the ported code.
+
+* **Zuno** (<https://github.com/noFAYZ/zuno>, commit
+  `1fa9a9669e4a526ebe53c0275153feda0c4fcefa`), © Zuno contributors, Apache License 2.0
+  (<https://www.apache.org/licenses/LICENSE-2.0>).
+* **Limusic** (<https://github.com/SimoHypers/limusic>, commit
+  `d82372cdd3016e3c5e28ea8022596b7fefdf681a`), © Limusic contributors, GPL-3.0.
+
+| File | Upstream | Changes |
+|---|---|---|
+| `crates/music-core/src/output.rs` (`tidy`) | Zuno `src-tauri/src/audio.rs` (`is_alsa_plugin_noise`, its list of ALSA PCM types) | Same list plus a few more types; instead of dropping `hw:` / `plughw:` outright, one entry per card is kept by rank (`sysdefault` > `hdmi` > `dmix` > `front` > `plughw` > `hw`), so a card with only raw entries stays selectable; friendly names for bare PCMs, de-duplication by id and name on every platform, the default first, a "show all" switch and the picked device always kept. |
+| `crates/music-core/src/together/{messages,server,client}.rs` (suggestion approval) | Limusic `crates/listen-protocol/src/lib.rs` (`Suggestion`, `Suggest`, `ApproveSuggestion` / `RejectSuggestion`, `SuggestionReceived` / `SuggestionApproved` / `SuggestionRejected`), `src-tauri/src/listentogether/mod.rs` | Kept within ArchiveTune's protocol: the guest's request is the existing `add_track_request`; the host keeps the waiting list (`TogetherServer::suggestions` / `decide_suggestion`) and answers with one new `suggestion_status` message (pending / approved / rejected) that older peers skip; a room setting, off by default; a cap of 20 waiting suggestions per guest. |
+| `crates/music-gpui/src/queue.rs` (your queue vs the context) | Zuno `src/player/Queue.ts` (`manualQueueLength`), `src/ui/components/player/QueuePanel.tsx` (sections) | A source tag per item instead of a count, so shuffle, moves, jumps, history and saving keep the two parts apart; a new list keeps your pending items (as Spotify does); each part can be cleared on its own; the context is named ("Next from …"). |
+| `crates/music-gpui/src/queue_tabs.rs` | Zuno `src/player/TabManager.ts` | Only the queue is per tab (one engine; Zuno gives each UI tab its own player and page stack): tabs are saved queues, one of them playing; the others are previewed and "continued" where they were left. |
+| `crates/music-gpui/src/selection.rs`, `src/components/selection_bar.rs` | Zuno `src/ui/hooks/useTrackSelection.ts`, `src/ui/components/SelectionBar.tsx` | Same click rules (⌘ / Ctrl toggles, Shift extends from the last row touched, selected songs in list order); one app-wide selection keyed by list id, index and video id; a plain click still plays (Zuno's collapses the selection); ⌘A / Esc; more actions (play, play next, like, dislike, the list's own "Remove"). |
+| `crates/music-gpui/src/logs.rs` | Zuno's log viewer (Settings) | Own implementation: stderr through a pipe into a ring buffer and a rotated file, levels guessed from the text, secrets redacted before anything is kept. |

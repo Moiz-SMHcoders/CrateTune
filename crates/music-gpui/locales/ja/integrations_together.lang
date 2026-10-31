@@ -122,3 +122,22 @@ together.guest.suggest_hint = 曲の「次に再生」または「キューに�
 together.guest.no_suggestions = ホストは提案を受け付けていません。
 together.guest.clock = 時刻のずれ {offset} ms · 往復 {rtt} ms
 together.activity = アクティビティ
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+together.log.suggestion_waiting = {name} さんが「{title}」を提案しました。「一緒に聴く」ページで承認してください
+together.log.suggestion_approved = {name} さんの「{title}」を追加しました
+together.log.suggestion_rejected = {name} さんの「{title}」を見送りました
+together.toast.suggestion_approved = ホストが「{title}」を追加しました
+together.toast.suggestion_rejected = ホストが「{title}」を見送りました
+together.room.approve_suggestions = 提案された曲は承認制にする
+together.suggestions.hint = 承認した曲は、ゲストの指定どおり（次に再生または最後）にキューへ追加されます。
+together.suggestions.from = {artists} · {name} さんから
+together.suggestions.approve = 承認
+together.suggestions.reject = 拒否
+together.suggestions.yours = あなたの提案
+together.suggestions.sent = 送信済み
+together.suggestions.pending = ホストの承認待ち
+together.suggestions.approved = 追加済み
+together.suggestions.rejected = 見送り
+together.suggestions.rejected_because = 見送り: {reason}
+together.suggestions.title.other = 承認待ちの提案 {count} 件

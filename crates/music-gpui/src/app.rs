@@ -299,7 +299,10 @@ impl MusicApp {
             loop {
                 executor.timer(POLL_INTERVAL).await;
                 if this
-                    .update_in(cx, |this, window, cx| this.poll_player(window, cx))
+                    .update_in(cx, |this, window, cx| {
+                        this.poll_player(window, cx);
+                        this.poll_log_viewer(cx);
+                    })
                     .is_err()
                 {
                     break;
@@ -897,6 +900,26 @@ impl MusicApp {
         match &self.engine {
             Some(Engine::Audio(player)) => Some(player),
             _ => None,
+        }
+    }
+
+    /// Settings → About shows the log: redraw it when lines came in (only then).
+    fn poll_log_viewer(&mut self, cx: &mut Context<Self>) {
+        if !matches!(
+            self.router.route(),
+            Route::Settings {
+                section: SectionId::About
+            }
+        ) || self.np.open
+        {
+            return;
+        }
+        let generation = crate::logs::generation();
+        if self.settings.read(cx).log_seen != generation {
+            self.settings.update(cx, |panel, cx| {
+                panel.log_seen = generation;
+                cx.notify();
+            });
         }
     }
 

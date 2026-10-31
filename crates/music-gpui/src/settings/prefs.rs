@@ -819,6 +819,20 @@ impl Default for UpdatePrefs {
     }
 }
 
+/// The app log (`logs.rs`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct LogPrefs {
+    /// Also write the log to a file in the logs folder (rotated at 1 MB).
+    pub file: bool,
+}
+
+impl Default for LogPrefs {
+    fn default() -> Self {
+        Self { file: true }
+    }
+}
+
 /// ArchiveTune's scrobble settings; defaults are Last.fm's rules.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[serde(default)]

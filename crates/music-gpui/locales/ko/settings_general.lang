@@ -124,3 +124,20 @@ login.instructions = Google 계정으로 로그인하세요. YouTube Music이 �
 login.webview_failed = 웹 뷰를 만들 수 없습니다({error}). 대신 ‘쿠키 붙여넣기’를 사용하세요.
 login.checking = 로그인됨. 계정 확인 중…
 login.webview2_missing = Google로 로그인하려면 Microsoft Edge WebView2 Runtime이 필요하지만 설치되어 있지 않습니다. microsoft.com/edge/webview2에서 설치하거나 ‘쿠키 붙여넣기’를 사용하세요.
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.about.logs = 로그
+settings.about.logs.note = 앱이 최근에 기록한 내용입니다(최신순). 쿠키, 토큰, 키, 비밀번호는 저장되기 전에 제거됩니다. 자세한 추적은 실행 시 MUSIC_TRACE=1이 필요합니다.
+settings.about.logs.errors = 오류
+settings.about.logs.warnings = 경고
+settings.about.logs.info = 정보
+settings.about.logs.trace = 전체
+settings.about.logs.empty = 이 수준에서는 아직 기록된 내용이 없습니다.
+settings.about.logs.copy = 복사
+settings.about.logs.copied = 로그를 클립보드에 복사함
+settings.about.logs.save = 로그 저장…
+settings.about.logs.open_folder = 로그 폴더 열기
+settings.about.logs.saved = 로그를 {path}에 저장함
+settings.about.logs.save_failed = 로그를 저장하지 못함: {error}
+settings.about.logs.file = 로그 파일 기록
+settings.about.logs.file_desc = 로그를 로그 폴더에도 보관합니다(최대 2MB: 현재 파일 하나와 이전 파일 하나).

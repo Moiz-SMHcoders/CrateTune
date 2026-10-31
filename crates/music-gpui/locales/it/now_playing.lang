@@ -81,3 +81,8 @@ card.align.right = Destra
 card.size.small = Piccolo
 card.size.medium = Medio
 card.size.large = Grande
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+np.queue.next_in_queue = PROSSIMI IN CODA
+np.queue.next_from = A SEGUIRE DA {name}
+np.queue.next_from_radio = A SEGUIRE DALLA RADIO DI {name}

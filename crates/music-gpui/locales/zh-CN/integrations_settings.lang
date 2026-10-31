@@ -142,3 +142,6 @@ settings.cast.streaming = 正在串流
 settings.cast.direct = 让设备自行获取 YouTube 音频
 settings.cast.direct_desc = 关闭时：由本应用将音频串流到设备（适用于所有歌曲）。
 settings.cast.note = 投放会在此网络中的 Chromecast、Google TV 或 Nest 音箱上播放队列（使用 Google 的 Default Media Receiver）。通过播放栏中的 Cast 按钮选择设备；之后播放、暂停、跳转、切歌和音量都会控制该设备，选择“停止投放”则会在这里继续播放。YouTube 音频和本地文件会从这台电脑串流到设备（请保持应用打开）；设备和这台电脑必须位于同一网络。更改将从下一首歌开始生效。
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.together.approve_suggestions_desc = 访客的歌曲会在“一起听”页面等待，直到你批准或拒绝。

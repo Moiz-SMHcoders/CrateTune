@@ -216,3 +216,27 @@ store.toast.playlist_renamed = 已重命名为“{playlist}”
 store.toast.playlist_deleted = 已删除“{playlist}”
 store.toast.removed_from_playlist.other = 已从播放列表移除 {count} 首歌曲
 store.toast.playlist_refreshed.other = 播放列表已刷新（{count} 首歌曲）
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+queue.section.next_in_queue = 队列中的下一首 · {count}
+queue.section.next_from = 接下来来自 {name} · {count}
+queue.section.next_from_radio = 接下来来自 {name} 电台 · {count}
+queue.clear_section = 清除
+queue.tooltip.clear_section = 移除这些歌曲，保留其余
+queue.tabs.main = 主队列
+queue.tabs.new_name = 队列 {n}
+queue.tabs.new = 新建队列标签页
+queue.tabs.tooltip_playing = 正在从此队列播放
+queue.tabs.tooltip_other = 显示此队列
+queue.tabs.rename = 重命名…
+queue.tabs.remove = 移除标签页
+queue.tabs.rename_title = 重命名队列标签页
+queue.tabs.name_placeholder = 标签页名称
+queue.tabs.left_at = 停在「{title}」的 {time}
+queue.tabs.empty = 此队列为空。先使用它，再播放内容来填充。
+queue.tabs.continue = 继续此队列
+queue.tabs.use = 使用此队列
+queue.tabs.paused = 已暂停
+queue.tabs.toast_switched = 正在从「{name}」播放
+queue.tabs.toast_guest = 在“一起听”中作为访客时，由主持人决定播放内容。
+store.toast.disliked_many.other = 已踩 {count} 首歌曲

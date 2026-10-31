@@ -162,3 +162,9 @@ settings.lyrics.kanji_download = Downloaden ({size})
 settings.lyrics.kanji_downloading = Downloaden… {done} van {total}
 settings.lyrics.kanji_ready = {name} · {size} op schijf.
 settings.lyrics.kanji_failed = Downloaden mislukt: {error}
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.playback.show_all_devices = Alle apparaten tonen
+settings.playback.show_all_devices_desc = Ook virtuele en dubbele uitgangen tonen (op Linux: ALSA's dmix, surround, hw / plughw en dergelijke).
+settings.playback.devices_hidden.one = {count} virtueel of dubbel apparaat is verborgen.
+settings.playback.devices_hidden.other = {count} virtuele of dubbele apparaten zijn verborgen.

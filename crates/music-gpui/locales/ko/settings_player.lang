@@ -162,3 +162,8 @@ settings.lyrics.kanji_download = 다운로드({size})
 settings.lyrics.kanji_downloading = 다운로드 중… {done}/{total}
 settings.lyrics.kanji_ready = {name} · 디스크 {size}.
 settings.lyrics.kanji_failed = 다운로드 실패: {error}
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.playback.show_all_devices = 모든 기기 표시
+settings.playback.show_all_devices_desc = 가상 출력과 중복 출력도 표시합니다(Linux: ALSA의 dmix, surround, hw / plughw 등).
+settings.playback.devices_hidden.other = 가상 또는 중복 기기 {count}개가 숨겨져 있습니다.

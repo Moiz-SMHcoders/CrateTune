@@ -1763,6 +1763,30 @@ pub const ENTRIES: &[Entry] = &[
         "guide"
     ),
     entry!(
+        "about.logs",
+        About,
+        -,
+        "settings.about.logs",
+        "settings.about.logs.note",
+        "log",
+        "debug",
+        "errors",
+        "warnings",
+        "diagnostics",
+        "trace"
+    ),
+    entry!(
+        "about.logs.file",
+        About,
+        "settings.about.logs",
+        "settings.about.logs.file",
+        "settings.about.logs.file_desc",
+        "log",
+        "file",
+        "folder",
+        "debug"
+    ),
+    entry!(
         "about.license",
         About,
         -,

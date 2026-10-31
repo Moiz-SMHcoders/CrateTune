@@ -156,6 +156,19 @@ hand-built from the recorded anonymous `next.json`. Details: [README: Account sy
 and dislikes](../README.md#library-account-downloads-local-files). · Size: small ·
 Priority: high
 
+**U17. Queue / selection round (`feat/queue-ux`) on real systems**
+Checked with unit tests, scripts and offscreen screenshots on macOS only: (1) the in-app
+log's stderr capture on Windows (`SetStdHandle` to a pipe; release builds without a
+console, and with `MUSIC_CONSOLE=1`) and on Linux; (2) the ALSA device filter against real
+Linux machines (PipeWire, PulseAudio-only, plain ALSA, USB DACs, HDMI) and the device list
+on Windows (WASAPI names); (3) "Suggestions need my approval" with an ArchiveTune guest or
+host (the new `suggestion_status` message must be skipped there, as our decoder does);
+(4) ⌘-click / Shift-click and ⌘A with a real mouse and keyboard on each system (scripts
+dispatch synthetic events), Ctrl-click on Windows / Linux; (5) continuing a queue tab while
+casting (the seek to the saved position isn't sent to a Cast session). Details: [README:
+Queue round](../README.md#queue-round-queue-parts-and-tabs-multi-select-devices-logs-suggestions).
+· Size: small · Priority: medium
+
 ## 3. Platform & distribution
 
 **P1. Builds are unsigned**
@@ -307,6 +320,13 @@ WindowServer does the blur, so it costs GPU time, not app CPU. Also sample live 
 page transitions / hover off and Animations Reduced / Off (that run lost its display
 frames). Details: `look_state.rs`, [README: App-wide look &
 motion](../README.md#app-wide-look--motion). · Size: small · Priority: low
+
+**M8. Full UI tabs (separate page stacks per tab)**
+Zuno gives every tab its own player *and* its own page stack (back / forward, scroll). Only
+the queue part was built (queue tabs, `queue_tabs.rs`): the router keeps one history and
+one cached page per route, pages talk to the one app entity, and a second page stack would
+double the cached pages (memory) for little gain while only one queue can play. Revisit if
+users ask for parallel browsing. · Size: large · Priority: low
 
 ## 5. Performance ideas
 

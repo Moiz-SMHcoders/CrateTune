@@ -122,3 +122,20 @@ login.instructions = Đăng nhập bằng tài khoản Google của bạn. Cửa
 login.webview_failed = Không thể tạo chế độ xem web ({error}). Hãy dùng “Dán cookie” thay thế.
 login.checking = Đã đăng nhập — đang kiểm tra tài khoản…
 login.webview2_missing = Đăng nhập bằng Google cần Microsoft Edge WebView2 Runtime nhưng chưa được cài đặt. Hãy cài từ microsoft.com/edge/webview2, hoặc dùng “Dán cookie”.
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.about.logs = Nhật ký
+settings.about.logs.note = Những gì ứng dụng ghi nhận gần đây, mới nhất trước. Cookie, token, khóa và mật khẩu bị xóa trước khi lưu bất cứ thứ gì. Theo dõi chi tiết cần MUSIC_TRACE=1 khi khởi động.
+settings.about.logs.errors = Lỗi
+settings.about.logs.warnings = Cảnh báo
+settings.about.logs.info = Thông tin
+settings.about.logs.trace = Tất cả
+settings.about.logs.empty = Chưa có gì được ghi ở mức này.
+settings.about.logs.copy = Sao chép
+settings.about.logs.copied = Đã sao chép nhật ký vào bảng nhớ tạm
+settings.about.logs.save = Lưu nhật ký…
+settings.about.logs.open_folder = Mở thư mục nhật ký
+settings.about.logs.saved = Đã lưu nhật ký vào {path}
+settings.about.logs.save_failed = Không lưu được nhật ký: {error}
+settings.about.logs.file = Ghi tệp nhật ký
+settings.about.logs.file_desc = Lưu nhật ký vào cả thư mục nhật ký (tối đa 2 MB: một tệp hiện tại và một tệp cũ hơn).

@@ -235,3 +235,7 @@ storage.restore_failed = Khôi phục thất bại: {error}
 storage.cache_cleared = Đã xóa bộ nhớ đệm phát
 storage.clearing_search = Xóa lịch sử tìm kiếm
 storage.search_cleared = Đã xóa lịch sử tìm kiếm
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+selection.tooltip.select_all = Chọn mọi bài trong danh sách này
+selection.tooltip.clear = Bỏ chọn (Esc)

@@ -5,6 +5,56 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+* **Your queue and the rest, apart** (after Zuno). The queue panel and Now Playing's *With
+  queue* design show **Next in queue** (what you added with *Play next* / *Add to queue*)
+  above **Next from <album / playlist / page>** or **Next from <song> radio** (the list
+  you started, a radio, autoplay), as Spotify does. Your songs always play first: *Add to
+  queue* goes to the end of your part, not behind a 500-song playlist, starting another
+  list keeps them, and jumping ahead in the list doesn't skip them. Each part has its own
+  **Clear**; shuffle only shuffles the list part. The saved queue remembers both parts
+  (queues saved by older versions load as before; older versions still read new ones).
+* **Queue tabs** (after Zuno). A row of tabs in the queue panel: **+** starts a new queue
+  ("Queue 2") while the one you were playing is put away where it was; click a tab to see
+  its songs and where it was left, **Continue this queue** plays on from there. Right
+  click renames or removes a tab. One tab plays at a time; tabs and their queues, positions,
+  shuffle orders and repeat modes are kept across launches.
+* **Multi-select on every song list** (after Zuno): ⌘-click (Ctrl-click) adds or removes
+  a row, Shift-click selects a range, ⌘A / Ctrl+A selects the whole list under the
+  pointer (outside text fields; in Settings → Keyboard shortcuts), Esc clears. A bar
+  floats above the player bar with Play, Play next, Add to queue, Add to playlist, Like,
+  Dislike, Download, the list's own Remove (library, liked songs, downloads, your
+  playlists), Select all / none and ✕. Plain clicks still play from the row. Works in the
+  library, playlists, albums, artist pages, search results, history, downloads and stats;
+  the library lists' **Select** button still shows checkboxes.
+* **Music Together: "Suggestions need my approval"** (after Limusic). With it on (room
+  settings on the Listen together page, or Settings → Music Together), a guest's *Play
+  next* / *Add to queue* waits in a **Suggestions waiting** card for **Approve** /
+  **Reject**; approved songs go into the queue the way the guest asked. Guests see
+  **Your suggestions** with *Waiting for the host*, then *Added* or *Turned down*, plus a
+  message. Compatible with ArchiveTune and older versions: the setting is only sent when
+  on, and the one new message (`suggestion_status`) is skipped by peers that don't know
+  it.
+* **Logs** in Settings → About: the app's recent log lines, live, newest first, filtered
+  by Errors / Warnings / Info / Everything (trace lines with `MUSIC_TRACE=1`), with
+  **Copy**, **Save logs…** and **Open log folder**. A log file (on by default, *Write a log
+  file*) is kept in `logs/` of the cache folder (or of `MUSIC_CONFIG_DIR`), 1 MB plus one
+  older file. Cookies, tokens, API keys, signatures, PoTokens, session keys and
+  passwords are removed from every line before it is shown, kept, written or printed.
+* **Output devices without the noise** (after Zuno): on Linux the picker drops ALSA's
+  virtual PCMs (null, dmix, dsnoop, surround…, iec958, rate converters, …) and shows one
+  entry per card (sysdefault / hdmi before raw `hw:` / `plughw:` duplicates), with
+  friendly names (PipeWire, PulseAudio). On every system: the default first and marked,
+  no repeated ids, identical names numbered. **Show all devices** (Settings → Playback)
+  lists everything; a device you picked is never hidden.
+
+### Changed
+
+* Starting a list, an album or a radio keeps the songs you queued yourself (they play
+  next); Music Together guests still follow the host's queue exactly.
+* Esc first clears a song selection before closing panels or going back.
+
 ## [0.2.6] — 2026-10-31
 
 

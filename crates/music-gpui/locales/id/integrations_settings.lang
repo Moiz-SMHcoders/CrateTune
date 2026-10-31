@@ -140,3 +140,6 @@ settings.cast.streaming = Streaming
 settings.cast.direct = Biarkan perangkat mengambil audio YouTube sendiri
 settings.cast.direct_desc = Mati: aplikasi ini melakukan streaming ke perangkat (berfungsi untuk semua lagu).
 settings.cast.note = Transmisi memutar antrean di Chromecast, Google TV, atau speaker Nest di jaringan ini (Default Media Receiver dari Google). Tombol Cast di bilah pemutar memilih perangkat; putar, jeda, lompat, lewati, dan volume lalu mengendalikannya, dan Hentikan transmisi melanjutkan pemutaran di sini. Audio YouTube dan file lokal di-streaming dari komputer ini ke perangkat (biarkan aplikasi tetap terbuka); perangkat dan komputer ini harus berada di jaringan yang sama. Perubahan berlaku untuk lagu berikutnya.
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.together.approve_suggestions_desc = Lagu dari tamu menunggu di halaman Dengar bersama sampai Anda menyetujui atau menolaknya.

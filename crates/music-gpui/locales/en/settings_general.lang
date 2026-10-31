@@ -53,6 +53,24 @@ settings.about.version_summary = Version {version} · {summary}
 settings.about.summary = Native desktop client for YouTube Music
 settings.about.not_affiliated = Not affiliated with, endorsed or sponsored by YouTube or Google.
 settings.about.license = License
+# ---- About → Logs: the app's recent log lines.
+settings.about.logs = Logs
+settings.about.logs.note = What the app reported lately, newest first. Cookies, tokens, keys and passwords are removed before anything is kept. Detailed tracing needs MUSIC_TRACE=1 at launch.
+# Level filter buttons (keep short): each shows that level and the more severe ones.
+settings.about.logs.errors = Errors
+settings.about.logs.warnings = Warnings
+settings.about.logs.info = Info
+settings.about.logs.trace = Everything
+settings.about.logs.empty = Nothing logged at this level yet.
+settings.about.logs.copy = Copy
+settings.about.logs.copied = Log copied to the clipboard
+settings.about.logs.save = Save logs…
+settings.about.logs.open_folder = Open log folder
+# {path}: where the file went.
+settings.about.logs.saved = Log saved to {path}
+settings.about.logs.save_failed = Could not save the log: {error}
+settings.about.logs.file = Write a log file
+settings.about.logs.file_desc = Keeps the log in the log folder too (up to 2 MB: one current file and one older one).
 settings.about.license_notice = This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License, version 3. It is distributed WITHOUT ANY WARRANTY; see the license for details.
 settings.about.credits = Credits
 # Credits: keep project names (Hummingbird, shazamkit, SongRec, GPUI …), license

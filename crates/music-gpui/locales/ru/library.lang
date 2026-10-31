@@ -285,3 +285,7 @@ storage.restore_failed = Не удалось восстановить: {error}
 storage.cache_cleared = Кеш воспроизведения очищен
 storage.clearing_search = Очистка истории поиска
 storage.search_cleared = История поиска очищена
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+selection.tooltip.select_all = Выбрать все треки этого списка
+selection.tooltip.clear = Снять выделение (Esc)

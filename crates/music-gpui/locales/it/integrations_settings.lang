@@ -145,3 +145,6 @@ settings.cast.streaming = Streaming
 settings.cast.direct = Lascia che il dispositivo recuperi da sé l'audio di YouTube
 settings.cast.direct_desc = No: è questa app a inviarlo al dispositivo (funziona con ogni brano).
 settings.cast.note = La trasmissione riproduce la coda su un Chromecast, un Google TV o uno speaker Nest di questa rete (Default Media Receiver di Google). Il pulsante Cast nella barra del player sceglie un dispositivo; riproduzione, pausa, avanzamento, salto e volume lo controllano, e Interrompi trasmissione continua qui. L'audio di YouTube e i file locali vengono inviati da questo computer al dispositivo (tieni aperta l'app); il dispositivo e questo computer devono essere sulla stessa rete. Le modifiche si applicano al brano successivo.
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.together.approve_suggestions_desc = I brani degli ospiti restano in attesa nella pagina Ascolta insieme finché non li approvi o rifiuti.

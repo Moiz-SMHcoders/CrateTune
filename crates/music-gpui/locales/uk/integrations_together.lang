@@ -137,3 +137,25 @@ together.guest.suggest_hint = Щоб запропонувати пісню хо�
 together.guest.no_suggestions = Хост не приймає пропозицій.
 together.guest.clock = Зсув годинника {offset} мс · затримка туди й назад {rtt} мс
 together.activity = Активність
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+together.log.suggestion_waiting = {name} пропонує «{title}»: схваліть на сторінці «Слухати разом»
+together.log.suggestion_approved = Додано «{title}» від {name}
+together.log.suggestion_rejected = Відхилено «{title}» від {name}
+together.toast.suggestion_approved = Господар додав «{title}»
+together.toast.suggestion_rejected = Господар відхилив «{title}»
+together.room.approve_suggestions = Пропозиції потребують мого схвалення
+together.suggestions.hint = Схвалені треки потрапляють у чергу так, як просив гість (наступним або в кінець).
+together.suggestions.from = {artists} · від {name}
+together.suggestions.approve = Схвалити
+together.suggestions.reject = Відхилити
+together.suggestions.yours = Ваші пропозиції
+together.suggestions.sent = Надіслано
+together.suggestions.pending = Чекає на господаря
+together.suggestions.approved = Додано
+together.suggestions.rejected = Відхилено
+together.suggestions.rejected_because = Відхилено: {reason}
+together.suggestions.title.one = {count} пропозиція чекає
+together.suggestions.title.few = {count} пропозиції чекають
+together.suggestions.title.many = {count} пропозицій чекають
+together.suggestions.title.other = {count} пропозиції чекають

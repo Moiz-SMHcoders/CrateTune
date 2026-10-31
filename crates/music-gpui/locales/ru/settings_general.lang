@@ -124,3 +124,20 @@ login.instructions = Войдите в аккаунт Google. Окно закр�
 login.webview_failed = Не удалось создать веб-представление ({error}). Используйте «Вставить cookie».
 login.checking = Вход выполнен — проверка аккаунта…
 login.webview2_missing = Для входа через Google нужен Microsoft Edge WebView2 Runtime, но он не установлен. Установите его с microsoft.com/edge/webview2 или используйте «Вставить cookie».
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.about.logs = Журнал
+settings.about.logs.note = Что приложение сообщало в последнее время, сначала новое. Куки, токены, ключи и пароли удаляются до того, как что-либо сохраняется. Подробная трассировка требует MUSIC_TRACE=1 при запуске.
+settings.about.logs.errors = Ошибки
+settings.about.logs.warnings = Предупреждения
+settings.about.logs.info = Сведения
+settings.about.logs.trace = Всё
+settings.about.logs.empty = На этом уровне пока ничего нет.
+settings.about.logs.copy = Копировать
+settings.about.logs.copied = Журнал скопирован в буфер обмена
+settings.about.logs.save = Сохранить журнал…
+settings.about.logs.open_folder = Открыть папку журнала
+settings.about.logs.saved = Журнал сохранён в {path}
+settings.about.logs.save_failed = Не удалось сохранить журнал: {error}
+settings.about.logs.file = Записывать файл журнала
+settings.about.logs.file_desc = Сохраняет журнал и в папке журнала (до 2 МБ: текущий файл и один старый).

@@ -124,3 +124,20 @@ login.instructions = Google アカウントでログインしてください。Y
 login.webview_failed = Web ビューを作成できませんでした（{error}）。代わりに「Cookie を貼り付け」を使用してください。
 login.checking = ログインしました。アカウントを確認中…
 login.webview2_missing = Google でのログインには Microsoft Edge WebView2 Runtime が必要ですが、インストールされていません。microsoft.com/edge/webview2 からインストールするか、「Cookie を貼り付け」を使用してください。
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.about.logs = ログ
+settings.about.logs.note = アプリが最近記録した内容です（新しい順）。Cookie、トークン、キー、パスワードは保存前に取り除かれます。詳細なトレースには起動時に MUSIC_TRACE=1 が必要です。
+settings.about.logs.errors = エラー
+settings.about.logs.warnings = 警告
+settings.about.logs.info = 情報
+settings.about.logs.trace = すべて
+settings.about.logs.empty = このレベルではまだ何も記録されていません。
+settings.about.logs.copy = コピー
+settings.about.logs.copied = ログをクリップボードにコピーしました
+settings.about.logs.save = ログを保存…
+settings.about.logs.open_folder = ログフォルダを開く
+settings.about.logs.saved = ログを {path} に保存しました
+settings.about.logs.save_failed = ログを保存できませんでした: {error}
+settings.about.logs.file = ログファイルに書き込む
+settings.about.logs.file_desc = ログをログフォルダにも保存します（最大 2 MB：現在のファイルと古いファイル 1 つ）。

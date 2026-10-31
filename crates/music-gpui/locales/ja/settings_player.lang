@@ -162,3 +162,8 @@ settings.lyrics.kanji_download = ダウンロード（{size}）
 settings.lyrics.kanji_downloading = ダウンロード中… {done}／{total}
 settings.lyrics.kanji_ready = {name} · ディスク上で {size}。
 settings.lyrics.kanji_failed = ダウンロードに失敗しました：{error}
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.playback.show_all_devices = すべてのデバイスを表示
+settings.playback.show_all_devices_desc = 仮想出力や重複した出力も表示します（Linux では ALSA の dmix、surround、hw / plughw など）。
+settings.playback.devices_hidden.other = 仮想または重複したデバイス {count} 台を非表示にしています。

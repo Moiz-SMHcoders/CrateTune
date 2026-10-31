@@ -250,3 +250,7 @@ storage.restore_failed = Échec de la restauration : {error}
 storage.cache_cleared = Cache de lecture vidé
 storage.clearing_search = L'effacement de l'historique de recherche
 storage.search_cleared = Historique de recherche effacé
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+selection.tooltip.select_all = Sélectionner tous les titres de cette liste
+selection.tooltip.clear = Effacer la sélection (Échap)

@@ -162,3 +162,8 @@ settings.lyrics.kanji_download = 下載（{size}）
 settings.lyrics.kanji_downloading = 正在下載… {done} / {total}
 settings.lyrics.kanji_ready = {name} · 佔用磁碟 {size}。
 settings.lyrics.kanji_failed = 下載失敗：{error}
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.playback.show_all_devices = 顯示所有裝置
+settings.playback.show_all_devices_desc = 同時列出虛擬和重複的輸出（Linux 上為 ALSA 的 dmix、surround、hw / plughw 等）。
+settings.playback.devices_hidden.other = 已隱藏 {count} 個虛擬或重複的裝置。

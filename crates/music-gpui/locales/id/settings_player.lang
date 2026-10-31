@@ -160,3 +160,8 @@ settings.lyrics.kanji_download = Unduh ({size})
 settings.lyrics.kanji_downloading = Mengunduh… {done} dari {total}
 settings.lyrics.kanji_ready = {name} · {size} di disk.
 settings.lyrics.kanji_failed = Unduhan gagal: {error}
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.playback.show_all_devices = Tampilkan semua perangkat
+settings.playback.show_all_devices_desc = Juga tampilkan output virtual dan duplikat (di Linux: dmix, surround, hw / plughw ALSA, dan sejenisnya).
+settings.playback.devices_hidden.other = {count} perangkat virtual atau duplikat disembunyikan.

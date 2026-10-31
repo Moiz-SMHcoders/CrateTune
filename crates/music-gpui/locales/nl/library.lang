@@ -253,3 +253,7 @@ storage.restore_failed = Herstellen mislukt: {error}
 storage.cache_cleared = Afspeelcache gewist
 storage.clearing_search = Zoekgeschiedenis wissen
 storage.search_cleared = Zoekgeschiedenis gewist
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+selection.tooltip.select_all = Alle nummers in deze lijst selecteren
+selection.tooltip.clear = Selectie wissen (Esc)

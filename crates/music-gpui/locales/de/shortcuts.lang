@@ -41,3 +41,6 @@ shortcuts.key.end = Ende
 shortcuts.key.page_up = Bild auf
 shortcuts.key.page_down = Bild ab
 shortcuts.key.insert = Einfg
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+shortcuts.action.select_all_rows = Alle Songs einer Liste auswählen

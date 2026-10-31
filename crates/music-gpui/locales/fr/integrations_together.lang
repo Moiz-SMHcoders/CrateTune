@@ -127,3 +127,23 @@ together.guest.suggest_hint = Utilisez « Lire ensuite » ou « Ajouter à la
 together.guest.no_suggestions = L'hôte n'accepte pas de suggestions.
 together.guest.clock = Décalage d'horloge {offset} ms · aller-retour {rtt} ms
 together.activity = Activité
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+together.log.suggestion_waiting = {name} propose « {title} » : acceptez-le sur la page Écouter ensemble
+together.log.suggestion_approved = « {title} » de {name} ajouté
+together.log.suggestion_rejected = « {title} » de {name} refusé
+together.toast.suggestion_approved = L'hôte a ajouté « {title} »
+together.toast.suggestion_rejected = L'hôte a refusé « {title} »
+together.room.approve_suggestions = Les suggestions doivent être approuvées par moi
+together.suggestions.hint = Les titres acceptés rejoignent votre file comme l'invité l'a demandé (à suivre ou à la fin).
+together.suggestions.from = {artists} · de {name}
+together.suggestions.approve = Accepter
+together.suggestions.reject = Refuser
+together.suggestions.yours = Vos suggestions
+together.suggestions.sent = Envoyée
+together.suggestions.pending = En attente de l'hôte
+together.suggestions.approved = Ajoutée
+together.suggestions.rejected = Refusée
+together.suggestions.rejected_because = Refusée : {reason}
+together.suggestions.title.one = {count} suggestion en attente
+together.suggestions.title.other = {count} suggestions en attente

@@ -14,3 +14,10 @@ the app's name comes from `packaging/app.env` through the `{app}` placeholder.
 
 ArchiveTune's code ported into this project is listed in
 [`../music-core/THIRD_PARTY.md`](../music-core/THIRD_PARTY.md).
+
+## Zuno and Limusic
+
+The queue sections and tabs, multi-select, the output-device filter, the log viewer and
+the Music Together suggestion approval follow ideas from Zuno (Apache-2.0) and Limusic
+(GPL-3.0); the ported pieces are listed in
+[`../music-core/THIRD_PARTY.md`](../music-core/THIRD_PARTY.md#zuno-and-limusic-featqueue-ux).

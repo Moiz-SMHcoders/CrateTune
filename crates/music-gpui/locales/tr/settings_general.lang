@@ -124,3 +124,20 @@ login.instructions = Google hesabınızla oturum açın. YouTube Music açıldı
 login.webview_failed = Web görünümü oluşturulamadı ({error}). Bunun yerine “Çerez yapıştır” seçeneğini kullanın.
 login.checking = Oturum açıldı — hesap denetleniyor…
 login.webview2_missing = Google ile oturum açmak için Microsoft Edge WebView2 Runtime gerekir ve yüklü değil. microsoft.com/edge/webview2 adresinden yükleyin ya da “Çerez yapıştır” seçeneğini kullanın.
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.about.logs = Günlükler
+settings.about.logs.note = Uygulamanın son zamanlarda bildirdikleri, en yenisi üstte. Herhangi bir şey saklanmadan önce çerezler, token'lar, anahtarlar ve parolalar çıkarılır. Ayrıntılı izleme için başlatırken MUSIC_TRACE=1 gerekir.
+settings.about.logs.errors = Hatalar
+settings.about.logs.warnings = Uyarılar
+settings.about.logs.info = Bilgi
+settings.about.logs.trace = Tümü
+settings.about.logs.empty = Bu düzeyde henüz bir şey kaydedilmedi.
+settings.about.logs.copy = Kopyala
+settings.about.logs.copied = Günlük panoya kopyalandı
+settings.about.logs.save = Günlükleri kaydet…
+settings.about.logs.open_folder = Günlük klasörünü aç
+settings.about.logs.saved = Günlük {path} konumuna kaydedildi
+settings.about.logs.save_failed = Günlük kaydedilemedi: {error}
+settings.about.logs.file = Günlük dosyası yaz
+settings.about.logs.file_desc = Günlüğü günlük klasöründe de tutar (2 MB'a kadar: bir güncel ve bir eski dosya).

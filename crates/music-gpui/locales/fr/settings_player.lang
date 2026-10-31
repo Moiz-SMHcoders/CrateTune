@@ -162,3 +162,9 @@ settings.lyrics.kanji_download = Télécharger ({size})
 settings.lyrics.kanji_downloading = Téléchargement… {done} sur {total}
 settings.lyrics.kanji_ready = {name} · {size} sur le disque.
 settings.lyrics.kanji_failed = Échec du téléchargement : {error}
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.playback.show_all_devices = Afficher tous les périphériques
+settings.playback.show_all_devices_desc = Lister aussi les sorties virtuelles et en double (sous Linux : dmix, surround, hw / plughw d'ALSA et similaires).
+settings.playback.devices_hidden.one = {count} périphérique virtuel ou en double est masqué.
+settings.playback.devices_hidden.other = {count} périphériques virtuels ou en double sont masqués.

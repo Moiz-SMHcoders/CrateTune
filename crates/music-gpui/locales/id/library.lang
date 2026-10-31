@@ -235,3 +235,7 @@ storage.restore_failed = Pemulihan gagal: {error}
 storage.cache_cleared = Cache putar dibersihkan
 storage.clearing_search = Menghapus riwayat pencarian
 storage.search_cleared = Riwayat pencarian dihapus
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+selection.tooltip.select_all = Pilih semua lagu di daftar ini
+selection.tooltip.clear = Hapus pilihan (Esc)

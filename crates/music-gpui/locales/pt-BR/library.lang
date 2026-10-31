@@ -254,3 +254,7 @@ storage.restore_failed = Falha na restauração: {error}
 storage.cache_cleared = Cache de reprodução limpo
 storage.clearing_search = limpar o histórico de pesquisa
 storage.search_cleared = Histórico de pesquisa limpo
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+selection.tooltip.select_all = Selecionar todas as músicas desta lista
+selection.tooltip.clear = Limpar a seleção (Esc)

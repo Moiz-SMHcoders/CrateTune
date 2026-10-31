@@ -216,3 +216,27 @@ store.toast.playlist_renamed = 「{playlist}」に名前を変更しました
 store.toast.playlist_deleted = 「{playlist}」を削除しました
 store.toast.removed_from_playlist.other = {count}曲をプレイリストから削除しました
 store.toast.playlist_refreshed.other = プレイリストを更新しました（{count}曲）
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+queue.section.next_in_queue = キューの次の曲 · {count}
+queue.section.next_from = {name} の次の曲 · {count}
+queue.section.next_from_radio = {name} ラジオの次の曲 · {count}
+queue.clear_section = クリア
+queue.tooltip.clear_section = これらの曲を削除し、残りは保持
+queue.tabs.main = メイン
+queue.tabs.new_name = キュー {n}
+queue.tabs.new = 新しいキュータブ
+queue.tabs.tooltip_playing = このキューから再生中
+queue.tabs.tooltip_other = このキューを表示
+queue.tabs.rename = 名前を変更…
+queue.tabs.remove = タブを削除
+queue.tabs.rename_title = キュータブの名前を変更
+queue.tabs.name_placeholder = タブ名
+queue.tabs.left_at = 「{title}」の {time} で中断
+queue.tabs.empty = このキューは空です。使用してから何か再生すると追加されます。
+queue.tabs.continue = このキューを再開
+queue.tabs.use = このキューを使用
+queue.tabs.paused = 一時停止中
+queue.tabs.toast_switched = 「{name}」から再生中
+queue.tabs.toast_guest = 「一緒に聴く」のゲスト中は、再生する曲はホストが決めます。
+store.toast.disliked_many.other = {count}曲を低評価しました

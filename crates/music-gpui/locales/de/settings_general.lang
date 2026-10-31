@@ -125,3 +125,20 @@ login.instructions = Melde dich mit deinem Google-Konto an. Dieses Fenster schli
 login.webview_failed = Die Webansicht konnte nicht erstellt werden ({error}). Nutze stattdessen „Cookie einfügen“.
 login.checking = Angemeldet – Konto wird geprüft…
 login.webview2_missing = Die Anmeldung mit Google braucht die Microsoft Edge WebView2 Runtime, die nicht installiert ist. Installiere sie über microsoft.com/edge/webview2 oder nutze „Cookie einfügen“.
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.about.logs = Protokolle
+settings.about.logs.note = Was die App zuletzt gemeldet hat, das Neueste zuerst. Cookies, Tokens, Schlüssel und Passwörter werden entfernt, bevor etwas gespeichert wird. Ausführliches Tracing braucht MUSIC_TRACE=1 beim Start.
+settings.about.logs.errors = Fehler
+settings.about.logs.warnings = Warnungen
+settings.about.logs.info = Info
+settings.about.logs.trace = Alles
+settings.about.logs.empty = Auf dieser Stufe wurde noch nichts protokolliert.
+settings.about.logs.copy = Kopieren
+settings.about.logs.copied = Protokoll in die Zwischenablage kopiert
+settings.about.logs.save = Protokoll speichern …
+settings.about.logs.open_folder = Protokollordner öffnen
+settings.about.logs.saved = Protokoll gespeichert unter {path}
+settings.about.logs.save_failed = Protokoll konnte nicht gespeichert werden: {error}
+settings.about.logs.file = Protokolldatei schreiben
+settings.about.logs.file_desc = Speichert das Protokoll auch im Protokollordner (bis zu 2 MB: eine aktuelle und eine ältere Datei).

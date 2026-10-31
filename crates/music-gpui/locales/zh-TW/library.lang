@@ -238,3 +238,7 @@ storage.restore_failed = 回復失敗：{error}
 storage.cache_cleared = 已清除播放快取
 storage.clearing_search = 清除搜尋記錄
 storage.search_cleared = 已清除搜尋記錄
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+selection.tooltip.select_all = 選取此清單中的所有歌曲
+selection.tooltip.clear = 清除選取 (Esc)

@@ -237,3 +237,7 @@ storage.restore_failed = 復元に失敗しました：{error}
 storage.cache_cleared = 再生キャッシュを消去しました
 storage.clearing_search = 検索履歴の消去
 storage.search_cleared = 検索履歴を消去しました
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+selection.tooltip.select_all = このリストの曲をすべて選択
+selection.tooltip.clear = 選択を解除 (Esc)

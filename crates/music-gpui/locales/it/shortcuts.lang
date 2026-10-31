@@ -41,3 +41,6 @@ shortcuts.key.end = Fine
 shortcuts.key.page_up = PagSu
 shortcuts.key.page_down = PagGiù
 shortcuts.key.insert = Ins
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+shortcuts.action.select_all_rows = Seleziona tutti i brani di un elenco

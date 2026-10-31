@@ -124,3 +124,20 @@ login.instructions = 請使用你的 Google 帳號登入。YouTube Music 開啟�
 login.webview_failed = 無法建立網頁檢視（{error}）。請改用「貼上 Cookie」。
 login.checking = 已登入——正在檢查帳號…
 login.webview2_missing = 使用 Google 登入需要 Microsoft Edge WebView2 Runtime，但尚未安裝。請從 microsoft.com/edge/webview2 安裝，或改用「貼上 Cookie」。
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.about.logs = 記錄
+settings.about.logs.note = 應用程式最近記錄的內容，最新的在前。Cookie、權杖、金鑰和密碼在保存前都會被移除。詳細追蹤需要在啟動時設定 MUSIC_TRACE=1。
+settings.about.logs.errors = 錯誤
+settings.about.logs.warnings = 警告
+settings.about.logs.info = 資訊
+settings.about.logs.trace = 全部
+settings.about.logs.empty = 此層級尚無記錄。
+settings.about.logs.copy = 複製
+settings.about.logs.copied = 記錄已複製到剪貼簿
+settings.about.logs.save = 儲存記錄…
+settings.about.logs.open_folder = 開啟記錄資料夾
+settings.about.logs.saved = 記錄已儲存到 {path}
+settings.about.logs.save_failed = 無法儲存記錄：{error}
+settings.about.logs.file = 寫入記錄檔
+settings.about.logs.file_desc = 同時將記錄保存到記錄資料夾（最多 2 MB：一個目前檔案和一個舊檔案）。

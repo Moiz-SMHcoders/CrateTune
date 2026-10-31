@@ -162,3 +162,11 @@ settings.lyrics.kanji_download = Завантажити ({size})
 settings.lyrics.kanji_downloading = Завантаження… {done} з {total}
 settings.lyrics.kanji_ready = {name} · {size} на диску.
 settings.lyrics.kanji_failed = Не вдалося завантажити: {error}
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.playback.show_all_devices = Показувати всі пристрої
+settings.playback.show_all_devices_desc = Показувати й віртуальні та повторювані виходи (у Linux: dmix, surround, hw / plughw з ALSA тощо).
+settings.playback.devices_hidden.one = Приховано {count} віртуальний або повторюваний пристрій.
+settings.playback.devices_hidden.few = Приховано {count} віртуальні або повторювані пристрої.
+settings.playback.devices_hidden.many = Приховано {count} віртуальних або повторюваних пристроїв.
+settings.playback.devices_hidden.other = Приховано {count} віртуального або повторюваного пристрою.

@@ -41,3 +41,6 @@ shortcuts.key.end = End
 shortcuts.key.page_up = Page Up
 shortcuts.key.page_down = Page Down
 shortcuts.key.insert = Insert
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+shortcuts.action.select_all_rows = リストの曲をすべて選択

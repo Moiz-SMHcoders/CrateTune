@@ -179,8 +179,18 @@ page. It takes effect the next time the app starts; **Restart now** does it righ
   the same moment, without a pause (the tag shows a spinner meanwhile); the choice is
   saved just like Settings → Playback → Streaming quality. Your own files and downloads
   keep their format (the menu says so); while casting, it applies from the next song.
-* **Queue** (⌥⌘Q): now playing, up next (drag to reorder, remove), history. Shuffle (⌘S)
-  and repeat off / all / one (⌘R) are remembered.
+* **Queue** (⌥⌘Q): now playing, then **Next in queue** — the songs you added with *Play
+  next* or *Add to queue* — and **Next from …** — the rest of the album, playlist, page or
+  radio you started — then the history. Your songs always play first: *Add to queue* puts a
+  song at the end of *your* part, starting another album keeps them, and clicking a song
+  further down doesn't skip them. **Clear** next to a heading empties just that part. Drag
+  to reorder (dropped among your songs a song becomes yours), remove with ×. Shuffle (⌘S)
+  only mixes the "Next from" part; it and repeat off / all / one (⌘R) are remembered.
+* **Queue tabs**: the row of tabs under the queue's header keeps several queues side by
+  side ("Main", "Workout", …). **+** starts a new, empty queue; the one that was playing is
+  put away, paused where it was. Click another tab to see what's in it and where you left
+  it, then **Continue this queue** to play on from there (only one tab plays at a time).
+  Right-click a tab to rename or remove it. Tabs are kept when you quit.
 * **Radio** plays an endless mix based on a song, artist, album or playlist.
   **Autoplay similar songs** (Settings → Content & region) keeps playing related songs
   when the queue ends.
@@ -262,7 +272,14 @@ Microphone).
 Everything is stored locally (SQLite database in the settings folder):
 
 * **Library** — songs you added, liked songs, albums, artists, playlists, downloads and
-  local files, with filters, sorting and multi-select (**Select**).
+  local files, with filters, sorting and multi-select (**Select** shows checkboxes).
+* **Selecting several songs** works in every song list (library, playlists, albums,
+  artists, search results, history, downloads): ⌘-click (Ctrl-click on Windows / Linux) a
+  row to add or remove it, Shift-click to select everything from the last row you clicked,
+  ⌘A / Ctrl+A to select the whole list under the pointer, Esc to clear. A bar above the
+  player bar then offers Play, Play next, Add to queue, Add to playlist, Like, Dislike,
+  Download, and Remove where the list has it (library, liked songs, downloads, your
+  playlists). A normal click still plays the song.
 * **Playlists** — create local playlists (and, when signed in, YouTube Music playlists),
   rename, reorder, delete. Your own YouTube Music playlists get **Change cover…** (any
   JPEG / PNG / WebP; cropped to a square and uploaded).
@@ -371,7 +388,7 @@ Sections:
 | Section | What's there |
 |---|---|
 | Appearance | profiles, interface language, **Window** (use the system title bar instead of the top bar), theme (dark, pure black, dynamic colours from the artwork), **Customize theme** (presets, accent, darkness, surface tint, contrast, corners, density, font, dynamic colour style), text size, Now Playing design (eight) and background, mini player style |
-| Playback | shuffle / repeat, quality, loudness normalization, skip silence, skip failing songs, crossfade, speed and pitch, output device, sleep timer |
+| Playback | shuffle / repeat, quality, loudness normalization, skip silence, skip failing songs, crossfade, speed and pitch, output device (the system default first; on Linux without ALSA's virtual and duplicate devices unless **Show all devices** is on), sleep timer |
 | Modules | provider modules (alternative audio sources) and where songs play from |
 | Equalizer | 10-band equalizer with presets |
 | Lyrics | look, animation style, providers and their order, translation, romanization |
@@ -387,7 +404,7 @@ Sections:
 | AI content filter | endpoint, model, key, categories to hide |
 | Chromecast | devices, stop casting, direct fetch |
 | Backup & sync | export / import settings, export / import themes |
-| About | version, updates (check, update, the automatic switches; see [Updates](#updates)), license, credits, welcome guide |
+| About | version, updates (check, update, the automatic switches; see [Updates](#updates)), **Logs** (recent log lines by level, copy, save, log folder), license, credits, welcome guide |
 
 Settings live in `~/Library/Application Support/cratetune/` (macOS),
 `~/.config/cratetune/` (Linux) or `%APPDATA%\cratetune\config\` (Windows); passwords
@@ -499,7 +516,8 @@ macOS keys shown. On Windows and Linux use **Ctrl** in place of ⌘ and Alt for 
 | ⌘S / ⌘R | shuffle / repeat |
 | ⌘[ / ⌘] | back / forward (also the mouse's back / forward buttons) |
 | ⌘1 / ⌘2 / ⌘3 / ⌘Y | Home / Explore / Library / History |
-| Esc | close an open menu or dialog first; else the welcome guide, the full screen entered with Now Playing's button, Now Playing or the queue; else back |
+| ⌘A | select every song of the list under the pointer (not in text fields) |
+| Esc | close an open menu or dialog first; else clear a song selection, the welcome guide, the full screen entered with Now Playing's button, Now Playing or the queue; else back |
 | ⌘Q | quit |
 | ⌘/ | show all shortcuts (also Help → Keyboard Shortcuts) |
 
@@ -578,6 +596,11 @@ Play the same music in sync with others (sidebar → **Listen together**).
   press **Join**, or paste the link under it. Their player follows yours; "Play next" /
   "Add to queue" become suggestions to the host, and, if you allow it, they can play,
   pause, seek and skip.
+* **Suggestions need my approval** (room settings on the page, or Settings → Music
+  Together): guests' songs then wait in **Suggestions waiting** until you press
+  **Approve** (it goes into your queue as they asked: next, or at the end) or **Reject**.
+  Guests see their songs under **Your suggestions**: *Waiting for the host*, then *Added*
+  or *Turned down*. Off, suggestions go straight into your queue as before.
 * In the people list you can let people in (with approval on), remove or ban them, or
   **Make host**: that guest takes over the session with your queue and position, and
   everyone, including you, follows them from then on.
@@ -761,7 +784,13 @@ Builds signed with a Developer ID keep the same identity, and neither prompt com
 * **Nothing loads:** check Settings → Network (proxy) → **Test connection**; with
   DNS-over-HTTPS on, **Test DNS** shows whether names resolve (turn on the fallback, or
   pick another provider, if the DoH server is blocked on your network).
-* **Windows: see the log.** Start the app from a terminal with `MUSIC_CONSOLE=1` (in
+* **See what the app logged:** Settings → About → **Logs** shows the recent lines (pick
+  Errors, Warnings, Info or Everything), with **Copy**, **Save logs…** and **Open log
+  folder** for a bug report. Cookies, tokens, keys and passwords are removed from every
+  line first. The log file (Settings → About → *Write a log file*, on by default) is in
+  the `logs` folder of the app's cache folder; start with `MUSIC_TRACE=1` for detailed
+  lines.
+* **Windows: see the log in a terminal.** Start the app from a terminal with `MUSIC_CONSOLE=1` (in
   PowerShell: `$env:MUSIC_CONSOLE=1; & "$env:LOCALAPPDATA\Programs\CrateTune\cratetune.exe"`);
   the log appears in that terminal (closing it then also closes the app). Started from the
   Start menu with `MUSIC_CONSOLE=1` set, a console window opens for it.

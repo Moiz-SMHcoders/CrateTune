@@ -140,3 +140,6 @@ settings.cast.streaming = Đang phát trực tuyến
 settings.cast.direct = Để thiết bị tự lấy âm thanh YouTube
 settings.cast.direct_desc = Tắt: ứng dụng này sẽ truyền luồng tới thiết bị (hoạt động với mọi bài hát).
 settings.cast.note = Truyền sẽ phát danh sách chờ trên Chromecast, Google TV hoặc loa Nest trong mạng này (Default Media Receiver của Google). Nút Cast trên thanh trình phát dùng để chọn thiết bị; sau đó phát, tạm dừng, tua, chuyển bài và âm lượng sẽ điều khiển thiết bị, còn Dừng truyền sẽ tiếp tục phát ở đây. Âm thanh YouTube và tệp cục bộ được truyền từ máy tính này tới thiết bị (hãy giữ ứng dụng mở); thiết bị và máy tính này phải ở cùng một mạng. Thay đổi áp dụng cho bài hát tiếp theo.
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.together.approve_suggestions_desc = Bài hát của khách sẽ chờ ở trang Nghe cùng nhau cho đến khi bạn duyệt hoặc từ chối.
