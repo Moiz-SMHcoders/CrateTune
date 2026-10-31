@@ -1039,13 +1039,13 @@ impl Render for MusicApp {
             let backdrop = self.app_backdrop(cx);
             // Songs selected in a list: their actions float above the player bar.
             let selection_bar = self.render_selection_bar(cx).map(|bar| {
-                h_flex()
+                v_flex()
                     .absolute()
                     .bottom_3()
                     .left_0()
                     .right_0()
                     .px_4()
-                    .justify_center()
+                    .items_center()
                     .child(bar)
             });
             let bar = self.player_bar_view(cx);

@@ -7,8 +7,8 @@
 use std::rc::Rc;
 
 use gpui::{
-    AnyElement, Context, FontWeight, IntoElement, ParentElement as _, SharedString, Styled as _,
-    Window, div, px,
+    AnyElement, Context, FontWeight, InteractiveElement as _, IntoElement, ParentElement as _,
+    SharedString, Styled as _, Window, div, px,
 };
 use gpui_component::{
     ActiveTheme as _, IconName, Sizable as _,
@@ -37,15 +37,18 @@ impl MusicApp {
         let theme = cx.theme();
         let actions = BatchAction::offered(&tracks, remove.is_some());
         let mut bar = h_flex()
+            // Clicks on the bar must not reach the rows under it.
+            .occlude()
+            .w_full()
+            .max_w(px(920.))
             .flex_wrap()
             .justify_center()
             .items_center()
             .gap_1()
             .px_2()
             .py_1p5()
-            .max_w(px(900.))
             .rounded(crate::theme::radius(18.))
-            .bg(theme.popover)
+            .bg(theme.secondary)
             .border_1()
             .border_color(theme.border)
             .shadow_lg()

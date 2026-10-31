@@ -293,6 +293,14 @@ mod tests {
                 .into_iter()
                 .find(|e| matches!(e, ServerEvent::Joined(_)))
         });
+        // The guest can only send once it has its participant id (the welcome), which
+        // may arrive after the server already counts it as joined.
+        wait_for(|| {
+            guest
+                .poll_events()
+                .into_iter()
+                .find(|e| matches!(e, ClientEvent::Welcome { .. }))
+        });
         let status = |want: SuggestionState| {
             wait_for(|| {
                 guest.poll_events().into_iter().find_map(|e| match e {
