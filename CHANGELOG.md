@@ -5,6 +5,9 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.6] — 2026-10-31
+
+
 ### Added
 
 * **Listen together over the internet, with room codes.** Hosting now goes through a relay

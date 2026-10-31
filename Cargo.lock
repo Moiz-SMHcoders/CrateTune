@@ -4780,7 +4780,7 @@ dependencies = [
 
 [[package]]
 name = "music-core"
-version = "0.2.5"
+version = "0.2.6"
 dependencies = [
  "base64 0.22.1",
  "block2 0.6.2",
@@ -4837,7 +4837,7 @@ dependencies = [
 
 [[package]]
 name = "music-gpui"
-version = "0.2.5"
+version = "0.2.6"
 dependencies = [
  "block2 0.6.2",
  "directories",
@@ -4868,11 +4868,11 @@ dependencies = [
 
 [[package]]
 name = "music-net"
-version = "0.2.5"
+version = "0.2.6"
 
 [[package]]
 name = "music-relay"
-version = "0.2.5"
+version = "0.2.6"
 dependencies = [
  "getrandom 0.3.4",
  "music-core",
