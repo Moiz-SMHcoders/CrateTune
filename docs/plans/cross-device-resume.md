@@ -3,7 +3,9 @@
 Goal: start a song on one device (CrateTune on a Mac, a Windows PC or Linux, or ArchiveTune
 on a phone) and carry on from where you left off on another, like Spotify Connect.
 
-Status: plan only. Nothing here is built yet.
+Status: phase 1 (play reporting and the Continue card) is built (`feat/accounts-plus`:
+`play_report.rs`, `continue_card.rs`), not yet verified against a real account. Phases 2–4
+are a plan only.
 
 ## What exists today
 
@@ -20,7 +22,8 @@ Status: plan only. Nothing here is built yet.
   - Has Music Together, using ArchiveTune's protocol (LAN and a self-hosted `music-relay`).
     It also supports host transfer.
   - Signs in to YouTube Music and reads the account's history.
-  - **Doesn't report plays to YouTube yet.**
+  - Reports plays to YouTube when signed in ("Add plays to my YouTube history"), and shows a
+    "Jump back in" card on Home for the newest history entry played elsewhere.
 
 Only two things are shared with ArchiveTune without changing ArchiveTune:
 - the **YouTube Music account**

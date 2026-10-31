@@ -66,6 +66,14 @@ rustls = { version = "0.23", default-features = false, features = ["std", "tls12
 webpki-roots = "1"
 # Chromecast discovery (`cast`): mDNS-SD on std threads (no async runtime).
 mdns-sd = { version = "0.21", default-features = false }
+# Importing the YouTube cookies of an installed browser (`browser_cookies`): Chromium's
+# AES-128-CBC (macOS / Linux, key by PBKDF2-HMAC-SHA1) and AES-256-GCM (Windows, ring).
+# All already in the graph (zip, rustls).
+aes = "0.8"
+cbc = "0.1"
+pbkdf2 = { version = "0.12", default-features = false, features = ["hmac"] }
+sha1 = "0.10"
+ring = "0.17"
 unicode-normalization = "0.1"
 ureq = { version = "3", features = ["json", "socks-proxy"] }
 url = "2.5"

@@ -37,6 +37,7 @@ pub const LOCAL_ONLY: &[&str] = &[
     "window",
     "mini_player",
     "library.account",
+    "library.saved_accounts",
     "lastfm.user",
     "listenbrainz.user",
     "network.has_password",

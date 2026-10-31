@@ -1007,6 +1007,9 @@ impl MusicApp {
     /// Called from the 250 ms poll with the fresh engine state.
     pub(crate) fn poll_store(&mut self, state: &PlaybackState, cx: &mut Context<Self>) {
         self.track_listening(state, cx);
+        // The account's YouTube history (`play_report.rs`) and the Continue card.
+        self.poll_play_report(state, cx);
+        self.poll_resume_seek(state, cx);
         self.resume_restored_position(state, cx);
         self.maybe_save_queue(state.status == PlaybackStatus::Playing, cx);
         let due = self
@@ -1126,6 +1129,8 @@ impl MusicApp {
 
     /// Records the current listening session (quit).
     pub(crate) fn flush_listening(&mut self) {
+        let position = self.clock.position(Instant::now()).as_secs_f64();
+        self.finish_play_report(position);
         let Some(session) = self.store.session.take() else {
             return;
         };

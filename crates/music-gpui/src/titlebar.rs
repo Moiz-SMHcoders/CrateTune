@@ -321,6 +321,11 @@ struct AccountView {
     name: Option<SharedString>,
     avatar: Option<String>,
     syncing: bool,
+    /// The other signed-in accounts (id, name), to switch to in one click
+    /// (`account_list.rs`).
+    others: Vec<(String, SharedString)>,
+    /// A switch is running: the account rows wait.
+    switching: bool,
 }
 
 impl MusicApp {
@@ -331,16 +336,26 @@ impl MusicApp {
                 name: Some(name.clone().into()),
                 avatar: None,
                 syncing: false,
+                others: Vec::new(),
+                switching: false,
             };
         }
         let account = &self.store.account;
         let signed_in = account.is_signed_in();
         let config = account.config.as_ref().filter(|_| signed_in);
+        let mut saved: Vec<_> = self.store.prefs.saved_accounts.iter().collect();
+        saved.sort_by_key(|a| a.added_at);
         AccountView {
             signed_in,
             name: config.map(|c| c.name.clone().into()),
             avatar: config.and_then(|c| c.thumbnail_url.clone()),
             syncing: account.is_syncing(),
+            others: saved
+                .into_iter()
+                .map(|a| (a.id.clone(), a.name.clone().into()))
+                .collect(),
+            switching: account.switching
+                || matches!(account.status, crate::account::Busy::Working(_)),
         }
     }
 
@@ -361,6 +376,11 @@ impl MusicApp {
             .map(|c| (&c.name, &c.thumbnail_url))
             .hash(&mut h);
         account.is_syncing().hash(&mut h);
+        account.switching.hash(&mut h);
+        matches!(account.status, crate::account::Busy::Working(_)).hash(&mut h);
+        for a in &self.store.prefs.saved_accounts {
+            (&a.id, &a.name).hash(&mut h);
+        }
         self.titlebar_fake_account.hash(&mut h);
         window.is_fullscreen().hash(&mut h);
         window.is_maximized().hash(&mut h);
@@ -626,18 +646,22 @@ impl MusicApp {
     /// The account menu's entries (`@account-menu`).
     pub(crate) fn account_menu_entries(&self) -> Vec<String> {
         let a = self.account_view();
+        let others = a.others.iter().map(|(_, name)| name.to_string());
         if a.signed_in {
-            vec![
-                a.name.map(|n| n.to_string()).unwrap_or_default(),
+            let mut entries = vec![a.name.map(|n| n.to_string()).unwrap_or_default()];
+            entries.extend(others);
+            entries.extend([
+                t!("titlebar.add_account").into(),
                 t!("titlebar.account_settings").into(),
                 t!("settings.account.sync_now").into(),
                 t!("common.sign_out").into(),
-            ]
+            ]);
+            entries
         } else {
-            vec![
-                t!("titlebar.signed_out").into(),
-                t!("common.sign_in").into(),
-            ]
+            let mut entries = vec![t!("titlebar.signed_out").to_owned()];
+            entries.extend(others);
+            entries.push(t!("common.sign_in").into());
+            entries
         }
     }
 
@@ -967,9 +991,28 @@ impl MusicApp {
     }
 }
 
+/// One item per other signed-in account: a click switches to it.
+fn other_accounts(mut menu: PopupMenu, account: &AccountView) -> PopupMenu {
+    for (id, name) in &account.others {
+        let id = id.clone();
+        menu = menu.item(
+            PopupMenuItem::new(name.clone())
+                .icon(Icon::new(IconName::CircleUser))
+                .disabled(account.switching)
+                .on_click(move |_, window, cx| {
+                    let id = id.clone();
+                    update_app(cx, |app, cx| app.switch_to_saved(id, window, cx));
+                }),
+        );
+    }
+    menu
+}
+
 fn account_menu(menu: PopupMenu, account: &AccountView) -> PopupMenu {
     if !account.signed_in {
-        return menu.label(t!("titlebar.signed_out")).separator().item(
+        let menu = menu.label(t!("titlebar.signed_out")).separator();
+        let menu = other_accounts(menu, account);
+        return menu.item(
             PopupMenuItem::new(t!("common.sign_in"))
                 .icon(Icon::new(IconName::CircleUser))
                 .on_click(|_, window, cx| {
@@ -979,33 +1022,46 @@ fn account_menu(menu: PopupMenu, account: &AccountView) -> PopupMenu {
                 }),
         );
     }
-    menu.label(account.name.clone().unwrap_or_default())
-        .separator()
-        .item(
-            PopupMenuItem::new(t!("titlebar.account_settings"))
-                .icon(Icon::new(IconName::Settings))
-                .on_click(|_, window, cx| {
-                    update_app(cx, |app, cx| {
-                        app.open_settings(Some(SectionId::Account), window, cx)
-                    });
-                }),
-        )
-        .item(
-            PopupMenuItem::new(t!("settings.account.sync_now"))
-                .icon(Icon::new(Lucide::RefreshCw))
-                .disabled(account.syncing)
-                .on_click(|_, window, cx| {
-                    update_app(cx, |app, cx| app.sync_youtube_library(window, cx));
-                }),
-        )
-        .separator()
-        .item(
-            PopupMenuItem::new(t!("common.sign_out"))
-                .icon(Icon::new(Lucide::LogOut))
-                .on_click(|_, window, cx| {
-                    update_app(cx, |app, cx| app.sign_out(window, cx));
-                }),
-        )
+    let menu = other_accounts(
+        menu.label(account.name.clone().unwrap_or_default())
+            .separator(),
+        account,
+    );
+    menu.item(
+        PopupMenuItem::new(t!("titlebar.add_account"))
+            .icon(Icon::new(Lucide::UserPlus))
+            .on_click(|_, window, cx| {
+                update_app(cx, |app, cx| {
+                    app.open_settings_at(SectionId::Account, "account.list", window, cx)
+                });
+            }),
+    )
+    .separator()
+    .item(
+        PopupMenuItem::new(t!("titlebar.account_settings"))
+            .icon(Icon::new(IconName::Settings))
+            .on_click(|_, window, cx| {
+                update_app(cx, |app, cx| {
+                    app.open_settings(Some(SectionId::Account), window, cx)
+                });
+            }),
+    )
+    .item(
+        PopupMenuItem::new(t!("settings.account.sync_now"))
+            .icon(Icon::new(Lucide::RefreshCw))
+            .disabled(account.syncing)
+            .on_click(|_, window, cx| {
+                update_app(cx, |app, cx| app.sync_youtube_library(window, cx));
+            }),
+    )
+    .separator()
+    .item(
+        PopupMenuItem::new(t!("common.sign_out"))
+            .icon(Icon::new(Lucide::LogOut))
+            .on_click(|_, window, cx| {
+                update_app(cx, |app, cx| app.sign_out(window, cx));
+            }),
+    )
 }
 
 #[cfg(test)]

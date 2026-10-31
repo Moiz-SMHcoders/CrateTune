@@ -248,6 +248,27 @@ pub(crate) fn normalize_data_sync_id(raw: &str) -> Option<String> {
     })
 }
 
+/// A stable, non-secret identifier of the browser login behind `cookie`: a hash of
+/// its `SAPISID` (Google rotates the other session cookies, not this one), or `None`
+/// for a cookie that can't sign requests. Two cookies with the same key are the same
+/// login (possibly rotated); saved accounts are matched by it, and a background
+/// renewal must keep it (otherwise the renewal would silently change the account).
+///
+/// Idea from Limusic's `db::account_key` (© SimoHypers and contributors, GPL-3.0):
+/// key the stored account by the one cookie Google doesn't rotate.
+pub fn login_key(cookie: &str) -> Option<String> {
+    use sha2::{Digest as _, Sha256};
+    let sapisid = sapisid_in(cookie)?;
+    let mut hash = Sha256::new();
+    hash.update(b"cratetune-login-v1\0");
+    hash.update(sapisid.as_bytes());
+    let hex: String = hash.finalize()[..12]
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect();
+    Some(format!("lk-{hex}"))
+}
+
 /// `SAPISIDHASH <ts>_<sha1("<ts> <sapisid> <origin>")>`.
 pub fn sapisid_hash(sapisid: &str, origin: &str, timestamp: u64) -> String {
     hash_part("SAPISIDHASH", sapisid, origin, timestamp)
@@ -364,6 +385,19 @@ mod tests {
             ["X=3"]
         ));
         assert!(!format!("{b:?}").contains("SAPISID"));
+    }
+
+    #[test]
+    fn login_key_follows_sapisid_only() {
+        let a = login_key("SAPISID=one; SIDTS=1").unwrap();
+        assert!(a.starts_with("lk-") && a.len() == 27, "{a}");
+        assert_eq!(
+            login_key("SIDTS=2; SAPISID=one").as_deref(),
+            Some(a.as_str())
+        );
+        assert_ne!(login_key("SAPISID=two").unwrap(), a);
+        assert_eq!(login_key("SID=x"), None);
+        assert!(!a.contains("one"));
     }
 
     #[test]

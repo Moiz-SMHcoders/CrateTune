@@ -60,14 +60,28 @@ Hosts: `music.youtube.com`, `www.youtube.com`, `*.googlevideo.com` (the audio it
 * **Signed out**, YouTube hands out an anonymous visitor id. CrateTune keeps it in its library
   database and reuses it, so YouTube can tell your requests apart from other people's, but not
   who you are.
-* **Plays are not reported to your YouTube history.** CrateTune sends no playback or watch-time
-  pings. YouTube still sees which songs the app asks streams for.
+* **Plays go to your YouTube history** when you're signed in and *Add plays to my YouTube
+  history* (Settings → Account) is on, which it is by default: about 5 seconds into a song the
+  app sends YouTube's playback ping, then a watch-time ping every 30 seconds and at the end,
+  so the song shows up in YouTube Music on your other devices. Nothing is sent while listen
+  history is paused (Settings → Privacy), for local files, or when signed out. The cookie only
+  ever goes to `*.youtube.com`. YouTube still sees which songs the app asks streams for either
+  way.
+* **"Jump back in"** on Home reads the newest entry of your YouTube Music history (the same
+  request as the History page) to offer resuming what you played on another device.
 * **Streams:** to get full-length streams, the app may fetch YouTube's player script and run
   YouTube's anti-abuse check (a PoToken) in a hidden web view (macOS, Windows). Settings →
   Playback → *YouTube streams* chooses how.
 * **Sign-in** happens in a web view showing Google's own page. CrateTune keeps the resulting
   `.youtube.com` cookies in the system keychain, and the web view's own profile so that an
-  expired session can be renewed. Signing out deletes both.
+  expired session can be renewed. Signing out deletes both. With several accounts, each one
+  has its own keychain entry and its own sign-in profile.
+* **Sign in from your browser** (optional) reads the cookie database of the browser profile
+  you pick, on this computer only. The database is copied to a private temporary folder,
+  only its `youtube.com` rows are read, and the copy is deleted straight away. Decrypting them
+  needs the browser's key: on macOS the system asks whether CrateTune may read that browser's
+  "Safe Storage" keychain item; Safari's cookies need Full Disk Access. Nothing from the
+  browser is sent anywhere except the YouTube cookie to YouTube, to check the account.
 
 Google's privacy policy applies: <https://policies.google.com/privacy>.
 
@@ -222,12 +236,12 @@ Everything stays on your computer, in your user account:
 |---|---|
 | Settings (`settings.json`, owner-only permissions), library database (`library.sqlite`: library, playlists, listen and search history, lyrics cache, recognition history), downloads and the optional play cache (`media/`), profiles, modules | macOS `~/Library/Application Support/cratetune`, Linux `~/.config/cratetune`, Windows `%APPDATA%\cratetune\config`, Flatpak `~/.var/app/io.github.moiz_smhcoders.cratetune/config/cratetune` |
 | Caches: update downloads and `update.log`, the `relay.txt` answer, the Japanese dictionary | macOS `~/Library/Caches/cratetune`, Linux `~/.cache/cratetune`, Windows `%LOCALAPPDATA%\cratetune\cache` |
-| Sign-in web view profile | macOS `~/Library/WebKit/io.github.moiz-smhcoders.cratetune`, Windows `%LOCALAPPDATA%\cratetune\data\SignIn` |
+| Sign-in web view profile | macOS `~/Library/WebKit/io.github.moiz-smhcoders.cratetune`, Windows `%LOCALAPPDATA%\cratetune\data\SignIn` (further accounts: `SignIn-<id>`; on macOS 14+ a separate WebKit data store per account) |
 | Secrets (below) | the system keychain |
 
 **Keychain.** Secrets go to the operating system's credential store (macOS Keychain, Windows
 Credential Manager, the Secret Service keyring on Linux) under the service name `cratetune`,
-never in plain files: the YouTube sign-in cookie, the Last.fm secret and session, the
+never in plain files: the YouTube sign-in cookie (one per saved account), the Last.fm secret and session, the
 ListenBrainz token, the Spotify refresh token, the proxy password, and API keys for lyrics
 providers and AI endpoints. Only if no keychain is available are they kept in `settings.json`,
 which only your user can read.

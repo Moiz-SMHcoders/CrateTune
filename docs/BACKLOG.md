@@ -156,6 +156,23 @@ hand-built from the recorded anonymous `next.json`. Details: [README: Account sy
 and dislikes](../README.md#library-account-downloads-local-files). · Size: small ·
 Priority: high
 
+**U17. Several accounts, browser sign-in and YouTube history against real services**
+Built in `feat/accounts-plus` and tested with fake cookies, a loopback server and fixture
+cookie databases only. To confirm: (1) adding a second Google login through the sign-in
+window (its own profile) and switching back and forth: sessions, Home and the library follow,
+and each account's background renewal uses its own profile; (2) "Sign in from your browser"
+with real Chrome / Edge / Brave / Arc / Vivaldi / Opera / Chromium profiles on macOS
+(Keychain prompt), Firefox everywhere, Safari with Full Disk Access, Linux with GNOME
+Keyring and KWallet, and Windows Chrome with app-bound encryption (`v20`, expected to be
+refused with the explanation); (3) that YouTube files the reported plays
+(`videostatsPlaybackUrl` / `videostatsWatchtimeUrl`) into the account's history and they
+appear on the phone, and whether the `player` request needs the player's
+`signatureTimestamp` to return `playbackTracking` (none is sent today); (4) whether
+`FEmusic_history` entries of episodes carry `startTimeSeconds` / a progress percentage for
+the "Jump back in" card. Details: [README: Several accounts, browser sign-in, YouTube
+history](../README.md#several-accounts-browser-sign-in-youtube-history). · Size: small ·
+Priority: high
+
 ## 3. Platform & distribution
 
 **P1. Builds are unsigned**

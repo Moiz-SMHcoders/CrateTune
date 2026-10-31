@@ -38,6 +38,7 @@
 //!   once per track on a background thread and cached ([`Player::waveform`]).
 
 pub mod ai_filter;
+pub mod browser_cookies;
 pub mod buffer;
 pub mod cast;
 mod deck;

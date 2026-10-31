@@ -4,8 +4,9 @@
 //! from a GPUI timer instead of wry's `cookies()`, which spins the main run loop and
 //! would re-enter GPUI from inside an update.
 //!
-//! The web view's data store is persistent ([`sign_in_store`]): its own
-//! `WKWebsiteDataStore` ([`STORE_ID`]) on macOS 14+, the app's default store before.
+//! The web view's data store is persistent ([`sign_in_store`]): on macOS 14+ one
+//! `WKWebsiteDataStore` per account's sign-in profile (identified by the profile
+//! id; the first account's is [`STORE_ID`]), the app's default store before.
 //! [`silent_refresh`] loads music.youtube.com in a WKWebView on that store that is
 //! never put in a window; [`clear_profile`] empties the store (sign-out).
 
@@ -37,29 +38,34 @@ use wry::{Rect, WebView, WebViewBuilder, WebViewBuilderExtDarwin as _, WebViewEx
 
 use super::{
     Cookies, LOGIN_URL, MUSIC_URL, Probe, RefreshResult, SIGNED_IN_PROBE, SILENT_TIMEOUT,
-    hand_over, read_probe, youtube_cookie,
+    hand_over, profile_bytes, read_probe, youtube_cookie,
 };
 
-/// The sign-in data store's identifier (macOS 14+; any fixed UUID of this app).
+/// The first sign-in data store's identifier (macOS 14+; any fixed UUID of this app;
+/// `LEGACY_PROFILE` spells it in hex).
+#[cfg_attr(not(test), allow(dead_code))]
 pub(super) const STORE_ID: [u8; 16] = [
     0x28, 0xEE, 0x6E, 0xD9, 0x6C, 0xE3, 0x4D, 0x48, 0xBA, 0x81, 0x15, 0xF5, 0x55, 0x84, 0xB7, 0x63,
 ];
 
 /// Whether `WKWebsiteDataStore(forIdentifier:)` exists (macOS 14+), as wry decides.
-fn identified_stores() -> bool {
+pub(super) fn identified_stores() -> bool {
     NSProcessInfo::processInfo()
         .operatingSystemVersion()
         .majorVersion
         >= 14
 }
 
-/// The persistent store the sign-in web views use (the same one wry picks for
-/// `with_data_store_identifier(STORE_ID)`).
-fn sign_in_store(mtm: MainThreadMarker) -> Retained<WKWebsiteDataStore> {
-    // SAFETY: main thread; the identifier is non-zero.
+/// The persistent store of sign-in `profile` (the same one wry picks for
+/// `with_data_store_identifier(profile_bytes(profile))`).
+fn sign_in_store(profile: &str, mtm: MainThreadMarker) -> Retained<WKWebsiteDataStore> {
+    // SAFETY: main thread; the identifier is non-zero (`profile_bytes`).
     unsafe {
         if identified_stores() {
-            WKWebsiteDataStore::dataStoreForIdentifier(&NSUUID::from_bytes(STORE_ID), mtm)
+            WKWebsiteDataStore::dataStoreForIdentifier(
+                &NSUUID::from_bytes(profile_bytes(profile)),
+                mtm,
+            )
         } else {
             WKWebsiteDataStore::defaultDataStore(mtm)
         }
@@ -90,13 +96,18 @@ fn all_cookies(store: &WKWebsiteDataStore) -> mpsc::Receiver<Cookies> {
     rx
 }
 
-/// Empties the sign-in data store: cookies, storage, caches (sign-out).
-pub(super) fn clear_profile() {
+/// Empties `profile`'s data store: cookies, storage, caches (sign-out). The
+/// receiver hears when WebKit is done.
+pub(super) fn clear_profile(profile: &str) -> mpsc::Receiver<()> {
+    let (tx, rx) = mpsc::channel();
     let Some(mtm) = MainThreadMarker::new() else {
-        return;
+        let _ = tx.send(());
+        return rx;
     };
-    let store = sign_in_store(mtm);
-    let done = RcBlock::new(|| {});
+    let store = sign_in_store(profile, mtm);
+    let done = RcBlock::new(move || {
+        let _ = tx.send(());
+    });
     // SAFETY: main thread; WebKit retains the block until it runs.
     unsafe {
         store.removeDataOfTypes_modifiedSince_completionHandler(
@@ -105,6 +116,7 @@ pub(super) fn clear_profile() {
             &done,
         );
     }
+    rx
 }
 
 thread_local! {
@@ -112,9 +124,12 @@ thread_local! {
     static SILENT_BUSY: RefCell<bool> = const { RefCell::new(false) };
 }
 
-/// Loads music.youtube.com in a hidden WKWebView on the sign-in store and reads its
+/// Loads music.youtube.com in a hidden WKWebView on `profile`'s store and reads its
 /// cookies once the page says it is signed in. Main thread (GPUI's).
-pub(super) fn silent_refresh(cx: &mut App) -> futures_channel::oneshot::Receiver<RefreshResult> {
+pub(super) fn silent_refresh(
+    profile: &str,
+    cx: &mut App,
+) -> futures_channel::oneshot::Receiver<RefreshResult> {
     let (tx, rx) = futures_channel::oneshot::channel();
     let Some(mtm) = MainThreadMarker::new() else {
         let _ = tx.send(Err("not on the main thread".into()));
@@ -127,7 +142,7 @@ pub(super) fn silent_refresh(cx: &mut App) -> futures_channel::oneshot::Receiver
     // SAFETY: plain WebKit object creation on the main thread.
     let view = unsafe {
         let config = WKWebViewConfiguration::new(mtm);
-        config.setWebsiteDataStore(&sign_in_store(mtm));
+        config.setWebsiteDataStore(&sign_in_store(profile, mtm));
         let frame = CGRect::new(CGPoint::new(0.0, 0.0), CGSize::new(1024.0, 768.0));
         let view = WKWebView::initWithFrame_configuration(WKWebView::alloc(mtm), frame, &config);
         view.setCustomUserAgent(Some(&NSString::from_str(USER_AGENT)));
@@ -226,6 +241,8 @@ const USER_AGENT: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleW
 const BAR_HEIGHT: f32 = 44.;
 
 pub(super) struct LoginWindow {
+    /// The sign-in profile (its data store) this window signs in with.
+    profile: String,
     webview: Option<WebView>,
     status: String,
     cookies: Option<mpsc::Receiver<Cookies>>,
@@ -236,8 +253,9 @@ pub(super) struct LoginWindow {
     _poll: Task<()>,
 }
 
-/// Opens the sign-in window (one at a time is enough; a second call opens another).
-pub(super) fn open(cx: &mut App) {
+/// Opens the sign-in window on `profile` (one at a time is enough; a second call
+/// opens another).
+pub(super) fn open(profile: String, cx: &mut App) {
     let options = WindowOptions {
         window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
             None,
@@ -251,14 +269,14 @@ pub(super) fn open(cx: &mut App) {
         ..Default::default()
     };
     if let Err(e) = cx.open_window(options, |window, cx| {
-        cx.new(|cx| LoginWindow::new(window, cx))
+        cx.new(|cx| LoginWindow::new(profile, window, cx))
     }) {
         eprintln!("music-gpui: login window: {e}");
     }
 }
 
 impl LoginWindow {
-    fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
+    fn new(profile: String, window: &mut Window, cx: &mut Context<Self>) -> Self {
         let viewport = window.viewport_size();
         let (w, h) = (f32::from(viewport.width), f32::from(viewport.height));
         // Persistent store (see the module docs): the Google session stays for
@@ -267,7 +285,7 @@ impl LoginWindow {
             .with_url(LOGIN_URL)
             .with_user_agent(USER_AGENT)
             .with_incognito(false)
-            .with_data_store_identifier(STORE_ID)
+            .with_data_store_identifier(profile_bytes(&profile))
             .with_bounds(bounds(w, h))
             .build_as_child(&*window);
         let (webview, status) = match built {
@@ -287,6 +305,7 @@ impl LoginWindow {
             }
         });
         Self {
+            profile,
             webview,
             status,
             cookies: None,
@@ -336,7 +355,7 @@ impl LoginWindow {
                 self.done = true;
                 self.status = t!("login.checking").into();
                 cx.notify();
-                hand_over(cookie, cx);
+                hand_over(cookie, self.profile.clone(), cx);
                 window.remove_window();
                 return false;
             }

@@ -1,0 +1,57 @@
+# ---- Several accounts (src/account_list.rs, src/settings/accounts.rs, src/titlebar.rs)
+# {name} is the account / channel name.
+account.toast.added = Added {name} and switched to it
+account.toast.removed = Removed {name}
+# Signing out of the account in use switches to another signed-in account.
+account.toast.signed_out_switched = Signed out. Now using {name}
+account.list.no_saved_cookie = Couldn't read the saved sign-in of {name}. Sign in to it again.
+# Account menu in the title bar.
+titlebar.add_account = Add account…
+settings.account.from_browser = Sign in from your browser…
+settings.account.browser_note = “Sign in from your browser” takes the YouTube sign-in of a browser on this computer (Chrome, Edge, Brave, Firefox, Safari, Arc, Vivaldi, Opera, Chromium), so you don't have to sign in again.
+# Shown next to the account in use in the account list.
+settings.account.in_use = In use
+settings.account.switch = Switch
+settings.account.remove = Remove this account
+settings.account.list_group = Your accounts
+settings.account.add = Add an account
+settings.account.add_desc = Sign in to another YouTube Music account; switch between them here or from the account menu in the title bar.
+settings.account.list_note = Liked songs, saved albums, subscriptions and YouTube playlists belong to the account in use and sync again when you switch. Local files, local playlists, play history and downloads are shared by all accounts.
+settings.account.report_plays = Add plays to my YouTube history
+settings.account.report_plays_desc = Songs you play here show up in your YouTube Music history on your other devices, and improve its recommendations. Nothing is sent while the listening history is paused.
+
+# ---- Sign in from your browser (src/browser_import.rs). Browser names aren't translated.
+browser_import.title = Sign in from your browser
+browser_import.intro = Pick a browser profile where you're signed in to music.youtube.com. {app} reads only its youtube.com cookies, on this computer, and keeps them in the keychain like any sign-in.
+browser_import.note.keychain = macOS will ask whether {app} may use “<browser> Safe Storage” from your keychain. That's expected: it is the key to the browser's cookies. Choose Allow.
+browser_import.note.app_bound = On recent Windows versions, Chrome, Edge and Brave lock their cookies to themselves (app-bound encryption). Those profiles are listed but can't be read; use Firefox, “Sign in with Google…” or a pasted cookie instead.
+browser_import.none_found = No supported browser with saved cookies was found on this computer.
+browser_import.import = Import
+# {date} is a date.
+browser_import.last_used = Last used {date}
+browser_import.blocked.app_bound = Locked by the browser (app-bound encryption)
+browser_import.blocked.no_key = The browser's cookie key wasn't found
+browser_import.blocked.full_disk_access = Needs Full Disk Access (System Settings → Privacy & Security)
+# {browser} is a browser name (Chrome, Firefox…).
+browser_import.reading = Reading the YouTube sign-in from {browser}…
+browser_import.error.not_found = {browser}'s cookie store isn't there any more.
+browser_import.error.locked = {browser} keeps its cookies locked while it runs. Quit {browser} and try again.
+browser_import.error.full_disk_access = {app} needs Full Disk Access to read Safari's cookies: System Settings → Privacy & Security → Full Disk Access.
+browser_import.error.permission = {app} isn't allowed to read {browser}'s cookies.
+browser_import.error.keychain = macOS didn't hand out “{browser} Safe Storage”, the key to {browser}'s cookies. Try again and choose Allow when macOS asks.
+browser_import.error.no_key = The key to {browser}'s cookies couldn't be found.
+browser_import.error.app_bound = {browser} locks its cookies to itself on this Windows version (app-bound encryption), so no other app can read them. Use Firefox, “Sign in with Google…” or a pasted cookie instead.
+browser_import.error.decrypt = {browser}'s cookies couldn't be decrypted.
+# {profile} is the browser profile's name.
+browser_import.error.not_signed_in = {browser} ({profile}) isn't signed in to YouTube. Sign in to music.youtube.com there first.
+browser_import.error.format = {browser}'s cookie store couldn't be read.
+
+# ---- Home → Continue from another device (src/continue_card.rs)
+# {title} is a song title.
+home.continue.title = Jump back in: {title}
+# {artist} is the artist(s).
+home.continue.elsewhere = {artist} · played on another device
+# {position} is a time like 12:34.
+home.continue.at = {artist} · played on another device, stopped at {position}
+home.continue.resume = Resume
+home.continue.dismiss = Dismiss

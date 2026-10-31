@@ -19,6 +19,16 @@
 //!   `~/Library/WebKit/<bundle id>/WebsiteDataStore/`); macOS 11–13: the app's
 //!   default data store (`~/Library/WebKit/<bundle id>/`, `~/Library/HTTPStorages/`).
 //!
+//! **One profile per account** ("Several accounts", `account_list.rs`): each
+//! account signed in through the window keeps its own profile (an id in its
+//! `AccountConfig::profile`): its own `WKWebsiteDataStore` identifier on macOS 14+,
+//! its own folder (`SignIn-<id>`) on Windows. Renewals load the profile of the
+//! account in use, so one account's Google session never renews another's. The
+//! first account keeps the profile of older versions ([`LEGACY_PROFILE`]: the fixed
+//! store id / the `SignIn` folder). macOS 11–13 have one store for the whole app:
+//! there, adding an account empties it first, and only the account that signed in
+//! last can be renewed in the background ([`separate_profiles`]).
+//!
 //! **Sign out** clears it ([`clear_profile`]), so signing out really signs out.
 //! Google may refuse embedded browsers ("This browser or app may not be secure"); the
 //! account settings say so, and the cookie-paste dialog is the fallback. **Not
@@ -69,45 +79,165 @@ type Cookies = Vec<(String, String, String)>;
 /// for the log; never contains cookie values).
 pub type RefreshResult = Result<String, String>;
 
-/// Opens the sign-in window (`window`: the main window, to center on).
+/// The profile of older versions (one for the whole app): the account that was
+/// signed in when "Several accounts" arrived keeps it. The bytes are the fixed
+/// macOS store id (`macos::STORE_ID`); on Windows it is the `SignIn` folder.
+pub const LEGACY_PROFILE: &str = "28ee6ed96ce34d48ba8115f55584b763";
+
+/// A fresh profile id (32 hex digits).
+#[cfg_attr(not(any(target_os = "windows", target_os = "macos")), allow(dead_code))]
+pub fn new_profile_id() -> String {
+    let id = format!(
+        "{}{}",
+        crate::settings::library_config::new_account_id(),
+        crate::settings::library_config::new_account_id()
+    );
+    if id == LEGACY_PROFILE {
+        new_profile_id()
+    } else {
+        id
+    }
+}
+
+/// The 16 bytes of a profile id (a store identifier on macOS 14+).
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+pub(crate) fn profile_bytes(profile: &str) -> [u8; 16] {
+    let mut out = [0u8; 16];
+    let hex = profile.as_bytes();
+    for (i, byte) in out.iter_mut().enumerate() {
+        let pair = hex
+            .get(2 * i..2 * i + 2)
+            .and_then(|p| std::str::from_utf8(p).ok());
+        *byte = pair
+            .and_then(|p| u8::from_str_radix(p, 16).ok())
+            .unwrap_or(0);
+    }
+    // A UUID of zeros is invalid for WebKit: keep one bit set.
+    out[15] |= u8::from(out.iter().all(|b| *b == 0));
+    out
+}
+
+/// Whether each account can have a sign-in profile of its own (macOS 14+, Windows).
+#[cfg_attr(not(any(target_os = "windows", target_os = "macos")), allow(dead_code))]
+pub fn separate_profiles() -> bool {
+    #[cfg(target_os = "macos")]
+    return macos::identified_stores();
+    #[cfg(target_os = "windows")]
+    return true;
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+    false
+}
+
+/// Which profile a sign-in uses, and whether it must be emptied first.
+///
+/// * Signing in (again) to the account in use: its profile.
+/// * Signing in with nobody using the old profile: that one (an upgrade keeps
+///   working the way it did).
+/// * Otherwise (`add`ing an account, or the active one has no profile yet): a new
+///   one.
+/// * With one store for the app (`!separate`): always that store; emptied first when
+///   it holds another account's session.
+#[cfg_attr(not(any(target_os = "windows", target_os = "macos")), allow(dead_code))]
+pub(crate) fn plan_profile(
+    add: bool,
+    active: Option<&str>,
+    in_use: &[String],
+    separate: bool,
+) -> (String, bool) {
+    let legacy_used = in_use.iter().any(|p| p == LEGACY_PROFILE);
+    if !separate {
+        let owner_is_active = active == Some(LEGACY_PROFILE);
+        let clear = legacy_used && (add || !owner_is_active);
+        return (LEGACY_PROFILE.to_owned(), clear);
+    }
+    match active {
+        Some(p) if !add => (p.to_owned(), false),
+        _ if !legacy_used => (LEGACY_PROFILE.to_owned(), false),
+        _ => (new_profile_id(), false),
+    }
+}
+
+/// The profile for a sign-in from the app's accounts (see [`plan_profile`]).
+#[cfg(any(target_os = "macos", target_os = "windows"))]
+fn profile_for(add: bool, cx: &App) -> (String, bool) {
+    let (active, in_use) =
+        crate::app::read_app(cx, |app, cx| app.sign_in_profiles(cx)).unwrap_or_default();
+    plan_profile(add, active.as_deref(), &in_use, separate_profiles())
+}
+
+/// Opens the sign-in window for the account in use (or the first one; `window`:
+/// the main window, to center on).
 pub fn open(window: &gpui::Window, cx: &mut App) {
+    open_with(window, cx, false);
+}
+
+/// Opens the sign-in window for another account ("Add account").
+#[cfg_attr(not(any(target_os = "windows", target_os = "macos")), allow(dead_code))]
+pub fn open_new(window: &gpui::Window, cx: &mut App) {
+    open_with(window, cx, true);
+}
+
+fn open_with(window: &gpui::Window, cx: &mut App, add: bool) {
     #[cfg(target_os = "macos")]
     {
         let _ = window;
-        macos::open(cx);
+        let (profile, clear) = profile_for(add, cx);
+        if !clear {
+            macos::open(profile, cx);
+            return;
+        }
+        // One store for the app: empty it, then open (WebKit answers on the main thread).
+        let done = macos::clear_profile(&profile);
+        let executor = cx.background_executor().clone();
+        cx.spawn(async move |cx| {
+            for _ in 0..50 {
+                if done.try_recv().is_ok() {
+                    break;
+                }
+                executor.timer(std::time::Duration::from_millis(100)).await;
+            }
+            cx.update(|cx| macos::open(profile, cx));
+        })
+        .detach();
     }
     #[cfg(target_os = "windows")]
-    open_windows(window, cx);
+    {
+        let (profile, _) = profile_for(add, cx);
+        open_windows(window, profile, cx);
+    }
     #[cfg(not(any(target_os = "macos", target_os = "windows")))]
-    let _ = (window, cx);
+    let _ = (window, cx, add);
 }
 
-/// Renews the YouTube Music cookie from the persistent profile without showing
-/// anything: loads music.youtube.com hidden, waits until it's loaded and signed in,
-/// reads the cookies like the sign-in does. `None` where there is no web view.
-pub fn silent_refresh(cx: &mut App) -> Option<futures_channel::oneshot::Receiver<RefreshResult>> {
+/// Renews the YouTube Music cookie from `profile` without showing anything: loads
+/// music.youtube.com hidden, waits until it's loaded and signed in, reads the
+/// cookies like the sign-in does. `None` where there is no web view.
+pub fn silent_refresh(
+    profile: &str,
+    cx: &mut App,
+) -> Option<futures_channel::oneshot::Receiver<RefreshResult>> {
     #[cfg(target_os = "macos")]
-    return Some(macos::silent_refresh(cx));
+    return Some(macos::silent_refresh(profile, cx));
     #[cfg(target_os = "windows")]
-    return Some(silent_refresh_windows(cx));
+    return Some(silent_refresh_windows(profile, cx));
     #[cfg(not(any(target_os = "macos", target_os = "windows")))]
     {
-        let _ = cx;
+        let _ = (profile, cx);
         None
     }
 }
 
-/// Forgets the Google session of the sign-in web view (sign-out).
-pub fn clear_profile(cx: &mut App) {
+/// Forgets the Google session of `profile` (sign-out, removing an account).
+pub fn clear_profile(profile: &str, cx: &mut App) {
     #[cfg(target_os = "macos")]
     {
         let _ = cx;
-        macos::clear_profile();
+        let _ = macos::clear_profile(profile);
     }
     #[cfg(target_os = "windows")]
     {
         let _ = cx;
-        let dir = profile_dir();
+        let dir = profile_dir(profile);
         let cancelled = webview2::cancel_silent();
         // Its own thread: retrying may take a few seconds.
         let _ = std::thread::Builder::new()
@@ -125,18 +255,26 @@ pub fn clear_profile(cx: &mut App) {
             });
     }
     #[cfg(not(any(target_os = "macos", target_os = "windows")))]
-    let _ = cx;
+    let _ = (profile, cx);
 }
 
-/// The WebView2 user-data folder of the sign-in window (Windows).
+/// The WebView2 user-data folder of sign-in `profile` (Windows): `SignIn` for
+/// [`LEGACY_PROFILE`], `SignIn-<id>` for the others.
 #[cfg_attr(not(target_os = "windows"), allow(dead_code))]
-pub fn profile_dir() -> std::path::PathBuf {
+pub fn profile_dir(profile: &str) -> std::path::PathBuf {
+    let name = if profile == LEGACY_PROFILE {
+        "SignIn".to_owned()
+    } else {
+        // Only hex digits reach the file system.
+        let id: String = profile.chars().filter(char::is_ascii_hexdigit).collect();
+        format!("SignIn-{id}")
+    };
     crate::identity::project_dirs()
-        .map(|d| d.data_local_dir().join("SignIn"))
+        .map(|d| d.data_local_dir().join(&name))
         .unwrap_or_else(|| {
             std::env::temp_dir()
                 .join(crate::identity::APP_ID)
-                .join("SignIn")
+                .join(&name)
         })
 }
 
@@ -190,21 +328,24 @@ fn read_probe(answer: &str, unknown_seen: &mut u32) -> Probe {
     }
 }
 
-/// Gives the cookie to the main window's app (notifications go there).
+/// Gives the cookie (from `profile`) to the main window's app (notifications go
+/// there).
 #[cfg(any(target_os = "macos", target_os = "windows"))]
-fn hand_over(cookie: String, cx: &mut App) {
+fn hand_over(cookie: String, profile: String, cx: &mut App) {
     let Some(app) = app_entity(cx) else { return };
     let Some(main) = app.read(cx).main_window else {
         return;
     };
     let _ = cx.update_window(main, move |_, window, cx| {
-        update_app(cx, |app, cx| app.sign_in_with_cookie(cookie, 0, window, cx));
+        update_app(cx, |app, cx| {
+            app.sign_in_from(cookie, 0, Some(profile), window, cx)
+        });
     });
 }
 
 /// Starts the WebView2 window's thread and waits (without blocking) for its answer.
 #[cfg(target_os = "windows")]
-fn open_windows(window: &gpui::Window, cx: &mut App) {
+fn open_windows(window: &gpui::Window, profile: String, cx: &mut App) {
     use self::webview2::{Failure, Outcome, Request, Start};
 
     let main_hwnd = crate::services::hwnd(window).map(|h| h.get());
@@ -213,7 +354,7 @@ fn open_windows(window: &gpui::Window, cx: &mut App) {
         title: t!("login.window_title").to_owned(),
         url: LOGIN_URL,
         cookies_url: MUSIC_URL,
-        data_dir: profile_dir(),
+        data_dir: profile_dir(&profile),
         center_on: main_hwnd,
         accept: |cookies| youtube_cookie(cookies).is_some(),
         silent: false,
@@ -244,7 +385,7 @@ fn open_windows(window: &gpui::Window, cx: &mut App) {
         cx.update(|cx| match outcome {
             Outcome::Cookies(cookies) => {
                 if let Some(cookie) = youtube_cookie(&cookies) {
-                    hand_over(cookie, cx);
+                    hand_over(cookie, profile, cx);
                 }
             }
             Outcome::Closed | Outcome::SignedOut => {}
@@ -269,7 +410,10 @@ fn open_windows(window: &gpui::Window, cx: &mut App) {
 
 /// The hidden WebView2 renewal (Windows).
 #[cfg(target_os = "windows")]
-fn silent_refresh_windows(cx: &mut App) -> futures_channel::oneshot::Receiver<RefreshResult> {
+fn silent_refresh_windows(
+    profile: &str,
+    cx: &mut App,
+) -> futures_channel::oneshot::Receiver<RefreshResult> {
     use self::webview2::{Failure, Outcome, Request, Start};
 
     let (answer_tx, answer_rx) = futures_channel::oneshot::channel();
@@ -278,7 +422,7 @@ fn silent_refresh_windows(cx: &mut App) -> futures_channel::oneshot::Receiver<Re
         title: String::new(),
         url: MUSIC_URL,
         cookies_url: MUSIC_URL,
-        data_dir: profile_dir(),
+        data_dir: profile_dir(profile),
         center_on: None,
         accept: |cookies| youtube_cookie(cookies).is_some(),
         silent: true,
@@ -324,6 +468,65 @@ mod tests {
             Some("SAPISID=abc; SID=2; PREF=x")
         );
         assert_eq!(youtube_cookie(&cookies[..1]), None);
+    }
+
+    #[test]
+    fn each_account_signs_in_with_its_own_profile() {
+        let none: Vec<String> = Vec::new();
+        // The first sign-in keeps the profile of older versions.
+        assert_eq!(
+            plan_profile(false, None, &none, true),
+            (LEGACY_PROFILE.to_owned(), false)
+        );
+        let legacy = vec![LEGACY_PROFILE.to_owned()];
+        // Signing in again: the account's own profile.
+        assert_eq!(
+            plan_profile(false, Some(LEGACY_PROFILE), &legacy, true),
+            (LEGACY_PROFILE.to_owned(), false)
+        );
+        // Adding another account: a new profile, nothing emptied.
+        let (p, clear) = plan_profile(true, Some(LEGACY_PROFILE), &legacy, true);
+        assert!(p != LEGACY_PROFILE && p.len() == 32 && !clear);
+        assert_ne!(plan_profile(true, Some(LEGACY_PROFILE), &legacy, true).0, p);
+        // Signing in again to an account without a profile (it pasted a cookie).
+        let (p, _) = plan_profile(false, None, &legacy, true);
+        assert_ne!(p, LEGACY_PROFILE);
+        // One store for the app (macOS 11–13): emptied before another account uses it.
+        assert_eq!(
+            plan_profile(true, Some(LEGACY_PROFILE), &legacy, false),
+            (LEGACY_PROFILE.to_owned(), true)
+        );
+        assert_eq!(
+            plan_profile(false, Some(LEGACY_PROFILE), &legacy, false),
+            (LEGACY_PROFILE.to_owned(), false)
+        );
+        assert_eq!(
+            plan_profile(false, None, &legacy, false),
+            (LEGACY_PROFILE.to_owned(), true),
+            "the store holds another account's session"
+        );
+        assert_eq!(
+            plan_profile(true, None, &none, false),
+            (LEGACY_PROFILE.to_owned(), false)
+        );
+    }
+
+    #[test]
+    fn profile_ids_and_folders() {
+        let id = new_profile_id();
+        assert!(id.len() == 32 && id.chars().all(|c| c.is_ascii_hexdigit()));
+        assert_eq!(
+            profile_bytes(LEGACY_PROFILE),
+            [
+                0x28, 0xEE, 0x6E, 0xD9, 0x6C, 0xE3, 0x4D, 0x48, 0xBA, 0x81, 0x15, 0xF5, 0x55, 0x84,
+                0xB7, 0x63
+            ]
+        );
+        #[cfg(target_os = "macos")]
+        assert_eq!(profile_bytes(LEGACY_PROFILE), macos::STORE_ID);
+        assert_ne!(profile_bytes("zz"), [0u8; 16]);
+        assert!(profile_dir(LEGACY_PROFILE).ends_with("SignIn"));
+        assert!(profile_dir("ab12/../x").ends_with("SignIn-ab12"));
     }
 
     #[test]
