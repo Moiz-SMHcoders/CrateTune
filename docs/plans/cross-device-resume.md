@@ -59,25 +59,21 @@ installations, each showing what it's playing ("MacBook: Song · 1:23"). Each en
 The state sent is the same as Together's `RoomState`: queue, index, position, playing,
 repeat and shuffle.
 
-Transports, in order:
+Transport (decided 2026-10-31, after reviewing tono.fm's client): **iroh** peer-to-peer
+QUIC links between paired devices.
 
-1. **Same network (no setup).**
-   - Each installation announces itself with mDNS (`_cratetune._tcp`). The app already uses
-     `mdns-sd` for Chromecast discovery.
-   - Each one answers a small authenticated request for its state, plus "pause" and "take
-     this".
-   - Devices are paired once by entering a 6-digit code, or automatically when signed in to
-     the same Google account.
-2. **Different networks.**
-   - **Option A, self-hosted `music-relay`:** add a per-user "mailbox". Each paired device
-     posts its state, end-to-end encrypted with the pairing key, every ~10 s while playing
-     and on pause or quit. Other devices fetch it when they start or gain focus. The relay
-     never sees what you play.
-   - **Option B, no server: a synced folder.** The user picks iCloud Drive, Dropbox,
-     OneDrive or Syncthing. Each device writes `cratetune-handoff.json` (encrypted) there.
-     Latency depends on the sync service, from seconds to minutes. This works everywhere
-     with zero infrastructure.
-   - Option B is cheap to build first, and Option A gives an instant experience.
+1. **Pairing:** each installation has a device key (stored in the keychain). Devices pair
+   once by exchanging keys with a short code or QR shown on one device and typed or scanned
+   on the other; paired keys are remembered.
+2. **Discovery and connection:** on the same network devices find each other through iroh's
+   local discovery (mDNS); across networks iroh connects directly (hole punching) and falls
+   back to a relay only when it must. The relay is **our own `iroh-relay`**, hosted on
+   `dev.home` next to `music-relay` (e.g. `iroh.smhcoders.click`), not iroh's public ones.
+   The relay only forwards encrypted bytes.
+3. **Protocol:** a small versioned message set over the connection: "what are you
+   playing" (the `RoomState`-like snapshot), "pause", "take over" (send the snapshot and
+   pause), "play this here". Only paired devices are accepted.
+
 3. **On launch**, if another device was playing more recently, show "Continue 'Song' from
    MacBook at 1:23?".
 

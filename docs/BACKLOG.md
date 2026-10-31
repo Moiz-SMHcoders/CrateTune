@@ -308,6 +308,18 @@ page transitions / hover off and Animations Reduced / Off (that run lost its dis
 frames). Details: `look_state.rs`, [README: App-wide look &
 motion](../README.md#app-wide-look--motion). · Size: small · Priority: low
 
+**M8. Sync settings and library between devices (Automerge)**
+After the iroh device hand-off: keep settings, likes, playlists, speed-dial pins and queue
+tabs as Automerge CRDT documents per device and merge them over the paired iroh links,
+so a Mac and a laptop behave like one app, including after offline edits. Idea from
+tono.fm's client (AGPL, ideas only). · Size: large · Priority: medium
+
+**M9. Lasting friend groups and an activity feed**
+Turn one-off Music Together rooms into friend groups (invite codes, a recovery phrase for
+the identity) and add a feed of what friends are listening to, like Spotify's friend
+activity. Builds on the device keys and iroh links. Idea from tono.fm. · Size: large ·
+Priority: low
+
 ## 5. Performance ideas
 
 **F1. Memory footprint: look into the GPU and graphics buffers**
@@ -335,6 +347,11 @@ evict by distance from the viewport rather than LRU, keep small thumbnails for c
 shelves, or raise the budget on machines with plenty of memory. Repro: `MUSIC_FIXTURES`
 with per-page artwork in `scripts/perf-frames.sh` (see the comment in
 `crates/music-core/src/fixtures.rs` and docs/TESTING.md 6.3). · Size: medium · Priority: low
+
+**F4. Check the CPU cost of scrolling (marquee) titles**
+tono.fm's GPUI client lists "reimplement marquee to lessen CPU load". Measure whether any
+CrateTune marquee or auto-scrolling title keeps the window redrawing, and make it static
+or frame-capped if so. · Size: small · Priority: medium
 
 ## 6. Technical debt
 
