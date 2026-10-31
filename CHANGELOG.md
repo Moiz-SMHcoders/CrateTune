@@ -5,6 +5,15 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-11-01
+
+Three rounds of features ported or remade from other desktop YouTube Music clients
+(refryt, Limusic, Zuno, Deviload) and tono.fm's ideas, all self-hosted: several accounts and
+browser sign-in, sturdier playback with signed player fixes, queue parts and tabs, lyrics
+that match the track's length, package-manager installs, reverb and mini player layouts,
+theme files, a see-through window, music videos and theater mode, Spotify-style hand-off
+between your devices, light mode and a memory pass.
+
 ### Added
 
 * **Light mode.** Settings → Appearance → Theme → *Mode*: Dark (default), Light, or System,
