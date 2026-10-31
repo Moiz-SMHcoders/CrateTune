@@ -30,6 +30,10 @@ directories = "6"
 keyring = "4.2"
 # The system's preferred UI languages (already in GPUI's graph through parley).
 sys-locale = "0.3"
+# The pairing link as a QR code (Settings → Devices): small, no dependencies.
+qrcodegen = "=1.8.0"
+# Checking the device hand-off relay URL (Settings → Devices; already in the graph).
+url = "2.5"
 # `music-core`'s and GPUI's log records into the in-app log (`logs.rs`; already in the graph).
 log = { version = "0.4", features = ["std"] }
 

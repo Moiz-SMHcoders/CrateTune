@@ -15,9 +15,9 @@ use gpui_component::{Sizable as _, tag::Tag};
 use music_core::together::online::{self, RelaySource};
 use music_core::together::{
     AddTrackMode, ClientEvent, CodeError, ControlAction, GuestSync, HostOptions, JoinInfo,
-    JoinRequest, LocalPlayback, Participant, RoomSettings, RoomState, ServerEvent, SuggestionState,
-    TogetherClient, TogetherServer, TogetherTrack, display_code, is_shareable_id, local_ip, new_id,
-    normalize_code, sync, sync::BROADCAST_INTERVAL_MS,
+    JoinRequest, LeavePlan, LocalPlayback, Participant, RoomSettings, RoomState, ServerEvent,
+    SuggestionState, TogetherClient, TogetherServer, TogetherTrack, display_code, is_shareable_id,
+    leave_plan, local_ip, new_id, normalize_code, sync, sync::BROADCAST_INTERVAL_MS,
 };
 use music_core::{PlaybackState, PlaybackStatus, Track};
 
@@ -536,8 +536,9 @@ impl MusicApp {
         (tracks, current_ok)
     }
 
-    /// The room as this host's player has it (position extrapolated to now).
-    fn host_room_state(&self) -> RoomState {
+    /// The room as this host's player has it (position extrapolated to now; also
+    /// what device hand-off sends).
+    pub(crate) fn host_room_state(&self) -> RoomState {
         let (queue, current_ok) = self.room_track_list();
         let engine_on_current = self.playback.track.as_ref().map(|t| &t.video_id)
             == self.queue.current().map(|t| &t.video_id);
@@ -1153,13 +1154,28 @@ impl MusicApp {
                     .log(t!("together.log.ended").into());
             }
             Role::Guest(guest) => {
+                let keep = self.settings.read(cx).settings().together.keep_playing;
+                let local = self.local_playback(&self.playback.clone());
+                let room = guest.room.clone().filter(|_| !guest.pending);
+                let plan = leave_plan(
+                    keep,
+                    &local,
+                    room.as_ref(),
+                    Some(guest.client.clock()),
+                    guest.client.elapsed_ms(),
+                );
                 let client = guest.client;
                 std::thread::spawn(move || client.leave());
-                let shuffle = self.settings.read(cx).settings().playback.shuffle;
-                self.queue.set_shuffle(shuffle);
+                if !matches!(plan, LeavePlan::Continue { .. }) {
+                    let shuffle = self.settings.read(cx).settings().playback.shuffle;
+                    self.queue.set_shuffle(shuffle);
+                }
                 self.integrations
                     .together
                     .log(t!("together.log.left_session").into());
+                if let Some(room) = room {
+                    self.together_keep_playing(plan, &room, &local, cx);
+                }
             }
             Role::Joining(_) | Role::Idle => {}
         }
@@ -1352,8 +1368,8 @@ impl MusicApp {
         self.guest_follow(state, cx);
     }
 
-    /// Applies the host's latest room state to the local player.
-    fn guest_follow(&mut self, state: &PlaybackState, cx: &mut Context<Self>) {
+    /// The local player as the sync sees it.
+    fn local_playback(&self, state: &PlaybackState) -> LocalPlayback {
         let local_ids: Vec<String> = self
             .queue
             .current()
@@ -1361,13 +1377,88 @@ impl MusicApp {
             .chain(self.queue.upcoming().iter().map(|i| &i.track))
             .map(|t| t.video_id.clone())
             .collect();
-        let local = LocalPlayback {
+        LocalPlayback {
             queue_ids: local_ids,
             current_id: state.track.as_ref().map(|t| t.video_id.clone()),
             playing: state.status == PlaybackStatus::Playing,
             loading: state.status == PlaybackStatus::Loading || state.buffering,
             position_ms: self.clock.position(Instant::now()).as_millis() as u64,
-        };
+        }
+    }
+
+    /// "Keep playing here when I leave" (or, with the setting off, stop): applies
+    /// the [`LeavePlan`] for the room the guest had.
+    fn together_keep_playing(
+        &mut self,
+        plan: LeavePlan,
+        room: &RoomState,
+        local: &LocalPlayback,
+        cx: &mut Context<Self>,
+    ) {
+        match plan {
+            LeavePlan::Nothing => {}
+            LeavePlan::Pause => {
+                if self.playback.status == PlaybackStatus::Playing {
+                    self.toggle_playback(cx);
+                }
+            }
+            LeavePlan::Continue {
+                replace_queue,
+                play_index,
+                seek_ms,
+                playing,
+                repeat_mode,
+            } => {
+                // The room's repeat mode for this queue (not saved as a preference).
+                self.queue.set_repeat(match repeat_mode {
+                    1 => Repeat::One,
+                    2 => Repeat::All,
+                    _ => Repeat::Off,
+                });
+                let tracks: Vec<Track> = room.queue.iter().map(TogetherTrack::to_track).collect();
+                if let Some(index) = play_index {
+                    let Some(track) = self.queue.replace(tracks, index) else {
+                        return;
+                    };
+                    self.next_sent = None;
+                    if playing {
+                        self.integrations.devices.pending_seek_into(&track, seek_ms);
+                        self.play(track, cx);
+                    } else {
+                        // Paused: ready where the room was; Play starts it there.
+                        if local.playing {
+                            self.toggle_playback(cx);
+                        }
+                        self.store.resume_at = Some((
+                            track.video_id,
+                            Duration::from_millis(seek_ms.unwrap_or(room.position_ms)),
+                        ));
+                    }
+                    cx.notify();
+                    return;
+                }
+                if replace_queue {
+                    let index = room.current_index.min(tracks.len().saturating_sub(1));
+                    let _ = self.queue.replace(tracks, index);
+                    self.next_sent = None;
+                }
+                if let Some(ms) = seek_ms {
+                    self.seek_to(Duration::from_millis(ms), cx);
+                }
+                if playing != local.playing
+                    && let Some(engine) = &mut self.engine
+                {
+                    engine.toggle_pause();
+                    self.refresh_soon(cx);
+                }
+                cx.notify();
+            }
+        }
+    }
+
+    /// Applies the host's latest room state to the local player.
+    fn guest_follow(&mut self, state: &PlaybackState, cx: &mut Context<Self>) {
+        let local = self.local_playback(state);
         let Role::Guest(guest) = &mut self.integrations.together.role else {
             return;
         };

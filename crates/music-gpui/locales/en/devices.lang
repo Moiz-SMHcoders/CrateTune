@@ -1,0 +1,92 @@
+# Device hand-off (integrations/devices.rs, settings/devices_ui.rs): carry on listening
+# on another of your computers, Spotify-style. Devices are paired once with a code; the
+# "Devices" button on the player bar then lists them with what each is playing.
+
+# The Settings section's name and the player bar item (Settings → Player bar → Show on
+# the bar).
+settings.section.devices = Devices
+bar_items.item.devices = Devices
+
+# ---- The Devices button on the player bar and its popover
+devices.tooltip = Devices
+devices.title = Your devices
+# Asks every paired device again what it is playing.
+devices.refresh = Refresh
+# Opens Settings → Devices.
+devices.manage = Manage devices…
+# Takes over what the other device plays (queue, position); the other device pauses.
+devices.continue_here = Continue here
+# Sends what plays here to that device; this one pauses. {device} is its name.
+devices.play_on = Play on {device}
+
+# What a paired device is doing, under its name. {title} is the song, {position} where
+# it is in it ("1:23").
+devices.status.checking = Checking…
+devices.status.nothing = Nothing playing
+devices.status.unreachable = Not reachable (is the app open on it?)
+devices.status.playing = {title} · {position}
+devices.status.paused = Paused · {title} · {position}
+
+# ---- Pairing errors (Settings → Devices, "Enter a code")
+devices.pair.not_found = No device showing a code was found on this network. Use the pairing link if the other device is on another network.
+devices.pair.wrong_code = The code doesn't match. Check it and try again.
+devices.pair.not_pairing = That device isn't showing a code any more. Show a new one and try again.
+# {error} is a technical reason (in English).
+devices.pair.failed = Couldn't pair: {error}
+devices.pair.bad_code = That isn't a pairing code. A code has 8 letters and digits, like ABCD-2345.
+
+# ---- Notifications. {device} is a device's name, {title} a song.
+devices.toast.nothing_to_send = Nothing to send: the queue is empty.
+devices.toast.continued = Continuing “{title}” from {device}
+devices.toast.playing_on = Now playing on {device}
+devices.toast.take_over_failed = Couldn't continue from {device}
+devices.toast.play_on_failed = Couldn't play on {device}
+devices.toast.unreachable = {device} can't be reached
+# This device paused because another one took over.
+devices.toast.paused_by = Paused: {device} continues
+devices.toast.sent_here = Playing “{title}” sent from {device}
+devices.toast.paired = Paired with {device}
+devices.toast.unpaired = {device} forgot this device
+
+# ---- Home: the "continue" card when a paired device played more recently
+# {title} the song, {device} the device, {position} where it stopped ("1:23").
+home.continue.from_device = Continue “{title}” from {device} at {position}?
+home.continue.device_playing = Playing on {device} now
+home.continue.device_paused = Paused on {device}
+# The card's button: takes over the queue at that position.
+home.continue.continue_here = Continue here
+
+# ---- Settings → Devices
+settings.devices.this_device = This device
+settings.devices.name = Name
+settings.devices.name_note = How your other devices show this one.
+# {id} is a shortened device id ("3f2a…9c01").
+settings.devices.id = Device id: {id}
+settings.devices.pair = Pair a device
+settings.devices.pair_note = Pair your computers once. Each then shows what the others are playing, and you can continue on one what you started on another. The app has to be open on both.
+settings.devices.show_code = Show a code
+settings.devices.show_code_desc = A code (and a link) to enter on the other device.
+settings.devices.show_code_button = Show code
+settings.devices.code_shown = On the other device, open Settings → Devices and enter this code:
+settings.devices.code_expires = Valid for 10 minutes, once. On another network, copy the link (or scan the QR code) and enter that instead.
+settings.devices.copy_link = Copy link
+settings.devices.enter_code = Enter a code
+settings.devices.enter_note = The code the other device shows, or its pairing link (needed when it is on another network).
+settings.devices.pair_button = Pair
+settings.devices.looking = Looking for the device…
+settings.devices.paired_with = Paired with {device}
+settings.devices.paired = Paired devices
+settings.devices.none_paired = No devices yet. Once one is paired, a Devices button appears on the player bar.
+# Removes the device; it is told to forget this one too.
+settings.devices.forget = Forget
+settings.devices.networks = Other networks
+settings.devices.use_relay = Use a relay
+settings.devices.use_relay_desc = When the devices are on different networks and can't connect directly. On the same network they always connect directly.
+settings.devices.relay = Relay
+settings.devices.relay_note = An iroh relay (https://…). Empty: the built-in one, run by the app's maintainers.
+settings.devices.relay_error = Not a relay address (https://host).
+settings.devices.privacy = Devices talk end-to-end encrypted, directly whenever they can. A relay only passes on encrypted data it can't read; it sees the devices' IP addresses and ids. No one else's servers are involved.
+
+# ---- Settings → Music Together: "Keep playing here when I leave" (a guest's setting)
+settings.together.keep_playing = Keep playing here when I leave
+settings.together.keep_playing_desc = When you leave a session you joined, or the host ends it, carry on with its queue from where it was instead of stopping.

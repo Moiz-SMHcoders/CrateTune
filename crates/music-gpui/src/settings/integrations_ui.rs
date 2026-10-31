@@ -604,7 +604,19 @@ pub(super) fn render_together(
                     Input::new(&panel.extras.together_name).small(),
                     cx,
                 ))
-                .child(note(t!("settings.together.display_name_note"), cx)),
+                .child(note(t!("settings.together.display_name_note"), cx))
+                .child(row_at(
+                    "together.keep_playing",
+                    t!("settings.together.keep_playing"),
+                    Some(t!("settings.together.keep_playing_desc")),
+                    switch(
+                        "together-keep-playing",
+                        t.keep_playing,
+                        |p, on, cx| p.set_together(|t| t.keep_playing = on, cx),
+                        cx,
+                    ),
+                    cx,
+                )),
         )
         .child(
             group_at("together.hosting", t!("settings.together.hosting"), cx)

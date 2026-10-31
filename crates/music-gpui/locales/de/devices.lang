@@ -1,0 +1,75 @@
+# Device hand-off (see locales/en/devices.lang).
+
+settings.section.devices = Geräte
+bar_items.item.devices = Geräte
+
+# ---- The Devices button on the player bar and its popover
+devices.tooltip = Geräte
+devices.title = Deine Geräte
+devices.refresh = Aktualisieren
+devices.manage = Geräte verwalten…
+devices.continue_here = Hier weiterhören
+devices.play_on = Auf {device} abspielen
+devices.status.checking = Wird geprüft…
+devices.status.nothing = Keine Wiedergabe
+devices.status.unreachable = Nicht erreichbar (ist die App dort geöffnet?)
+devices.status.playing = {title} · {position}
+devices.status.paused = Pausiert · {title} · {position}
+
+# ---- Pairing errors (Settings → Devices, "Enter a code")
+devices.pair.not_found = In diesem Netzwerk wurde kein Gerät gefunden, das einen Code anzeigt. Ist das andere Gerät in einem anderen Netzwerk, nutze den Kopplungslink.
+devices.pair.wrong_code = Der Code stimmt nicht. Prüf ihn und versuch es noch einmal.
+devices.pair.not_pairing = Das Gerät zeigt keinen Code mehr an. Lass einen neuen anzeigen und versuch es noch einmal.
+devices.pair.failed = Kopplung fehlgeschlagen: {error}
+devices.pair.bad_code = Das ist kein Kopplungscode. Ein Code hat 8 Buchstaben und Ziffern, etwa ABCD-2345.
+
+# ---- Notifications
+devices.toast.nothing_to_send = Nichts zu senden: Die Warteschlange ist leer.
+devices.toast.continued = „{title}“ von {device} wird fortgesetzt
+devices.toast.playing_on = Läuft jetzt auf {device}
+devices.toast.take_over_failed = Konnte nicht von {device} übernehmen
+devices.toast.play_on_failed = Konnte nicht auf {device} abspielen
+devices.toast.unreachable = {device} ist nicht erreichbar
+devices.toast.paused_by = Pausiert: {device} spielt weiter
+devices.toast.sent_here = „{title}“ von {device} läuft jetzt hier
+devices.toast.paired = Mit {device} gekoppelt
+devices.toast.unpaired = {device} hat dieses Gerät vergessen
+
+# ---- Home: the "continue" card when a paired device played more recently
+home.continue.from_device = „{title}“ von {device} bei {position} fortsetzen?
+home.continue.device_playing = Läuft gerade auf {device}
+home.continue.device_paused = Pausiert auf {device}
+home.continue.continue_here = Hier weiterhören
+
+# ---- Settings → Devices
+settings.devices.this_device = Dieses Gerät
+settings.devices.name = Name
+settings.devices.name_note = So sehen deine anderen Geräte dieses hier.
+settings.devices.id = Geräte-ID: {id}
+settings.devices.pair = Gerät koppeln
+settings.devices.pair_note = Kopple deine Computer einmal. Dann zeigt jeder, was auf den anderen läuft, und du kannst auf einem fortsetzen, was du auf einem anderen begonnen hast. Die App muss auf beiden geöffnet sein.
+settings.devices.show_code = Code anzeigen
+settings.devices.show_code_desc = Ein Code (und ein Link) zum Eingeben auf dem anderen Gerät.
+settings.devices.show_code_button = Code anzeigen
+settings.devices.code_shown = Öffne auf dem anderen Gerät Einstellungen → Geräte und gib diesen Code ein:
+settings.devices.code_expires = 10 Minuten lang einmal gültig. In einem anderen Netzwerk kopierst du stattdessen den Link (oder scannst den QR-Code) und gibst ihn ein.
+settings.devices.copy_link = Link kopieren
+settings.devices.enter_code = Code eingeben
+settings.devices.enter_note = Der Code, den das andere Gerät anzeigt, oder sein Kopplungslink (nötig, wenn es in einem anderen Netzwerk ist).
+settings.devices.pair_button = Koppeln
+settings.devices.looking = Suche nach dem Gerät…
+settings.devices.paired_with = Mit {device} gekoppelt
+settings.devices.paired = Gekoppelte Geräte
+settings.devices.none_paired = Noch keine Geräte. Sobald eines gekoppelt ist, erscheint in der Player-Leiste ein Geräte-Button.
+settings.devices.forget = Vergessen
+settings.devices.networks = Andere Netzwerke
+settings.devices.use_relay = Relay verwenden
+settings.devices.use_relay_desc = Wenn die Geräte in verschiedenen Netzwerken sind und sich nicht direkt verbinden können. Im selben Netzwerk verbinden sie sich immer direkt.
+settings.devices.relay = Relay
+settings.devices.relay_note = Ein iroh-Relay (https://…). Leer: das eingebaute, betrieben von den Entwicklern der App.
+settings.devices.relay_error = Keine Relay-Adresse (https://host).
+settings.devices.privacy = Geräte kommunizieren Ende-zu-Ende-verschlüsselt und, wann immer möglich, direkt. Ein Relay leitet nur verschlüsselte Daten weiter, die es nicht lesen kann; es sieht die IP-Adressen und IDs der Geräte. Fremde Server sind nicht beteiligt.
+
+# ---- Settings → Music Together
+settings.together.keep_playing = Hier weiterspielen, wenn ich gehe
+settings.together.keep_playing_desc = Wenn du eine Sitzung verlässt, der du beigetreten bist, oder der Host sie beendet, geht es mit ihrer Warteschlange an der aktuellen Stelle weiter, statt zu stoppen.

@@ -79,6 +79,8 @@ pub struct Settings {
     pub ai_filter: crate::integrations::config::AiFilterPrefs,
     /// Chromecast.
     pub cast: crate::integrations::config::CastPrefs,
+    /// Device hand-off: this device's name, paired devices, relay (`integrations/devices.rs`).
+    pub devices: crate::integrations::config::DevicesPrefs,
     /// Player bar look: progress style, background effect, … (`bar_prefs.rs`).
     pub player_bar: super::bar_prefs::PlayerBarConfig,
     /// The first-run guide was finished or skipped. Missing in files from before the
@@ -132,6 +134,7 @@ impl Default for Settings {
             spotify: Default::default(),
             ai_filter: Default::default(),
             cast: Default::default(),
+            devices: Default::default(),
             player_bar: Default::default(),
             onboarded: true,
             custom_theme: Default::default(),

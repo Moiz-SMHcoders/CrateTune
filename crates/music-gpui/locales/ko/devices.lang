@@ -1,0 +1,75 @@
+# Device hand-off (see locales/en/devices.lang).
+
+settings.section.devices = 기기
+bar_items.item.devices = 기기
+
+# ---- The Devices button on the player bar and its popover
+devices.tooltip = 기기
+devices.title = 내 기기
+devices.refresh = 새로고침
+devices.manage = 기기 관리…
+devices.continue_here = 여기서 계속
+devices.play_on = {device}에서 재생
+devices.status.checking = 확인 중…
+devices.status.nothing = 재생 중인 항목 없음
+devices.status.unreachable = 연결할 수 없음(앱이 열려 있나요?)
+devices.status.playing = {title} · {position}
+devices.status.paused = 일시정지됨 · {title} · {position}
+
+# ---- Pairing errors (Settings → Devices, "Enter a code")
+devices.pair.not_found = 이 네트워크에서 코드를 표시하는 기기를 찾지 못했습니다. 다른 기기가 다른 네트워크에 있으면 페어링 링크를 사용하세요.
+devices.pair.wrong_code = 코드가 일치하지 않습니다. 확인한 후 다시 시도하세요.
+devices.pair.not_pairing = 해당 기기에 더 이상 코드가 표시되지 않습니다. 새 코드를 표시한 후 다시 시도하세요.
+devices.pair.failed = 페어링하지 못했습니다: {error}
+devices.pair.bad_code = 페어링 코드가 아닙니다. 코드는 ABCD-2345처럼 영문자와 숫자 8자입니다.
+
+# ---- Notifications
+devices.toast.nothing_to_send = 보낼 항목이 없습니다. 대기열이 비어 있습니다.
+devices.toast.continued = {device}에서 듣던 “{title}” 이어서 재생 중
+devices.toast.playing_on = 지금 {device}에서 재생 중
+devices.toast.take_over_failed = {device}에서 이어서 재생하지 못했습니다
+devices.toast.play_on_failed = {device}에서 재생하지 못했습니다
+devices.toast.unreachable = {device}에 연결할 수 없습니다
+devices.toast.paused_by = 일시정지됨: {device}에서 계속 재생
+devices.toast.sent_here = {device}에서 보낸 “{title}” 재생 중
+devices.toast.paired = {device}와(과) 페어링됨
+devices.toast.unpaired = {device}에서 이 기기와의 페어링을 해제했습니다
+
+# ---- Home: the "continue" card when a paired device played more recently
+home.continue.from_device = {device}에서 듣던 “{title}”을(를) {position}부터 이어서 들을까요?
+home.continue.device_playing = 지금 {device}에서 재생 중
+home.continue.device_paused = {device}에서 일시정지됨
+home.continue.continue_here = 여기서 계속
+
+# ---- Settings → Devices
+settings.devices.this_device = 이 기기
+settings.devices.name = 이름
+settings.devices.name_note = 다른 기기에 표시되는 이 기기의 이름입니다.
+settings.devices.id = 기기 ID: {id}
+settings.devices.pair = 기기 페어링
+settings.devices.pair_note = 컴퓨터를 한 번만 페어링하세요. 그러면 각 기기에 다른 기기에서 재생 중인 항목이 표시되고, 한 기기에서 시작한 재생을 다른 기기에서 이어서 할 수 있습니다. 두 기기 모두 앱이 열려 있어야 합니다.
+settings.devices.show_code = 코드 표시
+settings.devices.show_code_desc = 다른 기기에 입력할 코드(및 링크)입니다.
+settings.devices.show_code_button = 코드 표시
+settings.devices.code_shown = 다른 기기에서 설정 → 기기를 열고 이 코드를 입력하세요:
+settings.devices.code_expires = 10분 동안 한 번만 유효합니다. 다른 네트워크에서는 대신 링크를 복사하거나 QR 코드를 스캔해 입력하세요.
+settings.devices.copy_link = 링크 복사
+settings.devices.enter_code = 코드 입력
+settings.devices.enter_note = 다른 기기에 표시된 코드 또는 페어링 링크(다른 네트워크에 있을 때 필요).
+settings.devices.pair_button = 페어링
+settings.devices.looking = 기기를 찾는 중…
+settings.devices.paired_with = {device}와(과) 페어링됨
+settings.devices.paired = 페어링된 기기
+settings.devices.none_paired = 아직 기기가 없습니다. 기기를 페어링하면 플레이어 바에 ‘기기’ 버튼이 나타납니다.
+settings.devices.forget = 삭제
+settings.devices.networks = 다른 네트워크
+settings.devices.use_relay = 릴레이 사용
+settings.devices.use_relay_desc = 기기가 서로 다른 네트워크에 있어 직접 연결할 수 없을 때 사용합니다. 같은 네트워크에서는 항상 직접 연결합니다.
+settings.devices.relay = 릴레이
+settings.devices.relay_note = iroh 릴레이(https://…). 비우면 앱 관리자가 운영하는 기본 제공 릴레이를 사용합니다.
+settings.devices.relay_error = 릴레이 주소가 아닙니다(https://host).
+settings.devices.privacy = 기기 간 통신은 종단 간 암호화되며, 가능하면 항상 직접 연결됩니다. 릴레이는 읽을 수 없는 암호화된 데이터를 전달할 뿐이며, 기기의 IP 주소와 ID를 볼 수 있습니다. 다른 누구의 서버도 관여하지 않습니다.
+
+# ---- Settings → Music Together
+settings.together.keep_playing = 나갈 때 여기서 계속 재생
+settings.together.keep_playing_desc = 참여한 세션에서 나가거나 호스트가 세션을 종료하면, 멈추지 않고 그 대기열을 이어서 재생합니다.

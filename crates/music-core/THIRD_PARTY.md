@@ -281,3 +281,13 @@ file names its source in its header or next to the ported code.
 | `crates/music-gpui/src/queue_tabs.rs` | Zuno `src/player/TabManager.ts` | Only the queue is per tab (one engine; Zuno gives each UI tab its own player and page stack): tabs are saved queues, one of them playing; the others are previewed and "continued" where they were left. |
 | `crates/music-gpui/src/selection.rs`, `src/components/selection_bar.rs` | Zuno `src/ui/hooks/useTrackSelection.ts`, `src/ui/components/SelectionBar.tsx` | Same click rules (⌘ / Ctrl toggles, Shift extends from the last row touched, selected songs in list order); one app-wide selection keyed by list id, index and video id; a plain click still plays (Zuno's collapses the selection); ⌘A / Esc; more actions (play, play next, like, dislike, the list's own "Remove"). |
 | `crates/music-gpui/src/logs.rs` | Zuno's log viewer (Settings) | Own implementation: stderr through a pipe into a ring buffer and a rotated file, levels guessed from the text, secrets redacted before anything is kept. |
+
+## Device hand-off (feat/device-handoff)
+
+No code was ported. `src/handoff/` is written against the published APIs of these crates
+(dependencies, not copies): `iroh` 1.4.1 and `iroh-mdns-address-lookup` 0.6.1 (© n0, Inc.,
+MIT OR Apache-2.0), `spake2` 0.5.0-pre.0 (RustCrypto, MIT OR Apache-2.0); music-gpui's QR code
+uses `qrcodegen` 1.8.0 (© Project Nayuki, MIT). `together::sync::leave_plan` ("keep playing here
+when I leave") is our own, on top of the ported sync code above; ArchiveTune has no such
+feature. The relay deployed from `deploy/iroh-relay/` is the unmodified `iroh-relay` 1.4.1
+binary (MIT OR Apache-2.0).

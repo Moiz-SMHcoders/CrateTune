@@ -1,8 +1,8 @@
 //! Where credentials live: the OS keychain when it works, else the settings file.
 //!
 //! Secrets are the Last.fm API secret and session key, the ListenBrainz user
-//! token, the proxy password, the YouTube Music sign-in cookie and the Spotify
-//! refresh token. Accounts that are signed in but not in use keep their cookies
+//! token, the proxy password, the YouTube Music sign-in cookie, the Spotify
+//! refresh token and the device key of device hand-off (`integrations/devices.rs`). Accounts that are signed in but not in use keep their cookies
 //! under keys of their own ([`account_cookie_key`]; "Several accounts" in
 //! `account_list.rs`), read and written with the `*_key` functions. They are stored with the `keyring` crate (macOS Keychain, Windows
 //! Credential Manager, Secret Service on Linux) under service [`SERVICE`], one
@@ -39,11 +39,14 @@ pub enum Secret {
     SpotifyRefreshToken,
     /// AI content filter: the OpenAI-compatible API key.
     AiFilterKey,
+    /// Device hand-off: this installation's private key (hex); its public half is
+    /// the device id paired devices know it by.
+    DeviceKey,
 }
 
 impl Secret {
     #[cfg(test)]
-    pub const ALL: [Secret; 10] = [
+    pub const ALL: [Secret; 11] = [
         Secret::LastFmShared,
         Secret::LastFmSession,
         Secret::ListenBrainzToken,
@@ -54,6 +57,7 @@ impl Secret {
         Secret::ProxyPassword,
         Secret::SpotifyRefreshToken,
         Secret::AiFilterKey,
+        Secret::DeviceKey,
     ];
 
     /// Keychain account name and settings-file key.
@@ -69,6 +73,7 @@ impl Secret {
             Secret::YouTubeCookie => "youtube-cookie",
             Secret::SpotifyRefreshToken => "spotify-refresh-token",
             Secret::AiFilterKey => "ai-filter-api-key",
+            Secret::DeviceKey => "device-key",
         }
     }
 }

@@ -264,7 +264,14 @@ its own executor.
   state, everyone reconnects); `online`: room codes (`register_code` / `resolve_code`), the
   relay's health probe, which relay to use (setting → `packaging/relay.txt` → built-in) and
   the 6 h cache of `relay.txt`. See [Relay server](#relay-server-music-relay) and
-  [Together online](#together-online-room-codes-and-the-default-relay).
+  [Together online](#together-online-room-codes-and-the-default-relay). `sync::leave_plan`:
+  what a guest does when it leaves ("keep playing here").
+* `handoff` — device hand-off between paired installations (iroh 1.4 QUIC on its own thread
+  with a single-threaded tokio runtime): `HandoffNode` (bind without n0's relays / DNS, mDNS
+  via `iroh-mdns-address-lookup`, accept only paired device ids, requests on demand),
+  `messages` (versioned length-prefixed JSON frames: what are you playing, pause, take over,
+  play this here), `pairing` (8-character codes, SPAKE2 + HMAC key confirmation, pairing links).
+  See [Continue on another device](#continue-on-another-device-device-hand-off).
 * `cast` — Chromecast / Google Cast: mDNS discovery (`discover`, `_googlecast._tcp`),
   `CastSession` (CASTV2 over TLS: Default Media Receiver, LOAD / PLAY / PAUSE / SEEK /
   STOP / volume, status), `MediaProxy` (serves a `ResolvedStream` or a local file to the
@@ -676,7 +683,8 @@ src/
                      (player + downloads), keychain hook for secret module settings;
                      settings/modules.rs: the Modules section
   integrations/      SponsorBlock, Music Together (+ relay, host transfer), import / export,
-                     AI content filter (ai_filter.rs), Chromecast (cast.rs: Engine::Cast)
+                     AI content filter (ai_filter.rs), Chromecast (cast.rs: Engine::Cast),
+                     device hand-off (devices.rs; settings/devices_ui.rs, qr.rs)
                      state + script actions (config.rs: their settings;
                      settings/integrations_ui.rs: sections; pages/together.rs, pages/import.rs)
   services.rs, secrets.rs, script.rs, util.rs, icons.rs
@@ -1620,6 +1628,62 @@ Like ArchiveTune's online mode, but on our own relay and without accounts:
   `integrations::together` (the LAN fallback), `music-relay` (`codes`: generation, normalization,
   rate limit, IPv6 /64, proxy addresses) and `relay_e2e.rs` (a guest joins by code, the code
   survives a host transfer and goes with the room, the host key never comes back, the limit).
+
+### Continue on another device (device hand-off)
+
+Spotify-style "continue on another device" between your own CrateTune installations, peer to
+peer, without third-party servers (phase 2 of
+[the plan](docs/plans/cross-device-resume.md); phase 3, "Keep playing here when I leave", is in
+Music Together).
+
+* **Device key and pairing.** Each installation makes an Ed25519 device key on first use
+  (`Secret::DeviceKey`, the keychain; `MUSIC_SECRET_STORE=file` in tests); its public half is
+  the device id. Settings → **Devices** → **Show code** shows 8 Crockford base32 characters
+  (`ABCD-2345`, 10 minutes, at most 5 attempts), a QR code and a pairing link
+  (`music-devices://pair?id=…&code=…&relay=…&addr=…`). The other device enters the code (it
+  then looks for a device advertising "pairing" over mDNS) or the link (which says where the
+  device is). Both run SPAKE2 with the code over the already-encrypted iroh connection, the two
+  device ids as identities, and confirm the key with an HMAC each way: one guess per attempt,
+  no offline search. Then each stores the other (name, id, relay, addresses) in `settings.json`
+  → `devices.paired` (not in settings exports). **Forget** tells the other side too.
+* **Connectivity.** iroh 1.4.1, `presets::Minimal`: no n0 relays, no DNS / pkarr lookup, no
+  captive-portal check. On the LAN, mDNS (`iroh-mdns-address-lookup`, service name = the app
+  id, query cadence 4 s); otherwise the stored relay and direct addresses (updated from every
+  frame the devices exchange). The relay is ours: `IROH_RELAY_URL` in `packaging/app.env`
+  (`https://relay.smhcoders.click`, path-routed next to music-relay: iroh only uses `/relay`,
+  `/ping` and `/generate_204`), overridable or off in Settings → Devices. Deployment:
+  [`deploy/iroh-relay/`](deploy/iroh-relay/README.md). UDP port 42119 (any if taken).
+* **Security.** Only the paired ids are accepted on the `cratetune/devices/1` ALPN (anyone else
+  is closed right after the handshake); `cratetune/pair/1` only while a code is shown.
+* **Protocol** (`music_core::handoff::messages`): length-prefixed JSON frames
+  `{"v":1,"from":{name, relayUrl, addrs},"msg":{"type":…}}` on a bidirectional QUIC stream per
+  request: `what_are_you_playing` → `playing` (a `RoomState`-like snapshot: queue as
+  `TogetherTrack`s, index, position, playing, repeat, shuffle, device name, last played),
+  `pause`, `take_over` (answer with the snapshot, then pause), `play_this_here`, `unpaired`.
+  Additions within version 1 are additive (unknown fields ignored, unknown types answered with
+  `unsupported`); a breaking change gets a new ALPN.
+* **App** (`integrations/devices.rs`). The node runs only while a device is paired or a code is
+  shown / entered, on its own thread; the 250 ms poll reads its events and mirrors what plays
+  here into it when the track, queue, play state or position (a seek) changes, so nothing
+  redraws while idle. The bar's **Devices** button (bar item `devices`, shown once a device is
+  paired) opens a popover: each device with "Song · 1:23", **Continue here**, **Play on …**.
+  At launch, a paired device that played more than 5 s later than this one takes Home's
+  continue card ("Continue 'Song' from MacBook at 1:23?", for 90 s after the node starts).
+* **Script actions** (`integrations/script.rs`): `@devices-show-code=FILE`,
+  `@devices-pair=CODE|LINK|file:PATH`, `@devices-status`, `@devices-continue=NAME`,
+  `@devices-play-on=NAME`, `@devices-pause=NAME`, `@devices-forget=NAME`, `@devices-menu`,
+  `@devices-relay=on|off`, `@devices-offer-dismiss`, `@together-keep-playing=on|off`;
+  `@set=devices-name:…` / `devices-relay:…` / `devices-code:…`. `MUSIC_DEVICES_NO_MDNS=1` turns
+  mDNS off.
+* **Keep playing here when I leave** (Settings → Music Together, on by default;
+  `together::sync::leave_plan`): when a guest leaves, is kicked, or the host ends the session,
+  the app keeps the room's queue (current track first, in the room's order), seeks to the
+  room's position extrapolated with the session clock if it drifted, starts the room's track if
+  it wasn't loaded yet (or leaves it ready at that position if the room was paused) and takes
+  the room's repeat mode. Off: playback stops. Nothing changes on the wire, so it works with
+  ArchiveTune hosts.
+
+MEASUREMENTS_PLACEHOLDER
 
 ### Relay server (`music-relay`)
 

@@ -1,0 +1,75 @@
+# Device hand-off (see locales/en/devices.lang).
+
+settings.section.devices = Urządzenia
+bar_items.item.devices = Urządzenia
+
+# ---- The Devices button on the player bar and its popover
+devices.tooltip = Urządzenia
+devices.title = Twoje urządzenia
+devices.refresh = Odśwież
+devices.manage = Zarządzaj urządzeniami…
+devices.continue_here = Kontynuuj tutaj
+devices.play_on = Odtwarzaj na: {device}
+devices.status.checking = Sprawdzanie…
+devices.status.nothing = Nic nie jest odtwarzane
+devices.status.unreachable = Nieosiągalne (czy aplikacja jest tam otwarta?)
+devices.status.playing = {title} · {position}
+devices.status.paused = Wstrzymano · {title} · {position}
+
+# ---- Pairing errors (Settings → Devices, "Enter a code")
+devices.pair.not_found = W tej sieci nie znaleziono urządzenia wyświetlającego kod. Jeśli drugie urządzenie jest w innej sieci, użyj linku parowania.
+devices.pair.wrong_code = Kod się nie zgadza. Sprawdź go i spróbuj ponownie.
+devices.pair.not_pairing = To urządzenie nie wyświetla już kodu. Wyświetl nowy i spróbuj ponownie.
+devices.pair.failed = Nie udało się sparować: {error}
+devices.pair.bad_code = To nie jest kod parowania. Kod ma 8 liter i cyfr, np. ABCD-2345.
+
+# ---- Notifications
+devices.toast.nothing_to_send = Nie ma czego wysłać: kolejka jest pusta.
+devices.toast.continued = Kontynuowanie „{title}” z urządzenia {device}
+devices.toast.playing_on = Teraz odtwarzane na: {device}
+devices.toast.take_over_failed = Nie udało się kontynuować z urządzenia {device}
+devices.toast.play_on_failed = Nie udało się odtworzyć na: {device}
+devices.toast.unreachable = Urządzenie {device} jest nieosiągalne
+devices.toast.paused_by = Wstrzymano: {device} kontynuuje
+devices.toast.sent_here = Odtwarzanie „{title}” wysłanego z urządzenia {device}
+devices.toast.paired = Sparowano z: {device}
+devices.toast.unpaired = Urządzenie {device} zapomniało o tym urządzeniu
+
+# ---- Home: the "continue" card when a paired device played more recently
+home.continue.from_device = Kontynuować „{title}” z urządzenia {device} od {position}?
+home.continue.device_playing = Teraz odtwarzane na: {device}
+home.continue.device_paused = Wstrzymano na: {device}
+home.continue.continue_here = Kontynuuj tutaj
+
+# ---- Settings → Devices
+settings.devices.this_device = To urządzenie
+settings.devices.name = Nazwa
+settings.devices.name_note = Pod tą nazwą widzą to urządzenie Twoje inne urządzenia.
+settings.devices.id = ID urządzenia: {id}
+settings.devices.pair = Sparuj urządzenie
+settings.devices.pair_note = Sparuj swoje komputery raz. Potem każdy pokazuje, co grają pozostałe, a odtwarzanie rozpoczęte na jednym możesz kontynuować na innym. Aplikacja musi być otwarta na obu.
+settings.devices.show_code = Pokaż kod
+settings.devices.show_code_desc = Kod (i link) do wpisania na drugim urządzeniu.
+settings.devices.show_code_button = Pokaż kod
+settings.devices.code_shown = Na drugim urządzeniu otwórz Ustawienia → Urządzenia i wpisz ten kod:
+settings.devices.code_expires = Ważny 10 minut, jednorazowo. W innej sieci skopiuj link (lub zeskanuj kod QR) i wpisz go zamiast kodu.
+settings.devices.copy_link = Kopiuj link
+settings.devices.enter_code = Wpisz kod
+settings.devices.enter_note = Kod wyświetlany na drugim urządzeniu lub jego link parowania (potrzebny, gdy jest w innej sieci).
+settings.devices.pair_button = Sparuj
+settings.devices.looking = Szukanie urządzenia…
+settings.devices.paired_with = Sparowano z: {device}
+settings.devices.paired = Sparowane urządzenia
+settings.devices.none_paired = Nie ma jeszcze urządzeń. Po sparowaniu pierwszego na pasku odtwarzacza pojawi się przycisk Urządzenia.
+settings.devices.forget = Zapomnij
+settings.devices.networks = Inne sieci
+settings.devices.use_relay = Użyj przekaźnika
+settings.devices.use_relay_desc = Gdy urządzenia są w różnych sieciach i nie mogą połączyć się bezpośrednio. W tej samej sieci zawsze łączą się bezpośrednio.
+settings.devices.relay = Przekaźnik
+settings.devices.relay_note = Przekaźnik iroh (https://…). Puste: wbudowany, prowadzony przez opiekunów aplikacji.
+settings.devices.relay_error = To nie jest adres przekaźnika (https://host).
+settings.devices.privacy = Urządzenia komunikują się z szyfrowaniem end-to-end, bezpośrednio, kiedy tylko mogą. Przekaźnik tylko przekazuje zaszyfrowane dane, których nie może odczytać; widzi adresy IP i identyfikatory urządzeń. Nie biorą w tym udziału niczyje inne serwery.
+
+# ---- Settings → Music Together
+settings.together.keep_playing = Odtwarzaj tutaj dalej, gdy wyjdę
+settings.together.keep_playing_desc = Gdy opuścisz sesję, do której dołączono, albo host ją zakończy, odtwarzanie jej kolejki trwa dalej od miejsca, w którym była, zamiast się zatrzymać.

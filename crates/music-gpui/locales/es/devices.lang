@@ -1,0 +1,75 @@
+# Device hand-off (see locales/en/devices.lang).
+
+settings.section.devices = Dispositivos
+bar_items.item.devices = Dispositivos
+
+# ---- The Devices button on the player bar and its popover
+devices.tooltip = Dispositivos
+devices.title = Tus dispositivos
+devices.refresh = Actualizar
+devices.manage = Administrar dispositivos…
+devices.continue_here = Continuar aquí
+devices.play_on = Reproducir en {device}
+devices.status.checking = Comprobando…
+devices.status.nothing = No se reproduce nada
+devices.status.unreachable = No disponible (¿está la app abierta en él?)
+devices.status.playing = {title} · {position}
+devices.status.paused = En pausa · {title} · {position}
+
+# ---- Pairing errors (Settings → Devices, "Enter a code")
+devices.pair.not_found = No se encontró ningún dispositivo mostrando un código en esta red. Usa el enlace de vinculación si el otro dispositivo está en otra red.
+devices.pair.wrong_code = El código no coincide. Revísalo e inténtalo de nuevo.
+devices.pair.not_pairing = Ese dispositivo ya no muestra un código. Muestra uno nuevo e inténtalo de nuevo.
+devices.pair.failed = No se pudo vincular: {error}
+devices.pair.bad_code = Eso no es un código de vinculación. Un código tiene 8 letras y dígitos, como ABCD-2345.
+
+# ---- Notifications
+devices.toast.nothing_to_send = Nada que enviar: la cola está vacía.
+devices.toast.continued = Continuando “{title}” desde {device}
+devices.toast.playing_on = Reproduciendo en {device}
+devices.toast.take_over_failed = No se pudo continuar desde {device}
+devices.toast.play_on_failed = No se pudo reproducir en {device}
+devices.toast.unreachable = No se puede conectar con {device}
+devices.toast.paused_by = En pausa: {device} continúa
+devices.toast.sent_here = Reproduciendo “{title}”, enviado desde {device}
+devices.toast.paired = Vinculado con {device}
+devices.toast.unpaired = {device} olvidó este dispositivo
+
+# ---- Home: the "continue" card when a paired device played more recently
+home.continue.from_device = ¿Continuar “{title}” desde {device} en {position}?
+home.continue.device_playing = Reproduciéndose ahora en {device}
+home.continue.device_paused = En pausa en {device}
+home.continue.continue_here = Continuar aquí
+
+# ---- Settings → Devices
+settings.devices.this_device = Este dispositivo
+settings.devices.name = Nombre
+settings.devices.name_note = Cómo ven este dispositivo tus otros dispositivos.
+settings.devices.id = ID del dispositivo: {id}
+settings.devices.pair = Vincular un dispositivo
+settings.devices.pair_note = Vincula tus equipos una vez. Luego cada uno muestra lo que suena en los demás, y puedes continuar en uno lo que empezaste en otro. La app tiene que estar abierta en ambos.
+settings.devices.show_code = Mostrar un código
+settings.devices.show_code_desc = Un código (y un enlace) para introducir en el otro dispositivo.
+settings.devices.show_code_button = Mostrar código
+settings.devices.code_shown = En el otro dispositivo, abre Configuración → Dispositivos e introduce este código:
+settings.devices.code_expires = Válido durante 10 minutos, una sola vez. En otra red, copia el enlace (o escanea el código QR) e introdúcelo en su lugar.
+settings.devices.copy_link = Copiar enlace
+settings.devices.enter_code = Introducir un código
+settings.devices.enter_note = El código que muestra el otro dispositivo, o su enlace de vinculación (necesario si está en otra red).
+settings.devices.pair_button = Vincular
+settings.devices.looking = Buscando el dispositivo…
+settings.devices.paired_with = Vinculado con {device}
+settings.devices.paired = Dispositivos vinculados
+settings.devices.none_paired = Aún no hay dispositivos. Cuando vincules uno, aparecerá un botón Dispositivos en la barra del reproductor.
+settings.devices.forget = Olvidar
+settings.devices.networks = Otras redes
+settings.devices.use_relay = Usar un relay
+settings.devices.use_relay_desc = Cuando los dispositivos están en redes distintas y no pueden conectarse directamente. En la misma red siempre se conectan directamente.
+settings.devices.relay = Relay
+settings.devices.relay_note = Un relay de iroh (https://…). Vacío: el integrado, gestionado por los mantenedores de la app.
+settings.devices.relay_error = No es una dirección de relay (https://host).
+settings.devices.privacy = Los dispositivos se comunican con cifrado de extremo a extremo, directamente siempre que pueden. Un relay solo reenvía datos cifrados que no puede leer; ve las direcciones IP y los ID de los dispositivos. No intervienen servidores de nadie más.
+
+# ---- Settings → Music Together
+settings.together.keep_playing = Seguir reproduciendo aquí al salir
+settings.together.keep_playing_desc = Cuando sales de una sesión a la que te uniste, o el anfitrión la termina, continúa con su cola desde donde estaba en lugar de detenerse.

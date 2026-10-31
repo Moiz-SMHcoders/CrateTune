@@ -1,0 +1,75 @@
+# Device hand-off (see locales/en/devices.lang).
+
+settings.section.devices = Apparaten
+bar_items.item.devices = Apparaten
+
+# ---- The Devices button on the player bar and its popover
+devices.tooltip = Apparaten
+devices.title = Je apparaten
+devices.refresh = Vernieuwen
+devices.manage = Apparaten beheren…
+devices.continue_here = Hier verdergaan
+devices.play_on = Afspelen op {device}
+devices.status.checking = Controleren…
+devices.status.nothing = Er speelt niets
+devices.status.unreachable = Niet bereikbaar (is de app daar open?)
+devices.status.playing = {title} · {position}
+devices.status.paused = Gepauzeerd · {title} · {position}
+
+# ---- Pairing errors (Settings → Devices, "Enter a code")
+devices.pair.not_found = Geen apparaat met een code gevonden op dit netwerk. Gebruik de koppellink als het andere apparaat op een ander netwerk zit.
+devices.pair.wrong_code = De code klopt niet. Controleer hem en probeer het opnieuw.
+devices.pair.not_pairing = Dat apparaat toont geen code meer. Laat een nieuwe zien en probeer het opnieuw.
+devices.pair.failed = Koppelen mislukt: {error}
+devices.pair.bad_code = Dat is geen koppelcode. Een code heeft 8 letters en cijfers, zoals ABCD-2345.
+
+# ---- Notifications
+devices.toast.nothing_to_send = Niets te versturen: de wachtrij is leeg.
+devices.toast.continued = ‘{title}’ gaat verder vanaf {device}
+devices.toast.playing_on = Speelt nu op {device}
+devices.toast.take_over_failed = Kan niet verdergaan vanaf {device}
+devices.toast.play_on_failed = Kan niet afspelen op {device}
+devices.toast.unreachable = {device} is niet bereikbaar
+devices.toast.paused_by = Gepauzeerd: {device} gaat verder
+devices.toast.sent_here = ‘{title}’ speelt, verstuurd vanaf {device}
+devices.toast.paired = Gekoppeld met {device}
+devices.toast.unpaired = {device} heeft dit apparaat vergeten
+
+# ---- Home: the "continue" card when a paired device played more recently
+home.continue.from_device = ‘{title}’ van {device} voortzetten bij {position}?
+home.continue.device_playing = Speelt nu op {device}
+home.continue.device_paused = Gepauzeerd op {device}
+home.continue.continue_here = Hier verdergaan
+
+# ---- Settings → Devices
+settings.devices.this_device = Dit apparaat
+settings.devices.name = Naam
+settings.devices.name_note = Zo zien je andere apparaten dit apparaat.
+settings.devices.id = Apparaat-ID: {id}
+settings.devices.pair = Een apparaat koppelen
+settings.devices.pair_note = Koppel je computers één keer. Daarna toont elk wat er op de andere speelt, en kun je op de ene verdergaan met wat je op een andere begon. De app moet op beide open zijn.
+settings.devices.show_code = Een code tonen
+settings.devices.show_code_desc = Een code (en een link) om op het andere apparaat in te voeren.
+settings.devices.show_code_button = Code tonen
+settings.devices.code_shown = Open op het andere apparaat Instellingen → Apparaten en voer deze code in:
+settings.devices.code_expires = 10 minuten geldig, één keer. Op een ander netwerk kopieer je in plaats daarvan de link (of scan je de QR-code) en voer je die in.
+settings.devices.copy_link = Link kopiëren
+settings.devices.enter_code = Een code invoeren
+settings.devices.enter_note = De code die het andere apparaat toont, of zijn koppellink (nodig als het op een ander netwerk zit).
+settings.devices.pair_button = Koppelen
+settings.devices.looking = Apparaat zoeken…
+settings.devices.paired_with = Gekoppeld met {device}
+settings.devices.paired = Gekoppelde apparaten
+settings.devices.none_paired = Nog geen apparaten. Zodra er een gekoppeld is, verschijnt er een knop Apparaten in de spelerbalk.
+settings.devices.forget = Vergeten
+settings.devices.networks = Andere netwerken
+settings.devices.use_relay = Een relay gebruiken
+settings.devices.use_relay_desc = Als de apparaten op verschillende netwerken zitten en niet rechtstreeks verbinding kunnen maken. Op hetzelfde netwerk verbinden ze altijd rechtstreeks.
+settings.devices.relay = Relay
+settings.devices.relay_note = Een iroh-relay (https://…). Leeg: de ingebouwde, beheerd door de makers van de app.
+settings.devices.relay_error = Geen relayadres (https://host).
+settings.devices.privacy = Apparaten communiceren end-to-end versleuteld, rechtstreeks waar dat kan. Een relay geeft alleen versleutelde gegevens door die hij niet kan lezen; hij ziet de IP-adressen en ID's van de apparaten. Er zijn geen servers van anderen bij betrokken.
+
+# ---- Settings → Music Together
+settings.together.keep_playing = Hier blijven afspelen als ik vertrek
+settings.together.keep_playing_desc = Als je een sessie verlaat waaraan je deelnam, of de host die beëindigt, ga je verder met de wachtrij vanaf waar die was in plaats van te stoppen.

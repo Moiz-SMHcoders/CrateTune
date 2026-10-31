@@ -1,0 +1,75 @@
+# Device hand-off (see locales/en/devices.lang).
+
+settings.section.devices = Perangkat
+bar_items.item.devices = Perangkat
+
+# ---- The Devices button on the player bar and its popover
+devices.tooltip = Perangkat
+devices.title = Perangkat Anda
+devices.refresh = Segarkan
+devices.manage = Kelola perangkat…
+devices.continue_here = Lanjutkan di sini
+devices.play_on = Putar di {device}
+devices.status.checking = Memeriksa…
+devices.status.nothing = Tidak ada yang diputar
+devices.status.unreachable = Tidak terjangkau (apakah aplikasi terbuka di sana?)
+devices.status.playing = {title} · {position}
+devices.status.paused = Dijeda · {title} · {position}
+
+# ---- Pairing errors (Settings → Devices, "Enter a code")
+devices.pair.not_found = Tidak ditemukan perangkat yang menampilkan kode di jaringan ini. Gunakan tautan penyandingan jika perangkat lain ada di jaringan lain.
+devices.pair.wrong_code = Kodenya tidak cocok. Periksa lalu coba lagi.
+devices.pair.not_pairing = Perangkat itu tidak lagi menampilkan kode. Tampilkan kode baru lalu coba lagi.
+devices.pair.failed = Tidak dapat menyandingkan: {error}
+devices.pair.bad_code = Itu bukan kode penyandingan. Kode terdiri dari 8 huruf dan angka, seperti ABCD-2345.
+
+# ---- Notifications
+devices.toast.nothing_to_send = Tidak ada yang dikirim: antrean kosong.
+devices.toast.continued = Melanjutkan “{title}” dari {device}
+devices.toast.playing_on = Sekarang diputar di {device}
+devices.toast.take_over_failed = Tidak dapat melanjutkan dari {device}
+devices.toast.play_on_failed = Tidak dapat memutar di {device}
+devices.toast.unreachable = {device} tidak dapat dijangkau
+devices.toast.paused_by = Dijeda: {device} melanjutkan
+devices.toast.sent_here = Memutar “{title}” yang dikirim dari {device}
+devices.toast.paired = Tersanding dengan {device}
+devices.toast.unpaired = {device} melupakan perangkat ini
+
+# ---- Home: the "continue" card when a paired device played more recently
+home.continue.from_device = Lanjutkan “{title}” dari {device} di {position}?
+home.continue.device_playing = Sedang diputar di {device}
+home.continue.device_paused = Dijeda di {device}
+home.continue.continue_here = Lanjutkan di sini
+
+# ---- Settings → Devices
+settings.devices.this_device = Perangkat ini
+settings.devices.name = Nama
+settings.devices.name_note = Nama perangkat ini di perangkat Anda yang lain.
+settings.devices.id = ID perangkat: {id}
+settings.devices.pair = Sandingkan perangkat
+settings.devices.pair_note = Sandingkan komputer Anda sekali saja. Setelah itu masing-masing menampilkan apa yang diputar di yang lain, dan Anda bisa melanjutkan di satu perangkat apa yang dimulai di perangkat lain. Aplikasi harus terbuka di keduanya.
+settings.devices.show_code = Tampilkan kode
+settings.devices.show_code_desc = Kode (dan tautan) untuk dimasukkan di perangkat lain.
+settings.devices.show_code_button = Tampilkan kode
+settings.devices.code_shown = Di perangkat lain, buka Pengaturan → Perangkat lalu masukkan kode ini:
+settings.devices.code_expires = Berlaku 10 menit, sekali pakai. Di jaringan lain, salin tautannya (atau pindai kode QR) dan masukkan itu sebagai gantinya.
+settings.devices.copy_link = Salin tautan
+settings.devices.enter_code = Masukkan kode
+settings.devices.enter_note = Kode yang ditampilkan perangkat lain, atau tautan penyandingannya (diperlukan jika berada di jaringan lain).
+settings.devices.pair_button = Sandingkan
+settings.devices.looking = Mencari perangkat…
+settings.devices.paired_with = Tersanding dengan {device}
+settings.devices.paired = Perangkat tersanding
+settings.devices.none_paired = Belum ada perangkat. Setelah satu disandingkan, tombol Perangkat muncul di bilah pemutar.
+settings.devices.forget = Lupakan
+settings.devices.networks = Jaringan lain
+settings.devices.use_relay = Gunakan relay
+settings.devices.use_relay_desc = Saat perangkat berada di jaringan berbeda dan tidak bisa terhubung langsung. Di jaringan yang sama, perangkat selalu terhubung langsung.
+settings.devices.relay = Relay
+settings.devices.relay_note = Relay iroh (https://…). Kosong: relay bawaan, dijalankan oleh pengelola aplikasi.
+settings.devices.relay_error = Bukan alamat relay (https://host).
+settings.devices.privacy = Perangkat berkomunikasi dengan enkripsi ujung ke ujung, langsung bila memungkinkan. Relay hanya meneruskan data terenkripsi yang tidak bisa dibacanya; relay melihat alamat IP dan ID perangkat. Tidak ada server pihak lain yang terlibat.
+
+# ---- Settings → Music Together
+settings.together.keep_playing = Tetap putar di sini saat saya keluar
+settings.together.keep_playing_desc = Saat Anda keluar dari sesi yang Anda ikuti, atau host mengakhirinya, antreannya dilanjutkan dari posisi terakhir alih-alih berhenti.

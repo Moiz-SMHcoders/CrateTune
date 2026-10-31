@@ -23,6 +23,7 @@ mod bar_items_ui;
 pub mod bar_prefs;
 mod bar_ui;
 mod content;
+mod devices_ui;
 mod equalizer;
 pub mod file;
 pub mod home_prefs;
@@ -102,6 +103,8 @@ pub enum SectionId {
     AiFilter,
     /// Chromecast devices.
     Cast,
+    /// Device hand-off: this device, pairing, paired devices (`devices_ui.rs`).
+    Devices,
     /// Settings export / import, theme files (`portable_ui.rs`).
     Backup,
     About,
@@ -208,6 +211,12 @@ pub const SECTIONS: &[Section] = &[
         render: integrations_ui::render_cast,
     },
     Section {
+        id: SectionId::Devices,
+        title: k!("settings.section.devices"),
+        icon: IconName::MonitorSmartphone,
+        render: devices_ui::render,
+    },
+    Section {
         id: SectionId::Backup,
         title: k!("settings.section.backup"),
         icon: IconName::ArchiveRestore,
@@ -257,6 +266,7 @@ impl SectionId {
             SectionId::Spotify => "spotify",
             SectionId::AiFilter => "ai-filter",
             SectionId::Cast => "cast",
+            SectionId::Devices => "devices",
             SectionId::Backup => "backup",
             SectionId::About => "about",
             SectionId::Shortcuts => "shortcuts",
@@ -284,7 +294,7 @@ mod tests {
             assert_eq!(SECTIONS.iter().filter(|s| s.id == section.id).count(), 1);
             assert_eq!(SectionId::from_key(section.id.key()), Some(section.id));
         }
-        assert_eq!(SECTIONS.len(), 19);
+        assert_eq!(SECTIONS.len(), 20);
         assert_eq!(
             SectionId::from_key("accounts"),
             Some(SectionId::Integrations)

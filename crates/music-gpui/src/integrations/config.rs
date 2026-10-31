@@ -1,8 +1,9 @@
 //! Persisted preferences of the integrations (`settings.json` → `sponsorblock`,
-//! `together`, `spotify`, `ai_filter`, `cast`). Every field has a default so older
-//! files keep loading.
+//! `together`, `spotify`, `ai_filter`, `cast`, `devices`). Every field has a default so
+//! older files keep loading.
 
 use music_core::ai_filter::{AiCategory, AiFilterConfig};
+use music_core::handoff::PairedDevice;
 use music_core::sponsorblock::{Category, DEFAULT_API_URL, SponsorBlockConfig};
 use music_core::together::{DEFAULT_PORT, RoomSettings};
 use serde::{Deserialize, Serialize};
@@ -82,6 +83,9 @@ pub struct TogetherPrefs {
     /// address in the app's `relay.txt`, else the built-in one).
     pub relay_url: String,
     pub host_mode: HostMode,
+    /// "Keep playing here when I leave": a guest that leaves (or whose session ends)
+    /// carries on with the room's queue from the room's position instead of stopping.
+    pub keep_playing: bool,
 }
 
 impl Default for TogetherPrefs {
@@ -97,6 +101,7 @@ impl Default for TogetherPrefs {
             client_id: String::new(),
             relay_url: String::new(),
             host_mode: HostMode::default(),
+            keep_playing: true,
         }
     }
 }
@@ -258,6 +263,88 @@ pub struct CastPrefs {
     pub last_device: Option<String>,
 }
 
+/// Device hand-off (`integrations/devices.rs`, Settings → Devices).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct DevicesPrefs {
+    /// This device's name as the others show it (empty: the computer's name).
+    pub name: String,
+    /// Reach paired devices on other networks through a relay (on the same network
+    /// they talk directly either way).
+    pub use_relay: bool,
+    /// An `iroh-relay` (`https://…`) instead of the built-in one.
+    pub relay_url: String,
+    /// The devices paired with this one (only these are accepted).
+    pub paired: Vec<PairedDevice>,
+    /// The device key exists (`Secret::DeviceKey`; keychain, else the secrets map).
+    pub key_set: bool,
+}
+
+impl Default for DevicesPrefs {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            use_relay: true,
+            relay_url: String::new(),
+            paired: Vec::new(),
+            key_set: false,
+        }
+    }
+}
+
+impl DevicesPrefs {
+    /// The name sent to the other devices.
+    pub fn name(&self) -> String {
+        let name = self.name.trim();
+        if name.is_empty() {
+            computer_name()
+        } else {
+            name.chars().take(40).collect()
+        }
+    }
+
+    /// The relay to use: the setting, else the built-in one; `None` when off (or
+    /// neither is a valid `http(s)://` URL).
+    pub fn relay(&self) -> Option<String> {
+        if !self.use_relay {
+            return None;
+        }
+        let url = match self.relay_url.trim() {
+            "" => crate::identity::IROH_RELAY_URL.trim(),
+            url => url,
+        };
+        relay_url_valid(url).then(|| url.to_owned())
+    }
+}
+
+/// An `https://host[:port][/]` (or `http://` for a relay on the LAN) iroh relay URL.
+pub fn relay_url_valid(url: &str) -> bool {
+    url::Url::parse(url).is_ok_and(|u| {
+        matches!(u.scheme(), "https" | "http") && u.host_str().is_some_and(|h| !h.is_empty())
+    })
+}
+
+/// The computer's name (`MacBook-Pro.local` → `MacBook-Pro`), for the default device
+/// name.
+pub fn computer_name() -> String {
+    #[cfg(unix)]
+    let raw = {
+        let mut buf = [0u8; 256];
+        // SAFETY: the buffer is valid for its length; the result is NUL-terminated
+        // when it fits (else truncated, and we stop at the first NUL anyway).
+        let ok = unsafe { libc::gethostname(buf.as_mut_ptr().cast(), buf.len()) } == 0;
+        let end = buf.iter().position(|&b| b == 0).unwrap_or(buf.len());
+        ok.then(|| String::from_utf8_lossy(&buf[..end]).into_owned())
+    };
+    #[cfg(not(unix))]
+    let raw = std::env::var("COMPUTERNAME").ok();
+    raw.map(|h| h.trim().trim_end_matches(".local").to_owned())
+        .map(|h| h.split('.').next().unwrap_or_default().to_owned())
+        .filter(|h| !h.is_empty() && h != "localhost")
+        .map(|h| h.chars().take(40).collect())
+        .unwrap_or_else(|| crate::identity::APP_NAME.to_owned())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -301,5 +388,38 @@ mod tests {
         assert_eq!(core.custom, vec!["cars", "boats"]);
         let cast: CastPrefs = serde_json::from_str("{}").unwrap();
         assert!(!cast.direct);
+        // Keep playing after leaving a session: on unless turned off.
+        assert!(TogetherPrefs::default().keep_playing);
+        let t: TogetherPrefs = serde_json::from_str(r#"{"keep_playing":false}"#).unwrap();
+        assert!(!t.keep_playing);
+    }
+
+    #[test]
+    fn devices_prefs() {
+        let d: DevicesPrefs = serde_json::from_str("{}").unwrap();
+        assert!(d.use_relay && d.paired.is_empty() && !d.key_set);
+        assert!(!d.name().is_empty());
+        // The built-in relay (packaging/app.env) is a valid relay URL, or none.
+        assert_eq!(
+            d.relay().is_some(),
+            !crate::identity::IROH_RELAY_URL.is_empty()
+        );
+        let d = DevicesPrefs {
+            relay_url: "https://iroh.example.com".into(),
+            name: "  Studio  ".into(),
+            ..DevicesPrefs::default()
+        };
+        assert_eq!(d.relay().as_deref(), Some("https://iroh.example.com"));
+        assert_eq!(d.name(), "Studio");
+        let off = DevicesPrefs {
+            use_relay: false,
+            ..d.clone()
+        };
+        assert_eq!(off.relay(), None);
+        assert!(relay_url_valid("http://192.168.0.10:3340"));
+        assert!(!relay_url_valid("wss://relay.example.com"));
+        assert!(!relay_url_valid("relay.example.com"));
+        let name = computer_name();
+        assert!(!name.is_empty() && !name.ends_with(".local"), "{name}");
     }
 }

@@ -1,6 +1,7 @@
 //! Integrations on top of the player: SponsorBlock skipping, Music Together
-//! sessions, playlist import (Spotify / Exportify CSV / M3U / JSON) and export,
-//! the AI content filter and Chromecast.
+//! sessions, device hand-off between paired installations, playlist import
+//! (Spotify / Exportify CSV / M3U / JSON) and export, the AI content filter and
+//! Chromecast.
 //!
 //! The state lives in [`Integrations`] (one field of `MusicApp`); everything is
 //! driven from the app's 250 ms poll ([`MusicApp::poll_integrations`]) and from
@@ -10,6 +11,7 @@
 pub mod ai_filter;
 pub mod cast;
 pub mod config;
+pub mod devices;
 pub mod import;
 mod script;
 mod sponsorblock;
@@ -27,6 +29,7 @@ pub struct Integrations {
     pub import: import::ImportState,
     pub ai_filter: ai_filter::AiFilterState,
     pub cast: cast::CastState,
+    pub devices: devices::DevicesState,
 }
 
 impl MusicApp {
@@ -38,6 +41,7 @@ impl MusicApp {
         cx: &mut Context<Self>,
     ) {
         self.poll_together(state, window, cx);
+        self.poll_devices(state, window, cx);
         self.poll_sponsorblock(state, window, cx);
         self.sync_ai_filter(window, cx);
     }

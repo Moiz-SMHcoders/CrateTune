@@ -76,6 +76,9 @@ pub struct BarLayout {
     pub slider: Option<f32>,
     pub lyrics: bool,
     pub cast: bool,
+    /// Device hand-off's Devices button (`items.devices` is off until a device is
+    /// paired, see `bar_layout_now`).
+    pub devices: bool,
     pub sleep: bool,
     pub sleep_label: bool,
     pub mini: bool,
@@ -92,8 +95,8 @@ pub struct BarLayout {
 /// Items the user hid ([`BarItems`]) are never shown and take no room. Of the
 /// rest, priority, highest first: Now Playing, queue, mute (always); then an
 /// active Cast session, an armed sleep timer (both even when hidden: they are
-/// how you stop them), the volume slider, lyrics, Cast, sleep timer, mini
-/// player, the sleep timer's label. Shuffle / repeat need room beside the
+/// how you stop them), the volume slider, lyrics, Cast, Devices (once a device is
+/// paired), sleep timer, mini player, the sleep timer's label. Shuffle / repeat need room beside the
 /// transport, the source tag room in its flank (more without shuffle / repeat),
 /// "Add to playlist" a track info zone of at least 240 pt.
 pub fn bar_layout(
@@ -139,6 +142,8 @@ pub fn bar_layout(
     };
     let lyrics = items.lyrics && take(step);
     let cast = casting || (cast_available && items.cast && take(step));
+    // Once a device is paired, its button comes before the sleep timer and mini player.
+    let devices = items.devices && take(step);
     let sleep = sleep_armed || (items.sleep_timer && take(step));
     let mini = items.mini_player && take(step);
     let sleep_label = sleep_armed && sleep && take(64.);
@@ -158,6 +163,7 @@ pub fn bar_layout(
         slider,
         lyrics,
         cast,
+        devices,
         sleep,
         sleep_label,
         mini,
@@ -858,12 +864,15 @@ impl MusicApp {
     }
 
     fn bar_layout_now(&self, window: &Window, cx: &App) -> BarLayout {
+        let mut items = self.settings.read(cx).bar_items();
+        // The Devices button only once a device is paired.
+        items.devices &= !self.settings.read(cx).settings().devices.paired.is_empty();
         bar_layout(
             f32::from(window.viewport_size().width),
             self.cast_device().is_some(),
             self.playback.sleep_timer.is_some(),
             true,
-            self.settings.read(cx).bar_items(),
+            items,
         )
     }
 
@@ -1186,6 +1195,7 @@ impl MusicApp {
             .cast
             .then(|| self.integration_cast_button(cx))
             .flatten();
+        let devices = layout.devices.then(|| self.devices_button(cx)).flatten();
         let (track, _) = self.bar_track();
         let sleep = self.sleep_timer_label();
         let sleep_armed = sleep.is_some();
@@ -1256,6 +1266,7 @@ impl MusicApp {
                     .overflow_hidden()
                     .child(cast)
             }))
+            .children(devices)
             .when(layout.mini, |this| {
                 this.child(
                     toggle(
@@ -1346,6 +1357,15 @@ mod tests {
         bar_layout(width, false, false, true, items)
     }
 
+    /// The default items as the bar shows them before any device is paired (the
+    /// Devices button is masked out, see `bar_layout_now`).
+    fn unpaired() -> BarItems {
+        BarItems {
+            devices: false,
+            ..BarItems::default()
+        }
+    }
+
     fn all_items() -> BarItems {
         let mut all = BarItems::none();
         for item in BarItem::ALL {
@@ -1357,7 +1377,15 @@ mod tests {
     /// Width the right zone's buttons take (Cast's label excluded: it clips).
     fn right_width(l: &BarLayout) -> f32 {
         let step = ICON_BUTTON + 4.;
-        let buttons = [l.queue, l.now_playing, l.lyrics, l.cast, l.sleep, l.mini];
+        let buttons = [
+            l.queue,
+            l.now_playing,
+            l.lyrics,
+            l.cast,
+            l.sleep,
+            l.mini,
+            l.devices,
+        ];
         let mut w = step * (1 + buttons.iter().filter(|b| **b).count()) as f32;
         if l.sleep_label {
             w += 64.;
@@ -1379,6 +1407,7 @@ mod tests {
             BarItem::Queue => l.queue,
             BarItem::SleepTimer => l.sleep,
             BarItem::Cast => l.cast,
+            BarItem::Devices => l.devices,
             BarItem::MiniPlayer => l.mini,
             BarItem::NowPlaying => l.now_playing,
             BarItem::Volume => l.slider.is_some(),
@@ -1390,7 +1419,7 @@ mod tests {
 
     /// The default items, everything, nothing, and each item alone hidden / shown.
     fn item_sets() -> Vec<BarItems> {
-        let mut sets = vec![BarItems::default(), all_items(), BarItems::none()];
+        let mut sets = vec![unpaired(), all_items(), BarItems::none()];
         for item in BarItem::ALL {
             let mut hidden = all_items();
             hidden.set(item, false);
@@ -1431,13 +1460,13 @@ mod tests {
                 }
             }
         }
-        let narrow = layout(880., BarItems::default());
+        let narrow = layout(880., unpaired());
         assert!(narrow.slider.is_some(), "volume slider at 880 pt");
         assert!(narrow.shuffle && narrow.repeat);
         assert!(!narrow.mini && !narrow.source_chip && !narrow.add_to_playlist);
-        let common = layout(1280., BarItems::default());
+        let common = layout(1280., unpaired());
         assert!(common.mini && common.lyrics && common.slider == Some(80.));
-        let wide = layout(1600., BarItems::default());
+        let wide = layout(1600., unpaired());
         assert!(wide.lyrics && wide.cast && wide.sleep && wide.mini && wide.source_chip);
         assert_eq!(wide.slider, Some(92.));
     }
@@ -1470,16 +1499,16 @@ mod tests {
         let items = BarItems {
             lyrics: false,
             cast: false,
-            ..BarItems::default()
+            ..unpaired()
         };
-        assert!(layout(880., items).sleep && !layout(880., BarItems::default()).sleep);
+        assert!(layout(880., items).sleep && !layout(880., unpaired()).sleep);
         let mut items = BarItems::none();
         items.mini_player = true;
         items.queue = true;
         items.now_playing = true;
         assert!(layout(880., items).mini);
         // 1180 pt: the source tag fits once shuffle / repeat are hidden.
-        let mut items = BarItems::default();
+        let mut items = unpaired();
         assert!(!layout(1180., items).source_chip);
         items.shuffle = false;
         items.repeat = false;
@@ -1491,7 +1520,7 @@ mod tests {
         // "Add to playlist" (off by default) needs a track info zone of 240 pt.
         let items = BarItems {
             add_to_playlist: true,
-            ..BarItems::default()
+            ..unpaired()
         };
         assert!(!layout(880., items).add_to_playlist || layout(880., items).side >= 240.);
         assert!(!layout(700., items).add_to_playlist && layout(1280., items).add_to_playlist);

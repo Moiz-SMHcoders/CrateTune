@@ -19,6 +19,7 @@ fn main() {
         "APP_SUMMARY",
         "UPDATE_REPO",
         "RELAY_URL",
+        "IROH_RELAY_URL",
     ] {
         let value = text
             .lines()

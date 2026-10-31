@@ -195,6 +195,75 @@ impl GuestSync {
     }
 }
 
+/// What a guest does when it leaves a session, or the session ends under it (the
+/// host ended it, kicked it, the connection dropped): "Keep playing here when I
+/// leave" (phase 3 of `docs/plans/cross-device-resume.md`).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum LeavePlan {
+    /// Nothing to carry on with (no room state yet, an empty queue), or already
+    /// stopped.
+    Nothing,
+    /// The setting is off: stop here.
+    Pause,
+    /// Carry on locally with the room's queue from where the room was.
+    Continue {
+        /// Put the room's queue in the local queue (current track first).
+        replace_queue: bool,
+        /// The local player isn't on the room's track yet: start it (index into the
+        /// room's queue).
+        play_index: Option<usize>,
+        seek_ms: Option<u64>,
+        /// Playing or paused, as the room was.
+        playing: bool,
+        /// The room's repeat mode (0 off, 1 one, 2 all).
+        repeat_mode: u8,
+    },
+}
+
+/// [`LeavePlan`] from the last room state the guest had and its own player.
+pub fn leave_plan(
+    keep_playing: bool,
+    local: &LocalPlayback,
+    room: Option<&RoomState>,
+    clock: Option<ClockSnapshot>,
+    now_ms: u64,
+) -> LeavePlan {
+    if !keep_playing {
+        return if local.playing {
+            LeavePlan::Pause
+        } else {
+            LeavePlan::Nothing
+        };
+    }
+    let Some((room, current)) = room.and_then(|r| Some((r, r.current()?))) else {
+        return LeavePlan::Nothing;
+    };
+    let target = target_position_ms(room, clock, now_ms);
+    let replace_queue = local
+        .queue_ids
+        .iter()
+        .map(String::as_str)
+        .ne(room.queue.iter().map(|t| t.id.as_str()));
+    let on_track = local.current_id.as_deref() == Some(current.id.as_str());
+    let (play_index, seek_ms) = if on_track {
+        let drifted =
+            !local.loading && should_seek_for_drift(local.position_ms, target, room.is_playing);
+        (None, drifted.then_some(target))
+    } else {
+        (
+            Some(room.current_index),
+            (target >= MIN_LOAD_SEEK_MS).then_some(target),
+        )
+    };
+    LeavePlan::Continue {
+        replace_queue,
+        play_index,
+        seek_ms,
+        playing: room.is_playing,
+        repeat_mode: room.repeat_mode,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::super::messages::TogetherTrack;
@@ -366,5 +435,89 @@ mod tests {
             .plan(&local, &room(&[], 0, false, 0, 8_000), clock, 8_000)
             .unwrap();
         assert_eq!(plan.set_playing, Some(false));
+    }
+
+    #[test]
+    fn leaving_keeps_playing_from_where_the_room_was() {
+        let clock = Some(ClockSnapshot {
+            offset_ms: 0,
+            rtt_ms: 10,
+            samples: 5,
+        });
+        let mut state = room(&["a", "b", "c"], 1, true, 30_000, 10_000);
+        state.repeat_mode = 2;
+        let following = LocalPlayback {
+            queue_ids: vec!["a".into(), "b".into(), "c".into()],
+            current_id: Some("b".into()),
+            playing: true,
+            loading: false,
+            position_ms: 30_400,
+        };
+        // In sync: keep going as is, with the room's repeat mode.
+        assert_eq!(
+            leave_plan(true, &following, Some(&state), clock, 10_500),
+            LeavePlan::Continue {
+                replace_queue: false,
+                play_index: None,
+                seek_ms: None,
+                playing: true,
+                repeat_mode: 2,
+            }
+        );
+        // Still loading the room's track (or on another one): start it at the room's
+        // position; the queue becomes the room's.
+        let behind = LocalPlayback {
+            queue_ids: vec!["a".into()],
+            current_id: Some("a".into()),
+            playing: false,
+            loading: true,
+            position_ms: 0,
+        };
+        assert_eq!(
+            leave_plan(true, &behind, Some(&state), clock, 11_000),
+            LeavePlan::Continue {
+                replace_queue: true,
+                play_index: Some(1),
+                seek_ms: Some(31_000),
+                playing: true,
+                repeat_mode: 2,
+            }
+        );
+        // Drifted on the right track: seek.
+        let drifted = LocalPlayback {
+            position_ms: 20_000,
+            ..following.clone()
+        };
+        assert!(matches!(
+            leave_plan(true, &drifted, Some(&state), clock, 10_000),
+            LeavePlan::Continue {
+                seek_ms: Some(30_000),
+                ..
+            }
+        ));
+        // The room was paused: stay paused.
+        let paused = room(&["a", "b", "c"], 1, false, 30_000, 10_000);
+        assert!(matches!(
+            leave_plan(true, &following, Some(&paused), clock, 10_500),
+            LeavePlan::Continue { playing: false, .. }
+        ));
+        // Nothing to carry on with.
+        assert_eq!(
+            leave_plan(true, &following, None, clock, 0),
+            LeavePlan::Nothing
+        );
+        assert_eq!(
+            leave_plan(true, &following, Some(&room(&[], 0, false, 0, 0)), clock, 0),
+            LeavePlan::Nothing
+        );
+        // The setting off: stop (if playing).
+        assert_eq!(
+            leave_plan(false, &following, Some(&state), clock, 10_500),
+            LeavePlan::Pause
+        );
+        assert_eq!(
+            leave_plan(false, &behind, Some(&state), clock, 10_500),
+            LeavePlan::Nothing
+        );
     }
 }

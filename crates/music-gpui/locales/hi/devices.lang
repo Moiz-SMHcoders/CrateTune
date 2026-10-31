@@ -1,0 +1,75 @@
+# Device hand-off (see locales/en/devices.lang).
+
+settings.section.devices = डिवाइस
+bar_items.item.devices = डिवाइस
+
+# ---- The Devices button on the player bar and its popover
+devices.tooltip = डिवाइस
+devices.title = आपके डिवाइस
+devices.refresh = रीफ़्रेश करें
+devices.manage = डिवाइस प्रबंधित करें…
+devices.continue_here = यहाँ जारी रखें
+devices.play_on = {device} पर चलाएँ
+devices.status.checking = जाँच हो रही है…
+devices.status.nothing = कुछ नहीं चल रहा
+devices.status.unreachable = पहुँच से बाहर (क्या उस पर ऐप खुला है?)
+devices.status.playing = {title} · {position}
+devices.status.paused = रुका हुआ · {title} · {position}
+
+# ---- Pairing errors (Settings → Devices, "Enter a code")
+devices.pair.not_found = इस नेटवर्क पर कोड दिखाता कोई डिवाइस नहीं मिला। अगर दूसरा डिवाइस किसी और नेटवर्क पर है, तो पेयरिंग लिंक इस्तेमाल करें।
+devices.pair.wrong_code = कोड मेल नहीं खाता। उसे जाँचें और फिर से कोशिश करें।
+devices.pair.not_pairing = वह डिवाइस अब कोड नहीं दिखा रहा। नया कोड दिखाएँ और फिर से कोशिश करें।
+devices.pair.failed = पेयर नहीं हो सका: {error}
+devices.pair.bad_code = यह पेयरिंग कोड नहीं है। कोड में 8 अक्षर और अंक होते हैं, जैसे ABCD-2345।
+
+# ---- Notifications
+devices.toast.nothing_to_send = भेजने के लिए कुछ नहीं: कतार खाली है।
+devices.toast.continued = {device} से “{title}” जारी है
+devices.toast.playing_on = अब {device} पर चल रहा है
+devices.toast.take_over_failed = {device} से जारी नहीं रख सके
+devices.toast.play_on_failed = {device} पर नहीं चला सके
+devices.toast.unreachable = {device} तक नहीं पहुँच सके
+devices.toast.paused_by = रोका गया: {device} पर जारी है
+devices.toast.sent_here = {device} से भेजा गया “{title}” चल रहा है
+devices.toast.paired = {device} के साथ पेयर हो गया
+devices.toast.unpaired = {device} ने इस डिवाइस को भुला दिया
+
+# ---- Home: the "continue" card when a paired device played more recently
+home.continue.from_device = {device} से “{title}” को {position} से जारी रखें?
+home.continue.device_playing = अभी {device} पर चल रहा है
+home.continue.device_paused = {device} पर रुका हुआ
+home.continue.continue_here = यहाँ जारी रखें
+
+# ---- Settings → Devices
+settings.devices.this_device = यह डिवाइस
+settings.devices.name = नाम
+settings.devices.name_note = आपके दूसरे डिवाइस इसे इसी नाम से देखते हैं।
+settings.devices.id = डिवाइस आईडी: {id}
+settings.devices.pair = डिवाइस पेयर करें
+settings.devices.pair_note = अपने कंप्यूटर एक बार पेयर करें। फिर हर एक दिखाता है कि बाकी पर क्या चल रहा है, और आप एक पर शुरू किया हुआ दूसरे पर जारी रख सकते हैं। दोनों पर ऐप खुला होना चाहिए।
+settings.devices.show_code = कोड दिखाएँ
+settings.devices.show_code_desc = दूसरे डिवाइस पर डालने के लिए एक कोड (और एक लिंक)।
+settings.devices.show_code_button = कोड दिखाएँ
+settings.devices.code_shown = दूसरे डिवाइस पर सेटिंग → डिवाइस खोलें और यह कोड डालें:
+settings.devices.code_expires = 10 मिनट तक, एक बार के लिए मान्य। किसी दूसरे नेटवर्क पर लिंक कॉपी करें (या QR कोड स्कैन करें) और कोड की जगह उसे डालें।
+settings.devices.copy_link = लिंक कॉपी करें
+settings.devices.enter_code = कोड डालें
+settings.devices.enter_note = दूसरे डिवाइस पर दिखने वाला कोड, या उसका पेयरिंग लिंक (जब वह किसी दूसरे नेटवर्क पर हो तब ज़रूरी)।
+settings.devices.pair_button = पेयर करें
+settings.devices.looking = डिवाइस खोजा जा रहा है…
+settings.devices.paired_with = {device} के साथ पेयर किया गया
+settings.devices.paired = पेयर किए गए डिवाइस
+settings.devices.none_paired = अभी कोई डिवाइस नहीं। एक डिवाइस पेयर होते ही प्लेयर बार पर “डिवाइस” बटन दिखेगा।
+settings.devices.forget = भूल जाएँ
+settings.devices.networks = दूसरे नेटवर्क
+settings.devices.use_relay = रिले इस्तेमाल करें
+settings.devices.use_relay_desc = जब डिवाइस अलग-अलग नेटवर्क पर हों और सीधे कनेक्ट न हो सकें। एक ही नेटवर्क पर वे हमेशा सीधे कनेक्ट होते हैं।
+settings.devices.relay = रिले
+settings.devices.relay_note = एक iroh रिले (https://…)। खाली: बिल्ट-इन रिले, जिसे ऐप के मेंटेनर चलाते हैं।
+settings.devices.relay_error = यह रिले पता नहीं है (https://host)।
+settings.devices.privacy = डिवाइस आपस में एंड-टू-एंड एन्क्रिप्टेड तरीके से बात करते हैं, और जब भी हो सके सीधे। रिले सिर्फ़ एन्क्रिप्टेड डेटा आगे भेजता है जिसे वह पढ़ नहीं सकता; उसे डिवाइसों के IP पते और आईडी दिखते हैं। किसी और के सर्वर शामिल नहीं होते।
+
+# ---- Settings → Music Together
+settings.together.keep_playing = छोड़ने पर यहीं चलाते रहें
+settings.together.keep_playing_desc = जब आप जॉइन किया हुआ सेशन छोड़ें, या होस्ट उसे खत्म कर दे, तो रुकने के बजाय उसकी कतार वहीं से जारी रखें जहाँ वह थी।
