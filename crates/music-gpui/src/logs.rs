@@ -110,6 +110,7 @@ impl Ring {
         self.lines.push_back(line);
     }
 
+    #[cfg(test)]
     pub fn len(&self) -> usize {
         self.lines.len()
     }

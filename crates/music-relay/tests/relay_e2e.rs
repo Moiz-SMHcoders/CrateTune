@@ -106,6 +106,7 @@ fn relay_host_two_guests_and_a_transfer() {
         allow_guests_to_add_tracks: true,
         allow_guests_to_control_playback: false,
         require_host_approval_to_join: true,
+        ..RoomSettings::default()
     };
     let mut host = TogetherServer::start_relay(
         &url,

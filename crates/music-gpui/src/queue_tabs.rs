@@ -81,10 +81,8 @@ impl QueueTabs {
             return Self::default();
         }
         self.tabs.truncate(MAX_TABS);
-        let mut next = 1;
-        for tab in &mut self.tabs {
-            tab.id = next;
-            next += 1;
+        for (id, tab) in (1..).zip(self.tabs.iter_mut()) {
+            tab.id = id;
             tab.name = clean_name(&tab.name);
         }
         self.playing = self.playing.min(self.tabs.len() - 1);

@@ -480,8 +480,8 @@ mod tests {
             [Play, PlayNext, AddToQueue, AddToPlaylist, Like]
         );
         let both = vec![yt.clone(), local.clone()];
-        assert_eq!(Download.applies_to(both.clone()), [yt.clone()]);
-        assert_eq!(Dislike.applies_to(both.clone()), [yt.clone()]);
+        assert_eq!(Download.applies_to(both.clone()), std::slice::from_ref(&yt));
+        assert_eq!(Dislike.applies_to(both.clone()), std::slice::from_ref(&yt));
         assert_eq!(AddToQueue.applies_to(both.clone()), both);
         assert!(Play.clears_selection() && Remove.clears_selection());
         assert!(!AddToQueue.clears_selection() && !AddToPlaylist.clears_selection());
