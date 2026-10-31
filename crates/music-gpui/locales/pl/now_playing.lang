@@ -115,3 +115,5 @@ card.size.large = Duży
 np.queue.next_in_queue = NASTĘPNE W KOLEJCE
 np.queue.next_from = NASTĘPNE Z: {name}
 np.queue.next_from_radio = NASTĘPNE Z RADIA: {name}
+sound_menu.tooltip = Dźwięk: korektor, pogłos, ustawienia
+sound_menu.settings = Ustawienia dźwięku…

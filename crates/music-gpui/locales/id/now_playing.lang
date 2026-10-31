@@ -104,3 +104,5 @@ card.size.large = Besar
 np.queue.next_in_queue = BERIKUTNYA DI ANTREAN
 np.queue.next_from = BERIKUTNYA DARI {name}
 np.queue.next_from_radio = BERIKUTNYA DARI RADIO {name}
+sound_menu.tooltip = Suara: equalizer, gema, preset
+sound_menu.settings = Pengaturan suara…

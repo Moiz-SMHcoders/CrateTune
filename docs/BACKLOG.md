@@ -54,8 +54,7 @@ The signed manifest's fetch, verification, cache and rollback rules are unit-tes
 in-memory sources, and the relay's `--player-fixes` route has an end-to-end test. Both
 published paths are live (2026-10-31): `raw.githubusercontent.com/<UPDATE_REPO>/main/packaging/`
 and the mirror at `relay.smhcoders.click/player-fixes.json` (byte-identical, refreshed by
-`~/cratetune-relay/fetch-player-fixes.sh` on dev.home; an hourly cron entry for it is still
-to be added by the maintainer). Still to do: publish a real fix (serial 2) and watch a running
+`~/cratetune-relay/fetch-player-fixes.sh` on dev.home, hourly by cron). Still to do: publish a real fix (serial 2) and watch a running
 app pick it up from each path. Details:
 [RELEASING.md](RELEASING.md#player-fixes-packagingplayer-fixesjson). · Size: small ·
 Priority: medium
@@ -213,6 +212,15 @@ dispatch synthetic events), Ctrl-click on Windows / Linux; (5) continuing a queu
 casting (the seek to the saved position isn't sent to a Cast session). Details: [README:
 Queue round](../README.md#queue-round-queue-parts-and-tabs-multi-select-devices-logs-suggestions).
 · Size: small · Priority: medium
+
+**U19. Now Playing extras on real systems**
+Checked on macOS with unit tests, scripts and offscreen screenshots only: (1) the reverb by
+ear (it was only measured on buffers: silence, stability, decay order, pre-delay, no
+subnormals) — whether the rooms sound right, and the level at a high wet mix (it can
+exceed 0 dBFS on loud masters; there is no limiter); (2) the mini player layouts on Windows
+(topmost, own close strip) and Linux, the turntable arm's position on a Retina vs a 1×
+screen, reopening on a layout change with a real mouse; (3) the ambient lights on a 120 Hz
+display. · Size: small · Priority: low
 
 ## 3. Platform & distribution
 
@@ -410,6 +418,51 @@ the queue part was built (queue tabs, `queue_tabs.rs`): the router keeps one his
 one cached page per route, pages talk to the one app entity, and a second page stack would
 double the cached pages (memory) for little gain while only one queue can play. Revisit if
 users ask for parallel browsing. · Size: large · Priority: low
+
+**M11. Now Playing / mini player / sound ideas from Zuno, Limusic, refryt and Deviload not built**
+Surveyed for the Now Playing extras round (README: [Now Playing
+extras](../README.md#now-playing-extras-round-sound-effects-mini-player-layouts-turntable)); what
+was built is listed there. Left out, with the reason:
+* *Fine reverb controls and convolution rooms* (Limusic: length 0.1–10 s, pre-delay 0–200 ms,
+  brightness, early reflections, dry level; impulse responses through FFmpeg's `afir`). The
+  four algorithmic rooms and the wet mix cover the common use; the extra sliders map onto
+  the existing `ReverbParams` if asked for. · Size: small · Priority: low
+* *Your own named sound presets* (Limusic, saved speed / pitch / reverb) and *named EQ presets,
+  a draggable response graph, a headroom warning, plain-language band names* (Zuno). · Size:
+  medium · Priority: low
+* *A compressor / "volume smoothing" / night mode* (Deviload: threshold −24 dB, ratio 3). A
+  new DSP stage with its own tests; normalization already evens out songs. · Size: medium ·
+  Priority: low
+* *Perceptual volume curve* (Limusic `10^(−(1−p)^1.5)`, Deviload `p²`): changes how every
+  saved volume sounds; needs a migration. · Size: small · Priority: low
+* *Mini player skins that need shaped or transparent windows or constant motion*: Zuno's
+  Classic capsule (grows on hover, clicks pass through), Cassette (turning spools), Y2K
+  (gel shape, LCD meter); a spinning picture disc (Deviload; GPUI cannot rotate images and the
+  disc would redraw ~30 times a second while playing). · Size: medium · Priority: low
+* *Up next / queue inside the mini player* (Deviload's flip side, Limusic's right column) and
+  *shuffle, repeat, like, a volume slider and an always-on-top pin toggle* in it. · Size: small
+  · Priority: low
+* *Mini player anchored to its screen corner when its size changes* (Limusic): it keeps its
+  top-left corner today. · Size: small · Priority: low
+* *Click the artwork to play / pause, scroll over it for the volume, a "pop" when liking*
+  (Limusic), *click the empty space to close Now Playing, open Now Playing on play*. ·
+  Size: small · Priority: low
+* *15-second skips and a speed button for podcasts in the bar* (Limusic), *an "∞" mark on
+  songs added by autoplay*. · Size: small · Priority: low
+* *Portrait-window layout for Now Playing* (refryt: cover above the lyrics on tall windows)
+  and *a compact player bar on narrow windows* (refryt, Zuno's compact / expanded bar). ·
+  Size: medium · Priority: low
+* *Lyrics niceties*: a "follow the current line" button after scrolling away (Deviload),
+  arrow-key focus over lines (Zuno), a skeleton while loading (refryt), a glow tinted by the
+  theme (Deviload). · Size: small · Priority: low
+* *A ring of bars around the record* (Zuno's site) for the Turntable design. · Size: small ·
+  Priority: low
+* *Not ours / won't do*: theater mode, auto-hiding controls, cinema, the ambient light around
+  music videos and the song / video switch (the music-video work); a translucent blurred
+  window (refryt; the look-themes work); a slow drift of the lyrics backdrop and an app-wide
+  wash that pulses with the audio (continuous frames); a gapless switch (always gapless
+  without a crossfade); volume above 100 % (clips); a phone remote with a QR code and a
+  sidebar "now playing" flip card (Deviload; outside Now Playing).
 
 ## 5. Performance ideas
 

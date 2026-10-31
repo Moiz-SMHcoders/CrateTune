@@ -4,7 +4,6 @@
 
 use std::time::Duration;
 
-use music_core::Quality;
 use music_core::discord::{
     ActivityKind, ButtonUrl, DiscordConfig as CoreDiscordConfig, PresenceButton, PresenceImage,
 };
@@ -12,6 +11,7 @@ use music_core::lyrics::ProviderId;
 use music_core::lyrics::romanize::Script;
 use music_core::scrobble::ScrobbleRules;
 use music_core::youtube::WebClient;
+use music_core::{Quality, ReverbPreset, ReverbSettings};
 use serde::{Deserialize, Serialize};
 
 use super::file::lenient;
@@ -59,6 +59,11 @@ pub struct AudioConfig {
     /// Fetch the signed player fixes from the app's repository (see
     /// `music_core::youtube::fixes`); off: only the ones built into the app.
     pub player_fixes: bool,
+    /// Reverb on the output (`music_core::reverb`); off by default.
+    #[serde(deserialize_with = "lenient")]
+    pub reverb: ReverbPreset,
+    /// 0..=1, how much reverb is heard.
+    pub reverb_mix: f32,
 }
 
 impl Default for AudioConfig {
@@ -77,6 +82,8 @@ impl Default for AudioConfig {
             sleep_custom_minutes: 20,
             stream_source: StreamSourceMode::Auto,
             player_fixes: true,
+            reverb: ReverbPreset::Off,
+            reverb_mix: music_core::reverb::DEFAULT_REVERB_MIX,
         }
     }
 }
@@ -95,6 +102,14 @@ impl AudioConfig {
         self.speed = (fix(self.speed, SPEED_MIN, SPEED_MAX, 1.0) * 20.0).round() / 20.0;
         self.pitch = fix(self.pitch, -PITCH_MAX, PITCH_MAX, 0.0).round();
         self.sleep_custom_minutes = self.sleep_custom_minutes.clamp(1, 600);
+        self.reverb_mix = (fix(
+            self.reverb_mix,
+            0.0,
+            1.0,
+            music_core::reverb::DEFAULT_REVERB_MIX,
+        ) * 100.0)
+            .round()
+            / 100.0;
         if self
             .output_device
             .as_deref()
@@ -106,6 +121,100 @@ impl AudioConfig {
 
     pub fn crossfade(&self) -> Duration {
         Duration::from_secs_f32(self.crossfade_secs.max(0.0))
+    }
+
+    pub fn reverb(&self) -> ReverbSettings {
+        ReverbSettings::new(self.reverb, self.reverb_mix)
+    }
+}
+
+/// One-click sound presets after Limusic's effect presets
+/// (`ui/src/lib/effect-presets.ts`, GPL-3.0): speed, pitch and reverb set together.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SoundPreset {
+    Original,
+    SlowedReverb,
+    Nightcore,
+    Practice,
+    ConcertHall,
+}
+
+impl SoundPreset {
+    pub const ALL: [Self; 5] = [
+        Self::Original,
+        Self::SlowedReverb,
+        Self::Nightcore,
+        Self::Practice,
+        Self::ConcertHall,
+    ];
+
+    /// (speed, semitones, reverb, mix).
+    fn values(self) -> (f32, f32, ReverbPreset, f32) {
+        match self {
+            Self::Original => (1.0, 0.0, ReverbPreset::Off, 0.3),
+            Self::SlowedReverb => (0.85, -3.0, ReverbPreset::Hall, 0.4),
+            Self::Nightcore => (1.2, 3.0, ReverbPreset::Plate, 0.15),
+            Self::Practice => (0.75, 0.0, ReverbPreset::Off, 0.3),
+            Self::ConcertHall => (1.0, 0.0, ReverbPreset::Hall, 0.25),
+        }
+    }
+
+    pub fn apply(self, audio: &mut AudioConfig) {
+        let (speed, pitch, reverb, mix) = self.values();
+        audio.speed = speed;
+        audio.pitch = pitch;
+        audio.reverb = reverb;
+        if reverb != ReverbPreset::Off {
+            audio.reverb_mix = mix;
+        }
+    }
+
+    /// The preset `audio` matches, if any (the mix only counts with a reverb on).
+    pub fn current(audio: &AudioConfig) -> Option<Self> {
+        Self::ALL.into_iter().find(|p| {
+            let (speed, pitch, reverb, mix) = p.values();
+            (audio.speed - speed).abs() < 0.001
+                && (audio.pitch - pitch).abs() < 0.001
+                && audio.reverb == reverb
+                && (reverb == ReverbPreset::Off || (audio.reverb_mix - mix).abs() < 0.005)
+        })
+    }
+
+    pub fn key(self) -> &'static str {
+        match self {
+            Self::Original => "original",
+            Self::SlowedReverb => "slowed-reverb",
+            Self::Nightcore => "nightcore",
+            Self::Practice => "practice",
+            Self::ConcertHall => "concert-hall",
+        }
+    }
+
+    pub fn parse(s: &str) -> Option<Self> {
+        Self::ALL
+            .into_iter()
+            .find(|p| p.key().eq_ignore_ascii_case(s))
+    }
+
+    pub fn title(self) -> &'static str {
+        match self {
+            Self::Original => t!("prefs.sound.original"),
+            Self::SlowedReverb => t!("prefs.sound.slowed_reverb"),
+            Self::Nightcore => t!("prefs.sound.nightcore"),
+            Self::Practice => t!("prefs.sound.practice"),
+            Self::ConcertHall => t!("prefs.sound.concert_hall"),
+        }
+    }
+}
+
+/// A reverb preset's name in the UI language.
+pub fn reverb_title(preset: ReverbPreset) -> &'static str {
+    match preset {
+        ReverbPreset::Off => t!("common.off"),
+        ReverbPreset::SmallRoom => t!("prefs.reverb.small_room"),
+        ReverbPreset::Hall => t!("prefs.reverb.hall"),
+        ReverbPreset::Plate => t!("prefs.reverb.plate"),
+        ReverbPreset::Cathedral => t!("prefs.reverb.cathedral"),
     }
 }
 
@@ -519,10 +628,13 @@ pub enum NowPlayingLayout {
     Editorial,
     /// Artwork and controls beside the upcoming queue.
     Queue,
+    /// A record with the artwork as its label and a tonearm that follows the
+    /// song, the title, the line being sung and the controls beside it.
+    Turntable,
 }
 
 impl NowPlayingLayout {
-    pub const ALL: [Self; 8] = [
+    pub const ALL: [Self; 9] = [
         Self::Split,
         Self::Centered,
         Self::Lyrics,
@@ -531,6 +643,7 @@ impl NowPlayingLayout {
         Self::Minimal,
         Self::Editorial,
         Self::Queue,
+        Self::Turntable,
     ];
 
     pub fn title(self) -> &'static str {
@@ -543,6 +656,7 @@ impl NowPlayingLayout {
             Self::Minimal => t!("prefs.layout.minimal"),
             Self::Editorial => t!("prefs.layout.editorial"),
             Self::Queue => t!("prefs.layout.queue"),
+            Self::Turntable => t!("prefs.layout.turntable"),
         }
     }
 
@@ -556,6 +670,7 @@ impl NowPlayingLayout {
             Self::Minimal => "minimal",
             Self::Editorial => "editorial",
             Self::Queue => "queue",
+            Self::Turntable => "turntable",
         }
     }
 
@@ -630,6 +745,69 @@ impl MiniPlayerStyle {
     }
 }
 
+/// Mini player layouts (after Zuno's mini player skins and Limusic's compact
+/// mini player), each with its own window size.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum MiniPlayerSkin {
+    /// Artwork, title, transport and progress in a row (the original).
+    #[default]
+    Bar,
+    /// A slim strip: small artwork, title, play / next, a hairline of progress.
+    Compact,
+    /// Large square artwork with the title and controls under it.
+    Card,
+    /// The bar plus the line being sung and the next one.
+    Lyrics,
+    /// A record with the artwork as its label and a tonearm that follows the song.
+    Turntable,
+}
+
+impl MiniPlayerSkin {
+    pub const ALL: [Self; 5] = [
+        Self::Bar,
+        Self::Compact,
+        Self::Card,
+        Self::Lyrics,
+        Self::Turntable,
+    ];
+
+    pub fn title(self) -> &'static str {
+        match self {
+            Self::Bar => t!("prefs.mini_skin.bar"),
+            Self::Compact => t!("prefs.mini_skin.compact"),
+            Self::Card => t!("prefs.mini_skin.card"),
+            Self::Lyrics => t!("prefs.mini_skin.lyrics"),
+            Self::Turntable => t!("prefs.mini_skin.turntable"),
+        }
+    }
+
+    pub fn key(self) -> &'static str {
+        match self {
+            Self::Bar => "bar",
+            Self::Compact => "compact",
+            Self::Card => "card",
+            Self::Lyrics => "lyrics",
+            Self::Turntable => "turntable",
+        }
+    }
+
+    pub fn parse(s: &str) -> Option<Self> {
+        Self::ALL.into_iter().find(|k| k.key() == s)
+    }
+
+    /// The window's content size in logical pixels (not resizable).
+    pub fn size(self) -> (f32, f32) {
+        match self {
+            Self::Bar => (400., 124.),
+            Self::Compact => (320., 84.),
+            Self::Card => (240., 352.),
+            Self::Lyrics => (440., 176.),
+            Self::Turntable => (264., 376.),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct NowPlayingConfig {
@@ -639,6 +817,9 @@ pub struct NowPlayingConfig {
     pub background: NowPlayingBackground,
     #[serde(deserialize_with = "lenient")]
     pub mini_player: MiniPlayerStyle,
+    /// The mini player's layout.
+    #[serde(deserialize_with = "lenient")]
+    pub mini_skin: MiniPlayerSkin,
     /// "Full screen when Now Playing opens" (off by default; `np_fullscreen.rs`).
     pub fullscreen: bool,
 }
@@ -945,6 +1126,63 @@ mod tests {
                 .now_playing
                 .fullscreen
         );
+    }
+
+    #[test]
+    fn mini_skins_round_trip_and_default_to_the_bar() {
+        assert_eq!(NowPlayingConfig::default().mini_skin, MiniPlayerSkin::Bar);
+        for skin in MiniPlayerSkin::ALL {
+            assert_eq!(MiniPlayerSkin::parse(skin.key()), Some(skin));
+            let json = serde_json::to_value(NowPlayingConfig {
+                mini_skin: skin,
+                ..NowPlayingConfig::default()
+            })
+            .unwrap();
+            assert_eq!(json["mini_skin"], skin.key());
+            let back: NowPlayingConfig = serde_json::from_value(json).unwrap();
+            assert_eq!(back.mini_skin, skin);
+            let (w, h) = skin.size();
+            assert!((240.0..=480.0).contains(&w) && (80.0..=400.0).contains(&h));
+        }
+        let old: NowPlayingConfig = serde_json::from_str(r#"{"mini_skin":"cassette"}"#).unwrap();
+        assert_eq!(old.mini_skin, MiniPlayerSkin::Bar);
+    }
+
+    #[test]
+    fn reverb_and_sound_presets() {
+        let a = AudioConfig::default();
+        assert_eq!(a.reverb, ReverbPreset::Off);
+        assert!(!a.reverb().is_on());
+        assert_eq!(SoundPreset::current(&a), Some(SoundPreset::Original));
+        let json = serde_json::to_value(AudioConfig {
+            reverb: ReverbPreset::SmallRoom,
+            ..a.clone()
+        })
+        .unwrap();
+        assert_eq!(json["reverb"], "small-room");
+        let back: AudioConfig = serde_json::from_value(json).unwrap();
+        assert_eq!(back.reverb, ReverbPreset::SmallRoom);
+        // An unknown room (a newer version) is off; a wild mix is clamped.
+        let mut odd: AudioConfig =
+            serde_json::from_str(r#"{"reverb":"spring","reverb_mix":7}"#).unwrap();
+        odd.normalize();
+        assert_eq!(odd.reverb, ReverbPreset::Off);
+        assert_eq!(odd.reverb_mix, 1.0);
+        for preset in SoundPreset::ALL {
+            assert_eq!(SoundPreset::parse(preset.key()), Some(preset));
+            let mut a = AudioConfig::default();
+            preset.apply(&mut a);
+            a.normalize();
+            assert_eq!(SoundPreset::current(&a), Some(preset), "{preset:?}");
+        }
+        let mut a = AudioConfig::default();
+        SoundPreset::Nightcore.apply(&mut a);
+        assert_eq!(
+            (a.speed, a.pitch, a.reverb),
+            (1.2, 3.0, ReverbPreset::Plate)
+        );
+        a.speed = 1.1;
+        assert_eq!(SoundPreset::current(&a), None);
     }
 
     #[test]

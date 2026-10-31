@@ -219,3 +219,48 @@ settings.lyrics.kanji_downloading = Downloading… {done} of {total}
 settings.lyrics.kanji_ready = {name} · {size} on disk.
 # {error} is an English error message.
 settings.lyrics.kanji_failed = Download failed: {error}
+
+# ---- Equalizer presets added later (Warm: fuller lows, softer highs; Night: quieter lows and highs).
+settings.eq.preset.warm = Warm
+settings.eq.preset.night = Night
+
+# ---- Reverb (Equalizer section, under the bands)
+settings.reverb.title = Reverb
+# Slider: how much of the reverb is heard.
+settings.reverb.mix = Wet mix
+# The slider's value, e.g. "30 %". {percent} is a whole number.
+settings.reverb.mix_value = {percent} %
+settings.reverb.note = A room around the music, added after the equalizer. Off costs nothing; when you pause, the echo rings out.
+# Reverb rooms (buttons; "Off" uses common.off).
+prefs.reverb.small_room = Small room
+prefs.reverb.hall = Hall
+prefs.reverb.plate = Plate
+prefs.reverb.cathedral = Cathedral
+
+# ---- Sound presets (Equalizer section): speed, pitch and reverb in one click.
+settings.sound.title = Sound presets
+settings.sound.note = Sets speed, pitch and reverb in one click. Speed and pitch are also in Playback.
+prefs.sound.original = Original
+# Music slowed down and lowered, with reverb (a popular remix style).
+prefs.sound.slowed_reverb = Slowed + reverb
+# Faster and higher (a popular remix style).
+prefs.sound.nightcore = Nightcore
+# Slower, same pitch (to play along).
+prefs.sound.practice = Practice
+prefs.sound.concert_hall = Concert hall
+
+# ---- Mini player layouts (Settings → Appearance → Mini player)
+settings.appearance.mini_skin = Layout
+settings.appearance.mini_skin_note = Each layout has its own window size. An open mini player switches at once.
+prefs.mini_skin.bar = Bar
+# A slim strip with small artwork.
+prefs.mini_skin.compact = Compact
+# Large square artwork with the controls under it.
+prefs.mini_skin.card = Artwork card
+# Shows the lyric line being sung.
+prefs.mini_skin.lyrics = Lyrics
+# A record player: the artwork as the record's label, a tonearm that follows the song.
+prefs.mini_skin.turntable = Turntable
+
+# ---- Now Playing design added later: a record player (artwork as the label, a tonearm that follows the song).
+prefs.layout.turntable = Turntable

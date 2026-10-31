@@ -94,6 +94,8 @@ struct HeaderSnap {
     /// The song has a music video: whether it's showing (`video.rs`).
     video: Option<bool>,
     theater_tip: SharedString,
+    /// The sound menu (lit while an effect is on).
+    sound: crate::components::sound_menu::SoundSnap,
 }
 
 #[derive(Clone, PartialEq)]
@@ -145,6 +147,8 @@ pub struct NowPlaying {
     progress_bounds: Rc<Cell<Bounds<Pixels>>>,
     /// A pending timed re-render (`Frame::wake_at`) while nothing animates.
     wake: Option<(Instant, Task<()>)>,
+    /// Turntable design: 0 = needle on the record, 1 = arm lifted.
+    pub(crate) arm: Tween<f32>,
 }
 
 impl NowPlaying {
@@ -174,6 +178,7 @@ impl NowPlaying {
             toolbar: None,
             progress_bounds: Rc::default(),
             wake: None,
+            arm: Tween::new(1.),
         }
     }
 }
@@ -505,8 +510,16 @@ impl MusicApp {
             NowPlayingLayout::Queue => {
                 self.render_with_queue(track.as_ref(), position, viewport, frame, cx)
             }
+            NowPlayingLayout::Turntable => {
+                self.render_turntable(track.as_ref(), position, viewport, frame, cx)
+            }
         };
 
+        let (viz_behind, viz_over) = match self.np_visualizer_view(cx) {
+            Some((view, true)) => (Some(view), None),
+            Some((view, false)) => (None, Some(view)),
+            None => (None, None),
+        };
         div()
             .id("now-playing")
             .key_context("NowPlaying")
@@ -531,8 +544,9 @@ impl MusicApp {
             .text_color(gpui::white())
             .child(backdrop)
             .children(design_backdrop)
+            .children(viz_behind)
             .child(v_flex().absolute().inset_0().child(header).child(body))
-            .children(self.np_visualizer_view(cx))
+            .children(viz_over)
             .into_any_element()
     }
 
@@ -574,6 +588,7 @@ impl MusicApp {
             fullscreen_tip: fullscreen_tip.into(),
             video: self.video_available(cx).then_some(!self.video.session_off),
             theater_tip: theater_tip.into(),
+            sound: crate::components::sound_menu::SoundSnap::new(self.settings.read(cx).settings()),
         }
     }
 
@@ -581,6 +596,7 @@ impl MusicApp {
         let (layout, background) = (s.layout, s.background);
         let custom = s.sleep_custom;
         let armed = s.sleep.is_some();
+        let sound = s.sound;
         h_flex()
             .size_full()
             .px_5()
@@ -648,6 +664,17 @@ impl MusicApp {
                     .tooltip(t!("np.sleep_tooltip"))
                     .dropdown_menu(move |menu, _, _| {
                         MusicApp::sleep_timer_menu(menu, armed, custom)
+                    }),
+            )
+            .child(
+                Button::new("np-sound")
+                    .ghost()
+                    .rounded(px(999.))
+                    .icon(Lucide::SlidersHorizontal)
+                    .selected(sound.active())
+                    .tooltip(t!("sound_menu.tooltip"))
+                    .dropdown_menu(move |menu, window, cx| {
+                        crate::components::sound_menu::sound_menu(menu, sound, window, cx)
                     }),
             )
             .child(

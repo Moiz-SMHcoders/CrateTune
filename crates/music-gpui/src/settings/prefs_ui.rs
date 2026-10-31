@@ -12,14 +12,14 @@ use gpui_component::slider::{SliderEvent, SliderState};
 use music_core::lyrics::romanize::Script;
 use music_core::lyrics::translate::{AiTranslator, GoogleTranslator, LyricsTranslator};
 use music_core::lyrics::{LyricsServiceConfig, ProviderId, ProviderKeys};
-use music_core::{OutputDevice, Player, Quality};
+use music_core::{OutputDevice, Player, Quality, ReverbPreset};
 
 use super::file::Settings;
 use super::panel::{SettingsEvent, SettingsPanel};
 use super::prefs::{
     ActivityType, ButtonTarget, CROSSFADE_MAX, ImageSource, LYRICS_SIZE_RANGE,
-    LYRICS_SPACING_RANGE, LyricsAnimation, MiniPlayerStyle, NowPlayingBackground, NowPlayingLayout,
-    PITCH_MAX, SPEED_MAX, SPEED_MIN, TextAlign, TranslatorKind,
+    LYRICS_SPACING_RANGE, LyricsAnimation, MiniPlayerSkin, MiniPlayerStyle, NowPlayingBackground,
+    NowPlayingLayout, PITCH_MAX, SPEED_MAX, SPEED_MIN, SoundPreset, TextAlign, TranslatorKind,
 };
 use crate::i18n::Key;
 use crate::secrets::Secret;
@@ -48,6 +48,8 @@ pub(super) struct PrefsUi {
     pub crossfade: Entity<SliderState>,
     pub speed: Entity<SliderState>,
     pub pitch: Entity<SliderState>,
+    /// Reverb wet mix, in percent.
+    pub reverb_mix: Entity<SliderState>,
     pub sleep_custom: Entity<SliderState>,
     pub devices: Devices,
 
@@ -125,6 +127,7 @@ impl PrefsUi {
             crossfade: slider(0., CROSSFADE_MAX, 0.5, a.crossfade_secs, cx),
             speed: slider(SPEED_MIN, SPEED_MAX, 0.05, a.speed, cx),
             pitch: slider(-PITCH_MAX, PITCH_MAX, 1., a.pitch, cx),
+            reverb_mix: slider(0., 100., 1., a.reverb_mix * 100., cx),
             sleep_custom: slider(1., 180., 1., a.sleep_custom_minutes as f32, cx),
             devices: Devices::NotLoaded,
             lyrics_size: slider(
@@ -257,6 +260,9 @@ impl PrefsUi {
         }));
         subs.push(on_slider(&ui.pitch, cx, |this, v, cx| {
             this.update_audio(cx, |a| a.pitch = v)
+        }));
+        subs.push(on_slider(&ui.reverb_mix, cx, |this, v, cx| {
+            this.update_audio(cx, |a| a.reverb_mix = v / 100.)
         }));
         subs.push(on_slider(&ui.sleep_custom, cx, |this, v, cx| {
             let minutes = v.round() as u32;
@@ -493,6 +499,44 @@ impl SettingsPanel {
             .update(cx, |s, cx| s.set_value(pitch, window, cx));
     }
 
+    /// Picks a reverb room (`Off` turns it off); a room picked while off
+    /// keeps the saved mix.
+    pub fn set_reverb(&mut self, preset: ReverbPreset, cx: &mut Context<Self>) {
+        self.update_audio(cx, |a| a.reverb = preset);
+        cx.notify();
+    }
+
+    /// Script hook: the wet mix (0..=1); moves the slider too.
+    pub fn set_reverb_mix(&mut self, mix: f32, window: &mut Window, cx: &mut Context<Self>) {
+        self.update_audio(cx, |a| a.reverb_mix = mix);
+        let v = self.settings.audio.reverb_mix * 100.;
+        self.prefs
+            .reverb_mix
+            .update(cx, |s, cx| s.set_value(v, window, cx));
+    }
+
+    /// One-click sound presets: speed, pitch and reverb together.
+    pub fn apply_sound_preset(
+        &mut self,
+        preset: SoundPreset,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.update_audio(cx, |a| preset.apply(a));
+        let a = &self.settings.audio;
+        let (speed, pitch, mix) = (a.speed, a.pitch, a.reverb_mix * 100.);
+        self.prefs
+            .speed
+            .update(cx, |s, cx| s.set_value(speed, window, cx));
+        self.prefs
+            .pitch
+            .update(cx, |s, cx| s.set_value(pitch, window, cx));
+        self.prefs
+            .reverb_mix
+            .update(cx, |s, cx| s.set_value(mix, window, cx));
+        cx.notify();
+    }
+
     pub fn set_output_device(&mut self, device: Option<(String, String)>, cx: &mut Context<Self>) {
         let (id, name) = device.unzip();
         self.update_audio(cx, |a| {
@@ -719,6 +763,10 @@ impl SettingsPanel {
 
     pub fn set_mini_style(&mut self, style: MiniPlayerStyle, cx: &mut Context<Self>) {
         self.update_now_playing(cx, |n| n.mini_player = style);
+    }
+
+    pub fn set_mini_skin(&mut self, skin: MiniPlayerSkin, cx: &mut Context<Self>) {
+        self.update_now_playing(cx, |n| n.mini_skin = skin);
     }
 
     pub fn set_np_fullscreen(&mut self, on: bool, cx: &mut Context<Self>) {

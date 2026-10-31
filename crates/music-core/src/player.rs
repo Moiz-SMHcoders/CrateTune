@@ -23,6 +23,7 @@ use rodio::MixerDeviceSink;
 use crate::deck::{Deck, HeadlessOutput, MAX_CROSSFADE};
 use crate::equalizer::EqControl;
 use crate::output::{self, OutputDevice};
+use crate::reverb::ReverbSettings;
 use crate::silence::SilenceConfig;
 use crate::sleep::{SleepClock, SleepTimer, SleepTimerState};
 use crate::spectrum::{Spectrum, SpectrumAnalyzer, SpectrumConfig, SpectrumTap};
@@ -179,6 +180,7 @@ enum Command {
     SetNormalization(bool),
     SetNext(Option<Track>),
     SetCrossfade(Duration),
+    SetReverb(ReverbSettings),
     SetSkipSilence(Option<SilenceConfig>),
     SetSpeed(f32),
     SetPitch(f32),
@@ -447,6 +449,13 @@ impl Player {
     pub fn set_equalizer(&self, mut settings: EqualizerSettings) {
         settings.sanitize();
         self.eq.set(settings);
+    }
+
+    /// Reverb on the output (after the crossfade mix, before the volume); a
+    /// change glides over ~10 ms. Off (the default) costs nothing: the deck
+    /// lets the wet part fade out, then drops the reverb.
+    pub fn set_reverb(&self, settings: ReverbSettings) {
+        self.send(Command::SetReverb(settings.sanitized()));
     }
 
     /// Turns the equalizer off (bit-exact passthrough).
@@ -897,6 +906,7 @@ impl Engine {
             Command::SetNormalization(enabled) => self.deck.set_normalization(enabled),
             Command::SetNext(track) => self.set_next(track),
             Command::SetCrossfade(d) => self.deck.set_crossfade(d),
+            Command::SetReverb(settings) => self.deck.set_reverb(settings),
             Command::SetSkipSilence(config) => {
                 self.config.settings.silence = config;
                 self.push_settings();

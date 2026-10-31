@@ -109,3 +109,5 @@ card.size.large = बड़ा
 np.queue.next_in_queue = कतार में आगे
 np.queue.next_from = {name} से आगे
 np.queue.next_from_radio = {name} रेडियो से आगे
+sound_menu.tooltip = ध्वनि: इक्वलाइज़र, रिवर्ब, प्रीसेट
+sound_menu.settings = ध्वनि सेटिंग…

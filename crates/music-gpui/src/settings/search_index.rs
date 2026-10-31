@@ -562,6 +562,20 @@ pub const ENTRIES: &[Entry] = &[
         "window"
     ),
     entry!(
+        "appearance.mini_player.skin",
+        Appearance,
+        "settings.appearance.mini_player",
+        "settings.appearance.mini_skin",
+        "settings.appearance.mini_skin_note",
+        "skin",
+        "compact",
+        "card",
+        "lyrics",
+        "turntable",
+        "vinyl",
+        "record"
+    ),
+    entry!(
         "appearance.mini_player.background",
         Appearance,
         "settings.appearance.mini_player",
@@ -689,6 +703,18 @@ pub const ENTRIES: &[Entry] = &[
         "spectrum",
         "analyzer",
         "visualiser"
+    ),
+    entry!(
+        "appearance.bar.np_visualizer_style",
+        Appearance,
+        "settings.bar.group",
+        "settings.bar.np_visualizer_style",
+        -,
+        "visualiser",
+        "lights",
+        "ambient",
+        "glow",
+        "bars"
     ),
     entry!(
         "appearance.bar.items",
@@ -924,6 +950,44 @@ pub const ENTRIES: &[Entry] = &[
         "preset",
         "sound",
         "audio"
+    ),
+    entry!(
+        "eq.reverb",
+        Equalizer,
+        -,
+        "settings.reverb.title",
+        "settings.reverb.note",
+        "reverb",
+        "room",
+        "hall",
+        "plate",
+        "cathedral",
+        "echo",
+        "ambience",
+        "effects"
+    ),
+    entry!(
+        "eq.reverb.mix",
+        Equalizer,
+        "settings.reverb.title",
+        "settings.reverb.mix",
+        -,
+        "wet",
+        "amount",
+        "reverb"
+    ),
+    entry!(
+        "eq.sound_presets",
+        Equalizer,
+        -,
+        "settings.sound.title",
+        "settings.sound.note",
+        "slowed",
+        "nightcore",
+        "practice",
+        "concert",
+        "effects",
+        "preset"
     ),
     // ---- Lyrics
     entry!(

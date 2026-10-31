@@ -50,6 +50,8 @@ struct QualityInfo {
     switching: bool,
     /// The playing song switches at once (local audio engine, not casting).
     instant: bool,
+    /// The equalizer / reverb / sound preset submenus.
+    sound: super::sound_menu::SoundSnap,
 }
 
 impl MusicApp {
@@ -65,6 +67,7 @@ impl MusicApp {
                 .is_some_and(|s| s.kind == SourceKind::File),
             switching: self.playback.switching_stream,
             instant: matches!(self.engine, Some(Engine::Audio(_))),
+            sound: super::sound_menu::SoundSnap::new(self.settings.read(cx).settings()),
         };
         let tag = Button::new("quality-tag")
             .map(|b| if module { b.primary() } else { b.secondary() })
@@ -74,7 +77,7 @@ impl MusicApp {
             .dropdown_caret(true)
             .loading(info.switching)
             .tooltip(t!("bar_items.quality.tooltip"))
-            .dropdown_menu(move |menu, _, _| quality_menu(menu, &info));
+            .dropdown_menu(move |menu, window, cx| quality_menu(menu, &info, window, cx));
         // Where it was drawn, for `@quality-menu` (set while the bar paints anyway).
         div()
             .child(tag)
@@ -159,7 +162,12 @@ fn quality_hint(q: Quality) -> &'static str {
     }
 }
 
-fn quality_menu(menu: PopupMenu, info: &QualityInfo) -> PopupMenu {
+fn quality_menu(
+    menu: PopupMenu,
+    info: &QualityInfo,
+    window: &mut Window,
+    cx: &mut Context<PopupMenu>,
+) -> PopupMenu {
     let mut menu = menu.min_w(px(260.)).label(t!("settings.playback.quality"));
     for q in Quality::ALL {
         menu = menu.item(
@@ -181,9 +189,12 @@ fn quality_menu(menu: PopupMenu, info: &QualityInfo) -> PopupMenu {
     } else {
         t!("bar_items.quality.applies_next")
     };
-    menu.separator()
+    let menu = menu
+        .separator()
         .label(t!("bar_items.quality.playing", source = info.playing))
         .label(when)
+        .separator();
+    super::sound_menu::sound_menu(menu, info.sound, window, cx)
         .separator()
         .item(
             PopupMenuItem::new(t!("bar_items.quality.settings")).on_click(|_, window, cx| {

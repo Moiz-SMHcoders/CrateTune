@@ -106,3 +106,5 @@ card.size.large = 大
 np.queue.next_in_queue = キューの次の曲
 np.queue.next_from = {name} の次の曲
 np.queue.next_from_radio = {name} ラジオの次の曲
+sound_menu.tooltip = サウンド：イコライザー、リバーブ、プリセット
+sound_menu.settings = サウンド設定…

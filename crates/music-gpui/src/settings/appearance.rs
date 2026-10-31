@@ -16,7 +16,7 @@ use gpui_component::{
 };
 
 use super::SettingsPanel;
-use super::prefs::{MiniPlayerStyle, NowPlayingBackground, NowPlayingLayout};
+use super::prefs::{MiniPlayerSkin, MiniPlayerStyle, NowPlayingBackground, NowPlayingLayout};
 use super::prefs_ui::choice;
 use super::widgets::{group_at, note, row_at};
 use crate::theme::{AppColors, FONT_SCALES, ThemeChoice};
@@ -240,6 +240,38 @@ pub(super) fn render(
                             .child(block(54., 2., 0.5)),
                     ),
             ),
+            // A record with its label and a tonearm, type beside it.
+            NowPlayingLayout::Turntable => frame.child(
+                h_flex()
+                    .size_full()
+                    .gap_2()
+                    .child(
+                        div()
+                            .relative()
+                            .size(px(40.))
+                            .flex_none()
+                            .rounded_full()
+                            .bg(hsla(0., 0., 0.04, 1.))
+                            .border_1()
+                            .border_color(hsla(0., 0., 1., 0.12))
+                            .child(
+                                div()
+                                    .absolute()
+                                    .top(px(13.))
+                                    .left(px(13.))
+                                    .size(px(14.))
+                                    .rounded_full()
+                                    .bg(hsla(0.08, 0.5, 0.6, 0.9)),
+                            ),
+                    )
+                    .child(
+                        v_flex()
+                            .gap(px(3.))
+                            .child(block(52., 5., 0.85))
+                            .child(block(36., 3., 0.5))
+                            .child(block(60., 2., 0.6)),
+                    ),
+            ),
             NowPlayingLayout::Queue => frame.child(
                 h_flex()
                     .size_full()
@@ -293,6 +325,14 @@ pub(super) fn render(
     let np_fullscreen = Switch::new("np-fullscreen-auto")
         .checked(np.fullscreen)
         .on_click(cx.listener(|this, on: &bool, _, cx| this.set_np_fullscreen(*on, cx)));
+    let mini_skin = choice(
+        "mini-skin",
+        &MiniPlayerSkin::ALL,
+        np.mini_skin,
+        MiniPlayerSkin::title,
+        |this, k, cx| this.set_mini_skin(k, cx),
+        cx,
+    );
     let mini = choice(
         "mini-style",
         &MiniPlayerStyle::ALL,
@@ -398,6 +438,13 @@ pub(super) fn render(
                 t!("settings.appearance.mini_player"),
                 cx,
             )
+            .child(row_at(
+                "appearance.mini_player.skin",
+                t!("settings.appearance.mini_skin"),
+                Some(t!("settings.appearance.mini_skin_note")),
+                mini_skin,
+                cx,
+            ))
             .child(row_at(
                 "appearance.mini_player.background",
                 t!("settings.appearance.background"),
