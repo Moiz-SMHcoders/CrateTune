@@ -1683,7 +1683,26 @@ Music Together).
   the room's repeat mode. Off: playback stops. Nothing changes on the wire, so it works with
   ArchiveTune hosts.
 
-MEASUREMENTS_PLACEHOLDER
+| ![Devices popover](docs/screenshots/devices-menu.png) | ![Settings → Devices: pairing](docs/screenshots/devices-pairing.png) |
+|---|---|
+| ![Home: continue from another device](docs/screenshots/devices-continue-offer.png) | |
+
+* **Checked** (31 Oct 2026): in-process tests on localhost with the relay off (`handoff::tests`:
+  pairing by link with the right / a wrong / a used code and too many tries, take-over, play-on,
+  pause, an unpaired device turned away, unpairing; `messages`: frames, versions, unknown
+  types; `pairing`: codes, links, SPAKE2), against a local `iroh-relay` 1.4.1 with the
+  deployment's config (`take_over_via_a_relay`: two nodes that only know each other's relay
+  URL), `together::tests::a_guest_keeps_playing_when_the_host_ends_the_session` and
+  `sync::leave_plan` tests; two app instances on one Mac (separate `MUSIC_CONFIG_DIR`s,
+  `MUSIC_SECRET_STORE=file`, muted, demo clock): paired by typing the code (found over mDNS),
+  the launch offer on Home, **Continue here** (the other paused, playback continued at its
+  position), **Play on …**, the popover and Settings above.
+* **Idle cost.** Two paired idle nodes (mDNS on) use 0.06 s of CPU per minute together
+  (0.1 % of one core; 0.11 % with a relay connection), measured with
+  `cargo test -p music-core --release -- --ignored idle_cost --nocapture`. Whole app, idle, on
+  a busy Mac: 3.2–4.6 % with devices paired vs 3.3–4.3 % without, i.e. no measurable
+  difference. Nothing redraws while idle (events only arrive when something happens); without
+  a paired device the node isn't started at all.
 
 ### Relay server (`music-relay`)
 

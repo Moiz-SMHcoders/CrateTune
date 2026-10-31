@@ -396,6 +396,47 @@ mod tests {
         });
     }
 
+    /// The idle cost of two paired nodes with mDNS on (and the relay given in
+    /// `MUSIC_TEST_IROH_RELAY`, if any): CPU time of this process over a minute.
+    /// `cargo test -p music-core --release -- --ignored idle_cost --nocapture`.
+    #[cfg(unix)]
+    #[test]
+    #[ignore]
+    fn idle_cost() {
+        fn cpu() -> Duration {
+            // SAFETY: `getrusage` fills the struct it is given.
+            let mut usage: libc::rusage = unsafe { std::mem::zeroed() };
+            unsafe { libc::getrusage(libc::RUSAGE_SELF, &mut usage) };
+            let tv = |t: libc::timeval| {
+                Duration::from_secs(t.tv_sec as u64) + Duration::from_micros(t.tv_usec as u64)
+            };
+            tv(usage.ru_utime) + tv(usage.ru_stime)
+        }
+        let relay = std::env::var("MUSIC_TEST_IROH_RELAY").ok();
+        let (mut cfg_a, _) = config("A", Vec::new());
+        let (mut cfg_b, _) = config("B", Vec::new());
+        for cfg in [&mut cfg_a, &mut cfg_b] {
+            cfg.local_discovery = true;
+            cfg.relay_url = relay.clone();
+        }
+        let a = HandoffNode::start(cfg_a).unwrap();
+        let b = HandoffNode::start(cfg_b).unwrap();
+        a.set_paired(&[record(&b, "B")]);
+        b.set_paired(&[record(&a, "A")]);
+        a.query(&b.id());
+        wait_for(&a, |e| matches!(e, Event::Status { .. }).then_some(()));
+        std::thread::sleep(Duration::from_secs(5));
+        let (start, at) = (cpu(), Instant::now());
+        std::thread::sleep(Duration::from_secs(60));
+        let used = cpu() - start;
+        eprintln!(
+            "two idle nodes: {:.3} s CPU in {:.0} s ({:.3} % of one core, both together)",
+            used.as_secs_f64(),
+            at.elapsed().as_secs_f64(),
+            100. * used.as_secs_f64() / at.elapsed().as_secs_f64()
+        );
+    }
+
     #[test]
     fn a_bad_relay_url_is_an_error() {
         let (mut cfg, _) = config("X", Vec::new());
