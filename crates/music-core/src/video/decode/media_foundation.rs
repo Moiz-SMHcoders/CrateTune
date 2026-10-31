@@ -14,10 +14,10 @@ use std::time::Duration;
 
 use windows::Win32::Media::MediaFoundation::{
     CLSID_MSH264DecoderMFT, IMF2DBuffer, IMFMediaType, IMFSample, IMFTransform, MF_E_NOTACCEPTING,
-    MF_E_TRANSFORM_NEED_MORE_INPUT, MF_E_TRANSFORM_STREAM_CHANGE, MF_MT_DEFAULT_STRIDE,
-    MF_MT_FRAME_SIZE, MF_MT_INTERLACE_MODE, MF_MT_MAJOR_TYPE, MF_MT_SUBTYPE, MF_VERSION,
-    MFCreateMediaType, MFCreateMemoryBuffer, MFCreateSample, MFMediaType_Video, MFSTARTUP_NOSOCKET,
-    MFStartup, MFT_MESSAGE_COMMAND_DRAIN, MFT_MESSAGE_COMMAND_FLUSH,
+    MF_E_TRANSFORM_NEED_MORE_INPUT, MF_E_TRANSFORM_STREAM_CHANGE, MF_LOW_LATENCY,
+    MF_MT_DEFAULT_STRIDE, MF_MT_FRAME_SIZE, MF_MT_INTERLACE_MODE, MF_MT_MAJOR_TYPE, MF_MT_SUBTYPE,
+    MF_VERSION, MFCreateMediaType, MFCreateMemoryBuffer, MFCreateSample, MFMediaType_Video,
+    MFSTARTUP_NOSOCKET, MFStartup, MFT_MESSAGE_COMMAND_DRAIN, MFT_MESSAGE_COMMAND_FLUSH,
     MFT_MESSAGE_NOTIFY_BEGIN_STREAMING, MFT_MESSAGE_NOTIFY_START_OF_STREAM, MFT_OUTPUT_DATA_BUFFER,
     MFT_OUTPUT_STREAM_PROVIDES_SAMPLES, MFVideoFormat_H264, MFVideoFormat_NV12,
     MFVideoInterlace_Progressive,
@@ -90,6 +90,12 @@ impl MfDecoder {
         let transform = create()?;
         // SAFETY: COM calls on a valid transform and media types.
         unsafe {
+            // Low latency: a frame comes out as soon as it can be shown instead of
+            // after the decoder's reorder buffer fills (up to 16 frames by default,
+            // which a flush on seek would throw away).
+            if let Ok(attributes) = transform.GetAttributes() {
+                let _ = attributes.SetUINT32(&MF_LOW_LATENCY, 1);
+            }
             let input = MFCreateMediaType().map_err(|e| mf_err("input type", e))?;
             input
                 .SetGUID(&MF_MT_MAJOR_TYPE, &MFMediaType_Video)
