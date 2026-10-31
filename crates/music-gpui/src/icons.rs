@@ -71,6 +71,9 @@ gpui_kit_assets::icon_assets!(
         Type,
         Keyboard,
         ArchiveRestore,
+        FilePlus,
+        ImageUp,
+        ZoomIn,
         // library / account
         Pencil,
         LogOut,

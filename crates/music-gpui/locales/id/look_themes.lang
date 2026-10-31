@@ -1,0 +1,62 @@
+# Theme files, window translucency, the music-reactive look, UI zoom and the
+# app icon (id).
+
+# ---- Theme files (Customize theme)
+themes.files = File tema
+themes.files_note = Tema dari folder tema: edit salah satunya di editor teks lalu simpan untuk langsung melihat perubahannya.
+themes.open_folder = Buka folder tema
+themes.export_file = Ekspor tema saat ini sebagai file
+themes.export_name = Tema saya
+themes.toast.exported = Disimpan sebagai {file} di folder tema.
+themes.invalid = {file} dilewati: {reason}
+themes.low_contrast = {name}: sebagian teks kontrasnya terlalu rendah ({ratio}:1); mungkin sulit dibaca.
+themes.empty = Belum ada file tema. Ekspor tema saat ini atau buka folder untuk menambahkannya.
+# ---- Reasons a theme file was left out
+themes.error.read = tidak dapat dibaca ({error})
+themes.error.too_large = ukuran file lebih dari 256 KB
+themes.error.syntax = baris {line}: {message}
+themes.error.choice = baris {line}: {key} = “{value}” bukan salah satu dari {expected}
+themes.error.range = baris {line}: {key} harus antara 0 dan 1
+themes.error.unknown_color = baris {line}: tidak ada warna bernama “{key}”
+themes.error.bad_color = baris {line}: {key} = “{value}” bukan warna (#RGB, #RRGGBB, atau #RRGGBBAA)
+
+# ---- Window translucency (Appearance → Window)
+window.material.off = Buram
+window.material.blur = Kabur
+window.material.transparent = Tembus pandang
+window.material.mica = Mica
+window.material.mica_alt = Mica Alt
+settings.window.material = Latar jendela
+settings.window.material_note = Desktop terlihat di balik seluruh jendela. Teks tetap terbaca: opasitas dinaikkan bila perlu.
+settings.window.opacity = Opasitas
+settings.window.opacity_value = {percent} %
+settings.window.opacity_raised = Dinaikkan ke {percent} % agar teks tetap terbaca di desktop yang terang.
+settings.window.note_macos = Kabur memakai efek kabur jendela macOS. Menu, dialog, dan Sedang diputar tetap buram.
+settings.window.note_windows = Kabur adalah akrilik. Mica dan Mica Alt memerlukan Windows 11 (22H2 atau lebih baru).
+settings.window.note_linux = Memerlukan pengelola jendela dengan compositing. Kabur memerlukan KDE Plasma di Wayland; di tempat lain tampil seperti Tembus pandang.
+settings.window.cpu_note = Sistem yang menggambar efek kabur, jadi tidak ada CPU tambahan untuk aplikasi dan tidak ada yang digambar ulang saat diam.
+
+# ---- React to the music (App-wide look)
+settings.look.react = Bereaksi terhadap musik
+settings.look.react_note = Gradien atau cahaya berdenyut mengikuti energi musik saat diputar (hingga 30 bingkai per detik; berhenti saat dijeda, jendela tersembunyi, atau gerakan dikurangi).
+
+# ---- UI zoom (Appearance → Text size, shortcuts)
+settings.appearance.zoom_note = Ctrl atau ⌘ dengan + / − / 0, atau Ctrl / ⌘ dan roda mouse, juga memperbesar antarmuka.
+zoom.toast = Zoom {percent} %
+shortcuts.action.zoom_in = Perbesar
+shortcuts.action.zoom_out = Perkecil
+shortcuts.action.zoom_reset = Ukuran sebenarnya
+
+# ---- App icon (Appearance → Window)
+settings.app_icon = Ikon aplikasi
+settings.app_icon_note = Ditampilkan di Dock dan pengalih aplikasi (macOS) atau di jendela dan bilah tugas (Windows, Linux di X11).
+settings.app_icon.linux_note = Di Linux berlaku mulai pembukaan berikutnya (X11); desktop Wayland menampilkan ikon yang terpasang.
+settings.app_icon.choose = Pilih gambar…
+app_icon.custom = Gambar Anda
+app_icon.default = Tengah malam
+app_icon.light = Kertas
+app_icon.sunset = Senja
+app_icon.mint = Mint
+app_icon.mono = Mono
+app_icon.error = Gambar itu tidak bisa dipakai sebagai ikon: {error}
+app_icon.error.not_png = pilih gambar PNG, JPEG, atau WebP

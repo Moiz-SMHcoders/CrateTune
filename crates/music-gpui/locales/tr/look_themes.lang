@@ -1,0 +1,62 @@
+# Theme files, window translucency, the music-reactive look, UI zoom and the
+# app icon (tr).
+
+# ---- Theme files (Customize theme)
+themes.files = Tema dosyaları
+themes.files_note = Tema klasöründeki temalar: birini bir metin düzenleyicide düzenleyip kaydedin, değişiklik hemen görünür.
+themes.open_folder = Tema klasörünü aç
+themes.export_file = Geçerli temayı dosya olarak dışa aktar
+themes.export_name = Temam
+themes.toast.exported = Tema klasörüne {file} olarak kaydedildi.
+themes.invalid = {file} dışarıda bırakıldı: {reason}
+themes.low_contrast = {name}: bazı metinlerin kontrastı çok düşük ({ratio}:1); okunması zor olabilir.
+themes.empty = Henüz tema dosyası yok. Bir tane eklemek için geçerli temayı dışa aktarın veya klasörü açın.
+# ---- Reasons a theme file was left out
+themes.error.read = okunamadı ({error})
+themes.error.too_large = dosya 256 KB’tan büyük
+themes.error.syntax = satır {line}: {message}
+themes.error.choice = satır {line}: {key} = “{value}” şunlardan biri değil: {expected}
+themes.error.range = satır {line}: {key} 0 ile 1 arasında olmalı
+themes.error.unknown_color = satır {line}: “{key}” adında bir renk yok
+themes.error.bad_color = satır {line}: {key} = “{value}” bir renk değil (#RGB, #RRGGBB veya #RRGGBBAA)
+
+# ---- Window translucency (Appearance → Window)
+window.material.off = Opak
+window.material.blur = Bulanık
+window.material.transparent = Saydam
+window.material.mica = Mica
+window.material.mica_alt = Mica Alt
+settings.window.material = Pencere arka planı
+settings.window.material_note = Masaüstü tüm pencerenin arkasından görünür. Metin okunur kalır: gerektiğinde opaklık artırılır.
+settings.window.opacity = Opaklık
+settings.window.opacity_value = %{percent}
+settings.window.opacity_raised = Metin açık bir masaüstünde okunur kalsın diye %{percent} değerine çıkarıldı.
+settings.window.note_macos = Bulanık, macOS’un pencere bulanıklığını kullanır. Menüler, iletişim kutuları ve Şimdi çalıyor opak kalır.
+settings.window.note_windows = Bulanık, akriliktir. Mica ve Mica Alt için Windows 11 (22H2 veya sonrası) gerekir.
+settings.window.note_linux = Birleştirici (compositing) bir pencere yöneticisi gerekir. Bulanık için Wayland’de KDE Plasma gerekir; başka yerlerde Saydam gibi görünür.
+settings.window.cpu_note = Bulanıklığı sistem çizer; uygulamaya ek CPU yükü getirmez ve boştayken hiçbir şey yeniden çizilmez.
+
+# ---- React to the music (App-wide look)
+settings.look.react = Müziğe tepki ver
+settings.look.react_note = Geçiş veya parıltı, müzik çalarken enerjisiyle birlikte nefes alır (saniyede en fazla 30 kare; duraklatıldığında, pencere gizliyken veya azaltılmış harekette durur).
+
+# ---- UI zoom (Appearance → Text size, shortcuts)
+settings.appearance.zoom_note = Ctrl veya ⌘ ile + / − / 0 ya da Ctrl / ⌘ ve fare tekerleği arayüzü de yakınlaştırır.
+zoom.toast = Yakınlaştırma %{percent}
+shortcuts.action.zoom_in = Yakınlaştır
+shortcuts.action.zoom_out = Uzaklaştır
+shortcuts.action.zoom_reset = Gerçek boyut
+
+# ---- App icon (Appearance → Window)
+settings.app_icon = Uygulama simgesi
+settings.app_icon_note = Dock’ta ve uygulama değiştiricide (macOS) ya da pencerede ve görev çubuğunda (Windows, X11’de Linux) gösterilir.
+settings.app_icon.linux_note = Linux’ta bir sonraki açılışta uygulanır (X11); Wayland masaüstleri yüklü simgeyi gösterir.
+settings.app_icon.choose = Bir görsel seç…
+app_icon.custom = Görseliniz
+app_icon.default = Gece yarısı
+app_icon.light = Kâğıt
+app_icon.sunset = Gün batımı
+app_icon.mint = Nane
+app_icon.mono = Mono
+app_icon.error = Bu görsel simge olarak kullanılamaz: {error}
+app_icon.error.not_png = PNG, JPEG veya WebP bir görsel seçin

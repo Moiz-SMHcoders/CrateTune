@@ -26,6 +26,11 @@ resvg = { version = "0.46", default-features = false, features = ["text", "syste
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 directories = "6"
+# Theme files (`settings/theme_files.rs`): TOML, which allows comments (already in the
+# graph through rust-i18n).
+toml = { version = "0.8", default-features = false, features = ["parse"] }
+# Watching the themes folder (already in gpui-component's graph).
+notify = "8.2"
 # Secrets in the OS keychain (macOS Keychain, Windows Credential Manager, Secret Service).
 keyring = "4.2"
 # The system's preferred UI languages (already in GPUI's graph through parley).

@@ -1,0 +1,62 @@
+# Theme files, window translucency, the music-reactive look, UI zoom and the
+# app icon (pl).
+
+# ---- Theme files (Customize theme)
+themes.files = Pliki motywów
+themes.files_note = Motywy z folderu motywów: edytuj jeden w edytorze tekstu i zapisz, aby od razu zobaczyć zmianę.
+themes.open_folder = Otwórz folder motywów
+themes.export_file = Eksportuj bieżący motyw do pliku
+themes.export_name = Mój motyw
+themes.toast.exported = Zapisano jako {file} w folderze motywów.
+themes.invalid = Pominięto {file}: {reason}
+themes.low_contrast = {name}: część tekstu ma za mały kontrast ({ratio}:1) i może być trudna do odczytania.
+themes.empty = Brak plików motywów. Wyeksportuj bieżący motyw lub otwórz folder, aby dodać motyw.
+# ---- Reasons a theme file was left out
+themes.error.read = nie udało się odczytać ({error})
+themes.error.too_large = plik jest większy niż 256 KB
+themes.error.syntax = wiersz {line}: {message}
+themes.error.choice = wiersz {line}: {key} = „{value}” nie jest żadną z wartości {expected}
+themes.error.range = wiersz {line}: {key} musi być między 0 a 1
+themes.error.unknown_color = wiersz {line}: nie ma koloru o nazwie „{key}”
+themes.error.bad_color = wiersz {line}: {key} = „{value}” nie jest kolorem (#RGB, #RRGGBB lub #RRGGBBAA)
+
+# ---- Window translucency (Appearance → Window)
+window.material.off = Nieprzezroczyste
+window.material.blur = Rozmyte
+window.material.transparent = Przejrzyste
+window.material.mica = Mica
+window.material.mica_alt = Mica Alt
+settings.window.material = Tło okna
+settings.window.material_note = Pulpit prześwituje przez całe okno. Tekst pozostaje czytelny: krycie jest w razie potrzeby zwiększane.
+settings.window.opacity = Krycie
+settings.window.opacity_value = {percent} %
+settings.window.opacity_raised = Zwiększone do {percent} %, aby tekst był czytelny na jasnym pulpicie.
+settings.window.note_macos = Rozmyte korzysta z rozmycia okien w macOS. Menu, okna dialogowe i Teraz odtwarzane pozostają nieprzezroczyste.
+settings.window.note_windows = Rozmyte to akryl. Mica i Mica Alt wymagają Windows 11 (22H2 lub nowszego).
+settings.window.note_linux = Wymaga menedżera okien z kompozycją. Rozmyte wymaga KDE Plasma na Waylandzie; gdzie indziej wygląda jak Przejrzyste.
+settings.window.cpu_note = Rozmycie rysuje system, więc aplikacja nie zużywa dodatkowego CPU i w spoczynku nic się nie przerysowuje.
+
+# ---- React to the music (App-wide look)
+settings.look.react = Reaguj na muzykę
+settings.look.react_note = Gradient lub poświata oddychają energią muzyki podczas odtwarzania (do 30 klatek na sekundę; zatrzymuje się przy pauzie, ukrytym oknie lub ograniczonym ruchu).
+
+# ---- UI zoom (Appearance → Text size, shortcuts)
+settings.appearance.zoom_note = Ctrl lub ⌘ z + / − / 0 albo Ctrl / ⌘ i kółko myszy również powiększają interfejs.
+zoom.toast = Powiększenie {percent} %
+shortcuts.action.zoom_in = Powiększ
+shortcuts.action.zoom_out = Pomniejsz
+shortcuts.action.zoom_reset = Rzeczywisty rozmiar
+
+# ---- App icon (Appearance → Window)
+settings.app_icon = Ikona aplikacji
+settings.app_icon_note = Widoczna w Docku i przełączniku aplikacji (macOS) lub na oknie i pasku zadań (Windows, Linux z X11).
+settings.app_icon.linux_note = W Linuksie działa od następnego uruchomienia (X11); pulpity Wayland pokazują zainstalowaną ikonę.
+settings.app_icon.choose = Wybierz obraz…
+app_icon.custom = Twój obraz
+app_icon.default = Północ
+app_icon.light = Papier
+app_icon.sunset = Zachód słońca
+app_icon.mint = Mięta
+app_icon.mono = Mono
+app_icon.error = Tego obrazu nie można użyć jako ikony: {error}
+app_icon.error.not_png = wybierz obraz PNG, JPEG lub WebP

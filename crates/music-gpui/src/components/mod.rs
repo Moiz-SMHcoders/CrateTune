@@ -15,6 +15,7 @@
 //! * [`like::like_button`] – the heart; [`playlist_dialog`] – "Add to playlist".
 //! * [`cull::Sections`] – skips building page sections far outside the viewport.
 
+pub mod ambient;
 pub mod app_backdrop;
 pub mod artwork;
 pub mod bar_fx;

@@ -1,0 +1,62 @@
+# Theme files, window translucency, the music-reactive look, UI zoom and the
+# app icon (ru).
+
+# ---- Theme files (Customize theme)
+themes.files = Файлы тем
+themes.files_note = Темы из папки тем: отредактируйте одну в текстовом редакторе и сохраните — изменение будет видно сразу.
+themes.open_folder = Открыть папку тем
+themes.export_file = Экспортировать текущую тему в файл
+themes.export_name = Моя тема
+themes.toast.exported = Сохранено как {file} в папке тем.
+themes.invalid = {file} пропущен: {reason}
+themes.low_contrast = {name}: у части текста слишком низкий контраст ({ratio}:1), его может быть трудно читать.
+themes.empty = Файлов тем пока нет. Экспортируйте текущую тему или откройте папку, чтобы добавить тему.
+# ---- Reasons a theme file was left out
+themes.error.read = не удалось прочитать ({error})
+themes.error.too_large = файл больше 256 КБ
+themes.error.syntax = строка {line}: {message}
+themes.error.choice = строка {line}: {key} = «{value}» — не одно из значений {expected}
+themes.error.range = строка {line}: {key} должно быть от 0 до 1
+themes.error.unknown_color = строка {line}: цвета с именем «{key}» нет
+themes.error.bad_color = строка {line}: {key} = «{value}» — не цвет (#RGB, #RRGGBB или #RRGGBBAA)
+
+# ---- Window translucency (Appearance → Window)
+window.material.off = Непрозрачный
+window.material.blur = Размытие
+window.material.transparent = Прозрачный
+window.material.mica = Mica
+window.material.mica_alt = Mica Alt
+settings.window.material = Фон окна
+settings.window.material_note = Рабочий стол просвечивает сквозь всё окно. Текст остаётся читаемым: где нужно, непрозрачность повышается.
+settings.window.opacity = Непрозрачность
+settings.window.opacity_value = {percent} %
+settings.window.opacity_raised = Повышена до {percent} %, чтобы текст читался на светлом рабочем столе.
+settings.window.note_macos = «Размытие» использует размытие окон macOS. Меню, диалоги и «Сейчас играет» остаются непрозрачными.
+settings.window.note_windows = «Размытие» — это акрил. Для Mica и Mica Alt нужна Windows 11 (22H2 или новее).
+settings.window.note_linux = Нужен композитный оконный менеджер. Для размытия нужен KDE Plasma на Wayland; в остальных случаях оно выглядит как «Прозрачный».
+settings.window.cpu_note = Размытие рисует система, поэтому оно не нагружает процессор приложения и в простое ничего не перерисовывается.
+
+# ---- React to the music (App-wide look)
+settings.look.react = Реагировать на музыку
+settings.look.react_note = Градиент или свечение «дышат» в такт энергии музыки во время воспроизведения (до 30 кадров в секунду; останавливается на паузе, при скрытом окне или уменьшенном движении).
+
+# ---- UI zoom (Appearance → Text size, shortcuts)
+settings.appearance.zoom_note = Ctrl или ⌘ с + / − / 0, а также Ctrl / ⌘ и колёсико мыши тоже масштабируют интерфейс.
+zoom.toast = Масштаб {percent} %
+shortcuts.action.zoom_in = Увеличить
+shortcuts.action.zoom_out = Уменьшить
+shortcuts.action.zoom_reset = Реальный размер
+
+# ---- App icon (Appearance → Window)
+settings.app_icon = Значок приложения
+settings.app_icon_note = Показывается в Dock и переключателе приложений (macOS) или на окне и панели задач (Windows, Linux на X11).
+settings.app_icon.linux_note = В Linux применяется при следующем запуске (X11); рабочие столы на Wayland показывают установленный значок.
+settings.app_icon.choose = Выбрать изображение…
+app_icon.custom = Ваше изображение
+app_icon.default = Полночь
+app_icon.light = Бумага
+app_icon.sunset = Закат
+app_icon.mint = Мята
+app_icon.mono = Моно
+app_icon.error = Это изображение нельзя использовать как значок: {error}
+app_icon.error.not_png = выберите изображение PNG, JPEG или WebP

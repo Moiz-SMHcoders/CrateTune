@@ -355,6 +355,15 @@ fn default_keymap_is_the_old_one() {
         // New: the cheat sheet, full screen (⌃⌘F on a Mac, F11 elsewhere).
         expected.push((combo(&format!("{primary}-/"), os), "show_shortcuts", None));
         expected.push((fullscreen_default(os), "toggle_fullscreen", None));
+        // New: the interface zoom (⌘= and ⌘+ both zoom in).
+        for (keys, id) in [
+            ("=", "zoom_in"),
+            ("+", "zoom_in"),
+            ("-", "zoom_out"),
+            ("0", "zoom_reset"),
+        ] {
+            expected.push((combo(&format!("{primary}-{keys}"), os), id, None));
+        }
         let entries = keymap(&Overrides::new(), os);
         let mut actual: Vec<(Combo, &str, Option<&str>)> = entries
             .iter()
@@ -422,6 +431,10 @@ fn gpui_bindings_match_the_old_construction() {
         .chain([
             (format!("{primary}-/"), "show_shortcuts", None),
             (fullscreen, "toggle_fullscreen", None),
+            (format!("{primary}-="), "zoom_in", None),
+            (format!("{primary}-+"), "zoom_in", None),
+            (format!("{primary}--"), "zoom_out", None),
+            (format!("{primary}-0"), "zoom_reset", None),
         ])
         .map(|(keys, id, ctx)| {
             (
@@ -446,6 +459,18 @@ fn gpui_bindings_match_the_old_construction() {
     expected.sort_by_key(key);
     actual.sort_by_key(key);
     assert_eq!(actual, expected);
+}
+
+#[test]
+fn zoom_plus_alias_follows_the_default() {
+    let os = Os::Mac;
+    let plus = combo("cmd-+", os);
+    let has_plus = |o: &Overrides| keymap(o, os).iter().any(|e| e.combo == plus);
+    assert!(has_plus(&Overrides::new()));
+    // Rebinding zoom in drops the alias (the user's key is the only one).
+    let mut o = Overrides::new();
+    set(&mut o, "zoom_in", Some(&combo("cmd-shift-z", os)), os);
+    assert!(!has_plus(&o));
 }
 
 #[test]

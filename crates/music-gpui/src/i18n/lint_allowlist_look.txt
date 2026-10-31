@@ -1,0 +1,7 @@
+# Look round: the comments of an exported theme file (read by people editing the file;
+# English like the commented example, themes/example.toml).
+settings/theme_files.rs: # {app} theme file, exported from Settings → Appearance.
+settings/theme_files.rs: # Edit and save it: the app applies the change at once.
+settings/theme_files.rs: # Every key is optional; see example.toml in this folder.
+settings/theme_files.rs: # Uncomment a line to set that colour (#RRGGBB, or #RRGGBBAA).
+settings/theme_files.rs: # The values are the ones on screen when this was exported.

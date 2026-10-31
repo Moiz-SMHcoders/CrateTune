@@ -4,7 +4,8 @@
 //!
 //! It's its own view, like the player bar: a new song's colours cross-fade
 //! once (400 ms, as the dynamic theme), play / pause dims it once, and the
-//! optional drift redraws at ~13 fps while playing. While any of that runs the
+//! optional drift redraws at ~13 fps while playing, "React to the music"
+//! (`ambient.rs`) at ≤ 30 fps while playing. While any of that runs the
 //! app embeds the shell (and the bar) as cached views, so a backdrop frame
 //! repaints the gradient and composites the cached content, without rebuilding
 //! a page. Static otherwise: no frames, no timers.
@@ -23,6 +24,7 @@ use gpui::{
 use gpui_component::ActiveTheme as _;
 use music_core::PlaybackStatus;
 
+use super::ambient::{self, Reactor};
 use super::bar_fx::{ArtTones, GRADIENT_INTERVAL};
 use crate::anim::{Frame, Spec, Tween, ease_in_out_cubic};
 use crate::app::{MusicApp, app_entity, read_app};
@@ -87,6 +89,8 @@ pub struct AppBackdrop {
     last: Option<Instant>,
     /// The last render asked for more frames soon.
     animating: Cell<bool>,
+    /// "React to the music": the tap's reader and the energy envelope.
+    react: Reactor,
     wake: Option<(Instant, Task<()>)>,
     _observe: Option<Subscription>,
 }
@@ -97,6 +101,8 @@ struct State {
     playing: bool,
     has_track: bool,
     tones: ArtTones,
+    /// The window's background opacity over a window material.
+    see_through: Option<f32>,
 }
 
 impl AppBackdrop {
@@ -110,6 +116,7 @@ impl AppBackdrop {
             drift: 0.,
             last: None,
             animating: Cell::new(false),
+            react: Reactor::default(),
             wake: None,
             _observe: observe,
         }
@@ -169,6 +176,7 @@ impl Render for AppBackdrop {
                 playing: app.playback.status == PlaybackStatus::Playing,
                 has_track: app.playback.track.is_some(),
                 tones: ArtTones::new(art.as_ref(), &crate::theme::AppPalette::get(cx)),
+                see_through: app.window_see_through(cx),
             }
         }) else {
             return div().into_any_element();
@@ -206,6 +214,35 @@ impl Render for AppBackdrop {
             tween.animate_to(c, COLOR_FADE, now);
         }
         let [mut a, mut b, light] = self.colors.each_ref().map(|t| frame.get(t));
+        // The fade layers end in the window's background (translucent over a
+        // window material, so the desktop keeps showing through).
+        let base = bg.opacity(state.see_through.unwrap_or(1.));
+
+        // React to the music: the strength follows the energy (never above the
+        // look's own, so the readable colours above stay readable).
+        let ambient_ok = crate::effects::ambient_motion();
+        let energy = if look.reacts() && ambient_ok && mix > 0.001 {
+            let listening = state.playing;
+            if listening {
+                read_app(cx, |app, _| app.want_spectrum());
+            }
+            let e = self.react.step(now, listening, || {
+                read_app(cx, |app, _| {
+                    app.audio_player().map(|p| p.spectrum_analyzer())
+                })
+                .flatten()
+            });
+            if let Some(after) =
+                ambient::next_frame(true, state.playing, ambient_ok, &self.react.envelope)
+            {
+                frame.wake_in(after);
+            }
+            Some(e)
+        } else {
+            self.react.reset();
+            None
+        };
+        let boost = energy.map_or(1., ambient::strength);
 
         let mut layers: Vec<AnyElement> = Vec::new();
         if mix > 0.001 {
@@ -230,7 +267,7 @@ impl Render for AppBackdrop {
                         div()
                             .absolute()
                             .inset_0()
-                            .opacity(peak * mix)
+                            .opacity(peak * mix * boost)
                             .bg(linear_gradient(
                                 angle,
                                 linear_color_stop(a, lo),
@@ -245,22 +282,24 @@ impl Render for AppBackdrop {
                             .inset_0()
                             .bg(linear_gradient(
                                 angle,
-                                linear_color_stop(bg.opacity(0.), 0.15),
-                                linear_color_stop(bg, 1.),
+                                linear_color_stop(base.opacity(0.), 0.15),
+                                linear_color_stop(base, 1.),
                             ))
                             .into_any_element(),
                     );
                 }
                 AppLookStyle::Glow => {
-                    // A band of light along the top, strongest at the top-left.
+                    // A band of light along the top, strongest at the top-left
+                    // (reaching further down on loud passages when reacting).
+                    let reach = energy.map_or(0.6, |e| 0.5 + 0.2 * e);
                     layers.push(
                         div()
                             .absolute()
                             .top_0()
                             .left_0()
                             .right_0()
-                            .h(relative(0.6))
-                            .opacity(peak * mix)
+                            .h(relative(reach))
+                            .opacity(peak * mix * boost)
                             .bg(linear_gradient(
                                 180.,
                                 linear_color_stop(light, 0.),
@@ -274,12 +313,12 @@ impl Render for AppBackdrop {
                             .top_0()
                             .left_0()
                             .right_0()
-                            .h(relative(0.6))
+                            .h(relative(reach))
                             .opacity(0.35 * mix)
                             .bg(linear_gradient(
                                 90.,
-                                linear_color_stop(bg.opacity(0.), 0.35),
-                                linear_color_stop(bg, 1.),
+                                linear_color_stop(base.opacity(0.), 0.35),
+                                linear_color_stop(base, 1.),
                             ))
                             .into_any_element(),
                     );
@@ -305,6 +344,13 @@ impl Render for AppBackdrop {
             self.schedule(at, cx);
         }
         element
+    }
+}
+
+impl AppBackdrop {
+    /// "React to the music": frames analyzed so far and the current energy.
+    pub fn react_status(&self) -> (u64, f32) {
+        (self.react.frames, self.react.envelope.energy())
     }
 }
 

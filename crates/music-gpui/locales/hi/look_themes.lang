@@ -1,0 +1,62 @@
+# Theme files, window translucency, the music-reactive look, UI zoom and the
+# app icon (hi).
+
+# ---- Theme files (Customize theme)
+themes.files = थीम फ़ाइलें
+themes.files_note = थीम फ़ोल्डर की थीम: किसी टेक्स्ट एडिटर में एक को बदलें और सेव करें, बदलाव तुरंत दिखेगा।
+themes.open_folder = थीम फ़ोल्डर खोलें
+themes.export_file = मौजूदा थीम को फ़ाइल के रूप में एक्सपोर्ट करें
+themes.export_name = मेरी थीम
+themes.toast.exported = थीम फ़ोल्डर में {file} के रूप में सेव हुई।
+themes.invalid = {file} छोड़ दी गई: {reason}
+themes.low_contrast = {name}: कुछ टेक्स्ट का कंट्रास्ट बहुत कम है ({ratio}:1); उसे पढ़ना मुश्किल हो सकता है।
+themes.empty = अभी कोई थीम फ़ाइल नहीं है। एक जोड़ने के लिए मौजूदा थीम एक्सपोर्ट करें या फ़ोल्डर खोलें।
+# ---- Reasons a theme file was left out
+themes.error.read = पढ़ी नहीं जा सकी ({error})
+themes.error.too_large = फ़ाइल 256 KB से बड़ी है
+themes.error.syntax = पंक्ति {line}: {message}
+themes.error.choice = पंक्ति {line}: {key} = “{value}” इनमें से कोई नहीं है: {expected}
+themes.error.range = पंक्ति {line}: {key} 0 और 1 के बीच होना चाहिए
+themes.error.unknown_color = पंक्ति {line}: “{key}” नाम का कोई रंग नहीं है
+themes.error.bad_color = पंक्ति {line}: {key} = “{value}” कोई रंग नहीं है (#RGB, #RRGGBB या #RRGGBBAA)
+
+# ---- Window translucency (Appearance → Window)
+window.material.off = अपारदर्शी
+window.material.blur = धुंधला
+window.material.transparent = पारदर्शी
+window.material.mica = Mica
+window.material.mica_alt = Mica Alt
+settings.window.material = विंडो का बैकग्राउंड
+settings.window.material_note = पूरी विंडो के पीछे से डेस्कटॉप दिखता है। टेक्स्ट पढ़ने लायक रहता है: ज़रूरत पड़ने पर अपारदर्शिता बढ़ा दी जाती है।
+settings.window.opacity = अपारदर्शिता
+settings.window.opacity_value = {percent} %
+settings.window.opacity_raised = {percent} % तक बढ़ाई गई, ताकि हल्के डेस्कटॉप पर भी टेक्स्ट पढ़ा जा सके।
+settings.window.note_macos = धुंधला macOS के विंडो ब्लर का इस्तेमाल करता है। मेन्यू, डायलॉग और अभी चल रहा अपारदर्शी रहते हैं।
+settings.window.note_windows = धुंधला यहाँ ऐक्रेलिक है। Mica और Mica Alt के लिए Windows 11 (22H2 या नया) चाहिए।
+settings.window.note_linux = कंपोज़िटिंग विंडो मैनेजर चाहिए। धुंधला के लिए Wayland पर KDE Plasma चाहिए; बाकी जगह यह पारदर्शी जैसा दिखता है।
+settings.window.cpu_note = ब्लर सिस्टम बनाता है, इसलिए ऐप का अतिरिक्त CPU नहीं लगता और खाली बैठे कुछ भी दोबारा नहीं बनता।
+
+# ---- React to the music (App-wide look)
+settings.look.react = संगीत पर प्रतिक्रिया दें
+settings.look.react_note = चलते संगीत की ऊर्जा के साथ ग्रेडिएंट या चमक साँस लेती है (हर सेकंड अधिकतम 30 फ़्रेम; रोकने पर, विंडो छिपी होने पर या कम मोशन में रुक जाती है)।
+
+# ---- UI zoom (Appearance → Text size, shortcuts)
+settings.appearance.zoom_note = Ctrl या ⌘ के साथ + / − / 0, या Ctrl / ⌘ और माउस व्हील से इंटरफ़ेस भी ज़ूम होता है।
+zoom.toast = ज़ूम {percent} %
+shortcuts.action.zoom_in = ज़ूम इन
+shortcuts.action.zoom_out = ज़ूम आउट
+shortcuts.action.zoom_reset = असली आकार
+
+# ---- App icon (Appearance → Window)
+settings.app_icon = ऐप आइकन
+settings.app_icon_note = Dock और ऐप स्विचर (macOS) में या विंडो और टास्कबार (Windows, X11 पर Linux) पर दिखता है।
+settings.app_icon.linux_note = Linux पर यह अगली बार खोलने पर लागू होता है (X11); Wayland डेस्कटॉप इंस्टॉल किया गया आइकन दिखाते हैं।
+settings.app_icon.choose = इमेज चुनें…
+app_icon.custom = आपकी इमेज
+app_icon.default = आधी रात
+app_icon.light = काग़ज़
+app_icon.sunset = सूर्यास्त
+app_icon.mint = पुदीना
+app_icon.mono = मोनो
+app_icon.error = इस इमेज को आइकन नहीं बनाया जा सकता: {error}
+app_icon.error.not_png = PNG, JPEG या WebP इमेज चुनें

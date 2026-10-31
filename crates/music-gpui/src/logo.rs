@@ -26,17 +26,26 @@ pub fn logo(size: f32) -> impl IntoElement {
 /// application has started.
 #[cfg(target_os = "macos")]
 pub fn set_dock_icon() {
+    if !bundled() {
+        set_dock_icon_png(None);
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn bundled() -> bool {
+    std::env::current_exe().is_ok_and(|exe| exe.to_string_lossy().contains(".app/Contents/MacOS/"))
+}
+
+/// Sets the Dock / app switcher icon (Appearance → Window → App icon, `app_icon.rs`):
+/// `png`, or with `None` the app's own (the bundle's icon; outside a bundle the
+/// full icon with its margin and shadow, like the bundle's `.icns`).
+#[cfg(target_os = "macos")]
+pub fn set_dock_icon_png(png: Option<&[u8]>) {
     use objc2::msg_send;
     use objc2::runtime::{AnyClass, AnyObject};
 
-    /// The full icon with its margin and shadow, like the bundle's `.icns`.
     const ICON_PNG: &[u8] = include_bytes!("../../../packaging/icons/app-icon-512.png");
 
-    let bundled = std::env::current_exe()
-        .is_ok_and(|exe| exe.to_string_lossy().contains(".app/Contents/MacOS/"));
-    if bundled {
-        return;
-    }
     let (Some(data_class), Some(image_class), Some(app_class)) = (
         AnyClass::get(c"NSData"),
         AnyClass::get(c"NSImage"),
@@ -44,14 +53,29 @@ pub fn set_dock_icon() {
     ) else {
         return;
     };
-    // SAFETY: main thread (called from the app's run callback); standard Foundation /
-    // AppKit messages. `dataWithBytes:length:` copies the bytes; the NSImage is
-    // retained by NSApp after `setApplicationIconImage:`, so our +1 is released.
+    let bytes = match png {
+        Some(bytes) => bytes,
+        None if bundled() => {
+            // SAFETY: main thread; `setApplicationIconImage:` with nil restores the
+            // bundle's icon.
+            unsafe {
+                let app: *mut AnyObject = msg_send![app_class, sharedApplication];
+                let none: *mut AnyObject = std::ptr::null_mut();
+                let _: () = msg_send![app, setApplicationIconImage: none];
+            }
+            return;
+        }
+        None => ICON_PNG,
+    };
+    // SAFETY: main thread (called from the app's run callback or a render);
+    // standard Foundation / AppKit messages. `dataWithBytes:length:` copies the
+    // bytes; the NSImage is retained by NSApp after `setApplicationIconImage:`, so
+    // our +1 is released.
     unsafe {
         let data: *mut AnyObject = msg_send![
             data_class,
-            dataWithBytes: ICON_PNG.as_ptr().cast::<std::ffi::c_void>(),
-            length: ICON_PNG.len()
+            dataWithBytes: bytes.as_ptr().cast::<std::ffi::c_void>(),
+            length: bytes.len()
         ];
         if data.is_null() {
             return;

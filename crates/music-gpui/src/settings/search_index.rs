@@ -173,6 +173,22 @@ pub const ENTRIES: &[Entry] = &[
         "palette"
     ),
     entry!(
+        "appearance.custom_theme.files",
+        Appearance,
+        "theme.custom.group",
+        "themes.files",
+        "themes.files_note",
+        "toml",
+        "file",
+        "folder",
+        "edit",
+        "export",
+        "nord",
+        "catppuccin",
+        "gruvbox",
+        "dracula"
+    ),
+    entry!(
         "appearance.accent",
         Appearance,
         "theme.custom.group",
@@ -364,6 +380,54 @@ pub const ENTRIES: &[Entry] = &[
         "settings.look.animate_note",
         "drift",
         "animation"
+    ),
+    entry!(
+        "appearance.look.react",
+        Appearance,
+        "settings.look.group",
+        "settings.look.react",
+        "settings.look.react_note",
+        "audio",
+        "reactive",
+        "beat",
+        "pulse",
+        "visualizer",
+        "ambient"
+    ),
+    entry!(
+        "appearance.window.material",
+        Appearance,
+        "settings.appearance.window_group",
+        "settings.window.material",
+        "settings.window.material_note",
+        "transparent",
+        "transparency",
+        "translucent",
+        "blur",
+        "glass",
+        "mica",
+        "acrylic",
+        "vibrancy"
+    ),
+    entry!(
+        "appearance.window.opacity",
+        Appearance,
+        "settings.appearance.window_group",
+        "settings.window.opacity",
+        -,
+        "transparency",
+        "alpha"
+    ),
+    entry!(
+        "appearance.window.app_icon",
+        Appearance,
+        "settings.appearance.window_group",
+        "settings.app_icon",
+        "settings.app_icon_note",
+        "icon",
+        "dock",
+        "taskbar",
+        "logo"
     ),
     entry!(
         "appearance.motion.animations",
@@ -2146,6 +2210,8 @@ mod tests {
         for anchor in [
             "appearance.look.direction",
             "appearance.look.animate",
+            "appearance.look.react",
+            "appearance.window.opacity",
             "appearance.bar.gradient_direction",
             "appearance.surfaces.font",
             "lyrics.translation.endpoint",

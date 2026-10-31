@@ -1,0 +1,66 @@
+# CrateTune theme file: a commented example.
+#
+# Every *.toml file in this folder is listed under Settings → Appearance →
+# Customize theme, next to the built-in presets. Pick one to apply it; save the
+# file while it is applied and the app updates at once. A file with a mistake is
+# listed with the reason (and the line) and left out until it's fixed.
+#
+# Every key is optional. Without one, the value of the stock theme is used
+# (density and font: the ones you picked in the app stay).
+
+# Shown in the app (the file name when missing).
+name = "Deep sea (example)"
+
+# The base theme: "dark" (default), "black" (pure black) or "dynamic"
+# (colours from the playing song's artwork; [colors] below still win).
+base = "dark"
+
+# Accent: buttons, sliders, the playing row, links. "#RRGGBB" or "" for the
+# theme's own. It is raised in brightness if needed, until it has the contrast
+# level's ratio against the background (see contrast below).
+accent = "#4FB3D9"
+
+# How much the stock surfaces take the accent's hue: 0.0 (neutral) to 1.0.
+surface_tint = 0.35
+
+# Background darkness: "dim", "standard", "deep" or "black".
+darkness = "deep"
+
+# Text and border contrast: "standard" (4.5:1), "medium" (5.5:1), "high" (7:1).
+contrast = "standard"
+
+# Corners of buttons, cards, dialogs and artwork: "sharp", "regular", "round".
+corners = "round"
+
+# Row heights and paddings: "compact", "regular", "comfortable".
+# density = "regular"
+
+# An installed font family ("" = the system font).
+# font = ""
+
+# Style of the dynamic theme's colours: "vibrant", "muted", "monochrome", "content".
+# dynamic_style = "vibrant"
+
+# Individual colours, over everything above: "#RRGGBB", or "#RRGGBBAA" with
+# alpha. Names are gpui-component's colour tokens; the full list is in the
+# user guide (Settings → Appearance → Customize theme → "Export current theme as
+# file" writes them all with their current values). The most useful ones:
+#
+#   background, foreground          the window and its text
+#   muted_foreground                secondary text (keep ≥ 3:1 on the background)
+#   sidebar, sidebar_foreground     the sidebar
+#   title_bar                       the top bar
+#   popover, popover_foreground     menus, dialogs, tooltips
+#   secondary, secondary_hover      raised surfaces: inputs, cards, buttons
+#   muted                           subtle fills (chips, tracks)
+#   border, input                   lines and field borders
+#   list_hover, list_active         song rows
+#   scrollbar_thumb, selection      scroll bars, selected text
+#   danger, success, warning        status colours
+[colors]
+background = "#0B1622"
+sidebar = "#08111B"
+title_bar = "#08111B"
+popover = "#12212F"
+secondary = "#14283A"
+border = "#1C3348"

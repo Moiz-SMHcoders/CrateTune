@@ -5,6 +5,8 @@
 #   packaging/windows/app.ico          (16–256 px)
 #   packaging/linux/icons/<n>x<n>.png  (hicolor sizes) and packaging/icons/app-icon-512.png
 #   packaging/icons/app-logo-256.png   (in-app logo, embedded in the binary)
+#   packaging/icons/variants/<id>.png  (the other app icons of Appearance → Window →
+#                                       App icon, 512 px, embedded in the binary)
 # Needs rsvg-convert (librsvg) and, on macOS, iconutil; ImageMagick (`magick`) for the .ico.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -37,6 +39,20 @@ cp packaging/linux/icons/512x512.png packaging/icons/app-icon-512.png
 sed -e 's/viewBox="0 0 512 512"/viewBox="40 40 432 432"/' -e 's/ filter="url(#shadow)"//' \
   "$SVG" > "$TMP/logo.svg"
 rsvg-convert -w 256 -h 256 "$TMP/logo.svg" -o packaging/icons/app-logo-256.png
+
+# App icon variants (`crates/music-gpui/src/app_icon.rs`): the same ク, other colours.
+# id  tile-start  tile-end  glyph
+mkdir -p packaging/icons/variants
+while read -r id start end glyph; do
+  sed -e "s/#22436A/$start/" -e "s/#0F2238/$end/" -e "s/#F2F5FA/$glyph/" \
+    "$SVG" > "$TMP/variant-$id.svg"
+  rsvg-convert -w 512 -h 512 "$TMP/variant-$id.svg" -o "packaging/icons/variants/$id.png"
+done <<'VARIANTS'
+light #FFFFFF #DDE4EE #16304F
+sunset #FF8A5B #D9376E #FFF6EE
+mint #34D1A7 #0E7C70 #F4FFFB
+mono #262626 #000000 #FFFFFF
+VARIANTS
 
 # Windows .ico
 mkdir -p packaging/windows

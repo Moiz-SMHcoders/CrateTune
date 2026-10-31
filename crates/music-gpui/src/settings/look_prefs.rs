@@ -80,6 +80,58 @@ impl CardSize {
     }
 }
 
+choice_enum! {
+    /// What shows behind the whole window (Appearance → Window).
+    WindowMaterial {
+        /// An opaque window (the default).
+        #[default]
+        Off = "off" => "window.material.off",
+        /// The desktop, blurred: macOS's window blur, Windows' acrylic, KDE
+        /// Plasma's blur on Wayland.
+        Blur = "blur" => "window.material.blur",
+        /// The desktop as it is (needs a compositor on Linux).
+        Transparent = "transparent" => "window.material.transparent",
+        /// Windows 11's Mica material (the wallpaper's colours, blurred).
+        Mica = "mica" => "window.material.mica",
+        /// Windows 11's Mica Alt (stronger wallpaper colour, as in tabbed windows).
+        #[serde(rename = "mica-alt")]
+        MicaAlt = "mica-alt" => "window.material.mica_alt",
+    }
+}
+
+impl WindowMaterial {
+    /// The platform can draw it (Mica: Windows 11 22H2, build 22621, as GPUI
+    /// needs; acrylic: Windows 10 1809). Linux offers blur and transparency;
+    /// whether they show depends on the compositor (see the UI's note).
+    pub fn available(self) -> bool {
+        #[cfg(windows)]
+        let build = crate::win::build_number();
+        #[cfg(not(windows))]
+        let build = 0;
+        match self {
+            WindowMaterial::Off => true,
+            WindowMaterial::Blur | WindowMaterial::Transparent => !cfg!(windows) || build >= 17763,
+            WindowMaterial::Mica | WindowMaterial::MicaAlt => cfg!(windows) && build >= 22621,
+        }
+    }
+
+    /// GPUI's window background for it.
+    pub fn appearance(self) -> gpui::WindowBackgroundAppearance {
+        use gpui::WindowBackgroundAppearance as A;
+        match self {
+            WindowMaterial::Off => A::Opaque,
+            WindowMaterial::Blur => A::Blurred,
+            WindowMaterial::Transparent => A::Transparent,
+            WindowMaterial::Mica => A::MicaBackdrop,
+            WindowMaterial::MicaAlt => A::MicaAltBackdrop,
+        }
+    }
+}
+
+/// Window opacities offered with a material (the readable floor may raise it,
+/// `theme::readable_window_alpha`).
+pub const WINDOW_OPACITIES: [f32; 4] = [0.6, 0.7, 0.8, 0.9];
+
 /// Intensities offered for the app-wide look (as the bar's gradient).
 pub const LOOK_INTENSITIES: [f32; 4] = GRADIENT_INTENSITIES;
 
@@ -101,6 +153,9 @@ pub struct AppLookConfig {
     pub tint_surfaces: bool,
     /// Gradient: a slow drift while playing (~13 fps, behind cached content).
     pub animate: bool,
+    /// Gradient / glow: the strength follows the music's energy while playing
+    /// (≤ 30 fps; `components/app_backdrop.rs`).
+    pub react: bool,
 }
 
 impl Default for AppLookConfig {
@@ -113,6 +168,7 @@ impl Default for AppLookConfig {
             dim_when_paused: true,
             tint_surfaces: false,
             animate: false,
+            react: false,
         }
     }
 }
@@ -126,6 +182,7 @@ pub struct EffectiveLook {
     pub dim_when_paused: bool,
     pub tint_surfaces: bool,
     pub animate: bool,
+    pub react: bool,
 }
 
 impl EffectiveLook {
@@ -155,6 +212,11 @@ impl EffectiveLook {
     pub fn animates(&self) -> bool {
         self.style == AppLookStyle::Gradient && self.animate
     }
+
+    /// Follows the music while playing (gradient / glow with "React to the music").
+    pub fn reacts(&self) -> bool {
+        self.react && self.draws_backdrop()
+    }
 }
 
 impl AppLookConfig {
@@ -163,6 +225,7 @@ impl AppLookConfig {
         Self {
             style: AppLookStyle::Off,
             animate: false,
+            react: false,
             ..Self::default()
         }
     }
@@ -186,6 +249,7 @@ impl AppLookConfig {
             dim_when_paused: self.dim_when_paused,
             tint_surfaces: self.tint_surfaces,
             animate: self.animate,
+            react: self.react,
         };
         if self.style == AppLookStyle::Off || !self.follow_bar || !bar.background_effect {
             return own;
@@ -224,6 +288,11 @@ pub struct EffectsConfig {
     pub card_size: CardSize,
     /// macOS: the sidebar shows the desktop through a system blur.
     pub translucent_sidebar: bool,
+    /// The whole window over the desktop (blur, transparency, Mica).
+    #[serde(deserialize_with = "lenient")]
+    pub window_material: WindowMaterial,
+    /// Opacity of the window's surfaces over the material (0.5..=1).
+    pub window_opacity: f32,
 }
 
 impl Default for EffectsConfig {
@@ -237,6 +306,8 @@ impl Default for EffectsConfig {
             artwork_shadow: false,
             card_size: CardSize::Regular,
             translucent_sidebar: false,
+            window_material: WindowMaterial::Off,
+            window_opacity: 0.8,
         }
     }
 }
@@ -253,8 +324,24 @@ impl EffectsConfig {
             artwork_headers: false,
             artwork_shadow: false,
             translucent_sidebar: false,
+            window_material: WindowMaterial::Off,
             ..Self::default()
         }
+    }
+
+    pub fn normalize(&mut self) {
+        self.window_opacity = if self.window_opacity.is_finite() {
+            self.window_opacity.clamp(0.5, 1.0)
+        } else {
+            0.8
+        };
+    }
+
+    /// The material drawn on this platform (`Off` when it can't be).
+    pub fn material(&self) -> WindowMaterial {
+        Some(self.window_material)
+            .filter(|m| m.available())
+            .unwrap_or_default()
     }
 }
 
@@ -324,6 +411,48 @@ mod tests {
         assert_eq!(fx.motion, MotionPref::Off);
         assert!(!fx.page_transitions && !fx.card_hover && !fx.artwork_headers);
         assert!(!fx.artwork_shadow && !fx.translucent_sidebar);
+        assert_eq!(fx.window_material, WindowMaterial::Off);
+        assert!(!least.reacts() && !AppLookConfig::default().react);
+    }
+
+    #[test]
+    fn window_material_defaults_and_availability() {
+        let fx: EffectsConfig =
+            serde_json::from_str(r#"{"window_material": "plasma", "window_opacity": 3}"#).unwrap();
+        assert_eq!(fx.window_material, WindowMaterial::Off);
+        let mut fx: EffectsConfig =
+            serde_json::from_str(r#"{"window_material": "mica-alt", "window_opacity": 0.1}"#)
+                .unwrap();
+        fx.normalize();
+        assert_eq!(fx.window_material, WindowMaterial::MicaAlt);
+        assert_eq!(fx.window_opacity, 0.5);
+        assert!(WindowMaterial::Off.available());
+        // Mica is Windows-only; blur everywhere else.
+        if !cfg!(target_os = "windows") {
+            assert_eq!(fx.material(), WindowMaterial::Off);
+            assert!(WindowMaterial::Blur.available());
+        }
+        for m in WindowMaterial::ALL {
+            assert_eq!(WindowMaterial::parse(m.key()), Some(*m));
+        }
+    }
+
+    #[test]
+    fn react_needs_a_backdrop() {
+        let bar = PlayerBarConfig::default();
+        for (style, reacts) in [
+            (AppLookStyle::Off, false),
+            (AppLookStyle::Tint, false),
+            (AppLookStyle::Gradient, true),
+            (AppLookStyle::Glow, true),
+        ] {
+            let look = AppLookConfig {
+                style,
+                react: true,
+                ..AppLookConfig::default()
+            };
+            assert_eq!(look.effective(&bar).reacts(), reacts, "{style:?}");
+        }
     }
 
     #[test]
@@ -370,6 +499,7 @@ mod tests {
             dim_when_paused: true,
             tint_surfaces: false,
             animate: false,
+            react: false,
         };
         assert_eq!(tint.surface_tint(true), 1.0);
         assert_eq!(tint.surface_tint(false), 0.5);

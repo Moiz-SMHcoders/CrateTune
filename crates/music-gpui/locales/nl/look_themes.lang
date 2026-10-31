@@ -1,0 +1,62 @@
+# Theme files, window translucency, the music-reactive look, UI zoom and the
+# app icon (nl).
+
+# ---- Theme files (Customize theme)
+themes.files = Themabestanden
+themes.files_note = Thema’s uit de themamap: bewerk er een in een teksteditor en sla hem op om de wijziging meteen te zien.
+themes.open_folder = Themamap openen
+themes.export_file = Huidig thema als bestand exporteren
+themes.export_name = Mijn thema
+themes.toast.exported = Opgeslagen als {file} in de themamap.
+themes.invalid = {file} is overgeslagen: {reason}
+themes.low_contrast = {name}: sommige tekst heeft te weinig contrast ({ratio}:1) en is misschien slecht leesbaar.
+themes.empty = Nog geen themabestanden. Exporteer het huidige thema of open de map om er een toe te voegen.
+# ---- Reasons a theme file was left out
+themes.error.read = kon niet worden gelezen ({error})
+themes.error.too_large = het bestand is groter dan 256 KB
+themes.error.syntax = regel {line}: {message}
+themes.error.choice = regel {line}: {key} = ‘{value}’ is niet een van {expected}
+themes.error.range = regel {line}: {key} moet tussen 0 en 1 liggen
+themes.error.unknown_color = regel {line}: er is geen kleur met de naam ‘{key}’
+themes.error.bad_color = regel {line}: {key} = ‘{value}’ is geen kleur (#RGB, #RRGGBB of #RRGGBBAA)
+
+# ---- Window translucency (Appearance → Window)
+window.material.off = Ondoorzichtig
+window.material.blur = Wazig
+window.material.transparent = Doorzichtig
+window.material.mica = Mica
+window.material.mica_alt = Mica Alt
+settings.window.material = Vensterachtergrond
+settings.window.material_note = Het bureaublad schijnt door het hele venster. Tekst blijft leesbaar: de dekking gaat waar nodig omhoog.
+settings.window.opacity = Dekking
+settings.window.opacity_value = {percent} %
+settings.window.opacity_raised = Verhoogd naar {percent} % zodat tekst leesbaar blijft op een licht bureaublad.
+settings.window.note_macos = Wazig gebruikt de vensterwaas van macOS. Menu’s, dialogen en Speelt nu blijven ondoorzichtig.
+settings.window.note_windows = Wazig is acryl. Mica en Mica Alt vereisen Windows 11 (22H2 of nieuwer).
+settings.window.note_linux = Vereist een compositing-windowmanager. Wazig vereist KDE Plasma op Wayland; elders lijkt het op Doorzichtig.
+settings.window.cpu_note = Het systeem tekent de waas, dus het kost de app geen extra CPU en in rust wordt niets opnieuw getekend.
+
+# ---- React to the music (App-wide look)
+settings.look.react = Reageren op de muziek
+settings.look.react_note = Het verloop of de gloed ademt mee met de energie van de muziek tijdens het afspelen (tot 30 beelden per seconde; stopt bij pauze, een verborgen venster of beperkte beweging).
+
+# ---- UI zoom (Appearance → Text size, shortcuts)
+settings.appearance.zoom_note = Ctrl of ⌘ met + / − / 0, of Ctrl / ⌘ en het muiswiel, zoomen ook de interface.
+zoom.toast = Zoom {percent} %
+shortcuts.action.zoom_in = Inzoomen
+shortcuts.action.zoom_out = Uitzoomen
+shortcuts.action.zoom_reset = Werkelijke grootte
+
+# ---- App icon (Appearance → Window)
+settings.app_icon = App-pictogram
+settings.app_icon_note = Getoond in het Dock en de appwisselaar (macOS) of op het venster en de taakbalk (Windows, Linux op X11).
+settings.app_icon.linux_note = Op Linux geldt het vanaf de volgende start (X11); Wayland-bureaubladen tonen het geïnstalleerde pictogram.
+settings.app_icon.choose = Afbeelding kiezen…
+app_icon.custom = Jouw afbeelding
+app_icon.default = Middernacht
+app_icon.light = Papier
+app_icon.sunset = Zonsondergang
+app_icon.mint = Munt
+app_icon.mono = Mono
+app_icon.error = Die afbeelding kan niet als pictogram dienen: {error}
+app_icon.error.not_png = kies een PNG-, JPEG- of WebP-afbeelding

@@ -1,0 +1,62 @@
+# Theme files, window translucency, the music-reactive look, UI zoom and the
+# app icon (it).
+
+# ---- Theme files (Customize theme)
+themes.files = File di tema
+themes.files_note = Temi dalla cartella dei temi: modificane uno in un editor di testo e salvalo per vedere subito la modifica.
+themes.open_folder = Apri la cartella dei temi
+themes.export_file = Esporta il tema attuale come file
+themes.export_name = Il mio tema
+themes.toast.exported = Salvato come {file} nella cartella dei temi.
+themes.invalid = {file} è stato escluso: {reason}
+themes.low_contrast = {name}: parte del testo ha poco contrasto ({ratio}:1) e potrebbe essere difficile da leggere.
+themes.empty = Ancora nessun file di tema. Esporta il tema attuale o apri la cartella per aggiungerne uno.
+# ---- Reasons a theme file was left out
+themes.error.read = impossibile leggerlo ({error})
+themes.error.too_large = il file supera i 256 KB
+themes.error.syntax = riga {line}: {message}
+themes.error.choice = riga {line}: {key} = «{value}» non è tra {expected}
+themes.error.range = riga {line}: {key} deve essere tra 0 e 1
+themes.error.unknown_color = riga {line}: non esiste un colore chiamato «{key}»
+themes.error.bad_color = riga {line}: {key} = «{value}» non è un colore (#RGB, #RRGGBB o #RRGGBBAA)
+
+# ---- Window translucency (Appearance → Window)
+window.material.off = Opaco
+window.material.blur = Sfocato
+window.material.transparent = Trasparente
+window.material.mica = Mica
+window.material.mica_alt = Mica Alt
+settings.window.material = Sfondo della finestra
+settings.window.material_note = La scrivania traspare da tutta la finestra. Il testo resta leggibile: l’opacità viene alzata dove serve.
+settings.window.opacity = Opacità
+settings.window.opacity_value = {percent} %
+settings.window.opacity_raised = Alzata al {percent} % perché il testo resti leggibile su una scrivania chiara.
+settings.window.note_macos = Sfocato usa la sfocatura delle finestre di macOS. Menu, finestre di dialogo e In riproduzione restano opachi.
+settings.window.note_windows = Sfocato è l’acrilico. Mica e Mica Alt richiedono Windows 11 (22H2 o successivo).
+settings.window.note_linux = Serve un window manager con compositing. Sfocato richiede KDE Plasma su Wayland; altrove appare come Trasparente.
+settings.window.cpu_note = La sfocatura la disegna il sistema: nessuna CPU in più per l’app, e a riposo non si ridisegna nulla.
+
+# ---- React to the music (App-wide look)
+settings.look.react = Reagisci alla musica
+settings.look.react_note = Il gradiente o il bagliore respirano con l’energia della musica mentre suona (fino a 30 fotogrammi al secondo; si ferma in pausa, a finestra nascosta o con movimento ridotto).
+
+# ---- UI zoom (Appearance → Text size, shortcuts)
+settings.appearance.zoom_note = Ctrl o ⌘ con + / − / 0, oppure Ctrl / ⌘ e la rotellina, ingrandiscono anche l’interfaccia.
+zoom.toast = Zoom {percent} %
+shortcuts.action.zoom_in = Ingrandisci
+shortcuts.action.zoom_out = Riduci
+shortcuts.action.zoom_reset = Dimensioni reali
+
+# ---- App icon (Appearance → Window)
+settings.app_icon = Icona dell’app
+settings.app_icon_note = Mostrata nel Dock e nel selettore di app (macOS) o sulla finestra e nella barra delle applicazioni (Windows, Linux su X11).
+settings.app_icon.linux_note = Su Linux vale dal prossimo avvio (X11); i desktop Wayland mostrano l’icona installata.
+settings.app_icon.choose = Scegli un’immagine…
+app_icon.custom = La tua immagine
+app_icon.default = Mezzanotte
+app_icon.light = Carta
+app_icon.sunset = Tramonto
+app_icon.mint = Menta
+app_icon.mono = Mono
+app_icon.error = Quell’immagine non può fare da icona: {error}
+app_icon.error.not_png = scegli un’immagine PNG, JPEG o WebP

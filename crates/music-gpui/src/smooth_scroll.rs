@@ -22,6 +22,9 @@
 //! macOS is unchanged (its wheel events already come with acceleration); elsewhere
 //! `MUSIC_SMOOTH_WHEEL=0` turns this off and `=1` turns it on (also on macOS, for
 //! testing with `@wheel` in scripts).
+//!
+//! The same listener (on every platform) turns Ctrl / ⌘ + wheel into the
+//! interface zoom (`zoom.rs`), except over the controls that claim the wheel.
 
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
@@ -114,6 +117,7 @@ impl Glide {
 struct State {
     glide: Glide,
     modifiers: Modifiers,
+    zoom: crate::zoom::WheelZoom,
 }
 
 /// The main window's wheel state (one per `MusicApp`).
@@ -128,14 +132,12 @@ thread_local! {
 /// For elements that read the wheel themselves (call while painting): when
 /// `hovered` says the pointer is on the element, wheel notches reach it unchanged.
 pub fn claim_wheel(window: &mut Window, hovered: impl Fn(&Window) -> bool + 'static) {
-    if !enabled() {
-        return;
-    }
     window.on_mouse_event(move |event: &ScrollEvent, phase, window, _| {
-        if phase == DispatchPhase::Capture
-            && matches!(event.delta, ScrollDelta::Lines(_))
-            && hovered(window)
-        {
+        // Notches (the glide) and Ctrl / ⌘ + wheel (the zoom) stay the control's.
+        let ours = matches!(event.delta, ScrollDelta::Lines(_))
+            || event.modifiers.control
+            || event.modifiers.platform;
+        if phase == DispatchPhase::Capture && ours && hovered(window) {
             CLAIMED.set(Some(event.position));
         }
     });
@@ -143,7 +145,7 @@ pub fn claim_wheel(window: &mut Window, hovered: impl Fn(&Window) -> bool + 'sta
 
 /// A zero-cost element filling its parent that [`claim_wheel`]s its bounds.
 pub fn claim_area() -> Option<AnyElement> {
-    enabled().then(|| {
+    Some({
         canvas(
             |_, _, _| (),
             |bounds, _, window, _| {
@@ -166,9 +168,6 @@ impl Wheel {
 
     /// The listener, as an element to add last to the main window's root.
     pub fn listener(&self) -> Option<AnyElement> {
-        if !enabled() {
-            return None;
-        }
         let state = self.0.clone();
         Some(
             div()
@@ -200,10 +199,24 @@ fn intercept(
     cx: &mut gpui::App,
 ) {
     let claimed = CLAIMED.take() == Some(event.position);
+    if claimed {
+        return;
+    }
+    if event.modifiers.control || event.modifiers.platform {
+        // The interface zoom; the page doesn't scroll.
+        cx.stop_propagation();
+        let steps = state.borrow_mut().zoom.push(event.delta);
+        if steps != 0
+            && let Some(app) = crate::app::app_entity(cx)
+        {
+            app.update(cx, |app, cx| app.zoom_step(steps, window, cx));
+        }
+        return;
+    }
     let ScrollDelta::Lines(lines) = event.delta else {
         return;
     };
-    if claimed || event.modifiers.control || event.modifiers.platform {
+    if !enabled() {
         return;
     }
     cx.stop_propagation();

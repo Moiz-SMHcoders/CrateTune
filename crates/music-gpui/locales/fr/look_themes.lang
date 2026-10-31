@@ -1,0 +1,62 @@
+# Theme files, window translucency, the music-reactive look, UI zoom and the
+# app icon (fr).
+
+# ---- Theme files (Customize theme)
+themes.files = Fichiers de thème
+themes.files_note = Les thèmes du dossier des thèmes : modifiez-en un dans un éditeur de texte et enregistrez-le pour voir le changement aussitôt.
+themes.open_folder = Ouvrir le dossier des thèmes
+themes.export_file = Exporter le thème actuel en fichier
+themes.export_name = Mon thème
+themes.toast.exported = Enregistré sous {file} dans le dossier des thèmes.
+themes.invalid = {file} a été ignoré : {reason}
+themes.low_contrast = {name} : une partie du texte manque de contraste ({ratio}:1) et peut être difficile à lire.
+themes.empty = Aucun fichier de thème pour l’instant. Exportez le thème actuel ou ouvrez le dossier pour en ajouter un.
+# ---- Reasons a theme file was left out
+themes.error.read = lecture impossible ({error})
+themes.error.too_large = le fichier dépasse 256 Ko
+themes.error.syntax = ligne {line} : {message}
+themes.error.choice = ligne {line} : {key} = « {value} » ne fait pas partie de {expected}
+themes.error.range = ligne {line} : {key} doit être compris entre 0 et 1
+themes.error.unknown_color = ligne {line} : aucune couleur ne s’appelle « {key} »
+themes.error.bad_color = ligne {line} : {key} = « {value} » n’est pas une couleur (#RGB, #RRGGBB ou #RRGGBBAA)
+
+# ---- Window translucency (Appearance → Window)
+window.material.off = Opaque
+window.material.blur = Flou
+window.material.transparent = Transparent
+window.material.mica = Mica
+window.material.mica_alt = Mica Alt
+settings.window.material = Arrière-plan de la fenêtre
+settings.window.material_note = Le bureau transparaît dans toute la fenêtre. Le texte reste lisible : l’opacité est relevée là où il le faut.
+settings.window.opacity = Opacité
+settings.window.opacity_value = {percent} %
+settings.window.opacity_raised = Relevée à {percent} % pour que le texte reste lisible sur un bureau clair.
+settings.window.note_macos = Flou utilise le flou de fenêtre de macOS. Les menus, dialogues et l’écran En cours de lecture restent opaques.
+settings.window.note_windows = Flou correspond à l’acrylique. Mica et Mica Alt demandent Windows 11 (22H2 ou plus récent).
+settings.window.note_linux = Demande un gestionnaire de fenêtres composite. Flou demande KDE Plasma sous Wayland ; ailleurs il s’affiche comme Transparent.
+settings.window.cpu_note = C’est le système qui dessine le flou : aucun CPU supplémentaire pour l’app, et rien n’est redessiné au repos.
+
+# ---- React to the music (App-wide look)
+settings.look.react = Réagir à la musique
+settings.look.react_note = Le dégradé ou la lueur respirent avec l’énergie de la musique pendant la lecture (jusqu’à 30 images par seconde ; s’arrête en pause, fenêtre masquée ou avec mouvements réduits).
+
+# ---- UI zoom (Appearance → Text size, shortcuts)
+settings.appearance.zoom_note = Ctrl ou ⌘ avec + / − / 0, ou Ctrl / ⌘ et la molette, zooment aussi l’interface.
+zoom.toast = Zoom {percent} %
+shortcuts.action.zoom_in = Zoom avant
+shortcuts.action.zoom_out = Zoom arrière
+shortcuts.action.zoom_reset = Taille réelle
+
+# ---- App icon (Appearance → Window)
+settings.app_icon = Icône de l’app
+settings.app_icon_note = Affichée dans le Dock et le sélecteur d’apps (macOS) ou sur la fenêtre et la barre des tâches (Windows, Linux sous X11).
+settings.app_icon.linux_note = Sous Linux, elle s’applique au prochain démarrage (X11) ; les bureaux Wayland affichent l’icône installée.
+settings.app_icon.choose = Choisir une image…
+app_icon.custom = Votre image
+app_icon.default = Minuit
+app_icon.light = Papier
+app_icon.sunset = Couchant
+app_icon.mint = Menthe
+app_icon.mono = Mono
+app_icon.error = Cette image ne peut pas servir d’icône : {error}
+app_icon.error.not_png = choisissez une image PNG, JPEG ou WebP

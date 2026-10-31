@@ -309,6 +309,27 @@ pub const ACTIONS: &[ShortcutAction] = &[
     shortcut!("minimize", View, "menu.minimize", Minimize, "secondary-m"),
     shortcut!("zoom", View, "menu.zoom", Zoom, ""),
     shortcut!(
+        "zoom_in",
+        View,
+        "shortcuts.action.zoom_in",
+        ZoomIn,
+        "secondary-="
+    ),
+    shortcut!(
+        "zoom_out",
+        View,
+        "shortcuts.action.zoom_out",
+        ZoomOut,
+        "secondary--"
+    ),
+    shortcut!(
+        "zoom_reset",
+        View,
+        "shortcuts.action.zoom_reset",
+        ZoomReset,
+        "secondary-0"
+    ),
+    shortcut!(
         "open_settings",
         App,
         "menu.settings",
@@ -415,6 +436,16 @@ pub fn keymap(overrides: &Overrides, os: Os) -> Vec<Entry> {
                     combo,
                     target: Target::Action(action),
                     context: Some(INPUT_CONTEXT),
+                });
+            }
+        }
+        if action.id == "zoom_in" && action.binding(overrides, os) == action.default_combo(os) {
+            // ⌘+ / Ctrl++ as well (Shift and the = key on most layouts), as browsers do.
+            if let Some(plus) = Combo::parse("secondary-+", os) {
+                out.push(Entry {
+                    combo: plus,
+                    target: Target::Action(action),
+                    context: None,
                 });
             }
         }

@@ -330,13 +330,10 @@ fn theme(panel: &mut SettingsPanel, cx: &mut Context<SettingsPanel>) -> AnyEleme
     let (border, ring) = (cx.theme().border, cx.theme().ring);
     let themes = h_flex().gap_3().children(ThemeChoice::ALL.map(|choice| {
         let selected = current == choice;
-        let (surface, raised, dot) = crate::theme::preview(&crate::theme::Look {
+        let (surface, raised, dot) = crate::theme::preview(&crate::theme::Look::plain(
             choice,
-            font_scale: 1.0,
-            custom: panel.settings.custom_theme.clone(),
-            art: None,
-            art_tint: 0.,
-        });
+            panel.settings.custom_theme.clone(),
+        ));
         v_flex()
             .id(SharedString::from(format!("onboarding-theme-{choice:?}")))
             .w(px(150.))

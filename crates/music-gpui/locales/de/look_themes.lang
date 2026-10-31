@@ -1,0 +1,62 @@
+# Theme files, window translucency, the music-reactive look, UI zoom and the
+# app icon (de).
+
+# ---- Theme files (Customize theme)
+themes.files = Theme-Dateien
+themes.files_note = Themes aus dem Theme-Ordner: Bearbeite eines in einem Texteditor und speichere es, um die Änderung sofort zu sehen.
+themes.open_folder = Theme-Ordner öffnen
+themes.export_file = Aktuelles Theme als Datei exportieren
+themes.export_name = Mein Theme
+themes.toast.exported = Als {file} im Theme-Ordner gespeichert.
+themes.invalid = {file} wurde ausgelassen: {reason}
+themes.low_contrast = {name}: Etwas Text hat zu wenig Kontrast ({ratio}:1) und ist evtl. schwer lesbar.
+themes.empty = Noch keine Theme-Dateien. Exportiere das aktuelle Theme oder öffne den Ordner, um eines hinzuzufügen.
+# ---- Reasons a theme file was left out
+themes.error.read = konnte nicht gelesen werden ({error})
+themes.error.too_large = die Datei ist größer als 256 KB
+themes.error.syntax = Zeile {line}: {message}
+themes.error.choice = Zeile {line}: {key} = „{value}“ ist keiner der Werte {expected}
+themes.error.range = Zeile {line}: {key} muss zwischen 0 und 1 liegen
+themes.error.unknown_color = Zeile {line}: Es gibt keine Farbe namens „{key}“
+themes.error.bad_color = Zeile {line}: {key} = „{value}“ ist keine Farbe (#RGB, #RRGGBB oder #RRGGBBAA)
+
+# ---- Window translucency (Appearance → Window)
+window.material.off = Deckend
+window.material.blur = Unscharf
+window.material.transparent = Durchsichtig
+window.material.mica = Mica
+window.material.mica_alt = Mica Alt
+settings.window.material = Fensterhintergrund
+settings.window.material_note = Der Schreibtisch scheint durch das ganze Fenster. Text bleibt lesbar: Die Deckkraft wird bei Bedarf erhöht.
+settings.window.opacity = Deckkraft
+settings.window.opacity_value = {percent} %
+settings.window.opacity_raised = Auf {percent} % erhöht, damit Text auf einem hellen Schreibtisch lesbar bleibt.
+settings.window.note_macos = „Unscharf“ nutzt die Fensterunschärfe von macOS. Menüs, Dialoge und „Läuft gerade“ bleiben deckend.
+settings.window.note_windows = „Unscharf“ ist Acryl. Mica und Mica Alt brauchen Windows 11 (22H2 oder neuer).
+settings.window.note_linux = Braucht einen Compositing-Fenstermanager. „Unscharf“ braucht KDE Plasma unter Wayland; sonst wirkt es wie „Durchsichtig“.
+settings.window.cpu_note = Das System zeichnet die Unschärfe, also kostet sie keine zusätzliche CPU der App, und im Leerlauf wird nichts neu gezeichnet.
+
+# ---- React to the music (App-wide look)
+settings.look.react = Auf die Musik reagieren
+settings.look.react_note = Verlauf oder Schimmer atmen beim Abspielen mit der Energie der Musik (bis zu 30 Bilder pro Sekunde; stoppt bei Pause, verstecktem Fenster oder reduzierter Bewegung).
+
+# ---- UI zoom (Appearance → Text size, shortcuts)
+settings.appearance.zoom_note = Strg oder ⌘ mit + / − / 0 oder Strg / ⌘ und das Mausrad zoomen auch die Oberfläche.
+zoom.toast = Zoom {percent} %
+shortcuts.action.zoom_in = Vergrößern
+shortcuts.action.zoom_out = Verkleinern
+shortcuts.action.zoom_reset = Originalgröße
+
+# ---- App icon (Appearance → Window)
+settings.app_icon = App-Symbol
+settings.app_icon_note = Wird im Dock und im App-Umschalter (macOS) oder am Fenster und in der Taskleiste (Windows, Linux unter X11) gezeigt.
+settings.app_icon.linux_note = Unter Linux gilt es ab dem nächsten Start (X11); Wayland-Desktops zeigen das installierte Symbol.
+settings.app_icon.choose = Bild auswählen …
+app_icon.custom = Dein Bild
+app_icon.default = Mitternacht
+app_icon.light = Papier
+app_icon.sunset = Abendrot
+app_icon.mint = Minze
+app_icon.mono = Mono
+app_icon.error = Dieses Bild kann nicht als Symbol genutzt werden: {error}
+app_icon.error.not_png = wähle ein PNG-, JPEG- oder WebP-Bild

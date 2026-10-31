@@ -728,6 +728,8 @@ impl MusicApp {
             SettingsEvent::Appearance => {
                 self.apply_theme(cx);
                 self.apply_artwork_budget(cx);
+                // The window background and app icon follow on the next render.
+                cx.notify();
             }
             SettingsEvent::Language => self.apply_language(window, cx),
             SettingsEvent::PlaybackModes => {
@@ -987,6 +989,7 @@ impl Render for MusicApp {
         let covered = reveal >= 1.;
         self.sync_window_background(window, cx);
         let translucent = self.translucent_sidebar(cx);
+        let see_through = self.window_see_through(cx).filter(|_| !covered);
         let mut root = div()
             .id("music-app")
             .key_context("MusicApp")
@@ -995,8 +998,9 @@ impl Render for MusicApp {
             .size_full()
             // With the translucent sidebar the window itself is see-through
             // (blurred); everything but the sidebar paints its own background.
+            // A see-through window paints its background at the readable opacity.
             .when(!translucent || covered, |this| {
-                this.bg(cx.theme().background)
+                this.bg(cx.theme().background.opacity(see_through.unwrap_or(1.)))
             })
             .text_color(cx.theme().foreground)
             .on_mouse_down(
