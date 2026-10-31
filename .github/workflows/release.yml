@@ -149,9 +149,11 @@ jobs:
       - name: Flatpak tooling
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends flatpak
+          sudo apt-get install -y --no-install-recommends flatpak flatpak-builder
           flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-          flatpak install --user -y --noninteractive flathub org.flatpak.Builder
+          # The runtime the manifest names, and Flathub's linter (org.flatpak.Builder).
+          flatpak install --user -y --noninteractive flathub \
+            org.freedesktop.Platform//25.08 org.freedesktop.Sdk//25.08 org.flatpak.Builder
       - name: Build
         run: |
           source scripts/lib/app-env.sh
@@ -165,8 +167,7 @@ jobs:
             --out target/packages --flatpak-tarball "$TARBALL"
           cd target/packages/flatpak
           MANIFEST="$(ls io.github.*.yml)"
-          flatpak run --command=flatpak-builder org.flatpak.Builder --user --install-deps-from=flathub \
-            --force-clean --disable-rofiles-fuse --repo=repo build "$MANIFEST"
+          flatpak-builder --user --force-clean --disable-rofiles-fuse --repo=repo build "$MANIFEST"
           flatpak build-bundle repo "$GITHUB_WORKSPACE/target/$APP_ID-$APP_VERSION-x86_64.flatpak" "${MANIFEST%.yml}"
           echo "FLATPAK_MANIFEST=$PWD/$MANIFEST" >> "$GITHUB_ENV"
       - name: Lint (flatpak-builder-lint)
