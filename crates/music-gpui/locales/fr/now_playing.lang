@@ -81,3 +81,8 @@ card.align.right = Droite
 card.size.small = Petite
 card.size.medium = Moyenne
 card.size.large = Grande
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+np.queue.next_in_queue = SUIVANT DANS LA FILE
+np.queue.next_from = À SUIVRE DEPUIS {name}
+np.queue.next_from_radio = À SUIVRE DEPUIS LA RADIO {name}

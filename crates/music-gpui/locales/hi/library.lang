@@ -253,3 +253,7 @@ storage.restore_failed = रीस्टोर विफल रहा: {error}
 storage.cache_cleared = प्ले कैश साफ़ हो गया
 storage.clearing_search = खोज का इतिहास साफ़ करना
 storage.search_cleared = खोज का इतिहास साफ़ हो गया
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+selection.tooltip.select_all = इस सूची के सभी गाने चुनें
+selection.tooltip.clear = चयन हटाएँ (Esc)

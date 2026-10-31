@@ -142,3 +142,6 @@ settings.cast.streaming = ストリーミング中
 settings.cast.direct = YouTube のオーディオをデバイスに直接取得させる
 settings.cast.direct_desc = オフ：このアプリがデバイスにストリーミングします（すべての曲で動作）。
 settings.cast.note = キャストすると、同じネットワーク上の Chromecast、Google TV、Nest スピーカー（Google の Default Media Receiver）でキューを再生します。プレーヤーバーのキャストボタンでデバイスを選ぶと、再生、一時停止、シーク、スキップ、音量でデバイスを操作でき、「キャストを停止」でこのコンピュータでの再生に戻ります。YouTube のオーディオとローカルファイルはこのコンピュータからデバイスにストリーミングされます（アプリは開いたままにしてください）。デバイスとこのコンピュータは同じネットワークに接続されている必要があります。変更は次の曲から適用されます。
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.together.approve_suggestions_desc = ゲストの曲は、承認または拒否するまで「一緒に聴く」ページで待機します。

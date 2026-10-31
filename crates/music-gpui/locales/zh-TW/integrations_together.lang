@@ -122,3 +122,22 @@ together.guest.suggest_hint = 在任一歌曲上使用「下一首播放」或�
 together.guest.no_suggestions = 主持人不接受推薦。
 together.guest.clock = 時鐘偏差 {offset} 毫秒 · 往返 {rtt} 毫秒
 together.activity = 活動
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+together.log.suggestion_waiting = {name} 推薦了「{title}」：請在「一起聽」頁面核准
+together.log.suggestion_approved = 已加入 {name} 推薦的「{title}」
+together.log.suggestion_rejected = 已拒絕 {name} 推薦的「{title}」
+together.toast.suggestion_approved = 主持人已加入「{title}」
+together.toast.suggestion_rejected = 主持人拒絕了「{title}」
+together.room.approve_suggestions = 推薦的歌曲需要我核准
+together.suggestions.hint = 核准的歌曲會依來賓的要求加入你的佇列（下一首或末尾）。
+together.suggestions.from = {artists} · 來自 {name}
+together.suggestions.approve = 核准
+together.suggestions.reject = 拒絕
+together.suggestions.yours = 你的推薦
+together.suggestions.sent = 已傳送
+together.suggestions.pending = 等待主持人
+together.suggestions.approved = 已加入
+together.suggestions.rejected = 已拒絕
+together.suggestions.rejected_because = 已拒絕：{reason}
+together.suggestions.title.other = {count} 則推薦待處理

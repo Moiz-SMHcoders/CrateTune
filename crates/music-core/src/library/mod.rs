@@ -118,6 +118,17 @@ pub struct SavedQueue {
     pub shuffle_order: Option<Vec<usize>>,
     /// The UI's repeat mode, opaque to the core (e.g. `"off"`, `"all"`, `"one"`).
     pub repeat_mode: Option<String>,
+    /// Indices into `tracks` of the songs you queued yourself ("Play next" / "Add to
+    /// queue"), which play before the rest. Absent in queues saved by older versions
+    /// (everything is then the context); older versions ignore it.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub user_queued: Vec<usize>,
+    /// Name of what the rest of the queue comes from ("Next from …"), opaque to the core.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub context_name: Option<String>,
+    /// Whether that is a radio / autoplay mix.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub context_radio: bool,
 }
 
 impl SavedQueue {
@@ -418,11 +429,46 @@ mod tests {
         assert_eq!(loaded, queue);
         assert_eq!(loaded.position(), Duration::from_millis(12_345));
 
+        // The two queue parts and the context round-trip too.
+        queue.user_queued = vec![1];
+        queue.context_name = Some("Album".into());
+        queue.context_radio = true;
+        lib.save_queue(&queue).unwrap();
+        assert_eq!(lib.load_queue().unwrap().unwrap(), queue);
+
         lib.save_queue(&SavedQueue::new(vec![], 5, Duration::ZERO))
             .unwrap();
         assert_eq!(lib.load_queue().unwrap().unwrap().index, 0);
         lib.clear_queue().unwrap();
         assert_eq!(lib.load_queue().unwrap(), None);
+    }
+
+    /// A queue saved before `user_queued` / `context_*` existed loads with everything as
+    /// context; a new one stays readable for older versions (extra fields only).
+    #[test]
+    fn saved_queue_is_backward_compatible() {
+        let lib = Library::open_in_memory().unwrap();
+        lib.set_value(
+            QUEUE_KEY,
+            r#"{"tracks":[{"video_id":"a","title":"A"}],"index":0,"position_ms":5,"shuffle_order":null,"repeat_mode":"all"}"#,
+        )
+        .unwrap();
+        let old = lib.load_queue().unwrap().unwrap();
+        assert!(old.user_queued.is_empty() && old.context_name.is_none() && !old.context_radio);
+        assert_eq!(old.repeat_mode.as_deref(), Some("all"));
+        // Nothing new is written for a queue without the new data.
+        let json = serde_json::to_string(&old).unwrap();
+        assert!(
+            !json.contains("user_queued") && !json.contains("context_"),
+            "{json}"
+        );
+        // The new fields are plain additions an older reader skips.
+        let mut new = old.clone();
+        new.user_queued = vec![0];
+        new.context_name = Some("Mix".into());
+        let json = serde_json::to_value(&new).unwrap();
+        assert_eq!(json["user_queued"], serde_json::json!([0]));
+        assert_eq!(json["tracks"][0]["video_id"], "a");
     }
 
     #[test]

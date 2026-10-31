@@ -123,3 +123,20 @@ login.instructions = Masuk dengan akun Google Anda. Jendela ini tertutup setelah
 login.webview_failed = Tampilan web tidak dapat dibuat ({error}). Gunakan “Tempel cookie” sebagai gantinya.
 login.checking = Sudah masuk — memeriksa akun…
 login.webview2_missing = Masuk dengan Google memerlukan Microsoft Edge WebView2 Runtime, yang belum terpasang. Pasang dari microsoft.com/edge/webview2, atau gunakan “Tempel cookie”.
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.about.logs = Log
+settings.about.logs.note = Yang dilaporkan aplikasi belakangan ini, terbaru di atas. Cookie, token, kunci, dan kata sandi dihapus sebelum apa pun disimpan. Pelacakan rinci memerlukan MUSIC_TRACE=1 saat dijalankan.
+settings.about.logs.errors = Galat
+settings.about.logs.warnings = Peringatan
+settings.about.logs.info = Info
+settings.about.logs.trace = Semua
+settings.about.logs.empty = Belum ada yang dicatat di tingkat ini.
+settings.about.logs.copy = Salin
+settings.about.logs.copied = Log disalin ke papan klip
+settings.about.logs.save = Simpan log…
+settings.about.logs.open_folder = Buka folder log
+settings.about.logs.saved = Log disimpan ke {path}
+settings.about.logs.save_failed = Tidak dapat menyimpan log: {error}
+settings.about.logs.file = Tulis file log
+settings.about.logs.file_desc = Juga menyimpan log di folder log (hingga 2 MB: satu file saat ini dan satu yang lebih lama).

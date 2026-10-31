@@ -81,3 +81,8 @@ card.align.right = Sağa
 card.size.small = Küçük
 card.size.medium = Orta
 card.size.large = Büyük
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+np.queue.next_in_queue = SIRADA SONRAKİ
+np.queue.next_from = SIRADA {name} İÇİNDEN
+np.queue.next_from_radio = SIRADA {name} RADYOSUNDAN

@@ -54,6 +54,7 @@ mod karaoke;
 mod library_script;
 mod login_webview;
 mod logo;
+mod logs;
 mod look_script;
 mod look_state;
 mod lyrics;
@@ -74,6 +75,7 @@ mod playback;
 mod playlist_cover;
 mod playlist_ops;
 mod queue;
+mod queue_tabs;
 mod radio;
 mod recognize;
 mod release_script;
@@ -82,6 +84,7 @@ mod script;
 mod search_box;
 mod search_history;
 mod secrets;
+mod selection;
 mod services;
 mod session_keeper;
 mod settings;
@@ -180,6 +183,8 @@ fn main() {
             // Only the UI language and the window frame are needed before the window
             // exists; the settings panel loads (and owns) the full file.
             let saved = settings::file::settings_path().map(|p| Settings::load(&p).0);
+            // From here on stderr also goes to the in-app log (Settings → About → Logs).
+            logs::install(saved.as_ref().is_none_or(|s| s.logs.file));
             i18n::set_locale(
                 saved
                     .as_ref()

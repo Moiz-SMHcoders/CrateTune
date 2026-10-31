@@ -55,6 +55,139 @@ pub(crate) fn list() -> Vec<OutputDevice> {
         .collect()
 }
 
+// ---- a tidy list for the picker ----------------------------------------------------------
+//
+// ALSA registers dozens of generic PCMs in alsa.conf whatever hardware is present (rate
+// converters, plugin wrappers, per-card surround / S/PDIF variants), and cpal's hint
+// enumeration lists every one; its physical-device probe then adds each card again as
+// raw `hw:` / `plughw:`. Idea and list from Zuno (Apache-2.0, `src-tauri/src/audio.rs`,
+// `is_alsa_plugin_noise`); unlike Zuno, a card that has *only* raw entries keeps its best
+// one instead of becoming unselectable.
+
+/// ALSA PCM types that are never a sensible pick by themselves.
+const ALSA_NOISE: &[&str] = &[
+    "null",
+    "jack",
+    "oss",
+    "speex",
+    "speexrate",
+    "lavrate",
+    "samplerate",
+    "upmix",
+    "vdownmix",
+    "surround21",
+    "surround40",
+    "surround41",
+    "surround50",
+    "surround51",
+    "surround71",
+    "iec958",
+    "spdif",
+    "usbstream",
+    "dsnoop",
+    "rear",
+    "center_lfe",
+    "side",
+    "modem",
+    "phoneline",
+    "shm",
+    "tee",
+    "file",
+    "empty",
+    "rate",
+    "route",
+    "mulaw",
+    "alaw",
+    "adpcm",
+    "plug",
+    "multi",
+    "ladspa",
+    "asym",
+    "a52",
+    "dcaenc",
+    "pcm",
+];
+
+/// Per-card ALSA types, best first: the first one present for a card is kept, the rest
+/// are duplicates of it.
+const ALSA_CARD_RANK: &[&str] = &["sysdefault", "hdmi", "dmix", "front", "plughw", "hw"];
+
+/// The ALSA PCM type of a cpal id (`alsa:hw:CARD=PCH,DEV=0` → `hw`); `None` elsewhere.
+fn alsa_type(id: &str) -> Option<&str> {
+    let pcm = id.strip_prefix("alsa:")?;
+    Some(pcm.split(':').next().unwrap_or(pcm))
+}
+
+/// Names for ALSA PCMs that come without a description.
+fn alsa_friendly(pcm_type: &str) -> Option<&'static str> {
+    Some(match pcm_type {
+        "default" => "Default (ALSA)",
+        "pipewire" => "PipeWire",
+        "pulse" => "PulseAudio",
+        _ => return None,
+    })
+}
+
+/// The output devices worth offering: on Linux without ALSA's virtual and duplicate
+/// PCMs (one entry per card), everywhere without repeated ids, with friendly names, the
+/// system default first. `show_all` keeps every device (still de-duplicated by id);
+/// `keep` (the device the user picked) is never dropped.
+pub fn tidy(devices: Vec<OutputDevice>, show_all: bool, keep: Option<&str>) -> Vec<OutputDevice> {
+    let mut seen = std::collections::HashSet::new();
+    let mut out: Vec<OutputDevice> = devices
+        .into_iter()
+        .filter(|d| seen.insert(d.id.clone()))
+        .map(|mut d| {
+            if d.name.trim().is_empty() || Some(d.name.as_str()) == d.id.strip_prefix("alsa:") {
+                if let Some(name) = alsa_type(&d.id).and_then(alsa_friendly) {
+                    d.name = name.to_owned();
+                } else if d.name.trim().is_empty() {
+                    d.name = d.id.clone();
+                }
+            }
+            d
+        })
+        .collect();
+    if !show_all {
+        let kept = |d: &OutputDevice| keep == Some(d.id.as_str()) || d.is_default;
+        out.retain(|d| kept(d) || !alsa_type(&d.id).is_some_and(|t| ALSA_NOISE.contains(&t)));
+        // One entry per card: the card's entries share the description's first line.
+        let rank = |d: &OutputDevice| {
+            alsa_type(&d.id).and_then(|t| ALSA_CARD_RANK.iter().position(|r| *r == t))
+        };
+        let best: std::collections::HashMap<String, usize> =
+            out.iter().fold(Default::default(), |mut best, d| {
+                if let Some(r) = rank(d) {
+                    let e = best.entry(d.name.clone()).or_insert(r);
+                    *e = (*e).min(r);
+                }
+                best
+            });
+        out.retain(|d| match rank(d) {
+            Some(r) => kept(d) || best.get(&d.name) == Some(&r),
+            None => true,
+        });
+    }
+    // Same name twice (two identical USB headsets): tell them apart.
+    let mut counts: std::collections::HashMap<String, usize> = Default::default();
+    for d in &out {
+        *counts.entry(d.name.clone()).or_default() += 1;
+    }
+    let mut nth: std::collections::HashMap<String, usize> = Default::default();
+    for d in &mut out {
+        if counts[&d.name] > 1 {
+            let n = nth.entry(d.name.clone()).or_default();
+            *n += 1;
+            if *n > 1 {
+                d.name = format!("{} ({n})", d.name);
+            }
+        }
+    }
+    // The default first, the rest as the system lists them.
+    out.sort_by_key(|d| !d.is_default);
+    out
+}
+
 /// Finds a device by id, or failing that by name (case-insensitive).
 fn find(wanted: &str) -> Option<rodio::Device> {
     let host = rodio::cpal::default_host();
@@ -137,4 +270,134 @@ pub(crate) fn is_fatal(kind: rodio::CpalErrorKind) -> bool {
         kind,
         K::DeviceNotAvailable | K::StreamInvalidated | K::HostUnavailable
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn dev(id: &str, name: &str) -> OutputDevice {
+        OutputDevice {
+            id: id.into(),
+            name: name.into(),
+            is_default: false,
+        }
+    }
+
+    fn ids(list: &[OutputDevice]) -> Vec<&str> {
+        list.iter().map(|d| d.id.as_str()).collect()
+    }
+
+    /// What cpal lists on a typical PipeWire desktop with onboard audio + HDMI.
+    fn alsa() -> Vec<OutputDevice> {
+        let mut default = dev(
+            "alsa:default",
+            "Default ALSA Output (currently PipeWire Media Server)",
+        );
+        default.is_default = true;
+        vec![
+            dev(
+                "alsa:null",
+                "Discard all samples (playback) or generate zero samples (capture)",
+            ),
+            dev(
+                "alsa:samplerate",
+                "Rate Converter Plugin Using Samplerate Library",
+            ),
+            dev(
+                "alsa:speexrate",
+                "Rate Converter Plugin Using Speex Resampler",
+            ),
+            dev("alsa:jack", "JACK Audio Connection Kit"),
+            dev("alsa:oss", "Open Sound System"),
+            dev("alsa:pipewire", "pipewire"),
+            dev("alsa:pulse", "PulseAudio Sound Server"),
+            dev("alsa:upmix", "Plugin for channel upmix (4,6,8)"),
+            dev(
+                "alsa:vdownmix",
+                "Plugin for channel downmix (stereo) with a simple spacialization",
+            ),
+            default,
+            dev("alsa:sysdefault:CARD=PCH", "HDA Intel PCH, ALC892 Analog"),
+            dev("alsa:front:CARD=PCH,DEV=0", "HDA Intel PCH, ALC892 Analog"),
+            dev(
+                "alsa:surround21:CARD=PCH,DEV=0",
+                "HDA Intel PCH, ALC892 Analog",
+            ),
+            dev(
+                "alsa:surround51:CARD=PCH,DEV=0",
+                "HDA Intel PCH, ALC892 Analog",
+            ),
+            dev(
+                "alsa:iec958:CARD=PCH,DEV=0",
+                "HDA Intel PCH, ALC892 Digital",
+            ),
+            dev("alsa:dmix:CARD=PCH,DEV=0", "HDA Intel PCH, ALC892 Analog"),
+            dev("alsa:hdmi:CARD=HDMI,DEV=0", "HDA Intel HDMI, HDMI 0"),
+            dev("alsa:dmix:CARD=HDMI,DEV=3", "HDA Intel HDMI, HDMI 0"),
+            dev("alsa:hw:CARD=PCH,DEV=0", "HDA Intel PCH, ALC892 Analog"),
+            dev("alsa:plughw:CARD=PCH,DEV=0", "HDA Intel PCH, ALC892 Analog"),
+            dev("alsa:hw:CARD=HDMI,DEV=3", "HDA Intel HDMI, HDMI 0"),
+            // A USB DAC with no sysdefault / hdmi hint: only raw entries.
+            dev("alsa:hw:CARD=2,DEV=0", "USB Audio DAC, USB Audio"),
+            dev("alsa:plughw:CARD=2,DEV=0", "USB Audio DAC, USB Audio"),
+        ]
+    }
+
+    #[test]
+    fn alsa_noise_and_duplicates_are_dropped() {
+        let list = tidy(alsa(), false, None);
+        assert_eq!(
+            ids(&list),
+            [
+                "alsa:default",
+                "alsa:pipewire",
+                "alsa:pulse",
+                "alsa:sysdefault:CARD=PCH",
+                "alsa:hdmi:CARD=HDMI,DEV=0",
+                "alsa:plughw:CARD=2,DEV=0",
+            ]
+        );
+        assert!(list[0].is_default, "the default comes first");
+        assert_eq!(list[1].name, "PipeWire", "a friendly name for a bare PCM");
+    }
+
+    #[test]
+    fn show_all_and_the_picked_device_stay() {
+        let all = tidy(alsa(), true, None);
+        assert_eq!(all.len(), alsa().len());
+        assert_eq!(all[0].id, "alsa:default");
+        // A device picked earlier is kept even if it would be filtered.
+        let list = tidy(alsa(), false, Some("alsa:hw:CARD=PCH,DEV=0"));
+        assert!(ids(&list).contains(&"alsa:hw:CARD=PCH,DEV=0"));
+        assert!(ids(&list).contains(&"alsa:sysdefault:CARD=PCH"));
+    }
+
+    #[test]
+    fn other_systems_are_cleaned_but_not_filtered() {
+        let mut speakers = dev("coreaudio:BuiltInSpeakerDevice", "MacBook Pro Speakers");
+        speakers.is_default = true;
+        let list = tidy(
+            vec![
+                dev("coreaudio:BlackHole2ch_UID", "BlackHole 2ch"),
+                speakers.clone(),
+                speakers.clone(),
+                dev("coreaudio:A", "USB Headset"),
+                dev("coreaudio:B", "USB Headset"),
+                dev("wasapi:{x}", ""),
+            ],
+            false,
+            None,
+        );
+        assert_eq!(
+            list.iter().map(|d| d.name.as_str()).collect::<Vec<_>>(),
+            [
+                "MacBook Pro Speakers",
+                "BlackHole 2ch",
+                "USB Headset",
+                "USB Headset (2)",
+                "wasapi:{x}"
+            ]
+        );
+    }
 }

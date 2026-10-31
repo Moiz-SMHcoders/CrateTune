@@ -27,6 +27,7 @@ use super::artwork::artwork;
 use crate::app::update_app;
 use crate::icons::Lucide;
 use crate::router::Route;
+use crate::selection::{self, Click, Outcome};
 use crate::theme::AppColors;
 
 /// Where a track sits, so "Play" can use the surrounding list as the queue.
@@ -35,6 +36,8 @@ pub type ListContext = Option<(Rc<Vec<Track>>, usize)>;
 #[derive(IntoElement)]
 pub struct TrackRow {
     id: ElementId,
+    /// The list's id (the prefix): what multi-select tells lists apart by.
+    list_id: SharedString,
     group: SharedString,
     list: Rc<Vec<Track>>,
     index: usize,
@@ -45,8 +48,10 @@ pub struct TrackRow {
 impl TrackRow {
     /// Row `index` of `list`; `prefix` keeps element ids unique per page.
     pub fn new(prefix: &str, list: Rc<Vec<Track>>, index: usize) -> Self {
+        let list_id = SharedString::from(prefix.to_owned());
         Self {
-            id: ElementId::NamedInteger(SharedString::from(prefix.to_owned()), index as u64),
+            id: ElementId::NamedInteger(list_id.clone(), index as u64),
+            list_id,
             group: SharedString::from(format!("{prefix}-row-{index}")),
             list,
             index,
@@ -98,6 +103,13 @@ impl RenderOnce for TrackRow {
         let (next_track, add_track) = (track.clone(), track.clone());
         let liked = crate::store::is_liked(&track.video_id);
         let heart = super::like::like_button("like", &track, None, cx);
+        let selected = selection::is_selected(&self.list_id, self.index, &track.video_id);
+        let (list_id, hover_id, hover_list) = (
+            self.list_id.clone(),
+            self.list_id.clone(),
+            self.list.clone(),
+        );
+        let selected_bg = theme.list_active;
 
         h_flex()
             .id(self.id)
@@ -110,8 +122,27 @@ impl RenderOnce for TrackRow {
             .cursor_pointer()
             .when(self.active, |this| this.bg(accent.accent_soft))
             .hover(move |style| style.bg(hover_bg))
-            .on_click(move |_, _, cx| {
-                update_app(cx, |app, cx| app.play_list(list.clone(), index, cx));
+            .when(selected, |this| {
+                this.bg(selected_bg)
+                    .hover(move |style| style.bg(selected_bg))
+            })
+            .on_hover(move |hovered, _, _| {
+                if *hovered {
+                    selection::hover(&hover_id, &hover_list);
+                }
+            })
+            .on_click(move |event, window, cx| {
+                // ⌘ / Ctrl / Shift-click select (selection.rs); a plain click plays.
+                let click = Click::from_modifiers(&event.modifiers());
+                let had = !selection::is_empty();
+                let mut outcome = Outcome::Play;
+                selection::update(window, |s| {
+                    outcome = s.click(&list_id, &list, index, click);
+                    outcome == Outcome::Selected || had
+                });
+                if outcome == Outcome::Play {
+                    update_app(cx, |app, cx| app.play_list(list.clone(), index, cx));
+                }
             })
             .when(self.numbered, |this| {
                 this.child(

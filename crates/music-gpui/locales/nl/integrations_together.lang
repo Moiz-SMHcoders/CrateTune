@@ -127,3 +127,23 @@ together.guest.suggest_hint = Gebruik ‘Hierna afspelen’ of ‘Toevoegen aan 
 together.guest.no_suggestions = De host neemt geen suggesties aan.
 together.guest.clock = Klokverschil {offset} ms · retourtijd {rtt} ms
 together.activity = Activiteit
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+together.log.suggestion_waiting = {name} stelt ‘{title}’ voor: keur het goed op de pagina Samen luisteren
+together.log.suggestion_approved = ‘{title}’ van {name} toegevoegd
+together.log.suggestion_rejected = ‘{title}’ van {name} afgewezen
+together.toast.suggestion_approved = De host heeft ‘{title}’ toegevoegd
+together.toast.suggestion_rejected = De host heeft ‘{title}’ afgewezen
+together.room.approve_suggestions = Suggesties hebben mijn goedkeuring nodig
+together.suggestions.hint = Goedgekeurde nummers komen in je wachtrij zoals de gast vroeg (hierna of aan het eind).
+together.suggestions.from = {artists} · van {name}
+together.suggestions.approve = Goedkeuren
+together.suggestions.reject = Afwijzen
+together.suggestions.yours = Jouw suggesties
+together.suggestions.sent = Verzonden
+together.suggestions.pending = Wacht op de host
+together.suggestions.approved = Toegevoegd
+together.suggestions.rejected = Afgewezen
+together.suggestions.rejected_because = Afgewezen: {reason}
+together.suggestions.title.one = {count} suggestie wacht
+together.suggestions.title.other = {count} suggesties wachten

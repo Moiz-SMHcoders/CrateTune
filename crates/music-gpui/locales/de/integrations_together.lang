@@ -127,3 +127,23 @@ together.guest.suggest_hint = Nutze bei einem beliebigen Song „Als Nächstes a
 together.guest.no_suggestions = Der Host nimmt keine Vorschläge an.
 together.guest.clock = Uhrabweichung {offset} ms · Roundtrip {rtt} ms
 together.activity = Aktivität
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+together.log.suggestion_waiting = {name} schlägt „{title}“ vor: auf der Seite „Gemeinsam hören“ annehmen
+together.log.suggestion_approved = „{title}“ von {name} hinzugefügt
+together.log.suggestion_rejected = „{title}“ von {name} abgelehnt
+together.toast.suggestion_approved = Der Gastgeber hat „{title}“ hinzugefügt
+together.toast.suggestion_rejected = Der Gastgeber hat „{title}“ abgelehnt
+together.room.approve_suggestions = Vorschläge brauchen meine Zustimmung
+together.suggestions.hint = Angenommene Songs kommen so in deine Warteschlange, wie der Gast es wollte (als Nächstes oder ans Ende).
+together.suggestions.from = {artists} · von {name}
+together.suggestions.approve = Annehmen
+together.suggestions.reject = Ablehnen
+together.suggestions.yours = Deine Vorschläge
+together.suggestions.sent = Gesendet
+together.suggestions.pending = Wartet auf den Gastgeber
+together.suggestions.approved = Hinzugefügt
+together.suggestions.rejected = Abgelehnt
+together.suggestions.rejected_because = Abgelehnt: {reason}
+together.suggestions.title.one = {count} Vorschlag wartet
+together.suggestions.title.other = {count} Vorschläge warten

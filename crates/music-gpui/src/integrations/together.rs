@@ -15,9 +15,9 @@ use gpui_component::{Sizable as _, tag::Tag};
 use music_core::together::online::{self, RelaySource};
 use music_core::together::{
     AddTrackMode, ClientEvent, CodeError, ControlAction, GuestSync, HostOptions, JoinInfo,
-    JoinRequest, LocalPlayback, Participant, RoomSettings, RoomState, ServerEvent, TogetherClient,
-    TogetherServer, TogetherTrack, display_code, is_shareable_id, local_ip, new_id, normalize_code,
-    sync, sync::BROADCAST_INTERVAL_MS,
+    JoinRequest, LocalPlayback, Participant, RoomSettings, RoomState, ServerEvent, SuggestionState,
+    TogetherClient, TogetherServer, TogetherTrack, display_code, is_shareable_id, local_ip, new_id,
+    normalize_code, sync, sync::BROADCAST_INTERVAL_MS,
 };
 use music_core::{PlaybackState, PlaybackStatus, Track};
 
@@ -253,6 +253,49 @@ pub struct GuestSession {
     pending_seek: Option<(String, u64)>,
     /// The host asked us to take over; our server is starting.
     pub taking_over: bool,
+    /// Songs this guest suggested and what became of them, newest last.
+    pub suggestions: VecDeque<SentSuggestion>,
+}
+
+/// Suggestions a guest keeps track of.
+const SUGGESTIONS_SHOWN: usize = 12;
+
+/// A song a guest suggested.
+#[derive(Clone, Debug, PartialEq)]
+pub struct SentSuggestion {
+    pub track: TogetherTrack,
+    pub state: SentState,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum SentState {
+    /// Sent; the host hasn't said anything (hosts without approvals never do).
+    Sent,
+    /// Waiting for the host's approval.
+    Pending,
+    Approved,
+    Rejected(Option<String>),
+}
+
+impl SentState {
+    /// Applies a status from the host. Returns whether it is a decision worth a toast.
+    pub fn apply(&mut self, state: SuggestionState, reason: Option<String>) -> bool {
+        let next = match state {
+            SuggestionState::Pending => SentState::Pending,
+            SuggestionState::Approved => SentState::Approved,
+            SuggestionState::Rejected => SentState::Rejected(reason),
+        };
+        let decided = matches!(next, SentState::Approved | SentState::Rejected(_));
+        // A host that approves straight away answers "approved" for every song: no
+        // toast for those (the "suggested" toast was enough).
+        let worth = decided && *self == SentState::Pending;
+        *self = next;
+        worth
+    }
+
+    pub fn open(&self) -> bool {
+        matches!(self, SentState::Sent | SentState::Pending)
+    }
 }
 
 #[derive(Default)]
@@ -661,6 +704,16 @@ impl MusicApp {
                     }
                     notify(window, cx, line);
                 }
+                ServerEvent::SuggestionPending(suggestion) => {
+                    let line = t!(
+                        "together.log.suggestion_waiting",
+                        name = suggestion.participant.name,
+                        title = suggestion.track.title
+                    );
+                    self.integrations.together.log(line.clone());
+                    notify(window, cx, line);
+                    cx.notify();
+                }
                 ServerEvent::HostTransferred { participant, join } => {
                     let line = t!("together.log.new_host", name = participant.name);
                     self.integrations.together.log(line.clone());
@@ -723,6 +776,53 @@ impl MusicApp {
         }
         self.together_broadcast(true, cx);
         cx.notify();
+    }
+
+    /// Host: approves (queues it as the guest asked) or rejects a waiting suggestion.
+    pub fn together_decide_suggestion(
+        &mut self,
+        id: &str,
+        approved: bool,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let Role::Hosting(host) = &self.integrations.together.role else {
+            return;
+        };
+        let Some(suggestion) = host.server.decide_suggestion(id, approved) else {
+            return;
+        };
+        let (name, title) = (&suggestion.participant.name, &suggestion.track.title);
+        let line = if approved {
+            t!(
+                "together.log.suggestion_approved",
+                name = name,
+                title = title
+            )
+        } else {
+            t!(
+                "together.log.suggestion_rejected",
+                name = name,
+                title = title
+            )
+        };
+        self.integrations.together.log(line);
+        if approved {
+            let tracks = vec![suggestion.track.to_track()];
+            match suggestion.mode {
+                AddTrackMode::PlayNext => self.queue_play_next(tracks, window, cx),
+                AddTrackMode::AddToQueue => self.queue_add(tracks, window, cx),
+            }
+        }
+        cx.notify();
+    }
+
+    /// Host: the suggestions waiting for approval.
+    pub fn together_suggestions(&self) -> Vec<music_core::together::Suggestion> {
+        match &self.integrations.together.role {
+            Role::Hosting(host) => host.server.suggestions(),
+            _ => Vec::new(),
+        }
     }
 
     pub fn together_kick(&mut self, participant_id: &str, ban: bool, cx: &mut Context<Self>) {
@@ -860,6 +960,7 @@ impl MusicApp {
                             sync: GuestSync::default(),
                             pending_seek: None,
                             taking_over: false,
+                            suggestions: VecDeque::new(),
                         }));
                         notify(window, cx, t!("together.toast.joined"));
                     }
@@ -989,6 +1090,7 @@ impl MusicApp {
                     t.allow_guests_to_add_tracks = room.allow_guests_to_add_tracks;
                     t.allow_guests_to_control_playback = room.allow_guests_to_control_playback;
                     t.require_host_approval = room.require_host_approval_to_join;
+                    t.approve_suggestions = room.require_approval_for_suggestions;
                 },
                 cx,
             )
@@ -1085,11 +1187,22 @@ impl MusicApp {
             return true;
         }
         let mut sent = 0;
+        let mut records = Vec::new();
         for track in tracks.iter().filter(|t| is_shareable_id(&t.video_id)) {
             if let Some(t) = TogetherTrack::from_track(track)
-                && guest.client.request_add_track(t, mode)
+                && guest.client.request_add_track(t.clone(), mode)
             {
                 sent += 1;
+                records.push(SentSuggestion {
+                    track: t,
+                    state: SentState::Sent,
+                });
+            }
+        }
+        if let Role::Guest(guest) = &mut self.integrations.together.role {
+            guest.suggestions.extend(records);
+            while guest.suggestions.len() > SUGGESTIONS_SHOWN {
+                guest.suggestions.pop_front();
             }
         }
         notify(
@@ -1151,6 +1264,28 @@ impl MusicApp {
                     });
                 }
                 ClientEvent::RoomState(room) => latest = Some(room),
+                ClientEvent::SuggestionStatus {
+                    track_id,
+                    state,
+                    reason,
+                } => {
+                    // The oldest open suggestion of that song.
+                    if let Some(sent) = guest
+                        .suggestions
+                        .iter_mut()
+                        .find(|s| s.track.id == track_id && s.state.open())
+                    {
+                        let title = sent.track.title.clone();
+                        if sent.state.apply(state, reason.clone()) {
+                            lines.push(match state {
+                                SuggestionState::Approved => {
+                                    t!("together.toast.suggestion_approved", title = title)
+                                }
+                                _ => t!("together.toast.suggestion_rejected", title = title),
+                            });
+                        }
+                    }
+                }
                 ClientEvent::ServerError { message, code } => {
                     if code.as_deref() == Some("invalid_session")
                         || code.as_deref() == Some("banned")
@@ -1359,6 +1494,22 @@ mod tests {
 
     /// The relay can't be reached: within a few seconds the session runs on the
     /// LAN instead, and says why.
+    #[test]
+    fn a_guest_follows_its_suggestions() {
+        let mut state = SentState::Sent;
+        assert!(state.open());
+        // Waiting, then decided: worth telling the guest.
+        assert!(!state.apply(SuggestionState::Pending, None));
+        assert_eq!(state, SentState::Pending);
+        assert!(state.apply(SuggestionState::Rejected, Some("no".into())));
+        assert_eq!(state, SentState::Rejected(Some("no".into())));
+        assert!(!state.open());
+        // A host that adds songs straight away: approved without a second toast.
+        let mut state = SentState::Sent;
+        assert!(!state.apply(SuggestionState::Approved, None));
+        assert_eq!(state, SentState::Approved);
+    }
+
     #[test]
     fn falls_back_to_the_lan_when_the_relay_is_unreachable() {
         let relay = format!("ws://127.0.0.1:{}", closed_port());

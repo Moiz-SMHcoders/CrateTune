@@ -30,6 +30,12 @@ directories = "6"
 keyring = "4.2"
 # The system's preferred UI languages (already in GPUI's graph through parley).
 sys-locale = "0.3"
+# `music-core`'s and GPUI's log records into the in-app log (`logs.rs`; already in the graph).
+log = { version = "0.4", features = ["std"] }
+
+[target.'cfg(unix)'.dependencies]
+# The in-app log: stderr through a pipe (`logs.rs`; already in GPUI's graph).
+libc = "0.2"
 
 [target.'cfg(windows)'.build-dependencies]
 # Icon + version info in the .exe (`build.rs`, `packaging/windows/app.rc`); already a
@@ -61,6 +67,7 @@ windows = { version = "0.62", features = [
     "Win32_System_Com",
     "Win32_System_Console",
     "Win32_System_LibraryLoader",
+    "Win32_System_Pipes",
     "Win32_System_Threading",
     "Win32_UI_HiDpi",
     "Win32_UI_Input_KeyboardAndMouse",

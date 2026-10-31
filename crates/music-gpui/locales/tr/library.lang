@@ -254,3 +254,7 @@ storage.restore_failed = Geri yükleme başarısız: {error}
 storage.cache_cleared = Çalma önbelleği temizlendi
 storage.clearing_search = Arama geçmişini temizleme
 storage.search_cleared = Arama geçmişi temizlendi
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+selection.tooltip.select_all = Bu listedeki tüm şarkıları seç
+selection.tooltip.clear = Seçimi temizle (Esc)

@@ -142,3 +142,6 @@ settings.cast.streaming = 스트리밍 중
 settings.cast.direct = 기기가 YouTube 오디오를 직접 가져오기
 settings.cast.direct_desc = 끔: 이 앱이 기기로 스트리밍합니다(모든 노래에서 작동).
 settings.cast.note = 전송하면 같은 네트워크에 있는 Chromecast, Google TV 또는 Nest 스피커(Google Default Media Receiver)에서 대기열을 재생합니다. 플레이어 바의 전송 버튼으로 기기를 선택하면 재생, 일시정지, 탐색, 건너뛰기, 음량으로 기기를 제어할 수 있고, ‘전송 중지’를 누르면 이 컴퓨터에서 이어서 재생합니다. YouTube 오디오와 로컬 파일은 이 컴퓨터에서 기기로 스트리밍됩니다(앱을 열어 두세요). 기기와 이 컴퓨터는 같은 네트워크에 있어야 합니다. 변경 사항은 다음 노래부터 적용됩니다.
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.together.approve_suggestions_desc = 게스트의 곡은 승인하거나 거절할 때까지 함께 듣기 페이지에서 대기합니다.

@@ -220,9 +220,14 @@ impl Route {
             Some((name, arg)) => (name.trim(), Some(arg.trim())),
             None => (spec.trim(), None),
         };
+        // `album:ID`, or `album:ID|Name` to give the page its display name (as a click
+        // on a card does; the queue's "Next from …" uses it).
         let entity = |arg: Option<&str>| {
-            let id = arg.filter(|a| !a.is_empty())?.to_owned();
-            Some((id.clone(), id))
+            let arg = arg.filter(|a| !a.is_empty())?;
+            match arg.split_once('|') {
+                Some((id, name)) if !id.is_empty() => Some((id.to_owned(), name.to_owned())),
+                _ => Some((arg.to_owned(), arg.to_owned())),
+            }
         };
         Some(match name {
             "home" => Route::Home,
@@ -245,7 +250,7 @@ impl Route {
             "library-album" => entity(arg).map(|(id, name)| Route::LibraryAlbum { id, name })?,
             "local-playlist" => entity(arg).map(|(id, name)| Route::LocalPlaylist { id, name })?,
             "browse" | "artist-items" => {
-                let (id, _) = entity(arg)?;
+                let id = arg.filter(|a| !a.is_empty())?.to_owned();
                 let (id, params) = match id.split_once('|') {
                     Some((id, params)) => (id.to_owned(), Some(params.to_owned())),
                     None => (id, None),
@@ -475,6 +480,13 @@ mod tests {
     #[test]
     fn parse_routes() {
         assert_eq!(Route::parse("home"), Some(Route::Home));
+        assert_eq!(
+            Route::parse("album:MPREb_1|Random Access Memories"),
+            Some(Route::Album {
+                id: "MPREb_1".into(),
+                name: "Random Access Memories".into()
+            })
+        );
         assert_eq!(Route::parse("search:daft punk"), Some(search("daft punk")));
         assert_eq!(
             Route::parse("library:albums"),

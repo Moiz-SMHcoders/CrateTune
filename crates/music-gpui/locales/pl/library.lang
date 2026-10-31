@@ -285,3 +285,7 @@ storage.restore_failed = Przywracanie nie powiodło się: {error}
 storage.cache_cleared = Wyczyszczono pamięć podręczną odtwarzania
 storage.clearing_search = Czyszczenie historii wyszukiwania
 storage.search_cleared = Wyczyszczono historię wyszukiwania
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+selection.tooltip.select_all = Zaznacz wszystkie utwory na tej liście
+selection.tooltip.clear = Wyczyść zaznaczenie (Esc)

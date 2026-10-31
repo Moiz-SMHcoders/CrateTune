@@ -161,13 +161,27 @@ pub(super) fn render(
             .unwrap_or_else(|| id.clone())
             .into(),
     };
+    // Without ALSA's virtual / duplicate devices unless "Show all devices" is on.
     let devices: Vec<(String, String, bool)> = match &panel.prefs.devices {
-        Devices::Ready(list) => list
-            .iter()
-            .map(|d| (d.id.clone(), d.name.clone(), d.is_default))
-            .collect(),
+        Devices::Ready(list) => music_core::tidy_output_devices(
+            list.clone(),
+            a.show_all_devices,
+            a.output_device.as_deref(),
+        )
+        .into_iter()
+        .map(|d| (d.id, d.name, d.is_default))
+        .collect(),
         _ => Vec::new(),
     };
+    let hidden = match &panel.prefs.devices {
+        Devices::Ready(list) => list.len().saturating_sub(devices.len()),
+        _ => 0,
+    };
+    let show_all = Switch::new("settings-show-all-devices")
+        .checked(a.show_all_devices)
+        .on_click(
+            cx.listener(|this, checked: &bool, _, cx| this.set_show_all_devices(*checked, cx)),
+        );
     let selected_device = a.output_device.clone();
     let panel_entity = cx.entity();
     let device_menu = Button::new("settings-device")
@@ -397,7 +411,17 @@ pub(super) fn render(
                             muted,
                         )),
                 )
-                .child(note(t!("settings.playback.output_note"), cx)),
+                .child(note(t!("settings.playback.output_note"), cx))
+                .child(row_at(
+                    "playback.show_all_devices",
+                    t!("settings.playback.show_all_devices"),
+                    Some(t!("settings.playback.show_all_devices_desc")),
+                    show_all,
+                    cx,
+                ))
+                .when(hidden > 0 && !a.show_all_devices, |this| {
+                    this.child(note(tp!("settings.playback.devices_hidden", hidden), cx))
+                }),
         )
         .child(
             group_at("playback.sleep", t!("settings.playback.sleep"), cx)

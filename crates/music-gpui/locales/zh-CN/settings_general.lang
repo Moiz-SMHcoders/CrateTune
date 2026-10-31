@@ -125,3 +125,20 @@ login.instructions = 请使用你的 Google 账号登录。YouTube Music 打开�
 login.webview_failed = 无法创建网页视图（{error}）。请改用“粘贴 Cookie”。
 login.checking = 已登录——正在检查账号…
 login.webview2_missing = 使用 Google 登录需要 Microsoft Edge WebView2 Runtime，但尚未安装。请从 microsoft.com/edge/webview2 安装，或改用“粘贴 Cookie”。
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.about.logs = 日志
+settings.about.logs.note = 应用最近记录的内容，最新的在前。Cookie、令牌、密钥和密码在保存前都会被移除。详细跟踪需要在启动时设置 MUSIC_TRACE=1。
+settings.about.logs.errors = 错误
+settings.about.logs.warnings = 警告
+settings.about.logs.info = 信息
+settings.about.logs.trace = 全部
+settings.about.logs.empty = 此级别暂无日志。
+settings.about.logs.copy = 复制
+settings.about.logs.copied = 日志已复制到剪贴板
+settings.about.logs.save = 保存日志…
+settings.about.logs.open_folder = 打开日志文件夹
+settings.about.logs.saved = 日志已保存到 {path}
+settings.about.logs.save_failed = 无法保存日志：{error}
+settings.about.logs.file = 写入日志文件
+settings.about.logs.file_desc = 同时将日志保存到日志文件夹（最多 2 MB：一个当前文件和一个旧文件）。

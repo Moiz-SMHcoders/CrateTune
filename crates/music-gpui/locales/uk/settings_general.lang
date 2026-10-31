@@ -125,3 +125,20 @@ login.instructions = Увійдіть за допомогою обліковог
 login.webview_failed = Не вдалося створити вебперегляд ({error}). Скористайтеся кнопкою «Вставити cookie».
 login.checking = Вхід виконано — перевірка облікового запису…
 login.webview2_missing = Для входу через Google потрібен Microsoft Edge WebView2 Runtime, але його не встановлено. Установіть його з microsoft.com/edge/webview2 або скористайтеся кнопкою «Вставити cookie».
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.about.logs = Журнал
+settings.about.logs.note = Що застосунок повідомляв останнім часом, спершу нове. Куки, токени, ключі й паролі видаляються, перш ніж щось зберігається. Докладне трасування потребує MUSIC_TRACE=1 під час запуску.
+settings.about.logs.errors = Помилки
+settings.about.logs.warnings = Попередження
+settings.about.logs.info = Відомості
+settings.about.logs.trace = Усе
+settings.about.logs.empty = На цьому рівні поки нічого немає.
+settings.about.logs.copy = Копіювати
+settings.about.logs.copied = Журнал скопійовано в буфер обміну
+settings.about.logs.save = Зберегти журнал…
+settings.about.logs.open_folder = Відкрити теку журналу
+settings.about.logs.saved = Журнал збережено в {path}
+settings.about.logs.save_failed = Не вдалося зберегти журнал: {error}
+settings.about.logs.file = Записувати файл журналу
+settings.about.logs.file_desc = Зберігає журнал і в теці журналу (до 2 МБ: поточний файл і один старіший).

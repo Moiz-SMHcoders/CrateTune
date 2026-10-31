@@ -1,8 +1,9 @@
 //! About section: version, updates, license and attribution notices.
 
 use gpui::{
-    AnyElement, Context, FontWeight, IntoElement, ParentElement as _, SharedString, Styled as _,
-    Window, div, px,
+    AnyElement, Context, FontWeight, InteractiveElement as _, IntoElement, ParentElement as _,
+    SharedString, StatefulInteractiveElement as _, Styled as _, Window, div,
+    prelude::FluentBuilder as _, px,
 };
 use gpui_component::{
     ActiveTheme as _, Disableable as _, Sizable as _,
@@ -102,6 +103,7 @@ pub(super) fn render(
                 ),
         )
         .children(updates)
+        .child(logs_group(panel, cx))
         .child(
             group_at("about.license", t!("settings.about.license"), cx)
                 .child(note(t!("settings.about.license_notice"), cx))
@@ -158,7 +160,179 @@ fn managed_group(
         .child(note(t!("update.managed_detail", manager = name), cx))
 }
 
+/// Lines the viewer draws (the newest; Copy / Save take everything in memory).
+const LOG_LINES_SHOWN: usize = 300;
+
+/// About → Logs: the recent log lines, live, by level; copy, save, open the folder.
+fn logs_group(panel: &mut SettingsPanel, cx: &mut Context<SettingsPanel>) -> impl IntoElement {
+    use crate::logs::{self, Level};
+    let theme = cx.theme();
+    let (muted, danger, warning, border, bg) = (
+        theme.muted_foreground,
+        theme.danger,
+        theme.warning,
+        theme.border,
+        theme.background,
+    );
+    let mono = theme.mono_font_family.clone();
+    let current = panel.log_level;
+    panel.log_seen = logs::generation();
+    let lines = logs::lines(current, LOG_LINES_SHOWN);
+    let filter = |level: Level, label: &'static str| {
+        Button::new(SharedString::from(format!("about-logs-{level:?}")))
+            .xsmall()
+            .map(|b| {
+                if level == current {
+                    b.primary()
+                } else {
+                    b.ghost()
+                }
+            })
+            .label(label)
+            .on_click(cx.listener(move |this, _, _, cx| {
+                this.log_level = level;
+                cx.notify();
+            }))
+    };
+    let filters = h_flex()
+        .gap_1()
+        .flex_wrap()
+        .child(filter(Level::Error, t!("settings.about.logs.errors")))
+        .child(filter(Level::Warn, t!("settings.about.logs.warnings")))
+        .child(filter(Level::Info, t!("settings.about.logs.info")))
+        .child(filter(Level::Trace, t!("settings.about.logs.trace")));
+    let rows = lines.iter().rev().map(|line| {
+        let color = match line.level {
+            Level::Error => danger,
+            Level::Warn => warning,
+            Level::Info | Level::Trace => muted,
+        };
+        h_flex()
+            .gap_2()
+            .items_start()
+            .child(
+                div()
+                    .flex_none()
+                    .text_color(muted)
+                    .child(logs::clock(line.at_ms)),
+            )
+            .child(
+                div()
+                    .flex_none()
+                    .w(px(44.))
+                    .text_color(color)
+                    .child(line.level.tag()),
+            )
+            .child(div().flex_1().min_w_0().child(line.text.clone()))
+    });
+    let empty = lines.is_empty();
+    let view = div()
+        .id("about-logs-lines")
+        .h(px(260.))
+        .w_full()
+        .overflow_y_scroll()
+        .p_2()
+        .rounded(crate::theme::radius(6.))
+        .border_1()
+        .border_color(border)
+        .bg(bg)
+        .font_family(mono)
+        .text_xs()
+        .when(empty, |this| {
+            this.child(
+                div()
+                    .text_color(muted)
+                    .child(t!("settings.about.logs.empty")),
+            )
+        })
+        .children(rows);
+    let folder = logs::folder();
+    let file_on = panel.settings.logs.file;
+    let file_switch = Switch::new("about-logs-file")
+        .checked(file_on)
+        .on_click(cx.listener(|this, checked: &bool, _, cx| this.set_log_file(*checked, cx)));
+    let actions = h_flex()
+        .gap_1()
+        .flex_wrap()
+        .child(
+            Button::new("about-logs-copy")
+                .small()
+                .outline()
+                .label(t!("settings.about.logs.copy"))
+                .on_click(move |_, window, cx| {
+                    let text = logs::dump(current);
+                    cx.write_to_clipboard(gpui::ClipboardItem::new_string(text));
+                    crate::app::notify(window, cx, t!("settings.about.logs.copied"));
+                }),
+        )
+        .child(
+            Button::new("about-logs-save")
+                .small()
+                .outline()
+                .label(t!("settings.about.logs.save"))
+                .on_click(cx.listener(|this, _, window, cx| this.save_logs(window, cx))),
+        )
+        .child(
+            Button::new("about-logs-folder")
+                .small()
+                .ghost()
+                .label(t!("settings.about.logs.open_folder"))
+                .disabled(folder.is_none())
+                .on_click(move |_, _, cx| {
+                    if let Some(dir) = &folder {
+                        let _ = std::fs::create_dir_all(dir);
+                        cx.open_with_system(dir);
+                    }
+                }),
+        );
+    group_at("about.logs", t!("settings.about.logs"), cx)
+        .child(note(t!("settings.about.logs.note"), cx))
+        .child(filters)
+        .child(view)
+        .child(actions)
+        .child(row_at(
+            "about.logs.file",
+            t!("settings.about.logs.file"),
+            Some(t!("settings.about.logs.file_desc")),
+            file_switch,
+            cx,
+        ))
+}
+
 impl SettingsPanel {
+    /// About → Logs → "Write a log file".
+    pub fn set_log_file(&mut self, on: bool, cx: &mut Context<Self>) {
+        if self.settings.logs.file != on {
+            self.settings.logs.file = on;
+            crate::logs::set_file_enabled(on);
+            self.changed(false, cx);
+            cx.notify();
+        }
+    }
+
+    /// "Save logs…": everything in memory (redacted) to a file of the user's choice.
+    pub fn save_logs(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let name = format!("{}-log.txt", crate::identity::APP_ID);
+        let dir = dirs_home();
+        let target = cx.prompt_for_new_path(&dir, Some(&name));
+        cx.spawn_in(window, async move |_, cx| {
+            let Ok(Ok(Some(path))) = target.await else {
+                return;
+            };
+            let text = crate::logs::dump(crate::logs::Level::Trace);
+            let result = std::fs::write(&path, text);
+            cx.update(|window, cx| {
+                let message = match result {
+                    Ok(()) => t!("settings.about.logs.saved", path = path.display()),
+                    Err(e) => t!("settings.about.logs.save_failed", error = e),
+                };
+                crate::app::notify(window, cx, message);
+            })
+            .ok();
+        })
+        .detach();
+    }
+
     /// Changes the Updates switches (saved like every other setting).
     pub fn update_update_prefs(
         &mut self,
@@ -367,4 +541,11 @@ fn updates_group(
             include_pre,
             cx,
         ))
+}
+
+/// Where "Save logs…" starts: the home folder.
+fn dirs_home() -> std::path::PathBuf {
+    directories::UserDirs::new()
+        .map(|d| d.home_dir().to_owned())
+        .unwrap_or_else(std::env::temp_dir)
 }

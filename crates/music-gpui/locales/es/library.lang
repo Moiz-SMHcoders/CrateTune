@@ -254,3 +254,7 @@ storage.restore_failed = Error al restaurar: {error}
 storage.cache_cleared = Se borró la caché de reproducción
 storage.clearing_search = borrar el historial de búsqueda
 storage.search_cleared = Se borró el historial de búsqueda
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+selection.tooltip.select_all = Seleccionar todas las canciones de esta lista
+selection.tooltip.clear = Borrar la selección (Esc)

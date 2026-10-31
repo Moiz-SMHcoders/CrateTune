@@ -172,3 +172,9 @@ settings.lyrics.kanji_download = İndir ({size})
 settings.lyrics.kanji_downloading = İndiriliyor… {done} / {total}
 settings.lyrics.kanji_ready = {name} · diskte {size}.
 settings.lyrics.kanji_failed = İndirme başarısız: {error}
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.playback.show_all_devices = Tüm cihazları göster
+settings.playback.show_all_devices_desc = Sanal ve yinelenen çıkışları da listele (Linux'ta: ALSA'nın dmix, surround, hw / plughw ve benzerleri).
+settings.playback.devices_hidden.one = {count} sanal ya da yinelenen cihaz gizlendi.
+settings.playback.devices_hidden.other = {count} sanal ya da yinelenen cihaz gizlendi.

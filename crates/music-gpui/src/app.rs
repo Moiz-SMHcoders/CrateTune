@@ -112,6 +112,8 @@ pub struct MusicApp {
     /// Seconds under the pointer while the user drags the progress slider.
     pub(crate) scrub: Option<f32>,
     pub(crate) queue: Queue,
+    /// Saved queues side by side; the playing one is `queue` (`queue_tabs.rs`).
+    pub(crate) queue_tabs: crate::queue_tabs::QueueTabs,
     /// Media controls, scrobbling, Discord.
     pub(crate) services: Services,
     pub(crate) settings: Entity<SettingsPanel>,
@@ -300,7 +302,10 @@ impl MusicApp {
             loop {
                 executor.timer(POLL_INTERVAL).await;
                 if this
-                    .update_in(cx, |this, window, cx| this.poll_player(window, cx))
+                    .update_in(cx, |this, window, cx| {
+                        this.poll_player(window, cx);
+                        this.poll_log_viewer(cx);
+                    })
                     .is_err()
                 {
                     break;
@@ -341,6 +346,7 @@ impl MusicApp {
             progress,
             scrub: None,
             queue,
+            queue_tabs: Default::default(),
             services: Services::default(),
             settings,
             volume_slider,
@@ -392,6 +398,7 @@ impl MusicApp {
         this.rebuild_lyrics_service(cx);
         this.use_library_lyrics_cache(cx);
         this.restore_queue();
+        this.load_queue_tabs();
         this.load_recent_searches(cx);
         this.queue.set_shuffle(saved.playback.shuffle);
         this.ensure_page(window, cx);
@@ -518,6 +525,8 @@ impl MusicApp {
     }
 
     fn on_route_changed(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        // A song selection belongs to the page it was made on.
+        crate::selection::clear(window);
         self.ensure_page(window, cx);
         let title = self.router.route().title();
         if let Some(started) = self.trace {
@@ -636,6 +645,8 @@ impl MusicApp {
 
     pub fn toggle_queue_panel(&mut self, cx: &mut Context<Self>) {
         self.queue_open = !self.queue_open;
+        // The panel opens on the playing tab.
+        self.queue_tabs.viewed = self.queue_tabs.playing;
         cx.notify();
     }
 
@@ -647,12 +658,24 @@ impl MusicApp {
         }
     }
 
-    /// Esc (menus and popovers handle it first): close a dialog, else end a lyrics
+    /// ⌘A / Ctrl+A outside text fields: every song of the list with a selection, else
+    /// of the list under the pointer (`selection.rs`).
+    pub fn select_all_rows(&mut self, window: &mut Window, _: &mut Context<Self>) {
+        if self.np.open {
+            return;
+        }
+        crate::selection::update(window, |s| s.select_all());
+    }
+
+    /// Esc (menus and popovers handle it first): close a dialog, else drop a song
+    /// selection, else end a lyrics
     /// card selection, else leave the full screen entered from Now Playing's button
     /// (`np_fullscreen.rs`), else Now Playing, else the queue panel, else go back.
     pub fn escape(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         if window.has_active_dialog(cx) {
             window.close_dialog(cx);
+        } else if !self.np.open && crate::selection::clear(window) {
+            // Dropped a song selection (`selection.rs`).
         } else if self.onboarding.is_some() {
             self.close_onboarding(cx);
         } else if self.np.open && self.np.list.selecting {
@@ -884,6 +907,26 @@ impl MusicApp {
         }
     }
 
+    /// Settings → About shows the log: redraw it when lines came in (only then).
+    fn poll_log_viewer(&mut self, cx: &mut Context<Self>) {
+        if !matches!(
+            self.router.route(),
+            Route::Settings {
+                section: SectionId::About
+            }
+        ) || self.np.open
+        {
+            return;
+        }
+        let generation = crate::logs::generation();
+        if self.settings.read(cx).log_seen != generation {
+            self.settings.update(cx, |panel, cx| {
+                panel.log_seen = generation;
+                cx.notify();
+            });
+        }
+    }
+
     /// A visualizer is on screen: keep the spectrum tap on (see `poll_spectrum`).
     pub(crate) fn want_spectrum(&self) {
         self.spectrum_wanted.set(Some(Instant::now()));
@@ -998,6 +1041,17 @@ impl Render for MusicApp {
                 cx,
             );
             let backdrop = self.app_backdrop(cx);
+            // Songs selected in a list: their actions float above the player bar.
+            let selection_bar = self.render_selection_bar(cx).map(|bar| {
+                v_flex()
+                    .absolute()
+                    .bottom_3()
+                    .left_0()
+                    .right_0()
+                    .px_4()
+                    .items_center()
+                    .child(bar)
+            });
             let bar = self.player_bar_view(cx);
             let bar = if backdrop_live && !bar_live {
                 bar.cached(
@@ -1052,7 +1106,8 @@ impl Render for MusicApp {
                                     .size_full()
                                     .children(titlebar)
                                     .child(div().flex_1().min_h_0().w_full().child(shell)),
-                            ),
+                            )
+                            .children(selection_bar),
                     )
                     .child(bar),
             );

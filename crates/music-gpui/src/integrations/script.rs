@@ -175,6 +175,31 @@ impl MusicApp {
                 self.together_join_code(&code, window, cx);
             }
             "together-leave" => self.together_leave(cx),
+            // Guests' suggestions waiting for the host: approve / reject the oldest (or N).
+            "together-approve-suggestion" | "together-reject-suggestion" => {
+                let approve = name == "together-approve-suggestion";
+                let ix = arg.and_then(|a| a.parse::<usize>().ok()).unwrap_or(0);
+                match self.together_suggestions().get(ix).map(|s| s.id.clone()) {
+                    Some(id) => self.together_decide_suggestion(&id, approve, window, cx),
+                    None => eprintln!("music-gpui: no suggestion {ix} waiting"),
+                }
+            }
+            "together-suggestions" => {
+                let waiting: Vec<String> = self
+                    .together_suggestions()
+                    .iter()
+                    .map(|s| format!("{} from {}", s.track.title, s.participant.name))
+                    .collect();
+                let sent: Vec<String> = match &self.integrations.together.role {
+                    super::together::Role::Guest(g) => g
+                        .suggestions
+                        .iter()
+                        .map(|s| format!("{}: {:?}", s.track.title, s.state))
+                        .collect(),
+                    _ => Vec::new(),
+                };
+                eprintln!("music-gpui: together suggestions waiting={waiting:?} sent={sent:?}");
+            }
             "together-approve" | "together-deny" => {
                 let approve = name == "together-approve";
                 let pending: Vec<String> = self
@@ -212,6 +237,7 @@ impl MusicApp {
                             "add" => t.allow_guests_to_add_tracks = on,
                             "control" => t.allow_guests_to_control_playback = on,
                             "approval" => t.require_host_approval = on,
+                            "suggestions" => t.approve_suggestions = on,
                             other => eprintln!("music-gpui: unknown together setting {other:?}"),
                         },
                         cx,

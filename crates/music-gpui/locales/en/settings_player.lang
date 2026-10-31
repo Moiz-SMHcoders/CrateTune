@@ -144,6 +144,11 @@ settings.playback.device_missing = {device} (not connected)
 settings.playback.device_current_default = {device} (current default)
 settings.playback.playing_through = Playing through {device}
 settings.playback.output_note = A missing device falls back to the system default and is picked up again when it comes back.
+settings.playback.show_all_devices = Show all devices
+settings.playback.show_all_devices_desc = Also list virtual and duplicate outputs (on Linux: ALSA's dmix, surround, hw / plughw and similar).
+# Under the device menu while some are hidden; {count} is how many.
+settings.playback.devices_hidden.one = {count} virtual or duplicate device is hidden.
+settings.playback.devices_hidden.other = {count} virtual or duplicate devices are hidden.
 settings.playback.sleep = Sleep timer
 # Sleep timer button: the custom length.
 settings.playback.sleep_custom_button = {minutes} min (custom)

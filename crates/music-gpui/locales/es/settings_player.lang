@@ -173,3 +173,9 @@ settings.lyrics.kanji_download = Descargar ({size})
 settings.lyrics.kanji_downloading = Descargando… {done} de {total}
 settings.lyrics.kanji_ready = {name} · {size} en disco.
 settings.lyrics.kanji_failed = Error en la descarga: {error}
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.playback.show_all_devices = Mostrar todos los dispositivos
+settings.playback.show_all_devices_desc = Incluir también salidas virtuales y duplicadas (en Linux: dmix, surround, hw / plughw de ALSA y similares).
+settings.playback.devices_hidden.one = {count} dispositivo virtual o duplicado está oculto.
+settings.playback.devices_hidden.other = {count} dispositivos virtuales o duplicados están ocultos.

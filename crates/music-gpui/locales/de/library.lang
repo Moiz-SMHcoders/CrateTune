@@ -253,3 +253,7 @@ storage.restore_failed = Wiederherstellen fehlgeschlagen: {error}
 storage.cache_cleared = Wiedergabe-Cache geleert
 storage.clearing_search = Löschen des Suchverlaufs
 storage.search_cleared = Suchverlauf gelöscht
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+selection.tooltip.select_all = Alle Songs dieser Liste auswählen
+selection.tooltip.clear = Auswahl aufheben (Esc)

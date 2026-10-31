@@ -125,3 +125,20 @@ login.instructions = अपने Google खाते से साइन इन
 login.webview_failed = वेब व्यू नहीं बन सका ({error})। इसके बजाय “कुकी पेस्ट करें” इस्तेमाल करें।
 login.checking = साइन इन हो गया — खाता जाँचा जा रहा है…
 login.webview2_missing = Google से साइन इन करने के लिए Microsoft Edge WebView2 Runtime चाहिए, जो इंस्टॉल नहीं है। इसे microsoft.com/edge/webview2 से इंस्टॉल करें, या “कुकी पेस्ट करें” इस्तेमाल करें।
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.about.logs = लॉग
+settings.about.logs.note = ऐप ने हाल में क्या बताया, सबसे नया पहले। कुछ भी रखने से पहले कुकी, टोकन, कुंजियाँ और पासवर्ड हटा दिए जाते हैं। विस्तृत ट्रेसिंग के लिए शुरू करते समय MUSIC_TRACE=1 चाहिए।
+settings.about.logs.errors = त्रुटियाँ
+settings.about.logs.warnings = चेतावनियाँ
+settings.about.logs.info = जानकारी
+settings.about.logs.trace = सब कुछ
+settings.about.logs.empty = इस स्तर पर अभी तक कुछ लॉग नहीं हुआ।
+settings.about.logs.copy = कॉपी करें
+settings.about.logs.copied = लॉग क्लिपबोर्ड पर कॉपी किया गया
+settings.about.logs.save = लॉग सहेजें…
+settings.about.logs.open_folder = लॉग फ़ोल्डर खोलें
+settings.about.logs.saved = लॉग {path} में सहेजा गया
+settings.about.logs.save_failed = लॉग सहेजा नहीं जा सका: {error}
+settings.about.logs.file = लॉग फ़ाइल लिखें
+settings.about.logs.file_desc = लॉग को लॉग फ़ोल्डर में भी रखता है (2 MB तक: एक मौजूदा और एक पुरानी फ़ाइल)।

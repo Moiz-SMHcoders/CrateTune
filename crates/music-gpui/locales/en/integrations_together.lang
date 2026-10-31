@@ -33,6 +33,10 @@ together.log.joined = {name} joined
 together.log.left = {name} left ({reason})
 # {title}: song title.
 together.log.suggested = {name} suggested “{title}”
+# Suggestions that need the host's approval ({name}: a guest, {title}: a song).
+together.log.suggestion_waiting = {name} suggests “{title}”: approve it on the Music Together page
+together.log.suggestion_approved = Added “{title}” from {name}
+together.log.suggestion_rejected = Turned down “{title}” from {name}
 together.log.new_host = {name} is the host now
 together.log.transfer_failed = Couldn't hand the session to {name}: {reason}
 together.log.transfer_failed_guest = Couldn't hand the session to the guest: {reason}
@@ -53,6 +57,9 @@ together.toast.only_youtube_music = Only YouTube Music songs can be suggested
 together.toast.suggested_title = Suggested “{title}” to the host
 together.toast.suggested.one = Suggested {count} song to the host
 together.toast.suggested.other = Suggested {count} songs to the host
+# The guest hears what the host decided about a song it suggested.
+together.toast.suggestion_approved = The host added “{title}”
+together.toast.suggestion_rejected = The host turned down “{title}”
 together.toast.no_control = The host doesn't let guests control playback
 together.status.waiting_approval = Waiting for the host to let you in…
 together.status.let_in = The host let you in
@@ -138,6 +145,23 @@ together.hosting.copy_code_tooltip = host|port|session|key, for typing on anothe
 together.room.allow_add = Guests can add songs
 together.room.allow_control = Guests can control playback
 together.room.approve = Approve new guests
+together.room.approve_suggestions = Suggestions need my approval
+# Host: card with guests' suggestions waiting for a decision.
+together.suggestions.title.one = {count} suggestion waiting
+together.suggestions.title.other = {count} suggestions waiting
+together.suggestions.hint = Approved songs go into your queue the way the guest asked (play next or at the end).
+# {artists}: the song's artists, {name}: the guest.
+together.suggestions.from = {artists} · from {name}
+together.suggestions.approve = Approve
+together.suggestions.reject = Reject
+# Guest: the songs it suggested and their state (short).
+together.suggestions.yours = Your suggestions
+together.suggestions.sent = Sent
+together.suggestions.pending = Waiting for the host
+together.suggestions.approved = Added
+together.suggestions.rejected = Turned down
+# {reason}: why, as the host's app says it (English).
+together.suggestions.rejected_because = Turned down: {reason}
 together.guest.listening_with = Listening with {name}
 # Button: leave the session.
 together.guest.leave = Leave

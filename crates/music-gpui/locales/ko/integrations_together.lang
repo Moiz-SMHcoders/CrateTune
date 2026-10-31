@@ -122,3 +122,22 @@ together.guest.suggest_hint = 노래에서 ‘다음에 재생’ 또는 ‘대�
 together.guest.no_suggestions = 호스트가 추천을 받지 않습니다.
 together.guest.clock = 시계 오차 {offset}ms · 왕복 {rtt}ms
 together.activity = 활동
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+together.log.suggestion_waiting = {name} 님이 “{title}”을(를) 제안함: 함께 듣기 페이지에서 승인하세요
+together.log.suggestion_approved = {name} 님의 “{title}” 추가함
+together.log.suggestion_rejected = {name} 님의 “{title}” 거절함
+together.toast.suggestion_approved = 호스트가 “{title}”을(를) 추가함
+together.toast.suggestion_rejected = 호스트가 “{title}”을(를) 거절함
+together.room.approve_suggestions = 제안된 곡은 내 승인 필요
+together.suggestions.hint = 승인한 곡은 게스트가 요청한 방식(다음 재생 또는 맨 끝)대로 대기열에 들어갑니다.
+together.suggestions.from = {artists} · {name} 님
+together.suggestions.approve = 승인
+together.suggestions.reject = 거절
+together.suggestions.yours = 내 제안
+together.suggestions.sent = 보냄
+together.suggestions.pending = 호스트 대기 중
+together.suggestions.approved = 추가됨
+together.suggestions.rejected = 거절됨
+together.suggestions.rejected_because = 거절됨: {reason}
+together.suggestions.title.other = 대기 중인 제안 {count}개

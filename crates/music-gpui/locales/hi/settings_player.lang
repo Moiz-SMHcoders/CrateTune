@@ -172,3 +172,9 @@ settings.lyrics.kanji_download = डाउनलोड करें ({size})
 settings.lyrics.kanji_downloading = डाउनलोड हो रहा है… {total} में से {done}
 settings.lyrics.kanji_ready = {name} · डिस्क पर {size}।
 settings.lyrics.kanji_failed = डाउनलोड विफल रहा: {error}
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.playback.show_all_devices = सभी डिवाइस दिखाएँ
+settings.playback.show_all_devices_desc = वर्चुअल और दोहराए गए आउटपुट भी दिखाएँ (Linux पर: ALSA के dmix, surround, hw / plughw आदि)।
+settings.playback.devices_hidden.one = {count} वर्चुअल या दोहराया गया डिवाइस छिपा है।
+settings.playback.devices_hidden.other = {count} वर्चुअल या दोहराए गए डिवाइस छिपे हैं।

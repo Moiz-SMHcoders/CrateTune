@@ -326,12 +326,55 @@ impl Store {
     }
 }
 
+/// The queue as the library saves it (downloaded copies' paths left out).
+pub(crate) fn saved_queue_of(queue: &crate::queue::Queue, position: Duration) -> SavedQueue {
+    let snapshot = queue.snapshot();
+    let mut saved = SavedQueue::new(
+        snapshot
+            .tracks
+            .into_iter()
+            .map(|mut t| {
+                if !t.video_id.starts_with("local:") {
+                    t.local_path = None;
+                }
+                t
+            })
+            .collect(),
+        snapshot.index,
+        position,
+    );
+    saved.shuffle_order = snapshot.order;
+    saved.repeat_mode = Some(repeat_key(queue.repeat()).into());
+    saved.user_queued = snapshot.user;
+    if let Some(context) = snapshot.context {
+        saved.context_name = Some(context.name);
+        saved.context_radio = context.radio;
+    }
+    saved
+}
+
+/// The other way round (the repeat mode and position are the caller's).
+pub(crate) fn snapshot_of(saved: SavedQueue) -> crate::queue::Snapshot {
+    crate::queue::Snapshot {
+        tracks: saved.tracks,
+        index: saved.index,
+        order: saved.shuffle_order,
+        user: saved.user_queued,
+        context: saved.context_name.map(|name| crate::queue::QueueContext {
+            name,
+            radio: saved.context_radio,
+        }),
+    }
+}
+
 /// Order-independent fingerprint of the queue for "did it change?".
 fn queue_signature(app: &MusicApp) -> u64 {
     use std::hash::{Hash, Hasher};
     let mut h = std::collections::hash_map::DefaultHasher::new();
+    app.queue.context().map(|c| (&c.name, c.radio)).hash(&mut h);
     for item in app.queue.items() {
         item.uid.hash(&mut h);
+        item.source.hash(&mut h);
     }
     app.queue.index().hash(&mut h);
     app.queue.shuffle().hash(&mut h);
@@ -516,6 +559,48 @@ impl MusicApp {
             && self.store.prefs.skip_disliked
             && self.current_video_id() == Some(track.video_id.as_str());
         self.rate(vec![track], rating, message, window, cx);
+        if skip {
+            self.next_track(cx);
+        }
+        cx.notify();
+    }
+
+    /// Thumbs down for several songs at once (the selection bar).
+    pub fn dislike_many(
+        &mut self,
+        tracks: Vec<Track>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        if let [one] = tracks.as_slice() {
+            self.set_disliked(one.clone(), true, window, cx);
+            return;
+        }
+        if tracks.is_empty() {
+            return;
+        }
+        if self.store.library.is_none() {
+            notify(window, cx, t!("store.library_db_unavailable"));
+            return;
+        }
+        let liked: Vec<Track> = tracks
+            .iter()
+            .filter(|t| is_liked(&t.video_id))
+            .cloned()
+            .collect();
+        if !liked.is_empty() {
+            self.liked_downloads(&liked, false, window, cx);
+        }
+        for t in &tracks {
+            set_rating_flag(&t.video_id, Rating::Dislike);
+            self.store.account.yt.rated_here(&t.video_id);
+        }
+        let skip = self.store.prefs.skip_disliked
+            && self
+                .current_video_id()
+                .is_some_and(|id| tracks.iter().any(|t| t.video_id == id));
+        let message = tp!("store.toast.disliked_many", tracks.len());
+        self.rate(tracks, Rating::Dislike, message, window, cx);
         if skip {
             self.next_track(cx);
         }
@@ -1153,8 +1238,7 @@ impl MusicApp {
         }
     }
 
-    fn saved_queue(&self) -> SavedQueue {
-        let (tracks, index, order) = self.queue.snapshot();
+    pub(crate) fn saved_queue(&self) -> SavedQueue {
         let position = if self.playback.track.is_some() {
             self.clock.position(Instant::now())
         } else {
@@ -1164,22 +1248,7 @@ impl MusicApp {
                 .map(|(_, p)| *p)
                 .unwrap_or_default()
         };
-        let mut saved = SavedQueue::new(
-            tracks
-                .into_iter()
-                .map(|mut t| {
-                    if !t.video_id.starts_with("local:") {
-                        t.local_path = None;
-                    }
-                    t
-                })
-                .collect(),
-            index,
-            position,
-        );
-        saved.shuffle_order = order;
-        saved.repeat_mode = Some(repeat_key(self.queue.repeat()).into());
-        saved
+        saved_queue_of(&self.queue, position)
     }
 
     fn maybe_save_queue(&mut self, playing: bool, cx: &mut Context<Self>) {
@@ -1234,16 +1303,20 @@ impl MusicApp {
         if saved.tracks.is_empty() {
             return;
         }
+        self.load_saved_queue(saved);
+    }
+
+    /// Puts `saved` in the queue, paused: nothing loads until play is pressed, which
+    /// then continues at the saved position (launch, switching queue tabs).
+    pub(crate) fn load_saved_queue(&mut self, saved: SavedQueue) {
         let position = saved.position();
         let current = saved.tracks.get(saved.index).map(|t| t.video_id.clone());
-        self.queue
-            .restore(saved.tracks, saved.index, saved.shuffle_order);
-        if let Some(repeat) = saved.repeat_mode.as_deref().and_then(Repeat::parse) {
+        let repeat = saved.repeat_mode.as_deref().and_then(Repeat::parse);
+        self.queue.restore(snapshot_of(saved));
+        if let Some(repeat) = repeat {
             self.queue.set_repeat(repeat);
         }
-        if let Some(id) = current {
-            self.store.resume_at = Some((id, position));
-        }
+        self.store.resume_at = current.map(|id| (id, position));
     }
 
     /// Play pressed with a restored queue and nothing loaded: start it where it was.

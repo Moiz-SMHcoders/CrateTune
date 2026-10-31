@@ -78,3 +78,8 @@ card.align.right = 오른쪽
 card.size.small = 작게
 card.size.medium = 보통
 card.size.large = 크게
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+np.queue.next_in_queue = 대기열의 다음 곡
+np.queue.next_from = {name}의 다음 곡
+np.queue.next_from_radio = {name} 라디오의 다음 곡

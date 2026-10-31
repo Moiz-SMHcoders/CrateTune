@@ -808,6 +808,18 @@ pub const ENTRIES: &[Entry] = &[
         "bluetooth"
     ),
     entry!(
+        "playback.show_all_devices",
+        Playback,
+        "settings.playback.output",
+        "settings.playback.show_all_devices",
+        "settings.playback.show_all_devices_desc",
+        "alsa",
+        "dmix",
+        "virtual",
+        "hidden",
+        "devices"
+    ),
+    entry!(
         "playback.sleep",
         Playback,
         -,
@@ -1574,6 +1586,17 @@ pub const ENTRIES: &[Entry] = &[
         "approve"
     ),
     entry!(
+        "together.approve_suggestions",
+        Together,
+        "settings.together.hosting",
+        "together.room.approve_suggestions",
+        "settings.together.approve_suggestions_desc",
+        "together",
+        "guests",
+        "suggestions",
+        "approve"
+    ),
+    entry!(
         "together.relay",
         Together,
         "settings.together.across_networks",
@@ -1795,6 +1818,30 @@ pub const ENTRIES: &[Entry] = &[
         "tour",
         "intro",
         "guide"
+    ),
+    entry!(
+        "about.logs",
+        About,
+        -,
+        "settings.about.logs",
+        "settings.about.logs.note",
+        "log",
+        "debug",
+        "errors",
+        "warnings",
+        "diagnostics",
+        "trace"
+    ),
+    entry!(
+        "about.logs.file",
+        About,
+        "settings.about.logs",
+        "settings.about.logs.file",
+        "settings.about.logs.file_desc",
+        "log",
+        "file",
+        "folder",
+        "debug"
     ),
     entry!(
         "about.license",

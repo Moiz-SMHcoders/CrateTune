@@ -127,3 +127,23 @@ together.guest.suggest_hint = किसी गाने को होस्ट �
 together.guest.no_suggestions = होस्ट सुझाव नहीं ले रहे।
 together.guest.clock = क्लॉक ऑफ़सेट {offset} ms · राउंड ट्रिप {rtt} ms
 together.activity = गतिविधि
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+together.log.suggestion_waiting = {name} ने “{title}” सुझाया: इसे “साथ में सुनें” पेज पर मंज़ूर करें
+together.log.suggestion_approved = {name} का “{title}” जोड़ा गया
+together.log.suggestion_rejected = {name} का “{title}” अस्वीकार किया गया
+together.toast.suggestion_approved = होस्ट ने “{title}” जोड़ा
+together.toast.suggestion_rejected = होस्ट ने “{title}” अस्वीकार किया
+together.room.approve_suggestions = सुझावों को मेरी मंज़ूरी चाहिए
+together.suggestions.hint = मंज़ूर किए गए गाने आपकी कतार में वैसे जुड़ते हैं जैसे मेहमान ने कहा (अगला या आख़िर में)।
+together.suggestions.from = {artists} · {name} से
+together.suggestions.approve = मंज़ूर करें
+together.suggestions.reject = अस्वीकार करें
+together.suggestions.yours = आपके सुझाव
+together.suggestions.sent = भेजा गया
+together.suggestions.pending = होस्ट की प्रतीक्षा
+together.suggestions.approved = जोड़ा गया
+together.suggestions.rejected = अस्वीकृत
+together.suggestions.rejected_because = अस्वीकृत: {reason}
+together.suggestions.title.one = {count} सुझाव प्रतीक्षा में
+together.suggestions.title.other = {count} सुझाव प्रतीक्षा में

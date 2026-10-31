@@ -3,6 +3,8 @@ settings.section.shortcuts = Keyboard shortcuts
 shortcuts.menu.help = Help
 shortcuts.action.show = Keyboard Shortcuts
 shortcuts.action.escape = Close / go back
+# Selects every song of the list under the pointer (not in text fields).
+shortcuts.action.select_all_rows = Select all songs in a list
 shortcuts.group.playback = Playback
 shortcuts.group.navigation = Navigation
 shortcuts.group.view = Windows & view

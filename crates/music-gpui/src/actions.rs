@@ -40,6 +40,7 @@ gpui::actions!(
         GoHistory,
         RecognizeSong,
         Escape,
+        SelectAllRows,
         About,
         Hide,
         HideOthers,
@@ -109,6 +110,7 @@ pub fn init(overrides: &crate::shortcuts::Overrides, cx: &mut App) {
         app.recognize_song(window, cx)
     });
     on::<Escape>(cx, |app, window, cx| app.escape(window, cx));
+    on::<SelectAllRows>(cx, |app, window, cx| app.select_all_rows(window, cx));
     on::<Minimize>(cx, |_, window, _| window.minimize_window());
     on::<Zoom>(cx, |_, window, _| window.zoom_window());
     cx.on_action(|_: &Hide, cx| cx.hide());

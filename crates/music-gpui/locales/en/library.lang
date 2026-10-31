@@ -116,6 +116,9 @@ library.playlist.empty_detail = Use “Add to playlist…” in a song's menu to
 
 # ---- Song lists: select mode
 song_list.select_none = Select none
+# The floating bar for songs selected with ⌘ / Ctrl / Shift-click: tooltips.
+selection.tooltip.select_all = Select every song in this list
+selection.tooltip.clear = Clear the selection (Esc)
 
 # ---- Local files page
 # Confirm button of the folder picker (keep short).

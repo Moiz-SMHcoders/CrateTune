@@ -137,3 +137,25 @@ together.guest.suggest_hint = Użyj „Odtwórz jako następny” lub „Dodaj d
 together.guest.no_suggestions = Host nie przyjmuje propozycji.
 together.guest.clock = Przesunięcie zegara {offset} ms · opóźnienie w obie strony {rtt} ms
 together.activity = Aktywność
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+together.log.suggestion_waiting = {name} proponuje „{title}”: zatwierdź na stronie „Słuchaj razem”
+together.log.suggestion_approved = Dodano „{title}” od: {name}
+together.log.suggestion_rejected = Odrzucono „{title}” od: {name}
+together.toast.suggestion_approved = Gospodarz dodał „{title}”
+together.toast.suggestion_rejected = Gospodarz odrzucił „{title}”
+together.room.approve_suggestions = Propozycje wymagają mojej zgody
+together.suggestions.hint = Zatwierdzone utwory trafiają do kolejki tak, jak prosił gość (jako następne lub na koniec).
+together.suggestions.from = {artists} · od: {name}
+together.suggestions.approve = Zatwierdź
+together.suggestions.reject = Odrzuć
+together.suggestions.yours = Twoje propozycje
+together.suggestions.sent = Wysłano
+together.suggestions.pending = Czeka na gospodarza
+together.suggestions.approved = Dodano
+together.suggestions.rejected = Odrzucono
+together.suggestions.rejected_because = Odrzucono: {reason}
+together.suggestions.title.one = {count} propozycja czeka
+together.suggestions.title.few = {count} propozycje czekają
+together.suggestions.title.many = {count} propozycji czeka
+together.suggestions.title.other = {count} propozycji czeka

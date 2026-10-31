@@ -190,6 +190,19 @@ the "Jump back in" card. Details: [README: Several accounts, browser sign-in, Yo
 history](../README.md#several-accounts-browser-sign-in-youtube-history). · Size: small ·
 Priority: high
 
+**U18. Queue / selection round (`feat/queue-ux`) on real systems**
+Checked with unit tests, scripts and offscreen screenshots on macOS only: (1) the in-app
+log's stderr capture on Windows (`SetStdHandle` to a pipe; release builds without a
+console, and with `MUSIC_CONSOLE=1`) and on Linux; (2) the ALSA device filter against real
+Linux machines (PipeWire, PulseAudio-only, plain ALSA, USB DACs, HDMI) and the device list
+on Windows (WASAPI names); (3) "Suggestions need my approval" with an ArchiveTune guest or
+host (the new `suggestion_status` message must be skipped there, as our decoder does);
+(4) ⌘-click / Shift-click and ⌘A with a real mouse and keyboard on each system (scripts
+dispatch synthetic events), Ctrl-click on Windows / Linux; (5) continuing a queue tab while
+casting (the seek to the saved position isn't sent to a Cast session). Details: [README:
+Queue round](../README.md#queue-round-queue-parts-and-tabs-multi-select-devices-logs-suggestions).
+· Size: small · Priority: medium
+
 ## 3. Platform & distribution
 
 **P1. Builds are unsigned**
@@ -353,6 +366,13 @@ Turn one-off Music Together rooms into friend groups (invite codes, a recovery p
 the identity) and add a feed of what friends are listening to, like Spotify's friend
 activity. Builds on the device keys and iroh links. Idea from tono.fm. · Size: large ·
 Priority: low
+
+**M10. Full UI tabs (separate page stacks per tab)**
+Zuno gives every tab its own player *and* its own page stack (back / forward, scroll). Only
+the queue part was built (queue tabs, `queue_tabs.rs`): the router keeps one history and
+one cached page per route, pages talk to the one app entity, and a second page stack would
+double the cached pages (memory) for little gain while only one queue can play. Revisit if
+users ask for parallel browsing. · Size: large · Priority: low
 
 ## 5. Performance ideas
 

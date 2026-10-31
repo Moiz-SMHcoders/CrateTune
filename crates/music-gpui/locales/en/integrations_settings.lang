@@ -104,6 +104,7 @@ settings.together.port_error = Ports must be between 1024 and 65535
 settings.together.allow_add_desc = Their suggestions go into your queue.
 settings.together.allow_control_desc = Play, pause, seek and skip for everyone.
 settings.together.approval = Approve guests before they join
+settings.together.approve_suggestions_desc = Guests' songs wait on the Music Together page until you approve or reject them.
 settings.together.host_mode = Host sessions
 settings.together.host_mode_desc = Over the internet through the relay (guests on any network, with a room code), or on this network only (guests connect straight to this computer).
 settings.together.hosting_note = On the same network, guests connect straight to this computer (allow incoming connections if the firewall asks). Links and room codes lead to a random key: only people who have one can join, and you can approve each guest. Changes apply right away. “Make host” on the Listen together page hands the session to a guest.

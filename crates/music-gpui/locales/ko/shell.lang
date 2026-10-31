@@ -216,3 +216,27 @@ store.toast.playlist_renamed = “{playlist}”(으)로 이름 변경함
 store.toast.playlist_deleted = “{playlist}” 삭제함
 store.toast.removed_from_playlist.other = 재생목록에서 {count}곡 삭제함
 store.toast.playlist_refreshed.other = 재생목록 새로고침됨({count}곡)
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+queue.section.next_in_queue = 대기열의 다음 곡 · {count}
+queue.section.next_from = {name}의 다음 곡 · {count}
+queue.section.next_from_radio = {name} 라디오의 다음 곡 · {count}
+queue.clear_section = 지우기
+queue.tooltip.clear_section = 이 곡들만 제거하고 나머지는 유지
+queue.tabs.main = 기본
+queue.tabs.new_name = 대기열 {n}
+queue.tabs.new = 새 대기열 탭
+queue.tabs.tooltip_playing = 이 대기열에서 재생 중
+queue.tabs.tooltip_other = 이 대기열 보기
+queue.tabs.rename = 이름 바꾸기…
+queue.tabs.remove = 탭 제거
+queue.tabs.rename_title = 대기열 탭 이름 바꾸기
+queue.tabs.name_placeholder = 탭 이름
+queue.tabs.left_at = “{title}”의 {time}에서 멈춤
+queue.tabs.empty = 이 대기열은 비어 있습니다. 사용으로 전환한 뒤 무언가를 재생해 채우세요.
+queue.tabs.continue = 이 대기열 이어서 재생
+queue.tabs.use = 이 대기열 사용
+queue.tabs.paused = 일시 정지됨
+queue.tabs.toast_switched = “{name}”에서 재생 중
+queue.tabs.toast_guest = 함께 듣기의 게스트인 동안에는 호스트가 재생할 곡을 정합니다.
+store.toast.disliked_many.other = {count}곡에 싫어요 표시함

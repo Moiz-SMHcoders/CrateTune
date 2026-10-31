@@ -81,3 +81,8 @@ card.align.right = Rechts
 card.size.small = Klein
 card.size.medium = Middel
 card.size.large = Groot
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+np.queue.next_in_queue = VOLGENDE IN DE WACHTRIJ
+np.queue.next_from = HIERNA UIT {name}
+np.queue.next_from_radio = HIERNA UIT RADIO {name}

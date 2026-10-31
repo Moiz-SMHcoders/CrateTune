@@ -126,3 +126,20 @@ login.instructions = Entre com sua conta Google. Esta janela fecha assim que o Y
 login.webview_failed = Não foi possível criar a visualização web ({error}). Use “Colar cookie”.
 login.checking = Conectado — verificando a conta…
 login.webview2_missing = Entrar com o Google requer o Microsoft Edge WebView2 Runtime, que não está instalado. Instale-o em microsoft.com/edge/webview2 ou use “Colar cookie”.
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.about.logs = Logs
+settings.about.logs.note = O que o app registrou recentemente, do mais novo ao mais antigo. Cookies, tokens, chaves e senhas são removidos antes de qualquer coisa ser guardada. O rastreamento detalhado exige MUSIC_TRACE=1 ao iniciar.
+settings.about.logs.errors = Erros
+settings.about.logs.warnings = Avisos
+settings.about.logs.info = Info
+settings.about.logs.trace = Tudo
+settings.about.logs.empty = Ainda não há nada registrado neste nível.
+settings.about.logs.copy = Copiar
+settings.about.logs.copied = Log copiado para a área de transferência
+settings.about.logs.save = Salvar logs…
+settings.about.logs.open_folder = Abrir pasta de logs
+settings.about.logs.saved = Log salvo em {path}
+settings.about.logs.save_failed = Não foi possível salvar o log: {error}
+settings.about.logs.file = Gravar um arquivo de log
+settings.about.logs.file_desc = Mantém o log também na pasta de logs (até 2 MB: um arquivo atual e um anterior).

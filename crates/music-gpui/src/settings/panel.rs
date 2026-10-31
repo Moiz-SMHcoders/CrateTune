@@ -170,6 +170,9 @@ pub struct SettingsPanel {
     pub(super) discord_id: Entity<InputState>,
     pub(super) discord_status: DiscordStatus,
     pub(super) scrobble_errors: VecDeque<String>,
+    /// About → Logs: the most detailed level shown, and the log generation drawn.
+    pub(super) log_level: crate::logs::Level,
+    pub log_seen: u64,
     /// Content & region section (language / country pickers).
     pub(super) content: super::content::ContentState,
     /// The content country taken from the system's region on this first run: Home
@@ -367,6 +370,8 @@ impl SettingsPanel {
             discord_id,
             discord_status: DiscordStatus::Idle,
             scrobble_errors: VecDeque::new(),
+            log_level: crate::logs::Level::Info,
+            log_seen: 0,
             content,
             region_nudge,
             language,

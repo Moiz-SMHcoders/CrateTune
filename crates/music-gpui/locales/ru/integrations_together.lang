@@ -137,3 +137,25 @@ together.guest.suggest_hint = Чтобы предложить трек веду�
 together.guest.no_suggestions = Ведущий не принимает предложения.
 together.guest.clock = Смещение часов {offset} мс · задержка {rtt} мс
 together.activity = Активность
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+together.log.suggestion_waiting = {name} предлагает «{title}»: одобрите на странице «Слушать вместе»
+together.log.suggestion_approved = Добавлено «{title}» от {name}
+together.log.suggestion_rejected = Отклонено «{title}» от {name}
+together.toast.suggestion_approved = Хозяин добавил «{title}»
+together.toast.suggestion_rejected = Хозяин отклонил «{title}»
+together.room.approve_suggestions = Предложения требуют моего одобрения
+together.suggestions.hint = Одобренные треки попадают в очередь так, как просил гость (следующим или в конец).
+together.suggestions.from = {artists} · от {name}
+together.suggestions.approve = Одобрить
+together.suggestions.reject = Отклонить
+together.suggestions.yours = Ваши предложения
+together.suggestions.sent = Отправлено
+together.suggestions.pending = Ждёт хозяина
+together.suggestions.approved = Добавлено
+together.suggestions.rejected = Отклонено
+together.suggestions.rejected_because = Отклонено: {reason}
+together.suggestions.title.one = {count} предложение ждёт
+together.suggestions.title.few = {count} предложения ждут
+together.suggestions.title.many = {count} предложений ждут
+together.suggestions.title.other = {count} предложения ждут

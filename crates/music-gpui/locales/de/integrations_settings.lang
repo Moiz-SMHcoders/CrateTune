@@ -145,3 +145,6 @@ settings.cast.streaming = Streamt
 settings.cast.direct = Gerät soll YouTube-Audio selbst abrufen
 settings.cast.direct_desc = Aus: Diese App streamt es an das Gerät (funktioniert mit jedem Song).
 settings.cast.note = Beim Übertragen wird die Warteschlange auf einem Chromecast, Google TV oder Nest-Lautsprecher in diesem Netzwerk abgespielt (Default Media Receiver von Google). Der Cast-Button in der Player-Leiste wählt ein Gerät; Abspielen, Pausieren, Spulen, Überspringen und Lautstärke steuern es dann, und „Übertragung beenden“ spielt hier weiter. YouTube-Audio und lokale Dateien werden von diesem Computer an das Gerät gestreamt (lass die App offen); das Gerät und dieser Computer müssen im selben Netzwerk sein. Änderungen gelten ab dem nächsten Song.
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.together.approve_suggestions_desc = Songs von Gästen warten auf der Seite „Gemeinsam hören“, bis du sie annimmst oder ablehnst.

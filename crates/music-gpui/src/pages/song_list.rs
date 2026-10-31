@@ -1,16 +1,16 @@
-//! A virtualized list of library songs with an optional multi-select mode and a
-//! selection action bar (play, queue, add to playlist, like, download, remove).
-//! Pages own a [`SongList`] and hand an accessor to it to [`SongList::render`].
+//! A virtualized list of library songs with an optional checkbox column for
+//! multi-select (the selection itself and its action bar are app-wide:
+//! `selection.rs`, `components/selection_bar.rs`). Pages own a [`SongList`] and hand
+//! an accessor to it to [`SongList::render`].
 
-use std::collections::BTreeSet;
 use std::rc::Rc;
 
 use gpui::{
     AnyElement, Context, IntoElement, ParentElement as _, Pixels, Render, ScrollHandle,
-    SharedString, Size, Styled as _, Window, div, prelude::FluentBuilder as _, px, size,
+    SharedString, Size, Styled as _, Window, div, px, size,
 };
 use gpui_component::{
-    ActiveTheme as _, Disableable as _, Sizable as _, VirtualListScrollHandle,
+    Disableable as _, Sizable as _, VirtualListScrollHandle,
     button::{Button, ButtonVariants as _},
     checkbox::Checkbox,
     h_flex,
@@ -30,8 +30,8 @@ pub type RowExtra<P> = Rc<dyn Fn(&mut P, usize, &mut Window, &mut Context<P>) ->
 pub struct SongList {
     pub tracks: Rc<Vec<Track>>,
     sizes: Rc<Vec<Size<Pixels>>>,
-    /// `Some` while selecting (indices into `tracks`).
-    pub selection: Option<BTreeSet<usize>>,
+    /// The checkbox column is shown ("Select"); ⌘ / Shift-click select without it.
+    pub selecting: bool,
     scroll: VirtualListScrollHandle,
 }
 
@@ -46,7 +46,7 @@ impl SongList {
         Self {
             tracks: Rc::default(),
             sizes: Rc::default(),
-            selection: None,
+            selecting: false,
             scroll: VirtualListScrollHandle::new(),
         }
     }
@@ -60,30 +60,18 @@ impl SongList {
         let n = tracks.len();
         self.sizes = Rc::new(vec![size(px(0.), px(crate::theme::row_height())); n]);
         self.tracks = Rc::new(tracks);
-        if let Some(selection) = &mut self.selection {
-            selection.retain(|&i| i < n);
-        }
     }
 
     pub fn is_empty(&self) -> bool {
         self.tracks.is_empty()
     }
 
-    pub fn selected_tracks(&self) -> Vec<Track> {
-        match &self.selection {
-            Some(sel) => sel
-                .iter()
-                .filter_map(|&i| self.tracks.get(i).cloned())
-                .collect(),
-            None => Vec::new(),
+    /// Shows or hides the checkbox column; hiding it drops the selection.
+    pub fn toggle_selecting(&mut self, window: &mut Window) {
+        self.selecting = !self.selecting;
+        if !self.selecting {
+            crate::selection::clear(window);
         }
-    }
-
-    pub fn toggle_selecting(&mut self) {
-        self.selection = match self.selection {
-            Some(_) => None,
-            None => Some(BTreeSet::new()),
-        };
     }
 
     /// The list itself; fills the remaining height of a flex column.
@@ -105,23 +93,21 @@ impl SongList {
         let list = v_virtual_list(cx.entity(), id, sizes, move |page, range, window, cx| {
             let list = get(page);
             let tracks = list.tracks.clone();
-            let selection = list.selection.clone();
+            let selecting = list.selecting;
             range
                 .map(|ix| {
                     let active = is_playing(&tracks[ix].video_id, cx);
-                    let check = selection.as_ref().map(|sel| {
+                    let check = selecting.then(|| {
+                        let tracks = tracks.clone();
                         Checkbox::new(SharedString::from(format!("{id}-sel-{ix}")))
-                            .checked(sel.contains(&ix))
-                            .on_click(cx.listener(move |page: &mut P, checked: &bool, _, cx| {
-                                if let Some(sel) = &mut get(page).selection {
-                                    if *checked {
-                                        sel.insert(ix);
-                                    } else {
-                                        sel.remove(&ix);
-                                    }
-                                }
-                                cx.notify();
-                            }))
+                            .checked(crate::selection::is_selected(id, ix, &tracks[ix].video_id))
+                            .on_click(move |checked: &bool, window, _| {
+                                let on = *checked;
+                                crate::selection::update(window, |s| {
+                                    s.set(id, &tracks, ix, on);
+                                    true
+                                });
+                            })
                     });
                     let trailing = extra.as_ref().map(|f| f(page, ix, window, cx));
                     h_flex()
@@ -159,7 +145,7 @@ impl SongList {
     ) -> impl IntoElement + use<P> {
         let (tracks, tracks2) = (self.tracks.clone(), self.tracks.clone());
         let empty = self.tracks.is_empty();
-        let selecting = self.selection.is_some();
+        let selecting = self.selecting;
         h_flex()
             .gap_1()
             .flex_wrap()
@@ -202,137 +188,35 @@ impl SongList {
                         t!("common.select")
                     })
                     .disabled(empty)
-                    .on_click(cx.listener(move |page: &mut P, _, _, cx| {
-                        get(page).toggle_selecting();
+                    .on_click(cx.listener(move |page: &mut P, _, window, cx| {
+                        get(page).toggle_selecting(window);
                         cx.notify();
                     })),
             )
     }
 
-    /// Actions for the selected songs, shown while selecting. `remove` adds a page-specific
-    /// "Remove" action (from the library / playlist).
-    pub fn selection_bar<P: Render>(
+    /// Gives the list's selection a "Remove" action (from the library / playlist) in
+    /// the app-wide selection bar. Called while the page renders.
+    pub fn register_remove<P: Render>(
         &self,
         id: &'static str,
-        get: fn(&mut P) -> &mut SongList,
         remove: Option<(&'static str, RemoveHandler<P>)>,
         cx: &mut Context<P>,
-    ) -> Option<AnyElement> {
-        let selection = self.selection.as_ref()?;
-        let count = selection.len();
-        let all = count == self.tracks.len() && count > 0;
-        let theme = cx.theme();
-        let picked = self.selected_tracks();
-        let none = picked.is_empty();
-        let action = |key: &str, icon: Lucide, label: &str| {
-            Button::new(SharedString::from(format!("{id}-{key}")))
-                .ghost()
-                .small()
-                .icon(icon)
-                .label(label.to_owned())
-                .disabled(none)
+    ) {
+        let Some((label, handler)) = remove else {
+            crate::selection::unregister_remove(id);
+            return;
         };
-        let with = |f: fn(Vec<Track>, &mut Window, &mut gpui::App)| {
-            let picked = picked.clone();
-            move |_: &gpui::ClickEvent, window: &mut Window, cx: &mut gpui::App| {
-                f(picked.clone(), window, cx)
-            }
-        };
-        let bar = h_flex()
-            .flex_wrap()
-            .gap_1()
-            .px_3()
-            .py_1p5()
-            .rounded(crate::theme::radius(8.))
-            .bg(theme.secondary)
-            .child(
-                div()
-                    .px_2()
-                    .text_sm()
-                    .text_color(theme.muted_foreground)
-                    .child(tp!("common.selected", count)),
-            )
-            .child(
-                Button::new(SharedString::from(format!("{id}-all")))
-                    .ghost()
-                    .small()
-                    .label(if all {
-                        t!("song_list.select_none")
-                    } else {
-                        t!("common.select_all")
-                    })
-                    .on_click(cx.listener(move |page: &mut P, _, _, cx| {
-                        let list = get(page);
-                        let n = list.tracks.len();
-                        if let Some(sel) = &mut list.selection {
-                            if sel.len() == n {
-                                sel.clear();
-                            } else {
-                                *sel = (0..n).collect();
-                            }
-                        }
-                        cx.notify();
-                    })),
-            )
-            .child(
-                action("sel-play", Lucide::Play, t!("common.play")).on_click(with(|t, _, cx| {
-                    update_app(cx, |app, cx| app.play_list(Rc::new(t), 0, cx));
-                })),
-            )
-            .child(
-                action("sel-next", Lucide::ListStart, t!("common.play_next")).on_click(with(
-                    |t, window, cx| {
-                        update_app(cx, |app, cx| app.queue_play_next(t, window, cx));
-                    },
-                )),
-            )
-            .child(
-                action("sel-queue", Lucide::ListEnd, t!("common.add_to_queue")).on_click(with(
-                    |t, window, cx| {
-                        update_app(cx, |app, cx| app.queue_add(t, window, cx));
-                    },
-                )),
-            )
-            .child(
-                action(
-                    "sel-playlist",
-                    Lucide::ListPlus,
-                    t!("common.add_to_playlist"),
-                )
-                .on_click(with(|t, window, cx| {
-                    update_app(cx, |app, cx| app.add_tracks_to_playlist(t, window, cx));
-                })),
-            )
-            .child(
-                action("sel-like", Lucide::Heart, t!("common.like")).on_click(with(
-                    |t, window, cx| {
-                        update_app(cx, |app, cx| app.set_liked(t, true, window, cx));
-                    },
-                )),
-            )
-            .child(
-                action("sel-download", Lucide::Download, t!("common.download")).on_click(with(
-                    |t, window, cx| {
-                        update_app(cx, |app, cx| app.download_tracks(t, window, cx));
-                    },
-                )),
-            )
-            .when_some(remove, |bar, (label, handler)| {
-                let picked = picked.clone();
-                let indices: Vec<usize> = selection.iter().copied().collect();
-                bar.child(
-                    action("sel-remove", Lucide::Trash, label).on_click(cx.listener(
-                        move |page: &mut P, _, window, cx| {
-                            handler(page, picked.clone(), indices.clone(), window, cx);
-                            if let Some(sel) = &mut get(page).selection {
-                                sel.clear();
-                            }
-                            cx.notify();
-                        },
-                    )),
-                )
-            });
-        Some(bar.into_any_element())
+        let page = cx.entity().downgrade();
+        crate::selection::register_remove(
+            id,
+            label,
+            Rc::new(move |tracks, indices, window, cx| {
+                let handler = handler.clone();
+                page.update(cx, |page, cx| handler(page, tracks, indices, window, cx))
+                    .ok();
+            }),
+        );
     }
 }
 

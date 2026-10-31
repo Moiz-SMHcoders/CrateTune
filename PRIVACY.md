@@ -256,8 +256,12 @@ which only your user can read.
 history. Backups you export contain your library, playlists, history and settings, but no
 passwords or cookies.
 
-**Logs.** The app writes diagnostics to standard error only, which nothing collects. The one
-log file is the updater's `update.log` in the cache folder. There are no crash reports.
+**Logs.** Diagnostics stay on your computer. The app keeps its recent log lines in memory
+for Settings → About → Logs and, unless you turn off *Write a log file* there, in a rotating
+file (`logs/` in the cache folder, at most about 2 MB). Cookies, tokens, keys, signatures and
+your stream IP are removed from every line before it is shown, kept or written. The updater
+writes its own `update.log` in the cache folder. Nothing is uploaded and there are no crash
+reports.
 
 ## Removing your data
 

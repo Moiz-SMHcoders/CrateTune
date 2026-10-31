@@ -145,3 +145,6 @@ settings.cast.streaming = Akış
 settings.cast.direct = YouTube sesini cihaz kendisi alsın
 settings.cast.direct_desc = Kapalı: bu uygulama sesi cihaza aktarır (her şarkıyla çalışır).
 settings.cast.note = Yayınlama, sırayı bu ağdaki bir Chromecast, Google TV veya Nest hoparlörde çalar (Google'ın Default Media Receiver'ı). Oynatıcı çubuğundaki Cast düğmesi bir cihaz seçer; ardından çalma, duraklatma, sarma, atlama ve ses düzeyi o cihazı denetler; Yayını durdur ise çalmayı burada sürdürür. YouTube sesi ve yerel dosyalar bu bilgisayardan cihaza aktarılır (uygulamayı açık tutun); cihaz ve bu bilgisayar aynı ağda olmalıdır. Değişiklikler bir sonraki şarkıda uygulanır.
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.together.approve_suggestions_desc = Misafirlerin şarkıları siz onaylayana ya da reddedene kadar Birlikte dinle sayfasında bekler.

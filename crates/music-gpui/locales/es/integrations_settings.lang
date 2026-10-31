@@ -146,3 +146,6 @@ settings.cast.streaming = Transmisión
 settings.cast.direct = Dejar que el dispositivo obtenga el audio de YouTube por sí mismo
 settings.cast.direct_desc = Desactivado: esta app lo transmite al dispositivo (funciona con todas las canciones).
 settings.cast.note = La transmisión reproduce la cola en un Chromecast, Google TV o altavoz Nest de esta red (Default Media Receiver de Google). El botón Transmitir de la barra del reproductor elige un dispositivo; reproducir, pausar, buscar, saltar y el volumen lo controlan, y Detener transmisión continúa aquí. El audio de YouTube y los archivos locales se transmiten desde este equipo al dispositivo (mantén la app abierta); el dispositivo y este equipo deben estar en la misma red. Los cambios se aplican a la siguiente canción.
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.together.approve_suggestions_desc = Las canciones de los invitados esperan en la página Escuchar juntos hasta que las apruebes o rechaces.

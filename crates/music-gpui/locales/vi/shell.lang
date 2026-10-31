@@ -214,3 +214,27 @@ store.toast.playlist_renamed = Đã đổi tên thành “{playlist}”
 store.toast.playlist_deleted = Đã xóa “{playlist}”
 store.toast.removed_from_playlist.other = Đã xóa {count} bài hát khỏi danh sách phát
 store.toast.playlist_refreshed.other = Đã làm mới danh sách phát ({count} bài hát)
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+queue.section.next_in_queue = TIẾP THEO TRONG DANH SÁCH CHỜ · {count}
+queue.section.next_from = TIẾP THEO TỪ {name} · {count}
+queue.section.next_from_radio = TIẾP THEO TỪ RADIO {name} · {count}
+queue.clear_section = Xóa
+queue.tooltip.clear_section = Xóa các bài này, giữ phần còn lại
+queue.tabs.main = Chính
+queue.tabs.new_name = Danh sách chờ {n}
+queue.tabs.new = Thẻ danh sách chờ mới
+queue.tabs.tooltip_playing = Đang phát từ danh sách chờ này
+queue.tabs.tooltip_other = Hiện danh sách chờ này
+queue.tabs.rename = Đổi tên…
+queue.tabs.remove = Xóa thẻ
+queue.tabs.rename_title = Đổi tên thẻ danh sách chờ
+queue.tabs.name_placeholder = Tên thẻ
+queue.tabs.left_at = Dừng ở {time} trong “{title}”
+queue.tabs.empty = Danh sách chờ này trống. Hãy dùng nó, rồi phát gì đó để thêm bài.
+queue.tabs.continue = Tiếp tục danh sách chờ này
+queue.tabs.use = Dùng danh sách chờ này
+queue.tabs.paused = ĐÃ TẠM DỪNG
+queue.tabs.toast_switched = Đang phát từ “{name}”
+queue.tabs.toast_guest = Khi bạn là khách trong Nghe cùng nhau, chủ phòng quyết định bài phát.
+store.toast.disliked_many.other = Đã không thích {count} bài hát

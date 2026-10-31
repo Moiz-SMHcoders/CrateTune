@@ -145,3 +145,6 @@ settings.cast.streaming = Streamt
 settings.cast.direct = Apparaat haalt YouTube-audio zelf op
 settings.cast.direct_desc = Uit: deze app streamt het naar het apparaat (werkt met elk nummer).
 settings.cast.note = Casten speelt de wachtrij af op een Chromecast, Google TV of Nest-speaker in dit netwerk (Default Media Receiver van Google). De Cast-knop in de spelerbalk kiest een apparaat; afspelen, pauzeren, spoelen, overslaan en volume bedienen het dan, en Casten stoppen gaat hier verder. YouTube-audio en lokale bestanden worden van deze computer naar het apparaat gestreamd (houd de app open); het apparaat en deze computer moeten in hetzelfde netwerk zitten. Wijzigingen gelden vanaf het volgende nummer.
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.together.approve_suggestions_desc = Nummers van gasten wachten op de pagina Samen luisteren tot je ze goedkeurt of afwijst.

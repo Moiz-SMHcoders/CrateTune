@@ -125,3 +125,20 @@ login.instructions = Zaloguj się kontem Google. To okno zamknie się, gdy otwor
 login.webview_failed = Nie udało się utworzyć widoku przeglądarki ({error}). Zamiast tego użyj „Wklej cookie”.
 login.checking = Zalogowano — sprawdzanie konta…
 login.webview2_missing = Logowanie przez Google wymaga środowiska Microsoft Edge WebView2 Runtime, które nie jest zainstalowane. Zainstaluj je z microsoft.com/edge/webview2 albo użyj „Wklej cookie”.
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.about.logs = Logi
+settings.about.logs.note = Co aplikacja ostatnio zgłosiła, od najnowszych. Ciasteczka, tokeny, klucze i hasła są usuwane, zanim cokolwiek zostanie zachowane. Szczegółowe śledzenie wymaga MUSIC_TRACE=1 przy uruchomieniu.
+settings.about.logs.errors = Błędy
+settings.about.logs.warnings = Ostrzeżenia
+settings.about.logs.info = Informacje
+settings.about.logs.trace = Wszystko
+settings.about.logs.empty = Na tym poziomie nic jeszcze nie zapisano.
+settings.about.logs.copy = Kopiuj
+settings.about.logs.copied = Skopiowano log do schowka
+settings.about.logs.save = Zapisz logi…
+settings.about.logs.open_folder = Otwórz folder logów
+settings.about.logs.saved = Zapisano log w {path}
+settings.about.logs.save_failed = Nie udało się zapisać logu: {error}
+settings.about.logs.file = Zapisuj plik logu
+settings.about.logs.file_desc = Przechowuje log także w folderze logów (do 2 MB: jeden bieżący i jeden starszy plik).

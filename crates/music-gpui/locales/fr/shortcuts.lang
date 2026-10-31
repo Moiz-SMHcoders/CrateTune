@@ -41,3 +41,6 @@ shortcuts.key.end = Fin
 shortcuts.key.page_up = Pg préc
 shortcuts.key.page_down = Pg suiv
 shortcuts.key.insert = Inser
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+shortcuts.action.select_all_rows = Sélectionner tous les titres d'une liste

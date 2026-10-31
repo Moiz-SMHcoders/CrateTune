@@ -81,3 +81,8 @@ card.align.right = दाएँ
 card.size.small = छोटा
 card.size.medium = मध्यम
 card.size.large = बड़ा
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+np.queue.next_in_queue = कतार में आगे
+np.queue.next_from = {name} से आगे
+np.queue.next_from_radio = {name} रेडियो से आगे

@@ -677,6 +677,18 @@ pub(super) fn render_together(
                     ),
                     cx,
                 ))
+                .child(row_at(
+                    "together.approve_suggestions",
+                    t!("together.room.approve_suggestions"),
+                    Some(t!("settings.together.approve_suggestions_desc")),
+                    switch(
+                        "together-approve-suggestions",
+                        t.approve_suggestions,
+                        |p, on, cx| p.set_together(|t| t.approve_suggestions = on, cx),
+                        cx,
+                    ),
+                    cx,
+                ))
                 .child(note(t!("settings.together.hosting_note"), cx)),
         )
         .child(

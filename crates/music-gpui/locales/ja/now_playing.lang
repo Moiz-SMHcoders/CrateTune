@@ -78,3 +78,8 @@ card.align.right = 右揃え
 card.size.small = 小
 card.size.medium = 中
 card.size.large = 大
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+np.queue.next_in_queue = キューの次の曲
+np.queue.next_from = {name} の次の曲
+np.queue.next_from_radio = {name} ラジオの次の曲

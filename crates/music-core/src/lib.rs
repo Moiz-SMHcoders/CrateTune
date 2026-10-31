@@ -96,7 +96,7 @@ pub use lyrics::{
     LyricsServiceConfig, fetch_lyrics, parse_lrc,
 };
 pub use model::{EntityRef, MusicVideoType, Track, format_duration};
-pub use output::OutputDevice;
+pub use output::{OutputDevice, tidy as tidy_output_devices};
 pub use player::{PlaybackState, PlaybackStatus, Player, WaveformState, WaveformStatus};
 pub use silence::{SilenceConfig, SkipSilence};
 pub use sleep::{SleepTimer, SleepTimerState};

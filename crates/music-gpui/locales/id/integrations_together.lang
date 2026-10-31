@@ -120,3 +120,22 @@ together.guest.suggest_hint = Gunakan “Putar berikutnya” atau “Tambah ke a
 together.guest.no_suggestions = Host tidak menerima saran.
 together.guest.clock = Selisih jam {offset} md · pulang-pergi {rtt} md
 together.activity = Aktivitas
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+together.log.suggestion_waiting = {name} menyarankan “{title}”: setujui di halaman Dengar bersama
+together.log.suggestion_approved = “{title}” dari {name} ditambahkan
+together.log.suggestion_rejected = “{title}” dari {name} ditolak
+together.toast.suggestion_approved = Tuan rumah menambahkan “{title}”
+together.toast.suggestion_rejected = Tuan rumah menolak “{title}”
+together.room.approve_suggestions = Saran perlu persetujuan saya
+together.suggestions.hint = Lagu yang disetujui masuk ke antrean Anda sesuai permintaan tamu (berikutnya atau di akhir).
+together.suggestions.from = {artists} · dari {name}
+together.suggestions.approve = Setujui
+together.suggestions.reject = Tolak
+together.suggestions.yours = Saran Anda
+together.suggestions.sent = Terkirim
+together.suggestions.pending = Menunggu tuan rumah
+together.suggestions.approved = Ditambahkan
+together.suggestions.rejected = Ditolak
+together.suggestions.rejected_because = Ditolak: {reason}
+together.suggestions.title.other = {count} saran menunggu

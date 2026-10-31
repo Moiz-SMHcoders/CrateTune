@@ -72,6 +72,8 @@ pub struct TogetherPrefs {
     pub allow_guests_to_add_tracks: bool,
     pub allow_guests_to_control_playback: bool,
     pub require_host_approval: bool,
+    /// "Suggestions need my approval": guests' songs wait for Approve / Reject.
+    pub approve_suggestions: bool,
     /// Last link joined (pre-fills the join field).
     pub last_join: String,
     /// Random id that identifies this app to hosts (bans stick to it).
@@ -90,6 +92,7 @@ impl Default for TogetherPrefs {
             allow_guests_to_add_tracks: true,
             allow_guests_to_control_playback: false,
             require_host_approval: false,
+            approve_suggestions: false,
             last_join: String::new(),
             client_id: String::new(),
             relay_url: String::new(),
@@ -104,6 +107,7 @@ impl TogetherPrefs {
             allow_guests_to_add_tracks: self.allow_guests_to_add_tracks,
             allow_guests_to_control_playback: self.allow_guests_to_control_playback,
             require_host_approval_to_join: self.require_host_approval,
+            require_approval_for_suggestions: self.approve_suggestions,
         }
     }
 

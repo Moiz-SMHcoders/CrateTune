@@ -125,3 +125,20 @@ login.instructions = Connectez-vous avec votre compte Google. Cette fenêtre se 
 login.webview_failed = Impossible de créer la vue web ({error}). Utilisez plutôt « Coller un cookie ».
 login.checking = Connecté — vérification du compte…
 login.webview2_missing = La connexion avec Google nécessite Microsoft Edge WebView2 Runtime, qui n’est pas installé. Installez-le depuis microsoft.com/edge/webview2, ou utilisez « Coller un cookie ».
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.about.logs = Journaux
+settings.about.logs.note = Ce que l'app a signalé récemment, le plus récent en premier. Les cookies, jetons, clés et mots de passe sont retirés avant toute conservation. Le traçage détaillé nécessite MUSIC_TRACE=1 au lancement.
+settings.about.logs.errors = Erreurs
+settings.about.logs.warnings = Avertissements
+settings.about.logs.info = Infos
+settings.about.logs.trace = Tout
+settings.about.logs.empty = Rien n'a encore été journalisé à ce niveau.
+settings.about.logs.copy = Copier
+settings.about.logs.copied = Journal copié dans le presse-papiers
+settings.about.logs.save = Enregistrer les journaux…
+settings.about.logs.open_folder = Ouvrir le dossier des journaux
+settings.about.logs.saved = Journal enregistré dans {path}
+settings.about.logs.save_failed = Impossible d'enregistrer le journal : {error}
+settings.about.logs.file = Écrire un fichier journal
+settings.about.logs.file_desc = Conserve aussi le journal dans le dossier des journaux (jusqu'à 2 Mo : un fichier actuel et un plus ancien).

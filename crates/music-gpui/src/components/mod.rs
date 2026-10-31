@@ -31,6 +31,7 @@ pub mod player_bar;
 pub mod playlist_dialog;
 pub mod progress;
 pub mod queue_panel;
+pub mod selection_bar;
 pub mod sidebar;
 pub mod track_row;
 

@@ -126,3 +126,20 @@ login.instructions = Inicia sesión con tu cuenta de Google. Esta ventana se cie
 login.webview_failed = No se pudo crear la vista web ({error}). Usa “Pegar cookie” en su lugar.
 login.checking = Sesión iniciada; comprobando la cuenta…
 login.webview2_missing = Iniciar sesión con Google requiere Microsoft Edge WebView2 Runtime, que no está instalado. Instálalo desde microsoft.com/edge/webview2 o usa “Pegar cookie”.
+
+# ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
+settings.about.logs = Registros
+settings.about.logs.note = Lo que la app ha registrado últimamente, lo más reciente primero. Las cookies, los tokens, las claves y las contraseñas se eliminan antes de guardar nada. El rastreo detallado necesita MUSIC_TRACE=1 al iniciar.
+settings.about.logs.errors = Errores
+settings.about.logs.warnings = Avisos
+settings.about.logs.info = Info
+settings.about.logs.trace = Todo
+settings.about.logs.empty = Todavía no hay nada registrado en este nivel.
+settings.about.logs.copy = Copiar
+settings.about.logs.copied = Registro copiado al portapapeles
+settings.about.logs.save = Guardar registros…
+settings.about.logs.open_folder = Abrir carpeta de registros
+settings.about.logs.saved = Registro guardado en {path}
+settings.about.logs.save_failed = No se pudo guardar el registro: {error}
+settings.about.logs.file = Escribir un archivo de registro
+settings.about.logs.file_desc = Guarda también el registro en la carpeta de registros (hasta 2 MB: un archivo actual y otro anterior).

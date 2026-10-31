@@ -502,14 +502,11 @@ impl LibraryPage {
             )),
             _ => None,
         };
-        let bar = self
-            .list
-            .selection_bar("library", |p: &mut Self| &mut p.list, remove, cx);
+        self.list.register_remove("library-songs", remove, cx);
         v_flex()
             .flex_1()
             .min_h_0()
             .gap_2()
-            .children(bar.map(|b| div().px_8().child(b)))
             .child(
                 self.list
                     .render("library-songs", |p: &mut Self| &mut p.list, None, cx),
