@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Frame-time regression check, offline (CI step "perf: frame-time"; macOS and Windows).
+# Frame-time regression check, offline (CI step "perf: frame-time"; macOS, Windows and
+# Linux under Xvfb).
 # Opens a release build on Home filled from the recorded InnerTube responses
 # (`MUSIC_FIXTURES`: no network, generated artwork), times full window draws near the
 # top (`@bench`, one screen down), scrolls through a long feed (~60 shelves) to its end
@@ -8,9 +9,14 @@
 #     not get more expensive the further a page is scrolled (sections far outside
 #     the viewport aren't built, `components/cull.rs`); runner speed cancels out;
 #   * either p50 is above MAX_MS (25): a ceiling for gross slowdowns (docs/TESTING.md 6.3).
+# It also logs the process's memory after each bench (`@mem`: footprint on macOS,
+# private bytes on Windows, resident set on Linux) and the artwork cache's size.
 #
 #   scripts/perf-frames.sh [--binary PATH] [--max-ms MS] [--ratio R] [--gap MS]
-#                          [--attempts N] [--keep]
+#                          [--attempts N] [--page-art] [--keep]
+#
+# --page-art gives every feed page its own artwork (~700 images, more than the artwork
+# memory budget holds; `MUSIC_FIXTURE_ART=page`), as a long session on a real feed has.
 #
 # Builds `target/release/music-gpui` first unless --binary is given. Needs a desktop
 # session (a window is opened; draws are timed without presenting). Settings go to a
@@ -26,6 +32,7 @@ gap=${PERF_GAP_MS:-1}
 ratio=1.5
 keep=0
 attempts=3
+page_art=0
 while [ $# -gt 0 ]; do
   case $1 in
     --binary) binary=$2; shift 2 ;;
@@ -33,8 +40,9 @@ while [ $# -gt 0 ]; do
     --ratio) ratio=$2; shift 2 ;;
     --gap) gap=$2; shift 2 ;;
     --attempts) attempts=$2; shift 2 ;;
+    --page-art) page_art=1; shift ;;
     --keep) keep=1; shift ;;
-    -h | --help) sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h | --help) sed -n '2,25p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
   esac
 done
@@ -71,13 +79,13 @@ trap cleanup EXIT
 # the CI runners just for having more shelves in view). Then 40 scroll steps of 1500 px, each followed by two forced draws, so the
 # feed keeps loading (and layout catching up) even where the system sends the window
 # no frames; the deep bench runs at the end of the feed (2 + 20 pages, ~60 shelves).
-script="5:@scroll=640;420;-700,5.1:@bench=2,8:@bench=60:$gap,8.1:@bench=300:$gap"
+script="5:@scroll=640;420;-700,5.1:@bench=2,8:@bench=60:$gap,8.1:@bench=300:$gap,8.2:@mem"
 t=11
 for _ in $(seq 1 40); do
   script="$script,$t:@scroll=640;420;-1500,$(awk "BEGIN { print $t + 0.1 }"):@bench=2"
   t=$(awk "BEGIN { print $t + 0.25 }")
 done
-script="$script,28:@bench=60:$gap,28.1:@bench=300:$gap,34:@quit"
+script="$script,28:@bench=60:$gap,28.1:@bench=300:$gap,28.2:@mem,34:@quit"
 
 # One run of the app, logging to $work/app-N.log.
 run() { # n
@@ -85,6 +93,7 @@ run() { # n
   rm -rf "$work/config" && mkdir "$work/config"
   (
     export MUSIC_CONFIG_DIR MUSIC_FIXTURES
+    [ "$page_art" = 1 ] && export MUSIC_FIXTURE_ART=page
     MUSIC_CONFIG_DIR=$(native "$work/config")
     MUSIC_FIXTURES=$(native "$root/crates/music-core/tests/fixtures/innertube")
     MUSIC_SECRET_STORE=file MUSIC_VOLUME=0.0 MUSIC_TRAY=0 MUSIC_ON_TOP=1 \
@@ -106,7 +115,7 @@ run() { # n
 
 # Checks the log of run N; prints the report and returns 1 if a check failed.
 evaluate() { # n
-  local log="$work/app-$1.log" benches top deep pages loaded cull
+  local log="$work/app-$1.log" benches top deep pages loaded cull mem art
   # `bench 300 draws: avg A ms, p50 B, p95 C, max D …` → "B C"
   benches=$(sed -n 's/.*bench 300 draws: avg [0-9.]* ms, p50 \([0-9.]*\), p95 \([0-9.]*\).*/\1 \2/p' "$log")
   top=$(printf '%s\n' "$benches" | sed -n 1p)
@@ -114,18 +123,24 @@ evaluate() { # n
   pages=$(sed -n 's/.*fixture feed page \([0-9]*\)\/\([0-9]*\).*/\1 \2/p' "$log" | tail -n 1)
   # The feed asks for its first continuation once Home is drawn: before the first bench?
   loaded=$(awk '/fixture feed page 1\// { print 1; exit } /bench 300 draws/ { print 0; exit }' "$log")
+  # `mem footprint 182.3, peak 190.0, resident 250.0 MiB; artwork …` after each bench.
+  mem=$(sed -n 's/.*music-gpui: mem \(.*\)$/\1/p' "$log" | paste -sd '~' -)
   cull=on
   [ -n "${MUSIC_NO_CULL:-}" ] && [ "${MUSIC_NO_CULL}" != 0 ] && cull="OFF (MUSIC_NO_CULL)"
+  art=shared
+  [ "$page_art" = 1 ] && art="per page"
   awk -v top="$top" -v deep="$deep" -v pages="$pages" -v ratio="$ratio" \
-    -v max="$max_ms" -v cull="$cull" -v loaded="$loaded" -v n="$1" '
+    -v max="$max_ms" -v cull="$cull" -v loaded="$loaded" -v n="$1" -v mem="$mem" \
+    -v art="$art" '
   function na(v) { return v == "" ? "n/a" : v }
   # Prints the check; returns 1 if it failed.
   function check(ok, name) { printf "- %s - %s\n", (ok ? "pass" : "FAIL"), name; return !ok }
   BEGIN {
-    split(top, t, " "); split(deep, d, " "); split(pages, p, " ")
-    printf "| Run %s: full window draw (offline Home, culling %s) | p50 | p95 |\n|---|---|---|\n", n, cull
-    printf "| near the top (one screen down) | %s ms | %s ms |\n", na(t[1]), na(t[2])
-    printf "| end of the feed | %s ms | %s ms |\n\n", na(d[1]), na(d[2])
+    split(top, t, " "); split(deep, d, " "); split(pages, p, " "); split(mem, m, "~")
+    printf "| Run %s: full window draw (offline Home, culling %s, artwork %s) | p50 | p95 | memory |\n", n, cull, art
+    printf "|---|---|---|---|\n"
+    printf "| near the top (one screen down) | %s ms | %s ms | %s |\n", na(t[1]), na(t[2]), na(m[1])
+    printf "| end of the feed | %s ms | %s ms | %s |\n\n", na(d[1]), na(d[2]), na(m[2])
     fail = check(loaded == 1, "Home was showing the feed when the first bench started")
     fail += check(p[1] != "" && p[1] == p[2], \
       sprintf("feed loaded to its end (%s of %s pages)", na(p[1]), na(p[2])))

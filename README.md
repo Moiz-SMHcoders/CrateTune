@@ -2771,7 +2771,7 @@ from the cache. A page transition is ≈ 11 full frames ≈ 70 ms of CPU per nav
 With Animations Reduced or Off nothing changes on a static screen (nothing animates there
 by default); they matter with Now Playing, the bar's animated styles and transitions.
 The rows for transitions / hover *off* and the Reduced / Off levels could not be sampled
-live: the display stopped delivering frames during that run (see the Backlog's F2).
+live: the display stopped delivering frames during that run (CPU with the screen awake: [Performance round 3](#performance-round-3-memory-artwork-cpu)).
 
 Memory: `footprint` stayed at 203 MB through every style (static and animated) in one
 session; page navigation moved it by the loaded pages (210–267 MB), as on main.
@@ -3786,6 +3786,114 @@ or a break on a real song, Windows and Linux in the app (decoders tested in CI o
 P8), DXVA on Windows (not used), 60 fps-only videos, URL expiry during a video longer than
 its URL (~6 h), TV / web clients serving a video (visionOS served every one), theater mode
 with a physical pointer, a second display or full screen.
+
+### Performance round 3: memory, artwork, CPU
+
+Measured first, changed only what helped (BACKLOG F1–F3). Base = `main` at `4f0972f` plus
+the measurement hooks below, branch = this round, run interleaved on the same machine.
+
+**New measurement hooks.** `@mem` prints the process's memory (`memory::usage`: footprint
+on macOS, private bytes / working set on Windows, resident set / `VmHWM` / anonymous on
+Linux) and the artwork cache's decoded size; `scripts/perf-frames.sh` logs it after both
+benches, and `--page-art` (`MUSIC_FIXTURE_ART=page`) gives every feed page its own artwork
+(~700 images, past the 48 MB budget). The fixtures had shared 17 images, not ~60: the app's
+size rewrite (`items::sized_art`) cut the tag off the URLs; tags now go before the size and
+fixture tiles come at the size asked for. CI runs both checks on all three OSes (Linux
+under Xvfb with Mesa's lavapipe) and also after a failed test step. `@atlas-trim` empties
+the sprite atlases (below).
+
+**Where the memory goes (F1, macOS).** Fixture Home at 1200 × 768 pt on a 2x display,
+~176 MB footprint (`footprint`, `vmmap`): three window drawables of 14 MB each
+(`CAMetalLayer`, GPUI keeps `maximumDrawableCount` 3), a path texture as large as the
+window (14 MB, while paths draw), the sprite atlas in 4 MB textures (1024² BGRA; ~30 MB for
+60 card images), GPUI's decoded CPU copy of every image drawn (as large as its tile), the
+rest malloc and code. Renderers: Metal on macOS, DirectX 11 on Windows (WARP on the CI
+runner, so textures count as private bytes there), wgpu (Vulkan, else GL) on Linux. All
+three use etagere's `BucketedAtlasAllocator`, which reuses a freed tile's space only once
+every tile in its bucket is gone.
+
+**Findings and changes.**
+
+* **The atlas grew with every song while Now Playing was open**: +94 to +106 MB of
+  `IOAccelerator (graphics)` over 30 songs (`@next` every 2.5 s, real network, muted), the
+  footprint 186 → 301–318 MB. Part was ours (a dropped track's blurred backdrop and glows,
+  `RenderImage`s, were never dropped from the atlas: ~12 MB of it), most the allocator: the
+  544 px art, 320 px backdrop and small thumbnails of each song took fresh space while freed
+  tiles stayed unusable. Now `ArtworkCache::trim_atlas` drops every image the app knows
+  (cached artwork it handed out, backdrops and glows) from every window's atlas after 16 MB
+  of new uploads, at most every 10 s, and redraws the windows without reusing cached views,
+  so what is on screen is uploaded again (decoded copies stay; a draw right after a trim
+  costs ~2–3 ms more on an M4). Same test: atlas 26.7 → 19.0 MB, footprint 127 → 131 MB.
+  Requesting the hi-res art at 512 px (four fit in a texture instead of one) alone changed
+  nothing measurable and was dropped.
+* **Fast scrolls through more artwork than the budget** (F3): images looked up within
+  `KEEP_RECENT` are never evicted, and at 3 s a fast scroll kept ~700 images (270 MB
+  decoded). Now 1 s. Fixture Home with per-page artwork, M4 (load 2–3): peak footprint
+  574 / 613 → 367 / 365 MB, after the end bench 229 / 231 → 152 / 153 MB, draws unchanged
+  (1.8–3.5 ms). The 1.8x slower end-of-feed draw on Windows no longer reproduces on any
+  runner (0.97x Windows and macOS, 0.74x Linux before this round), so the per-page run is
+  now a CI gate too.
+* **Artwork fetched at the size it is shown**: YouTube's image servers scale to any size, so
+  `artwork()` asks for at most the shown size at the main window's scale (sizes 64–768 in
+  steps, never more than the caller asked): a 160 pt card fetches 160 px at 1x instead of
+  320, a 44 pt row 96 px at 2x instead of 120. Nothing changes for cards on a 2x Mac.
+* **Linux keeps freed memory** (glibc): after the per-page scroll the runner's process kept
+  427 MB anonymous with 48 MB of artwork cached. `malloc_trim` now runs 2 s after a burst
+  of evictions.
+* A replaced lyrics-card preview is dropped from the atlas (same mechanism as the
+  backdrops; not measured: the scripted card run drew no preview).
+
+**CI** (fixture Home; near the top → end of the feed; memory after each bench):
+
+One app run per runner and check, before (`aa33c46`, run 41237119579) → after (run
+41243537213). The runners draw at 1x, so the cards' artwork is fetched at 160 px: the cache
+holds the 60 default images in 5.9 MiB instead of 23.4, and 491 instead of 122 of the
+per-page images in the 48 MB budget.
+
+| Runner | Default artwork: draw p50 | memory near the top / at the end | Per-page artwork: draw p50 | memory at the end (peak) |
+|---|---|---|---|---|
+| `windows-2022` (WARP), private bytes | 10.0 → 8.2 ms ⇒ 7.4 → 6.2 ms | 104 / 113 ⇒ 68 / 73 MiB | 7.1 → 6.9 ms ⇒ 7.0 → 6.1 ms | 184 (working set peak 736) ⇒ 129 (205) MiB |
+| `macos-15` (VM), footprint | 5.8 → 5.8 ms ⇒ 7.2 → 5.5 ms | 82 / 88 ⇒ 49 / 51 MiB | 6.6 → 6.4 ms ⇒ 7.3 → 5.9 ms | 120 (549) ⇒ 68 (118) MiB |
+| `ubuntu-24.04` (Xvfb, lavapipe), resident | 4.8 → 3.3 ms ⇒ 5.1 → 3.4 ms | 299 / 310 ⇒ 250 / 262 MiB | 4.4 → 3.2 ms ⇒ 4.8 → 3.4 ms | 713 (936), anonymous 427 ⇒ 352 (415), anonymous 136 MiB |
+
+(⇒ separates before and after; → is near the top → end of the feed.) Draw times stay within
+the runners' noise; all ratios 0.67–0.97x. Linux keeps the lavapipe textures in the
+process's own memory, Windows' WARP too, so their figures include what a GPU would hold.
+
+**Not done** (BACKLOG F1, F4–F6): two drawables instead of three (14 MB per window; could
+make frames uneven at 120 Hz), dropping GPUI's decoded copy once uploaded (needs GPUI),
+decoding `i.ytimg.com` thumbnails and local covers at the shown size (they can't be resized
+by the server: 0.9–1.2 MB decoded each), skipping queued downloads that scrolled out of
+view (can't be measured offline), backing off the 250 ms poll while idle. Raising the budget
+with system memory wasn't tried: memory was the cost, not frame time. Evicting by distance
+from the viewport is what the LRU already does here (sections far off screen aren't built,
+so their images aren't looked up); the shorter `KEEP_RECENT` is the part that mattered.
+
+**CPU with the screen awake (F2).** The display was on and unlocked (`pmset -g
+assertions`: user active; no `CGSSessionScreenIsLocked`), all runs under `caffeinate -d`,
+window on top (`MUSIC_ON_TOP=1`). Frames still stopped whenever the user's own full-screen
+apps covered it, so every run counted renders (`MUSIC_TIMINGS`) and runs with fewer than 12
+of 15 seconds with frames were thrown away. M4 MacBook Air, 60 Hz, release, "Instant Crush"
+(word-synced) seeked to 1:10, muted, CPU over seconds 20–35 (`ps`), load average 2–70:
+
+| Scenario | % of one core | renders/s |
+|---|---|---|
+| Idle on Home | 0.8–0.9 | none (nothing changes) |
+| Playing, Home (default bar) | 1.8–2.0 | ~1 |
+| Now Playing · Split · blur · Karaoke | 7.5–11.9 | 61 (words swept) |
+| Lyrics first (strip region included) | 7.2–11.1 | 60–61 |
+| Lyrics first · glow · Apple | 9.8–9.9 | 61 |
+| Big artwork / Immersive / Editorial | 2.3–2.6 | 5 |
+| Card / Minimal / With queue / Turntable | 1.3 / 2.0 / 2.3 / 2.3 | 5 / 8 / 5 / 6 |
+| Mini player (Now Playing closed): bar / compact / card / lyrics / turntable | 1.6 / 1.9 / 2.1–2.3 / 2.1 / 2.2 | main window ~1 |
+
+Base and branch fall in the same ranges (this round changes nothing on these paths). Against
+the Now Playing round (split 11.6, lyrics first · glow · Apple 13.0, big artwork 1.6 at 6
+renders/s) the lyrics designs are the same or lower; that round's measurement had the screen
+locked for the final build. The Lyrics-first strip is a cached region: its cost is in the
+design's row, not separable from the lyrics' own frames. `scripts/perf-macos.sh` (base):
+idle 0.7 %, scrolling 61 fps at 60 Hz, Home draw p50 3.0 / 3.3 ms, Now Playing 9 renders/s
+at 3.0 %.
 
 ### Measurements (app shell round)
 
