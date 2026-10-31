@@ -191,6 +191,16 @@ the "Jump back in" card. Details: [README: Several accounts, browser sign-in, Yo
 history](../README.md#several-accounts-browser-sign-in-youtube-history). · Size: small ·
 Priority: high
 
+**U19. Music videos against real accounts and long sessions**
+Songs show their music video only through the pairs YouTube Music sends signed in
+(`next`'s `counterpart` rows). That path is tested on a hand-built response shaped like the
+recorded one Limusic keeps, never against a real signed-in account; neither is the
+`segmentMap` timing on a real song (a video's intro, a break in the middle). Also unverified:
+URL renewal after a video has played for more than its URL's ~6 h, the TV / web clients for
+video (visionOS served every video so far), 60 fps-only videos, and theater mode with a
+physical pointer and on a second display. Details: [README: Music videos and theater
+mode](../README.md#music-videos-and-theater-mode). · Size: small · Priority: medium
+
 **U18. Queue / selection round (`feat/queue-ux`) on real systems**
 Checked with unit tests, scripts and offscreen screenshots on macOS only: (1) the in-app
 log's stderr capture on Windows (`SetStdHandle` to a pipe; release builds without a
@@ -290,6 +300,19 @@ pull request with the three files from `packaging/flatpak/` (consider the 26.08 
 linter suggests first). After that, each release's `package-manifests` asset is copied into
 each channel. Steps: [RELEASING.md](RELEASING.md#package-managers). · Size: small ·
 Priority: very low
+
+**P8. Music videos on Windows and Linux machines**
+The video decoders for Windows (Media Foundation's H.264 decoder, `video/decode/media_foundation.rs`)
+and Linux (OpenH264 built from source, `openh264.rs`) decode the test clip in CI
+(`video::decode::tests::decodes_the_clip`, `video::player::tests`) but never ran in the app
+on a real desktop: frame pacing, colours (BT.601 / 709 limited range converted on the CPU),
+CPU use and the sprite-atlas churn of one `RenderImage` per frame are unmeasured there.
+Windows decodes on the CPU: giving the decoder a D3D11 device manager (DXVA) would move it to
+the GPU and the colour conversion to a shader. OpenH264 is compiled from source, which Cisco's
+patent licence for its binaries doesn't cover; a distribution that cares can build music-core
+without its `video` feature (no decoder: the setting hides itself). Details: [README: Music
+videos and theater mode](../README.md#music-videos-and-theater-mode). · Size: medium ·
+Priority: medium
 
 ## 4. Missing features vs ArchiveTune
 

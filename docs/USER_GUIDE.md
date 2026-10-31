@@ -233,6 +233,28 @@ button, the first Esc leaves full screen and the second closes Now Playing; with
 setting, one Esc does both. If you leave full screen yourself (the green button), the app
 doesn't put it back. The mini player keeps working on top of the full-screen window.
 
+**Music videos**: turn on Settings → Appearance → Music videos → **Show music videos in the
+artwork** and Now Playing shows the song's music video in place of the artwork, muted and in
+step with the music (the sound stays the app's own). A video (a music video or an upload)
+shows its own picture; a song shows the music video YouTube Music pairs it with, which it only
+does for signed-in accounts, so signed out, songs keep their artwork. Where the video has a
+scene without the song (an intro, a break) the artwork shows meanwhile. The video button in
+the header (a camera) switches back to the artwork until you press it again or quit the app;
+the setting is the lasting off switch. **Video quality** (360p, 480p, 720p) is the most that is
+fetched: 480p (the default) is sharp at the artwork's size, 720p suits theater mode on a big
+screen. A video uses more data than the song alone (about 0.5–2 Mbit/s against 0.13) and
+some CPU while it's on screen; with Now Playing closed nothing is fetched or decoded. The
+setting is missing where the system has no H.264 decoder (Windows "N" editions without the
+Media Feature Pack). Round designs (Editorial) and the mini player keep the artwork.
+
+**Theater mode**: the song filling the window, nothing else — the music video, or the
+artwork on its blurred backdrop, with the current lyric line over it. Open it with the
+theater button in Now Playing's header (a wide rectangle), View → Theater mode, or **⌘⇧T**
+(**Ctrl+Shift+T** on Windows and Linux; changeable in Settings → Keyboard shortcuts). The
+controls (leave, title, video, progress, play / pause, previous / next) fade out after three
+seconds without moving the pointer while the music plays, and come back when you move it.
+**Esc** or the ✕ leaves, back to where you were.
+
 **Lyrics cards**: click the share button above the lyrics, click up to six lines, then
 **Create card…**. Pick a background (blurred artwork, album colour, dark, light), the text
 alignment and size, square / portrait / story shape and whether the cover shows, then

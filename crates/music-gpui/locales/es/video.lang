@@ -1,0 +1,13 @@
+# Music videos in Now Playing's artwork slot, and theater mode.
+
+video.settings.group = Videos musicales
+video.settings.show = Mostrar videos musicales en la portada
+video.settings.show_note = Reproduciendo muestra el video musical de la canción en lugar de la portada, sin sonido y al ritmo de la música. Usa más datos (unos 0,5–2 Mbit/s) y algo de CPU mientras está en pantalla.
+video.settings.quality = Calidad de video
+video.settings.quality_note = La calidad más alta que se descarga. Una menor usa menos datos.
+video.settings.pairs_note = Un video muestra su propia imagen. Una canción muestra su video musical cuando YouTube Music los empareja, lo que hace con las cuentas con sesión iniciada.
+video.show = Mostrar video
+video.hide = Mostrar portada
+video.theater = Modo cine
+video.theater_keys = Modo cine ({keys})
+video.theater_exit = Salir del modo cine (Esc)

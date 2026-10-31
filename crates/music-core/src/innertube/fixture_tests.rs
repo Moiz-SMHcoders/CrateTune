@@ -1017,3 +1017,83 @@ fn like_status_from_a_fake_server() {
     let anon = super::InnerTube::default().with_api_base(&server.base);
     assert!(anon.like_status("sVx1mJDeUjY").is_err());
 }
+
+/// Signed-in `next` rows pair a song with its music video (and a video with
+/// its song); `segmentMap` says which stretches the two share.
+#[test]
+fn counterparts_and_their_time_maps() {
+    use crate::MusicVideoType::{Atv, Omv};
+    use crate::video::TimeMap;
+    use std::time::Duration;
+    let ms = Duration::from_millis;
+    let q = pages::watch_queue(&fixture("authed/next_counterpart")).unwrap();
+    // The wrappers' primaries are the queue's rows; the other versions aren't.
+    let ids: Vec<&str> = q.tracks.iter().map(|t| t.video_id.as_str()).collect();
+    assert_eq!(
+        ids,
+        ["khnokW3Mw24", "vidSeed0001", "noMapSong01", "plainRow001"]
+    );
+    assert_eq!(q.current_index, Some(0));
+    assert_eq!(q.counterparts.len(), 3);
+
+    // A song: its music video, through the two shared stretches.
+    let c = &q.counterparts[0];
+    assert_eq!((c.of.as_str(), c.of_type), ("khnokW3Mw24", Some(Atv)));
+    assert_eq!(
+        (c.video_id.as_str(), c.video_type),
+        ("a5uQMwRMHcs", Some(Omv))
+    );
+    let (video, map) = c.video_for("khnokW3Mw24").unwrap();
+    assert_eq!(video, "a5uQMwRMHcs");
+    assert_eq!(map.video_time(ms(0)), Some(ms(4_100)));
+    assert_eq!(map.video_time(ms(150_000)), Some(ms(156_499)));
+    // Playing the video itself: no other video to show.
+    assert!(c.video_for("a5uQMwRMHcs").is_none());
+
+    // A video row whose twin is the song: playing the song shows the video,
+    // with the stretches turned around.
+    let c = &q.counterparts[1];
+    let (video, map) = c.video_for("songTwin001").unwrap();
+    assert_eq!(video, "vidSeed0001");
+    assert_eq!(map.video_time(ms(1_000)), Some(ms(6_000)));
+    assert!(c.video_for("vidSeed0001").is_none());
+
+    // No segment map: assumed to line up.
+    let (_, map) = q.counterparts[2].video_for("noMapSong01").unwrap();
+    assert_eq!(map, TimeMap::Stretches(Vec::new()));
+    assert_eq!(map.video_time(ms(42)), Some(ms(42)));
+
+    // Anonymous responses have none.
+    assert!(
+        pages::watch_queue(&fixture("next"))
+            .unwrap()
+            .counterparts
+            .is_empty()
+    );
+}
+
+/// `InnerTube::counterpart` asks `next` for the one video and finds its pair.
+#[test]
+fn counterpart_from_a_fake_server() {
+    use crate::testutil::{Reply, TestServer};
+    let server = TestServer::start_http(|req| {
+        assert!(req.path.starts_with("/youtubei/v1/next"), "{}", req.path);
+        let body: Value = serde_json::from_slice(&req.body).unwrap();
+        assert!(body.get("playlistId").is_none());
+        let name = match body["videoId"].as_str() {
+            Some("khnokW3Mw24") | Some("songTwin001") => "authed/next_counterpart",
+            _ => "next",
+        };
+        Reply::Full {
+            status: 200,
+            headers: vec!["Content-Type: application/json".into()],
+            body: serde_json::to_vec(&fixture(name)).unwrap(),
+        }
+    });
+    let it = super::InnerTube::default().with_api_base(&server.base);
+    let c = it.counterpart("khnokW3Mw24").unwrap().unwrap();
+    assert_eq!(c.video_id, "a5uQMwRMHcs");
+    let c = it.counterpart("songTwin001").unwrap().unwrap();
+    assert_eq!(c.of, "vidSeed0001");
+    assert!(it.counterpart("sVx1mJDeUjY").unwrap().is_none());
+}

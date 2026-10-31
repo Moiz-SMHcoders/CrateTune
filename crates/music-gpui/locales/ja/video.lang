@@ -1,0 +1,13 @@
+# Music videos in Now Playing's artwork slot, and theater mode.
+
+video.settings.group = ミュージックビデオ
+video.settings.show = アートワークの代わりにミュージックビデオを表示
+video.settings.show_note = 再生中画面で、アートワークの代わりに曲のミュージックビデオを音声なしで音楽に合わせて表示します。表示中はより多くのデータ（約0.5〜2 Mbit/s）と多少のCPUを使います。
+video.settings.quality = ビデオの画質
+video.settings.quality_note = 取得する最高画質。低いほどデータ使用量が少なくなります。
+video.settings.pairs_note = ビデオはそれ自体の映像を表示します。曲は YouTube Music が曲とビデオを対応付けている場合にミュージックビデオを表示します（ログイン中のアカウントのみ）。
+video.show = ビデオを表示
+video.hide = アートワークを表示
+video.theater = シアターモード
+video.theater_keys = シアターモード（{keys}）
+video.theater_exit = シアターモードを終了（Esc）

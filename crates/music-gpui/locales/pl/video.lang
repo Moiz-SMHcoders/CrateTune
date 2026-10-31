@@ -1,0 +1,13 @@
+# Music videos in Now Playing's artwork slot, and theater mode.
+
+video.settings.group = Teledyski
+video.settings.show = Pokazuj teledyski zamiast okładki
+video.settings.show_note = Teraz odtwarzane pokazuje teledysk utworu zamiast okładki, bez dźwięku i w rytm muzyki. Zużywa więcej danych (około 0,5–2 Mbit/s) i trochę CPU, gdy jest na ekranie.
+video.settings.quality = Jakość wideo
+video.settings.quality_note = Najwyższa pobierana jakość. Niższa zużywa mniej danych.
+video.settings.pairs_note = Film pokazuje własny obraz. Utwór pokazuje swój teledysk, gdy YouTube Music łączy je w parę, co robi dla zalogowanych kont.
+video.show = Pokaż wideo
+video.hide = Pokaż okładkę
+video.theater = Tryb kinowy
+video.theater_keys = Tryb kinowy ({keys})
+video.theater_exit = Zamknij tryb kinowy (Esc)

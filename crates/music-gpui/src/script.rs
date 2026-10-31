@@ -66,6 +66,8 @@
 //! | `@app-look=off\|tint\|gradient\|glow`, `@app-look-opt=follow:on\|intensity:0.7\|dir:diagonal\|dim:off\|tint:on\|animate:on`, `@motion=system\|full\|reduced\|off`, `@effects=transitions:…\|hover:…\|headers:…\|corners:square\|shadow:on\|cards:large\|translucent:on`, `@bar-art=standard\|edge`, `@look-status` | app-wide look, Motion & effects, bar artwork (saved; `look_script.rs`) |
 //! | `@shortcut=ACTION:KEYS`, `@shortcut-reset=ACTION\|all`, `@shortcut-status`, `@shortcut-record=ACTION`, `@shortcut-replace`, `@shortcut-cancel`, `@shortcut-sheet` | keyboard shortcuts (saved; `shortcuts/script.rs`) |
 //! | `@np-fullscreen[=on\|off]`, `@np-fullscreen-auto=on\|off`, `@lyrics-view`, `@fullscreen-external`, `@fullscreen-status` | full screen: Now Playing's button (no argument toggles), "Full screen when Now Playing opens" (saved), the bar's lyrics button, toggle as the green button would, print the window state and who entered it (`np_fullscreen.rs`) |
+//! | `@video=on\|off`, `@video-session=on\|off`, `@video-quality=360p\|480p\|720p`, `@video-status` | music videos: the setting (saved), Now Playing's video / artwork button (this session), the quality cap (saved), print the lookup, stream and player counters (`video.rs`) |
+//! | `@theater[=on\|off]`, `@theater-move`, `@theater-status` | theater mode: open / close (no argument toggles), a pointer movement (the controls show), print its state (`theater.rs`) |
 //! | `@titlebar-status`, `@app-menu`, `@account-menu`, `@titlebar-account=NAME\|off`, `@system-title-bar[=off]` | custom top bar: print mode / controls / window state / part positions; click the ⋯ or account button (prints the account menu's items); a fake signed-in account in the bar (debug / screenshot builds); "Use the system title bar" (saved, next launch; `titlebar.rs`) |
 //! | `@quit` | quit |
 //!
@@ -970,6 +972,8 @@ impl MusicApp {
                     && !self.card_script_action(other, arg, window, cx)
                     && !self.theme_script_action(other, arg, window, cx)
                     && !self.fullscreen_script_action(other, arg, window, cx)
+                    && !self.theater_script_action(other, arg, window, cx)
+                    && !self.video_script_action(other, arg, cx)
                     && !self.home_script_action(other, arg, cx)
                     && !self.titlebar_script_action(other, arg, window, cx)
                 {

@@ -1,0 +1,13 @@
+# Music videos in Now Playing's artwork slot, and theater mode.
+
+video.settings.group = म्यूज़िक वीडियो
+video.settings.show = आर्टवर्क की जगह म्यूज़िक वीडियो दिखाएँ
+video.settings.show_note = “अभी चल रहा है” आर्टवर्क की जगह गाने का म्यूज़िक वीडियो दिखाता है, बिना आवाज़ के और संगीत के साथ तालमेल में। स्क्रीन पर रहते हुए ज़्यादा डेटा (लगभग 0.5–2 Mbit/s) और कुछ CPU लगता है।
+video.settings.quality = वीडियो क्वालिटी
+video.settings.quality_note = लोड की जाने वाली सबसे ऊँची क्वालिटी। कम क्वालिटी में कम डेटा लगता है।
+video.settings.pairs_note = वीडियो अपनी ही तस्वीर दिखाता है। गाना अपना म्यूज़िक वीडियो तब दिखाता है जब YouTube Music दोनों को जोड़ता है, जो वह साइन-इन खातों के लिए करता है।
+video.show = वीडियो दिखाएँ
+video.hide = आर्टवर्क दिखाएँ
+video.theater = थिएटर मोड
+video.theater_keys = थिएटर मोड ({keys})
+video.theater_exit = थिएटर मोड से बाहर निकलें (Esc)

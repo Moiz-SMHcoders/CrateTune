@@ -591,6 +591,54 @@ pub struct WatchQueue {
     /// `responseContext`'s `logged_in` flag: whether YouTube took the request as
     /// signed in (`None` if the response doesn't say).
     pub logged_in: Option<bool>,
+    /// Rows YouTube pairs with their other version (a song with its music
+    /// video, or the other way round): signed-in responses only.
+    #[serde(skip)]
+    pub counterparts: Vec<Counterpart>,
+}
+
+/// A track's other version as YouTube Music pairs them in a `next` panel
+/// (`playlistPanelVideoWrapperRenderer`: the row and its `counterpart`), the
+/// pair its own Song / Video switch flips between.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Counterpart {
+    /// The row (primary) and its type.
+    pub of: String,
+    pub of_type: Option<crate::MusicVideoType>,
+    /// The other version.
+    pub video_id: String,
+    pub video_type: Option<crate::MusicVideoType>,
+    /// The stretches both play (`segmentMap`): `audio` is the time in the
+    /// row, `video` in the other version. Empty when YouTube sent none.
+    pub stretches: Vec<crate::video::SharedStretch>,
+}
+
+impl Counterpart {
+    /// For `playing` (either side of the pair): the music video to show with
+    /// it and how its time maps to the video's, if the other side is a video.
+    pub fn video_for(&self, playing: &str) -> Option<(String, crate::video::TimeMap)> {
+        use crate::video::{SharedStretch, TimeMap};
+        let is_video = |t: Option<crate::MusicVideoType>| t.is_some_and(|t| t.is_video());
+        if playing == self.of && is_video(self.video_type) {
+            return Some((
+                self.video_id.clone(),
+                TimeMap::stretches(self.stretches.clone()),
+            ));
+        }
+        if playing == self.video_id && is_video(self.of_type) {
+            let flipped = self
+                .stretches
+                .iter()
+                .map(|s| SharedStretch {
+                    audio: s.video,
+                    video: s.audio,
+                    length: s.length,
+                })
+                .collect();
+            return Some((self.of.clone(), TimeMap::stretches(flipped)));
+        }
+        None
+    }
 }
 
 impl WatchQueue {

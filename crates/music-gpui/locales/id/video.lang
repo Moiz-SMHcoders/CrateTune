@@ -1,0 +1,13 @@
+# Music videos in Now Playing's artwork slot, and theater mode.
+
+video.settings.group = Video musik
+video.settings.show = Tampilkan video musik di artwork
+video.settings.show_note = Sedang Diputar menampilkan video musik lagu sebagai ganti artwork, tanpa suara dan selaras dengan musik. Memakai lebih banyak data (sekitar 0,5–2 Mbit/s) dan sedikit CPU selama tampil di layar.
+video.settings.quality = Kualitas video
+video.settings.quality_note = Kualitas tertinggi yang diambil. Lebih rendah memakai lebih sedikit data.
+video.settings.pairs_note = Video menampilkan gambarnya sendiri. Lagu menampilkan video musiknya jika YouTube Music memasangkan keduanya, yang dilakukannya untuk akun yang sudah masuk.
+video.show = Tampilkan video
+video.hide = Tampilkan artwork
+video.theater = Mode teater
+video.theater_keys = Mode teater ({keys})
+video.theater_exit = Keluar dari mode teater (Esc)

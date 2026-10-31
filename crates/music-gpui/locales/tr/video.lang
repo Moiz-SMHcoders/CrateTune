@@ -1,0 +1,13 @@
+# Music videos in Now Playing's artwork slot, and theater mode.
+
+video.settings.group = Müzik videoları
+video.settings.show = Kapak yerine müzik videolarını göster
+video.settings.show_note = Şu an çalıyor, kapak yerine şarkının müzik videosunu sessiz ve müzikle senkron gösterir. Ekrandayken daha fazla veri (yaklaşık 0,5–2 Mbit/s) ve biraz CPU kullanır.
+video.settings.quality = Video kalitesi
+video.settings.quality_note = Alınan en yüksek kalite. Daha düşük kalite daha az veri kullanır.
+video.settings.pairs_note = Bir video kendi görüntüsünü gösterir. Bir şarkı, YouTube Music ikisini eşleştirdiğinde müzik videosunu gösterir; bunu oturum açılmış hesaplar için yapar.
+video.show = Videoyu göster
+video.hide = Kapağı göster
+video.theater = Sinema modu
+video.theater_keys = Sinema modu ({keys})
+video.theater_exit = Sinema modundan çık (Esc)

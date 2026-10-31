@@ -81,6 +81,8 @@ pub struct Settings {
     pub cast: crate::integrations::config::CastPrefs,
     /// Player bar look: progress style, background effect, … (`bar_prefs.rs`).
     pub player_bar: super::bar_prefs::PlayerBarConfig,
+    /// Music videos in the artwork and theater mode (off by default; `video_prefs.rs`).
+    pub video: super::video_prefs::VideoConfig,
     /// The first-run guide was finished or skipped. Missing in files from before the
     /// guide existed: those users count as onboarded; a fresh install starts `false`.
     #[serde(default = "onboarded_default")]
@@ -133,6 +135,7 @@ impl Default for Settings {
             ai_filter: Default::default(),
             cast: Default::default(),
             player_bar: Default::default(),
+            video: Default::default(),
             onboarded: true,
             custom_theme: Default::default(),
             app_look: Default::default(),

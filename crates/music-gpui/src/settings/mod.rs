@@ -55,6 +55,8 @@ mod shortcuts_ui;
 mod storage;
 pub mod theme_prefs;
 mod theme_ui;
+pub mod video_prefs;
+mod video_ui;
 mod widgets;
 
 use crate::i18n::Key;

@@ -37,6 +37,10 @@ gpui_kit_assets::icon_assets!(
         Repeat1,
         ListMusic,
         PictureInPicture2,
+        // music videos, theater mode
+        Video,
+        VideoOff,
+        RectangleHorizontal,
         ListPlus,
         ListStart,
         ListEnd,

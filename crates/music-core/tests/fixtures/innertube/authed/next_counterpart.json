@@ -1,0 +1,572 @@
+{
+ "responseContext": {
+  "serviceTrackingParams": [
+   {
+    "service": "GFEEDBACK",
+    "params": [
+     {
+      "key": "logged_in",
+      "value": "1"
+     }
+    ]
+   }
+  ]
+ },
+ "contents": {
+  "singleColumnMusicWatchNextResultsRenderer": {
+   "tabbedRenderer": {
+    "watchNextTabbedResultsRenderer": {
+     "tabs": [
+      {
+       "tabRenderer": {
+        "title": "Up next",
+        "content": {
+         "musicQueueRenderer": {
+          "content": {
+           "playlistPanelRenderer": {
+            "contents": [
+             {
+              "playlistPanelVideoWrapperRenderer": {
+               "primaryRenderer": {
+                "playlistPanelVideoRenderer": {
+                 "title": {
+                  "runs": [
+                   {
+                    "text": "Instant Crush (feat. Julian Casablancas)"
+                   }
+                  ]
+                 },
+                 "longBylineText": {
+                  "runs": [
+                   {
+                    "text": "Daft Punk",
+                    "navigationEndpoint": {
+                     "browseEndpoint": {
+                      "browseId": "UC_daft_punk_channel",
+                      "browseEndpointContextSupportedConfigs": {
+                       "browseEndpointContextMusicConfig": {
+                        "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                       }
+                      }
+                     }
+                    }
+                   },
+                   {
+                    "text": " \u2022 "
+                   },
+                   {
+                    "text": "2013"
+                   }
+                  ]
+                 },
+                 "thumbnail": {
+                  "thumbnails": [
+                   {
+                    "url": "https://i.ytimg.com/vi/khnokW3Mw24/sddefault.jpg",
+                    "width": 640,
+                    "height": 480
+                   }
+                  ]
+                 },
+                 "lengthText": {
+                  "runs": [
+                   {
+                    "text": "5:38"
+                   }
+                  ]
+                 },
+                 "navigationEndpoint": {
+                  "watchEndpoint": {
+                   "videoId": "khnokW3Mw24",
+                   "watchEndpointMusicSupportedConfigs": {
+                    "watchEndpointMusicConfig": {
+                     "hasPersistentPlaylistPanel": true,
+                     "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                    }
+                   }
+                  }
+                 },
+                 "videoId": "khnokW3Mw24",
+                 "shortBylineText": {
+                  "runs": [
+                   {
+                    "text": "Daft Punk"
+                   }
+                  ]
+                 },
+                 "selected": true
+                }
+               },
+               "counterpart": [
+                {
+                 "counterpartRenderer": {
+                  "playlistPanelVideoRenderer": {
+                   "title": {
+                    "runs": [
+                     {
+                      "text": "Instant Crush (Official Video) ft. Julian Casablancas"
+                     }
+                    ]
+                   },
+                   "longBylineText": {
+                    "runs": [
+                     {
+                      "text": "Daft Punk",
+                      "navigationEndpoint": {
+                       "browseEndpoint": {
+                        "browseId": "UC_daft_punk_channel",
+                        "browseEndpointContextSupportedConfigs": {
+                         "browseEndpointContextMusicConfig": {
+                          "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                         }
+                        }
+                       }
+                      }
+                     },
+                     {
+                      "text": " \u2022 "
+                     },
+                     {
+                      "text": "2013"
+                     }
+                    ]
+                   },
+                   "thumbnail": {
+                    "thumbnails": [
+                     {
+                      "url": "https://i.ytimg.com/vi/a5uQMwRMHcs/sddefault.jpg",
+                      "width": 640,
+                      "height": 480
+                     }
+                    ]
+                   },
+                   "lengthText": {
+                    "runs": [
+                     {
+                      "text": "5:41"
+                     }
+                    ]
+                   },
+                   "navigationEndpoint": {
+                    "watchEndpoint": {
+                     "videoId": "a5uQMwRMHcs",
+                     "watchEndpointMusicSupportedConfigs": {
+                      "watchEndpointMusicConfig": {
+                       "hasPersistentPlaylistPanel": true,
+                       "musicVideoType": "MUSIC_VIDEO_TYPE_OMV"
+                      }
+                     }
+                    }
+                   },
+                   "videoId": "a5uQMwRMHcs",
+                   "shortBylineText": {
+                    "runs": [
+                     {
+                      "text": "Daft Punk"
+                     }
+                    ]
+                   }
+                  }
+                 },
+                 "segmentMap": {
+                  "segment": [
+                   {
+                    "primaryVideoStartTimeMilliseconds": "0",
+                    "counterpartVideoStartTimeMilliseconds": "4100",
+                    "durationMilliseconds": "120000"
+                   },
+                   {
+                    "primaryVideoStartTimeMilliseconds": "120001",
+                    "counterpartVideoStartTimeMilliseconds": "126500",
+                    "durationMilliseconds": "218000"
+                   }
+                  ]
+                 }
+                }
+               ]
+              }
+             },
+             {
+              "playlistPanelVideoWrapperRenderer": {
+               "primaryRenderer": {
+                "playlistPanelVideoRenderer": {
+                 "title": {
+                  "runs": [
+                   {
+                    "text": "Some Video (Official Video)"
+                   }
+                  ]
+                 },
+                 "longBylineText": {
+                  "runs": [
+                   {
+                    "text": "Some Artist",
+                    "navigationEndpoint": {
+                     "browseEndpoint": {
+                      "browseId": "UC_daft_punk_channel",
+                      "browseEndpointContextSupportedConfigs": {
+                       "browseEndpointContextMusicConfig": {
+                        "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                       }
+                      }
+                     }
+                    }
+                   },
+                   {
+                    "text": " \u2022 "
+                   },
+                   {
+                    "text": "2013"
+                   }
+                  ]
+                 },
+                 "thumbnail": {
+                  "thumbnails": [
+                   {
+                    "url": "https://i.ytimg.com/vi/vidSeed0001/sddefault.jpg",
+                    "width": 640,
+                    "height": 480
+                   }
+                  ]
+                 },
+                 "lengthText": {
+                  "runs": [
+                   {
+                    "text": "4:10"
+                   }
+                  ]
+                 },
+                 "navigationEndpoint": {
+                  "watchEndpoint": {
+                   "videoId": "vidSeed0001",
+                   "watchEndpointMusicSupportedConfigs": {
+                    "watchEndpointMusicConfig": {
+                     "hasPersistentPlaylistPanel": true,
+                     "musicVideoType": "MUSIC_VIDEO_TYPE_OMV"
+                    }
+                   }
+                  }
+                 },
+                 "videoId": "vidSeed0001",
+                 "shortBylineText": {
+                  "runs": [
+                   {
+                    "text": "Some Artist"
+                   }
+                  ]
+                 }
+                }
+               },
+               "counterpart": [
+                {
+                 "counterpartRenderer": {
+                  "playlistPanelVideoRenderer": {
+                   "title": {
+                    "runs": [
+                     {
+                      "text": "Some Video"
+                     }
+                    ]
+                   },
+                   "longBylineText": {
+                    "runs": [
+                     {
+                      "text": "Some Artist",
+                      "navigationEndpoint": {
+                       "browseEndpoint": {
+                        "browseId": "UC_daft_punk_channel",
+                        "browseEndpointContextSupportedConfigs": {
+                         "browseEndpointContextMusicConfig": {
+                          "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                         }
+                        }
+                       }
+                      }
+                     },
+                     {
+                      "text": " \u2022 "
+                     },
+                     {
+                      "text": "2013"
+                     }
+                    ]
+                   },
+                   "thumbnail": {
+                    "thumbnails": [
+                     {
+                      "url": "https://i.ytimg.com/vi/songTwin001/sddefault.jpg",
+                      "width": 640,
+                      "height": 480
+                     }
+                    ]
+                   },
+                   "lengthText": {
+                    "runs": [
+                     {
+                      "text": "3:58"
+                     }
+                    ]
+                   },
+                   "navigationEndpoint": {
+                    "watchEndpoint": {
+                     "videoId": "songTwin001",
+                     "watchEndpointMusicSupportedConfigs": {
+                      "watchEndpointMusicConfig": {
+                       "hasPersistentPlaylistPanel": true,
+                       "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                      }
+                     }
+                    }
+                   },
+                   "videoId": "songTwin001",
+                   "shortBylineText": {
+                    "runs": [
+                     {
+                      "text": "Some Artist"
+                     }
+                    ]
+                   }
+                  }
+                 },
+                 "segmentMap": {
+                  "segment": [
+                   {
+                    "primaryVideoStartTimeMilliseconds": "5000",
+                    "counterpartVideoStartTimeMilliseconds": "0",
+                    "durationMilliseconds": "238000"
+                   }
+                  ]
+                 }
+                }
+               ]
+              }
+             },
+             {
+              "playlistPanelVideoWrapperRenderer": {
+               "primaryRenderer": {
+                "playlistPanelVideoRenderer": {
+                 "title": {
+                  "runs": [
+                   {
+                    "text": "No Map"
+                   }
+                  ]
+                 },
+                 "longBylineText": {
+                  "runs": [
+                   {
+                    "text": "Some Artist",
+                    "navigationEndpoint": {
+                     "browseEndpoint": {
+                      "browseId": "UC_daft_punk_channel",
+                      "browseEndpointContextSupportedConfigs": {
+                       "browseEndpointContextMusicConfig": {
+                        "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                       }
+                      }
+                     }
+                    }
+                   },
+                   {
+                    "text": " \u2022 "
+                   },
+                   {
+                    "text": "2013"
+                   }
+                  ]
+                 },
+                 "thumbnail": {
+                  "thumbnails": [
+                   {
+                    "url": "https://i.ytimg.com/vi/noMapSong01/sddefault.jpg",
+                    "width": 640,
+                    "height": 480
+                   }
+                  ]
+                 },
+                 "lengthText": {
+                  "runs": [
+                   {
+                    "text": "3:00"
+                   }
+                  ]
+                 },
+                 "navigationEndpoint": {
+                  "watchEndpoint": {
+                   "videoId": "noMapSong01",
+                   "watchEndpointMusicSupportedConfigs": {
+                    "watchEndpointMusicConfig": {
+                     "hasPersistentPlaylistPanel": true,
+                     "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                    }
+                   }
+                  }
+                 },
+                 "videoId": "noMapSong01",
+                 "shortBylineText": {
+                  "runs": [
+                   {
+                    "text": "Some Artist"
+                   }
+                  ]
+                 }
+                }
+               },
+               "counterpart": [
+                {
+                 "counterpartRenderer": {
+                  "playlistPanelVideoRenderer": {
+                   "title": {
+                    "runs": [
+                     {
+                      "text": "No Map (Official Video)"
+                     }
+                    ]
+                   },
+                   "longBylineText": {
+                    "runs": [
+                     {
+                      "text": "Some Artist",
+                      "navigationEndpoint": {
+                       "browseEndpoint": {
+                        "browseId": "UC_daft_punk_channel",
+                        "browseEndpointContextSupportedConfigs": {
+                         "browseEndpointContextMusicConfig": {
+                          "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                         }
+                        }
+                       }
+                      }
+                     },
+                     {
+                      "text": " \u2022 "
+                     },
+                     {
+                      "text": "2013"
+                     }
+                    ]
+                   },
+                   "thumbnail": {
+                    "thumbnails": [
+                     {
+                      "url": "https://i.ytimg.com/vi/noMapVideo1/sddefault.jpg",
+                      "width": 640,
+                      "height": 480
+                     }
+                    ]
+                   },
+                   "lengthText": {
+                    "runs": [
+                     {
+                      "text": "3:00"
+                     }
+                    ]
+                   },
+                   "navigationEndpoint": {
+                    "watchEndpoint": {
+                     "videoId": "noMapVideo1",
+                     "watchEndpointMusicSupportedConfigs": {
+                      "watchEndpointMusicConfig": {
+                       "hasPersistentPlaylistPanel": true,
+                       "musicVideoType": "MUSIC_VIDEO_TYPE_OMV"
+                      }
+                     }
+                    }
+                   },
+                   "videoId": "noMapVideo1",
+                   "shortBylineText": {
+                    "runs": [
+                     {
+                      "text": "Some Artist"
+                     }
+                    ]
+                   }
+                  }
+                 }
+                }
+               ]
+              }
+             },
+             {
+              "playlistPanelVideoRenderer": {
+               "title": {
+                "runs": [
+                 {
+                  "text": "Plain Row"
+                 }
+                ]
+               },
+               "longBylineText": {
+                "runs": [
+                 {
+                  "text": "Some Artist",
+                  "navigationEndpoint": {
+                   "browseEndpoint": {
+                    "browseId": "UC_daft_punk_channel",
+                    "browseEndpointContextSupportedConfigs": {
+                     "browseEndpointContextMusicConfig": {
+                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                     }
+                    }
+                   }
+                  }
+                 },
+                 {
+                  "text": " \u2022 "
+                 },
+                 {
+                  "text": "2013"
+                 }
+                ]
+               },
+               "thumbnail": {
+                "thumbnails": [
+                 {
+                  "url": "https://i.ytimg.com/vi/plainRow001/sddefault.jpg",
+                  "width": 640,
+                  "height": 480
+                 }
+                ]
+               },
+               "lengthText": {
+                "runs": [
+                 {
+                  "text": "3:30"
+                 }
+                ]
+               },
+               "navigationEndpoint": {
+                "watchEndpoint": {
+                 "videoId": "plainRow001",
+                 "watchEndpointMusicSupportedConfigs": {
+                  "watchEndpointMusicConfig": {
+                   "hasPersistentPlaylistPanel": true,
+                   "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                  }
+                 }
+                }
+               },
+               "videoId": "plainRow001",
+               "shortBylineText": {
+                "runs": [
+                 {
+                  "text": "Some Artist"
+                 }
+                ]
+               }
+              }
+             }
+            ],
+            "playlistId": "RDAMVMkhnokW3Mw24"
+           }
+          }
+         }
+        }
+       }
+      }
+     ]
+    }
+   }
+  }
+ }
+}

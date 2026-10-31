@@ -78,6 +78,9 @@ pub struct ResolvedStream {
     /// [`StreamResolver::refresh_track`]). `None`: googlevideo's `expire`
     /// parameter, if any (see [`Self::expires_at`]).
     pub valid_until: Option<SystemTime>,
+    /// A video-only stream: its size, frame rate and index ranges
+    /// ([`crate::youtube::WebResolver::resolve_video`]); `None` for audio.
+    pub video: Option<crate::video::VideoFormat>,
 }
 
 /// The start of a stream from a URL usable immediately (see [`ResolvedStream::prefix`]).
@@ -476,7 +479,7 @@ impl ResolvedStream {
 pub(crate) type Refresh = Box<dyn FnMut(&ResolvedStream) -> Result<ResolvedStream> + Send>;
 
 /// Treat a URL as expired this long before its `expire` time.
-const EXPIRY_MARGIN: Duration = Duration::from_secs(30);
+pub(crate) const EXPIRY_MARGIN: Duration = Duration::from_secs(30);
 /// Re-resolutions per download (each needs progress since the previous one).
 const MAX_REFRESHES: u32 = 3;
 /// Transport errors in a row (not HTTP statuses) before giving up.

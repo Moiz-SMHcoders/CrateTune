@@ -132,6 +132,10 @@ pub struct MusicApp {
 
     // ---- overlays & windows
     pub(crate) np: NowPlaying,
+    /// Music videos in the artwork slot and theater mode (`video.rs`).
+    pub(crate) video: crate::video::VideoState,
+    /// The chrome-free theater view (`theater.rs`).
+    pub(crate) theater: crate::theater::Theater,
     /// Who put the window in full screen (`np_fullscreen.rs`).
     pub(crate) fullscreen: crate::np_fullscreen::FullScreen,
     /// Re-checks a full-screen transition in flight.
@@ -357,6 +361,8 @@ impl MusicApp {
             seen_advance: 0,
             last_failure: None,
             np,
+            video: Default::default(),
+            theater: Default::default(),
             fullscreen: crate::np_fullscreen::FullScreen::new(window.is_fullscreen()),
             fullscreen_task: None,
             queue_open: false,
@@ -667,13 +673,15 @@ impl MusicApp {
         crate::selection::update(window, |s| s.select_all());
     }
 
-    /// Esc (menus and popovers handle it first): close a dialog, else drop a song
-    /// selection, else end a lyrics
+    /// Esc (menus and popovers handle it first): close a dialog, else leave
+    /// theater mode, else drop a song selection, else end a lyrics
     /// card selection, else leave the full screen entered from Now Playing's button
     /// (`np_fullscreen.rs`), else Now Playing, else the queue panel, else go back.
     pub fn escape(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         if window.has_active_dialog(cx) {
             window.close_dialog(cx);
+        } else if self.theater.open {
+            self.set_theater(false, window, cx);
         } else if !self.np.open && crate::selection::clear(window) {
             // Dropped a song selection (`selection.rs`).
         } else if self.onboarding.is_some() {
@@ -982,9 +990,12 @@ impl Render for MusicApp {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let mut frame = Frame::new();
         let reveal = frame.get(&self.np.reveal);
-        // Once the Now Playing screen fully covers the window, skip building the
-        // shell underneath, so per-frame lyric renders stay cheap.
-        let covered = reveal >= 1.;
+        // Music videos: start, stop, free replaced frames (`video.rs`).
+        self.sync_video(window, cx);
+        let theater = self.theater.open;
+        // Once the Now Playing screen (or theater mode) fully covers the window,
+        // skip building the shell underneath, so per-frame lyric renders stay cheap.
+        let covered = reveal >= 1. || theater;
         self.sync_window_background(window, cx);
         let translucent = self.translucent_sidebar(cx);
         let mut root = div()
@@ -1011,7 +1022,7 @@ impl Render for MusicApp {
         // except in full screen (where Now Playing covers the whole window).
         let custom = crate::titlebar::custom();
         let bar_h = px(crate::titlebar::top_inset());
-        let titlebar = (custom && !(covered && window.is_fullscreen())).then(|| {
+        let titlebar = (custom && !theater && !(covered && window.is_fullscreen())).then(|| {
             let key = self.titlebar_key(window, cx);
             crate::np_region::sync(
                 &mut self.titlebar,
@@ -1114,7 +1125,10 @@ impl Render for MusicApp {
         } else if let Some(titlebar) = titlebar {
             root = root.child(titlebar);
         }
-        if reveal > 0. {
+        if theater {
+            // Chrome free, over everything; Now Playing waits underneath unbuilt.
+            root = root.child(self.render_theater(&mut frame, window, cx));
+        } else if reveal > 0. {
             root = root.child(self.render_now_playing_screen(reveal, &mut frame, window, cx));
         }
         if let Some(onboarding) = &self.onboarding {
@@ -1134,6 +1148,9 @@ impl Render for MusicApp {
         }
         if let Some(rate) = &mut self.render_rate {
             rate.record(frame.now, frame.is_animating() || self.wheel.gliding());
+        }
+        if let Some(at) = self.take_video_wake() {
+            frame.wake_at(at);
         }
         if let Some(at) = frame.finish(window) {
             self.schedule_np_wake(at, cx);

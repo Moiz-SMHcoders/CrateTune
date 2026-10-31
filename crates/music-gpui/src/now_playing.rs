@@ -91,6 +91,9 @@ struct HeaderSnap {
     /// The window is (or is going) full screen; the button's tooltip.
     fullscreen: bool,
     fullscreen_tip: SharedString,
+    /// The song has a music video: whether it's showing (`video.rs`).
+    video: Option<bool>,
+    theater_tip: SharedString,
 }
 
 #[derive(Clone, PartialEq)]
@@ -550,6 +553,10 @@ impl MusicApp {
             (false, None) => t!("np.fullscreen_enter").to_owned(),
             (true, None) => t!("np.fullscreen_exit").to_owned(),
         };
+        let theater_tip = match crate::shortcuts::display("toggle_theater", cx) {
+            Some(keys) => t!("video.theater_keys", keys = keys),
+            None => t!("video.theater").to_owned(),
+        };
         HeaderSnap {
             layout,
             background,
@@ -565,6 +572,8 @@ impl MusicApp {
             sleep_custom: self.settings.read(cx).sleep_custom(),
             fullscreen,
             fullscreen_tip: fullscreen_tip.into(),
+            video: self.video_available(cx).then_some(!self.video.session_off),
+            theater_tip: theater_tip.into(),
         }
     }
 
@@ -674,6 +683,36 @@ impl MusicApp {
                             );
                         }
                         menu
+                    }),
+            )
+            .when_some(s.video, |this, showing| {
+                this.child(
+                    Button::new("np-video")
+                        .ghost()
+                        .rounded(px(999.))
+                        .icon(if showing {
+                            Lucide::VideoOff
+                        } else {
+                            Lucide::Video
+                        })
+                        .tooltip(if showing {
+                            t!("video.hide")
+                        } else {
+                            t!("video.show")
+                        })
+                        .on_click(|_, _, cx| {
+                            update_app(cx, |app, cx| app.toggle_video_session(cx));
+                        }),
+                )
+            })
+            .child(
+                Button::new("np-theater")
+                    .ghost()
+                    .rounded(px(999.))
+                    .icon(Lucide::RectangleHorizontal)
+                    .tooltip(s.theater_tip.clone())
+                    .on_click(|_, window, cx| {
+                        update_app(cx, |app, cx| app.set_theater(true, window, cx));
                     }),
             )
             .child(
@@ -864,12 +903,25 @@ impl MusicApp {
         cx: &mut Context<Self>,
     ) -> Div {
         let playing = self.playback.status == PlaybackStatus::Playing;
-        let art = self.art_image(track, cx);
+        // The music video takes a rectangular slot's place, at its own aspect
+        // (`video.rs`); a round one keeps the artwork.
+        let video =
+            radius.and_then(|_| self.video_element(ObjectFit::Contain, std::time::Instant::now()));
+        let aspect = video
+            .as_ref()
+            .and_then(|_| self.video.aspect())
+            .map(|a| a.clamp(1., 2.4));
+        let art = video.is_none().then(|| self.art_image(track, cx)).flatten();
         let radius = radius.unwrap_or(side * 0.5);
         let inner = div()
             .rounded(radius)
             .shadow_2xl()
-            .bg(white(0.08))
+            .bg(if video.is_some() {
+                gpui::black()
+            } else {
+                white(0.08)
+            })
+            .when_some(video, |this, video| this.overflow_hidden().child(video))
             .when_some(art, |this, art| {
                 this.child(
                     img(art)
@@ -879,6 +931,7 @@ impl MusicApp {
                 )
             });
         let scale = if playing { 1.0f32 } else { 0.9 };
+        let height = aspect.map_or(1., |a| 1. / a);
         let shaped = if crate::effects::ambient_motion() {
             // GPUI's built-in stateful spring (keyed by element id): slightly
             // underdamped, so the art "pops" when playback resumes.
@@ -886,15 +939,20 @@ impl MusicApp {
                 .with_spring(
                     "np-artwork-scale",
                     SpringAnimation::new(SpringConfig::new(260., 22., 1.)).to(scale),
-                    move |this, scale| this.size(side * scale),
+                    move |this, scale| this.w(side * scale).h(side * scale * height),
                 )
                 .into_any_element()
         } else {
             // Reduced / no motion: the size just changes.
-            inner.size(side * scale).into_any_element()
+            inner
+                .w(side * scale)
+                .h(side * scale * height)
+                .into_any_element()
         };
+        // A video's slot is only as tall as the video.
         div()
-            .size(side)
+            .w(side)
+            .h(side * height)
             .flex_none()
             .flex()
             .items_center()
@@ -1158,7 +1216,9 @@ impl MusicApp {
             extra: side.as_f32() as u64
                 | u64::from(self.engine.is_some()) << 32
                 | u64::from(self.queue.has_next()) << 33
-                | u64::from(track.is_some_and(|t| crate::store::is_disliked(&t.video_id))) << 34,
+                | u64::from(track.is_some_and(|t| crate::store::is_disliked(&t.video_id))) << 34
+                // A music video started or stopped: the artwork slot changes.
+                | (self.video.generation & 0xffff) << 40,
         }
     }
 

@@ -1,0 +1,7 @@
+# Music videos (`video.rs`): log lines and `@video-status` (developer-only, English).
+video.rs: video: looking up {id}'s video failed: {e}
+video.rs: video: no stream for {video_id}: {e}
+video.rs: same time
+video.rs: itag {} {}x{} {} fps {} via {}
+video.rs: {:?}, shown {} dropped {} repositions {}
+video.rs: video: setting {} {} (decoder {}{}), session {}, showing {}, lookup {lookup}, stream {stream}, player {player}

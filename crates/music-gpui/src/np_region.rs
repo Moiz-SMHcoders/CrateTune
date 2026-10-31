@@ -54,6 +54,10 @@ impl Render for Region {
         let (element, wake) = app.update(cx, |app, cx| {
             let mut frame = Frame::new();
             let element = render(app, &mut frame, window, cx);
+            // A music video in the region asks for its next frame (`video.rs`).
+            if let Some(at) = app.take_video_wake() {
+                frame.wake_at(at);
+            }
             // Requests the next frame for the view being rendered: this region.
             (element, frame.finish(window))
         });

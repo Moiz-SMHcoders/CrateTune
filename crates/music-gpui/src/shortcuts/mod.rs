@@ -306,6 +306,13 @@ pub const ACTIONS: &[ShortcutAction] = &[
         "f11",
         mac: "ctrl-cmd-f"
     ),
+    shortcut!(
+        "toggle_theater",
+        View,
+        "video.theater",
+        ToggleTheater,
+        "secondary-shift-t"
+    ),
     shortcut!("minimize", View, "menu.minimize", Minimize, "secondary-m"),
     shortcut!("zoom", View, "menu.zoom", Zoom, ""),
     shortcut!(

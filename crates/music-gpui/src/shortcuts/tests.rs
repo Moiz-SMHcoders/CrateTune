@@ -352,9 +352,14 @@ fn default_keymap_is_the_old_one() {
             .into_iter()
             .map(|(keys, id, ctx)| (combo(&keys, os), id, ctx))
             .collect();
-        // New: the cheat sheet, full screen (⌃⌘F on a Mac, F11 elsewhere).
+        // New: the cheat sheet, full screen (⌃⌘F on a Mac, F11 elsewhere), theater mode.
         expected.push((combo(&format!("{primary}-/"), os), "show_shortcuts", None));
         expected.push((fullscreen_default(os), "toggle_fullscreen", None));
+        expected.push((
+            combo(&format!("{primary}-shift-t"), os),
+            "toggle_theater",
+            None,
+        ));
         let entries = keymap(&Overrides::new(), os);
         let mut actual: Vec<(Combo, &str, Option<&str>)> = entries
             .iter()
@@ -422,6 +427,7 @@ fn gpui_bindings_match_the_old_construction() {
         .chain([
             (format!("{primary}-/"), "show_shortcuts", None),
             (fullscreen, "toggle_fullscreen", None),
+            (format!("{primary}-shift-t"), "toggle_theater", None),
         ])
         .map(|(keys, id, ctx)| {
             (

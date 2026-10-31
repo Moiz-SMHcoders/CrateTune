@@ -959,6 +959,11 @@ locales/<locale>/*.lang  the catalogs (English = source), embedded by build.rs v
   playing; pre-rendered images, since GPUI has no radial gradients). Immersive, minimal
   and editorial bring their own colours. Colours cross-fade between tracks. Design and
   background are also in the header's menu. Mini player style: theme or blurred artwork.
+* **Music videos and theater mode** (`video.rs`, `theater.rs`, `music_core::video`; after
+  Limusic): the song's music video, muted and following the audio clock, in Now Playing's
+  artwork slot (Appearance → Music videos, off by default), and a chrome-free theater view
+  (video or artwork filling the window, lyric line, fading controls; ⌘⇧T). See [Music
+  videos and theater mode](#music-videos-and-theater-mode).
 * **Lyrics cards** (`card_render.rs`, `lyrics_card.rs`; after ArchiveTune's
   `LyricsImageCard` / `LyricsShareDialog`): the share button in the lyrics toolbar
   switches the synced lyrics to selection (click up to six lines, the toolbar shows the
@@ -3137,6 +3142,148 @@ Linux / Windows fonts for cards (fallback depends on installed fonts), the cache
 under a 120 Hz display, CPU of the final build with the screen awake (the screen locked
 before the last run; the final code equals the measured one plus the bar and Esc
 changes). Not measured: the Lyrics-first strip region separately.
+
+### Music videos and theater mode
+
+| ![A music video in the artwork slot](docs/screenshots/video-np-split.png) | ![Theater mode with the video](docs/screenshots/video-theater.png) |
+|---|---|
+| ![Theater mode with the artwork](docs/screenshots/video-theater-artwork.png) | ![Appearance → Music videos](docs/screenshots/video-settings.png) |
+
+Idea from Limusic (GPL-3.0): the playing song's music video in place of the artwork, and a
+theater view. The audio stays on the app's own engine (and so keeps the EQ, crossfade,
+speed, normalization, casting); the picture is a second, muted stream that follows it.
+
+**Which video** (`video.rs`, per track). A track that *is* a video (OMV / UGC) shows its
+own picture. A song (ATV) shows the music video YouTube Music pairs it with: signed-in
+`next` responses wrap the row in `playlistPanelVideoWrapperRenderer` with a `counterpart`
+arm and a `segmentMap` (the stretches both play: start in the song, start in the video,
+length) — `pages.rs` keeps them as `WatchQueue::counterparts`, `Counterpart::video_for`
+picks the side, and `video::TimeMap` maps the song's position into the video (gaps under
+1.5 s bridged; outside the stretches, e.g. a video's intro, the artwork shows). Anonymous
+`next` responses never carry the pair (checked live with WEB_REMIX and ANDROID_MUSIC on
+"Instant Crush"), so signed out a song makes no request and keeps its artwork; a track of
+unknown type (`@play-id`, library rows) is asked about once, the answer says if it's a
+video.
+
+**Fetching** (`WebResolver::resolve_video`). The same client chain as the audio (visionOS,
+TV, TV Simply, web, with their PoTokens, `n` / signature solving and ad waits), asking for a
+video-only format instead: H.264 (`avc1`) in fragmented MP4, the tallest at or under the
+quality cap (360p / 480p / 720p; the shorter side counts for portrait videos), 30 fps
+preferred over 60, the lower bitrate, and only formats with `initRange` / `indexRange`. A
+video resolve honours the circuit breakers but never trips them, never changes the stream
+status and has no preview fallback: a client without a fitting video format says nothing
+about its songs. visionOS served every video tried (itag 135, 854×480, 24 fps, ~0.5 Mbit/s
+for "Instant Crush"). The player fetches `ftyp` + `moov` and the `sidx` index by byte
+range, then one fragment (≈ 5 s, starting with a keyframe) per range request, the next
+fragment while the current one decodes; a seek fetches the fragment holding the target.
+URLs are renewed 30 s before `expire` and re-resolved once on a 403 / 410
+(`video/fetch.rs`), as for the audio.
+
+**Decoding** (`video/decode/`). H.264 is the format every platform decodes without extra
+libraries: VideoToolbox on macOS (hardware on every Mac; temporal processing for display
+order, output straight into IOSurface-backed `420f` buffers that GPUI's `surface` element
+draws through its Metal `CVMetalTextureCache` path, no copy, no sprite atlas); Media
+Foundation's H.264 decoder on Windows (`CLSID_MSH264DecoderMFT`, synchronous, NV12 → BGRA
+on the CPU into a `RenderImage`, the replaced one dropped from the atlas on the next render);
+OpenH264 on Linux (the `openh264` crate, BSD-2-Clause, compiled from Cisco's source: I420 →
+BGRA). VP9 / AV1 were left out: VideoToolbox decodes VP9 only through
+`VTRegisterSupplementalVideoDecoderIfAvailable` on Macs whose hardware has it and AV1 only on
+M3 and later, Media Foundation's VP9 / AV1 decoders are Store extensions, and on Linux they
+would mean libvpx / dav1d (C, NASM, meson) builds; YouTube offers H.264 for every music
+video up to 1080p. Where a system has no
+decoder (Windows N without the Media Feature Pack) the setting hides itself; music-core's
+`video` cargo feature (default) leaves all of it out.
+
+**Sync** (`video/sync.rs`, `video/player.rs`). A worker decodes up to 8 frames ahead (16 MB
+budget) and sleeps when the queue is full (so a paused video costs nothing). Each render
+asks `VideoPlayer::present` for the frame of the audio clock's position (the same
+`SmoothClock` the lyrics use, through the `TimeMap`): the newest frame not later than the
+clock is shown, the ones it passed are dropped (never shown late), nothing is shown early.
+Decoded frames more than 0.6 s ahead of the clock (a seek back) or the newest more than
+0.9 s behind (a seek forward, a stall) reposition the decoder at the clock: fetch the
+fragment, decode from its keyframe, skip what's before the target; meanwhile the old frame
+stays. Paused or buffering, the clock stands and so does the picture. The next render is
+asked for when the next frame is due (at most ~30 fps); with no video the setting costs
+nothing (no player, no requests): the player only exists while Now Playing or theater
+mode is on screen and the window visible, and is dropped when they close (the resolved
+URL stays for a reopen; another track or quality drops it).
+
+**Theater mode** (`theater.rs`): over the whole window, no top bar, sidebar or player bar;
+the video (contained) or the artwork on its blurred backdrop, the current and next lyric
+line over the lower third, and controls (leave, title, video / artwork, progress,
+previous / play / next) that fade after 3 s without pointer movement while playing (not
+while paused). ⌘⇧T / Ctrl+Shift+T (`toggle_theater`, editable), View → Theater mode, Now
+Playing's header button; Esc or ✕ leaves. While it's open neither the shell nor Now
+Playing is built.
+
+**Settings.** Appearance → Music videos: *Show music videos in the artwork* (off by
+default: a video costs 3–10× the audio's data and keeps a decoder running in an app that is
+otherwise light on both), *Video quality* (480p by default: sharp at the artwork's ≤ 400 pt,
+half of 720p's bitrate). In profiles (the Minimal / Fast profile turns it off) and the
+settings search; Now Playing's camera button switches to the artwork for the session.
+Script actions: `@video=on|off`, `@video-session=on|off`, `@video-quality=480p`,
+`@video-play=ID` (plays an id as a music video), `@video-status`, `@theater[=on|off]`,
+`@theater-move`, `@theater-status`. `scripts/perf-macos.sh --video` measures it.
+
+**Live check** (`cargo run --release -p music-core --example video -- auto "daft punk
+instant crush official video"`: resolve, then fetch, decode and present against a
+simulated clock with two seeks; nothing shown): visionOS answered in 0.59 s with itag 135
+(854×480, 24 fps, `avc1.4D401E`, 10.7 MB for 5:38, 0.52 Mbit/s); the first frame was on
+screen 1.07 s after the resolve started (index, one fragment, decode from its keyframe);
+then frames landed 2–5 ms after their time, the seek to 1:30 showed its first frame 24 ms
+late and the paused seek back to 0:05 the right frame; 365 frames in 17.1 s, 23 dropped
+(the catch-up after starting and seeking), 1.5 % of one core for fetching and decoding.
+
+**Measurements** (M4 MacBook Air, 60 Hz, macOS 26.6; release builds of this branch and of
+`main` at `cd4c6ec`, both thin LTO; "Instant Crush" official video played muted with
+`@play-id`, `MUSIC_ON_TOP=1`, the display kept awake; CPU = process CPU time over seconds
+35–50, once the stream, Home and the radio had loaded, two runs each; memory =
+`footprint`; the machine was shared with other builds, load average 60–100):
+
+| Session | main | this branch |
+|---|---|---|
+| Playing, Now Playing closed (setting on) | 2.0 / 1.9 % | 1.7 / 1.7 % |
+| Now Playing open, setting off | 3.4 / 3.1 %, 8 renders/s | 3.3 / 3.2 %, 8 renders/s |
+| Now Playing open, video (480p) | — | 10.4 / 9.7 %, 31–32 renders/s, ~958 frames shown in 41 s, 11–13 dropped |
+| Now Playing open, video at 720p | — | 10.3 / 10.6 %, 942–960 shown, 10–28 dropped |
+| Now Playing open, video paused | — | 1.0 / 0.9 % |
+| Theater mode, video | — | 4.9 / 5.1 %, 27 renders/s, 961 shown, 9–10 dropped |
+| Theater mode, artwork (setting off) | — | 1.6 / 1.7 %, 4 renders/s |
+
+Footprint was 131–193 MB in every session, with no difference between the builds beyond
+run-to-run noise (the decoded frames ahead are ≤ 8 IOSurfaces of 0.6 MB at 480p). With the
+setting off, or on with Now Playing closed, the branch costs nothing: no lookup, no stream,
+no player. The video's cost is mostly drawing, not decoding (hardware decode plus fetching
+is ~1.5 % in the example above): each new frame re-renders the window's root view, and Now
+Playing's player column with it; theater mode builds far less per frame. Binary size
+(macOS arm64 release, stripped): 51,156,400 bytes against main's 50,987,344 (+165 KB,
++0.3 %); VideoToolbox and Media Foundation are system frameworks, OpenH264 adds to the Linux
+build only (see the release dry run in the round's report). `scripts/perf-macos.sh --video`
+gives the same table (run here too; its default sessions measured the two builds alike
+within the load noise).
+
+**Verified** (macOS 26.6, M4, temporary `MUSIC_CONFIG_DIR`, `MUSIC_VOLUME=0.0`,
+release builds): the example above; in the app "Instant Crush" (official video) in the split
+design's artwork slot at its 16:9 shape and in theater mode with and without the controls
+(screenshots, `screenshot` build: GPUI's offscreen renderer draws the `surface` too);
+`@video-status` after seeks (repositions counted, frames on time), `@video-session=off`
+dropping the player, the setting off creating no player at all; theater mode with the
+artwork (a song without a video); `@theater-move` bringing the controls back, Esc leaving.
+Unit tests without network: MP4 init / `sidx` / fragment parsing on a fixture clip (B-frames,
+3 fragments), every platform decoder on that clip, the player against a local range server
+(start, seek forward and back, paused frame, next-frame timing, failure), format selection
+on a trimmed player response, the resolver chain for videos (breakers untouched, no preview),
+counterpart parsing on a hand-built signed-in `next` response and through a fake server,
+the time maps, the A/V sync decisions, URL renewal and re-resolution, theater state, the
+setting's defaults. The Media Foundation decoder is clippy-clean for
+`x86_64-pc-windows-gnu`; Windows and Linux CI run the decoder and player tests.
+
+**Not verified** songs paired with their video by a real signed-in account (the pair's
+parsing is fixture-tested only; anonymous responses have none), a `segmentMap` with an intro
+or a break on a real song, Windows and Linux in the app (decoders tested in CI only; BACKLOG
+P8), DXVA on Windows (not used), 60 fps-only videos, URL expiry during a video longer than
+its URL (~6 h), TV / web clients serving a video (visionOS served every one), theater mode
+with a physical pointer, a second display or full screen.
 
 ### Measurements (app shell round)
 

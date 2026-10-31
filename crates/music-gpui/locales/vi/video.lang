@@ -1,0 +1,13 @@
+# Music videos in Now Playing's artwork slot, and theater mode.
+
+video.settings.group = Video nhạc
+video.settings.show = Hiện video nhạc thay cho ảnh bìa
+video.settings.show_note = Đang phát hiện video nhạc của bài hát thay cho ảnh bìa, không có tiếng và khớp nhịp với nhạc. Tốn thêm dữ liệu (khoảng 0,5–2 Mbit/s) và một ít CPU khi đang hiển thị.
+video.settings.quality = Chất lượng video
+video.settings.quality_note = Chất lượng cao nhất được tải. Thấp hơn thì tốn ít dữ liệu hơn.
+video.settings.pairs_note = Video hiện hình ảnh của chính nó. Bài hát hiện video nhạc khi YouTube Music ghép đôi hai bản, điều này chỉ có với tài khoản đã đăng nhập.
+video.show = Hiện video
+video.hide = Hiện ảnh bìa
+video.theater = Chế độ rạp hát
+video.theater_keys = Chế độ rạp hát ({keys})
+video.theater_exit = Thoát chế độ rạp hát (Esc)

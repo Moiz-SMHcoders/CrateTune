@@ -281,3 +281,17 @@ file names its source in its header or next to the ported code.
 | `crates/music-gpui/src/queue_tabs.rs` | Zuno `src/player/TabManager.ts` | Only the queue is per tab (one engine; Zuno gives each UI tab its own player and page stack): tabs are saved queues, one of them playing; the others are previewed and "continued" where they were left. |
 | `crates/music-gpui/src/selection.rs`, `src/components/selection_bar.rs` | Zuno `src/ui/hooks/useTrackSelection.ts`, `src/ui/components/SelectionBar.tsx` | Same click rules (⌘ / Ctrl toggles, Shift extends from the last row touched, selected songs in list order); one app-wide selection keyed by list id, index and video id; a plain click still plays (Zuno's collapses the selection); ⌘A / Esc; more actions (play, play next, like, dislike, the list's own "Remove"). |
 | `crates/music-gpui/src/logs.rs` | Zuno's log viewer (Settings) | Own implementation: stderr through a pipe into a ring buffer and a rotated file, levels guessed from the text, secrets redacted before anything is kept. |
+
+## Limusic (feat/music-video): music videos and theater mode
+
+Ideas and data shapes from **Limusic** (<https://github.com/SimoHypers/limusic>, © SimoHypers
+and Limusic contributors, GPL-3.0, commit `d82372cdd3016e3c5e28ea8022596b7fefdf681a`). No code
+was copied: Limusic plays the video in a `<video>` element or mpv, CrateTune decodes it itself
+(`src/video/`, original). Each file names its source in its header.
+
+| File | Upstream file(s) | Changes |
+|---|---|---|
+| `crates/music-core/src/innertube/pages.rs` (`counterpart`), `models.rs` (`Counterpart`) | `crates/innertube/src/models/metadata.rs` (`panel_rows`, `set_twin`, `Segment`) | The wrapper row's `counterpart` arm and its `segmentMap` read the same way (milliseconds as strings or numbers); kept as a list beside the queue instead of on each row; `Counterpart::video_for` also turns a video-primary pair around. |
+| `crates/music-core/src/video/timeline.rs` | `crates/innertube/src/models/metadata.rs` (`counterpart_segments`, issue #535 there) | Limusic maps a Song / Video *switch* onto the other version's time; here the song's position drives the muted video continuously, with gaps under 1.5 s bridged and the artwork shown in longer ones. |
+| `crates/music-gpui/src/theater.rs` | `ui/src/lib/components/TheaterMode.svelte` | The idea (picture filling the window, lyric line over it, controls that fade after a few still seconds but not while paused, Esc leaves); written for GPUI, without Limusic's queue / lyrics columns or OS full screen. |
+| `crates/music-gpui/src/video.rs` (`session_off`) | `ui/src/lib/video.svelte.ts` (`video.want`) | "Show artwork" lasts for the session; the setting is the lasting off switch. |

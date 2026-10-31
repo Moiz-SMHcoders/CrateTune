@@ -7,6 +7,22 @@ versions follow [SemVer](https://semver.org/).
 
 ### Added
 
+* **Music videos in Now Playing.** Settings → Appearance → Music videos → *Show music videos in
+  the artwork* (off by default): when the playing song has a music video, Now Playing shows it,
+  muted, in the artwork's place and in step with the music, which keeps coming from the app's
+  own audio engine. A video track shows its own picture; a song shows the music video YouTube
+  Music pairs it with (signed-in accounts), following the stretches the two share, so a video's
+  intro or a scene without the song doesn't put it out of step. The header's video button
+  switches back to the artwork for the rest of the session. *Video quality* caps what is
+  fetched (360p, 480p by default, 720p). Seeks, pauses and buffering are followed; late frames
+  are dropped, never shown late. Decoding uses VideoToolbox on macOS (hardware), Media
+  Foundation on Windows and OpenH264 on Linux; nothing runs and nothing is downloaded while no
+  video is on screen. (After Limusic.)
+* **Theater mode** (Limusic's idea): the song filling the window, chrome free — the music video
+  or the artwork on its blurred backdrop, the current lyric line over it, and controls that
+  fade after three still seconds while the music plays. From Now Playing's header, the View
+  menu or ⌘⇧T / Ctrl+Shift+T; Esc leaves.
+
 * **Package managers.** Manifests for a Homebrew cask (`packaging/homebrew/`), a Scoop bucket
   (`packaging/scoop/`), the AUR (`cratetune-bin` from the release tarball and `cratetune` from
   source, `packaging/aur/`) and Flatpak (`packaging/flatpak/`, app id

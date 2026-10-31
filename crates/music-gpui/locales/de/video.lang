@@ -1,0 +1,13 @@
+# Music videos in Now Playing's artwork slot, and theater mode.
+
+video.settings.group = Musikvideos
+video.settings.show = Musikvideos statt des Covers zeigen
+video.settings.show_note = „Läuft gerade“ zeigt das Musikvideo des Songs anstelle des Covers, stumm und im Takt der Musik. Braucht mehr Daten (etwa 0,5–2 Mbit/s) und etwas CPU, solange es zu sehen ist.
+video.settings.quality = Videoqualität
+video.settings.quality_note = Die höchste geladene Qualität. Niedriger braucht weniger Daten.
+video.settings.pairs_note = Ein Video zeigt sein eigenes Bild. Ein Song zeigt sein Musikvideo, wenn YouTube Music die beiden verknüpft – das tut es bei angemeldeten Konten.
+video.show = Video zeigen
+video.hide = Cover zeigen
+video.theater = Kinomodus
+video.theater_keys = Kinomodus ({keys})
+video.theater_exit = Kinomodus beenden (Esc)

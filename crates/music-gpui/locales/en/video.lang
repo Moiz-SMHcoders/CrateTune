@@ -1,0 +1,24 @@
+# Music videos in Now Playing's artwork slot, and theater mode.
+# Format: see crates/music-gpui/i18n_parse.rs ({name} = placeholder, {app} = the
+# app's name, `.one` / `.other` = plural forms).
+
+# ---- Settings → Appearance → Music videos
+video.settings.group = Music videos
+video.settings.show = Show music videos in the artwork
+video.settings.show_note = Now Playing shows the song's music video in place of the artwork, muted and in time with the music. Uses more data (about 0.5–2 Mbit/s) and some CPU while it's on screen.
+video.settings.quality = Video quality
+# The options are 360p, 480p and 720p (not translated).
+video.settings.quality_note = The highest quality fetched. Lower uses less data.
+video.settings.pairs_note = A video shows its own picture. A song shows its music video when YouTube Music pairs the two, which it does for signed-in accounts.
+
+# ---- Now Playing header buttons (tooltips)
+# Shown while the artwork is on screen and the song has a video.
+video.show = Show video
+# Shown while the video plays in the artwork's place.
+video.hide = Show artwork
+# A large view of the video or artwork that fills the window, with lyrics. Also the
+# name of its keyboard shortcut.
+video.theater = Theater mode
+# {keys} = the shortcut, e.g. ⌘⇧T.
+video.theater_keys = Theater mode ({keys})
+video.theater_exit = Exit theater mode (Esc)

@@ -5,10 +5,11 @@ use serde_json::Value;
 
 use super::models::{
     AlbumPage, AlbumSummary, AlbumTracks, ArtistItemsPage, ArtistPage, ArtistSummary, BrowsePage,
-    ChartCountry, ChartsPage, Episode, EpisodePage, ExplorePage, HomePage, Item, LyricsText,
-    MoodCategory, MoodsPage, PlaylistContinuation, PlaylistEntry, PlaylistPage, PlaylistSummary,
-    PodcastContinuation, PodcastPage, PodcastSummary, QueueChip, RelatedPage, SearchCorrection,
-    SearchResults, SearchSuggestions, SearchSummary, Shelf, VideoRating, WatchQueue,
+    ChartCountry, ChartsPage, Counterpart, Episode, EpisodePage, ExplorePage, HomePage, Item,
+    LyricsText, MoodCategory, MoodsPage, PlaylistContinuation, PlaylistEntry, PlaylistPage,
+    PlaylistSummary, PodcastContinuation, PodcastPage, PodcastSummary, QueueChip, RelatedPage,
+    SearchCorrection, SearchResults, SearchSuggestions, SearchSummary, Shelf, VideoRating,
+    WatchQueue,
 };
 use super::parse::{
     PAGE_PODCAST, analyze_runs, arr_at, browse_target, card_item, continuation_item_token,
@@ -1068,6 +1069,12 @@ pub(crate) fn watch_queue(resp: &Value) -> Result<WatchQueue> {
                 if r.get("selected").and_then(Value::as_bool) == Some(true) {
                     out.current_index = Some(out.tracks.len());
                 }
+                if let Some(c) = row
+                    .pointer("/playlistPanelVideoWrapperRenderer/counterpart/0")
+                    .and_then(|c| counterpart(&track, c))
+                {
+                    out.counterparts.push(c);
+                }
                 if let Some(rating) = row_rating(r)
                     && out.ratings.iter().all(|v| v.video_id != track.video_id)
                 {
@@ -1105,6 +1112,39 @@ pub(crate) fn watch_queue(resp: &Value) -> Result<WatchQueue> {
         })
         .collect();
     Ok(out)
+}
+
+/// A wrapper row's `counterpart` arm: the other version and the stretches the
+/// two share (`segmentMap`, milliseconds as strings; numbers are taken too).
+fn counterpart(primary: &Track, arm: &Value) -> Option<Counterpart> {
+    use crate::video::SharedStretch;
+    use std::time::Duration;
+    let other = arm.pointer("/counterpartRenderer/playlistPanelVideoRenderer")?;
+    let (twin, _) = parse_panel_video(other)?;
+    let ms = |seg: &Value, key: &str| {
+        let v = seg.get(key)?;
+        v.as_str()
+            .and_then(|s| s.parse::<u64>().ok())
+            .or_else(|| v.as_u64())
+            .map(Duration::from_millis)
+    };
+    let stretches = arr_at(arm, "/segmentMap/segment")
+        .iter()
+        .filter_map(|seg| {
+            Some(SharedStretch {
+                audio: ms(seg, "primaryVideoStartTimeMilliseconds")?,
+                video: ms(seg, "counterpartVideoStartTimeMilliseconds")?,
+                length: ms(seg, "durationMilliseconds")?,
+            })
+        })
+        .collect();
+    Some(Counterpart {
+        of: primary.video_id.clone(),
+        of_type: primary.music_video_type,
+        video_id: twin.video_id,
+        video_type: twin.music_video_type,
+        stretches,
+    })
 }
 
 pub(crate) fn related(resp: &Value) -> RelatedPage {
