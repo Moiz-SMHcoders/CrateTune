@@ -1696,7 +1696,9 @@ Music Together).
   `sync::leave_plan` tests; two app instances on one Mac (separate `MUSIC_CONFIG_DIR`s,
   `MUSIC_SECRET_STORE=file`, muted, demo clock): paired by typing the code (found over mDNS),
   the launch offer on Home, **Continue here** (the other paused, playback continued at its
-  position), **Play on …**, the popover and Settings above.
+  position), **Play on …**, the popover and Settings above. "Keep playing here": a LAN
+  session between two instances, the host ended it at 32 s: the guest carried on with the
+  room's song and queue (on), or paused (off).
 * **Idle cost.** Two paired idle nodes (mDNS on) use 0.06 s of CPU per minute together
   (0.1 % of one core; 0.11 % with a relay connection), measured with
   `cargo test -p music-core --release -- --ignored idle_cost --nocapture`. Whole app, idle, on
