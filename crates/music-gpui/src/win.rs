@@ -366,9 +366,9 @@ pub fn set_window_icon(hwnd: isize, png: Option<&[u8]>) {
             Some(bytes) => {
                 CreateIconFromResourceEx(bytes, true, 0x0003_0000, 0, 0, IMAGE_FLAGS(0)).ok()
             }
-            None => GetModuleHandleW(None)
-                .ok()
-                .and_then(|m| LoadIconW(Some(m.into()), PCWSTR(1 as *const u16)).ok()),
+            None => GetModuleHandleW(None).ok().and_then(|m| {
+                LoadIconW(Some(m.into()), PCWSTR(std::ptr::without_provenance(1))).ok()
+            }),
         };
         let Some(icon) = icon else {
             return;

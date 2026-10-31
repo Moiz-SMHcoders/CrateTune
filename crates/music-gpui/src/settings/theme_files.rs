@@ -614,7 +614,8 @@ mod tests {
 
     #[test]
     fn problems_name_the_line_and_the_reason() {
-        let cases: [(&str, fn(&Problem) -> bool); 7] = [
+        type Check = fn(&Problem) -> bool;
+        let cases: [(&str, Check); 7] = [
             (
                 "name = \"x\nbase = 1",
                 |p| matches!(p, Problem::Syntax { line, .. } if *line >= 1),

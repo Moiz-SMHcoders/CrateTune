@@ -421,14 +421,28 @@ pub fn lifted_muted(muted: Hsla, foreground: Hsla, alpha: f32) -> Hsla {
 /// The lowest window opacity ≥ `chosen` at which text stays readable on the
 /// worst desktop behind the window (white; a blur doesn't make it darker):
 /// `foreground` ≥ 4.5:1 and the (lifted) muted text ≥ 3:1 on the background
-/// drawn at that opacity over white.
-pub fn readable_window_alpha(chosen: f32, bg: Hsla, foreground: Hsla, muted: Hsla) -> f32 {
+/// drawn at that opacity over white. `lift`: the muted text is [`lifted_muted`]
+/// (the whole see-through window; the translucent sidebar's isn't).
+pub fn readable_window_alpha(
+    chosen: f32,
+    bg: Hsla,
+    foreground: Hsla,
+    muted: Hsla,
+    lift: bool,
+) -> f32 {
     use crate::components::app_backdrop::over;
     let white = hsla(0., 0., 1., 1.);
     let readable = |a: f32| {
         let shown = over(white, bg.opacity(1.), a);
         contrast(foreground, shown) >= 4.5
-            && contrast(lifted_muted(muted, foreground, a), shown) >= 3.0
+            && contrast(
+                if lift {
+                    lifted_muted(muted, foreground, a)
+                } else {
+                    muted
+                },
+                shown,
+            ) >= 3.0
     };
     let mut a = chosen.clamp(0., 1.);
     while a < 1. && !readable(a) {
@@ -863,7 +877,7 @@ mod tests {
         let (fg, muted) = text_of(&look(ThemeChoice::Dark));
         let white = hsla(0., 0., 1., 1.);
         for chosen in [0.5, 0.6, 0.7, 0.8, 0.9, 1.0] {
-            let a = readable_window_alpha(chosen, bg, fg, muted);
+            let a = readable_window_alpha(chosen, bg, fg, muted, true);
             assert!(a >= chosen && a <= 1.);
             let shown = over(white, bg, a);
             assert!(contrast(fg, shown) >= 4.5, "{chosen} → {a}");
@@ -876,8 +890,10 @@ mod tests {
             assert!(contrast(fg, dark) >= 4.5);
         }
         // 80 % and above are readable as chosen; lower levels get raised a bit.
-        assert_eq!(readable_window_alpha(0.8, bg, fg, muted), 0.8);
-        let low = readable_window_alpha(0.5, bg, fg, muted);
+        assert_eq!(readable_window_alpha(0.8, bg, fg, muted, true), 0.8);
+        let low = readable_window_alpha(0.5, bg, fg, muted, true);
+        // Without the lift the floor is higher.
+        assert!(readable_window_alpha(0.5, bg, fg, muted, false) > low);
         assert!(low > 0.5 && low < 0.75, "{low}");
         // An opaque window changes nothing; a translucent one lifts muted text.
         let mut l = look(ThemeChoice::Dark);

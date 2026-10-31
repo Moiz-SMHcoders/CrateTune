@@ -67,6 +67,7 @@ impl MusicApp {
                 theme::background_of(&look),
                 fg,
                 muted,
+                true,
             );
         }
         look

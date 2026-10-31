@@ -138,7 +138,16 @@ impl MusicApp {
             // sidebar keeps its colour and stays a little more solid.
             base.opacity(0.35)
         } else if self.translucent_sidebar(cx) {
-            base.opacity(0.45)
+            // Over the desktop blur: raised from 45 % until the sidebar's text keeps
+            // its contrast on a light desktop (as the see-through window does).
+            let theme = cx.theme();
+            base.opacity(crate::theme::readable_window_alpha(
+                0.45,
+                base,
+                theme.sidebar_foreground,
+                theme.muted_foreground,
+                false,
+            ))
         } else if self.backdrop_shown(cx) {
             base.opacity(0.6)
         } else {
