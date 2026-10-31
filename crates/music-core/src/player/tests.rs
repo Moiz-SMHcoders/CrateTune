@@ -187,9 +187,10 @@ fn title(s: &PlaybackState) -> &str {
     s.track.as_ref().map_or("", |t| t.title.as_str())
 }
 
-/// Polls without pulling audio (the deck is idle, voices fill their queues).
+/// Polls without pulling audio (the deck is idle, voices fill their queues). The
+/// deadline is generous: loaded CI runners took over 10 s here.
 fn wait_for(player: &Player, what: &str, cond: impl Fn(&PlaybackState) -> bool) -> PlaybackState {
-    let deadline = Instant::now() + Duration::from_secs(10);
+    let deadline = Instant::now() + Duration::from_secs(30);
     loop {
         let s = player.state();
         if cond(&s) {

@@ -294,7 +294,12 @@ fn run(shared: &Shared, fetcher: &RangeFetcher, format: &super::VideoFormat) -> 
             if next_fragment >= index.fragments.len() {
                 let rest = decoder.finish()?;
                 deliver(shared, generation, rest, skip_before, &mut last_kept);
-                shared.lock().ended = true;
+                // Not if a seek came in meanwhile: that would leave the worker
+                // waiting after the seek's first frame instead of decoding on.
+                let mut state = shared.lock();
+                if state.generation == generation {
+                    state.ended = true;
+                }
                 continue;
             }
             let fragment = index.fragments[next_fragment];
@@ -414,6 +419,18 @@ mod tests {
         }
     }
 
+    /// The frame shown at `at` once decoding has caught up: an earlier due
+    /// frame may come first when the worker is slow (a loaded CI runner).
+    fn settled_frame(player: &VideoPlayer, at: Duration, want: Duration) -> VideoFrame {
+        let started = Instant::now();
+        loop {
+            let f = frame_at(player, at);
+            if f.pts >= want || started.elapsed() > Duration::from_secs(10) {
+                return f;
+            }
+        }
+    }
+
     /// Fetching, decoding, presenting and repositioning on the fixture clip,
     /// served over HTTP in byte ranges like googlevideo.
     #[test]
@@ -429,15 +446,27 @@ mod tests {
         assert_eq!(f.pts, Duration::ZERO);
         assert_eq!(f.picture.size(), (128, 72));
 
-        // The clock moves on: the frame of that moment, earlier ones dropped.
-        let f = frame_at(&player, Duration::from_millis(350));
+        // The clock moves on: the frame of that moment (earlier ones are dropped
+        // when they were decoded in time; `sync` tests the dropping itself).
+        let f = settled_frame(
+            &player,
+            Duration::from_millis(350),
+            Duration::from_millis(300),
+        );
         assert_eq!(f.pts, Duration::from_millis(300));
-        assert!(player.stats().dropped >= 2, "{:?}", player.stats());
 
         // A seek forward into the last fragment, then back to the start.
-        let f = frame_at(&player, Duration::from_millis(2_520));
+        let f = settled_frame(
+            &player,
+            Duration::from_millis(2_520),
+            Duration::from_millis(2_500),
+        );
         assert_eq!(f.pts, Duration::from_millis(2_500));
-        let f = frame_at(&player, Duration::from_millis(1_010));
+        let f = settled_frame(
+            &player,
+            Duration::from_millis(1_010),
+            Duration::from_millis(1_000),
+        );
         assert_eq!(f.pts, Duration::from_millis(1_000));
         assert!(player.stats().seeks >= 2, "{:?}", player.stats());
         assert_eq!(player.status(), VideoStatus::Ready);
