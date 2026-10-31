@@ -50,7 +50,7 @@
 //! | `@hide-videos[=off]` | Content & region: hide music videos |
 //! | `@layout=split\|centered\|lyrics`, `@np-bg=blur\|gradient\|solid\|glow`, `@mini-style=theme\|artwork` | Now Playing / mini player look (saved) |
 //! | `@lyrics-style=karaoke\|apple\|slide\|glow\|fade\|none`, `@lyrics-size=40`, `@lyrics-spacing=1.5`, `@lyrics-align=left\|center\|right` | lyrics look (saved) |
-//! | `@translate=on\|off`, `@romanize=SCRIPT:on\|off` (`japanese`, `korean`, `chinese`, `devanagari`, `cyrillic`, `other`), `@lyrics-reload`, `@kanji-dict[=remove\|cancel]` (download the kanji dictionary) | lyrics extras |
+//! | `@translate=on\|off`, `@romanize=SCRIPT:on\|off` (`japanese`, `korean`, `chinese`, `devanagari`, `cyrillic`, `other`), `@lyrics-reload`, `@kanji-dict[=remove\|cancel]` (download the kanji dictionary), `@lyrics-source=NAME\|auto` (show that provider's lyrics for the track, remembered), `@lyrics-nudge=MS\|reset` (timing nudge, + = later), `@lyrics-sources` (print the "sources tried" list) | lyrics extras |
 //! | `@sleep=MIN\|eot\|off` (`@sleep=5s`: seconds, for tests) | sleep timer |
 //! | `@speed=1.25`, `@pitch=-2`, `@crossfade=6`, `@quality=low\|normal\|high`, `@normalize=on\|off`, `@skip-silence=on\|off` | engine options (saved) |
 //! | `@modules=youtube\|first\|only` | playback source (Settings → Modules) |
@@ -786,6 +786,18 @@ impl MusicApp {
                 }
             }
             "lyrics-reload" => self.reload_lyrics(cx),
+            "lyrics-source" => match arg {
+                None | Some("auto") => self.choose_lyrics_source(None, cx),
+                Some(name) => self.choose_lyrics_source(Some(name.to_owned()), cx),
+            },
+            "lyrics-nudge" => match arg.unwrap_or("reset") {
+                "reset" => self.reset_lyrics_nudge(cx),
+                ms => match ms.parse::<i32>() {
+                    Ok(ms) => self.nudge_lyrics(ms, cx),
+                    Err(_) => eprintln!("music-gpui: @lyrics-nudge: not a number of ms: {ms}"),
+                },
+            },
+            "lyrics-sources" => self.print_lyrics_sources(),
             "kanji-dict" => match arg.unwrap_or("download") {
                 "remove" => self.remove_kanji_dictionary(cx),
                 "cancel" => self.cancel_kanji_dictionary(cx),

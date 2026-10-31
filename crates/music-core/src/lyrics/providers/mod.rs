@@ -13,9 +13,11 @@ mod unison;
 mod youlyplus;
 mod youtube;
 
+use std::cell::RefCell;
 use std::fmt;
 use std::str::FromStr;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 pub use betterlyrics::{BetterLyrics, BetterLyricsVariant};
@@ -155,6 +157,27 @@ impl ProviderId {
         )
     }
 
+    /// Which wave of a lyrics search asks this provider (see
+    /// [`crate::lyrics::LyricsService`]). Wave 1 is fast (typically under a second,
+    /// timed on real tracks) and good: Apple Music / QQ word timings, LRCLIB matched on
+    /// the exact length, SimpMusic filed under the video id. Wave 2 is slower or
+    /// rougher; wave 3 the providers that often take 10 s or more, or rarely have
+    /// anything.
+    pub fn default_wave(self) -> u8 {
+        match self {
+            Self::BetterLyrics | Self::BetterLyricsPortato | Self::LrcLib | Self::SimpMusic => 1,
+            Self::Binimum
+            | Self::KuGou
+            | Self::Unison
+            | Self::YouTube
+            | Self::PaxsenixAppleMusic
+            | Self::PaxsenixSpotify
+            | Self::PaxsenixMusixmatch
+            | Self::Paxsenix => 2,
+            Self::YouLyPlus | Self::Megalobiz => 3,
+        }
+    }
+
     /// Builds the provider with the given credentials.
     pub fn create(self, keys: &ProviderKeys) -> Arc<dyn LyricsProvider> {
         let pax = |source| Arc::new(Paxsenix::new(source, keys.paxsenix.clone())) as Arc<_>;
@@ -236,6 +259,34 @@ impl HttpResponse {
     }
 }
 
+thread_local! {
+    /// Set by the service on a provider's worker thread: once raised, the
+    /// provider's remaining requests fail at once (a result arrived elsewhere).
+    static CANCEL: RefCell<Option<Arc<AtomicBool>>> = const { RefCell::new(None) };
+}
+
+/// Installs (or clears) the cancel flag for providers running on this thread.
+pub(crate) fn set_cancel_flag(flag: Option<Arc<AtomicBool>>) {
+    CANCEL.with(|c| *c.borrow_mut() = flag);
+}
+
+/// True once the search this thread works for no longer needs an answer.
+pub(crate) fn cancelled() -> bool {
+    CANCEL.with(|c| {
+        c.borrow()
+            .as_ref()
+            .is_some_and(|f| f.load(Ordering::Relaxed))
+    })
+}
+
+fn check_cancelled() -> Result<()> {
+    if cancelled() {
+        Err(Error::Parse("lyrics: cancelled".into()))
+    } else {
+        Ok(())
+    }
+}
+
 /// Lyrics bodies are small; cap them well below the audio limit.
 const MAX_LYRICS_BODY: u64 = 8 * 1024 * 1024;
 pub(crate) const BROWSER_UA: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
@@ -247,6 +298,7 @@ pub(crate) fn http_get(
     headers: &[(&str, &str)],
     timeout: Option<Duration>,
 ) -> Result<HttpResponse> {
+    check_cancelled()?;
     let mut req = agent()
         .get(url)
         .config()
@@ -268,6 +320,7 @@ pub(crate) fn http_post_json(
     headers: &[(&str, &str)],
     timeout: Option<Duration>,
 ) -> Result<HttpResponse> {
+    check_cancelled()?;
     let mut req = agent()
         .post(url)
         .config()
@@ -286,6 +339,7 @@ pub(crate) fn http_post_form(
     headers: &[(&str, &str)],
     timeout: Option<Duration>,
 ) -> Result<HttpResponse> {
+    check_cancelled()?;
     let mut req = agent()
         .post(url)
         .config()

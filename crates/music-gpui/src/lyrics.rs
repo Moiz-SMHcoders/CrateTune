@@ -9,11 +9,18 @@
 //! Persistent caching: [`MusicApp::set_lyrics_cache`] swaps the in-memory
 //! `LyricsCache` for another one (e.g. the library database's table); the
 //! service is rebuilt around it.
+//!
+//! Per track, [`TrackLyricsStore`] remembers the source picked by hand (asked first
+//! and preferred by later searches) and a timing nudge, in `lyrics-tracks.json`
+//! next to the settings; [`SourcesInfo`] keeps what the last searches did (the
+//! "sources tried" list) and the other sources' lyrics, to switch without asking
+//! again. Per-track nudges follow Zuno's `lyricsOffset` (© noFAYZ, Apache-2.0) and
+//! Limusic's pinned choices (© SimoHypers, GPL-3.0).
 
 use std::collections::HashMap;
-use std::path::PathBuf;
-use std::sync::Arc;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use gpui::{Context, SharedString};
@@ -22,9 +29,10 @@ use music_core::lyrics::romanize::dictionary::{self, DictionarySource};
 use music_core::lyrics::romanize::{Script, detect_script, romanize_line};
 use music_core::lyrics::translate::{CachedTranslator, LyricsTranslator, is_rate_limited};
 use music_core::lyrics::{
-    LyricLine, Lyrics, LyricsCache, LyricsQuery, LyricsResult, LyricsService, MemoryLyricsCache,
-    SyncKind,
+    AttemptStatus, CachedLyrics, LyricLine, Lyrics, LyricsCache, LyricsQuery, LyricsResult,
+    LyricsService, MemoryLyricsCache, RawLyrics, SearchOptions, SourceAttempt, SyncKind,
 };
+use serde::{Deserialize, Serialize};
 
 use crate::app::MusicApp;
 use crate::karaoke;
@@ -237,17 +245,212 @@ pub fn kanji_dictionary_dir() -> Option<PathBuf> {
     crate::identity::project_dirs().map(|d| d.cache_dir().join("ja-dict"))
 }
 
+/// What the last search for a track did, and every usable result it found (the
+/// shown one first), kept as raw payloads so switching costs a parse, not a request.
+#[derive(Debug, Default)]
+pub struct SourcesInfo {
+    pub attempts: Vec<SourceAttempt>,
+    pub found: Vec<RawLyrics>,
+    /// Answered from the lyrics cache (no provider asked).
+    pub from_cache: bool,
+    pub elapsed: Duration,
+    /// A provider being asked on request ("try this source").
+    pub trying: Option<String>,
+    /// Changes with every update (the toolbar rebuilds its menu only then).
+    pub revision: u64,
+}
+
+/// How many tracks' [`SourcesInfo`] are kept (the playing one and a few before).
+const SOURCES_KEPT: usize = 3;
+
+/// Per-track lyrics choices: the source picked by hand and a timing nudge.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TrackLyrics {
+    /// [`music_core::lyrics::LyricsProvider::name`] of the source picked for the track.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source: Option<String>,
+    /// Timing nudge in milliseconds; positive shows the lyrics later.
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub offset_ms: i32,
+    /// Last change (a counter), to forget the oldest tracks first.
+    #[serde(default)]
+    pub touched: u64,
+}
+
+fn is_zero(v: &i32) -> bool {
+    *v == 0
+}
+
+impl TrackLyrics {
+    fn is_default(&self) -> bool {
+        self.source.is_none() && self.offset_ms == 0
+    }
+}
+
+/// One nudge step and the largest nudge (a bigger error is the wrong lyrics).
+pub const OFFSET_STEP_MS: i32 = 100;
+pub const MAX_OFFSET_MS: i32 = 10_000;
+/// Tracks remembered; the least recently changed are forgotten beyond this.
+const MAX_TRACKS: usize = 2000;
+
+/// [`TrackLyrics`] per video id, saved as JSON (`lyrics-tracks.json`).
+#[derive(Debug, Default)]
+pub struct TrackLyricsStore {
+    path: Option<PathBuf>,
+    entries: HashMap<String, TrackLyrics>,
+    counter: u64,
+    /// The newest JSON not yet written (writes happen off the UI thread).
+    pending: Arc<Mutex<Option<String>>>,
+}
+
+impl TrackLyricsStore {
+    pub const FILE_NAME: &str = "lyrics-tracks.json";
+
+    /// Loads `path` (an unreadable or missing file is an empty store).
+    pub fn load(path: Option<PathBuf>) -> Self {
+        let entries: HashMap<String, TrackLyrics> = path
+            .as_deref()
+            .and_then(|p| std::fs::read_to_string(p).ok())
+            .and_then(|json| serde_json::from_str(&json).ok())
+            .unwrap_or_default();
+        let counter = entries.values().map(|t| t.touched).max().unwrap_or(0);
+        Self {
+            path,
+            entries,
+            counter,
+            pending: Arc::default(),
+        }
+    }
+
+    pub fn get(&self, video_id: &str) -> Option<&TrackLyrics> {
+        self.entries.get(video_id)
+    }
+
+    pub fn source(&self, video_id: &str) -> Option<&str> {
+        self.get(video_id)?.source.as_deref()
+    }
+
+    pub fn offset_ms(&self, video_id: &str) -> i32 {
+        self.get(video_id).map_or(0, |t| t.offset_ms)
+    }
+
+    #[cfg(test)]
+    fn len(&self) -> usize {
+        self.entries.len()
+    }
+
+    /// Remembers (or forgets, `None`) the source picked for a track. True if changed.
+    pub fn set_source(&mut self, video_id: &str, source: Option<String>) -> bool {
+        self.change(video_id, |t| {
+            let changed = t.source != source;
+            t.source = source;
+            changed
+        })
+    }
+
+    /// Moves the track's nudge by `delta_ms` (snapped to [`OFFSET_STEP_MS`], at most
+    /// ±[`MAX_OFFSET_MS`]); returns the new nudge.
+    pub fn nudge(&mut self, video_id: &str, delta_ms: i32) -> i32 {
+        let mut now = 0;
+        self.change(video_id, |t| {
+            let raw = (t.offset_ms + delta_ms).clamp(-MAX_OFFSET_MS, MAX_OFFSET_MS);
+            let snapped = ((raw as f32 / OFFSET_STEP_MS as f32).round() as i32) * OFFSET_STEP_MS;
+            now = snapped;
+            std::mem::replace(&mut t.offset_ms, snapped) != snapped
+        });
+        now
+    }
+
+    pub fn reset_offset(&mut self, video_id: &str) -> bool {
+        self.change(video_id, |t| std::mem::take(&mut t.offset_ms) != 0)
+    }
+
+    fn change(&mut self, video_id: &str, f: impl FnOnce(&mut TrackLyrics) -> bool) -> bool {
+        let entry = self.entries.entry(video_id.to_owned()).or_default();
+        if !f(entry) {
+            if entry.is_default() {
+                self.entries.remove(video_id);
+            }
+            return false;
+        }
+        self.counter += 1;
+        entry.touched = self.counter;
+        if entry.is_default() {
+            self.entries.remove(video_id);
+        }
+        if self.entries.len() > MAX_TRACKS {
+            let mut touched: Vec<u64> = self.entries.values().map(|t| t.touched).collect();
+            touched.sort_unstable();
+            let cut = touched[self.entries.len() - MAX_TRACKS];
+            self.entries.retain(|_, t| t.touched >= cut);
+        }
+        self.save();
+        true
+    }
+
+    /// Writes the store off the UI thread; the newest state always lands last.
+    fn save(&self) {
+        let Some(path) = self.path.clone() else {
+            return;
+        };
+        let Ok(json) = serde_json::to_string(&self.entries) else {
+            return;
+        };
+        *self.pending.lock().unwrap_or_else(|e| e.into_inner()) = Some(json);
+        let pending = self.pending.clone();
+        std::thread::spawn(move || {
+            let _guard = TRACKS_WRITE.lock().unwrap_or_else(|e| e.into_inner());
+            let next = pending.lock().unwrap_or_else(|e| e.into_inner()).take();
+            if let Some(json) = next
+                && let Err(e) = write_atomically(&path, &json)
+            {
+                eprintln!("music-gpui: {}: {e}", path.display());
+            }
+        });
+    }
+
+    /// Waits for pending writes (tests).
+    #[cfg(test)]
+    fn flush(&self) {
+        while self.pending.lock().unwrap().is_some() {
+            std::thread::sleep(Duration::from_millis(2));
+        }
+        // The writer takes the JSON while holding the lock: wait for it to finish.
+        drop(TRACKS_WRITE.lock());
+    }
+}
+
+/// Serializes writes of `lyrics-tracks.json`.
+static TRACKS_WRITE: Mutex<()> = Mutex::new(());
+
+fn write_atomically(path: &Path, contents: &str) -> std::io::Result<()> {
+    if let Some(dir) = path.parent() {
+        std::fs::create_dir_all(dir)?;
+    }
+    let tmp = path.with_extension("json.tmp");
+    std::fs::write(&tmp, contents)?;
+    std::fs::rename(&tmp, path)
+}
+
 /// Lyrics service + cache and the per-track state the app keeps.
 pub struct LyricsHub {
     pub service: Arc<LyricsService>,
     pub cache: Arc<dyn LyricsCache>,
     /// Bumped whenever the provider settings change (refetch "missing" tracks).
     pub generation: u64,
-    /// Per video id; small, never evicted.
+    /// Per video id: the last [`STATES_KEPT`] tracks (a track played again comes
+    /// back from the lyrics cache, without a request).
     pub states: HashMap<String, LyricsState>,
+    /// `states`' ids, least recently set first.
+    recent: std::collections::VecDeque<String>,
     /// Per (video id, translator key).
     pub translations: HashMap<(String, String), TranslationState>,
     pub kanji: KanjiDictionary,
+    /// Sources picked by hand and timing nudges, per track.
+    pub tracks: TrackLyricsStore,
+    /// The last few searches (most recent last), see [`SourcesInfo`].
+    pub sources: Vec<(String, SourcesInfo)>,
+    sources_revision: u64,
 }
 
 impl Default for LyricsHub {
@@ -258,9 +461,99 @@ impl Default for LyricsHub {
             cache,
             generation: 0,
             states: HashMap::new(),
+            recent: std::collections::VecDeque::new(),
             translations: HashMap::new(),
             kanji: KanjiDictionary::Unknown,
+            // Unit tests never touch the real settings folder.
+            tracks: TrackLyricsStore::load(
+                crate::settings::file::config_dir()
+                    .filter(|_| !cfg!(test))
+                    .map(|d| d.join(TrackLyricsStore::FILE_NAME)),
+            ),
+            sources: Vec::new(),
+            sources_revision: 0,
         }
+    }
+}
+
+/// Prepared lyrics kept in memory (each holds every line, word timing and
+/// romanization of a song; a long session would otherwise keep them all).
+const STATES_KEPT: usize = 12;
+
+impl LyricsHub {
+    /// Sets a track's state and forgets the oldest ones beyond [`STATES_KEPT`]
+    /// (never `keep`, the playing track, or one still loading).
+    pub fn put_state(&mut self, video_id: String, state: LyricsState, keep: Option<&str>) {
+        self.recent.retain(|id| *id != video_id);
+        self.recent.push_back(video_id.clone());
+        self.states.insert(video_id, state);
+        let mut i = 0;
+        while self.states.len() > STATES_KEPT && i < self.recent.len() {
+            let id = &self.recent[i];
+            if Some(id.as_str()) == keep
+                || matches!(self.states.get(id), Some(LyricsState::Loading))
+            {
+                i += 1;
+                continue;
+            }
+            if let Some(id) = self.recent.remove(i) {
+                self.states.remove(&id);
+                self.translations.retain(|(track, _), _| *track != id);
+            }
+        }
+    }
+
+    pub fn sources_for(&self, video_id: &str) -> Option<&SourcesInfo> {
+        self.sources
+            .iter()
+            .rev()
+            .find(|(id, _)| id == video_id)
+            .map(|(_, s)| s)
+    }
+
+    /// The track's sources, to change (bumps their revision).
+    fn sources_mut(&mut self, video_id: &str) -> Option<&mut SourcesInfo> {
+        self.sources_revision += 1;
+        let revision = self.sources_revision;
+        let info = self
+            .sources
+            .iter_mut()
+            .rev()
+            .find(|(id, _)| id == video_id)
+            .map(|(_, s)| s)?;
+        info.revision = revision;
+        Some(info)
+    }
+
+    fn set_sources(&mut self, video_id: String, mut info: SourcesInfo) {
+        self.sources_revision += 1;
+        info.revision = self.sources_revision;
+        self.sources.retain(|(id, _)| *id != video_id);
+        self.sources.push((video_id, info));
+        if self.sources.len() > SOURCES_KEPT {
+            self.sources.remove(0);
+        }
+    }
+
+    /// Where synced lyrics are at playback `position` for `video_id` (its timing
+    /// nudge applied: a positive nudge shows them later).
+    pub fn lyrics_position(&self, video_id: &str, position: Duration) -> Duration {
+        shifted(position, self.tracks.offset_ms(video_id))
+    }
+
+    /// The playback position for lyrics time `at` (inverse of `lyrics_position`).
+    pub fn playback_position(&self, video_id: &str, at: Duration) -> Duration {
+        shifted(at, -self.tracks.offset_ms(video_id))
+    }
+}
+
+/// `position - offset_ms`, clamped at zero.
+fn shifted(position: Duration, offset_ms: i32) -> Duration {
+    let offset = Duration::from_millis(u64::from(offset_ms.unsigned_abs()));
+    if offset_ms >= 0 {
+        position.saturating_sub(offset)
+    } else {
+        position + offset
     }
 }
 
@@ -314,47 +607,211 @@ impl MusicApp {
     }
 
     fn fetch_lyrics(&mut self, track: &Track, refresh: bool, cx: &mut Context<Self>) {
-        self.lyrics
-            .states
-            .insert(track.video_id.clone(), LyricsState::Loading);
+        let playing = self.playback.track.as_ref().map(|t| t.video_id.clone());
+        self.lyrics.put_state(
+            track.video_id.clone(),
+            LyricsState::Loading,
+            playing.as_deref(),
+        );
         let service = self.lyrics.service.clone();
         let generation = self.lyrics.generation;
         let query = LyricsQuery::from_track(track);
         let id = track.video_id.clone();
+        let options = SearchOptions {
+            refresh,
+            pinned: self.lyrics.tracks.source(&id).map(str::to_owned),
+        };
         let trace = self.trace;
         cx.spawn(async move |this, cx| {
-            let result = off_thread(move || {
-                let result = if refresh {
-                    service.refresh(&query)
-                } else {
-                    service.fetch(&query)
+            let (result, info) = off_thread(move || {
+                let search = service.search(&query, &options);
+                let mut found: Vec<RawLyrics> = Vec::new();
+                if let Ok(Some(r)) = &search.result {
+                    found.push(r.to_raw());
+                }
+                found.extend(search.alternates.iter().map(LyricsResult::to_raw));
+                let info = SourcesInfo {
+                    attempts: search.attempts,
+                    found,
+                    from_cache: search.from_cache,
+                    elapsed: search.elapsed,
+                    trying: None,
+                    revision: 0,
                 };
-                result.map(|r| r.map(|r| Arc::new(PreparedLyrics::new(r))))
+                let result = search
+                    .result
+                    .map(|r| r.map(|r| Arc::new(PreparedLyrics::new(r))));
+                (result, info)
             })
             .await;
             this.update(cx, |this, cx| {
+                if let Some(started) = trace {
+                    let what = match &result {
+                        Ok(Some(p)) => format!(
+                            "{} ({:?}, {} lines)",
+                            p.provider,
+                            p.kind,
+                            p.lines.len().max(p.plain.len())
+                        ),
+                        Ok(None) => "none".into(), // i18n-ignore
+                        Err(e) => format!("failed: {e}"),
+                    };
+                    let asked: Vec<String> = info
+                        .attempts
+                        .iter()
+                        .filter(|a| a.status != AttemptStatus::NotAsked)
+                        .map(|a| {
+                            format!("{}:{}", a.provider, a.elapsed.map_or(0, |d| d.as_millis()))
+                        })
+                        .collect();
+                    eprintln!(
+                        "music-gpui: [{:6.2}s] lyrics {id}: {what} in {} ms{} [{}]",
+                        started.elapsed().as_secs_f64(),
+                        info.elapsed.as_millis(),
+                        if info.from_cache { " (cache)" } else { "" },
+                        asked.join(", "),
+                    );
+                }
                 let state = match result {
-                    Ok(Some(prepared)) => {
-                        if let Some(started) = trace {
-                            eprintln!(
-                                "music-gpui: [{:6.2}s] lyrics {id}: {} ({:?}, {} lines)",
-                                started.elapsed().as_secs_f64(),
-                                prepared.provider,
-                                prepared.kind,
-                                prepared.lines.len().max(prepared.plain.len()),
-                            );
-                        }
-                        LyricsState::Ready(prepared)
-                    }
+                    Ok(Some(prepared)) => LyricsState::Ready(prepared),
                     Ok(None) => LyricsState::Missing { generation },
                     Err(e) => LyricsState::Failed(e.to_string()),
                 };
-                this.lyrics.states.insert(id, state);
+                let playing = this.playback.track.as_ref().map(|t| t.video_id.clone());
+                this.lyrics.put_state(id.clone(), state, playing.as_deref());
+                this.lyrics.set_sources(id, info);
                 cx.notify();
             })
             .ok();
         })
         .detach();
+    }
+
+    /// Shows `provider`'s lyrics for the playing track and remembers the choice
+    /// (`None`: forget it and search again). Lyrics a search already found are
+    /// switched to at once; another source is asked first, and only remembered
+    /// when it has lyrics.
+    pub fn choose_lyrics_source(&mut self, provider: Option<String>, cx: &mut Context<Self>) {
+        let Some(track) = self.playback.track.clone() else {
+            return;
+        };
+        let id = track.video_id.clone();
+        let Some(provider) = provider else {
+            self.lyrics.tracks.set_source(&id, None);
+            self.reload_lyrics(cx);
+            return;
+        };
+        let query = LyricsQuery::from_track(&track);
+        let found = self
+            .lyrics
+            .sources_for(&id)
+            .and_then(|s| s.found.iter().find(|r| r.provider == provider).cloned());
+        let service = self.lyrics.service.clone();
+        let cache = self.lyrics.cache.clone();
+        if found.is_none() {
+            if let Some(info) = self.lyrics.sources_mut(&id) {
+                info.trying = Some(provider.clone());
+            }
+            cx.notify();
+        }
+        cx.spawn(async move |this, cx| {
+            let outcome = off_thread(move || {
+                let (result, attempt) = match found {
+                    Some(raw) => (
+                        raw.parse(query.duration_secs)
+                            .and_then(|r| r.without_credits(&query)),
+                        None,
+                    ),
+                    None => {
+                        let (result, attempt) = service.fetch_from(&query, &provider);
+                        (result.ok().flatten(), Some(attempt))
+                    }
+                };
+                let raw = result.as_ref().map(LyricsResult::to_raw);
+                if let Some(raw) = &raw {
+                    // The choice is what this track shows from now on.
+                    cache.store(&query, &CachedLyrics::Found(raw.clone()));
+                }
+                let prepared = result.map(|r| Arc::new(PreparedLyrics::new(r)));
+                (provider, prepared, raw, attempt)
+            })
+            .await;
+            this.update(cx, |this, cx| {
+                let (provider, prepared, raw, attempt) = outcome;
+                if let Some(info) = this.lyrics.sources_mut(&id) {
+                    info.trying = None;
+                    if let Some(attempt) = attempt
+                        && let Some(slot) = info
+                            .attempts
+                            .iter_mut()
+                            .find(|a| a.provider == attempt.provider)
+                    {
+                        *slot = attempt;
+                    }
+                    if let Some(raw) = raw
+                        && !info.found.iter().any(|r| r.provider == raw.provider)
+                    {
+                        info.found.push(raw);
+                    }
+                }
+                if let Some(prepared) = prepared {
+                    this.lyrics.tracks.set_source(&id, Some(provider));
+                    this.lyrics
+                        .translations
+                        .retain(|(track, _), _| *track != id);
+                    this.lyrics
+                        .put_state(id.clone(), LyricsState::Ready(prepared), Some(&id));
+                }
+                cx.notify();
+            })
+            .ok();
+        })
+        .detach();
+    }
+
+    /// Prints the playing track's "sources tried" list (`@lyrics-sources`).
+    pub(crate) fn print_lyrics_sources(&self) {
+        let Some(track) = &self.playback.track else {
+            return;
+        };
+        let id = &track.video_id;
+        let Some(info) = self.lyrics.sources_for(id) else {
+            eprintln!("music-gpui: lyrics sources {id}: no search yet");
+            return;
+        };
+        eprintln!(
+            "music-gpui: lyrics sources {id}: {} ms{}, pinned {:?}, nudge {} ms",
+            info.elapsed.as_millis(),
+            if info.from_cache { " (cache)" } else { "" },
+            self.lyrics.tracks.source(id),
+            self.lyrics.tracks.offset_ms(id),
+        );
+        for a in &info.attempts {
+            eprintln!(
+                "music-gpui:   wave {} {:<22} {:>5} ms {:?}",
+                a.wave,
+                a.provider,
+                a.elapsed.map_or(0, |d| d.as_millis()),
+                a.status
+            );
+        }
+    }
+
+    /// Nudges the playing track's lyrics timing by `delta_ms` (positive: later).
+    pub fn nudge_lyrics(&mut self, delta_ms: i32, cx: &mut Context<Self>) {
+        if let Some(track) = &self.playback.track {
+            self.lyrics.tracks.nudge(&track.video_id, delta_ms);
+            cx.notify();
+        }
+    }
+
+    /// The playing track's lyrics as published again.
+    pub fn reset_lyrics_nudge(&mut self, cx: &mut Context<Self>) {
+        if let Some(track) = &self.playback.track
+            && self.lyrics.tracks.reset_offset(&track.video_id)
+        {
+            cx.notify();
+        }
     }
 
     /// Translation of the current track's lyrics with the configured translator,
@@ -646,5 +1103,116 @@ mod tests {
         assert!(prepared.synced.is_none());
         assert_eq!(prepared.plain.len(), 2);
         assert_eq!(prepared.texts()[1], "zweite Zeile");
+    }
+
+    fn temp_dir(name: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!(
+            "music-gpui-lyrics-{name}-{}-{:?}",
+            std::process::id(),
+            std::thread::current().id()
+        ));
+        let _ = std::fs::remove_dir_all(&dir);
+        dir
+    }
+
+    #[test]
+    fn remembers_source_choice_and_nudge_per_track() {
+        let dir = temp_dir("tracks");
+        let path = dir.join(TrackLyricsStore::FILE_NAME);
+        let mut store = TrackLyricsStore::load(Some(path.clone()));
+        assert!(store.set_source("vid1", Some("LrcLib".into())));
+        assert!(
+            !store.set_source("vid1", Some("LrcLib".into())),
+            "unchanged"
+        );
+        assert_eq!(store.nudge("vid2", 100), 100);
+        assert_eq!(store.nudge("vid2", 100), 200);
+        assert_eq!(store.nudge("vid2", -350), -200, "snapped to 0.1 s");
+        assert_eq!(store.nudge("vid3", 60_000), MAX_OFFSET_MS);
+        store.flush();
+
+        // A new session reads the choices back.
+        let mut again = TrackLyricsStore::load(Some(path.clone()));
+        assert_eq!(again.source("vid1"), Some("LrcLib"));
+        assert_eq!(again.offset_ms("vid2"), -200);
+        assert_eq!(again.offset_ms("unknown"), 0);
+        // Forgetting both leaves nothing behind for the track.
+        assert!(again.set_source("vid1", None));
+        assert!(again.reset_offset("vid2"));
+        assert!(again.get("vid1").is_none() && again.get("vid2").is_none());
+        again.flush();
+        let json = std::fs::read_to_string(&path).unwrap();
+        assert!(!json.contains("vid1") && json.contains("vid3"), "{json}");
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn track_store_is_capped_and_survives_a_bad_file() {
+        let dir = temp_dir("cap");
+        let path = dir.join(TrackLyricsStore::FILE_NAME);
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(&path, "{ not json").unwrap();
+        let mut store = TrackLyricsStore::load(Some(path.clone()));
+        assert_eq!(store.len(), 0);
+        for i in 0..MAX_TRACKS + 5 {
+            store.nudge(&format!("v{i}"), 100);
+        }
+        assert_eq!(store.len(), MAX_TRACKS);
+        // The oldest changes go first.
+        assert!(store.get("v0").is_none());
+        assert!(store.get(&format!("v{}", MAX_TRACKS + 4)).is_some());
+        store.flush();
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn nudge_shifts_lyrics_time() {
+        let mut hub = LyricsHub::default();
+        let at = Duration::from_secs(10);
+        assert_eq!(hub.lyrics_position("v", at), at);
+        hub.tracks.nudge("v", 300); // lyrics 0.3 s later
+        assert_eq!(hub.lyrics_position("v", at), Duration::from_millis(9700));
+        assert_eq!(hub.playback_position("v", Duration::from_millis(9700)), at);
+        hub.tracks.nudge("v", -500); // now 0.2 s earlier
+        assert_eq!(hub.lyrics_position("v", at), Duration::from_millis(10_200));
+        assert_eq!(
+            hub.lyrics_position("v", Duration::from_millis(100)),
+            Duration::from_millis(300)
+        );
+        hub.tracks.nudge("v", 2000);
+        assert_eq!(hub.lyrics_position("v", Duration::ZERO), Duration::ZERO);
+    }
+
+    #[test]
+    fn keeps_sources_of_the_last_few_tracks() {
+        let mut hub = LyricsHub::default();
+        for i in 0..5 {
+            hub.set_sources(format!("v{i}"), SourcesInfo::default());
+        }
+        assert_eq!(hub.sources.len(), SOURCES_KEPT);
+        assert!(hub.sources_for("v0").is_none());
+        assert!(hub.sources_for("v4").is_some());
+    }
+
+    #[test]
+    fn keeps_the_last_tracks_lyrics_only() {
+        let mut hub = LyricsHub::default();
+        hub.put_state(
+            "playing".into(),
+            LyricsState::Failed("x".into()),
+            Some("playing"),
+        );
+        hub.put_state("loading".into(), LyricsState::Loading, Some("playing"));
+        for i in 0..20 {
+            hub.put_state(
+                format!("v{i}"),
+                LyricsState::Missing { generation: 0 },
+                Some("playing"),
+            );
+        }
+        assert_eq!(hub.states.len(), STATES_KEPT);
+        assert!(hub.states.contains_key("playing") && hub.states.contains_key("loading"));
+        assert!(hub.states.contains_key("v19") && !hub.states.contains_key("v0"));
+        assert_eq!(hub.recent.len(), STATES_KEPT);
     }
 }

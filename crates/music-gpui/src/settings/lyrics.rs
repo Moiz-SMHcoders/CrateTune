@@ -99,6 +99,14 @@ pub(super) fn render(
                         })),
                 )
         }));
+    let match_duration = Switch::new("lyrics-match-duration")
+        .checked(l.match_duration)
+        .on_click(
+            cx.listener(|this, checked: &bool, _, cx| this.set_lyrics_match_duration(*checked, cx)),
+        );
+    let waves = Switch::new("lyrics-waves")
+        .checked(l.waves)
+        .on_click(cx.listener(|this, checked: &bool, _, cx| this.set_lyrics_waves(*checked, cx)));
     let prefer_word = Switch::new("lyrics-prefer-word")
         .checked(l.prefer_word_synced)
         .on_click(
@@ -220,10 +228,24 @@ pub(super) fn render(
                 .child(note(t!("settings.lyrics.providers_note"), cx))
                 .child(providers)
                 .child(row_at(
+                    "lyrics.match_duration",
+                    t!("settings.lyrics.match_duration"),
+                    Some(t!("settings.lyrics.match_duration_desc")),
+                    match_duration,
+                    cx,
+                ))
+                .child(row_at(
                     "lyrics.prefer_word",
                     t!("settings.lyrics.prefer_word"),
                     Some(t!("settings.lyrics.prefer_word_desc")),
                     prefer_word,
+                    cx,
+                ))
+                .child(row_at(
+                    "lyrics.waves",
+                    t!("settings.lyrics.waves"),
+                    Some(t!("settings.lyrics.waves_desc")),
+                    waves,
                     cx,
                 ))
                 .child(

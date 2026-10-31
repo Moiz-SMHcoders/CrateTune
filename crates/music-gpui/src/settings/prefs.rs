@@ -338,6 +338,10 @@ pub struct LyricsConfig {
     pub disabled: Vec<String>,
     /// A word-synced result beats a line-synced one from a higher-priority provider.
     pub prefer_word_synced: bool,
+    /// Rank lyrics by how well the matched recording's length fits the track first.
+    pub match_duration: bool,
+    /// Ask the fast, good providers first; the rest only without good synced lyrics.
+    pub waves: bool,
     /// The API keys themselves are secrets; these record that one is stored.
     pub paxsenix_key_set: bool,
     pub betterlyrics_key_set: bool,
@@ -373,6 +377,8 @@ impl Default for LyricsConfig {
                 .collect(),
             disabled: Vec::new(),
             prefer_word_synced: true,
+            match_duration: true,
+            waves: true,
             paxsenix_key_set: false,
             betterlyrics_key_set: false,
             translate: false,

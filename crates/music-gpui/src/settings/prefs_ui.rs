@@ -325,6 +325,8 @@ impl SettingsPanel {
                 .filter(|id| !l.is_enabled(*id))
                 .collect(),
             prefer_word_synced: l.prefer_word_synced,
+            match_duration: l.match_duration,
+            waves: l.waves,
             keys: ProviderKeys {
                 paxsenix: secret(Secret::PaxsenixKey),
                 betterlyrics: secret(Secret::BetterLyricsKey),
@@ -540,6 +542,14 @@ impl SettingsPanel {
 
     pub fn set_prefer_word_synced(&mut self, on: bool, cx: &mut Context<Self>) {
         self.update_lyrics_sources(cx, |l| l.prefer_word_synced = on);
+    }
+
+    pub fn set_lyrics_match_duration(&mut self, on: bool, cx: &mut Context<Self>) {
+        self.update_lyrics_sources(cx, |l| l.match_duration = on);
+    }
+
+    pub fn set_lyrics_waves(&mut self, on: bool, cx: &mut Context<Self>) {
+        self.update_lyrics_sources(cx, |l| l.waves = on);
     }
 
     fn set_lyrics_secret(&mut self, secret: Secret, value: String, cx: &mut Context<Self>) {

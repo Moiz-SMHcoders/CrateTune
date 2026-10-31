@@ -60,8 +60,6 @@ lyrics.translation_failed = Translation failed: {error}
 lyrics.kind.word = Word-synced
 lyrics.kind.line = Line-synced
 lyrics.kind.plain = Unsynced
-# Lyrics toolbar: {provider} is a provider name (LRCLIB, …), {kind} one of lyrics.kind.*.
-lyrics.source = {provider} · {kind}
 # Selecting lines for a lyrics card; {count} is the maximum number of lines.
 lyrics.select_hint.one = Select up to {count} line for a card
 lyrics.select_hint.other = Select up to {count} lines for a card
@@ -73,6 +71,34 @@ lyrics.share_tooltip = Share lyrics as a card
 lyrics.translation_on = Translation: on
 lyrics.translation_off = Translation: off
 lyrics.reload_tooltip = Search the providers again
+# Lyrics toolbar label: {provider} is a provider name (LrcLib, …), {kind} one of lyrics.kind.*.
+lyrics.from = Lyrics from {provider} · {kind}
+# The "sources tried" menu behind it: every provider asked, in order, with what it did.
+lyrics.sources.tooltip = Where these lyrics come from · switch source
+lyrics.sources.title = Sources tried
+lyrics.sources.title_in = Sources tried · {time}
+lyrics.sources.cached = From the lyrics cache · no source asked
+lyrics.sources.none = No source was asked
+# A found source: {kind} is lyrics.kind.*, {length} lyrics.fit.* (the matched recording vs the track).
+lyrics.sources.found = {kind} · {length}
+lyrics.sources.ms = {ms} ms
+lyrics.sources.automatic = Automatic (best match)
+lyrics.sources.search_again = Search all sources again
+lyrics.fit.exact = same length
+lyrics.fit.different = different length
+lyrics.status.not_found = Not found
+lyrics.status.unusable = Not usable
+lyrics.status.instrumental = Instrumental
+lyrics.status.failed = Error
+lyrics.status.timed_out = Timed out
+lyrics.status.stopped = Slower · stopped
+lyrics.status.not_asked = Not asked
+lyrics.status.trying = Asking…
+# Per-track timing nudge (0.1 s steps); {offset} is signed, e.g. +0.3.
+lyrics.offset.earlier = Lyrics earlier (−0.1 s)
+lyrics.offset.later = Lyrics later (+0.1 s)
+lyrics.offset.value = {offset} s
+lyrics.offset.reset = Timing nudged for this track · click to reset
 
 # ---- Lyrics card dialog
 card.dialog_title = Lyrics card

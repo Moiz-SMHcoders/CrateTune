@@ -1,7 +1,7 @@
 //! Lyrics: the time-synced model the UI renders ([`Lyrics`]), parsers for every
 //! format providers return (LRC / enhanced LRC, TTML, QRC, plain text),
-//! [`providers`] ported from ArchiveTune, a [`LyricsService`] that queries them
-//! in priority order, plus [`translate`] and [`romanize`] helpers.
+//! [`providers`] ported from ArchiveTune, a [`LyricsService`] that asks them in
+//! waves and ranks what they found (length of the matched recording first), plus [`translate`] and [`romanize`] helpers.
 //!
 //! ```no_run
 //! use music_core::lyrics::{LyricsQuery, LyricsService, LyricsServiceConfig};
@@ -27,11 +27,12 @@ mod types;
 pub use lrc::parse_lrc;
 pub use providers::{LyricsProvider, ProviderId, ProviderKeys};
 pub use service::{
-    CachedLyrics, LyricsCache, LyricsService, LyricsServiceConfig, MemoryLyricsCache, cache_key,
+    AttemptStatus, CachedLyrics, LyricsCache, LyricsSearch, LyricsService, LyricsServiceConfig,
+    MemoryLyricsCache, SearchOptions, SourceAttempt, cache_key,
 };
 pub use types::{
-    LineExtras, LyricLine, LyricWord, Lyrics, LyricsAgent, LyricsFormat, LyricsQuery, LyricsResult,
-    RawLyrics, SyncKind,
+    DurationFit, EXACT_DURATION_SECS, LineExtras, LyricLine, LyricWord, Lyrics, LyricsAgent,
+    LyricsFormat, LyricsQuery, LyricsResult, MatchInfo, RawLyrics, SyncKind,
 };
 
 use crate::{Result, Track};

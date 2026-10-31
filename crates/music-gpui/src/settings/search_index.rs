@@ -913,6 +913,21 @@ pub const ENTRIES: &[Entry] = &[
         "order"
     ),
     entry!(
+        "lyrics.match_duration",
+        Lyrics,
+        "settings.lyrics.providers",
+        "settings.lyrics.match_duration",
+        "settings.lyrics.match_duration_desc",
+        "length",
+        "duration",
+        "version",
+        "radio",
+        "edit",
+        "remix",
+        "live",
+        "drift"
+    ),
+    entry!(
         "lyrics.prefer_word",
         Lyrics,
         "settings.lyrics.providers",
@@ -921,6 +936,18 @@ pub const ENTRIES: &[Entry] = &[
         "synced",
         "karaoke",
         "word"
+    ),
+    entry!(
+        "lyrics.waves",
+        Lyrics,
+        "settings.lyrics.providers",
+        "settings.lyrics.waves",
+        "settings.lyrics.waves_desc",
+        "source",
+        "parallel",
+        "faster",
+        "speed",
+        "race"
     ),
     entry!(
         "lyrics.providers.keys",

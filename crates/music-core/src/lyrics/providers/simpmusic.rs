@@ -7,7 +7,7 @@ use serde_json::Value;
 use super::{LyricsProvider, http_get};
 use crate::Result;
 use crate::lyrics::qrc::unescape_xml;
-use crate::lyrics::{LyricsQuery, LyricsResult};
+use crate::lyrics::{LyricsQuery, LyricsResult, MatchInfo};
 
 const BASE: &str = "https://api-lyrics.simpmusic.org/v1/";
 const DURATION_TOLERANCE: u32 = 5;
@@ -36,8 +36,10 @@ impl LyricsProvider for SimpMusic {
         if !resp.ok() {
             return Ok(None);
         }
+        // Filed under this video id: timed to exactly the upload playing.
         Ok(best_lyrics(&resp.json()?, query)
-            .and_then(|raw| LyricsResult::parse(self.name(), raw, query.duration_secs)))
+            .and_then(|raw| LyricsResult::parse(self.name(), raw, query.duration_secs))
+            .map(|r| r.with_match(MatchInfo::video_id())))
     }
 }
 
