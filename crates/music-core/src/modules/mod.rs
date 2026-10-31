@@ -253,6 +253,7 @@ impl Selection {
             prefix: None,
             valid_until: (self.stream.expires_at_ms > 0)
                 .then(|| UNIX_EPOCH + Duration::from_millis(self.stream.expires_at_ms)),
+            video: None,
         }
     }
 }

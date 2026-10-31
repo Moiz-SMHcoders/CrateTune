@@ -4,11 +4,13 @@
 # smoothly it draws. Needs internet (Home feed, one song played muted) and a display
 # that is awake; nothing touches your real settings, keychain or library.
 #   scripts/perf-macos.sh [--binary PATH] [--settings settings.json] [--report out.md]
-#                         [--no-checks] [--keep]
+#                         [--no-checks] [--keep] [--video]
 # Builds `target/release/music-gpui` first unless --binary is given (e.g. the app
 # bundle's Contents/MacOS/cratetune). --settings copies a settings.json into the
 # throw-away settings folder (your own look and bar styles). Exits 1 when a check fails
 # (see "Checks" at the end); --no-checks only reports. --keep keeps the sessions' logs.
+# --video adds music-video sessions (a music video played with the setting off and on:
+# Now Playing closed, open, theater mode); a build without videos runs them as plain playback.
 # What each number means: docs/TESTING.md, "Performance".
 set -euo pipefail
 
@@ -23,6 +25,7 @@ settings=""
 report=""
 checks=1
 keep=0
+video=0
 while [ $# -gt 0 ]; do
   case $1 in
     --binary) binary=$2; shift 2 ;;
@@ -30,7 +33,8 @@ while [ $# -gt 0 ]; do
     --report) report=$2; shift 2 ;;
     --no-checks) checks=0; shift ;;
     --keep) keep=1; shift ;;
-    -h | --help) sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    --video) video=1; shift ;;
+    -h | --help) sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
   esac
 done
@@ -166,6 +170,22 @@ session now-playing "5:@search=daft punk,10:@play=0,14:@open,30:@quit"
 np=$(phase "$work/now-playing.log" open quit | rate app)
 np_usage=$(usage "$work/now-playing.samples" 18 29)
 
+# Music videos (`--video`): "Instant Crush" (official video, 480p H.264), played muted;
+# CPU and memory over seconds 26-45, once the stream, the Home feed and the radio have loaded.
+mv=a5uQMwRMHcs
+if [ "$video" = 1 ]; then
+  echo "video 1/5 music video playing, setting off, Now Playing open..."
+  session mv-off "5:@play-id=$mv,9:@open,46:@quit"
+  echo "video 2/5 setting on, Now Playing closed..."
+  session mv-closed "3:@video=on,5:@play-id=$mv,46:@quit"
+  echo "video 3/5 setting on, Now Playing open..."
+  session mv-np "3:@video=on,5:@play-id=$mv,9:@open,44:@video-status,46:@quit"
+  echo "video 4/5 setting on, theater mode..."
+  session mv-theater "3:@video=on,5:@play-id=$mv,9:@open,10:@theater,44:@video-status,46:@quit"
+  echo "video 5/5 setting off, theater mode (artwork)..."
+  session mv-theater-art "5:@play-id=$mv,9:@open,10:@theater,46:@quit"
+fi
+
 # Fields of "A B" values, "n/a" when missing.
 f() { printf '%s\n' "$1" | awk -v i="$2" '{ v = $i } END { print (v == "" ? "n/a" : v) }'; }
 out=$(cat <<EOF
@@ -186,6 +206,25 @@ Build: $binary${settings:+; settings from $settings}
 | Now Playing open while playing | $(f "$np" 1) fps, $(f "$np_usage" 1) % of one core, $(f "$np_usage" 2) MB |
 EOF
 )
+if [ "$video" = 1 ]; then
+  vrow() { # label session
+    local u r
+    u=$(usage "$work/$2.samples" 26 45)
+    r=$(phase "$work/$2.log" play-id quit | rate app)
+    echo "| $1 | $(f "$u" 1) % of one core, $(f "$u" 2) MB, $(f "$r" 1) renders/s (n/a: under 5) |"
+  }
+  out="$out
+$(vrow "Music video, setting off, Now Playing open" mv-off)
+$(vrow "Music video, setting on, Now Playing closed" mv-closed)
+$(vrow "Music video, setting on, Now Playing open" mv-np)
+$(vrow "Music video, setting on, theater mode" mv-theater)
+$(vrow "Music video, setting off, theater mode (artwork)" mv-theater-art)"
+  for s in mv-np mv-theater; do
+    v=$(grep -o "player Ready, shown [0-9]* dropped [0-9]* repositions [0-9]*" "$work/$s.log" | tail -1 || true)
+    [ -n "$v" ] && out="$out
+| $s: video frames | $v |"
+  done
+fi
 
 # Checks, the same as on Windows, plus an absolute draw budget: an M-series Mac draws
 # Home in ~4 ms; 6 ms leaves room on a 180 Hz display (5.5 ms a frame, minus what the

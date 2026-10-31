@@ -1,0 +1,13 @@
+# Music videos in Now Playing's artwork slot, and theater mode.
+
+video.settings.group = Кліпи
+video.settings.show = Показувати кліпи замість обкладинки
+video.settings.show_note = «Зараз грає» показує кліп пісні замість обкладинки — без звуку й у такт музиці. Витрачає більше трафіку (близько 0,5–2 Мбіт/с) і трохи процесора, поки кліп на екрані.
+video.settings.quality = Якість відео
+video.settings.quality_note = Найвища якість, що завантажується. Нижча витрачає менше трафіку.
+video.settings.pairs_note = Відео показує власне зображення. Пісня показує свій кліп, коли YouTube Music пов'язує їх між собою, — це робиться для облікових записів, у які виконано вхід.
+video.show = Показати відео
+video.hide = Показати обкладинку
+video.theater = Режим кінотеатру
+video.theater_keys = Режим кінотеатру ({keys})
+video.theater_exit = Вийти з режиму кінотеатру (Esc)

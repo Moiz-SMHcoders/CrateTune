@@ -37,6 +37,8 @@
 //!   against `SHA256SUMS.txt`, install per platform with rollback.
 //! * [`waveform`] – a track's loudness envelope for a waveform progress bar, computed
 //!   once per track on a background thread and cached ([`Player::waveform`]).
+//! * [`video`] – music videos, muted and following the audio clock: video-only H.264
+//!   fetched in ranges, decoded by the platform ([`video::VideoPlayer`]).
 
 pub mod ai_filter;
 pub mod browser_cookies;
@@ -80,6 +82,7 @@ mod stream;
 mod testutil;
 pub mod together;
 pub mod updater;
+pub mod video;
 mod voice;
 pub mod waveform;
 mod webm_duration;

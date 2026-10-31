@@ -298,3 +298,17 @@ uses `qrcodegen` 1.8.0 (© Project Nayuki, MIT). `together::sync::leave_plan` ("
 when I leave") is our own, on top of the ported sync code above; ArchiveTune has no such
 feature. The relay deployed from `deploy/iroh-relay/` is the unmodified `iroh-relay` 1.4.1
 binary (MIT OR Apache-2.0).
+
+## Limusic (feat/music-video): music videos and theater mode
+
+Ideas and data shapes from **Limusic** (<https://github.com/SimoHypers/limusic>, © SimoHypers
+and Limusic contributors, GPL-3.0, commit `d82372cdd3016e3c5e28ea8022596b7fefdf681a`). No code
+was copied: Limusic plays the video in a `<video>` element or mpv, CrateTune decodes it itself
+(`src/video/`, original). Each file names its source in its header.
+
+| File | Upstream file(s) | Changes |
+|---|---|---|
+| `crates/music-core/src/innertube/pages.rs` (`counterpart`), `models.rs` (`Counterpart`) | `crates/innertube/src/models/metadata.rs` (`panel_rows`, `set_twin`, `Segment`) | The wrapper row's `counterpart` arm and its `segmentMap` read the same way (milliseconds as strings or numbers); kept as a list beside the queue instead of on each row; `Counterpart::video_for` also turns a video-primary pair around. |
+| `crates/music-core/src/video/timeline.rs` | `crates/innertube/src/models/metadata.rs` (`counterpart_segments`, issue #535 there) | Limusic maps a Song / Video *switch* onto the other version's time; here the song's position drives the muted video continuously, with gaps under 1.5 s bridged and the artwork shown in longer ones. |
+| `crates/music-gpui/src/theater.rs` | `ui/src/lib/components/TheaterMode.svelte` | The idea (picture filling the window, lyric line over it, controls that fade after a few still seconds but not while paused, Esc leaves); written for GPUI, without Limusic's queue / lyrics columns or OS full screen. |
+| `crates/music-gpui/src/video.rs` (`session_off`) | `ui/src/lib/video.svelte.ts` (`video.want`) | "Show artwork" lasts for the session; the setting is the lasting off switch. |

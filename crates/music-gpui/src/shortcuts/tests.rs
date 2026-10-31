@@ -352,7 +352,7 @@ fn default_keymap_is_the_old_one() {
             .into_iter()
             .map(|(keys, id, ctx)| (combo(&keys, os), id, ctx))
             .collect();
-        // New: the cheat sheet, full screen (⌃⌘F on a Mac, F11 elsewhere).
+        // New: the cheat sheet, full screen (⌃⌘F on a Mac, F11 elsewhere), theater mode.
         expected.push((combo(&format!("{primary}-/"), os), "show_shortcuts", None));
         expected.push((fullscreen_default(os), "toggle_fullscreen", None));
         // New: the interface zoom (⌘= and ⌘+ both zoom in).
@@ -364,6 +364,11 @@ fn default_keymap_is_the_old_one() {
         ] {
             expected.push((combo(&format!("{primary}-{keys}"), os), id, None));
         }
+        expected.push((
+            combo(&format!("{primary}-shift-t"), os),
+            "toggle_theater",
+            None,
+        ));
         let entries = keymap(&Overrides::new(), os);
         let mut actual: Vec<(Combo, &str, Option<&str>)> = entries
             .iter()
@@ -435,6 +440,7 @@ fn gpui_bindings_match_the_old_construction() {
             (format!("{primary}-+"), "zoom_in", None),
             (format!("{primary}--"), "zoom_out", None),
             (format!("{primary}-0"), "zoom_reset", None),
+            (format!("{primary}-shift-t"), "toggle_theater", None),
         ])
         .map(|(keys, id, ctx)| {
             (

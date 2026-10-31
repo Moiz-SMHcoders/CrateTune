@@ -472,7 +472,13 @@ scripts/perf-macos.sh --binary /Applications/CrateTune.app/Contents/MacOS/cratet
 scripts/perf-macos.sh --settings ~/Library/Application\ Support/cratetune/settings.json --no-checks
 ```
 
-`--report out.md` also writes the table to a file, `--keep` keeps the sessions' logs. The
+`--report out.md` also writes the table to a file, `--keep` keeps the sessions' logs.
+`--video` adds five sessions with a music video playing ("Instant Crush", official video):
+the setting off with Now Playing open, on with Now Playing closed, on with Now Playing open,
+on in theater mode, off in theater mode (the artwork); each row is CPU and memory over
+seconds 26–45 (once the stream, Home and the radio have loaded), the main window's renders
+per second, and the video's frame counters (`@video-status`). A build without music videos
+runs the same sessions as plain playback, so main and a branch compare row by row. The
 wheel glide that Windows and Linux have is turned on for the scrolling session
 (`MUSIC_SMOOTH_WHEEL=1`), so `@wheel` notches produce frames as on Windows. CPU is the
 process's CPU time per second from `ps` (100 % = one core), averaged over the phase;

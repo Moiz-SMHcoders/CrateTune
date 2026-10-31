@@ -578,6 +578,44 @@ pub const ENTRIES: &[Entry] = &[
         "immersive"
     ),
     entry!(
+        "appearance.video",
+        Appearance,
+        -,
+        "video.settings.group",
+        "video.settings.pairs_note",
+        "video",
+        "videos",
+        "clip",
+        "mv"
+    ),
+    entry!(
+        "appearance.video.show",
+        Appearance,
+        "video.settings.group",
+        "video.settings.show",
+        "video.settings.show_note",
+        "video",
+        "artwork",
+        "cover",
+        "clip",
+        "motion",
+        "animated"
+    ),
+    entry!(
+        "appearance.video.quality",
+        Appearance,
+        "video.settings.group",
+        "video.settings.quality",
+        "video.settings.quality_note",
+        "video",
+        "resolution",
+        "360p",
+        "480p",
+        "720p",
+        "data",
+        "bandwidth"
+    ),
+    entry!(
         "appearance.mini_player",
         Appearance,
         -,

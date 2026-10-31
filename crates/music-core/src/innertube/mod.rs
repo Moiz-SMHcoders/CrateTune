@@ -393,6 +393,17 @@ impl InnerTube {
         pages::watch_queue(&self.post("next", next_body(target, None))?)
     }
 
+    /// The music video YouTube Music pairs with `video_id` (or the song, for a
+    /// video), from a `next` request for it alone. Only signed-in responses
+    /// carry the pair; anonymous ones give `None`.
+    pub fn counterpart(&self, video_id: &str) -> Result<Option<Counterpart>> {
+        let queue = self.next(&WatchTarget::video(video_id))?;
+        Ok(queue
+            .counterparts
+            .into_iter()
+            .find(|c| c.of == video_id || c.video_id == video_id))
+    }
+
     /// More of a queue; pass the same `target` as for [`InnerTube::next`].
     pub fn next_continuation(
         &self,

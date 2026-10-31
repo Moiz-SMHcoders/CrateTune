@@ -1,0 +1,13 @@
+# Music videos in Now Playing's artwork slot, and theater mode.
+
+video.settings.group = 뮤직비디오
+video.settings.show = 아트워크 대신 뮤직비디오 표시
+video.settings.show_note = 지금 재생 중 화면에서 아트워크 대신 곡의 뮤직비디오를 소리 없이 음악에 맞춰 보여 줍니다. 화면에 표시되는 동안 데이터(약 0.5–2 Mbit/s)와 CPU를 조금 더 사용합니다.
+video.settings.quality = 동영상 화질
+video.settings.quality_note = 가져올 최고 화질입니다. 낮을수록 데이터를 덜 사용합니다.
+video.settings.pairs_note = 동영상은 자체 영상을 보여 줍니다. 노래는 YouTube Music이 노래와 뮤직비디오를 연결한 경우 뮤직비디오를 보여 주며, 이는 로그인한 계정에서만 제공됩니다.
+video.show = 동영상 표시
+video.hide = 아트워크 표시
+video.theater = 극장 모드
+video.theater_keys = 극장 모드({keys})
+video.theater_exit = 극장 모드 종료(Esc)

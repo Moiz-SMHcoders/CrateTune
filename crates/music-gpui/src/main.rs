@@ -96,6 +96,7 @@ mod smooth_scroll;
 mod snapshot;
 mod storage_ops;
 mod store;
+mod theater;
 mod theme;
 mod theme_script;
 mod theme_state;
@@ -105,6 +106,7 @@ mod turntable;
 mod update_check;
 mod update_script;
 mod util;
+mod video;
 #[cfg(windows)]
 mod win;
 mod youtube_sync;

@@ -1,0 +1,13 @@
+# Music videos in Now Playing's artwork slot, and theater mode.
+
+video.settings.group = Muziekvideo's
+video.settings.show = Muziekvideo's tonen in plaats van de hoes
+video.settings.show_note = Speelt nu toont de muziekvideo van het nummer in plaats van de hoes, zonder geluid en gelijk met de muziek. Gebruikt meer data (ongeveer 0,5–2 Mbit/s) en wat CPU zolang hij in beeld is.
+video.settings.quality = Videokwaliteit
+video.settings.quality_note = De hoogste kwaliteit die wordt opgehaald. Lager gebruikt minder data.
+video.settings.pairs_note = Een video toont zijn eigen beeld. Een nummer toont zijn muziekvideo als YouTube Music de twee aan elkaar koppelt, wat het doet voor ingelogde accounts.
+video.show = Video tonen
+video.hide = Hoes tonen
+video.theater = Theatermodus
+video.theater_keys = Theatermodus ({keys})
+video.theater_exit = Theatermodus verlaten (Esc)

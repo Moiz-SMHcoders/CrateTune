@@ -1,0 +1,13 @@
+# Music videos in Now Playing's artwork slot, and theater mode.
+
+video.settings.group = Клипы
+video.settings.show = Показывать клипы вместо обложки
+video.settings.show_note = «Сейчас играет» показывает клип песни вместо обложки — без звука и в такт музыке. Расходует больше трафика (около 0,5–2 Мбит/с) и немного процессора, пока клип на экране.
+video.settings.quality = Качество видео
+video.settings.quality_note = Максимальное загружаемое качество. Чем ниже, тем меньше трафика.
+video.settings.pairs_note = Видео показывает собственное изображение. Песня показывает свой клип, если YouTube Music связывает их между собой, — это делается для аккаунтов, в которые выполнен вход.
+video.show = Показать видео
+video.hide = Показать обложку
+video.theater = Режим кинотеатра
+video.theater_keys = Режим кинотеатра ({keys})
+video.theater_exit = Выйти из режима кинотеатра (Esc)

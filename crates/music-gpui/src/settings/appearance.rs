@@ -429,6 +429,7 @@ pub(super) fn render(
                 ))
                 .child(note(t!("settings.appearance.np_note"), cx)),
         )
+        .children(super::video_ui::render(panel, cx))
         .child(
             group_at(
                 "appearance.mini_player",

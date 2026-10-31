@@ -32,6 +32,7 @@ gpui::actions!(
         ToggleQueue,
         ToggleMiniPlayer,
         ToggleFullscreen,
+        ToggleTheater,
         GoBack,
         GoForward,
         GoHome,
@@ -89,6 +90,11 @@ pub fn init(overrides: &crate::shortcuts::Overrides, cx: &mut App) {
     on::<ToggleFullscreen>(cx, |app, window, cx| {
         activate_main(window);
         app.toggle_fullscreen(window, cx)
+    });
+    // Theater mode (`theater.rs`), also from the mini player.
+    on::<ToggleTheater>(cx, |app, window, cx| {
+        activate_main(window);
+        app.toggle_theater(window, cx)
     });
     on::<GoBack>(cx, |app, window, cx| app.go_back(window, cx));
     on::<GoForward>(cx, |app, window, cx| app.go_forward(window, cx));
@@ -232,6 +238,7 @@ fn menus() -> Vec<Menu> {
             MenuItem::action(t!("shortcuts.action.zoom_out"), ZoomOut),
             MenuItem::action(t!("shortcuts.action.zoom_reset"), ZoomReset),
             MenuItem::separator(),
+            MenuItem::action(t!("video.theater"), ToggleTheater),
             MenuItem::action(t!("menu.fullscreen"), ToggleFullscreen),
         ]),
         Menu::new(t!("menu.controls")).items([

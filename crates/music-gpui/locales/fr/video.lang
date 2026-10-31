@@ -1,0 +1,13 @@
+# Music videos in Now Playing's artwork slot, and theater mode.
+
+video.settings.group = Clips musicaux
+video.settings.show = Afficher les clips à la place de la pochette
+video.settings.show_note = À l'écoute affiche le clip du morceau à la place de la pochette, sans le son et en rythme avec la musique. Consomme plus de données (environ 0,5–2 Mbit/s) et un peu de CPU tant qu'il est à l'écran.
+video.settings.quality = Qualité vidéo
+video.settings.quality_note = La qualité maximale téléchargée. Plus basse, elle consomme moins de données.
+video.settings.pairs_note = Une vidéo affiche sa propre image. Un morceau affiche son clip quand YouTube Music associe les deux, ce qu'il fait pour les comptes connectés.
+video.show = Afficher la vidéo
+video.hide = Afficher la pochette
+video.theater = Mode cinéma
+video.theater_keys = Mode cinéma ({keys})
+video.theater_exit = Quitter le mode cinéma (Échap)

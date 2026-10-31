@@ -1,0 +1,13 @@
+# Music videos in Now Playing's artwork slot, and theater mode.
+
+video.settings.group = Videoclipes
+video.settings.show = Mostrar videoclipes no lugar da capa
+video.settings.show_note = Tocando agora mostra o videoclipe da música no lugar da capa, sem som e no ritmo da música. Usa mais dados (cerca de 0,5–2 Mbit/s) e um pouco de CPU enquanto está na tela.
+video.settings.quality = Qualidade do vídeo
+video.settings.quality_note = A maior qualidade baixada. Uma menor usa menos dados.
+video.settings.pairs_note = Um vídeo mostra a própria imagem. Uma música mostra o videoclipe quando o YouTube Music associa os dois, o que ele faz para contas conectadas.
+video.show = Mostrar vídeo
+video.hide = Mostrar capa
+video.theater = Modo cinema
+video.theater_keys = Modo cinema ({keys})
+video.theater_exit = Sair do modo cinema (Esc)

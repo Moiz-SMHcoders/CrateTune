@@ -3,7 +3,7 @@
 //! renames, deletes, imports and exports.
 //!
 //! * **What a profile holds:** whole top-level sections ([`PROFILE_SECTIONS`]:
-//!   `appearance`, `custom_theme`, `now_playing`, `lyrics` and the player bar's
+//!   `appearance`, `custom_theme`, `now_playing`, `lyrics`, `video` and the player bar's
 //!   style sections, [`super::portable::BAR_STYLE_KEYS`], plus the app-wide look
 //!   and Motion & effects, [`super::portable::LOOK_KEYS`]) serialized as JSON, so
 //!   a field added to one of those structs later is part of every profile without
@@ -38,7 +38,13 @@ pub const MINIMAL_ID: &str = "minimal";
 const ACTIVE_FILE: &str = "active.json";
 
 /// Top-level settings sections a profile carries (whole).
-pub const PROFILE_SECTIONS: &[&str] = &["appearance", "custom_theme", "now_playing", "lyrics"];
+pub const PROFILE_SECTIONS: &[&str] = &[
+    "appearance",
+    "custom_theme",
+    "now_playing",
+    "lyrics",
+    "video",
+];
 
 /// Fields inside those sections that are not about the look or resource use.
 pub const PROFILE_EXCLUDE: &[&str] = &[
@@ -141,6 +147,8 @@ pub fn minimal_settings() -> Settings {
     s.now_playing.background = NowPlayingBackground::Solid;
     s.now_playing.mini_player = MiniPlayerStyle::Theme;
     s.now_playing.fullscreen = false;
+    // No music videos (no stream, no decoder).
+    s.video.show = false;
     // Lyrics: whole lines light up, no per-word animation; no translation
     // requests, no romanization (the kanji dictionary is ~45 MB mapped).
     s.lyrics.animation = LyricsAnimation::None;
@@ -550,7 +558,8 @@ mod tests {
                 "effects",
                 "lyrics",
                 "now_playing",
-                "player_bar"
+                "player_bar",
+                "video"
             ]
         );
         let text = Value::Object(snap.clone()).to_string();

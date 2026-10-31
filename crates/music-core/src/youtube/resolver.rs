@@ -42,6 +42,7 @@ use crate::stream::{
     CHUNK_BYTES, IosClientResolver, PrefetchedHead, Quality, ResolvedStream, StreamPrefix,
     StreamResolver, StreamSource,
 };
+use crate::video::{VideoFormat, VideoQuality};
 use crate::{Error, Result};
 
 /// googlevideo serves web/TV clients in ranges of this size (yt-dlp's chunk size).
@@ -206,6 +207,14 @@ impl WebResolver {
         self.inner.check_fixes(true);
     }
 
+    /// A video-only H.264 stream of `video_id` (at most `quality`), through the
+    /// same clients as the audio (see [`crate::video`]); its
+    /// [`ResolvedStream::video`] holds the size and index ranges. Blocking.
+    pub fn resolve_video(&self, video_id: &str, quality: VideoQuality) -> Result<ResolvedStream> {
+        self.inner
+            .resolve_chain(video_id, Want::Video(quality), false)
+    }
+
     /// Does the slow one-time work up front so the first song starts quickly:
     /// the visionOS visitor id, the session, the preprocessed player script, and
     /// (if a PoToken client is enabled) BotGuard. Blocking, a few seconds; call
@@ -368,12 +377,18 @@ impl Inner {
     /// Tries the clients in order (skipping those whose breaker is open, never
     /// the last), then the fallback. `preview`: fetch the iOS client's head
     /// meanwhile, for clients with an ad wait (not for prefetches).
+    ///
+    /// A video-only stream ([`Want::Video`]) takes the same route but leaves
+    /// the breakers, the status and the fallback alone: a client without a
+    /// fitting video format says nothing about the songs it serves, and the
+    /// preview has no picture.
     fn resolve_chain(
         self: &Arc<Self>,
         video_id: &str,
-        quality: Quality,
+        want: Want,
         preview: bool,
     ) -> Result<ResolvedStream> {
+        let audio = matches!(want, Want::Audio(_));
         self.renew_potoken_in_background();
         let clients = self.effective_clients();
         let last_index = clients.len().saturating_sub(1);
@@ -389,7 +404,22 @@ impl Inner {
                 ));
                 continue;
             }
-            match self.resolve_client(client, video_id, quality, preview) {
+            match self.resolve_client(client, video_id, want, preview) {
+                Ok(stream) if !audio => {
+                    let ms = now.elapsed().as_millis();
+                    trace(format_args!(
+                        "{video_id}: video via {} in {ms} ms",
+                        client.label()
+                    ));
+                    return Ok(stream);
+                }
+                Err(e) if !audio => {
+                    log::info!(
+                        "youtube: no video from {} for {video_id}: {e}",
+                        client.label()
+                    );
+                    last = Some(e);
+                }
                 Ok(stream) => {
                     let ms = now.elapsed().as_millis();
                     trace(format_args!("{video_id}: {} in {ms} ms", client.label()));
@@ -436,6 +466,14 @@ impl Inner {
             // Maybe YouTube changed something the published fixes already cover.
             self.check_fixes(true);
         }
+        let quality = match want {
+            Want::Audio(quality) => quality,
+            Want::Video(_) => {
+                return Err(
+                    last.unwrap_or_else(|| Error::Unplayable("no stream clients enabled".into()))
+                );
+            }
+        };
         let result = match &self.fallback {
             Some(fallback) => fallback
                 .resolve_with_quality(video_id, quality)
@@ -460,7 +498,7 @@ impl Inner {
         &self,
         client: WebClient,
         video_id: &str,
-        quality: Quality,
+        want: Want,
         preview: bool,
     ) -> Result<ResolvedStream> {
         #[cfg(test)]
@@ -468,13 +506,16 @@ impl Inner {
             return fake(client, video_id);
         }
         if !client.needs_player() {
-            return self.resolve_vision(video_id, quality);
+            return self.resolve_vision(video_id, want);
         }
         let web = || {
             with_decipher_retry(
-                || self.resolve_web(client, video_id, quality),
+                || self.resolve_web(client, video_id, want),
                 |player_id| self.heal_player(player_id),
             )
+        };
+        let Want::Audio(quality) = want else {
+            return web();
         };
         if !preview {
             return web();
@@ -610,10 +651,10 @@ impl Inner {
     }
 
     /// visionOS: direct URLs, nothing to solve, no ad wait.
-    fn resolve_vision(&self, video_id: &str, quality: Quality) -> Result<ResolvedStream> {
+    fn resolve_vision(&self, video_id: &str, want: Want) -> Result<ResolvedStream> {
         let started = Instant::now();
         let player = self.vision_player(video_id)?;
-        let format = select_format(&player, quality)?;
+        let format = want.select(&player)?;
         let url = format
             .url
             .clone()
@@ -641,6 +682,7 @@ impl Inner {
             // Ranged fetches are served at full speed (one plain GET is throttled).
             chunk_size: Some(WEB_CHUNK_BYTES),
             full_access: true,
+            video: format.video,
             ..Default::default()
         })
     }
@@ -649,7 +691,7 @@ impl Inner {
         &self,
         client: WebClient,
         video_id: &str,
-        quality: Quality,
+        want: Want,
     ) -> std::result::Result<ResolvedStream, Attempt> {
         let started = Instant::now();
         let identity = self.identity(client);
@@ -716,7 +758,7 @@ impl Inner {
             "youtube: {video_id}: player response after {:?}",
             started.elapsed()
         );
-        let format = select_format(&player, quality)?;
+        let format = want.select(&player)?;
         let (url, n, sig) = format.cipher_parts()?;
 
         let script = if self.solver.has_preprocessed(&session.player_id) {
@@ -814,6 +856,7 @@ impl Inner {
             not_before: Some(requested_at + wait + Duration::from_millis(500)),
             chunk_size: Some(WEB_CHUNK_BYTES),
             full_access: true,
+            video: format.video,
             ..Default::default()
         })
     }
@@ -916,7 +959,7 @@ impl Inner {
             .name("music-core-prefetch-url".into())
             .spawn(move || {
                 let (video_id, quality) = &key;
-                match inner.resolve_chain(video_id, *quality, false) {
+                match inner.resolve_chain(video_id, Want::Audio(*quality), false) {
                     // A preview is no head start: the real resolve may do better.
                     Ok(stream) if stream.full_access => {
                         log::debug!("youtube: {video_id}: next track's URL resolved ahead");
@@ -952,7 +995,8 @@ impl StreamResolver for WebResolver {
             trace(format_args!("{video_id}: URL resolved ahead"));
             return Ok(stream);
         }
-        self.inner.resolve_chain(video_id, quality, true)
+        self.inner
+            .resolve_chain(video_id, Want::Audio(quality), true)
     }
 
     /// Never from the prefetch cache: `stale` stopped working.
@@ -963,7 +1007,8 @@ impl StreamResolver for WebResolver {
         stale: &ResolvedStream,
     ) -> Result<ResolvedStream> {
         let _ = stale;
-        self.inner.resolve_chain(&track.video_id, quality, true)
+        self.inner
+            .resolve_chain(&track.video_id, Want::Audio(quality), true)
     }
 
     fn prefetch_track(&self, track: &crate::Track, quality: Quality) {
@@ -1200,6 +1245,24 @@ pub(crate) struct Format {
     pub loudness_db: Option<f32>,
     url: Option<String>,
     signature_cipher: Option<String>,
+    /// Video-only formats: size, frame rate, index ranges.
+    pub video: Option<VideoFormat>,
+}
+
+/// What a resolve is for.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Want {
+    Audio(Quality),
+    Video(VideoQuality),
+}
+
+impl Want {
+    fn select(self, player: &Value) -> Result<Format> {
+        match self {
+            Want::Audio(quality) => select_format(player, quality),
+            Want::Video(quality) => select_video_format(player, quality),
+        }
+    }
 }
 
 impl Format {
@@ -1258,6 +1321,7 @@ pub(crate) fn select_format(player: &Value, quality: Quality) -> Result<Format> 
             loudness_db: f["loudnessDb"].as_f64().map(|db| db as f32),
             url: f["url"].as_str().map(str::to_owned),
             signature_cipher: f["signatureCipher"].as_str().map(str::to_owned),
+            video: None,
         })
         .collect();
     quality
@@ -1265,6 +1329,82 @@ pub(crate) fn select_format(player: &Value, quality: Quality) -> Result<Format> 
         .iter()
         .find_map(|itag| formats.iter().find(|f| f.itag == *itag).cloned())
         .ok_or_else(|| Error::Unplayable("no audio format in the player response".into()))
+}
+
+/// The video-only H.264 format to show for `quality`: the tallest one not
+/// over its height (the smallest one if all are taller), 30 fps or less
+/// preferred over 60 (half the decoding for a picture the size of the
+/// artwork), then the lower bitrate. Only formats with an index (`sidx`) are
+/// taken: the player fetches them fragment by fragment.
+pub(crate) fn select_video_format(player: &Value, quality: VideoQuality) -> Result<Format> {
+    let range = |f: &Value, key: &str| -> Option<(u64, u64)> {
+        let r = f.get(key)?;
+        let num = |k: &str| {
+            r[k].as_str()
+                .and_then(|s| s.parse().ok())
+                .or_else(|| r[k].as_u64())
+        };
+        Some((num("start")?, num("end")?)).filter(|(a, b)| a <= b)
+    };
+    let formats: Vec<Format> = player
+        .pointer("/streamingData/adaptiveFormats")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter(|f| {
+            f["mimeType"]
+                .as_str()
+                .is_some_and(|m| m.starts_with("video/mp4") && m.contains("avc1"))
+                && (f.get("url").is_some() || f.get("signatureCipher").is_some())
+                && f.get("drmFamilies").is_none()
+        })
+        .filter_map(|f| {
+            let mime = f["mimeType"].as_str().unwrap_or_default();
+            let codecs = mime
+                .split("codecs=")
+                .nth(1)
+                .map(|c| c.trim_matches(['"', ' ']).to_owned())
+                .unwrap_or_default();
+            let video = VideoFormat {
+                width: f["width"].as_u64()? as u32,
+                height: f["height"].as_u64()? as u32,
+                fps: f["fps"].as_u64().unwrap_or(30) as u32,
+                codecs,
+                init_range: range(f, "initRange")?,
+                index_range: range(f, "indexRange")?,
+                bitrate: f["bitrate"].as_u64(),
+            };
+            Some(Format {
+                itag: f["itag"].as_u64().unwrap_or_default() as u32,
+                mime_type: mime.to_owned(),
+                content_length: f["contentLength"].as_str().and_then(|s| s.parse().ok()),
+                loudness_db: None,
+                url: f["url"].as_str().map(str::to_owned),
+                signature_cipher: f["signatureCipher"].as_str().map(str::to_owned),
+                video: Some(video),
+            })
+        })
+        .collect();
+    let cap = quality.max_height();
+    // The shorter side counts (a portrait video's "480p" is 480 wide).
+    let height = |f: &Format| f.video.as_ref().map_or(0, |v| v.height.min(v.width));
+    let fits: Vec<&Format> = formats.iter().filter(|f| height(f) <= cap).collect();
+    let best = if fits.is_empty() {
+        formats.iter().min_by_key(|f| height(f))
+    } else {
+        let top = fits.iter().map(|f| height(f)).max().unwrap_or(0);
+        fits.into_iter()
+            .filter(|f| height(f) == top)
+            .min_by_key(|f| {
+                let v = f.video.as_ref();
+                (
+                    v.is_some_and(|v| v.fps > 30),
+                    v.and_then(|v| v.bitrate).unwrap_or(u64::MAX),
+                )
+            })
+    };
+    best.cloned()
+        .ok_or_else(|| Error::Unplayable("no H.264 video format in the player response".into()))
 }
 
 /// How long googlevideo makes clients wait before a stream URL works: the
@@ -1387,6 +1527,76 @@ mod tests {
         assert_eq!((n.as_deref(), sig), (Some("MMM"), None));
 
         assert!(select_format(&player(json!([])), Quality::Normal).is_err());
+    }
+
+    /// The video-only formats of a music video's `player` response (trimmed;
+    /// the shape YouTube sends: H.264, VP9 and AV1 side by side, 60 fps
+    /// variants, ranges as strings).
+    fn video_player() -> Value {
+        let v = |itag: u32, mime: &str, w: u32, h: u32, fps: u32, bitrate: u64| {
+            json!({ "itag": itag, "mimeType": mime, "width": w, "height": h, "fps": fps,
+                    "bitrate": bitrate, "contentLength": format!("{}", bitrate * 30),
+                    "initRange": { "start": "0", "end": "740" },
+                    "indexRange": { "start": "741", "end": "1356" },
+                    "url": format!("https://r.googlevideo.com/videoplayback?itag={itag}") })
+        };
+        let avc = "video/mp4; codecs=\"avc1.4d401e\"";
+        player(json!([
+            v(137, "video/mp4; codecs=\"avc1.640028\"", 1920, 1080, 30, 4_000_000),
+            v(248, "video/webm; codecs=\"vp9\"", 1920, 1080, 30, 2_600_000),
+            v(299, "video/mp4; codecs=\"avc1.64002a\"", 1280, 720, 60, 3_500_000),
+            v(136, avc, 1280, 720, 30, 1_500_000),
+            v(398, "video/mp4; codecs=\"av01.0.05M.08\"", 1280, 720, 30, 1_000_000),
+            v(135, avc, 854, 480, 30, 800_000),
+            v(134, avc, 640, 360, 30, 450_000),
+            v(133, avc, 426, 240, 30, 250_000),
+            // No index: not fetchable fragment by fragment.
+            json!({ "itag": 18, "mimeType": avc, "width": 640, "height": 360, "fps": 30,
+                    "url": "https://r.googlevideo.com/videoplayback?itag=18" }),
+            { "itag": 140, "mimeType": "audio/mp4; codecs=\"mp4a.40.2\"", "url": "https://x/a" },
+        ]))
+    }
+
+    #[test]
+    fn selects_an_indexed_h264_video_format_under_the_cap() {
+        let p = video_player();
+        let pick = |q| select_video_format(&p, q).unwrap();
+        let f = pick(VideoQuality::P480);
+        assert_eq!(f.itag, 135);
+        let v = f.video.unwrap();
+        assert_eq!((v.width, v.height, v.fps), (854, 480, 30));
+        assert_eq!((v.init_range, v.index_range), ((0, 740), (741, 1356)));
+        assert_eq!(v.codecs, "avc1.4d401e");
+        assert_eq!(pick(VideoQuality::P360).itag, 134);
+        // 720p: the 30 fps H.264 one, not 60 fps, not AV1.
+        assert_eq!(pick(VideoQuality::P720).itag, 136);
+        assert!(pick(VideoQuality::P720).cipher_parts().is_ok());
+
+        // Only taller ones: the smallest of them. A portrait video counts its width.
+        let tall = player(json!([
+            { "itag": 136, "mimeType": "video/mp4; codecs=\"avc1.4d401f\"", "width": 720, "height": 1280,
+              "fps": 30, "initRange": { "start": "0", "end": "9" }, "indexRange": { "start": "10", "end": "99" },
+              "url": "https://x/136" },
+            { "itag": 137, "mimeType": "video/mp4; codecs=\"avc1.640028\"", "width": 1080, "height": 1920,
+              "fps": 30, "initRange": { "start": "0", "end": "9" }, "indexRange": { "start": "10", "end": "99" },
+              "url": "https://x/137" },
+        ]));
+        assert_eq!(
+            select_video_format(&tall, VideoQuality::P360).unwrap().itag,
+            136
+        );
+        assert_eq!(
+            select_video_format(&tall, VideoQuality::P720).unwrap().itag,
+            136
+        );
+        // Audio only, or only VP9: no video.
+        assert!(select_video_format(&player(json!([])), VideoQuality::P480).is_err());
+        let vp9 = player(
+            json!([{ "itag": 244, "mimeType": "video/webm; codecs=\"vp9\"", "width": 854,
+            "height": 480, "initRange": { "start": "0", "end": "9" },
+            "indexRange": { "start": "10", "end": "99" }, "url": "https://x/244" }]),
+        );
+        assert!(select_video_format(&vp9, VideoQuality::P480).is_err());
     }
 
     #[test]
@@ -1520,6 +1730,31 @@ mod tests {
         let heard = statuses.lock().unwrap();
         assert!(heard.iter().any(|s| s.skipped().count() == 1));
         assert!(heard.len() <= 5, "{} reports", heard.len());
+    }
+
+    #[test]
+    fn videos_take_the_chain_without_touching_breakers_status_or_preview() {
+        let (r, calls) = chain(WebClient::automatic(false), |c, _| match c {
+            WebClient::VisionOs => Err(Error::Unplayable(
+                "no H.264 video format in the player response".into(),
+            )),
+            _ => Ok(full("https://tv-video")),
+        });
+        for _ in 0..5 {
+            let v = r.resolve_video("x", VideoQuality::P480).unwrap();
+            assert_eq!(v.url, "https://tv-video");
+        }
+        // visionOS is asked every time: a missing video format trips nothing.
+        assert_eq!(count(&calls, WebClient::VisionOs), 5);
+        let status = r.status();
+        assert_eq!(status.skipped().count(), 0);
+        assert_eq!(status.last_client, None);
+        // Every client failing: an error, never the audio preview.
+        let (r, _) = chain(WebClient::automatic(false), |_, _| {
+            Err(Error::Unplayable("no H.264 video format".into()))
+        });
+        assert!(r.resolve_video("x", VideoQuality::P360).is_err());
+        assert!(!r.status().last_was_preview);
     }
 
     #[test]

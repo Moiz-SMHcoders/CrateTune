@@ -1,0 +1,13 @@
+# Music videos in Now Playing's artwork slot, and theater mode.
+
+video.settings.group = 音乐视频
+video.settings.show = 用音乐视频代替封面
+video.settings.show_note = 正在播放会用歌曲的音乐视频代替封面，静音并与音乐同步。显示期间会多用一些流量（约 0.5–2 Mbit/s）和 CPU。
+video.settings.quality = 视频画质
+video.settings.quality_note = 获取的最高画质。画质越低，流量越少。
+video.settings.pairs_note = 视频显示自身的画面。歌曲在 YouTube Music 将歌曲与视频配对时显示其音乐视频，仅限已登录的账号。
+video.show = 显示视频
+video.hide = 显示封面
+video.theater = 影院模式
+video.theater_keys = 影院模式（{keys}）
+video.theater_exit = 退出影院模式（Esc）
