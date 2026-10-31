@@ -3045,7 +3045,27 @@ read at launch); `hidden_bar_buttons`: menu, back, forward, home, themes, accoun
 `@columns=added:on`, `@bar-button=home:off`, `@window-controls=`, `@effects=outlines:on|hairline:on|wheel:on`,
 `@custom-theme=heading:FAMILY`.
 
-PERF_PLACEHOLDER
+**Measured** (release, macOS 26.6 on an Apple M4, display awake, `scripts/perf-macos.sh`,
+two interleaved runs each: main at `4f0972f`, the branch with Mode Dark and Light; the
+machine ran other agents' builds throughout, so CPU is noisy):
+
+| | main | branch, dark | branch, light |
+|---|---|---|---|
+| Idle on Home, CPU | 0.9 / 0.7 % | 0.7 / 0.7 % | 1.0 / 1.0 % |
+| Idle on Home, footprint | 145 / 139 MB | 147 / 152 MB | 142 / 146 MB |
+| Full window draw, top of Home (p50) | 2.53 / 2.31 ms | 2.53 / 2.46 ms | 2.46 / 2.28 ms |
+| Full window draw, scrolled down (p50) | 2.99 / 3.09 ms | 3.63 / 3.06 ms | 3.08 / 3.09 ms |
+| Scrolling Home (wheel glide) | 60 / 60 fps | 60 / 60 fps | 61 / 60 fps |
+| Playing, Equalizer bar: CPU | 6.1 / 4.9 % | 5.0 / 5.9 % | 5.9 / 6.5 % |
+| Now Playing open while playing | 9 fps, 1.6 / 2.1 % | 9 fps, 2.5 / 2.9 % | 9 / 8 fps, 3.0 / 3.0 % |
+
+Light mode draws the same frames at the same cost (its colours are computed once per
+theme change; `ink` / `shade` are an atomic load). The Now Playing row's spread (1.6–3.0 %
+at the same 9 fps) is within this machine's noise for that session (the README's earlier
+rounds measured 2.4–6.5 % for it). **Smooth wheel** (`MUSIC_TIMINGS`, offline fixtures, 20
+notches in 2 s on Home): 61 + 57 window renders while gliding, then 0 per second when idle;
+with Animations Reduced the same notches made 27 + 12 renders (steps, no glide). Hover
+sidebar, the switcher and drags render once per change; nothing new runs between changes.
 
 **Verified** (macOS): the unit tests above plus theme-file sets / `mode` / sub-table errors /
 export round trip, the Matugen template, KDE's file parsing, panel width clamping, the
