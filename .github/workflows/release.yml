@@ -1,6 +1,11 @@
 # Builds release artifacts for every OS when a version tag (v1.2.3) is pushed and
 # attaches them to a draft GitHub release, with SHA256SUMS.txt over every asset (the
 # in-app updater refuses to install without it). Publish the draft by hand (docs/RELEASING.md).
+# The `packages` job generates the package-manager manifests (Homebrew, Scoop, AUR, Flatpak;
+# scripts/update-packages.sh) from the built assets and validates them; the `flatpak` job
+# builds the Flatpak from the Linux tarball and lints it. The manifests are attached to the
+# release as <id>-<version>-package-manifests.tar.gz; nothing is pushed anywhere.
+# `gh workflow run release.yml --ref <branch>` runs everything except the release itself.
 # Signing/notarization secrets are optional:
 #   MACOS_SIGN_IDENTITY (+ a keychain with the Developer ID certificate) for macOS.
 name: Release
@@ -86,8 +91,100 @@ jobs:
             target/bundle/*-setup.exe
           if-no-files-found: error
 
-  publish:
+  packages:
+    name: package manifests
     needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Generate manifests
+        run: |
+          source scripts/lib/app-env.sh
+          (cd dist && sha256sum -- * > ../SHA256SUMS.txt)
+          ARGS=(--version "$APP_VERSION" --sums SHA256SUMS.txt --out target/packages)
+          # The source PKGBUILD hashes the tag's archive, which only a tag run has.
+          if [[ "$GITHUB_REF" != refs/tags/v* ]]; then ARGS+=(--no-source); fi
+          scripts/update-packages.sh "${ARGS[@]}"
+          tar -C target/packages -czf "target/$APP_ID-$APP_VERSION-package-manifests.tar.gz" .
+      - name: Validate (AppStream, desktop entry, JSON)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends appstream desktop-file-utils
+          appstreamcli validate --no-net --explain target/packages/flatpak/*.metainfo.xml
+          desktop-file-validate target/packages/flatpak/*.desktop
+          # The tarball's copies (scripts/bundle-linux.sh renders the same templates).
+          tar -xzf dist/*-linux-x86_64.tar.gz -C "$RUNNER_TEMP"
+          appstreamcli validate --no-net --explain "$RUNNER_TEMP"/*/share/metainfo/*.metainfo.xml
+          desktop-file-validate "$RUNNER_TEMP"/*/share/applications/*.desktop
+          python3 -m json.tool target/packages/scoop/*.json > /dev/null
+          ruby -c target/packages/homebrew/*.rb
+      - name: Validate (makepkg --printsrcinfo)
+        run: |
+          for dir in target/packages/aur/*/; do
+            docker run --rm -v "$PWD/$dir:/pkg" -w /pkg archlinux:base-devel bash -c '
+              useradd -m builder && cp -r /pkg /home/builder/pkg && chown -R builder /home/builder/pkg &&
+              su builder -c "cd ~/pkg && bash -n PKGBUILD && makepkg --printsrcinfo" > /tmp/srcinfo &&
+              diff -u .SRCINFO /tmp/srcinfo && echo "$(basename "$PWD")/.SRCINFO matches makepkg"'
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: package-manifests
+          path: target/*-package-manifests.tar.gz
+          if-no-files-found: error
+
+  flatpak:
+    name: flatpak (build + lint)
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-x86_64
+          path: dist
+      - name: Flatpak tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends flatpak
+          flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+          flatpak install --user -y --noninteractive flathub org.flatpak.Builder
+      - name: Build
+        run: |
+          source scripts/lib/app-env.sh
+          (cd dist && sha256sum -- * > ../SHA256SUMS.txt)
+          # Every asset is needed for the sums; the Flatpak only reads the Linux tarball.
+          for suffix in macos-arm64.dmg macos-x86_64.dmg windows-x64.zip; do
+            echo "0000000000000000000000000000000000000000000000000000000000000000  $APP_ID-$APP_VERSION-$suffix" >> SHA256SUMS.txt
+          done
+          TARBALL="$(ls "$PWD"/dist/*-linux-x86_64.tar.gz)"
+          scripts/update-packages.sh --version "$APP_VERSION" --sums SHA256SUMS.txt --no-source \
+            --out target/packages --flatpak-tarball "$TARBALL"
+          cd target/packages/flatpak
+          MANIFEST="$(ls io.github.*.yml)"
+          flatpak run --command=flatpak-builder org.flatpak.Builder --user --install-deps-from=flathub \
+            --force-clean --disable-rofiles-fuse --repo=repo build "$MANIFEST"
+          flatpak build-bundle repo "$GITHUB_WORKSPACE/target/$APP_ID-$APP_VERSION-x86_64.flatpak" "${MANIFEST%.yml}"
+          echo "FLATPAK_MANIFEST=$PWD/$MANIFEST" >> "$GITHUB_ENV"
+      - name: Lint (flatpak-builder-lint)
+        # Flathub's linter. Reported, not enforced: some checks (screenshots mirrored by
+        # Flathub, the id's domain verification) only pass in Flathub's own pipeline.
+        continue-on-error: true
+        run: |
+          cd "$(dirname "$FLATPAK_MANIFEST")"
+          flatpak run --command=flatpak-builder-lint org.flatpak.Builder manifest "$FLATPAK_MANIFEST"
+          flatpak run --command=flatpak-builder-lint org.flatpak.Builder repo repo
+      - uses: actions/upload-artifact@v4
+        with:
+          name: flatpak
+          path: target/*.flatpak
+          if-no-files-found: error
+
+  publish:
+    needs: [build, packages]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
@@ -95,6 +192,9 @@ jobs:
         with:
           path: dist
           merge-multiple: true
+          # The packages (macos-arm64, linux-x86_64, …) and package-manifests; not the
+          # Flatpak test build.
+          pattern: "*-*"
       - name: Checksums
         working-directory: dist
         run: |
