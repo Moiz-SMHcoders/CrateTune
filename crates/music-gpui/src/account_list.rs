@@ -108,8 +108,9 @@ pub(crate) fn hand_over_ratings(
 
 impl MusicApp {
     /// The account switcher's rows (title bar, Settings → Account).
-    pub(crate) fn account_choices(&self, cx: &gpui::App) -> Vec<AccountChoice> {
-        let saved = &self.settings.read(cx).settings().library.saved_accounts;
+    /// `saved` is the settings' saved accounts, passed in because Settings → Account
+    /// asks while it renders (the settings entity can't be read then).
+    pub(crate) fn account_choices(&self, saved: &[AccountConfig]) -> Vec<AccountChoice> {
         let active = self
             .store
             .account

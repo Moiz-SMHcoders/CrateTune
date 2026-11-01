@@ -5,11 +5,12 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
-## [0.3.1] — 2026-11-01
+## [0.3.2] — 2026-11-01
 
-0.3.0 was tagged but never published: its macOS Intel DMG didn't build (the disk image
-was made too small for the larger app). 0.3.1 is the same release with that fixed
-(`scripts/bundle-macos.sh` sizes the image itself).
+0.3.0 and 0.3.1 were tagged but never published. 0.3.0's macOS Intel DMG didn't build (the
+disk image was made too small for the larger app; `scripts/bundle-macos.sh` now sizes it
+itself), and 0.3.1 crashed on opening Settings → Account (fixed below). 0.3.2 is the first
+published 0.3 release.
 
 Three rounds of features ported or remade from other desktop YouTube Music clients
 (refryt, Limusic, Zuno, Deviload) and tono.fm's ideas, all self-hosted: several accounts and
@@ -286,6 +287,13 @@ between your devices, light mode and a memory pass.
   a Mac, and drops back sooner. On displays without high-DPI scaling (most Windows and Linux
   setups) artwork is downloaded and kept at the size it is shown, a quarter of the memory it
   took. On Linux, memory freed by the artwork cache is handed back to the system.
+
+### Fixed
+
+* Opening **Settings → Account** (also through "Sign in") no longer crashes: the page read
+  the settings while drawing them (`account_choices`). A new CI step,
+  `scripts/smoke-pages.sh`, opens every Settings section and the main pages on all three
+  systems and fails on a panic.
 
 ## [0.2.6] — 2026-10-31
 

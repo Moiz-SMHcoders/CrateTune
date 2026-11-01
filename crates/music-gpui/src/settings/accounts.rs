@@ -326,8 +326,9 @@ pub(super) fn render(
     _: &mut Window,
     cx: &mut Context<SettingsPanel>,
 ) -> AnyElement {
+    let saved = panel.settings.library.saved_accounts.clone();
     let Some((signed_in, status, sync, channels, google, expired, choices, switching)) =
-        read_app(cx, |app, cx| {
+        read_app(cx, |app, _| {
             let a = &app.store.account;
             (
                 a.is_signed_in(),
@@ -336,7 +337,7 @@ pub(super) fn render(
                 a.channels.clone(),
                 a.google_accounts_view(),
                 a.expired,
-                app.account_choices(cx),
+                app.account_choices(&saved),
                 a.switching,
             )
         })

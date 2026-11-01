@@ -98,3 +98,10 @@ jobs:
         if: ${{ !cancelled() }}
         shell: bash
         run: scripts/perf-frames.sh --max-ms 30 --page-art
+
+      # Every Settings section and the main pages opened once (offline): a panic while
+      # a page renders fails here (unit tests don't draw them).
+      - name: "smoke: open every page"
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: scripts/smoke-pages.sh
