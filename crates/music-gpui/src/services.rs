@@ -1,4 +1,4 @@
-//! Everything that hangs off the 250 ms poll besides the UI itself: OS media
+//! Everything that hangs off the app's poll (`poll.rs`) besides the UI itself: OS media
 //! controls, Last.fm/ListenBrainz scrobbling and Discord Rich Presence.
 //!
 //! All three are `music-core` types that never block on `update`; this module
@@ -9,7 +9,9 @@ use std::sync::mpsc::{Receiver, Sender, channel};
 
 use music_core::PlaybackState;
 use music_core::discord::{DiscordConfig, DiscordPresence, DiscordStatus};
-use music_core::media_controls::{MediaControlEvent, MediaControls, MediaControlsConfig};
+use music_core::media_controls::{
+    MediaControlEvent, MediaControls, MediaControlsConfig, player_handler,
+};
 use music_core::scrobble::{LastFm, ListenBrainz, ScrobbleRules, ScrobbleService, Scrobbler};
 
 use crate::clock::Engine;
@@ -86,9 +88,18 @@ impl Services {
         let tx = self.events_tx.clone();
         let forward = move |event| {
             let _ = tx.send(event);
+            crate::poll::wake();
         };
         let result = match engine {
-            Engine::Audio(player) => MediaControls::for_player(config, player.clone(), forward),
+            // As `MediaControls::for_player`, and the poll picks up what the
+            // player did at once (it may be waiting at its idle pace).
+            Engine::Audio(player) => {
+                let handle = player_handler(player.clone(), forward);
+                MediaControls::new(config, move |event| {
+                    handle(event);
+                    crate::poll::wake();
+                })
+            }
             Engine::Demo(_) | Engine::Cast(_) => MediaControls::new(config, forward),
         };
         match result {

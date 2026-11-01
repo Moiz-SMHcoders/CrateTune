@@ -694,7 +694,8 @@ impl MusicApp {
         let (muted_bg, fg) = (theme.secondary, theme.foreground);
         let face = match (&account.avatar, &account.name) {
             (Some(url), _) => {
-                crate::components::artwork::artwork(Some(url.clone()), side, side / 2., cx)
+                use crate::components::artwork::{Pin, artwork_pinned};
+                artwork_pinned(Pin::TopBar, Some(url.clone()), side, side / 2., cx)
                     .into_any_element()
             }
             (None, Some(name)) if account.signed_in => div()

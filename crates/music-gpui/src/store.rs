@@ -176,6 +176,8 @@ pub struct Store {
     /// Finished jobs at the last flag refresh: library pages reload only when a
     /// download finished, not on every progress step of a long batch.
     downloads_finished: usize,
+    /// A download is queued or running (the poll keeps its full pace, `poll.rs`).
+    pub(crate) downloads_active: bool,
     /// Saves / forgets searches in order (see `search_history.rs`).
     search_writer: Option<crate::search_history::SearchHistoryWriter>,
 }
@@ -252,6 +254,7 @@ impl Store {
             downloads_polled: None,
             downloads_sig: 0,
             downloads_finished: 0,
+            downloads_active: false,
         };
         store.refresh_download_flags(true);
         store
@@ -268,6 +271,7 @@ impl Store {
             return false;
         };
         let states = downloads.states();
+        self.downloads_active = states.iter().any(|s| !s.status.is_finished());
         let sig = {
             use std::hash::{Hash, Hasher};
             let mut h = std::collections::hash_map::DefaultHasher::new();

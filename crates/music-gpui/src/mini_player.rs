@@ -29,7 +29,7 @@ use music_core::{PlaybackStatus, format_duration};
 use crate::actions::with_main_window;
 use crate::anim::{Frame, RenderRate, Tween};
 use crate::app::{MusicApp, read_app, update_app};
-use crate::components::artwork::{ArtworkCache, artwork};
+use crate::components::artwork::{ArtworkCache, Pin, artwork_pinned};
 use crate::components::bar_fx::{
     BackgroundArt, BackgroundFx, BackgroundGeometry, BackgroundLook, TrackFx,
 };
@@ -242,7 +242,7 @@ impl Render for MiniPlayer {
         };
         let art_url = track.as_ref().and_then(|t| t.artwork_url(art_size));
         let art = |side: f32, radius: f32, cx: &mut Context<Self>| {
-            artwork(art_url.clone(), px(side), px(radius), cx)
+            artwork_pinned(Pin::MiniPlayer, art_url.clone(), px(side), px(radius), cx)
         };
         let theme = cx.theme();
         let (mut fg, mut muted, bg, mut track_bg) = (

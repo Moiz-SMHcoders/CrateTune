@@ -4,8 +4,9 @@
 //! entity.
 //!
 //! Blocking `music-core` calls run off the UI thread; a foreground task polls
-//! `Player::state()` every 250 ms, feeds the OS media controls / scrobbler /
-//! Discord (`services.rs`) and only re-renders when the snapshot changed. The
+//! `Player::state()` every 250 ms (every 2 s while idle, `poll.rs`), feeds the
+//! OS media controls / scrobbler / Discord (`services.rs`) and only re-renders
+//! when the snapshot changed. The
 //! Now Playing screen (`now_playing.rs`) renders at display rate while it is
 //! visible and something moves (see `anim::Frame`).
 //!
@@ -45,8 +46,6 @@ use crate::router::{Route, Router};
 use crate::search_box::SearchBox;
 use crate::services::{self, Services};
 use crate::settings::{SectionId, SettingsEvent, SettingsPanel, WindowGeometry};
-
-pub const POLL_INTERVAL: Duration = Duration::from_millis(250);
 
 struct AppHandle(WeakEntity<MusicApp>);
 impl Global for AppHandle {}
@@ -231,6 +230,8 @@ impl MusicApp {
             cx.subscribe_in(&progress, window, Self::on_progress_event),
             cx.subscribe_in(&volume_slider, window, Self::on_volume_event),
             cx.subscribe_in(&settings, window, Self::on_settings_event),
+            // Anything that changes the app keeps the poll at its full pace a while.
+            cx.observe_self(|_, _| crate::poll::wake()),
             // Downloaded artwork shows up on the next frame.
             cx.observe(
                 &crate::components::artwork::ArtworkCache::global(cx),
@@ -317,16 +318,17 @@ impl MusicApp {
 
         let executor = cx.background_executor().clone();
         let poll = cx.spawn_in(window, async move |this, cx| {
+            let mut pace = crate::poll::Pace::new();
+            let mut busy = true;
             loop {
-                executor.timer(POLL_INTERVAL).await;
-                if this
-                    .update_in(cx, |this, window, cx| {
-                        this.poll_player(window, cx);
-                        this.poll_log_viewer(cx);
-                    })
-                    .is_err()
-                {
-                    break;
+                pace.wait(busy, &executor).await;
+                match this.update_in(cx, |this, window, cx| {
+                    this.poll_player(window, cx);
+                    this.poll_log_viewer(cx);
+                    this.poll_busy()
+                }) {
+                    Ok(now_busy) => busy = now_busy,
+                    Err(_) => break,
                 }
             }
         });
