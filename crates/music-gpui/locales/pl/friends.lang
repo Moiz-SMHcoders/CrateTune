@@ -1,0 +1,92 @@
+# Friend groups (see locales/en/friends.lang).
+
+# The Settings section's name.
+settings.section.friends = Znajomi
+
+# ---- Settings → Friends
+settings.friends.title = Grupy znajomych
+settings.friends.intro = Miej stałą grupę znajomych zamiast za każdym razem nowego pokoju Music Together: zobacz, czego słuchają, i jednym kliknięciem rozpocznij sesję dla całej grupy.
+settings.friends.enabled = Używaj grup znajomych
+settings.friends.enabled_desc = Domyślnie wyłączone. Twój komputer łączy się wtedy bezpośrednio z komputerami znajomych, z szyfrowaniem end-to-end.
+settings.friends.privacy = Co widzą znajomi: Twoją nazwę i, tylko gdy udostępnianie jest włączone, odtwarzany utwór (tytuł, wykonawca, jego identyfikator YouTube, godzina rozpoczęcia). Nic nie jest przechowywane na serwerze: przekaźnik tylko przekazuje zaszyfrowane dane i widzi Twój adres IP. Grupy są przechowywane na komputerze każdego członka.
+
+settings.friends.you = Ty
+settings.friends.name = Nazwa
+settings.friends.name_note = Tak widzą Cię znajomi.
+settings.friends.share = Udostępniaj, czego słucham
+settings.friends.share_desc = Znajomi widzą odtwarzany przez Ciebie utwór w swoim kanale. Utwory z Twoich własnych plików nigdy nie są udostępniane.
+settings.friends.private = Sesja prywatna
+settings.friends.private_desc = Wstrzymaj udostępnianie do zamknięcia aplikacji.
+# {id} is a shortened member id ("3f2a…9c01").
+settings.friends.member_id = Identyfikator członka: {id}
+
+settings.friends.groups = Twoje grupy
+settings.friends.no_groups = Nie ma jeszcze grup. Utwórz grupę i zaproś znajomych albo dołącz do istniejącej za pomocą kodu, który pokaże Ci znajomy.
+# {name} is your own name in a group's member list.
+settings.friends.you_name = {name} (Ty)
+settings.friends.owner = Właściciel
+# Removes a member from the group for good (only the group's owner can).
+settings.friends.remove = Usuń
+settings.friends.invite = Zaproś
+settings.friends.leave = Opuść
+settings.friends.invite_shown = Znajomy wpisuje ten kod w Ustawienia → Znajomi → Dołącz do grupy:
+settings.friends.invite_expires = Ważny przez 10 minut, jednorazowo. Jeśli znajomy jest w innej sieci, wyślij mu link (lub pozwól zeskanować kod QR).
+settings.friends.create = Utwórz grupę
+settings.friends.group_placeholder = Nazwa grupy
+settings.friends.create_button = Utwórz
+settings.friends.join = Dołącz do grupy
+settings.friends.join_button = Dołącz
+settings.friends.join_note = Kod pokazany przez członka grupy albo wysłany przez niego link z zaproszeniem.
+settings.friends.joining = Szukanie grupy…
+# {group} is the group's name.
+settings.friends.joined = Dołączono do grupy {group}
+
+settings.friends.recovery = Fraza odzyskiwania
+settings.friends.recovery_note = Znajomi rozpoznają Cię po kluczu przechowywanym na tym komputerze. Zapisz frazę odzyskiwania, aby przenieść ten klucz na nowy komputer; każdy, kto ją zna, może występować jako Ty.
+settings.friends.show_phrase = Pokaż frazę odzyskiwania
+settings.friends.hide_phrase = Ukryj
+settings.friends.copy_phrase = Kopiuj
+settings.friends.restore = Przywróć z frazy odzyskiwania
+settings.friends.phrase_placeholder = XXXXX-XXXXX-…
+settings.friends.restore_button = Przywróć
+settings.friends.restore_note = Zastępuje klucz tego komputera. Jego grupy zostaną tu zapomniane: poproś członka (lub swój stary komputer) o zaproszenie do każdej z nich, a wrócisz pod swoją nazwą.
+
+# ---- Joining errors. {error} is a technical reason (in English).
+friends.join.not_found = W tej sieci nie znaleziono nikogo, kto pokazuje zaproszenie. Jeśli znajomy jest w innej sieci, poproś o link z zaproszeniem.
+friends.join.wrong_code = Kod się nie zgadza. Sprawdź go i spróbuj ponownie.
+friends.join.not_inviting = To zaproszenie jest już nieważne. Poproś o nowe.
+friends.join.failed = Nie udało się dołączyć: {error}
+friends.join.bad_code = To nie jest kod zaproszenia. Kod ma 8 liter i cyfr, np. ABCD-2345.
+
+# ---- Notifications. {group} is a group's name, {name} a member's.
+friends.toast.not_ready = Znajomi nie są jeszcze gotowi. Spróbuj ponownie za chwilę.
+friends.toast.created = Utworzono grupę „{group}”. Zaproś znajomych za pomocą kodu.
+friends.toast.removed = Usunięto Cię z grupy „{group}”.
+friends.toast.listen_invite = {name} zaprasza Cię do wspólnego słuchania ({group}). Otwórz Słuchaj razem, aby dołączyć.
+friends.toast.listen_sent = Rozpoczynanie sesji; Twoja grupa dostanie zaproszenie, gdy sesja ruszy.
+friends.toast.joined = Dołączyłeś do grupy „{group}”
+friends.toast.member_joined = {name} dołącza do grupy „{group}”
+friends.toast.bad_phrase = To nie jest prawidłowa fraza odzyskiwania. Sprawdź każdą grupę znaków.
+friends.toast.restored = Klucz przywrócony. Poproś o zaproszenia do swoich grup.
+
+# ---- The feed (Listen together page). {ago} is a relative time.
+friends.feed.playing = Teraz odtwarza
+friends.feed.paused = Wstrzymano · {ago}
+friends.feed.idle = Nic nie odtwarza · {ago}
+friends.feed.unknown = Brak wieści
+# {title} the song, {artist} its artist.
+friends.feed.song = {title} — {artist}
+
+# ---- The friends card on the Listen together page
+friends.panel.title = Znajomi
+friends.panel.off = Utwórz stałą grupę ze znajomymi: zobacz, czego słuchają, i jednym kliknięciem rozpocznij wspólną sesję.
+friends.panel.set_up = Skonfiguruj grupy znajomych
+# {name} invited the group {group} to a session they host.
+friends.panel.invite = {name} rozpoczyna sesję dla grupy {group}
+friends.panel.join = Dołącz
+friends.panel.no_friends = Nie masz jeszcze znajomych: utwórz grupę w Ustawienia → Znajomi i zaproś ich.
+# A button per group: hosts a session and invites the group.
+friends.panel.listen = Słuchaj razem: {group}
+friends.panel.sharing = Znajomi widzą, co odtwarzasz.
+friends.panel.not_sharing = Nie udostępniasz tego, co odtwarzasz.
+friends.panel.manage = Grupy…

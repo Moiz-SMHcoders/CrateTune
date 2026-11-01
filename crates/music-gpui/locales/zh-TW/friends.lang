@@ -1,0 +1,85 @@
+# Friend groups (see locales/en/friends.lang).
+
+# The Settings section's name.
+settings.section.friends = 好友
+
+# ---- Settings → Friends
+settings.friends.title = 好友群組
+settings.friends.intro = 保留一個好友群組，不必每次都建立新的 Music Together 房間：查看好友正在聽什麼，一鍵為整個群組開始工作階段。
+settings.friends.enabled = 使用好友群組
+settings.friends.enabled_desc = 預設為關閉。開啟後，你的電腦會與好友的電腦直接通訊，並採用端對端加密。
+settings.friends.privacy = 好友能看到的內容：你的名稱，以及僅在分享開啟時你正在播放的歌曲（標題、藝人、YouTube ID、開始時間）。伺服器上不會儲存任何內容：中繼只會轉送加密資料，並能看到你的 IP 位址。群組會儲存在每位成員的電腦上。
+
+settings.friends.you = 你
+settings.friends.name = 名稱
+settings.friends.name_note = 好友看到的你的名稱。
+settings.friends.share = 分享我正在聽的內容
+settings.friends.share_desc = 好友會在動態中看到你播放的歌曲。來自你本機檔案的歌曲一律不會分享。
+settings.friends.private = 私人工作階段
+settings.friends.private_desc = 暫停分享，直到你結束應用程式。
+settings.friends.member_id = 成員 ID：{id}
+
+settings.friends.groups = 你的群組
+settings.friends.no_groups = 尚無群組。建立一個群組並邀請好友，或使用好友顯示的代碼加入群組。
+settings.friends.you_name = {name}（你）
+settings.friends.owner = 擁有者
+settings.friends.remove = 移除
+settings.friends.invite = 邀請
+settings.friends.leave = 退出
+settings.friends.invite_shown = 請好友在「設定 → 好友 → 加入群組」中輸入此代碼：
+settings.friends.invite_expires = 10 分鐘內有效，僅能使用一次。如果位於其他網路，請改為傳送連結（或讓對方掃描 QR 碼）。
+settings.friends.create = 建立群組
+settings.friends.group_placeholder = 群組名稱
+settings.friends.create_button = 建立
+settings.friends.join = 加入群組
+settings.friends.join_button = 加入
+settings.friends.join_note = 成員顯示的代碼，或對方傳送的邀請連結。
+settings.friends.joining = 正在尋找群組…
+settings.friends.joined = 已加入 {group}
+
+settings.friends.recovery = 復原片語
+settings.friends.recovery_note = 好友會透過儲存在這部電腦上的金鑰識別你。記下復原片語，即可將該金鑰移至新電腦；任何擁有它的人都能以你的身分發言。
+settings.friends.show_phrase = 顯示復原片語
+settings.friends.hide_phrase = 隱藏
+settings.friends.copy_phrase = 複製
+settings.friends.restore = 從復原片語還原
+settings.friends.phrase_placeholder = XXXXX-XXXXX-…
+settings.friends.restore_button = 還原
+settings.friends.restore_note = 將取代這部電腦的金鑰，此處的群組將會移除：請向每個群組的成員（或你的舊電腦）索取邀請，即可用原本的名稱回到群組。
+
+# ---- Joining errors
+friends.join.not_found = 在此網路上找不到正在顯示邀請的人。如果好友位於其他網路，請向對方索取邀請連結。
+friends.join.wrong_code = 代碼不符。請檢查後再試一次。
+friends.join.not_inviting = 該邀請已失效。請索取新的邀請。
+friends.join.failed = 無法加入：{error}
+friends.join.bad_code = 這不是邀請碼。邀請碼由 8 個英文字母和數字組成，例如 ABCD-2345。
+
+# ---- Notifications
+friends.toast.not_ready = 好友功能尚未就緒。請稍後再試一次。
+friends.toast.created = 已建立群組「{group}」。使用代碼邀請你的好友吧。
+friends.toast.removed = 你已被移出「{group}」。
+friends.toast.listen_invite = {name} 邀請你一起聽（{group}）。開啟「一起聽」即可加入。
+friends.toast.listen_sent = 正在開始工作階段；工作階段就緒後，你的群組會收到邀請。
+friends.toast.joined = 你已加入「{group}」
+friends.toast.member_joined = {name} 已加入「{group}」
+friends.toast.bad_phrase = 這不是有效的復原片語。請檢查每一組字元。
+friends.toast.restored = 金鑰已還原。請索取你所屬群組的邀請。
+
+# ---- The feed (Listen together page)
+friends.feed.playing = 正在播放
+friends.feed.paused = 已暫停 · {ago}
+friends.feed.idle = 未在播放 · {ago}
+friends.feed.unknown = 尚無消息
+friends.feed.song = {title} — {artist}
+
+# ---- The friends card on the Listen together page
+friends.panel.title = 好友
+friends.panel.off = 與好友建立一個長期群組：查看他們正在聽什麼，一鍵一起開始工作階段。
+friends.panel.set_up = 設定好友群組
+friends.panel.invite = {name} 為 {group} 開始了工作階段
+friends.panel.join = 加入
+friends.panel.no_friends = 尚無好友：在「設定 → 好友」中建立群組並邀請他們。
+friends.panel.listen = 一起聽：{group}
+friends.panel.sharing = 好友能看到你在播放什麼。
+friends.panel.not_sharing = 你沒有分享正在播放的內容。
+friends.panel.manage = 群組…

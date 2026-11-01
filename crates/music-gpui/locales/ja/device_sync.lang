@@ -1,0 +1,34 @@
+# Device sync (see locales/en/device_sync.lang).
+
+# ---- Settings → Devices → Sync
+settings.devices.sync.title = 同期
+settings.devices.sync.note = 設定、高評価、プレイリストなどを、ペアリングしたデバイス間でひとつのアプリのように同じ状態に保ちます。データは暗号化されてデバイス間で直接送られ、サーバにコピーが残ることはありません。
+settings.devices.sync.enabled = 自分のデバイスと同期
+settings.devices.sync.enabled_desc = 各デバイスでオンにしてください。初回は両方のデバイスの高評価、プレイリスト、固定した項目がまとめられます。削除されるものはありません。
+
+# The categories, each with its own switch.
+settings.devices.sync.settings = 設定
+settings.devices.sync.settings_desc = 外観、再生、歌詞、コンテンツなどの設定（下に記載したこのコンピュータ固有の設定を除く）。
+settings.devices.sync.sound = サウンド
+settings.devices.sync.sound_desc = イコライザ、速度、ピッチ、リバーブ、サウンドプリセット。コンピュータごとに別のスピーカーに合わせて調整している場合はオフにしてください。
+settings.devices.sync.likes = 高評価と低評価
+settings.devices.sync.likes_desc = 高評価または低評価した曲。
+settings.devices.sync.playlists = 自分のプレイリスト
+settings.devices.sync.playlists_desc = アプリで作成したプレイリスト（YouTube のプレイリストはアカウントに含まれます）。
+settings.devices.sync.pins = スピードダイヤル
+settings.devices.sync.pins_desc = ホームに固定したもの。
+settings.devices.sync.queue_tabs = キューのタブ
+settings.devices.sync.queue_tabs_desc = ほかのキューのタブ（名前で照合）。デバイスで再生中のタブは、そのデバイス独自のキューを保ちます。
+settings.devices.sync.history = 再生履歴
+settings.devices.sync.history_desc = 過去90日間の再生。オンにしない限りオフです。
+
+# Each paired device's state.
+settings.devices.sync.no_devices = まずデバイスをペアリングしてください。
+settings.devices.sync.syncing = 同期中…
+settings.devices.sync.failed = 同期できませんでした：{error}
+settings.devices.sync.last = 同期済み：{ago}
+settings.devices.sync.never = まだ同期していません
+settings.devices.sync.received.other = ほかのデバイスからの最新の変更：{count}件、{ago}
+settings.devices.sync.now = 今すぐ同期
+settings.devices.sync.rules = デバイスが離れている間に行った変更は、再びつながったときに統合されます。同じ項目を両方で変更した場合は、後の変更が優先されます。どちらかで追加した高評価やプレイリストの曲はすべて保持されます。
+settings.devices.sync.private = 同期されないもの：パスワードとキー、サインイン、このデバイスの名前、ウインドウの位置、出力デバイス、音楽フォルダ、プロキシ、キーボードショートカット、音量。

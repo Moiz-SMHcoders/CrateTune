@@ -443,17 +443,31 @@ page transitions / hover off and Animations Reduced / Off (that run lost its dis
 frames), and check Now Playing / dialogs covering it. Details: `look_state.rs`, [README:
 App-wide look & motion](../README.md#app-wide-look--motion). · Size: small · Priority: low
 
-**M8. Sync settings and library between devices (Automerge)**
-After the iroh device hand-off: keep settings, likes, playlists, speed-dial pins and queue
-tabs as Automerge CRDT documents per device and merge them over the paired iroh links,
-so a Mac and a laptop behave like one app, including after offline edits. Idea from
-tono.fm's client (AGPL, ideas only). · Size: large · Priority: medium
+**M8. Device sync and friend groups: what is left to check, and what was left out**
+Built ([README: Sync and friend groups](../README.md#sync-between-devices-and-friend-groups)):
+sync of settings, sound settings, likes, local playlists, pins, queue tabs and (optionally)
+history between paired devices (`music_core::sync`), and friend groups with invitations, a
+recovery phrase, the activity feed and "listen together" (`music_core::friends`). Verified in
+process on localhost (relay off) and with app instances on one Mac. Still to do:
+* *Real machines and networks:* two Macs on one Wi-Fi, a Mac and a Windows / Linux PC, two
+  networks through the relay (sync and friends), a large library (10 000 likes, long
+  playlists) through the relay, two computers syncing after days apart. · Size: small ·
+  Priority: medium
+* *Windows and Linux:* the Friends section, the Together page's friends card, sync applying
+  settings (theme, EQ) live. CI builds and tests them; nobody has looked. · Size: small ·
+  Priority: medium
+* *A mailbox:* sync and friends only work while both apps are open; a relay-side mailbox for
+  encrypted changes would let a laptop that was closed catch up from one that is now off. ·
+  Size: medium · Priority: low
+* *Left out:* per-group sharing (sharing is one switch for all groups), renaming a group in
+  the UI (the owner can, in code: `Group::rename`), a history of friends' plays (memory only,
+  by design), syncing downloads or local files, syncing the playing queue itself (that is
+  hand-off's "Continue here"), Automerge (see `music_core::sync`'s docs for why). · Size:
+  small each · Priority: low
 
-**M9. Lasting friend groups and an activity feed**
-Turn one-off Music Together rooms into friend groups (invite codes, a recovery phrase for
-the identity) and add a feed of what friends are listening to, like Spotify's friend
-activity. Builds on the device keys and iroh links. Idea from tono.fm. · Size: large ·
-Priority: low
+**M9. Friend groups with ArchiveTune**
+ArchiveTune has no friend groups; a group member on a phone would need ArchiveTune to speak
+the `cratetune/friends/1` protocol over iroh. Not ours to change. · Won't do (here)
 
 **M10. Full UI tabs (separate page stacks per tab)**
 Zuno gives every tab its own player *and* its own page stack (back / forward, scroll). Only

@@ -1,0 +1,35 @@
+# Device sync (see locales/en/device_sync.lang).
+
+# ---- Settings → Devices → Sync
+settings.devices.sync.title = Sincronizzazione
+settings.devices.sync.note = Mantieni uguali impostazioni, Mi piace, playlist e altro sui tuoi dispositivi associati, come se fossero un'unica app. I dati passano direttamente dall'uno all'altro, cifrati; nessun server ne conserva una copia.
+settings.devices.sync.enabled = Sincronizza con i miei dispositivi
+settings.devices.sync.enabled_desc = Attivala su ogni dispositivo. La prima volta, Mi piace, playlist ed elementi fissati di entrambi i dispositivi vengono uniti; non viene rimosso nulla.
+
+# The categories, each with its own switch.
+settings.devices.sync.settings = Impostazioni
+settings.devices.sync.settings_desc = Aspetto, riproduzione, testi, contenuti e le altre preferenze (tranne quelle proprie di questo computer, elencate sotto).
+settings.devices.sync.sound = Audio
+settings.devices.sync.sound_desc = Equalizzatore, velocità, tonalità, riverbero e preset audio. Disattivalo se ogni computer ha i propri altoparlanti da regolare.
+settings.devices.sync.likes = Mi piace e Non mi piace
+settings.devices.sync.likes_desc = I brani che ti sono piaciuti o a cui hai dato un pollice verso.
+settings.devices.sync.playlists = Le tue playlist
+settings.devices.sync.playlists_desc = Playlist create nell'app (le playlist di YouTube arrivano con il tuo account).
+settings.devices.sync.pins = Accesso rapido
+settings.devices.sync.pins_desc = Ciò che hai fissato nella Home.
+settings.devices.sync.queue_tabs = Schede coda
+settings.devices.sync.queue_tabs_desc = Le tue altre schede coda, abbinate per nome. La scheda in riproduzione su un dispositivo vi mantiene la propria coda.
+settings.devices.sync.history = Cronologia di ascolto
+settings.devices.sync.history_desc = Ascolti degli ultimi 90 giorni. Disattivata finché non la attivi.
+
+# Each paired device's state.
+settings.devices.sync.no_devices = Associa prima un dispositivo.
+settings.devices.sync.syncing = Sincronizzazione…
+settings.devices.sync.failed = Impossibile sincronizzare: {error}
+settings.devices.sync.last = Sincronizzato {ago}
+settings.devices.sync.never = Non ancora sincronizzato
+settings.devices.sync.received.one = Ultima modifica da un altro dispositivo: {count} elemento, {ago}
+settings.devices.sync.received.other = Ultime modifiche da un altro dispositivo: {count} elementi, {ago}
+settings.devices.sync.now = Sincronizza ora
+settings.devices.sync.rules = Le modifiche fatte mentre i dispositivi erano separati vengono unite quando si ritrovano. Se entrambi hanno cambiato la stessa cosa, vince la modifica più recente; i Mi piace e i brani aggiunti alle playlist su uno qualsiasi dei due vengono tutti conservati.
+settings.devices.sync.private = Mai sincronizzati: password e chiavi, accessi, il nome di questo dispositivo, le posizioni delle finestre, il dispositivo di uscita, le cartelle musicali, il proxy, le scorciatoie da tastiera e il volume.

@@ -1,0 +1,37 @@
+# Device sync (see locales/en/device_sync.lang).
+
+# ---- Settings → Devices → Sync
+settings.devices.sync.title = Synchronizacja
+settings.devices.sync.note = Utrzymuj te same ustawienia, polubienia, playlisty i nie tylko na sparowanych urządzeniach, jakby były jedną aplikacją. Dane idą prosto z jednego do drugiego, zaszyfrowane; żaden serwer nie przechowuje kopii.
+settings.devices.sync.enabled = Synchronizuj z moimi urządzeniami
+settings.devices.sync.enabled_desc = Włącz na każdym urządzeniu. Za pierwszym razem polubienia, playlisty i przypięcia z obu urządzeń zostaną połączone; nic nie zostanie usunięte.
+
+# The categories, each with its own switch.
+settings.devices.sync.settings = Ustawienia
+settings.devices.sync.settings_desc = Wygląd, odtwarzanie, teksty, treści i pozostałe preferencje (oprócz własnych ustawień tego komputera, wymienionych niżej).
+settings.devices.sync.sound = Dźwięk
+settings.devices.sync.sound_desc = Korektor, szybkość, wysokość, pogłos i zestawy dźwięku. Wyłącz, jeśli każdy komputer ma własne głośniki do dostrojenia.
+settings.devices.sync.likes = Polubienia i „Nie lubię”
+settings.devices.sync.likes_desc = Utwory, które polubiłeś lub oznaczyłeś jako „Nie lubię”.
+settings.devices.sync.playlists = Twoje playlisty
+settings.devices.sync.playlists_desc = Playlisty utworzone w aplikacji (playlisty YouTube są powiązane z Twoim kontem).
+settings.devices.sync.pins = Szybkie wybieranie
+settings.devices.sync.pins_desc = To, co przypiąłeś do strony Główna.
+settings.devices.sync.queue_tabs = Karty kolejki
+settings.devices.sync.queue_tabs_desc = Twoje pozostałe karty kolejki, dopasowywane po nazwie. Karta odtwarzana na danym urządzeniu zachowuje tam własną kolejkę.
+settings.devices.sync.history = Historia słuchania
+settings.devices.sync.history_desc = Odtworzenia z ostatnich 90 dni. Wyłączone, dopóki tego nie włączysz.
+
+# Each paired device's state. {ago} is a relative time, {error} a technical reason (in English).
+settings.devices.sync.no_devices = Najpierw sparuj urządzenie.
+settings.devices.sync.syncing = Synchronizowanie…
+settings.devices.sync.failed = Nie udało się zsynchronizować: {error}
+settings.devices.sync.last = Zsynchronizowano {ago}
+settings.devices.sync.never = Jeszcze nie zsynchronizowano
+settings.devices.sync.received.one = Ostatnia zmiana z innego urządzenia: {count} element, {ago}
+settings.devices.sync.received.few = Ostatnie zmiany z innego urządzenia: {count} elementy, {ago}
+settings.devices.sync.received.many = Ostatnie zmiany z innego urządzenia: {count} elementów, {ago}
+settings.devices.sync.received.other = Ostatnie zmiany z innego urządzenia: {count} elementu, {ago}
+settings.devices.sync.now = Synchronizuj teraz
+settings.devices.sync.rules = Zmiany wprowadzone, gdy urządzenia były rozłączone, łączą się, gdy znów się spotkają. Jeśli obie strony zmieniły to samo, wygrywa późniejsza zmiana; polubienia i utwory dodane do playlist na którymkolwiek z nich są zachowywane.
+settings.devices.sync.private = Nigdy nie synchronizowane: hasła i klucze, logowania, nazwa tego urządzenia, położenie okien, urządzenie wyjściowe, foldery z muzyką, proxy, skróty klawiszowe i głośność.

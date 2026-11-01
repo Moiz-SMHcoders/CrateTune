@@ -81,6 +81,8 @@ pub struct Settings {
     pub cast: crate::integrations::config::CastPrefs,
     /// Device hand-off: this device's name, paired devices, relay (`integrations/devices.rs`).
     pub devices: crate::integrations::config::DevicesPrefs,
+    /// Friend groups and the activity feed (off by default; `integrations/friends.rs`).
+    pub friends: crate::integrations::config::FriendsPrefs,
     /// Player bar look: progress style, background effect, … (`bar_prefs.rs`).
     pub player_bar: super::bar_prefs::PlayerBarConfig,
     /// Music videos in the artwork and theater mode (off by default; `video_prefs.rs`).
@@ -137,6 +139,7 @@ impl Default for Settings {
             ai_filter: Default::default(),
             cast: Default::default(),
             devices: Default::default(),
+            friends: Default::default(),
             player_bar: Default::default(),
             video: Default::default(),
             onboarded: true,

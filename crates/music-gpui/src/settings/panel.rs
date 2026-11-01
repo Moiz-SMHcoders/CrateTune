@@ -77,6 +77,8 @@ pub enum SettingsEvent {
     Quality,
     /// Device hand-off settings changed (name, relay, paired devices).
     Devices,
+    /// The file was written (device sync records what changed).
+    Saved,
 }
 
 pub(super) enum LastFmFlow {
@@ -194,6 +196,8 @@ pub struct SettingsPanel {
     pub(super) extras: super::integrations_ui::ExtrasUi,
     /// Devices section inputs (`devices_ui.rs`).
     pub(super) devices_ui: super::devices_ui::DevicesUi,
+    /// Friends section inputs (`friends_ui.rs`).
+    pub(super) friends_ui: super::friends_ui::FriendsUi,
     /// Customize theme widgets, pending settings / theme import (`theme_ui.rs`).
     pub(super) theme_ui: super::theme_ui::ThemeUi,
     /// Theme files in `<config>/themes` (`theme_library.rs`).
@@ -336,6 +340,9 @@ impl SettingsPanel {
         let (devices_ui, devices_subscriptions) =
             super::devices_ui::DevicesUi::new(&settings, window, cx);
         subscriptions.extend(devices_subscriptions);
+        let (friends_ui, friends_subscriptions) =
+            super::friends_ui::FriendsUi::new(&settings, window, cx);
+        subscriptions.extend(friends_subscriptions);
         let profiles = super::profiles_ui::load_store(&settings);
         let (theme_ui, theme_subscriptions) =
             super::theme_ui::ThemeUi::new(&settings.custom_theme, window, cx);
@@ -394,6 +401,7 @@ impl SettingsPanel {
             modules,
             extras,
             devices_ui,
+            friends_ui,
             theme_ui,
             theme_files,
             one_run: None,
@@ -433,6 +441,7 @@ impl SettingsPanel {
             (Secret::SpotifyRefreshToken, s.spotify.user.is_some()),
             (Secret::AiFilterKey, s.ai_filter.key_set),
             (Secret::DeviceKey, s.devices.key_set),
+            (Secret::FriendKey, s.friends.key_set),
         ]
         .into_iter()
         .filter_map(|(secret, wanted)| wanted.then_some(secret))
@@ -851,6 +860,7 @@ impl SettingsPanel {
                 if std::mem::take(&mut this.integrations_dirty) {
                     cx.emit(SettingsEvent::Integrations);
                 }
+                cx.emit(SettingsEvent::Saved);
                 cx.notify();
             })
             .ok();

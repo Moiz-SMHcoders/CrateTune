@@ -11,7 +11,9 @@
 pub mod ai_filter;
 pub mod cast;
 pub mod config;
+pub mod device_sync;
 pub mod devices;
+pub mod friends;
 pub mod import;
 mod script;
 mod sponsorblock;
@@ -30,6 +32,8 @@ pub struct Integrations {
     pub ai_filter: ai_filter::AiFilterState,
     pub cast: cast::CastState,
     pub devices: devices::DevicesState,
+    pub sync: device_sync::SyncState,
+    pub friends: friends::FriendsState,
 }
 
 impl MusicApp {
@@ -42,6 +46,7 @@ impl MusicApp {
     ) {
         self.poll_together(state, window, cx);
         self.poll_devices(state, window, cx);
+        self.poll_friends(state, cx);
         self.poll_sponsorblock(state, window, cx);
         self.sync_ai_filter(window, cx);
     }

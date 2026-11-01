@@ -1,0 +1,92 @@
+# Friend groups (see locales/en/friends.lang).
+
+# The Settings section's name.
+settings.section.friends = Arkadaşlar
+
+# ---- Settings → Friends
+settings.friends.title = Arkadaş grupları
+settings.friends.intro = Her seferinde yeni bir Music Together odası yerine kalıcı bir arkadaş grubu tutun: ne dinlediklerini görün ve tek tıkla tüm grup için bir oturum başlatın.
+settings.friends.enabled = Arkadaş gruplarını kullan
+settings.friends.enabled_desc = Varsayılan olarak kapalıdır. Açıldığında bilgisayarınız arkadaşlarınızın bilgisayarlarıyla uçtan uca şifreli olarak doğrudan konuşur.
+settings.friends.privacy = Arkadaşların gördükleri: adınız ve, yalnızca paylaşım açıkken, çaldığınız şarkı (adı, sanatçısı, YouTube kimliği, başlama zamanı). Sunucuda hiçbir şey saklanmaz: aktarma sunucusu yalnızca şifreli verileri iletir ve IP adresinizi görür. Gruplar her üyenin kendi bilgisayarında tutulur.
+
+settings.friends.you = Siz
+settings.friends.name = Ad
+settings.friends.name_note = Arkadaşlarınızın sizi gördüğü ad.
+settings.friends.share = Ne dinlediğimi paylaş
+settings.friends.share_desc = Arkadaşlarınız çaldığınız şarkıyı kendi akışlarında görür. Kendi dosyalarınızdaki şarkılar asla paylaşılmaz.
+settings.friends.private = Gizli oturum
+settings.friends.private_desc = Uygulamadan çıkana kadar paylaşımı duraklat.
+# {id} is a shortened member id ("3f2a…9c01").
+settings.friends.member_id = Üye kimliği: {id}
+
+settings.friends.groups = Gruplarınız
+settings.friends.no_groups = Henüz grup yok. Bir grup oluşturup arkadaşlarınızı davet edin ya da bir arkadaşınızın gösterdiği kodla bir gruba katılın.
+# {name} is your own name in a group's member list.
+settings.friends.you_name = {name} (siz)
+settings.friends.owner = Sahip
+# Removes a member from the group for good (only the group's owner can).
+settings.friends.remove = Çıkar
+settings.friends.invite = Davet et
+settings.friends.leave = Ayrıl
+settings.friends.invite_shown = Arkadaşınız bu kodu Ayarlar → Arkadaşlar → Bir gruba katıl bölümüne girer:
+settings.friends.invite_expires = 10 dakika boyunca, bir kez geçerlidir. Başka bir ağdaysa bunun yerine bağlantıyı gönderin (veya QR kodunu taratın).
+settings.friends.create = Grup oluştur
+settings.friends.group_placeholder = Grup adı
+settings.friends.create_button = Oluştur
+settings.friends.join = Bir gruba katıl
+settings.friends.join_button = Katıl
+settings.friends.join_note = Bir üyenin gösterdiği kod veya gönderdiği davet bağlantısı.
+settings.friends.joining = Grup aranıyor…
+# {group} is the group's name.
+settings.friends.joined = {group} grubuna katıldınız
+
+settings.friends.recovery = Kurtarma ifadesi
+settings.friends.recovery_note = Arkadaşlarınız sizi bu bilgisayarda tutulan bir anahtarla tanır. Bu anahtarı yeni bir bilgisayara taşımak için kurtarma ifadesini bir yere yazın; ona sahip olan herkes sizin adınıza konuşabilir.
+settings.friends.show_phrase = Kurtarma ifadesini göster
+settings.friends.hide_phrase = Gizle
+settings.friends.copy_phrase = Kopyala
+settings.friends.restore = Kurtarma ifadesinden geri yükle
+settings.friends.phrase_placeholder = XXXXX-XXXXX-…
+settings.friends.restore_button = Geri yükle
+settings.friends.restore_note = Bu bilgisayarın anahtarını değiştirir. Bilgisayarın grupları burada unutulur: her biri için bir üyeden (veya eski bilgisayarınızdan) davet isteyin, adınızla geri dönersiniz.
+
+# ---- Joining errors. {error} is a technical reason (in English).
+friends.join.not_found = Bu ağda davet gösteren kimse bulunamadı. Arkadaşınız başka bir ağdaysa davet bağlantısını isteyin.
+friends.join.wrong_code = Kod eşleşmiyor. Kontrol edip yeniden deneyin.
+friends.join.not_inviting = Bu davet artık geçerli değil. Yenisini isteyin.
+friends.join.failed = Katılınamadı: {error}
+friends.join.bad_code = Bu bir davet kodu değil. Kod, ABCD-2345 gibi 8 harf ve rakamdan oluşur.
+
+# ---- Notifications. {group} is a group's name, {name} a member's.
+friends.toast.not_ready = Arkadaşlar henüz hazır değil. Birazdan yeniden deneyin.
+friends.toast.created = “{group}” grubu oluşturuldu. Arkadaşlarınızı bir kodla davet edin.
+friends.toast.removed = “{group}” grubundan çıkarıldınız.
+friends.toast.listen_invite = {name} sizi birlikte dinlemeye davet ediyor ({group}). Katılmak için Birlikte dinle'yi açın.
+friends.toast.listen_sent = Oturum başlatılıyor; oturum hazır olunca grubunuza davet gider.
+friends.toast.joined = “{group}” grubuna katıldınız
+friends.toast.member_joined = {name}, “{group}” grubuna katıldı
+friends.toast.bad_phrase = Bu geçerli bir kurtarma ifadesi değil. Her karakter grubunu kontrol edin.
+friends.toast.restored = Anahtar geri yüklendi. Gruplarınız için davet isteyin.
+
+# ---- The feed (Listen together page). {ago} is a relative time.
+friends.feed.playing = Şimdi çalıyor
+friends.feed.paused = Duraklatıldı · {ago}
+friends.feed.idle = Bir şey çalmıyor · {ago}
+friends.feed.unknown = Henüz haber yok
+# {title} the song, {artist} its artist.
+friends.feed.song = {title} — {artist}
+
+# ---- The friends card on the Listen together page
+friends.panel.title = Arkadaşlar
+friends.panel.off = Arkadaşlarınızla kalıcı bir grup kurun: ne dinlediklerini görün ve tek tıkla birlikte bir oturum başlatın.
+friends.panel.set_up = Arkadaş gruplarını kur
+# {name} invited the group {group} to a session they host.
+friends.panel.invite = {name}, {group} için bir oturum başlattı
+friends.panel.join = Katıl
+friends.panel.no_friends = Henüz arkadaş yok: Ayarlar → Arkadaşlar bölümünde bir grup oluşturup onları davet edin.
+# A button per group: hosts a session and invites the group.
+friends.panel.listen = Birlikte dinle: {group}
+friends.panel.sharing = Arkadaşlarınız ne çaldığınızı görüyor.
+friends.panel.not_sharing = Ne çaldığınızı paylaşmıyorsunuz.
+friends.panel.manage = Gruplar…

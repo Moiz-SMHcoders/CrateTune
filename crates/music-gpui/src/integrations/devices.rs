@@ -106,6 +106,11 @@ pub struct DevicesState {
 }
 
 impl DevicesState {
+    /// The running node (sync and friends ride on it).
+    pub(crate) fn node(&self) -> Option<&HandoffNode> {
+        self.node.as_ref()
+    }
+
     /// What a paired device was last seen doing (Settings reads this while it renders,
     /// so it must not touch the settings entity).
     pub(crate) fn status_of(&self, id: &str) -> DeviceStatus {
@@ -187,7 +192,7 @@ fn pair_error_text(e: &PairError) -> String {
 }
 
 impl MusicApp {
-    fn devices_prefs(&self, cx: &App) -> crate::integrations::config::DevicesPrefs {
+    pub(crate) fn devices_prefs(&self, cx: &App) -> crate::integrations::config::DevicesPrefs {
         self.settings.read(cx).settings().devices.clone()
     }
 
@@ -196,6 +201,7 @@ impl MusicApp {
     /// Devices settings change.
     pub(crate) fn devices_sync(&mut self, cx: &mut Context<Self>) {
         let prefs = self.devices_prefs(cx);
+        let friends = self.friends_wanted(cx);
         let state = &mut self.integrations.devices;
         if let Some(node) = &state.node {
             node.set_name(&prefs.name());
@@ -206,7 +212,8 @@ impl MusicApp {
             || state.want_pairing.is_some()
             || state.pairing.is_some()
             || state.pair == PairStatus::Looking
-            || lingering;
+            || lingering
+            || friends;
         let config = (prefs.relay(), prefs.name());
         let stale = state
             .started_with
@@ -289,6 +296,8 @@ impl MusicApp {
                             None => {}
                         }
                         this.devices_refresh(cx);
+                        this.sync_setup(cx);
+                        this.friends_setup(cx);
                         // Stopped meanwhile (the last device forgotten)?
                         this.devices_sync(cx);
                     }
@@ -736,6 +745,10 @@ impl MusicApp {
                 state.pair = PairStatus::Paired(name.clone());
                 if let Some(node) = &state.node {
                     node.query(&device.id);
+                    // A new device: a first sync round right away (if sync is on).
+                    if self.integrations.sync.running() {
+                        node.sync_with(&device.id);
+                    }
                 }
                 state
                     .statuses
@@ -757,6 +770,39 @@ impl MusicApp {
                 self.devices_remove_paired(&id, cx);
                 notify(window, cx, t!("devices.toast.unpaired", device = name));
             }
+            Event::Synced { id, applied } => self.sync_on_synced(id, applied, window, cx),
+            Event::SyncFailed { id, error } => self.sync_on_failed(id, error),
+            Event::GroupsChanged(groups) => self.friends_groups_changed(groups, window, cx),
+            Event::FriendActivity { member, activity } => self.friends_activity(member, activity),
+            Event::ListenInvite {
+                member,
+                group,
+                link,
+            } => self.friends_listen_invite(
+                super::friends::ListenInvite {
+                    member,
+                    group,
+                    link,
+                    at_ms: now_unix_ms(),
+                },
+                window,
+                cx,
+            ),
+            Event::Joined(group) => self.friends_joined(group, window, cx),
+            Event::JoinFailed(e) => self.friends_join_failed(e, cx),
+            Event::InviteEnded { joined } => self.friends_invite_ended(joined, window, cx),
+            Event::FriendDevice {
+                id,
+                relay_url,
+                addrs,
+            } => self.friends_device_seen(
+                super::config::FriendHint {
+                    id,
+                    relay_url,
+                    addrs,
+                },
+                cx,
+            ),
         }
     }
 

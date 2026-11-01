@@ -14,11 +14,13 @@
 //! the state Music Together's `RoomState` carries: queue, index, position, playing,
 //! repeat, shuffle, plus the device name.
 
+mod friends_net;
 pub mod messages;
 pub mod node;
 pub mod pairing;
 
 pub use messages::{PROTOCOL_VERSION, PeerInfo, Snapshot};
+pub use friends_net::FriendsSetup;
 pub use node::{
     Action, Event, HandoffNode, NodeConfig, PairError, PairedDevice, PairingOffer, now_unix_ms,
 };
@@ -435,6 +437,208 @@ mod tests {
             at.elapsed().as_secs_f64(),
             100. * used.as_secs_f64() / at.elapsed().as_secs_f64()
         );
+    }
+
+    /// Friends on localhost: Ann makes a group and shows an invitation, Bob joins with
+    /// the link; Ann's activity reaches Bob, a "listen together" too; a stranger is
+    /// turned away; a wrong code doesn't join.
+    #[test]
+    fn friends_invite_activity_and_listen_together() {
+        use crate::friends::{Activity, Group, Identity};
+        let (ann_id, bob_id) = (Identity::generate(), Identity::generate());
+        let (cfg_a, _) = config("Ann's Mac", Vec::new());
+        let (cfg_b, _) = config("Bob's PC", Vec::new());
+        let a = HandoffNode::start(cfg_a).unwrap();
+        let b = HandoffNode::start(cfg_b).unwrap();
+        let group = Group::create(&ann_id, "Friday", "Ann", &a.id(), now_unix_ms());
+        a.set_friends(Some(FriendsSetup {
+            identity: ann_id.clone(),
+            name: "Ann".into(),
+            groups: vec![group.clone()],
+        }));
+        b.set_friends(Some(FriendsSetup {
+            identity: bob_id.clone(),
+            name: "Bob".into(),
+            groups: Vec::new(),
+        }));
+        assert!(a.start_invite("no-such-group").is_none());
+        let offer = a.start_invite(group.id()).unwrap();
+        let localhost = |link: &PairingLink| PairingLink {
+            addrs: record(&a, "").addrs,
+            ..link.clone()
+        };
+        // A wrong code first.
+        let mut wrong = localhost(&offer.link);
+        wrong.code = if offer.code == "AAAAAAAA" {
+            "BBBBBBBB".into()
+        } else {
+            "AAAAAAAA".into()
+        };
+        b.join_group(PairInput::Link(wrong));
+        let error = wait_for(&b, |e| match e {
+            Event::JoinFailed(e) => Some(e),
+            Event::Joined(_) => panic!("joined with a wrong code"),
+            _ => None,
+        });
+        assert_eq!(error, PairError::WrongCode);
+        // The link as shown (`music-friends://join?…`), then joined.
+        let link = localhost(&offer.link).to_invite_link();
+        b.join_group(PairInput::parse_invite(&link).unwrap());
+        let joined = wait_for(&b, |e| match e {
+            Event::Joined(g) => Some(g),
+            Event::JoinFailed(e) => panic!("{e:?}"),
+            _ => None,
+        });
+        assert!(joined.is_member(&bob_id.id()) && joined.is_member(&ann_id.id()));
+        // The groups (with Bob), then the invitation ends (one batch, likely).
+        let mut on_a = None;
+        let name = wait_for(&a, |e| match e {
+            Event::GroupsChanged(groups) => {
+                on_a = Some(groups);
+                None
+            }
+            Event::InviteEnded { joined } => Some(joined),
+            _ => None,
+        });
+        assert_eq!(name.as_deref(), Some("Bob"));
+        let on_a = on_a.expect("the groups changed on Ann's side");
+        assert_eq!(on_a[0].member_of_device(&b.id()).unwrap().name, "Bob");
+        // Both know where the other is (localhost here).
+        let here = |node: &HandoffNode| (node.id(), None, record(node, "").addrs);
+        a.set_friend_hints(&[here(&b)]);
+        b.set_friend_hints(&[here(&a)]);
+
+        // Ann plays something and shares it: Bob hears of it.
+        let song = Activity {
+            video_id: "aaaaaaaaaaa".into(),
+            title: "Song".into(),
+            artist: "Artist".into(),
+            started_ms: 1,
+            playing: true,
+        };
+        a.set_activity(Some(song.clone()));
+        let (member, activity) = wait_for(&b, |e| match e {
+            Event::FriendActivity { member, activity } if member == ann_id.id() => {
+                Some((member, activity))
+            }
+            _ => None,
+        });
+        assert_eq!(member, ann_id.id());
+        assert_eq!(activity, Some(song));
+        // Private session: an empty activity goes out.
+        a.set_activity(None);
+        wait_for(&b, |e| match e {
+            Event::FriendActivity { activity: None, member } if member == ann_id.id() => Some(()),
+            _ => None,
+        });
+        a.listen_together(group.id(), "music-together://session");
+        let (from, link) = wait_for(&b, |e| match e {
+            Event::ListenInvite { member, link, .. } => Some((member, link)),
+            _ => None,
+        });
+        assert_eq!((from.as_str(), link.as_str()), (ann_id.id().as_str(), "music-together://session"));
+
+        // A stranger makes a group with the same id (owned by her) and vouches for Ann
+        // in it, so her device says hello to Ann's: refused, nothing taken.
+        let eve_id = Identity::generate();
+        let (cfg_c, _) = config("Eve", Vec::new());
+        let c = HandoffNode::start(cfg_c).unwrap();
+        let mut fake = Group::create(&eve_id, "Friday", "Eve", &c.id(), now_unix_ms());
+        fake.header.id = group.id().to_owned();
+        fake.rename(&eve_id, "Friday", now_unix_ms()).unwrap();
+        fake.vouch(&eve_id, &eve_id.id(), now_unix_ms()).unwrap();
+        fake.set_self(&eve_id, "Eve", None, false, now_unix_ms());
+        let mut ann_record = on_a[0].record(&ann_id.id()).unwrap().clone();
+        ann_record.added_sig.clear();
+        fake.members.push(ann_record);
+        fake.vouch(&eve_id, &ann_id.id(), now_unix_ms()).unwrap();
+        assert!(fake.is_member(&ann_id.id()));
+        c.set_friends(Some(FriendsSetup {
+            identity: eve_id.clone(),
+            name: "Eve".into(),
+            groups: vec![fake],
+        }));
+        c.set_friend_hints(&[here(&a)]);
+        c.set_activity(Some(Activity {
+            video_id: "eeeeeeeeeee".into(),
+            ..Activity::default()
+        }));
+        std::thread::sleep(Duration::from_millis(3000));
+        assert!(
+            a.poll_events().iter().all(|e| !matches!(e,
+                Event::FriendActivity { member, .. } if *member == eve_id.id())),
+            "Ann took a stranger's hello"
+        );
+        assert!(
+            c.poll_events()
+                .iter()
+                .all(|e| !matches!(e, Event::FriendActivity { .. } | Event::GroupsChanged(_))),
+            "the stranger learnt something"
+        );
+    }
+
+    /// Sync over the nodes (localhost): a like on A reaches B when B syncs; a device
+    /// with sync off answers `sync_off`; B's newer change comes back to A unasked (A
+    /// pulls back when B's request shows it knows more).
+    #[test]
+    fn sync_between_two_devices() {
+        use std::sync::Arc;
+
+        use crate::library::Library;
+        use crate::sync::{Category, SyncEngine};
+        let (cfg_a, _) = config("A", Vec::new());
+        let (cfg_b, _) = config("B", Vec::new());
+        let a = HandoffNode::start(cfg_a).unwrap();
+        let b = HandoffNode::start(cfg_b).unwrap();
+        a.set_paired(&[record(&b, "B")]);
+        b.set_paired(&[record(&a, "A")]);
+        let (la, lb) = (
+            Library::open_in_memory().unwrap(),
+            Library::open_in_memory().unwrap(),
+        );
+        let ea = Arc::new(SyncEngine::open_in_memory(&a.id(), Some(la.clone())).unwrap());
+        let eb = Arc::new(SyncEngine::open_in_memory(&b.id(), Some(lb.clone())).unwrap());
+        ea.set_categories(&Category::ALL);
+        eb.set_categories(&Category::ALL);
+        let song = |id: &str| crate::Track {
+            video_id: id.into(),
+            title: format!("Song {id}"),
+            ..crate::Track::default()
+        };
+        la.like(&song("aaaaaaaaaaa")).unwrap();
+        // A has sync off: B is refused.
+        b.set_sync(Some(eb.clone()));
+        b.sync_with(&a.id());
+        let error = wait_for(&b, |e| match e {
+            Event::SyncFailed { error, .. } => Some(error),
+            Event::Synced { .. } => panic!("synced with sync off"),
+            _ => None,
+        });
+        assert!(error.contains(messages::code::SYNC_OFF), "{error}");
+        a.set_sync(Some(ea.clone()));
+        b.sync_with(&a.id());
+        let applied = wait_for(&b, |e| match e {
+            Event::Synced { applied, .. } => Some(applied),
+            Event::SyncFailed { error, .. } => panic!("{error}"),
+            _ => None,
+        });
+        assert_eq!(applied.library, vec![Category::Likes]);
+        assert!(lb.song("aaaaaaaaaaa").unwrap().unwrap().liked());
+        // B likes something and pulls again: A, behind, pulls it back on its own.
+        lb.like(&song("bbbbbbbbbbb")).unwrap();
+        b.sync_with(&a.id());
+        wait_for(&a, |e| match e {
+            Event::Synced { applied, .. } if applied.received > 0 => Some(()),
+            _ => None,
+        });
+        assert!(la.song("bbbbbbbbbbb").unwrap().unwrap().liked());
+        assert!(ea.last_synced(&b.id()).is_some());
+        // The change listener: a write on A notifies the node (debounced round).
+        let notify = a.change_notifier();
+        la.set_change_listener(Some(notify));
+        la.like(&song("ccccccccccc")).unwrap();
+        let liked = || lb.song("ccccccccccc").ok().flatten().is_some_and(|s| s.liked());
+        wait_for(&b, |e| (matches!(e, Event::Synced { .. }) && liked()).then_some(()));
     }
 
     #[test]

@@ -234,7 +234,7 @@ impl Library {
 
     /// Stores (replacing) lyrics for `video_id` from `provider`.
     pub fn cache_lyrics(&self, video_id: &str, provider: &str, text: &str) -> Result<()> {
-        self.read(|c| {
+        self.read_quiet(|c| {
             c.execute(
                 "INSERT INTO lyrics (song_id, provider, text, fetched_at) VALUES (?1, ?2, ?3, ?4)
                  ON CONFLICT(song_id, provider) DO UPDATE SET text = excluded.text,

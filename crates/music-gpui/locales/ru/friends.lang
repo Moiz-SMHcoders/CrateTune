@@ -1,0 +1,92 @@
+# Friend groups (see locales/en/friends.lang).
+
+# The Settings section's name.
+settings.section.friends = Друзья
+
+# ---- Settings → Friends
+settings.friends.title = Группы друзей
+settings.friends.intro = Держите постоянную группу друзей вместо новой комнаты Music Together каждый раз: смотрите, что они слушают, и запускайте сеанс для всей группы в один клик.
+settings.friends.enabled = Использовать группы друзей
+settings.friends.enabled_desc = По умолчанию выключено. Ваш компьютер будет связываться напрямую с компьютерами друзей, со сквозным шифрованием.
+settings.friends.privacy = Что видят друзья: ваше имя и, только пока включено «Делиться», трек, который вы слушаете (название, исполнитель, его идентификатор YouTube, время начала). На сервере ничего не хранится: ретранслятор лишь передаёт зашифрованные данные и видит ваш IP-адрес. Группы хранятся на компьютере каждого участника.
+
+settings.friends.you = Вы
+settings.friends.name = Имя
+settings.friends.name_note = Так вас видят друзья.
+settings.friends.share = Делиться тем, что я слушаю
+settings.friends.share_desc = Друзья видят в своей ленте трек, который вы слушаете. Треки из ваших собственных файлов никогда не публикуются.
+settings.friends.private = Приватный сеанс
+settings.friends.private_desc = Приостановить публикацию до выхода из приложения.
+# {id} is a shortened member id ("3f2a…9c01").
+settings.friends.member_id = ID участника: {id}
+
+settings.friends.groups = Ваши группы
+settings.friends.no_groups = Групп пока нет. Создайте группу и пригласите друзей или присоединитесь к группе по коду, который покажет друг.
+# {name} is your own name in a group's member list.
+settings.friends.you_name = {name} (вы)
+settings.friends.owner = Владелец
+# Removes a member from the group for good (only the group's owner can).
+settings.friends.remove = Исключить
+settings.friends.invite = Пригласить
+settings.friends.leave = Выйти
+settings.friends.invite_shown = Ваш друг вводит этот код в разделе «Настройки → Друзья → Присоединиться к группе»:
+settings.friends.invite_expires = Действует 10 минут, один раз. Если друг в другой сети, отправьте ему ссылку (или дайте отсканировать QR-код).
+settings.friends.create = Создать группу
+settings.friends.group_placeholder = Название группы
+settings.friends.create_button = Создать
+settings.friends.join = Присоединиться к группе
+settings.friends.join_button = Присоединиться
+settings.friends.join_note = Код, который показывает участник, или присланная им ссылка-приглашение.
+settings.friends.joining = Поиск группы…
+# {group} is the group's name.
+settings.friends.joined = Вы в группе {group}
+
+settings.friends.recovery = Фраза восстановления
+settings.friends.recovery_note = Друзья узнают вас по ключу, который хранится на этом компьютере. Запишите фразу восстановления, чтобы перенести ключ на новый компьютер; любой, у кого она есть, может выступать от вашего имени.
+settings.friends.show_phrase = Показать фразу восстановления
+settings.friends.hide_phrase = Скрыть
+settings.friends.copy_phrase = Копировать
+settings.friends.restore = Восстановить по фразе
+settings.friends.phrase_placeholder = XXXXX-XXXXX-…
+settings.friends.restore_button = Восстановить
+settings.friends.restore_note = Заменяет ключ этого компьютера. Его группы здесь будут забыты: попросите участника (или свой старый компьютер) прислать приглашение в каждую, и вы вернётесь под своим именем.
+
+# ---- Joining errors. {error} is a technical reason (in English).
+friends.join.not_found = В этой сети никто не показывает приглашение. Если друг в другой сети, попросите у него ссылку-приглашение.
+friends.join.wrong_code = Код не совпадает. Проверьте его и попробуйте ещё раз.
+friends.join.not_inviting = Это приглашение больше не действует. Попросите новое.
+friends.join.failed = Не удалось присоединиться: {error}
+friends.join.bad_code = Это не код приглашения. Код состоит из 8 букв и цифр, например ABCD-2345.
+
+# ---- Notifications. {group} is a group's name, {name} a member's.
+friends.toast.not_ready = Друзья ещё не готовы. Попробуйте чуть позже.
+friends.toast.created = Группа «{group}» создана. Пригласите друзей по коду.
+friends.toast.removed = Вас исключили из группы «{group}».
+friends.toast.listen_invite = {name} приглашает вас слушать вместе ({group}). Откройте «Слушать вместе», чтобы присоединиться.
+friends.toast.listen_sent = Запуск сеанса; ваша группа получит приглашение, как только он начнётся.
+friends.toast.joined = Вы присоединились к группе «{group}»
+friends.toast.member_joined = {name} присоединяется к группе «{group}»
+friends.toast.bad_phrase = Это неверная фраза восстановления. Проверьте каждую группу символов.
+friends.toast.restored = Ключ восстановлен. Попросите приглашения в свои группы.
+
+# ---- The feed (Listen together page). {ago} is a relative time.
+friends.feed.playing = Сейчас играет
+friends.feed.paused = На паузе · {ago}
+friends.feed.idle = Ничего не играет · {ago}
+friends.feed.unknown = Пока нет данных
+# {title} the song, {artist} its artist.
+friends.feed.song = {title} — {artist}
+
+# ---- The friends card on the Listen together page
+friends.panel.title = Друзья
+friends.panel.off = Создайте постоянную группу с друзьями: смотрите, что они слушают, и запускайте совместный сеанс в один клик.
+friends.panel.set_up = Настроить группы друзей
+# {name} invited the group {group} to a session they host.
+friends.panel.invite = {name} запускает сеанс для группы {group}
+friends.panel.join = Присоединиться
+friends.panel.no_friends = Друзей пока нет: создайте группу в разделе «Настройки → Друзья» и пригласите их.
+# A button per group: hosts a session and invites the group.
+friends.panel.listen = Слушать вместе: {group}
+friends.panel.sharing = Друзья видят, что вы слушаете.
+friends.panel.not_sharing = Вы не делитесь тем, что слушаете.
+friends.panel.manage = Группы…

@@ -18,6 +18,8 @@ use std::net::SocketAddr;
 
 use serde::{Deserialize, Serialize};
 
+use crate::friends::{Activity, Group, MemberRecord};
+use crate::sync::{Entry, VersionVector};
 use crate::together::TogetherTrack;
 
 pub const PROTOCOL_VERSION: u32 = 1;
@@ -25,6 +27,10 @@ pub const PROTOCOL_VERSION: u32 = 1;
 pub const DEVICES_ALPN: &[u8] = b"cratetune/devices/1";
 /// The ALPN of pairing (only answered while this device shows a pairing code).
 pub const PAIR_ALPN: &[u8] = b"cratetune/pair/1";
+/// The ALPN between friends' devices (`crate::friends`; only members are answered).
+pub const FRIENDS_ALPN: &[u8] = b"cratetune/friends/1";
+/// The ALPN of friends invitations (only answered while an invitation code is shown).
+pub const INVITE_ALPN: &[u8] = b"cratetune/invite/1";
 /// Largest frame accepted (a queue of several thousand songs fits).
 pub const MAX_FRAME: usize = 4 << 20;
 
@@ -120,6 +126,62 @@ pub enum Message {
     PairDone {
         peer: PeerInfo,
     },
+
+    // ---- sync between paired devices (`crate::sync`)
+    /// "What do I lack?": the asker's document format, categories (`crate::sync::
+    /// Category` names; unknown ones are skipped) and version vector → one or more
+    /// [`Message::SyncBatch`] on the same stream (the last with `more: false`), or
+    /// `error` ([`code::SYNC_OFF`], [`code::FORMAT`]).
+    SyncPull {
+        format: u32,
+        cats: Vec<String>,
+        #[serde(default)]
+        vv: VersionVector,
+    },
+    /// Entries the asker lacks; the last batch carries the answerer's version vector
+    /// and the categories it answered.
+    SyncBatch {
+        format: u32,
+        #[serde(default)]
+        cats: Vec<String>,
+        #[serde(default)]
+        entries: Vec<Entry>,
+        #[serde(default)]
+        vv: VersionVector,
+        more: bool,
+    },
+
+    // ---- friend groups (`FRIENDS_ALPN`, `crate::friends`)
+    /// The sender's copies of the groups both are in and what it is listening to
+    /// (`None`: nothing, or not shared) → `friend_hello` back (the answerer's copies,
+    /// merged) or `error` / [`code::NOT_MEMBER`].
+    FriendHello {
+        #[serde(default)]
+        groups: Vec<Group>,
+        #[serde(default)]
+        activity: Option<Activity>,
+    },
+    /// "Listen together": the join link of a Music Together session for a group →
+    /// [`Message::Ok`].
+    ListenTogether {
+        group: String,
+        link: String,
+    },
+
+    // ---- invitations (`INVITE_ALPN`: `pair_start`, `pair_challenge`, `pair_confirm`
+    // with the invitation code, then these)
+    /// Inviter → newcomer: the group (once the code is confirmed).
+    InviteGroup {
+        group: Group,
+    },
+    /// Newcomer → inviter: its own record for the group, signed.
+    InviteJoin {
+        record: MemberRecord,
+    },
+    /// Inviter → newcomer: the group with the newcomer in.
+    InviteDone {
+        group: Group,
+    },
 }
 
 /// Error codes of [`Message::Error`].
@@ -134,6 +196,12 @@ pub mod code {
     pub const WRONG_CODE: &str = "wrong_code";
     /// Pairing: too many wrong codes; a new code has to be shown.
     pub const TOO_MANY_TRIES: &str = "too_many_tries";
+    /// Sync: switched off on the answering device.
+    pub const SYNC_OFF: &str = "sync_off";
+    /// Sync: the devices' document formats differ (update the older app).
+    pub const FORMAT: &str = "format";
+    /// Friends: the asking device isn't a member's (any more).
+    pub const NOT_MEMBER: &str = "not_member";
 }
 
 impl Message {
@@ -244,6 +312,13 @@ const KNOWN_TYPES: &[&str] = &[
     "pair_challenge",
     "pair_confirm",
     "pair_done",
+    "sync_pull",
+    "sync_batch",
+    "friend_hello",
+    "listen_together",
+    "invite_group",
+    "invite_join",
+    "invite_done",
 ];
 
 /// The 4-byte length prefix of a frame.
@@ -306,6 +381,44 @@ mod tests {
                 peer: from.clone(),
             },
             Message::PairDone { peer: from.clone() },
+            Message::SyncPull {
+                format: 1,
+                cats: vec!["likes".into()],
+                vv: [("likes".to_owned(), [("a".to_owned(), 5u64)].into())].into(),
+            },
+            Message::SyncBatch {
+                format: 1,
+                cats: vec!["likes".into()],
+                entries: vec![Entry {
+                    key: "r/x".into(),
+                    value: serde_json::json!({"r": "like"}),
+                    t: 5,
+                    o: "a".into(),
+                }],
+                vv: VersionVector::new(),
+                more: false,
+            },
+            Message::FriendHello {
+                groups: vec![Group::default()],
+                activity: Some(Activity {
+                    video_id: "aaaaaaaaaaa".into(),
+                    title: "Song".into(),
+                    ..Activity::default()
+                }),
+            },
+            Message::ListenTogether {
+                group: "g".into(),
+                link: "music-together://x".into(),
+            },
+            Message::InviteGroup {
+                group: Group::default(),
+            },
+            Message::InviteJoin {
+                record: MemberRecord::default(),
+            },
+            Message::InviteDone {
+                group: Group::default(),
+            },
         ] {
             let frame = decode(&encode(Some(&from), &msg)).unwrap();
             assert_eq!(frame.version, PROTOCOL_VERSION);

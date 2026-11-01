@@ -1,0 +1,37 @@
+# Device sync (see locales/en/device_sync.lang).
+
+# ---- Settings → Devices → Sync
+settings.devices.sync.title = Синхронізація
+settings.devices.sync.note = Нехай налаштування, вподобання, плейлисти й не тільки будуть однаковими на сполучених пристроях, ніби це один застосунок. Дані йдуть напряму з одного на інший у зашифрованому вигляді; жоден сервер не зберігає копію.
+settings.devices.sync.enabled = Синхронізувати з моїми пристроями
+settings.devices.sync.enabled_desc = Увімкніть на кожному пристрої. Першого разу вподобання, плейлисти й закріплення обох пристроїв об'єднуються; нічого не видаляється.
+
+# The categories, each with its own switch.
+settings.devices.sync.settings = Налаштування
+settings.devices.sync.settings_desc = Вигляд, відтворення, тексти пісень, вміст та інші параметри (крім власних налаштувань цього комп'ютера, перелічених нижче).
+settings.devices.sync.sound = Звук
+settings.devices.sync.sound_desc = Еквалайзер, швидкість, висота тону, реверберація та звукові набори. Вимкніть, якщо кожен комп'ютер має власні колонки, які треба налаштовувати окремо.
+settings.devices.sync.likes = «Подобається» і «Не подобається»
+settings.devices.sync.likes_desc = Пісні, які ви вподобали або позначили «Не подобається».
+settings.devices.sync.playlists = Ваші плейлисти
+settings.devices.sync.playlists_desc = Плейлисти, створені в застосунку (плейлисти YouTube прив'язані до вашого облікового запису).
+settings.devices.sync.pins = Швидкий набір
+settings.devices.sync.pins_desc = Те, що ви закріпили на головній.
+settings.devices.sync.queue_tabs = Вкладки черги
+settings.devices.sync.queue_tabs_desc = Інші ваші вкладки черги, зіставлені за назвою. Вкладка, що грає на пристрої, зберігає там свою чергу.
+settings.devices.sync.history = Історія прослуховування
+settings.devices.sync.history_desc = Прослуховування за останні 90 днів. Вимкнено, доки ви не ввімкнете.
+
+# Each paired device's state. {ago} is a relative time, {error} a technical reason (in English).
+settings.devices.sync.no_devices = Спершу сполучіть пристрій.
+settings.devices.sync.syncing = Синхронізація…
+settings.devices.sync.failed = Не вдалося синхронізувати: {error}
+settings.devices.sync.last = Синхронізовано {ago}
+settings.devices.sync.never = Ще не синхронізовано
+settings.devices.sync.received.one = Останні зміни з іншого пристрою: {count} елемент, {ago}
+settings.devices.sync.received.few = Останні зміни з іншого пристрою: {count} елементи, {ago}
+settings.devices.sync.received.many = Останні зміни з іншого пристрою: {count} елементів, {ago}
+settings.devices.sync.received.other = Останні зміни з іншого пристрою: {count} елемента, {ago}
+settings.devices.sync.now = Синхронізувати зараз
+settings.devices.sync.rules = Зміни, зроблені, поки пристрої були окремо, об'єднуються, коли вони знову на зв'язку. Якщо на обох змінили те саме, перемагає пізніша зміна; вподобання й пісні, додані до плейлистів на будь-якому з них, зберігаються всі.
+settings.devices.sync.private = Ніколи не синхронізуються: паролі та ключі, входи в облікові записи, назва цього пристрою, положення вікон, пристрій виведення, теки з музикою, проксі, клавіатурні скорочення та гучність.

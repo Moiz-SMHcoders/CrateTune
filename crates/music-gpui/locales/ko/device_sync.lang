@@ -1,0 +1,34 @@
+# Device sync (see locales/en/device_sync.lang).
+
+# ---- Settings → Devices → Sync
+settings.devices.sync.title = 동기화
+settings.devices.sync.note = 설정, 좋아요, 재생목록 등을 페어링된 기기에서 하나의 앱처럼 똑같이 유지합니다. 데이터는 암호화되어 기기 간에 직접 전송되며, 서버에 사본이 남지 않습니다.
+settings.devices.sync.enabled = 내 기기와 동기화
+settings.devices.sync.enabled_desc = 각 기기에서 켜세요. 처음에는 두 기기의 좋아요, 재생목록, 고정 항목이 합쳐지며 아무것도 삭제되지 않습니다.
+
+# The categories, each with its own switch.
+settings.devices.sync.settings = 설정
+settings.devices.sync.settings_desc = 화면, 재생, 가사, 콘텐츠 및 기타 환경설정(아래에 나열된 이 컴퓨터 고유의 설정 제외).
+settings.devices.sync.sound = 사운드
+settings.devices.sync.sound_desc = 이퀄라이저, 속도, 피치, 리버브, 사운드 프리셋. 컴퓨터마다 따로 맞춰야 하는 스피커가 있다면 끄세요.
+settings.devices.sync.likes = 좋아요 및 싫어요
+settings.devices.sync.likes_desc = 좋아요 또는 싫어요를 표시한 노래.
+settings.devices.sync.playlists = 내 재생목록
+settings.devices.sync.playlists_desc = 앱에서 만든 재생목록(YouTube 재생목록은 계정과 함께 제공됨).
+settings.devices.sync.pins = 단축 다이얼
+settings.devices.sync.pins_desc = 홈에 고정한 항목.
+settings.devices.sync.queue_tabs = 대기열 탭
+settings.devices.sync.queue_tabs_desc = 다른 대기열 탭(이름으로 일치). 기기에서 재생 중인 탭은 해당 기기의 대기열을 그대로 유지합니다.
+settings.devices.sync.history = 감상 기록
+settings.devices.sync.history_desc = 최근 90일간의 재생 기록. 직접 켜지 않으면 꺼져 있습니다.
+
+# Each paired device's state.
+settings.devices.sync.no_devices = 먼저 기기를 페어링하세요.
+settings.devices.sync.syncing = 동기화 중…
+settings.devices.sync.failed = 동기화하지 못했습니다: {error}
+settings.devices.sync.last = 동기화됨: {ago}
+settings.devices.sync.never = 아직 동기화되지 않음
+settings.devices.sync.received.other = 다른 기기의 마지막 변경 사항: 항목 {count}개, {ago}
+settings.devices.sync.now = 지금 동기화
+settings.devices.sync.rules = 기기가 떨어져 있는 동안 변경한 내용은 다시 연결될 때 병합됩니다. 양쪽에서 같은 항목을 변경했다면 나중에 변경한 내용이 적용되며, 어느 쪽에서든 추가한 좋아요와 재생목록 노래는 모두 유지됩니다.
+settings.devices.sync.private = 동기화되지 않는 항목: 비밀번호 및 키, 로그인 정보, 이 기기의 이름, 창 위치, 출력 기기, 음악 폴더, 프록시, 키보드 단축키, 음량.

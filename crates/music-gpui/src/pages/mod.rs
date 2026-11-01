@@ -21,6 +21,7 @@ mod charts;
 pub(crate) mod downloads;
 mod explore;
 mod history;
+mod friends_panel;
 mod home;
 mod import;
 mod library;
@@ -41,7 +42,8 @@ pub mod widgets;
 
 pub(crate) use home::forget_visitor;
 pub use home::speed_dial::{
-    menu_item as speed_dial_menu_item, set_pinned_in as speed_dial_set_pinned,
+    load as speed_dial_load, menu_item as speed_dial_menu_item, set_loaded as speed_dial_set_loaded,
+    set_pinned_in as speed_dial_set_pinned,
 };
 
 use gpui::{AnyView, App, Context, Entity, Pixels, Point, ScrollHandle, Window};

@@ -1,0 +1,35 @@
+# Device sync (see locales/en/device_sync.lang).
+
+# ---- Settings → Devices → Sync
+settings.devices.sync.title = सिंक
+settings.devices.sync.note = अपनी सेटिंग, पसंद, प्लेलिस्ट और बहुत कुछ अपने पेयर किए डिवाइसों पर एक जैसा रखें, मानो वे एक ही ऐप हों। डेटा सीधे एक से दूसरे तक एन्क्रिप्टेड जाता है; कोई सर्वर उसकी कॉपी नहीं रखता।
+settings.devices.sync.enabled = मेरे डिवाइसों के साथ सिंक करें
+settings.devices.sync.enabled_desc = इसे हर डिवाइस पर चालू करें। पहली बार दोनों डिवाइसों की पसंद, प्लेलिस्ट और पिन मिला दिए जाते हैं; कुछ भी हटाया नहीं जाता।
+
+# The categories, each with its own switch.
+settings.devices.sync.settings = सेटिंग
+settings.devices.sync.settings_desc = रूप-रंग, प्लेबैक, बोल, कॉन्टेंट और बाकी प्राथमिकताएँ (इस कंप्यूटर की अपनी सेटिंग को छोड़कर, जो नीचे दी गई हैं)।
+settings.devices.sync.sound = साउंड
+settings.devices.sync.sound_desc = इक्वलाइज़र, स्पीड, पिच, रिवर्ब और साउंड प्रीसेट। अगर हर कंप्यूटर के अपने स्पीकर हैं जिनके लिए अलग ट्यूनिंग चाहिए, तो इसे बंद करें।
+settings.devices.sync.likes = पसंद और नापसंद
+settings.devices.sync.likes_desc = वे गाने जिन्हें आपने पसंद किया या नापसंद किया।
+settings.devices.sync.playlists = आपकी प्लेलिस्ट
+settings.devices.sync.playlists_desc = ऐप में बनाई गई प्लेलिस्ट (YouTube प्लेलिस्ट आपके खाते के साथ आती हैं)।
+settings.devices.sync.pins = स्पीड डायल
+settings.devices.sync.pins_desc = जो आपने होम पर पिन किया है।
+settings.devices.sync.queue_tabs = कतार टैब
+settings.devices.sync.queue_tabs_desc = आपके बाकी कतार टैब, नाम से मिलाए जाते हैं। किसी डिवाइस पर चल रहा टैब वहाँ अपनी कतार रखता है।
+settings.devices.sync.history = सुनने का इतिहास
+settings.devices.sync.history_desc = पिछले 90 दिनों में चलाए गए गाने। जब तक आप इसे चालू न करें, बंद रहता है।
+
+# Each paired device's state.
+settings.devices.sync.no_devices = पहले कोई डिवाइस पेयर करें।
+settings.devices.sync.syncing = सिंक हो रहा है…
+settings.devices.sync.failed = सिंक नहीं हो सका: {error}
+settings.devices.sync.last = सिंक किया गया: {ago}
+settings.devices.sync.never = अभी तक सिंक नहीं हुआ
+settings.devices.sync.received.one = दूसरे डिवाइस से आख़िरी बदलाव: {count} आइटम, {ago}
+settings.devices.sync.received.other = दूसरे डिवाइस से आख़िरी बदलाव: {count} आइटम, {ago}
+settings.devices.sync.now = अभी सिंक करें
+settings.devices.sync.rules = डिवाइस अलग रहते हुए किए गए बदलाव उनके फिर मिलने पर मिला दिए जाते हैं। अगर दोनों पर एक ही चीज़ बदली गई, तो बाद वाला बदलाव लागू होता है; किसी भी डिवाइस पर जोड़ी गई पसंद और प्लेलिस्ट के गाने सब रखे जाते हैं।
+settings.devices.sync.private = कभी सिंक नहीं होते: पासवर्ड और कुंजियाँ, साइन-इन, इस डिवाइस का नाम, विंडो की जगह, आउटपुट डिवाइस, म्यूज़िक फ़ोल्डर, प्रॉक्सी, कीबोर्ड शॉर्टकट और वॉल्यूम।

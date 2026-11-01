@@ -42,11 +42,14 @@ pub enum Secret {
     /// Device hand-off: this installation's private key (hex); its public half is
     /// the device id paired devices know it by.
     DeviceKey,
+    /// Friend groups: this installation's member key (hex); its public half is the
+    /// member id friends know it by (`music_core::friends::Identity`).
+    FriendKey,
 }
 
 impl Secret {
     #[cfg(test)]
-    pub const ALL: [Secret; 11] = [
+    pub const ALL: [Secret; 12] = [
         Secret::LastFmShared,
         Secret::LastFmSession,
         Secret::ListenBrainzToken,
@@ -58,6 +61,7 @@ impl Secret {
         Secret::SpotifyRefreshToken,
         Secret::AiFilterKey,
         Secret::DeviceKey,
+        Secret::FriendKey,
     ];
 
     /// Keychain account name and settings-file key.
@@ -74,6 +78,7 @@ impl Secret {
             Secret::SpotifyRefreshToken => "spotify-refresh-token",
             Secret::AiFilterKey => "ai-filter-api-key",
             Secret::DeviceKey => "device-key",
+            Secret::FriendKey => "friend-key",
         }
     }
 }

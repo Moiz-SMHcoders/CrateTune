@@ -1,0 +1,91 @@
+# Friend groups (see locales/en/friends.lang).
+
+# The Settings section's name.
+settings.section.friends = दोस्त
+
+# ---- Settings → Friends
+settings.friends.title = दोस्तों के ग्रुप
+settings.friends.intro = हर बार नया Music Together रूम बनाने के बजाय दोस्तों का एक ग्रुप रखें: देखें कि वे क्या सुन रहे हैं और एक क्लिक में पूरे ग्रुप के लिए सेशन शुरू करें।
+settings.friends.enabled = दोस्तों के ग्रुप इस्तेमाल करें
+settings.friends.enabled_desc = डिफ़ॉल्ट रूप से बंद। चालू करने पर आपका कंप्यूटर आपके दोस्तों के कंप्यूटरों से सीधे, एंड-टू-एंड एन्क्रिप्टेड तरीके से बात करता है।
+settings.friends.privacy = दोस्त क्या देखते हैं: आपका नाम और, सिर्फ़ जब शेयरिंग चालू हो, आपके चल रहे गाने (टाइटल, कलाकार, उसकी YouTube id, कब शुरू हुआ)। सर्वर पर कुछ भी स्टोर नहीं होता: रिले सिर्फ़ एन्क्रिप्टेड डेटा आगे भेजता है और आपका IP पता देखता है। ग्रुप हर सदस्य के कंप्यूटर पर रखे जाते हैं।
+
+settings.friends.you = आप
+settings.friends.name = नाम
+settings.friends.name_note = आपके दोस्त आपको इसी नाम से देखते हैं।
+settings.friends.share = मेरा चल रहा गाना शेयर करें
+settings.friends.share_desc = आपके दोस्त अपनी फ़ीड में आपका चल रहा गाना देखते हैं। आपकी अपनी फ़ाइलों के गाने कभी शेयर नहीं होते।
+settings.friends.private = निजी सेशन
+settings.friends.private_desc = ऐप बंद करने तक शेयरिंग रोकें।
+# {id} is a shortened member id ("3f2a…9c01").
+settings.friends.member_id = सदस्य id: {id}
+
+settings.friends.groups = आपके ग्रुप
+settings.friends.no_groups = अभी कोई ग्रुप नहीं। एक बनाएँ और दोस्तों को आमंत्रित करें, या किसी दोस्त के दिखाए कोड से किसी ग्रुप में शामिल हों।
+# {name} is your own name in a group's member list.
+settings.friends.you_name = {name} (आप)
+settings.friends.owner = मालिक
+settings.friends.remove = हटाएँ
+settings.friends.invite = आमंत्रित करें
+settings.friends.leave = छोड़ें
+settings.friends.invite_shown = आपका दोस्त यह कोड सेटिंग → दोस्त → ग्रुप में शामिल हों में डाले:
+settings.friends.invite_expires = 10 मिनट के लिए, एक बार मान्य। किसी दूसरे नेटवर्क पर हों तो इसके बजाय लिंक भेजें (या उन्हें QR कोड स्कैन करने दें)।
+settings.friends.create = ग्रुप बनाएँ
+settings.friends.group_placeholder = ग्रुप का नाम
+settings.friends.create_button = बनाएँ
+settings.friends.join = ग्रुप में शामिल हों
+settings.friends.join_button = शामिल हों
+settings.friends.join_note = किसी सदस्य का दिखाया कोड, या उनका भेजा आमंत्रण लिंक।
+settings.friends.joining = ग्रुप खोजा जा रहा है…
+# {group} is the group's name.
+settings.friends.joined = {group} में शामिल हो गए
+
+settings.friends.recovery = रिकवरी वाक्यांश
+settings.friends.recovery_note = आपके दोस्त आपको इस कंप्यूटर पर रखी एक कुंजी से पहचानते हैं। उस कुंजी को नए कंप्यूटर पर ले जाने के लिए रिकवरी वाक्यांश लिख लें; जिसके पास यह है, वह आपके नाम से बात कर सकता है।
+settings.friends.show_phrase = रिकवरी वाक्यांश दिखाएँ
+settings.friends.hide_phrase = छिपाएँ
+settings.friends.copy_phrase = कॉपी करें
+settings.friends.restore = रिकवरी वाक्यांश से रीस्टोर करें
+settings.friends.phrase_placeholder = XXXXX-XXXXX-…
+settings.friends.restore_button = रीस्टोर करें
+settings.friends.restore_note = इस कंप्यूटर की कुंजी बदल देता है। इसके ग्रुप यहाँ भुला दिए जाते हैं: हर ग्रुप के लिए किसी सदस्य (या अपने पुराने कंप्यूटर) से आमंत्रण माँगें, और आप अपने नाम के साथ वापस आ जाएँगे।
+
+# ---- Joining errors. {error} is a technical reason (in English).
+friends.join.not_found = इस नेटवर्क पर आमंत्रण दिखाता कोई नहीं मिला। अगर आपका दोस्त किसी और नेटवर्क पर है, तो आमंत्रण लिंक माँगें।
+friends.join.wrong_code = कोड मेल नहीं खाता। उसे जाँचें और फिर से कोशिश करें।
+friends.join.not_inviting = वह आमंत्रण अब मान्य नहीं है। नया आमंत्रण माँगें।
+friends.join.failed = शामिल नहीं हो सके: {error}
+friends.join.bad_code = यह आमंत्रण कोड नहीं है। कोड में 8 अक्षर और अंक होते हैं, जैसे ABCD-2345।
+
+# ---- Notifications. {group} is a group's name, {name} a member's.
+friends.toast.not_ready = दोस्त सुविधा अभी तैयार नहीं है। थोड़ी देर में फिर से कोशिश करें।
+friends.toast.created = ग्रुप “{group}” बन गया। कोड से अपने दोस्तों को आमंत्रित करें।
+friends.toast.removed = आपको “{group}” से हटा दिया गया।
+friends.toast.listen_invite = {name} आपको साथ में सुनने के लिए आमंत्रित कर रहे हैं ({group})। शामिल होने के लिए साथ में सुनें खोलें।
+friends.toast.listen_sent = सेशन शुरू हो रहा है; तैयार होते ही आपके ग्रुप को आमंत्रण मिलेगा।
+friends.toast.joined = आप “{group}” में शामिल हो गए
+friends.toast.member_joined = {name} “{group}” में शामिल हुए
+friends.toast.bad_phrase = यह मान्य रिकवरी वाक्यांश नहीं है। अक्षरों का हर समूह जाँचें।
+friends.toast.restored = कुंजी रीस्टोर हो गई। अपने ग्रुप के लिए आमंत्रण माँगें।
+
+# ---- The feed (Listen together page). {ago} is a relative time ("5 min ago").
+friends.feed.playing = अभी चल रहा है
+friends.feed.paused = रुका हुआ · {ago}
+friends.feed.idle = कुछ नहीं चल रहा · {ago}
+friends.feed.unknown = अभी तक कोई खबर नहीं
+# {title} the song, {artist} its artist.
+friends.feed.song = {title} — {artist}
+
+# ---- The friends card on the Listen together page
+friends.panel.title = दोस्त
+friends.panel.off = अपने दोस्तों के साथ एक स्थायी ग्रुप बनाएँ: देखें कि वे क्या सुन रहे हैं और एक क्लिक में साथ में सेशन शुरू करें।
+friends.panel.set_up = दोस्तों के ग्रुप सेट करें
+# {name} invited the group {group} to a session they host.
+friends.panel.invite = {name} ने {group} के लिए सेशन शुरू किया
+friends.panel.join = शामिल हों
+friends.panel.no_friends = अभी कोई दोस्त नहीं: सेटिंग → दोस्त में ग्रुप बनाएँ और उन्हें आमंत्रित करें।
+# A button per group: hosts a session and invites the group.
+friends.panel.listen = साथ में सुनें: {group}
+friends.panel.sharing = आपके दोस्त देखते हैं कि आप क्या चला रहे हैं।
+friends.panel.not_sharing = आप शेयर नहीं कर रहे कि आप क्या चला रहे हैं।
+friends.panel.manage = ग्रुप…

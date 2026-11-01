@@ -1,0 +1,95 @@
+# Friend groups and the activity feed (integrations/friends.rs, settings/friends_ui.rs,
+# pages/friends_panel.rs): lasting groups of friends, what they are listening to, and
+# Music Together sessions started for a group. Off by default; nothing goes through a
+# server that keeps it.
+
+# The Settings section's name.
+settings.section.friends = Friends
+
+# ---- Settings → Friends
+settings.friends.title = Friend groups
+settings.friends.intro = Keep a group of friends instead of a new Music Together room each time: see what they are listening to and start a session for the whole group in one click.
+settings.friends.enabled = Use friend groups
+settings.friends.enabled_desc = Off by default. Your computer then talks directly with your friends' computers, end-to-end encrypted.
+settings.friends.privacy = What friends see: your name and, only while sharing is on, the song you play (title, artist, its YouTube id, when it started). Nothing is stored on a server: the relay only passes on encrypted data and sees your IP address. The groups are kept on each member's computer.
+
+settings.friends.you = You
+settings.friends.name = Name
+settings.friends.name_note = How your friends see you.
+settings.friends.share = Share what I'm listening to
+settings.friends.share_desc = Your friends see the song you play in their feed. Songs from your own files are never shared.
+settings.friends.private = Private session
+settings.friends.private_desc = Pause sharing until you quit the app.
+# {id} is a shortened member id ("3f2a…9c01").
+settings.friends.member_id = Member id: {id}
+
+settings.friends.groups = Your groups
+settings.friends.no_groups = No groups yet. Create one and invite your friends, or join one with the code a friend shows you.
+# {name} is your own name in a group's member list.
+settings.friends.you_name = {name} (you)
+settings.friends.owner = Owner
+# Removes a member from the group for good (only the group's owner can).
+settings.friends.remove = Remove
+settings.friends.invite = Invite
+settings.friends.leave = Leave
+settings.friends.invite_shown = Your friend enters this code in Settings → Friends → Join a group:
+settings.friends.invite_expires = Valid for 10 minutes, once. On another network, send the link (or let them scan the QR code) instead.
+settings.friends.create = Create a group
+settings.friends.group_placeholder = Group name
+settings.friends.create_button = Create
+settings.friends.join = Join a group
+settings.friends.join_button = Join
+settings.friends.join_note = The code a member shows, or the invitation link they sent.
+settings.friends.joining = Looking for the group…
+# {group} is the group's name.
+settings.friends.joined = Joined {group}
+
+settings.friends.recovery = Recovery phrase
+settings.friends.recovery_note = Your friends know you by a key kept on this computer. Write the recovery phrase down to move that key to a new computer; anyone who has it can speak as you.
+settings.friends.show_phrase = Show recovery phrase
+settings.friends.hide_phrase = Hide
+settings.friends.copy_phrase = Copy
+settings.friends.restore = Restore from a recovery phrase
+settings.friends.phrase_placeholder = XXXXX-XXXXX-…
+settings.friends.restore_button = Restore
+settings.friends.restore_note = Replaces this computer's key. Its groups are forgotten here: ask a member (or your old computer) for an invitation to each, and you are back with your name.
+
+# ---- Joining errors. {error} is a technical reason (in English).
+friends.join.not_found = No one showing an invitation was found on this network. Ask for the invitation link if your friend is on another network.
+friends.join.wrong_code = The code doesn't match. Check it and try again.
+friends.join.not_inviting = That invitation isn't valid any more. Ask for a new one.
+friends.join.failed = Couldn't join: {error}
+friends.join.bad_code = That isn't an invitation code. A code has 8 letters and digits, like ABCD-2345.
+
+# ---- Notifications. {group} is a group's name, {name} a member's.
+friends.toast.not_ready = Friends aren't ready yet. Try again in a moment.
+friends.toast.created = Group “{group}” created. Invite your friends with a code.
+friends.toast.removed = You were removed from “{group}”.
+friends.toast.listen_invite = {name} invites you to listen together ({group}). Open Listen together to join.
+friends.toast.listen_sent = Starting a session; your group gets an invitation once it is up.
+friends.toast.joined = You joined “{group}”
+friends.toast.member_joined = {name} joined “{group}”
+friends.toast.bad_phrase = That isn't a valid recovery phrase. Check every group of characters.
+friends.toast.restored = Key restored. Ask for invitations to your groups.
+
+# ---- The feed (Listen together page). {ago} is a relative time ("5 min ago").
+friends.feed.playing = Playing now
+friends.feed.paused = Paused · {ago}
+friends.feed.idle = Nothing playing · {ago}
+friends.feed.unknown = Not heard from yet
+# {title} the song, {artist} its artist.
+friends.feed.song = {title} — {artist}
+
+# ---- The friends card on the Listen together page
+friends.panel.title = Friends
+friends.panel.off = Make a lasting group with your friends: see what they are listening to and start a session together in one click.
+friends.panel.set_up = Set up friend groups
+# {name} invited the group {group} to a session they host.
+friends.panel.invite = {name} started a session for {group}
+friends.panel.join = Join
+friends.panel.no_friends = No friends yet: create a group in Settings → Friends and invite them.
+# A button per group: hosts a session and invites the group.
+friends.panel.listen = Listen together: {group}
+friends.panel.sharing = Your friends see what you play.
+friends.panel.not_sharing = You aren't sharing what you play.
+friends.panel.manage = Groups…

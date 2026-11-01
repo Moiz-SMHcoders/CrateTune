@@ -1,0 +1,85 @@
+# Friend groups (see locales/en/friends.lang).
+
+# The Settings section's name.
+settings.section.friends = Amis
+
+# ---- Settings → Friends
+settings.friends.title = Groupes d'amis
+settings.friends.intro = Gardez un groupe d'amis au lieu d'un nouveau salon Music Together à chaque fois : voyez ce qu'ils écoutent et lancez une session pour tout le groupe en un clic.
+settings.friends.enabled = Utiliser les groupes d'amis
+settings.friends.enabled_desc = Désactivé par défaut. Votre ordinateur communique alors directement avec ceux de vos amis, avec un chiffrement de bout en bout.
+settings.friends.privacy = Ce que voient vos amis : votre nom et, uniquement pendant le partage, le titre que vous écoutez (titre, artiste, son identifiant YouTube, l'heure à laquelle il a commencé). Rien n'est stocké sur un serveur : le relais ne fait que transmettre des données chiffrées et voit votre adresse IP. Les groupes sont conservés sur l'ordinateur de chaque membre.
+
+settings.friends.you = Vous
+settings.friends.name = Nom
+settings.friends.name_note = Le nom sous lequel vos amis vous voient.
+settings.friends.share = Partager ce que j'écoute
+settings.friends.share_desc = Vos amis voient dans leur fil le titre que vous écoutez. Les titres de vos propres fichiers ne sont jamais partagés.
+settings.friends.private = Session privée
+settings.friends.private_desc = Suspendre le partage jusqu'à ce que vous quittiez l'app.
+settings.friends.member_id = Identifiant de membre : {id}
+
+settings.friends.groups = Vos groupes
+settings.friends.no_groups = Aucun groupe pour l'instant. Créez-en un et invitez vos amis, ou rejoignez-en un avec le code qu'un ami vous montre.
+settings.friends.you_name = {name} (vous)
+settings.friends.owner = Propriétaire
+settings.friends.remove = Retirer
+settings.friends.invite = Inviter
+settings.friends.leave = Quitter
+settings.friends.invite_shown = Votre ami saisit ce code dans Paramètres → Amis → Rejoindre un groupe :
+settings.friends.invite_expires = Valable 10 minutes, une seule fois. Sur un autre réseau, envoyez plutôt le lien (ou faites scanner le code QR).
+settings.friends.create = Créer un groupe
+settings.friends.group_placeholder = Nom du groupe
+settings.friends.create_button = Créer
+settings.friends.join = Rejoindre un groupe
+settings.friends.join_button = Rejoindre
+settings.friends.join_note = Le code affiché par un membre, ou le lien d'invitation qu'il vous a envoyé.
+settings.friends.joining = Recherche du groupe…
+settings.friends.joined = {group} rejoint
+
+settings.friends.recovery = Phrase de récupération
+settings.friends.recovery_note = Vos amis vous reconnaissent grâce à une clé conservée sur cet ordinateur. Notez la phrase de récupération pour transférer cette clé sur un nouvel ordinateur ; quiconque la possède peut parler en votre nom.
+settings.friends.show_phrase = Afficher la phrase de récupération
+settings.friends.hide_phrase = Masquer
+settings.friends.copy_phrase = Copier
+settings.friends.restore = Restaurer à partir d'une phrase de récupération
+settings.friends.phrase_placeholder = XXXXX-XXXXX-…
+settings.friends.restore_button = Restaurer
+settings.friends.restore_note = Remplace la clé de cet ordinateur. Ses groupes y sont oubliés : demandez à un membre (ou à votre ancien ordinateur) une invitation pour chacun, et vous retrouvez votre nom.
+
+# ---- Joining errors
+friends.join.not_found = Personne n'affiche d'invitation sur ce réseau. Demandez le lien d'invitation si votre ami est sur un autre réseau.
+friends.join.wrong_code = Le code ne correspond pas. Vérifiez-le et réessayez.
+friends.join.not_inviting = Cette invitation n'est plus valable. Demandez-en une nouvelle.
+friends.join.failed = Impossible de rejoindre : {error}
+friends.join.bad_code = Ce n'est pas un code d'invitation. Un code comporte 8 lettres et chiffres, comme ABCD-2345.
+
+# ---- Notifications
+friends.toast.not_ready = Les groupes d'amis ne sont pas encore prêts. Réessayez dans un instant.
+friends.toast.created = Groupe « {group} » créé. Invitez vos amis avec un code.
+friends.toast.removed = Vous avez été retiré de « {group} ».
+friends.toast.listen_invite = {name} vous invite à écouter ensemble ({group}). Ouvrez Écouter ensemble pour rejoindre.
+friends.toast.listen_sent = Démarrage d'une session ; votre groupe recevra une invitation dès qu'elle sera prête.
+friends.toast.joined = Vous avez rejoint « {group} »
+friends.toast.member_joined = {name} a rejoint « {group} »
+friends.toast.bad_phrase = Ce n'est pas une phrase de récupération valide. Vérifiez chaque groupe de caractères.
+friends.toast.restored = Clé restaurée. Demandez des invitations à vos groupes.
+
+# ---- The feed (Listen together page)
+friends.feed.playing = En cours de lecture
+friends.feed.paused = En pause · {ago}
+friends.feed.idle = Aucune lecture · {ago}
+friends.feed.unknown = Pas encore de nouvelles
+friends.feed.song = {title} — {artist}
+
+# ---- The friends card on the Listen together page
+friends.panel.title = Amis
+friends.panel.off = Créez un groupe durable avec vos amis : voyez ce qu'ils écoutent et lancez une session ensemble en un clic.
+friends.panel.set_up = Configurer les groupes d'amis
+friends.panel.invite = {name} a lancé une session pour {group}
+friends.panel.join = Rejoindre
+friends.panel.no_friends = Pas encore d'amis : créez un groupe dans Paramètres → Amis et invitez-les.
+friends.panel.listen = Écouter ensemble : {group}
+friends.panel.sharing = Vos amis voient ce que vous écoutez.
+friends.panel.not_sharing = Vous ne partagez pas ce que vous écoutez.
+friends.panel.manage = Groupes…

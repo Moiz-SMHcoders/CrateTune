@@ -16,6 +16,8 @@ off. It describes the code in this repository; if a change here makes it wrong, 
   * [Updates (GitHub)](#updates-github)
   * [Music Together](#music-together)
   * [Your other devices (device hand-off)](#your-other-devices-device-hand-off)
+  * [Sync between your devices](#sync-between-your-devices)
+  * [Friend groups](#friend-groups)
   * [SponsorBlock](#sponsorblock)
   * [Last.fm and ListenBrainz](#lastfm-and-listenbrainz)
   * [Discord](#discord)
@@ -38,6 +40,8 @@ off. It describes the code in this repository; if a change here makes it wrong, 
 | GitHub (player fixes), relay as fallback | at start, then every 6 hours | yes (Settings → Playback → *Player fixes*) |
 | GitHub (`relay.txt`) and the Music Together relay | only when you host or join a session | only when used |
 | Your paired devices (local network, mDNS) and the device hand-off relay | while a device is paired, or while pairing | only when used |
+| Your paired devices: sync of settings, likes, playlists, pins, queue tabs (same links) | while sync is on (on both devices) | no |
+| Your friends' computers (same relay, or directly) | while friend groups are on and you are in a group | no |
 | SponsorBlock | when a song starts | yes |
 | Google Translate or an AI endpoint | when lyrics translation is on | no |
 | Last.fm, ListenBrainz | while scrobbling is set up | no |
@@ -184,6 +188,54 @@ while a pairing code is shown or being entered, and only while the app is open:
   `settings.json`; they are not part of settings exports. *Forget* removes a device here and
   asks it to forget this one too.
 
+### Sync between your devices
+
+**Off by default** (Settings → Devices → *Sync with my devices*), and it only works with
+devices you paired yourself (above), over the same end-to-end encrypted links. Each kind of data
+has its own switch.
+
+* **What is synced:** your settings (look, playback, lyrics, content and so on), the sound
+  settings (EQ, speed, pitch, reverb, sound presets), likes and dislikes (video ids with the
+  songs' titles, artists, album and artwork links), the playlists you made in the app, Home's
+  speed-dial pins, your queue tabs and, only if you switch it on, the listen history of the last
+  90 days (which song, when, for how long).
+* **Never synced:** passwords, keys, cookies and tokens; your accounts and sign-ins; this
+  device's name, its window positions, output device, music folders, cache size, proxy and DNS
+  settings, keyboard shortcuts and volume; songs from your own files; anything about your
+  paired devices or friend groups.
+* **Where it goes:** straight to your paired devices (directly, or through the hand-off relay,
+  which can't read it). No server keeps a copy. Each device keeps a record of what was synced,
+  when and from which device in `sync.sqlite` next to the library; deleting that file resets
+  sync without touching your library or settings.
+
+### Friend groups
+
+**Off by default** (Settings → Friends). Nothing is sent to your friends until you switch it on
+and create or join a group, and what you are listening to only goes out while *Share what I'm
+listening to* is on (a second switch, also off by default) and no *private session* runs.
+
+* **What friends see:** the name you choose for the groups, your member id (a public key), the
+  ids of your devices in the groups, and, while sharing, the song you are playing: its **title,
+  artist, YouTube video id**, when it started and whether it plays. Songs from your own files
+  are never shared. Your device's name is not sent to friends.
+* **How it travels:** end-to-end encrypted (QUIC/TLS) between your computer and each friend's
+  computer, directly when possible, else through the same relay as device hand-off, which
+  only passes on encrypted packets and sees the computers' IP addresses and device ids. Your
+  friends' computers see your IP address when they connect directly. A computer only answers
+  devices of current members of a group it shares with them, and only sends a member the groups
+  that member is in.
+* **What is stored:** no server keeps anything. Each member's computer keeps the groups (names,
+  members' names, member and device ids, signed by their owners) in `settings.json` (not in
+  settings exports or sync), and the last addresses it reached friends' devices at. What your
+  friends play is kept in memory only, until the app quits.
+* **Your member key** is in the keychain. Its **recovery phrase** (Settings → Friends) lets you
+  move it to another computer; anyone who has the phrase can speak as you in your groups.
+* **Leaving:** *Leave* tells the group's members and forgets the group here; the group's
+  owner can remove members. Switching friend groups off stops all of it at once.
+* **Invitations** work like device pairing: an 8-character code (10 minutes, one use, at most
+  5 tries) or a link with your device id, relay and addresses. While a code is shown, the app
+  says on your local network (mDNS) that it is inviting.
+
 ### SponsorBlock
 
 **On by default** (Settings → SponsorBlock → *Skip segments*). When a song starts, the app asks
@@ -270,7 +322,7 @@ Everything stays on your computer, in your user account:
 
 | What | Where |
 |---|---|
-| Settings (`settings.json`, owner-only permissions), library database (`library.sqlite`: library, playlists, listen and search history, lyrics cache, recognition history), downloads and the optional play cache (`media/`), profiles, modules | macOS `~/Library/Application Support/cratetune`, Linux `~/.config/cratetune`, Windows `%APPDATA%\cratetune\config`, Flatpak `~/.var/app/io.github.moiz_smhcoders.cratetune/config/cratetune` |
+| Settings (`settings.json`, owner-only permissions), library database (`library.sqlite`: library, playlists, listen and search history, lyrics cache, recognition history), the sync record (`sync.sqlite`, only with device sync on), downloads and the optional play cache (`media/`), profiles, modules | macOS `~/Library/Application Support/cratetune`, Linux `~/.config/cratetune`, Windows `%APPDATA%\cratetune\config`, Flatpak `~/.var/app/io.github.moiz_smhcoders.cratetune/config/cratetune` |
 | Caches: update downloads and `update.log`, the `relay.txt` answer, the Japanese dictionary | macOS `~/Library/Caches/cratetune`, Linux `~/.cache/cratetune`, Windows `%LOCALAPPDATA%\cratetune\cache` |
 | Sign-in web view profile | macOS `~/Library/WebKit/io.github.moiz-smhcoders.cratetune`, Windows `%LOCALAPPDATA%\cratetune\data\SignIn` (further accounts: `SignIn-<id>`; on macOS 14+ a separate WebKit data store per account) |
 | Secrets (below) | the system keychain |
@@ -279,7 +331,7 @@ Everything stays on your computer, in your user account:
 Credential Manager, the Secret Service keyring on Linux) under the service name `cratetune`,
 never in plain files: the YouTube sign-in cookie (one per saved account), the Last.fm secret and session, the
 ListenBrainz token, the Spotify refresh token, the proxy password, API keys for lyrics
-providers and AI endpoints, and the device key of device hand-off. Only if no keychain is available are they kept in `settings.json`,
+providers and AI endpoints, the device key of device hand-off and the member key of friend groups. Only if no keychain is available are they kept in `settings.json`,
 which only your user can read.
 
 **History** stays on your computer. Settings → Privacy pauses or clears listen and search

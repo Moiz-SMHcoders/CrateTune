@@ -1,0 +1,91 @@
+# Friend groups (see locales/en/friends.lang).
+
+# The Settings section's name.
+settings.section.friends = Bạn bè
+
+# ---- Settings → Friends
+settings.friends.title = Nhóm bạn bè
+settings.friends.intro = Giữ một nhóm bạn thay vì tạo phòng Music Together mới mỗi lần: xem họ đang nghe gì và bắt đầu một phiên cho cả nhóm chỉ với một cú nhấp.
+settings.friends.enabled = Dùng nhóm bạn bè
+settings.friends.enabled_desc = Tắt theo mặc định. Khi bật, máy tính của bạn trao đổi trực tiếp với máy tính của bạn bè, được mã hóa đầu cuối.
+settings.friends.privacy = Bạn bè thấy gì: tên của bạn và, chỉ khi đang bật chia sẻ, bài hát bạn phát (tên bài, nghệ sĩ, ID YouTube của bài, thời điểm bắt đầu). Không có gì được lưu trên máy chủ: máy chủ chuyển tiếp chỉ chuyển dữ liệu đã mã hóa và thấy địa chỉ IP của bạn. Các nhóm được lưu trên máy tính của từng thành viên.
+
+settings.friends.you = Bạn
+settings.friends.name = Tên
+settings.friends.name_note = Tên bạn bè thấy cho bạn.
+settings.friends.share = Chia sẻ những gì tôi đang nghe
+settings.friends.share_desc = Bạn bè thấy bài hát bạn phát trong bảng tin của họ. Bài hát từ tệp của riêng bạn không bao giờ được chia sẻ.
+settings.friends.private = Phiên riêng tư
+settings.friends.private_desc = Tạm dừng chia sẻ cho đến khi bạn thoát ứng dụng.
+# {id} is a shortened member id ("3f2a…9c01").
+settings.friends.member_id = ID thành viên: {id}
+
+settings.friends.groups = Nhóm của bạn
+settings.friends.no_groups = Chưa có nhóm nào. Hãy tạo một nhóm và mời bạn bè, hoặc tham gia bằng mã mà một người bạn hiển thị cho bạn.
+# {name} is your own name in a group's member list.
+settings.friends.you_name = {name} (bạn)
+settings.friends.owner = Chủ nhóm
+settings.friends.remove = Xóa khỏi nhóm
+settings.friends.invite = Mời
+settings.friends.leave = Rời nhóm
+settings.friends.invite_shown = Bạn của bạn nhập mã này trong Cài đặt → Bạn bè → Tham gia nhóm:
+settings.friends.invite_expires = Có hiệu lực trong 10 phút, dùng một lần. Nếu ở mạng khác, hãy gửi liên kết (hoặc để họ quét mã QR) thay vào đó.
+settings.friends.create = Tạo nhóm
+settings.friends.group_placeholder = Tên nhóm
+settings.friends.create_button = Tạo
+settings.friends.join = Tham gia nhóm
+settings.friends.join_button = Tham gia
+settings.friends.join_note = Mã mà một thành viên hiển thị, hoặc liên kết mời họ đã gửi.
+settings.friends.joining = Đang tìm nhóm…
+# {group} is the group's name.
+settings.friends.joined = Đã tham gia {group}
+
+settings.friends.recovery = Cụm từ khôi phục
+settings.friends.recovery_note = Bạn bè nhận ra bạn qua một khóa được lưu trên máy tính này. Hãy ghi lại cụm từ khôi phục để chuyển khóa đó sang máy tính mới; bất kỳ ai có nó đều có thể nói với danh nghĩa của bạn.
+settings.friends.show_phrase = Hiện cụm từ khôi phục
+settings.friends.hide_phrase = Ẩn
+settings.friends.copy_phrase = Sao chép
+settings.friends.restore = Khôi phục từ cụm từ khôi phục
+settings.friends.phrase_placeholder = XXXXX-XXXXX-…
+settings.friends.restore_button = Khôi phục
+settings.friends.restore_note = Thay thế khóa của máy tính này. Các nhóm của nó sẽ bị quên ở đây: hãy xin một thành viên (hoặc máy tính cũ của bạn) lời mời vào từng nhóm, và bạn sẽ trở lại với tên của mình.
+
+# ---- Joining errors. {error} is a technical reason (in English).
+friends.join.not_found = Không tìm thấy ai đang hiển thị lời mời trên mạng này. Hãy xin liên kết mời nếu bạn của bạn ở mạng khác.
+friends.join.wrong_code = Mã không khớp. Hãy kiểm tra và thử lại.
+friends.join.not_inviting = Lời mời đó không còn hiệu lực. Hãy xin lời mời mới.
+friends.join.failed = Không thể tham gia: {error}
+friends.join.bad_code = Đó không phải mã mời. Mã gồm 8 chữ cái và chữ số, ví dụ ABCD-2345.
+
+# ---- Notifications. {group} is a group's name, {name} a member's.
+friends.toast.not_ready = Tính năng bạn bè chưa sẵn sàng. Hãy thử lại sau giây lát.
+friends.toast.created = Đã tạo nhóm “{group}”. Hãy mời bạn bè bằng mã.
+friends.toast.removed = Bạn đã bị xóa khỏi “{group}”.
+friends.toast.listen_invite = {name} mời bạn nghe cùng nhau ({group}). Mở Nghe cùng nhau để tham gia.
+friends.toast.listen_sent = Đang bắt đầu phiên; nhóm của bạn sẽ nhận lời mời khi phiên sẵn sàng.
+friends.toast.joined = Bạn đã tham gia “{group}”
+friends.toast.member_joined = {name} đã tham gia “{group}”
+friends.toast.bad_phrase = Đó không phải cụm từ khôi phục hợp lệ. Hãy kiểm tra từng nhóm ký tự.
+friends.toast.restored = Đã khôi phục khóa. Hãy xin lời mời vào các nhóm của bạn.
+
+# ---- The feed (Listen together page). {ago} is a relative time ("5 min ago").
+friends.feed.playing = Đang phát
+friends.feed.paused = Đã tạm dừng · {ago}
+friends.feed.idle = Không phát gì · {ago}
+friends.feed.unknown = Chưa có tin
+# {title} the song, {artist} its artist.
+friends.feed.song = {title} — {artist}
+
+# ---- The friends card on the Listen together page
+friends.panel.title = Bạn bè
+friends.panel.off = Tạo một nhóm lâu dài với bạn bè: xem họ đang nghe gì và cùng bắt đầu một phiên chỉ với một cú nhấp.
+friends.panel.set_up = Thiết lập nhóm bạn bè
+# {name} invited the group {group} to a session they host.
+friends.panel.invite = {name} đã bắt đầu một phiên cho {group}
+friends.panel.join = Tham gia
+friends.panel.no_friends = Chưa có bạn bè: hãy tạo nhóm trong Cài đặt → Bạn bè và mời họ.
+# A button per group: hosts a session and invites the group.
+friends.panel.listen = Nghe cùng nhau: {group}
+friends.panel.sharing = Bạn bè thấy những gì bạn phát.
+friends.panel.not_sharing = Bạn không chia sẻ những gì bạn phát.
+friends.panel.manage = Nhóm…

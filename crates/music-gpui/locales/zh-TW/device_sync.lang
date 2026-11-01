@@ -1,0 +1,34 @@
+# Device sync (see locales/en/device_sync.lang).
+
+# ---- Settings → Devices → Sync
+settings.devices.sync.title = 同步
+settings.devices.sync.note = 讓你的設定、喜歡的歌曲、播放清單等在已配對的裝置上保持一致，就像同一個應用程式一樣。資料經加密後直接在裝置之間傳輸，不會在任何伺服器上保留副本。
+settings.devices.sync.enabled = 與我的裝置同步
+settings.devices.sync.enabled_desc = 請在每部裝置上開啟。首次同步時，兩部裝置的喜歡、播放清單和釘選項目會合併在一起，不會移除任何內容。
+
+# The categories, each with its own switch.
+settings.devices.sync.settings = 設定
+settings.devices.sync.settings_desc = 外觀、播放、歌詞、內容及其他偏好設定（下方列出的這部電腦專屬設定除外）。
+settings.devices.sync.sound = 聲音
+settings.devices.sync.sound_desc = 等化器、速度、音調、殘響和音效預設組合。如果每部電腦都要針對各自的喇叭調整，請關閉此項。
+settings.devices.sync.likes = 喜歡和不喜歡
+settings.devices.sync.likes_desc = 你標示為喜歡或不喜歡的歌曲。
+settings.devices.sync.playlists = 你的播放清單
+settings.devices.sync.playlists_desc = 在應用程式中建立的播放清單（YouTube 播放清單會隨你的帳號同步）。
+settings.devices.sync.pins = 快速撥號
+settings.devices.sync.pins_desc = 你釘選到首頁的內容。
+settings.devices.sync.queue_tabs = 佇列分頁
+settings.devices.sync.queue_tabs_desc = 你的其他佇列分頁，依名稱比對。裝置上正在播放的分頁會保留該裝置自己的佇列。
+settings.devices.sync.history = 播放記錄
+settings.devices.sync.history_desc = 最近 90 天的播放記錄。除非你開啟，否則保持關閉。
+
+# Each paired device's state.
+settings.devices.sync.no_devices = 請先配對裝置。
+settings.devices.sync.syncing = 正在同步…
+settings.devices.sync.failed = 無法同步：{error}
+settings.devices.sync.last = 已同步（{ago}）
+settings.devices.sync.never = 尚未同步
+settings.devices.sync.received.other = 來自其他裝置的最近變更：{count} 個項目，{ago}
+settings.devices.sync.now = 立即同步
+settings.devices.sync.rules = 裝置分開期間所做的變更會在重新連線時合併。如果兩邊變更了同一個項目，以較晚的變更為準；在任一裝置上加入的喜歡和播放清單歌曲都會保留。
+settings.devices.sync.private = 永不同步：密碼和金鑰、登入資訊、這部裝置的名稱、視窗位置、輸出裝置、音樂資料夾、代理伺服器、鍵盤快速鍵和音量。

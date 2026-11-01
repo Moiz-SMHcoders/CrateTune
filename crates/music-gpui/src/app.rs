@@ -746,8 +746,11 @@ impl MusicApp {
             SettingsEvent::Quality => self.switch_stream_quality(cx),
             SettingsEvent::Devices => {
                 self.devices_sync(cx);
+                self.sync_setup(cx);
+                self.friends_setup(cx);
                 cx.notify();
             }
+            SettingsEvent::Saved => self.sync_settings_saved(cx),
             SettingsEvent::Lyrics => self.rebuild_lyrics_service(cx),
             SettingsEvent::NowPlaying => {
                 // The bar's background effect may need the artwork colours now.
@@ -806,6 +809,7 @@ impl MusicApp {
             .update(cx, |panel, cx| panel.set_discord_status(status, cx));
         // The secrets were read (or settings changed): devices may start now.
         self.devices_sync(cx);
+        self.friends_setup(cx);
     }
 
     fn save_window_bounds(&mut self, window: &mut Window, cx: &mut Context<Self>) {

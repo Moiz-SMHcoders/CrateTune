@@ -148,11 +148,16 @@ impl SavedQueue {
 
 const QUEUE_KEY: &str = "core.saved_queue";
 
+/// Called after a write changed rows (device sync's trigger; see
+/// [`Library::set_change_listener`]).
+pub type ChangeListener = Arc<dyn Fn() + Send + Sync>;
+
 /// Handle to the library database. Clones share one connection.
 #[derive(Clone)]
 pub struct Library {
     conn: Arc<Mutex<Connection>>,
     path: Option<PathBuf>,
+    listener: Arc<Mutex<Option<ChangeListener>>>,
 }
 
 impl std::fmt::Debug for Library {
@@ -188,7 +193,27 @@ impl Library {
         Ok(Self {
             conn: Arc::new(Mutex::new(conn)),
             path,
+            listener: Arc::default(),
         })
+    }
+
+    /// Calls `listener` after every call that changed rows (from the thread that made
+    /// the change, after the connection is free again), or stops calling it (`None`).
+    /// Shared by every clone. It must be cheap: it runs on every write (plays, the
+    /// saved queue, lyrics cache, …).
+    pub fn set_change_listener(&self, listener: Option<ChangeListener>) {
+        *self.listener.lock().unwrap_or_else(|e| e.into_inner()) = listener;
+    }
+
+    fn changed(&self) {
+        let listener = self
+            .listener
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .clone();
+        if let Some(listener) = listener {
+            listener();
+        }
     }
 
     /// File the database lives in (`None` for in-memory).
@@ -206,6 +231,24 @@ impl Library {
     }
 
     pub(crate) fn read<T>(&self, f: impl FnOnce(&Connection) -> rusqlite::Result<T>) -> Result<T> {
+        let (out, changed) = {
+            let conn = self.lock();
+            let before = conn.total_changes();
+            let out = f(&conn)?;
+            (out, conn.total_changes() != before)
+        };
+        if changed {
+            self.changed();
+        }
+        Ok(out)
+    }
+
+    /// [`Self::read`] without telling the change listener: for writes nobody syncs
+    /// (the saved queue every few seconds, the lyrics cache, search history).
+    pub(crate) fn read_quiet<T>(
+        &self,
+        f: impl FnOnce(&Connection) -> rusqlite::Result<T>,
+    ) -> Result<T> {
         Ok(f(&self.lock())?)
     }
 
@@ -214,10 +257,17 @@ impl Library {
         &self,
         f: impl FnOnce(&rusqlite::Transaction<'_>) -> Result<T>,
     ) -> Result<T> {
-        let mut conn = self.lock();
-        let tx = conn.transaction()?;
-        let out = f(&tx)?;
-        tx.commit()?;
+        let (out, changed) = {
+            let mut conn = self.lock();
+            let before = conn.total_changes();
+            let tx = conn.transaction()?;
+            let out = f(&tx)?;
+            tx.commit()?;
+            (out, conn.total_changes() != before)
+        };
+        if changed {
+            self.changed();
+        }
         Ok(out)
     }
 
@@ -261,9 +311,18 @@ impl Library {
 
     // ---- queue -----------------------------------------------------------------------------
 
-    /// Persists the play queue (replacing the previous one).
+    /// Persists the play queue (replacing the previous one). The change listener isn't
+    /// told (it is saved every few seconds while playing, and never synced).
     pub fn save_queue(&self, queue: &SavedQueue) -> Result<()> {
-        self.set_json(QUEUE_KEY, queue)
+        let json = serde_json::to_string(queue).map_err(|e| Error::Storage(e.to_string()))?;
+        self.read_quiet(|c| {
+            c.execute(
+                "INSERT INTO kv(key, value) VALUES (?1, ?2)
+                 ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+                params![QUEUE_KEY, json],
+            )
+        })?;
+        Ok(())
     }
 
     /// The queue last passed to [`Self::save_queue`]. The index is clamped into range.
@@ -469,6 +528,30 @@ mod tests {
         let json = serde_json::to_value(&new).unwrap();
         assert_eq!(json["user_queued"], serde_json::json!([0]));
         assert_eq!(json["tracks"][0]["video_id"], "a");
+    }
+
+    #[test]
+    fn change_listener_hears_writes_only() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        let lib = Library::open_in_memory().unwrap();
+        let heard = Arc::new(AtomicUsize::new(0));
+        let h = heard.clone();
+        lib.clone()
+            .set_change_listener(Some(Arc::new(move || {
+                h.fetch_add(1, Ordering::Relaxed);
+            })));
+        lib.set_value("x", "1").unwrap();
+        lib.like(&track("a", "A", "X", None)).unwrap();
+        assert_eq!(heard.load(Ordering::Relaxed), 2);
+        lib.get_value("x").unwrap();
+        lib.song_count(SongScope::All).unwrap();
+        lib.unlike("nothing-here").unwrap();
+        assert_eq!(heard.load(Ordering::Relaxed), 2, "reads and no-op writes");
+        lib.save_queue(&SavedQueue::default()).unwrap();
+        assert_eq!(heard.load(Ordering::Relaxed), 2, "the saved queue is quiet");
+        lib.set_change_listener(None);
+        lib.set_value("x", "2").unwrap();
+        assert_eq!(heard.load(Ordering::Relaxed), 2);
     }
 
     #[test]

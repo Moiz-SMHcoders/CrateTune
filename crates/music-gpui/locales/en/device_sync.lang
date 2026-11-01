@@ -1,0 +1,38 @@
+# Sync between paired devices (integrations/device_sync.rs, settings/devices_ui.rs):
+# settings, likes, playlists, pins and queue tabs kept the same on your own computers.
+# It travels directly between them, end-to-end encrypted, over the Devices links.
+
+# ---- Settings → Devices → Sync
+settings.devices.sync.title = Sync
+settings.devices.sync.note = Keep your settings, likes, playlists and more the same on your paired devices, as if they were one app. It goes straight from one to the other, encrypted; no server keeps a copy.
+settings.devices.sync.enabled = Sync with my devices
+settings.devices.sync.enabled_desc = Switch it on on each device. The first time, both devices' likes, playlists and pins are put together; nothing is removed.
+
+# The categories, each with its own switch.
+settings.devices.sync.settings = Settings
+settings.devices.sync.settings_desc = Look, playback, lyrics, content and the other preferences (except this computer's own, listed below).
+settings.devices.sync.sound = Sound
+settings.devices.sync.sound_desc = Equalizer, speed, pitch, reverb and sound presets. Switch it off if each computer has its own speakers to tune for.
+settings.devices.sync.likes = Likes and dislikes
+settings.devices.sync.likes_desc = Songs you liked or gave a thumbs down.
+settings.devices.sync.playlists = Your playlists
+settings.devices.sync.playlists_desc = Playlists made in the app (YouTube playlists come with your account).
+settings.devices.sync.pins = Speed dial
+settings.devices.sync.pins_desc = What you pinned to Home.
+settings.devices.sync.queue_tabs = Queue tabs
+settings.devices.sync.queue_tabs_desc = Your other queue tabs, matched by name. The tab playing on a device keeps its own queue there.
+settings.devices.sync.history = Listen history
+settings.devices.sync.history_desc = Plays of the last 90 days. Off unless you switch it on.
+
+# Each paired device's state. {ago} is a relative time ("5 min ago", "just now"),
+# {error} a technical reason (in English).
+settings.devices.sync.no_devices = Pair a device first.
+settings.devices.sync.syncing = Syncing…
+settings.devices.sync.failed = Couldn't sync: {error}
+settings.devices.sync.last = Synced {ago}
+settings.devices.sync.never = Not synced yet
+settings.devices.sync.received.one = Last change from another device: {count} item, {ago}
+settings.devices.sync.received.other = Last changes from another device: {count} items, {ago}
+settings.devices.sync.now = Sync now
+settings.devices.sync.rules = Changes made while the devices were apart merge when they meet. If both changed the same thing, the later change wins; likes and playlist songs added on either are all kept.
+settings.devices.sync.private = Never synced: passwords and keys, sign-ins, this device's name, window positions, the output device, music folders, the proxy, keyboard shortcuts and the volume.

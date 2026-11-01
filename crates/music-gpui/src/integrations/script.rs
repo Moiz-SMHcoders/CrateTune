@@ -33,6 +33,14 @@
 //! | `@devices-continue=NAME`, `@devices-play-on=NAME`, `@devices-pause=NAME`, `@devices-forget=NAME` | hand-off with a paired device (by name or id) |
 //! | `@devices-menu[=on\|off]`, `@devices-relay=off\|on`, `@devices-offer-dismiss` | the bar's Devices popover; the relay switch; Home's offer |
 //! | `@together-keep-playing=on\|off` | "Keep playing here when I leave" |
+//! | `@device-sync=on\|off`, `@device-sync-category=CAT:on\|off` | device sync and its categories (`settings`, `sound`, `likes`, `playlists`, `pins`, `queue_tabs`, `history`) |
+//! | `@device-sync-now`, `@device-sync-status` | a sync round with every paired device; print the state |
+//! | `@friends=on\|off`, `@friends-share=on\|off`, `@friends-private=on\|off` | friend groups, sharing, a private session |
+//! | `@friends-create=NAME`, `@friends-leave=GROUP` | make or leave a group (by name or id) |
+//! | `@friends-invite=GROUP[:FILE]`, `@friends-invite-cancel` | show an invitation (FILE gets the code, `FILE.link` the link) |
+//! | `@friends-join=CODE\|LINK` / `@friends-join=file:PATH` | join a group with an invitation |
+//! | `@friends-listen=GROUP`, `@friends-join-session` | start a Music Together session for a group; join the newest one a friend started |
+//! | `@friends-phrase=on\|off`, `@friends-status` | show the recovery phrase in Settings; print groups, feed, invitations |
 
 use std::path::PathBuf;
 use std::time::Instant;
@@ -116,6 +124,7 @@ impl MusicApp {
                 let ok = panel.update(cx, |p, cx| {
                     p.set_extras_field(field, value, window, cx)
                         || p.set_devices_field(field, value, window, cx)
+                        || p.set_friends_field(field, value, window, cx)
                 });
                 if !ok {
                     eprintln!("music-gpui: unknown field {field:?}");
@@ -339,6 +348,67 @@ impl MusicApp {
                 cx.notify();
             }
             "devices-relay" => panel.update(cx, |p, cx| p.set_devices(|d| d.use_relay = on, cx)),
+            "device-sync" => panel.update(cx, |p, cx| p.set_sync(None, on, cx)),
+            "device-sync-category" => {
+                let (cat, state) = arg.unwrap_or("").split_once(':').unwrap_or((arg.unwrap_or(""), "on"));
+                match music_core::sync::Category::parse(cat) {
+                    Some(cat) => panel.update(cx, |p, cx| p.set_sync(Some(cat), state != "off", cx)),
+                    None => eprintln!("music-gpui: unknown sync category {cat:?}"),
+                }
+            }
+            "device-sync-now" => self.sync_now(cx),
+            "device-sync-status" => self.print_sync_status(cx),
+            "friends" => panel.update(cx, |p, cx| p.set_friends_prefs(|f| f.enabled = on, cx)),
+            "friends-share" => panel.update(cx, |p, cx| p.set_friends_prefs(|f| f.share = on, cx)),
+            "friends-private" => self.friends_set_private(on, cx),
+            "friends-phrase" => panel.update(cx, |p, cx| p.show_recovery_phrase(on, cx)),
+            "friends-status" => self.print_friends_status(cx),
+            "friends-create" => self.friends_create_group(arg.unwrap_or(""), window, cx),
+            "friends-invite-cancel" => self.friends_cancel_invite(cx),
+            "friends-join-session" => {
+                match self.integrations.friends.invites.last().map(|i| i.link.clone()) {
+                    Some(link) => self.friends_join_session(&link, window, cx),
+                    None => eprintln!("music-gpui: no listen-together invitation"),
+                }
+            }
+            "friends-join" => {
+                let raw = arg.unwrap_or("");
+                let input = match raw.strip_prefix("file:") {
+                    Some(path) => std::fs::read_to_string(path).unwrap_or_else(|e| {
+                        eprintln!("music-gpui: reading {path}: {e}");
+                        String::new()
+                    }),
+                    None => raw.to_owned(),
+                };
+                self.friends_join(input.trim(), cx);
+            }
+            "friends-invite" | "friends-leave" | "friends-listen" => {
+                let raw = arg.unwrap_or("");
+                let (wanted, file) = match raw.split_once(':') {
+                    Some((g, f)) if name == "friends-invite" => (g, Some(f.to_owned())),
+                    _ => (raw, None),
+                };
+                let group = self
+                    .settings
+                    .read(cx)
+                    .settings()
+                    .friends
+                    .groups
+                    .iter()
+                    .find(|g| g.name().eq_ignore_ascii_case(wanted) || g.id() == wanted)
+                    .map(|g| g.id().to_owned());
+                match (name, group) {
+                    (_, None) => eprintln!("music-gpui: no group {wanted:?}"),
+                    ("friends-invite", Some(id)) => {
+                        self.friends_invite(&id, cx);
+                        if let Some(path) = file {
+                            self.friends_write_invite(path, cx);
+                        }
+                    }
+                    ("friends-leave", Some(id)) => self.friends_leave(&id, cx),
+                    (_, Some(id)) => self.friends_listen_together(&id, window, cx),
+                }
+            }
             "devices-offer-dismiss" => self.devices_dismiss_offer(cx),
             "cast-scan" => self.cast_scan(window, cx),
             "cast" => {
