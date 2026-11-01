@@ -5,7 +5,11 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
-## [0.3.0] — 2026-11-01
+## [0.3.1] — 2026-11-01
+
+0.3.0 was tagged but never published: its macOS Intel DMG didn't build (the disk image
+was made too small for the larger app). 0.3.1 is the same release with that fixed
+(`scripts/bundle-macos.sh` sizes the image itself).
 
 Three rounds of features ported or remade from other desktop YouTube Music clients
 (refryt, Limusic, Zuno, Deviload) and tono.fm's ideas, all self-hosted: several accounts and

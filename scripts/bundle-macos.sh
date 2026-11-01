@@ -110,10 +110,13 @@ if [[ $DMG == 1 ]]; then
   rm -f "$DMG_PATH"
   # hdiutil fails now and then on CI runners ("Resource busy"), a retry gets through.
   # Not `-quiet`: that hides its error message, leaving only exit code 1 in the log.
+  # An explicit size: hdiutil's own estimate from -srcfolder came out too small for the
+  # x86_64 app on the Intel runner ("No space left on device" inside the image).
+  DMG_MB=$(( $(du -sm "$STAGE" | cut -f1) * 5 / 4 + 32 ))
   DMG_TRIES=5
   for ((try = 1; ; try++)); do
     status=0
-    hdiutil create -volname "$APP_NAME" -srcfolder "$STAGE" -ov -format UDZO "$DMG_PATH" || status=$?
+    hdiutil create -volname "$APP_NAME" -srcfolder "$STAGE" -size "${DMG_MB}m" -ov -format UDZO "$DMG_PATH" || status=$?
     [[ $status == 0 ]] && break
     echo "hdiutil create failed with exit code $status (try $try of $DMG_TRIES)" >&2
     [[ $try -lt $DMG_TRIES ]] || exit "$status"
