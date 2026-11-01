@@ -64,11 +64,33 @@ only users who turn on **Include pre-releases** get them. Drafts are never offer
 
 ## Signing (macOS)
 
-Without `MACOS_SIGN_IDENTITY` the bundle is ad-hoc signed. That works for updates (the
-updater checks `codesign --verify --strict` and the bundle id), but every version has a
-new code identity. macOS then asks again for keychain access to stored sign-ins and for
-the microphone (see the user guide, "Updates"). A Developer ID certificate (secret
-`MACOS_SIGN_IDENTITY`, plus notarizing the DMG) keeps the identity stable.
+Three ways, first that applies (`scripts/bundle-macos.sh`):
+
+* **Developer ID** (secret `MACOS_SIGN_IDENTITY`, plus notarizing the DMG): a stable
+  identity and no Gatekeeper warning. Needs a paid Apple Developer account.
+* **The project's self-signed certificate** (secrets `MACOS_SELF_SIGN_P12`, the `.p12`
+  in base64, and `MACOS_SELF_SIGN_PASSWORD`). The release workflow imports it into a
+  throw-away keychain on the runner and trusts it for code signing there. Every release
+  then has the designated requirement `identifier "<bundle id>" and certificate leaf =
+  H"…"`, so macOS keeps letting updates read the sign-in in the keychain once the user
+  chose *Always Allow* (no prompt per update). Gatekeeper still asks on the first open,
+  as with ad-hoc. The bundle script fails if the requirement doesn't name the
+  certificate.
+* **Ad-hoc** otherwise: every version has a new code identity (its hash), so macOS asks
+  again for keychain access to stored sign-ins and for the microphone after each update
+  (see the user guide, "Updates"). The app says so in Settings → Account and offers
+  *Try again* instead of looking signed out.
+
+The certificate (20 years, RSA 3072, code-signing only) and its password live outside the
+repository at `~/.config/cratetune/codesign.p12` and `codesign.pass` on the maintainer's
+Mac. Keep an offline backup. Losing it means a new certificate, and each Mac then asks
+once more for keychain access after the next update; nothing else breaks. To set the
+secrets again:
+
+```sh
+base64 -i ~/.config/cratetune/codesign.p12 | tr -d '\n' | gh secret set MACOS_SELF_SIGN_P12
+gh secret set MACOS_SELF_SIGN_PASSWORD < ~/.config/cratetune/codesign.pass
+```
 
 ## Testing an update locally (macOS)
 

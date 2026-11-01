@@ -40,3 +40,7 @@ home.continue.elsewhere = {artist} · 在其他裝置上播放過
 home.continue.at = {artist} · 在其他裝置上播放過，停在 {position}
 home.continue.resume = 繼續播放
 home.continue.dismiss = 關閉
+account.keychain_failed.title = 無法從鑰匙圈讀取你的登入資訊
+account.keychain_failed.detail = macOS 詢問 {app} 是否可以使用已儲存的登入資訊，但未允許存取（或提示已關閉）。你的帳號已保留。請選擇「重試」，再選擇「永遠允許」。
+account.keychain_failed.retry = 重試
+account.keychain_failed.toast = 無法從鑰匙圈讀取你的 YouTube 登入資訊。設定 → 帳號 → 重試。

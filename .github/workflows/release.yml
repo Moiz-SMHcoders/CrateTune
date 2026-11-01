@@ -8,6 +8,9 @@
 # `gh workflow run release.yml --ref <branch>` runs everything except the release itself.
 # Signing/notarization secrets are optional:
 #   MACOS_SIGN_IDENTITY (+ a keychain with the Developer ID certificate) for macOS.
+#   MACOS_SELF_SIGN_P12 (base64) + MACOS_SELF_SIGN_PASSWORD: the project's self-signed
+#   code-signing certificate, so every macOS release has the same designated requirement
+#   and keeps keychain access across updates (scripts/bundle-macos.sh, docs/RELEASING.md).
 name: Release
 
 on:
@@ -63,6 +66,37 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: release-${{ matrix.name }}
+
+      # A throw-away keychain with the self-signed certificate, trusted for code signing
+      # on this runner only (codesign refuses an untrusted identity). Skipped without
+      # the secrets: the build is then signed ad-hoc.
+      - name: Signing certificate (macOS)
+        if: runner.os == 'macOS'
+        env:
+          P12: ${{ secrets.MACOS_SELF_SIGN_P12 }}
+          P12_PASSWORD: ${{ secrets.MACOS_SELF_SIGN_PASSWORD }}
+        run: |
+          if [ -z "$P12" ] || [ -z "$P12_PASSWORD" ]; then
+            echo "no self-signed certificate: ad-hoc signing"; exit 0
+          fi
+          kc="$RUNNER_TEMP/sign.keychain-db"
+          kc_pass=$(openssl rand -hex 24)
+          printf '%s' "$P12" | base64 --decode > "$RUNNER_TEMP/sign.p12"
+          security create-keychain -p "$kc_pass" "$kc"
+          security set-keychain-settings -lut 21600 "$kc"
+          security unlock-keychain -p "$kc_pass" "$kc"
+          security import "$RUNNER_TEMP/sign.p12" -k "$kc" -P "$P12_PASSWORD" -T /usr/bin/codesign >/dev/null
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$kc_pass" "$kc" >/dev/null
+          security list-keychains -d user -s "$kc" $(security list-keychains -d user | tr -d '"')
+          /usr/bin/openssl pkcs12 -in "$RUNNER_TEMP/sign.p12" -nokeys -clcerts \
+            -passin env:P12_PASSWORD -out "$RUNNER_TEMP/sign.pem" 2>/dev/null
+          sudo security add-trusted-cert -d -r trustRoot -p codeSign \
+            -k /Library/Keychains/System.keychain "$RUNNER_TEMP/sign.pem"
+          rm -f "$RUNNER_TEMP/sign.p12"
+          id=$(/usr/bin/openssl x509 -in "$RUNNER_TEMP/sign.pem" -noout -fingerprint -sha1 \
+            | sed 's/.*=//; s/://g')
+          security find-identity -v -p codesigning "$kc" | grep -q "$id"
+          echo "MACOS_SELF_SIGN_IDENTITY=$id" >> "$GITHUB_ENV"
 
       - name: Bundle (macOS)
         if: runner.os == 'macOS'
