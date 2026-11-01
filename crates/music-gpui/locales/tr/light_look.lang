@@ -58,3 +58,6 @@ theme.custom.heading_font = Başlık yazı tipi
 theme.custom.heading_font_detail = Sayfa başlıkları, albüm ve çalma listesi üst bilgileri, Şu an çalıyor ekranındaki başlık.
 theme.custom.fonts_folder = Yazı tipi klasörünü aç
 theme.custom.fonts_folder_note = Yazı tipi klasöründeki yazı tipi dosyaları (.ttf, .otf, .ttc) da bir sonraki açılıştan itibaren listelenir.
+sidebar.collapse = Kenar çubuğunu daralt
+sidebar.expand = Kenar çubuğunu genişlet
+sidebar.keep_open = Kenar çubuğunu açık tut

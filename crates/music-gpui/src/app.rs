@@ -893,14 +893,15 @@ impl MusicApp {
     fn render_shell(&mut self, window: &mut Window, cx: &mut Context<Self>) -> gpui::AnyElement {
         self.ensure_page(window, cx);
         let page = self.router.current().page.as_ref().map(|p| p.view.clone());
-        let sidebar = self.render_sidebar(cx);
+        // A new page fades in, and the sidebar slides (~200 ms of frames each,
+        // then static).
+        let mut frame = Frame::new();
+        let sidebar = self.render_sidebar(&mut frame, cx);
         // The custom top bar has back / forward / search; the old header only
         // comes with the system title bar.
         let header = (!crate::titlebar::custom()).then(|| self.render_header(cx));
         let queue_panel = self.queue_open.then(|| self.render_queue_panel(cx));
-        // A new page fades in (and slides up a little with full motion): ~180 ms
-        // of frames once per navigation, then static.
-        let mut frame = Frame::new();
+        // A new page slides up a little with full motion.
         let t = frame.get(&self.look.page_in);
         let page_box = div().flex_1().min_h_0().children(page);
         let page_box = if t < 1. {

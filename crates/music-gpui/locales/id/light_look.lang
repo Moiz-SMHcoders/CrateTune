@@ -58,3 +58,6 @@ theme.custom.heading_font = Font judul
 theme.custom.heading_font_detail = Judul halaman, kepala album dan playlist, judul di Sedang Diputar.
 theme.custom.fonts_folder = Buka folder font
 theme.custom.fonts_folder_note = File font (.ttf, .otf, .ttc) di folder font juga dicantumkan, mulai pembukaan berikutnya.
+sidebar.collapse = Ciutkan bilah samping
+sidebar.expand = Bentangkan bilah samping
+sidebar.keep_open = Biarkan bilah samping terbuka

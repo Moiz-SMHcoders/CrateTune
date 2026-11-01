@@ -58,3 +58,6 @@ theme.custom.heading_font = 見出しのフォント
 theme.custom.heading_font_detail = ページのタイトル、アルバムとプレイリストのヘッダー、再生中画面のタイトル。
 theme.custom.fonts_folder = フォントフォルダを開く
 theme.custom.fonts_folder_note = フォントフォルダ内のフォントファイル（.ttf、.otf、.ttc）も、次回の起動から一覧に表示されます。
+sidebar.collapse = サイドバーを折りたたむ
+sidebar.expand = サイドバーを展開
+sidebar.keep_open = サイドバーを開いたままにする

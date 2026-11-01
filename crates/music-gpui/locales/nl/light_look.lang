@@ -58,3 +58,6 @@ theme.custom.heading_font = Lettertype voor koppen
 theme.custom.heading_font_detail = Paginatitels, album- en afspeellijstkoppen, de titel in Speelt nu.
 theme.custom.fonts_folder = Lettertypemap openen
 theme.custom.fonts_folder_note = Lettertypebestanden (.ttf, .otf, .ttc) in de lettertypemap worden vanaf de volgende start ook getoond.
+sidebar.collapse = Zijbalk inklappen
+sidebar.expand = Zijbalk uitklappen
+sidebar.keep_open = Zijbalk open houden

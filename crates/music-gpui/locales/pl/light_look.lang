@@ -58,3 +58,6 @@ theme.custom.heading_font = Czcionka nagłówków
 theme.custom.heading_font_detail = Tytuły stron, nagłówki albumów i playlist, tytuł w Teraz odtwarzane.
 theme.custom.fonts_folder = Otwórz folder czcionek
 theme.custom.fonts_folder_note = Pliki czcionek (.ttf, .otf, .ttc) z folderu czcionek też są na liście, od następnego uruchomienia.
+sidebar.collapse = Zwiń pasek boczny
+sidebar.expand = Rozwiń pasek boczny
+sidebar.keep_open = Zostaw pasek boczny otwarty

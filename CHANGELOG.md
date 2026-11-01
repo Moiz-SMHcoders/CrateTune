@@ -9,6 +9,11 @@ versions follow [SemVer](https://semver.org/).
 
 ### Added
 
+* **The sidebar slides.** Switching between the full sidebar and the icon rail, and
+  *Expand on hover*, animate the width (~200 ms, eased; titles fade, icons glide to the
+  rail's position; frames only while it moves, none at rest; follows Animations →
+  Reduced / Off). A button in the sidebar's header collapses it to the rail, expands the
+  rail, or keeps the hover panel open.
 * **Sign in from your browser** now reads Firefox forks too: **Zen, LibreWolf, Floorp and
   Waterfox**. Like Firefox, they keep plain cookie files, so this is also a working
   browser-import route on **Windows**, where Chrome, Edge and Brave lock their cookies to

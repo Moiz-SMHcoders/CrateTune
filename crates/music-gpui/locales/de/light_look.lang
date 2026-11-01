@@ -58,3 +58,6 @@ theme.custom.heading_font = Schrift für Überschriften
 theme.custom.heading_font_detail = Seitentitel, Album- und Playlist-Köpfe, der Titel in „Läuft gerade“.
 theme.custom.fonts_folder = Schriftenordner öffnen
 theme.custom.fonts_folder_note = Schriftdateien (.ttf, .otf, .ttc) im Schriftenordner werden ab dem nächsten Start ebenfalls aufgeführt.
+sidebar.collapse = Seitenleiste einklappen
+sidebar.expand = Seitenleiste ausklappen
+sidebar.keep_open = Seitenleiste geöffnet lassen

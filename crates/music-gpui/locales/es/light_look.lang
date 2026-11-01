@@ -58,3 +58,6 @@ theme.custom.heading_font = Fuente de los títulos
 theme.custom.heading_font_detail = Títulos de página, encabezados de álbumes y listas, el título en Reproduciendo.
 theme.custom.fonts_folder = Abrir carpeta de fuentes
 theme.custom.fonts_folder_note = Los archivos de fuente (.ttf, .otf, .ttc) de la carpeta de fuentes también aparecen, a partir del próximo inicio.
+sidebar.collapse = Contraer barra lateral
+sidebar.expand = Expandir barra lateral
+sidebar.keep_open = Mantener barra lateral abierta

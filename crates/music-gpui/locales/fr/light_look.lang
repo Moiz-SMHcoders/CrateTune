@@ -58,3 +58,6 @@ theme.custom.heading_font = Police des titres
 theme.custom.heading_font_detail = Titres des pages, en-têtes d’albums et de playlists, le titre dans À l'écoute.
 theme.custom.fonts_folder = Ouvrir le dossier des polices
 theme.custom.fonts_folder_note = Les fichiers de police (.ttf, .otf, .ttc) du dossier des polices sont aussi proposés, à partir du prochain lancement.
+sidebar.collapse = Réduire la barre latérale
+sidebar.expand = Déplier la barre latérale
+sidebar.keep_open = Garder la barre latérale ouverte

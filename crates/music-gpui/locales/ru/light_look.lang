@@ -58,3 +58,6 @@ theme.custom.heading_font = Шрифт заголовков
 theme.custom.heading_font_detail = Заголовки страниц, шапки альбомов и плейлистов, название в «Сейчас играет».
 theme.custom.fonts_folder = Открыть папку шрифтов
 theme.custom.fonts_folder_note = Файлы шрифтов (.ttf, .otf, .ttc) из папки шрифтов тоже появятся в списке, со следующего запуска.
+sidebar.collapse = Свернуть боковую панель
+sidebar.expand = Развернуть боковую панель
+sidebar.keep_open = Оставить боковую панель открытой

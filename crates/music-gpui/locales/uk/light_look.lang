@@ -58,3 +58,6 @@ theme.custom.heading_font = Шрифт заголовків
 theme.custom.heading_font_detail = Заголовки сторінок, шапки альбомів і плейлистів, назва в «Зараз грає».
 theme.custom.fonts_folder = Відкрити теку шрифтів
 theme.custom.fonts_folder_note = Файли шрифтів (.ttf, .otf, .ttc) з теки шрифтів теж з’являться у списку, з наступного запуску.
+sidebar.collapse = Згорнути бічну панель
+sidebar.expand = Розгорнути бічну панель
+sidebar.keep_open = Залишити бічну панель відкритою

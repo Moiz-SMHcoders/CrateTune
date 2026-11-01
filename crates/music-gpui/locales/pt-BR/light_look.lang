@@ -58,3 +58,6 @@ theme.custom.heading_font = Fonte dos títulos
 theme.custom.heading_font_detail = Títulos de página, cabeçalhos de álbuns e playlists, o título em Tocando agora.
 theme.custom.fonts_folder = Abrir pasta de fontes
 theme.custom.fonts_folder_note = Arquivos de fonte (.ttf, .otf, .ttc) na pasta de fontes também aparecem na lista, a partir da próxima abertura.
+sidebar.collapse = Recolher barra lateral
+sidebar.expand = Expandir barra lateral
+sidebar.keep_open = Manter barra lateral aberta

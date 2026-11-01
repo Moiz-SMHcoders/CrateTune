@@ -66,3 +66,8 @@ theme.custom.heading_font = Heading font
 theme.custom.heading_font_detail = Page titles, album and playlist headers, the title in Now Playing.
 theme.custom.fonts_folder = Open fonts folder
 theme.custom.fonts_folder_note = Font files (.ttf, .otf, .ttc) in the fonts folder are listed too, from the next start.
+# The sidebar header's button (icon with this tooltip): to the icon rail, back to
+# the full sidebar, or (expand-on-hover panel) switch to the always-open sidebar.
+sidebar.collapse = Collapse sidebar
+sidebar.expand = Expand sidebar
+sidebar.keep_open = Keep sidebar open

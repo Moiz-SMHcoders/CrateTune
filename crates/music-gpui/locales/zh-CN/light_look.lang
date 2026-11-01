@@ -58,3 +58,6 @@ theme.custom.heading_font = 标题字体
 theme.custom.heading_font_detail = 页面标题、专辑和歌单的页头、正在播放中的标题。
 theme.custom.fonts_folder = 打开字体文件夹
 theme.custom.fonts_folder_note = 字体文件夹中的字体文件（.ttf、.otf、.ttc）也会列出，下次启动起生效。
+sidebar.collapse = 收起侧边栏
+sidebar.expand = 展开侧边栏
+sidebar.keep_open = 保持侧边栏展开

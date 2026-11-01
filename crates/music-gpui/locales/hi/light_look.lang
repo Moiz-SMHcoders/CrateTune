@@ -58,3 +58,6 @@ theme.custom.heading_font = शीर्षक फ़ॉन्ट
 theme.custom.heading_font_detail = पेज के शीर्षक, एल्बम और प्लेलिस्ट के हेडर, अभी चल रहा है में शीर्षक।
 theme.custom.fonts_folder = फ़ॉन्ट फ़ोल्डर खोलें
 theme.custom.fonts_folder_note = फ़ॉन्ट फ़ोल्डर की फ़ॉन्ट फ़ाइलें (.ttf, .otf, .ttc) भी अगली बार खोलने से सूची में दिखती हैं।
+sidebar.collapse = साइडबार छोटा करें
+sidebar.expand = साइडबार फैलाएँ
+sidebar.keep_open = साइडबार खुला रखें

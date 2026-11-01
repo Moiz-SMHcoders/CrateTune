@@ -58,3 +58,6 @@ theme.custom.heading_font = 제목 글꼴
 theme.custom.heading_font_detail = 페이지 제목, 앨범과 재생목록 머리글, 지금 재생 중의 제목.
 theme.custom.fonts_folder = 글꼴 폴더 열기
 theme.custom.fonts_folder_note = 글꼴 폴더의 글꼴 파일(.ttf, .otf, .ttc)도 다음 실행부터 목록에 표시됩니다.
+sidebar.collapse = 사이드바 접기
+sidebar.expand = 사이드바 펼치기
+sidebar.keep_open = 사이드바 열어 두기

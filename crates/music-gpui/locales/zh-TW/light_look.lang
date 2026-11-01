@@ -58,3 +58,6 @@ theme.custom.heading_font = 標題字型
 theme.custom.heading_font_detail = 頁面標題、專輯和播放清單的頁首、正在播放中的標題。
 theme.custom.fonts_folder = 開啟字型資料夾
 theme.custom.fonts_folder_note = 字型資料夾中的字型檔案（.ttf、.otf、.ttc）也會列出，下次啟動起生效。
+sidebar.collapse = 收合側邊欄
+sidebar.expand = 展開側邊欄
+sidebar.keep_open = 保持側邊欄展開

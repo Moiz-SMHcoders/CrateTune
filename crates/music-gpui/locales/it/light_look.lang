@@ -58,3 +58,6 @@ theme.custom.heading_font = Carattere dei titoli
 theme.custom.heading_font_detail = Titoli delle pagine, intestazioni di album e playlist, il titolo in In riproduzione.
 theme.custom.fonts_folder = Apri cartella dei caratteri
 theme.custom.fonts_folder_note = Anche i file dei caratteri (.ttf, .otf, .ttc) nella cartella dei caratteri sono elencati, dal prossimo avvio.
+sidebar.collapse = Comprimi barra laterale
+sidebar.expand = Espandi barra laterale
+sidebar.keep_open = Tieni aperta la barra laterale

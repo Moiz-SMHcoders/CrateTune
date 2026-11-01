@@ -58,3 +58,6 @@ theme.custom.heading_font = Phông chữ tiêu đề
 theme.custom.heading_font_detail = Tiêu đề trang, phần đầu album và danh sách phát, tiêu đề trong Đang phát.
 theme.custom.fonts_folder = Mở thư mục phông chữ
 theme.custom.fonts_folder_note = Các tệp phông chữ (.ttf, .otf, .ttc) trong thư mục phông chữ cũng được liệt kê, từ lần mở tiếp theo.
+sidebar.collapse = Thu gọn thanh bên
+sidebar.expand = Mở rộng thanh bên
+sidebar.keep_open = Giữ thanh bên luôn mở
