@@ -525,27 +525,15 @@ uneven frames on 120 Hz displays, not tried); the decoded copy could go once upl
 3](../README.md#performance-round-3-memory-artwork-cpu), `components/artwork.rs`,
 `crates/music-gpui/src/memory.rs`. · Size: medium · Priority: low
 
-**F4. Video thumbnails and local artwork are kept at full size**
-Artwork from YouTube's image servers is now fetched at the size it is shown, but
-`i.ytimg.com` thumbnails (videos 640 × 360, playlists' 544 px squares, 0.9–1.2 MB decoded
-each) and local files' cover art can't be resized by the server. Decoding them at the shown
-size on the fetch threads (`ImageSource::Render`) would save up to 90 % for those. ·
-Size: medium · Priority: low
-
-**F5. A 250 ms timer runs all the time**
-`app.rs` polls the player 4 times a second also when nothing plays and the window is
-hidden (media keys, tray, Music Together and downloads are handled there too). Idle CPU is
-0.8–0.9 % of one core on an M4; backing off while idle would mostly save wake-ups (battery).
-· Size: small · Priority: low
-
-**F6. Fast scrolling still keeps a second of artwork past the budget**
-Images looked up within the last second (`KEEP_RECENT`, was 3 s) are never evicted, so a
-very fast scroll through a long Home still peaks above the budget (~370 MB footprint with
-~700 images, was ~600 MB). Skipping queued downloads that went off screen before they
-started would also save network and decoding on a real feed (the fixtures answer at once,
-so it can't be measured offline yet). Mini player art and cached views can lose their
-artwork when a fast scroll passes the budget (least recently used first); seen as a short
-reload, not reproduced. · Size: small · Priority: low
+**F7. An idle window still wakes the app 60 times a second**
+GPUI runs its display link (macOS `CVDisplayLink`) at the display's rate whenever the main
+window is visible and not covered, also when nothing changes and no frame is drawn: an idle,
+visible window measured 60–74 interrupt wake-ups per second against 11–15 hidden (M4,
+round 4; the app's own 250 ms poll now backs off to 2 s while idle, which is most of what is
+left when hidden). Pausing the link after a few idle frames and restarting it on the next
+`request_frame` / input would need GPUI (or a patch to its `MacWindow`). Details: [README:
+Performance round 4](../README.md#performance-round-4-idle-poll-thumbnails-off-screen-downloads).
+· Size: medium (upstream) · Priority: low
 
 ## 6. Technical debt
 

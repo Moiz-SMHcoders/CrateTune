@@ -3895,6 +3895,98 @@ design's row, not separable from the lyrics' own frames. `scripts/perf-macos.sh`
 idle 0.7 %, scrolling 61 fps at 60 Hz, Home draw p50 3.0 / 3.3 ms, Now Playing 9 renders/s
 at 3.0 %.
 
+### Performance round 4: idle poll, thumbnails, off-screen downloads
+
+BACKLOG F4–F6, measured first, kept what helped. Base = `main` at `80df7c9` plus the
+measurement hooks below (`9d20b36`), branch = this round; runs interleaved on an M4
+MacBook Air shared with other builds (load average 140–290 throughout, so CPU figures are
+noise; counts and memory are not).
+
+**New measurement hooks.** Fixture artwork for `i.ytimg.com` comes at the sizes those
+servers send (`hq720.jpg` 1280 × 720, `hqdefault.jpg` 480 × 360, a playlist's
+`studio_square_thumbnail.jpg` 544 px; before, every fixture image was 226 px), so video and
+playlist thumbnails can be measured offline. `MUSIC_FIXTURE_ART_MS` (`perf-frames.sh
+--art-ms`) delays every fixture image as a network would, and CI runs the per-page check
+that way too (**perf: frame-time, artwork past the budget arriving late**). `@mem` also
+prints the artwork downloads done and skipped; `@hide` hides the app.
+
+**Thumbnails at the size shown (F4).** YouTube's image servers scale album and artist art
+to any size (round 3 asks for the shown size), but `i.ytimg.com` serves video and playlist
+thumbnails at fixed sizes, and local files' covers are whatever the file holds. These are
+now decoded on the fetch threads with the shorter side at the shown size (the window's
+scale, the same size steps; cache key `<url>#fit=N`) and cached as the decoded pixels
+(`ImageSource::Render`, `Art::Pixels`), with no encoded copy and nothing left for GPUI to
+decode; smaller ones (within an eighth) stay files. Per image, decoded:
+
+| Image | Before | After |
+|---|---|---|
+| `hq720.jpg` (1280 × 720) in a 44 pt row at 2x | 3.5 MiB | 64 KiB (171 × 96) |
+| `hqdefault.jpg` / `sddefault.jpg` in a row | 675 KiB / 1.2 MiB | 48 KiB |
+| the same in a 160 pt card at 2x | 3.5 MiB (hq720) | 711 KiB (569 × 320) |
+| playlist square (544 px) in a card at 2x / 1x | 1.1 MiB | 400 / 100 KiB |
+| local cover (1400 px JPEG) in a row | 7.5 MiB | 36 KiB |
+
+Offline run (fixtures; the artist page and Explore with their video shelves, then the
+local-files page of 40 songs with 1400 px covers, scrolled; two runs each): the 20 video
+thumbnails took 53.7 → 1.2 MiB, the 26 covers 202 → 0.9 MiB. On the local page the cache
+held 8–11 covers in 60–82 MiB (over the 48 MiB budget: images on screen are never evicted)
+→ 161 images in 46 MiB; footprint peak 404–429 → 207–252 MB, at the end 255–271 → 127–191
+MB. Re-encoding the small copy (PNG / JPEG) and letting GPUI decode it was the other option:
+it keeps an encoded copy and decodes twice, so it wasn't built.
+
+**The poll backs off while idle (F5).** The app's 250 ms poll (`app.rs`: player state,
+media keys, the menu-bar item, scrobbling, Discord, Music Together, hand-off, download
+flags) ran four times a second also with nothing playing and the window hidden. Now
+(`poll.rs`) it runs every 2 s unless something needs it (playing or loading, a scrub, a
+sleep timer, casting, a Music Together session, a queued or running download, the log on
+screen, start-up) or the app changed in the last 3 s (any notify of the app, e.g. a click
+that starts something). What arrives from outside wakes it at once: media keys (also play /
+pause / seek, which go straight to the player), menu-bar clicks (tray-icon's event handlers
+instead of its channels) and the hand-off node's events (`handoff::node::set_event_hook`).
+The OS reduce-motion check (every 16 polls) is every 4 s. Nothing that is timed while
+playing changes: scrobbling, Together sync, the sleep timer and download progress all run
+at the full pace.
+
+| Idle on Home, 30 s (`proc_pid_rusage`) | Before | After |
+|---|---|---|
+| poll runs per second | 4 | 0.5 (+ one per wake: 1–2 in 30 s) |
+| interrupt wake-ups per second, hidden (6–7 runs each) | 13.3–15.4, median 13.8 (one 47) | 10.2–13.9, median 11.9 (one 24, one 71) |
+| the same, window visible (3 runs each) | 31.6–74.3 | 70.4–71.7 |
+
+`top`'s and `powermetrics`' idle wake-ups need an idle CPU (this machine never had one
+during the measurements) and `powermetrics` needs root, so the process's interrupt
+wake-ups are reported. A visible window is dominated by GPUI's display link, which runs at
+the display's rate whenever the window is visible and not covered, also when nothing is
+drawn (60–74 wake-ups a second either way; new BACKLOG F7); the outliers among the hidden
+runs look like the same (`@hide` not taking while another app was in front). The process
+count is noisy on a loaded machine and the poll is a small part of it; the poll's own
+fires are the exact figure. Idle CPU: 0.3–1.1 % of one core either way (load average
+150–250, not measurable here).
+
+**Off-screen downloads skipped, cached views pinned (F6).** Downloads run newest first, so a
+fast scroll leaves a backlog of images that already went by. A queued download is now
+skipped when its turn comes if the image wasn't looked up within 500 ms of the latest
+page lookup (relative, so nothing counts as gone while the window sits still; looked up
+again, it is queued again). Per-page artwork, fast scroll to the end of Home (two runs
+each):
+
+| | Before | After |
+|---|---|---|
+| images arriving 150 ms late: downloads by the end of the run | 501–545, still downloading ~10 s after the scroll | 174–176 (625–628 skipped), done within 2 s |
+| footprint at the end (peak) | 184–186 (255–260) MB | 141–165 (252–261) MB |
+| fixtures answering at once: downloads | 744 | 598–637 (109–146 skipped) |
+| footprint at the end (peak) | 138 (345–352) MB | 151–152 (314–318) MB |
+
+The mini player, the player bar, Now Playing and the top bar are cached views or other
+windows, not looked up with every frame while a page scrolls, so an LRU past the budget can
+evict their image (seen as a short reload). Five offline scenarios (paused / playing,
+YouTube and Google artwork, mini player open, an animated app-wide look) didn't reproduce
+it: the mini player redraws with every finished download, and Now Playing's hi-res copy is
+held by the app (never evicted). They now pin the image they show (`Pin`, one each): never
+evicted and never skipped, and their lookups don't count as page lookups.
+
+**CI** (fixture Home; memory after each bench): CI_TABLE
+
 ### Measurements (app shell round)
 
 macOS arm64, release (thin LTO), demo clock unless noted, sampled 10 s after launch
