@@ -1,0 +1,25 @@
+# Page tabs (see locales/en/page_tabs.lang).
+page_tabs.new = Nowa karta
+page_tabs.close = Zamknij kartę
+page_tabs.close_others = Zamknij pozostałe karty
+page_tabs.duplicate = Duplikuj kartę
+page_tabs.next = Następna karta
+page_tabs.previous = Poprzednia karta
+page_tabs.tab_1 = Karta 1
+page_tabs.tab_2 = Karta 2
+page_tabs.tab_3 = Karta 3
+page_tabs.tab_4 = Karta 4
+page_tabs.tab_5 = Karta 5
+page_tabs.tab_6 = Karta 6
+page_tabs.tab_7 = Karta 7
+page_tabs.tab_8 = Karta 8
+page_tabs.tab_last = Ostatnia karta
+page_tabs.open_in_new_tab = Otwórz w nowej karcie
+page_tabs.limit = Możesz mieć otwartych najwyżej {max} kart. Zamknij jedną, aby otworzyć kolejną.
+shortcuts.group.tabs = Karty stron
+settings.page_tabs.group = Karty stron
+settings.page_tabs.show = Pokazuj karty
+settings.page_tabs.show_note = Przeglądaj kilka stron obok siebie, każda karta z własnym wstecz i dalej. Pasek kart pojawia się, gdy otwarta jest druga karta: Nowa karta (⌘T / Ctrl+T), ⌘-kliknięcie lub Ctrl+kliknięcie karty albo linku lub „Otwórz w nowej karcie”.
+settings.page_tabs.restore = Przywracaj karty przy starcie
+settings.page_tabs.restore_note = Ponownie otwiera karty z ostatniej sesji wraz z ich historią. Wyłączone: {app} startuje na stronie głównej.
+settings.page_tabs.note = Karty stron zmieniają tylko to, co przeglądasz: odtwarzanie i kolejka są wspólne. Karty kolejki, w panelu kolejki, przechowują osobne kolejki.

@@ -205,6 +205,20 @@ the envelope's tests and frame counts were checked). Details: [README: Look
 round](../README.md#look-round-theme-files-see-through-window-music-reactive-look-zoom-app-icon).
 · Size: small · Priority: medium
 
+**U24. Page tabs (`feat/ui-tabs`) on real systems**
+Checked with unit tests, scripts (`@tab…`, synthetic ⌘ / Ctrl keys through GPUI's key
+dispatch), `scripts/smoke-pages.sh`, offscreen screenshots and `@mem` on macOS only: (1) a
+real mouse: ⌘-click / Ctrl+click on cards, middle-click on a tab, dragging tabs (GPUI's drag
+threshold vs a click), the hover-only × of background tabs; (2) Ctrl+Tab / Ctrl+Shift+Tab on
+macOS with a real keyboard (AppKit may take Ctrl+Tab for focus movement in some setups) and
+⌘W / Ctrl+W with a menu or dialog open; (3) Windows and Linux: Ctrl+1…9 passing on to Home /
+Explore / Library with one tab, Ctrl+W not closing the window, the strip under the old header
+with the system title bar; (4) the macOS menu bar's key equivalents (⌘T / ⌘W) with one tab
+(GPUI handles the key first; the menu item then runs an action that passes); (5) restoring
+tabs after a crash (they are only saved when the app quits); (6) many tabs on a narrow
+window (the strip scrolls sideways; the tabs shrink to 96 px first). · Size: small ·
+Priority: medium
+
 **U23. Light mode and layout round (`feat/light-look`) on Windows, Linux and real hardware**
 Checked on macOS only (unit tests, scripts, offscreen screenshots): (1) *Follow system* on
 Windows (`AppsUseLightTheme`, live switch through `WM_SETTINGCHANGE`) and Linux (the XDG
@@ -455,12 +469,14 @@ the identity) and add a feed of what friends are listening to, like Spotify's fr
 activity. Builds on the device keys and iroh links. Idea from tono.fm. · Size: large ·
 Priority: low
 
-**M10. Full UI tabs (separate page stacks per tab)**
-Zuno gives every tab its own player *and* its own page stack (back / forward, scroll). Only
-the queue part was built (queue tabs, `queue_tabs.rs`): the router keeps one history and
-one cached page per route, pages talk to the one app entity, and a second page stack would
-double the cached pages (memory) for little gain while only one queue can play. Revisit if
-users ask for parallel browsing. · Size: large · Priority: low
+**M10. Page tabs: what was left out**
+Page tabs are built (README: [Page
+tabs](../README.md#page-tabs-browser-style-tabs-for-browsing)): a page stack per tab, one
+engine and one queue. Not built: *reopen a closed tab* (⌘⇧T is theater mode), *middle-click
+on a card opens it in a tab* (⌘-click does), *pinned tabs*, *tabs dragged out into their
+own window*, *a tab per queue tab* (deliberately unlinked: one queue plays), *a playing
+indicator on the tab showing the playing album / playlist*, and an *Open in new tab* item in
+the song menu's *Go to artist / album* (⌘-click on those works). · Size: small · Priority: low
 
 **M11. Now Playing / mini player / sound ideas from Zuno, Limusic, refryt and Deviload not built**
 Surveyed for the Now Playing extras round (README: [Now Playing

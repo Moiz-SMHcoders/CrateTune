@@ -96,6 +96,33 @@ Prefer the system's title bar? **Settings → Appearance → Window → Use the 
 bar** brings back the operating system's title bar with back, forward and search above the
 page. It takes effect the next time the app starts; **Restart now** does it right away.
 
+## Tabs
+
+![Page tabs under the top bar](screenshots/page-tabs.png)
+
+Browse several pages side by side, like in a web browser. Each tab keeps its own back /
+forward history and where you scrolled; the music is the same in every tab (one player,
+one queue — switching tabs never changes what plays).
+
+* **Open a tab:** **⌘T** (Windows / Linux: **Ctrl+T**) opens Home in a new tab. **⌘-click**
+  (Ctrl+click) an album, artist, playlist or podcast card, an artist or album link, a
+  "See all" or a sidebar entry to open it in a tab in the background; **⌘⇧-click**
+  (Ctrl+Shift+click) opens it and shows it. A card's right-click menu has **Open in new
+  tab**.
+* **The tab bar** appears under the top bar as soon as a second tab is open. Click a tab
+  to show it, **×** or a **middle-click** closes it, drag a tab to move it. Right-click a
+  tab for **New tab**, **Duplicate tab**, **Close tab** and **Close other tabs**. Up to 12
+  tabs can be open.
+* **Keys:** ⌘W / Ctrl+W closes the tab, **Ctrl+Tab** / **Ctrl+Shift+Tab** go to the next /
+  previous one, **⌘1…⌘8** (Ctrl+1…8) to that tab and **⌘9** (Ctrl+9) to the last. While
+  only one tab is open, ⌘1 / ⌘2 / ⌘3 still go to Home / Explore / Library.
+* **Settings → Appearance → Page tabs:** **Show tabs** (on) turns the feature off
+  entirely; **Restore tabs at start** (off) reopens your tabs, with their history, the
+  next time you start the app.
+
+Tabs only hold pages you browse. Not to be confused with **queue tabs** in the queue panel,
+which keep separate queues (see [Playing](#playing)).
+
 ## Finding music
 
 * **Search** (⌘F, the field in the top bar): type to get suggestions (songs, artists, albums) and recent searches;
@@ -801,6 +828,9 @@ macOS keys shown. On Windows and Linux use **Ctrl** in place of ⌘ and Alt for 
 | ⌘S / ⌘R | shuffle / repeat |
 | ⌘[ / ⌘] | back / forward (also the mouse's back / forward buttons) |
 | ⌘1 / ⌘2 / ⌘3 / ⌘Y | Home / Explore / Library / History |
+| ⌘T / ⌘W | new tab / close tab ([Tabs](#tabs)) |
+| ⌃Tab / ⌃⇧Tab | next / previous tab |
+| ⌘1…⌘8 / ⌘9 | with two tabs or more: that tab / the last tab (with one tab ⌘1–⌘3 stay Home / Explore / Library) |
 | ⌘= (or ⌘+) / ⌘− / ⌘0 | zoom in / out / actual size (also ⌘ + mouse wheel) |
 | ⌘A | select every song of the list under the pointer (not in text fields) |
 | Esc | close an open menu or dialog first; else clear a song selection, the welcome guide, the full screen entered with Now Playing's button, Now Playing or the queue; else back |

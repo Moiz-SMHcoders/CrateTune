@@ -430,7 +430,7 @@ pub fn track_menu(menu: PopupMenu, track: &Track, list: ListContext) -> PopupMen
                 } else {
                     Route::Artist { id, name }
                 };
-                update_app(cx, |app, cx| app.navigate(route, window, cx));
+                update_app(cx, |app, cx| app.navigate_click(route, window, cx));
             }),
         );
     }
@@ -444,7 +444,7 @@ pub fn track_menu(menu: PopupMenu, track: &Track, list: ListContext) -> PopupMen
             .on_click(move |_, window, cx| {
                 if let Some((id, name)) = album.clone() {
                     let route = Route::Album { id, name };
-                    update_app(cx, |app, cx| app.navigate(route, window, cx));
+                    update_app(cx, |app, cx| app.navigate_click(route, window, cx));
                 }
             }),
     );

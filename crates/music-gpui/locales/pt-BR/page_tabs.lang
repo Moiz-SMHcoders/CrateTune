@@ -1,0 +1,25 @@
+# Page tabs (see locales/en/page_tabs.lang).
+page_tabs.new = Nova aba
+page_tabs.close = Fechar aba
+page_tabs.close_others = Fechar as outras abas
+page_tabs.duplicate = Duplicar aba
+page_tabs.next = Próxima aba
+page_tabs.previous = Aba anterior
+page_tabs.tab_1 = Aba 1
+page_tabs.tab_2 = Aba 2
+page_tabs.tab_3 = Aba 3
+page_tabs.tab_4 = Aba 4
+page_tabs.tab_5 = Aba 5
+page_tabs.tab_6 = Aba 6
+page_tabs.tab_7 = Aba 7
+page_tabs.tab_8 = Aba 8
+page_tabs.tab_last = Última aba
+page_tabs.open_in_new_tab = Abrir em nova aba
+page_tabs.limit = Você pode ter até {max} abas abertas. Feche uma para abrir outra.
+shortcuts.group.tabs = Abas de páginas
+settings.page_tabs.group = Abas de páginas
+settings.page_tabs.show = Mostrar abas
+settings.page_tabs.show_note = Navegue por várias páginas lado a lado, cada aba com seu próprio voltar e avançar. A barra de abas aparece quando uma segunda aba é aberta: Nova aba (⌘T / Ctrl+T), ⌘-clique ou Ctrl+clique em um card ou link, ou “Abrir em nova aba”.
+settings.page_tabs.restore = Restaurar abas ao iniciar
+settings.page_tabs.restore_note = Reabre as abas da última sessão com o histórico delas. Desativado: o {app} começa no Início.
+settings.page_tabs.note = As abas de páginas só mudam o que você navega: a reprodução e a fila são compartilhadas. As abas de fila, no painel da fila, guardam filas separadas.

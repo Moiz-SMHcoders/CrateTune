@@ -212,9 +212,47 @@ impl Route {
             )
     }
 
+    /// The [`Route::parse`] form of this route, with the display name (saved page
+    /// tabs, `@tab-status`): `album:MPREb_1|Random Access Memories`,
+    /// `browse:ID|PARAMS|Name`. `Route::parse(&r.spec()) == Some(r)`.
+    pub fn spec(&self) -> String {
+        let entity = |kind: &str, id: &str, name: &str| format!("{kind}:{id}|{name}");
+        let items = |kind: &str, id: &str, params: &Option<String>, name: &str| {
+            format!("{kind}:{id}|{}|{name}", params.as_deref().unwrap_or(""))
+        };
+        match self {
+            Route::Home => "home".into(),
+            Route::Explore => "explore".into(),
+            Route::Charts => "charts".into(),
+            Route::MoodsAndGenres => "moods".into(),
+            Route::NewReleases => "new-releases".into(),
+            Route::Search { query } => format!("search:{query}"),
+            Route::Library { tab } => format!("library:{}", tab.key()),
+            Route::Artist { id, name } => entity("artist", id, name),
+            Route::Album { id, name } => entity("album", id, name),
+            Route::Playlist { id, name } => entity("playlist", id, name),
+            Route::Podcast { id, name } => entity("podcast", id, name),
+            Route::Episode { id, name } => entity("episode", id, name),
+            Route::LibraryArtist { id, name } => entity("library-artist", id, name),
+            Route::LibraryAlbum { id, name } => entity("library-album", id, name),
+            Route::LocalPlaylist { id, name } => entity("local-playlist", id, name),
+            Route::Browse { id, params, name } => items("browse", id, params, name),
+            Route::ArtistItems { id, params, name } => items("artist-items", id, params, name),
+            Route::History => "history".into(),
+            Route::Stats => "stats".into(),
+            Route::YearInMusic { year } => format!("year:{year}"),
+            Route::Downloads => "downloads".into(),
+            Route::LocalFiles => "local-files".into(),
+            Route::Import => "import".into(),
+            Route::Together => "together".into(),
+            Route::Recognition => "recognition".into(),
+            Route::Settings { section } => format!("settings:{}", section.key()),
+        }
+    }
+
     /// Parses the script / startup form: `home`, `search:daft punk`,
     /// `library:albums`, `settings:eq`, `artist:UC…`, `album:MPREb_…`,
-    /// `browse:ID|PARAMS`, `artist-items:ID|PARAMS`, …
+    /// `browse:ID|PARAMS[|NAME]`, `artist-items:ID|PARAMS[|NAME]`, …
     pub fn parse(spec: &str) -> Option<Route> {
         let (name, arg) = match spec.split_once(':') {
             Some((name, arg)) => (name.trim(), Some(arg.trim())),
@@ -250,13 +288,11 @@ impl Route {
             "library-album" => entity(arg).map(|(id, name)| Route::LibraryAlbum { id, name })?,
             "local-playlist" => entity(arg).map(|(id, name)| Route::LocalPlaylist { id, name })?,
             "browse" | "artist-items" => {
-                let id = arg.filter(|a| !a.is_empty())?.to_owned();
-                let (id, params) = match id.split_once('|') {
-                    Some((id, params)) => (id.to_owned(), Some(params.to_owned())),
-                    None => (id, None),
-                };
+                let mut parts = arg.filter(|a| !a.is_empty())?.splitn(3, '|');
+                let id = parts.next().filter(|id| !id.is_empty())?.to_owned();
+                let params = parts.next().filter(|p| !p.is_empty()).map(str::to_owned);
                 let kind = name;
-                let name = id.clone();
+                let name = parts.next().map_or_else(|| id.clone(), str::to_owned);
                 if kind == "browse" {
                     Route::Browse { id, params, name }
                 } else {
@@ -383,6 +419,50 @@ impl<P> Router<P> {
         }
     }
 
+    /// Drops every page but the current entry's (its tab went to the background,
+    /// `page_tabs.rs`).
+    pub fn drop_pages_except_current(&mut self) {
+        let index = self.index;
+        for (i, entry) in self.entries.iter_mut().enumerate() {
+            if i != index {
+                entry.page = None;
+            }
+        }
+    }
+
+    /// The history as `(route, scroll offset)` pairs and the current index (saved
+    /// page tabs).
+    pub fn history(&self) -> (Vec<(&Route, Point<Pixels>)>, usize) {
+        let entries = self.entries.iter().map(|e| (&e.route, e.scroll)).collect();
+        (entries, self.index)
+    }
+
+    /// A router with this history (no pages yet); `None` if it is empty.
+    pub fn with_history(history: Vec<(Route, Point<Pixels>)>, index: usize) -> Option<Self> {
+        if history.is_empty() {
+            return None;
+        }
+        let mut entries: Vec<Entry<P>> = history
+            .into_iter()
+            .map(|(route, scroll)| Entry {
+                scroll,
+                ..Entry::new(route)
+            })
+            .collect();
+        let mut index = index.min(entries.len() - 1);
+        if entries.len() > MAX_ENTRIES {
+            let drop = entries.len() - MAX_ENTRIES;
+            entries.drain(..drop);
+            index = index.saturating_sub(drop);
+        }
+        Some(Self { entries, index })
+    }
+
+    /// Entries whose page is alive.
+    pub fn live_pages(&self) -> usize {
+        self.entries.iter().filter(|e| e.page.is_some()).count()
+    }
+
     /// Drops the pages of entries further than [`LIVE_PAGES`] / 2 from the current one
     /// (their scroll offsets stay).
     fn trim(&mut self) {
@@ -393,11 +473,6 @@ impl<P> Router<P> {
                 entry.page = None;
             }
         }
-    }
-
-    #[cfg(test)]
-    pub fn live_pages(&self) -> usize {
-        self.entries.iter().filter(|e| e.page.is_some()).count()
     }
 }
 
@@ -538,6 +613,121 @@ mod tests {
                 tab: LibraryTab::Podcasts
             })
         );
+    }
+
+    #[test]
+    fn spec_round_trips() {
+        let entity = |id: &str, name: &str| (id.to_owned(), name.to_owned());
+        let (id, name) = entity("MPREb_1", "Random Access Memories: 10th | Edition");
+        let routes = [
+            Route::Home,
+            Route::Explore,
+            Route::Charts,
+            Route::MoodsAndGenres,
+            Route::NewReleases,
+            search(""),
+            search("daft punk: live"),
+            Route::Library {
+                tab: LibraryTab::Podcasts,
+            },
+            Route::Artist {
+                id: "UC1".into(),
+                name: "Daft Punk".into(),
+            },
+            Route::Album {
+                id: id.clone(),
+                name: name.clone(),
+            },
+            Route::Playlist {
+                id: "VLPL1".into(),
+                name: String::new(),
+            },
+            Route::Podcast {
+                id: "MPSP1".into(),
+                name: "Show".into(),
+            },
+            Route::Episode {
+                id: "MPED1".into(),
+                name: "Episode".into(),
+            },
+            Route::LibraryArtist {
+                id: "a".into(),
+                name: "A".into(),
+            },
+            Route::LibraryAlbum {
+                id: "b".into(),
+                name: "B".into(),
+            },
+            Route::LocalPlaylist {
+                id: "7".into(),
+                name: "Mine".into(),
+            },
+            Route::Browse {
+                id: "FEmusic_moods_and_genres_category".into(),
+                params: Some("ggMP".into()),
+                name: "Chill".into(),
+            },
+            Route::Browse {
+                id: "FEmusic_x".into(),
+                params: None,
+                name: "Name | with bar".into(),
+            },
+            Route::ArtistItems {
+                id: "MPAD1".into(),
+                params: Some("p".into()),
+                name: "Albums".into(),
+            },
+            Route::History,
+            Route::Stats,
+            Route::YearInMusic { year: 2025 },
+            Route::Downloads,
+            Route::LocalFiles,
+            Route::Import,
+            Route::Together,
+            Route::Recognition,
+            Route::Settings {
+                section: SectionId::Shortcuts,
+            },
+        ];
+        for route in routes {
+            assert_eq!(
+                Route::parse(&route.spec()),
+                Some(route.clone()),
+                "{route:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn history_round_trips_and_pages_drop() {
+        let mut r: Router<u32> = Router::new(Route::Home);
+        r.current_mut().page = Some(0);
+        r.push(Route::Explore);
+        r.current_mut().page = Some(1);
+        r.current_mut().scroll = point(px(0.), px(-300.));
+        r.push(Route::History);
+        r.current_mut().page = Some(2);
+        r.back();
+        assert_eq!(r.live_pages(), 3);
+        r.drop_pages_except_current();
+        assert_eq!(r.live_pages(), 1);
+        assert_eq!(r.current().page, Some(1));
+
+        let (history, index) = r.history();
+        let history: Vec<_> = history.into_iter().map(|(r, s)| (r.clone(), s)).collect();
+        let copy: Router<u32> = Router::with_history(history, index).unwrap();
+        assert_eq!(*copy.route(), Route::Explore);
+        assert_eq!(copy.current().scroll, point(px(0.), px(-300.)));
+        assert!(copy.can_go_back() && copy.can_go_forward());
+        assert_eq!(copy.live_pages(), 0);
+        assert!(Router::<u32>::with_history(Vec::new(), 0).is_none());
+        // Out-of-range indices and over-long histories are clamped.
+        let long: Vec<_> = (0..MAX_ENTRIES + 5)
+            .map(|i| (search(&i.to_string()), point(px(0.), px(0.))))
+            .collect();
+        let r: Router<u32> = Router::with_history(long, 1000).unwrap();
+        assert_eq!(*r.route(), search(&(MAX_ENTRIES + 4).to_string()));
+        assert_eq!(r.history().0.len(), MAX_ENTRIES);
     }
 
     #[test]

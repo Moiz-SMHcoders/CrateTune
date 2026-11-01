@@ -1,0 +1,25 @@
+# Page tabs (see locales/en/page_tabs.lang).
+page_tabs.new = 新建标签页
+page_tabs.close = 关闭标签页
+page_tabs.close_others = 关闭其他标签页
+page_tabs.duplicate = 复制标签页
+page_tabs.next = 下一个标签页
+page_tabs.previous = 上一个标签页
+page_tabs.tab_1 = 标签页 1
+page_tabs.tab_2 = 标签页 2
+page_tabs.tab_3 = 标签页 3
+page_tabs.tab_4 = 标签页 4
+page_tabs.tab_5 = 标签页 5
+page_tabs.tab_6 = 标签页 6
+page_tabs.tab_7 = 标签页 7
+page_tabs.tab_8 = 标签页 8
+page_tabs.tab_last = 最后一个标签页
+page_tabs.open_in_new_tab = 在新标签页中打开
+page_tabs.limit = 最多可以打开 {max} 个标签页。请先关闭一个再打开新的。
+shortcuts.group.tabs = 页面标签页
+settings.page_tabs.group = 页面标签页
+settings.page_tabs.show = 显示标签页
+settings.page_tabs.show_note = 并排浏览多个页面，每个标签页都有自己的后退和前进。打开第二个标签页后会显示标签栏：新建标签页（⌘T / Ctrl+T）、按住 ⌘ 或 Ctrl 点按卡片或链接，或“在新标签页中打开”。
+settings.page_tabs.restore = 启动时恢复标签页
+settings.page_tabs.restore_note = 重新打开上次会话的标签页及其历史记录。关闭时，{app} 从首页启动。
+settings.page_tabs.note = 页面标签页只改变你浏览的内容：播放和队列是共享的。队列面板中的队列标签页保存各自独立的队列。

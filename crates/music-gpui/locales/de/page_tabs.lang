@@ -1,0 +1,25 @@
+# Page tabs (see locales/en/page_tabs.lang).
+page_tabs.new = Neuer Tab
+page_tabs.close = Tab schließen
+page_tabs.close_others = Andere Tabs schließen
+page_tabs.duplicate = Tab duplizieren
+page_tabs.next = Nächster Tab
+page_tabs.previous = Vorheriger Tab
+page_tabs.tab_1 = Tab 1
+page_tabs.tab_2 = Tab 2
+page_tabs.tab_3 = Tab 3
+page_tabs.tab_4 = Tab 4
+page_tabs.tab_5 = Tab 5
+page_tabs.tab_6 = Tab 6
+page_tabs.tab_7 = Tab 7
+page_tabs.tab_8 = Tab 8
+page_tabs.tab_last = Letzter Tab
+page_tabs.open_in_new_tab = In neuem Tab öffnen
+page_tabs.limit = Es können höchstens {max} Tabs offen sein. Schließe einen, um einen neuen zu öffnen.
+shortcuts.group.tabs = Seiten-Tabs
+settings.page_tabs.group = Seiten-Tabs
+settings.page_tabs.show = Tabs anzeigen
+settings.page_tabs.show_note = Mehrere Seiten nebeneinander durchsuchen, jeder Tab mit eigenem Zurück und Vorwärts. Die Tableiste erscheint, sobald ein zweiter Tab offen ist: Neuer Tab (⌘T / Strg+T), ⌘- oder Strg-Klick auf eine Karte oder einen Link oder „In neuem Tab öffnen“.
+settings.page_tabs.restore = Tabs beim Start wiederherstellen
+settings.page_tabs.restore_note = Öffnet die Tabs der letzten Sitzung mit ihrem Verlauf wieder. Aus: {app} startet auf der Startseite.
+settings.page_tabs.note = Seiten-Tabs ändern nur, was du ansiehst: Wiedergabe und Warteschlange sind gemeinsam. Warteschlangen-Tabs im Warteschlangenbereich führen getrennte Warteschlangen.

@@ -403,7 +403,7 @@ impl MusicApp {
                         })
                     })
                     .on_click(cx.listener(move |this, _, window, cx| {
-                        this.navigate(route.clone(), window, cx)
+                        this.navigate_click(route.clone(), window, cx)
                     }))
             };
         // The rail shows a thin divider instead of the group's name, in a box as

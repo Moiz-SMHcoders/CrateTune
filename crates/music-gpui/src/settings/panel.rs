@@ -77,6 +77,8 @@ pub enum SettingsEvent {
     Quality,
     /// Device hand-off settings changed (name, relay, paired devices).
     Devices,
+    /// "Show tabs" changed (`page_tabs.rs`).
+    PageTabs,
 }
 
 pub(super) enum LastFmFlow {
@@ -765,6 +767,22 @@ impl SettingsPanel {
         }
     }
 
+    /// Appearance → Page tabs → "Show tabs".
+    pub fn set_page_tabs_shown(&mut self, on: bool, cx: &mut Context<Self>) {
+        if self.settings.tabs.show != on {
+            self.settings.tabs.show = on;
+            self.changed(false, cx);
+        }
+    }
+
+    /// Appearance → Page tabs → "Restore tabs at start".
+    pub fn set_page_tabs_restore(&mut self, on: bool, cx: &mut Context<Self>) {
+        if self.settings.tabs.restore != on {
+            self.settings.tabs.restore = on;
+            self.changed(false, cx);
+        }
+    }
+
     pub fn set_font_scale(&mut self, scale: f32, cx: &mut Context<Self>) {
         if (self.settings.appearance.font_scale - scale).abs() > f32::EPSILON {
             self.settings.appearance.font_scale = scale;
@@ -843,6 +861,10 @@ impl SettingsPanel {
         self.save_pending = true;
         // Edited, imported or restored shortcuts take effect at once.
         crate::shortcuts::sync(&self.settings.shortcuts, cx);
+        // ...and so does "Show tabs" (also from an import).
+        if self.settings.tabs.show != crate::page_tabs::shown() {
+            cx.emit(SettingsEvent::PageTabs);
+        }
         let executor = cx.background_executor().clone();
         self.save_task = Some(cx.spawn(async move |this, cx| {
             executor.timer(SAVE_DEBOUNCE).await;

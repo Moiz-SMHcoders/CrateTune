@@ -315,6 +315,68 @@ fn bindings_before(primary: &str) -> Vec<(String, &'static str, Option<&'static 
     ]
 }
 
+/// The page tab defaults (`page_tabs.rs`), with `primary` for ⌘ / Ctrl.
+fn page_tab_defaults(primary: &str) -> Vec<(String, &'static str)> {
+    let mut out = vec![
+        (format!("{primary}-t"), "new_page_tab"),
+        (format!("{primary}-w"), "close_page_tab"),
+        ("ctrl-tab".to_owned(), "next_page_tab"),
+        ("ctrl-shift-tab".to_owned(), "previous_page_tab"),
+    ];
+    for (n, id) in (1..).zip([
+        "page_tab_1",
+        "page_tab_2",
+        "page_tab_3",
+        "page_tab_4",
+        "page_tab_5",
+        "page_tab_6",
+        "page_tab_7",
+        "page_tab_8",
+        "page_tab_last",
+    ]) {
+        out.push((format!("{primary}-{n}"), id));
+    }
+    out
+}
+
+#[test]
+fn page_tab_numbers_share_keys_with_navigation() {
+    for os in ALL_OS {
+        let o = Overrides::new();
+        let one = find("page_tab_1").unwrap().default_combo(os).unwrap();
+        assert_eq!(
+            find("go_home").unwrap().default_combo(os),
+            Some(one.clone())
+        );
+        // Shared on purpose: not a conflict either way...
+        assert_eq!(conflict(&one, "page_tab_1", &o, os), None);
+        assert_eq!(conflict(&one, "go_home", &o, os), None);
+        // ...but two tab numbers on one key are.
+        assert_eq!(
+            conflict(&one, "page_tab_2", &o, os).map(|a| a.id),
+            Some("page_tab_1")
+        );
+        // The tab binding comes later in the keymap, so GPUI tries it first (it
+        // passes the key on to Home while the tab strip is hidden).
+        let entries = keymap(&o, os);
+        let order: Vec<&str> = entries
+            .iter()
+            .filter(|e| e.combo == one)
+            .filter_map(|e| match e.target {
+                Target::Action(a) => Some(a.id),
+                Target::Nothing => None,
+            })
+            .collect();
+        assert_eq!(order, vec!["go_home", "page_tab_1"]);
+    }
+    for a in ACTIONS {
+        assert_eq!(a.shared, a.id.starts_with("page_tab_"), "{}", a.id);
+        if a.shared {
+            assert_eq!(a.group, Group::Tabs);
+        }
+    }
+}
+
 fn fullscreen_default(os: Os) -> Combo {
     combo(if os == Os::Mac { "ctrl-cmd-f" } else { "f11" }, os)
 }
@@ -369,6 +431,10 @@ fn default_keymap_is_the_old_one() {
             "toggle_theater",
             None,
         ));
+        // New: page tabs (⌘1…⌘9 shared with Home / Explore / Library, see below).
+        for (keys, id) in page_tab_defaults(primary) {
+            expected.push((combo(&keys, os), id, None));
+        }
         let entries = keymap(&Overrides::new(), os);
         let mut actual: Vec<(Combo, &str, Option<&str>)> = entries
             .iter()
@@ -442,6 +508,11 @@ fn gpui_bindings_match_the_old_construction() {
             (format!("{primary}-0"), "zoom_reset", None),
             (format!("{primary}-shift-t"), "toggle_theater", None),
         ])
+        .chain(
+            page_tab_defaults(primary)
+                .into_iter()
+                .map(|(keys, id)| (keys, id, None)),
+        )
         .map(|(keys, id, ctx)| {
             (
                 vec![combo(&keys, Os::current())],
@@ -488,7 +559,8 @@ fn ids_are_unique_and_labels_exist() {
     for a in ACTIONS {
         assert!(!a.label().is_empty(), "{}", a.id);
         assert!(
-            a.id.chars().all(|c| c.is_ascii_lowercase() || c == '_'),
+            a.id.chars()
+                .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_'),
             "{}",
             a.id
         );

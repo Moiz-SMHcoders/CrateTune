@@ -54,6 +54,19 @@ gpui::actions!(
         Quit,
         ShowShortcuts,
         CheckForUpdates,
+        NewPageTab,
+        ClosePageTab,
+        NextPageTab,
+        PreviousPageTab,
+        PageTab1,
+        PageTab2,
+        PageTab3,
+        PageTab4,
+        PageTab5,
+        PageTab6,
+        PageTab7,
+        PageTab8,
+        PageTabLast,
     ]
 );
 
@@ -137,6 +150,44 @@ pub fn init(overrides: &crate::shortcuts::Overrides, cx: &mut App) {
     on::<ShowShortcuts>(cx, |_, window, cx| {
         activate_main(window);
         crate::settings::open_cheat_sheet(window, cx)
+    });
+    // Page tabs (`page_tabs.rs`).
+    on_tabs::<NewPageTab>(cx, false, |app, window, cx| {
+        app.new_page_tab(None, window, cx)
+    });
+    on_tabs::<ClosePageTab>(cx, true, |app, window, cx| {
+        app.close_page_tab(app.page_tabs.active(), window, cx)
+    });
+    on_tabs::<NextPageTab>(cx, true, |app, window, cx| app.step_page_tab(1, window, cx));
+    on_tabs::<PreviousPageTab>(cx, true, |app, window, cx| {
+        app.step_page_tab(-1, window, cx)
+    });
+    on_tabs::<PageTab1>(cx, true, |app, window, cx| {
+        app.numbered_page_tab(1, window, cx)
+    });
+    on_tabs::<PageTab2>(cx, true, |app, window, cx| {
+        app.numbered_page_tab(2, window, cx)
+    });
+    on_tabs::<PageTab3>(cx, true, |app, window, cx| {
+        app.numbered_page_tab(3, window, cx)
+    });
+    on_tabs::<PageTab4>(cx, true, |app, window, cx| {
+        app.numbered_page_tab(4, window, cx)
+    });
+    on_tabs::<PageTab5>(cx, true, |app, window, cx| {
+        app.numbered_page_tab(5, window, cx)
+    });
+    on_tabs::<PageTab6>(cx, true, |app, window, cx| {
+        app.numbered_page_tab(6, window, cx)
+    });
+    on_tabs::<PageTab7>(cx, true, |app, window, cx| {
+        app.numbered_page_tab(7, window, cx)
+    });
+    on_tabs::<PageTab8>(cx, true, |app, window, cx| {
+        app.numbered_page_tab(8, window, cx)
+    });
+    on_tabs::<PageTabLast>(cx, true, |app, window, cx| {
+        app.numbered_page_tab(9, window, cx)
     });
 
     // Also builds the menu bar (with the bindings as key equivalents).
@@ -252,10 +303,28 @@ fn menus() -> Vec<Menu> {
             MenuItem::action(t!("menu.volume_up"), VolumeUp),
             MenuItem::action(t!("menu.volume_down"), VolumeDown),
         ]),
-        Menu::new(t!("menu.window")).items([
-            MenuItem::action(t!("menu.minimize"), Minimize),
-            MenuItem::action(t!("menu.zoom"), Zoom),
-        ]),
+        Menu::new(t!("menu.window")).items(
+            [
+                MenuItem::action(t!("menu.minimize"), Minimize),
+                MenuItem::action(t!("menu.zoom"), Zoom),
+            ]
+            .into_iter()
+            // Page tabs, while they are on (`page_tabs.rs`).
+            .chain(
+                crate::page_tabs::shown()
+                    .then(|| {
+                        [
+                            MenuItem::separator(),
+                            MenuItem::action(t!("page_tabs.new"), NewPageTab),
+                            MenuItem::action(t!("page_tabs.close"), ClosePageTab),
+                            MenuItem::action(t!("page_tabs.next"), NextPageTab),
+                            MenuItem::action(t!("page_tabs.previous"), PreviousPageTab),
+                        ]
+                    })
+                    .into_iter()
+                    .flatten(),
+            ),
+        ),
         Menu::new(t!("shortcuts.menu.help")).items(
             [MenuItem::action(t!("shortcuts.action.show"), ShowShortcuts)]
                 .into_iter()
@@ -285,6 +354,24 @@ pub fn app_menu(menu: gpui_component::menu::PopupMenu) -> gpui_component::menu::
 /// once the current dispatch is over (the window is free to update then).
 fn on<A: Action>(cx: &mut App, f: fn(&mut MusicApp, &mut Window, &mut gpui::Context<MusicApp>)) {
     cx.on_action(move |_: &A, cx| {
+        cx.defer(move |cx| with_main_window(cx, f));
+    });
+}
+
+/// [`on`] for a page tab action that may not apply: without tabs (or, with `strip`,
+/// while the strip is hidden: one tab) the key goes on to the next binding with the
+/// same keys (⌘1 is Home then; see `ShortcutAction::shared`). Decided right away,
+/// before the dispatch ends.
+fn on_tabs<A: Action>(
+    cx: &mut App,
+    strip: bool,
+    f: fn(&mut MusicApp, &mut Window, &mut gpui::Context<MusicApp>),
+) {
+    cx.on_action(move |_: &A, cx| {
+        if !crate::app::read_app(cx, |app, _| app.page_tab_keys_apply(strip)).unwrap_or(false) {
+            cx.propagate();
+            return;
+        }
         cx.defer(move |cx| with_main_window(cx, f));
     });
 }

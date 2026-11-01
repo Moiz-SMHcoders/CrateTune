@@ -1,0 +1,25 @@
+# Page tabs (see locales/en/page_tabs.lang).
+page_tabs.new = Nuova scheda
+page_tabs.close = Chiudi scheda
+page_tabs.close_others = Chiudi le altre schede
+page_tabs.duplicate = Duplica scheda
+page_tabs.next = Scheda successiva
+page_tabs.previous = Scheda precedente
+page_tabs.tab_1 = Scheda 1
+page_tabs.tab_2 = Scheda 2
+page_tabs.tab_3 = Scheda 3
+page_tabs.tab_4 = Scheda 4
+page_tabs.tab_5 = Scheda 5
+page_tabs.tab_6 = Scheda 6
+page_tabs.tab_7 = Scheda 7
+page_tabs.tab_8 = Scheda 8
+page_tabs.tab_last = Ultima scheda
+page_tabs.open_in_new_tab = Apri in una nuova scheda
+page_tabs.limit = Puoi tenere aperte fino a {max} schede. Chiudine una per aprirne un’altra.
+shortcuts.group.tabs = Schede delle pagine
+settings.page_tabs.group = Schede delle pagine
+settings.page_tabs.show = Mostra le schede
+settings.page_tabs.show_note = Sfoglia più pagine affiancate, ogni scheda con il proprio indietro e avanti. La barra delle schede compare quando è aperta una seconda scheda: Nuova scheda (⌘T / Ctrl+T), ⌘-clic o Ctrl+clic su una scheda o un link, oppure «Apri in una nuova scheda».
+settings.page_tabs.restore = Ripristina le schede all’avvio
+settings.page_tabs.restore_note = Riapre le schede dell’ultima sessione con la loro cronologia. Disattivato: {app} si apre sulla Home.
+settings.page_tabs.note = Le schede delle pagine cambiano solo ciò che sfogli: la riproduzione e la coda sono condivise. Le schede della coda, nel pannello della coda, tengono code separate.

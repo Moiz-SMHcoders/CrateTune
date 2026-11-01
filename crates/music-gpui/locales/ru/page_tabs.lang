@@ -1,0 +1,25 @@
+# Page tabs (see locales/en/page_tabs.lang).
+page_tabs.new = Новая вкладка
+page_tabs.close = Закрыть вкладку
+page_tabs.close_others = Закрыть другие вкладки
+page_tabs.duplicate = Дублировать вкладку
+page_tabs.next = Следующая вкладка
+page_tabs.previous = Предыдущая вкладка
+page_tabs.tab_1 = Вкладка 1
+page_tabs.tab_2 = Вкладка 2
+page_tabs.tab_3 = Вкладка 3
+page_tabs.tab_4 = Вкладка 4
+page_tabs.tab_5 = Вкладка 5
+page_tabs.tab_6 = Вкладка 6
+page_tabs.tab_7 = Вкладка 7
+page_tabs.tab_8 = Вкладка 8
+page_tabs.tab_last = Последняя вкладка
+page_tabs.open_in_new_tab = Открыть в новой вкладке
+page_tabs.limit = Можно открыть не больше {max} вкладок. Закройте одну, чтобы открыть другую.
+shortcuts.group.tabs = Вкладки страниц
+settings.page_tabs.group = Вкладки страниц
+settings.page_tabs.show = Показывать вкладки
+settings.page_tabs.show_note = Просматривайте несколько страниц одновременно, у каждой вкладки свои «назад» и «вперёд». Панель вкладок появляется, когда открыта вторая вкладка: «Новая вкладка» (⌘T / Ctrl+T), ⌘-щелчок или Ctrl+щелчок по карточке или ссылке либо «Открыть в новой вкладке».
+settings.page_tabs.restore = Восстанавливать вкладки при запуске
+settings.page_tabs.restore_note = Снова открывает вкладки прошлого сеанса вместе с историей. Если выключено, {app} открывается на главной.
+settings.page_tabs.note = Вкладки страниц меняют только то, что вы просматриваете: воспроизведение и очередь общие. Вкладки очереди на панели очереди хранят отдельные очереди.

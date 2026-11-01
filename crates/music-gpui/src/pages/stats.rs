@@ -238,7 +238,7 @@ fn artist_cards(prefix: &'static str, artists: &[ArtistStat]) -> Vec<AnyElement>
                 .artwork(a.artist.thumbnail_url.clone())
                 .on_click(move |_, window, cx| {
                     let route = route.clone();
-                    update_app(cx, |app, cx| app.navigate(route, window, cx));
+                    update_app(cx, |app, cx| app.navigate_click(route, window, cx));
                 })
                 .into_any_element()
         })
@@ -263,7 +263,7 @@ fn album_cards(prefix: &'static str, albums: &[AlbumStat]) -> Vec<AnyElement> {
                 .artwork(a.album.meta.thumbnail_url.clone())
                 .on_click(move |_, window, cx| {
                     let route = route.clone();
-                    update_app(cx, |app, cx| app.navigate(route, window, cx));
+                    update_app(cx, |app, cx| app.navigate_click(route, window, cx));
                 })
                 .into_any_element()
         })

@@ -5,6 +5,19 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+* **Page tabs.** Browse several pages side by side, each tab with its own back / forward
+  history and scroll positions; the player and the queue stay shared. ⌘T / Ctrl+T opens a
+  tab, ⌘W / Ctrl+W closes it, Ctrl+Tab / Ctrl+Shift+Tab and ⌘1…⌘9 / Ctrl+1…9 switch;
+  ⌘-click / Ctrl+click a card or link (or *Open in new tab* in its menu) opens it in a
+  background tab. The tab bar shows under the top bar once a second tab is open; drag to
+  reorder, middle-click to close; up to 12 tabs. Settings → Appearance → *Page tabs*: *Show
+  tabs* (on), *Restore tabs at start* (off). Only the shown tab keeps its pages in memory
+  (plus the current page of the two most recently shown tabs), so many tabs cost little.
+  The keys are editable (Settings → Keyboard shortcuts → *Page tabs*); with one tab ⌘1–⌘3
+  are still Home / Explore / Library.
+
 ## [0.3.3] — 2026-11-01
 
 ### Added

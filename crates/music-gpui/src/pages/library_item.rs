@@ -211,7 +211,7 @@ impl LibraryItemPage {
                 .label(t!("library.item.open_online"))
                 .on_click(move |_, window, cx| {
                     let route = route.clone();
-                    update_app(cx, |app, cx| app.navigate(route, window, cx));
+                    update_app(cx, |app, cx| app.navigate_click(route, window, cx));
                 })
         });
         let theme = cx.theme();

@@ -1,5 +1,5 @@
 //! Appearance section: theme (dark / pure black / dynamic accent), font size,
-//! the window's title bar (custom top bar or the system's), Now Playing layout +
+//! the window's title bar (custom top bar or the system's), page tabs, Now Playing layout +
 //! background + full screen on open, and the mini player style.
 
 use gpui::{
@@ -448,6 +448,7 @@ pub(super) fn render(
             .child(note(t!("settings.appearance.zoom_note"), cx)),
         )
         .child(window_group)
+        .child(super::page_tabs_ui::render(panel, cx))
         .child(
             group_at("appearance.now_playing", t!("common.now_playing"), cx)
                 .child(layouts)

@@ -312,3 +312,13 @@ was copied: Limusic plays the video in a `<video>` element or mpv, CrateTune dec
 | `crates/music-core/src/video/timeline.rs` | `crates/innertube/src/models/metadata.rs` (`counterpart_segments`, issue #535 there) | Limusic maps a Song / Video *switch* onto the other version's time; here the song's position drives the muted video continuously, with gaps under 1.5 s bridged and the artwork shown in longer ones. |
 | `crates/music-gpui/src/theater.rs` | `ui/src/lib/components/TheaterMode.svelte` | The idea (picture filling the window, lyric line over it, controls that fade after a few still seconds but not while paused, Esc leaves); written for GPUI, without Limusic's queue / lyrics columns or OS full screen. |
 | `crates/music-gpui/src/video.rs` (`session_off`) | `ui/src/lib/video.svelte.ts` (`video.want`) | "Show artwork" lasts for the session; the setting is the lasting off switch. |
+
+## Zuno (feat/ui-tabs): page tabs
+
+Ideas from [Zuno](https://github.com/noFAYZ/zuno) (commit
+`1fa9a9669e4a526ebe53c0275153feda0c4fcefa`, © Zuno contributors, Apache License 2.0); no
+code copied.
+
+| File | Upstream | Changes |
+|---|---|---|
+| `crates/music-gpui/src/page_tabs.rs` | Zuno `src/ui/components/MusicTabs.tsx` (the strip: a close button per tab, middle-click closes, drag to reorder landing before or after the tab dropped on), `src/ui/App.tsx` (`handleCloseTab`: the left neighbour takes over, the last tab stays; `handleReorderTab`), `src/ui/settings/keyboardShortcuts.ts` (new / close tab, tabs 1–9) | Only the page stack is per tab (one engine and one queue; Zuno gives each tab its own player): the shown tab's stack is the app's router, background tabs keep routes and scroll offsets and at most two of them their current page, rebuilt when shown; ⌘9 is the last tab and ⌘1…⌘9 pass on to Home / Explore / Library while the strip is hidden; ⌘-click / "Open in new tab" open in the background after the current tab; a tab limit; tabs saved and restored on request. |

@@ -1016,7 +1016,7 @@ impl Render for HomePage {
                                 Lucide::ArrowRight,
                                 move |window, cx| {
                                     let route = route.clone();
-                                    update_app(cx, |app, cx| app.navigate(route, window, cx));
+                                    update_app(cx, |app, cx| app.navigate_click(route, window, cx));
                                 },
                             )
                         });

@@ -1,0 +1,25 @@
+# Page tabs (see locales/en/page_tabs.lang).
+page_tabs.new = 新しいタブ
+page_tabs.close = タブを閉じる
+page_tabs.close_others = ほかのタブを閉じる
+page_tabs.duplicate = タブを複製
+page_tabs.next = 次のタブ
+page_tabs.previous = 前のタブ
+page_tabs.tab_1 = タブ 1
+page_tabs.tab_2 = タブ 2
+page_tabs.tab_3 = タブ 3
+page_tabs.tab_4 = タブ 4
+page_tabs.tab_5 = タブ 5
+page_tabs.tab_6 = タブ 6
+page_tabs.tab_7 = タブ 7
+page_tabs.tab_8 = タブ 8
+page_tabs.tab_last = 最後のタブ
+page_tabs.open_in_new_tab = 新しいタブで開く
+page_tabs.limit = 開けるタブは {max} 個までです。新しく開くには、どれかを閉じてください。
+shortcuts.group.tabs = ページタブ
+settings.page_tabs.group = ページタブ
+settings.page_tabs.show = タブを表示
+settings.page_tabs.show_note = 複数のページを並べて閲覧できます。タブごとに戻る・進むの履歴があります。2 つ目のタブを開くとタブバーが表示されます: 新しいタブ（⌘T / Ctrl+T）、カードやリンクを ⌘ クリックまたは Ctrl+クリック、または「新しいタブで開く」。
+settings.page_tabs.restore = 起動時にタブを復元
+settings.page_tabs.restore_note = 前回のセッションのタブを履歴ごと開き直します。オフ: {app} はホームから始まります。
+settings.page_tabs.note = ページタブは閲覧するページだけを切り替えます。再生とキューは共通です。キューパネルのキュータブは別々のキューを保持します。

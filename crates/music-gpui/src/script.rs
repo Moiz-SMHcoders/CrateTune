@@ -20,6 +20,7 @@
 //! | `@seek=SECS`, `@volume=0.3` | seek, set the volume (saved) |
 //! | `@nav=ROUTE` | navigate (`home`, `search:q`, `library:albums`, `settings:eq`, `artist:ID`, …) |
 //! | `@back`, `@forward` | history navigation |
+//! | `@tab-new[=ROUTE]`, `@tab-open=ROUTE`, `@tab-duplicate`, `@tab-close[=N]`, `@tab=N\|next\|prev`, `@tab-move=FROM:TO`, `@tabs=on\|off`, `@tabs-restore=on\|off`, `@tab-status` | page tabs (1-based, like ⌘1…⌘9): new tab (shown), a tab in the background (as ⌘-click), a copy of the shown tab, close (default: the shown one), show, reorder, the two settings (saved), print every tab's route / history / live pages (`page_tabs.rs`) |
 //! | `@search=QUERY` | type into the search field and search now |
 //! | `@play-next=N`, `@enqueue=N` | queue search result N next / at the end |
 //! | `@queue[=on\|off]` | queue panel |
@@ -1019,6 +1020,7 @@ impl MusicApp {
                     && !self.video_script_action(other, arg, cx)
                     && !self.home_script_action(other, arg, cx)
                     && !self.titlebar_script_action(other, arg, window, cx)
+                    && !self.page_tabs_script_action(other, arg, window, cx)
                     && !self.appearance_script_action(other, arg, window, cx)
                 {
                     eprintln!("music-gpui: unknown script action @{other}");

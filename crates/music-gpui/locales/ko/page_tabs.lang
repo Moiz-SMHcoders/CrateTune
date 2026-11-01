@@ -1,0 +1,25 @@
+# Page tabs (see locales/en/page_tabs.lang).
+page_tabs.new = 새 탭
+page_tabs.close = 탭 닫기
+page_tabs.close_others = 다른 탭 닫기
+page_tabs.duplicate = 탭 복제
+page_tabs.next = 다음 탭
+page_tabs.previous = 이전 탭
+page_tabs.tab_1 = 탭 1
+page_tabs.tab_2 = 탭 2
+page_tabs.tab_3 = 탭 3
+page_tabs.tab_4 = 탭 4
+page_tabs.tab_5 = 탭 5
+page_tabs.tab_6 = 탭 6
+page_tabs.tab_7 = 탭 7
+page_tabs.tab_8 = 탭 8
+page_tabs.tab_last = 마지막 탭
+page_tabs.open_in_new_tab = 새 탭에서 열기
+page_tabs.limit = 탭은 최대 {max}개까지 열 수 있습니다. 새로 열려면 하나를 닫으세요.
+shortcuts.group.tabs = 페이지 탭
+settings.page_tabs.group = 페이지 탭
+settings.page_tabs.show = 탭 표시
+settings.page_tabs.show_note = 여러 페이지를 나란히 둘러보세요. 탭마다 뒤로 및 앞으로 기록이 따로 있습니다. 두 번째 탭을 열면 탭 막대가 나타납니다: 새 탭(⌘T / Ctrl+T), 카드나 링크를 ⌘-클릭 또는 Ctrl+클릭, 또는 “새 탭에서 열기”.
+settings.page_tabs.restore = 시작할 때 탭 복원
+settings.page_tabs.restore_note = 지난 세션의 탭을 기록과 함께 다시 엽니다. 끄면 {app}이(가) 홈에서 시작합니다.
+settings.page_tabs.note = 페이지 탭은 둘러보는 화면만 바꿉니다. 재생과 대기열은 공유됩니다. 대기열 패널의 대기열 탭은 별도의 대기열을 유지합니다.
