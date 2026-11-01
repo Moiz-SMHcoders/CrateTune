@@ -444,7 +444,7 @@ the sign-in in the keychain.
 |---|---|---|---|
 | Chrome, Edge, Brave, Vivaldi, Opera, Chromium | ✓ (asks for keychain access) | only browsers without app-bound encryption (see below) | ✓ |
 | Arc | ✓ (asks for keychain access) | only without app-bound encryption | — |
-| Firefox | ✓ | ✓ | ✓ |
+| Firefox, Zen, LibreWolf, Floorp, Waterfox | ✓ | ✓ | ✓ |
 | Safari | ✓ with Full Disk Access | — | — |
 
 * **macOS** asks whether CrateTune may use "*Browser* Safe Storage" from your keychain. That
@@ -453,7 +453,9 @@ the sign-in in the keychain.
   Security → Full Disk Access).
 * **Windows:** recent Chrome, Edge and Brave lock their cookies to themselves (*app-bound
   encryption*), so no other app can read them. Such profiles are listed as locked; use
-  Firefox, **Sign in with Google…** or **Paste cookie…** instead. A Chromium browser that is
+  a Firefox-family browser (Firefox, Zen, LibreWolf, Floorp, Waterfox — these keep plain
+  cookie files, so the import works on Windows too), **Sign in with Google…** or
+  **Paste cookie…** instead. A Chromium browser that is
   running may keep its cookies locked: quit it and try again.
 * **Linux:** the cookie key comes from the keyring (GNOME Keyring via `secret-tool`, or
   KWallet), else Chromium's built-in fallbacks.

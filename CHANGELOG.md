@@ -5,6 +5,15 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.3] — 2026-11-01
+
+### Added
+
+* **Sign in from your browser** now reads Firefox forks too: **Zen, LibreWolf, Floorp and
+  Waterfox**. Like Firefox, they keep plain cookie files, so this is also a working
+  browser-import route on **Windows**, where Chrome, Edge and Brave lock their cookies to
+  themselves (app-bound encryption) and can't be read by any other app.
+
 ## [0.3.2] — 2026-11-01
 
 0.3.0 and 0.3.1 were tagged but never published. 0.3.0's macOS Intel DMG didn't build (the

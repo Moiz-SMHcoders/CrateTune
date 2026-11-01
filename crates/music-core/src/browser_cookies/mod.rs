@@ -20,7 +20,9 @@
 //!
 //!   The platform half (Keychain, DPAPI, libsecret) is the app's; this module takes
 //!   the resulting [`chromium::Keys`].
-//! * **Firefox** keeps plain SQLite (`cookies.sqlite`, [`firefox`]).
+//! * **Firefox** and its forks (Zen, LibreWolf, Floorp, Waterfox) keep plain SQLite
+//!   (`cookies.sqlite`, [`firefox`]); no OS key, so they also work on Windows, where
+//!   Chromium's app-bound encryption blocks the import.
 //! * **Safari** (macOS) keeps `Cookies.binarycookies` in its container, which needs
 //!   Full Disk Access ([`safari`]).
 //!
@@ -50,6 +52,12 @@ pub enum Browser {
     Vivaldi,
     Opera,
     Chromium,
+    /// Firefox forks (plain SQLite like Firefox; no app-bound encryption, so they
+    /// work on Windows too).
+    Zen,
+    LibreWolf,
+    Floorp,
+    Waterfox,
 }
 
 /// How a browser stores its cookies.
@@ -79,7 +87,7 @@ impl Os {
 }
 
 impl Browser {
-    pub const ALL: [Browser; 9] = [
+    pub const ALL: [Browser; 13] = [
         Browser::Chrome,
         Browser::Edge,
         Browser::Brave,
@@ -89,6 +97,10 @@ impl Browser {
         Browser::Vivaldi,
         Browser::Opera,
         Browser::Chromium,
+        Browser::Zen,
+        Browser::LibreWolf,
+        Browser::Floorp,
+        Browser::Waterfox,
     ];
 
     /// The product name (not translated).
@@ -103,12 +115,20 @@ impl Browser {
             Browser::Vivaldi => "Vivaldi",
             Browser::Opera => "Opera",
             Browser::Chromium => "Chromium",
+            Browser::Zen => "Zen",
+            Browser::LibreWolf => "LibreWolf",
+            Browser::Floorp => "Floorp",
+            Browser::Waterfox => "Waterfox",
         }
     }
 
     pub fn engine(self) -> Engine {
         match self {
-            Browser::Firefox => Engine::Firefox,
+            Browser::Firefox
+            | Browser::Zen
+            | Browser::LibreWolf
+            | Browser::Floorp
+            | Browser::Waterfox => Engine::Firefox,
             Browser::Safari => Engine::Safari,
             _ => Engine::Chromium,
         }
@@ -124,7 +144,13 @@ impl Browser {
             Browser::Vivaldi => ("Vivaldi Safe Storage", "Vivaldi"),
             Browser::Opera => ("Opera Safe Storage", "Opera"),
             Browser::Chromium => ("Chromium Safe Storage", "Chromium"),
-            Browser::Firefox | Browser::Safari => return None,
+            // Firefox and its forks keep plain SQLite; Safari has its own store.
+            Browser::Firefox
+            | Browser::Safari
+            | Browser::Zen
+            | Browser::LibreWolf
+            | Browser::Floorp
+            | Browser::Waterfox => return None,
         })
     }
 
@@ -138,7 +164,13 @@ impl Browser {
             Browser::Vivaldi => ("vivaldi", "Vivaldi Safe Storage"),
             Browser::Opera => ("opera", "Opera Safe Storage"),
             Browser::Chromium => ("chromium", "Chromium Safe Storage"),
-            Browser::Arc | Browser::Firefox | Browser::Safari => return None,
+            Browser::Arc
+            | Browser::Firefox
+            | Browser::Safari
+            | Browser::Zen
+            | Browser::LibreWolf
+            | Browser::Floorp
+            | Browser::Waterfox => return None,
         })
     }
 
@@ -205,6 +237,27 @@ impl Browser {
                 ".var/app/org.chromium.Chromium/config/chromium",
                 "snap/chromium/common/chromium",
             ],
+            // Firefox forks: the same `profiles.ini` + `Profiles/` layout.
+            (Zen, Os::MacOs) => &["Library/Application Support/zen"],
+            (Zen, Os::Windows) => &["AppData/Roaming/zen"],
+            (Zen, Os::Linux) => &[
+                ".zen",
+                ".var/app/app.zen_browser.zen/.zen",
+                "snap/zen-browser/common/.zen",
+            ],
+            (LibreWolf, Os::MacOs) => &["Library/Application Support/librewolf"],
+            (LibreWolf, Os::Windows) => &["AppData/Roaming/librewolf"],
+            (LibreWolf, Os::Linux) => &[
+                ".librewolf",
+                ".var/app/io.gitlab.librewolf-community/.librewolf",
+                "snap/librewolf/common/.librewolf",
+            ],
+            (Floorp, Os::MacOs) => &["Library/Application Support/Floorp"],
+            (Floorp, Os::Windows) => &["AppData/Roaming/Floorp"],
+            (Floorp, Os::Linux) => &[".floorp", ".var/app/one.ablaze.floorp/.floorp"],
+            (Waterfox, Os::MacOs) => &["Library/Application Support/Waterfox"],
+            (Waterfox, Os::Windows) => &["AppData/Roaming/Waterfox"],
+            (Waterfox, Os::Linux) => &[".waterfox", ".var/app/net.waterfox.waterfox/.waterfox"],
         }
     }
 }
@@ -369,7 +422,7 @@ fn firefox_names(root: &Path) -> Vec<(PathBuf, String)> {
     out
 }
 
-fn firefox_profiles(root: &Path, out: &mut Vec<FoundProfile>) {
+fn firefox_profiles(browser: Browser, root: &Path, out: &mut Vec<FoundProfile>) {
     let names = firefox_names(root);
     // Windows and macOS keep the profiles one level down, in `Profiles`.
     for dir in subdirs(root)
@@ -392,7 +445,7 @@ fn firefox_profiles(root: &Path, out: &mut Vec<FoundProfile>) {
                     .map_or(folder.to_string(), |(_, n)| n.to_owned())
             });
         out.push(FoundProfile {
-            browser: Browser::Firefox,
+            browser,
             profile: shown,
             used: modified(&cookies),
             cookies,
@@ -415,7 +468,9 @@ pub fn discover(home: &Path, os: Os) -> Vec<FoundProfile> {
                     Engine::Chromium if root.is_dir() => {
                         chromium_profiles(browser, &root, os, &mut found)
                     }
-                    Engine::Firefox if root.is_dir() => firefox_profiles(&root, &mut found),
+                    Engine::Firefox if root.is_dir() => {
+                        firefox_profiles(browser, &root, &mut found)
+                    }
                     Engine::Safari => match std::fs::metadata(&root) {
                         Ok(meta) if meta.is_file() => found.push(FoundProfile {
                             browser,
@@ -751,6 +806,43 @@ pub(crate) mod tests {
         );
         assert!(found.iter().all(|p| p.blocked.is_none()));
         assert!(found[0].cookies.ends_with("Profile 1/Cookies"));
+        let _ = std::fs::remove_dir_all(&home);
+    }
+
+    /// Firefox forks are read like Firefox, on Windows too (no app-bound key).
+    #[test]
+    fn firefox_forks_are_found() {
+        let home = temp_home("forks");
+        // Zen on Windows: Roaming, profiles one level under `Profiles`.
+        touch(
+            &home,
+            "AppData/Roaming/zen/Profiles/zz99.Default/cookies.sqlite",
+            5,
+        );
+        std::fs::write(
+            home.join("AppData/Roaming/zen/profiles.ini"),
+            "[Profile0]\nName=Default (zen)\nIsRelative=1\nPath=Profiles/zz99.Default\n",
+        )
+        .unwrap();
+        // LibreWolf on Linux: profiles in the root itself.
+        touch(&home, ".librewolf/ab12.default/cookies.sqlite", 9);
+        std::fs::write(
+            home.join(".librewolf/profiles.ini"),
+            "[Profile0]\nName=default\nIsRelative=1\nPath=ab12.default\n",
+        )
+        .unwrap();
+
+        let win = discover(&home, Os::Windows);
+        let zen = win.iter().find(|p| p.browser == Browser::Zen).unwrap();
+        assert_eq!(zen.profile, "Default (zen)");
+        assert!(zen.blocked.is_none());
+
+        let linux = discover(&home, Os::Linux);
+        assert!(
+            linux
+                .iter()
+                .any(|p| p.browser == Browser::LibreWolf && p.profile == "default")
+        );
         let _ = std::fs::remove_dir_all(&home);
     }
 
