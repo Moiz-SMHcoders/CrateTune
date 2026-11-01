@@ -19,7 +19,8 @@ use super::panel::{SettingsEvent, SettingsPanel};
 use super::prefs::{
     ActivityType, ButtonTarget, CROSSFADE_MAX, ImageSource, LYRICS_SIZE_RANGE,
     LYRICS_SPACING_RANGE, LyricsAnimation, MiniPlayerSkin, MiniPlayerStyle, NowPlayingBackground,
-    NowPlayingLayout, PITCH_MAX, SPEED_MAX, SPEED_MIN, SoundPreset, TextAlign, TranslatorKind,
+    NowPlayingLayout, PITCH_MAX, PortraitLayout, SPEED_MAX, SPEED_MIN, SoundPreset, TextAlign,
+    TranslatorKind,
 };
 use crate::i18n::Key;
 use crate::secrets::Secret;
@@ -706,6 +707,10 @@ impl SettingsPanel {
         self.update_lyrics_display(cx, |l| l.animation = animation);
     }
 
+    pub fn set_line_glow(&mut self, on: bool, cx: &mut Context<Self>) {
+        self.update_lyrics_display(cx, |l| l.line_glow = on);
+    }
+
     pub fn set_background_vocals(&mut self, on: bool, cx: &mut Context<Self>) {
         self.update_lyrics_display(cx, |l| l.show_background_vocals = on);
     }
@@ -771,6 +776,30 @@ impl SettingsPanel {
 
     pub fn set_np_fullscreen(&mut self, on: bool, cx: &mut Context<Self>) {
         self.update_now_playing(cx, |n| n.fullscreen = on);
+    }
+
+    pub fn set_np_open_on_play(&mut self, on: bool, cx: &mut Context<Self>) {
+        self.update_now_playing(cx, |n| n.open_on_play = on);
+    }
+
+    pub fn set_np_click_empty(&mut self, on: bool, cx: &mut Context<Self>) {
+        self.update_now_playing(cx, |n| n.click_empty_closes = on);
+    }
+
+    pub fn set_np_portrait(&mut self, portrait: PortraitLayout, cx: &mut Context<Self>) {
+        self.update_now_playing(cx, |n| n.portrait = portrait);
+    }
+
+    pub fn set_turntable_spin(&mut self, look: crate::turntable::SpinLook, cx: &mut Context<Self>) {
+        self.update_now_playing(cx, |n| n.turntable_spin = look);
+    }
+
+    pub fn set_mini_queue(&mut self, on: bool, cx: &mut Context<Self>) {
+        self.update_now_playing(cx, |n| n.mini_queue = on);
+    }
+
+    pub fn set_mini_on_top(&mut self, on: bool, cx: &mut Context<Self>) {
+        self.update_now_playing(cx, |n| n.mini_on_top = on);
     }
 
     // ---- Discord activity / scrobble rules -------------------------------------------------

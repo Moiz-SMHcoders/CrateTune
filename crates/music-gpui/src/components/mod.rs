@@ -18,6 +18,7 @@
 pub mod ambient;
 pub mod app_backdrop;
 pub mod artwork;
+pub mod bar_compact;
 pub mod bar_fx;
 pub mod bar_menu;
 pub mod card;

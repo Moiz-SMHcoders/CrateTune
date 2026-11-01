@@ -1,0 +1,31 @@
+# Now Playing gestures and layout, lyrics extras, the mini player's extras, the compact player bar and podcast controls.
+
+np_extras.settings.portrait = 歌詞の上にカバー
+np_extras.settings.portrait_note = 分割デザインで、アートワーク・タイトル・操作ボタンを歌詞の横ではなく上に1列で並べます。
+np_extras.portrait.auto = 縦長のウィンドウで
+np_extras.portrait.always = 常に
+np_extras.portrait.never = しない
+np_extras.settings.open_on_play = 再生を始めたら「再生中」を開く
+np_extras.settings.open_on_play_note = 何も再生していないとき、または別の曲が一時停止中に曲を始めたとき。再開したときや、キューが自動で次へ進んだときは開きません。
+np_extras.settings.click_empty = 空いている所をクリックして「再生中」を閉じる
+np_extras.settings.click_empty_note = アートワーク・操作ボタン・歌詞の外側をクリックすると閉じます。アートワークのクリックで再生／一時停止、上でスクロールすると音量が変わります。
+np_extras.settings.mini_queue = ミニプレーヤーに「次の曲」を表示
+np_extras.settings.mini_queue_note = アートワークカードとターンテーブルは裏面に、その他のレイアウトは操作ボタンの下に広げて表示します。
+np_extras.settings.mini_on_top = ミニプレーヤーをほかのウィンドウより手前に表示
+np_extras.mini.pin = 手前に固定
+np_extras.mini.unpin = 手前への固定を解除
+np_extras.settings.line_glow = 歌っている行を光らせる
+np_extras.settings.line_glow_note = 現在の行の周りに、アートワークの色（グレーのアートワークではテーマのアクセントカラー）のやわらかな光を付けます。
+np_extras.follow = 歌詞を追う
+np_extras.skip_back = 15秒戻る
+np_extras.skip_forward = 15秒進む
+np_extras.speed = 再生速度
+np_extras.bar.more = 操作ボタンを増やす
+np_extras.bar.fewer = 操作ボタンを減らす
+np_extras.shortcut.line_previous = 歌詞：前の行
+np_extras.shortcut.line_next = 歌詞：次の行
+np_extras.shortcut.line_play = 歌詞：選んだ行から再生
+np_extras.settings.spin = レコードを回転
+np_extras.settings.spin_note = 音楽の再生中、ターンテーブルのレコードを回します。負荷があります：ウィンドウを毎秒20回描き直し、「溝だけ」でCPUコアの約{grooves}、「レコード全体」で約{record}を使い、後者は回転したアートワークを最大{memory}メモリに保持します。一時停止中やアニメーションが「控えめ」「オフ」のときは回りません。
+np_extras.spin.grooves = 溝だけ
+np_extras.spin.record = レコード全体

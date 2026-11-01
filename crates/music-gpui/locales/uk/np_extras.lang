@@ -1,0 +1,31 @@
+# Now Playing gestures and layout, lyrics extras, the mini player's extras, the compact player bar and podcast controls.
+
+np_extras.settings.portrait = Обкладинка над текстом
+np_extras.settings.portrait_note = Розділений дизайн ставить обкладинку, назву й кнопки в ряд над текстом пісні, а не поруч.
+np_extras.portrait.auto = У високих вікнах
+np_extras.portrait.always = Завжди
+np_extras.portrait.never = Ніколи
+np_extras.settings.open_on_play = Відкривати «Зараз грає» на початку відтворення
+np_extras.settings.open_on_play_note = Коли ви вмикаєте пісню, поки нічого не грає або інша пісня на паузі. Не під час продовження і не коли черга переходить далі сама.
+np_extras.settings.click_empty = Клік по порожньому місцю закриває «Зараз грає»
+np_extras.settings.click_empty_note = Клік поруч з обкладинкою, кнопками й текстом закриває екран. Клік по обкладинці запускає чи ставить на паузу, прокручування над нею змінює гучність.
+np_extras.settings.mini_queue = Показувати «Далі» в міні-плеєрі
+np_extras.settings.mini_queue_note = Картка з обкладинкою й програвач показують це на звороті, інші макети збільшуються й показують це під кнопками.
+np_extras.settings.mini_on_top = Тримати міні-плеєр поверх інших вікон
+np_extras.mini.pin = Тримати поверх інших вікон
+np_extras.mini.unpin = Не тримати поверх інших вікон
+np_extras.settings.line_glow = Сяйво навколо рядка, що звучить
+np_extras.settings.line_glow_note = М'яке сяйво кольору обкладинки (акцентного кольору теми для сірої обкладинки) навколо поточного рядка.
+np_extras.follow = Стежити за текстом
+np_extras.skip_back = Назад на 15 секунд
+np_extras.skip_forward = Уперед на 15 секунд
+np_extras.speed = Швидкість відтворення
+np_extras.bar.more = Більше кнопок
+np_extras.bar.fewer = Менше кнопок
+np_extras.shortcut.line_previous = Текст: попередній рядок
+np_extras.shortcut.line_next = Текст: наступний рядок
+np_extras.shortcut.line_play = Текст: грати з вибраного рядка
+np_extras.settings.spin = Обертати платівку
+np_extras.settings.spin_note = Обертає платівку програвачів, поки грає музика. Не безкоштовно: вікно перемальовується 20 разів на секунду, це близько {grooves} ядра процесора з «Лише борозни» і {record} з «Уся платівка», яка ще й тримає в пам'яті до {memory} повернутої обкладинки. На паузі та з анімацією «Менше» чи «Вимк.» нічого не обертається.
+np_extras.spin.grooves = Лише борозни
+np_extras.spin.record = Уся платівка

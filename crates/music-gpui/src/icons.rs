@@ -63,6 +63,9 @@ gpui_kit_assets::icon_assets!(
         RotateCcw,
         LayoutTemplate,
         Gauge,
+        // player extras: autoplay mark, "follow the lyrics"
+        Infinity,
+        LocateFixed,
         // lyrics cards
         Share2,
         ImageDown,
@@ -159,6 +162,12 @@ impl AssetSource for Assets {
     fn load(&self, path: &str) -> gpui::Result<Option<Cow<'static, [u8]>>> {
         if path == HEART_FILLED_PATH {
             return Ok(Some(Cow::Borrowed(HEART_FILLED_SVG)));
+        }
+        if let Some(svg) = crate::player_extras::icon(path) {
+            return Ok(Some(svg));
+        }
+        if path == crate::turntable::SHEEN_PATH {
+            return Ok(Some(Cow::Borrowed(crate::turntable::SHEEN_SVG)));
         }
         if path == crate::turntable::TONEARM_PATH {
             return Ok(Some(Cow::Borrowed(crate::turntable::TONEARM_SVG)));

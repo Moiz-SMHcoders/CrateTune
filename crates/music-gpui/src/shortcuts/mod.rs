@@ -41,6 +41,8 @@ pub const TAG: KeyBindingMetaIndex = KeyBindingMetaIndex(0);
 
 /// gpui-component's text input key context.
 pub const INPUT_CONTEXT: &str = "Input"; // i18n-ignore
+/// The Now Playing screen's key context (no text field inside).
+pub const NOW_PLAYING_CONTEXT: &str = "NowPlaying"; // i18n-ignore
 
 /// The groups of the settings section and the cheat sheet.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -188,6 +190,20 @@ pub const ACTIONS: &[ShortcutAction] = &[
         "secondary-down"
     ),
     shortcut!(
+        "seek_back",
+        Playback,
+        "np_extras.skip_back",
+        SeekBack,
+        "secondary-shift-left"
+    ),
+    shortcut!(
+        "seek_forward",
+        Playback,
+        "np_extras.skip_forward",
+        SeekForward,
+        "secondary-shift-right"
+    ),
+    shortcut!(
         "toggle_shuffle",
         Playback,
         "common.shuffle",
@@ -283,6 +299,34 @@ pub const ACTIONS: &[ShortcutAction] = &[
         "common.now_playing",
         ToggleNowPlaying,
         "secondary-l"
+    ),
+    // Now Playing's lyrics: plain keys, bound only there.
+    shortcut!(
+        "lyrics_line_previous",
+        View,
+        "np_extras.shortcut.line_previous",
+        LyricsLinePrevious,
+        "up",
+        Some(NOW_PLAYING_CONTEXT),
+        false
+    ),
+    shortcut!(
+        "lyrics_line_next",
+        View,
+        "np_extras.shortcut.line_next",
+        LyricsLineNext,
+        "down",
+        Some(NOW_PLAYING_CONTEXT),
+        false
+    ),
+    shortcut!(
+        "lyrics_line_play",
+        View,
+        "np_extras.shortcut.line_play",
+        LyricsLinePlay,
+        "enter",
+        Some(NOW_PLAYING_CONTEXT),
+        false
     ),
     shortcut!(
         "toggle_queue",

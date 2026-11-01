@@ -39,9 +39,12 @@ use crate::backdrop::Palette;
 use crate::components::artwork::ArtworkCache;
 use crate::icons::{AppIcon, Lucide};
 use crate::lyrics::{LyricsState, PreparedLyrics};
+use crate::np_extras::Keep as _;
 use crate::np_lyrics::{LyricsList, MAX_SELECTED};
 use crate::np_region::{self, RegionKey};
-use crate::settings::prefs::{LyricsDisplay, NowPlayingBackground, NowPlayingLayout, TextAlign};
+use crate::settings::prefs::{
+    LyricsDisplay, NowPlayingBackground, NowPlayingLayout, PortraitLayout, TextAlign,
+};
 use crate::snapshot::{self, Snapshot};
 use crate::theme::AppColors;
 use crate::util::off_thread;
@@ -59,7 +62,7 @@ const GLOW_FRAME: Duration = Duration::from_millis(33);
 /// Lyrics column width cap (long lines wrap, like Apple Music's lyrics column).
 const LYRICS_MAX_WIDTH: f32 = 600.;
 /// ...in the lyrics-first layout.
-const LYRICS_WIDE_MAX_WIDTH: f32 = 920.;
+pub(crate) const LYRICS_WIDE_MAX_WIDTH: f32 = 920.;
 
 /// Large artwork, its pre-blurred backdrop, palette and accent colour, per video id.
 pub enum HiRes {
@@ -81,6 +84,8 @@ pub enum HiRes {
 struct HeaderSnap {
     layout: NowPlayingLayout,
     background: NowPlayingBackground,
+    /// The split design's "Cover above the lyrics" (`np_extras.rs`).
+    portrait: PortraitLayout,
     demo: bool,
     buffering: bool,
     speed: Option<f32>,
@@ -149,6 +154,19 @@ pub struct NowPlaying {
     wake: Option<(Instant, Task<()>)>,
     /// Turntable design: 0 = needle on the record, 1 = arm lifted.
     pub(crate) arm: Tween<f32>,
+    /// Where the Turntable design's deck was laid out (its ring of bars).
+    pub(crate) deck_bounds: Rc<Cell<Bounds<Pixels>>>,
+    /// Artwork clicks and wheel, the heart's pop, closing on the empty space
+    /// (`np_extras.rs`).
+    pub(crate) gestures: crate::np_extras::Gestures,
+    /// The stacked split design's row above the lyrics (a cached region).
+    pub(crate) stacked_top: Option<Entity<np_region::Region>>,
+    /// The design on screen shows the synced lyrics list (arrow keys move over it).
+    pub(crate) lyrics_pane: bool,
+    /// "Open Now Playing when playback starts" (`player_extras.rs`).
+    pub(crate) on_play: crate::player_extras::OnPlay,
+    /// The Turntable design's turning record (`turntable.rs`).
+    pub(crate) spin: crate::turntable::Spin,
 }
 
 impl NowPlaying {
@@ -179,6 +197,12 @@ impl NowPlaying {
             progress_bounds: Rc::default(),
             wake: None,
             arm: Tween::new(1.),
+            deck_bounds: Rc::default(),
+            gestures: Default::default(),
+            stacked_top: None,
+            lyrics_pane: false,
+            on_play: Default::default(),
+            spin: Default::default(),
         }
     }
 }
@@ -217,6 +241,7 @@ impl MusicApp {
 
     pub fn close_now_playing(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         self.np.open = false;
+        self.np.spin.release(cx);
         self.np.lyrics_view = false;
         self.np.reveal.animate_to(0., CLOSE, Instant::now());
         window.focus(&self.focus, cx);
@@ -397,6 +422,8 @@ impl MusicApp {
             let s = self.settings.read(cx).settings();
             (s.now_playing, s.lyrics.display())
         };
+        self.np.gestures.empty_close = config.click_empty_closes;
+        let keep = config.click_empty_closes;
         if self.np.lyrics_view
             && !matches!(
                 config.layout,
@@ -418,7 +445,7 @@ impl MusicApp {
         let design_backdrop =
             self.design_backdrop(config.layout, track.as_ref(), position, viewport, frame, cx);
         let fullscreen = self.fullscreen_target(window);
-        let header_state = self.header_snap(config.layout, config.background, fullscreen, cx);
+        let header_state = self.header_snap(config, fullscreen, cx);
         let header = snapshot::sync(
             &mut self.np.header,
             header_state,
@@ -427,7 +454,30 @@ impl MusicApp {
             cx,
         )
         .cached(StyleRefinement::default().w_full().h(px(56.)).flex_none());
+        let header = div()
+            .w_full()
+            .h(px(56.))
+            .flex_none()
+            .child(header)
+            .np_keep(keep);
+        let stacked = config.layout == NowPlayingLayout::Split
+            && config
+                .portrait
+                .stacked(viewport.width.as_f32(), viewport.height.as_f32());
+        self.np.lyrics_pane = matches!(
+            config.layout,
+            NowPlayingLayout::Split | NowPlayingLayout::Lyrics
+        );
         let body: AnyElement = match config.layout {
+            NowPlayingLayout::Split if stacked => self.render_split_stacked(
+                track.as_ref(),
+                position,
+                viewport,
+                display,
+                frame,
+                window,
+                cx,
+            ),
             NowPlayingLayout::Split => {
                 // A cached region: rebuilt when what it shows changes, not with
                 // every lyrics frame.
@@ -467,7 +517,7 @@ impl MusicApp {
                             .min_w_0()
                             .h_full()
                             .justify_center()
-                            .child(left),
+                            .child(div().h_full().flex_none().child(left).np_keep(keep)),
                     )
                     .child(
                         h_flex()
@@ -506,6 +556,12 @@ impl MusicApp {
                     cx,
                 )
                 .cached(StyleRefinement::default().w_full().h(px(104.)).flex_none());
+                let strip = div()
+                    .w_full()
+                    .h(px(104.))
+                    .flex_none()
+                    .child(strip)
+                    .np_keep(keep);
                 v_flex()
                     .flex_1()
                     .min_h_0()
@@ -535,12 +591,23 @@ impl MusicApp {
             NowPlayingLayout::Queue => {
                 self.render_with_queue(track.as_ref(), position, viewport, frame, cx)
             }
-            NowPlayingLayout::Turntable => {
-                self.render_turntable(track.as_ref(), position, viewport, frame, cx)
-            }
+            NowPlayingLayout::Turntable => self.render_turntable(
+                track.as_ref(),
+                position,
+                viewport,
+                window.scale_factor(),
+                frame,
+                cx,
+            ),
         };
 
-        let (viz_behind, viz_over) = match self.np_visualizer_view(cx) {
+        let ring = config.layout == NowPlayingLayout::Turntable && !self.np.lyrics_view;
+        if !ring {
+            // The record's turned labels go with the Turntable design.
+            self.np.spin.release(cx);
+        }
+        let empty = self.np_empty_layer(cx);
+        let (viz_behind, viz_over) = match self.np_visualizer_view(ring, cx) {
             Some((view, true)) => (Some(view), None),
             Some((view, false)) => (None, Some(view)),
             None => (None, None),
@@ -570,6 +637,7 @@ impl MusicApp {
             .child(backdrop)
             .children(design_backdrop)
             .children(viz_behind)
+            .children(empty)
             .child(v_flex().absolute().inset_0().child(header).child(body))
             .children(viz_over)
             .into_any_element()
@@ -579,11 +647,11 @@ impl MusicApp {
     /// buttons are only rebuilt when this changes).
     fn header_snap(
         &self,
-        layout: NowPlayingLayout,
-        background: NowPlayingBackground,
+        config: crate::settings::prefs::NowPlayingConfig,
         fullscreen: bool,
         cx: &App,
     ) -> HeaderSnap {
+        let (layout, background) = (config.layout, config.background);
         let state = &self.playback;
         let keys = crate::shortcuts::display("toggle_fullscreen", cx);
         let fullscreen_tip = match (fullscreen, keys) {
@@ -599,6 +667,7 @@ impl MusicApp {
         HeaderSnap {
             layout,
             background,
+            portrait: config.portrait,
             demo: self.engine.as_ref().is_some_and(|e| e.is_demo()),
             buffering: state.buffering && state.status == PlaybackStatus::Playing,
             // Formatted in `header_view` (only when the snapshot changes).
@@ -618,7 +687,7 @@ impl MusicApp {
     }
 
     fn header_view(s: &HeaderSnap, _: &mut Window, _: &mut App) -> AnyElement {
-        let (layout, background) = (s.layout, s.background);
+        let (layout, background, portrait) = (s.layout, s.background, s.portrait);
         let custom = s.sleep_custom;
         let armed = s.sleep.is_some();
         let sound = s.sound;
@@ -719,6 +788,19 @@ impl MusicApp {
                                         });
                                     },
                                 ),
+                            );
+                        }
+                        menu = menu.separator().label(t!("np_extras.settings.portrait"));
+                        for p in PortraitLayout::ALL {
+                            menu = menu.item(
+                                PopupMenuItem::new(p.title())
+                                    .checked(p == portrait)
+                                    .on_click(move |_, _, cx| {
+                                        update_app(cx, |app, cx| {
+                                            app.settings
+                                                .update(cx, |s, cx| s.set_np_portrait(p, cx))
+                                        });
+                                    }),
                             );
                         }
                         menu = menu.separator().label(t!("np.menu.background"));
@@ -939,8 +1021,14 @@ impl MusicApp {
             }))
     }
 
-    fn artwork_view(&self, track: Option<&Track>, side: Pixels, cx: &mut Context<Self>) -> Div {
-        self.artwork_shaped(track, side, Some((side * 0.035).max(px(6.))), cx)
+    pub(crate) fn artwork_view(
+        &self,
+        track: Option<&Track>,
+        side: Pixels,
+        frame: &mut Frame,
+        cx: &mut Context<Self>,
+    ) -> gpui::Stateful<Div> {
+        self.artwork_shaped(track, side, Some((side * 0.035).max(px(6.))), frame, cx)
     }
 
     /// The 544 px art of `track` (the list thumbnail while it loads).
@@ -959,14 +1047,16 @@ impl MusicApp {
     }
 
     /// Artwork `side` px square with corner `radius` (`None`: a circle), that
-    /// shrinks a little while paused.
+    /// shrinks a little while paused; a click plays / pauses, the wheel changes
+    /// the volume (`np_extras.rs`).
     pub(crate) fn artwork_shaped(
         &self,
         track: Option<&Track>,
         side: Pixels,
         radius: Option<Pixels>,
+        frame: &mut Frame,
         cx: &mut Context<Self>,
-    ) -> Div {
+    ) -> gpui::Stateful<Div> {
         let playing = self.playback.status == PlaybackStatus::Playing;
         // The music video takes a rectangular slot's place, at its own aspect
         // (`video.rs`); a round one keeps the artwork.
@@ -1015,18 +1105,20 @@ impl MusicApp {
                 .into_any_element()
         };
         // A video's slot is only as tall as the video.
-        div()
+        let slot = div()
             .w(side)
             .h(side * height)
             .flex_none()
             .flex()
             .items_center()
             .justify_center()
-            .child(shaped)
+            .child(shaped);
+        let pill = self.np_volume_pill(frame);
+        self.artwork_gestures(slot, pill, cx)
     }
 
     /// Progress bar (click to seek) and elapsed / remaining time.
-    fn progress_view(&self, position: Duration, cx: &mut Context<Self>) -> Div {
+    pub(crate) fn progress_view(&self, position: Duration, cx: &mut Context<Self>) -> Div {
         let fill = AppColors::get(cx).np_progress;
         let bar = self.progress_bar(position, px(4.), ink(0.22), fill, cx);
         v_flex()
@@ -1251,7 +1343,7 @@ impl MusicApp {
     }
 
     /// What the player column / strip region shows (see `np_region.rs`).
-    fn region_key(
+    pub(crate) fn region_key(
         &self,
         track: Option<&Track>,
         position: Duration,
@@ -1283,7 +1375,9 @@ impl MusicApp {
                 | u64::from(self.queue.has_next()) << 33
                 | u64::from(track.is_some_and(|t| crate::store::is_disliked(&t.video_id))) << 34
                 // A music video started or stopped: the artwork slot changes.
-                | (self.video.generation & 0xffff) << 40,
+                | (self.video.generation & 0xffff) << 40
+                // The volume pill over the artwork (`np_extras.rs`).
+                | u64::from(self.np_volume_pill_key()) << 56,
         }
     }
 
@@ -1304,7 +1398,7 @@ impl MusicApp {
             .flex_none()
             .justify_center()
             .gap_4()
-            .child(self.artwork_view(track, side, cx))
+            .child(self.artwork_view(track, side, frame, cx))
             .child(
                 h_flex()
                     .w_full()
@@ -1335,7 +1429,7 @@ impl MusicApp {
                             cx,
                         )
                     }))
-                    .children(track.map(|t| like_icon_button("np-like", t, px(36.), cx))),
+                    .children(track.map(|t| self.np_like("np-like", t, px(36.), frame, cx))),
             )
             .child(self.progress_view(position, cx))
             .child(self.transport_view(1., frame, cx))
@@ -1358,6 +1452,7 @@ impl MusicApp {
         // The line being sung (or the last one) and the next, as plain text.
         let current = self.lyric_snippet(track, position, frame);
         let width = (side * 1.15).min(viewport.width - px(64.));
+        let keep = self.np.gestures.empty_close;
         v_flex()
             .flex_1()
             .min_h_0()
@@ -1365,10 +1460,11 @@ impl MusicApp {
             .justify_center()
             .gap_4()
             .pb_6()
-            .child(self.artwork_view(track, side, cx))
+            .child(self.artwork_view(track, side, frame, cx).np_keep(keep))
             .child(
                 v_flex()
                     .w(width)
+                    .np_keep(keep)
                     .items_center()
                     .gap_0p5()
                     .child(
@@ -1383,12 +1479,18 @@ impl MusicApp {
                     )
                     .child(div().text_color(ink(0.65)).truncate().child(artists)),
             )
-            .child(div().w(width).child(self.progress_view(position, cx)))
-            .child(self.transport_view(1., frame, cx))
+            .child(
+                div()
+                    .w(width)
+                    .np_keep(keep)
+                    .child(self.progress_view(position, cx)),
+            )
+            .child(self.transport_view(1., frame, cx).np_keep(keep))
             .when_some(current, |this, (now, next)| {
                 this.child(
                     v_flex()
                         .w(width)
+                        .np_keep(keep)
                         .items_center()
                         .gap_1()
                         .pt_2()
@@ -1457,7 +1559,7 @@ impl MusicApp {
             .flex_none()
             .px(px(48.))
             .gap_5()
-            .child(self.artwork_view(track, px(72.), cx))
+            .child(self.artwork_view(track, px(72.), frame, cx))
             .child(
                 v_flex()
                     .w(px(220.))
@@ -1482,7 +1584,7 @@ impl MusicApp {
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn render_lyrics(
+    pub(crate) fn render_lyrics(
         &mut self,
         track: Option<&Track>,
         position: Duration,
@@ -1492,6 +1594,7 @@ impl MusicApp {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> AnyElement {
+        let keep = self.np.gestures.empty_close;
         let pane = || {
             v_flex()
                 .flex_1()
@@ -1499,6 +1602,7 @@ impl MusicApp {
                 .max_w(px(max_width))
                 .h_full()
                 .relative()
+                .np_keep(keep)
         };
         let message = |title: &str, detail: Option<String>, spinner: bool| {
             pane()
@@ -1535,8 +1639,13 @@ impl MusicApp {
             return message(t!("lyrics.nothing_playing"), None, false);
         };
         let prepared = match self.lyrics.states.get(&track.video_id) {
+            // A still outline of lines where the lyrics will be (after refryt's
+            // lyrics placeholder; no shimmer, so nothing redraws while waiting).
             None | Some(LyricsState::Loading) => {
-                return message(t!("lyrics.loading"), None, true);
+                return pane()
+                    .child(div().w_full().h(px(32.)).flex_none())
+                    .child(crate::np_lyrics::skeleton(display))
+                    .into_any_element();
             }
             Some(LyricsState::Missing { .. }) => {
                 return message(
@@ -1796,6 +1905,7 @@ pub(crate) fn like_icon_button(
     id: &'static str,
     track: &Track,
     side: Pixels,
+    pop: f32,
     cx: &App,
 ) -> gpui::Stateful<Div> {
     let liked = crate::store::is_liked(&track.video_id);
@@ -1824,7 +1934,13 @@ pub(crate) fn like_icon_button(
         .on_click(move |_, window, cx| {
             cx.stop_propagation();
             let track = track.clone();
-            update_app(cx, |app, cx| app.toggle_like(track, window, cx));
+            update_app(cx, |app, cx| {
+                // A like (not an unlike) pops the heart (`np_extras.rs`).
+                if !crate::store::is_liked(&track.video_id) {
+                    app.start_like_pop(&track.video_id);
+                }
+                app.toggle_like(track, window, cx)
+            });
         })
-        .child(svg().size(side * 0.5).path(path).text_color(color))
+        .child(svg().size(side * 0.5 * pop).path(path).text_color(color))
 }

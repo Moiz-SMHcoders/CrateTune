@@ -51,6 +51,26 @@ Zuno `1fa9a9669e4a526ebe53c0275153feda0c4fcefa` (Apache-2.0), Limusic
 | `src/components/sound_menu.rs` | Zuno `src/ui/components/player/PlaybackOptions.tsx` (one popover for the playback options and the EQ presets); Limusic's effects button that lights up while an effect is on (`PlayerBar.svelte`) | Submenus for the EQ presets, reverb rooms and sound presets in the player bar's quality menu and a Now Playing header button that is highlighted while the sound is changed. |
 | `src/components/np_visualizer.rs` (Ambient lights) | Deviload `src/music-ambient.js`, `src/music-ambient-light.js`, `docs/music-ambient.md` | Three lights in the artwork's colours for the lows, mids and highs, opacity 0.17 + level × 0.76 and a little growth, drawn from the analyzer's 16 bands with the pre-rendered glow images instead of CSS blur. |
 
+## Limusic, Zuno, refryt and Deviload (player UI round, BACKLOG M11)
+
+Written for this project after the apps below; no file was copied. A few numbers were taken
+over as noted (Deviload's MIT permission notice and Zuno's Apache-2.0 notice apply to them).
+Upstream commits: Limusic (<https://github.com/SimoHypers/limusic>, © SimoHypers, GPL-3.0)
+`d82372cdd3016e3c5e28ea8022596b7fefdf681a`, Zuno (<https://github.com/noFAYZ/zuno>, © noFAYZ,
+Apache-2.0) `1fa9a9669e4a526ebe53c0275153feda0c4fcefa`, refryt
+(<https://github.com/gridoe/refryt>, © gridoe, GPL-3.0-or-later)
+`e9685b0b49ff2fd094d60abc565a57494963755d`, Deviload
+(<https://github.com/Pronexsteam/deviload>, © Samvel Avetisyan, MIT)
+`7348689cf292e175769f1a7a3d7000d3fb697178`.
+
+| music-gpui file | Upstream file(s) | What was adapted |
+|---|---|---|
+| `src/mini_player.rs` ("Up next", tools row, pin, `anchored`) | Limusic `ui/src/lib/components/MiniPlayer.svelte` (shuffle / repeat / like / volume in the mini player, its queue column), `src-tauri/src/mini.rs` (`anchored`: per axis, a window in the far half of its display keeps its far edge when its size changes); Deviload's mini player flip side | "Up next" on the artwork card's and turntable's flip side, under the other layouts (which grow); the window reopens at the anchored spot (GPUI cannot move a window); the pin reopens it as a floating or an ordinary window. |
+| `src/np_extras.rs` | Limusic `ui/src/lib/components/NowPlaying.svelte` (click the artwork to play / pause, the wheel over it for the volume with the level shown for a second, the heart's pop on a like, `data-np-keep` regions and a click on the rest closing the view), `AppearanceSettings.svelte` ("click empty space"); refryt `crates/refryt/src/ui/fullscreen.rs` (`layout`: cover stacked above the words when taller than wide) | Regions that own their clicks occlude a layer that closes Now Playing; the pop is a 340 ms one-shot tween; the stacked split design is a row (cover, then titles and controls) above the lyrics. |
+| `src/player_extras.rs`, `src/components/bar_compact.rs` | Limusic `ui/src/lib/components/PlayerBar.svelte` (an episode trades shuffle for the speed and gets 15-second skips beside play; the "∞" on autoplay songs), `SpeedPicker.svelte` (0.5–2×), `QueueList.svelte`; refryt `crates/refryt/src/ui/player_bar.rs` (a narrow bar goes compact: no shuffle / repeat, the transport beside the volume, the seek bar a line along the top); Zuno `src/ui/components/player/PlayerBar.tsx`, `src/ui/settings/playerControls.ts` (compact / expanded) | Skip icons drawn for this project; the speed is the app's playback speed; "Open Now Playing when playback starts" skips resumes and the queue moving on by itself; the compact bar is automatic below 1000 pt with "More controls" for the session. |
+| `src/np_lyrics.rs` (follow button, arrow keys, glow, skeleton), `src/karaoke.rs` (`wide_glow`) | Deviload `src/music-lyrics.js` ("Follow current line" after a manual scroll, held 8 s), `src/lyrics-flow.css` (a glow tinted by the theme around the active line); Zuno `src/ui/pages/LyricsView.tsx` (arrow keys over the lines); refryt `crates/refryt/src/ui/fullscreen.rs` (`lyrics_skeleton`: eight line widths, fading down the list) | The 8 s hold; the glow painted as eight offset glyph copies in the artwork's (or accent) colour, no blur; the skeleton without a shimmer (no frames while waiting). |
+| `src/components/np_visualizer.rs` (ring) | Zuno `landing/src/components/Spectrum.tsx` (a ring of bars around the record, bands mirrored with the bass at the top, opacity 0.22 + level × 0.78) | Those numbers; 16 bands from our analyzer at its ~20 fps cap, drawn as GPUI paths (one per opacity step) behind the deck. |
+
 ## refryt, Deviload and Limusic (look round)
 
 Written for this project after ideas from **refryt** (<https://github.com/gridoe/refryt> at

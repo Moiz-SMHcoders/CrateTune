@@ -1,0 +1,31 @@
+# Now Playing gestures and layout, lyrics extras, the mini player's extras, the compact player bar and podcast controls.
+
+np_extras.settings.portrait = Portada sobre la letra
+np_extras.settings.portrait_note = El diseño dividido coloca la portada, el título y los controles en una fila sobre la letra en lugar de al lado.
+np_extras.portrait.auto = En ventanas altas
+np_extras.portrait.always = Siempre
+np_extras.portrait.never = Nunca
+np_extras.settings.open_on_play = Abrir «Reproduciendo» al empezar la reproducción
+np_extras.settings.open_on_play_note = Cuando inicias una canción sin nada sonando o con otra en pausa. No al reanudar ni cuando la cola avanza sola.
+np_extras.settings.click_empty = Hacer clic en el espacio vacío cierra «Reproduciendo»
+np_extras.settings.click_empty_note = Un clic junto a la portada, los controles y la letra lo cierra. Un clic en la portada reproduce o pausa; desplazarse sobre ella cambia el volumen.
+np_extras.settings.mini_queue = Mostrar «A continuación» en el minirreproductor
+np_extras.settings.mini_queue_note = La tarjeta de portada y el tocadiscos lo muestran en su reverso; los demás diseños crecen para mostrarlo bajo los controles.
+np_extras.settings.mini_on_top = Mantener el minirreproductor sobre otras ventanas
+np_extras.mini.pin = Mantener sobre otras ventanas
+np_extras.mini.unpin = Dejar de mantener sobre otras ventanas
+np_extras.settings.line_glow = Brillo en la línea que se canta
+np_extras.settings.line_glow_note = Un brillo suave del color de la portada (el color de acento del tema si la portada es gris) alrededor de la línea actual.
+np_extras.follow = Seguir la letra
+np_extras.skip_back = Retroceder 15 segundos
+np_extras.skip_forward = Avanzar 15 segundos
+np_extras.speed = Velocidad de reproducción
+np_extras.bar.more = Más controles
+np_extras.bar.fewer = Menos controles
+np_extras.shortcut.line_previous = Letra: línea anterior
+np_extras.shortcut.line_next = Letra: línea siguiente
+np_extras.shortcut.line_play = Letra: reproducir desde la línea elegida
+np_extras.settings.spin = Girar el disco
+np_extras.settings.spin_note = Hace girar el disco de los tocadiscos mientras suena música. No es gratis: redibuja la ventana 20 veces por segundo, alrededor de {grooves} de un núcleo con «Solo los surcos» y {record} con «Todo el disco», que además guarda hasta {memory} de portada girada en memoria. En pausa o con Animaciones Reducidas o Desactivadas no gira nada.
+np_extras.spin.grooves = Solo los surcos
+np_extras.spin.record = Todo el disco

@@ -44,6 +44,19 @@ sections="appearance playback modules eq lyrics content network privacy storage 
 script="" t=4
 for r in $routes; do script="$script$t:@nav=$r,"; t=$((t + 2)); done
 for s in $sections; do script="$script$t:@nav=settings:$s,"; t=$((t + 2)); done
+# Now Playing in every design (the stacked split, the turntable's ring of bars) and the
+# mini player with "Up next", over the search results (the demo clock plays them).
+script="$script$t:@nav=search:daft%20punk,"; t=$((t + 3))
+script="$script$t:@play=0,"; t=$((t + 2))
+script="$script$t:@np-viz=on,$t:@np-click-empty=on,"; t=$((t + 1))
+script="$script$t:@open,"; t=$((t + 2))
+for l in split centered lyrics immersive card minimal editorial queue turntable; do
+  script="$script$t:@layout=$l,"; t=$((t + 2))
+done
+script="$script$t:@np-portrait=always,$t:@layout=split,"; t=$((t + 2))
+script="$script$t:@close,$t:@mini-queue=on,$t:@mini=on,"; t=$((t + 3))
+script="$script$t:@mini-skin=card,"; t=$((t + 3))
+script="$script$t:@mini=off,"; t=$((t + 1))
 script="$script$t:@quit"
 limit=$((t + 60))
 
@@ -53,7 +66,7 @@ status=0
   MUSIC_CONFIG_DIR=$(native "$work/config")
   MUSIC_FIXTURES=$(native "$root/crates/music-core/tests/fixtures/innertube")
   MUSIC_SECRET_STORE=file MUSIC_VOLUME=0.0 MUSIC_TRAY=0 MUSIC_NO_TRANSITIONS=1 \
-    MUSIC_SCRIPT=$script exec "$binary"
+    MUSIC_DEMO_CLOCK=1 MUSIC_SCRIPT=$script exec "$binary"
 ) >"$work/app.log" 2>&1 &
 pid=$!
 for _ in $(seq 1 "$limit"); do

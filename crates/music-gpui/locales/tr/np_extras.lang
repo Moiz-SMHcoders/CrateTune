@@ -1,0 +1,31 @@
+# Now Playing gestures and layout, lyrics extras, the mini player's extras, the compact player bar and podcast controls.
+
+np_extras.settings.portrait = Kapak şarkı sözlerinin üstünde
+np_extras.settings.portrait_note = Bölünmüş tasarım kapağı, başlığı ve kontrolleri sözlerin yanına değil, üstüne bir sıra halinde koyar.
+np_extras.portrait.auto = Uzun pencerelerde
+np_extras.portrait.always = Her zaman
+np_extras.portrait.never = Asla
+np_extras.settings.open_on_play = Çalma başladığında Şimdi Çalıyor'u aç
+np_extras.settings.open_on_play_note = Hiçbir şey çalmıyorken ya da başka bir şarkı duraklatılmışken bir şarkı başlattığında. Devam ettirdiğinde veya sıra kendiliğinden ilerlediğinde değil.
+np_extras.settings.click_empty = Boş alana tıklamak Şimdi Çalıyor'u kapatsın
+np_extras.settings.click_empty_note = Kapağın, kontrollerin ve sözlerin yanına tıklamak onu kapatır. Kapağa tıklamak çalar veya duraklatır; üzerinde kaydırmak sesi değiştirir.
+np_extras.settings.mini_queue = Mini oynatıcıda "Sıradaki"yi göster
+np_extras.settings.mini_queue_note = Kapak kartı ve pikap bunu arka yüzünde gösterir; diğer düzenler büyüyüp kontrollerin altında gösterir.
+np_extras.settings.mini_on_top = Mini oynatıcıyı diğer pencerelerin üstünde tut
+np_extras.mini.pin = Diğer pencerelerin üstünde tut
+np_extras.mini.unpin = Diğer pencerelerin üstünde tutma
+np_extras.settings.line_glow = Söylenen satırda parıltı
+np_extras.settings.line_glow_note = Geçerli satırın çevresinde kapağın renginde (gri kapaklarda temanın vurgu renginde) yumuşak bir parıltı.
+np_extras.follow = Sözleri takip et
+np_extras.skip_back = 15 saniye geri
+np_extras.skip_forward = 15 saniye ileri
+np_extras.speed = Çalma hızı
+np_extras.bar.more = Daha fazla kontrol
+np_extras.bar.fewer = Daha az kontrol
+np_extras.shortcut.line_previous = Sözler: önceki satır
+np_extras.shortcut.line_next = Sözler: sonraki satır
+np_extras.shortcut.line_play = Sözler: seçili satırdan çal
+np_extras.settings.spin = Plağı döndür
+np_extras.settings.spin_note = Müzik çalarken pikapların plağını döndürür. Bedava değil: pencere saniyede 20 kez yeniden çizilir; "Yalnızca oluklar" ile bir CPU çekirdeğinin yaklaşık {grooves} kadarını, "Plağın tamamı" ile {record} kadarını kullanır ve ikincisi bellekte {memory} kadar döndürülmüş kapak tutar. Duraklatıldığında veya Animasyonlar Azaltılmış ya da Kapalı olduğunda hiçbir şey dönmez.
+np_extras.spin.grooves = Yalnızca oluklar
+np_extras.spin.record = Plağın tamamı

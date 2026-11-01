@@ -4,7 +4,11 @@
 //! progress track with elapsed / remaining time and a time tooltip), and
 //! secondary controls (lyrics, queue, sleep timer, Cast, mini player, Now
 //! Playing, volume with mute, scroll and a percentage tooltip). Narrow windows
-//! drop secondary controls by priority ([`bar_layout`]) instead of overlapping.
+//! drop secondary controls by priority ([`bar_layout`]) instead of overlapping;
+//! below [`bar_compact::COMPACT_BELOW`] the bar collapses to the track, the
+//! transport and a few buttons with the progress as a line along its top, and
+//! "More controls" brings the full bar back (`bar_compact.rs`). Podcast
+//! episodes get 15-second skips and a speed button (`player_extras.rs`).
 //! Every optional item can be hidden (`settings/bar_items.rs`); the quality menu,
 //! "Add to playlist" and the right-click menu are in `bar_menu.rs`.
 //!
@@ -37,6 +41,7 @@ use gpui_component::{
 };
 use music_core::{PlaybackStatus, format_duration};
 
+use super::bar_compact;
 use super::bar_fx::{BackgroundArt, BackgroundFx, BackgroundGeometry, BackgroundLook, TrackFx};
 use super::progress::{ProgressTrack, TrackEvent, TrackLook, TrackParams};
 use crate::anim::{Frame, RenderRate, Spec, Tween, ease_out_cubic};
@@ -90,6 +95,23 @@ pub struct BarLayout {
     pub now_playing: bool,
     /// Beside the like button in the track info.
     pub add_to_playlist: bool,
+    /// Collapsed for a narrow window (`bar_compact.rs`).
+    pub compact: bool,
+    /// The "More controls" / "Fewer controls" button (a narrow window).
+    pub more: bool,
+    /// A podcast episode: 15-second skips beside play...
+    pub skips: bool,
+    /// ...and the speed button in shuffle's place.
+    pub speed: bool,
+}
+
+/// What else decides the layout besides the width and the items.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct LayoutOptions {
+    /// The track is a podcast episode.
+    pub episode: bool,
+    /// A narrow window may collapse the bar (the user hasn't expanded it).
+    pub collapse: bool,
 }
 
 /// Items the user hid ([`BarItems`]) are never shown and take no room. Of the
@@ -106,10 +128,33 @@ pub fn bar_layout(
     cast_available: bool,
     items: BarItems,
 ) -> BarLayout {
+    bar_layout_with(
+        width,
+        casting,
+        sleep_armed,
+        cast_available,
+        items,
+        LayoutOptions::default(),
+    )
+}
+
+/// [`bar_layout`] for a podcast episode and / or a bar that may collapse.
+pub fn bar_layout_with(
+    width: f32,
+    casting: bool,
+    sleep_armed: bool,
+    cast_available: bool,
+    items: BarItems,
+    options: LayoutOptions,
+) -> BarLayout {
+    let narrow = width < bar_compact::COMPACT_BELOW;
+    if narrow && options.collapse {
+        return compact_layout(casting, sleep_armed, items, options.episode);
+    }
     let side = (width * 0.27).clamp(200., 380.);
     let center = (width - 4. * PAD - 2. * side).max(0.);
     let step = ICON_BUTTON + 4.;
-    let fixed = 1 + usize::from(items.queue) + usize::from(items.now_playing);
+    let fixed = 1 + usize::from(items.queue) + usize::from(items.now_playing) + usize::from(narrow);
     let mut free = side - fixed as f32 * step;
     // An active Cast session and an armed sleep timer always show (their labels clip).
     if casting {
@@ -147,15 +192,23 @@ pub fn bar_layout(
     let sleep = sleep_armed || (items.sleep_timer && take(step));
     let mini = items.mini_player && take(step);
     let sleep_label = sleep_armed && sleep && take(64.);
-    // Shuffle and repeat: both or neither fit (they flank the transport).
+    // Shuffle and repeat: both or neither fit (they flank the transport). An
+    // episode has the speed in shuffle's place and the skips beside play (kept
+    // before the toggles).
     let toggle_w = ICON_BUTTON + 8.;
-    let toggles = usize::from(items.shuffle) + usize::from(items.repeat);
-    let transport = TRANSPORT_WIDTH - (2 - toggles) as f32 * toggle_w;
+    let skips_w = if options.episode { 2. * toggle_w } else { 0. };
+    let left_slot = items.shuffle || options.episode;
+    let toggles = usize::from(left_slot) + usize::from(items.repeat);
+    let transport = TRANSPORT_WIDTH - (2 - toggles) as f32 * toggle_w + skips_w;
     let toggles_fit = center >= transport + 40.;
+    let bare = TRANSPORT_WIDTH - 2. * toggle_w;
+    let skips = options.episode && (toggles_fit || center >= bare + skips_w + 40.);
     let transport = if toggles_fit {
         transport
+    } else if skips {
+        bare + skips_w
     } else {
-        TRANSPORT_WIDTH - 2. * toggle_w
+        bare
     };
     BarLayout {
         side,
@@ -168,11 +221,49 @@ pub fn bar_layout(
         sleep_label,
         mini,
         source_chip: items.quality_tag && (center - transport) / 2. >= 150.,
-        shuffle: items.shuffle && toggles_fit,
+        shuffle: items.shuffle && !options.episode && toggles_fit,
         repeat: items.repeat && toggles_fit,
         queue: items.queue,
         now_playing: items.now_playing,
         add_to_playlist: items.add_to_playlist && side >= 240.,
+        compact: false,
+        more: narrow,
+        skips,
+        speed: options.episode && toggles_fit,
+    }
+}
+
+/// The collapsed bar (after refryt's compact player bar): the track takes the
+/// room, the transport sits beside the queue, Now Playing, mute and "More
+/// controls" buttons; an active Cast session and an armed sleep timer stay.
+fn compact_layout(casting: bool, sleep_armed: bool, items: BarItems, episode: bool) -> BarLayout {
+    let step = ICON_BUTTON + 4.;
+    let buttons = 2
+        + usize::from(items.queue)
+        + usize::from(items.now_playing)
+        + usize::from(casting)
+        + usize::from(sleep_armed);
+    let skips = if episode { 2. * (ICON_BUTTON + 8.) } else { 0. };
+    BarLayout {
+        side: buttons as f32 * step + if casting { 96. } else { 0. },
+        center: 2. * SKIP_BUTTON + PLAY_BUTTON + 4. * 8. + skips,
+        slider: None,
+        lyrics: false,
+        cast: casting,
+        devices: false,
+        sleep: sleep_armed,
+        sleep_label: false,
+        mini: false,
+        source_chip: false,
+        shuffle: false,
+        repeat: false,
+        queue: items.queue,
+        now_playing: items.now_playing,
+        add_to_playlist: false,
+        compact: true,
+        more: true,
+        skips: episode,
+        speed: false,
     }
 }
 
@@ -321,6 +412,8 @@ struct BarState {
     /// The current track's id and, with the Waveform style, its waveform.
     track_id: Option<String>,
     waveform: Option<std::sync::Arc<music_core::Waveform>>,
+    /// A podcast episode (skips and speed).
+    episode: bool,
 }
 
 impl Render for PlayerBar {
@@ -373,20 +466,26 @@ impl Render for PlayerBar {
                     .filter(|_| config.wants_waveform())
                     .and_then(|id| app.waveform.ready_for(id).cloned()),
                 track_id,
+                episode: app.playing_episode(),
             }
         }) else {
             return div().into_any_element();
         };
         let width = f32::from(window.viewport_size().width);
-        let layout = bar_layout(
+        let layout = bar_layout_with(
             width,
             state.casting,
             state.sleep_armed,
             true,
             state.config.items,
+            bar_compact::options(state.episode),
         );
         let live = self.is_live();
-        let config = state.config;
+        let mut config = state.config;
+        if layout.compact {
+            // Collapsed: the progress is a plain line along the top.
+            config.progress_style = ProgressStyle::Standard;
+        }
         let edge = config.artwork_style == BarArtworkStyle::Edge;
 
         // ---- progress
@@ -452,7 +551,11 @@ impl Render for PlayerBar {
                 wave_fade,
                 enabled,
                 look,
-                height: px(20.),
+                height: px(if layout.compact {
+                    bar_compact::LINE_HEIGHT
+                } else {
+                    20.
+                }),
                 scale: 1.,
             },
             self.progress.input.clone(),
@@ -499,6 +602,12 @@ impl Render for PlayerBar {
         // fill follow the app's once-a-second update (it notifies this view).
         let show_remaining = config.show_remaining;
         let fg = theme.foreground;
+        // Collapsed: the track alone, along the bar's top (`bar_compact.rs`).
+        let (progress_track, tooltip, compact_progress) = if layout.compact {
+            (None, None, Some((progress_track, tooltip)))
+        } else {
+            (Some(progress_track), tooltip, None)
+        };
         let progress_row = h_flex()
             .w_full()
             .max_w(px(680.))
@@ -518,7 +627,7 @@ impl Render for PlayerBar {
                     .flex_1()
                     .min_w_0()
                     .h(px(20.))
-                    .child(progress_track)
+                    .children(progress_track)
                     .children(tooltip),
             )
             .child(
@@ -660,10 +769,20 @@ impl Render for PlayerBar {
             &mut frame,
             BackgroundLook::from_config(&config, state.playing, level),
             &state.art,
-            BackgroundGeometry {
-                width,
-                info_end: PAD + side,
-                center: (2. * PAD + side, width - 2. * PAD - side),
+            if layout.compact {
+                // Track info, then the transport and the buttons at the right.
+                let info_end = width - 3. * PAD - side - layout.center;
+                BackgroundGeometry {
+                    width,
+                    info_end,
+                    center: (info_end + PAD, info_end + PAD + layout.center),
+                }
+            } else {
+                BackgroundGeometry {
+                    width,
+                    info_end: PAD + side,
+                    center: (2. * PAD + side, width - 2. * PAD - side),
+                }
             },
         );
 
@@ -672,6 +791,25 @@ impl Render for PlayerBar {
         let transport = region(&mut self.transport, MusicApp::bar_transport_zone, live, cx);
         let right = region(&mut self.right, MusicApp::bar_secondary_zone, live, cx);
 
+        if let Some((progress, tooltip)) = compact_progress {
+            let element = bar_compact::compact_bar(
+                bar_compact::CompactParts {
+                    layers,
+                    left,
+                    transport,
+                    right,
+                    volume: volume_group.into_any_element(),
+                    progress: progress.into_any_element(),
+                    tooltip,
+                },
+                &layout,
+                edge,
+                &theme,
+            )
+            .context_menu(super::bar_menu::customize_menu)
+            .into_any_element();
+            return self.finish_frame(element, frame, now, window, cx);
+        }
         let element = div()
             .id("player-bar")
             .relative()
@@ -722,7 +860,20 @@ impl Render for PlayerBar {
             )
             .context_menu(super::bar_menu::customize_menu)
             .into_any_element();
+        self.finish_frame(element, frame, now, window, cx)
+    }
+}
 
+impl PlayerBar {
+    /// Asks for the next frame or wake-up the render needs and counts it.
+    fn finish_frame(
+        &mut self,
+        element: AnyElement,
+        frame: Frame,
+        now: Instant,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> AnyElement {
         let animating = frame.is_animating();
         let wake = frame.finish(window);
         // Continuous styles wake on a timer (~30 fps) instead of every display frame.
@@ -867,12 +1018,13 @@ impl MusicApp {
         let mut items = self.settings.read(cx).bar_items();
         // The Devices button only once a device is paired.
         items.devices &= !self.settings.read(cx).settings().devices.paired.is_empty();
-        bar_layout(
+        bar_layout_with(
             f32::from(window.viewport_size().width),
             self.cast_device().is_some(),
             self.playback.sleep_timer.is_some(),
             true,
             items,
+            bar_compact::options(self.playing_episode()),
         )
     }
 
@@ -1103,6 +1255,10 @@ impl MusicApp {
                         .on_click(cx.listener(|this, _, _, cx| this.toggle_shuffle(cx))),
                 )
             })
+            // A podcast episode: the speed in shuffle's place (`player_extras.rs`).
+            .when(layout.speed, |this| {
+                this.child(bar_compact::speed_button(state.speed, cx))
+            })
             .child(
                 Button::new("previous")
                     .custom(bar_button_style(cx))
@@ -1115,6 +1271,9 @@ impl MusicApp {
                     .disabled(track.is_none())
                     .on_click(cx.listener(|this, _, _, cx| this.previous_track(cx))),
             )
+            .when(layout.skips, |this| {
+                this.child(bar_compact::skip_button(false, track.is_some(), cx))
+            })
             .child(
                 Button::new("play-pause")
                     .primary()
@@ -1136,6 +1295,9 @@ impl MusicApp {
                     .disabled(!can_toggle)
                     .on_click(cx.listener(Self::toggle_pause)),
             )
+            .when(layout.skips, |this| {
+                this.child(bar_compact::skip_button(true, track.is_some(), cx))
+            })
             .child(
                 Button::new("next")
                     .custom(bar_button_style(cx))
@@ -1291,6 +1453,10 @@ impl MusicApp {
                             cx.listener(|this, _, window, cx| this.open_now_playing(window, cx)),
                         ),
                 )
+            })
+            // A narrow window: collapse / expand the bar (`bar_compact.rs`).
+            .when(layout.more, |this| {
+                this.child(bar_compact::more_button(layout.compact, cx))
             })
             .into_any_element()
     }

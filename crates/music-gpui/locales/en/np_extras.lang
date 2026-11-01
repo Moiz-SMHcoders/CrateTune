@@ -1,0 +1,53 @@
+# Now Playing gestures and layout, lyrics extras, the mini player's extras, the
+# compact player bar and podcast controls (src/np_extras.rs, src/np_lyrics.rs,
+# src/mini_player.rs, src/components/bar_compact.rs, src/player_extras.rs).
+# Format: see crates/music-gpui/i18n_parse.rs ({name} = placeholder, {app} = the
+# app's name, `.one` / `.other` = plural forms).
+
+# ---- Settings → Appearance → Now Playing
+np_extras.settings.portrait = Cover above the lyrics
+np_extras.settings.portrait_note = The split design puts the artwork, title and controls in a row above the lyrics instead of beside them.
+# The choices for "Cover above the lyrics".
+np_extras.portrait.auto = On tall windows
+np_extras.portrait.always = Always
+np_extras.portrait.never = Never
+np_extras.settings.open_on_play = Open Now Playing when playback starts
+np_extras.settings.open_on_play_note = When you start a song with nothing playing, or another song paused. Not when you resume, or when the queue moves on by itself.
+np_extras.settings.click_empty = Click the empty space to close Now Playing
+np_extras.settings.click_empty_note = A click beside the artwork, the controls and the lyrics closes it. Clicking the artwork plays or pauses; scrolling over it changes the volume.
+
+# ---- Settings → Appearance → Mini player
+np_extras.settings.mini_queue = Show “Up next” in the mini player
+np_extras.settings.mini_queue_note = The artwork card and turntable show it on their flip side; the other layouts grow to show it under the controls.
+np_extras.settings.mini_on_top = Keep the mini player above other windows
+# The mini player's pin button (tooltips).
+np_extras.mini.pin = Keep above other windows
+np_extras.mini.unpin = Stop keeping above other windows
+
+# ---- Settings → Lyrics
+np_extras.settings.line_glow = Glow on the line being sung
+np_extras.settings.line_glow_note = A soft glow in the artwork's colour (the theme's accent for grey artwork) around the current line.
+
+# ---- Now Playing's lyrics
+# The button that appears after scrolling the lyrics away from the line being sung.
+np_extras.follow = Follow the lyrics
+
+# ---- Player bar: podcast episodes, narrow windows
+np_extras.skip_back = Back 15 seconds
+np_extras.skip_forward = Forward 15 seconds
+np_extras.speed = Playback speed
+np_extras.bar.more = More controls
+np_extras.bar.fewer = Fewer controls
+
+# ---- Keyboard shortcuts (the arrow keys and Enter over Now Playing's lyrics)
+np_extras.shortcut.line_previous = Lyrics: previous line
+np_extras.shortcut.line_next = Lyrics: next line
+np_extras.shortcut.line_play = Lyrics: play from the selected line
+
+# ---- Settings → Appearance → Now Playing: "Spin the record" (the Turntable design and
+# the mini player's turntable). {grooves} and {record} are CPU figures like "2 %", {memory}
+# a size like "15 MB" (measured, filled in by the app).
+np_extras.settings.spin = Spin the record
+np_extras.settings.spin_note = Turns the turntables' record while music plays. Not free: it redraws the window 20 times a second, about {grooves} of a CPU core with “Grooves only” and {record} with “The whole record”, which also keeps up to {memory} of turned artwork in memory. Nothing turns while paused or with Animations Reduced or Off.
+np_extras.spin.grooves = Grooves only
+np_extras.spin.record = The whole record

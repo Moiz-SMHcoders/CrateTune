@@ -1,0 +1,31 @@
+# Now Playing gestures and layout, lyrics extras, the mini player's extras, the compact player bar and podcast controls.
+
+np_extras.settings.portrait = Ảnh bìa phía trên lời bài hát
+np_extras.settings.portrait_note = Thiết kế chia đôi đặt ảnh bìa, tiêu đề và nút điều khiển thành một hàng phía trên lời bài hát thay vì bên cạnh.
+np_extras.portrait.auto = Trên cửa sổ cao
+np_extras.portrait.always = Luôn luôn
+np_extras.portrait.never = Không bao giờ
+np_extras.settings.open_on_play = Mở Đang phát khi bắt đầu phát
+np_extras.settings.open_on_play_note = Khi bạn bắt đầu một bài lúc không có gì đang phát hoặc một bài khác đang tạm dừng. Không mở khi tiếp tục phát, hay khi danh sách chờ tự chuyển bài.
+np_extras.settings.click_empty = Nhấp vào chỗ trống để đóng Đang phát
+np_extras.settings.click_empty_note = Nhấp bên cạnh ảnh bìa, nút điều khiển và lời bài hát sẽ đóng màn hình. Nhấp vào ảnh bìa để phát hoặc tạm dừng; cuộn trên ảnh bìa để đổi âm lượng.
+np_extras.settings.mini_queue = Hiện "Tiếp theo" trong trình phát mini
+np_extras.settings.mini_queue_note = Thẻ ảnh bìa và mâm đĩa hiện ở mặt sau; các bố cục khác mở rộng để hiện bên dưới nút điều khiển.
+np_extras.settings.mini_on_top = Giữ trình phát mini trên các cửa sổ khác
+np_extras.mini.pin = Giữ trên các cửa sổ khác
+np_extras.mini.unpin = Thôi giữ trên các cửa sổ khác
+np_extras.settings.line_glow = Phát sáng dòng đang hát
+np_extras.settings.line_glow_note = Ánh sáng dịu theo màu ảnh bìa (màu nhấn của chủ đề với ảnh bìa xám) quanh dòng hiện tại.
+np_extras.follow = Theo lời bài hát
+np_extras.skip_back = Lùi 15 giây
+np_extras.skip_forward = Tiến 15 giây
+np_extras.speed = Tốc độ phát
+np_extras.bar.more = Thêm nút điều khiển
+np_extras.bar.fewer = Bớt nút điều khiển
+np_extras.shortcut.line_previous = Lời bài hát: dòng trước
+np_extras.shortcut.line_next = Lời bài hát: dòng sau
+np_extras.shortcut.line_play = Lời bài hát: phát từ dòng đã chọn
+np_extras.settings.spin = Quay đĩa than
+np_extras.settings.spin_note = Quay đĩa của mâm đĩa khi nhạc đang phát. Không miễn phí: cửa sổ được vẽ lại 20 lần mỗi giây, khoảng {grooves} của một nhân CPU với "Chỉ rãnh đĩa" và {record} với "Cả đĩa", chế độ sau còn giữ tới {memory} ảnh bìa đã xoay trong bộ nhớ. Khi tạm dừng hoặc khi Hiệu ứng chuyển động Giảm hay Tắt thì không có gì quay.
+np_extras.spin.grooves = Chỉ rãnh đĩa
+np_extras.spin.record = Cả đĩa

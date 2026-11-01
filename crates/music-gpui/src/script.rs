@@ -67,6 +67,7 @@
 //! | `@bench-backdrop=N[:MS]` | the same, marking only the app-wide backdrop dirty (one frame of its fade / drift) |
 //! | `@bar-style=standard\|thick\|simple\|wavy\|equalizer\|waveform`, `@bar-bg=glow\|gradient\|pulse\|off`, `@bar-peaks=on\|off`, `@bar-remaining=on\|off`, `@bar-scroll-volume=on\|off`, `@mini-follow=on\|off`, `@np-viz=on\|off`, `@bar-gradient=dir:…\|intensity:…\|animate:on\|dim:off`, `@bar-status`, `@waveform-status` | player bar look (saved; `bar_script.rs`) |
 //! | `@bar-hover=F`, `@bar-hover=off` | hover the progress bar at fraction F (tooltip, thumb) |
+//! | `@np-open-on-play=on\|off`, `@np-click-empty=on\|off`, `@np-portrait=auto\|always\|never`, `@lyrics-glow=on\|off`, `@turntable-spin=off\|grooves\|record`, `@mini-queue=on\|off`, `@mini-pin=on\|off`, `@seek-by=SECS`, `@lyrics-line=up\|down\|play`, `@bar-compact=on\|off`, `@extras-status` | Now Playing / mini player / bar extras (saved where they are settings; `player_extras_script.rs`) |
 //! | `@app-look=off\|tint\|gradient\|glow`, `@app-look-opt=follow:on\|intensity:0.7\|dir:diagonal\|dim:off\|tint:on\|animate:on\|react:on`, `@motion=system\|full\|reduced\|off`, `@effects=transitions:…\|hover:…\|headers:…\|corners:square\|shadow:on\|cards:large\|translucent:on\|outlines:on\|hairline:on\|wheel:on`, `@bar-art=standard\|edge`, `@sidebar=full\|rail\|hover`, `@sidebar-width=260`, `@queue-width=400`, `@sidebar-hover[=off]`, `@columns=added:on`, `@bar-button=home:off`, `@window-controls=mac`, `@theme-mode=light\|dark\|system`, `@system-appearance=light\|dark`, `@theme-switcher[=off]`, `@look-status` | app-wide look, Motion & effects, layout, light / dark mode, bar artwork (saved; `look_script.rs`) |
 //! | `@shortcut=ACTION:KEYS`, `@shortcut-reset=ACTION\|all`, `@shortcut-status`, `@shortcut-record=ACTION`, `@shortcut-replace`, `@shortcut-cancel`, `@shortcut-sheet` | keyboard shortcuts (saved; `shortcuts/script.rs`) |
 //! | `@np-fullscreen[=on\|off]`, `@np-fullscreen-auto=on\|off`, `@lyrics-view`, `@fullscreen-external`, `@fullscreen-status` | full screen: Now Playing's button (no argument toggles), "Full screen when Now Playing opens" (saved), the bar's lyrics button, toggle as the green button would, print the window state and who entered it (`np_fullscreen.rs`) |
@@ -1005,6 +1006,7 @@ impl MusicApp {
             // Library, downloads, account, storage (`library_script.rs`).
             other => {
                 if !self.bar_script_action(other, arg, window, cx)
+                    && !self.extras_script_action(other, arg, window, cx)
                     && !self.look_script_action(other, arg, window, cx)
                     && !self.shortcut_script_action(other, arg, window, cx)
                     && !self.module_script_action(other, arg, window, cx)

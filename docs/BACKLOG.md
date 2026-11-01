@@ -480,26 +480,8 @@ was built is listed there. Left out, with the reason:
   saved volume sounds; needs a migration. · Size: small · Priority: low
 * *Mini player skins that need shaped or transparent windows or constant motion*: Zuno's
   Classic capsule (grows on hover, clicks pass through), Cassette (turning spools), Y2K
-  (gel shape, LCD meter); a spinning picture disc (Deviload; GPUI cannot rotate images and the
-  disc would redraw ~30 times a second while playing). · Size: medium · Priority: low
-* *Up next / queue inside the mini player* (Deviload's flip side, Limusic's right column) and
-  *shuffle, repeat, like, a volume slider and an always-on-top pin toggle* in it. · Size: small
-  · Priority: low
-* *Mini player anchored to its screen corner when its size changes* (Limusic): it keeps its
-  top-left corner today. · Size: small · Priority: low
-* *Click the artwork to play / pause, scroll over it for the volume, a "pop" when liking*
-  (Limusic), *click the empty space to close Now Playing, open Now Playing on play*. ·
-  Size: small · Priority: low
-* *15-second skips and a speed button for podcasts in the bar* (Limusic), *an "∞" mark on
-  songs added by autoplay*. · Size: small · Priority: low
-* *Portrait-window layout for Now Playing* (refryt: cover above the lyrics on tall windows)
-  and *a compact player bar on narrow windows* (refryt, Zuno's compact / expanded bar). ·
-  Size: medium · Priority: low
-* *Lyrics niceties*: a "follow the current line" button after scrolling away (Deviload),
-  arrow-key focus over lines (Zuno), a skeleton while loading (refryt), a glow tinted by the
-  theme (Deviload). · Size: small · Priority: low
-* *A ring of bars around the record* (Zuno's site) for the Turntable design. · Size: small ·
-  Priority: low
+  (gel shape, LCD meter). (Deviload's spinning picture disc is built: "Spin the record",
+  README: Player UI round.) · Size: medium · Priority: low
 * *Not ours / won't do*: theater mode, auto-hiding controls, cinema, the ambient light around
   music videos and the song / video switch (the music-video work); a translucent blurred
   window (refryt; the look-themes work); a slow drift of the lyrics backdrop and an app-wide

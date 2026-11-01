@@ -1,0 +1,31 @@
+# Now Playing gestures and layout, lyrics extras, the mini player's extras, the compact player bar and podcast controls.
+
+np_extras.settings.portrait = Cover über dem Songtext
+np_extras.settings.portrait_note = Das geteilte Design zeigt Cover, Titel und Steuerung in einer Reihe über dem Songtext statt daneben.
+np_extras.portrait.auto = Bei hohen Fenstern
+np_extras.portrait.always = Immer
+np_extras.portrait.never = Nie
+np_extras.settings.open_on_play = „Läuft gerade“ beim Start der Wiedergabe öffnen
+np_extras.settings.open_on_play_note = Wenn du einen Song startest, während nichts läuft oder ein anderer Song pausiert ist. Nicht beim Fortsetzen und nicht, wenn die Warteschlange von selbst weiterspielt.
+np_extras.settings.click_empty = Klick auf freie Fläche schließt „Läuft gerade“
+np_extras.settings.click_empty_note = Ein Klick neben Cover, Steuerung und Songtext schließt es. Ein Klick aufs Cover spielt oder pausiert, Scrollen darüber ändert die Lautstärke.
+np_extras.settings.mini_queue = „Als Nächstes“ im Mini-Player zeigen
+np_extras.settings.mini_queue_note = Die Cover-Karte und der Plattenspieler zeigen es auf ihrer Rückseite, die anderen Layouts werden größer und zeigen es unter der Steuerung.
+np_extras.settings.mini_on_top = Mini-Player über anderen Fenstern halten
+np_extras.mini.pin = Über anderen Fenstern halten
+np_extras.mini.unpin = Nicht mehr über anderen Fenstern halten
+np_extras.settings.line_glow = Leuchten um die gesungene Zeile
+np_extras.settings.line_glow_note = Ein sanftes Leuchten in der Farbe des Covers (bei grauem Cover die Akzentfarbe des Designs) um die aktuelle Zeile.
+np_extras.follow = Songtext folgen
+np_extras.skip_back = 15 Sekunden zurück
+np_extras.skip_forward = 15 Sekunden vor
+np_extras.speed = Wiedergabegeschwindigkeit
+np_extras.bar.more = Mehr Steuerelemente
+np_extras.bar.fewer = Weniger Steuerelemente
+np_extras.shortcut.line_previous = Songtext: vorherige Zeile
+np_extras.shortcut.line_next = Songtext: nächste Zeile
+np_extras.shortcut.line_play = Songtext: ab der gewählten Zeile abspielen
+np_extras.settings.spin = Platte drehen
+np_extras.settings.spin_note = Dreht die Platte der Plattenspieler, während Musik läuft. Nicht gratis: Das Fenster wird 20-mal pro Sekunde neu gezeichnet, etwa {grooves} eines CPU-Kerns mit „Nur Rillen“ und {record} mit „Ganze Platte“, die zusätzlich bis zu {memory} gedrehtes Cover im Speicher hält. Bei Pause oder Animationen „Reduziert“/„Aus“ dreht sich nichts.
+np_extras.spin.grooves = Nur Rillen
+np_extras.spin.record = Ganze Platte

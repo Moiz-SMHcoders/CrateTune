@@ -415,6 +415,8 @@ impl MusicApp {
         if advanced {
             self.engine_advanced(&state);
         }
+        // "Open Now Playing when playback starts" (`player_extras.rs`).
+        self.note_play_start(&state, cx);
         if advanced
             && track_changed
             && let Some(track) = state.track.clone()
@@ -445,6 +447,7 @@ impl MusicApp {
             window.focus(&self.focus, cx);
         }
         self.poll_tray(window, cx);
+        self.open_np_on_play(window, cx);
         self.poll_spectrum();
         self.poll_waveform(cx);
         self.poll_look(cx);

@@ -1,0 +1,31 @@
+# Now Playing gestures and layout, lyrics extras, the mini player's extras, the compact player bar and podcast controls.
+
+np_extras.settings.portrait = बोलों के ऊपर कवर
+np_extras.settings.portrait_note = स्प्लिट डिज़ाइन आर्टवर्क, शीर्षक और नियंत्रणों को बोलों के बगल में नहीं, उनके ऊपर एक पंक्ति में दिखाता है।
+np_extras.portrait.auto = ऊँची विंडो पर
+np_extras.portrait.always = हमेशा
+np_extras.portrait.never = कभी नहीं
+np_extras.settings.open_on_play = प्लेबैक शुरू होने पर "अभी चल रहा है" खोलें
+np_extras.settings.open_on_play_note = जब कुछ न चल रहा हो या कोई दूसरा गाना रुका हो और आप गाना शुरू करें। फिर से चलाने पर या कतार के अपने-आप आगे बढ़ने पर नहीं।
+np_extras.settings.click_empty = खाली जगह पर क्लिक करने से "अभी चल रहा है" बंद हो
+np_extras.settings.click_empty_note = आर्टवर्क, नियंत्रणों और बोलों के बगल में क्लिक करने से यह बंद होता है। आर्टवर्क पर क्लिक करने से चलता या रुकता है; उस पर स्क्रॉल करने से वॉल्यूम बदलता है।
+np_extras.settings.mini_queue = मिनी प्लेयर में "आगे" दिखाएँ
+np_extras.settings.mini_queue_note = आर्टवर्क कार्ड और टर्नटेबल इसे पीछे की ओर दिखाते हैं; बाकी लेआउट बड़े होकर इसे नियंत्रणों के नीचे दिखाते हैं।
+np_extras.settings.mini_on_top = मिनी प्लेयर को दूसरी विंडो के ऊपर रखें
+np_extras.mini.pin = दूसरी विंडो के ऊपर रखें
+np_extras.mini.unpin = दूसरी विंडो के ऊपर रखना बंद करें
+np_extras.settings.line_glow = गाई जा रही पंक्ति पर चमक
+np_extras.settings.line_glow_note = मौजूदा पंक्ति के चारों ओर आर्टवर्क के रंग की हल्की चमक (धूसर आर्टवर्क के लिए थीम का एक्सेंट रंग)।
+np_extras.follow = बोलों के साथ चलें
+np_extras.skip_back = 15 सेकंड पीछे
+np_extras.skip_forward = 15 सेकंड आगे
+np_extras.speed = प्लेबैक गति
+np_extras.bar.more = और नियंत्रण
+np_extras.bar.fewer = कम नियंत्रण
+np_extras.shortcut.line_previous = बोल: पिछली पंक्ति
+np_extras.shortcut.line_next = बोल: अगली पंक्ति
+np_extras.shortcut.line_play = बोल: चुनी पंक्ति से चलाएँ
+np_extras.settings.spin = रिकॉर्ड घुमाएँ
+np_extras.settings.spin_note = संगीत चलते समय टर्नटेबल का रिकॉर्ड घुमाता है। मुफ़्त नहीं: विंडो सेकंड में 20 बार फिर से बनती है, "सिर्फ़ खाँचे" के साथ CPU कोर का लगभग {grooves} और "पूरा रिकॉर्ड" के साथ {record}, जो {memory} तक घुमाया गया आर्टवर्क मेमोरी में भी रखता है। रुकने पर या एनिमेशन कम/बंद होने पर कुछ नहीं घूमता।
+np_extras.spin.grooves = सिर्फ़ खाँचे
+np_extras.spin.record = पूरा रिकॉर्ड

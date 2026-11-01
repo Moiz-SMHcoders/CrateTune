@@ -170,6 +170,9 @@ pub(super) fn render(
         |this, a, cx| this.set_lyrics_align(a, cx),
         cx,
     );
+    let line_glow = Switch::new("lyrics-line-glow")
+        .checked(l.line_glow)
+        .on_click(cx.listener(|this, checked: &bool, _, cx| this.set_line_glow(*checked, cx)));
     let background_vocals = Switch::new("lyrics-bg-vocals")
         .checked(l.show_background_vocals)
         .on_click(
@@ -213,6 +216,13 @@ pub(super) fn render(
                     t!("settings.lyrics.alignment"),
                     None,
                     align,
+                    cx,
+                ))
+                .child(row_at(
+                    "lyrics.line_glow",
+                    t!("np_extras.settings.line_glow"),
+                    Some(t!("np_extras.settings.line_glow_note")),
+                    line_glow,
                     cx,
                 ))
                 .child(row_at(

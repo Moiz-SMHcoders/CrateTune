@@ -5,6 +5,29 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+* **Mini player**: shuffle, repeat, the heart and a volume slider under the controls;
+  **Up next** (the back of the artwork card and the turntable, a list under the other
+  layouts) and an **always-on-top pin** in its top strip. When its size changes it stays
+  in the screen corner it is nearest to instead of keeping its top-left corner.
+* **Now Playing gestures**: click the artwork to play / pause, scroll over it for the
+  volume (the level shows for a second), the heart pops when you like a song; optional
+  **Open Now Playing when playback starts** and **Click the empty space to close Now
+  Playing**.
+* **Podcasts**: 15-second back / forward buttons beside play and a speed button (0.5–2×)
+  in the bar for episodes; ⇧⌘← / ⇧⌘→ (Ctrl+Shift+← / →) jump 15 seconds in any song. Songs
+  autoplay added carry an **∞** in the queue.
+* **Tall windows**: the Split design puts the cover, title and controls above the lyrics
+  (automatically when the window is about as tall as wide or taller, or always / never).
+* **Narrow windows**: under 1000 pt the player bar collapses (song, transport, queue, Now
+  Playing, mute, the progress as a line along the top) with **More controls** to expand it.
+* **Lyrics**: a **Follow the lyrics** button after scrolling away (the hold is now 8 s),
+  ↑ / ↓ and Enter to pick a line and play from it, a still outline while lyrics load, and
+  an optional **glow** in the artwork's colour on the line being sung.
+* **Turntable ring**: with the Now Playing visualizer on (bars), the Turntable design draws
+  the spectrum as a ring of bars around the record.
+
 ## [0.3.3] — 2026-11-01
 
 ### Added

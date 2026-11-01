@@ -1,0 +1,31 @@
+# Now Playing gestures and layout, lyrics extras, the mini player's extras, the compact player bar and podcast controls.
+
+np_extras.settings.portrait = Copertina sopra il testo
+np_extras.settings.portrait_note = Il layout diviso mette copertina, titolo e controlli in una riga sopra il testo invece che accanto.
+np_extras.portrait.auto = Nelle finestre alte
+np_extras.portrait.always = Sempre
+np_extras.portrait.never = Mai
+np_extras.settings.open_on_play = Apri «In riproduzione» quando inizia la riproduzione
+np_extras.settings.open_on_play_note = Quando avvii un brano mentre non suona nulla o un altro è in pausa. Non quando riprendi, né quando la coda prosegue da sola.
+np_extras.settings.click_empty = Un clic nello spazio vuoto chiude «In riproduzione»
+np_extras.settings.click_empty_note = Un clic accanto a copertina, controlli e testo la chiude. Un clic sulla copertina avvia o mette in pausa; scorrere sopra cambia il volume.
+np_extras.settings.mini_queue = Mostra «Prossimi» nel mini player
+np_extras.settings.mini_queue_note = La scheda copertina e il giradischi lo mostrano sul retro; gli altri layout si ingrandiscono per mostrarlo sotto i controlli.
+np_extras.settings.mini_on_top = Tieni il mini player sopra le altre finestre
+np_extras.mini.pin = Tieni sopra le altre finestre
+np_extras.mini.unpin = Non tenere più sopra le altre finestre
+np_extras.settings.line_glow = Bagliore sulla riga cantata
+np_extras.settings.line_glow_note = Un bagliore tenue del colore della copertina (il colore d'accento del tema per copertine grigie) attorno alla riga corrente.
+np_extras.follow = Segui il testo
+np_extras.skip_back = Indietro di 15 secondi
+np_extras.skip_forward = Avanti di 15 secondi
+np_extras.speed = Velocità di riproduzione
+np_extras.bar.more = Più controlli
+np_extras.bar.fewer = Meno controlli
+np_extras.shortcut.line_previous = Testo: riga precedente
+np_extras.shortcut.line_next = Testo: riga successiva
+np_extras.shortcut.line_play = Testo: riproduci dalla riga scelta
+np_extras.settings.spin = Fai girare il disco
+np_extras.settings.spin_note = Fa girare il disco dei giradischi mentre la musica suona. Non è gratis: la finestra viene ridisegnata 20 volte al secondo, circa {grooves} di un core della CPU con «Solo i solchi» e {record} con «Tutto il disco», che tiene anche fino a {memory} di copertina ruotata in memoria. In pausa o con le animazioni Ridotte o Disattivate non gira nulla.
+np_extras.spin.grooves = Solo i solchi
+np_extras.spin.record = Tutto il disco

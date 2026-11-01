@@ -1,0 +1,31 @@
+# Now Playing gestures and layout, lyrics extras, the mini player's extras, the compact player bar and podcast controls.
+
+np_extras.settings.portrait = 가사 위에 커버
+np_extras.settings.portrait_note = 분할 디자인에서 아트워크, 제목, 컨트롤을 가사 옆이 아니라 위에 한 줄로 놓습니다.
+np_extras.portrait.auto = 세로로 긴 창에서
+np_extras.portrait.always = 항상
+np_extras.portrait.never = 안 함
+np_extras.settings.open_on_play = 재생을 시작하면 '지금 재생 중' 열기
+np_extras.settings.open_on_play_note = 아무것도 재생하지 않거나 다른 곡이 일시 정지된 상태에서 곡을 시작할 때. 다시 재생하거나 대기열이 알아서 넘어갈 때는 열지 않습니다.
+np_extras.settings.click_empty = 빈 곳을 클릭하면 '지금 재생 중' 닫기
+np_extras.settings.click_empty_note = 아트워크, 컨트롤, 가사 바깥을 클릭하면 닫힙니다. 아트워크를 클릭하면 재생하거나 일시 정지하고, 그 위에서 스크롤하면 볼륨이 바뀝니다.
+np_extras.settings.mini_queue = 미니 플레이어에 '다음 곡' 표시
+np_extras.settings.mini_queue_note = 아트워크 카드와 턴테이블은 뒷면에, 다른 레이아웃은 커져서 컨트롤 아래에 표시합니다.
+np_extras.settings.mini_on_top = 미니 플레이어를 다른 창 위에 유지
+np_extras.mini.pin = 다른 창 위에 유지
+np_extras.mini.unpin = 다른 창 위에 유지 안 함
+np_extras.settings.line_glow = 부르는 줄에 빛 효과
+np_extras.settings.line_glow_note = 현재 줄 주위에 아트워크 색(회색 아트워크면 테마 강조색)의 은은한 빛을 줍니다.
+np_extras.follow = 가사 따라가기
+np_extras.skip_back = 15초 뒤로
+np_extras.skip_forward = 15초 앞으로
+np_extras.speed = 재생 속도
+np_extras.bar.more = 컨트롤 더 보기
+np_extras.bar.fewer = 컨트롤 줄이기
+np_extras.shortcut.line_previous = 가사: 이전 줄
+np_extras.shortcut.line_next = 가사: 다음 줄
+np_extras.shortcut.line_play = 가사: 선택한 줄부터 재생
+np_extras.settings.spin = 레코드 회전
+np_extras.settings.spin_note = 음악이 재생되는 동안 턴테이블의 레코드를 돌립니다. 부담이 있습니다: 창을 초당 20번 다시 그리며, '홈만'은 CPU 코어의 약 {grooves}, '레코드 전체'는 약 {record}를 쓰고 후자는 회전한 아트워크를 최대 {memory}까지 메모리에 둡니다. 일시 정지 중이거나 애니메이션이 '줄이기'/'끄기'이면 돌지 않습니다.
+np_extras.spin.grooves = 홈만
+np_extras.spin.record = 레코드 전체
