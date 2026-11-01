@@ -60,7 +60,7 @@
 //! | `@module-open=N\|ID`, `@module-field=KEY:VALUE`, `@module-save` | a module's settings form (index in playback order or manifest id) |
 //! | `@module-check=N`, `@module-update=N`, `@module-enable=N:on\|off`, `@module-remove=N` (twice: confirm) | module actions |
 //! | `@card-select=3;4`, `@card-open`, `@card-style=bg:light`, `@card-save=PATH`, `@card-copy`, `@card-close` | lyrics cards (`lyrics_card.rs`) |
-//! | `@mem` | print the process's memory (`memory::usage`: footprint on macOS, private bytes on Windows, resident set on Linux) and the artwork cache's decoded size |
+//! | `@mem` | print the process's memory (`memory::usage`: footprint on macOS, private bytes on Windows, resident set on Linux) and the artwork cache's decoded size, downloads done and skipped (off screen) |
 //! | `@atlas-trim` | empty the sprite atlases of all artwork now and redraw (`ArtworkCache::trim_atlas`; it also runs on its own) |
 //! | `@bench=N[:MS]` | draw the main window N times MS (16) ms apart and print the draw times (UI CPU per frame) |
 //! | `@bench-bar=N[:MS]` | the same, marking only the player bar dirty (the cost of one bar animation frame) |
@@ -73,6 +73,7 @@
 //! | `@video=on\|off`, `@video-session=on\|off`, `@video-quality=360p\|480p\|720p`, `@video-status` | music videos: the setting (saved), Now Playing's video / artwork button (this session), the quality cap (saved), print the lookup, stream and player counters (`video.rs`) |
 //! | `@theater[=on\|off]`, `@theater-move`, `@theater-status` | theater mode: open / close (no argument toggles), a pointer movement (the controls show), print its state (`theater.rs`) |
 //! | `@titlebar-status`, `@app-menu`, `@account-menu`, `@titlebar-account=NAME\|off`, `@system-title-bar[=off]` | custom top bar: print mode / controls / window state / part positions; click the ⋯ or account button (prints the account menu's items); a fake signed-in account in the bar (debug / screenshot builds); "Use the system title bar" (saved, next launch; `titlebar.rs`) |
+//! | `@hide` | hide the app (as ⌘H; measuring it in the background) |
 //! | `@quit` | quit |
 //!
 //! Library / account / storage actions (`@like`, `@download`, `@backup`, …) are listed
@@ -709,11 +710,11 @@ impl MusicApp {
                     .into_iter()
                     .map(|(name, bytes)| format!("{name} {:.1}", mib(bytes)))
                     .collect();
-                let (art_bytes, art_images) = crate::components::artwork::ArtworkCache::global(cx)
-                    .read(cx)
-                    .stats();
+                let cache = crate::components::artwork::ArtworkCache::global(cx).read(cx);
+                let (art_bytes, art_images) = cache.stats();
+                let (downloads, skipped) = cache.fetch_counts();
                 eprintln!(
-                    "music-gpui: mem {} MiB; artwork {:.1} MiB decoded in {art_images} images",
+                    "music-gpui: mem {} MiB; artwork {:.1} MiB decoded in {art_images} images ({downloads} downloads, {skipped} skipped)",
                     figures.join(", "),
                     mib(art_bytes as u64)
                 );
@@ -1001,6 +1002,8 @@ impl MusicApp {
                 let on = on();
                 panel.update(cx, |p, cx| p.set_skip_silence(on, cx));
             }
+            // Hides the app (as ⌘H), for measuring it in the background.
+            "hide" => cx.hide(),
             "quit" => cx.quit(),
             // Library, downloads, account, storage (`library_script.rs`).
             other => {

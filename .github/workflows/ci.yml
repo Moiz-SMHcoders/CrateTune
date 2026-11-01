@@ -99,6 +99,13 @@ jobs:
         shell: bash
         run: scripts/perf-frames.sh --max-ms 30 --page-art
 
+      # The same with every image arriving 150 ms late, as over a network: the scroll
+      # outruns the downloads (those that went off screen first are skipped).
+      - name: "perf: frame-time, artwork past the budget arriving late"
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: scripts/perf-frames.sh --max-ms 30 --page-art --art-ms 150
+
       # Every Settings section and the main pages opened once (offline): a panic while
       # a page renders fails here (unit tests don't draw them).
       - name: "smoke: open every page"
