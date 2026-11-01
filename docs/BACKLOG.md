@@ -428,8 +428,6 @@ and layout](../README.md#light-mode-and-layout-round)). Left out, with the reaso
   (T3). · Size: small after T3 · Priority: low
 * *Shortcuts that follow the key position on non-Latin layouts* (Limusic). · Size: medium ·
   Priority: low
-* *An animated sidebar expand* (Expand on hover slides out at once): a width tween would
-  re-render the shell per frame for ~150 ms per hover. · Size: small · Priority: low
 * *Fonts added while the app runs*: the fonts folder is read at launch (GPUI can't drop a
   registered font, so a watcher could only add). · Size: small · Priority: low
 * *Fake liquid glass* (Deviload's WebGL refraction over a wallpaper). No shaders or
