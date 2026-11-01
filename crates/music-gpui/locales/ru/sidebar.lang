@@ -1,0 +1,32 @@
+# Sidebar items and playlists (ru).
+
+sidebar.items.title = Пункты боковой панели
+sidebar.items.note = Отметьте пункты, которые нужно показывать; перетащите строку или используйте стрелки, чтобы изменить порядок. Настройки всегда остаются внизу.
+sidebar.items.reset = Сбросить
+sidebar.items.heading = {name} (заголовок)
+sidebar.playlists.heading = Плейлисты
+sidebar.playlists.title = Плейлисты на боковой панели
+sidebar.playlists.note = Ваши плейлисты под пунктами боковой панели, как в YouTube Music. Нажмите правой кнопкой, чтобы воспроизвести плейлист или закрепить его сверху.
+sidebar.playlists.sources = Показывать
+sidebar.playlists.sources_note = Плейлисты YouTube Music видны, пока вы вошли в аккаунт (они приходят при синхронизации медиатеки).
+sidebar.playlists.youtube = YouTube Music
+sidebar.playlists.local = Созданные в {app}
+sidebar.playlists.sort = Порядок
+sidebar.playlists.sort_note = Закреплённые плейлисты идут первыми. Перетащите плейлист на боковой панели, чтобы задать свой порядок.
+sidebar.playlists.sort.recent = Недавние
+sidebar.playlists.sort.name = А–Я
+sidebar.playlists.sort.custom = Свой
+sidebar.playlists.limit = До «Показать все»
+sidebar.playlists.limit_all = Все
+sidebar.playlists.artwork = Обложки
+sidebar.playlists.artwork_note = Маленькие обложки из кэша обложек; без них у каждого плейлиста показывается первая буква.
+sidebar.playlists.pinned_count.one = {count} плейлист закреплён
+sidebar.playlists.pinned_count.few = {count} плейлиста закреплено
+sidebar.playlists.pinned_count.many = {count} плейлистов закреплено
+sidebar.playlists.pinned_count.other = {count} плейлиста закреплено
+sidebar.playlists.unpin_all = Открепить все
+sidebar.playlists.show_all = Показать все ({count})
+sidebar.playlists.show_less = Показать меньше
+sidebar.playlists.in_library = Все плейлисты в медиатеке
+sidebar.playlists.pin = Закрепить на боковой панели
+sidebar.playlists.unpin = Открепить с боковой панели

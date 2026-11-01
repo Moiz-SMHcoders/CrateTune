@@ -96,6 +96,12 @@ choice_enum! {
         /// Windows 11's Mica Alt (stronger wallpaper colour, as in tabbed windows).
         #[serde(rename = "mica-alt")]
         MicaAlt = "mica-alt" => "window.material.mica_alt",
+        /// macOS's vibrancy: the system blur with its tint and saturation, in one of
+        /// the materials of `glass_prefs::Vibrancy`.
+        Vibrant = "vibrant" => "window.material.vibrant",
+        /// Windows 11's acrylic system backdrop (as its menus and flyouts; build
+        /// 22621 and later). "Blurred" is the older acrylic of Windows 10.
+        Acrylic = "acrylic" => "window.material.acrylic",
     }
 }
 
@@ -111,18 +117,24 @@ impl WindowMaterial {
         match self {
             WindowMaterial::Off => true,
             WindowMaterial::Blur | WindowMaterial::Transparent => !cfg!(windows) || build >= 17763,
-            WindowMaterial::Mica | WindowMaterial::MicaAlt => cfg!(windows) && build >= 22621,
+            WindowMaterial::Mica | WindowMaterial::MicaAlt | WindowMaterial::Acrylic => {
+                cfg!(windows) && build >= 22621
+            }
+            WindowMaterial::Vibrant => cfg!(target_os = "macos"),
         }
     }
 
-    /// GPUI's window background for it.
+    /// GPUI's window background for it. The materials GPUI doesn't have are
+    /// drawn behind a transparent window (macOS: a vibrancy view, or the window
+    /// server's blur for a chosen strength) or replace its Mica (Windows'
+    /// acrylic backdrop); see `glass.rs`.
     pub fn appearance(self) -> gpui::WindowBackgroundAppearance {
         use gpui::WindowBackgroundAppearance as A;
         match self {
             WindowMaterial::Off => A::Opaque,
             WindowMaterial::Blur => A::Blurred,
-            WindowMaterial::Transparent => A::Transparent,
-            WindowMaterial::Mica => A::MicaBackdrop,
+            WindowMaterial::Transparent | WindowMaterial::Vibrant => A::Transparent,
+            WindowMaterial::Mica | WindowMaterial::Acrylic => A::MicaBackdrop,
             WindowMaterial::MicaAlt => A::MicaAltBackdrop,
         }
     }
@@ -386,6 +398,9 @@ pub struct EffectsConfig {
     /// The queue panel's width, px ([`QUEUE_WIDTHS`]).
     pub queue_width: f32,
     pub columns: TrackColumns,
+    /// Translucency per surface, tint, macOS blur strength and vibrancy
+    /// (`glass_prefs.rs`).
+    pub glass: super::glass_prefs::GlassConfig,
 }
 
 impl Default for EffectsConfig {
@@ -408,6 +423,7 @@ impl Default for EffectsConfig {
             sidebar_width: crate::components::sidebar::SIDEBAR_WIDTH,
             queue_width: 340.,
             columns: TrackColumns::default(),
+            glass: Default::default(),
         }
     }
 }
@@ -448,6 +464,7 @@ impl EffectsConfig {
             crate::components::sidebar::SIDEBAR_WIDTH,
         );
         self.queue_width = width(self.queue_width, QUEUE_WIDTHS, 340.);
+        self.glass.normalize();
     }
 
     /// The material drawn on this platform (`Off` when it can't be, or when the

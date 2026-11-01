@@ -1,0 +1,30 @@
+# Sidebar items and playlists (tr).
+
+sidebar.items.title = Kenar çubuğu öğeleri
+sidebar.items.note = Gösterilecek öğeleri işaretleyin; sırayı değiştirmek için bir satırı sürükleyin veya okları kullanın. Ayarlar her zaman en altta kalır.
+sidebar.items.reset = Sıfırla
+sidebar.items.heading = {name} (başlık)
+sidebar.playlists.heading = Çalma listeleri
+sidebar.playlists.title = Kenar çubuğundaki çalma listeleri
+sidebar.playlists.note = Çalma listeleriniz, YouTube Music'teki gibi kenar çubuğu öğelerinin altında. Çalmak veya en üste sabitlemek için birine sağ tıklayın.
+sidebar.playlists.sources = Göster
+sidebar.playlists.sources_note = YouTube Music çalma listeleri oturum açıkken görünür (kitaplık eşitlemesiyle gelir).
+sidebar.playlists.youtube = YouTube Music
+sidebar.playlists.local = {app} içinde oluşturulanlar
+sidebar.playlists.sort = Sıralama
+sidebar.playlists.sort_note = Sabitlenen çalma listeleri önce gelir. Kendi sıranızı oluşturmak için kenar çubuğunda bir çalma listesini sürükleyin.
+sidebar.playlists.sort.recent = Son
+sidebar.playlists.sort.name = A–Z
+sidebar.playlists.sort.custom = Özel
+sidebar.playlists.limit = "Tümünü göster" öncesi
+sidebar.playlists.limit_all = Tümü
+sidebar.playlists.artwork = Kapaklar
+sidebar.playlists.artwork_note = Görsel önbelleğinden küçük kapaklar; kapaklar olmadan her çalma listesi baş harfini gösterir.
+sidebar.playlists.pinned_count.one = {count} çalma listesi sabitlendi
+sidebar.playlists.pinned_count.other = {count} çalma listesi sabitlendi
+sidebar.playlists.unpin_all = Tüm sabitlemeleri kaldır
+sidebar.playlists.show_all = Tümünü göster ({count})
+sidebar.playlists.show_less = Daha az göster
+sidebar.playlists.in_library = Kitaplıktaki tüm çalma listeleri
+sidebar.playlists.pin = Kenar çubuğuna sabitle
+sidebar.playlists.unpin = Kenar çubuğundan kaldır

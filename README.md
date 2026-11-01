@@ -3077,6 +3077,108 @@ dark. **Not verified**: BACKLOG U23 (Windows / Linux, a live OS switch with a re
 the window-button styles elsewhere, KDE, Matugen, fonts through DirectWrite / fontconfig).
 Left out, with the reasons and numbers: [BACKLOG M6](docs/BACKLOG.md#4-missing-features-vs-archivetune).
 
+### Sidebar and translucency round
+
+| ![Sidebar with playlists (signed-in fixture account)](docs/screenshots/sidebar-playlists-full.png) | ![The icon rail: covers with tooltips](docs/screenshots/sidebar-playlists-rail.png) |
+|---|---|
+| ![Expand on hover with the playlists](docs/screenshots/sidebar-playlists-hover.png) | ![A playlist's right-click menu](docs/screenshots/sidebar-playlists-menu.png) |
+| ![Appearance → Layout: Sidebar items and Sidebar playlists](docs/screenshots/sidebar-items-editor.png) | ![A customized sidebar: fewer entries, pins, A–Z](docs/screenshots/sidebar-custom.png) |
+| ![Appearance → Window: presets, surfaces, tint](docs/screenshots/glass-settings.png) | ![Glass preset over a made-up wallpaper (offscreen render; the blur is the system's and isn't in it)](docs/screenshots/glass-preset-glass.png) |
+| ![Frosted preset over a made-up wallpaper (offscreen render)](docs/screenshots/glass-preset-frosted.png) | ![Frosted, light mode, over a made-up wallpaper (offscreen render)](docs/screenshots/glass-preset-frosted-light.png) |
+
+The user asked for "navbar options, and maybe playlists from the YouTube account on there,
+like refryt and YouTube Music do it", and "more blur options like refryt". Surveyed refryt
+(`crates/refryt/src/ui/sidebar.rs`, `blur.rs`, `theme.rs`, `settings.rs`), Zuno
+(`src/ui/components/Sidebar.tsx`, `sidebarLibrary.ts`) and YouTube Music's web sidebar;
+ported ideas in `crates/music-gpui/THIRD_PARTY.md`.
+
+| | YouTube Music (web) | refryt | Zuno | CrateTune now |
+|---|---|---|---|---|
+| Nav entries | fixed (Home, Explore, Library) | fixed (Home, Explore, Library) | fixed | any of 13 entries + the Library heading, shown / hidden and reordered (arrows or drag); Reset |
+| Playlists under the nav | library playlists, *Liked music* first, "New playlist" | library playlists with covers, "+", drag to reorder, right-click menu | library rail: filter, Recent / Name / Custom, drag in Custom | Liked, YouTube playlists (signed in), local ones; pins; Recent / A–Z / Custom (drag); 5 / 10 / 20 / all before *Show all*; covers or initials; right-click play / shuffle / next / queue / pin; "+" |
+| Collapsed sidebar | icons only, no playlists | covers only, tooltips | covers only | covers only with tooltips, same row heights as the full sidebar (no jump at the end of the slide) |
+| Transparency | – | one slider (window and cards solved to two composite levels), faint text lifted | – | window opacity 60–90 % (as before) + per surface: sidebar, top bar, player bar, queue (Auto / Solid / 90–50 %) |
+| Blur | – | on / off: macOS `CGSSetWindowBackgroundBlurRadius` (radius 30), Windows 11 acrylic, KDE / ext-background-effect | – | Blurred (system), on macOS Light / Medium / Strong radii (8 / 24 / 60) through the same call; macOS **Vibrant** materials; Windows 11 **Acrylic**; Mica / Mica Alt; KDE blur |
+| Tint, presets | – | – | – | tint (accent, frost, smoke, ice, rose, amber; 8–35 %); Subtle / Glass / Frosted |
+| Readability | – | faint text lifted | – | every surface's opacity raised until text keeps 4.5:1 (muted 3:1) over a white and a black desktop, tint included, light and dark; the settings list what was raised |
+
+* **Sidebar items** (`settings/sidebar_prefs.rs`, `sidebar_ui.rs`; `sidebar.order` /
+  `sidebar.hidden` in `settings.json`): `NavItem` has a stable key now; the stored order
+  keeps known keys, adds an entry a newer version brings at its default place and drops
+  unknown ones, so an older file gets today's sidebar. A heading with nothing under it
+  isn't drawn. The editor is a check box per entry with up / down buttons; rows can also be
+  dragged onto each other (GPUI's `on_drag` / `on_drop`, as the queue panel's).
+* **Playlists in the sidebar** (`components/sidebar_playlists.rs`): read from the library
+  database (`Library::playlists`, newest change first) on a worker thread once per library
+  revision (a sync, an edit, a recorded play) and kept as shared rows; a render filters
+  (YouTube mirrors only while signed in), sorts (`sidebar_prefs::arrange`: pins first,
+  then Recent with Liked first, A–Z numeric and accent-folded, or the custom order with new
+  playlists after it) and builds only the shown rows: the limit, or after *Show all* at
+  most 100, then one row to Library → Playlists. Covers come from the artwork cache at 28 pt
+  (inside the memory budget), else a tile with the initial. Rows have one fixed height in
+  the full sidebar, the rail and the hover panel; the cover's centre is where the nav icons
+  sit, so the slide moves nothing up or down. Right-click (here and on Library's playlist
+  cards): Open, Play, Shuffle, Play next, Add to queue (`play_library_playlist`: the
+  library's entries, or the YouTube playlist online if a mirror has none yet), Pin / Unpin.
+  Dragging a row onto another switches to the custom order. A sync now stores the
+  account's playlists last to first, so *Recent* matches YouTube Music's own order.
+* **The rail's header** shows the expand button in the logo's place on hover; it used to
+  take a row of its own, which (with rail rows 4 pt shorter than full ones) made the
+  entries jump at the end of every slide. Rows without a title now keep the title's line
+  height.
+* **Translucency** (`settings/glass_prefs.rs`, `glass_ui.rs`, `glass.rs`;
+  `effects.glass`): over a window material the root paints nothing; the content gets its
+  own layer (following the sidebar's sliding edge), and the sidebar, top bar, player bar and
+  queue panel paint their own colour at their own opacity straight over the desktop
+  (before, they were layers over the window's own colour, so none could be clearer than
+  the content). *Auto* keeps the earlier look exactly (a 35 % layer over the window: 87 %
+  at 80 %; the player bar solid; the translucent sidebar's 45 % floor). Each surface goes
+  through `theme::readable_window_alpha` with its own colours and the tint mixed in.
+  **macOS**: *Blurred* with a strength sets GPUI's background to transparent and asks the
+  window server for the radius (`CGSSetWindowBackgroundBlurRadius`, private but stable;
+  refryt, iTerm2, Alacritty use it); *Vibrant* adds an `NSVisualEffectView` with the
+  material and the app's light / dark appearance below GPUI's view (GPUI's own blur view
+  strips the material's tint and saturation, so its materials would all look alike).
+  **Windows 11**: *Acrylic* sets `DWMSBT_TRANSIENTWINDOW` right after GPUI's Mica. Each is
+  applied once per change. **Presets**: Subtle (blurred, 90 %, Auto surfaces), Glass
+  (80 %, sidebar / top bar 60 %, bar 80 %, queue 70 %, accent tint 8 %, medium blur), Frosted
+  (70 % everywhere, frost tint 15 %, strong blur).
+* **Signed-in offline fixtures** (`music-core/src/fixtures.rs`): `account/account_menu`,
+  `accounts_list`, the library tabs, `VLLM` and history are answered from
+  `tests/fixtures/innertube/authed/` (plus a new `library_playlists.json` with 13
+  playlists), library continuations end the list, so `@cookie=SAPISID=fixture` signs in and
+  syncs offline: the screenshots above are the real sign-in and sync paths.
+
+**Settings JSON** (new parts, defaults shown):
+
+```json
+"sidebar": {
+  "order": ["home", "explore", "charts", "moods", "new_releases", "recognize", "library_group",
+            "library", "history", "stats", "downloads", "local_files", "import", "together"],
+  "hidden": [],
+  "playlists": { "show": true, "youtube": true, "local": true, "liked": true, "sort": "recent",
+                 "limit": 10, "artwork": true, "pinned": [], "custom": [] }
+},
+"effects": { …, "window_material": "off", "glass": { "sidebar": null, "top_bar": null,
+  "player_bar": null, "queue": null, "tint": "off", "tint_strength": 0.15,
+  "blur": "system", "vibrancy": "sidebar" } }
+```
+
+`window_material` also takes `vibrant` (macOS) and `acrylic` (Windows 11 22H2+); a surface
+opacity is `null` (Auto) or 0.3–1; `sort`: recent | name | custom; `limit`: 5 | 10 | 20 | 0
+(all); `pinned` / `custom` hold library playlist ids or `liked`. `sidebar` is in settings
+exports, not in profiles; `effects.glass` is in profiles and theme files like the rest of
+`effects`. Scripts: `@sidebar-items=charts:off|explore:up|reset`,
+`@sidebar-playlists=show:on|youtube:off|sort:name|limit:5|artwork:off|pin:NAME|unpin:NAME|expand:on`,
+`@glass-preset=frosted`, `@surface-opacity=sidebar:0.6|auto`, `@glass-tint=ice:0.25`,
+`@glass-blur=strong`, `@glass-vibrancy=hud`.
+
+[[MEASURED]]
+
+Not built, with the reasons and numbers: [BACKLOG M12](docs/BACKLOG.md#4-missing-features-vs-archivetune)
+(a blur radius on Windows / Linux, translucent menus and Now Playing, blurred artwork behind
+pages, scroll fades, a sidebar filter). Not verified: [BACKLOG U24](docs/BACKLOG.md#2-unverified--needs-real-world-testing).
+
 ### Self-update
 
 | ![Update available](docs/screenshots/update-available.png) | ![Downloading](docs/screenshots/update-downloading.png) |

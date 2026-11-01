@@ -80,7 +80,7 @@ fn theme_name_of(path: &std::path::Path) -> String {
 fn section_title(key: &str) -> String {
     use super::SectionId;
     let section = match key {
-        "appearance" => Some(SectionId::Appearance),
+        "appearance" | "sidebar" => Some(SectionId::Appearance),
         "playback" | "audio" | "volume" => Some(SectionId::Playback),
         "equalizer" => Some(SectionId::Equalizer),
         "lyrics" => Some(SectionId::Lyrics),

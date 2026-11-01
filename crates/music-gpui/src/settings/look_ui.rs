@@ -655,6 +655,7 @@ pub(super) fn render_layout(
                     sidebar,
                     cx,
                 ))
+                .child(super::sidebar_ui::render(panel, cx))
                 .child(row_at(
                     "appearance.layout.columns",
                     t!("settings.layout.columns"),
@@ -719,6 +720,11 @@ pub(super) fn render_window(
                 .on_click(cx.listener(move |this, _, _, cx| this.set_window_opacity(value, cx)))
         }));
     let used = crate::theme::window_alpha();
+    let sidebar_only = shown == WindowMaterial::Off
+        && fx.translucent_sidebar
+        && crate::look_state::sidebar_material().is_some()
+        && !crate::effects::os_reduce_transparency();
+    let glass = super::glass_ui::render(panel, shown, sidebar_only, cx);
     let raised = shown != WindowMaterial::Off && used > fx.window_opacity + 0.005;
     let platform_note = if cfg!(target_os = "macos") {
         t!("settings.window.note_macos")
@@ -799,6 +805,7 @@ pub(super) fn render_window(
                 ))
             })
         })
+        .child(glass)
         .when(crate::effects::os_reduce_transparency(), |this| {
             this.child(note(t!("settings.window.reduced_by_os"), cx))
         })

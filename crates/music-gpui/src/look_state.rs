@@ -14,6 +14,7 @@ use crate::anim::{Spec, Tween, ease_out_cubic};
 use crate::app::MusicApp;
 use crate::components::app_backdrop::AppBackdrop;
 use crate::settings::Settings;
+use crate::settings::glass_prefs::Surface;
 use crate::settings::look_prefs::WindowMaterial;
 use crate::theme::ThemeChoice;
 
@@ -31,6 +32,10 @@ pub struct LookState {
     /// What `set_background_appearance` was last told (translucent sidebar,
     /// window material).
     pub background: Option<gpui::WindowBackgroundAppearance>,
+    /// The platform's extra material (macOS blur radius / vibrancy, Windows
+    /// acrylic; `glass.rs`) and the vibrancy view the app added.
+    pub native: crate::glass::NativeMaterial,
+    pub vibrancy_view: Option<crate::glass::VibrancyView>,
     /// The app icon shown (choice, the custom image's generation).
     pub icon: Option<(crate::app_icon::AppIconChoice, u32)>,
     last_playing: bool,
@@ -43,6 +48,8 @@ impl Default for LookState {
             backdrop: None,
             page_in: Tween::new(1.),
             background: None,
+            native: crate::glass::NativeMaterial::None,
+            vibrancy_view: None,
             icon: None,
             last_playing: false,
             polls: 0,
@@ -126,20 +133,30 @@ impl MusicApp {
 
     /// Tells the window what's behind it (once per change).
     pub(crate) fn sync_window_background(&mut self, window: &mut Window, cx: &App) {
-        let material = self.settings.read(cx).settings().effects.material();
-        let want = if material != WindowMaterial::Off {
-            material.appearance()
+        let effects = self.settings.read(cx).settings().effects;
+        let material = effects.material();
+        let (want, native) = if material != WindowMaterial::Off {
+            crate::glass::window_background(material, &effects.glass, !crate::theme::is_light())
         } else if self.translucent_sidebar(cx)
             && let Some(m) = sidebar_material()
         {
-            m
+            (m, crate::glass::NativeMaterial::None)
         } else {
-            gpui::WindowBackgroundAppearance::Opaque
+            (
+                gpui::WindowBackgroundAppearance::Opaque,
+                crate::glass::NativeMaterial::None,
+            )
         };
-        if self.look.background != Some(want) {
+        let changed = self.look.background != Some(want);
+        if changed {
             self.look.background = Some(want);
             window.set_background_appearance(want);
         }
+        // After GPUI's own (Windows' acrylic replaces the Mica just set).
+        if changed && native == crate::glass::NativeMaterial::Acrylic {
+            self.look.native = crate::glass::NativeMaterial::None;
+        }
+        self.sync_native_material(native, window);
         // The app icon, once per change (the first time only if it isn't the default).
         let panel = self.settings.read(cx);
         let icon = (
@@ -155,26 +172,15 @@ impl MusicApp {
         }
     }
 
-    /// The sidebar's / queue panel's surface: translucent over the backdrop or
-    /// the desktop, the theme's colour otherwise.
-    pub(crate) fn chrome_bg(&self, cx: &App) -> Hsla {
+    /// The sidebar's / top bar's / queue panel's surface: its own opacity over a
+    /// window material or the translucent sidebar's blur (`glass.rs`: readable
+    /// on any desktop), translucent over the artwork backdrop, the theme's colour
+    /// otherwise.
+    pub(crate) fn chrome_bg(&self, surface: Surface, cx: &App) -> Hsla {
         use gpui_component::ActiveTheme as _;
         let base = cx.theme().sidebar;
-        if self.window_see_through(cx).is_some() {
-            // Over the window's own translucent background: a light layer, so the
-            // sidebar keeps its colour and stays a little more solid.
-            base.opacity(0.35)
-        } else if self.translucent_sidebar(cx) {
-            // Over the desktop blur: raised from 45 % until the sidebar's text keeps
-            // its contrast on a light desktop (as the see-through window does).
-            let theme = cx.theme();
-            base.opacity(crate::theme::readable_window_alpha(
-                0.45,
-                base,
-                theme.sidebar_foreground,
-                theme.muted_foreground,
-                false,
-            ))
+        if let Some(glass) = self.glass(cx) {
+            glass.surface(surface)
         } else if self.backdrop_shown(cx) {
             base.opacity(0.6)
         } else {

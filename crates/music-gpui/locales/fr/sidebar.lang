@@ -1,0 +1,30 @@
+# Sidebar items and playlists (fr).
+
+sidebar.items.title = Éléments de la barre latérale
+sidebar.items.note = Cochez les éléments à afficher ; faites glisser une ligne ou utilisez les flèches pour changer l’ordre. Réglages reste toujours en bas.
+sidebar.items.reset = Réinitialiser
+sidebar.items.heading = {name} (titre)
+sidebar.playlists.heading = Playlists
+sidebar.playlists.title = Playlists dans la barre latérale
+sidebar.playlists.note = Vos playlists sous les éléments de la barre latérale, comme sur YouTube Music. Clic droit sur l’une d’elles pour la lire ou l’épingler en haut.
+sidebar.playlists.sources = Afficher
+sidebar.playlists.sources_note = Les playlists YouTube Music s’affichent tant que vous êtes connecté (elles arrivent avec la synchronisation de la bibliothèque).
+sidebar.playlists.youtube = YouTube Music
+sidebar.playlists.local = Créées dans {app}
+sidebar.playlists.sort = Ordre
+sidebar.playlists.sort_note = Les playlists épinglées viennent en premier. Faites glisser une playlist dans la barre latérale pour choisir votre propre ordre.
+sidebar.playlists.sort.recent = Récentes
+sidebar.playlists.sort.name = A–Z
+sidebar.playlists.sort.custom = Personnalisé
+sidebar.playlists.limit = Avant « Tout afficher »
+sidebar.playlists.limit_all = Toutes
+sidebar.playlists.artwork = Pochettes
+sidebar.playlists.artwork_note = Petites pochettes issues du cache d’images ; sans elles, chaque playlist affiche son initiale.
+sidebar.playlists.pinned_count.one = {count} playlist épinglée
+sidebar.playlists.pinned_count.other = {count} playlists épinglées
+sidebar.playlists.unpin_all = Tout désépingler
+sidebar.playlists.show_all = Tout afficher ({count})
+sidebar.playlists.show_less = Afficher moins
+sidebar.playlists.in_library = Toutes les playlists dans la Bibliothèque
+sidebar.playlists.pin = Épingler dans la barre latérale
+sidebar.playlists.unpin = Désépingler de la barre latérale

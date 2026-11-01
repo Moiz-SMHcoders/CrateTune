@@ -269,6 +269,20 @@ phone (host ends the session, guest leaves, kicked). A relay "mailbox" so a devi
 off can still be continued from is not built (both apps must run). · Size: medium ·
 Priority: medium
 
+**U24. Sidebar and translucency round (`feat/sidebar-plus`) on Windows, Linux and real accounts**
+Checked on macOS with offline fixtures (a signed-in fixture account whose sync brings 13
+playlists), unit tests and offscreen renders. Not yet: (1) the sidebar's playlists with a
+real YouTube Music account (the sync's new last-to-first order and *Recent* matching YouTube
+Music's own order; a library with hundreds of playlists, past the 100-row cap); (2) Windows
+11's **Acrylic** (`DWMSBT_TRANSIENTWINDOW` set right after GPUI's Mica) and the tint over
+acrylic / Mica on a real desktop, and how DWM greys the backdrop while the window is inactive
+(refryt re-sends `WM_NCACTIVATE` for that; not done here); (3) Linux: per-surface opacities
+over KDE's blur and over a plain compositor; (4) macOS: the blur strengths by eye (the window
+server's `CGSSetWindowBackgroundBlurRadius` returned success on macOS 26.6; the real desktop
+wasn't captured, by policy) and the **Vibrant** materials in light and dark mode, on an
+older macOS (13–15) too; (5) the drag-and-drop of sidebar entries and playlists with a
+trackpad (the scripts and the up / down buttons were used). · Size: small · Priority: medium
+
 ## 3. Platform & distribution
 
 **P1. Builds are unsigned**
@@ -428,8 +442,6 @@ and layout](../README.md#light-mode-and-layout-round)). Left out, with the reaso
   (T3). · Size: small after T3 · Priority: low
 * *Shortcuts that follow the key position on non-Latin layouts* (Limusic). · Size: medium ·
   Priority: low
-* *An animated sidebar expand* (Expand on hover slides out at once): a width tween would
-  re-render the shell per frame for ~150 ms per hover. · Size: small · Priority: low
 * *Fonts added while the app runs*: the fonts folder is read at launch (GPUI can't drop a
   registered font, so a watcher could only add). · Size: small · Priority: low
 * *Fake liquid glass* (Deviload's WebGL refraction over a wallpaper). No shaders or
@@ -444,6 +456,34 @@ stays readable on a light desktop (45 % → about 74 %). Still to do: sample liv
 page transitions / hover off and Animations Reduced / Off (that run lost its display
 frames), and check Now Playing / dialogs covering it. Details: `look_state.rs`, [README:
 App-wide look & motion](../README.md#app-wide-look--motion). · Size: small · Priority: low
+
+**M12. Translucency ideas not built (sidebar-plus round)**
+Compared with refryt (one transparency slider, card fills solved to composite at a second
+level, a blur switch, scroll-edge fades) and macOS / Windows materials; what was built is in
+[README: Sidebar and translucency](../README.md#sidebar-and-translucency-round). Left out:
+* *A blur radius on Windows and Linux.* DWM's acrylic / Mica and KWin's blur have fixed
+  radii and no API to change them; only macOS's window server takes one. · Won't do
+* *Translucent menus, popovers and dialogs.* They are drawn inside the window, over the
+  page: with no backdrop filter in GPUI (T3) the page's text would show through them sharp,
+  and no opacity keeps that readable. · Size: small after T3 · Priority: low
+* *A translucent Now Playing.* Its background is the artwork (a CPU-blurred image or a
+  gradient); letting the desktop through puts lyrics over two unrelated pictures. ·
+  Won't do
+* *Blurred artwork behind pages* (refryt-style frosted cards over a picture). Needs a CPU
+  blur per window size and track: at 1440 × 900 pt on a 2× display one RGBA buffer is
+  2880 × 1800 × 4 = 20.7 MB, a 40 px blur of it ~60–120 ms on one core per track change or
+  resize, held while shown; the GPU path needs backdrop filters (T3). · Size: large ·
+  Priority: low
+* *Blur strength on "Vibrant".* `NSVisualEffectView`'s materials have a fixed blur; the
+  strength applies to "Blurred". · Won't do
+* *Scroll-edge fades* (refryt, with transparency). Need alpha masks (T3). · Size: small
+  after T3 · Priority: low
+* *A sidebar filter field and albums in the sidebar* (Zuno). The section is short (pins,
+  a limit, *Show all*, Library for the rest); a filter needs a text input in the rail too.
+  · Size: small · Priority: low
+* *Virtualized sidebar rows.* The section draws at most 100 rows (the rest is one row that
+  opens Library → Playlists) inside the sidebar's one scroll area; a uniform list there
+  would need the entries above it in the same list. · Size: small · Priority: low
 
 **M8. Sync settings and library between devices (Automerge)**
 After the iroh device hand-off: keep settings, likes, playlists, speed-dial pins and queue

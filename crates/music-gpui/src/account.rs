@@ -1196,7 +1196,10 @@ fn sync_library(
                 })
                 .collect();
             let total = playlists.len();
-            for (n, p) in playlists.into_iter().enumerate() {
+            // Last to first: YouTube lists the most recently active first, and each
+            // mirror's `updated_at` is when it was synced, so the sidebar's "Recent"
+            // order (newest first) ends up as YouTube Music's own.
+            for (n, p) in playlists.into_iter().rev().enumerate() {
                 if report.auth_failed {
                     return report;
                 }

@@ -1,0 +1,30 @@
+# Sidebar items and playlists (es).
+
+sidebar.items.title = Elementos de la barra lateral
+sidebar.items.note = Marca los elementos que quieres ver; arrastra una fila o usa las flechas para cambiar el orden. Ajustes siempre queda abajo.
+sidebar.items.reset = Restablecer
+sidebar.items.heading = {name} (encabezado)
+sidebar.playlists.heading = Playlists
+sidebar.playlists.title = Playlists en la barra lateral
+sidebar.playlists.note = Tus playlists bajo los elementos de la barra lateral, como en YouTube Music. Haz clic derecho en una para reproducirla o fijarla arriba.
+sidebar.playlists.sources = Mostrar
+sidebar.playlists.sources_note = Las playlists de YouTube Music aparecen mientras tienes la sesión iniciada (llegan con la sincronización de la biblioteca).
+sidebar.playlists.youtube = YouTube Music
+sidebar.playlists.local = Creadas en {app}
+sidebar.playlists.sort = Orden
+sidebar.playlists.sort_note = Las playlists fijadas van primero. Arrastra una playlist en la barra lateral para ponerlas en tu propio orden.
+sidebar.playlists.sort.recent = Recientes
+sidebar.playlists.sort.name = A–Z
+sidebar.playlists.sort.custom = Personalizado
+sidebar.playlists.limit = Antes de «Mostrar todo»
+sidebar.playlists.limit_all = Todas
+sidebar.playlists.artwork = Portadas
+sidebar.playlists.artwork_note = Portadas pequeñas de la caché de carátulas; sin ellas, cada playlist muestra su inicial.
+sidebar.playlists.pinned_count.one = {count} playlist fijada
+sidebar.playlists.pinned_count.other = {count} playlists fijadas
+sidebar.playlists.unpin_all = Desfijar todas
+sidebar.playlists.show_all = Mostrar todo ({count})
+sidebar.playlists.show_less = Mostrar menos
+sidebar.playlists.in_library = Todas las playlists en la Biblioteca
+sidebar.playlists.pin = Fijar en la barra lateral
+sidebar.playlists.unpin = Quitar de la barra lateral

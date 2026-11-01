@@ -1,11 +1,15 @@
 //! Left navigation: app title, the browse / library entries from
-//! [`crate::pages::NAV`] (without Home when the custom top bar shows it), and
-//! Settings at the bottom.
+//! [`crate::pages::NAV`] in the order and selection of Appearance → Layout →
+//! Sidebar items (`settings/sidebar_prefs.rs`), the library's playlists under them
+//! (`sidebar_playlists.rs`), and Settings at the bottom.
 //!
 //! Appearance → Layout → Sidebar: **Full** (icons and titles; drag its right
 //! edge for the width, 176–360 px), **Icons only** (a 68 px rail with tooltips)
 //! or **Expand on hover** (the rail; hovering it slides the full sidebar out over
-//! the page). A button in the sidebar's header collapses it to the rail and back.
+//! the page). A button in the sidebar's header collapses it to the rail and back
+//! (in the rail it shows in the logo's place on hover). Rows, headings and the
+//! header are as tall in the rail as in the full sidebar, so nothing moves up or
+//! down when the slide hands over to the rail.
 //! Switching between the full sidebar and the rail, and the hover panel, slide
 //! with an eased width (`anim::Tween`): frames only while it moves (~200 ms, per
 //! Settings → Animations), none at rest. The queue panel's left edge drags the
@@ -22,12 +26,15 @@ use gpui_component::{ActiveTheme as _, Icon, Sizable as _, h_flex, v_flex};
 
 use crate::anim::{Frame, Spec, Tween, ease_out_cubic};
 use crate::app::MusicApp;
+use crate::components::sidebar_playlists::{SectionInput, SidebarPlaylistsState};
 use crate::i18n::{Key, text};
 use crate::icons::Lucide;
-use crate::pages::{NAV, NavItem};
+use crate::pages::NavItem;
 use crate::router::Route;
 use crate::settings::SectionId;
+use crate::settings::glass_prefs::Surface;
 use crate::settings::look_prefs::{QUEUE_WIDTHS, SIDEBAR_WIDTHS, SidebarMode};
+use crate::settings::sidebar_prefs::SidebarConfig;
 use crate::theme::AppColors;
 
 /// The classic (default) width of the full sidebar.
@@ -66,6 +73,11 @@ pub struct Panels {
     /// panel's width over the page; created at the first render.
     column: Option<Tween<f32>>,
     overlay: Option<Tween<f32>>,
+    /// The playlists section's rows and "Show all".
+    pub(crate) playlists: SidebarPlaylistsState,
+    /// A slide started and the root was told (it lays the content's layer out
+    /// along the sliding edge over a window material).
+    slide_told: bool,
 }
 
 impl Panels {
@@ -76,6 +88,12 @@ impl Panels {
     fn expanded(&self) -> bool {
         self.hover_rail || self.hover_panel
     }
+}
+
+/// What one render of the sidebar shows (read from the settings once).
+struct SidebarView {
+    items: SidebarConfig,
+    playlists: SectionInput,
 }
 
 /// The width a drag from `from` (x) with the panel `start` wide to `x` gives
@@ -96,6 +114,11 @@ pub fn dragged_width(edge: PanelEdge, from: f32, start: f32, x: f32) -> f32 {
 impl MusicApp {
     fn sidebar_mode(&self, cx: &App) -> SidebarMode {
         self.settings.read(cx).settings().effects.sidebar
+    }
+
+    /// The sidebar column's width tween (sliding between full and rail).
+    pub(crate) fn panels_column(&self) -> Option<&Tween<f32>> {
+        self.panels.column.as_ref()
     }
 
     /// The full sidebar's width (while dragging: the dragged one).
@@ -217,6 +240,16 @@ impl MusicApp {
         let mode = self.sidebar_mode(cx);
         let full = self.full_sidebar_width(cx);
         let now = frame.now;
+        let view = {
+            let sidebar = &self.settings.read(cx).settings().sidebar;
+            SidebarView {
+                items: sidebar.clone(),
+                playlists: SectionInput {
+                    config: sidebar.playlists.clone(),
+                    signed_in: self.store.account.is_signed_in(),
+                },
+            }
+        };
 
         // The column in the layout slides between the full width and the rail.
         let target = if mode == SidebarMode::Full {
@@ -239,6 +272,13 @@ impl MusicApp {
         }
         let width = frame.get(column);
         let sliding = (width - target).abs() > 0.5;
+        // Once per slide: the root re-renders and follows the slide's frames itself.
+        if sliding != self.panels.slide_told {
+            self.panels.slide_told = sliding;
+            if sliding {
+                cx.notify();
+            }
+        }
         let shown = if sliding {
             // On its way: the full sidebar, clipped, its titles fading.
             div()
@@ -246,7 +286,7 @@ impl MusicApp {
                 .h_full()
                 .w(px(width))
                 .overflow_hidden()
-                .child(self.sidebar_panel(false, full, labels(width, full), "", cx))
+                .child(self.sidebar_panel(&view, false, full, labels(width, full), "", cx))
                 .into_any_element()
         } else if mode == SidebarMode::Full {
             let handle = self.panel_resize_handle(PanelEdge::Sidebar, cx);
@@ -254,14 +294,14 @@ impl MusicApp {
                 .relative()
                 .flex_none()
                 .h_full()
-                .child(self.sidebar_panel(false, full, 1., "", cx))
+                .child(self.sidebar_panel(&view, false, full, 1., "", cx))
                 .child(handle)
                 .into_any_element()
         } else {
             div()
                 .flex_none()
                 .h_full()
-                .child(self.sidebar_panel(true, RAIL_WIDTH, 0., "", cx))
+                .child(self.sidebar_panel(&view, true, RAIL_WIDTH, 0., "", cx))
                 .into_any_element()
         };
         if mode != SidebarMode::Hover {
@@ -283,7 +323,7 @@ impl MusicApp {
         let over = frame.get(overlay);
         let panel = (over > RAIL_WIDTH + 0.5).then(|| {
             let bg = cx.theme().sidebar;
-            let panel = self.sidebar_panel(false, full, labels(over, full), "hover-", cx);
+            let panel = self.sidebar_panel(&view, false, full, labels(over, full), "hover-", cx);
             // Painted after the page, over it.
             deferred(
                 div()
@@ -337,6 +377,7 @@ impl MusicApp {
     /// icons towards where the rail shows them.
     fn sidebar_panel(
         &mut self,
+        view: &SidebarView,
         rail: bool,
         width: f32,
         labels: f32,
@@ -347,7 +388,7 @@ impl MusicApp {
         let nudge = if rail { 0. } else { RAIL_NUDGE * (1. - labels) };
         let current = self.router.route().clone();
         let colors = AppColors::get(cx);
-        let chrome = self.chrome_bg(cx);
+        let chrome = self.chrome_bg(Surface::Sidebar, cx);
         let theme = cx.theme();
         let (bg, border, muted, fg, hover, active_bg) = (
             chrome,
@@ -398,7 +439,9 @@ impl MusicApp {
                         )
                     })
                     .when(rail, |this| {
-                        this.tooltip(move |window, cx| {
+                        // As tall as a row with its title, so the rows don't move
+                        // when the sliding sidebar turns into the rail.
+                        this.child(strut()).tooltip(move |window, cx| {
                             gpui_component::tooltip::Tooltip::new(text(title)).build(window, cx)
                         })
                     })
@@ -434,13 +477,34 @@ impl MusicApp {
         };
 
         // Home stays in the sidebar too, also with the custom top bar's Home button.
+        // A heading shows only when an entry follows it before the next one.
+        let entries: Vec<&NavItem> = view
+            .items
+            .entries()
+            .filter(|(_, shown)| *shown)
+            .map(|(item, _)| item)
+            .collect();
         let mut list = v_flex().gap_0p5();
-        for (i, item) in NAV.iter().enumerate() {
+        for (i, item) in entries.iter().enumerate() {
             match item {
-                NavItem::Group(label) => list = list.child(group_label(*label)),
-                NavItem::Page { title, icon, route } => {
+                NavItem::Group { title, .. } => {
+                    let heads_something = entries[i + 1..]
+                        .iter()
+                        .take_while(|next| matches!(next, NavItem::Page { .. }))
+                        .next()
+                        .is_some();
+                    if heads_something {
+                        list = list.child(group_label(*title));
+                    }
+                }
+                NavItem::Page {
+                    key,
+                    title,
+                    icon,
+                    route,
+                } => {
                     list = list.child(entry(
-                        SharedString::from(format!("{prefix}nav-{i}")),
+                        SharedString::from(format!("{prefix}nav-{key}")),
                         *icon,
                         *title,
                         route(),
@@ -448,6 +512,36 @@ impl MusicApp {
                     ))
                 }
             }
+        }
+        // The library's playlists, under a heading like the groups' (its "+" sits
+        // over the heading's box, so the box is as tall in the rail).
+        let playlists =
+            self.render_sidebar_playlists(&view.playlists, rail, labels, nudge, prefix, cx);
+        if let Some(playlists) = playlists {
+            let new_playlist = (!rail).then(|| {
+                div()
+                    .absolute()
+                    .right_1()
+                    .bottom(px(2.))
+                    .when(labels < 1., |d| d.opacity(labels))
+                    .child(
+                        Button::new(SharedString::from(format!("{prefix}sidebar-new-playlist")))
+                            .ghost()
+                            .xsmall()
+                            .icon(Icon::new(Lucide::Plus))
+                            .tooltip(t!("library.new_playlist"))
+                            .on_click(cx.listener(|this, _, window, cx| {
+                                this.add_tracks_to_playlist(Vec::new(), window, cx)
+                            })),
+                    )
+            });
+            list = list
+                .child(
+                    group_label(k!("sidebar.playlists.heading"))
+                        .id(SharedString::from(format!("{prefix}sidebar-pl-heading")))
+                        .children(new_playlist),
+                )
+                .child(playlists);
         }
 
         v_flex()
@@ -465,7 +559,37 @@ impl MusicApp {
                     .pb_2()
                     .gap_2()
                     .when(rail, |this| this.px_0().justify_center())
-                    .child(crate::logo::logo(26.))
+                    .map(|this| {
+                        if rail && mode == SidebarMode::Rail {
+                            // The rail's expand button takes the logo's place on hover
+                            // (a row of its own would push the entries down from where
+                            // the full sidebar has them).
+                            this.child(
+                                div()
+                                    .relative()
+                                    .group("sidebar-rail-head")
+                                    .child(
+                                        div()
+                                            .group_hover("sidebar-rail-head", |s| s.opacity(0.))
+                                            .child(crate::logo::logo(26.)),
+                                    )
+                                    .child(
+                                        h_flex()
+                                            .absolute()
+                                            .inset_0()
+                                            .justify_center()
+                                            .opacity(0.)
+                                            .group_hover("sidebar-rail-head", |s| s.opacity(1.))
+                                            .child(self.sidebar_toggle(mode, prefix, 1., cx)),
+                                    ),
+                            )
+                            .child(strut().text_lg())
+                        } else if rail {
+                            this.child(crate::logo::logo(26.)).child(strut().text_lg())
+                        } else {
+                            this.child(crate::logo::logo(26.))
+                        }
+                    })
                     .when(!rail, |this| {
                         this.child(
                             div()
@@ -480,14 +604,6 @@ impl MusicApp {
                         .child(self.sidebar_toggle(mode, prefix, labels, cx))
                     }),
             )
-            .when(rail && mode == SidebarMode::Rail, |this| {
-                this.child(
-                    h_flex()
-                        .justify_center()
-                        .pb_2()
-                        .child(self.sidebar_toggle(mode, prefix, 1., cx)),
-                )
-            })
             .child(
                 div()
                     .id(SharedString::from(format!("{prefix}sidebar-scroll")))
@@ -550,6 +666,12 @@ impl MusicApp {
                     .on_click(cx.listener(move |this, _, _, cx| this.set_sidebar(next, cx))),
             )
     }
+}
+
+/// An empty, zero-width line of text: gives a row without its title (the rail)
+/// the title's line height.
+fn strut() -> Div {
+    div().w_0().overflow_hidden().child("\u{200B}")
 }
 
 /// How visible the titles are at `width` (0 at the rail, 1 at `full`).

@@ -328,7 +328,8 @@ impl Render for PlayerBar {
         let mut frame = Frame::new();
         let now = frame.now;
         let theme = cx.theme().clone();
-        let surface = theme.secondary;
+        // Translucent over a window material (`glass.rs`).
+        let surface = read_app(cx, |app, cx| app.player_bar_bg(cx)).unwrap_or(theme.secondary);
         let accent = AppColors::get(cx).accent;
         let Some(state) = read_app(cx, |app, cx| {
             let config = app.settings.read(cx).settings().player_bar;

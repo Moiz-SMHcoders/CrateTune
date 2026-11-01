@@ -4,7 +4,7 @@
 //! language), plus English keywords and synonyms that are always searched.
 //!
 //! Each entry's `anchor` is the id its row registers (`row_at`, `group_at`,
-//! `field_at`, `slider_row_at` or `.anchor(…)`, see `reveal.rs`); picking a
+//! `field_at`, `slider_row_at`, `stack_at` or `.anchor(…)`, see `reveal.rs`); picking a
 //! result opens `section` and scrolls to that row. Ids are dotted paths: when
 //! a row isn't on screen (it only shows with some option on), the reveal
 //! falls back to the nearest registered parent (`appearance.bar.gradient_direction`
@@ -446,6 +446,68 @@ pub const ENTRIES: &[Entry] = &[
         "alpha"
     ),
     entry!(
+        "appearance.window.presets",
+        Appearance,
+        "settings.appearance.window_group",
+        "glass.presets",
+        "glass.presets_note",
+        "glass",
+        "frosted",
+        "blur",
+        "transparency",
+        "translucent"
+    ),
+    entry!(
+        "appearance.window.blur",
+        Appearance,
+        "settings.appearance.window_group",
+        "glass.blur",
+        "glass.blur_note",
+        "blur",
+        "radius",
+        "strength",
+        "frosted"
+    ),
+    entry!(
+        "appearance.window.vibrancy",
+        Appearance,
+        "settings.appearance.window_group",
+        "glass.vibrancy",
+        "glass.vibrancy_note",
+        "vibrancy",
+        "vibrant",
+        "material",
+        "hud",
+        "glass"
+    ),
+    entry!(
+        "appearance.window.surfaces",
+        Appearance,
+        "settings.appearance.window_group",
+        "glass.surfaces",
+        "glass.surfaces_note",
+        "transparency",
+        "opacity",
+        "translucent",
+        "sidebar",
+        "queue",
+        "player",
+        "bar",
+        "glass"
+    ),
+    entry!(
+        "appearance.window.tint",
+        Appearance,
+        "settings.appearance.window_group",
+        "glass.tint",
+        "glass.tint_note",
+        "tint",
+        "colour",
+        "color",
+        "glass",
+        "frost"
+    ),
+    entry!(
         "appearance.window.app_icon",
         Appearance,
         "settings.appearance.window_group",
@@ -592,6 +654,36 @@ pub const ENTRIES: &[Entry] = &[
         "icons",
         "width",
         "resize"
+    ),
+    entry!(
+        "appearance.layout.sidebar_items",
+        Appearance,
+        "settings.layout.group",
+        "sidebar.items.title",
+        "sidebar.items.note",
+        "sidebar",
+        "navbar",
+        "navigation",
+        "menu",
+        "entries",
+        "order",
+        "reorder",
+        "hide",
+        "customize"
+    ),
+    entry!(
+        "appearance.layout.sidebar_playlists",
+        Appearance,
+        "settings.layout.group",
+        "sidebar.playlists.title",
+        "sidebar.playlists.note",
+        "sidebar",
+        "navbar",
+        "playlists",
+        "pin",
+        "pinned",
+        "liked",
+        "library"
     ),
     entry!(
         "appearance.layout.columns",
@@ -2466,6 +2558,7 @@ mod tests {
             "group_at(",
             "field_at(",
             "slider_row_at(",
+            "stack_at(",
             ".anchor(",
         ];
         let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/settings");

@@ -1,0 +1,30 @@
+# Sidebar items and playlists (hi).
+
+sidebar.items.title = साइडबार के आइटम
+sidebar.items.note = जो आइटम दिखाने हैं उन्हें चुनें; क्रम बदलने के लिए किसी पंक्ति को खींचें या तीरों का उपयोग करें। सेटिंग्स हमेशा नीचे रहती है।
+sidebar.items.reset = रीसेट करें
+sidebar.items.heading = {name} (शीर्षक)
+sidebar.playlists.heading = प्लेलिस्ट
+sidebar.playlists.title = साइडबार में प्लेलिस्ट
+sidebar.playlists.note = साइडबार के आइटम के नीचे आपकी प्लेलिस्ट, YouTube Music की तरह। चलाने या ऊपर पिन करने के लिए किसी पर राइट-क्लिक करें।
+sidebar.playlists.sources = दिखाएँ
+sidebar.playlists.sources_note = YouTube Music की प्लेलिस्ट तब दिखती हैं जब आप साइन इन हों (वे लाइब्रेरी के सिंक के साथ आती हैं)।
+sidebar.playlists.youtube = YouTube Music
+sidebar.playlists.local = {app} में बनाई गई
+sidebar.playlists.sort = क्रम
+sidebar.playlists.sort_note = पिन की गई प्लेलिस्ट सबसे पहले आती हैं। अपना क्रम बनाने के लिए साइडबार में किसी प्लेलिस्ट को खींचें।
+sidebar.playlists.sort.recent = हाल की
+sidebar.playlists.sort.name = A–Z
+sidebar.playlists.sort.custom = कस्टम
+sidebar.playlists.limit = "सभी दिखाएँ" से पहले
+sidebar.playlists.limit_all = सभी
+sidebar.playlists.artwork = कवर
+sidebar.playlists.artwork_note = आर्टवर्क कैश से छोटे कवर; उनके बिना हर प्लेलिस्ट अपना पहला अक्षर दिखाती है।
+sidebar.playlists.pinned_count.one = {count} प्लेलिस्ट पिन की गई
+sidebar.playlists.pinned_count.other = {count} प्लेलिस्ट पिन की गईं
+sidebar.playlists.unpin_all = सभी अनपिन करें
+sidebar.playlists.show_all = सभी दिखाएँ ({count})
+sidebar.playlists.show_less = कम दिखाएँ
+sidebar.playlists.in_library = लाइब्रेरी में सभी प्लेलिस्ट
+sidebar.playlists.pin = साइडबार में पिन करें
+sidebar.playlists.unpin = साइडबार से अनपिन करें

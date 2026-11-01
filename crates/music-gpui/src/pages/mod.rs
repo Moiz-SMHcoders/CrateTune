@@ -78,49 +78,82 @@ impl PageView {
     }
 }
 
-/// Sidebar entries, in order.
+/// Sidebar entries, in their default order (Appearance → Layout → Sidebar items
+/// shows, hides and reorders them by `key`, `settings/sidebar_prefs.rs`).
 pub enum NavItem {
-    Group(Key),
+    /// A heading over the entries after it.
+    Group { key: &'static str, title: Key },
     Page {
+        /// Stable, untranslated name (`settings.json`, `@sidebar-items`).
+        key: &'static str,
         title: Key,
         icon: Lucide,
         route: fn() -> Route,
     },
 }
 
+impl NavItem {
+    pub fn key(&self) -> &'static str {
+        match self {
+            NavItem::Group { key, .. } | NavItem::Page { key, .. } => key,
+        }
+    }
+
+    pub fn title(&self) -> Key {
+        match self {
+            NavItem::Group { title, .. } | NavItem::Page { title, .. } => *title,
+        }
+    }
+
+    /// The entry called `key`.
+    pub fn find(key: &str) -> Option<&'static NavItem> {
+        NAV.iter().find(|item| item.key() == key)
+    }
+}
+
 pub const NAV: &[NavItem] = &[
     NavItem::Page {
+        key: "home",
         title: k!("nav.home"),
         icon: Lucide::House,
         route: || Route::Home,
     },
     NavItem::Page {
+        key: "explore",
         title: k!("nav.explore"),
         icon: Lucide::Compass,
         route: || Route::Explore,
     },
     NavItem::Page {
+        key: "charts",
         title: k!("nav.charts"),
         icon: Lucide::ChartNoAxesColumn,
         route: || Route::Charts,
     },
     NavItem::Page {
+        key: "moods",
         title: k!("nav.moods"),
         icon: Lucide::Shapes,
         route: || Route::MoodsAndGenres,
     },
     NavItem::Page {
+        key: "new_releases",
         title: k!("nav.new_releases"),
         icon: Lucide::Sparkles,
         route: || Route::NewReleases,
     },
     NavItem::Page {
+        key: "recognize",
         title: k!("nav.recognize"),
         icon: Lucide::AudioWaveform,
         route: || Route::Recognition,
     },
-    NavItem::Group(k!("nav.library_group")),
+    NavItem::Group {
+        key: "library_group",
+        title: k!("nav.library_group"),
+    },
     NavItem::Page {
+        key: "library",
         title: k!("nav.library"),
         icon: Lucide::Library,
         route: || Route::Library {
@@ -128,31 +161,37 @@ pub const NAV: &[NavItem] = &[
         },
     },
     NavItem::Page {
+        key: "history",
         title: k!("nav.history"),
         icon: Lucide::Clock,
         route: || Route::History,
     },
     NavItem::Page {
+        key: "stats",
         title: k!("nav.stats"),
         icon: Lucide::ChartColumn,
         route: || Route::Stats,
     },
     NavItem::Page {
+        key: "downloads",
         title: k!("nav.downloads"),
         icon: Lucide::Download,
         route: || Route::Downloads,
     },
     NavItem::Page {
+        key: "local_files",
         title: k!("nav.local_files"),
         icon: Lucide::FileMusic,
         route: || Route::LocalFiles,
     },
     NavItem::Page {
+        key: "import",
         title: k!("nav.import"),
         icon: Lucide::Upload,
         route: || Route::Import,
     },
     NavItem::Page {
+        key: "together",
         title: k!("nav.together"),
         icon: Lucide::UsersRound,
         route: || Route::Together,

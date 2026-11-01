@@ -1,0 +1,39 @@
+# The sidebar's entries and playlists section (Appearance → Layout → Sidebar items,
+# Sidebar playlists; src/settings/sidebar_ui.rs, src/components/sidebar_playlists.rs).
+
+# The editor's title, its note and its button (back to the shipped order).
+sidebar.items.title = Sidebar items
+sidebar.items.note = Tick the entries to show; drag a row or use the arrows to change the order. Settings always stays at the bottom.
+sidebar.items.reset = Reset
+# A group heading in the list of entries ({name}: e.g. "Library").
+sidebar.items.heading = {name} (heading)
+
+# The heading over the playlists in the sidebar.
+sidebar.playlists.heading = Playlists
+# Options of the playlists section.
+sidebar.playlists.title = Playlists in the sidebar
+sidebar.playlists.note = Your playlists under the sidebar's entries, as on YouTube Music. Right-click one to play it or pin it to the top.
+sidebar.playlists.sources = Show
+sidebar.playlists.sources_note = YouTube Music playlists show while you're signed in (they come with the library's sync).
+sidebar.playlists.youtube = YouTube Music
+sidebar.playlists.local = Made in {app}
+sidebar.playlists.sort = Order
+sidebar.playlists.sort_note = Pinned playlists come first. Drag a playlist in the sidebar to put them in your own order.
+sidebar.playlists.sort.recent = Recent
+sidebar.playlists.sort.name = A–Z
+sidebar.playlists.sort.custom = Custom
+# How many playlists show before the "Show all" row.
+sidebar.playlists.limit = Before "Show all"
+sidebar.playlists.limit_all = All
+sidebar.playlists.artwork = Covers
+sidebar.playlists.artwork_note = Small covers from the artwork cache; without them, each playlist shows its initial.
+sidebar.playlists.pinned_count.one = {count} playlist pinned
+sidebar.playlists.pinned_count.other = {count} playlists pinned
+sidebar.playlists.unpin_all = Unpin all
+# Rows under the playlists.
+sidebar.playlists.show_all = Show all ({count})
+sidebar.playlists.show_less = Show less
+sidebar.playlists.in_library = All playlists in Library
+# Right-click menu of a playlist (sidebar, Library).
+sidebar.playlists.pin = Pin to sidebar
+sidebar.playlists.unpin = Unpin from sidebar

@@ -1,0 +1,32 @@
+# Sidebar items and playlists (pl).
+
+sidebar.items.title = Elementy paska bocznego
+sidebar.items.note = Zaznacz elementy do wyświetlenia; przeciągnij wiersz lub użyj strzałek, aby zmienić kolejność. Ustawienia zawsze zostają na dole.
+sidebar.items.reset = Przywróć
+sidebar.items.heading = {name} (nagłówek)
+sidebar.playlists.heading = Playlisty
+sidebar.playlists.title = Playlisty na pasku bocznym
+sidebar.playlists.note = Twoje playlisty pod elementami paska bocznego, jak w YouTube Music. Kliknij jedną prawym przyciskiem, aby ją odtworzyć lub przypiąć na górze.
+sidebar.playlists.sources = Pokaż
+sidebar.playlists.sources_note = Playlisty YouTube Music są widoczne, gdy jesteś zalogowany (przychodzą z synchronizacją biblioteki).
+sidebar.playlists.youtube = YouTube Music
+sidebar.playlists.local = Utworzone w {app}
+sidebar.playlists.sort = Kolejność
+sidebar.playlists.sort_note = Przypięte playlisty są pierwsze. Przeciągnij playlistę na pasku bocznym, aby ustawić własną kolejność.
+sidebar.playlists.sort.recent = Ostatnie
+sidebar.playlists.sort.name = A–Z
+sidebar.playlists.sort.custom = Własna
+sidebar.playlists.limit = Przed „Pokaż wszystkie”
+sidebar.playlists.limit_all = Wszystkie
+sidebar.playlists.artwork = Okładki
+sidebar.playlists.artwork_note = Małe okładki z pamięci podręcznej grafik; bez nich każda playlista pokazuje swoją pierwszą literę.
+sidebar.playlists.pinned_count.one = {count} playlista przypięta
+sidebar.playlists.pinned_count.few = {count} playlisty przypięte
+sidebar.playlists.pinned_count.many = {count} playlist przypiętych
+sidebar.playlists.pinned_count.other = {count} playlisty przypiętej
+sidebar.playlists.unpin_all = Odepnij wszystkie
+sidebar.playlists.show_all = Pokaż wszystkie ({count})
+sidebar.playlists.show_less = Pokaż mniej
+sidebar.playlists.in_library = Wszystkie playlisty w Bibliotece
+sidebar.playlists.pin = Przypnij do paska bocznego
+sidebar.playlists.unpin = Odepnij z paska bocznego

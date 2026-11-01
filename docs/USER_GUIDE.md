@@ -343,7 +343,7 @@ Everything is stored locally (SQLite database in the settings folder):
   Download, and Remove where the list has it (library, liked songs, downloads, your
   playlists). A normal click still plays the song.
 * **Playlists** — create local playlists (and, when signed in, YouTube Music playlists),
-  rename, reorder, delete. Your own YouTube Music playlists get **Change cover…** (any
+  rename, reorder, delete. Right-click a playlist to play it or pin it to the sidebar. Your own YouTube Music playlists get **Change cover…** (any
   JPEG / PNG / WebP; cropped to a square and uploaded).
 * **History** — every song you listened to for at least 30 s, by day.
 * **Stats** — listening time, top songs / artists / albums, by hour and weekday; **Year in
@@ -739,7 +739,23 @@ General Behavior): faster or slower transitions, and "Instant" counts as reduced
 * **Sidebar** — *Full* (icons and names; drag its right edge to make it wider or
   narrower), *Icons only* (a narrow rail; hover an icon for its name) or *Expand on hover*
   (the rail, with the full sidebar sliding over the page while the pointer is on it). The
-  queue panel's left edge can be dragged too.
+  queue panel's left edge can be dragged too. In the rail, hover the logo for the expand
+  button.
+* **Sidebar items** — tick the entries the sidebar shows (Home, Explore, Charts, Moods &
+  genres, New releases, Recognize, the *Library* heading, Library, History, Stats,
+  Downloads, Local files, Import & export, Listen together) and put them in your order with
+  the arrows or by dragging a row onto another. **Reset** brings back the usual sidebar.
+  Settings is always at the bottom.
+* **Playlists in the sidebar** — under the entries, like YouTube Music: *Liked*, your
+  YouTube Music playlists (while you are signed in; they arrive with the library's sync)
+  and the playlists you made in the app. Click one to open it; right-click (or Ctrl-click
+  on a Mac trackpad) to **Play**, **Shuffle**, **Play next**, **Add to queue** or **Pin to
+  sidebar** — pinned ones stay at the top (Library → Playlists has the same menu). The **+**
+  next to *Playlists* makes a new one. Options: which kinds to show, the order (*Recent*:
+  most recently changed first; *A–Z*; *Custom*: drag playlists in the sidebar into your
+  order), how many show before **Show all** (5, 10, 20 or all; a very long list ends with a
+  row that opens Library → Playlists) and small covers or initials. In the icon rail the
+  covers show alone; hover one for its name.
 * **Song list columns** — show or hide the album, *Added* (when the song came into your
   library), *Plays* and the duration. Added and Plays show in library lists (songs,
   liked, downloads, local files).
@@ -764,8 +780,20 @@ and is off with Animations set to Reduced or Off.
   and on Windows 11 *Mica* / *Mica Alt*. Options your system can't draw aren't shown.
   **Opacity** (60–90 %) sets how much of the desktop shows; where light desktops would
   make text hard to read it is raised automatically (the setting says so). Menus,
-  dialogs, the player bar and Now Playing stay opaque. On Linux it needs a compositing
-  window manager.
+  dialogs and Now Playing stay opaque. On Linux it needs a compositing window manager.
+  macOS also has *Vibrant* (its own glass in the colours of your desktop; pick the
+  **Material**: Sidebar, Window, Menu, Popover, HUD or Full screen) and Windows 11
+  *Acrylic*. With *Blurred* on a Mac, **Blur strength** makes the blur lighter or stronger
+  than the system's.
+* **Presets** — *Subtle*, *Glass* and *Frosted* set the blurred background, the opacities,
+  the tint and the blur in one click; change anything afterwards.
+* **Surfaces** — how much the sidebar, the top bar, the player bar and the queue panel let
+  through, each on its own (*Auto*, *Solid*, 90–50 %). *Auto* keeps the sidebar, top bar
+  and queue a little more solid than the rest and the player bar solid. Each is raised when
+  its text would get hard to read on a light or dark desktop; the settings list what was
+  raised.
+* **Tint** — mixes a colour into the translucent parts: your accent, *Frost* (lighter),
+  *Smoke* (darker), *Ice*, *Rose* or *Amber*, at 8–35 %.
 * **App icon** — *Midnight* (the standard icon), *Paper*, *Sunset*, *Mint*, *Mono*, or
   **Choose an image…** (PNG, JPEG or WebP; it is fitted into a square and kept in the
   settings folder). macOS shows it in the Dock and the app switcher while the app runs

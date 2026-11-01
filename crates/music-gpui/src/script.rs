@@ -68,6 +68,8 @@
 //! | `@bar-style=standard\|thick\|simple\|wavy\|equalizer\|waveform`, `@bar-bg=glow\|gradient\|pulse\|off`, `@bar-peaks=on\|off`, `@bar-remaining=on\|off`, `@bar-scroll-volume=on\|off`, `@mini-follow=on\|off`, `@np-viz=on\|off`, `@bar-gradient=dir:…\|intensity:…\|animate:on\|dim:off`, `@bar-status`, `@waveform-status` | player bar look (saved; `bar_script.rs`) |
 //! | `@bar-hover=F`, `@bar-hover=off` | hover the progress bar at fraction F (tooltip, thumb) |
 //! | `@app-look=off\|tint\|gradient\|glow`, `@app-look-opt=follow:on\|intensity:0.7\|dir:diagonal\|dim:off\|tint:on\|animate:on\|react:on`, `@motion=system\|full\|reduced\|off`, `@effects=transitions:…\|hover:…\|headers:…\|corners:square\|shadow:on\|cards:large\|translucent:on\|outlines:on\|hairline:on\|wheel:on`, `@bar-art=standard\|edge`, `@sidebar=full\|rail\|hover`, `@sidebar-width=260`, `@queue-width=400`, `@sidebar-hover[=off]`, `@columns=added:on`, `@bar-button=home:off`, `@window-controls=mac`, `@theme-mode=light\|dark\|system`, `@system-appearance=light\|dark`, `@theme-switcher[=off]`, `@look-status` | app-wide look, Motion & effects, layout, light / dark mode, bar artwork (saved; `look_script.rs`) |
+//! | `@sidebar-items=charts:off\|explore:up\|reset`, `@sidebar-playlists=show:on\|youtube:off\|local:on\|liked:off\|sort:name\|limit:5\|artwork:off\|pin:NAME\|unpin:NAME\|expand:on` | the sidebar's entries and playlists section (saved; `settings/sidebar_ui.rs`) |
+//! | `@glass-preset=subtle\|glass\|frosted`, `@surface-opacity=sidebar:0.6\|auto`, `@glass-tint=ice:0.25\|off`, `@glass-blur=system\|light\|medium\|strong`, `@glass-vibrancy=hud` | translucency per surface, tint, macOS blur strength and material (saved; `settings/glass_ui.rs`) |
 //! | `@shortcut=ACTION:KEYS`, `@shortcut-reset=ACTION\|all`, `@shortcut-status`, `@shortcut-record=ACTION`, `@shortcut-replace`, `@shortcut-cancel`, `@shortcut-sheet` | keyboard shortcuts (saved; `shortcuts/script.rs`) |
 //! | `@np-fullscreen[=on\|off]`, `@np-fullscreen-auto=on\|off`, `@lyrics-view`, `@fullscreen-external`, `@fullscreen-status` | full screen: Now Playing's button (no argument toggles), "Full screen when Now Playing opens" (saved), the bar's lyrics button, toggle as the green button would, print the window state and who entered it (`np_fullscreen.rs`) |
 //! | `@video=on\|off`, `@video-session=on\|off`, `@video-quality=360p\|480p\|720p`, `@video-status` | music videos: the setting (saved), Now Playing's video / artwork button (this session), the quality cap (saved), print the lookup, stream and player counters (`video.rs`) |
@@ -1018,6 +1020,8 @@ impl MusicApp {
                     && !self.theater_script_action(other, arg, window, cx)
                     && !self.video_script_action(other, arg, cx)
                     && !self.home_script_action(other, arg, cx)
+                    && !self.sidebar_script_action(other, arg, cx)
+                    && !self.glass_script_action(other, arg, cx)
                     && !self.titlebar_script_action(other, arg, window, cx)
                     && !self.appearance_script_action(other, arg, window, cx)
                 {

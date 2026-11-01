@@ -10,6 +10,7 @@
 //! * [`reduce_motion`] – the system's "Show animations in Windows" switch.
 //! * [`build_number`] – which window materials the system has (Mica, acrylic).
 //! * [`set_window_icon`] – the chosen app icon on a window (title bar, taskbar).
+//! * [`set_acrylic_backdrop`] – Windows 11's acrylic material behind a window.
 
 use std::sync::atomic::{AtomicIsize, Ordering};
 use std::time::{Duration, Instant};
@@ -285,6 +286,28 @@ pub fn set_topmost(hwnd: isize) {
             0,
             SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE,
         );
+    }
+}
+
+/// Windows 11 (22H2+): the acrylic system backdrop behind `hwnd`
+/// (`DWMSBT_TRANSIENTWINDOW`), set after GPUI's Mica, whose frame setup it reuses.
+pub fn set_acrylic_backdrop(hwnd: isize) {
+    use windows::Win32::Graphics::Dwm::{
+        DWMSBT_TRANSIENTWINDOW, DWMWA_SYSTEMBACKDROP_TYPE, DwmSetWindowAttribute,
+    };
+    let kind = DWMSBT_TRANSIENTWINDOW;
+    // SAFETY: one DWM attribute of a window of this process; the value is the
+    // 4-byte `DWM_SYSTEMBACKDROP_TYPE` the attribute takes.
+    let result = unsafe {
+        DwmSetWindowAttribute(
+            HWND(hwnd as *mut _),
+            DWMWA_SYSTEMBACKDROP_TYPE,
+            &kind as *const _ as *const _,
+            std::mem::size_of_val(&kind) as u32,
+        )
+    };
+    if let Err(e) = result {
+        eprintln!("music-gpui: the acrylic backdrop wasn't set: {e}");
     }
 }
 

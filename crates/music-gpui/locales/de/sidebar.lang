@@ -1,0 +1,30 @@
+# Sidebar items and playlists (de).
+
+sidebar.items.title = Einträge der Seitenleiste
+sidebar.items.note = Hake die Einträge an, die erscheinen sollen; ziehe eine Zeile oder nutze die Pfeile, um die Reihenfolge zu ändern. Einstellungen bleibt immer unten.
+sidebar.items.reset = Zurücksetzen
+sidebar.items.heading = {name} (Überschrift)
+sidebar.playlists.heading = Playlists
+sidebar.playlists.title = Playlists in der Seitenleiste
+sidebar.playlists.note = Deine Playlists unter den Einträgen der Seitenleiste, wie bei YouTube Music. Rechtsklick auf eine zum Abspielen oder Anheften.
+sidebar.playlists.sources = Anzeigen
+sidebar.playlists.sources_note = YouTube-Music-Playlists erscheinen, während du angemeldet bist (sie kommen mit dem Abgleich der Mediathek).
+sidebar.playlists.youtube = YouTube Music
+sidebar.playlists.local = In {app} erstellt
+sidebar.playlists.sort = Reihenfolge
+sidebar.playlists.sort_note = Angeheftete Playlists stehen oben. Ziehe eine Playlist in der Seitenleiste, um deine eigene Reihenfolge festzulegen.
+sidebar.playlists.sort.recent = Zuletzt
+sidebar.playlists.sort.name = A–Z
+sidebar.playlists.sort.custom = Eigene
+sidebar.playlists.limit = Vor „Alle anzeigen“
+sidebar.playlists.limit_all = Alle
+sidebar.playlists.artwork = Cover
+sidebar.playlists.artwork_note = Kleine Cover aus dem Cover-Cache; ohne sie zeigt jede Playlist ihren Anfangsbuchstaben.
+sidebar.playlists.pinned_count.one = {count} Playlist angeheftet
+sidebar.playlists.pinned_count.other = {count} Playlists angeheftet
+sidebar.playlists.unpin_all = Alle lösen
+sidebar.playlists.show_all = Alle anzeigen ({count})
+sidebar.playlists.show_less = Weniger anzeigen
+sidebar.playlists.in_library = Alle Playlists in der Mediathek
+sidebar.playlists.pin = An Seitenleiste anheften
+sidebar.playlists.unpin = Von Seitenleiste lösen

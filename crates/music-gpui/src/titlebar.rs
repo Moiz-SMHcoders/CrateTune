@@ -455,6 +455,7 @@ impl MusicApp {
         self.translucent_sidebar(cx).hash(&mut h);
         crate::i18n::generation().hash(&mut h);
         crate::theme::density().to_bits().hash(&mut h);
+        hash_color(self.titlebar_bg(cx), &mut h);
         let theme = cx.theme();
         for c in [
             theme.sidebar,
@@ -483,7 +484,7 @@ impl MusicApp {
         if self.np.open {
             cx.theme().sidebar
         } else {
-            self.chrome_bg(cx)
+            self.chrome_bg(crate::settings::glass_prefs::Surface::TopBar, cx)
         }
     }
 

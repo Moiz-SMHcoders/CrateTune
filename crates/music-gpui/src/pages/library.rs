@@ -540,10 +540,21 @@ impl LibraryPage {
                     .collect()
             }),
             LibraryTab::Playlists => self.playlists.value.as_ref().map(|playlists| {
+                // Pinned in the sidebar (the right-click menu says "Unpin").
+                let pinned = read_app(cx, |app, cx| {
+                    app.settings
+                        .read(cx)
+                        .settings()
+                        .sidebar
+                        .playlists
+                        .pinned
+                        .clone()
+                })
+                .unwrap_or_default();
                 playlists
                     .iter()
                     .enumerate()
-                    .map(|(ix, p)| playlist_card(ix, p).into_any_element())
+                    .map(|(ix, p)| playlist_card(ix, p, pinned.contains(&p.id)).into_any_element())
                     .collect()
             }),
             _ => None,
@@ -709,7 +720,7 @@ fn artist_card(ix: usize, a: &LibraryArtist) -> Card {
         })
 }
 
-fn playlist_card(ix: usize, p: &Playlist) -> Card {
+fn playlist_card(ix: usize, p: &Playlist, pinned: bool) -> Card {
     let route = Route::LocalPlaylist {
         id: p.id.clone(),
         name: p.name.clone(),
@@ -719,12 +730,21 @@ fn playlist_card(ix: usize, p: &Playlist) -> Card {
     } else {
         songs_label(p.song_count).to_string()
     };
+    let menu_playlist = p.clone();
     Card::new(("library-playlist", ix), CardKind::Playlist, p.name.clone())
         .subtitle(subtitle)
         .artwork(p.thumbnail_url.clone())
         .on_click(move |_, window, cx| {
             let route = route.clone();
             update_app(cx, |app, cx| app.navigate(route, window, cx));
+        })
+        // Play, queue, pin to the sidebar (as the sidebar's own rows).
+        .context_menu(move |menu, _, _| {
+            crate::components::sidebar_playlists::library_playlist_menu(
+                menu,
+                &menu_playlist,
+                pinned,
+            )
         })
 }
 

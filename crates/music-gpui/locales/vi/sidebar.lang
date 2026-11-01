@@ -1,0 +1,29 @@
+# Sidebar items and playlists (vi).
+
+sidebar.items.title = Mục trên thanh bên
+sidebar.items.note = Đánh dấu các mục muốn hiện; kéo một hàng hoặc dùng mũi tên để đổi thứ tự. Cài đặt luôn ở dưới cùng.
+sidebar.items.reset = Đặt lại
+sidebar.items.heading = {name} (tiêu đề)
+sidebar.playlists.heading = Danh sách phát
+sidebar.playlists.title = Danh sách phát trên thanh bên
+sidebar.playlists.note = Danh sách phát của bạn bên dưới các mục của thanh bên, như trên YouTube Music. Nhấp chuột phải vào một danh sách để phát hoặc ghim lên đầu.
+sidebar.playlists.sources = Hiện
+sidebar.playlists.sources_note = Danh sách phát YouTube Music hiện khi bạn đã đăng nhập (chúng đến cùng lần đồng bộ thư viện).
+sidebar.playlists.youtube = YouTube Music
+sidebar.playlists.local = Tạo trong {app}
+sidebar.playlists.sort = Thứ tự
+sidebar.playlists.sort_note = Danh sách phát đã ghim đứng đầu. Kéo một danh sách phát trên thanh bên để sắp theo thứ tự của riêng bạn.
+sidebar.playlists.sort.recent = Gần đây
+sidebar.playlists.sort.name = A–Z
+sidebar.playlists.sort.custom = Tùy chỉnh
+sidebar.playlists.limit = Trước "Hiện tất cả"
+sidebar.playlists.limit_all = Tất cả
+sidebar.playlists.artwork = Ảnh bìa
+sidebar.playlists.artwork_note = Ảnh bìa nhỏ từ bộ nhớ đệm ảnh; khi tắt, mỗi danh sách phát hiện chữ cái đầu.
+sidebar.playlists.pinned_count.other = Đã ghim {count} danh sách phát
+sidebar.playlists.unpin_all = Bỏ ghim tất cả
+sidebar.playlists.show_all = Hiện tất cả ({count})
+sidebar.playlists.show_less = Hiện ít hơn
+sidebar.playlists.in_library = Tất cả danh sách phát trong Thư viện
+sidebar.playlists.pin = Ghim vào thanh bên
+sidebar.playlists.unpin = Bỏ ghim khỏi thanh bên
