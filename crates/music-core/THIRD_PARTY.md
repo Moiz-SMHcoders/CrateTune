@@ -289,6 +289,20 @@ file names its source in its header or next to the ported code.
 | `crates/music-core/src/reverb.rs` | Freeverb by Jezar at Dreampoint (2000, public domain): the comb / allpass structure and its tuning constants (delay lengths, stereo spread, gains). The preset idea is [Limusic](https://github.com/SimoHypers/limusic)'s rooms (`crates/player/src/lib.rs`, `reverb_filter`; commit `d82372cdd3016e3c5e28ea8022596b7fefdf681a`, GPL-3.0) | Written for this project, no code copied. Limusic convolves bundled impulse responses with FFmpeg's `afir`; this is an algorithmic reverb on the deck's mix: four presets of our own (room size, damping, width, pre-delay), a pre-delay line, delay lengths scaled to the output rate, smoothed wet / dry gains, denormal flushing, a tail that rings out after a pause and then stops, dropped entirely when off. |
 | `crates/music-core/src/equalizer.rs` (`EqPreset::Warm`, `EqPreset::Night`) | [Zuno](https://github.com/noFAYZ/zuno) `src/ui/settings/equalizer.ts` ("Warm", commit `1fa9a9669e4a526ebe53c0275153feda0c4fcefa`, Apache-2.0); [Deviload](https://github.com/Pronexsteam/deviload) `src/devil-music.js` / `src/music-sound.js` ("night", commit `70d1d951147d8882996c544f4061faea9100752f`, © Samvel Avetisyan, MIT) | Warm's ten gains as Zuno has them; Deviload's six-band night curve (60 Hz – 10 kHz) spread over our ten bands. |
 
+## Limusic, Zuno and Deviload (feat/sound-plus)
+
+Upstream commits: Limusic `d82372cdd3016e3c5e28ea8022596b7fefdf681a` (GPL-3.0), Zuno
+`1fa9a9669e4a526ebe53c0275153feda0c4fcefa` (Apache-2.0), Deviload
+`7348689cf292e175769f1a7a3d7000d3fb697178` (© Samvel Avetisyan, MIT). No code copied.
+
+| File | Upstream | Changes |
+|---|---|---|
+| `crates/music-core/src/reverb.rs` (`ReverbParams`, early reflections, `Custom`) | [Limusic](https://github.com/SimoHypers/limusic) `crates/player/src/lib.rs` (`Reverb`: decay, pre-delay 0–200 ms, damping, reflections, dry; `reverb_filter`) | The same controls on our Freeverb-style rooms: the decay as a time turned into the combs' feedback (the four rooms keep their old feedback exactly), pre-delay up to 200 ms that glides instead of jumping, damping shown as brightness, a tapped early-reflection line (our own tap times), dry level on top of the mix's own dry curve. |
+| `crates/music-core/src/convolver.rs` | Limusic convolves bundled impulse responses with FFmpeg's `afir` (same file) | Our own uniformly partitioned FFT convolution on `rustfft` (already a dependency): 512-frame partitions, both output channels from one complex FFT, silent blocks skipped, everything allocated on the engine thread. The three built-in rooms are generated in code from a fixed seed (written for this project; no impulse files are bundled, so no third-party audio). Files of the user's are decoded by Symphonia, trimmed, cut at 6 s and normalized. |
+| `crates/music-core/src/compressor.rs` | [Deviload](https://github.com/Pronexsteam/deviload) `src/music-sound.js` ("volume smoothing": a Web Audio `DynamicsCompressorNode`, threshold −24 dB, ratio 3) | Written for this project: feed-forward, stereo-linked peak detector, 6 dB soft knee, attack / release smoothing of the gain reduction in dB, makeup gain; attack 3 ms and release 250 ms are the Web Audio node's defaults that Deviload inherits. The permission notice of Deviload's `LICENSE` applies to those values. |
+| `crates/music-core/src/volume.rs` | Deviload (`p²`) and Limusic (`10^(−(1−p)^1.5)`) volume curves | The square; Limusic's was compared and not taken (it stops at −20 dB above silence). |
+| `crates/music-core/src/equalizer.rs` (`peak_boost_db`) | [Zuno](https://github.com/noFAYZ/zuno) `src/ui/settings/equalizerCurve.ts` (`autoPreampDb`: the peak of the combined response, so stacked neighbours count) | The existing compensation's peak search made public for the UI's clipping warning. |
+
 ## Device hand-off (feat/device-handoff)
 
 No code was ported. `src/handoff/` is written against the published APIs of these crates

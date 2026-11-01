@@ -131,7 +131,6 @@ settings.eq.preset.bass = Basy
 settings.eq.preset.vocal = Wokal
 settings.eq.preset.treble = Soprany
 settings.eq.preset.loudness = Głośność
-settings.eq.note = Stosowany na bieżąco. Wzmocnienia są kompensowane, więc dźwięk nigdy się nie przesterowuje.
 
 # ---- Lyrics
 settings.lyrics.look = Wygląd
@@ -189,13 +188,11 @@ settings.eq.preset.night = Noc
 settings.reverb.title = Pogłos
 settings.reverb.mix = Udział efektu
 settings.reverb.mix_value = {percent}%
-settings.reverb.note = Pomieszczenie wokół muzyki, dodawane po korektorze. Wyłączony nic nie kosztuje; po pauzie echo powoli wygasa.
 prefs.reverb.small_room = Mały pokój
 prefs.reverb.hall = Sala
 prefs.reverb.plate = Płyta
 prefs.reverb.cathedral = Katedra
 settings.sound.title = Ustawienia dźwięku
-settings.sound.note = Ustawia prędkość, wysokość i pogłos jednym kliknięciem. Prędkość i wysokość są też w Odtwarzaniu.
 prefs.sound.original = Oryginał
 prefs.sound.slowed_reverb = Zwolnione + pogłos
 prefs.sound.nightcore = Nightcore

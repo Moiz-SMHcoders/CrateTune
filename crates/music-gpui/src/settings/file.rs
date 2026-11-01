@@ -32,8 +32,10 @@ use crate::theme::ThemeChoice;
 /// From `packaging/app.env` (see `identity.rs`).
 pub const APP_ID: &str = crate::identity::APP_ID;
 pub const FILE_NAME: &str = "settings.json";
-/// Bumped when a field changes meaning; [`Settings::normalize`] migrates older files.
-pub const VERSION: u32 = 1;
+/// Bumped when a field changes meaning; [`Settings::from_json`] and
+/// [`Settings::normalize`] migrate older files. 2: `volume` is the slider position
+/// on the perceptual curve (`music_core::volume`), not the linear gain.
+pub const VERSION: u32 = 2;
 /// The UI's EQ sliders cover ±12 dB (the DSP itself allows ±24).
 pub const EQ_RANGE_DB: f64 = 12.0;
 pub const BANDS: usize = GRAPHIC_BANDS_HZ.len();
@@ -42,7 +44,8 @@ pub const BANDS: usize = GRAPHIC_BANDS_HZ.len();
 #[serde(default)]
 pub struct Settings {
     pub version: u32,
-    /// 0.0..=1.0, passed to `Player::set_volume`.
+    /// 0.0..=1.0, the volume slider's position; the player gets
+    /// `music_core::volume::gain` of it (version 1 saved the gain itself).
     pub volume: f32,
     pub equalizer: EqConfig,
     pub lastfm: LastFmConfig,
@@ -162,6 +165,12 @@ pub struct EqConfig {
     pub enabled: bool,
     /// Gains for `GRAPHIC_BANDS_HZ`, ±[`EQ_RANGE_DB`].
     pub gains_db: Vec<f64>,
+    /// Automatic pre-gain: the output is lowered by the curve's peak boost so
+    /// it cannot clip (`EqualizerSettings::volume_compensation`); on by default.
+    pub pre_gain: bool,
+    /// The user's named curves.
+    #[serde(deserialize_with = "lenient")]
+    pub saved: Vec<SavedEq>,
 }
 
 impl Default for EqConfig {
@@ -169,7 +178,29 @@ impl Default for EqConfig {
         Self {
             enabled: false,
             gains_db: vec![0.0; BANDS],
+            pre_gain: true,
+            saved: Vec::new(),
         }
+    }
+}
+
+/// A named EQ curve of the user's.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct SavedEq {
+    pub name: String,
+    pub gains_db: Vec<f64>,
+}
+
+/// Ten gains within ±[`EQ_RANGE_DB`] (missing ones 0, extra ones dropped).
+pub fn normalize_gains(gains: &mut Vec<f64>) {
+    gains.resize(BANDS, 0.0);
+    for g in gains {
+        *g = if g.is_finite() {
+            g.clamp(-EQ_RANGE_DB, EQ_RANGE_DB)
+        } else {
+            0.0
+        };
     }
 }
 
@@ -198,10 +229,38 @@ impl EqConfig {
         self.enabled = true;
     }
 
+    /// The saved curve these gains are, if any (when no built-in matches).
+    pub fn saved_current(&self) -> Option<usize> {
+        let gains = self.gains();
+        self.saved.iter().position(|p| {
+            p.gains_db
+                .iter()
+                .zip(gains)
+                .all(|(a, b)| (a - b).abs() < 0.05)
+        })
+    }
+
     /// What to hand the player: `None` means "turn the EQ off".
     pub fn player_settings(&self) -> Option<EqualizerSettings> {
-        self.enabled
-            .then(|| EqualizerSettings::graphic(self.gains()))
+        self.enabled.then(|| EqualizerSettings {
+            volume_compensation: self.pre_gain,
+            ..EqualizerSettings::graphic(self.gains())
+        })
+    }
+
+    fn normalize(&mut self) {
+        normalize_gains(&mut self.gains_db);
+        let mut seen = std::collections::HashSet::new();
+        self.saved
+            .retain_mut(|p| match super::prefs::preset_name(&p.name) {
+                Some(name) if seen.insert(name.to_lowercase()) => {
+                    p.name = name;
+                    normalize_gains(&mut p.gains_db);
+                    true
+                }
+                _ => false,
+            });
+        self.saved.truncate(super::prefs::PRESETS_MAX);
     }
 }
 
@@ -591,6 +650,18 @@ impl WindowGeometry {
     }
 }
 
+/// Brings the settings object of a file written by version `from` up to
+/// [`VERSION`] (before it is parsed): also used for imported settings exports.
+pub fn migrate(map: &mut serde_json::Map<String, serde_json::Value>, from: u64) {
+    if from < 2 {
+        // The volume was the linear gain: keep its loudness on the perceptual slider.
+        if let Some(gain) = map.get("volume").and_then(serde_json::Value::as_f64) {
+            let position = music_core::volume::position(gain as f32);
+            map.insert("volume".into(), serde_json::json!(position));
+        }
+    }
+}
+
 /// Secret name → value, for when the keychain is unavailable. `Debug` is redacted.
 #[derive(Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(transparent)]
@@ -620,15 +691,7 @@ impl Settings {
         } else {
             1.0
         };
-        let eq = &mut self.equalizer;
-        eq.gains_db.resize(BANDS, 0.0);
-        for g in &mut eq.gains_db {
-            *g = if g.is_finite() {
-                g.clamp(-EQ_RANGE_DB, EQ_RANGE_DB)
-            } else {
-                0.0
-            };
-        }
+        self.equalizer.normalize();
         // A zoom level (the Appearance buttons and ⌘+ / ⌘−, `zoom.rs`).
         self.appearance.font_scale = crate::zoom::snap(self.appearance.font_scale);
         let mb = self.appearance.artwork_memory_mb;
@@ -664,7 +727,16 @@ impl Settings {
     }
 
     pub fn from_json(text: &str) -> serde_json::Result<Self> {
-        let mut settings: Settings = serde_json::from_str(text)?;
+        let mut value: serde_json::Value = serde_json::from_str(text)?;
+        if let Some(map) = value.as_object_mut() {
+            // A file from before the version field counts as version 1.
+            let from = map
+                .get("version")
+                .and_then(serde_json::Value::as_u64)
+                .unwrap_or(1);
+            migrate(map, from);
+        }
+        let mut settings: Settings = serde_json::from_value(value)?;
         settings.normalize();
         Ok(settings)
     }
@@ -784,10 +856,61 @@ mod tests {
         )
         .unwrap();
         assert_eq!(s.version, VERSION);
-        assert_eq!(s.volume, 0.4);
+        // Saved before the perceptual volume curve: the same loudness on the new slider.
+        assert!((music_core::volume::gain(s.volume) - 0.4).abs() < 1e-6);
         assert!(s.equalizer.enabled);
         assert_eq!(s.equalizer.gains_db, vec![0.0; BANDS]);
+        assert!(s.equalizer.pre_gain);
         assert_eq!(s.discord, DiscordConfig::default());
+    }
+
+    #[test]
+    fn volume_moves_onto_the_perceptual_curve_once() {
+        // Version 1: the volume was the linear gain.
+        for gain in [0.0f32, 0.09, 0.25, 0.5, 1.0] {
+            let s = Settings::from_json(&format!(r#"{{"version": 1, "volume": {gain}}}"#)).unwrap();
+            assert!(
+                (s.volume - gain.sqrt()).abs() < 1e-6,
+                "{gain} → {}",
+                s.volume
+            );
+            assert!((music_core::volume::gain(s.volume) - gain).abs() < 1e-6);
+            // Saved again (version 2) and read back: not converted a second time.
+            let again = Settings::from_json(&s.to_json()).unwrap();
+            assert_eq!(again.volume, s.volume);
+            assert_eq!(again.version, VERSION);
+        }
+        let s = Settings::from_json(r#"{"version": 2, "volume": 0.5}"#).unwrap();
+        assert_eq!(s.volume, 0.5);
+        // A broken value still falls back as before.
+        let s = Settings::from_json(r#"{"version": 1, "volume": "loud"}"#);
+        assert!(s.is_err() || s.unwrap().volume == 1.0);
+    }
+
+    #[test]
+    fn saved_eq_curves_are_cleaned_up() {
+        let s = Settings::from_json(
+            r#"{"equalizer": {"enabled": true, "pre_gain": false, "gains_db": [3,3,0,0,0,0,0,0,0,0],
+                "saved": [{"name": " Mine ", "gains_db": [3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 9]},
+                          {"name": "mine", "gains_db": []}, {"name": "", "gains_db": []},
+                          {"name": "Loud", "gains_db": [40]}]}}"#,
+        )
+        .unwrap();
+        let eq = &s.equalizer;
+        assert!(!eq.pre_gain);
+        assert_eq!(eq.saved.len(), 2);
+        assert_eq!(eq.saved[0].name, "Mine");
+        assert_eq!(eq.saved[0].gains_db.len(), BANDS);
+        assert_eq!(eq.saved[1].gains_db[0], EQ_RANGE_DB);
+        assert_eq!(eq.preset(), None);
+        assert_eq!(eq.saved_current(), Some(0));
+        // Pre-gain is what the player gets as volume compensation.
+        assert!(!eq.player_settings().unwrap().volume_compensation);
+        let on = EqConfig {
+            pre_gain: true,
+            ..eq.clone()
+        };
+        assert!(on.player_settings().unwrap().volume_compensation);
     }
 
     #[test]

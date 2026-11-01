@@ -1,0 +1,70 @@
+# Settings → Equalizer, the sound additions: reverb fine controls, convolution
+# rooms, night mode, own presets, the EQ graph (see locales/en/sound.lang).
+
+# ---- Convolution rooms (reverb buttons: keep short)
+sound.room.studio = 錄音室
+sound.room.chamber = 迴響室
+sound.room.church = 教堂
+sound.room.own = 自己的房間
+sound.room.own_named = 自有：{name}
+sound.room.convolution = 卷積房間
+sound.ir.load = 載入自己的檔案（WAV）…
+sound.ir.pick = 用作房間
+sound.ir.loaded = 已從 {name} 載入房間
+sound.ir.failed = 無法將 {name} 用作房間：{error}
+
+# ---- Reverb fine controls (slider labels)
+sound.reverb.length = 長度
+sound.reverb.pre_delay = 預延遲
+sound.reverb.brightness = 明亮度
+sound.reverb.early = 早期反射
+sound.reverb.width = 寬度
+sound.reverb.dry = 乾聲音量
+sound.reverb.note = 在等化器之後為音樂加上空間感。各房間是下方控制項的預設；調整任一項就會變成「自訂」。卷積房間使用預延遲、寬度和乾聲音量。關閉時不耗用任何資源；暫停時，殘響會自然消散。
+sound.value.seconds = {value} 秒
+sound.value.ms = {value} ms
+sound.value.db = {value} dB
+sound.value.ratio = {value} : 1
+
+# ---- Night mode
+sound.night.title = 深夜模式
+sound.night.switch = 深夜模式
+sound.night.threshold = 臨界值
+sound.night.ratio = 壓縮比
+sound.night.attack = 起始時間
+sound.night.release = 釋放時間
+sound.night.makeup = 補償增益
+sound.night.reset = 重設數值
+sound.night.note = 拉近大聲與小聲段落的差距，方便以低音量聆聽：高於臨界值的音量依壓縮比降低，再以補償增益整體提升。關閉時不耗用任何資源。
+
+# ---- Equalizer: band names (keep short)
+sound.band.sub = 超低音
+sound.band.bass = 低音
+sound.band.punch = 衝擊
+sound.band.warmth = 溫暖
+sound.band.low_mids = 中低頻
+sound.band.mids = 中頻
+sound.band.upper_mids = 中高頻
+sound.band.presence = 臨場感
+sound.band.brilliance = 光澤
+sound.band.air = 空氣感
+
+# ---- Equalizer: headroom and the response graph
+sound.eq.no_boost = 沒有提升：不會破音。
+sound.eq.pre_gain_on = 輸出已降低 {db} dB，避免提升造成破音。
+sound.eq.clip_warning = 提升最高達 +{db} dB，大聲的歌曲可能會破音。請開啟自動前級增益或調低各頻段。
+sound.eq.small_boost = 提升最高達 +{db} dB（不足以破音）。
+sound.eq.pre_gain = 自動前級增益
+sound.eq.note = 即時套用。拖移曲線上的點或滑桿。曲線顯示濾波器實際的效果：相鄰的提升會疊加。
+sound.eq.save_title = 儲存 EQ 曲線
+
+# ---- Own presets
+sound.preset.save = 儲存為預設…
+sound.preset.save_title = 儲存音效預設
+sound.preset.rename_title = 重新命名預設
+sound.preset.name_placeholder = 預設名稱
+sound.preset.note = 一鍵設定速度、音高、殘響和等化器。可儲存自己的預設：同名的預設會被更新。速度和音高也可在「播放」中調整。
+
+# ---- Settings search
+sound.search.graph = 等化器曲線
+sound.search.saved_eq = 我的 EQ 預設

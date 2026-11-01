@@ -194,7 +194,7 @@ fn quality_menu(
         .label(t!("bar_items.quality.playing", source = info.playing))
         .label(when)
         .separator();
-    super::sound_menu::sound_menu(menu, info.sound, window, cx)
+    super::sound_menu::sound_menu(menu, info.sound.clone(), window, cx)
         .separator()
         .item(
             PopupMenuItem::new(t!("bar_items.quality.settings")).on_click(|_, window, cx| {

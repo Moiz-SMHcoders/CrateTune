@@ -405,6 +405,12 @@ pub fn plan_settings_import(text: &str, current: &Settings) -> Result<ImportPlan
     let doc = parse_object(text)?;
     let mut notes = Vec::new();
     let format = doc.get("format").and_then(Value::as_str).map(str::to_owned);
+    // The version that wrote the file (an export's schema, a settings.json's version).
+    let from = if format.is_some() {
+        doc.get("schema").and_then(Value::as_u64)
+    } else {
+        doc.get("version").and_then(Value::as_u64)
+    };
     let mut payload = match format.as_deref() {
         Some(f) if is_settings_format(f) => {
             schema_note(&doc, &mut notes);
@@ -435,6 +441,8 @@ pub fn plan_settings_import(text: &str, current: &Settings) -> Result<ImportPlan
             doc
         }
     };
+    // An export of an older version: its values as this version reads them.
+    super::file::migrate(&mut payload, from.unwrap_or(1));
     if payload.contains_key("secrets") {
         notes.push(ImportNote::SecretsIgnored);
     }
@@ -782,6 +790,28 @@ mod tests {
     }
 
     #[test]
+    fn older_exports_keep_their_volume_loudness() {
+        let current = Settings::default();
+        // A version-1 export and a version-1 settings.json: the gain 0.25 is the
+        // slider position 0.5 now.
+        let export = format!(
+            r#"{{"format": "{APP_ID}-settings", "schema": 1, "settings": {{"volume": 0.25}}}}"#
+        );
+        let plain = r#"{"version": 1, "volume": 0.25}"#;
+        for text in [export.as_str(), plain] {
+            let plan = plan_settings_import(text, &current).unwrap();
+            assert!((plan.settings.volume - 0.5).abs() < 1e-6, "{text}");
+        }
+        // This version's exports are taken as they are.
+        let s = Settings {
+            volume: 0.25,
+            ..Settings::default()
+        };
+        let plan = plan_settings_import(&export_settings(&s, 0), &current).unwrap();
+        assert_eq!(plan.settings.volume, 0.25);
+    }
+
+    #[test]
     fn settings_round_trip_without_secrets_or_local_state() {
         let s = sample();
         let text = export_settings(&s, 1_793_188_800_000);
@@ -830,7 +860,8 @@ mod tests {
                 r#"{{"format": "{old}-settings", "schema": 1, "settings": {{"volume": 0.4}}}}"#
             );
             let plan = plan_settings_import(&file, &current).unwrap();
-            assert_eq!(plan.settings.volume, 0.4);
+            // Schema 1 saved the linear gain: the same loudness on the new slider.
+            assert_eq!(plan.settings.volume, music_core::volume::position(0.4));
         }
     }
 
@@ -842,7 +873,7 @@ mod tests {
             .replace("FMT", &settings_format());
         let plan = plan_settings_import(&old, &current).unwrap();
         assert_eq!(plan.notes, vec![ImportNote::Older(0)]);
-        assert_eq!(plan.settings.volume, 0.9);
+        assert_eq!(plan.settings.volume, music_core::volume::position(0.9));
         assert_eq!(plan.settings.custom_theme, CustomTheme::default());
         assert_eq!(plan.settings.appearance.theme, ThemeChoice::Dark);
         assert_eq!(plan.settings.window, current.window, "local state kept");

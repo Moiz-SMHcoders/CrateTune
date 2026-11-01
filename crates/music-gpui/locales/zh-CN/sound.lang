@@ -1,0 +1,70 @@
+# Settings → Equalizer, the sound additions: reverb fine controls, convolution
+# rooms, night mode, own presets, the EQ graph (see locales/en/sound.lang).
+
+# ---- Convolution rooms (reverb buttons: keep short)
+sound.room.studio = 录音室
+sound.room.chamber = 混响室
+sound.room.church = 教堂
+sound.room.own = 自己的房间
+sound.room.own_named = 自有：{name}
+sound.room.convolution = 卷积房间
+sound.ir.load = 载入自己的文件（WAV）…
+sound.ir.pick = 用作房间
+sound.ir.loaded = 已从 {name} 载入房间
+sound.ir.failed = 无法将 {name} 用作房间：{error}
+
+# ---- Reverb fine controls (slider labels)
+sound.reverb.length = 时长
+sound.reverb.pre_delay = 预延迟
+sound.reverb.brightness = 明亮度
+sound.reverb.early = 早期反射
+sound.reverb.width = 宽度
+sound.reverb.dry = 干声电平
+sound.reverb.note = 在均衡器之后为音乐加上房间感。各房间是下方控件的预设；调整任意一项即变为“自定义”。卷积房间使用预延迟、宽度和干声电平。关闭时没有任何开销；暂停时，回声会自然消散。
+sound.value.seconds = {value} 秒
+sound.value.ms = {value} ms
+sound.value.db = {value} dB
+sound.value.ratio = {value} : 1
+
+# ---- Night mode
+sound.night.title = 深夜模式
+sound.night.switch = 深夜模式
+sound.night.threshold = 阈值
+sound.night.ratio = 压缩比
+sound.night.attack = 启动时间
+sound.night.release = 释放时间
+sound.night.makeup = 补偿增益
+sound.night.reset = 重置数值
+sound.night.note = 拉近响亮与安静部分的差距，便于低音量聆听：高于阈值的电平按压缩比降低，然后整体按补偿增益提升。关闭时没有任何开销。
+
+# ---- Equalizer: band names (keep short)
+sound.band.sub = 超低音
+sound.band.bass = 低音
+sound.band.punch = 冲击
+sound.band.warmth = 温暖
+sound.band.low_mids = 中低频
+sound.band.mids = 中频
+sound.band.upper_mids = 中高频
+sound.band.presence = 临场感
+sound.band.brilliance = 光泽
+sound.band.air = 空气感
+
+# ---- Equalizer: headroom and the response graph
+sound.eq.no_boost = 没有提升：不会削波。
+sound.eq.pre_gain_on = 输出已降低 {db} dB，以免提升造成削波。
+sound.eq.clip_warning = 提升最高达 +{db} dB，响亮的歌曲可能会削波。请开启自动预增益或降低各频段。
+sound.eq.small_boost = 提升最高达 +{db} dB（不足以造成削波）。
+sound.eq.pre_gain = 自动预增益
+sound.eq.note = 实时生效。拖动曲线上的点或滑块。曲线显示滤波器的实际效果：相邻的提升会叠加。
+sound.eq.save_title = 保存 EQ 曲线
+
+# ---- Own presets
+sound.preset.save = 存为预设…
+sound.preset.save_title = 保存音效预设
+sound.preset.rename_title = 重命名预设
+sound.preset.name_placeholder = 预设名称
+sound.preset.note = 一键设置速度、音高、混响和均衡器。可保存自己的预设：同名预设会被更新。速度和音高也可在“播放”中调整。
+
+# ---- Settings search
+sound.search.graph = 均衡器曲线
+sound.search.saved_eq = 我的 EQ 预设

@@ -1025,7 +1025,9 @@ locales/<locale>/*.lang  the catalogs (English = source), embedded by build.rs v
   and a percentage bubble, lyrics button; static by default — see
   [Player bar](#player-bar-redesign-progress-styles-backgrounds).
 * **OS media controls**, **Equalizer**, **volume**: unchanged (history below); the
-  equalizer gained Warm and Night presets, a reverb and sound presets (Now Playing extras round).
+  equalizer gained Warm and Night presets, a reverb and sound presets (Now Playing extras round),
+  then reverb fine controls, convolution rooms, night mode, your own presets, a response curve
+  and a perceptual volume curve ([Sound round](#sound-round-reverb-controls-convolution-rooms-night-mode-presets-eq-curve-volume-curve)).
 
 ### Home
 

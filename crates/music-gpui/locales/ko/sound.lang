@@ -1,0 +1,70 @@
+# Settings → Equalizer, the sound additions: reverb fine controls, convolution
+# rooms, night mode, own presets, the EQ graph (see locales/en/sound.lang).
+
+# ---- Convolution rooms (reverb buttons: keep short)
+sound.room.studio = 스튜디오
+sound.room.chamber = 체임버
+sound.room.church = 교회
+sound.room.own = 내 공간
+sound.room.own_named = 내 공간: {name}
+sound.room.convolution = 컨볼루션 공간
+sound.ir.load = 직접 불러오기(WAV)…
+sound.ir.pick = 공간으로 사용
+sound.ir.loaded = {name}에서 공간을 불러왔습니다
+sound.ir.failed = {name}을(를) 공간으로 사용할 수 없습니다: {error}
+
+# ---- Reverb fine controls (slider labels)
+sound.reverb.length = 길이
+sound.reverb.pre_delay = 프리딜레이
+sound.reverb.brightness = 밝기
+sound.reverb.early = 초기 반사
+sound.reverb.width = 폭
+sound.reverb.dry = 드라이 레벨
+sound.reverb.note = 이퀄라이저 다음 단계에서 음악 주위에 공간감을 더합니다. 공간은 아래 컨트롤의 프리셋이며, 하나라도 움직이면 사용자 지정이 됩니다. 컨볼루션 공간은 프리딜레이, 폭, 드라이 레벨을 사용합니다. 끄면 부담이 없고, 일시 정지하면 잔향이 자연스럽게 사라집니다.
+sound.value.seconds = {value}초
+sound.value.ms = {value} ms
+sound.value.db = {value} dB
+sound.value.ratio = {value} : 1
+
+# ---- Night mode
+sound.night.title = 나이트 모드
+sound.night.switch = 나이트 모드
+sound.night.threshold = 스레숄드
+sound.night.ratio = 레이시오
+sound.night.attack = 어택
+sound.night.release = 릴리스
+sound.night.makeup = 메이크업 게인
+sound.night.reset = 값 재설정
+sound.night.note = 낮은 볼륨으로 들을 수 있도록 큰 소리와 작은 소리의 차이를 줄입니다. 스레숄드를 넘는 레벨은 레이시오에 따라 낮추고, 그다음 전체를 메이크업 게인만큼 올립니다. 끄면 부담이 없습니다.
+
+# ---- Equalizer: band names (keep short)
+sound.band.sub = 서브
+sound.band.bass = 저음
+sound.band.punch = 펀치
+sound.band.warmth = 따뜻함
+sound.band.low_mids = 중저음
+sound.band.mids = 중음
+sound.band.upper_mids = 중고음
+sound.band.presence = 프레즌스
+sound.band.brilliance = 광채
+sound.band.air = 에어
+
+# ---- Equalizer: headroom and the response graph
+sound.eq.no_boost = 부스트 없음: 클리핑이 생기지 않습니다.
+sound.eq.pre_gain_on = 부스트가 클리핑되지 않도록 출력을 {db} dB 낮춥니다.
+sound.eq.clip_warning = 부스트가 +{db} dB에 달해 소리가 큰 곡에서 클리핑될 수 있습니다. 자동 프리게인을 켜거나 밴드를 낮추세요.
+sound.eq.small_boost = 부스트가 +{db} dB입니다(클리핑되기에는 작음).
+sound.eq.pre_gain = 자동 프리게인
+sound.eq.note = 바로 적용됩니다. 곡선의 점이나 슬라이더를 드래그하세요. 곡선은 필터가 실제로 하는 일을 보여 줍니다. 인접한 부스트는 합쳐집니다.
+sound.eq.save_title = EQ 곡선 저장
+
+# ---- Own presets
+sound.preset.save = 프리셋으로 저장…
+sound.preset.save_title = 사운드 프리셋 저장
+sound.preset.rename_title = 프리셋 이름 변경
+sound.preset.name_placeholder = 프리셋 이름
+sound.preset.note = 속도, 피치, 리버브, 이퀄라이저를 한 번에 설정합니다. 직접 저장할 수도 있으며, 같은 이름이 있으면 업데이트됩니다. 속도와 피치는 재생에도 있습니다.
+
+# ---- Settings search
+sound.search.graph = 이퀄라이저 곡선
+sound.search.saved_eq = 내 EQ 프리셋

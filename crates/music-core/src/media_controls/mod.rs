@@ -319,7 +319,10 @@ pub fn player_handler(
             let position = player.state().position.as_secs_f64() + secs;
             player.seek(Duration::from_secs_f64(position.max(0.0)));
         }
-        MediaControlEvent::SetVolume(volume) => player.set_volume(volume as f32),
+        // A slider position (as MPRIS shows it): through the volume curve.
+        MediaControlEvent::SetVolume(volume) => {
+            player.set_volume(crate::volume::gain(volume as f32))
+        }
         other => on_other(other),
     }
 }

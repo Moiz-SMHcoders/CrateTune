@@ -131,7 +131,6 @@ settings.eq.preset.bass = Bassi
 settings.eq.preset.vocal = Voce
 settings.eq.preset.treble = Alti
 settings.eq.preset.loudness = Loudness
-settings.eq.note = Applicato in tempo reale. Le amplificazioni vengono compensate in modo che l'uscita non saturi mai.
 
 # ---- Lyrics
 settings.lyrics.look = Aspetto
@@ -187,13 +186,11 @@ settings.eq.preset.night = Notte
 settings.reverb.title = Riverbero
 settings.reverb.mix = Quantità effetto
 settings.reverb.mix_value = {percent} %
-settings.reverb.note = Una stanza intorno alla musica, aggiunta dopo l'equalizzatore. Spento non costa nulla; in pausa l'eco si spegne piano.
 prefs.reverb.small_room = Stanza piccola
 prefs.reverb.hall = Sala
 prefs.reverb.plate = Plate
 prefs.reverb.cathedral = Cattedrale
 settings.sound.title = Preimpostazioni audio
-settings.sound.note = Imposta velocità, intonazione e riverbero con un clic. Velocità e intonazione sono anche in Riproduzione.
 prefs.sound.original = Originale
 prefs.sound.slowed_reverb = Rallentato + riverbero
 prefs.sound.nightcore = Nightcore

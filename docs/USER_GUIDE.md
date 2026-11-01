@@ -209,10 +209,36 @@ page. It takes effect the next time the app starts; **Restart now** does it righ
   **reverb** rooms and the **sound presets**; the button is highlighted while the sound is
   changed. Reverb (Settings → Equalizer): **Small room**, **Hall**, **Plate** or
   **Cathedral**, with a **Wet mix** slider for how much of the room you hear; off by default.
-  When you pause, the echo rings out instead of stopping dead. **Sound presets** set speed,
-  pitch and reverb in one click: *Original*, *Slowed + reverb*, *Nightcore*, *Practice*
-  (slower, same pitch) and *Concert hall*; change any of them afterwards and the preset
-  shows as *Custom*.
+  When you pause, the echo rings out instead of stopping dead. Under the rooms are the
+  reverb's **fine controls**: *Length* (0.1–10 s), *Pre-delay* (the gap before the echo,
+  0–200 ms), *Brightness*, *Early reflections*, *Width* and *Dry level* (how loud the song
+  itself stays). The rooms are presets of these; move one and the reverb shows as *Custom*.
+  **Convolution rooms** (*Studio*, *Chamber*, *Church*) put the music in a modelled room
+  instead; **Load your own (WAV)…** uses an impulse response file of yours (WAV, FLAC or
+  AIFF; mono or stereo; up to 6 s are used) — it is remembered and listed as *Own: name*.
+  Convolution rooms use the pre-delay, width and dry level. **Sound presets** set speed,
+  pitch, reverb and the equalizer in one click: *Original*, *Slowed + reverb*, *Nightcore*,
+  *Practice* (slower, same pitch) and *Concert hall*, plus your own: **Save as preset…**
+  keeps the current sound under a name (saving under a name that exists updates it);
+  rename or delete the selected one. They are in the Sound menu too. Change anything
+  afterwards and the preset shows as *Custom*.
+* **Night mode** (Sound menu, or Settings → Equalizer → *Night mode*): a compressor that
+  turns loud passages down and raises everything by a makeup gain, so you can listen
+  quietly without the loud parts jumping out. Defaults: threshold −24 dB, ratio 3 : 1,
+  attack 3 ms, release 250 ms, makeup +6 dB; each has a slider, and *Reset values* puts
+  them back. Off by default; off costs nothing.
+* **Equalizer extras** (Settings → Equalizer): a **curve** above the sliders shows what the
+  ten bands really do together (neighbouring boosts add up); drag a point, or click a
+  column, to set that band. Each band has a plain name under its frequency (*Sub*, *Bass*,
+  *Punch*, *Warmth*, *Low mids*, *Mids*, *Upper mids*, *Presence*, *Brilliance*, *Air*).
+  **Automatic pre-gain** (on by default) lowers the output by the curve's highest boost so
+  it can't clip; turn it off for the full level and the line under the curve warns, and the
+  part of the curve above 0 dB turns red, when the boosts could clip. **Save as preset…**
+  names the current curve; your curves sit beside the built-in presets and in the Sound
+  menu.
+* **Volume**: the slider follows your ears — its middle is about half as loud (−12 dB), and
+  the bottom part gives fine control of quiet levels. A volume saved by an older version
+  sounds the same after the update (the slider just sits further right).
 * **Sleep timer**: the moon button in the bar — 5 to 60 minutes, end of the song, or a
   custom length.
 * **Media keys** and the system's now-playing controls work on all three systems; on
@@ -529,7 +555,7 @@ Sections:
 | Appearance | profiles, interface language, **Window** (use the system title bar instead of the top bar), theme (dark, pure black, dynamic colours from the artwork), **Customize theme** (presets, accent, darkness, surface tint, contrast, corners, density, font, dynamic colour style), text size, Now Playing design (nine) and background, mini player layout and style |
 | Playback | shuffle / repeat, quality, loudness normalization, skip silence, skip failing songs, crossfade, speed and pitch, output device (the system default first; on Linux without ALSA's virtual and duplicate devices unless **Show all devices** is on), sleep timer |
 | Modules | provider modules (alternative audio sources) and where songs play from |
-| Equalizer | 10-band equalizer with presets (Flat, Bass, Vocal, Treble, Loudness, Warm, Night), reverb (four rooms and the wet mix), sound presets (speed, pitch and reverb together) |
+| Equalizer | 10-band equalizer with presets (Flat, Bass, Vocal, Treble, Loudness, Warm, Night) and your own named curves, a response curve with draggable bands, automatic pre-gain and a clipping warning; reverb (four rooms, three convolution rooms, your own impulse file, wet mix and fine controls); night mode (compressor); sound presets (speed, pitch, reverb and EQ together; built-in and your own) |
 | Lyrics | look, animation style, providers and their order, translation, romanization |
 | Content & region | content language and country, hide explicit, hide videos (also inside playlists, albums, radio and queues), autoplay similar songs |
 | Network | HTTP / HTTPS / SOCKS proxy with test; DNS-over-HTTPS (Cloudflare, Google, Quad9 or your own URL, with optional fallback to the system resolver) and **Test DNS** |

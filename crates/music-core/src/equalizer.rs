@@ -363,6 +363,30 @@ pub fn config_response_db(config: &EqualizerSettings, sample_rate: f64, at_frequ
         .sum()
 }
 
+/// Highest point of the composite response in dB, never negative (0 when bypassed or
+/// cut-only): the headroom the boosts need, and what volume compensation takes off. For a
+/// UI's clipping warning.
+pub fn peak_boost_db(config: &EqualizerSettings, sample_rate: f64) -> f64 {
+    if !config.enabled {
+        return 0.0;
+    }
+    let bands: Vec<&EqBandSettings> = config
+        .bands
+        .iter()
+        .take(MAX_EQ_BANDS)
+        .filter(|band| band.enabled)
+        .collect();
+    let biquads: Vec<Biquad> = bands
+        .iter()
+        .map(|b| Biquad::new(b.kind, sample_rate, b.frequency, b.gain_db, b.q))
+        .collect();
+    let centers: Vec<f64> = bands
+        .iter()
+        .map(|b| clamp_frequency(b.frequency, sample_rate))
+        .collect();
+    peak_response_db(&biquads, &centers, sample_rate)
+}
+
 /// Peak of the summed responses in dB, sampled over a log grid plus each band's center so narrow
 /// bells between grid points are still caught. Never negative - a cut-only curve needs no headroom.
 fn peak_response_db(biquads: &[Biquad], centers: &[f64], sample_rate: f64) -> f64 {
@@ -1595,6 +1619,28 @@ mod tests {
             config_response_db(&config(false, &cfg.bands), FS, 1_000.0),
             0.0
         );
+    }
+
+    #[test]
+    fn peak_boost_matches_the_compensation() {
+        let flat = EqualizerSettings::graphic([0.0; 10]);
+        assert_eq!(peak_boost_db(&flat, 48_000.0), 0.0);
+        let cut = EqualizerSettings::graphic([-6.0; 10]);
+        assert_eq!(peak_boost_db(&cut, 48_000.0), 0.0);
+        let mut one = [0.0; 10];
+        one[5] = 6.0;
+        let one = EqualizerSettings::graphic(one);
+        assert!((peak_boost_db(&one, 48_000.0) - 6.0).abs() < 0.05);
+        // Neighbouring boosts stack above either band's gain.
+        let bass = EqPreset::Bass.settings();
+        let peak = peak_boost_db(&bass, 48_000.0);
+        assert!(peak > 6.0, "{peak}");
+        assert!((comp_target(&bass.bands, 48_000.0) + peak).abs() < 1e-9);
+        let off = EqualizerSettings {
+            enabled: false,
+            ..bass
+        };
+        assert_eq!(peak_boost_db(&off, 48_000.0), 0.0);
     }
 
     #[test]

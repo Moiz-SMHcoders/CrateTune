@@ -129,7 +129,6 @@ settings.eq.preset.bass = Bass
 settings.eq.preset.vocal = Vokal
 settings.eq.preset.treble = Treble
 settings.eq.preset.loudness = Kenyaringan
-settings.eq.note = Diterapkan langsung. Penguatan dikompensasi sehingga output tidak pernah pecah.
 
 # ---- Lyrics
 settings.lyrics.look = Tampilan
@@ -184,13 +183,11 @@ settings.eq.preset.night = Malam
 settings.reverb.title = Gema
 settings.reverb.mix = Campuran efek
 settings.reverb.mix_value = {percent} %
-settings.reverb.note = Ruang di sekitar musik, ditambahkan setelah equalizer. Saat mati tidak memakan apa pun; saat dijeda, gemanya memudar.
 prefs.reverb.small_room = Ruang kecil
 prefs.reverb.hall = Aula
 prefs.reverb.plate = Plat
 prefs.reverb.cathedral = Katedral
 settings.sound.title = Preset suara
-settings.sound.note = Mengatur kecepatan, nada, dan gema dalam satu klik. Kecepatan dan nada juga ada di Pemutaran.
 prefs.sound.original = Asli
 prefs.sound.slowed_reverb = Lambat + gema
 prefs.sound.nightcore = Nightcore

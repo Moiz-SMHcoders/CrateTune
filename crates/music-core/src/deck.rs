@@ -9,9 +9,9 @@
 //! but short mutex sections; all decoding happens on voice threads.
 //!
 //! Each block is mixed at unity volume, ramped for pause/resume, run through
-//! the reverb (only while one is on; its tail rings out after a pause), copied
-//! into the [`SpectrumTap`] (when enabled), and only then scaled by the user
-//! volume.
+//! the reverb (only while one is on; its tail rings out after a pause) and the
+//! night-mode compressor (only while on), copied into the [`SpectrumTap`] (when
+//! enabled), and only then scaled by the user volume.
 
 use std::num::NonZero;
 use std::sync::{Arc, Mutex, MutexGuard};
@@ -19,6 +19,7 @@ use std::time::Duration;
 
 use rodio::{ChannelCount, SampleRate, Source};
 
+use crate::compressor::{Compressor, CompressorSettings};
 use crate::reverb::{Reverb, ReverbSettings};
 use crate::spectrum::SpectrumTap;
 use crate::voice::{Chunk, Voice};
@@ -227,6 +228,8 @@ struct DeckState {
     scratch: Vec<f32>,
     /// Present only while a reverb is on or still fading out (`Deck::set_reverb`).
     reverb: Option<Box<Reverb>>,
+    /// Present only while night mode is on or still fading out (`Deck::set_compressor`).
+    compressor: Option<Box<Compressor>>,
 }
 
 /// What the engine needs to know about the deck.
@@ -344,25 +347,67 @@ impl Deck {
     }
 
     /// Turns the reverb on, changes it, or lets it fade out (then it is dropped
-    /// and the callback skips it). The delay lines are allocated here, not in
-    /// the audio callback.
+    /// and the callback skips it). The delay lines (or a convolution room's
+    /// partitions) are built here, outside the lock, and only when the kind of
+    /// tail changes; never in the audio callback. Switching between an
+    /// algorithmic and a convolution room (or between two impulses) replaces
+    /// the reverb: the old tail stops and the new one glides in.
     pub(crate) fn set_reverb(&self, settings: ReverbSettings) {
         let settings = settings.sanitized();
-        let fresh = settings
-            .is_on()
-            .then(|| Box::new(Reverb::new(self.rate, settings)));
-        let mut st = self.lock();
-        match (&mut st.reverb, fresh) {
-            (Some(reverb), _) => reverb.set(settings),
-            (None, Some(fresh)) => st.reverb = Some(fresh),
-            (None, None) => {}
+        let Some(kind) = settings.tail_kind() else {
+            if let Some(reverb) = self.lock().reverb.as_mut() {
+                reverb.set(settings);
+            }
+            return;
+        };
+        let running = self.lock().reverb.as_ref().map(|r| r.kind());
+        if running == Some(kind)
+            && let Some(reverb) = self.lock().reverb.as_mut()
+        {
+            reverb.set(settings);
+            return;
         }
+        let fresh = Box::new(Reverb::new(self.rate, settings.clone()));
+        let old = {
+            let mut st = self.lock();
+            match st.reverb.as_mut() {
+                // Another call built the same kind meanwhile.
+                Some(reverb) if reverb.kind() == kind => {
+                    reverb.set(settings);
+                    return;
+                }
+                _ => st.reverb.replace(fresh),
+            }
+        };
+        // Freed here, on the engine thread.
+        drop(old);
     }
 
     /// The reverb's settings while one runs (tests).
     #[cfg(test)]
     pub(crate) fn reverb_settings(&self) -> Option<ReverbSettings> {
-        self.lock().reverb.as_ref().map(|r| r.settings())
+        self.lock().reverb.as_ref().map(|r| r.settings().clone())
+    }
+
+    /// Turns night mode on, changes it, or lets it fade out (then the
+    /// compressor is dropped and the callback skips it).
+    pub(crate) fn set_compressor(&self, settings: CompressorSettings) {
+        let settings = settings.sanitized();
+        let fresh = settings
+            .enabled
+            .then(|| Box::new(Compressor::new(self.rate, settings)));
+        let mut st = self.lock();
+        match (&mut st.compressor, fresh) {
+            (Some(compressor), _) => compressor.set(settings),
+            (None, Some(fresh)) => st.compressor = Some(fresh),
+            (None, None) => {}
+        }
+    }
+
+    /// The compressor's settings while one runs (tests).
+    #[cfg(test)]
+    pub(crate) fn compressor_settings(&self) -> Option<CompressorSettings> {
+        self.lock().compressor.as_ref().map(|c| c.settings())
     }
 
     /// Sleep timer "end of track": pause right after the next advance.
@@ -445,6 +490,15 @@ impl Deck {
         }
         // What the listener hears, before the volume (muted playback still
         // animates a visualizer). Paused blocks feed zeros so bars fall at once.
+        // Night mode after the room, so the tail is evened out with the song.
+        if let Some(compressor) = st.compressor.as_mut()
+            && (!silent || reverb_tail)
+        {
+            compressor.process(out);
+            if compressor.is_finished() {
+                st.compressor = None;
+            }
+        }
         if self.tap.is_enabled() {
             self.tap.push_stereo(out);
         }

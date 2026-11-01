@@ -1,0 +1,70 @@
+# Settings → Equalizer, the sound additions: reverb fine controls, convolution
+# rooms, night mode, own presets, the EQ graph (see locales/en/sound.lang).
+
+# ---- Convolution rooms (reverb buttons: keep short)
+sound.room.studio = Studio
+sound.room.chamber = Kammer
+sound.room.church = Kirche
+sound.room.own = Eigener Raum
+sound.room.own_named = Eigener: {name}
+sound.room.convolution = Faltungsräume
+sound.ir.load = Eigenen laden (WAV)…
+sound.ir.pick = Als Raum verwenden
+sound.ir.loaded = Raum aus {name} geladen
+sound.ir.failed = {name} konnte nicht als Raum verwendet werden: {error}
+
+# ---- Reverb fine controls (slider labels)
+sound.reverb.length = Länge
+sound.reverb.pre_delay = Pre-Delay
+sound.reverb.brightness = Helligkeit
+sound.reverb.early = Erstreflexionen
+sound.reverb.width = Breite
+sound.reverb.dry = Direktsignal
+sound.reverb.note = Ein Raum um die Musik, nach dem Equalizer. Die Räume sind Presets der Regler darunter; bewegst du einen, wird daraus „Benutzerdefiniert“. Faltungsräume nutzen Pre-Delay, Breite und Direktsignal. Aus kostet nichts; beim Pausieren klingt der Hall aus.
+sound.value.seconds = {value} s
+sound.value.ms = {value} ms
+sound.value.db = {value} dB
+sound.value.ratio = {value} : 1
+
+# ---- Night mode
+sound.night.title = Nachtmodus
+sound.night.switch = Nachtmodus
+sound.night.threshold = Schwelle
+sound.night.ratio = Ratio
+sound.night.attack = Attack
+sound.night.release = Release
+sound.night.makeup = Make-up-Gain
+sound.night.reset = Werte zurücksetzen
+sound.night.note = Gleicht laute und leise Stellen für das Hören bei geringer Lautstärke aus: Pegel über der Schwelle werden gemäß der Ratio abgesenkt, dann wird alles um das Make-up-Gain angehoben. Aus kostet nichts.
+
+# ---- Equalizer: band names (keep short)
+sound.band.sub = Sub
+sound.band.bass = Bass
+sound.band.punch = Punch
+sound.band.warmth = Wärme
+sound.band.low_mids = Untere Mitten
+sound.band.mids = Mitten
+sound.band.upper_mids = Obere Mitten
+sound.band.presence = Präsenz
+sound.band.brilliance = Brillanz
+sound.band.air = Luft
+
+# ---- Equalizer: headroom and the response graph
+sound.eq.no_boost = Keine Anhebung: nichts kann übersteuern.
+sound.eq.pre_gain_on = Die Ausgabe wird um {db} dB abgesenkt, damit die Anhebungen nicht übersteuern können.
+sound.eq.clip_warning = Anhebungen erreichen +{db} dB und können bei lauten Songs übersteuern. Schalte automatisches Pre-Gain ein oder senke die Bänder ab.
+sound.eq.small_boost = Anhebungen erreichen +{db} dB (zu wenig zum Übersteuern).
+sound.eq.pre_gain = Automatisches Pre-Gain
+sound.eq.note = Wirkt sofort. Ziehe die Punkte auf der Kurve oder die Regler. Die Kurve zeigt, was die Filter wirklich tun: Benachbarte Anhebungen addieren sich.
+sound.eq.save_title = EQ-Kurve speichern
+
+# ---- Own presets
+sound.preset.save = Als Preset speichern…
+sound.preset.save_title = Klang-Preset speichern
+sound.preset.rename_title = Preset umbenennen
+sound.preset.name_placeholder = Preset-Name
+sound.preset.note = Stellt Tempo, Tonhöhe, Hall und Equalizer mit einem Klick ein. Speichere eigene: Ein vorhandener Name wird aktualisiert. Tempo und Tonhöhe gibt es auch unter Wiedergabe.
+
+# ---- Settings search
+sound.search.graph = Equalizer-Kurve
+sound.search.saved_eq = Deine EQ-Presets

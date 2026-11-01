@@ -1,0 +1,70 @@
+# Settings → Equalizer, the sound additions: reverb fine controls, convolution
+# rooms, night mode, own presets, the EQ graph (see locales/en/sound.lang).
+
+# ---- Convolution rooms (reverb buttons: keep short)
+sound.room.studio = Studio
+sound.room.chamber = Kamar
+sound.room.church = Gereja
+sound.room.own = Ruang Anda sendiri
+sound.room.own_named = Sendiri: {name}
+sound.room.convolution = Ruang konvolusi
+sound.ir.load = Muat milik Anda (WAV)…
+sound.ir.pick = Pakai sebagai ruang
+sound.ir.loaded = Ruang dimuat dari {name}
+sound.ir.failed = Tidak bisa memakai {name} sebagai ruang: {error}
+
+# ---- Reverb fine controls (slider labels)
+sound.reverb.length = Panjang
+sound.reverb.pre_delay = Pre-delay
+sound.reverb.brightness = Kecerahan
+sound.reverb.early = Pantulan awal
+sound.reverb.width = Lebar
+sound.reverb.dry = Level kering
+sound.reverb.note = Ruang di sekitar musik, setelah ekualiser. Ruang-ruang ini adalah preset dari kontrol di bawah; menggeser salah satunya membuatnya menjadi Kustom. Ruang konvolusi memakai pre-delay, lebar, dan level kering. Saat mati tidak membebani apa pun; saat dijeda, gema memudar dengan sendirinya.
+sound.value.seconds = {value} dtk
+sound.value.ms = {value} ms
+sound.value.db = {value} dB
+sound.value.ratio = {value} : 1
+
+# ---- Night mode
+sound.night.title = Mode malam
+sound.night.switch = Mode malam
+sound.night.threshold = Ambang
+sound.night.ratio = Rasio
+sound.night.attack = Attack
+sound.night.release = Release
+sound.night.makeup = Makeup gain
+sound.night.reset = Setel ulang nilai
+sound.night.note = Meratakan bagian keras dan pelan untuk mendengarkan dengan volume rendah: level di atas ambang diturunkan sesuai rasio, lalu semuanya dinaikkan dengan makeup gain. Saat mati tidak membebani apa pun.
+
+# ---- Equalizer: band names (keep short)
+sound.band.sub = Sub
+sound.band.bass = Bass
+sound.band.punch = Punch
+sound.band.warmth = Kehangatan
+sound.band.low_mids = Mid rendah
+sound.band.mids = Mid
+sound.band.upper_mids = Mid tinggi
+sound.band.presence = Presence
+sound.band.brilliance = Kilau
+sound.band.air = Udara
+
+# ---- Equalizer: headroom and the response graph
+sound.eq.no_boost = Tanpa boost: tidak ada yang bisa clipping.
+sound.eq.pre_gain_on = Output diturunkan {db} dB agar boost tidak bisa clipping.
+sound.eq.clip_warning = Boost mencapai +{db} dB dan bisa clipping pada lagu yang keras. Nyalakan pre-gain otomatis atau turunkan band.
+sound.eq.small_boost = Boost mencapai +{db} dB (terlalu kecil untuk clipping).
+sound.eq.pre_gain = Pre-gain otomatis
+sound.eq.note = Diterapkan langsung. Seret titik pada kurva atau slider. Kurva menunjukkan apa yang benar-benar dilakukan filter: boost yang berdekatan saling menjumlah.
+sound.eq.save_title = Simpan kurva EQ
+
+# ---- Own presets
+sound.preset.save = Simpan sebagai preset…
+sound.preset.save_title = Simpan preset suara
+sound.preset.rename_title = Ganti nama preset
+sound.preset.name_placeholder = Nama preset
+sound.preset.note = Mengatur kecepatan, nada, gema, dan ekualiser dalam satu klik. Simpan milik Anda sendiri: nama yang sudah ada akan diperbarui. Kecepatan dan nada juga ada di Pemutaran.
+
+# ---- Settings search
+sound.search.graph = Kurva ekualiser
+sound.search.saved_eq = Preset EQ Anda

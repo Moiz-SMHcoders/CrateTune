@@ -132,7 +132,6 @@ settings.eq.preset.bass = Graves
 settings.eq.preset.vocal = Voces
 settings.eq.preset.treble = Agudos
 settings.eq.preset.loudness = Sonoridad
-settings.eq.note = Se aplica en vivo. Las ganancias se compensan para que la salida nunca sature.
 
 # ---- Lyrics
 settings.lyrics.look = Aspecto
@@ -188,13 +187,11 @@ settings.eq.preset.night = Noche
 settings.reverb.title = Reverberación
 settings.reverb.mix = Mezcla de efecto
 settings.reverb.mix_value = {percent} %
-settings.reverb.note = Una sala alrededor de la música, añadida después del ecualizador. Desactivada no consume nada; al pausar, el eco se apaga poco a poco.
 prefs.reverb.small_room = Sala pequeña
 prefs.reverb.hall = Auditorio
 prefs.reverb.plate = Placa
 prefs.reverb.cathedral = Catedral
 settings.sound.title = Ajustes de sonido
-settings.sound.note = Ajusta velocidad, tono y reverberación con un clic. La velocidad y el tono también están en Reproducción.
 prefs.sound.original = Original
 prefs.sound.slowed_reverb = Lento + reverb
 prefs.sound.nightcore = Nightcore

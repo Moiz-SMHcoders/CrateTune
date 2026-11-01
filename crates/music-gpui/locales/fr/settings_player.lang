@@ -131,7 +131,6 @@ settings.eq.preset.bass = Basses
 settings.eq.preset.vocal = Voix
 settings.eq.preset.treble = Aigus
 settings.eq.preset.loudness = Loudness
-settings.eq.note = Appliqué en direct. Les amplifications sont compensées pour que la sortie ne sature jamais.
 
 # ---- Lyrics
 settings.lyrics.look = Apparence
@@ -187,13 +186,11 @@ settings.eq.preset.night = Nuit
 settings.reverb.title = Réverbération
 settings.reverb.mix = Dosage de l'effet
 settings.reverb.mix_value = {percent} %
-settings.reverb.note = Une pièce autour de la musique, ajoutée après l'égaliseur. Désactivée, elle ne coûte rien ; à la pause, l'écho s'éteint doucement.
 prefs.reverb.small_room = Petite pièce
 prefs.reverb.hall = Salle
 prefs.reverb.plate = Plaque
 prefs.reverb.cathedral = Cathédrale
 settings.sound.title = Préréglages de son
-settings.sound.note = Règle vitesse, hauteur et réverbération en un clic. La vitesse et la hauteur sont aussi dans Lecture.
 prefs.sound.original = Original
 prefs.sound.slowed_reverb = Ralenti + réverb
 prefs.sound.nightcore = Nightcore

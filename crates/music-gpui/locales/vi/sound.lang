@@ -1,0 +1,70 @@
+# Settings → Equalizer, the sound additions: reverb fine controls, convolution
+# rooms, night mode, own presets, the EQ graph (see locales/en/sound.lang).
+
+# ---- Convolution rooms (reverb buttons: keep short)
+sound.room.studio = Phòng thu
+sound.room.chamber = Buồng vang
+sound.room.church = Nhà thờ
+sound.room.own = Phòng của bạn
+sound.room.own_named = Riêng: {name}
+sound.room.convolution = Phòng tích chập
+sound.ir.load = Tải tệp riêng (WAV)…
+sound.ir.pick = Dùng làm phòng
+sound.ir.loaded = Đã tải phòng từ {name}
+sound.ir.failed = Không thể dùng {name} làm phòng: {error}
+
+# ---- Reverb fine controls (slider labels)
+sound.reverb.length = Độ dài
+sound.reverb.pre_delay = Trễ trước
+sound.reverb.brightness = Độ sáng
+sound.reverb.early = Phản xạ sớm
+sound.reverb.width = Độ rộng
+sound.reverb.dry = Mức khô
+sound.reverb.note = Một căn phòng bao quanh âm nhạc, sau bộ cân bằng. Các phòng là cấu hình sẵn của các thanh trượt bên dưới; chỉnh một thanh sẽ chuyển sang Tùy chỉnh. Phòng tích chập dùng trễ trước, độ rộng và mức khô. Khi tắt không tốn gì; khi tạm dừng, tiếng vang tắt dần tự nhiên.
+sound.value.seconds = {value} giây
+sound.value.ms = {value} ms
+sound.value.db = {value} dB
+sound.value.ratio = {value} : 1
+
+# ---- Night mode
+sound.night.title = Chế độ nghe đêm
+sound.night.switch = Nghe đêm
+sound.night.threshold = Ngưỡng
+sound.night.ratio = Tỷ lệ
+sound.night.attack = Attack
+sound.night.release = Release
+sound.night.makeup = Tăng bù
+sound.night.reset = Đặt lại giá trị
+sound.night.note = Cân bằng đoạn to và đoạn nhỏ để nghe ở âm lượng thấp: mức vượt ngưỡng được giảm theo tỷ lệ, rồi toàn bộ được nâng lên bằng mức tăng bù. Khi tắt không tốn gì.
+
+# ---- Equalizer: band names (keep short)
+sound.band.sub = Sub
+sound.band.bass = Trầm
+sound.band.punch = Lực
+sound.band.warmth = Ấm
+sound.band.low_mids = Trung thấp
+sound.band.mids = Trung
+sound.band.upper_mids = Trung cao
+sound.band.presence = Hiện diện
+sound.band.brilliance = Sáng
+sound.band.air = Thoáng
+
+# ---- Equalizer: headroom and the response graph
+sound.eq.no_boost = Không tăng: không thể bị méo.
+sound.eq.pre_gain_on = Đầu ra được giảm {db} dB để các mức tăng không thể bị méo.
+sound.eq.clip_warning = Mức tăng đạt +{db} dB và có thể bị méo với bài hát lớn. Bật pre-gain tự động hoặc hạ các dải.
+sound.eq.small_boost = Mức tăng đạt +{db} dB (quá ít để bị méo).
+sound.eq.pre_gain = Pre-gain tự động
+sound.eq.note = Áp dụng ngay. Kéo các điểm trên đường cong hoặc thanh trượt. Đường cong là những gì bộ lọc thực sự làm: các mức tăng cạnh nhau cộng dồn.
+sound.eq.save_title = Lưu đường cong EQ
+
+# ---- Own presets
+sound.preset.save = Lưu thành cấu hình…
+sound.preset.save_title = Lưu cấu hình âm thanh
+sound.preset.rename_title = Đổi tên cấu hình
+sound.preset.name_placeholder = Tên cấu hình
+sound.preset.note = Đặt tốc độ, cao độ, vang và bộ cân bằng chỉ với một cú nhấp. Lưu cấu hình của riêng bạn: tên đã có sẽ được cập nhật. Tốc độ và cao độ cũng có trong Phát lại.
+
+# ---- Settings search
+sound.search.graph = Đường cong bộ cân bằng
+sound.search.saved_eq = Cấu hình EQ của bạn

@@ -131,7 +131,6 @@ settings.eq.preset.bass = Баси
 settings.eq.preset.vocal = Вокал
 settings.eq.preset.treble = Високі
 settings.eq.preset.loudness = Гучність
-settings.eq.note = Застосовується наживо. Підсилення компенсується, тож вихідний сигнал ніколи не перевантажується.
 
 # ---- Lyrics
 settings.lyrics.look = Вигляд
@@ -189,13 +188,11 @@ settings.eq.preset.night = Ніч
 settings.reverb.title = Реверберація
 settings.reverb.mix = Частка ефекту
 settings.reverb.mix_value = {percent} %
-settings.reverb.note = Простір навколо музики, додається після еквалайзера. Вимкнена нічого не коштує; під час паузи луна плавно згасає.
 prefs.reverb.small_room = Мала кімната
 prefs.reverb.hall = Зала
 prefs.reverb.plate = Пластина
 prefs.reverb.cathedral = Собор
 settings.sound.title = Пресети звуку
-settings.sound.note = Задає швидкість, висоту тону й реверберацію одним натисканням. Швидкість і висота тону є також у розділі «Відтворення».
 prefs.sound.original = Оригінал
 prefs.sound.slowed_reverb = Уповільнено + реверб
 prefs.sound.nightcore = Найткор

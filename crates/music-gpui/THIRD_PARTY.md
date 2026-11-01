@@ -51,6 +51,27 @@ Zuno `1fa9a9669e4a526ebe53c0275153feda0c4fcefa` (Apache-2.0), Limusic
 | `src/components/sound_menu.rs` | Zuno `src/ui/components/player/PlaybackOptions.tsx` (one popover for the playback options and the EQ presets); Limusic's effects button that lights up while an effect is on (`PlayerBar.svelte`) | Submenus for the EQ presets, reverb rooms and sound presets in the player bar's quality menu and a Now Playing header button that is highlighted while the sound is changed. |
 | `src/components/np_visualizer.rs` (Ambient lights) | Deviload `src/music-ambient.js`, `src/music-ambient-light.js`, `docs/music-ambient.md` | Three lights in the artwork's colours for the lows, mids and highs, opacity 0.17 + level × 0.76 and a little growth, drawn from the analyzer's 16 bands with the pre-rendered glow images instead of CSS blur. |
 
+## Zuno, Limusic and Deviload (sound round)
+
+Written for this project after the apps below; no file was copied. Upstream commits: Zuno
+(<https://github.com/noFAYZ/zuno>, © noFAYZ) `1fa9a9669e4a526ebe53c0275153feda0c4fcefa`
+(Apache-2.0), Limusic (<https://github.com/SimoHypers/limusic>, © SimoHypers)
+`d82372cdd3016e3c5e28ea8022596b7fefdf681a` (GPL-3.0), Deviload
+(<https://github.com/Pronexsteam/deviload>, © Samvel Avetisyan)
+`7348689cf292e175769f1a7a3d7000d3fb697178` (MIT; the night-mode values below are the only
+numbers taken from it, and the permission notice of Deviload's `LICENSE` applies to them).
+refryt (`e9685b0b49ff2fd094d60abc565a57494963755d`, GPL-3.0) was surveyed; nothing came
+from it.
+
+| music-gpui file | Upstream file(s) | What was adapted |
+|---|---|---|
+| `src/settings/eq_graph.rs`, `src/settings/sound.rs` (`EqCurve`, `band_name`) | Zuno `src/ui/components/Equalizer.tsx` (`EqualizerGraph`: the real filter response drawn over ±15 dB, grid at ±12 / ±6 / 0, a press on a column sets that band, the part above 0 dB marked; `BAND_ROLES`), `src/ui/settings/equalizerCurve.ts` (`responseCurveDb`, `autoPreampDb`) | The curve from `music_core::equalizer::config_response_db` (the DSP's own biquads) at 160 log-spaced points, recomputed only when a gain changes; the over-0-dB part tinted only while automatic pre-gain is off; band names Sub, Bass, Punch, Warmth, Low mids, Mids, Upper mids, Presence, Brilliance, Air (some of Zuno's roles, some ours). |
+| `src/settings/file.rs` (`SavedEq`), `src/settings/sound.rs` (`save_eq_preset`, …) | Zuno `src/ui/settings/equalizer.ts` (user presets beside the built-ins, saving under an existing name updates it, rename, delete) | Stored in `settings.json`, names unique ignoring case, at most 50; listed in the Sound menu. |
+| `src/settings/prefs.rs` (`UserSoundPreset`) | Limusic `ui/src/lib/effect-presets.ts`, `src-tauri/src/state.rs` (`playback_params`: speed, semitones and reverb saved together) | Plus the reverb's fine values or impulse file and the equalizer; listed with the built-in presets in Settings and the Sound menu. |
+| `src/settings/sound.rs` (reverb fine controls), `src/settings/equalizer.rs` | Limusic `ui/src/lib/components/TempoPitchDialog.svelte`, `crates/player/src/lib.rs` (`Reverb`: decay, pre-delay 0–200 ms, damping, reflections, dry level; impulse responses through FFmpeg's `afir`) | Mapped onto `music_core::ReverbParams`; the four rooms are presets of them; an impulse file is decoded by Symphonia and convolved in our own engine (`music_core::convolver`). |
+| `src/settings/sound.rs` (night mode), `src/components/sound_menu.rs` | Deviload `src/music-sound.js` ("volume smoothing": a compressor with threshold −24 dB, ratio 3) | A switch in the Sound menu and Settings with threshold, ratio, attack, release and makeup sliders (`music_core::compressor`). |
+| `src/clock.rs` (`Engine::set_volume`), `src/settings/file.rs` (`migrate`) | Deviload's squared volume (`p²`); Limusic's `10^(−(1−p)^1.5)` compared | The square, applied where the slider's value reaches the player; settings files of version 1 have their volume converted to the slider position of the same gain. |
+
 ## refryt, Deviload and Limusic (look round)
 
 Written for this project after ideas from **refryt** (<https://github.com/gridoe/refryt> at

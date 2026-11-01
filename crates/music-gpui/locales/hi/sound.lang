@@ -1,0 +1,70 @@
+# Settings → Equalizer, the sound additions: reverb fine controls, convolution
+# rooms, night mode, own presets, the EQ graph (see locales/en/sound.lang).
+
+# ---- Convolution rooms (reverb buttons: keep short)
+sound.room.studio = स्टूडियो
+sound.room.chamber = चैंबर
+sound.room.church = चर्च
+sound.room.own = आपका अपना कमरा
+sound.room.own_named = अपना: {name}
+sound.room.convolution = कन्वॉल्यूशन कमरे
+sound.ir.load = अपनी फ़ाइल लोड करें (WAV)…
+sound.ir.pick = कमरे के रूप में इस्तेमाल करें
+sound.ir.loaded = {name} से कमरा लोड हुआ
+sound.ir.failed = {name} को कमरे के रूप में इस्तेमाल नहीं कर सके: {error}
+
+# ---- Reverb fine controls (slider labels)
+sound.reverb.length = लंबाई
+sound.reverb.pre_delay = प्री-डिले
+sound.reverb.brightness = चमक
+sound.reverb.early = अर्ली रिफ़्लेक्शन
+sound.reverb.width = चौड़ाई
+sound.reverb.dry = ड्राई लेवल
+sound.reverb.note = संगीत के चारों ओर एक कमरा, इक्वलाइज़र के बाद। कमरे नीचे दिए कंट्रोल के प्रीसेट हैं; किसी एक को हिलाने पर यह कस्टम हो जाता है। कन्वॉल्यूशन कमरे प्री-डिले, चौड़ाई और ड्राई लेवल का इस्तेमाल करते हैं। बंद होने पर कोई ख़र्च नहीं; रोकने पर गूँज धीरे-धीरे थम जाती है।
+sound.value.seconds = {value} से॰
+sound.value.ms = {value} ms
+sound.value.db = {value} dB
+sound.value.ratio = {value} : 1
+
+# ---- Night mode
+sound.night.title = नाइट मोड
+sound.night.switch = नाइट मोड
+sound.night.threshold = थ्रेशोल्ड
+sound.night.ratio = रेशियो
+sound.night.attack = अटैक
+sound.night.release = रिलीज़
+sound.night.makeup = मेकअप गेन
+sound.night.reset = मान रीसेट करें
+sound.night.note = कम आवाज़ में सुनने के लिए तेज़ और धीमे हिस्सों को बराबर करता है: थ्रेशोल्ड से ऊपर के लेवल रेशियो के हिसाब से कम किए जाते हैं, फिर सब कुछ मेकअप गेन से बढ़ाया जाता है। बंद होने पर कोई ख़र्च नहीं।
+
+# ---- Equalizer: band names (keep short)
+sound.band.sub = सब
+sound.band.bass = बेस
+sound.band.punch = पंच
+sound.band.warmth = गर्माहट
+sound.band.low_mids = लो मिड
+sound.band.mids = मिड
+sound.band.upper_mids = अपर मिड
+sound.band.presence = प्रेज़ेंस
+sound.band.brilliance = ब्रिलियंस
+sound.band.air = एयर
+
+# ---- Equalizer: headroom and the response graph
+sound.eq.no_boost = कोई बूस्ट नहीं: क्लिपिंग नहीं हो सकती।
+sound.eq.pre_gain_on = आउटपुट {db} dB कम किया गया है ताकि बूस्ट क्लिप न हो सकें।
+sound.eq.clip_warning = बूस्ट +{db} dB तक पहुँचते हैं और तेज़ गानों पर क्लिप हो सकते हैं। ऑटोमैटिक प्री-गेन चालू करें या बैंड कम करें।
+sound.eq.small_boost = बूस्ट +{db} dB तक पहुँचते हैं (क्लिप होने के लिए बहुत कम)।
+sound.eq.pre_gain = ऑटोमैटिक प्री-गेन
+sound.eq.note = तुरंत लागू होता है। कर्व पर पॉइंट या स्लाइडर खींचें। कर्व वही दिखाता है जो फ़िल्टर सच में करते हैं: पास-पास के बूस्ट जुड़ जाते हैं।
+sound.eq.save_title = EQ कर्व सेव करें
+
+# ---- Own presets
+sound.preset.save = प्रीसेट के रूप में सेव करें…
+sound.preset.save_title = साउंड प्रीसेट सेव करें
+sound.preset.rename_title = प्रीसेट का नाम बदलें
+sound.preset.name_placeholder = प्रीसेट का नाम
+sound.preset.note = स्पीड, पिच, रिवर्ब और इक्वलाइज़र एक क्लिक में सेट करता है। अपने प्रीसेट सेव करें: मौजूदा नाम वाला प्रीसेट अपडेट हो जाता है। स्पीड और पिच प्लेबैक में भी हैं।
+
+# ---- Settings search
+sound.search.graph = इक्वलाइज़र कर्व
+sound.search.saved_eq = आपके EQ प्रीसेट

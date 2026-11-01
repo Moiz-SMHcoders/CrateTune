@@ -1,0 +1,70 @@
+# Settings → Equalizer, the sound additions: reverb fine controls, convolution
+# rooms, night mode, own presets, the EQ graph (see locales/en/sound.lang).
+
+# ---- Convolution rooms (reverb buttons: keep short)
+sound.room.studio = Estúdio
+sound.room.chamber = Câmara
+sound.room.church = Igreja
+sound.room.own = Sua própria sala
+sound.room.own_named = Própria: {name}
+sound.room.convolution = Salas por convolução
+sound.ir.load = Carregar a sua (WAV)…
+sound.ir.pick = Usar como sala
+sound.ir.loaded = Sala carregada de {name}
+sound.ir.failed = Não foi possível usar {name} como sala: {error}
+
+# ---- Reverb fine controls (slider labels)
+sound.reverb.length = Duração
+sound.reverb.pre_delay = Pré-delay
+sound.reverb.brightness = Brilho
+sound.reverb.early = Primeiras reflexões
+sound.reverb.width = Largura
+sound.reverb.dry = Nível seco
+sound.reverb.note = Uma sala em volta da música, depois do equalizador. As salas são predefinições dos controles abaixo; mexer em um muda para Personalizado. As salas por convolução usam o pré-delay, a largura e o nível seco. Desativado não custa nada; ao pausar, o eco se dissipa naturalmente.
+sound.value.seconds = {value} s
+sound.value.ms = {value} ms
+sound.value.db = {value} dB
+sound.value.ratio = {value} : 1
+
+# ---- Night mode
+sound.night.title = Modo noturno
+sound.night.switch = Modo noturno
+sound.night.threshold = Limiar
+sound.night.ratio = Ratio
+sound.night.attack = Ataque
+sound.night.release = Release
+sound.night.makeup = Ganho de compensação
+sound.night.reset = Redefinir valores
+sound.night.note = Equilibra partes altas e baixas para ouvir em volume baixo: níveis acima do limiar são reduzidos de acordo com o ratio e depois tudo é elevado pelo ganho de compensação. Desativado não custa nada.
+
+# ---- Equalizer: band names (keep short)
+sound.band.sub = Sub
+sound.band.bass = Graves
+sound.band.punch = Punch
+sound.band.warmth = Calor
+sound.band.low_mids = Médios-graves
+sound.band.mids = Médios
+sound.band.upper_mids = Médios-agudos
+sound.band.presence = Presença
+sound.band.brilliance = Brilho
+sound.band.air = Ar
+
+# ---- Equalizer: headroom and the response graph
+sound.eq.no_boost = Sem reforço: nada pode clipar.
+sound.eq.pre_gain_on = A saída é reduzida em {db} dB para que os reforços não possam clipar.
+sound.eq.clip_warning = Os reforços chegam a +{db} dB e podem clipar em músicas altas. Ative o pré-ganho automático ou abaixe as bandas.
+sound.eq.small_boost = Os reforços chegam a +{db} dB (pouco demais para clipar).
+sound.eq.pre_gain = Pré-ganho automático
+sound.eq.note = Aplicado na hora. Arraste os pontos da curva ou os controles deslizantes. A curva mostra o que os filtros realmente fazem: reforços vizinhos se somam.
+sound.eq.save_title = Salvar curva do EQ
+
+# ---- Own presets
+sound.preset.save = Salvar como predefinição…
+sound.preset.save_title = Salvar predefinição de som
+sound.preset.rename_title = Renomear predefinição
+sound.preset.name_placeholder = Nome da predefinição
+sound.preset.note = Ajusta velocidade, tom, reverb e equalizador em um clique. Salve as suas: um nome que já existe é atualizado. Velocidade e tom também estão em Reprodução.
+
+# ---- Settings search
+sound.search.graph = Curva do equalizador
+sound.search.saved_eq = Suas predefinições de EQ

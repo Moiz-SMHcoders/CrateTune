@@ -20,6 +20,7 @@ use std::time::{Duration, Instant};
 
 use rodio::MixerDeviceSink;
 
+use crate::compressor::CompressorSettings;
 use crate::deck::{Deck, HeadlessOutput, MAX_CROSSFADE};
 use crate::equalizer::EqControl;
 use crate::output::{self, OutputDevice};
@@ -181,6 +182,7 @@ enum Command {
     SetNext(Option<Track>),
     SetCrossfade(Duration),
     SetReverb(ReverbSettings),
+    SetCompressor(CompressorSettings),
     SetSkipSilence(Option<SilenceConfig>),
     SetSpeed(f32),
     SetPitch(f32),
@@ -456,6 +458,13 @@ impl Player {
     /// lets the wet part fade out, then drops the reverb.
     pub fn set_reverb(&self, settings: ReverbSettings) {
         self.send(Command::SetReverb(settings.sanitized()));
+    }
+
+    /// Night mode: a compressor after the reverb (before the spectrum tap and
+    /// the volume). Off (the default) costs nothing: the deck lets its gain
+    /// glide back to unity over ~10 ms, then drops it.
+    pub fn set_compressor(&self, settings: CompressorSettings) {
+        self.send(Command::SetCompressor(settings.sanitized()));
     }
 
     /// Turns the equalizer off (bit-exact passthrough).
@@ -907,6 +916,7 @@ impl Engine {
             Command::SetNext(track) => self.set_next(track),
             Command::SetCrossfade(d) => self.deck.set_crossfade(d),
             Command::SetReverb(settings) => self.deck.set_reverb(settings),
+            Command::SetCompressor(settings) => self.deck.set_compressor(settings),
             Command::SetSkipSilence(config) => {
                 self.config.settings.silence = config;
                 self.push_settings();

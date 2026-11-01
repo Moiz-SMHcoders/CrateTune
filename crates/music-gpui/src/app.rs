@@ -300,7 +300,8 @@ impl MusicApp {
                     );
                 }
                 engine.set_equalizer(this.settings.read(cx).equalizer());
-                engine.apply_audio(&this.settings.read(cx).settings().audio);
+                let panel = this.settings.read(cx);
+                engine.apply_audio(&panel.settings().audio, panel.reverb_settings());
                 // Main thread, window exists: what the media-controls docs require.
                 this.services
                     .start_media_controls(&engine, services::hwnd(window));
@@ -734,11 +735,12 @@ impl MusicApp {
             }
             SettingsEvent::Integrations => self.apply_integrations(cx),
             SettingsEvent::Audio => {
-                let audio = self.settings.read(cx).settings().audio.clone();
+                let panel = self.settings.read(cx);
+                let (audio, reverb) = (panel.settings().audio.clone(), panel.reverb_settings());
                 crate::module_service::ModuleService::set_stream_source(cx, audio.stream_source);
                 crate::module_service::ModuleService::set_player_fixes(cx, audio.player_fixes);
                 if let Some(engine) = &mut self.engine {
-                    engine.apply_audio(&audio);
+                    engine.apply_audio(&audio, reverb);
                 }
                 self.refresh_soon(cx);
                 cx.notify();
