@@ -71,8 +71,8 @@ Three ways, first that applies (`scripts/bundle-macos.sh`):
 * **The project's self-signed certificate** (secrets `MACOS_SELF_SIGN_P12`, the `.p12`
   in base64, and `MACOS_SELF_SIGN_PASSWORD`). The release workflow imports it into a
   throw-away keychain on the runner and trusts it for code signing there. Every release
-  then has the designated requirement `identifier "<bundle id>" and certificate leaf =
-  H"…"`, so macOS keeps letting updates read the sign-in in the keychain once the user
+  then has the designated requirement `identifier "<bundle id>" and certificate root =
+  H"…"` (the self-signed certificate is its own root), so macOS keeps letting updates read the sign-in in the keychain once the user
   chose *Always Allow* (no prompt per update). Gatekeeper still asks on the first open,
   as with ad-hoc. The bundle script fails if the requirement doesn't name the
   certificate.
