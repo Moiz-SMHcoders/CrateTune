@@ -3417,6 +3417,14 @@ cached pages.
   by ⌘ / Ctrl keys), moves and closes tabs, and fails unless ⌘2 / Ctrl+2 goes on to
   Explore and ⌘W / Ctrl+W keeps the window once one tab is left.
 
+**Verified** (macOS, release builds, `MUSIC_FIXTURES`, temporary `MUSIC_CONFIG_DIR`,
+`MUSIC_SECRET_STORE=file`, `MUSIC_VOLUME=0.0`): opening (⌘T, background tabs as ⌘-click),
+switching by script, ⌘1 / ⌘9 / Ctrl+Tab through GPUI's key dispatch, ⌘2 going on to
+Explore and ⌘W keeping the window with one tab, moving, duplicating, closing, the
+right-click menu, the strip with the system title bar, the settings rows and their search
+entries (offscreen screenshots above), save / restore and the budget in unit tests. Not
+verified: BACKLOG U24.
+
 **Measured** (macOS 26.6, Apple M4, release builds, `MUSIC_FIXTURES` offline data, fresh
 `MUSIC_CONFIG_DIR`, `MUSIC_VOLUME=0.0`; the same 10 pages — Home, Explore, Charts, Moods,
 New releases, a search, an album, an artist, a playlist, History — visited in one stack or
