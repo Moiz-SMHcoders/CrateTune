@@ -1053,6 +1053,32 @@ mod tests {
     }
 
     #[test]
+    fn night_mode_runs_only_while_on() {
+        use crate::compressor::CompressorSettings;
+        let deck = Deck::new(RATE);
+        deck.set_current(Some(voice(1, 0.5, 30_000)));
+        // Off (the default): nothing allocated, output untouched.
+        deck.set_compressor(CompressorSettings::NIGHT);
+        assert!(deck.compressor_settings().is_none());
+        assert!(render(&deck, 200).iter().all(|&s| s == 0.5));
+        // On: a steady −6 dBFS level is 18 dB over the threshold, so it comes out lower
+        // (12 dB of reduction, +6 dB makeup).
+        deck.set_compressor(CompressorSettings::NIGHT.with_enabled(true));
+        assert!(deck.compressor_settings().is_some_and(|c| c.enabled));
+        let on = render(&deck, 8000);
+        let level = on[on.len() - 2];
+        assert!((level - 0.25).abs() < 0.03, "{level}");
+        // Off again: glides back, is dropped, bit-exact.
+        deck.set_compressor(CompressorSettings::NIGHT);
+        render(&deck, 8000);
+        assert!(
+            deck.compressor_settings().is_none(),
+            "dropped after the glide"
+        );
+        assert!(render(&deck, 200).iter().all(|&s| s == 0.5));
+    }
+
+    #[test]
     fn reverb_tail_rings_out_after_a_pause() {
         use crate::reverb::{ReverbPreset, ReverbSettings};
         let deck = Deck::new(RATE);

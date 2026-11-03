@@ -9,10 +9,11 @@
 //! file Symphonia can decode (WAV, FLAC, AIFF, …) with [`Impulse::from_file`].
 //!
 //! [`Convolver`] is uniformly partitioned overlap-save convolution: the
-//! impulse is cut into 512-frame partitions whose spectra are computed once;
-//! every 512 input frames one forward FFT, a multiply-add of the newest input
-//! spectra with the partitions, and one inverse FFT give the next 512 output
-//! frames (so the wet signal is 512 frames late, ~11 ms at 48 kHz). Both
+//! impulse is cut into partitions of 512 frames (1024 / 2048 for impulses
+//! longer than 2.5 / 4.5 s) whose spectra are computed once; every partition's
+//! worth of input frames, one forward FFT, a multiply-add of the newest input
+//! spectra with the partitions, and one inverse FFT give the next output frames
+//! (so the wet signal is one partition late: ~11 ms at 48 kHz for the rooms). Both
 //! output channels come out of one complex FFT: the left impulse goes in the
 //! real part and the right one in the imaginary part (the input is real, so
 //! the two results do not mix). Everything is allocated when the convolver is
@@ -27,8 +28,13 @@ use rustfft::{Fft, FftPlanner};
 use crate::dsp::Resampler;
 use crate::error::{Error, Result};
 
-/// Frames per partition (and the wet signal's latency).
+/// Frames per partition (and the wet signal's latency) for impulses up to
+/// [`SHORT_SECS`]; longer ones use 1024, past [`MEDIUM_SECS`] 2048 frames: the
+/// work per sample grows with length / partition, so a 6 s file costs about
+/// what a 1.5 s room does, and a long room hides a later start.
 const BLOCK: usize = 512;
+const SHORT_SECS: f32 = 2.5;
+const MEDIUM_SECS: f32 = 4.5;
 /// Longest impulse kept from a file; longer ones are cut with a fade.
 pub const MAX_IMPULSE_SECS: f32 = 6.0;
 /// Leading samples quieter than this (relative to the peak) are dropped.
@@ -85,7 +91,7 @@ impl ImpulseRoom {
                     (5.9, -0.33),
                     (8.2, 0.25),
                 ],
-                seed: 0x5713_D10,
+                seed: 0x0571_3D10,
             },
             Self::Chamber => Shape {
                 secs: 1.6,
@@ -102,7 +108,7 @@ impl ImpulseRoom {
                     (16.2, 0.27),
                     (22.9, -0.2),
                 ],
-                seed: 0xC4A_4BE2,
+                seed: 0x0C4A_4BE2,
             },
             Self::Church => Shape {
                 secs: 2.0,
@@ -119,7 +125,7 @@ impl ImpulseRoom {
                     (41.0, 0.26),
                     (56.0, -0.2),
                 ],
-                seed: 0xC4_0C4,
+                seed: 0x000C_40C4,
             },
         }
     }
@@ -340,6 +346,8 @@ pub(crate) struct Convolver {
     work: Box<[Complex32]>,
     /// Output of the last block, handed out while the next one fills.
     out: Box<[[f32; 2]]>,
+    /// Frames per partition.
+    block: usize,
     frames: usize,
 }
 
@@ -347,7 +355,15 @@ impl Convolver {
     /// Builds the partitions of `impulse` at `rate`, each sample scaled by `gain`.
     pub(crate) fn new(impulse: &Impulse, rate: u32, gain: f32) -> Self {
         let (left, right) = impulse.at_rate(rate.max(1));
-        let n = 2 * BLOCK;
+        let secs = left.len() as f32 / rate.max(1) as f32;
+        let block = if secs <= SHORT_SECS {
+            BLOCK
+        } else if secs <= MEDIUM_SECS {
+            2 * BLOCK
+        } else {
+            4 * BLOCK
+        };
+        let n = 2 * block;
         let mut planner = FftPlanner::<f32>::new();
         let fft = planner.plan_fft_forward(n);
         let ifft = planner.plan_fft_inverse(n);
@@ -355,12 +371,12 @@ impl Convolver {
             .get_inplace_scratch_len()
             .max(ifft.get_inplace_scratch_len());
         let mut scratch = vec![Complex32::default(); scratch_len].into_boxed_slice();
-        let parts = left.len().div_ceil(BLOCK).max(1);
+        let parts = left.len().div_ceil(block).max(1);
         let filters: Box<[Box<[Complex32]>]> = (0..parts)
             .map(|p| {
                 let mut spec = vec![Complex32::default(); n];
-                for (i, c) in spec.iter_mut().take(BLOCK).enumerate() {
-                    let at = p * BLOCK + i;
+                for (i, c) in spec.iter_mut().take(block).enumerate() {
+                    let at = p * block + i;
                     let l = left.get(at).copied().unwrap_or(0.0) * gain;
                     let r = right.get(at).copied().unwrap_or(0.0) * gain;
                     *c = Complex32::new(l, r);
@@ -385,23 +401,30 @@ impl Convolver {
             input: vec![0.0; n].into_boxed_slice(),
             fill: 0,
             work: vec![Complex32::default(); n].into_boxed_slice(),
-            out: vec![[0.0; 2]; BLOCK].into_boxed_slice(),
+            out: vec![[0.0; 2]; block].into_boxed_slice(),
+            block,
             frames: left.len(),
         }
     }
 
-    /// Frames from an input sample to the end of its tail (latency + impulse).
-    pub(crate) fn tail_frames(&self) -> usize {
-        self.frames + 2 * BLOCK
+    /// How many frames late the wet signal is (one partition).
+    pub(crate) fn latency(&self) -> usize {
+        self.block
     }
 
-    /// One input sample in, one stereo output frame out (`BLOCK` frames late).
+    /// Frames from an input sample to the end of its tail (latency + impulse).
+    pub(crate) fn tail_frames(&self) -> usize {
+        self.frames + 2 * self.block
+    }
+
+    /// One input sample in, one stereo output frame out ([`Self::latency`] frames late).
     #[inline]
     pub(crate) fn process(&mut self, x: f32) -> [f32; 2] {
         let y = self.out[self.fill];
-        self.input[BLOCK + self.fill] = x;
+        let block = self.block;
+        self.input[block + self.fill] = x;
         self.fill += 1;
-        if self.fill == BLOCK {
+        if self.fill == block {
             self.fill = 0;
             self.run_block();
         }
@@ -411,8 +434,8 @@ impl Convolver {
     fn run_block(&mut self) {
         let parts = self.filters.len();
         self.newest = (self.newest + 1) % parts;
-        let silent = self.input[BLOCK..].iter().all(|&v| v == 0.0)
-            && self.input[..BLOCK].iter().all(|&v| v == 0.0);
+        let block = self.block;
+        let silent = self.input.iter().all(|&v| v == 0.0);
         self.silent[self.newest] = silent;
         if !silent {
             let spec = &mut self.spectra[self.newest];
@@ -421,7 +444,7 @@ impl Convolver {
             }
             self.fft.process_with_scratch(spec, &mut self.scratch);
         }
-        self.input.copy_within(BLOCK.., 0);
+        self.input.copy_within(block.., 0);
         let acc = &mut self.work;
         acc.fill(Complex32::default());
         let mut any = false;
@@ -444,7 +467,7 @@ impl Convolver {
             return;
         }
         self.ifft.process_with_scratch(acc, &mut self.scratch);
-        for (o, c) in self.out.iter_mut().zip(&acc[BLOCK..]) {
+        for (o, c) in self.out.iter_mut().zip(&acc[block..]) {
             *o = [c.re, c.im];
         }
     }
@@ -526,6 +549,32 @@ mod tests {
     }
 
     #[test]
+    fn long_impulses_use_longer_partitions() {
+        let at = |secs: f32| {
+            let h = noise((secs * RATE as f32) as usize, 2);
+            Convolver::new(&Impulse::from_interleaved(RATE, 1, &h).unwrap(), RATE, 1.0).latency()
+        };
+        assert_eq!(at(2.0), BLOCK);
+        assert_eq!(at(4.0), 2 * BLOCK);
+        assert_eq!(at(6.0), 4 * BLOCK);
+        // Still exact with the long partitions.
+        let h = noise((5.0 * RATE as f32) as usize, 3);
+        let imp = Impulse::from_interleaved(RATE, 1, &h).unwrap();
+        let mut conv = Convolver::new(&imp, RATE, 1.0);
+        let lat = conv.latency();
+        let x = noise(3 * lat, 9);
+        let out: Vec<[f32; 2]> = x
+            .iter()
+            .chain(std::iter::repeat_n(&0.0, lat))
+            .map(|&v| conv.process(v))
+            .collect();
+        let want = direct(&x, &imp.left);
+        for n in 0..x.len() {
+            assert!((out[n + lat][0] - want[n]).abs() < 2e-3, "{n}");
+        }
+    }
+
+    #[test]
     fn silence_in_silence_out_and_state_clears() {
         let imp = Impulse::room(ImpulseRoom::Church, RATE);
         let mut conv = Convolver::new(&imp, RATE, 1.0);
@@ -537,7 +586,7 @@ mod tests {
             let o = conv.process(v);
             assert!(o[0].is_finite() && o[1].is_finite());
         }
-        for _ in 0..conv.tail_frames() + BLOCK {
+        for _ in 0..conv.tail_frames() + conv.latency() {
             conv.process(0.0);
         }
         assert!(conv.is_clear());
