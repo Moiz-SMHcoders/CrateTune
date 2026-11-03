@@ -40,3 +40,7 @@ home.continue.elsewhere = {artist} · tocada em outro dispositivo
 home.continue.at = {artist} · tocada em outro dispositivo, parou em {position}
 home.continue.resume = Retomar
 home.continue.dismiss = Dispensar
+account.keychain_failed.title = Não foi possível ler seu login das Chaves
+account.keychain_failed.detail = O macOS perguntou se o {app} pode usar o login salvo, e o acesso não foi permitido (ou o aviso foi fechado). Sua conta foi mantida. Escolha Tentar de novo e depois Sempre Permitir.
+account.keychain_failed.retry = Tentar de novo
+account.keychain_failed.toast = Não foi possível ler seu login do YouTube das Chaves. Configurações → Conta → Tentar de novo.

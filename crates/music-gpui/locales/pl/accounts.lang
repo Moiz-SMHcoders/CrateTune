@@ -40,3 +40,7 @@ home.continue.elsewhere = {artist} · odtwarzane na innym urządzeniu
 home.continue.at = {artist} · odtwarzane na innym urządzeniu, zatrzymane na {position}
 home.continue.resume = Wznów
 home.continue.dismiss = Odrzuć
+account.keychain_failed.title = Nie udało się odczytać logowania z pęku kluczy
+account.keychain_failed.detail = macOS zapytał, czy {app} może użyć zapisanego logowania, i dostęp nie został przyznany (lub okno zamknięto). Twoje konto zostaje. Wybierz Spróbuj ponownie, a potem Zawsze zezwalaj.
+account.keychain_failed.retry = Spróbuj ponownie
+account.keychain_failed.toast = Nie udało się odczytać logowania do YouTube z pęku kluczy. Ustawienia → Konto → Spróbuj ponownie.

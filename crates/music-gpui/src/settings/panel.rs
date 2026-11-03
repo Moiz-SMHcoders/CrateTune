@@ -423,7 +423,17 @@ impl SettingsPanel {
         this
     }
 
-    fn load_secrets(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+    /// Whether the keychain refused to hand out the YouTube sign-in (macOS asked and
+    /// access wasn't allowed, or the prompt was closed): the account is kept and
+    /// Settings → Account offers to try again.
+    pub(super) fn sign_in_unreadable(&self) -> bool {
+        self.secrets_loaded
+            && matches!(self.secret_store, SecretStore::File(FileReason::ReadFailed))
+            && self.settings.library.account.is_some()
+            && !self.secrets.contains_key(&Secret::YouTubeCookie)
+    }
+
+    pub(super) fn load_secrets(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let backend = self.backend.clone();
         let file = self.settings.secrets.0.clone();
         // Only what the settings say exists, so the keychain isn't touched at all
@@ -455,6 +465,19 @@ impl SettingsPanel {
                 }
                 if !loaded.errors.is_empty() {
                     this.secret_store = SecretStore::File(FileReason::ReadFailed);
+                    let cookie_missing = this.settings.library.account.is_some()
+                        && !loaded.values.contains_key(&Secret::YouTubeCookie);
+                    if cookie_missing {
+                        crate::app::notify(window, cx, t!("account.keychain_failed.toast"));
+                    }
+                } else if let (SecretStore::File(FileReason::ReadFailed), Some(b)) =
+                    (&this.secret_store, &this.backend)
+                {
+                    // A retry that worked.
+                    this.secret_store = SecretStore::Backend {
+                        backend: b.clone(),
+                        file_too: !this.settings.secrets.is_empty(),
+                    };
                 } else if !this.settings.secrets.is_empty()
                     && let SecretStore::Backend { file_too, .. } = &mut this.secret_store
                 {

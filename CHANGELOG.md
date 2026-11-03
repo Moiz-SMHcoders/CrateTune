@@ -27,6 +27,17 @@ versions follow [SemVer](https://semver.org/).
 
 ## [0.3.3] — 2026-11-01
 
+### Changed
+
+* **Updates keep you signed in on macOS.** Releases are signed with the project's own
+  certificate instead of ad hoc, so macOS sees each update as the same app and keeps
+  the keychain access you allowed ("Always Allow"); before, every update was a new app
+  to macOS and asked again, and a refused or missed prompt looked like being signed out.
+  The first update with this asks one last time. Windows and Linux were never affected.
+* If the keychain still refuses the sign-in, Settings → Account says so and offers
+  **Try again** (and a notice at start) instead of looking signed out; the account is
+  kept.
+
 ### Added
 
 * **The sidebar slides.** Switching between the full sidebar and the icon rail, and
