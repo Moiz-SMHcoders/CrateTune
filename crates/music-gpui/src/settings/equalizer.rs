@@ -68,57 +68,55 @@ pub(super) fn render(
                 )
         }));
     let muted = theme.muted_foreground;
-    let bands =
-        h_flex()
-            .w_full()
-            .justify_between()
-            .children(panel.eq_sliders.iter().enumerate().map(|(i, slider)| {
-                let gain = eq.gains_db[i];
-                v_flex()
-                    .w(px(46.))
-                    .items_center()
-                    .gap_2()
-                    .child(
-                        div()
-                            .text_xs()
-                            .text_color(if gain.abs() < 0.05 {
-                                muted
-                            } else {
-                                theme.foreground
-                            })
-                            .child(if gain.abs() < 0.05 {
-                                "0".to_owned()
-                            } else {
-                                format!("{gain:+.1}")
-                            }),
-                    )
-                    .child(
-                        div().h(px(SLIDER_HEIGHT)).child(
-                            Slider::new(slider)
-                                .vertical()
-                                .h_full()
-                                .disabled(!eq.enabled),
+    let bands = h_flex().w_full().items_start().justify_between().children(
+        panel.eq_sliders.iter().enumerate().map(|(i, slider)| {
+            let gain = eq.gains_db[i];
+            v_flex()
+                .w(px(54.))
+                .items_center()
+                .gap_2()
+                .child(
+                    div()
+                        .text_xs()
+                        .text_color(if gain.abs() < 0.05 {
+                            muted
+                        } else {
+                            theme.foreground
+                        })
+                        .child(if gain.abs() < 0.05 {
+                            "0".to_owned()
+                        } else {
+                            format!("{gain:+.1}")
+                        }),
+                )
+                .child(
+                    div().h(px(SLIDER_HEIGHT)).child(
+                        Slider::new(slider)
+                            .vertical()
+                            .h_full()
+                            .disabled(!eq.enabled),
+                    ),
+                )
+                .child(
+                    v_flex()
+                        .items_center()
+                        .child(
+                            div()
+                                .text_xs()
+                                .text_color(muted)
+                                .child(band_label(GRAPHIC_BANDS_HZ[i])),
+                        )
+                        .child(
+                            div()
+                                .text_size(px(11.))
+                                .text_center()
+                                .line_height(px(13.))
+                                .text_color(theme.foreground)
+                                .child(band_name(i)),
                         ),
-                    )
-                    .child(
-                        v_flex()
-                            .items_center()
-                            .child(
-                                div()
-                                    .text_xs()
-                                    .text_color(muted)
-                                    .child(band_label(GRAPHIC_BANDS_HZ[i])),
-                            )
-                            .child(
-                                div()
-                                    .text_xs()
-                                    .text_center()
-                                    .line_height(px(13.))
-                                    .text_color(theme.foreground)
-                                    .child(band_name(i)),
-                            ),
-                    )
-            }));
+                )
+        }),
+    );
     let curve = panel.eq_curve();
     let peak = curve.peak_db;
     let warn = eq.enabled && !eq.pre_gain && peak > HEADROOM_WARN_DB;
@@ -165,7 +163,7 @@ pub(super) fn render(
     let saved_actions = eq_preset_actions(panel, saved_current, cx);
     v_flex()
         .gap_3()
-        .max_w(px(560.))
+        .max_w(px(600.))
         .child(
             h_flex()
                 .justify_between()
