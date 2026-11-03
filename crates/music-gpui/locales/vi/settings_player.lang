@@ -129,7 +129,6 @@ settings.eq.preset.bass = Âm trầm
 settings.eq.preset.vocal = Giọng hát
 settings.eq.preset.treble = Âm cao
 settings.eq.preset.loudness = Độ to
-settings.eq.note = Áp dụng trực tiếp. Mức tăng được bù trừ để đầu ra không bao giờ bị méo.
 
 # ---- Lyrics
 settings.lyrics.look = Giao diện
@@ -184,13 +183,11 @@ settings.eq.preset.night = Đêm
 settings.reverb.title = Vang
 settings.reverb.mix = Mức hiệu ứng
 settings.reverb.mix_value = {percent} %
-settings.reverb.note = Thêm không gian quanh bản nhạc, sau bộ chỉnh âm. Khi tắt không tốn gì; khi tạm dừng, tiếng vang tắt dần.
 prefs.reverb.small_room = Phòng nhỏ
 prefs.reverb.hall = Hội trường
 prefs.reverb.plate = Tấm vang
 prefs.reverb.cathedral = Nhà thờ lớn
 settings.sound.title = Cấu hình âm thanh
-settings.sound.note = Đặt tốc độ, cao độ và vang chỉ với một cú nhấp. Tốc độ và cao độ cũng có trong Phát lại.
 prefs.sound.original = Gốc
 prefs.sound.slowed_reverb = Chậm + vang
 prefs.sound.nightcore = Nightcore

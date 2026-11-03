@@ -1025,7 +1025,9 @@ locales/<locale>/*.lang  the catalogs (English = source), embedded by build.rs v
   and a percentage bubble, lyrics button; static by default — see
   [Player bar](#player-bar-redesign-progress-styles-backgrounds).
 * **OS media controls**, **Equalizer**, **volume**: unchanged (history below); the
-  equalizer gained Warm and Night presets, a reverb and sound presets (Now Playing extras round).
+  equalizer gained Warm and Night presets, a reverb and sound presets (Now Playing extras round),
+  then reverb fine controls, convolution rooms, night mode, your own presets, a response curve
+  and a perceptual volume curve ([Sound round](#sound-round-reverb-controls-convolution-rooms-night-mode-presets-eq-curve-volume-curve)).
 
 ### Home
 
@@ -4005,6 +4007,123 @@ notifies (as before this round), so it follows Now Playing's rate while that is 
 on loud masters at a high mix (no limiter), the mini player layouts on Windows and Linux, a
 real mouse wheel over the mini player (the handler is the bar's), the lights on a 120 Hz
 display.
+
+### Sound round: reverb controls, convolution rooms, night mode, presets, EQ curve, volume curve
+
+| ![Settings: the EQ curve with draggable bands, band names, the clipping warning (pre-gain off) and a saved curve](docs/screenshots/sound-eq-graph.png) | ![Settings: reverb fine controls (Custom from the Hall) and the convolution rooms](docs/screenshots/sound-reverb-controls.png) |
+|---|---|
+| ![Settings: night mode on with its controls](docs/screenshots/sound-night-mode.png) | ![Settings: sound presets with one of your own](docs/screenshots/sound-presets.png) |
+
+The sound items of BACKLOG M11 (ideas from Limusic, Zuno and Deviload; sources per file in
+both crates' `THIRD_PARTY.md`). The chain is unchanged in order: per-track EQ → deck mix
+(crossfade, pause ramp) → **reverb** → **night mode** → spectrum tap → **volume**. Every
+new stage follows the reverb's rules: the deck holds nothing while it is off
+(`Option<Box<…>>`), it glides out and is dropped when turned off, everything is allocated
+on the engine thread, and the audio callback never allocates.
+
+* **Reverb fine controls** (`music_core::ReverbParams`): *Length* (−60 dB decay time,
+  0.1–10 s, turned into the combs' feedback `10^(−3 · 31.2 ms / T)`, capped at Freeverb's
+  0.98), *Pre-delay* (0–200 ms; a change moves the read point one frame per frame, so it
+  bends the wet pitch briefly instead of clicking), *Brightness* (1 − damping), *Early
+  reflections* (eight taps per side, 4–41 ms after the pre-delay, read from the pre-delay
+  line), *Width* and *Dry level* (on top of the mix's own dry curve). The four rooms are
+  presets of these and keep their old feedback exactly (tested); moving a control makes the
+  reverb **Custom** (`audio.reverb = "custom"`, `audio.reverb_params`).
+* **Convolution rooms** (`music_core::convolver`): uniformly partitioned overlap-save FFT
+  convolution on `rustfft` (already a dependency, so **no new crates**): 512-frame
+  partitions (1024 / 2048 for impulses over 2.5 / 4.5 s), both output channels from one
+  complex FFT (left impulse in the real part, right in the imaginary part), all-zero input
+  blocks skipped, so a finished tail costs nothing. The wet part is one partition late
+  (~11 ms). **Studio** (0.6 s), **Chamber** (1.6 s) and **Church** (2.0 s) are generated
+  in code at the output rate from a fixed seed — decaying noise whose highs die faster than
+  its lows, a smooth build-up and a few early reflections — so **no impulse files are
+  bundled** (0 bytes; written for this project, the project's licence). **Load your own
+  (WAV)…** decodes any file Symphonia reads (WAV, FLAC, AIFF; mono or stereo), drops
+  leading silence, cuts at 6 s with a fade, normalizes to unit energy and resamples to the
+  output rate (cubic) on the engine thread; the path is saved (`audio.reverb_impulse`) and
+  re-read at launch. Convolution rooms are calibrated to the Hall's wet level (±4 dB,
+  tested) and use the pre-delay, width and dry level.
+* **Night mode** (`music_core::compressor`, `audio.compressor`): feed-forward, stereo-linked
+  peak detector, 6 dB soft knee, attack / release smoothing of the reduction in dB, makeup
+  gain; defaults after Deviload's "volume smoothing": threshold −24 dB, ratio 3, attack 3
+  ms, release 250 ms (the Web Audio node's defaults it inherits), makeup +6 dB. A switch in
+  the Sound menu, sliders and *Reset values* in Settings. Tests: silence in → exact
+  silence out, the static curve and a steady tone settle at the ratio, a higher ratio
+  reduces more and the makeup lifts quiet parts, attack faster than release, finite and
+  without a subnormal state after 10 s of silence at extreme settings, off glides back to
+  the input and finishes; in the deck: off = untouched and not allocated, on = the expected
+  level, off again = dropped and bit-exact.
+* **Your own presets**: *Save as preset…* / rename / delete for **sound presets** (speed,
+  pitch, reverb with its fine values or impulse file, equalizer; `audio.sound_presets`) and
+  **EQ curves** (`equalizer.saved`), names unique ignoring case, at most 50 each; listed with
+  the built-ins in Settings and in the Sound menu's submenus.
+* **EQ curve** (`settings/eq_graph.rs`): the composite response from the DSP's own biquads
+  (`config_response_db`) at 160 log-spaced points over 20 Hz–20 kHz on a ±15 dB plot,
+  recomputed only when a gain changes; the ten bands as points — press a column to set its
+  band, drag to move it (0.5 dB steps, the slider follows). Band names under the Hz labels:
+  *Sub, Bass, Punch, Warmth, Low mids, Mids, Upper mids, Presence, Brilliance, Air*.
+  **Automatic pre-gain** (the existing volume compensation) is now a switch
+  (`equalizer.pre_gain`, on by default); the line under the curve shows the peak boost
+  (`equalizer::peak_boost_db`, which counts stacked neighbours) and, with pre-gain off and
+  more than +0.5 dB, warns that it can clip and draws the curve above 0 dB in red.
+* **Perceptual volume curve** (`music_core::volume`): gain = position². Chosen over
+  Limusic's `10^(−(1−p)^1.5)` because that curve ends at −20 dB just above the bottom
+  (a jump to silence and no quiet settings below −20 dB); the square is continuous,
+  reaches exact silence and unity, puts the middle at −12 dB (about half as loud) and
+  −40 dB at a tenth. Applied in one place, where the slider's value reaches the player
+  (`Engine::set_volume`), so the bar, mini player, wheel, media keys / MPRIS and scripts all
+  go through it; a Chromecast still gets the position (its receiver has its own curve);
+  Music Together and device hand-off carry no volume. **Migration**: `settings.json`
+  version 2; a file of version 1 (or without a version) has its volume converted to
+  `√gain` when read, as are settings exports of schema 1 and plain `settings.json` imports
+  (tested: the same gain before and after, converted once).
+* Scripts: `@reverb=custom|studio|chamber|church|own-impulse`, `@reverb-length`,
+  `@reverb-pre-delay`, `@reverb-brightness`, `@reverb-early`, `@reverb-dry`,
+  `@reverb-width`, `@reverb-ir=PATH`, `@night=on|off`, `@night-threshold|ratio|attack|
+  release|makeup`, `@eq=NAME`, `@eq-save=NAME`, `@eq-pre-gain=on|off`, `@sound=NAME`,
+  `@sound-save=NAME`, `@sound-status`. Settings search finds the curve, pre-gain /
+  clipping, your EQ presets, each reverb control, the convolution rooms and night mode.
+
+**Verified** (macOS, `MUSIC_SECRET_STORE=file`, temporary `MUSIC_CONFIG_DIR`, `MUSIC_VOLUME=0.0`
+everywhere; nothing was listened to): the unit tests above and in `reverb/tests.rs`,
+`convolver.rs` (FFT result = direct convolution per channel, also with the long
+partitions; silence in → silence out and every buffer back to exact zeros after the tail;
+rooms ≤ 2 s, unit energy, stereo; files trimmed, capped and refused when silent; a WAV
+written by hand read back), `compressor.rs`, `volume.rs`, the settings migration
+(`file.rs`, `portable.rs`) and presets (`prefs.rs`); `scripts/smoke-pages.sh` (33 pages);
+the script actions changing and saving their settings (`@sound-status`, `settings.json`);
+the screenshots above (release `screenshot` build, `MUSIC_FIXTURES`); at rest on Settings →
+Equalizer with the curve, a convolution room and night mode on, `MUSIC_TIMINGS` shows no
+renders once the page has settled.
+
+**Cost offline** (60 s of 48 kHz stereo noise, release, `cargo test --release -p music-core
+-- --ignored _cost --nocapture`, a shared machine with a load average of 40–50):
+algorithmic rooms 0.37–0.44 % of one core, Custom with early reflections and 120 ms
+pre-delay 0.58 %, Studio / Chamber / Church 0.77 / 1.9 / 2.4 % (the convolver alone 0.33 /
+0.77 / 0.94 %), a 6 s impulse file 0.72 % (2048-frame partitions; 12.8 % before the longer
+partitions), night mode 0.09 %.
+
+**CPU in the app** (`scripts/perf-macos.sh --no-checks`, release builds of this branch and
+of main at `80df7c9`, the "daft punk" song 0 played muted, `--settings` for each stage on;
+one run each, the machine shared, so differences under ~1 point are noise):
+
+| Scenario | Idle on Home | Playing, Home | Now Playing open while playing |
+|---|---|---|---|
+| main, everything off | 0.7 % | 6.4 % | 12.4 % (outlier), 9 fps |
+| branch, everything off | 0.9 % | 6.5 % | 2.7 %, 9 fps |
+| branch, Custom reverb (3 s, 120 ms, early 60 %) | 1.3 % | 7.2 % | 3.4 %, 9 fps |
+| branch, Church (convolution) | 0.7 % | 8.6 % | 5.0 %, 9 fps |
+| branch, night mode | 0.9 % | 6.1 % | 3.3 %, 9 fps |
+| branch, Church + night mode + EQ Bass | 0.9 % | 10.7 % | 8.2 %, 9 fps |
+
+Binary size: 64,299,184 bytes against 64,099,072 for main at `80df7c9` (+200 KB, which
+also includes main's commits merged since; no new dependencies).
+
+**Not verified:** how any of it sounds (BACKLOG M11: by ear), impulse files from real
+rooms and at other rates than 48 kHz in the app (only generated rooms and a test WAV),
+dragging the curve with a real mouse (a synthetic `@click` on the 4 kHz column set that
+band to +12 dB; a drag was not injected), Windows and Linux (CI builds and tests
+only).
 
 ### Music videos and theater mode
 

@@ -131,7 +131,6 @@ settings.eq.preset.bass = 低音
 settings.eq.preset.vocal = 人聲
 settings.eq.preset.treble = 高音
 settings.eq.preset.loudness = 響度
-settings.eq.note = 即時套用。增益會自動補償，因此輸出絕不會削波失真。
 
 # ---- Lyrics
 settings.lyrics.look = 外觀
@@ -186,13 +185,11 @@ settings.eq.preset.night = 夜間
 settings.reverb.title = 殘響
 settings.reverb.mix = 濕聲比例
 settings.reverb.mix_value = {percent}%
-settings.reverb.note = 在等化器之後為音樂加上空間感。關閉時不佔用資源；暫停時餘音會自然消散。
 prefs.reverb.small_room = 小房間
 prefs.reverb.hall = 大廳
 prefs.reverb.plate = 板式
 prefs.reverb.cathedral = 大教堂
 settings.sound.title = 音效預設
-settings.sound.note = 一鍵設定速度、音高和殘響。速度和音高也可在「播放」中調整。
 prefs.sound.original = 原音
 prefs.sound.slowed_reverb = 慢速 + 殘響
 prefs.sound.nightcore = Nightcore

@@ -166,7 +166,6 @@ settings.eq.preset.bass = Bass
 settings.eq.preset.vocal = Vocal
 settings.eq.preset.treble = Treble
 settings.eq.preset.loudness = Loudness
-settings.eq.note = Applied live. Boosts are compensated so the output never clips.
 
 # ---- Lyrics
 settings.lyrics.look = Look
@@ -230,7 +229,6 @@ settings.reverb.title = Reverb
 settings.reverb.mix = Wet mix
 # The slider's value, e.g. "30 %". {percent} is a whole number.
 settings.reverb.mix_value = {percent} %
-settings.reverb.note = A room around the music, added after the equalizer. Off costs nothing; when you pause, the echo rings out.
 # Reverb rooms (buttons; "Off" uses common.off).
 prefs.reverb.small_room = Small room
 prefs.reverb.hall = Hall
@@ -239,7 +237,6 @@ prefs.reverb.cathedral = Cathedral
 
 # ---- Sound presets (Equalizer section): speed, pitch and reverb in one click.
 settings.sound.title = Sound presets
-settings.sound.note = Sets speed, pitch and reverb in one click. Speed and pitch are also in Playback.
 prefs.sound.original = Original
 # Music slowed down and lowered, with reverb (a popular remix style).
 prefs.sound.slowed_reverb = Slowed + reverb

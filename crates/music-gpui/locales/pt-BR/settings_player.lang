@@ -132,7 +132,6 @@ settings.eq.preset.bass = Graves
 settings.eq.preset.vocal = Vocal
 settings.eq.preset.treble = Agudos
 settings.eq.preset.loudness = Loudness
-settings.eq.note = Aplicado em tempo real. Os reforços são compensados para que a saída nunca distorça.
 
 # ---- Lyrics
 settings.lyrics.look = Visual
@@ -188,13 +187,11 @@ settings.eq.preset.night = Noite
 settings.reverb.title = Reverb
 settings.reverb.mix = Mistura do efeito
 settings.reverb.mix_value = {percent}%
-settings.reverb.note = Uma sala ao redor da música, aplicada depois do equalizador. Desligado não custa nada; ao pausar, o eco se dissipa.
 prefs.reverb.small_room = Sala pequena
 prefs.reverb.hall = Salão
 prefs.reverb.plate = Placa
 prefs.reverb.cathedral = Catedral
 settings.sound.title = Predefinições de som
-settings.sound.note = Define velocidade, tom e reverb com um clique. Velocidade e tom também ficam em Reprodução.
 prefs.sound.original = Original
 prefs.sound.slowed_reverb = Lento + reverb
 prefs.sound.nightcore = Nightcore

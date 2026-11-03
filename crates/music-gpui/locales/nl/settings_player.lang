@@ -131,7 +131,6 @@ settings.eq.preset.bass = Bas
 settings.eq.preset.vocal = Zang
 settings.eq.preset.treble = Hoge tonen
 settings.eq.preset.loudness = Loudness
-settings.eq.note = Wordt live toegepast. Versterkingen worden gecompenseerd zodat de uitvoer nooit oversturt.
 
 # ---- Lyrics
 settings.lyrics.look = Uiterlijk
@@ -187,13 +186,11 @@ settings.eq.preset.night = Nacht
 settings.reverb.title = Galm
 settings.reverb.mix = Effectmix
 settings.reverb.mix_value = {percent} %
-settings.reverb.note = Een ruimte rond de muziek, toegevoegd na de equalizer. Uit kost niets; bij pauzeren sterft de echo uit.
 prefs.reverb.small_room = Kleine kamer
 prefs.reverb.hall = Zaal
 prefs.reverb.plate = Plaat
 prefs.reverb.cathedral = Kathedraal
 settings.sound.title = Geluidspresets
-settings.sound.note = Stelt snelheid, toonhoogte en galm in één klik in. Snelheid en toonhoogte staan ook bij Afspelen.
 prefs.sound.original = Origineel
 prefs.sound.slowed_reverb = Vertraagd + galm
 prefs.sound.nightcore = Nightcore

@@ -24,6 +24,7 @@ pub mod bar_prefs;
 mod bar_ui;
 mod content;
 mod devices_ui;
+mod eq_graph;
 mod equalizer;
 pub mod file;
 mod friends_ui;
@@ -59,6 +60,7 @@ mod search_ui;
 mod shortcuts_ui;
 pub mod sidebar_prefs;
 mod sidebar_ui;
+mod sound;
 mod storage;
 pub mod sync_settings;
 pub mod theme_files;
@@ -78,6 +80,7 @@ pub use content::country_name;
 pub use file::{APP_ID, Settings, WindowGeometry};
 pub use panel::{SettingsEvent, SettingsPanel};
 pub use shortcuts_ui::{Outcome as ShortcutOutcome, open_cheat_sheet};
+pub use sound::file_name as sound_file_name;
 
 /// One entry of the settings page's section list.
 pub struct Section {

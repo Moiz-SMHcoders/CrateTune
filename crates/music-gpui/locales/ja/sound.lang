@@ -1,0 +1,70 @@
+# Settings → Equalizer, the sound additions: reverb fine controls, convolution
+# rooms, night mode, own presets, the EQ graph (see locales/en/sound.lang).
+
+# ---- Convolution rooms (reverb buttons: keep short)
+sound.room.studio = スタジオ
+sound.room.chamber = チェンバー
+sound.room.church = 教会
+sound.room.own = 自分のルーム
+sound.room.own_named = 自分：{name}
+sound.room.convolution = コンボリューションルーム
+sound.ir.load = 自分のファイルを読み込む（WAV）…
+sound.ir.pick = ルームとして使用
+sound.ir.loaded = {name} からルームを読み込みました
+sound.ir.failed = {name} をルームとして使用できませんでした：{error}
+
+# ---- Reverb fine controls (slider labels)
+sound.reverb.length = 長さ
+sound.reverb.pre_delay = プリディレイ
+sound.reverb.brightness = 明るさ
+sound.reverb.early = 初期反射
+sound.reverb.width = 広がり
+sound.reverb.dry = ドライレベル
+sound.reverb.note = イコライザの後で、音楽の周りに空間を加えます。ルームは下のコントロールのプリセットで、どれかを動かすとカスタムになります。コンボリューションルームではプリディレイ、広がり、ドライレベルが使われます。オフなら負荷はかかりません。一時停止すると残響は自然に消えます。
+sound.value.seconds = {value}秒
+sound.value.ms = {value} ms
+sound.value.db = {value} dB
+sound.value.ratio = {value} : 1
+
+# ---- Night mode
+sound.night.title = ナイトモード
+sound.night.switch = ナイトモード
+sound.night.threshold = スレッショルド
+sound.night.ratio = レシオ
+sound.night.attack = アタック
+sound.night.release = リリース
+sound.night.makeup = メイクアップゲイン
+sound.night.reset = 値をリセット
+sound.night.note = 小さな音量でも聴きやすいよう、大きい部分と小さい部分の差を縮めます。スレッショルドを超えたレベルをレシオに応じて下げ、その後全体をメイクアップゲインで持ち上げます。オフなら負荷はかかりません。
+
+# ---- Equalizer: band names (keep short)
+sound.band.sub = サブ
+sound.band.bass = 低音
+sound.band.punch = パンチ
+sound.band.warmth = 温かみ
+sound.band.low_mids = 中低域
+sound.band.mids = 中域
+sound.band.upper_mids = 中高域
+sound.band.presence = プレゼンス
+sound.band.brilliance = 輝き
+sound.band.air = 空気感
+
+# ---- Equalizer: headroom and the response graph
+sound.eq.no_boost = ブーストなし：クリップしません。
+sound.eq.pre_gain_on = ブーストがクリップしないよう、出力を {db} dB 下げています。
+sound.eq.clip_warning = ブーストが +{db} dB に達し、音量の大きい曲でクリップする可能性があります。自動プリゲインをオンにするか、バンドを下げてください。
+sound.eq.small_boost = ブーストは +{db} dB です（クリップするほどではありません）。
+sound.eq.pre_gain = 自動プリゲイン
+sound.eq.note = すぐに反映されます。カーブ上のポイントやスライダーをドラッグしてください。カーブはフィルタの実際の効果を表しており、隣り合うブーストは加算されます。
+sound.eq.save_title = EQ カーブを保存
+
+# ---- Own presets
+sound.preset.save = プリセットとして保存…
+sound.preset.save_title = サウンドプリセットを保存
+sound.preset.rename_title = プリセット名を変更
+sound.preset.name_placeholder = プリセット名
+sound.preset.note = 速度、ピッチ、リバーブ、イコライザをワンクリックで設定します。自分のプリセットも保存でき、既存の名前なら更新されます。速度とピッチは「再生」にもあります。
+
+# ---- Settings search
+sound.search.graph = イコライザカーブ
+sound.search.saved_eq = 自分の EQ プリセット

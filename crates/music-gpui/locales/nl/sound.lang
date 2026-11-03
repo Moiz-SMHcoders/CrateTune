@@ -1,0 +1,70 @@
+# Settings → Equalizer, the sound additions: reverb fine controls, convolution
+# rooms, night mode, own presets, the EQ graph (see locales/en/sound.lang).
+
+# ---- Convolution rooms (reverb buttons: keep short)
+sound.room.studio = Studio
+sound.room.chamber = Kamer
+sound.room.church = Kerk
+sound.room.own = Je eigen ruimte
+sound.room.own_named = Eigen: {name}
+sound.room.convolution = Convolutieruimtes
+sound.ir.load = Eigen laden (WAV)…
+sound.ir.pick = Gebruiken als ruimte
+sound.ir.loaded = Ruimte geladen uit {name}
+sound.ir.failed = Kan {name} niet als ruimte gebruiken: {error}
+
+# ---- Reverb fine controls (slider labels)
+sound.reverb.length = Lengte
+sound.reverb.pre_delay = Pre-delay
+sound.reverb.brightness = Helderheid
+sound.reverb.early = Vroege reflecties
+sound.reverb.width = Breedte
+sound.reverb.dry = Droog niveau
+sound.reverb.note = Een ruimte rond de muziek, na de equalizer. De ruimtes zijn presets van de regelaars hieronder; verschuif je er een, dan wordt het Aangepast. Convolutieruimtes gebruiken de pre-delay, de breedte en het droge niveau. Uit kost niets; bij pauzeren sterft de galm uit.
+sound.value.seconds = {value} s
+sound.value.ms = {value} ms
+sound.value.db = {value} dB
+sound.value.ratio = {value} : 1
+
+# ---- Night mode
+sound.night.title = Nachtmodus
+sound.night.switch = Nachtmodus
+sound.night.threshold = Drempel
+sound.night.ratio = Ratio
+sound.night.attack = Attack
+sound.night.release = Release
+sound.night.makeup = Make-up gain
+sound.night.reset = Waarden resetten
+sound.night.note = Maakt harde en zachte delen gelijkmatiger om op laag volume te luisteren: niveaus boven de drempel worden volgens de ratio verlaagd, daarna wordt alles verhoogd met de make-up gain. Uit kost niets.
+
+# ---- Equalizer: band names (keep short)
+sound.band.sub = Sub
+sound.band.bass = Bas
+sound.band.punch = Punch
+sound.band.warmth = Warmte
+sound.band.low_mids = Laag-mid
+sound.band.mids = Mid
+sound.band.upper_mids = Hoog-mid
+sound.band.presence = Presence
+sound.band.brilliance = Briljantie
+sound.band.air = Lucht
+
+# ---- Equalizer: headroom and the response graph
+sound.eq.no_boost = Geen versterking: niets kan clippen.
+sound.eq.pre_gain_on = De uitvoer wordt {db} dB verlaagd zodat de versterkingen niet kunnen clippen.
+sound.eq.clip_warning = Versterkingen komen tot +{db} dB en kunnen clippen bij luide nummers. Zet automatische pre-gain aan of verlaag de banden.
+sound.eq.small_boost = Versterkingen komen tot +{db} dB (te weinig om te clippen).
+sound.eq.pre_gain = Automatische pre-gain
+sound.eq.note = Direct toegepast. Sleep de punten op de curve of de schuifregelaars. De curve toont wat de filters echt doen: naburige versterkingen tellen op.
+sound.eq.save_title = EQ-curve opslaan
+
+# ---- Own presets
+sound.preset.save = Opslaan als preset…
+sound.preset.save_title = Geluidspreset opslaan
+sound.preset.rename_title = Naam van preset wijzigen
+sound.preset.name_placeholder = Presetnaam
+sound.preset.note = Stelt snelheid, toonhoogte, galm en de equalizer in met één klik. Bewaar je eigen presets: een bestaande naam wordt bijgewerkt. Snelheid en toonhoogte staan ook bij Afspelen.
+
+# ---- Settings search
+sound.search.graph = Equalizercurve
+sound.search.saved_eq = Je EQ-presets

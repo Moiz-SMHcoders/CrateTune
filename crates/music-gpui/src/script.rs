@@ -33,8 +33,12 @@
 //! | `@settings[=SECTION]`, `@close-settings` | settings page (`eq`, `integrations`/`accounts`, `appearance`, `about`, …) |
 //! | `@settings-search=QUERY`, `@settings-search-pick=N` | settings search: type QUERY into the field (opens Settings) and print the ranked results; pick result N (0-based) of the list |
 //! | `@settings-anchors` | open every settings section in turn and print which search-index rows it draws (and where hidden ones fall back to) |
-//! | `@eq=Bass`, `@eq=off`, `@eq=on` | equalizer preset / switch |
-//! | `@reverb=off\|small-room\|hall\|plate\|cathedral`, `@reverb-mix=0.4`, `@sound=original\|slowed-reverb\|nightcore\|practice\|concert-hall` | reverb room, wet mix (0–1), sound preset (saved) |
+//! | `@eq=Bass`, `@eq=off`, `@eq=on`, `@eq=NAME` | equalizer preset (built-in or a saved curve's name) / switch |
+//! | `@eq-save=NAME`, `@eq-pre-gain=on\|off` | save the curve under a name; automatic pre-gain (saved) |
+//! | `@reverb=off\|small-room\|hall\|plate\|cathedral\|custom\|studio\|chamber\|church\|own-impulse`, `@reverb-mix=0.4`, `@sound=original\|slowed-reverb\|nightcore\|practice\|concert-hall\|NAME` | reverb room, wet mix (0–1), sound preset (built-in or the user's own by name; saved) |
+//! | `@reverb-length=2.5`, `@reverb-pre-delay=120`, `@reverb-brightness=0.6`, `@reverb-early=0.5`, `@reverb-dry=0.8`, `@reverb-width=1`, `@reverb-ir=PATH` | reverb fine controls (seconds, ms, 0–1; an algorithmic room becomes Custom); load an impulse response file (saved) |
+//! | `@night=on\|off`, `@night-threshold=-24`, `@night-ratio=3`, `@night-attack=3`, `@night-release=250`, `@night-makeup=6` | night mode (compressor) and its values (dB, ratio, ms; saved) |
+//! | `@sound-save=NAME`, `@sound-status` | save the sound as a preset; print reverb / night mode / EQ / volume state |
 //! | `@field=lastfm-key:VALUE` (also `lastfm-secret`, `lb-token`, `discord-id`) | type into a settings field |
 //! | `@lastfm-connect`, `@lastfm-finish`, `@lastfm-disconnect`, `@lastfm-clear` | Last.fm auth flow |
 //! | `@lb-validate`, `@lb-disconnect` | ListenBrainz |
@@ -804,6 +808,13 @@ impl MusicApp {
                 "off" => panel.update(cx, |p, cx| p.set_eq_enabled(false, cx)),
                 "on" => panel.update(cx, |p, cx| p.set_eq_enabled(true, cx)),
                 preset => {
+                    let saved = panel
+                        .read(cx)
+                        .settings()
+                        .equalizer
+                        .saved
+                        .iter()
+                        .position(|p| p.name.eq_ignore_ascii_case(preset));
                     match EqPreset::ALL
                         .into_iter()
                         .find(|p| p.name().eq_ignore_ascii_case(preset))
@@ -811,10 +822,23 @@ impl MusicApp {
                         Some(preset) => {
                             panel.update(cx, |p, cx| p.apply_preset(preset, window, cx))
                         }
-                        None => eprintln!("music-gpui: unknown EQ preset {preset:?}"),
+                        None => match saved {
+                            Some(i) => panel.update(cx, |p, cx| p.apply_saved_eq(i, window, cx)),
+                            None => eprintln!("music-gpui: unknown EQ preset {preset:?}"),
+                        },
                     }
                 }
             },
+            "eq-save" => {
+                let name = arg.unwrap_or_default().to_owned();
+                if !panel.update(cx, |p, cx| p.save_eq_preset(&name, cx)) {
+                    eprintln!("music-gpui: @eq-save wants a name");
+                }
+            }
+            "eq-pre-gain" => {
+                let on = on();
+                panel.update(cx, |p, cx| p.set_eq_pre_gain(on, cx));
+            }
             "field" => {
                 if let Some((field, value)) = arg.and_then(|a| a.split_once(':')) {
                     panel.update(cx, |p, cx| p.set_field(field, value, window, cx));
@@ -976,18 +1000,101 @@ impl MusicApp {
                 panel.update(cx, |p, cx| p.set_crossfade(secs, window, cx));
             }
             "reverb" => match arg.and_then(music_core::ReverbPreset::parse) {
-                Some(preset) => panel.update(cx, |p, cx| p.set_reverb(preset, cx)),
-                None => eprintln!("music-gpui: @reverb wants off|small-room|hall|plate|cathedral"),
+                Some(preset) => panel.update(cx, |p, cx| p.set_reverb(preset, window, cx)),
+                None => eprintln!(
+                    "music-gpui: @reverb wants off|small-room|hall|plate|cathedral|custom|studio|chamber|church|own-impulse"
+                ),
             },
+            "reverb-length" | "reverb-pre-delay" | "reverb-brightness" | "reverb-early"
+            | "reverb-dry" | "reverb-width" => {
+                let key = name.trim_start_matches("reverb-");
+                match num() {
+                    Some(v) => {
+                        panel.update(cx, |p, cx| p.set_reverb_param(key, v as f32, window, cx));
+                    }
+                    None => eprintln!("music-gpui: @{name} wants a number"),
+                }
+            }
+            "reverb-ir" => match arg {
+                Some(path) => {
+                    let path = std::path::PathBuf::from(path);
+                    panel.update(cx, |p, cx| p.load_impulse(path, window, cx));
+                }
+                None => eprintln!("music-gpui: @reverb-ir wants a file path"),
+            },
+            "night" => {
+                let on = on();
+                panel.update(cx, |p, cx| p.set_night_mode(on, cx));
+            }
+            "night-threshold" | "night-ratio" | "night-attack" | "night-release"
+            | "night-makeup" => {
+                let key = name.trim_start_matches("night-");
+                match num() {
+                    Some(v) => {
+                        panel.update(cx, |p, cx| {
+                            p.set_compressor_param(key, v as f32, window, cx)
+                        });
+                    }
+                    None => eprintln!("music-gpui: @{name} wants a number"),
+                }
+            }
+            "sound-save" => {
+                let name = arg.unwrap_or_default().to_owned();
+                if !panel.update(cx, |p, cx| p.save_sound_preset(&name, cx)) {
+                    eprintln!("music-gpui: @sound-save wants a name");
+                }
+            }
+            "sound-status" => {
+                let p = panel.read(cx);
+                let s = p.settings();
+                let a = &s.audio;
+                let r = p.reverb_settings();
+                eprintln!(
+                    "music-gpui: sound reverb={} on={} mix={:.2} params={:?} impulse={:?} night={:?} eq_on={} pre_gain={} gains={:?} saved_eq={:?} presets={:?} volume={:.3} gain={:.4}",
+                    a.reverb.key(),
+                    r.is_on(),
+                    a.reverb_mix,
+                    a.reverb_params(),
+                    p.impulse().map(|i| (i.rate(), i.frames())),
+                    a.compressor,
+                    s.equalizer.enabled,
+                    s.equalizer.pre_gain,
+                    s.equalizer.gains(),
+                    s.equalizer
+                        .saved
+                        .iter()
+                        .map(|p| &p.name)
+                        .collect::<Vec<_>>(),
+                    a.sound_presets.iter().map(|p| &p.name).collect::<Vec<_>>(),
+                    self.volume,
+                    music_core::volume::gain(self.volume),
+                );
+            }
             "reverb-mix" => {
                 let mix = num().unwrap_or(0.3) as f32;
                 panel.update(cx, |p, cx| p.set_reverb_mix(mix, window, cx));
             }
             "sound" => match arg.and_then(crate::settings::prefs::SoundPreset::parse) {
                 Some(preset) => panel.update(cx, |p, cx| p.apply_sound_preset(preset, window, cx)),
-                None => eprintln!(
-                    "music-gpui: @sound wants original|slowed-reverb|nightcore|practice|concert-hall"
-                ),
+                None => {
+                    let user = arg.and_then(|a| {
+                        panel
+                            .read(cx)
+                            .settings()
+                            .audio
+                            .sound_presets
+                            .iter()
+                            .position(|p| p.name.eq_ignore_ascii_case(a))
+                    });
+                    match user {
+                        Some(i) => {
+                            panel.update(cx, |p, cx| p.apply_user_sound_preset(i, window, cx))
+                        }
+                        None => eprintln!(
+                            "music-gpui: @sound wants original|slowed-reverb|nightcore|practice|concert-hall or a saved preset's name"
+                        ),
+                    }
+                }
             },
             "quality" => {
                 let quality = match arg {

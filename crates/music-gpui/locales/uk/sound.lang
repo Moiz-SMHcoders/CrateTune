@@ -1,0 +1,70 @@
+# Settings → Equalizer, the sound additions: reverb fine controls, convolution
+# rooms, night mode, own presets, the EQ graph (see locales/en/sound.lang).
+
+# ---- Convolution rooms (reverb buttons: keep short)
+sound.room.studio = Студія
+sound.room.chamber = Камера
+sound.room.church = Церква
+sound.room.own = Власне приміщення
+sound.room.own_named = Власне: {name}
+sound.room.convolution = Згорткові приміщення
+sound.ir.load = Завантажити власне (WAV)…
+sound.ir.pick = Використати як приміщення
+sound.ir.loaded = Приміщення завантажено з {name}
+sound.ir.failed = Не вдалося використати {name} як приміщення: {error}
+
+# ---- Reverb fine controls (slider labels)
+sound.reverb.length = Тривалість
+sound.reverb.pre_delay = Передзатримка
+sound.reverb.brightness = Яскравість
+sound.reverb.early = Ранні відбиття
+sound.reverb.width = Ширина
+sound.reverb.dry = Сухий сигнал
+sound.reverb.note = Приміщення навколо музики, після еквалайзера. Приміщення — це пресети регуляторів нижче; якщо зсунути будь-який, вибирається «Власний». Згорткові приміщення використовують передзатримку, ширину й сухий сигнал. Вимкнена реверберація нічого не коштує; під час паузи відлуння природно згасає.
+sound.value.seconds = {value} с
+sound.value.ms = {value} мс
+sound.value.db = {value} дБ
+sound.value.ratio = {value} : 1
+
+# ---- Night mode
+sound.night.title = Нічний режим
+sound.night.switch = Нічний режим
+sound.night.threshold = Поріг
+sound.night.ratio = Ступінь стиснення
+sound.night.attack = Атака
+sound.night.release = Відновлення
+sound.night.makeup = Компенсація підсилення
+sound.night.reset = Скинути значення
+sound.night.note = Вирівнює гучні й тихі місця для прослуховування на малій гучності: рівні понад поріг знижуються відповідно до ступеня стиснення, потім усе піднімається на величину компенсації підсилення. Вимкнений нічого не коштує.
+
+# ---- Equalizer: band names (keep short)
+sound.band.sub = Саб
+sound.band.bass = Бас
+sound.band.punch = Удар
+sound.band.warmth = Теплота
+sound.band.low_mids = Нижні середні
+sound.band.mids = Середні
+sound.band.upper_mids = Верхні середні
+sound.band.presence = Присутність
+sound.band.brilliance = Блиск
+sound.band.air = Повітря
+
+# ---- Equalizer: headroom and the response graph
+sound.eq.no_boost = Без підйому: кліпінгу не буде.
+sound.eq.pre_gain_on = Вихід знижено на {db} дБ, щоб підйоми не спричиняли кліпінг.
+sound.eq.clip_warning = Підйоми сягають +{db} дБ і можуть спричинити кліпінг на гучних піснях. Увімкніть автоматичне попереднє підсилення або опустіть смуги.
+sound.eq.small_boost = Підйоми сягають +{db} дБ (замало для кліпінгу).
+sound.eq.pre_gain = Автоматичне попереднє підсилення
+sound.eq.note = Застосовується одразу. Перетягуйте точки на кривій або повзунки. Крива показує, що насправді роблять фільтри: сусідні підйоми додаються.
+sound.eq.save_title = Зберегти криву еквалайзера
+
+# ---- Own presets
+sound.preset.save = Зберегти як пресет…
+sound.preset.save_title = Зберегти пресет звуку
+sound.preset.rename_title = Перейменувати пресет
+sound.preset.name_placeholder = Назва пресету
+sound.preset.note = Задає швидкість, висоту тону, реверберацію й еквалайзер одним клацанням. Зберігайте власні: наявна назва оновлюється. Швидкість і висота тону є також у розділі «Відтворення».
+
+# ---- Settings search
+sound.search.graph = Крива еквалайзера
+sound.search.saved_eq = Ваші пресети еквалайзера

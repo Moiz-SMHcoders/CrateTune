@@ -2,6 +2,8 @@
 //! `settings.json`, see [`super::file::Settings`]). Option sets and defaults
 //! follow ArchiveTune's `PreferenceKeys.kt` where it has an equivalent.
 
+use std::path::PathBuf;
+use std::sync::Arc;
 use std::time::Duration;
 
 use music_core::discord::{
@@ -11,7 +13,9 @@ use music_core::lyrics::ProviderId;
 use music_core::lyrics::romanize::Script;
 use music_core::scrobble::ScrobbleRules;
 use music_core::youtube::WebClient;
-use music_core::{Quality, ReverbPreset, ReverbSettings};
+use music_core::{
+    CompressorSettings, Impulse, Quality, ReverbParams, ReverbPreset, ReverbSettings,
+};
 use serde::{Deserialize, Serialize};
 
 use super::file::lenient;
@@ -64,6 +68,20 @@ pub struct AudioConfig {
     pub reverb: ReverbPreset,
     /// 0..=1, how much reverb is heard.
     pub reverb_mix: f32,
+    /// The reverb's fine controls as changed by hand; `None`: the room's own
+    /// values (`ReverbPreset::params`). Moving one with an algorithmic room
+    /// picked makes the reverb `Custom`; the convolution rooms keep their name
+    /// (they use the pre-delay, width and dry level).
+    #[serde(deserialize_with = "lenient")]
+    pub reverb_params: Option<ReverbParams>,
+    /// The impulse response file for `ReverbPreset::OwnImpulse` ("Load your own").
+    pub reverb_impulse: Option<PathBuf>,
+    /// Night mode (a compressor on the output, `music_core::compressor`); off by default.
+    #[serde(deserialize_with = "lenient")]
+    pub compressor: CompressorSettings,
+    /// The user's own sound presets (speed, pitch, reverb, equalizer).
+    #[serde(deserialize_with = "lenient")]
+    pub sound_presets: Vec<UserSoundPreset>,
 }
 
 impl Default for AudioConfig {
@@ -84,6 +102,10 @@ impl Default for AudioConfig {
             player_fixes: true,
             reverb: ReverbPreset::Off,
             reverb_mix: music_core::reverb::DEFAULT_REVERB_MIX,
+            reverb_params: None,
+            reverb_impulse: None,
+            compressor: CompressorSettings::NIGHT,
+            sound_presets: Vec::new(),
         }
     }
 }
@@ -117,15 +139,194 @@ impl AudioConfig {
         {
             self.output_device = None;
         }
+        self.reverb_params = self.reverb_params.map(ReverbParams::sanitized);
+        if self.reverb == ReverbPreset::Custom && self.reverb_params.is_none() {
+            self.reverb_params = Some(ReverbParams::default());
+        }
+        self.reverb_impulse = self
+            .reverb_impulse
+            .take()
+            .filter(|p| !p.as_os_str().is_empty());
+        self.compressor = self.compressor.sanitized();
+        normalize_presets(&mut self.sound_presets);
     }
 
     pub fn crossfade(&self) -> Duration {
         Duration::from_secs_f32(self.crossfade_secs.max(0.0))
     }
 
-    pub fn reverb(&self) -> ReverbSettings {
-        ReverbSettings::new(self.reverb, self.reverb_mix)
+    /// The fine controls in effect: as changed by hand, else the room's own.
+    pub fn reverb_params(&self) -> ReverbParams {
+        self.reverb_params
+            .unwrap_or_else(|| self.reverb.params().unwrap_or_default())
     }
+
+    /// What the player gets; `impulse` is the loaded file of
+    /// `ReverbPreset::OwnImpulse` (without one that choice stays silent).
+    pub fn reverb(&self, impulse: Option<Arc<Impulse>>) -> ReverbSettings {
+        ReverbSettings::new(self.reverb, self.reverb_mix)
+            .with_params(self.reverb_params())
+            .with_impulse(impulse.filter(|_| self.reverb == ReverbPreset::OwnImpulse))
+    }
+
+    /// Picks a reverb choice with its own fine values.
+    pub fn pick_reverb(&mut self, preset: ReverbPreset) {
+        if preset == ReverbPreset::Custom {
+            self.reverb_params = Some(self.reverb_params());
+        } else {
+            self.reverb_params = None;
+        }
+        self.reverb = preset;
+    }
+
+    /// Changes the fine controls; an algorithmic room (or off) becomes `Custom`.
+    pub fn edit_reverb(&mut self, f: impl FnOnce(&mut ReverbParams)) {
+        let mut params = self.reverb_params();
+        f(&mut params);
+        let params = params.sanitized();
+        if params == self.reverb_params() {
+            return;
+        }
+        if !self.reverb.is_convolution() {
+            self.reverb = ReverbPreset::Custom;
+        }
+        self.reverb_params = Some(params);
+    }
+}
+
+/// Longest name of a user preset (sound or EQ), in characters.
+pub const PRESET_NAME_MAX: usize = 40;
+/// How many user presets (sound or EQ) are kept.
+pub const PRESETS_MAX: usize = 50;
+
+/// A preset name trimmed and shortened to [`PRESET_NAME_MAX`]; `None` if empty.
+pub fn preset_name(name: &str) -> Option<String> {
+    let name: String = name.trim().chars().take(PRESET_NAME_MAX).collect();
+    let name = name.trim().to_owned();
+    (!name.is_empty()).then_some(name)
+}
+
+/// The user's own sound preset: speed, pitch, reverb (with its fine values or
+/// impulse file) and the equalizer, saved under a name.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct UserSoundPreset {
+    pub name: String,
+    pub speed: f32,
+    pub pitch: f32,
+    #[serde(deserialize_with = "lenient")]
+    pub reverb: ReverbPreset,
+    pub reverb_mix: f32,
+    #[serde(deserialize_with = "lenient")]
+    pub reverb_params: Option<ReverbParams>,
+    pub reverb_impulse: Option<PathBuf>,
+    pub eq_enabled: bool,
+    /// Gains for the ten bands.
+    pub eq_gains_db: Vec<f64>,
+}
+
+impl Default for UserSoundPreset {
+    fn default() -> Self {
+        let a = AudioConfig::default();
+        Self {
+            name: String::new(),
+            speed: a.speed,
+            pitch: a.pitch,
+            reverb: a.reverb,
+            reverb_mix: a.reverb_mix,
+            reverb_params: None,
+            reverb_impulse: None,
+            eq_enabled: false,
+            eq_gains_db: vec![0.0; super::file::BANDS],
+        }
+    }
+}
+
+impl UserSoundPreset {
+    /// The current sound under `name`.
+    pub fn capture(name: String, settings: &super::file::Settings) -> Self {
+        let a = &settings.audio;
+        Self {
+            name,
+            speed: a.speed,
+            pitch: a.pitch,
+            reverb: a.reverb,
+            reverb_mix: a.reverb_mix,
+            reverb_params: a.reverb_params,
+            reverb_impulse: (a.reverb == ReverbPreset::OwnImpulse)
+                .then(|| a.reverb_impulse.clone())
+                .flatten(),
+            eq_enabled: settings.equalizer.enabled,
+            eq_gains_db: settings.equalizer.gains().to_vec(),
+        }
+    }
+
+    pub fn apply(&self, settings: &mut super::file::Settings) {
+        let a = &mut settings.audio;
+        a.speed = self.speed;
+        a.pitch = self.pitch;
+        a.reverb = self.reverb;
+        a.reverb_mix = self.reverb_mix;
+        a.reverb_params = self.reverb_params;
+        if self.reverb == ReverbPreset::OwnImpulse && self.reverb_impulse.is_some() {
+            a.reverb_impulse = self.reverb_impulse.clone();
+        }
+        settings.equalizer.enabled = self.eq_enabled;
+        settings.equalizer.gains_db = self.eq_gains_db.clone();
+        settings.normalize();
+    }
+
+    /// The sound is this preset's (the mix only counts with a reverb on).
+    pub fn matches(&self, settings: &super::file::Settings) -> bool {
+        let a = &settings.audio;
+        let eq = &settings.equalizer;
+        let close = |x: f32, y: f32| (x - y).abs() < 0.005;
+        close(a.speed, self.speed)
+            && close(a.pitch, self.pitch)
+            && a.reverb == self.reverb
+            && (self.reverb == ReverbPreset::Off
+                || (close(a.reverb_mix, self.reverb_mix) && a.reverb_params == self.reverb_params))
+            && (self.reverb != ReverbPreset::OwnImpulse
+                || self.reverb_impulse.is_none()
+                || a.reverb_impulse == self.reverb_impulse)
+            && eq.enabled == self.eq_enabled
+            && (!eq.enabled
+                || eq
+                    .gains()
+                    .iter()
+                    .zip(&self.eq_gains_db)
+                    .all(|(x, y)| (x - y).abs() < 0.05))
+    }
+
+    fn normalize(&mut self) {
+        let mut a = AudioConfig {
+            speed: self.speed,
+            pitch: self.pitch,
+            reverb: self.reverb,
+            reverb_mix: self.reverb_mix,
+            reverb_params: self.reverb_params,
+            ..AudioConfig::default()
+        };
+        a.normalize();
+        (self.speed, self.pitch, self.reverb_mix, self.reverb_params) =
+            (a.speed, a.pitch, a.reverb_mix, a.reverb_params);
+        super::file::normalize_gains(&mut self.eq_gains_db);
+    }
+}
+
+/// Names trimmed and unique (case-insensitive; later duplicates dropped),
+/// values clamped, at most [`PRESETS_MAX`].
+fn normalize_presets(presets: &mut Vec<UserSoundPreset>) {
+    let mut seen = std::collections::HashSet::new();
+    presets.retain_mut(|p| match preset_name(&p.name) {
+        Some(name) if seen.insert(name.to_lowercase()) => {
+            p.name = name;
+            p.normalize();
+            true
+        }
+        _ => false,
+    });
+    presets.truncate(PRESETS_MAX);
 }
 
 /// One-click sound presets after Limusic's effect presets
@@ -163,7 +364,7 @@ impl SoundPreset {
         let (speed, pitch, reverb, mix) = self.values();
         audio.speed = speed;
         audio.pitch = pitch;
-        audio.reverb = reverb;
+        audio.pick_reverb(reverb);
         if reverb != ReverbPreset::Off {
             audio.reverb_mix = mix;
         }
@@ -176,7 +377,8 @@ impl SoundPreset {
             (audio.speed - speed).abs() < 0.001
                 && (audio.pitch - pitch).abs() < 0.001
                 && audio.reverb == reverb
-                && (reverb == ReverbPreset::Off || (audio.reverb_mix - mix).abs() < 0.005)
+                && (reverb == ReverbPreset::Off
+                    || ((audio.reverb_mix - mix).abs() < 0.005 && audio.reverb_params.is_none()))
         })
     }
 
@@ -215,6 +417,11 @@ pub fn reverb_title(preset: ReverbPreset) -> &'static str {
         ReverbPreset::Hall => t!("prefs.reverb.hall"),
         ReverbPreset::Plate => t!("prefs.reverb.plate"),
         ReverbPreset::Cathedral => t!("prefs.reverb.cathedral"),
+        ReverbPreset::Custom => t!("common.custom"),
+        ReverbPreset::Studio => t!("sound.room.studio"),
+        ReverbPreset::Chamber => t!("sound.room.chamber"),
+        ReverbPreset::Church => t!("sound.room.church"),
+        ReverbPreset::OwnImpulse => t!("sound.room.own"),
     }
 }
 
@@ -1152,7 +1359,7 @@ mod tests {
     fn reverb_and_sound_presets() {
         let a = AudioConfig::default();
         assert_eq!(a.reverb, ReverbPreset::Off);
-        assert!(!a.reverb().is_on());
+        assert!(!a.reverb(None).is_on());
         assert_eq!(SoundPreset::current(&a), Some(SoundPreset::Original));
         let json = serde_json::to_value(AudioConfig {
             reverb: ReverbPreset::SmallRoom,
@@ -1183,6 +1390,110 @@ mod tests {
         );
         a.speed = 1.1;
         assert_eq!(SoundPreset::current(&a), None);
+    }
+
+    #[test]
+    fn fine_reverb_controls_make_a_room_custom() {
+        let mut a = AudioConfig::default();
+        a.pick_reverb(ReverbPreset::Hall);
+        assert_eq!(a.reverb_params(), ReverbPreset::Hall.params().unwrap());
+        // Moving a fine control of an algorithmic room: Custom, from its values.
+        a.edit_reverb(|p| p.pre_delay_ms = 120.0);
+        assert_eq!(a.reverb, ReverbPreset::Custom);
+        let p = a.reverb_params();
+        assert_eq!(p.pre_delay_ms, 120.0);
+        assert_eq!(
+            p.decay_secs,
+            ReverbPreset::Hall.params().unwrap().decay_secs
+        );
+        assert!(a.reverb(None).is_on());
+        // Off → Custom too; a convolution room keeps its name.
+        a.pick_reverb(ReverbPreset::Off);
+        a.edit_reverb(|p| p.early = 0.5);
+        assert_eq!(a.reverb, ReverbPreset::Custom);
+        a.pick_reverb(ReverbPreset::Church);
+        assert_eq!(a.reverb_params, None);
+        a.edit_reverb(|p| p.dry = 0.4);
+        assert_eq!(a.reverb, ReverbPreset::Church);
+        assert_eq!(a.reverb_params().dry, 0.4);
+        // No change, no Custom.
+        a.pick_reverb(ReverbPreset::Plate);
+        a.edit_reverb(|_| {});
+        assert_eq!(a.reverb, ReverbPreset::Plate);
+        // Own impulse: silent without a loaded file, on with one.
+        a.pick_reverb(ReverbPreset::OwnImpulse);
+        assert!(!a.reverb(None).is_on());
+        let imp = Arc::new(Impulse::from_interleaved(48_000, 1, &[1.0, 0.5, 0.25]).unwrap());
+        assert!(a.reverb(Some(imp.clone())).is_on());
+        a.pick_reverb(ReverbPreset::Hall);
+        assert!(a.reverb(Some(imp)).impulse.is_none());
+        // Saved values round-trip and are clamped.
+        let a: AudioConfig = serde_json::from_str(
+            r#"{"reverb":"custom","reverb_params":{"decay_secs":99,"pre_delay_ms":-5},
+                "compressor":{"enabled":true,"ratio":100}}"#,
+        )
+        .map(|mut a: AudioConfig| {
+            a.normalize();
+            a
+        })
+        .unwrap();
+        let p = a.reverb_params.unwrap();
+        assert_eq!((p.decay_secs, p.pre_delay_ms), (10.0, 0.0));
+        assert!(a.compressor.enabled);
+        assert_eq!(a.compressor.ratio, 20.0);
+        assert_eq!(a.compressor.threshold_db, -24.0);
+        // Garbage in a new field does not cost the rest of the section.
+        let a: AudioConfig =
+            serde_json::from_str(r#"{"speed":1.5,"reverb_params":"x","compressor":7}"#).unwrap();
+        assert_eq!(a.speed, 1.5);
+        assert_eq!(a.reverb_params, None);
+        assert!(!a.compressor.enabled);
+    }
+
+    #[test]
+    fn user_sound_presets_capture_apply_and_match() {
+        use super::super::file::Settings;
+        let mut s = Settings::default();
+        s.audio.speed = 0.9;
+        s.audio.pitch = -2.0;
+        s.audio.pick_reverb(ReverbPreset::Cathedral);
+        s.audio.edit_reverb(|p| p.early = 0.3);
+        s.equalizer.apply_preset(music_core::EqPreset::Warm);
+        let preset = UserSoundPreset::capture("Late night".into(), &s);
+        assert!(preset.matches(&s));
+        let mut other = Settings::default();
+        assert!(!preset.matches(&other));
+        preset.apply(&mut other);
+        assert!(preset.matches(&other));
+        assert_eq!(other.audio.reverb, ReverbPreset::Custom);
+        assert_eq!(other.audio.reverb_params().early, 0.3);
+        assert_eq!(other.equalizer.gains(), s.equalizer.gains());
+        other.equalizer.gains_db[0] += 1.0;
+        assert!(!preset.matches(&other));
+        // Names: trimmed, unique ignoring case, capped.
+        let mut a = AudioConfig {
+            sound_presets: vec![
+                UserSoundPreset {
+                    name: "  Mine ".into(),
+                    speed: 9.0,
+                    ..Default::default()
+                },
+                UserSoundPreset {
+                    name: "MINE".into(),
+                    ..Default::default()
+                },
+                UserSoundPreset {
+                    name: "   ".into(),
+                    ..Default::default()
+                },
+            ],
+            ..Default::default()
+        };
+        a.normalize();
+        assert_eq!(a.sound_presets.len(), 1);
+        assert_eq!(a.sound_presets[0].name, "Mine");
+        assert_eq!(a.sound_presets[0].speed, SPEED_MAX);
+        assert_eq!(preset_name(&"x".repeat(99)).unwrap().len(), PRESET_NAME_MAX);
     }
 
     #[test]

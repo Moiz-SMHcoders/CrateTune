@@ -12,7 +12,7 @@ use gpui_component::slider::{SliderEvent, SliderState};
 use music_core::lyrics::romanize::Script;
 use music_core::lyrics::translate::{AiTranslator, GoogleTranslator, LyricsTranslator};
 use music_core::lyrics::{LyricsServiceConfig, ProviderId, ProviderKeys};
-use music_core::{OutputDevice, Player, Quality, ReverbPreset};
+use music_core::{OutputDevice, Player, Quality};
 
 use super::file::Settings;
 use super::panel::{SettingsEvent, SettingsPanel};
@@ -499,13 +499,6 @@ impl SettingsPanel {
             .update(cx, |s, cx| s.set_value(pitch, window, cx));
     }
 
-    /// Picks a reverb room (`Off` turns it off); a room picked while off
-    /// keeps the saved mix.
-    pub fn set_reverb(&mut self, preset: ReverbPreset, cx: &mut Context<Self>) {
-        self.update_audio(cx, |a| a.reverb = preset);
-        cx.notify();
-    }
-
     /// Script hook: the wet mix (0..=1); moves the slider too.
     pub fn set_reverb_mix(&mut self, mix: f32, window: &mut Window, cx: &mut Context<Self>) {
         self.update_audio(cx, |a| a.reverb_mix = mix);
@@ -523,17 +516,7 @@ impl SettingsPanel {
         cx: &mut Context<Self>,
     ) {
         self.update_audio(cx, |a| preset.apply(a));
-        let a = &self.settings.audio;
-        let (speed, pitch, mix) = (a.speed, a.pitch, a.reverb_mix * 100.);
-        self.prefs
-            .speed
-            .update(cx, |s, cx| s.set_value(speed, window, cx));
-        self.prefs
-            .pitch
-            .update(cx, |s, cx| s.set_value(pitch, window, cx));
-        self.prefs
-            .reverb_mix
-            .update(cx, |s, cx| s.set_value(mix, window, cx));
+        self.sync_sound_widgets(window, cx);
         cx.notify();
     }
 

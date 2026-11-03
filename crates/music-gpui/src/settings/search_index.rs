@@ -1256,7 +1256,7 @@ pub const ENTRIES: &[Entry] = &[
         Equalizer,
         -,
         "settings.section.equalizer",
-        "settings.eq.note",
+        "sound.eq.note",
         "eq",
         "equaliser",
         "bass",
@@ -1267,11 +1267,47 @@ pub const ENTRIES: &[Entry] = &[
         "audio"
     ),
     entry!(
+        "eq.saved",
+        Equalizer,
+        "settings.section.equalizer",
+        "sound.search.saved_eq",
+        -,
+        "save",
+        "preset",
+        "curve",
+        "rename",
+        "my"
+    ),
+    entry!(
+        "eq.graph",
+        Equalizer,
+        "settings.section.equalizer",
+        "sound.search.graph",
+        "sound.eq.note",
+        "graph",
+        "response",
+        "frequency",
+        "drag",
+        "bands"
+    ),
+    entry!(
+        "eq.headroom",
+        Equalizer,
+        "settings.section.equalizer",
+        "sound.eq.pre_gain",
+        -,
+        "clipping",
+        "clip",
+        "headroom",
+        "preamp",
+        "distortion"
+    ),
+    entry!(
         "eq.reverb",
         Equalizer,
         -,
         "settings.reverb.title",
-        "settings.reverb.note",
+        "sound.reverb.note",
         "reverb",
         "room",
         "hall",
@@ -1280,6 +1316,82 @@ pub const ENTRIES: &[Entry] = &[
         "echo",
         "ambience",
         "effects"
+    ),
+    entry!(
+        "eq.reverb.impulse",
+        Equalizer,
+        "settings.reverb.title",
+        "sound.room.convolution",
+        -,
+        "convolution",
+        "impulse",
+        "ir",
+        "wav",
+        "studio",
+        "chamber",
+        "church"
+    ),
+    entry!(
+        "eq.reverb.length",
+        Equalizer,
+        "settings.reverb.title",
+        "sound.reverb.length",
+        -,
+        "decay",
+        "size",
+        "time",
+        "reverb"
+    ),
+    entry!(
+        "eq.reverb.pre_delay",
+        Equalizer,
+        "settings.reverb.title",
+        "sound.reverb.pre_delay",
+        -,
+        "predelay",
+        "gap",
+        "delay",
+        "reverb"
+    ),
+    entry!(
+        "eq.reverb.brightness",
+        Equalizer,
+        "settings.reverb.title",
+        "sound.reverb.brightness",
+        -,
+        "damping",
+        "tone",
+        "dark",
+        "reverb"
+    ),
+    entry!(
+        "eq.reverb.early",
+        Equalizer,
+        "settings.reverb.title",
+        "sound.reverb.early",
+        -,
+        "reflections",
+        "reverb"
+    ),
+    entry!(
+        "eq.reverb.width",
+        Equalizer,
+        "settings.reverb.title",
+        "sound.reverb.width",
+        -,
+        "stereo",
+        "wide",
+        "reverb"
+    ),
+    entry!(
+        "eq.reverb.dry",
+        Equalizer,
+        "settings.reverb.title",
+        "sound.reverb.dry",
+        -,
+        "original",
+        "level",
+        "reverb"
     ),
     entry!(
         "eq.reverb.mix",
@@ -1292,11 +1404,38 @@ pub const ENTRIES: &[Entry] = &[
         "reverb"
     ),
     entry!(
+        "eq.night",
+        Equalizer,
+        -,
+        "sound.night.title",
+        "sound.night.note",
+        "compressor",
+        "smoothing",
+        "dynamic",
+        "range",
+        "quiet",
+        "loud",
+        "late",
+        "threshold",
+        "ratio"
+    ),
+    entry!(
+        "eq.night.makeup",
+        Equalizer,
+        "sound.night.title",
+        "sound.night.makeup",
+        -,
+        "gain",
+        "compressor"
+    ),
+    entry!(
         "eq.sound_presets",
         Equalizer,
         -,
         "settings.sound.title",
-        "settings.sound.note",
+        "sound.preset.note",
+        "save",
+        "my",
         "slowed",
         "nightcore",
         "practice",
@@ -2658,6 +2797,9 @@ mod tests {
     const OWN_WORDS: &[(&str, &str)] = &[
         ("about.updates.check", "menu.check_updates"),
         ("shortcuts.main", "settings.section.shortcuts"),
+        // Names for search only: the rows show buttons / the drawn curve.
+        ("eq.saved", "sound.search.saved_eq"),
+        ("eq.graph", "sound.search.graph"),
     ];
 
     fn keys(entry: &Entry) -> Vec<Key> {
@@ -2746,6 +2888,7 @@ mod tests {
             "field_at(",
             "slider_row_at(",
             "stack_at(",
+            "fine_row_at(",
             ".anchor(",
         ];
         let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/settings");

@@ -3,8 +3,8 @@
 use std::time::{Duration, Instant};
 
 use music_core::{
-    EqualizerSettings, PlaybackState, PlaybackStatus, Player, SilenceConfig, SleepTimer,
-    SleepTimerState, Track,
+    EqualizerSettings, PlaybackState, PlaybackStatus, Player, ReverbSettings, SilenceConfig,
+    SleepTimer, SleepTimerState, Track,
 };
 
 use crate::settings::prefs::AudioConfig;
@@ -89,7 +89,9 @@ impl Engine {
 
     pub fn set_volume(&mut self, volume: f32) {
         match self {
-            Engine::Audio(player) => player.set_volume(volume),
+            // The slider's position through the perceptual curve; a Chromecast
+            // gets the position (its receiver has its own curve).
+            Engine::Audio(player) => player.set_volume(music_core::volume::gain(volume)),
             Engine::Demo(demo) => demo.volume = volume.clamp(0., 1.),
             Engine::Cast(cast) => cast.set_volume(volume.clamp(0., 1.)),
         }
@@ -118,8 +120,9 @@ impl Engine {
     }
 
     /// Quality, crossfade, skip silence, speed, pitch, auto-skip, normalization,
-    /// reverb and the output device. The demo clock only honours the speed.
-    pub fn apply_audio(&mut self, audio: &AudioConfig) {
+    /// reverb (`reverb`: with the loaded impulse file), night mode and the output
+    /// device. The demo clock only honours the speed.
+    pub fn apply_audio(&mut self, audio: &AudioConfig, reverb: ReverbSettings) {
         match self {
             Engine::Audio(player) => {
                 player.set_quality(audio.quality);
@@ -129,7 +132,8 @@ impl Engine {
                 player.set_pitch(audio.pitch);
                 player.set_auto_skip(audio.auto_skip);
                 player.set_normalization(audio.normalize);
-                player.set_reverb(audio.reverb());
+                player.set_reverb(reverb);
+                player.set_compressor(audio.compressor);
                 player.set_output_device(audio.output_device.clone());
             }
             Engine::Demo(demo) => {
@@ -137,7 +141,7 @@ impl Engine {
                 demo.rebase(now);
                 demo.speed = audio.speed;
             }
-            Engine::Cast(cast) => cast.local_mut().apply_audio(audio),
+            Engine::Cast(cast) => cast.local_mut().apply_audio(audio, reverb),
         }
     }
 

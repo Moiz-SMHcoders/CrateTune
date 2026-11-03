@@ -1,0 +1,70 @@
+# Settings → Equalizer, the sound additions: reverb fine controls, convolution
+# rooms, night mode, own presets, the EQ graph (see locales/en/sound.lang).
+
+# ---- Convolution rooms (reverb buttons: keep short)
+sound.room.studio = Studio
+sound.room.chamber = Komora
+sound.room.church = Kościół
+sound.room.own = Własne pomieszczenie
+sound.room.own_named = Własne: {name}
+sound.room.convolution = Pomieszczenia splotowe
+sound.ir.load = Wczytaj własne (WAV)…
+sound.ir.pick = Użyj jako pomieszczenia
+sound.ir.loaded = Wczytano pomieszczenie z {name}
+sound.ir.failed = Nie można użyć {name} jako pomieszczenia: {error}
+
+# ---- Reverb fine controls (slider labels)
+sound.reverb.length = Długość
+sound.reverb.pre_delay = Pre-delay
+sound.reverb.brightness = Jasność
+sound.reverb.early = Wczesne odbicia
+sound.reverb.width = Szerokość
+sound.reverb.dry = Sygnał suchy
+sound.reverb.note = Pomieszczenie wokół muzyki, za korektorem. Pomieszczenia to gotowe ustawienia suwaków poniżej; poruszenie któregoś zmienia wybór na Własne. Pomieszczenia splotowe używają pre-delay, szerokości i sygnału suchego. Wyłączony nic nie kosztuje; po wstrzymaniu pogłos naturalnie wybrzmiewa.
+sound.value.seconds = {value} s
+sound.value.ms = {value} ms
+sound.value.db = {value} dB
+sound.value.ratio = {value} : 1
+
+# ---- Night mode
+sound.night.title = Tryb nocnego słuchania
+sound.night.switch = Nocne słuchanie
+sound.night.threshold = Próg
+sound.night.ratio = Współczynnik
+sound.night.attack = Atak
+sound.night.release = Zwolnienie
+sound.night.makeup = Wzmocnienie wyrównawcze
+sound.night.reset = Przywróć wartości
+sound.night.note = Wyrównuje głośne i ciche fragmenty do słuchania przy niskiej głośności: poziomy powyżej progu są ściszane zgodnie ze współczynnikiem, a potem całość jest podnoszona o wzmocnienie wyrównawcze. Wyłączony nic nie kosztuje.
+
+# ---- Equalizer: band names (keep short)
+sound.band.sub = Sub
+sound.band.bass = Bas
+sound.band.punch = Uderzenie
+sound.band.warmth = Ciepło
+sound.band.low_mids = Niskie średnie
+sound.band.mids = Średnie
+sound.band.upper_mids = Wysokie średnie
+sound.band.presence = Prezencja
+sound.band.brilliance = Blask
+sound.band.air = Powietrze
+
+# ---- Equalizer: headroom and the response graph
+sound.eq.no_boost = Bez podbicia: nic nie może przesterować.
+sound.eq.pre_gain_on = Wyjście jest ściszone o {db} dB, aby podbicia nie mogły przesterować.
+sound.eq.clip_warning = Podbicia sięgają +{db} dB i mogą przesterować przy głośnych utworach. Włącz automatyczny pre-gain lub obniż pasma.
+sound.eq.small_boost = Podbicia sięgają +{db} dB (za mało, by przesterować).
+sound.eq.pre_gain = Automatyczny pre-gain
+sound.eq.note = Działa na bieżąco. Przeciągaj punkty na krzywej lub suwaki. Krzywa pokazuje, co naprawdę robią filtry: sąsiednie podbicia się sumują.
+sound.eq.save_title = Zapisz krzywą korektora
+
+# ---- Own presets
+sound.preset.save = Zapisz jako ustawienie…
+sound.preset.save_title = Zapisz ustawienie dźwięku
+sound.preset.rename_title = Zmień nazwę ustawienia
+sound.preset.name_placeholder = Nazwa ustawienia
+sound.preset.note = Ustawia szybkość, wysokość, pogłos i korektor jednym kliknięciem. Zapisz własne: istniejąca nazwa zostanie zaktualizowana. Szybkość i wysokość są też w sekcji Odtwarzanie.
+
+# ---- Settings search
+sound.search.graph = Krzywa korektora
+sound.search.saved_eq = Twoje ustawienia korektora

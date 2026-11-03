@@ -244,10 +244,12 @@ impl SettingsPanel {
         .detach();
     }
 
-    /// A dialog asking for a profile name; `done` gets the trimmed name.
-    fn name_dialog(
+    /// A dialog asking for a name (profiles, sound and EQ presets); `done` gets
+    /// the trimmed name.
+    pub(super) fn name_dialog(
         &mut self,
         title: &'static str,
+        placeholder: crate::i18n::Key,
         initial: String,
         done: impl Fn(&mut SettingsPanel, String, &mut Window, &mut Context<SettingsPanel>) + 'static,
         window: &mut Window,
@@ -255,7 +257,7 @@ impl SettingsPanel {
     ) {
         let input: Entity<InputState> =
             cx.new(|cx| InputState::new(window, cx).default_value(initial));
-        crate::i18n::track_placeholder(&input, k!("profiles.name_placeholder"), window, cx);
+        crate::i18n::track_placeholder(&input, placeholder, window, cx);
         let panel = cx.entity().downgrade();
         let focus = std::cell::Cell::new(true);
         let done = std::rc::Rc::new(done);
@@ -346,6 +348,7 @@ pub(super) fn render(
                 |this, _, window, cx| {
                     this.name_dialog(
                         t!("profiles.new_title"),
+                        k!("profiles.name_placeholder"),
                         String::new(),
                         |p, name, _, cx| {
                             p.create_profile(&name, cx);
@@ -372,6 +375,7 @@ pub(super) fn render(
                         .unwrap_or_default();
                     this.name_dialog(
                         t!("profiles.rename_title"),
+                        k!("profiles.name_placeholder"),
                         name,
                         move |p, name, _, cx| p.rename_profile(&id, &name, cx),
                         window,

@@ -1,0 +1,94 @@
+# Settings → Equalizer, the sound additions: the reverb's fine controls and
+# convolution rooms, night mode (a compressor), the user's own sound and EQ
+# presets, the EQ's response graph, and the Sound menu.
+# Format: see crates/music-gpui/i18n_parse.rs ({name} = placeholder, {app} = the
+# app's name, `.one` / `.other` = plural forms).
+
+# ---- Convolution rooms (reverb buttons: keep short)
+sound.room.studio = Studio
+sound.room.chamber = Chamber
+sound.room.church = Church
+# The reverb uses an impulse response file the user loaded.
+sound.room.own = Your own room
+# Button of the loaded file, e.g. "Own: hall.wav". {name} is a file name.
+sound.room.own_named = Own: {name}
+# Label above the convolution rooms ("convolution" is the technique: a recorded room).
+sound.room.convolution = Convolution rooms
+# Button / menu item: pick an audio file (an impulse response) as the room.
+sound.ir.load = Load your own (WAV)…
+# The file dialog's button.
+sound.ir.pick = Use as room
+# Toast. {name} is a file name.
+sound.ir.loaded = Room loaded from {name}
+# {name} is a file name, {error} an English error message.
+sound.ir.failed = Couldn't use {name} as a room: {error}
+
+# ---- Reverb fine controls (slider labels)
+# How long the echo lasts.
+sound.reverb.length = Length
+# The gap before the echo starts.
+sound.reverb.pre_delay = Pre-delay
+sound.reverb.brightness = Brightness
+# The first, distinct echoes off nearby walls.
+sound.reverb.early = Early reflections
+# Stereo width of the echo.
+sound.reverb.width = Width
+# How loud the song itself stays.
+sound.reverb.dry = Dry level
+sound.reverb.note = A room around the music, after the equalizer. The rooms are presets of the controls below; moving one makes it Custom. Convolution rooms use the pre-delay, width and dry level. Off costs nothing; when you pause, the echo rings out.
+# Slider values. {value} is a number.
+sound.value.seconds = {value} s
+sound.value.ms = {value} ms
+sound.value.db = {value} dB
+# A compressor ratio, e.g. "3.0 : 1".
+sound.value.ratio = {value} : 1
+
+# ---- Night mode (a compressor: loud parts quieter, quiet parts louder)
+sound.night.title = Night mode
+# Switch and Sound menu item.
+sound.night.switch = Night mode
+# Compressor controls (audio terms; keep them short).
+sound.night.threshold = Threshold
+sound.night.ratio = Ratio
+sound.night.attack = Attack
+sound.night.release = Release
+sound.night.makeup = Makeup gain
+sound.night.reset = Reset values
+sound.night.note = Evens out loud and quiet parts for listening at a low volume: levels above the threshold are turned down by the ratio, then everything is raised by the makeup gain. Off costs nothing.
+
+# ---- Equalizer: band names under the frequencies (plain words for what each band does; keep short)
+sound.band.sub = Sub
+sound.band.bass = Bass
+# The kick of drums and bass.
+sound.band.punch = Punch
+sound.band.warmth = Warmth
+sound.band.low_mids = Low mids
+sound.band.mids = Mids
+sound.band.upper_mids = Upper mids
+# Where voices and instruments stand out.
+sound.band.presence = Presence
+sound.band.brilliance = Brilliance
+# The highest, airy shimmer.
+sound.band.air = Air
+
+# ---- Equalizer: headroom (whether boosts can clip) and the response graph
+sound.eq.no_boost = No boost: nothing can clip.
+# {db} is a number like "6.2".
+sound.eq.pre_gain_on = The output is lowered by {db} dB so the boosts cannot clip.
+sound.eq.clip_warning = Boosts reach +{db} dB and can clip on loud songs. Turn on automatic pre-gain or lower the bands.
+sound.eq.small_boost = Boosts reach +{db} dB (too little to clip).
+# Switch: lower the output by the curve's highest boost.
+sound.eq.pre_gain = Automatic pre-gain
+sound.eq.note = Applied live. Drag the points on the curve or the sliders. The curve is what the filters really do: neighbouring boosts add up.
+sound.eq.save_title = Save EQ curve
+
+# ---- Presets of your own (sound presets and EQ curves)
+sound.preset.save = Save as preset…
+sound.preset.save_title = Save sound preset
+sound.preset.rename_title = Rename preset
+sound.preset.name_placeholder = Preset name
+sound.preset.note = Sets speed, pitch, reverb and the equalizer in one click. Save your own: a name that exists is updated. Speed and pitch are also in Playback.
+
+# ---- Settings search
+sound.search.graph = Equalizer curve
+sound.search.saved_eq = Your EQ presets

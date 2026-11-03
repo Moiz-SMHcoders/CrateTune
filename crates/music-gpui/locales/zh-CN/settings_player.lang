@@ -131,7 +131,6 @@ settings.eq.preset.bass = 低音
 settings.eq.preset.vocal = 人声
 settings.eq.preset.treble = 高音
 settings.eq.preset.loudness = 响度
-settings.eq.note = 实时生效。增益会被自动补偿，因此输出永远不会削波。
 
 # ---- Lyrics
 settings.lyrics.look = 外观
@@ -186,13 +185,11 @@ settings.eq.preset.night = 夜间
 settings.reverb.title = 混响
 settings.reverb.mix = 湿声比例
 settings.reverb.mix_value = {percent}%
-settings.reverb.note = 在均衡器之后为音乐加上房间感。关闭时不占用资源；暂停时余音会自然消散。
 prefs.reverb.small_room = 小房间
 prefs.reverb.hall = 大厅
 prefs.reverb.plate = 板式
 prefs.reverb.cathedral = 大教堂
 settings.sound.title = 音效预设
-settings.sound.note = 一键设置速度、音高和混响。速度和音高也可在“播放”中调整。
 prefs.sound.original = 原声
 prefs.sound.slowed_reverb = 慢速 + 混响
 prefs.sound.nightcore = Nightcore

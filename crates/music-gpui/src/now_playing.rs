@@ -621,7 +621,7 @@ impl MusicApp {
         let (layout, background) = (s.layout, s.background);
         let custom = s.sleep_custom;
         let armed = s.sleep.is_some();
-        let sound = s.sound;
+        let sound = s.sound.clone();
         h_flex()
             .size_full()
             .px_5()
@@ -699,7 +699,7 @@ impl MusicApp {
                     .selected(sound.active())
                     .tooltip(t!("sound_menu.tooltip"))
                     .dropdown_menu(move |menu, window, cx| {
-                        crate::components::sound_menu::sound_menu(menu, sound, window, cx)
+                        crate::components::sound_menu::sound_menu(menu, sound.clone(), window, cx)
                     }),
             )
             .child(

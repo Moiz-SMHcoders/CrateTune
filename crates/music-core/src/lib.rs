@@ -13,7 +13,10 @@
 //!   gets full-length streams (TV client, or web client + BotGuard PoToken).
 //! * [`Player`] – background audio engine with a pollable [`PlaybackState`].
 //! * [`equalizer`] – parametric EQ applied live via [`Player::set_equalizer`].
-//! * [`reverb`] – reverb presets on the output via [`Player::set_reverb`].
+//! * [`reverb`] – reverb on the output via [`Player::set_reverb`]: algorithmic rooms and
+//!   their fine controls, convolution rooms ([`convolver`]) and impulse responses from files.
+//! * [`compressor`] – night mode (a compressor on the output) via [`Player::set_compressor`].
+//! * [`volume`] – the volume slider's perceptual curve (slider position → gain).
 //! * [`Spectrum`] – real-time spectrum / level of the output for visualizers
 //!   ([`Player::spectrum`], [`SpectrumAnalyzer`]).
 //! * [`media_controls`] – OS now-playing info + media keys (macOS, Windows, Linux).
@@ -49,6 +52,8 @@ pub mod ai_filter;
 pub mod browser_cookies;
 pub mod buffer;
 pub mod cast;
+pub mod compressor;
+pub mod convolver;
 mod deck;
 mod decode;
 #[cfg(feature = "discord")]
@@ -91,11 +96,14 @@ pub mod together;
 pub mod updater;
 pub mod video;
 mod voice;
+pub mod volume;
 pub mod waveform;
 mod webm_duration;
 pub mod youtube;
 
 pub use buffer::{BufferEnd, StreamBuffer, StreamReader};
+pub use compressor::CompressorSettings;
+pub use convolver::{Impulse, ImpulseRoom};
 pub use deck::{HeadlessOutput, MAX_CROSSFADE};
 pub use decode::{ReplayGain, TrackDecoder};
 pub use dsp::{PITCH_RANGE, SPEED_RANGE};
@@ -111,7 +119,7 @@ pub use lyrics::{
 pub use model::{EntityRef, MusicVideoType, Track, format_duration};
 pub use output::{OutputDevice, tidy as tidy_output_devices};
 pub use player::{PlaybackState, PlaybackStatus, Player, WaveformState, WaveformStatus};
-pub use reverb::{ReverbPreset, ReverbSettings};
+pub use reverb::{ReverbParams, ReverbPreset, ReverbSettings};
 pub use silence::{SilenceConfig, SkipSilence};
 pub use sleep::{SleepTimer, SleepTimerState};
 pub use spectrum::{

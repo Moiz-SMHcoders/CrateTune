@@ -192,6 +192,8 @@ pub struct SettingsPanel {
     pub(super) network: super::network::NetworkState,
     /// Player / lyrics / Now Playing / activity widgets (`prefs_ui.rs`).
     pub(super) prefs: PrefsUi,
+    /// Reverb fine controls, night mode, impulse file, EQ graph (`sound.rs`).
+    pub(super) sound: super::sound::SoundUi,
     /// Modules section (inputs, review, open settings form, status).
     pub(super) modules: super::modules::ModulesState,
     /// SponsorBlock / Music Together / Spotify inputs (`integrations_ui.rs`).
@@ -336,6 +338,8 @@ impl SettingsPanel {
         let modules = super::modules::ModulesState::new(window, cx);
         let (prefs, prefs_subscriptions) = PrefsUi::new(&settings, window, cx);
         subscriptions.extend(prefs_subscriptions);
+        let (sound, sound_subscriptions) = super::sound::SoundUi::new(&settings, window, cx);
+        subscriptions.extend(sound_subscriptions);
         let (extras, extras_subscriptions) =
             super::integrations_ui::ExtrasUi::new(&settings, window, cx);
         subscriptions.extend(extras_subscriptions);
@@ -400,6 +404,7 @@ impl SettingsPanel {
             language,
             network,
             prefs,
+            sound,
             modules,
             extras,
             devices_ui,
@@ -422,6 +427,7 @@ impl SettingsPanel {
             eprintln!("music-gpui: proxy not applied: {e}");
         }
         this.load_secrets(window, cx);
+        this.load_saved_impulse(cx);
         this
     }
 
@@ -995,13 +1001,14 @@ impl SettingsPanel {
 
     // ---- equalizer -------------------------------------------------------------
 
-    fn set_band(&mut self, band: usize, gain: f64, cx: &mut Context<Self>) {
+    pub(super) fn set_band(&mut self, band: usize, gain: f64, cx: &mut Context<Self>) {
         let eq = &mut self.settings.equalizer;
         if (eq.gains_db[band] - gain).abs() < 1e-6 {
             return;
         }
         eq.gains_db[band] = gain;
         eq.enabled = true;
+        self.refresh_eq_curve();
         cx.emit(SettingsEvent::Equalizer(self.equalizer()));
         self.changed(false, cx);
     }
@@ -1011,6 +1018,7 @@ impl SettingsPanel {
         for (slider, gain) in self.eq_sliders.iter().zip(preset.gains_db()) {
             slider.update(cx, |s, cx| s.set_value(gain as f32, window, cx));
         }
+        self.refresh_eq_curve();
         cx.emit(SettingsEvent::Equalizer(self.equalizer()));
         self.changed(false, cx);
     }

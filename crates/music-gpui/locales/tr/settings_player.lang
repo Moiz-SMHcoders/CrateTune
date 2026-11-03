@@ -131,7 +131,6 @@ settings.eq.preset.bass = Bas
 settings.eq.preset.vocal = Vokal
 settings.eq.preset.treble = Tiz
 settings.eq.preset.loudness = Ses yüksekliği
-settings.eq.note = Anında uygulanır. Güçlendirmeler dengelenir, böylece çıkış asla bozulmaz.
 
 # ---- Lyrics
 settings.lyrics.look = Görünüm
@@ -187,13 +186,11 @@ settings.eq.preset.night = Gece
 settings.reverb.title = Yankı
 settings.reverb.mix = Efekt oranı
 settings.reverb.mix_value = %{percent}
-settings.reverb.note = Müziğin etrafına, ekolayzırdan sonra bir oda ekler. Kapalıyken hiçbir şeye mal olmaz; duraklatınca yankı yavaşça söner.
 prefs.reverb.small_room = Küçük oda
 prefs.reverb.hall = Salon
 prefs.reverb.plate = Plaka
 prefs.reverb.cathedral = Katedral
 settings.sound.title = Ses ön ayarları
-settings.sound.note = Hız, perde ve yankıyı tek tıkla ayarlar. Hız ve perde Oynatma bölümünde de var.
 prefs.sound.original = Orijinal
 prefs.sound.slowed_reverb = Yavaş + yankı
 prefs.sound.nightcore = Nightcore

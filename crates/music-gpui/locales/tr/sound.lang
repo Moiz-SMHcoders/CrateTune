@@ -1,0 +1,70 @@
+# Settings → Equalizer, the sound additions: reverb fine controls, convolution
+# rooms, night mode, own presets, the EQ graph (see locales/en/sound.lang).
+
+# ---- Convolution rooms (reverb buttons: keep short)
+sound.room.studio = Stüdyo
+sound.room.chamber = Yankı odası
+sound.room.church = Kilise
+sound.room.own = Kendi odan
+sound.room.own_named = Kendi: {name}
+sound.room.convolution = Konvolüsyon odaları
+sound.ir.load = Kendi dosyanı yükle (WAV)…
+sound.ir.pick = Oda olarak kullan
+sound.ir.loaded = Oda yüklendi: {name}
+sound.ir.failed = {name} oda olarak kullanılamadı: {error}
+
+# ---- Reverb fine controls (slider labels)
+sound.reverb.length = Süre
+sound.reverb.pre_delay = Ön gecikme
+sound.reverb.brightness = Parlaklık
+sound.reverb.early = Erken yansımalar
+sound.reverb.width = Genişlik
+sound.reverb.dry = Kuru seviye
+sound.reverb.note = Müziğin etrafında bir oda, ekolayzırdan sonra. Odalar aşağıdaki kontrollerin ön ayarlarıdır; birini oynatınca Özel olur. Konvolüsyon odaları ön gecikmeyi, genişliği ve kuru seviyeyi kullanır. Kapalıyken hiçbir yük getirmez; duraklattığında yankı doğal olarak söner.
+sound.value.seconds = {value} sn
+sound.value.ms = {value} ms
+sound.value.db = {value} dB
+sound.value.ratio = {value} : 1
+
+# ---- Night mode
+sound.night.title = Gece dinleme modu
+sound.night.switch = Gece dinleme modu
+sound.night.threshold = Eşik
+sound.night.ratio = Oran
+sound.night.attack = Atak
+sound.night.release = Bırakma
+sound.night.makeup = Telafi kazancı
+sound.night.reset = Değerleri sıfırla
+sound.night.note = Düşük seste dinlemek için yüksek ve alçak bölümleri dengeler: eşiğin üzerindeki seviyeler orana göre kısılır, ardından her şey telafi kazancı kadar yükseltilir. Kapalıyken hiçbir yük getirmez.
+
+# ---- Equalizer: band names (keep short)
+sound.band.sub = Sub
+sound.band.bass = Bas
+sound.band.punch = Vuruş
+sound.band.warmth = Sıcaklık
+sound.band.low_mids = Alt orta
+sound.band.mids = Orta
+sound.band.upper_mids = Üst orta
+sound.band.presence = Belirginlik
+sound.band.brilliance = Parıltı
+sound.band.air = Hava
+
+# ---- Equalizer: headroom and the response graph
+sound.eq.no_boost = Yükseltme yok: kırpılma olamaz.
+sound.eq.pre_gain_on = Yükseltmeler kırpılmasın diye çıkış {db} dB düşürülür.
+sound.eq.clip_warning = Yükseltmeler +{db} dB'e ulaşıyor ve yüksek sesli şarkılarda kırpılabilir. Otomatik ön kazancı aç veya bantları düşür.
+sound.eq.small_boost = Yükseltmeler +{db} dB'e ulaşıyor (kırpılmak için çok az).
+sound.eq.pre_gain = Otomatik ön kazanç
+sound.eq.note = Anında uygulanır. Eğrideki noktaları veya kaydırıcıları sürükle. Eğri, filtrelerin gerçekte ne yaptığını gösterir: komşu yükseltmeler toplanır.
+sound.eq.save_title = EQ eğrisini kaydet
+
+# ---- Own presets
+sound.preset.save = Ön ayar olarak kaydet…
+sound.preset.save_title = Ses ön ayarını kaydet
+sound.preset.rename_title = Ön ayarı yeniden adlandır
+sound.preset.name_placeholder = Ön ayar adı
+sound.preset.note = Hız, perde, yankı ve ekolayzırı tek tıkla ayarlar. Kendi ön ayarlarını kaydet: var olan bir ad güncellenir. Hız ve perde Çalma bölümünde de var.
+
+# ---- Settings search
+sound.search.graph = Ekolayzır eğrisi
+sound.search.saved_eq = EQ ön ayarların

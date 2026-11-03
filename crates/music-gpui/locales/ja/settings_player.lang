@@ -131,7 +131,6 @@ settings.eq.preset.bass = 低音
 settings.eq.preset.vocal = ボーカル
 settings.eq.preset.treble = 高音
 settings.eq.preset.loudness = ラウドネス
-settings.eq.note = 即座に適用されます。ブースト分は補正されるため、出力が音割れすることはありません。
 
 # ---- Lyrics
 settings.lyrics.look = 外観
@@ -186,13 +185,11 @@ settings.eq.preset.night = ナイト
 settings.reverb.title = リバーブ
 settings.reverb.mix = ウェット量
 settings.reverb.mix_value = {percent} %
-settings.reverb.note = イコライザーの後で音楽に部屋の響きを加えます。オフなら負荷はゼロ。一時停止すると残響が自然に消えます。
 prefs.reverb.small_room = 小部屋
 prefs.reverb.hall = ホール
 prefs.reverb.plate = プレート
 prefs.reverb.cathedral = 大聖堂
 settings.sound.title = サウンドプリセット
-settings.sound.note = 速度・ピッチ・リバーブをワンクリックで設定します。速度とピッチは「再生」にもあります。
 prefs.sound.original = オリジナル
 prefs.sound.slowed_reverb = スロー + リバーブ
 prefs.sound.nightcore = ナイトコア

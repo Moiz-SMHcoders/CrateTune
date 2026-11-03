@@ -538,18 +538,25 @@ the song menu's *Go to artist / album* (⌘-click on those works). · Size: smal
 Surveyed for the Now Playing extras round (README: [Now Playing
 extras](../README.md#now-playing-extras-round-sound-effects-mini-player-layouts-turntable)); what
 was built is listed there. Left out, with the reason:
-* *Fine reverb controls and convolution rooms* (Limusic: length 0.1–10 s, pre-delay 0–200 ms,
-  brightness, early reflections, dry level; impulse responses through FFmpeg's `afir`). The
-  four algorithmic rooms and the wet mix cover the common use; the extra sliders map onto
-  the existing `ReverbParams` if asked for. · Size: small · Priority: low
-* *Your own named sound presets* (Limusic, saved speed / pitch / reverb) and *named EQ presets,
-  a draggable response graph, a headroom warning, plain-language band names* (Zuno). · Size:
-  medium · Priority: low
-* *A compressor / "volume smoothing" / night mode* (Deviload: threshold −24 dB, ratio 3). A
-  new DSP stage with its own tests; normalization already evens out songs. · Size: medium ·
-  Priority: low
-* *Perceptual volume curve* (Limusic `10^(−(1−p)^1.5)`, Deviload `p²`): changes how every
-  saved volume sounds; needs a migration. · Size: small · Priority: low
+* *Built in the sound round* (README: [Sound round](../README.md#sound-round-reverb-controls-convolution-rooms-night-mode-presets-eq-curve-volume-curve)):
+  reverb fine controls, convolution rooms and your own impulse files, named sound and EQ
+  presets, the EQ curve with draggable bands, headroom warning and band names, night mode,
+  the perceptual volume curve with its migration. Left from it:
+  * *How it all sounds by ear* — the rooms, the fine controls' ranges, the generated
+    convolution rooms, night mode's defaults and the curve's feel were checked on buffers
+    and numbers only, never listened to (app runs were muted). · Size: small · Priority:
+    medium
+  * *Bundled recorded impulse responses* (real rooms): only generated ones ship, as no
+    CC0 / public-domain recordings of suitable size were vetted; your own file covers it.
+    · Size: small · Priority: low
+  * *A limiter after night mode / the reverb*: a high wet mix or makeup gain on a loud master
+    can still clip (no limiter on the output). · Size: small · Priority: low
+  * *Cross-fading between reverb tails* when switching between an algorithmic and a
+    convolution room (the old tail stops at once). · Size: small · Priority: low
+  * *Moving EQ frequencies / Q on the graph* (it moves gains only; the bands are a fixed
+    10-band layout). · Size: medium · Priority: low
+  * *Anti-aliased resampling of impulse files* at another rate than the output (cubic
+    interpolation now). · Size: small · Priority: low
 * *Mini player skins that need shaped or transparent windows or constant motion*: Zuno's
   Classic capsule (grows on hover, clicks pass through), Cassette (turning spools), Y2K
   (gel shape, LCD meter); a spinning picture disc (Deviload; GPUI cannot rotate images and the
