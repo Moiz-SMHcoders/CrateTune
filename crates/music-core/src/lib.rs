@@ -33,6 +33,11 @@
 //! * [`playlist_import`] – CSV / M3U / JSON playlists, matching tracks to YouTube Music.
 //! * [`spotify`] – Spotify Web API (PKCE sign-in, playlists, liked songs) for imports.
 //! * [`together`] – Music Together: synced listening on the LAN over WebSockets.
+//! * [`handoff`] – device hand-off: paired installations over iroh (QUIC, our own relay).
+//! * [`sync`] – settings, likes, playlists, pins and queue tabs synced between paired
+//!   devices (last-writer-wins registers, merged over the hand-off links).
+//! * [`friends`] – friend groups (signed member records, SPAKE2 invitations) and the
+//!   activity feed, over the same iroh endpoint.
 //! * [`updater`] – self-update from GitHub releases: check, download, SHA-256 check
 //!   against `SHA256SUMS.txt`, install per platform with rollback.
 //! * [`waveform`] – a track's loudness envelope for a waveform progress bar, computed
@@ -54,6 +59,7 @@ mod dsp;
 pub mod equalizer;
 mod error;
 pub mod fixtures;
+pub mod friends;
 pub mod handoff;
 pub mod http;
 pub mod innertube;
@@ -78,6 +84,7 @@ mod spectrum;
 pub mod sponsorblock;
 pub mod spotify;
 mod stream;
+pub mod sync;
 #[cfg(test)]
 mod testutil;
 pub mod together;

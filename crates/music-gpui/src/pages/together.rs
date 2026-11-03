@@ -267,9 +267,11 @@ impl Render for TogetherPage {
                 t.log.iter().rev().take(12).cloned().collect::<Vec<_>>(),
                 prefs,
                 (waiting, sent),
+                app.friends_panel(cx),
             )
         });
-        let Some(((role, link, guest, participants), error, log, prefs, (waiting, sent))) = data
+        let Some(((role, link, guest, participants), error, log, prefs, (waiting, sent), friends)) =
+            data
         else {
             return div().into_any_element();
         };
@@ -283,6 +285,7 @@ impl Render for TogetherPage {
         if let Some(e) = &error {
             content = content.child(div().text_sm().text_color(danger).child(e.clone()));
         }
+        content = content.child(super::friends_panel::render(friends, cx));
 
         match role {
             // ---- idle: host or join

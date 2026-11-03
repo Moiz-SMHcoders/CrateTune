@@ -8,7 +8,7 @@ use gpui::{
     prelude::FluentBuilder as _, px,
 };
 use gpui_component::{
-    ActiveTheme as _, Sizable as _,
+    ActiveTheme as _, Disableable as _, Sizable as _,
     button::{Button, ButtonVariants as _},
     h_flex,
     input::{Input, InputEvent, InputState},
@@ -19,11 +19,12 @@ use gpui_component::{
 use super::SettingsPanel;
 use super::file::Settings;
 use super::panel::SettingsEvent;
-use super::widgets::{Anchor as _, field_at, group_at, note, row_at, status_line};
+use super::widgets::{Anchor as _, field_at, group_at, long_note, note, row, row_at, status_line};
 use crate::app::{read_app, update_app};
 use crate::integrations::config::{DevicesPrefs, relay_url_valid};
 use crate::integrations::devices::{DeviceStatus, PairStatus, status_text};
 use crate::secrets::Secret;
+use music_core::sync::Category as SyncCategory;
 
 pub struct DevicesUi {
     name: Entity<InputState>,
@@ -135,6 +136,71 @@ impl SettingsPanel {
         cx.notify();
     }
 
+    /// Settings another device synced (`integrations/device_sync.rs`): written in,
+    /// saved, and the app told about the sections that changed.
+    pub fn apply_synced(
+        &mut self,
+        changes: &[(String, serde_json::Value)],
+        cx: &mut Context<Self>,
+    ) {
+        let next = super::sync_settings::apply(&self.settings, changes);
+        if next == self.settings {
+            return;
+        }
+        let old = std::mem::replace(&mut self.settings, next);
+        let new = &self.settings;
+        let look = old.appearance != new.appearance
+            || old.custom_theme != new.custom_theme
+            || old.app_look != new.app_look
+            || old.effects != new.effects
+            || old.player_bar != new.player_bar
+            || old.now_playing != new.now_playing
+            || old.video != new.video
+            || old.home != new.home;
+        if look {
+            cx.emit(SettingsEvent::Appearance);
+            cx.emit(SettingsEvent::NowPlaying);
+        }
+        if old.appearance.language != new.appearance.language {
+            cx.emit(SettingsEvent::Language);
+        }
+        if old.equalizer != new.equalizer {
+            cx.emit(SettingsEvent::Equalizer(self.equalizer()));
+        }
+        if old.playback != new.playback {
+            cx.emit(SettingsEvent::PlaybackModes);
+        }
+        if old.audio != new.audio {
+            cx.emit(SettingsEvent::Audio);
+        }
+        if old.lyrics != new.lyrics {
+            cx.emit(SettingsEvent::Lyrics);
+        }
+        if old.content != new.content {
+            cx.emit(SettingsEvent::Content);
+        }
+        if old.library != new.library {
+            cx.emit(SettingsEvent::Library);
+        }
+        let integrations = old.sponsorblock != new.sponsorblock
+            || old.together != new.together
+            || old.ai_filter != new.ai_filter
+            || old.discord != new.discord
+            || old.scrobble_rules != new.scrobble_rules;
+        self.changed(integrations, cx);
+    }
+
+    /// A sync switch (`None`: sync itself).
+    pub fn set_sync(&mut self, cat: Option<SyncCategory>, on: bool, cx: &mut Context<Self>) {
+        self.set_devices(
+            |d| match cat {
+                None => d.sync.enabled = on,
+                Some(cat) => *d.sync.get_mut(cat) = on,
+            },
+            cx,
+        );
+    }
+
     /// Script hook (`@set=devices-name:…`, `devices-relay`, `devices-code`).
     pub fn set_devices_field(
         &mut self,
@@ -157,7 +223,7 @@ impl SettingsPanel {
 }
 
 /// The pairing code as big, spaced characters.
-fn code_box(code: &str, cx: &gpui::App) -> impl IntoElement {
+pub(super) fn code_box(code: &str, cx: &gpui::App) -> impl IntoElement {
     div()
         .px_4()
         .py_2()
@@ -165,6 +231,7 @@ fn code_box(code: &str, cx: &gpui::App) -> impl IntoElement {
         .bg(cx.theme().secondary)
         .text_2xl()
         .font_weight(FontWeight::SEMIBOLD)
+        .whitespace_nowrap()
         .child(SharedString::from(music_core::handoff::display_code(code)))
 }
 
@@ -400,6 +467,150 @@ pub(super) fn render(
         .child(this_device)
         .child(pairing)
         .child(paired)
+        .child(sync_group(&prefs, cx))
         .child(connection)
+        .into_any_element()
+}
+
+/// A sync category's switch label and description.
+fn category_text(cat: SyncCategory) -> (&'static str, &'static str) {
+    match cat {
+        SyncCategory::Settings => (
+            t!("settings.devices.sync.settings"),
+            t!("settings.devices.sync.settings_desc"),
+        ),
+        SyncCategory::Sound => (
+            t!("settings.devices.sync.sound"),
+            t!("settings.devices.sync.sound_desc"),
+        ),
+        SyncCategory::Likes => (
+            t!("settings.devices.sync.likes"),
+            t!("settings.devices.sync.likes_desc"),
+        ),
+        SyncCategory::Playlists => (
+            t!("settings.devices.sync.playlists"),
+            t!("settings.devices.sync.playlists_desc"),
+        ),
+        SyncCategory::Pins => (
+            t!("settings.devices.sync.pins"),
+            t!("settings.devices.sync.pins_desc"),
+        ),
+        SyncCategory::QueueTabs => (
+            t!("settings.devices.sync.queue_tabs"),
+            t!("settings.devices.sync.queue_tabs_desc"),
+        ),
+        SyncCategory::History => (
+            t!("settings.devices.sync.history"),
+            t!("settings.devices.sync.history_desc"),
+        ),
+    }
+}
+
+/// Settings → Devices → Sync: the switches, each paired device's last sync, "Sync now".
+fn sync_group(prefs: &DevicesPrefs, cx: &mut Context<SettingsPanel>) -> AnyElement {
+    let sync = prefs.sync.clone();
+    // The app's state only (the settings panel is being updated while it renders).
+    let (running, last, busy, errors, received) = read_app(cx, |app, _| {
+        let s = &app.integrations.sync;
+        (
+            s.running(),
+            s.last.clone(),
+            s.busy.clone(),
+            s.errors.clone(),
+            s.received,
+        )
+    })
+    .unwrap_or_default();
+    let theme = cx.theme();
+    let (muted, danger) = (theme.muted_foreground, theme.danger);
+    let mut group = group_at("devices.sync", t!("settings.devices.sync.title"), cx)
+        .child(long_note(t!("settings.devices.sync.note"), cx))
+        .child(row_at(
+            "devices.sync.enabled",
+            t!("settings.devices.sync.enabled"),
+            Some(t!("settings.devices.sync.enabled_desc")),
+            Switch::new("devices-sync")
+                .checked(sync.enabled)
+                .on_click(cx.listener(|p, on: &bool, _, cx| p.set_sync(None, *on, cx))),
+            cx,
+        ));
+    if !sync.enabled {
+        return group.into_any_element();
+    }
+    for (ix, cat) in SyncCategory::ALL.into_iter().enumerate() {
+        let (label, desc) = category_text(cat);
+        group = group.child(row(
+            label,
+            Some(desc),
+            Switch::new(("devices-sync-cat", ix))
+                .checked(sync.get(cat))
+                .on_click(cx.listener(move |p, on: &bool, _, cx| p.set_sync(Some(cat), *on, cx))),
+            cx,
+        ));
+    }
+    let now = music_core::handoff::now_unix_ms();
+    let mut devices = v_flex().gap_1().anchor("devices.sync.status");
+    if prefs.paired.is_empty() {
+        devices = devices.child(note(t!("settings.devices.sync.no_devices"), cx));
+    }
+    for device in &prefs.paired {
+        let status: SharedString = if busy.contains(&device.id) {
+            t!("settings.devices.sync.syncing").into()
+        } else if let Some(error) = errors.get(&device.id) {
+            t!("settings.devices.sync.failed", error = error).into()
+        } else if let Some(at) = last.get(&device.id) {
+            t!(
+                "settings.devices.sync.last",
+                ago = crate::i18n::format::ago(now.saturating_sub(*at) / 1000)
+            )
+            .into()
+        } else {
+            t!("settings.devices.sync.never").into()
+        };
+        let color = if errors.contains_key(&device.id) {
+            danger
+        } else {
+            muted
+        };
+        devices = devices.child(
+            h_flex()
+                .gap_2()
+                .justify_between()
+                .child(
+                    div()
+                        .text_sm()
+                        .truncate()
+                        .child(SharedString::from(device.name.clone())),
+                )
+                .child(div().text_xs().text_color(color).truncate().child(status)),
+        );
+    }
+    group
+        .child(devices)
+        .children(received.map(|(at, n)| {
+            note(
+                tp!(
+                    "settings.devices.sync.received",
+                    n,
+                    ago = crate::i18n::format::ago(now.saturating_sub(at) / 1000)
+                ),
+                cx,
+            )
+        }))
+        .child(
+            h_flex().child(
+                Button::new("devices-sync-now")
+                    .small()
+                    .outline()
+                    .label(t!("settings.devices.sync.now"))
+                    .loading(!busy.is_empty())
+                    .disabled(!running || prefs.paired.is_empty())
+                    .on_click(|_, _, cx| {
+                        update_app(cx, |app, cx| app.sync_now(cx));
+                    }),
+            ),
+        )
+        .child(long_note(t!("settings.devices.sync.rules"), cx))
+        .child(long_note(t!("settings.devices.sync.private"), cx))
         .into_any_element()
 }

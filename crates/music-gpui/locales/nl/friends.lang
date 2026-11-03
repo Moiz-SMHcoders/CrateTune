@@ -1,0 +1,85 @@
+# Friend groups (see locales/en/friends.lang).
+
+# The Settings section's name.
+settings.section.friends = Vrienden
+
+# ---- Settings → Friends
+settings.friends.title = Vriendengroepen
+settings.friends.intro = Houd een vaste groep vrienden in plaats van elke keer een nieuwe Music Together-ruimte: zie waar ze naar luisteren en start met één klik een sessie voor de hele groep.
+settings.friends.enabled = Vriendengroepen gebruiken
+settings.friends.enabled_desc = Standaard uit. Je computer praat dan rechtstreeks met de computers van je vrienden, end-to-end versleuteld.
+settings.friends.privacy = Wat vrienden zien: je naam en, alleen zolang delen aanstaat, het nummer dat je afspeelt (titel, artiest, de YouTube-id, wanneer het begon). Er wordt niets op een server opgeslagen: de relay geeft alleen versleutelde gegevens door en ziet je IP-adres. De groepen worden bewaard op de computer van elk lid.
+
+settings.friends.you = Jij
+settings.friends.name = Naam
+settings.friends.name_note = Hoe je vrienden je zien.
+settings.friends.share = Delen waar ik naar luister
+settings.friends.share_desc = Je vrienden zien het nummer dat je afspeelt in hun feed. Nummers uit je eigen bestanden worden nooit gedeeld.
+settings.friends.private = Privésessie
+settings.friends.private_desc = Delen pauzeren tot je de app afsluit.
+settings.friends.member_id = Lid-id: {id}
+
+settings.friends.groups = Je groepen
+settings.friends.no_groups = Nog geen groepen. Maak er een en nodig je vrienden uit, of word lid van een groep met de code die een vriend je laat zien.
+settings.friends.you_name = {name} (jij)
+settings.friends.owner = Eigenaar
+settings.friends.remove = Verwijderen
+settings.friends.invite = Uitnodigen
+settings.friends.leave = Verlaten
+settings.friends.invite_shown = Je vriend voert deze code in bij Instellingen → Vrienden → Lid worden van een groep:
+settings.friends.invite_expires = 10 minuten geldig, één keer. Op een ander netwerk stuur je in plaats daarvan de link (of laat je de QR-code scannen).
+settings.friends.create = Een groep maken
+settings.friends.group_placeholder = Groepsnaam
+settings.friends.create_button = Maken
+settings.friends.join = Lid worden van een groep
+settings.friends.join_button = Lid worden
+settings.friends.join_note = De code die een lid laat zien, of de uitnodigingslink die het heeft gestuurd.
+settings.friends.joining = Groep zoeken…
+settings.friends.joined = Lid geworden van {group}
+
+settings.friends.recovery = Herstelzin
+settings.friends.recovery_note = Je vrienden herkennen je aan een sleutel die op deze computer wordt bewaard. Schrijf de herstelzin op om die sleutel naar een nieuwe computer te verplaatsen; iedereen die hem heeft, kan namens jou spreken.
+settings.friends.show_phrase = Herstelzin tonen
+settings.friends.hide_phrase = Verbergen
+settings.friends.copy_phrase = Kopiëren
+settings.friends.restore = Herstellen met een herstelzin
+settings.friends.phrase_placeholder = XXXXX-XXXXX-…
+settings.friends.restore_button = Herstellen
+settings.friends.restore_note = Vervangt de sleutel van deze computer. De groepen ervan worden hier vergeten: vraag een lid (of je oude computer) om een uitnodiging voor elke groep, en je bent terug met je naam.
+
+# ---- Joining errors
+friends.join.not_found = Er is op dit netwerk niemand gevonden die een uitnodiging toont. Vraag om de uitnodigingslink als je vriend op een ander netwerk zit.
+friends.join.wrong_code = De code klopt niet. Controleer hem en probeer het opnieuw.
+friends.join.not_inviting = Die uitnodiging is niet meer geldig. Vraag om een nieuwe.
+friends.join.failed = Kan geen lid worden: {error}
+friends.join.bad_code = Dat is geen uitnodigingscode. Een code heeft 8 letters en cijfers, zoals ABCD-2345.
+
+# ---- Notifications
+friends.toast.not_ready = Vriendengroepen zijn nog niet klaar. Probeer het zo opnieuw.
+friends.toast.created = Groep ‘{group}’ gemaakt. Nodig je vrienden uit met een code.
+friends.toast.removed = Je bent verwijderd uit ‘{group}’.
+friends.toast.listen_invite = {name} nodigt je uit om samen te luisteren ({group}). Open Samen luisteren om deel te nemen.
+friends.toast.listen_sent = Sessie wordt gestart; je groep krijgt een uitnodiging zodra die loopt.
+friends.toast.joined = Je bent lid geworden van ‘{group}’
+friends.toast.member_joined = {name} is lid geworden van ‘{group}’
+friends.toast.bad_phrase = Dat is geen geldige herstelzin. Controleer elke groep tekens.
+friends.toast.restored = Sleutel hersteld. Vraag om uitnodigingen voor je groepen.
+
+# ---- The feed (Listen together page)
+friends.feed.playing = Speelt nu
+friends.feed.paused = Gepauzeerd · {ago}
+friends.feed.idle = Er speelt niets · {ago}
+friends.feed.unknown = Nog niets van gehoord
+friends.feed.song = {title} — {artist}
+
+# ---- The friends card on the Listen together page
+friends.panel.title = Vrienden
+friends.panel.off = Maak een vaste groep met je vrienden: zie waar ze naar luisteren en start met één klik samen een sessie.
+friends.panel.set_up = Vriendengroepen instellen
+friends.panel.invite = {name} heeft een sessie gestart voor {group}
+friends.panel.join = Deelnemen
+friends.panel.no_friends = Nog geen vrienden: maak een groep in Instellingen → Vrienden en nodig ze uit.
+friends.panel.listen = Samen luisteren: {group}
+friends.panel.sharing = Je vrienden zien wat je afspeelt.
+friends.panel.not_sharing = Je deelt niet wat je afspeelt.
+friends.panel.manage = Groepen…

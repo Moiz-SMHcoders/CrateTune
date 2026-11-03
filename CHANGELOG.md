@@ -17,6 +17,23 @@ versions follow [SemVer](https://semver.org/).
   (plus the current page of the two most recently shown tabs), so many tabs cost little.
   The keys are editable (Settings → Keyboard shortcuts → *Page tabs*); with one tab ⌘1–⌘3
   are still Home / Explore / Library.
+* **Sync between your devices** (Settings → Devices → Sync, off by default): settings, sound
+  settings, likes and dislikes, your playlists, speed-dial pins, queue tabs and, if you want,
+  the last 90 days of listen history stay the same on your paired computers. It goes straight
+  between them over the device hand-off links (end-to-end encrypted, on the LAN without the
+  relay), merges changes made while apart when the devices meet (the later change wins;
+  likes and playlist songs from both sides are kept), has a switch per kind of data, "Sync
+  now" and when each device last synced. Never synced: secrets, sign-ins, this machine's name,
+  window positions, output device, folders, proxy, shortcuts, volume, local files. A versioned
+  document of last-writer-wins registers with hybrid clocks (`music_core::sync`, `sync.sqlite`
+  next to the library); no new dependency.
+* **Friend groups and an activity feed** (Settings → Friends, off by default): lasting groups
+  instead of one-off Listen together rooms. Create a group, invite with a code / link / QR
+  code (SPAKE2, like device pairing), see what your friends are listening to on the Listen
+  together page (opt-in sharing, a private session), and start a session for the whole group
+  with one click. Each installation has a member key in the keychain with a recovery phrase to
+  move it to a new computer; groups are signed records every member keeps (no server). Over
+  the same iroh links and relay as device hand-off.
 
 ### Changed
 

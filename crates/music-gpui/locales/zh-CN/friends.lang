@@ -1,0 +1,85 @@
+# Friend groups (see locales/en/friends.lang).
+
+# The Settings section's name.
+settings.section.friends = 好友
+
+# ---- Settings → Friends
+settings.friends.title = 好友群组
+settings.friends.intro = 保留一个好友群组，无需每次都新建 Music Together 房间：查看好友正在听什么，一键为整个群组开始会话。
+settings.friends.enabled = 使用好友群组
+settings.friends.enabled_desc = 默认关闭。开启后，你的电脑会与好友的电脑直接通信，并采用端到端加密。
+settings.friends.privacy = 好友能看到的内容：你的名称，以及仅在共享开启时你正在播放的歌曲（标题、艺人、YouTube ID、开始时间）。服务器上不会存储任何内容：中继只转发加密数据，并能看到你的 IP 地址。群组保存在每位成员的电脑上。
+
+settings.friends.you = 你
+settings.friends.name = 名称
+settings.friends.name_note = 好友看到的你的名称。
+settings.friends.share = 分享我正在听的内容
+settings.friends.share_desc = 好友会在动态中看到你播放的歌曲。来自你本地文件的歌曲永远不会被分享。
+settings.friends.private = 私密会话
+settings.friends.private_desc = 暂停分享，直到你退出应用。
+settings.friends.member_id = 成员 ID：{id}
+
+settings.friends.groups = 你的群组
+settings.friends.no_groups = 还没有群组。创建一个群组并邀请好友，或使用好友显示的代码加入群组。
+settings.friends.you_name = {name}（你）
+settings.friends.owner = 群主
+settings.friends.remove = 移除
+settings.friends.invite = 邀请
+settings.friends.leave = 退出
+settings.friends.invite_shown = 请好友在“设置 → 好友 → 加入群组”中输入此代码：
+settings.friends.invite_expires = 10 分钟内有效，仅可使用一次。如果在其他网络中，请改为发送链接（或让对方扫描 QR 码）。
+settings.friends.create = 创建群组
+settings.friends.group_placeholder = 群组名称
+settings.friends.create_button = 创建
+settings.friends.join = 加入群组
+settings.friends.join_button = 加入
+settings.friends.join_note = 成员显示的代码，或对方发送的邀请链接。
+settings.friends.joining = 正在查找群组…
+settings.friends.joined = 已加入 {group}
+
+settings.friends.recovery = 恢复短语
+settings.friends.recovery_note = 好友通过保存在这台电脑上的密钥识别你。记下恢复短语，即可将该密钥转移到新电脑；任何拥有它的人都能以你的身份发言。
+settings.friends.show_phrase = 显示恢复短语
+settings.friends.hide_phrase = 隐藏
+settings.friends.copy_phrase = 复制
+settings.friends.restore = 通过恢复短语还原
+settings.friends.phrase_placeholder = XXXXX-XXXXX-…
+settings.friends.restore_button = 还原
+settings.friends.restore_note = 将替换这台电脑的密钥，此处的群组将被移除：请向每个群组的成员（或你的旧电脑）索取邀请，即可以原来的名称回到群组。
+
+# ---- Joining errors
+friends.join.not_found = 在此网络中未找到正在显示邀请的人。如果好友在其他网络中，请向其索取邀请链接。
+friends.join.wrong_code = 代码不匹配。请检查后重试。
+friends.join.not_inviting = 该邀请已失效。请索取新的邀请。
+friends.join.failed = 无法加入：{error}
+friends.join.bad_code = 这不是邀请码。邀请码由 8 位字母和数字组成，例如 ABCD-2345。
+
+# ---- Notifications
+friends.toast.not_ready = 好友功能尚未就绪。请稍后重试。
+friends.toast.created = 已创建群组“{group}”。使用代码邀请你的好友吧。
+friends.toast.removed = 你已被移出“{group}”。
+friends.toast.listen_invite = {name} 邀请你一起听（{group}）。打开“一起听”即可加入。
+friends.toast.listen_sent = 正在开始会话；会话就绪后，你的群组会收到邀请。
+friends.toast.joined = 你已加入“{group}”
+friends.toast.member_joined = {name} 已加入“{group}”
+friends.toast.bad_phrase = 这不是有效的恢复短语。请检查每组字符。
+friends.toast.restored = 密钥已还原。请索取你所在群组的邀请。
+
+# ---- The feed (Listen together page)
+friends.feed.playing = 正在播放
+friends.feed.paused = 已暂停 · {ago}
+friends.feed.idle = 未在播放 · {ago}
+friends.feed.unknown = 尚无消息
+friends.feed.song = {title} — {artist}
+
+# ---- The friends card on the Listen together page
+friends.panel.title = 好友
+friends.panel.off = 与好友建立一个长期群组：查看他们正在听什么，一键一起开始会话。
+friends.panel.set_up = 设置好友群组
+friends.panel.invite = {name} 为 {group} 开始了会话
+friends.panel.join = 加入
+friends.panel.no_friends = 还没有好友：在“设置 → 好友”中创建群组并邀请他们。
+friends.panel.listen = 一起听：{group}
+friends.panel.sharing = 好友能看到你在播放什么。
+friends.panel.not_sharing = 你没有分享正在播放的内容。
+friends.panel.manage = 群组…

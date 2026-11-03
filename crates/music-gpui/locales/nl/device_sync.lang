@@ -1,0 +1,35 @@
+# Device sync (see locales/en/device_sync.lang).
+
+# ---- Settings → Devices → Sync
+settings.devices.sync.title = Synchronisatie
+settings.devices.sync.note = Houd je instellingen, leuke nummers, playlists en meer gelijk op je gekoppelde apparaten, alsof het één app is. Alles gaat rechtstreeks van het ene naar het andere, versleuteld; geen enkele server bewaart een kopie.
+settings.devices.sync.enabled = Synchroniseren met mijn apparaten
+settings.devices.sync.enabled_desc = Zet het op elk apparaat aan. De eerste keer worden de leuke nummers, playlists en vastgezette items van beide apparaten samengevoegd; er wordt niets verwijderd.
+
+# The categories, each with its own switch.
+settings.devices.sync.settings = Instellingen
+settings.devices.sync.settings_desc = Uiterlijk, afspelen, songteksten, inhoud en de andere voorkeuren (behalve die van deze computer zelf, hieronder vermeld).
+settings.devices.sync.sound = Geluid
+settings.devices.sync.sound_desc = Equalizer, snelheid, toonhoogte, galm en geluidspresets. Zet het uit als elke computer eigen speakers heeft om af te stellen.
+settings.devices.sync.likes = Vind ik leuk en niet leuk
+settings.devices.sync.likes_desc = Nummers die je leuk vond of een duim omlaag gaf.
+settings.devices.sync.playlists = Je playlists
+settings.devices.sync.playlists_desc = Playlists gemaakt in de app (YouTube-playlists komen mee met je account).
+settings.devices.sync.pins = Snelkiezer
+settings.devices.sync.pins_desc = Wat je op Home hebt vastgezet.
+settings.devices.sync.queue_tabs = Wachtrijtabbladen
+settings.devices.sync.queue_tabs_desc = Je andere wachtrijtabbladen, gekoppeld op naam. Het tabblad dat op een apparaat speelt, houdt daar zijn eigen wachtrij.
+settings.devices.sync.history = Luistergeschiedenis
+settings.devices.sync.history_desc = Afgespeelde nummers van de afgelopen 90 dagen. Uit tenzij je het aanzet.
+
+# Each paired device's state.
+settings.devices.sync.no_devices = Koppel eerst een apparaat.
+settings.devices.sync.syncing = Synchroniseren…
+settings.devices.sync.failed = Kan niet synchroniseren: {error}
+settings.devices.sync.last = Gesynchroniseerd {ago}
+settings.devices.sync.never = Nog niet gesynchroniseerd
+settings.devices.sync.received.one = Laatste wijziging van een ander apparaat: {count} item, {ago}
+settings.devices.sync.received.other = Laatste wijzigingen van een ander apparaat: {count} items, {ago}
+settings.devices.sync.now = Nu synchroniseren
+settings.devices.sync.rules = Wijzigingen die zijn gemaakt terwijl de apparaten gescheiden waren, worden samengevoegd zodra ze elkaar weer zien. Als beide hetzelfde hebben gewijzigd, wint de laatste wijziging; leuke nummers en aan playlists toegevoegde nummers op een van beide blijven allemaal behouden.
+settings.devices.sync.private = Nooit gesynchroniseerd: wachtwoorden en sleutels, aanmeldingen, de naam van dit apparaat, vensterposities, het uitvoerapparaat, muziekmappen, de proxy, sneltoetsen en het volume.

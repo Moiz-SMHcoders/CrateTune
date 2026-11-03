@@ -26,6 +26,7 @@ mod content;
 mod devices_ui;
 mod equalizer;
 pub mod file;
+mod friends_ui;
 pub mod glass_prefs;
 mod glass_ui;
 pub mod home_prefs;
@@ -59,6 +60,7 @@ mod shortcuts_ui;
 pub mod sidebar_prefs;
 mod sidebar_ui;
 mod storage;
+pub mod sync_settings;
 pub mod theme_files;
 pub mod theme_library;
 pub mod theme_prefs;
@@ -112,8 +114,10 @@ pub enum SectionId {
     AiFilter,
     /// Chromecast devices.
     Cast,
-    /// Device hand-off: this device, pairing, paired devices (`devices_ui.rs`).
+    /// Device hand-off: this device, pairing, paired devices, sync (`devices_ui.rs`).
     Devices,
+    /// Friend groups and the activity feed (`friends_ui.rs`).
+    Friends,
     /// Settings export / import, theme files (`portable_ui.rs`).
     Backup,
     About,
@@ -226,6 +230,12 @@ pub const SECTIONS: &[Section] = &[
         render: devices_ui::render,
     },
     Section {
+        id: SectionId::Friends,
+        title: k!("settings.section.friends"),
+        icon: IconName::UsersRound,
+        render: friends_ui::render,
+    },
+    Section {
         id: SectionId::Backup,
         title: k!("settings.section.backup"),
         icon: IconName::ArchiveRestore,
@@ -276,6 +286,7 @@ impl SectionId {
             SectionId::AiFilter => "ai-filter",
             SectionId::Cast => "cast",
             SectionId::Devices => "devices",
+            SectionId::Friends => "friends",
             SectionId::Backup => "backup",
             SectionId::About => "about",
             SectionId::Shortcuts => "shortcuts",
@@ -303,7 +314,7 @@ mod tests {
             assert_eq!(SECTIONS.iter().filter(|s| s.id == section.id).count(), 1);
             assert_eq!(SectionId::from_key(section.id.key()), Some(section.id));
         }
-        assert_eq!(SECTIONS.len(), 20);
+        assert_eq!(SECTIONS.len(), 21);
         assert_eq!(
             SectionId::from_key("accounts"),
             Some(SectionId::Integrations)

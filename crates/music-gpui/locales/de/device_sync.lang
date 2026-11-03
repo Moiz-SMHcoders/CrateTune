@@ -1,0 +1,35 @@
+# Device sync (see locales/en/device_sync.lang).
+
+# ---- Settings → Devices → Sync
+settings.devices.sync.title = Synchronisierung
+settings.devices.sync.note = Halte deine Einstellungen, Likes, Playlists und mehr auf deinen gekoppelten Geräten gleich, als wäre es eine App. Die Daten gehen verschlüsselt direkt von einem Gerät zum anderen; kein Server speichert eine Kopie.
+settings.devices.sync.enabled = Mit meinen Geräten synchronisieren
+settings.devices.sync.enabled_desc = Schalte es auf jedem Gerät ein. Beim ersten Mal werden die Likes, Playlists und Kurzwahl-Einträge beider Geräte zusammengeführt; nichts wird entfernt.
+
+# The categories, each with its own switch.
+settings.devices.sync.settings = Einstellungen
+settings.devices.sync.settings_desc = Aussehen, Wiedergabe, Songtexte, Inhalte und die übrigen Einstellungen (außer denen dieses Computers, siehe unten).
+settings.devices.sync.sound = Klang
+settings.devices.sync.sound_desc = Equalizer, Geschwindigkeit, Tonhöhe, Hall und Klang-Presets. Schalte es aus, wenn du auf jedem Computer eigene Lautsprecher abstimmst.
+settings.devices.sync.likes = Likes und Dislikes
+settings.devices.sync.likes_desc = Songs, die dir gefallen oder die du mit „Daumen runter“ bewertet hast.
+settings.devices.sync.playlists = Deine Playlists
+settings.devices.sync.playlists_desc = In der App erstellte Playlists (YouTube-Playlists kommen mit deinem Konto).
+settings.devices.sync.pins = Kurzwahl
+settings.devices.sync.pins_desc = Was du an die Startseite angeheftet hast.
+settings.devices.sync.queue_tabs = Warteschlangen-Tabs
+settings.devices.sync.queue_tabs_desc = Deine anderen Warteschlangen-Tabs, zugeordnet nach Name. Der Tab, der auf einem Gerät gerade läuft, behält dort seine eigene Warteschlange.
+settings.devices.sync.history = Hörverlauf
+settings.devices.sync.history_desc = Wiedergaben der letzten 90 Tage. Aus, solange du es nicht einschaltest.
+
+# Each paired device's state.
+settings.devices.sync.no_devices = Kopple zuerst ein Gerät.
+settings.devices.sync.syncing = Wird synchronisiert…
+settings.devices.sync.failed = Synchronisierung fehlgeschlagen: {error}
+settings.devices.sync.last = Synchronisiert {ago}
+settings.devices.sync.never = Noch nicht synchronisiert
+settings.devices.sync.received.one = Letzte Änderung von einem anderen Gerät: {count} Eintrag, {ago}
+settings.devices.sync.received.other = Letzte Änderungen von einem anderen Gerät: {count} Einträge, {ago}
+settings.devices.sync.now = Jetzt synchronisieren
+settings.devices.sync.rules = Änderungen, die gemacht wurden, während die Geräte getrennt waren, werden zusammengeführt, sobald sie sich wieder verbinden. Hat sich auf beiden dasselbe geändert, gewinnt die spätere Änderung; Likes und Playlist-Songs, die auf einem der beiden hinzugefügt wurden, bleiben alle erhalten.
+settings.devices.sync.private = Nie synchronisiert: Passwörter und Schlüssel, Anmeldungen, der Name dieses Geräts, Fensterpositionen, das Ausgabegerät, Musikordner, der Proxy, Tastaturkurzbefehle und die Lautstärke.

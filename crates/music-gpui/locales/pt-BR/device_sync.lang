@@ -1,0 +1,35 @@
+# Device sync (see locales/en/device_sync.lang).
+
+# ---- Settings → Devices → Sync
+settings.devices.sync.title = Sincronização
+settings.devices.sync.note = Mantenha suas configurações, curtidas, playlists e mais iguais nos seus dispositivos pareados, como se fossem um só app. Tudo vai direto de um para o outro, criptografado; nenhum servidor guarda uma cópia.
+settings.devices.sync.enabled = Sincronizar com meus dispositivos
+settings.devices.sync.enabled_desc = Ative em cada dispositivo. Na primeira vez, as curtidas, playlists e fixados dos dois dispositivos são juntados; nada é removido.
+
+# The categories, each with its own switch.
+settings.devices.sync.settings = Configurações
+settings.devices.sync.settings_desc = Aparência, reprodução, letras, conteúdo e as demais preferências (exceto as deste computador, listadas abaixo).
+settings.devices.sync.sound = Som
+settings.devices.sync.sound_desc = Equalizador, velocidade, tom, reverb e predefinições de som. Desative se cada computador tiver os próprios alto-falantes para ajustar.
+settings.devices.sync.likes = Curtidas e “Não curti”
+settings.devices.sync.likes_desc = Músicas que você curtiu ou marcou com “Não curti”.
+settings.devices.sync.playlists = Suas playlists
+settings.devices.sync.playlists_desc = Playlists criadas no app (as playlists do YouTube vêm com a sua conta).
+settings.devices.sync.pins = Discagem rápida
+settings.devices.sync.pins_desc = O que você fixou no Início.
+settings.devices.sync.queue_tabs = Abas de fila
+settings.devices.sync.queue_tabs_desc = Suas outras abas de fila, associadas pelo nome. A aba que está tocando em um dispositivo mantém a própria fila nele.
+settings.devices.sync.history = Histórico de reprodução
+settings.devices.sync.history_desc = Reproduções dos últimos 90 dias. Desativado, a menos que você ative.
+
+# Each paired device's state.
+settings.devices.sync.no_devices = Pareie um dispositivo primeiro.
+settings.devices.sync.syncing = Sincronizando…
+settings.devices.sync.failed = Não foi possível sincronizar: {error}
+settings.devices.sync.last = Sincronizado {ago}
+settings.devices.sync.never = Ainda não sincronizado
+settings.devices.sync.received.one = Última alteração de outro dispositivo: {count} item, {ago}
+settings.devices.sync.received.other = Últimas alterações de outro dispositivo: {count} itens, {ago}
+settings.devices.sync.now = Sincronizar agora
+settings.devices.sync.rules = Alterações feitas enquanto os dispositivos estavam separados são mescladas quando eles se reencontram. Se os dois mudaram a mesma coisa, vale a alteração mais recente; curtidas e músicas adicionadas a playlists em qualquer um deles são todas mantidas.
+settings.devices.sync.private = Nunca sincronizados: senhas e chaves, logins, o nome deste dispositivo, posições das janelas, o dispositivo de saída, pastas de música, o proxy, atalhos de teclado e o volume.

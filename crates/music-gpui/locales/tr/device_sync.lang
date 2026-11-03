@@ -1,0 +1,35 @@
+# Device sync (see locales/en/device_sync.lang).
+
+# ---- Settings → Devices → Sync
+settings.devices.sync.title = Eşitleme
+settings.devices.sync.note = Ayarlarınız, beğenileriniz, çalma listeleriniz ve daha fazlası eşlenmiş cihazlarınızda tek bir uygulamaymış gibi aynı kalsın. Veriler şifreli olarak doğrudan bir cihazdan diğerine gider; hiçbir sunucu kopya tutmaz.
+settings.devices.sync.enabled = Cihazlarımla eşitle
+settings.devices.sync.enabled_desc = Her cihazda ayrı ayrı açın. İlk seferde iki cihazın beğenileri, çalma listeleri ve sabitlemeleri birleştirilir; hiçbir şey silinmez.
+
+# The categories, each with its own switch.
+settings.devices.sync.settings = Ayarlar
+settings.devices.sync.settings_desc = Görünüm, çalma, şarkı sözleri, içerik ve diğer tercihler (aşağıda listelenen, bu bilgisayara özgü olanlar hariç).
+settings.devices.sync.sound = Ses
+settings.devices.sync.sound_desc = Ekolayzır, hız, perde, yankı ve ses hazır ayarları. Her bilgisayarın ayrı ayar gerektiren kendi hoparlörleri varsa kapatın.
+settings.devices.sync.likes = Beğeniler ve beğenmemeler
+settings.devices.sync.likes_desc = Beğendiğiniz veya beğenmediğiniz şarkılar.
+settings.devices.sync.playlists = Çalma listeleriniz
+settings.devices.sync.playlists_desc = Uygulamada oluşturulan çalma listeleri (YouTube çalma listeleri hesabınızla birlikte gelir).
+settings.devices.sync.pins = Hızlı arama
+settings.devices.sync.pins_desc = Ana sayfaya sabitledikleriniz.
+settings.devices.sync.queue_tabs = Sıra sekmeleri
+settings.devices.sync.queue_tabs_desc = Diğer sıra sekmeleriniz, adlarına göre eşleştirilir. Bir cihazda çalan sekme orada kendi sırasını korur.
+settings.devices.sync.history = Dinleme geçmişi
+settings.devices.sync.history_desc = Son 90 günün dinlemeleri. Siz açmadıkça kapalıdır.
+
+# Each paired device's state. {ago} is a relative time, {error} a technical reason (in English).
+settings.devices.sync.no_devices = Önce bir cihaz eşleyin.
+settings.devices.sync.syncing = Eşitleniyor…
+settings.devices.sync.failed = Eşitlenemedi: {error}
+settings.devices.sync.last = {ago} eşitlendi
+settings.devices.sync.never = Henüz eşitlenmedi
+settings.devices.sync.received.one = Başka bir cihazdan son değişiklik: {count} öğe, {ago}
+settings.devices.sync.received.other = Başka bir cihazdan son değişiklikler: {count} öğe, {ago}
+settings.devices.sync.now = Şimdi eşitle
+settings.devices.sync.rules = Cihazlar ayrıyken yapılan değişiklikler yeniden buluştuklarında birleştirilir. İkisinde de aynı şey değiştiyse sonraki değişiklik geçerli olur; herhangi birinde eklenen beğeniler ve çalma listesi şarkılarının hepsi korunur.
+settings.devices.sync.private = Asla eşitlenmez: parolalar ve anahtarlar, oturum açma bilgileri, bu cihazın adı, pencere konumları, çıkış cihazı, müzik klasörleri, proxy, klavye kısayolları ve ses düzeyi.

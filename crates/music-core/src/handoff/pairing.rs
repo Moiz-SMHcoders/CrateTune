@@ -84,10 +84,22 @@ pub struct PairingLink {
     pub addrs: Vec<SocketAddr>,
 }
 
+/// Scheme of a friends invitation link (the same fields as a pairing link).
+pub const INVITE_LINK_SCHEME: &str = "music-friends://join";
+
 impl PairingLink {
     /// `music-devices://pair?id=…&code=…&relay=…&addr=…&addr=…`.
     pub fn to_link(&self) -> String {
-        let mut url = url::Url::parse(LINK_SCHEME).expect("valid scheme");
+        self.to_link_as(LINK_SCHEME)
+    }
+
+    /// The same as an invitation link (`music-friends://join?…`).
+    pub fn to_invite_link(&self) -> String {
+        self.to_link_as(INVITE_LINK_SCHEME)
+    }
+
+    fn to_link_as(&self, base: &str) -> String {
+        let mut url = url::Url::parse(base).expect("valid scheme");
         {
             let mut q = url.query_pairs_mut();
             q.append_pair("id", &self.id);
@@ -103,8 +115,12 @@ impl PairingLink {
     }
 
     pub fn parse(link: &str) -> Option<Self> {
+        Self::parse_as(link, "music-devices", "pair")
+    }
+
+    fn parse_as(link: &str, scheme: &str, host: &str) -> Option<Self> {
         let url = url::Url::parse(link.trim()).ok()?;
-        if url.scheme() != "music-devices" || url.host_str() != Some("pair") {
+        if url.scheme() != scheme || url.host_str() != Some(host) {
             return None;
         }
         let mut link = PairingLink {
@@ -139,6 +155,16 @@ impl PairInput {
         let input = input.trim();
         if input.starts_with("music-devices:") {
             PairingLink::parse(input).map(Self::Link)
+        } else {
+            normalize_code(input).map(Self::Code)
+        }
+    }
+
+    /// A friends invitation: its code, or its link (`music-friends://join?…`).
+    pub fn parse_invite(input: &str) -> Option<Self> {
+        let input = input.trim();
+        if input.starts_with("music-friends:") {
+            PairingLink::parse_as(input, "music-friends", "join").map(Self::Link)
         } else {
             normalize_code(input).map(Self::Code)
         }
@@ -314,6 +340,22 @@ mod tests {
         );
         assert_eq!(PairInput::parse("hello"), None);
         assert_eq!(PairInput::parse("hello, world!"), None);
+        // The same fields as a friends invitation; the kinds don't mix.
+        let invite = link.to_invite_link();
+        assert!(
+            invite.starts_with("music-friends://join?id=abab"),
+            "{invite}"
+        );
+        assert_eq!(
+            PairInput::parse_invite(&invite),
+            Some(PairInput::Link(link.clone()))
+        );
+        assert_eq!(PairInput::parse(&invite), None);
+        assert_eq!(PairInput::parse_invite(&text), None);
+        assert_eq!(
+            PairInput::parse_invite("abcd-2345"),
+            Some(PairInput::Code("ABCD2345".into()))
+        );
         // Without a relay or addresses (the LAN, by id).
         let bare = PairingLink {
             relay_url: None,

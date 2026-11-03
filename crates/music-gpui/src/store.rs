@@ -118,6 +118,15 @@ pub(crate) fn set_rating_flag(video_id: &str, rating: Rating) {
     });
 }
 
+/// Replaces every like / dislike flag (after device sync changed the ratings).
+pub(crate) fn set_rating_flags(liked: HashSet<String>, disliked: HashSet<String>) {
+    FLAGS.with(|f| {
+        let mut f = f.borrow_mut();
+        f.liked = liked;
+        f.disliked = disliked;
+    });
+}
+
 /// The local rating the flags show.
 pub(crate) fn rating_flag(video_id: &str) -> Rating {
     if is_liked(video_id) {

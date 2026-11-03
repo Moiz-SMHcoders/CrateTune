@@ -11,6 +11,15 @@ over iroh) and phase 3 ("keep playing here") are built (`feat/device-handoff`:
 instances on one Mac and in-process tests; across real networks and against a real ArchiveTune
 host not yet (docs/BACKLOG.md). Phase 4 is a plan only.
 
+Built on top of it (`feat/device-sync`): **sync between paired devices** (settings, likes,
+playlists, pins, queue tabs, optional history; `music_core::sync`, last-writer-wins registers
+with hybrid clocks, merged over the same `cratetune/devices/1` links; off by default) and
+**friend groups** (`music_core::friends`: signed group records, invitations by code with SPAKE2,
+a member key with a recovery phrase, an activity feed and "listen together", on
+`cratetune/friends/1` and `cratetune/invite/1` of the same endpoint). Both need the apps open on
+both sides, like hand-off (a relay mailbox for encrypted changes is in BACKLOG M8). See
+[README: Sync between devices and friend groups](../../README.md#sync-between-devices-and-friend-groups).
+
 As built (differences from the plan below): the relay is served by path on
 `relay.smhcoders.click` (`/relay`, `/ping`, `/generate_204`) next to music-relay instead of a
 new host name; pairing uses a SPAKE2 exchange keyed by the code (8 Crockford base32

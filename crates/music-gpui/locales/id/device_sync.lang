@@ -1,0 +1,34 @@
+# Device sync (see locales/en/device_sync.lang).
+
+# ---- Settings → Devices → Sync
+settings.devices.sync.title = Sinkronisasi
+settings.devices.sync.note = Jaga pengaturan, suka, playlist, dan lainnya tetap sama di perangkat yang tersanding, seolah-olah satu aplikasi. Data langsung dikirim dari satu perangkat ke perangkat lain secara terenkripsi; tidak ada server yang menyimpan salinannya.
+settings.devices.sync.enabled = Sinkronkan dengan perangkat saya
+settings.devices.sync.enabled_desc = Aktifkan di setiap perangkat. Pertama kali, suka, playlist, dan sematan dari kedua perangkat digabungkan; tidak ada yang dihapus.
+
+# The categories, each with its own switch.
+settings.devices.sync.settings = Pengaturan
+settings.devices.sync.settings_desc = Tampilan, pemutaran, lirik, konten, dan preferensi lainnya (kecuali milik komputer ini sendiri, tercantum di bawah).
+settings.devices.sync.sound = Suara
+settings.devices.sync.sound_desc = Ekualiser, kecepatan, nada, reverb, dan preset suara. Nonaktifkan jika setiap komputer punya speaker sendiri yang perlu disetel.
+settings.devices.sync.likes = Suka dan tidak suka
+settings.devices.sync.likes_desc = Lagu yang Anda sukai atau beri jempol ke bawah.
+settings.devices.sync.playlists = Playlist Anda
+settings.devices.sync.playlists_desc = Playlist yang dibuat di aplikasi (playlist YouTube ikut dengan akun Anda).
+settings.devices.sync.pins = Panggilan cepat
+settings.devices.sync.pins_desc = Yang Anda sematkan ke Beranda.
+settings.devices.sync.queue_tabs = Tab antrean
+settings.devices.sync.queue_tabs_desc = Tab antrean Anda yang lain, dicocokkan berdasarkan nama. Tab yang sedang diputar di suatu perangkat tetap memakai antreannya sendiri di sana.
+settings.devices.sync.history = Riwayat putar
+settings.devices.sync.history_desc = Putaran 90 hari terakhir. Nonaktif kecuali Anda mengaktifkannya.
+
+# Each paired device's state.
+settings.devices.sync.no_devices = Sandingkan perangkat terlebih dahulu.
+settings.devices.sync.syncing = Menyinkronkan…
+settings.devices.sync.failed = Tidak dapat menyinkronkan: {error}
+settings.devices.sync.last = Disinkronkan {ago}
+settings.devices.sync.never = Belum disinkronkan
+settings.devices.sync.received.other = Perubahan terakhir dari perangkat lain: {count} item, {ago}
+settings.devices.sync.now = Sinkronkan sekarang
+settings.devices.sync.rules = Perubahan yang dibuat saat perangkat terpisah akan digabungkan ketika terhubung kembali. Jika keduanya mengubah hal yang sama, perubahan terakhir yang berlaku; suka dan lagu playlist yang ditambahkan di salah satunya semuanya disimpan.
+settings.devices.sync.private = Tidak pernah disinkronkan: kata sandi dan kunci, info masuk, nama perangkat ini, posisi jendela, perangkat output, folder musik, proxy, pintasan keyboard, dan volume.

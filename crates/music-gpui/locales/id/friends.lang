@@ -1,0 +1,91 @@
+# Friend groups (see locales/en/friends.lang).
+
+# The Settings section's name.
+settings.section.friends = Teman
+
+# ---- Settings → Friends
+settings.friends.title = Grup teman
+settings.friends.intro = Simpan grup teman alih-alih membuat ruang Music Together baru setiap kali: lihat apa yang mereka dengarkan dan mulai sesi untuk seluruh grup dengan satu klik.
+settings.friends.enabled = Gunakan grup teman
+settings.friends.enabled_desc = Nonaktif secara default. Jika aktif, komputer Anda berkomunikasi langsung dengan komputer teman Anda, terenkripsi end-to-end.
+settings.friends.privacy = Yang dilihat teman: nama Anda dan, hanya saat berbagi aktif, lagu yang Anda putar (judul, artis, ID YouTube-nya, kapan dimulai). Tidak ada yang disimpan di server: relay hanya meneruskan data terenkripsi dan melihat alamat IP Anda. Grup disimpan di komputer setiap anggota.
+
+settings.friends.you = Anda
+settings.friends.name = Nama
+settings.friends.name_note = Nama Anda di mata teman-teman.
+settings.friends.share = Bagikan yang sedang saya dengarkan
+settings.friends.share_desc = Teman Anda melihat lagu yang Anda putar di feed mereka. Lagu dari file Anda sendiri tidak pernah dibagikan.
+settings.friends.private = Sesi pribadi
+settings.friends.private_desc = Jeda berbagi hingga Anda keluar dari aplikasi.
+# {id} is a shortened member id ("3f2a…9c01").
+settings.friends.member_id = ID anggota: {id}
+
+settings.friends.groups = Grup Anda
+settings.friends.no_groups = Belum ada grup. Buat satu dan undang teman Anda, atau gabung dengan kode yang ditunjukkan teman.
+# {name} is your own name in a group's member list.
+settings.friends.you_name = {name} (Anda)
+settings.friends.owner = Pemilik
+settings.friends.remove = Keluarkan
+settings.friends.invite = Undang
+settings.friends.leave = Keluar
+settings.friends.invite_shown = Teman Anda memasukkan kode ini di Pengaturan → Teman → Gabung ke grup:
+settings.friends.invite_expires = Berlaku 10 menit, sekali pakai. Jika di jaringan lain, kirim tautannya (atau minta mereka memindai kode QR) sebagai gantinya.
+settings.friends.create = Buat grup
+settings.friends.group_placeholder = Nama grup
+settings.friends.create_button = Buat
+settings.friends.join = Gabung ke grup
+settings.friends.join_button = Gabung
+settings.friends.join_note = Kode yang ditunjukkan anggota, atau tautan undangan yang mereka kirim.
+settings.friends.joining = Mencari grup…
+# {group} is the group's name.
+settings.friends.joined = Bergabung dengan {group}
+
+settings.friends.recovery = Frasa pemulihan
+settings.friends.recovery_note = Teman Anda mengenali Anda lewat kunci yang disimpan di komputer ini. Catat frasa pemulihan untuk memindahkan kunci itu ke komputer baru; siapa pun yang memilikinya bisa bertindak atas nama Anda.
+settings.friends.show_phrase = Tampilkan frasa pemulihan
+settings.friends.hide_phrase = Sembunyikan
+settings.friends.copy_phrase = Salin
+settings.friends.restore = Pulihkan dari frasa pemulihan
+settings.friends.phrase_placeholder = XXXXX-XXXXX-…
+settings.friends.restore_button = Pulihkan
+settings.friends.restore_note = Mengganti kunci komputer ini. Grupnya dilupakan di sini: minta undangan ke masing-masing grup dari seorang anggota (atau komputer lama Anda), dan Anda kembali dengan nama Anda.
+
+# ---- Joining errors. {error} is a technical reason (in English).
+friends.join.not_found = Tidak ditemukan siapa pun yang menampilkan undangan di jaringan ini. Minta tautan undangan jika teman Anda ada di jaringan lain.
+friends.join.wrong_code = Kodenya tidak cocok. Periksa lalu coba lagi.
+friends.join.not_inviting = Undangan itu sudah tidak berlaku. Minta undangan baru.
+friends.join.failed = Tidak dapat bergabung: {error}
+friends.join.bad_code = Itu bukan kode undangan. Kode terdiri dari 8 huruf dan angka, seperti ABCD-2345.
+
+# ---- Notifications. {group} is a group's name, {name} a member's.
+friends.toast.not_ready = Fitur teman belum siap. Coba lagi sebentar lagi.
+friends.toast.created = Grup “{group}” dibuat. Undang teman Anda dengan kode.
+friends.toast.removed = Anda dikeluarkan dari “{group}”.
+friends.toast.listen_invite = {name} mengajak Anda dengar bersama ({group}). Buka Dengar bersama untuk bergabung.
+friends.toast.listen_sent = Memulai sesi; grup Anda mendapat undangan setelah sesi siap.
+friends.toast.joined = Anda bergabung dengan “{group}”
+friends.toast.member_joined = {name} bergabung dengan “{group}”
+friends.toast.bad_phrase = Itu bukan frasa pemulihan yang valid. Periksa setiap kelompok karakter.
+friends.toast.restored = Kunci dipulihkan. Minta undangan ke grup Anda.
+
+# ---- The feed (Listen together page). {ago} is a relative time ("5 min ago").
+friends.feed.playing = Sedang diputar
+friends.feed.paused = Dijeda · {ago}
+friends.feed.idle = Tidak memutar apa pun · {ago}
+friends.feed.unknown = Belum ada kabar
+# {title} the song, {artist} its artist.
+friends.feed.song = {title} — {artist}
+
+# ---- The friends card on the Listen together page
+friends.panel.title = Teman
+friends.panel.off = Buat grup tetap dengan teman Anda: lihat apa yang mereka dengarkan dan mulai sesi bersama dengan satu klik.
+friends.panel.set_up = Siapkan grup teman
+# {name} invited the group {group} to a session they host.
+friends.panel.invite = {name} memulai sesi untuk {group}
+friends.panel.join = Gabung
+friends.panel.no_friends = Belum ada teman: buat grup di Pengaturan → Teman lalu undang mereka.
+# A button per group: hosts a session and invites the group.
+friends.panel.listen = Dengar bersama: {group}
+friends.panel.sharing = Teman Anda melihat apa yang Anda putar.
+friends.panel.not_sharing = Anda tidak membagikan apa yang Anda putar.
+friends.panel.manage = Grup…

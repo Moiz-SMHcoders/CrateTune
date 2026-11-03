@@ -1714,6 +1714,128 @@ Music Together).
   difference. Nothing redraws while idle (events only arrive when something happens); without
   a paired device the node isn't started at all.
 
+### Sync between devices and friend groups
+
+Two features on top of device hand-off's iroh endpoint (same device key, relay and mDNS; no new
+server, no new dependency): **sync** of settings and library between your own paired devices
+(BACKLOG M8 before) and **friend groups** with an activity feed (M9 before). Both are off by
+default.
+
+**Sync** (`music_core::sync`, `integrations/device_sync.rs`, Settings → Devices → **Sync**):
+
+* **Document.** One key → value map of last-writer-wins registers, each stamped with a hybrid
+  logical clock (48 bits of Unix ms, 16 of counter; a device that has seen a stamp stamps later)
+  and the writing device's id: `s/<settings path>`, `r/<video id>` (like / dislike),
+  `p/<playlist id>` and `e/<playlist id>/<video id>#<n>` (entries ordered by fractional
+  positions, `sync::frac`), `d/<kind>:<id>` (speed-dial pins, newest stamp first), `q/<tab name>`
+  (queue tabs), `h/<video id>/<played at>` (history, last 90 days, optional). `null` is a
+  tombstone. Values carry descriptive metadata in `m` (title, artists, artwork) that doesn't
+  count as a change. Stored in `sync.sqlite` next to the library (`entry`, per-category
+  version vector `vv`, `meta`; `PRAGMA user_version` = format 1, sent in every request; a newer
+  file or peer format is refused). Deleting the file resets sync.
+* **Why not Automerge.** tono.fm keeps such data as Automerge documents (AGPL; idea only).
+  The `automerge` crate (MIT) was considered: our data is independent registers plus one
+  ordered list, which fractional positions cover, while Automerge keeps every operation forever
+  (a like toggled 1 000 times is 1 000 ops), holds the document in memory while open and adds
+  about 1.2 MB to a release binary on its own (a minimal program with and without
+  `automerge` 0.6.1, same profile: 0.37 → 1.61 MB). The hand-rolled document needs no new
+  crate (SQLite, serde, ring and SPAKE2 were already in), holds nothing in memory between
+  rounds and keeps one register per key, however often it changed. The whole round (sync,
+  friends, their UI and 2 × 18 translation files) grows the macOS release binary by
+  1.48 MB (64.08 → 65.56 MB against main at b447871).
+* **Local changes** aren't reported by each edit: before a round the library and the settings
+  are *projected* and compared with the document (new value: new stamp; a key this device had
+  and lost: tombstone; a key it never had, e.g. a setting only a newer version knows, is never
+  removed). The library calls a change listener after writes (`Library::set_change_listener`;
+  the saved queue and lyrics cache are quiet); the node waits 3 s, projects, and only if
+  something was stamped syncs with devices heard from in the last 15 minutes. The settings are
+  passed in after every save (`SettingsEvent::Saved`).
+* **Rounds** (`SyncPull` → `SyncBatch`… on `cratetune/devices/1`, additive to protocol v1):
+  the asker sends its categories and version vector, the answerer projects, sends what is
+  newer in ~1 MB frames plus its vector; merging keeps the higher (stamp, device) per key, so it
+  is commutative and idempotent. If the asker knew more, the answerer pulls back at once. A
+  device with sync off answers `sync_off`; categories switched off on either side aren't sent,
+  and their vectors don't advance, so they catch up when switched on. Rounds run when the
+  node starts, after local changes, on **Sync now** and when a paired device asks.
+* **Conflict rules**: the later change wins per setting / rating / pin / tab / playlist name;
+  likes and playlist entries from both sides are a union (enabling sync never removes
+  anything); a removal or move made later wins over an older add; a deleted playlist comes
+  back only if renamed later; queue tabs are matched by name and the tab playing on a device
+  keeps its live queue there; history is add-only with deletions as tombstones.
+* **Defaults don't win.** A setting still at its default that was never synced isn't recorded,
+  so switching sync on on a fresh install takes the other device's choices instead of
+  resetting it to the defaults (found in the two-instance run: 170 settings would otherwise
+  have come back as defaults).
+* **Never in the document**: secrets, keychain markers, accounts, this device's name and
+  pairing, window frames, volume, output device, folders, cache and memory sizes, proxy / DNS,
+  shortcuts, update / log options, friends (`settings/sync_settings.rs::NOT_SYNCED` plus the
+  export's `LOCAL_ONLY`; tested), local files (ids, paths) and their pins / entries.
+
+**Friend groups** (`music_core::friends`, `handoff/friends_net.rs`, `integrations/friends.rs`,
+Settings → **Friends**, the friends card on the Listen together page):
+
+* **Identity.** A member key per installation (Ed25519 via ring, `Secret::FriendKey`); the
+  member id is its public half. The **recovery phrase** is the 32-byte key plus a 2-byte
+  SHA-256 checksum in Crockford base32 (55 characters, 11 groups); restoring it on a new
+  computer gives the same member id, which then rejoins each group with an invitation (its
+  record gains the new device; name and owner role stay).
+* **Groups** are signed records every member keeps (`settings.json` → `friends`, not exported
+  or synced): a header signed by the owner, per member a self-signed part (name, device ids,
+  left) and an inviter-signed part (who let it in, when; valid only through a chain of inviters
+  back to the owner, so nobody can add themselves), and owner-signed removals (permanent).
+  Every signature covers the group id; copies merge per record (newest valid wins), forged
+  or tampered records are dropped.
+* **Invitations** reuse pairing: an 8-character code (10 min, one use, 5 tries), QR code and
+  link `music-friends://join?id=…&code=…&relay=…&addr=…`, SPAKE2 with key confirmation on
+  `cratetune/invite/1` (only answered while a code is shown; mDNS user data `inviting` for a
+  code typed on the LAN), then the group, the newcomer's self-signed record (must list the
+  device it joins from), and the group with it vouched for.
+* **Between members** (`cratetune/friends/1`): `friend_hello` carries the sender's copies of
+  the groups the receiver's member is in (or was removed from) and its activity, answered the
+  same way; `listen_together` carries a Music Together link. A device only answers devices of
+  current members of a group they share (`not_member` otherwise), never sends a member other
+  groups, and doesn't send its device name. Friends' devices are dialled by id on their last
+  relay (else ours), their last addresses and mDNS.
+* **Activity** (`Activity`: video id, title, artist, start time, playing) is shared only with
+  *Share what I'm listening to* on and no private session (until the app quits), never for
+  local files. The app mirrors it into the node when the song or play / pause changes; the
+  node pushes it to the members' devices after 1.5 s (no polling). Received activity is kept
+  in memory only (the feed on the Listen together page).
+* **Listen together** per group hosts a Music Together session through its relay and sends
+  the link to the group's members; they get a notification and a **Join** button.
+* **Script actions**: `@device-sync=on|off`, `@device-sync-category=CAT:on|off`,
+  `@device-sync-now`, `@device-sync-status`,
+  `@friends=on|off`, `@friends-share=on|off`, `@friends-private=on|off`,
+  `@friends-create=NAME`, `@friends-invite=GROUP[:FILE]`, `@friends-invite-cancel`,
+  `@friends-join=CODE|LINK|file:PATH`, `@friends-leave=GROUP`, `@friends-listen=GROUP`,
+  `@friends-join-session`, `@friends-phrase=on|off`, `@friends-status`; `@set=friends-name:…`
+  / `friends-group:…` / `friends-code:…` / `friends-phrase:…`.
+
+| ![Settings → Devices → Sync](docs/screenshots/devices-sync.png) | ![Listen together: the friends card](docs/screenshots/friends-feed.png) |
+|---|---|
+| ![Settings → Friends](docs/screenshots/friends-settings.png) | ![A group and its invitation](docs/screenshots/friends-groups.png) |
+| ![Recovery phrase](docs/screenshots/friends-recovery.png) | |
+
+* **Checked** (3 Nov 2026): in-process tests on localhost with the relay off
+  (`sync::{store, engine, library, frac, clock}`: convergence in any order, per-category
+  vectors, stale projections, likes union then last change, playlists merged from both
+  sides with moves and removals, pins / tabs / history, defaults; `friends::{identity, group}`:
+  signatures, recovery phrases, forged / tampered / self-added records dropped, permanent
+  removals; `handoff::tests::sync_between_two_devices`: `sync_off`, a round, the pull-back,
+  the change listener's debounced round; `friends_invite_activity_and_listen_together`: a wrong
+  code, joining by link, activity, private session, listen together, a stranger with a
+  same-id group refused; `sync_settings`: nothing private flattened, apply round trip). Two
+  app instances on one Mac (separate `MUSIC_CONFIG_DIR`s, `MUSIC_SECRET_STORE=file`, muted,
+  demo clock, fixtures): paired, sync on both, friends on, a group made on one and joined by
+  link on the other; the other got the 2 likes and the 8-song playlist, saw the first one's
+  song in its feed, got its "listen together" invitation; screenshots above from that run.
+  Not checked: real machines, other networks, Windows / Linux (BACKLOG M8).
+* **Idle cost.** Two paired idle nodes with mDNS, sync engines and a friend group each:
+  0.026 s of CPU in 60 s together (0.04 % of one core; `idle_cost`). Nothing runs on a timer:
+  rounds follow changes, hellos follow what is shared. Memory (RSS, same session): 151 MB for
+  an instance with nothing on, 160–165 MB for the two paired instances with sync and friends
+  on, which includes the hand-off node itself.
+
 ### Relay server (`music-relay`)
 
 `crates/music-relay`: one small binary (std threads + tungstenite, ~0.9 MB release) for
@@ -3406,7 +3528,7 @@ Ideas from **Zuno** (Apache-2.0) and **Limusic** (GPL-3.0); what was ported is l
 * **Queue tabs** (`queue_tabs.rs`, UI in `components/queue_panel.rs`). Zuno's tabs each
   own a player *and* a page stack; here only the queue is per tab, because one engine
   plays, and a second router / page cache per tab would cost memory and touch every page
-  for little gain (BACKLOG M8). One tab is *playing* (its queue is the live `Queue`, saved
+  for little gain (BACKLOG M10). One tab is *playing* (its queue is the live `Queue`, saved
   as before); the others hold a `SavedQueue` (songs, index, position, shuffle order,
   repeat, parts). Clicking a tab previews it (where it was left, its two parts, read-only);
   **Continue this queue** stores the live queue with its position in its tab, loads the

@@ -50,6 +50,8 @@ pub const LOCAL_ONLY: &[&str] = &[
     "devices.paired",
     "devices.key_set",
     "devices.name",
+    // Friend groups: tied to this installation's member key (`friends`).
+    "friends",
 ];
 
 /// Top-level sections of the player bar's look that theme files and profiles
@@ -177,7 +179,7 @@ fn to_value(settings: &Settings) -> Value {
     serde_json::to_value(settings).expect("settings always serialize")
 }
 
-fn remove_path(v: &mut Value, path: &str) -> Option<Value> {
+pub(super) fn remove_path(v: &mut Value, path: &str) -> Option<Value> {
     let mut parts = path.split('.').peekable();
     let mut cur = v;
     while let Some(part) = parts.next() {
@@ -194,7 +196,7 @@ fn get_path<'a>(v: &'a Value, path: &str) -> Option<&'a Value> {
     path.split('.').try_fold(v, |cur, part| cur.get(part))
 }
 
-fn set_path(v: &mut Value, path: &str, value: Value) {
+pub(super) fn set_path(v: &mut Value, path: &str, value: Value) {
     let mut parts: Vec<&str> = path.split('.').collect();
     let Some(last) = parts.pop() else { return };
     let mut cur = v;

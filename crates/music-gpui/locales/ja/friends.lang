@@ -1,0 +1,85 @@
+# Friend groups (see locales/en/friends.lang).
+
+# The Settings section's name.
+settings.section.friends = フレンド
+
+# ---- Settings → Friends
+settings.friends.title = フレンドグループ
+settings.friends.intro = 毎回新しい Music Together のルームを作る代わりに、フレンドのグループを保存できます。フレンドが聴いている曲を確認し、ワンクリックでグループ全員とのセッションを始められます。
+settings.friends.enabled = フレンドグループを使用
+settings.friends.enabled_desc = デフォルトではオフです。オンにすると、このコンピュータがフレンドのコンピュータとエンドツーエンドで暗号化された状態で直接通信します。
+settings.friends.privacy = フレンドに見えるもの：あなたの名前と、共有がオンの間だけ再生中の曲（タイトル、アーティスト、YouTube の ID、再生開始時刻）。サーバには何も保存されません。リレーは暗号化されたデータを中継するだけで、見えるのはあなたの IP アドレスのみです。グループは各メンバーのコンピュータに保存されます。
+
+settings.friends.you = 自分
+settings.friends.name = 名前
+settings.friends.name_note = フレンドに表示されるあなたの名前です。
+settings.friends.share = 聴いている曲を共有
+settings.friends.share_desc = あなたが再生する曲がフレンドのフィードに表示されます。自分のファイルの曲は共有されません。
+settings.friends.private = プライベートセッション
+settings.friends.private_desc = アプリを終了するまで共有を一時停止します。
+settings.friends.member_id = メンバー ID：{id}
+
+settings.friends.groups = 自分のグループ
+settings.friends.no_groups = グループはまだありません。グループを作成してフレンドを招待するか、フレンドが表示するコードで参加してください。
+settings.friends.you_name = {name}（自分）
+settings.friends.owner = オーナー
+settings.friends.remove = 削除
+settings.friends.invite = 招待
+settings.friends.leave = 退出
+settings.friends.invite_shown = フレンドに 設定 → フレンド → グループに参加 でこのコードを入力してもらってください：
+settings.friends.invite_expires = 10分間、1回だけ有効です。別のネットワークの場合は、代わりにリンクを送ってください（または QR コードを読み取ってもらってください）。
+settings.friends.create = グループを作成
+settings.friends.group_placeholder = グループ名
+settings.friends.create_button = 作成
+settings.friends.join = グループに参加
+settings.friends.join_button = 参加
+settings.friends.join_note = メンバーが表示するコード、または送られてきた招待リンク。
+settings.friends.joining = グループを探しています…
+settings.friends.joined = {group} に参加しました
+
+settings.friends.recovery = リカバリーフレーズ
+settings.friends.recovery_note = フレンドはこのコンピュータに保存されたキーであなたを識別します。リカバリーフレーズを書き留めておくと、そのキーを新しいコンピュータに移せます。フレーズを知っている人は誰でもあなたとして振る舞えます。
+settings.friends.show_phrase = リカバリーフレーズを表示
+settings.friends.hide_phrase = 隠す
+settings.friends.copy_phrase = コピー
+settings.friends.restore = リカバリーフレーズから復元
+settings.friends.phrase_placeholder = XXXXX-XXXXX-…
+settings.friends.restore_button = 復元
+settings.friends.restore_note = このコンピュータのキーを置き換えます。ここにあるグループは削除されます。各グループのメンバー（または以前のコンピュータ）に招待を依頼すれば、同じ名前で戻れます。
+
+# ---- Joining errors
+friends.join.not_found = このネットワーク上で招待を表示している人が見つかりません。フレンドが別のネットワークにいる場合は、招待リンクを送ってもらってください。
+friends.join.wrong_code = コードが一致しません。確認してもう一度お試しください。
+friends.join.not_inviting = その招待はもう有効ではありません。新しい招待を依頼してください。
+friends.join.failed = 参加できませんでした：{error}
+friends.join.bad_code = 招待コードではありません。コードは ABCD-2345 のような8文字の英数字です。
+
+# ---- Notifications
+friends.toast.not_ready = フレンド機能の準備がまだできていません。しばらくしてからもう一度お試しください。
+friends.toast.created = グループ「{group}」を作成しました。コードでフレンドを招待しましょう。
+friends.toast.removed = 「{group}」から削除されました。
+friends.toast.listen_invite = {name}が一緒に聴こうと誘っています（{group}）。参加するには「一緒に聴く」を開いてください。
+friends.toast.listen_sent = セッションを開始しています。準備ができるとグループに招待が届きます。
+friends.toast.joined = 「{group}」に参加しました
+friends.toast.member_joined = {name}が「{group}」に参加しました
+friends.toast.bad_phrase = 有効なリカバリーフレーズではありません。文字の各グループを確認してください。
+friends.toast.restored = キーを復元しました。各グループへの招待を依頼してください。
+
+# ---- The feed (Listen together page)
+friends.feed.playing = 再生中
+friends.feed.paused = 一時停止中 · {ago}
+friends.feed.idle = 再生していません · {ago}
+friends.feed.unknown = まだ応答がありません
+friends.feed.song = {title} — {artist}
+
+# ---- The friends card on the Listen together page
+friends.panel.title = フレンド
+friends.panel.off = フレンドと継続的なグループを作りましょう。フレンドが聴いている曲を確認し、ワンクリックで一緒にセッションを始められます。
+friends.panel.set_up = フレンドグループを設定
+friends.panel.invite = {name}が{group}のセッションを開始しました
+friends.panel.join = 参加
+friends.panel.no_friends = フレンドはまだいません。設定 → フレンド でグループを作成して招待しましょう。
+friends.panel.listen = 一緒に聴く：{group}
+friends.panel.sharing = フレンドにはあなたが再生している曲が表示されます。
+friends.panel.not_sharing = 再生している曲を共有していません。
+friends.panel.manage = グループ…

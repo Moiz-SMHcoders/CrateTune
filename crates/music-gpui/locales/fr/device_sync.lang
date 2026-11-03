@@ -1,0 +1,35 @@
+# Device sync (see locales/en/device_sync.lang).
+
+# ---- Settings → Devices → Sync
+settings.devices.sync.title = Synchronisation
+settings.devices.sync.note = Gardez vos paramètres, titres aimés, playlists et plus encore identiques sur vos appareils associés, comme s'il s'agissait d'une seule app. Les données passent directement de l'un à l'autre, chiffrées ; aucun serveur n'en garde de copie.
+settings.devices.sync.enabled = Synchroniser avec mes appareils
+settings.devices.sync.enabled_desc = Activez-la sur chaque appareil. La première fois, les titres aimés, playlists et épingles des deux appareils sont réunis ; rien n'est supprimé.
+
+# The categories, each with its own switch.
+settings.devices.sync.settings = Paramètres
+settings.devices.sync.settings_desc = Apparence, lecture, paroles, contenu et les autres préférences (sauf celles propres à cet ordinateur, listées ci-dessous).
+settings.devices.sync.sound = Son
+settings.devices.sync.sound_desc = Égaliseur, vitesse, hauteur, réverbération et préréglages sonores. Désactivez-le si chaque ordinateur a ses propres haut-parleurs à régler.
+settings.devices.sync.likes = J'aime et Je n'aime pas
+settings.devices.sync.likes_desc = Les titres que vous avez aimés ou notés d'un pouce vers le bas.
+settings.devices.sync.playlists = Vos playlists
+settings.devices.sync.playlists_desc = Playlists créées dans l'app (les playlists YouTube viennent avec votre compte).
+settings.devices.sync.pins = Accès rapide
+settings.devices.sync.pins_desc = Ce que vous avez épinglé à l'Accueil.
+settings.devices.sync.queue_tabs = Onglets de file
+settings.devices.sync.queue_tabs_desc = Vos autres onglets de file, associés par nom. L'onglet en lecture sur un appareil y garde sa propre file.
+settings.devices.sync.history = Historique d'écoute
+settings.devices.sync.history_desc = Écoutes des 90 derniers jours. Désactivé, sauf si vous l'activez.
+
+# Each paired device's state.
+settings.devices.sync.no_devices = Associez d'abord un appareil.
+settings.devices.sync.syncing = Synchronisation…
+settings.devices.sync.failed = Impossible de synchroniser : {error}
+settings.devices.sync.last = Synchronisé {ago}
+settings.devices.sync.never = Pas encore synchronisé
+settings.devices.sync.received.one = Dernière modification venue d'un autre appareil : {count} élément, {ago}
+settings.devices.sync.received.other = Dernières modifications venues d'un autre appareil : {count} éléments, {ago}
+settings.devices.sync.now = Synchroniser maintenant
+settings.devices.sync.rules = Les modifications faites pendant que les appareils étaient séparés sont fusionnées quand ils se retrouvent. Si les deux ont modifié la même chose, la modification la plus récente l'emporte ; les titres aimés et les titres ajoutés aux playlists sur l'un ou l'autre sont tous conservés.
+settings.devices.sync.private = Jamais synchronisés : mots de passe et clés, connexions, le nom de cet appareil, la position des fenêtres, le périphérique de sortie, les dossiers de musique, le proxy, les raccourcis clavier et le volume.

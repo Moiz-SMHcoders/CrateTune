@@ -5,6 +5,7 @@
 use music_core::ai_filter::{AiCategory, AiFilterConfig};
 use music_core::handoff::PairedDevice;
 use music_core::sponsorblock::{Category, DEFAULT_API_URL, SponsorBlockConfig};
+use music_core::sync::Category as SyncCategory;
 use music_core::together::{DEFAULT_PORT, RoomSettings};
 use serde::{Deserialize, Serialize};
 
@@ -278,6 +279,8 @@ pub struct DevicesPrefs {
     pub paired: Vec<PairedDevice>,
     /// The device key exists (`Secret::DeviceKey`; keychain, else the secrets map).
     pub key_set: bool,
+    /// Sync with the paired devices (`integrations/device_sync.rs`).
+    pub sync: SyncPrefs,
 }
 
 impl Default for DevicesPrefs {
@@ -288,7 +291,76 @@ impl Default for DevicesPrefs {
             relay_url: String::new(),
             paired: Vec::new(),
             key_set: false,
+            sync: SyncPrefs::default(),
         }
+    }
+}
+
+/// Settings → Devices → Sync: off until switched on (merging two libraries can't be
+/// undone), then everything but the listen history.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct SyncPrefs {
+    pub enabled: bool,
+    pub settings: bool,
+    pub sound: bool,
+    pub likes: bool,
+    pub playlists: bool,
+    pub pins: bool,
+    pub queue_tabs: bool,
+    pub history: bool,
+}
+
+impl Default for SyncPrefs {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            settings: true,
+            sound: true,
+            likes: true,
+            playlists: true,
+            pins: true,
+            queue_tabs: true,
+            history: false,
+        }
+    }
+}
+
+impl SyncPrefs {
+    /// A category's switch.
+    pub fn get(&self, cat: SyncCategory) -> bool {
+        match cat {
+            SyncCategory::Settings => self.settings,
+            SyncCategory::Sound => self.sound,
+            SyncCategory::Likes => self.likes,
+            SyncCategory::Playlists => self.playlists,
+            SyncCategory::Pins => self.pins,
+            SyncCategory::QueueTabs => self.queue_tabs,
+            SyncCategory::History => self.history,
+        }
+    }
+
+    pub fn get_mut(&mut self, cat: SyncCategory) -> &mut bool {
+        match cat {
+            SyncCategory::Settings => &mut self.settings,
+            SyncCategory::Sound => &mut self.sound,
+            SyncCategory::Likes => &mut self.likes,
+            SyncCategory::Playlists => &mut self.playlists,
+            SyncCategory::Pins => &mut self.pins,
+            SyncCategory::QueueTabs => &mut self.queue_tabs,
+            SyncCategory::History => &mut self.history,
+        }
+    }
+
+    /// The categories to sync (none while sync is off).
+    pub fn categories(&self) -> Vec<SyncCategory> {
+        if !self.enabled {
+            return Vec::new();
+        }
+        SyncCategory::ALL
+            .into_iter()
+            .filter(|c| self.get(*c))
+            .collect()
     }
 }
 
@@ -314,6 +386,47 @@ impl DevicesPrefs {
             url => url,
         };
         relay_url_valid(url).then(|| url.to_owned())
+    }
+}
+
+/// Friend groups (Settings → Friends, `integrations/friends.rs`). Off until switched on;
+/// sharing what you listen to is a second, separate switch.
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(default)]
+pub struct FriendsPrefs {
+    pub enabled: bool,
+    /// The name friends see (empty: the device's name).
+    pub name: String,
+    /// Share what you listen to with your groups.
+    pub share: bool,
+    /// The member key exists (`Secret::FriendKey`).
+    pub key_set: bool,
+    /// The groups, as signed records (`music_core::friends::Group`).
+    pub groups: Vec<music_core::friends::Group>,
+    /// Where friends' devices were reachable last.
+    pub hints: Vec<FriendHint>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(default)]
+pub struct FriendHint {
+    pub id: String,
+    pub relay_url: Option<String>,
+    pub addrs: Vec<std::net::SocketAddr>,
+}
+
+impl FriendsPrefs {
+    /// Hints kept (oldest dropped).
+    pub const MAX_HINTS: usize = 128;
+
+    /// The display name (`device`: this device's name, when none is set).
+    pub fn display_name(&self, device: &str) -> String {
+        let name = music_core::friends::group::clean_name(&self.name);
+        if name.is_empty() {
+            music_core::friends::group::clean_name(device)
+        } else {
+            name
+        }
     }
 }
 
@@ -421,5 +534,12 @@ mod tests {
         assert!(!relay_url_valid("relay.example.com"));
         let name = computer_name();
         assert!(!name.is_empty() && !name.ends_with(".local"), "{name}");
+        // Sync: off by default; everything but the history once on.
+        let d: DevicesPrefs = serde_json::from_str(r#"{"sync":{"enabled":true}}"#).unwrap();
+        assert!(!DevicesPrefs::default().sync.enabled);
+        assert!(DevicesPrefs::default().sync.categories().is_empty());
+        let cats = d.sync.categories();
+        assert_eq!(cats.len(), SyncCategory::ALL.len() - 1);
+        assert!(!cats.contains(&SyncCategory::History));
     }
 }

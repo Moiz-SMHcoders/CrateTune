@@ -1,0 +1,34 @@
+# Device sync (see locales/en/device_sync.lang).
+
+# ---- Settings → Devices → Sync
+settings.devices.sync.title = Đồng bộ
+settings.devices.sync.note = Giữ cài đặt, lượt thích, danh sách phát và nhiều thứ khác giống nhau trên các thiết bị đã ghép nối, như thể chúng là một ứng dụng. Dữ liệu đi thẳng từ thiết bị này sang thiết bị kia, được mã hóa; không máy chủ nào giữ bản sao.
+settings.devices.sync.enabled = Đồng bộ với các thiết bị của tôi
+settings.devices.sync.enabled_desc = Bật trên từng thiết bị. Lần đầu, lượt thích, danh sách phát và mục ghim của cả hai thiết bị được gộp lại; không có gì bị xóa.
+
+# The categories, each with its own switch.
+settings.devices.sync.settings = Cài đặt
+settings.devices.sync.settings_desc = Giao diện, phát lại, lời bài hát, nội dung và các tùy chọn khác (trừ những cài đặt riêng của máy tính này, liệt kê bên dưới).
+settings.devices.sync.sound = Âm thanh
+settings.devices.sync.sound_desc = Bộ cân bằng, tốc độ, cao độ, tiếng vang và cấu hình âm thanh. Hãy tắt nếu mỗi máy tính có loa riêng cần chỉnh.
+settings.devices.sync.likes = Thích và không thích
+settings.devices.sync.likes_desc = Các bài hát bạn đã thích hoặc đánh dấu không thích.
+settings.devices.sync.playlists = Danh sách phát của bạn
+settings.devices.sync.playlists_desc = Danh sách phát tạo trong ứng dụng (danh sách phát YouTube đi kèm tài khoản của bạn).
+settings.devices.sync.pins = Quay số nhanh
+settings.devices.sync.pins_desc = Những gì bạn đã ghim vào Trang chủ.
+settings.devices.sync.queue_tabs = Thẻ danh sách chờ
+settings.devices.sync.queue_tabs_desc = Các thẻ danh sách chờ khác của bạn, khớp theo tên. Thẻ đang phát trên một thiết bị giữ danh sách chờ riêng của nó ở đó.
+settings.devices.sync.history = Lịch sử nghe
+settings.devices.sync.history_desc = Lượt phát trong 90 ngày qua. Tắt trừ khi bạn bật.
+
+# Each paired device's state.
+settings.devices.sync.no_devices = Hãy ghép nối một thiết bị trước.
+settings.devices.sync.syncing = Đang đồng bộ…
+settings.devices.sync.failed = Không thể đồng bộ: {error}
+settings.devices.sync.last = Đã đồng bộ {ago}
+settings.devices.sync.never = Chưa đồng bộ
+settings.devices.sync.received.other = Thay đổi gần nhất từ thiết bị khác: {count} mục, {ago}
+settings.devices.sync.now = Đồng bộ ngay
+settings.devices.sync.rules = Các thay đổi thực hiện khi các thiết bị không kết nối sẽ được gộp khi chúng gặp lại nhau. Nếu cả hai cùng thay đổi một thứ, thay đổi sau sẽ được giữ; lượt thích và bài hát thêm vào danh sách phát trên bất kỳ thiết bị nào đều được giữ lại.
+settings.devices.sync.private = Không bao giờ đồng bộ: mật khẩu và khóa, thông tin đăng nhập, tên thiết bị này, vị trí cửa sổ, thiết bị đầu ra, thư mục nhạc, proxy, phím tắt và âm lượng.

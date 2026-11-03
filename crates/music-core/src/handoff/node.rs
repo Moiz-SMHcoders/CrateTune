@@ -17,6 +17,7 @@
 
 use std::collections::{HashMap, HashSet};
 use std::net::SocketAddr;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, mpsc as std_mpsc};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
@@ -28,23 +29,35 @@ use iroh_mdns_address_lookup::{DiscoveryEvent, MdnsAddressLookup};
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc;
 
+use super::friends_net::{self, FriendsCommand, FriendsSetup, FriendsShared};
 use super::messages::{
-    DEVICES_ALPN, DecodeError, Frame, MAX_FRAME, Message, PAIR_ALPN, PeerInfo, Snapshot, code,
-    decode, encode, length_prefix,
+    DEVICES_ALPN, DecodeError, FRIENDS_ALPN, Frame, INVITE_ALPN, MAX_FRAME, Message, PAIR_ALPN,
+    PeerInfo, Snapshot, code, decode, encode, length_prefix,
 };
 use super::pairing::{
     self, CODE_TTL, Exchange, MAX_ATTEMPTS, PAIRING_USER_DATA, PairInput, PairingLink, Side,
 };
+use crate::friends::{Activity, Group, INVITING_USER_DATA};
+use crate::sync::{Category, Entry, FORMAT_VERSION, SyncApplied, SyncEngine, VersionVector};
 
 /// Giving up on reaching a device.
-const CONNECT_TIMEOUT: Duration = Duration::from_secs(8);
+pub(super) const CONNECT_TIMEOUT: Duration = Duration::from_secs(8);
 /// Giving up on an answer.
-const REQUEST_TIMEOUT: Duration = Duration::from_secs(8);
+pub(super) const REQUEST_TIMEOUT: Duration = Duration::from_secs(8);
 /// Pairing by code: how long to look for a device showing a code on the LAN.
-const FIND_TIMEOUT: Duration = Duration::from_secs(10);
+pub(super) const FIND_TIMEOUT: Duration = Duration::from_secs(10);
 /// mDNS queries: rarer than iroh's default (700 ms) to keep the idle cost down; a
 /// device that starts showing a code still announces itself at once.
 const MDNS_CADENCE: Duration = Duration::from_secs(4);
+/// Sync: local changes are gathered this long before a round.
+const SYNC_DEBOUNCE: Duration = Duration::from_secs(3);
+/// Sync: a round after local changes only goes to devices heard from this recently
+/// (the others sync when they next start, or when "Sync now" is pressed).
+const ONLINE_WINDOW: Duration = Duration::from_secs(15 * 60);
+/// Sync: a batch frame is cut after about this many bytes of entries.
+const BATCH_BYTES: usize = 1 << 20;
+/// Sync: a whole answer may take this long.
+const SYNC_TIMEOUT: Duration = Duration::from_secs(60);
 
 /// A device this one is paired with (`settings.json` → `devices.paired`).
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -180,6 +193,42 @@ pub enum Event {
     Unpaired {
         id: String,
     },
+    /// A sync round with a paired device went through (what changed here).
+    Synced {
+        id: String,
+        applied: SyncApplied,
+    },
+    SyncFailed {
+        id: String,
+        error: String,
+    },
+    /// Friends: the groups changed (merged from a member's copy, an invitation): save
+    /// them.
+    GroupsChanged(Vec<Group>),
+    /// Friends: what a member is listening to (`None`: nothing, or not shared now).
+    FriendActivity {
+        member: String,
+        activity: Option<Activity>,
+    },
+    /// Friends: a member started a Music Together session for a group.
+    ListenInvite {
+        member: String,
+        group: String,
+        link: String,
+    },
+    /// Friends: joined a group with an invitation.
+    Joined(Group),
+    JoinFailed(PairError),
+    /// Friends: the shown invitation was used (by the member named) or ran out.
+    InviteEnded {
+        joined: Option<String>,
+    },
+    /// Friends: where a friend's device was reachable (kept for next time).
+    FriendDevice {
+        id: String,
+        relay_url: Option<String>,
+        addrs: Vec<SocketAddr>,
+    },
 }
 
 /// A shown pairing code.
@@ -189,7 +238,7 @@ pub struct PairingOffer {
     pub link: PairingLink,
 }
 
-enum Command {
+pub(super) enum Command {
     Query(EndpointId),
     Pause(EndpointId),
     TakeOver(EndpointId),
@@ -197,18 +246,24 @@ enum Command {
     Pair(PairInput),
     Unpair(EndpointId),
     Advertise(bool),
+    /// Sync with this device now.
+    Sync(EndpointId),
+    /// Something changed here: sync soon with the devices that are around.
+    LocalChanged,
+    /// Friend groups (`friends_net.rs`).
+    Friends(FriendsCommand),
 }
 
-struct Pairing {
-    code: String,
-    until: Instant,
-    attempts: u32,
+pub(super) struct Pairing {
+    pub(super) code: String,
+    pub(super) until: Instant,
+    pub(super) attempts: u32,
     /// The shown code was already used by a joiner that finished.
-    done: bool,
+    pub(super) done: bool,
 }
 
 #[derive(Default)]
-struct Shared {
+pub(super) struct Shared {
     name: Mutex<String>,
     /// What this device plays, and when that was taken.
     local: Mutex<Option<(Snapshot, Instant)>>,
@@ -216,9 +271,23 @@ struct Shared {
     pairing: Mutex<Option<Pairing>>,
     /// Devices showing a code on the LAN (from mDNS).
     showing: Mutex<HashSet<EndpointId>>,
+    /// Devices showing a friends invitation on the LAN (from mDNS).
+    pub(super) inviting_seen: Mutex<HashSet<EndpointId>>,
+    /// Friend groups, when switched on.
+    pub(super) friends: Mutex<Option<FriendsShared>>,
+    /// The friends invitation this device shows (group id, code).
+    pub(super) inviting: Mutex<Option<(String, Pairing)>>,
+    /// Sync, when switched on.
+    sync: Mutex<Option<Arc<SyncEngine>>>,
+    /// Paired devices last heard from (any request either way that went through).
+    seen: Mutex<HashMap<EndpointId, Instant>>,
+    /// Sync rounds running (one per device at a time).
+    syncing: Mutex<HashSet<EndpointId>>,
+    /// A round after local changes is due.
+    sync_pending: AtomicBool,
 }
 
-fn lock<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
+pub(super) fn lock<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
     m.lock().unwrap_or_else(|e| e.into_inner())
 }
 
@@ -260,6 +329,8 @@ impl HandoffNode {
                 .filter_map(|d| Some((d.endpoint_id()?, d.clone()))),
         );
         let thread_shared = shared.clone();
+        // Weak: the loop ends when the node (the only strong sender) is dropped.
+        let sender = commands.downgrade();
         let thread = std::thread::Builder::new()
             .name("handoff".into())
             .spawn(move || {
@@ -273,7 +344,14 @@ impl HandoffNode {
                         return;
                     }
                 };
-                rt.block_on(run(config, thread_shared, command_rx, event_tx, ready_tx));
+                rt.block_on(run(
+                    config,
+                    thread_shared,
+                    command_rx,
+                    event_tx,
+                    ready_tx,
+                    sender,
+                ));
             })
             .map_err(|e| e.to_string())?;
         let endpoint = ready_rx
@@ -413,6 +491,125 @@ impl HandoffNode {
             self.send(Command::Unpair(id));
         }
     }
+
+    /// Switches sync on (with the engine to use) or off. Requests from paired devices
+    /// are answered with `sync_off` while it is off.
+    pub fn set_sync(&self, engine: Option<Arc<SyncEngine>>) {
+        *lock(&self.shared.sync) = engine;
+    }
+
+    /// Syncs with `id` now → [`Event::Synced`] / [`Event::SyncFailed`].
+    pub fn sync_with(&self, id: &str) {
+        if let Some(id) = self.target(id) {
+            self.send(Command::Sync(id));
+        }
+    }
+
+    /// Syncs with every paired device.
+    pub fn sync_all(&self) {
+        let ids: Vec<EndpointId> = lock(&self.shared.paired).keys().copied().collect();
+        for id in ids {
+            self.send(Command::Sync(id));
+        }
+    }
+
+    /// Something synced changed here (debounced; only devices heard from lately are
+    /// synced with). Cheap: call it on every library write.
+    pub fn local_changed(&self) {
+        if !self.shared.sync_pending.load(Ordering::Relaxed) {
+            self.send(Command::LocalChanged);
+        }
+    }
+
+    /// Switches friend groups on (who this is, the groups) or off. Updating it keeps
+    /// what is shared and the friends' addresses.
+    pub fn set_friends(&self, setup: Option<FriendsSetup>) {
+        let mut friends = lock(&self.shared.friends);
+        *friends = match (setup, friends.take()) {
+            (None, _) => None,
+            (Some(setup), Some(mut old)) => {
+                old.setup = setup;
+                Some(old)
+            }
+            (Some(setup), None) => Some(FriendsShared::new(setup)),
+        };
+    }
+
+    /// What this device shares as its activity (`None`: nothing, or a private session).
+    /// Pushed to the members' devices when it changed.
+    pub fn set_activity(&self, activity: Option<Activity>) {
+        let changed = match lock(&self.shared.friends).as_mut() {
+            Some(f) if f.activity != activity => {
+                f.activity = activity;
+                true
+            }
+            _ => false,
+        };
+        if changed {
+            self.send(Command::Friends(FriendsCommand::Push));
+        }
+    }
+
+    /// Exchanges groups and activity with every member's devices (at start, after a
+    /// change to a group).
+    pub fn friends_hello_all(&self) {
+        self.send(Command::Friends(FriendsCommand::HelloAll));
+    }
+
+    /// Where a friend's device was last reachable (from an earlier run).
+    pub fn set_friend_hints(&self, hints: &[(String, Option<String>, Vec<SocketAddr>)]) {
+        if let Some(f) = lock(&self.shared.friends).as_mut() {
+            for (id, relay, addrs) in hints {
+                if let Ok(id) = id.parse() {
+                    f.hints.insert(id, (relay.clone(), addrs.clone()));
+                }
+            }
+        }
+    }
+
+    /// Shows an invitation code for a group → [`Event::InviteEnded`] once used or
+    /// expired. `None` while friends are off or not a member.
+    pub fn start_invite(&self, group: &str) -> Option<PairingOffer> {
+        let offer = friends_net::start_invite(&self.shared, group, self.id(), self.reachable())?;
+        self.send(Command::Friends(FriendsCommand::Advertise(true)));
+        Some(offer)
+    }
+
+    pub fn cancel_invite(&self) {
+        if lock(&self.shared.inviting).take().is_some() {
+            self.send(Command::Friends(FriendsCommand::Advertise(false)));
+        }
+    }
+
+    /// Joins a group with an invitation code or link → [`Event::Joined`] /
+    /// [`Event::JoinFailed`].
+    pub fn join_group(&self, input: PairInput) {
+        self.send(Command::Friends(FriendsCommand::Join(input)));
+    }
+
+    /// Tells a group's members about a Music Together session (its join link).
+    pub fn listen_together(&self, group: &str, link: &str) {
+        self.send(Command::Friends(FriendsCommand::ListenTogether {
+            group: group.to_owned(),
+            link: link.to_owned(),
+        }));
+    }
+
+    /// [`Self::local_changed`] as a function for other threads (the library's change
+    /// listener); does nothing once the node is gone.
+    pub fn change_notifier(&self) -> Arc<dyn Fn() + Send + Sync> {
+        // Weak: a listener left behind doesn't keep the node's loop alive.
+        let tx = self.commands.as_ref().map(|tx| tx.downgrade());
+        let shared = Arc::downgrade(&self.shared);
+        Arc::new(move || {
+            let pending = shared
+                .upgrade()
+                .is_none_or(|s| s.sync_pending.load(Ordering::Relaxed));
+            if let (false, Some(tx)) = (pending, tx.as_ref().and_then(|tx| tx.upgrade())) {
+                let _ = tx.send(Command::LocalChanged);
+            }
+        })
+    }
 }
 
 impl Drop for HandoffNode {
@@ -447,7 +644,12 @@ async fn bind(config: &NodeConfig) -> Result<Endpoint, String> {
     net_report.https_probes = true;
     Endpoint::builder(presets::Minimal)
         .secret_key(SecretKey::from_bytes(&config.secret_key))
-        .alpns(vec![DEVICES_ALPN.to_vec(), PAIR_ALPN.to_vec()])
+        .alpns(vec![
+            DEVICES_ALPN.to_vec(),
+            PAIR_ALPN.to_vec(),
+            FRIENDS_ALPN.to_vec(),
+            INVITE_ALPN.to_vec(),
+        ])
         .relay_mode(relay_mode)
         .net_report_config(net_report)
         .bind_addr(std::net::SocketAddr::from(([0, 0, 0, 0], config.port)))
@@ -458,22 +660,45 @@ async fn bind(config: &NodeConfig) -> Result<Endpoint, String> {
 }
 
 /// Everything a task needs.
-struct Ctx {
-    endpoint: Endpoint,
-    shared: Arc<Shared>,
+pub(super) struct Ctx {
+    pub(super) endpoint: Endpoint,
+    pub(super) shared: Arc<Shared>,
     events: std_mpsc::Sender<Event>,
     conns: Mutex<HashMap<EndpointId, Connection>>,
+    /// Connections with friends' devices (another protocol than paired devices').
+    pub(super) friend_conns: Mutex<HashMap<EndpointId, Connection>>,
+    /// The node's own command queue (sync rounds a request starts); weak, so dropping
+    /// the node still ends the loop.
+    commands: mpsc::WeakUnboundedSender<Command>,
+    /// The relay this node uses (friends' devices are looked for there first).
+    pub(super) relay_url: Option<String>,
 }
 
 impl Ctx {
-    fn emit(&self, event: Event) {
+    pub(super) fn emit(&self, event: Event) {
         let _ = self.events.send(event);
         if let Some(hook) = EVENT_HOOK.get() {
             hook();
         }
     }
 
-    fn me(&self) -> PeerInfo {
+    /// [`Self::me`] for friends: where this device is, not its name (only the member's
+    /// display name is shared, in the group).
+    /// Queues a command of the node's own (nothing once the node is being dropped).
+    pub(super) fn command(&self, command: Command) {
+        if let Some(tx) = self.commands.upgrade() {
+            let _ = tx.send(command);
+        }
+    }
+
+    pub(super) fn me_for_friends(&self) -> PeerInfo {
+        PeerInfo {
+            name: String::new(),
+            ..self.me()
+        }
+    }
+
+    pub(super) fn me(&self) -> PeerInfo {
         let addr = self.endpoint.addr();
         PeerInfo {
             name: lock(&self.shared.name).clone(),
@@ -508,6 +733,10 @@ impl Ctx {
         }
     }
 
+    fn heard_from(&self, id: EndpointId) {
+        lock(&self.shared.seen).insert(id, Instant::now());
+    }
+
     async fn connect(self: &Arc<Self>, id: EndpointId) -> Result<Connection, String> {
         if let Some(conn) = lock(&self.conns).get(&id)
             && conn.close_reason().is_none()
@@ -536,6 +765,7 @@ impl Ctx {
             match exchange(&conn, &self.me(), msg).await {
                 Ok(frame) => {
                     self.learn(id, frame.from.as_ref());
+                    self.heard_from(id);
                     return match frame.msg {
                         Message::Error { code, message } => Err(if message.is_empty() {
                             code
@@ -555,7 +785,7 @@ impl Ctx {
     }
 }
 
-async fn write_frame(
+pub(super) async fn write_frame(
     send: &mut SendStream,
     from: Option<&PeerInfo>,
     msg: &Message,
@@ -567,7 +797,7 @@ async fn write_frame(
     send.write_all(&body).await.map_err(|e| e.to_string())
 }
 
-async fn read_frame(recv: &mut RecvStream) -> Result<Frame, ReadError> {
+pub(super) async fn read_frame(recv: &mut RecvStream) -> Result<Frame, ReadError> {
     let mut len = [0u8; 4];
     recv.read_exact(&mut len)
         .await
@@ -583,7 +813,7 @@ async fn read_frame(recv: &mut RecvStream) -> Result<Frame, ReadError> {
     decode(&body).map_err(ReadError::Decode)
 }
 
-enum ReadError {
+pub(super) enum ReadError {
     Io(String),
     Decode(DecodeError),
 }
@@ -598,7 +828,11 @@ impl std::fmt::Display for ReadError {
 }
 
 /// Sends `msg` on a new stream and reads the answer.
-async fn exchange(conn: &Connection, me: &PeerInfo, msg: &Message) -> Result<Frame, String> {
+pub(super) async fn exchange(
+    conn: &Connection,
+    me: &PeerInfo,
+    msg: &Message,
+) -> Result<Frame, String> {
     tokio::time::timeout(REQUEST_TIMEOUT, async {
         let (mut send, mut recv) = conn.open_bi().await.map_err(|e| e.to_string())?;
         write_frame(&mut send, Some(me), msg).await?;
@@ -615,6 +849,7 @@ async fn run(
     mut commands: mpsc::UnboundedReceiver<Command>,
     events: std_mpsc::Sender<Event>,
     ready: std_mpsc::Sender<Result<Endpoint, String>>,
+    sender: mpsc::WeakUnboundedSender<Command>,
 ) {
     let endpoint = match bind(&config).await {
         Ok(endpoint) => endpoint,
@@ -650,6 +885,9 @@ async fn run(
         shared,
         events,
         conns: Mutex::new(HashMap::new()),
+        friend_conns: Mutex::new(HashMap::new()),
+        commands: sender,
+        relay_url: config.relay_url.clone(),
     });
     if let Some(mdns) = mdns {
         let ctx = ctx.clone();
@@ -657,19 +895,26 @@ async fn run(
             let mut stream = mdns.subscribe().await;
             while let Some(event) = stream.next().await {
                 let mut showing = lock(&ctx.shared.showing);
+                let mut inviting = lock(&ctx.shared.inviting_seen);
                 match event {
                     DiscoveryEvent::Discovered { endpoint_info, .. } => {
                         let id = endpoint_info.endpoint_id;
-                        if endpoint_info.user_data().map(|d| d.to_string()).as_deref()
-                            == Some(PAIRING_USER_DATA)
-                        {
-                            showing.insert(id);
-                        } else {
-                            showing.remove(&id);
+                        let data = endpoint_info.user_data().map(|d| d.to_string());
+                        showing.remove(&id);
+                        inviting.remove(&id);
+                        match data.as_deref() {
+                            Some(PAIRING_USER_DATA) => {
+                                showing.insert(id);
+                            }
+                            Some(INVITING_USER_DATA) => {
+                                inviting.insert(id);
+                            }
+                            _ => {}
                         }
                     }
                     DiscoveryEvent::Expired { endpoint_id } => {
                         showing.remove(&endpoint_id);
+                        inviting.remove(&endpoint_id);
                     }
                     _ => {}
                 }
@@ -796,6 +1041,39 @@ fn handle(ctx: &Arc<Ctx>, command: Command) {
                 }
             });
         }
+        Command::Friends(command) => friends_net::handle(&ctx, command),
+        Command::Sync(id) => {
+            tokio::spawn(async move { sync_pull(&ctx, id).await });
+        }
+        Command::LocalChanged => {
+            if ctx.shared.sync_pending.swap(true, Ordering::Relaxed) {
+                return;
+            }
+            tokio::spawn(async move {
+                tokio::time::sleep(SYNC_DEBOUNCE).await;
+                ctx.shared.sync_pending.store(false, Ordering::Relaxed);
+                let Some(engine) = lock(&ctx.shared.sync).clone() else {
+                    return;
+                };
+                let stamped =
+                    tokio::task::spawn_blocking(move || engine.refresh(now_unix_ms())).await;
+                if !matches!(stamped, Ok(Ok(n)) if n > 0) {
+                    return;
+                }
+                let around: Vec<EndpointId> = {
+                    let paired = lock(&ctx.shared.paired);
+                    lock(&ctx.shared.seen)
+                        .iter()
+                        .filter(|(id, at)| at.elapsed() < ONLINE_WINDOW && paired.contains_key(*id))
+                        .map(|(id, _)| *id)
+                        .collect()
+                };
+                for id in around {
+                    let ctx = ctx.clone();
+                    tokio::spawn(async move { sync_pull(&ctx, id).await });
+                }
+            });
+        }
         Command::Advertise(on) => {
             let data = on
                 .then(|| PAIRING_USER_DATA.parse::<UserData>().ok())
@@ -844,6 +1122,8 @@ async fn serve(ctx: Arc<Ctx>, conn: Connection) {
             answer_all(ctx, conn).await;
         }
         PAIR_ALPN => serve_pairing(&ctx, &conn).await,
+        FRIENDS_ALPN => friends_net::serve_friend(ctx, conn).await,
+        INVITE_ALPN => friends_net::serve_invite(&ctx, &conn).await,
         _ => conn.close(2u32.into(), b"unknown protocol"),
     }
 }
@@ -868,8 +1148,12 @@ async fn answer(ctx: &Ctx, id: EndpointId, mut send: SendStream, mut recv: RecvS
         Ok(Err(ReadError::Decode(e))) => Message::error(code::MALFORMED, e.to_string()),
         Ok(Ok(frame)) => {
             ctx.learn(id, frame.from.as_ref());
+            ctx.heard_from(id);
             let from = id.to_string();
             match frame.msg {
+                Message::SyncPull { format, cats, vv } => {
+                    return answer_sync(ctx, id, send, format, cats, vv).await;
+                }
                 Message::WhatAreYouPlaying => Message::Playing {
                     snapshot: ctx.local_snapshot(),
                 },
@@ -1137,4 +1421,214 @@ async fn pair_with(ctx: &Ctx, target: EndpointAddr, code: &str) -> Result<Paired
     let device = new_device(shower, &result?);
     lock(&ctx.shared.paired).insert(shower, device.clone());
     Ok(device)
+}
+
+fn categories(names: &[String]) -> Vec<Category> {
+    names.iter().filter_map(|n| Category::parse(n)).collect()
+}
+
+fn names(cats: &[Category]) -> Vec<String> {
+    cats.iter().map(|c| c.as_str().to_owned()).collect()
+}
+
+/// Answers a [`Message::SyncPull`]: what the asker lacks, in batches; pulls back if
+/// it knows something this device doesn't.
+async fn answer_sync(
+    ctx: &Ctx,
+    id: EndpointId,
+    mut send: SendStream,
+    format: u32,
+    cats: Vec<String>,
+    vv: VersionVector,
+) {
+    let engine = lock(&ctx.shared.sync).clone();
+    let reply = match engine {
+        None => Err(Message::error(code::SYNC_OFF, "")),
+        Some(_) if format != FORMAT_VERSION => {
+            Err(Message::error(code::FORMAT, format!("{FORMAT_VERSION}")))
+        }
+        Some(engine) => {
+            let asked = categories(&cats);
+            tokio::task::spawn_blocking(move || engine.answer(&asked, &vv, now_unix_ms()))
+                .await
+                .map_err(|e| e.to_string())
+                .and_then(|r| r.map_err(|e| e.to_string()))
+                .map_err(|e| Message::error(code::MALFORMED, e))
+        }
+    };
+    let me = ctx.me();
+    let answer = match reply {
+        Ok(answer) => answer,
+        Err(error) => {
+            if write_frame(&mut send, Some(&me), &error).await.is_ok() {
+                let _ = send.finish();
+                let _ = send.stopped().await;
+            }
+            return;
+        }
+    };
+    let cats = names(&answer.cats);
+    let mut batch: Vec<Entry> = Vec::new();
+    let mut bytes = 0;
+    let mut entries = answer.entries.into_iter().peekable();
+    let sent = async {
+        while let Some(entry) = entries.next() {
+            bytes += entry.key.len() + entry.o.len() + entry.value.to_string().len() + 32;
+            batch.push(entry);
+            if bytes >= BATCH_BYTES && entries.peek().is_some() {
+                let msg = Message::SyncBatch {
+                    format: FORMAT_VERSION,
+                    cats: Vec::new(),
+                    entries: std::mem::take(&mut batch),
+                    vv: VersionVector::new(),
+                    more: true,
+                };
+                write_frame(&mut send, Some(&me), &msg).await?;
+                bytes = 0;
+            }
+        }
+        let last = Message::SyncBatch {
+            format: FORMAT_VERSION,
+            cats,
+            entries: batch,
+            vv: answer.vv,
+            more: false,
+        };
+        write_frame(&mut send, Some(&me), &last).await
+    };
+    if tokio::time::timeout(SYNC_TIMEOUT, sent)
+        .await
+        .is_ok_and(|r| r.is_ok())
+    {
+        let _ = send.finish();
+        let _ = send.stopped().await;
+    }
+    if answer.behind {
+        ctx.command(Command::Sync(id));
+    }
+}
+
+/// One sync round with `id`: asks for what this device lacks and merges it.
+async fn sync_pull(ctx: &Arc<Ctx>, id: EndpointId) {
+    let Some(engine) = lock(&ctx.shared.sync).clone() else {
+        return;
+    };
+    if !lock(&ctx.shared.syncing).insert(id) {
+        return;
+    }
+    let result = sync_round(ctx, id, engine).await;
+    lock(&ctx.shared.syncing).remove(&id);
+    match result {
+        Ok(applied) => {
+            ctx.heard_from(id);
+            ctx.emit(Event::Synced {
+                id: id.to_string(),
+                applied,
+            });
+        }
+        Err(error) => {
+            lock(&ctx.shared.seen).remove(&id);
+            ctx.emit(Event::SyncFailed {
+                id: id.to_string(),
+                error,
+            });
+        }
+    }
+}
+
+async fn sync_round(
+    ctx: &Arc<Ctx>,
+    id: EndpointId,
+    engine: Arc<SyncEngine>,
+) -> Result<SyncApplied, String> {
+    let asker = engine.clone();
+    let (cats, vv) = tokio::task::spawn_blocking(move || {
+        asker.refresh(now_unix_ms())?;
+        asker.request()
+    })
+    .await
+    .map_err(|e| e.to_string())?
+    .map_err(|e| e.to_string())?;
+    let msg = Message::SyncPull {
+        format: FORMAT_VERSION,
+        cats: names(&cats),
+        vv,
+    };
+    let mut last = String::new();
+    for _ in 0..2 {
+        let conn = ctx.connect(id).await?;
+        match pull_batches(&conn, &ctx.me(), &msg).await {
+            Ok((from, cats, entries, vv)) => {
+                ctx.learn(id, from.as_ref());
+                let merger = engine.clone();
+                let applied = tokio::task::spawn_blocking(move || {
+                    let applied = merger.merge(&categories(&cats), &entries, &vv, now_unix_ms())?;
+                    merger.set_last_synced(&id.to_string(), now_unix_ms());
+                    Ok::<_, crate::Error>(applied)
+                })
+                .await
+                .map_err(|e| e.to_string())?
+                .map_err(|e| e.to_string())?;
+                return Ok(applied);
+            }
+            Err(PullError::Refused(e)) => return Err(e),
+            Err(PullError::Io(e)) => {
+                last = e;
+                lock(&ctx.conns).remove(&id);
+            }
+        }
+    }
+    Err(last)
+}
+
+enum PullError {
+    /// The other device answered with an error (sync off there, another format).
+    Refused(String),
+    Io(String),
+}
+
+type Pulled = (Option<PeerInfo>, Vec<String>, Vec<Entry>, VersionVector);
+
+async fn pull_batches(
+    conn: &Connection,
+    me: &PeerInfo,
+    msg: &Message,
+) -> Result<Pulled, PullError> {
+    let io = |e: String| PullError::Io(e);
+    tokio::time::timeout(SYNC_TIMEOUT, async {
+        let (mut send, mut recv) = conn.open_bi().await.map_err(|e| io(e.to_string()))?;
+        write_frame(&mut send, Some(me), msg).await.map_err(io)?;
+        send.finish().map_err(|e| io(e.to_string()))?;
+        let mut entries = Vec::new();
+        loop {
+            let frame = read_frame(&mut recv).await.map_err(|e| io(e.to_string()))?;
+            match frame.msg {
+                Message::SyncBatch {
+                    entries: batch,
+                    more: true,
+                    ..
+                } => entries.extend(batch),
+                Message::SyncBatch {
+                    entries: batch,
+                    cats,
+                    vv,
+                    more: false,
+                    ..
+                } => {
+                    entries.extend(batch);
+                    return Ok((frame.from, cats, entries, vv));
+                }
+                Message::Error { code, message } => {
+                    return Err(PullError::Refused(if message.is_empty() {
+                        code
+                    } else {
+                        format!("{code}: {message}")
+                    }));
+                }
+                other => return Err(io(format!("unexpected answer {other:?}"))), // i18n-ignore
+            }
+        }
+    })
+    .await
+    .map_err(|_| io("timed out".into()))? // i18n-ignore
 }

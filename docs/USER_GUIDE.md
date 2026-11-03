@@ -19,6 +19,7 @@ Google or Shazam.
 * [Modules](#modules)
 * [Listen together](#listen-together)
 * [Continue on another device](#continue-on-another-device)
+* [Friend groups](#friend-groups)
 * [Cast to a TV or speaker](#cast-to-a-tv-or-speaker)
 * [AI content filter](#ai-content-filter)
 * [Updates](#updates)
@@ -990,6 +991,55 @@ your own computers only, with no account and no one else's servers.
 * **Forget** removes a device (and tells it to forget this one, if it is open).
 * Both computers need the app open: there is no server keeping your state while one is off.
 
+### Sync between your devices
+
+Keep your paired computers alike: settings, likes and dislikes, your playlists, speed-dial
+pins, queue tabs and, if you want, your listen history.
+
+* **Switch it on** in Settings → Devices → **Sync** → *Sync with my devices*, **on each
+  device**. The first time, both libraries are put together: nothing is removed. Each kind of
+  data has its own switch (turn *Sound* off if each computer has its own speakers to tune the
+  EQ for; *Listen history* is off unless you turn it on, and covers the last 90 days).
+* **When it syncs:** when a device starts, a few seconds after you change something (with the
+  devices that are around), and when you press **Sync now**. Each paired device shows when it
+  last synced ("Synced 5 min ago").
+* **Changes made apart** merge when the devices meet. If both changed the same setting,
+  rating, pin or tab, the later change wins. Likes and songs added to a playlist on either side
+  are all kept; removing a song or unliking on one side removes it on the other.
+* **Queue tabs** are matched by name. The tab playing on a computer keeps its own queue there
+  (use *Continue here* to take over what plays).
+* **Never synced:** passwords and keys, sign-ins, this computer's name, window positions,
+  the output device, music folders, proxy, keyboard shortcuts, volume, and songs from your own
+  files.
+* Sync goes straight between your devices, end-to-end encrypted; no server keeps a copy.
+
+## Friend groups
+
+Keep a group of friends instead of starting a new Listen together room each time: see what
+they are listening to, and start a session for the whole group in one click. Everything is off
+until you switch it on.
+
+* **Switch it on** in Settings → **Friends** → *Use friend groups*, set the **Name** your
+  friends see, and decide whether to **Share what I'm listening to** (off by default). A
+  **Private session** pauses sharing until you quit the app.
+* **Make a group:** type its name under *Create a group* and press **Create**. Press
+  **Invite** next to it: a code like `ABCD-2345` (valid for 10 minutes, once), a QR code and
+  **Copy link**. Your friend types the code under *Join a group* (same network) or pastes the
+  link (any network) and presses **Join**. Anyone in a group can invite; the group's owner (who
+  made it) can **Remove** members; **Leave** takes you out.
+* **The feed** is on the **Listen together** page: each friend with the song they are playing
+  ("Playing now", or "Paused · 5 min ago"). It fills as friends play something while both apps
+  are open; nothing is kept once you quit.
+* **Listen together: Friday** (a button per group on that page) starts a session through the
+  relay and invites the group: they get a notification and a **Join** button on their Listen
+  together page.
+* **Your recovery phrase** (Settings → Friends → *Show recovery phrase*): 11 groups of
+  characters that move your friend identity to a new computer (*Restore from a recovery
+  phrase*). Then ask a friend (or your old computer) for an invitation to each group; you come
+  back with your name and, for groups you made, as their owner. Keep the phrase private.
+* Your friends' computers and yours talk end-to-end encrypted, directly or through the relay
+  (which can't read it). No server keeps your groups or what you play.
+
 ## Cast to a TV or speaker
 
 * The **Cast** button in the player bar lists Chromecasts, Google TVs and Nest speakers on
@@ -1120,7 +1170,11 @@ Builds signed with a Developer ID keep the same identity, and neither prompt com
 * **Continue on another device**, once a device is paired: the app announces itself on your
   network (mDNS) and your paired devices exchange their names and what they play, end-to-end
   encrypted, directly or through the hand-off relay (which can't read it). Nothing runs until
-  you pair a device.
+  you pair a device. **Sync** (off by default) sends your settings, likes, playlists, pins and
+  queue tabs to your paired devices the same way; never passwords, sign-ins or paths.
+* **Friend groups** (off by default): your group name and, only while sharing is on, the title,
+  artist and YouTube id of the song you play go to your friends' computers, end-to-end
+  encrypted. Nothing is stored on a server; what friends play is kept in memory only.
 * **Casting** looks for devices on your network only when you open the Cast menu or the
   Chromecast settings.
 * Signed in, **Add plays to my YouTube history** (on by default; off while your listening
@@ -1167,7 +1221,9 @@ Builds signed with a Developer ID keep the same identity, and neither prompt com
 * Builds are not signed with a Developer ID / Authenticode certificate yet (see Install).
 * Continue on another device needs the app open on both computers, and has been tried on one
   network only (two copies on one Mac); across networks it relies on the relay (see the
-  README).
+  README). The same goes for sync and friend groups: they sync and share only while the apps
+  are open, and have been tried with copies on one Mac, not yet between real computers,
+  networks or on Windows / Linux.
 
 ## Troubleshooting
 
