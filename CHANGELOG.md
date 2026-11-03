@@ -5,8 +5,52 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.3] — 2026-11-03
+
+The biggest release so far: page tabs, sidebar playlists and glass looks, a sound round
+(fine reverb, convolution rooms, presets, EQ curve, night mode, a perceptual volume
+slider), mini player and Now Playing extras with a spinning record, device sync and friend
+groups, lower memory, browser sign-in from Firefox-family browsers (also on Windows), and
+macOS updates that keep you signed in.
+
 ### Added
 
+* **The sidebar slides.** Switching between the full sidebar and the icon rail, and
+  *Expand on hover*, animate the width (~200 ms, eased; titles fade, icons glide to the
+  rail's position; frames only while it moves, none at rest; follows Animations →
+  Reduced / Off). A button in the sidebar's header collapses it to the rail, expands the
+  rail, or keeps the hover panel open.
+* **Your playlists in the sidebar**, as on YouTube Music and in refryt: Liked songs, the
+  account's YouTube Music playlists (while signed in; from the library's sync) and playlists
+  made in the app, under the sidebar's entries. Click opens the playlist (the open one is
+  highlighted); right-click plays, shuffles, plays next, adds to the queue or pins it to the
+  top (also from Library → Playlists). Options in Appearance → Layout → **Sidebar
+  playlists**: show or hide the section, YouTube / local / Liked, order (Recent, A–Z, or
+  Custom: drag a playlist in the sidebar), how many before *Show all* (5, 10, 20, all) and
+  small covers or initials. Works in the icon rail (covers with tooltips) and the hover
+  panel; nothing moves up or down when the sidebar slides.
+* **Sidebar items.** Appearance → Layout → **Sidebar items**: show or hide each entry
+  (Home, Explore, Charts, … Listen together, and the Library heading) and reorder them with
+  the arrows or by dragging; *Reset* restores the shipped sidebar. Settings stays at the
+  bottom. Scripts: `@sidebar-items=charts:off`, `@sidebar-playlists=sort:name`.
+* **More see-through options** (Appearance → Window): **presets** (Subtle, Glass,
+  Frosted); each **surface**'s own opacity (sidebar, top bar, player bar, queue panel; Auto
+  keeps the previous look); a **tint** over the translucent surfaces (accent, frost, smoke,
+  ice, rose, amber; 8–35 %); on macOS a **blur strength** (System, Light, Medium, Strong:
+  the window server's blur radius, as refryt and terminals use) and a **Vibrant**
+  background with macOS's own materials (Sidebar, Window, Menu, Popover, HUD, Full screen;
+  in the app's light or dark mode); on Windows 11 an **Acrylic** background. Every surface's
+  opacity is raised until its text stays readable over a white or black desktop, tint
+  included, and the settings list what was raised. The OS draws the blur: nothing redraws
+  at rest. Scripts: `@glass-preset=frosted`, `@surface-opacity=sidebar:0.6`,
+  `@glass-tint=ice:0.25`, `@glass-blur=strong`, `@glass-vibrancy=hud`.
+* **Offline signed-in fixtures**: with `MUSIC_FIXTURES`, signing in with any cookie that
+  has a `SAPISID` works offline (the fixture account, its library and 13 playlists), for
+  screenshots and checks of the signed-in UI.
+* **Sign in from your browser** now reads Firefox forks too: **Zen, LibreWolf, Floorp and
+  Waterfox**. Like Firefox, they keep plain cookie files, so this is also a working
+  browser-import route on **Windows**, where Chrome, Edge and Brave lock their cookies to
+  themselves (app-bound encryption) and can't be read by any other app.
 * **Page tabs.** Browse several pages side by side, each tab with its own back / forward
   history and scroll positions; the player and the queue stay shared. ⌘T / Ctrl+T opens a
   tab, ⌘W / Ctrl+W closes it, Ctrl+Tab / Ctrl+Shift+Tab and ⌘1…⌘9 / Ctrl+1…9 switch;
@@ -79,6 +123,21 @@ versions follow [SemVer](https://semver.org/).
 
 ### Changed
 
+* **Updates keep you signed in on macOS.** Releases are signed with the project's own
+  certificate instead of ad hoc, so macOS sees each update as the same app and keeps
+  the keychain access you allowed ("Always Allow"); before, every update was a new app
+  to macOS and asked again, and a refused or missed prompt looked like being signed out.
+  The first update with this asks one last time. Windows and Linux were never affected.
+* If the keychain still refuses the sign-in, Settings → Account says so and offers
+  **Try again** (and a notice at start) instead of looking signed out; the account is
+  kept.
+* The icon rail's expand button shows in the logo's place on hover (it had a row of its
+  own, which moved every entry down at the end of a slide), and the rail's rows are as tall
+  as the full sidebar's.
+* Over a window material, the artwork backdrop fills the content area only (the sidebar,
+  top bar and queue now show the desktop through their own opacity).
+* A sync now stores the account's YouTube playlists in YouTube Music's order of recent
+  activity (the sidebar's *Recent*).
 * **Video thumbnails and local cover art take far less memory.** Video and playlist
   thumbnails (which YouTube only serves at fixed sizes, up to 1280 × 720) and your local
   files' cover art are now decoded at the size they are shown: a music video in a list row
@@ -97,65 +156,6 @@ versions follow [SemVer](https://semver.org/).
   the volume is set (bar, mini player, scroll wheel, media keys, scripts). A volume saved
   by an older version keeps its loudness: settings files (version 1 → 2), settings exports
   and backups are converted on load. A Chromecast still gets the slider position.
-
-## [0.3.3] — 2026-11-01
-
-### Changed
-
-* **Updates keep you signed in on macOS.** Releases are signed with the project's own
-  certificate instead of ad hoc, so macOS sees each update as the same app and keeps
-  the keychain access you allowed ("Always Allow"); before, every update was a new app
-  to macOS and asked again, and a refused or missed prompt looked like being signed out.
-  The first update with this asks one last time. Windows and Linux were never affected.
-* If the keychain still refuses the sign-in, Settings → Account says so and offers
-  **Try again** (and a notice at start) instead of looking signed out; the account is
-  kept.
-* The icon rail's expand button shows in the logo's place on hover (it had a row of its
-  own, which moved every entry down at the end of a slide), and the rail's rows are as tall
-  as the full sidebar's.
-* Over a window material, the artwork backdrop fills the content area only (the sidebar,
-  top bar and queue now show the desktop through their own opacity).
-* A sync now stores the account's YouTube playlists in YouTube Music's order of recent
-  activity (the sidebar's *Recent*).
-
-### Added
-
-* **The sidebar slides.** Switching between the full sidebar and the icon rail, and
-  *Expand on hover*, animate the width (~200 ms, eased; titles fade, icons glide to the
-  rail's position; frames only while it moves, none at rest; follows Animations →
-  Reduced / Off). A button in the sidebar's header collapses it to the rail, expands the
-  rail, or keeps the hover panel open.
-* **Your playlists in the sidebar**, as on YouTube Music and in refryt: Liked songs, the
-  account's YouTube Music playlists (while signed in; from the library's sync) and playlists
-  made in the app, under the sidebar's entries. Click opens the playlist (the open one is
-  highlighted); right-click plays, shuffles, plays next, adds to the queue or pins it to the
-  top (also from Library → Playlists). Options in Appearance → Layout → **Sidebar
-  playlists**: show or hide the section, YouTube / local / Liked, order (Recent, A–Z, or
-  Custom: drag a playlist in the sidebar), how many before *Show all* (5, 10, 20, all) and
-  small covers or initials. Works in the icon rail (covers with tooltips) and the hover
-  panel; nothing moves up or down when the sidebar slides.
-* **Sidebar items.** Appearance → Layout → **Sidebar items**: show or hide each entry
-  (Home, Explore, Charts, … Listen together, and the Library heading) and reorder them with
-  the arrows or by dragging; *Reset* restores the shipped sidebar. Settings stays at the
-  bottom. Scripts: `@sidebar-items=charts:off`, `@sidebar-playlists=sort:name`.
-* **More see-through options** (Appearance → Window): **presets** (Subtle, Glass,
-  Frosted); each **surface**'s own opacity (sidebar, top bar, player bar, queue panel; Auto
-  keeps the previous look); a **tint** over the translucent surfaces (accent, frost, smoke,
-  ice, rose, amber; 8–35 %); on macOS a **blur strength** (System, Light, Medium, Strong:
-  the window server's blur radius, as refryt and terminals use) and a **Vibrant**
-  background with macOS's own materials (Sidebar, Window, Menu, Popover, HUD, Full screen;
-  in the app's light or dark mode); on Windows 11 an **Acrylic** background. Every surface's
-  opacity is raised until its text stays readable over a white or black desktop, tint
-  included, and the settings list what was raised. The OS draws the blur: nothing redraws
-  at rest. Scripts: `@glass-preset=frosted`, `@surface-opacity=sidebar:0.6`,
-  `@glass-tint=ice:0.25`, `@glass-blur=strong`, `@glass-vibrancy=hud`.
-* **Offline signed-in fixtures**: with `MUSIC_FIXTURES`, signing in with any cookie that
-  has a `SAPISID` works offline (the fixture account, its library and 13 playlists), for
-  screenshots and checks of the signed-in UI.
-* **Sign in from your browser** now reads Firefox forks too: **Zen, LibreWolf, Floorp and
-  Waterfox**. Like Firefox, they keep plain cookie files, so this is also a working
-  browser-import route on **Windows**, where Chrome, Edge and Brave lock their cookies to
-  themselves (app-bound encryption) and can't be read by any other app.
 
 ## [0.3.2] — 2026-11-01
 
