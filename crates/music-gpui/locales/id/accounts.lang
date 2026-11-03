@@ -40,3 +40,7 @@ home.continue.elsewhere = {artist} · diputar di perangkat lain
 home.continue.at = {artist} · diputar di perangkat lain, berhenti di {position}
 home.continue.resume = Lanjutkan
 home.continue.dismiss = Tutup
+account.keychain_failed.title = Info masuk Anda tidak dapat dibaca dari Keychain
+account.keychain_failed.detail = macOS menanyakan apakah {app} boleh memakai info masuk yang tersimpan, dan akses tidak diizinkan (atau dialog ditutup). Akun Anda tetap disimpan. Pilih Coba lagi, lalu Selalu Izinkan.
+account.keychain_failed.retry = Coba lagi
+account.keychain_failed.toast = Info masuk YouTube Anda tidak dapat dibaca dari Keychain. Pengaturan → Akun → Coba lagi.

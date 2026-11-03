@@ -40,3 +40,7 @@ home.continue.elsewhere = {artist} · afgespeeld op een ander apparaat
 home.continue.at = {artist} · afgespeeld op een ander apparaat, gestopt bij {position}
 home.continue.resume = Hervatten
 home.continue.dismiss = Sluiten
+account.keychain_failed.title = Je aanmelding kon niet uit de sleutelhanger worden gelezen
+account.keychain_failed.detail = macOS vroeg of {app} de bewaarde aanmelding mag gebruiken, en toegang werd niet toegestaan (of de vraag werd gesloten). Je account blijft bewaard. Kies Opnieuw proberen en daarna Altijd toestaan.
+account.keychain_failed.retry = Opnieuw proberen
+account.keychain_failed.toast = Je YouTube-aanmelding kon niet uit de sleutelhanger worden gelezen. Instellingen → Account → Opnieuw proberen.

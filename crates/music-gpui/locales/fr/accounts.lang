@@ -40,3 +40,7 @@ home.continue.elsewhere = {artist} · écouté sur un autre appareil
 home.continue.at = {artist} · écouté sur un autre appareil, arrêté à {position}
 home.continue.resume = Reprendre
 home.continue.dismiss = Masquer
+account.keychain_failed.title = Impossible de lire votre connexion dans le trousseau
+account.keychain_failed.detail = macOS a demandé si {app} peut utiliser la connexion enregistrée, et l'accès n'a pas été autorisé (ou la demande a été fermée). Votre compte est conservé. Choisissez Réessayer, puis Toujours autoriser.
+account.keychain_failed.retry = Réessayer
+account.keychain_failed.toast = Impossible de lire votre connexion YouTube dans le trousseau. Réglages → Compte → Réessayer.

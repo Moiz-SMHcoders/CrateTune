@@ -40,3 +40,7 @@ home.continue.elsewhere = {artist} · auf einem anderen Gerät gehört
 home.continue.at = {artist} · auf einem anderen Gerät gehört, gestoppt bei {position}
 home.continue.resume = Fortsetzen
 home.continue.dismiss = Ausblenden
+account.keychain_failed.title = Deine Anmeldung konnte nicht aus dem Schlüsselbund gelesen werden
+account.keychain_failed.detail = macOS hat gefragt, ob {app} die gespeicherte Anmeldung verwenden darf, und der Zugriff wurde nicht erlaubt (oder die Abfrage geschlossen). Dein Konto bleibt erhalten. Wähle „Erneut versuchen“ und dann „Immer erlauben“.
+account.keychain_failed.retry = Erneut versuchen
+account.keychain_failed.toast = Deine YouTube-Anmeldung konnte nicht aus dem Schlüsselbund gelesen werden. Einstellungen → Konto → Erneut versuchen.

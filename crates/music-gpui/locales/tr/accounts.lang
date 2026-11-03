@@ -40,3 +40,7 @@ home.continue.elsewhere = {artist} · başka bir cihazda çalındı
 home.continue.at = {artist} · başka bir cihazda çalındı, {position} noktasında durdu
 home.continue.resume = Devam et
 home.continue.dismiss = Kapat
+account.keychain_failed.title = Oturum bilgin Anahtar Zinciri'nden okunamadı
+account.keychain_failed.detail = macOS, {app}'un kayıtlı oturumu kullanıp kullanamayacağını sordu ve erişime izin verilmedi (ya da istem kapatıldı). Hesabın korunuyor. Yeniden dene'yi, ardından Her Zaman İzin Ver'i seç.
+account.keychain_failed.retry = Yeniden dene
+account.keychain_failed.toast = YouTube oturumun Anahtar Zinciri'nden okunamadı. Ayarlar → Hesap → Yeniden dene.
