@@ -40,3 +40,7 @@ home.continue.elsewhere = {artist} · किसी दूसरे डिवा�
 home.continue.at = {artist} · किसी दूसरे डिवाइस पर चला, {position} पर रुका
 home.continue.resume = जारी रखें
 home.continue.dismiss = हटाएँ
+account.keychain_failed.title = आपका साइन-इन कीचेन से पढ़ा नहीं जा सका
+account.keychain_failed.detail = macOS ने पूछा कि क्या {app} सहेजा गया साइन-इन इस्तेमाल कर सकता है, और अनुमति नहीं दी गई (या संकेत बंद कर दिया गया)। आपका खाता रखा गया है। फिर से कोशिश करें चुनें, फिर Always Allow।
+account.keychain_failed.retry = फिर से कोशिश करें
+account.keychain_failed.toast = आपका YouTube साइन-इन कीचेन से पढ़ा नहीं जा सका। सेटिंग्स → खाता → फिर से कोशिश करें।

@@ -40,3 +40,7 @@ home.continue.elsewhere = {artist} · đã phát trên thiết bị khác
 home.continue.at = {artist} · đã phát trên thiết bị khác, dừng ở {position}
 home.continue.resume = Tiếp tục
 home.continue.dismiss = Bỏ qua
+account.keychain_failed.title = Không đọc được thông tin đăng nhập từ Chuỗi khóa
+account.keychain_failed.detail = macOS đã hỏi {app} có được dùng thông tin đăng nhập đã lưu không, và quyền truy cập chưa được cho phép (hoặc hộp thoại đã bị đóng). Tài khoản của bạn vẫn được giữ. Chọn Thử lại, rồi Luôn cho phép.
+account.keychain_failed.retry = Thử lại
+account.keychain_failed.toast = Không đọc được thông tin đăng nhập YouTube từ Chuỗi khóa. Cài đặt → Tài khoản → Thử lại.
