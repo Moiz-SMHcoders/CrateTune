@@ -3985,7 +3985,22 @@ it: the mini player redraws with every finished download, and Now Playing's hi-r
 held by the app (never evicted). They now pin the image they show (`Pin`, one each): never
 evicted and never skipped, and their lookups don't count as page lookups.
 
-**CI** (fixture Home; memory after each bench): CI_TABLE
+**CI** (fixture Home; memory after each bench). One app run per runner and check, before
+(hooks only, `9d20b36`, run 41316233953) ⇒ after (run 41317696596). The new step,
+per-page artwork arriving 150 ms late, at the end of the feed:
+
+| Runner | Downloads by the end bench | Memory at the end (peak) | Draw p50 near the top → end |
+|---|---|---|---|
+| `windows-2022` (WARP), private bytes | 695 ⇒ 136 (664 skipped) | 90.3 (working set peak 118.2) ⇒ 81.5 (101.8) MiB | 5.8 → 5.2 ⇒ 5.0 → 4.7 ms |
+| `macos-15` (VM), footprint | 413 ⇒ 150 (645 skipped) | 72.2 (72.4) ⇒ 65.5 (65.5) MiB | 7.1 → 6.3 ⇒ 4.1 → 3.8 ms |
+| `ubuntu-24.04` (Xvfb, lavapipe), resident | 588 ⇒ 143 (645 skipped) | 267.0 (277.5) ⇒ 266.0 (266.4) MiB | 6.6 → 4.5 ⇒ 7.8 → 4.6 ms |
+
+With the fixtures answering at once the two existing checks skip nothing on the runners
+(all 744 images arrive in time) and stay the same: end of the per-page feed 130.2 ⇒ 129.5 MiB
+private (Windows), 68.5 (119.8) ⇒ 68.2 (120.7) MiB footprint (macOS), 347.5 (400.8) ⇒
+334.3 (382.3) MiB resident (Linux); draw times within the runners' noise. Home has no
+video thumbnails or local covers, so F4 shows in the macOS runs above (the decoded sizes
+are the same on every platform: the fetch threads decode with the `image` crate).
 
 ### Measurements (app shell round)
 
