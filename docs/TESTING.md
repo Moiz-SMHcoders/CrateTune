@@ -395,7 +395,7 @@ Three scripts, all on release builds with a throw-away settings folder:
 | `scripts/perf-windows.ps1` | Windows desktop | yes | CPU, memory, frame rate and draw cost (6.1) |
 | `scripts/perf-macos.sh` | Mac with an awake display | yes | the same, plus a draw budget for 180 Hz (6.2) |
 | `scripts/perf-frames.sh` | CI (macOS, Windows, Linux), any desktop | no | draw cost must not grow down a long page; logs memory (6.3) |
-| `scripts/smoke-pages.sh` | CI (macOS, Windows, Linux), any desktop | no | opens every Settings section and the main pages offline; fails on a panic |
+| `scripts/smoke-pages.sh` | CI (macOS, Windows, Linux), any desktop | no | opens every Settings section and the main pages offline, then page tabs (opened, switched by script and keys, moved, closed); fails on a panic or when the tab keys don't pass on with one tab |
 
 ### 6.1 Windows
 

@@ -1,0 +1,25 @@
+# Page tabs (see locales/en/page_tabs.lang).
+page_tabs.new = 新增分頁
+page_tabs.close = 關閉分頁
+page_tabs.close_others = 關閉其他分頁
+page_tabs.duplicate = 複製分頁
+page_tabs.next = 下一個分頁
+page_tabs.previous = 上一個分頁
+page_tabs.tab_1 = 分頁 1
+page_tabs.tab_2 = 分頁 2
+page_tabs.tab_3 = 分頁 3
+page_tabs.tab_4 = 分頁 4
+page_tabs.tab_5 = 分頁 5
+page_tabs.tab_6 = 分頁 6
+page_tabs.tab_7 = 分頁 7
+page_tabs.tab_8 = 分頁 8
+page_tabs.tab_last = 最後一個分頁
+page_tabs.open_in_new_tab = 在新分頁中開啟
+page_tabs.limit = 最多可以開啟 {max} 個分頁。請先關閉一個再開啟新的。
+shortcuts.group.tabs = 頁面分頁
+settings.page_tabs.group = 頁面分頁
+settings.page_tabs.show = 顯示分頁
+settings.page_tabs.show_note = 並排瀏覽多個頁面，每個分頁都有自己的上一頁與下一頁。開啟第二個分頁後會顯示分頁列：新增分頁（⌘T / Ctrl+T）、按住 ⌘ 或 Ctrl 點按卡片或連結，或「在新分頁中開啟」。
+settings.page_tabs.restore = 啟動時還原分頁
+settings.page_tabs.restore_note = 重新開啟上次工作階段的分頁及其記錄。關閉時，{app} 從首頁開始。
+settings.page_tabs.note = 頁面分頁只會改變你瀏覽的內容：播放與佇列是共用的。佇列面板中的佇列分頁會保留各自獨立的佇列。

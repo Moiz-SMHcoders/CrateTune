@@ -1,0 +1,25 @@
+# Page tabs (see locales/en/page_tabs.lang).
+page_tabs.new = Нова вкладка
+page_tabs.close = Закрити вкладку
+page_tabs.close_others = Закрити інші вкладки
+page_tabs.duplicate = Дублювати вкладку
+page_tabs.next = Наступна вкладка
+page_tabs.previous = Попередня вкладка
+page_tabs.tab_1 = Вкладка 1
+page_tabs.tab_2 = Вкладка 2
+page_tabs.tab_3 = Вкладка 3
+page_tabs.tab_4 = Вкладка 4
+page_tabs.tab_5 = Вкладка 5
+page_tabs.tab_6 = Вкладка 6
+page_tabs.tab_7 = Вкладка 7
+page_tabs.tab_8 = Вкладка 8
+page_tabs.tab_last = Остання вкладка
+page_tabs.open_in_new_tab = Відкрити в новій вкладці
+page_tabs.limit = Можна відкрити не більше {max} вкладок. Закрийте одну, щоб відкрити іншу.
+shortcuts.group.tabs = Вкладки сторінок
+settings.page_tabs.group = Вкладки сторінок
+settings.page_tabs.show = Показувати вкладки
+settings.page_tabs.show_note = Переглядайте кілька сторінок поруч, у кожної вкладки свої «назад» і «вперед». Панель вкладок з’являється, щойно відкрито другу вкладку: «Нова вкладка» (⌘T / Ctrl+T), ⌘-клік або Ctrl+клік по картці чи посиланню або «Відкрити в новій вкладці».
+settings.page_tabs.restore = Відновлювати вкладки під час запуску
+settings.page_tabs.restore_note = Знову відкриває вкладки останнього сеансу разом з історією. Якщо вимкнено, {app} відкривається на головній.
+settings.page_tabs.note = Вкладки сторінок змінюють лише те, що ви переглядаєте: відтворення й черга спільні. Вкладки черги на панелі черги зберігають окремі черги.

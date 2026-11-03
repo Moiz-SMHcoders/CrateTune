@@ -664,7 +664,7 @@ fn album_card(ix: usize, a: &LibraryAlbum) -> Card {
         .artwork(a.meta.thumbnail_url.clone())
         .on_click(move |_, window, cx| {
             let route = route.clone();
-            update_app(cx, |app, cx| app.navigate(route, window, cx));
+            update_app(cx, |app, cx| app.navigate_click(route, window, cx));
         })
         .context_menu(move |menu, _, _| {
             let id = id.clone();
@@ -705,7 +705,7 @@ fn artist_card(ix: usize, a: &LibraryArtist) -> Card {
         .artwork(a.thumbnail_url.clone())
         .on_click(move |_, window, cx| {
             let route = route.clone();
-            update_app(cx, |app, cx| app.navigate(route, window, cx));
+            update_app(cx, |app, cx| app.navigate_click(route, window, cx));
         })
 }
 
@@ -724,7 +724,7 @@ fn playlist_card(ix: usize, p: &Playlist) -> Card {
         .artwork(p.thumbnail_url.clone())
         .on_click(move |_, window, cx| {
             let route = route.clone();
-            update_app(cx, |app, cx| app.navigate(route, window, cx));
+            update_app(cx, |app, cx| app.navigate_click(route, window, cx));
         })
 }
 

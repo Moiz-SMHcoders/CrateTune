@@ -668,6 +668,44 @@ pub const ENTRIES: &[Entry] = &[
         "frame"
     ),
     entry!(
+        "appearance.page_tabs",
+        Appearance,
+        -,
+        "settings.page_tabs.group",
+        "settings.page_tabs.note",
+        "tabs",
+        "tab",
+        "browser",
+        "pages",
+        "windows"
+    ),
+    entry!(
+        "appearance.page_tabs.show",
+        Appearance,
+        "settings.page_tabs.group",
+        "settings.page_tabs.show",
+        "settings.page_tabs.show_note",
+        "tabs",
+        "tab",
+        "strip",
+        "browser",
+        "new",
+        "open"
+    ),
+    entry!(
+        "appearance.page_tabs.restore",
+        Appearance,
+        "settings.page_tabs.group",
+        "settings.page_tabs.restore",
+        "settings.page_tabs.restore_note",
+        "tabs",
+        "restore",
+        "reopen",
+        "session",
+        "startup",
+        "launch"
+    ),
+    entry!(
         "appearance.now_playing",
         Appearance,
         -,

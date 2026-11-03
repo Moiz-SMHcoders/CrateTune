@@ -39,6 +39,7 @@ mod lyrics;
 pub mod modules;
 mod network;
 pub mod onboarding;
+mod page_tabs_ui;
 pub mod panel;
 mod playback;
 pub mod portable;

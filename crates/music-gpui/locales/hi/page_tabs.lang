@@ -1,0 +1,25 @@
+# Page tabs (see locales/en/page_tabs.lang).
+page_tabs.new = नया टैब
+page_tabs.close = टैब बंद करें
+page_tabs.close_others = अन्य टैब बंद करें
+page_tabs.duplicate = टैब की कॉपी बनाएँ
+page_tabs.next = अगला टैब
+page_tabs.previous = पिछला टैब
+page_tabs.tab_1 = टैब 1
+page_tabs.tab_2 = टैब 2
+page_tabs.tab_3 = टैब 3
+page_tabs.tab_4 = टैब 4
+page_tabs.tab_5 = टैब 5
+page_tabs.tab_6 = टैब 6
+page_tabs.tab_7 = टैब 7
+page_tabs.tab_8 = टैब 8
+page_tabs.tab_last = आख़िरी टैब
+page_tabs.open_in_new_tab = नए टैब में खोलें
+page_tabs.limit = आप ज़्यादा से ज़्यादा {max} टैब खोल सकते हैं। नया खोलने के लिए कोई एक बंद करें।
+shortcuts.group.tabs = पेज टैब
+settings.page_tabs.group = पेज टैब
+settings.page_tabs.show = टैब दिखाएँ
+settings.page_tabs.show_note = कई पेज साथ-साथ देखें, हर टैब का अपना पीछे और आगे। दूसरा टैब खुलते ही टैब बार दिखता है: नया टैब (⌘T / Ctrl+T), किसी कार्ड या लिंक पर ⌘-क्लिक या Ctrl+क्लिक, या “नए टैब में खोलें”।
+settings.page_tabs.restore = शुरू होने पर टैब वापस लाएँ
+settings.page_tabs.restore_note = पिछले सत्र के टैब उनके इतिहास के साथ फिर से खोलता है। बंद होने पर {app} होम पर शुरू होता है।
+settings.page_tabs.note = पेज टैब सिर्फ़ यह बदलते हैं कि आप क्या देख रहे हैं: प्लेबैक और कतार साझा हैं। कतार पैनल के कतार टैब अलग-अलग कतारें रखते हैं।

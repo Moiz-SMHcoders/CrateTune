@@ -629,7 +629,7 @@ impl EpisodePage {
                         id: id.clone(),
                         name: show.name.clone(),
                     };
-                    update_app(cx, |app, cx| app.navigate(route, window, cx));
+                    update_app(cx, |app, cx| app.navigate_click(route, window, cx));
                 },
             ));
         }

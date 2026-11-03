@@ -113,6 +113,8 @@ gpui_kit_assets::icon_assets!(
         // recognition / onboarding
         AudioWaveform,
         CircleStop,
+        // page tabs
+        SquarePlus,
     ]
 );
 

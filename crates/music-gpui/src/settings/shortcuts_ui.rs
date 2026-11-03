@@ -6,7 +6,7 @@
 
 use gpui::{
     AnyElement, App, Context, Hsla, IntoElement, ParentElement as _, SharedString, Styled as _,
-    Subscription, Window, div, px,
+    Subscription, Window, div, prelude::FluentBuilder as _, px,
 };
 use gpui_component::{
     ActiveTheme as _, Disableable as _, Sizable as _, WindowExt as _,
@@ -468,12 +468,13 @@ pub fn open_cheat_sheet(window: &mut Window, cx: &mut App) {
         let os = Os::current();
         let overrides = shortcuts::current(cx);
         let muted = cx.theme().muted_foreground;
-        let column = |groups: [Group; 2], cx: &App| {
+        let tabs = crate::page_tabs::shown();
+        let column = |groups: &[Group], cx: &App| {
             v_flex()
                 .flex_1()
                 .min_w_0()
                 .gap_4()
-                .children(groups.into_iter().map(|g| {
+                .children(groups.iter().map(|&g| {
                     v_flex()
                         .gap_1()
                         .child(
@@ -509,7 +510,8 @@ pub fn open_cheat_sheet(window: &mut Window, cx: &mut App) {
         };
         dialog
             .title(div().child(t!("shortcuts.cheat.title")))
-            .w(px(680.))
+            // A third column for the page tabs while they are on (`page_tabs.rs`).
+            .w(px(if tabs { 940. } else { 680. }))
             .child(
                 v_flex()
                     .gap_3()
@@ -517,8 +519,9 @@ pub fn open_cheat_sheet(window: &mut Window, cx: &mut App) {
                         h_flex()
                             .items_start()
                             .gap_6()
-                            .child(column([Group::Playback, Group::Navigation], cx))
-                            .child(column([Group::View, Group::App], cx)),
+                            .child(column(&[Group::Playback, Group::Navigation], cx))
+                            .when(tabs, |this| this.child(column(&[Group::Tabs], cx)))
+                            .child(column(&[Group::View, Group::App], cx)),
                     )
                     .child(
                         div()

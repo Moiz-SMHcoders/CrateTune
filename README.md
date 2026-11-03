@@ -3345,6 +3345,109 @@ runs each against the 0.2.6 build): idle on Home 1.1 % of a core (0.2.6: 0.8–1
 5.8–6.9 % (0.2.6: 5.3 % and an outlier of 29.6 % while other builds ran), Now Playing open
 1.9 % (2.8 %); draw times within run-to-run noise. Not verified: see BACKLOG U18.
 
+### Page tabs (browser-style tabs for browsing)
+
+Idea from **Zuno** (Apache-2.0; listed in
+[`crates/music-core/THIRD_PARTY.md`](crates/music-core/THIRD_PARTY.md#zuno-featui-tabs-page-tabs)).
+BACKLOG M10, skipped in the queue round because a second page stack would double the
+cached pages.
+
+| ![Page tabs](docs/screenshots/page-tabs.png) | ![A tab's menu](docs/screenshots/page-tabs-menu.png) |
+|---|---|
+| ![Settings → Appearance → Page tabs](docs/screenshots/settings-page-tabs.png) | ![Page tabs with the system title bar](docs/screenshots/page-tabs-system-titlebar.png) |
+
+* **What is per tab** (`page_tabs.rs`): the page stack only — back / forward history,
+  the current page, each entry's scroll offset. One audio engine, one queue, one player
+  bar, one Now Playing: switching a tab never changes what plays. **Page tabs** and **queue
+  tabs** (`queue_tabs.rs`, the queue panel's row of saved queues) are separate features
+  and stay unlinked: a page tab owning a queue would make switching tabs change (or stop)
+  the music, and only one queue can play anyway; Zuno can link them because each of its
+  tabs has its own player. The names in the UI keep them apart ("New tab" / "Close tab" in
+  the strip, "New queue tab" in the queue panel).
+* **The strip** sits under the top bar (and under the old header with the system title
+  bar), over the page column: the bar's centre is the search field and its sides are full,
+  and a row of its own keeps the bar's height (traffic lights, Now Playing's top, sheets)
+  unchanged. Each tab shows its page's icon and title (the full title as a tooltip), a ×
+  (on hover for background tabs), and a right-click menu (*New tab*, *Duplicate tab*,
+  *Close tab*, *Close other tabs*; *Duplicate* copies the tab's history, not its pages);
+  **+** opens a tab on Home. Click shows a tab,
+  middle-click closes it, drag reorders (dropped on a tab further right it lands after it,
+  further left before it). Closing the shown tab shows its left neighbour (the right one
+  for the first tab); the last tab can't be closed. Up to **12** tabs (a toast says so);
+  the strip scrolls sideways when they don't fit.
+* **Opening in a tab:** ⌘-click / Ctrl+click a card (album, artist, playlist, podcast),
+  an artist or album link, a "See all", a sidebar entry or a Library / Stats card opens
+  it in a background tab right after the current one (several in a row keep their order);
+  ⌘⇧-click / Ctrl+Shift+click opens and shows it. Cards' right-click menus have **Open in
+  new tab**.
+* **Keys** (Settings → Keyboard shortcuts → *Page tabs*, all editable): ⌘T / Ctrl+T new
+  tab, ⌘W / Ctrl+W close, Ctrl+Tab / Ctrl+Shift+Tab next / previous, ⌘1…⌘8 / Ctrl+1…8
+  that tab, ⌘9 / Ctrl+9 the last tab. ⌘1–⌘3 were already Home / Explore / Library: the tab
+  numbers *share* those keys (`ShortcutAction::shared`) and only act while the strip shows;
+  with one tab (or tabs off) the handler propagates and GPUI runs the next binding of the
+  same keys, so ⌘1 is still Home for everyone who never opens a tab. The shortcut editor
+  doesn't call that a conflict (two tab numbers on one key still are). ⌘T / ⌘W / Ctrl+Tab
+  were unbound. The Window menu lists New / Close / Next / Previous tab while tabs are on;
+  the cheat sheet gets a third column.
+* **Defaults** (Settings → Appearance → **Page tabs**): **Show tabs** is on — the strip
+  only appears once a second tab is open, so nothing changes on screen, in memory or under
+  the keys until someone opens a tab (the feature was asked for; hiding it behind a switch
+  would make ⌘T and ⌘-click silently do nothing). Off: no strip, the tab keys pass through,
+  "Open in new tab" is hidden, ⌘-click opens in place, and the other tabs are closed.
+  **Restore tabs at start** is off: the app starts on Home as before; on, the tabs (up to
+  16 history entries each, as `Route::spec` strings with scroll offsets) are saved in the
+  library database (`gpui.page_tabs`) when the app quits and reopened at launch, none of
+  their pages built until shown.
+* **Memory policy.** The shown tab's stack *is* the app's `Router` (unchanged: up to 9
+  live pages around the current entry). A tab going to the background keeps only its
+  current page, and only the **2** most recently shown background tabs keep even that
+  (`BACKGROUND_PAGES`); every other background tab is routes + scroll offsets. Showing a
+  tab whose page was dropped rebuilds it (`ensure_page`; the data comes from
+  `browse::PageCache`, so nothing is refetched within its lifetime) and re-applies the
+  scroll offset. A tab opened in the background builds nothing until it is shown, and
+  background tabs are never rendered (only the shown tab's page is in the tree). Content
+  language / network changes drop every tab's pages, as before for the one stack.
+* **Script hooks** (`script.rs`): `@tab-new[=ROUTE]`, `@tab-open=ROUTE` (background, as
+  ⌘-click), `@tab-duplicate`, `@tab-close[=N]`, `@tab=N|next|prev` (1-based, like
+  ⌘1…⌘9), `@tab-move=FROM:TO`, `@tabs=on|off`, `@tabs-restore=on|off`, `@tab-status`
+  (every tab's route, history position, live pages, scroll). `Route::spec` is the inverse
+  of `Route::parse` (also `browse:ID|PARAMS|NAME` now, so a restored "See all" keeps its
+  title).
+* **Smoke test:** `scripts/smoke-pages.sh` also opens, duplicates, switches (by script and
+  by ⌘ / Ctrl keys), moves and closes tabs, and fails unless ⌘2 / Ctrl+2 goes on to
+  Explore and ⌘W / Ctrl+W keeps the window once one tab is left.
+
+**Verified** (macOS, release builds, `MUSIC_FIXTURES`, temporary `MUSIC_CONFIG_DIR`,
+`MUSIC_SECRET_STORE=file`, `MUSIC_VOLUME=0.0`): opening (⌘T, background tabs as ⌘-click),
+switching by script, ⌘1 / ⌘9 / Ctrl+Tab through GPUI's key dispatch, ⌘2 going on to
+Explore and ⌘W keeping the window with one tab, moving, duplicating, closing, the
+right-click menu, the strip with the system title bar, the settings rows and their search
+entries (offscreen screenshots above), save / restore and the budget in unit tests. Not
+verified: BACKLOG U24.
+
+**Measured** (macOS 26.6, Apple M4, release builds, `MUSIC_FIXTURES` offline data, fresh
+`MUSIC_CONFIG_DIR`, `MUSIC_VOLUME=0.0`; the same 10 pages — Home, Explore, Charts, Moods,
+New releases, a search, an album, an artist, a playlist, History — visited in one stack or
+spread over the tabs, every tab shown once, then `@mem` after 10–20 s; other builds were
+compiling on the machine, so run-to-run spread is ±15 MB):
+
+| Session | Footprint, settled | Peak during the run | Live pages | Idle CPU (20 s) |
+|---|---|---|---|---|
+| main (80df7c9), one stack | 153–180 MB (median 171, 5 runs) | 213–236 MB | 5 | 0.4 / 0.9 % |
+| this branch, 1 tab | 150–189 MB (median 174, 5 runs) | 217–235 MB | 5 | 0.7 / 1.5 % |
+| 5 tabs, 2 pages each | 183 / 185 MB | 242 MB | 3 | 1.4 % |
+| 10 tabs, 1 page each | 174 / 180 MB | 246–251 MB | 3 | 2.2 / 0.9 / 0.8 % |
+| 10 tabs, 3 pages each | 147 MB | 277 MB (peak of the process) | 3 | — |
+
+With the budget, 5 or 10 tabs hold fewer live pages than one long stack (the shown tab's
+current page plus two background ones, against the router's window of up to 9), so the
+settled footprint stays within the noise of main's. The peak is 10–20 MB higher with many
+tabs: switching through all of them rebuilds the dropped pages one after another
+(transient; it settles back). Idle CPU stays at the level of main: nothing renders for a
+background tab and the strip doesn't animate. Scripts: `@tab-new` / `@tab=N` / `@mem` /
+`@tab-status` in `MUSIC_SCRIPT`.
+
+
 ### Player UI round: verification
 
 | ![Split, karaoke](docs/screenshots/player-np-split-karaoke.png) | ![Big artwork](docs/screenshots/player-np-big-artwork.png) |

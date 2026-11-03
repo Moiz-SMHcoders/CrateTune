@@ -77,7 +77,10 @@ pub struct MusicApp {
     wheel: crate::smooth_scroll::Wheel,
 
     // ---- navigation
+    /// The shown page tab's page stack (the other tabs' are in `page_tabs`).
     pub(crate) router: Router<PageView>,
+    /// Browser-style page tabs (`page_tabs.rs`).
+    pub(crate) page_tabs: crate::page_tabs::PageTabs<PageView>,
     pub(crate) search_input: Entity<InputState>,
     /// Trimmed text of the search field as last handled.
     pub(crate) search_text: String,
@@ -254,6 +257,7 @@ impl MusicApp {
                 this.persist_session_cookie(true, cx);
                 this.flush_listening();
                 this.save_queue_now();
+                this.save_page_tabs_now(cx);
                 this.flush_searches();
                 // "Install updates automatically": a verified download waiting for a
                 // restart goes in now (`update_check.rs`).
@@ -348,6 +352,7 @@ impl MusicApp {
             main_window: Some(window.window_handle()),
             wheel: Default::default(),
             router: Router::new(Route::Home),
+            page_tabs: Default::default(),
             search_input,
             search_text: String::new(),
             search_box: SearchBox::default(),
@@ -424,6 +429,7 @@ impl MusicApp {
         this.use_library_lyrics_cache(cx);
         this.restore_queue();
         this.load_queue_tabs();
+        this.restore_page_tabs(window, cx);
         this.load_recent_searches(cx);
         this.queue.set_shuffle(saved.playback.shuffle);
         this.ensure_page(window, cx);
@@ -549,7 +555,7 @@ impl MusicApp {
         window.set_window_title(&t!("app.window_title", page = title));
     }
 
-    fn on_route_changed(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn on_route_changed(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         // A song selection belongs to the page it was made on.
         crate::selection::clear(window);
         self.ensure_page(window, cx);
@@ -772,6 +778,7 @@ impl MusicApp {
             SettingsEvent::Library => self.apply_library_settings(cx),
             SettingsEvent::Content => self.apply_content(window, cx),
             SettingsEvent::Network => self.refresh_pages(window, cx),
+            SettingsEvent::PageTabs => self.apply_page_tabs_setting(window, cx),
             SettingsEvent::Section(section) => {
                 let route = Route::Settings { section: *section };
                 if matches!(self.router.route(), Route::Settings { .. }) {
@@ -902,6 +909,8 @@ impl MusicApp {
         // The custom top bar has back / forward / search; the old header only
         // comes with the system title bar.
         let header = (!crate::titlebar::custom()).then(|| self.render_header(cx));
+        // Page tabs (`page_tabs.rs`): under the top bar / header, over the page.
+        let tabs = self.render_page_tabs(cx);
         let queue_panel = self.queue_open.then(|| self.render_queue_panel(cx));
         // A new page slides up a little with full motion.
         let t = frame.get(&self.look.page_in);
@@ -929,6 +938,7 @@ impl MusicApp {
                     .min_w_0()
                     .h_full()
                     .children(header)
+                    .children(tabs)
                     .child(page_box),
             )
             .children(queue_panel)

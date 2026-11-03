@@ -173,6 +173,7 @@ impl MusicApp {
         PageCache::clear(cx);
         self.save_scroll();
         self.router.drop_pages();
+        self.page_tabs.drop_pages();
         self.ensure_page(window, cx);
         cx.notify();
     }

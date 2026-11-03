@@ -3,6 +3,7 @@
 //! * `app.rs` – root view: sidebar, header, routed page, queue panel, player bar,
 //!   Now Playing overlay; `playback.rs` – transport, queue, poll, volume.
 //! * `router.rs` – `Route` + back/forward history; `pages/` – one file per page.
+//! * `page_tabs.rs` – browser-style page tabs (a page stack per tab, the strip).
 //! * `components/` – track rows, cards, shelves, InnerTube items, artwork cache, bar,
 //!   sidebar, queue panel.
 //! * `browse.rs` – page data loading / cache, content filters, locale; `search_box.rs` –
@@ -71,6 +72,7 @@ mod np_designs;
 mod np_fullscreen;
 mod np_lyrics;
 mod np_region;
+mod page_tabs;
 mod pages;
 mod palette;
 mod play_report;

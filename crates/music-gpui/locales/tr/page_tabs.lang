@@ -1,0 +1,25 @@
+# Page tabs (see locales/en/page_tabs.lang).
+page_tabs.new = Yeni sekme
+page_tabs.close = Sekmeyi kapat
+page_tabs.close_others = Diğer sekmeleri kapat
+page_tabs.duplicate = Sekmeyi çoğalt
+page_tabs.next = Sonraki sekme
+page_tabs.previous = Önceki sekme
+page_tabs.tab_1 = Sekme 1
+page_tabs.tab_2 = Sekme 2
+page_tabs.tab_3 = Sekme 3
+page_tabs.tab_4 = Sekme 4
+page_tabs.tab_5 = Sekme 5
+page_tabs.tab_6 = Sekme 6
+page_tabs.tab_7 = Sekme 7
+page_tabs.tab_8 = Sekme 8
+page_tabs.tab_last = Son sekme
+page_tabs.open_in_new_tab = Yeni sekmede aç
+page_tabs.limit = En fazla {max} sekme açık olabilir. Başka birini açmak için birini kapatın.
+shortcuts.group.tabs = Sayfa sekmeleri
+settings.page_tabs.group = Sayfa sekmeleri
+settings.page_tabs.show = Sekmeleri göster
+settings.page_tabs.show_note = Birkaç sayfaya yan yana göz atın; her sekmenin kendi geri ve ileri geçmişi vardır. Sekme çubuğu ikinci bir sekme açılınca görünür: Yeni sekme (⌘T / Ctrl+T), bir karta veya bağlantıya ⌘-tıklama ya da Ctrl+tıklama veya “Yeni sekmede aç”.
+settings.page_tabs.restore = Başlangıçta sekmeleri geri yükle
+settings.page_tabs.restore_note = Son oturumun sekmelerini geçmişleriyle yeniden açar. Kapalıyken {app} Ana Sayfa'da başlar.
+settings.page_tabs.note = Sayfa sekmeleri yalnızca göz attığınız sayfayı değiştirir: çalma ve sıra ortaktır. Sıra panelindeki sıra sekmeleri ayrı sıralar tutar.

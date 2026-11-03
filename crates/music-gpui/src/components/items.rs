@@ -165,7 +165,7 @@ pub fn open_item(item: &Item, list: ListContext, window: &mut Window, cx: &mut A
             None => app.play_now(track, cx),
         });
     } else if let Some(route) = item_route(item) {
-        update_app(cx, |app, cx| app.navigate(route, window, cx));
+        update_app(cx, |app, cx| app.navigate_click(route, window, cx));
     }
 }
 
@@ -251,12 +251,24 @@ pub fn item_menu(menu: PopupMenu, item: &Item, list: ListContext) -> PopupMenu {
     };
     let route = item_route(item);
     let mut menu = menu.item(menu_item(t!("common.open"), Lucide::ArrowRight).on_click({
+        let route = route.clone();
         move |_, window, cx| {
             if let Some(route) = route.clone() {
                 update_app(cx, |app, cx| app.navigate(route, window, cx));
             }
         }
     }));
+    // Page tabs (`page_tabs.rs`): in the background, as ⌘-click.
+    if let Some(route) = route.filter(|_| crate::page_tabs::shown()) {
+        menu = menu.item(
+            menu_item(t!("page_tabs.open_in_new_tab"), Lucide::SquarePlus).on_click(
+                move |_, window, cx| {
+                    let route = route.clone();
+                    update_app(cx, |app, cx| app.open_in_new_tab(route, false, window, cx));
+                },
+            ),
+        );
+    }
     let action = |label: &str, icon: Lucide, action: CollectionAction| {
         let collection = collection.clone();
         menu_item(label, icon).on_click(move |_, window, cx| {
@@ -508,7 +520,7 @@ pub fn see_all(id: SharedString, shelf: &Shelf) -> Option<AnyElement> {
             .label(t!("common.see_all"))
             .on_click(move |_, window, cx| {
                 let route = target_route(&target, &title);
-                update_app(cx, |app, cx| app.navigate(route, window, cx));
+                update_app(cx, |app, cx| app.navigate_click(route, window, cx));
             })
             .into_any_element(),
     )
@@ -754,7 +766,7 @@ pub fn mood_tile(id: impl Into<ElementId>, button: &NavButton, cx: &App) -> AnyE
         )
         .on_click(move |_, window, cx| {
             let route = target_route(&target, &title);
-            update_app(cx, |app, cx| app.navigate(route, window, cx));
+            update_app(cx, |app, cx| app.navigate_click(route, window, cx));
         })
         .into_any_element()
 }
@@ -908,7 +920,7 @@ pub fn artist_links(id: &str, artists: &[music_core::EntityRef], cx: &App) -> An
                             id: artist_id.clone(),
                             name: name.clone(),
                         };
-                        update_app(cx, |app, cx| app.navigate(route, window, cx));
+                        update_app(cx, |app, cx| app.navigate_click(route, window, cx));
                     })
                     .into_any_element(),
                 None => div().child(name).into_any_element(),

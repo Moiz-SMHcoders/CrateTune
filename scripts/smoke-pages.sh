@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Opens every Settings section and the main pages once, offline (`MUSIC_FIXTURES`),
+# then a few page tabs (opened, switched by script and by their keys, moved, closed),
 # and fails if the app panics or doesn't quit cleanly. Catches crashes that only
 # happen while a page renders (e.g. reading an entity that is being updated), which
 # unit tests don't draw.
@@ -44,6 +45,15 @@ sections="appearance playback modules eq lyrics content network privacy storage 
 script="" t=4
 for r in $routes; do script="$script$t:@nav=$r,"; t=$((t + 2)); done
 for s in $sections; do script="$script$t:@nav=settings:$s,"; t=$((t + 2)); done
+# Page tabs (`page_tabs.rs`): new / background tabs, switching (also by ⌘ / Ctrl keys,
+# which pass on to Home / Explore / Library once one tab is left), reordering, closing.
+case "$(uname -s)" in Darwin) cmd=cmd ;; *) cmd=ctrl ;; esac
+tabs="@tab-new=explore @tab-open=charts @tab-open=library:albums @tab=3 @tab=next
+  @tab-new=settings:shortcuts @key=$cmd-1 @key=ctrl-tab @tab-move=1:4 @tab=prev
+  @nav=search:daft%20punk @key=$cmd-9 @key=$cmd-w @tab-close=1 @tab-status
+  @tab-duplicate @tab-new=history @tab=2 @tab-close @tab-close @tab-close @key=$cmd-w
+  @key=$cmd-2 @key=$cmd-w @tab-status"
+for a in $tabs; do script="$script$t:$a,"; t=$((t + 2)); done
 script="$script$t:@quit"
 limit=$((t + 60))
 
@@ -68,6 +78,7 @@ fi
 wait "$pid" 2>/dev/null || status=$?
 
 navs=$(grep -c 'script @nav' "$work/app.log" || true)
+tab_lines=$(grep -c 'music-gpui: page tabs:' "$work/app.log" || true)
 if grep -qE 'panicked|fatal runtime error' "$work/app.log"; then
   echo "FAIL: the app panicked:" >&2
   grep -E -A3 'panicked|fatal runtime error' "$work/app.log" >&2
@@ -75,6 +86,14 @@ if grep -qE 'panicked|fatal runtime error' "$work/app.log"; then
 elif [ "$status" != 0 ]; then
   echo "FAIL: exit status $status" >&2
   tail -20 "$work/app.log" >&2
+elif [ "$tab_lines" != 2 ]; then
+  echo "FAIL: expected 2 page tab status lines, got $tab_lines" >&2
+  status=1
+elif ! tail -1 <<<"$(grep 'music-gpui: page tabs:' "$work/app.log")" | grep -q 'count=1 .*\*explore\['; then
+  # ⌘2 / Ctrl+2 with one tab left went on to Explore; ⌘W / Ctrl+W kept the last tab.
+  echo "FAIL: the keys didn't pass on with one tab" >&2
+  status=1
 fi
+grep 'music-gpui: page tabs:' "$work/app.log" || true
 echo "smoke: $navs pages opened, exit status $status"
 exit "$status"

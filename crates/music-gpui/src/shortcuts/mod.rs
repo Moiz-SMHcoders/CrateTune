@@ -47,12 +47,20 @@ pub const INPUT_CONTEXT: &str = "Input"; // i18n-ignore
 pub enum Group {
     Playback,
     Navigation,
+    /// Page tabs (`page_tabs.rs`).
+    Tabs,
     View,
     App,
 }
 
 impl Group {
-    pub const ALL: [Group; 4] = [Group::Playback, Group::Navigation, Group::View, Group::App];
+    pub const ALL: [Group; 5] = [
+        Group::Playback,
+        Group::Navigation,
+        Group::Tabs,
+        Group::View,
+        Group::App,
+    ];
 
     pub fn title(self) -> &'static str {
         crate::i18n::text(self.title_key())
@@ -62,6 +70,7 @@ impl Group {
         match self {
             Group::Playback => k!("shortcuts.group.playback"),
             Group::Navigation => k!("shortcuts.group.navigation"),
+            Group::Tabs => k!("shortcuts.group.tabs"),
             Group::View => k!("shortcuts.group.view"),
             Group::App => k!("shortcuts.group.app"),
         }
@@ -72,6 +81,7 @@ impl Group {
         match self {
             Group::Playback => "shortcuts.playback",
             Group::Navigation => "shortcuts.navigation",
+            Group::Tabs => "shortcuts.tabs",
             Group::View => "shortcuts.view",
             Group::App => "shortcuts.app",
         }
@@ -94,6 +104,10 @@ pub struct ShortcutAction {
     /// Also bound in the `Input` context, beating the text field's own binding
     /// (it binds ⌘[ / ⌘] to indent).
     pub in_input: bool,
+    /// Shares its keys with another action on purpose: it only acts while the page
+    /// tab strip shows and otherwise passes the key on to the next binding (⌘1 is a
+    /// tab with tabs open, Home without). Never a conflict with an unshared action.
+    pub shared: bool,
     /// Makes the binding (as `KeyBinding::new` with the action's type).
     bind: fn(&'static str, Option<&str>) -> KeyBinding,
 }
@@ -130,6 +144,12 @@ macro_rules! shortcut {
     ($id:literal, $group:ident, $label:literal, $action:ident, $default:literal) => {
         shortcut!($id, $group, $label, $action, $default, None, false)
     };
+    ($id:literal, $group:ident, $label:literal, $action:ident, $default:literal, shared) => {
+        ShortcutAction {
+            shared: true,
+            ..shortcut!($id, $group, $label, $action, $default)
+        }
+    };
     ($id:literal, $group:ident, $label:literal, $action:ident, $default:literal, mac: $mac:literal) => {
         ShortcutAction {
             default_mac: Some($mac),
@@ -145,6 +165,7 @@ macro_rules! shortcut {
             default_mac: None,
             context: $context,
             in_input: $in_input,
+            shared: false,
             bind: |keys, context| KeyBinding::new(keys, $action, context),
         }
     };
@@ -278,6 +299,107 @@ pub const ACTIONS: &[ShortcutAction] = &[
         false
     ),
     shortcut!(
+        "new_page_tab",
+        Tabs,
+        "page_tabs.new",
+        NewPageTab,
+        "secondary-t"
+    ),
+    shortcut!(
+        "close_page_tab",
+        Tabs,
+        "page_tabs.close",
+        ClosePageTab,
+        "secondary-w"
+    ),
+    shortcut!(
+        "next_page_tab",
+        Tabs,
+        "page_tabs.next",
+        NextPageTab,
+        "ctrl-tab"
+    ),
+    shortcut!(
+        "previous_page_tab",
+        Tabs,
+        "page_tabs.previous",
+        PreviousPageTab,
+        "ctrl-shift-tab"
+    ),
+    // After ⌘1–⌘3's Home / Explore / Library: the later binding is tried first.
+    shortcut!(
+        "page_tab_1",
+        Tabs,
+        "page_tabs.tab_1",
+        PageTab1,
+        "secondary-1",
+        shared
+    ),
+    shortcut!(
+        "page_tab_2",
+        Tabs,
+        "page_tabs.tab_2",
+        PageTab2,
+        "secondary-2",
+        shared
+    ),
+    shortcut!(
+        "page_tab_3",
+        Tabs,
+        "page_tabs.tab_3",
+        PageTab3,
+        "secondary-3",
+        shared
+    ),
+    shortcut!(
+        "page_tab_4",
+        Tabs,
+        "page_tabs.tab_4",
+        PageTab4,
+        "secondary-4",
+        shared
+    ),
+    shortcut!(
+        "page_tab_5",
+        Tabs,
+        "page_tabs.tab_5",
+        PageTab5,
+        "secondary-5",
+        shared
+    ),
+    shortcut!(
+        "page_tab_6",
+        Tabs,
+        "page_tabs.tab_6",
+        PageTab6,
+        "secondary-6",
+        shared
+    ),
+    shortcut!(
+        "page_tab_7",
+        Tabs,
+        "page_tabs.tab_7",
+        PageTab7,
+        "secondary-7",
+        shared
+    ),
+    shortcut!(
+        "page_tab_8",
+        Tabs,
+        "page_tabs.tab_8",
+        PageTab8,
+        "secondary-8",
+        shared
+    ),
+    shortcut!(
+        "page_tab_last",
+        Tabs,
+        "page_tabs.tab_last",
+        PageTabLast,
+        "secondary-9",
+        shared
+    ),
+    shortcut!(
         "toggle_now_playing",
         View,
         "common.now_playing",
@@ -374,16 +496,18 @@ pub fn find(id: &str) -> Option<&'static ShortcutAction> {
     ACTIONS.iter().find(|a| a.id == id)
 }
 
-/// The action (other than `except`) whose binding is `combo`.
+/// The action (other than `except`) whose binding is `combo`. A shared action
+/// (⌘1…⌘9 for page tabs) and an unshared one may have the same keys.
 pub fn conflict(
     combo: &Combo,
     except: &str,
     overrides: &Overrides,
     os: Os,
 ) -> Option<&'static ShortcutAction> {
+    let shared = find(except).is_some_and(|a| a.shared);
     ACTIONS
         .iter()
-        .filter(|a| a.id != except)
+        .filter(|a| a.id != except && a.shared == shared)
         .find(|a| a.binding(overrides, os).as_ref() == Some(combo))
 }
 

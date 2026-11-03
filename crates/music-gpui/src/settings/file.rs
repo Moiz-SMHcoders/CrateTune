@@ -105,6 +105,8 @@ pub struct Settings {
     pub updates: super::prefs::UpdatePrefs,
     /// The app log (Settings → About → Logs; `logs.rs`).
     pub logs: super::prefs::LogPrefs,
+    /// Page tabs: show them, restore them at start (`page_tabs.rs`).
+    pub tabs: crate::page_tabs::PageTabsConfig,
     /// Secrets that could not go to the OS keychain (see `secrets.rs`).
     #[serde(skip_serializing_if = "FileSecrets::is_empty")]
     pub secrets: FileSecrets,
@@ -146,6 +148,7 @@ impl Default for Settings {
             shortcuts: Default::default(),
             updates: Default::default(),
             logs: Default::default(),
+            tabs: Default::default(),
             secrets: FileSecrets::default(),
         }
     }
