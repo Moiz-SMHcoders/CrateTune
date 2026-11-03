@@ -92,16 +92,11 @@ pub fn render(data: FriendsPanel, cx: &App) -> AnyElement {
                 .p_2()
                 .rounded(crate::theme::radius(8.))
                 .bg(cx.theme().secondary)
-                .child(
-                    div()
-                        .text_sm()
-                        .truncate()
-                        .child(SharedString::from(t!(
-                            "friends.panel.invite",
-                            name = name,
-                            group = group
-                        ))),
-                )
+                .child(div().text_sm().truncate().child(SharedString::from(t!(
+                    "friends.panel.invite",
+                    name = name,
+                    group = group
+                ))))
                 .child(
                     Button::new(("friends-join-session", ix))
                         .small()
@@ -153,7 +148,11 @@ pub fn render(data: FriendsPanel, cx: &App) -> AnyElement {
                         .text_sm()
                         .font_weight(FontWeight::SEMIBOLD)
                         .child(SharedString::from(
-                            row.name.chars().next().map(|c| c.to_uppercase().to_string()).unwrap_or_default(),
+                            row.name
+                                .chars()
+                                .next()
+                                .map(|c| c.to_uppercase().to_string())
+                                .unwrap_or_default(),
                         )),
                 )
                 .child(
@@ -181,17 +180,13 @@ pub fn render(data: FriendsPanel, cx: &App) -> AnyElement {
                         .when(!song.is_empty(), |this| {
                             this.child(div().text_sm().truncate().child(SharedString::from(song)))
                         })
-                        .child(
-                            div()
-                                .text_xs()
-                                .text_color(muted)
-                                .truncate()
-                                .child(SharedString::from(format!(
-                                    "{} · {}",
-                                    status(row),
-                                    row.groups.join(", ")
-                                ))),
-                        ),
+                        .child(div().text_xs().text_color(muted).truncate().child(
+                            SharedString::from(format!(
+                                "{} · {}",
+                                status(row),
+                                row.groups.join(", ")
+                            )),
+                        )),
                 ),
         );
     }
@@ -219,16 +214,13 @@ pub fn render(data: FriendsPanel, cx: &App) -> AnyElement {
             h_flex()
                 .gap_2()
                 .justify_between()
-                .child(
-                    div()
-                        .text_xs()
-                        .text_color(muted)
-                        .child(SharedString::from(if data.sharing {
-                            t!("friends.panel.sharing")
-                        } else {
-                            t!("friends.panel.not_sharing")
-                        })),
-                )
+                .child(div().text_xs().text_color(muted).child(SharedString::from(
+                    if data.sharing {
+                        t!("friends.panel.sharing")
+                    } else {
+                        t!("friends.panel.not_sharing")
+                    },
+                )))
                 .child(
                     Button::new("friends-manage")
                         .ghost()

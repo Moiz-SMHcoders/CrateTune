@@ -342,7 +342,10 @@ mod tests {
         assert_eq!(PairInput::parse("hello, world!"), None);
         // The same fields as a friends invitation; the kinds don't mix.
         let invite = link.to_invite_link();
-        assert!(invite.starts_with("music-friends://join?id=abab"), "{invite}");
+        assert!(
+            invite.starts_with("music-friends://join?id=abab"),
+            "{invite}"
+        );
         assert_eq!(
             PairInput::parse_invite(&invite),
             Some(PairInput::Link(link.clone()))

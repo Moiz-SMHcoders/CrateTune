@@ -34,10 +34,10 @@ use super::messages::{
     DEVICES_ALPN, DecodeError, FRIENDS_ALPN, Frame, INVITE_ALPN, MAX_FRAME, Message, PAIR_ALPN,
     PeerInfo, Snapshot, code, decode, encode, length_prefix,
 };
-use crate::friends::{Activity, Group, INVITING_USER_DATA};
 use super::pairing::{
     self, CODE_TTL, Exchange, MAX_ATTEMPTS, PAIRING_USER_DATA, PairInput, PairingLink, Side,
 };
+use crate::friends::{Activity, Group, INVITING_USER_DATA};
 use crate::sync::{Category, Entry, FORMAT_VERSION, SyncApplied, SyncEngine, VersionVector};
 
 /// Giving up on reaching a device.
@@ -817,7 +817,11 @@ impl std::fmt::Display for ReadError {
 }
 
 /// Sends `msg` on a new stream and reads the answer.
-pub(super) async fn exchange(conn: &Connection, me: &PeerInfo, msg: &Message) -> Result<Frame, String> {
+pub(super) async fn exchange(
+    conn: &Connection,
+    me: &PeerInfo,
+    msg: &Message,
+) -> Result<Frame, String> {
     tokio::time::timeout(REQUEST_TIMEOUT, async {
         let (mut send, mut recv) = conn.open_bi().await.map_err(|e| e.to_string())?;
         write_frame(&mut send, Some(me), msg).await?;
@@ -1429,10 +1433,9 @@ async fn answer_sync(
     let engine = lock(&ctx.shared.sync).clone();
     let reply = match engine {
         None => Err(Message::error(code::SYNC_OFF, "")),
-        Some(_) if format != FORMAT_VERSION => Err(Message::error(
-            code::FORMAT,
-            format!("{FORMAT_VERSION}"),
-        )),
+        Some(_) if format != FORMAT_VERSION => {
+            Err(Message::error(code::FORMAT, format!("{FORMAT_VERSION}")))
+        }
         Some(engine) => {
             let asked = categories(&cats);
             tokio::task::spawn_blocking(move || engine.answer(&asked, &vv, now_unix_ms()))
@@ -1482,7 +1485,10 @@ async fn answer_sync(
         };
         write_frame(&mut send, Some(&me), &last).await
     };
-    if tokio::time::timeout(SYNC_TIMEOUT, sent).await.is_ok_and(|r| r.is_ok()) {
+    if tokio::time::timeout(SYNC_TIMEOUT, sent)
+        .await
+        .is_ok_and(|r| r.is_ok())
+    {
         let _ = send.finish();
         let _ = send.stopped().await;
     }
@@ -1572,7 +1578,11 @@ enum PullError {
 
 type Pulled = (Option<PeerInfo>, Vec<String>, Vec<Entry>, VersionVector);
 
-async fn pull_batches(conn: &Connection, me: &PeerInfo, msg: &Message) -> Result<Pulled, PullError> {
+async fn pull_batches(
+    conn: &Connection,
+    me: &PeerInfo,
+    msg: &Message,
+) -> Result<Pulled, PullError> {
     let io = |e: String| PullError::Io(e);
     tokio::time::timeout(SYNC_TIMEOUT, async {
         let (mut send, mut recv) = conn.open_bi().await.map_err(|e| io(e.to_string()))?;

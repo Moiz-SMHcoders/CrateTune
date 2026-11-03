@@ -43,7 +43,7 @@ fn hex(bytes: &[u8]) -> String {
 
 fn unhex(text: &str) -> Option<Vec<u8>> {
     let text = text.trim();
-    if text.len() % 2 != 0 || !text.is_ascii() {
+    if !text.len().is_multiple_of(2) || !text.is_ascii() {
         return None;
     }
     (0..text.len())
@@ -191,7 +191,10 @@ mod tests {
         let stored = me.to_secret();
         assert_eq!(Identity::from_secret(&stored), Some(me.clone()));
         assert_eq!(Identity::from_secret("abc"), None);
-        assert!(!format!("{me:?}").contains(&stored), "the key isn't in Debug");
+        assert!(
+            !format!("{me:?}").contains(&stored),
+            "the key isn't in Debug"
+        );
     }
 
     #[test]

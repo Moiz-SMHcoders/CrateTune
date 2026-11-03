@@ -1737,8 +1737,12 @@ default.
   The `automerge` crate (MIT) was considered: our data is independent registers plus one
   ordered list, which fractional positions cover, while Automerge keeps every operation forever
   (a like toggled 1 000 times is 1 000 ops), holds the document in memory while open and adds
-  ~AUTOMERGE_SIZE to the release binary. The hand-rolled design adds ~OWN_SIZE, holds nothing in
-  memory between rounds and reuses SQLite.
+  about 1.2 MB to a release binary on its own (a minimal program with and without
+  `automerge` 0.6.1, same profile: 0.37 → 1.61 MB). The hand-rolled document needs no new
+  crate (SQLite, serde, ring and SPAKE2 were already in), holds nothing in memory between
+  rounds and keeps one register per key, however often it changed. The whole round (sync,
+  friends, their UI and 2 × 18 translation files) grows the macOS release binary by
+  1.48 MB (64.08 → 65.56 MB against main at b447871).
 * **Local changes** aren't reported by each edit: before a round the library and the settings
   are *projected* and compared with the document (new value: new stamp; a key this device had
   and lost: tombstone; a key it never had, e.g. a setting only a newer version knows, is never
@@ -1758,6 +1762,10 @@ default.
   anything); a removal or move made later wins over an older add; a deleted playlist comes
   back only if renamed later; queue tabs are matched by name and the tab playing on a device
   keeps its live queue there; history is add-only with deletions as tombstones.
+* **Defaults don't win.** A setting still at its default that was never synced isn't recorded,
+  so switching sync on on a fresh install takes the other device's choices instead of
+  resetting it to the defaults (found in the two-instance run: 170 settings would otherwise
+  have come back as defaults).
 * **Never in the document**: secrets, keychain markers, accounts, this device's name and
   pairing, window frames, volume, output device, folders, cache and memory sizes, proxy / DNS,
   shortcuts, update / log options, friends (`settings/sync_settings.rs::NOT_SYNCED` plus the
@@ -1803,7 +1811,30 @@ Settings → **Friends**, the friends card on the Listen together page):
   `@friends-join-session`, `@friends-phrase=on|off`, `@friends-status`; `@set=friends-name:…`
   / `friends-group:…` / `friends-code:…` / `friends-phrase:…`.
 
-SCREENSHOTS_AND_CHECKS
+| ![Settings → Devices → Sync](docs/screenshots/devices-sync.png) | ![Listen together: the friends card](docs/screenshots/friends-feed.png) |
+|---|---|
+| ![Settings → Friends](docs/screenshots/friends-settings.png) | ![A group and its invitation](docs/screenshots/friends-groups.png) |
+| ![Recovery phrase](docs/screenshots/friends-recovery.png) | |
+
+* **Checked** (3 Nov 2026): in-process tests on localhost with the relay off
+  (`sync::{store, engine, library, frac, clock}`: convergence in any order, per-category
+  vectors, stale projections, likes union then last change, playlists merged from both
+  sides with moves and removals, pins / tabs / history, defaults; `friends::{identity, group}`:
+  signatures, recovery phrases, forged / tampered / self-added records dropped, permanent
+  removals; `handoff::tests::sync_between_two_devices`: `sync_off`, a round, the pull-back,
+  the change listener's debounced round; `friends_invite_activity_and_listen_together`: a wrong
+  code, joining by link, activity, private session, listen together, a stranger with a
+  same-id group refused; `sync_settings`: nothing private flattened, apply round trip). Two
+  app instances on one Mac (separate `MUSIC_CONFIG_DIR`s, `MUSIC_SECRET_STORE=file`, muted,
+  demo clock, fixtures): paired, sync on both, friends on, a group made on one and joined by
+  link on the other; the other got the 2 likes and the 8-song playlist, saw the first one's
+  song in its feed, got its "listen together" invitation; screenshots above from that run.
+  Not checked: real machines, other networks, Windows / Linux (BACKLOG M8).
+* **Idle cost.** Two paired idle nodes with mDNS, sync engines and a friend group each:
+  0.026 s of CPU in 60 s together (0.04 % of one core; `idle_cost`). Nothing runs on a timer:
+  rounds follow changes, hellos follow what is shared. Memory (RSS, same session): 151 MB for
+  an instance with nothing on, 160–165 MB for the two paired instances with sync and friends
+  on, which includes the hand-off node itself.
 
 ### Relay server (`music-relay`)
 

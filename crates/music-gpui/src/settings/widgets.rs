@@ -35,6 +35,14 @@ pub fn note(text: impl Into<SharedString>, cx: &App) -> impl IntoElement {
         .child(text.into())
 }
 
+/// [`note`] for longer explanations: wraps over as many lines as it needs.
+pub fn long_note(text: impl Into<SharedString>, cx: &App) -> impl IntoElement {
+    div()
+        .text_xs()
+        .text_color(cx.theme().muted_foreground)
+        .child(text.into())
+}
+
 pub fn status_line(text: SharedString, color: Hsla) -> impl IntoElement {
     div().text_xs().text_color(color).line_clamp(3).child(text)
 }

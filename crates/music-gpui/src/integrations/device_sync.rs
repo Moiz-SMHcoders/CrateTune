@@ -123,6 +123,9 @@ impl MusicApp {
         state.cats = cats.clone();
         engine.set_categories(&cats);
         let flat = crate::settings::sync_settings::flatten(self.settings.read(cx).settings());
+        engine.set_defaults(crate::settings::sync_settings::flatten(
+            &crate::settings::file::Settings::default(),
+        ));
         engine.set_settings(flat);
         node.set_sync(Some(engine));
         if let Some(lib) = &library {
@@ -262,7 +265,12 @@ impl MusicApp {
     /// `@device-sync-status`.
     pub(crate) fn print_sync_status(&self, cx: &gpui::App) {
         let s = &self.integrations.sync;
-        let peers: Vec<String> = self.devices_prefs(cx).paired.iter().map(|d| d.id.clone()).collect();
+        let peers: Vec<String> = self
+            .devices_prefs(cx)
+            .paired
+            .iter()
+            .map(|d| d.id.clone())
+            .collect();
         let entries = s.engine.as_ref().map(|e| e.status(&peers).entries);
         eprintln!(
             "music-gpui: sync running={} cats={:?} entries={entries:?} received={:?} busy={}",

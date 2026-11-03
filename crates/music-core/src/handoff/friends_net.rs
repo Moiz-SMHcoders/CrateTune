@@ -18,7 +18,7 @@ use iroh::{EndpointAddr, EndpointId};
 
 use super::messages::{FRIENDS_ALPN, Frame, INVITE_ALPN, Message, PeerInfo, code};
 use super::node::{
-    CONNECT_TIMEOUT, Command, Ctx, Event, FIND_TIMEOUT, PairError, PairingOffer, Pairing,
+    CONNECT_TIMEOUT, Command, Ctx, Event, FIND_TIMEOUT, PairError, Pairing, PairingOffer,
     REQUEST_TIMEOUT, ReadError, Shared, exchange, lock, now_unix_ms, read_frame, write_frame,
 };
 use super::pairing::{self, CODE_TTL, Exchange, MAX_ATTEMPTS, PairInput, PairingLink, Side};
@@ -73,7 +73,11 @@ impl FriendsShared {
             }
             for m in g.current() {
                 if m.member != me {
-                    out.extend(m.devices.iter().filter_map(|d| d.parse::<EndpointId>().ok()));
+                    out.extend(
+                        m.devices
+                            .iter()
+                            .filter_map(|d| d.parse::<EndpointId>().ok()),
+                    );
                 }
             }
         }
@@ -116,12 +120,7 @@ impl FriendsShared {
     fn merge(&mut self, groups: &[Group]) -> bool {
         let mut changed = false;
         for theirs in groups {
-            if let Some(mine) = self
-                .setup
-                .groups
-                .iter_mut()
-                .find(|g| g.id() == theirs.id())
-            {
+            if let Some(mine) = self.setup.groups.iter_mut().find(|g| g.id() == theirs.id()) {
                 changed |= mine.merge(theirs);
             }
         }
@@ -136,7 +135,10 @@ pub(crate) enum FriendsCommand {
     Push,
     Advertise(bool),
     Join(PairInput),
-    ListenTogether { group: String, link: String },
+    ListenTogether {
+        group: String,
+        link: String,
+    },
 }
 
 /// Starts showing an invitation code for `group`.
@@ -201,7 +203,11 @@ pub(super) fn handle(ctx: &Arc<Ctx>, command: FriendsCommand) {
         }
         FriendsCommand::Advertise(on) => {
             let data = on
-                .then(|| INVITING_USER_DATA.parse::<iroh::address_lookup::UserData>().ok())
+                .then(|| {
+                    INVITING_USER_DATA
+                        .parse::<iroh::address_lookup::UserData>()
+                        .ok()
+                })
                 .flatten();
             ctx.endpoint.set_user_data_for_address_lookup(data);
             if on {
@@ -209,7 +215,9 @@ pub(super) fn handle(ctx: &Arc<Ctx>, command: FriendsCommand) {
                     tokio::time::sleep(CODE_TTL).await;
                     let expired = {
                         let mut inviting = lock(&ctx.shared.inviting);
-                        let gone = inviting.as_ref().is_some_and(|(_, p)| p.until <= Instant::now());
+                        let gone = inviting
+                            .as_ref()
+                            .is_some_and(|(_, p)| p.until <= Instant::now());
                         if gone {
                             *inviting = None;
                         }
@@ -302,7 +310,10 @@ fn take_hello(
             && let Some(peer) = from
             && (peer.relay_url.is_some() || !peer.addrs.is_empty())
         {
-            let hint = (peer.relay_url.clone(), peer.addrs.iter().copied().take(16).collect());
+            let hint = (
+                peer.relay_url.clone(),
+                peer.addrs.iter().copied().take(16).collect(),
+            );
             if f.hints.get(&device) != Some(&hint) {
                 ctx.emit(Event::FriendDevice {
                     id: device.to_string(),
@@ -434,7 +445,10 @@ async fn answer(ctx: &Ctx, id: EndpointId, mut send: SendStream, mut recv: RecvS
             other => Message::error(code::UNSUPPORTED, format!("{other:?}")),
         },
     };
-    if write_frame(&mut send, Some(&ctx.me_for_friends()), &reply).await.is_ok() {
+    if write_frame(&mut send, Some(&ctx.me_for_friends()), &reply)
+        .await
+        .is_ok()
+    {
         let _ = send.finish();
         let _ = send.stopped().await;
     }
@@ -500,7 +514,9 @@ pub(super) async fn serve_invite(ctx: &Arc<Ctx>, conn: &Connection) {
         // The code is proven: the group goes to the newcomer.
         let (group, identity) = {
             let friends = lock(&ctx.shared.friends);
-            let f = friends.as_ref().ok_or(Message::error(code::NOT_PAIRING, ""))?;
+            let f = friends
+                .as_ref()
+                .ok_or(Message::error(code::NOT_PAIRING, ""))?;
             let g = f.setup.groups.iter().find(|g| g.id() == group_id);
             (
                 g.cloned().ok_or(Message::error(code::NOT_PAIRING, ""))?,
@@ -543,9 +559,15 @@ pub(super) async fn serve_invite(ctx: &Arc<Ctx>, conn: &Connection) {
             };
             *lock(&ctx.shared.inviting) = None;
             ctx.endpoint.set_user_data_for_address_lookup(None);
-            if write_frame(&mut send, None, &Message::InviteDone { group: group.shareable() })
-                .await
-                .is_ok()
+            if write_frame(
+                &mut send,
+                None,
+                &Message::InviteDone {
+                    group: group.shareable(),
+                },
+            )
+            .await
+            .is_ok()
             {
                 let _ = send.finish();
                 let _ = send.stopped().await;
@@ -591,9 +613,7 @@ pub(crate) fn admit(
         return None;
     }
     let mut joined = group.clone();
-    joined
-        .vouch(inviter, &record.member, now_unix_ms())
-        .ok()?;
+    joined.vouch(inviter, &record.member, now_unix_ms()).ok()?;
     let theirs = Group {
         header: group.header.clone(),
         members: vec![record.clone()],
@@ -716,7 +736,13 @@ async fn join_with(ctx: &Arc<Ctx>, target: EndpointAddr, code: &str) -> Result<G
                 ..MemberRecord::default()
             });
         }
-        mine.set_self(&identity, &name, Some(&me.to_string()), false, now_unix_ms());
+        mine.set_self(
+            &identity,
+            &name,
+            Some(&me.to_string()),
+            false,
+            now_unix_ms(),
+        );
         let record = mine.record(&my_id).cloned().unwrap_or_default();
         write_frame(&mut send, None, &Message::InviteJoin { record })
             .await
@@ -760,7 +786,11 @@ mod tests {
 
     #[test]
     fn admitting_checks_the_record() {
-        let (ann, bob, eve) = (Identity::generate(), Identity::generate(), Identity::generate());
+        let (ann, bob, eve) = (
+            Identity::generate(),
+            Identity::generate(),
+            Identity::generate(),
+        );
         let group = Group::create(&ann, "Friday", "Ann", "dev-ann", 1);
         let record = |who: &Identity, device: &str| {
             let mut g = group.clone();

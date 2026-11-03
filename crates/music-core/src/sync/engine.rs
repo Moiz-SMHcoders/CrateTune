@@ -58,6 +58,10 @@ struct Inner {
     /// The app's settings, flattened (`None` until it passes them: settings aren't
     /// projected before, so nothing is mistaken for removed).
     settings: Option<BTreeMap<String, Value>>,
+    /// The settings' defaults: a setting at its default that was never synced isn't
+    /// recorded, so another device's own choice wins over it (switching sync on on a
+    /// fresh install doesn't reset the other device to the defaults).
+    defaults: BTreeMap<String, Value>,
     cats: Vec<Category>,
 }
 
@@ -87,6 +91,7 @@ impl SyncEngine {
                 store,
                 library,
                 settings: None,
+                defaults: BTreeMap::new(),
                 cats: Vec::new(),
             }),
         }
@@ -119,6 +124,11 @@ impl SyncEngine {
         self.lock().settings = Some(settings);
     }
 
+    /// The settings' defaults, flattened like [`Self::set_settings`].
+    pub fn set_defaults(&self, defaults: BTreeMap<String, Value>) {
+        self.lock().defaults = defaults;
+    }
+
     /// Records local changes in the document. Returns how many entries were stamped.
     pub fn refresh(&self, now_ms: u64) -> Result<usize> {
         let mut inner = self.lock();
@@ -133,14 +143,16 @@ impl SyncEngine {
     /// What to ask another device for: the categories and this device's version vector.
     pub fn request(&self) -> Result<(Vec<Category>, VersionVector)> {
         let inner = self.lock();
-        Ok((
-            inner.cats.clone(),
-            inner.store.version_vector(&inner.cats)?,
-        ))
+        Ok((inner.cats.clone(), inner.store.version_vector(&inner.cats)?))
     }
 
     /// Answers another device's pull (local changes are recorded first).
-    pub fn answer(&self, asked: &[Category], theirs: &VersionVector, now_ms: u64) -> Result<Answer> {
+    pub fn answer(
+        &self,
+        asked: &[Category],
+        theirs: &VersionVector,
+        now_ms: u64,
+    ) -> Result<Answer> {
         let mut inner = self.lock();
         let cats: Vec<Category> = inner
             .cats
@@ -247,10 +259,16 @@ impl Inner {
                     return Ok(0);
                 };
                 let sound = cat == Category::Sound;
+                let known = self.store.all(cat)?;
                 let items: Vec<(String, Option<Value>)> = settings
                     .iter()
                     .filter(|(path, _)| is_sound_setting(path) == sound)
-                    .map(|(path, v)| (format!("s/{path}"), Some(v.clone())))
+                    .map(|(path, v)| (format!("s/{path}"), v))
+                    .filter(|(key, v)| {
+                        let path = &key[2..];
+                        known.contains_key(key) || self.defaults.get(path) != Some(*v)
+                    })
+                    .map(|(key, v)| (key, Some(v.clone())))
                     .collect();
                 self.store.project(cat, &items, &|_| true, now_ms)
             }
@@ -296,7 +314,8 @@ mod tests {
         a.refresh(now).unwrap();
         let (cats, vv) = a.request().unwrap();
         let answer = b.answer(&cats, &vv, now).unwrap();
-        a.merge(&answer.cats, &answer.entries, &answer.vv, now).unwrap()
+        a.merge(&answer.cats, &answer.entries, &answer.vv, now)
+            .unwrap()
     }
 
     fn sync(a: &SyncEngine, b: &SyncEngine) {
@@ -322,9 +341,15 @@ mod tests {
                 .map(|(k, v)| (k.to_string(), v.clone()))
                 .collect::<BTreeMap<_, _>>()
         };
-        a.set_settings(map(&[("appearance.theme", json!("light")), ("audio.speed", json!(1.0))]));
+        a.set_settings(map(&[
+            ("appearance.theme", json!("light")),
+            ("audio.speed", json!(1.0)),
+        ]));
         std::thread::sleep(std::time::Duration::from_millis(2));
-        b.set_settings(map(&[("appearance.theme", json!("dark")), ("audio.speed", json!(1.25))]));
+        b.set_settings(map(&[
+            ("appearance.theme", json!("dark")),
+            ("audio.speed", json!(1.25)),
+        ]));
         let applied = pull(&a, &b);
         let mut got = applied.settings.clone();
         got.sort_by(|x, y| x.0.cmp(&y.0));
@@ -337,9 +362,23 @@ mod tests {
         );
         // a hasn't passed its new settings yet: refreshing doesn't undo b's.
         assert_eq!(a.refresh(now_ms() as u64).unwrap(), 0);
+        // A fresh device (everything at its defaults) doesn't reset the other's choices.
+        let (c, _) = device("c");
+        let defaults = map(&[
+            ("appearance.theme", json!("dark")),
+            ("audio.speed", json!(1.0)),
+        ]);
+        c.set_defaults(defaults.clone());
+        c.set_settings(defaults);
+        let applied = pull(&c, &a);
+        assert_eq!(applied.settings.len(), 2, "{applied:?}");
+        assert!(pull(&a, &c).settings.is_empty());
         // Sound off on a: speed isn't taken any more.
         a.set_categories(&[Category::Settings]);
-        b.set_settings(map(&[("appearance.theme", json!("dark")), ("audio.speed", json!(0.75))]));
+        b.set_settings(map(&[
+            ("appearance.theme", json!("dark")),
+            ("audio.speed", json!(0.75)),
+        ]));
         let applied = pull(&a, &b);
         assert!(applied.settings.is_empty(), "{applied:?}");
     }
@@ -358,7 +397,10 @@ mod tests {
             assert!(lib.song("bbbbbbbbbbb").unwrap().unwrap().liked());
             assert!(lib.song("ccccccccccc").unwrap().unwrap().disliked());
         }
-        assert_eq!(la.song("bbbbbbbbbbb").unwrap().unwrap().track.title, "Song bbbbbbbbbbb");
+        assert_eq!(
+            la.song("bbbbbbbbbbb").unwrap().unwrap().track.title,
+            "Song bbbbbbbbbbb"
+        );
         // Unliked on b later: gone on a too; nothing ping-pongs afterwards.
         lb.unlike("aaaaaaaaaaa").unwrap();
         sync(&a, &b);
@@ -415,8 +457,11 @@ mod tests {
         let (a, la) = device("a");
         let (b, lb) = device("b");
         let song = |id: &str| json!({"kind": "Song", "data": {"video_id": id, "title": id}});
-        la.set_json(library::PINS_KEY, &json!([song("aaaaaaaaaaa"), song("bbbbbbbbbbb")]))
-            .unwrap();
+        la.set_json(
+            library::PINS_KEY,
+            &json!([song("aaaaaaaaaaa"), song("bbbbbbbbbbb")]),
+        )
+        .unwrap();
         la.set_json(
             library::TABS_KEY,
             &json!({"tabs": [
@@ -440,20 +485,30 @@ mod tests {
         assert_eq!(tabs["tabs"][1]["name"], "Workout");
         assert_eq!(tabs["tabs"][1]["queue"]["position_ms"], 5000);
         assert_eq!(tabs["playing"], 0);
-        let history = lb.history(crate::library::TimeZone::Offset(0), 10, 0).unwrap();
+        let history = lb
+            .history(crate::library::TimeZone::Offset(0), 10, 0)
+            .unwrap();
         assert_eq!(history.len(), 1);
         assert_eq!(history[0].played_ms, 120_000);
         // Unpinned on b, the tab removed on b, the play deleted on b.
-        lb.set_json(library::PINS_KEY, &json!([song("bbbbbbbbbbb")])).unwrap();
-        lb.set_json(library::TABS_KEY, &json!({"tabs": [{"id": 1, "name": ""}], "playing": 0}))
+        lb.set_json(library::PINS_KEY, &json!([song("bbbbbbbbbbb")]))
             .unwrap();
+        lb.set_json(
+            library::TABS_KEY,
+            &json!({"tabs": [{"id": 1, "name": ""}], "playing": 0}),
+        )
+        .unwrap();
         lb.delete_history_entries(&[history[0].id]).unwrap();
         sync(&a, &b);
         let pins = la.get_json::<Value>(library::PINS_KEY).unwrap().unwrap();
         assert_eq!(pins.as_array().unwrap().len(), 1);
         let tabs = la.get_json::<Value>(library::TABS_KEY).unwrap().unwrap();
         assert_eq!(tabs["tabs"].as_array().unwrap().len(), 1);
-        assert!(la.history(crate::library::TimeZone::Offset(0), 10, 0).unwrap().is_empty());
+        assert!(
+            la.history(crate::library::TimeZone::Offset(0), 10, 0)
+                .unwrap()
+                .is_empty()
+        );
         assert!(pull(&a, &b).is_empty() && pull(&b, &a).is_empty());
     }
 

@@ -19,12 +19,12 @@ use gpui_component::{
 use super::SettingsPanel;
 use super::file::Settings;
 use super::panel::SettingsEvent;
-use super::widgets::{Anchor as _, field_at, group_at, note, row, row_at, status_line};
+use super::widgets::{Anchor as _, field_at, group_at, long_note, note, row, row_at, status_line};
 use crate::app::{read_app, update_app};
 use crate::integrations::config::{DevicesPrefs, relay_url_valid};
-use music_core::sync::Category as SyncCategory;
 use crate::integrations::devices::{DeviceStatus, PairStatus, status_text};
 use crate::secrets::Secret;
+use music_core::sync::Category as SyncCategory;
 
 pub struct DevicesUi {
     name: Entity<InputState>,
@@ -138,7 +138,11 @@ impl SettingsPanel {
 
     /// Settings another device synced (`integrations/device_sync.rs`): written in,
     /// saved, and the app told about the sections that changed.
-    pub fn apply_synced(&mut self, changes: &[(String, serde_json::Value)], cx: &mut Context<Self>) {
+    pub fn apply_synced(
+        &mut self,
+        changes: &[(String, serde_json::Value)],
+        cx: &mut Context<Self>,
+    ) {
         let next = super::sync_settings::apply(&self.settings, changes);
         if next == self.settings {
             return;
@@ -227,6 +231,7 @@ pub(super) fn code_box(code: &str, cx: &gpui::App) -> impl IntoElement {
         .bg(cx.theme().secondary)
         .text_2xl()
         .font_weight(FontWeight::SEMIBOLD)
+        .whitespace_nowrap()
         .child(SharedString::from(music_core::handoff::display_code(code)))
 }
 
@@ -519,7 +524,7 @@ fn sync_group(prefs: &DevicesPrefs, cx: &mut Context<SettingsPanel>) -> AnyEleme
     let theme = cx.theme();
     let (muted, danger) = (theme.muted_foreground, theme.danger);
     let mut group = group_at("devices.sync", t!("settings.devices.sync.title"), cx)
-        .child(note(t!("settings.devices.sync.note"), cx))
+        .child(long_note(t!("settings.devices.sync.note"), cx))
         .child(row_at(
             "devices.sync.enabled",
             t!("settings.devices.sync.enabled"),
@@ -605,7 +610,7 @@ fn sync_group(prefs: &DevicesPrefs, cx: &mut Context<SettingsPanel>) -> AnyEleme
                     }),
             ),
         )
-        .child(note(t!("settings.devices.sync.rules"), cx))
-        .child(note(t!("settings.devices.sync.private"), cx))
+        .child(long_note(t!("settings.devices.sync.rules"), cx))
+        .child(long_note(t!("settings.devices.sync.private"), cx))
         .into_any_element()
 }

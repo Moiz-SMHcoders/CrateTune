@@ -20,7 +20,8 @@
 //! which fractional positions cover; Automerge's strengths (text, nested lists, full
 //! history) would go unused while its costs stay: the document keeps every change
 //! ever made (a like toggled a thousand times is a thousand ops), is held in memory
-//! while open, and adds about 1.5 MB to the binary. This module adds no dependency
+//! while open, and adds about 1.2 MB to a release binary (a minimal program with and
+//! without `automerge` 0.6.1, built like the app). This module adds no dependency
 //! (SQLite and serde are already in) and holds nothing in memory between rounds.
 //!
 //! **Local changes.** The app doesn't report each edit. Before every round the
@@ -40,6 +41,8 @@
 //! **Conflict rules** (documented for users in the README):
 //! * The same setting, rating, pin or tab changed on two devices while apart: the
 //!   later change wins (clock time, ties by device id).
+//! * A setting at its default that was never synced isn't recorded: the other
+//!   device's choice wins over it (a fresh install doesn't reset the other one).
 //! * Likes from both devices are kept (a union): enabling sync never removes
 //!   anything; only an unlike / delete made after the other device's like removes it.
 //! * Playlist entries added on both devices are both kept, in position order; an
@@ -175,7 +178,9 @@ pub fn same_value(a: &Value, b: &Value) -> bool {
     match (a, b) {
         (Value::Object(a), Value::Object(b)) => {
             a.len() - usize::from(a.contains_key("m")) == b.len() - usize::from(b.contains_key("m"))
-                && a.iter().filter(|(k, _)| *k != "m").all(|(k, v)| b.get(k) == Some(v))
+                && a.iter()
+                    .filter(|(k, _)| *k != "m")
+                    .all(|(k, v)| b.get(k) == Some(v))
         }
         _ => a == b,
     }
@@ -216,7 +221,10 @@ mod tests {
         let a = json!({"r": "like", "m": {"title": "A"}});
         assert!(same_value(&a, &json!({"r": "like", "m": {"title": "B"}})));
         assert!(same_value(&a, &json!({"r": "like"})));
-        assert!(!same_value(&a, &json!({"r": "dislike", "m": {"title": "A"}})));
+        assert!(!same_value(
+            &a,
+            &json!({"r": "dislike", "m": {"title": "A"}})
+        ));
         assert!(!same_value(&a, &json!({"r": "like", "x": 1})));
         assert!(!same_value(&a, &Value::Null));
         assert!(same_value(&json!(1), &json!(1)));

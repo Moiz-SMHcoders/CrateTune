@@ -276,12 +276,18 @@ impl MusicApp {
     }
 
     /// Settings → Friends → "Create a group".
-    pub fn friends_create_group(&mut self, name: &str, window: &mut Window, cx: &mut Context<Self>) {
+    pub fn friends_create_group(
+        &mut self,
+        name: &str,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         let name = music_core::friends::group::clean_name(name);
         if name.is_empty() {
             return;
         }
-        let (Some(identity), Some(device)) = (self.friends_identity(cx), self.friends_device_id(cx))
+        let (Some(identity), Some(device)) =
+            (self.friends_identity(cx), self.friends_device_id(cx))
         else {
             notify(window, cx, t!("friends.toast.not_ready"));
             return;
@@ -387,7 +393,12 @@ impl MusicApp {
 
     /// "Listen together": host a Music Together session through the relay; its link
     /// goes to the group's members once it is up.
-    pub fn friends_listen_together(&mut self, group: &str, window: &mut Window, cx: &mut Context<Self>) {
+    pub fn friends_listen_together(
+        &mut self,
+        group: &str,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         self.integrations.friends.pending_listen = Some((group.to_owned(), Instant::now()));
         // Already hosting: the group is invited to that session (on the next poll).
         if !matches!(self.integrations.together.role, Role::Hosting(_)) {
@@ -430,7 +441,12 @@ impl MusicApp {
     }
 
     /// A friend's "listen together": join their session.
-    pub fn friends_join_session(&mut self, link: &str, window: &mut Window, cx: &mut Context<Self>) {
+    pub fn friends_join_session(
+        &mut self,
+        link: &str,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         let link = link.to_owned();
         self.integrations.friends.invites.retain(|i| i.link != link);
         self.together_join(&link, window, cx);
@@ -444,7 +460,12 @@ impl MusicApp {
 
     /// Replaces this installation's member key with the one of a recovery phrase. The
     /// groups of the old key are forgotten here (ask for invitations again).
-    pub fn friends_restore(&mut self, phrase: &str, window: &mut Window, cx: &mut Context<Self>) -> bool {
+    pub fn friends_restore(
+        &mut self,
+        phrase: &str,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> bool {
         let identity = match Identity::from_recovery_phrase(phrase) {
             Ok(identity) => identity,
             Err(_) => {
@@ -483,9 +504,13 @@ impl MusicApp {
             .as_ref()
             .filter(|t| !t.is_local() && music_core::together::is_shareable_id(&t.video_id))
             .map(|t| (t.video_id.clone(), playing));
-        let key = self.integrations.friends.mirrored.as_ref().map(|(k, _)| k.clone());
-        if key != Some(current.clone()) || std::mem::take(&mut self.integrations.friends.remirror)
-        {
+        let key = self
+            .integrations
+            .friends
+            .mirrored
+            .as_ref()
+            .map(|(k, _)| k.clone());
+        if key != Some(current.clone()) || std::mem::take(&mut self.integrations.friends.remirror) {
             let started = match (&self.integrations.friends.mirrored, &current) {
                 // Same song, play / pause: it started when it started.
                 (Some((Some((id, _)), at)), Some((now_id, _))) if id == now_id => *at,
@@ -493,18 +518,19 @@ impl MusicApp {
             };
             self.integrations.friends.mirrored = Some((current.clone(), started));
             let share = self.friends_prefs(cx).share && !self.integrations.friends.private_session;
-            let activity = state
-                .track
-                .as_ref()
-                .zip(current)
-                .filter(|_| share)
-                .map(|(t, (id, playing))| Activity {
-                    video_id: id,
-                    title: t.title.clone(),
-                    artist: t.artists.clone(),
-                    started_ms: started,
-                    playing,
-                });
+            let activity =
+                state
+                    .track
+                    .as_ref()
+                    .zip(current)
+                    .filter(|_| share)
+                    .map(|(t, (id, playing))| Activity {
+                        video_id: id,
+                        title: t.title.clone(),
+                        artist: t.artists.clone(),
+                        started_ms: started,
+                        playing,
+                    });
             self.friends_mirror(activity);
         }
         let pending = self.integrations.friends.pending_listen.clone();
@@ -529,7 +555,12 @@ impl MusicApp {
 
     // ---- node events ---------------------------------------------------------------
 
-    pub(crate) fn friends_groups_changed(&mut self, groups: Vec<Group>, window: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn friends_groups_changed(
+        &mut self,
+        groups: Vec<Group>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         let me = self.integrations.friends.member_id.clone();
         let prefs = self.friends_prefs(cx);
         let leaving = &self.integrations.friends.leaving;
@@ -593,11 +624,20 @@ impl MusicApp {
         notify(
             window,
             cx,
-            t!("friends.toast.listen_invite", name = name, group = group_name),
+            t!(
+                "friends.toast.listen_invite",
+                name = name,
+                group = group_name
+            ),
         );
     }
 
-    pub(crate) fn friends_joined(&mut self, group: Group, window: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn friends_joined(
+        &mut self,
+        group: Group,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         let name = group.name().to_owned();
         self.integrations.friends.join = PairStatus::Paired(name.clone());
         self.friends_groups_changed(vec![group], window, cx);
@@ -609,7 +649,12 @@ impl MusicApp {
         self.devices_sync(cx);
     }
 
-    pub(crate) fn friends_invite_ended(&mut self, joined: Option<String>, window: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn friends_invite_ended(
+        &mut self,
+        joined: Option<String>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         let group = self
             .integrations
             .friends
@@ -625,7 +670,11 @@ impl MusicApp {
             })
             .unwrap_or_default();
         if let Some(name) = joined {
-            notify(window, cx, t!("friends.toast.member_joined", name = name, group = group));
+            notify(
+                window,
+                cx,
+                t!("friends.toast.member_joined", name = name, group = group),
+            );
         }
         self.devices_sync(cx);
     }
@@ -699,7 +748,9 @@ impl MusicApp {
             eprintln!(
                 "music-gpui: friends   {}: {:?}",
                 row.name,
-                row.activity.as_ref().map(|a| (&a.title, &a.artist, a.playing))
+                row.activity
+                    .as_ref()
+                    .map(|a| (&a.title, &a.artist, a.playing))
             );
         }
         for i in &s.invites {
@@ -714,7 +765,11 @@ mod tests {
 
     #[test]
     fn the_feed_lists_other_members_playing_first() {
-        let (ann, bob, cat) = (Identity::generate(), Identity::generate(), Identity::generate());
+        let (ann, bob, cat) = (
+            Identity::generate(),
+            Identity::generate(),
+            Identity::generate(),
+        );
         let mut g = Group::create(&ann, "Friday", "Ann", "d-ann", 1);
         for (who, name) in [(&bob, "Bob"), (&cat, "Cat")] {
             g.vouch(&ann, &who.id(), 2).unwrap();

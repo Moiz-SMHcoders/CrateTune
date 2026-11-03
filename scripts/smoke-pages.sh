@@ -38,12 +38,17 @@ trap 'rm -rf "$work"' EXIT
 mkdir "$work/config"
 
 routes="home explore charts moods new-releases history library:songs library:albums
-  library:artists library:playlists downloads stats search:daft%20punk"
+  library:artists library:playlists downloads stats search:daft%20punk together"
 sections="appearance playback modules eq lyrics content network privacy storage account
-  integrations sponsorblock together spotify ai-filter cast devices backup about shortcuts"
+  integrations sponsorblock together spotify ai-filter cast devices friends backup about
+  shortcuts"
 script="" t=4
 for r in $routes; do script="$script$t:@nav=$r,"; t=$((t + 2)); done
 for s in $sections; do script="$script$t:@nav=settings:$s,"; t=$((t + 2)); done
+# Friend groups and device sync switched on: their sections and the Together page's card
+# draw their full content too.
+for a in @friends=on @friends-share=on @device-sync=on @nav=settings:friends @nav=settings:devices \
+  @nav=together; do script="$script$t:$a,"; t=$((t + 2)); done
 script="$script$t:@quit"
 limit=$((t + 60))
 

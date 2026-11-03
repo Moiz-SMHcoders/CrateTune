@@ -536,10 +536,9 @@ mod tests {
         let lib = Library::open_in_memory().unwrap();
         let heard = Arc::new(AtomicUsize::new(0));
         let h = heard.clone();
-        lib.clone()
-            .set_change_listener(Some(Arc::new(move || {
-                h.fetch_add(1, Ordering::Relaxed);
-            })));
+        lib.clone().set_change_listener(Some(Arc::new(move || {
+            h.fetch_add(1, Ordering::Relaxed);
+        })));
         lib.set_value("x", "1").unwrap();
         lib.like(&track("a", "A", "X", None)).unwrap();
         assert_eq!(heard.load(Ordering::Relaxed), 2);

@@ -22,7 +22,7 @@ use super::SettingsPanel;
 use super::devices_ui::code_box;
 use super::file::Settings;
 use super::panel::SettingsEvent;
-use super::widgets::{Anchor as _, field_at, group_at, note, row_at, status_line};
+use super::widgets::{Anchor as _, field_at, group_at, long_note, note, row_at, status_line};
 use crate::app::{read_app, update_app};
 use crate::integrations::config::FriendsPrefs;
 use crate::integrations::devices::PairStatus;
@@ -48,32 +48,51 @@ impl FriendsUi {
                 .default_value(settings.friends.name.clone())
         });
         let group = cx.new(|cx| InputState::new(window, cx));
-        crate::i18n::track_placeholder(&group, k!("settings.friends.group_placeholder"), window, cx);
+        crate::i18n::track_placeholder(
+            &group,
+            k!("settings.friends.group_placeholder"),
+            window,
+            cx,
+        );
         let code = cx.new(|cx| InputState::new(window, cx).placeholder("ABCD-EFGH"));
         let phrase = cx.new(|cx| InputState::new(window, cx));
-        crate::i18n::track_placeholder(&phrase, k!("settings.friends.phrase_placeholder"), window, cx);
+        crate::i18n::track_placeholder(
+            &phrase,
+            k!("settings.friends.phrase_placeholder"),
+            window,
+            cx,
+        );
         let subscriptions = vec![
-            cx.subscribe(&name, |panel: &mut SettingsPanel, input, event: &InputEvent, cx| {
-                if matches!(event, InputEvent::Blur | InputEvent::PressEnter { .. }) {
-                    let value = input.read(cx).value().trim().to_owned();
-                    panel.set_friends_prefs(|f| f.name = value, cx);
-                }
-            }),
+            cx.subscribe(
+                &name,
+                |panel: &mut SettingsPanel, input, event: &InputEvent, cx| {
+                    if matches!(event, InputEvent::Blur | InputEvent::PressEnter { .. }) {
+                        let value = input.read(cx).value().trim().to_owned();
+                        panel.set_friends_prefs(|f| f.name = value, cx);
+                    }
+                },
+            ),
             // The app reads the settings: not while this panel is being updated.
-            cx.subscribe(&group, |_: &mut SettingsPanel, input, event: &InputEvent, cx| {
-                if matches!(event, InputEvent::PressEnter { .. }) {
-                    let value = input.read(cx).value().to_string();
-                    cx.defer(move |cx| create_group(value, cx));
-                }
-            }),
-            cx.subscribe(&code, |_: &mut SettingsPanel, input, event: &InputEvent, cx| {
-                if matches!(event, InputEvent::PressEnter { .. }) {
-                    let value = input.read(cx).value().to_string();
-                    cx.defer(move |cx| {
-                        update_app(cx, |app, cx| app.friends_join(&value, cx));
-                    });
-                }
-            }),
+            cx.subscribe(
+                &group,
+                |_: &mut SettingsPanel, input, event: &InputEvent, cx| {
+                    if matches!(event, InputEvent::PressEnter { .. }) {
+                        let value = input.read(cx).value().to_string();
+                        cx.defer(move |cx| create_group(value, cx));
+                    }
+                },
+            ),
+            cx.subscribe(
+                &code,
+                |_: &mut SettingsPanel, input, event: &InputEvent, cx| {
+                    if matches!(event, InputEvent::PressEnter { .. }) {
+                        let value = input.read(cx).value().to_string();
+                        cx.defer(move |cx| {
+                            update_app(cx, |app, cx| app.friends_join(&value, cx));
+                        });
+                    }
+                },
+            ),
         ];
         (
             Self {
@@ -177,7 +196,7 @@ pub(super) fn render(
     let theme = cx.theme();
     let (muted, danger, success) = (theme.muted_foreground, theme.danger, theme.success);
     let intro = group_at("friends.enabled", t!("settings.friends.title"), cx)
-        .child(note(t!("settings.friends.intro"), cx))
+        .child(long_note(t!("settings.friends.intro"), cx))
         .child(row_at(
             "friends.switch",
             t!("settings.friends.enabled"),
@@ -190,7 +209,11 @@ pub(super) fn render(
                 })),
             cx,
         ))
-        .child(div().anchor("friends.privacy").child(note(t!("settings.friends.privacy"), cx)));
+        .child(
+            div()
+                .anchor("friends.privacy")
+                .child(long_note(t!("settings.friends.privacy"), cx)),
+        );
     if !prefs.enabled {
         return v_flex().gap_5().child(intro).into_any_element();
     }
@@ -240,14 +263,17 @@ pub(super) fn render(
         ))
         .children(me.as_ref().map(|id| {
             note(
-                t!("settings.friends.member_id", id = music_core::handoff::short_id(id)),
+                t!(
+                    "settings.friends.member_id",
+                    id = music_core::handoff::short_id(id)
+                ),
                 cx,
             )
         }));
 
     let mut groups = group_at("friends.groups", t!("settings.friends.groups"), cx);
     if prefs.groups.is_empty() {
-        groups = groups.child(note(t!("settings.friends.no_groups"), cx));
+        groups = groups.child(long_note(t!("settings.friends.no_groups"), cx));
     }
     for (gx, g) in prefs.groups.iter().enumerate() {
         let gid = g.id().to_owned();
@@ -271,7 +297,9 @@ pub(super) fn render(
                             .min_w_0()
                             .child(div().text_sm().truncate().child(SharedString::from(label)))
                             .when(m.member == g.header.owner, |this| {
-                                this.child(Tag::secondary().small().child(t!("settings.friends.owner")))
+                                this.child(
+                                    Tag::secondary().small().child(t!("settings.friends.owner")),
+                                )
                             }),
                     )
                     .when(owner && !you, |this| {
@@ -288,7 +316,10 @@ pub(super) fn render(
                     }),
             );
         }
-        let shown = invite.as_ref().filter(|(id, _)| *id == gid).map(|(_, o)| o.clone());
+        let shown = invite
+            .as_ref()
+            .filter(|(id, _)| *id == gid)
+            .map(|(_, o)| o.clone());
         let (invite_id, leave_id) = (gid.clone(), gid.clone());
         let mut card = v_flex()
             .gap_2()
@@ -339,16 +370,18 @@ pub(super) fn render(
                     .gap_4()
                     .items_start()
                     .anchor("friends.invite")
-                    .child(crate::qr::qr_code(&link, px(120.), cx))
+                    .child(crate::qr::qr_code(&link, px(104.), cx))
                     .child(
                         v_flex()
                             .gap_2()
                             .min_w_0()
-                            .child(div().text_sm().child(SharedString::from(t!(
-                                "settings.friends.invite_shown"
-                            ))))
+                            .child(
+                                div()
+                                    .text_sm()
+                                    .child(SharedString::from(t!("settings.friends.invite_shown"))),
+                            )
                             .child(code_box(&offer.code, cx))
-                            .child(note(t!("settings.friends.invite_expires"), cx))
+                            .child(long_note(t!("settings.friends.invite_expires"), cx))
                             .child(
                                 h_flex()
                                     .gap_2()
@@ -393,7 +426,12 @@ pub(super) fn render(
         .child(
             h_flex()
                 .gap_2()
-                .child(div().flex_1().min_w_0().child(Input::new(&panel.friends_ui.group).small()))
+                .child(
+                    div()
+                        .flex_1()
+                        .min_w_0()
+                        .child(Input::new(&panel.friends_ui.group).small()),
+                )
                 .child(
                     Button::new("friends-create")
                         .small()
@@ -414,7 +452,12 @@ pub(super) fn render(
         .child(
             h_flex()
                 .gap_2()
-                .child(div().flex_1().min_w_0().child(Input::new(&panel.friends_ui.code).small()))
+                .child(
+                    div()
+                        .flex_1()
+                        .min_w_0()
+                        .child(Input::new(&panel.friends_ui.code).small()),
+                )
                 .child(
                     Button::new("friends-join")
                         .small()
@@ -448,7 +491,7 @@ pub(super) fn render(
         .map(|i| i.recovery_phrase());
     let phrase_input = panel.friends_ui.phrase.clone();
     let recovery = group_at("friends.recovery", t!("settings.friends.recovery"), cx)
-        .child(note(t!("settings.friends.recovery_note"), cx))
+        .child(long_note(t!("settings.friends.recovery_note"), cx))
         .child(match phrase {
             Some(phrase) => {
                 let copy = phrase.clone();
@@ -483,9 +526,11 @@ pub(super) fn render(
                                     .small()
                                     .ghost()
                                     .label(t!("settings.friends.hide_phrase"))
-                                    .on_click(cx.listener(|p, _, _, cx| {
-                                        p.show_recovery_phrase(false, cx)
-                                    })),
+                                    .on_click(
+                                        cx.listener(|p, _, _, cx| {
+                                            p.show_recovery_phrase(false, cx)
+                                        }),
+                                    ),
                             ),
                     )
                     .into_any_element()
@@ -509,7 +554,12 @@ pub(super) fn render(
         .child(
             h_flex()
                 .gap_2()
-                .child(div().flex_1().min_w_0().child(Input::new(&panel.friends_ui.phrase).small()))
+                .child(
+                    div()
+                        .flex_1()
+                        .min_w_0()
+                        .child(Input::new(&panel.friends_ui.phrase).small()),
+                )
                 .child(
                     Button::new("friends-restore")
                         .small()
@@ -517,15 +567,16 @@ pub(super) fn render(
                         .label(t!("settings.friends.restore_button"))
                         .on_click(move |_, window, cx| {
                             let value = phrase_input.read(cx).value().to_string();
-                            let done = update_app(cx, |app, cx| app.friends_restore(&value, window, cx))
-                                .unwrap_or(false);
+                            let done =
+                                update_app(cx, |app, cx| app.friends_restore(&value, window, cx))
+                                    .unwrap_or(false);
                             if done {
                                 phrase_input.update(cx, |i, cx| i.set_value("", window, cx));
                             }
                         }),
                 ),
         )
-        .child(note(t!("settings.friends.restore_note"), cx));
+        .child(long_note(t!("settings.friends.restore_note"), cx));
 
     v_flex()
         .gap_5()

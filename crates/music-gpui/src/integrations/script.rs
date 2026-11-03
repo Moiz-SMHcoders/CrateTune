@@ -350,9 +350,14 @@ impl MusicApp {
             "devices-relay" => panel.update(cx, |p, cx| p.set_devices(|d| d.use_relay = on, cx)),
             "device-sync" => panel.update(cx, |p, cx| p.set_sync(None, on, cx)),
             "device-sync-category" => {
-                let (cat, state) = arg.unwrap_or("").split_once(':').unwrap_or((arg.unwrap_or(""), "on"));
+                let (cat, state) = arg
+                    .unwrap_or("")
+                    .split_once(':')
+                    .unwrap_or((arg.unwrap_or(""), "on"));
                 match music_core::sync::Category::parse(cat) {
-                    Some(cat) => panel.update(cx, |p, cx| p.set_sync(Some(cat), state != "off", cx)),
+                    Some(cat) => {
+                        panel.update(cx, |p, cx| p.set_sync(Some(cat), state != "off", cx))
+                    }
                     None => eprintln!("music-gpui: unknown sync category {cat:?}"),
                 }
             }
@@ -366,7 +371,13 @@ impl MusicApp {
             "friends-create" => self.friends_create_group(arg.unwrap_or(""), window, cx),
             "friends-invite-cancel" => self.friends_cancel_invite(cx),
             "friends-join-session" => {
-                match self.integrations.friends.invites.last().map(|i| i.link.clone()) {
+                match self
+                    .integrations
+                    .friends
+                    .invites
+                    .last()
+                    .map(|i| i.link.clone())
+                {
                     Some(link) => self.friends_join_session(&link, window, cx),
                     None => eprintln!("music-gpui: no listen-together invitation"),
                 }

@@ -125,25 +125,27 @@ mod tests {
     use crate::theme::ThemeChoice;
 
     fn private() -> Settings {
-        let mut s = Settings::default();
-        s.secrets = FileSecrets(
-            [("youtube-cookie".to_owned(), "SAPISID=hunter2".to_owned())].into(),
-        );
-        s.window = Some(WindowGeometry {
-            x: 1.,
-            y: 2.,
-            width: 1000.,
-            height: 700.,
-            maximized: false,
-        });
-        s.volume = 0.3;
+        let mut s = Settings {
+            secrets: FileSecrets(
+                [("youtube-cookie".to_owned(), "SAPISID=hunter2".to_owned())].into(),
+            ),
+            window: Some(WindowGeometry {
+                x: 1.,
+                y: 2.,
+                width: 1000.,
+                height: 700.,
+                maximized: false,
+            }),
+            volume: 0.3,
+            ..Settings::default()
+        };
         s.audio.output_device = Some("USB DAC".into());
         s.library.local_folders = vec!["/Users/me/Music".into()];
         s.network.host = "proxy.local".into();
         s.devices.name = "Studio".into();
         s.lastfm.user = Some("me".into());
         s.together.client_id = "abc".into();
-        s.appearance.theme = ThemeChoice::Light;
+        s.appearance.theme = ThemeChoice::Black;
         s
     }
 
@@ -169,7 +171,7 @@ mod tests {
                 "{path}"
             );
         }
-        assert_eq!(flat["appearance.theme"], "light");
+        assert_eq!(flat["appearance.theme"], "black");
         assert!(flat.contains_key("equalizer.gains_db"));
         assert!(flat.contains_key("audio.speed"));
         assert!(!flat.contains_key("volume"));

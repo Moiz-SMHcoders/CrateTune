@@ -167,7 +167,8 @@ struct PlaylistRow {
 
 fn playlists(lib: &Library) -> Result<Vec<PlaylistRow>> {
     lib.read(|c| {
-        let mut stmt = c.prepare("SELECT id, name, created_at, browse_id IS NOT NULL FROM playlist")?;
+        let mut stmt =
+            c.prepare("SELECT id, name, created_at, browse_id IS NOT NULL FROM playlist")?;
         stmt.query_map([], |r| {
             Ok(PlaylistRow {
                 id: r.get(0)?,
@@ -369,7 +370,10 @@ fn shareable_queue(queue: &Value) -> Value {
         }
     }
     let mut out = queue.clone();
-    let remap = |v: &Value| v.as_u64().and_then(|i| map.get(i as usize).copied().flatten());
+    let remap = |v: &Value| {
+        v.as_u64()
+            .and_then(|i| map.get(i as usize).copied().flatten())
+    };
     if let Some(obj) = out.as_object_mut() {
         let kept: Vec<Value> = tracks
             .iter()
@@ -807,6 +811,9 @@ mod tests {
             },
         ]);
         occ.sort();
-        assert_eq!(occ, vec![(0, "x#0".into()), (1, "y#0".into()), (2, "x#1".into())]);
+        assert_eq!(
+            occ,
+            vec![(0, "x#0".into()), (1, "y#0".into()), (2, "x#1".into())]
+        );
     }
 }

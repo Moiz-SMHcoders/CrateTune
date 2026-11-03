@@ -19,8 +19,8 @@ pub mod messages;
 pub mod node;
 pub mod pairing;
 
-pub use messages::{PROTOCOL_VERSION, PeerInfo, Snapshot};
 pub use friends_net::FriendsSetup;
+pub use messages::{PROTOCOL_VERSION, PeerInfo, Snapshot};
 pub use node::{
     Action, Event, HandoffNode, NodeConfig, PairError, PairedDevice, PairingOffer, now_unix_ms,
 };
@@ -425,6 +425,22 @@ mod tests {
         let b = HandoffNode::start(cfg_b).unwrap();
         a.set_paired(&[record(&b, "B")]);
         b.set_paired(&[record(&a, "A")]);
+        // Sync and friends on as well (they add no timers: this checks it).
+        for (node, name) in [(&a, "A"), (&b, "B")] {
+            let lib = crate::library::Library::open_in_memory().unwrap();
+            let engine = crate::sync::SyncEngine::open_in_memory(&node.id(), Some(lib)).unwrap();
+            engine.set_categories(&crate::sync::Category::ALL);
+            node.set_sync(Some(std::sync::Arc::new(engine)));
+            let me = crate::friends::Identity::generate();
+            let group = crate::friends::Group::create(&me, "G", name, &node.id(), now_unix_ms());
+            node.set_friends(Some(FriendsSetup {
+                identity: me,
+                name: name.into(),
+                groups: vec![group],
+            }));
+        }
+        a.sync_with(&b.id());
+        wait_for(&a, |e| matches!(e, Event::Synced { .. }).then_some(()));
         a.query(&b.id());
         wait_for(&a, |e| matches!(e, Event::Status { .. }).then_some(()));
         std::thread::sleep(Duration::from_secs(5));
@@ -528,7 +544,10 @@ mod tests {
         // Private session: an empty activity goes out.
         a.set_activity(None);
         wait_for(&b, |e| match e {
-            Event::FriendActivity { activity: None, member } if member == ann_id.id() => Some(()),
+            Event::FriendActivity {
+                activity: None,
+                member,
+            } if member == ann_id.id() => Some(()),
             _ => None,
         });
         a.listen_together(group.id(), "music-together://session");
@@ -536,7 +555,10 @@ mod tests {
             Event::ListenInvite { member, link, .. } => Some((member, link)),
             _ => None,
         });
-        assert_eq!((from.as_str(), link.as_str()), (ann_id.id().as_str(), "music-together://session"));
+        assert_eq!(
+            (from.as_str(), link.as_str()),
+            (ann_id.id().as_str(), "music-together://session")
+        );
 
         // A stranger makes a group with the same id (owned by her) and vouches for Ann
         // in it, so her device says hello to Ann's: refused, nothing taken.
@@ -637,8 +659,15 @@ mod tests {
         let notify = a.change_notifier();
         la.set_change_listener(Some(notify));
         la.like(&song("ccccccccccc")).unwrap();
-        let liked = || lb.song("ccccccccccc").ok().flatten().is_some_and(|s| s.liked());
-        wait_for(&b, |e| (matches!(e, Event::Synced { .. }) && liked()).then_some(()));
+        let liked = || {
+            lb.song("ccccccccccc")
+                .ok()
+                .flatten()
+                .is_some_and(|s| s.liked())
+        };
+        wait_for(&b, |e| {
+            (matches!(e, Event::Synced { .. }) && liked()).then_some(())
+        });
     }
 
     #[test]

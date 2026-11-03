@@ -172,7 +172,15 @@ impl SyncStore {
         rows.collect::<rusqlite::Result<_>>().map_err(storage)
     }
 
-    fn write_row(&self, key: &str, cat: Category, value: &Value, t: u64, origin: &str, local: bool) -> Result<()> {
+    fn write_row(
+        &self,
+        key: &str,
+        cat: Category,
+        value: &Value,
+        t: u64,
+        origin: &str,
+        local: bool,
+    ) -> Result<()> {
         self.conn
             .execute(
                 "INSERT INTO entry(key, cat, value, t, origin, local) VALUES (?1, ?2, ?3, ?4, ?5, ?6)
@@ -495,8 +503,13 @@ mod tests {
         let s = Category::Settings;
         a.project(s, &items(&[("s/x", json!("a1"))]), &all_scope, 1_000)
             .unwrap();
-        b.project(s, &items(&[("s/x", json!("b1")), ("s/y", json!(1))]), &all_scope, 2_000)
-            .unwrap();
+        b.project(
+            s,
+            &items(&[("s/x", json!("b1")), ("s/y", json!(1))]),
+            &all_scope,
+            2_000,
+        )
+        .unwrap();
         c.project(s, &items(&[("s/z", json!(true))]), &all_scope, 1_500)
             .unwrap();
         // a ← b: b's x is later.
@@ -514,11 +527,26 @@ mod tests {
             assert_eq!(store.get("s/x").unwrap().unwrap().value, json!("b1"));
             assert_eq!(store.get("s/z").unwrap().unwrap().value, json!(true));
         }
-        assert!(!a.behind(&Category::ALL, &b.version_vector(&Category::ALL).unwrap()).unwrap());
+        assert!(
+            !a.behind(&Category::ALL, &b.version_vector(&Category::ALL).unwrap())
+                .unwrap()
+        );
         // a edits after having seen b's stamp: wins even with a slow wall clock.
-        a.project(s, &items(&[("s/x", json!("a2")), ("s/y", json!(1)), ("s/z", json!(true))]), &all_scope, 100)
-            .unwrap();
-        assert!(b.behind(&Category::ALL, &a.version_vector(&Category::ALL).unwrap()).unwrap());
+        a.project(
+            s,
+            &items(&[
+                ("s/x", json!("a2")),
+                ("s/y", json!(1)),
+                ("s/z", json!(true)),
+            ]),
+            &all_scope,
+            100,
+        )
+        .unwrap();
+        assert!(
+            b.behind(&Category::ALL, &a.version_vector(&Category::ALL).unwrap())
+                .unwrap()
+        );
         pull(&mut b, &a, 3_000);
         assert_eq!(b.get("s/x").unwrap().unwrap().value, json!("a2"));
     }
@@ -527,10 +555,20 @@ mod tests {
     fn categories_are_synced_separately() {
         let mut a = SyncStore::open_in_memory("a").unwrap();
         let mut b = SyncStore::open_in_memory("b").unwrap();
-        a.project(Category::Likes, &items(&[("r/v", json!({"r": "like"}))]), &all_scope, 1)
-            .unwrap();
-        a.project(Category::Settings, &items(&[("s/x", json!(1))]), &all_scope, 2)
-            .unwrap();
+        a.project(
+            Category::Likes,
+            &items(&[("r/v", json!({"r": "like"}))]),
+            &all_scope,
+            1,
+        )
+        .unwrap();
+        a.project(
+            Category::Settings,
+            &items(&[("s/x", json!(1))]),
+            &all_scope,
+            2,
+        )
+        .unwrap();
         // b only syncs settings: likes don't come, and its vector for likes stays empty,
         // so they come once likes are switched on.
         let only = [Category::Settings];

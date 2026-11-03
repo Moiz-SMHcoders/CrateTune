@@ -111,7 +111,12 @@ impl MemberRecord {
     fn vouch_bytes(&self, group: &str) -> Vec<u8> {
         signed(
             "added",
-            &[group, &self.member, &self.added_by, &self.added_ms.to_string()],
+            &[
+                group,
+                &self.member,
+                &self.added_by,
+                &self.added_ms.to_string(),
+            ],
         )
     }
 
@@ -431,7 +436,11 @@ mod tests {
 
     #[test]
     fn a_group_grows_through_invitations() {
-        let (ann, bob, cat) = (Identity::generate(), Identity::generate(), Identity::generate());
+        let (ann, bob, cat) = (
+            Identity::generate(),
+            Identity::generate(),
+            Identity::generate(),
+        );
         let mut g = Group::create(&ann, " Friday  ", "Ann", "dev-ann", 1);
         assert_eq!(g.name(), "Friday");
         assert!(g.valid());
