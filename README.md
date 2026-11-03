@@ -3083,8 +3083,9 @@ Left out, with the reasons and numbers: [BACKLOG M6](docs/BACKLOG.md#4-missing-f
 |---|---|
 | ![Expand on hover with the playlists](docs/screenshots/sidebar-playlists-hover.png) | ![A playlist's right-click menu](docs/screenshots/sidebar-playlists-menu.png) |
 | ![Appearance → Layout: Sidebar items and Sidebar playlists](docs/screenshots/sidebar-items-editor.png) | ![A customized sidebar: fewer entries, pins, A–Z](docs/screenshots/sidebar-custom.png) |
-| ![Appearance → Window: presets, surfaces, tint](docs/screenshots/glass-settings.png) | ![Glass preset over a made-up wallpaper (offscreen render; the blur is the system's and isn't in it)](docs/screenshots/glass-preset-glass.png) |
+| ![Appearance → Window: presets, surfaces, tint](docs/screenshots/glass-settings.png) | ![Glass preset (offscreen render over a made-up, pre-blurred wallpaper; the real blur is drawn by the system)](docs/screenshots/glass-preset-glass.png) |
 | ![Frosted preset over a made-up wallpaper (offscreen render)](docs/screenshots/glass-preset-frosted.png) | ![Frosted, light mode, over a made-up wallpaper (offscreen render)](docs/screenshots/glass-preset-frosted-light.png) |
+| ![Sidebar playlists options](docs/screenshots/sidebar-playlists-options.png) | |
 
 The user asked for "navbar options, and maybe playlists from the YouTube account on there,
 like refryt and YouTube Music do it", and "more blur options like refryt". Surveyed refryt
@@ -3173,7 +3174,40 @@ exports, not in profiles; `effects.glass` is in profiles and theme files like th
 `@glass-preset=frosted`, `@surface-opacity=sidebar:0.6|auto`, `@glass-tint=ice:0.25`,
 `@glass-blur=strong`, `@glass-vibrancy=hud`.
 
-[[MEASURED]]
+**Measured** (release, macOS 26.6.2 on an Apple M4, display kept awake; other agents'
+builds kept the load average at 45–95, so CPU is noisy). Branch vs main at `f58b532`, offline
+fixtures, two interleaved runs each (CPU from `ps` deltas, renders from `MUSIC_TIMINGS`); the
+branch signed in to the fixture account with all 16 sidebar rows (`limit:0`):
+
+| | main | branch |
+|---|---|---|
+| Idle on Home, CPU / renders in 10 s | 0.9 / 1.4 %, 0–1 | 0.9 / 0.9 %, 0 |
+| 20 wheel notches over the sidebar, CPU (glide) | 20.8 / 22.5 % | 22.9 / 23.0 % |
+| Idle after, renders | 0–2 | 0–1 |
+| Blurred background idle (main) / Glass preset idle (branch), CPU | 0.9 / 0.7 % | 1.1 / 0.9 % |
+| Frosted preset idle, CPU / renders | – | 0.5 / 1.0 %, 0 |
+| Vibrant (HUD) idle, CPU / renders | – | 0.4 / 0.8 %, 0 |
+| Memory (footprint) | 112–177 MB | 109–167 MB |
+
+Nothing redraws at rest with any preset: a preset change is 3–6 renders, then none; the
+materials are drawn by the window server. Full window draw (`@bench=150`, three interleaved
+runs, signed out): top of Home p50 3.3–4.3 ms (main 4.1–4.4), scrolled down 5.9–6.0 ms (main
+5.9–6.9). Signed in, the playlists section with 16 rows and covers costs ~0.2–0.3 ms per full
+draw (p50 4.4 vs 4.1–4.2 ms with the section off), which only happens when something
+changes. `scripts/perf-macos.sh` (network, a song played muted): idle 0.9 % (main 2.1 %),
+playing 6.5 % (6.8 %), Now Playing 9 fps at 2.6 % (11.4 %), wheel scrolling 61 fps (60);
+its draw p50s (branch 4.80 / 6.16 ms, main 4.43 / 4.73 ms) came from runs during other
+builds, and the interleaved offline runs above didn't repeat the gap.
+
+**Verified** (macOS): unit tests (sidebar order / hide / reset and lenient parsing, the
+playlist sort with pins, Liked and the custom order, row routes, the glass resolution's
+Auto values, readability of every surface for every tint at 30–100 % in light and dark,
+presets, platform materials, the signed-in fixtures); the screenshots above (real sign-in
+and sync through the fixtures; rail, hover, right-click menu, settings); the window server's
+blur call returned success; `scripts/smoke-pages.sh` (33 pages); scripted runs of every new
+script action. **Not verified**: [BACKLOG U24](docs/BACKLOG.md#2-unverified--needs-real-world-testing)
+(Windows' acrylic, Linux, a real account, the blur strengths and vibrancy by eye on a real
+desktop, which was not captured).
 
 Not built, with the reasons and numbers: [BACKLOG M12](docs/BACKLOG.md#4-missing-features-vs-archivetune)
 (a blur radius on Windows / Linux, translucent menus and Now Playing, blurred artwork behind

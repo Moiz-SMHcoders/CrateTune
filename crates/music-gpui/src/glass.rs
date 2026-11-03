@@ -12,7 +12,8 @@
 //! **Readable.** Each surface's opacity is raised until its text keeps 4.5:1 and
 //! its secondary text 3:1 over a white and a black desktop
 //! (`theme::readable_window_alpha`), with the tint mixed in first, for the light
-//! or dark theme on screen. A solid surface keeps the theme's colour (no tint).
+//! or dark theme on screen; a tint too strong to read on is weakened first. A
+//! solid surface keeps the theme's colour (no tint).
 //!
 //! **Materials** (`NativeMaterial`): macOS "Vibrant" puts an `NSVisualEffectView`
 //! with the chosen material (and the app's light / dark appearance) behind GPUI's
@@ -79,8 +80,21 @@ pub fn resolve(behind: Behind, config: &GlassConfig, colors: &Colors) -> Glass {
         .tint
         .color(colors.accent)
         .map(|t| (t, config.tint_strength));
-    let tinted = |c: Hsla| match tint {
-        Some((t, k)) => over(c.opacity(1.), t, k),
+    // A strong tint can make the surface itself too close to its text (frost on a
+    // dark theme): it is weakened until the text reads on the solid surface.
+    let tinted = |c: Hsla, fg: Hsla| match tint {
+        Some((t, k)) => {
+            let mut k = k;
+            loop {
+                let bg = over(c.opacity(1.), t, k);
+                let solid_reads = crate::theme::contrast(fg, bg) >= 4.5
+                    && crate::theme::contrast(colors.muted, bg) >= 3.0;
+                if solid_reads || k <= 0. {
+                    break bg;
+                }
+                k = (k - 0.02).max(0.);
+            }
+        }
         None => c.opacity(1.),
     };
     let readable = |chosen: f32, bg: Hsla, fg: Hsla| {
@@ -102,12 +116,12 @@ pub fn resolve(behind: Behind, config: &GlassConfig, colors: &Colors) -> Glass {
         if chosen >= 1. {
             return bg.opacity(1.);
         }
-        let bg = tinted(bg);
+        let bg = tinted(bg, fg);
         bg.opacity(readable(chosen, bg, fg))
     };
     // The window's opacity is readable untinted; a tint can ask for a little more.
     let content = if content_alpha < 1. {
-        let bg = tinted(colors.background);
+        let bg = tinted(colors.background, colors.foreground);
         bg.opacity(readable(content_alpha, bg, colors.foreground))
     } else {
         colors.background.opacity(1.)

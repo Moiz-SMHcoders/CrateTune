@@ -17,6 +17,13 @@ versions follow [SemVer](https://semver.org/).
 * If the keychain still refuses the sign-in, Settings → Account says so and offers
   **Try again** (and a notice at start) instead of looking signed out; the account is
   kept.
+* The icon rail's expand button shows in the logo's place on hover (it had a row of its
+  own, which moved every entry down at the end of a slide), and the rail's rows are as tall
+  as the full sidebar's.
+* Over a window material, the artwork backdrop fills the content area only (the sidebar,
+  top bar and queue now show the desktop through their own opacity).
+* A sync now stores the account's YouTube playlists in YouTube Music's order of recent
+  activity (the sidebar's *Recent*).
 
 ### Added
 
@@ -56,16 +63,6 @@ versions follow [SemVer](https://semver.org/).
   Waterfox**. Like Firefox, they keep plain cookie files, so this is also a working
   browser-import route on **Windows**, where Chrome, Edge and Brave lock their cookies to
   themselves (app-bound encryption) and can't be read by any other app.
-
-### Changed
-
-* The icon rail's expand button shows in the logo's place on hover (it had a row of its
-  own, which moved every entry down at the end of a slide), and the rail's rows are as tall
-  as the full sidebar's.
-* Over a window material, the artwork backdrop fills the content area only (the sidebar,
-  top bar and queue now show the desktop through their own opacity).
-* A sync now stores the account's YouTube playlists in YouTube Music's order of recent
-  activity (the sidebar's *Recent*).
 
 ## [0.3.2] — 2026-11-01
 

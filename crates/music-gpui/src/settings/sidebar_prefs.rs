@@ -367,10 +367,13 @@ mod tests {
         )
         .unwrap();
         c.normalize();
-        // Known ones kept in their order; the rest at their default place.
-        assert_eq!(&c.order[..3], ["stats", "home", "explore"]);
+        // Known ones kept in their order; the rest after the entry they follow by
+        // default (Downloads after Stats, Charts after Explore).
         assert_eq!(c.order.len(), NAV.len());
         let pos = |k: &str| c.order.iter().position(|o| o == k).unwrap();
+        assert_eq!(c.order[0], "stats");
+        assert!(pos("stats") < pos("home") && pos("home") < pos("explore"));
+        assert_eq!(pos("downloads"), pos("stats") + 1);
         assert_eq!(pos("charts"), pos("explore") + 1);
         assert_eq!(c.hidden, ["charts"]);
         assert!(!keys(&c).contains(&"charts"));
