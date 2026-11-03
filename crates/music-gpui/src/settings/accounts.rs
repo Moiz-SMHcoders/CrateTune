@@ -321,6 +321,26 @@ fn busy_line(busy: &Busy, cx: &App) -> Option<AnyElement> {
     }
 }
 
+/// The keychain didn't hand out the saved sign-in: say so instead of looking
+/// signed out, and offer to ask again.
+fn keychain_failed(cx: &mut gpui::Context<SettingsPanel>) -> impl IntoElement {
+    group_at(
+        "account.keychain_failed",
+        t!("account.keychain_failed.title"),
+        cx,
+    )
+    .child(note(t!("account.keychain_failed.detail"), cx))
+    .child(
+        h_flex().child(
+            Button::new("account-keychain-retry")
+                .small()
+                .primary()
+                .label(t!("account.keychain_failed.retry"))
+                .on_click(cx.listener(|this, _, window, cx| this.load_secrets(window, cx))),
+        ),
+    )
+}
+
 pub(super) fn render(
     panel: &mut SettingsPanel,
     _: &mut Window,
@@ -359,6 +379,9 @@ pub(super) fn render(
                     .child(note(t!("settings.account.profile_note"), cx));
             }
             sign_in = sign_in.child(note(t!("settings.account.browser_note"), cx));
+            if panel.sign_in_unreadable() {
+                content = content.child(keychain_failed(cx));
+            }
             content = content.child(sign_in.children(busy_line(&status, cx)));
             // Accounts saved while none is in use (a switch that failed).
             if !choices.is_empty() {

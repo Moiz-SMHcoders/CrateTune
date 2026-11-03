@@ -40,3 +40,7 @@ home.continue.elsewhere = {artist} · reproducido en otro dispositivo
 home.continue.at = {artist} · reproducido en otro dispositivo, detenido en {position}
 home.continue.resume = Reanudar
 home.continue.dismiss = Descartar
+account.keychain_failed.title = No se pudo leer tu inicio de sesión del llavero
+account.keychain_failed.detail = macOS preguntó si {app} puede usar el inicio de sesión guardado y no se permitió el acceso (o se cerró el aviso). Tu cuenta se conserva. Elige Reintentar y luego Permitir siempre.
+account.keychain_failed.retry = Reintentar
+account.keychain_failed.toast = No se pudo leer tu inicio de sesión de YouTube del llavero. Ajustes → Cuenta → Reintentar.

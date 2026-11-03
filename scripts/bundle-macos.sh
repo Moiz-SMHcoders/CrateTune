@@ -9,9 +9,17 @@
 # * <APP_ID>-<version>-macos-<arch>.app.zip  the in-app updater's package
 #   (`ditto -c -k --keepParent`, keeps the signature; see music_core::updater)
 # Name, bundle id and summary come from packaging/app.env, the version from Cargo.toml.
-# Signing: ad-hoc (`codesign -s -`) unless MACOS_SIGN_IDENTITY is set (a "Developer ID
-# Application: …" identity; then the hardened runtime and packaging/macos/entitlements.plist
-# are used — notarize the DMG afterwards with `xcrun notarytool`, needs full Xcode).
+# Signing, first that applies:
+# * MACOS_SIGN_IDENTITY: a "Developer ID Application: …" identity; the hardened runtime and
+#   packaging/macos/entitlements.plist are used — notarize the DMG afterwards with
+#   `xcrun notarytool`, needs full Xcode.
+# * MACOS_SELF_SIGN_IDENTITY: the project's own self-signed certificate (its SHA-1, in a
+#   keychain where it is trusted for code signing; release.yml sets that up). The app's
+#   designated requirement is then `identifier … and certificate leaf = H"…"`, the same
+#   for every release, so macOS keeps letting updates read the sign-in in the keychain
+#   ("Always Allow" holds). Gatekeeper still asks on first open, as with ad-hoc.
+# * else ad-hoc (`codesign -s -`): the requirement is the build's hash, so after every
+#   update macOS asks again before the app may read its keychain items.
 set -euo pipefail
 source "$(dirname "$0")/lib/app-env.sh"
 cd "$ROOT"
@@ -83,6 +91,14 @@ if [[ -n "${MACOS_SIGN_IDENTITY:-}" ]]; then
   codesign --force --options runtime --timestamp \
     --entitlements packaging/macos/entitlements.plist \
     --sign "$MACOS_SIGN_IDENTITY" "$APP"
+elif [[ -n "${MACOS_SELF_SIGN_IDENTITY:-}" ]]; then
+  codesign --force --identifier "$BUNDLE_ID" --sign "$MACOS_SELF_SIGN_IDENTITY" "$APP"
+  # The point of it: a requirement that names the certificate, not this build.
+  codesign -d -r - "$APP" 2>&1 | grep -q 'certificate leaf = H"' || {
+    echo "self-signed: unexpected designated requirement:" >&2
+    codesign -d -r - "$APP" >&2
+    exit 1
+  }
 else
   # Ad-hoc: runs locally; Gatekeeper on other Macs asks to confirm (right-click → Open).
   codesign --force --sign - "$APP"

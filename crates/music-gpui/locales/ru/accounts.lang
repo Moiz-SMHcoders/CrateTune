@@ -40,3 +40,7 @@ home.continue.elsewhere = {artist} · играло на другом устро�
 home.continue.at = {artist} · играло на другом устройстве, остановлено на {position}
 home.continue.resume = Продолжить
 home.continue.dismiss = Скрыть
+account.keychain_failed.title = Не удалось прочитать вход из связки ключей
+account.keychain_failed.detail = macOS спросила, может ли {app} использовать сохранённый вход, и доступ не был разрешён (или окно закрыли). Аккаунт сохранён. Нажмите «Повторить», затем «Всегда разрешать».
+account.keychain_failed.retry = Повторить
+account.keychain_failed.toast = Не удалось прочитать вход в YouTube из связки ключей. Настройки → Аккаунт → Повторить.

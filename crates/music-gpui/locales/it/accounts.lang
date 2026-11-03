@@ -40,3 +40,7 @@ home.continue.elsewhere = {artist} · ascoltato su un altro dispositivo
 home.continue.at = {artist} · ascoltato su un altro dispositivo, fermato a {position}
 home.continue.resume = Riprendi
 home.continue.dismiss = Ignora
+account.keychain_failed.title = Impossibile leggere l'accesso dal portachiavi
+account.keychain_failed.detail = macOS ha chiesto se {app} può usare l'accesso salvato e l'accesso non è stato consentito (o la richiesta è stata chiusa). Il tuo account viene mantenuto. Scegli Riprova, poi Consenti sempre.
+account.keychain_failed.retry = Riprova
+account.keychain_failed.toast = Impossibile leggere l'accesso a YouTube dal portachiavi. Impostazioni → Account → Riprova.
