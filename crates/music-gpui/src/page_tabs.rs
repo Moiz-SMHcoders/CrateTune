@@ -588,7 +588,12 @@ impl MusicApp {
     }
 
     /// "Duplicate tab": the same history in a new tab after it, shown.
-    pub fn duplicate_page_tab(&mut self, index: usize, window: &mut Window, cx: &mut Context<Self>) {
+    pub fn duplicate_page_tab(
+        &mut self,
+        index: usize,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         if !self.page_tabs.can_open() {
             crate::app::notify(window, cx, t!("page_tabs.limit", max = MAX_TABS));
             return;
@@ -852,9 +857,7 @@ impl MusicApp {
                             .icon(Lucide::Copy)
                             .on_click(move |_, window, cx| {
                                 if let Some(i) = at(cx) {
-                                    update_app(cx, |app, cx| {
-                                        app.duplicate_page_tab(i, window, cx)
-                                    });
+                                    update_app(cx, |app, cx| app.duplicate_page_tab(i, window, cx));
                                 }
                             }),
                     )
