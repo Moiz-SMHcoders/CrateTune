@@ -1,0 +1,31 @@
+# Now Playing gestures and layout, lyrics extras, the mini player's extras, the compact player bar and podcast controls.
+
+np_extras.settings.portrait = Capa acima da letra
+np_extras.settings.portrait_note = O design dividido coloca a capa, o título e os controles em uma linha acima da letra em vez de ao lado.
+np_extras.portrait.auto = Em janelas altas
+np_extras.portrait.always = Sempre
+np_extras.portrait.never = Nunca
+np_extras.settings.open_on_play = Abrir Tocando agora quando a reprodução começar
+np_extras.settings.open_on_play_note = Quando você começa uma música sem nada tocando ou com outra pausada. Não ao retomar, nem quando a fila avança sozinha.
+np_extras.settings.click_empty = Clicar no espaço vazio fecha Tocando agora
+np_extras.settings.click_empty_note = Um clique ao lado da capa, dos controles e da letra fecha a tela. Clicar na capa toca ou pausa; rolar sobre ela muda o volume.
+np_extras.settings.mini_queue = Mostrar "A seguir" no miniplayer
+np_extras.settings.mini_queue_note = O cartão de capa e o toca-discos mostram no verso; os outros layouts crescem para mostrar abaixo dos controles.
+np_extras.settings.mini_on_top = Manter o miniplayer acima de outras janelas
+np_extras.mini.pin = Manter acima de outras janelas
+np_extras.mini.unpin = Parar de manter acima de outras janelas
+np_extras.settings.line_glow = Brilho na linha cantada
+np_extras.settings.line_glow_note = Um brilho suave na cor da capa (a cor de destaque do tema para capas cinza) em volta da linha atual.
+np_extras.follow = Seguir a letra
+np_extras.skip_back = Voltar 15 segundos
+np_extras.skip_forward = Avançar 15 segundos
+np_extras.speed = Velocidade de reprodução
+np_extras.bar.more = Mais controles
+np_extras.bar.fewer = Menos controles
+np_extras.shortcut.line_previous = Letra: linha anterior
+np_extras.shortcut.line_next = Letra: próxima linha
+np_extras.shortcut.line_play = Letra: tocar a partir da linha escolhida
+np_extras.settings.spin = Girar o disco
+np_extras.settings.spin_note = Gira o disco dos toca-discos enquanto a música toca. Não é de graça: a janela é redesenhada 20 vezes por segundo, cerca de {grooves} de um núcleo da CPU com "Só os sulcos" e {record} com "O disco inteiro", que também guarda até {memory} de capa girada na memória. Nada gira em pausa ou com as animações Reduzidas ou Desligadas.
+np_extras.spin.grooves = Só os sulcos
+np_extras.spin.record = O disco inteiro

@@ -1,0 +1,31 @@
+# Now Playing gestures and layout, lyrics extras, the mini player's extras, the compact player bar and podcast controls.
+
+np_extras.settings.portrait = Okładka nad tekstem
+np_extras.settings.portrait_note = Układ dzielony umieszcza okładkę, tytuł i przyciski w rzędzie nad tekstem zamiast obok niego.
+np_extras.portrait.auto = W wysokich oknach
+np_extras.portrait.always = Zawsze
+np_extras.portrait.never = Nigdy
+np_extras.settings.open_on_play = Otwieraj „Teraz odtwarzane” po rozpoczęciu odtwarzania
+np_extras.settings.open_on_play_note = Gdy włączasz utwór, kiedy nic nie gra albo inny utwór jest wstrzymany. Nie przy wznawianiu ani gdy kolejka sama przechodzi dalej.
+np_extras.settings.click_empty = Kliknięcie w puste miejsce zamyka „Teraz odtwarzane”
+np_extras.settings.click_empty_note = Kliknięcie obok okładki, przycisków i tekstu je zamyka. Kliknięcie okładki odtwarza lub wstrzymuje; przewijanie nad nią zmienia głośność.
+np_extras.settings.mini_queue = Pokazuj „Następne” w miniodtwarzaczu
+np_extras.settings.mini_queue_note = Karta z okładką i gramofon pokazują to na odwrocie; pozostałe układy powiększają się i pokazują to pod przyciskami.
+np_extras.settings.mini_on_top = Trzymaj miniodtwarzacz nad innymi oknami
+np_extras.mini.pin = Trzymaj nad innymi oknami
+np_extras.mini.unpin = Nie trzymaj nad innymi oknami
+np_extras.settings.line_glow = Poświata wokół śpiewanej linii
+np_extras.settings.line_glow_note = Delikatna poświata w kolorze okładki (w kolorze akcentu motywu przy szarej okładce) wokół bieżącej linii.
+np_extras.follow = Podążaj za tekstem
+np_extras.skip_back = 15 sekund do tyłu
+np_extras.skip_forward = 15 sekund do przodu
+np_extras.speed = Prędkość odtwarzania
+np_extras.bar.more = Więcej przycisków
+np_extras.bar.fewer = Mniej przycisków
+np_extras.shortcut.line_previous = Tekst: poprzednia linia
+np_extras.shortcut.line_next = Tekst: następna linia
+np_extras.shortcut.line_play = Tekst: odtwarzaj od wybranej linii
+np_extras.settings.spin = Obracaj płytę
+np_extras.settings.spin_note = Obraca płytę gramofonów, gdy gra muzyka. Nie za darmo: okno jest rysowane 20 razy na sekundę, około {grooves} rdzenia procesora przy „Tylko rowki” i {record} przy „Cała płyta”, która trzyma też w pamięci do {memory} obróconej okładki. Gdy muzyka jest wstrzymana albo animacje są ograniczone lub wyłączone, nic się nie obraca.
+np_extras.spin.grooves = Tylko rowki
+np_extras.spin.record = Cała płyta

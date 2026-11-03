@@ -1,0 +1,31 @@
+# Now Playing gestures and layout, lyrics extras, the mini player's extras, the compact player bar and podcast controls.
+
+np_extras.settings.portrait = Hoes boven de songtekst
+np_extras.settings.portrait_note = Het gesplitste ontwerp zet de hoes, de titel en de bediening in een rij boven de songtekst in plaats van ernaast.
+np_extras.portrait.auto = Bij hoge vensters
+np_extras.portrait.always = Altijd
+np_extras.portrait.never = Nooit
+np_extras.settings.open_on_play = ‘Speelt nu’ openen als het afspelen begint
+np_extras.settings.open_on_play_note = Als je een nummer start terwijl er niets speelt of een ander nummer gepauzeerd is. Niet bij hervatten, en niet als de wachtrij vanzelf doorgaat.
+np_extras.settings.click_empty = Klik op lege ruimte sluit ‘Speelt nu’
+np_extras.settings.click_empty_note = Een klik naast de hoes, de bediening en de songtekst sluit het. Een klik op de hoes speelt of pauzeert; scrollen erboven verandert het volume.
+np_extras.settings.mini_queue = ‘Hierna’ tonen in de minispeler
+np_extras.settings.mini_queue_note = De hoeskaart en de draaitafel tonen het op hun achterkant; de andere indelingen worden groter en tonen het onder de bediening.
+np_extras.settings.mini_on_top = Minispeler boven andere vensters houden
+np_extras.mini.pin = Boven andere vensters houden
+np_extras.mini.unpin = Niet meer boven andere vensters houden
+np_extras.settings.line_glow = Gloed om de gezongen regel
+np_extras.settings.line_glow_note = Een zachte gloed in de kleur van de hoes (de accentkleur van het thema bij een grijze hoes) om de huidige regel.
+np_extras.follow = Songtekst volgen
+np_extras.skip_back = 15 seconden terug
+np_extras.skip_forward = 15 seconden vooruit
+np_extras.speed = Afspeelsnelheid
+np_extras.bar.more = Meer bediening
+np_extras.bar.fewer = Minder bediening
+np_extras.shortcut.line_previous = Songtekst: vorige regel
+np_extras.shortcut.line_next = Songtekst: volgende regel
+np_extras.shortcut.line_play = Songtekst: afspelen vanaf de gekozen regel
+np_extras.settings.spin = Plaat laten draaien
+np_extras.settings.spin_note = Laat de plaat van de draaitafels draaien terwijl er muziek speelt. Niet gratis: het venster wordt 20 keer per seconde opnieuw getekend, ongeveer {grooves} van een processorkern met ‘Alleen groeven’ en {record} met ‘De hele plaat’, die ook tot {memory} gedraaide hoes in het geheugen houdt. Gepauzeerd of met Animaties Beperkt of Uit draait er niets.
+np_extras.spin.grooves = Alleen groeven
+np_extras.spin.record = De hele plaat

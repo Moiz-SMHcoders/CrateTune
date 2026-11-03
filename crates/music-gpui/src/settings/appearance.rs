@@ -16,7 +16,9 @@ use gpui_component::{
 };
 
 use super::SettingsPanel;
-use super::prefs::{MiniPlayerSkin, MiniPlayerStyle, NowPlayingBackground, NowPlayingLayout};
+use super::prefs::{
+    MiniPlayerSkin, MiniPlayerStyle, NowPlayingBackground, NowPlayingLayout, PortraitLayout,
+};
 use super::prefs_ui::choice;
 use super::theme_prefs::ColorMode;
 use super::widgets::{group_at, note, row_at};
@@ -349,6 +351,35 @@ pub(super) fn render(
     let np_fullscreen = Switch::new("np-fullscreen-auto")
         .checked(np.fullscreen)
         .on_click(cx.listener(|this, on: &bool, _, cx| this.set_np_fullscreen(*on, cx)));
+    // Now Playing extras (`np_extras.rs`, `player_extras.rs`).
+    let portrait = choice(
+        "np-portrait",
+        &PortraitLayout::ALL,
+        np.portrait,
+        PortraitLayout::title,
+        |this, p, cx| this.set_np_portrait(p, cx),
+        cx,
+    );
+    let spin = choice(
+        "np-turntable-spin",
+        &crate::turntable::SpinLook::ALL,
+        np.turntable_spin,
+        crate::turntable::SpinLook::title,
+        |this, l, cx| this.set_turntable_spin(l, cx),
+        cx,
+    );
+    let open_on_play = Switch::new("np-open-on-play")
+        .checked(np.open_on_play)
+        .on_click(cx.listener(|this, on: &bool, _, cx| this.set_np_open_on_play(*on, cx)));
+    let click_empty = Switch::new("np-click-empty")
+        .checked(np.click_empty_closes)
+        .on_click(cx.listener(|this, on: &bool, _, cx| this.set_np_click_empty(*on, cx)));
+    let mini_on_top = Switch::new("mini-on-top")
+        .checked(np.mini_on_top)
+        .on_click(cx.listener(|this, on: &bool, _, cx| this.set_mini_on_top(*on, cx)));
+    let mini_queue = Switch::new("mini-queue")
+        .checked(np.mini_queue)
+        .on_click(cx.listener(|this, on: &bool, _, cx| this.set_mini_queue(*on, cx)));
     let mini_skin = choice(
         "mini-skin",
         &MiniPlayerSkin::ALL,
@@ -460,10 +491,45 @@ pub(super) fn render(
                     cx,
                 ))
                 .child(row_at(
+                    "appearance.now_playing.portrait",
+                    t!("np_extras.settings.portrait"),
+                    Some(t!("np_extras.settings.portrait_note")),
+                    portrait,
+                    cx,
+                ))
+                .child(row_at(
+                    "appearance.now_playing.spin",
+                    t!("np_extras.settings.spin"),
+                    None,
+                    spin,
+                    cx,
+                ))
+                // What it costs (measured; not clamped like `note`).
+                .child(
+                    div()
+                        .text_xs()
+                        .text_color(muted)
+                        .child(crate::turntable::spin_cost_note()),
+                )
+                .child(row_at(
                     "appearance.now_playing.fullscreen",
                     t!("settings.appearance.np_fullscreen"),
                     Some(t!("settings.appearance.np_fullscreen_note")),
                     np_fullscreen,
+                    cx,
+                ))
+                .child(row_at(
+                    "appearance.now_playing.open_on_play",
+                    t!("np_extras.settings.open_on_play"),
+                    Some(t!("np_extras.settings.open_on_play_note")),
+                    open_on_play,
+                    cx,
+                ))
+                .child(row_at(
+                    "appearance.now_playing.click_empty",
+                    t!("np_extras.settings.click_empty"),
+                    Some(t!("np_extras.settings.click_empty_note")),
+                    click_empty,
                     cx,
                 ))
                 .child(note(t!("settings.appearance.np_note"), cx)),
@@ -487,6 +553,20 @@ pub(super) fn render(
                 t!("settings.appearance.background"),
                 None,
                 mini,
+                cx,
+            ))
+            .child(row_at(
+                "appearance.mini_player.queue",
+                t!("np_extras.settings.mini_queue"),
+                Some(t!("np_extras.settings.mini_queue_note")),
+                mini_queue,
+                cx,
+            ))
+            .child(row_at(
+                "appearance.mini_player.on_top",
+                t!("np_extras.settings.mini_on_top"),
+                None,
+                mini_on_top,
                 cx,
             )),
         )

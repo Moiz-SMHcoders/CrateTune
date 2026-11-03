@@ -180,6 +180,15 @@ which keep separate queues (see [Playing](#playing)).
   to mute; scroll over it or the slider to change the volume). In a narrow window the
   less important buttons hide first. Messages such as "Loading…" or a skipped song
   appear under the artist.
+* **Narrow windows** (under 1000 points wide): the bar collapses — the song gets the
+  room, previous / play / next sit beside the queue, Now Playing and mute buttons, and the
+  progress is a thin line along the bar's top (hover it for the time, click or drag to
+  seek). **⋯ More controls** brings back the full bar until you press it again (**Fewer
+  controls**) or quit the app.
+* **Podcast episodes** get **15 seconds back** and **15 seconds forward** buttons on
+  either side of play, and a **speed** button (0.5× to 2×) in shuffle's place. The keys
+  ⇧⌘← / ⇧⌘→ (Ctrl+Shift+← / → on Windows and Linux; changeable) jump 15 seconds in any
+  song. The speed is the app's playback speed (Settings → Playback).
 * **Player bar look** (Settings → Appearance → Player bar): progress bar style —
   Standard, Thick, Simple, **Wavy** (an animated wave), **Equalizer** (bars that move
   with the music) or **Waveform** (the song's loudness shape as bars, like SoundCloud:
@@ -222,7 +231,7 @@ which keep separate queues (see [Playing](#playing)).
   Right-click a tab to rename or remove it. Tabs are kept when you quit.
 * **Radio** plays an endless mix based on a song, artist, album or playlist.
   **Autoplay similar songs** (Settings → Content & region) keeps playing related songs
-  when the queue ends.
+  when the queue ends; those songs carry a small **∞** in the queue.
 * **Mini player** (⇧⌘M): a small window that stays on top; click or drag its progress
   bar to seek, scroll over it to change the volume. On Windows and Linux, drag its top
   strip to move it; × closes it. Five layouts (Settings → Appearance → Mini player →
@@ -231,7 +240,14 @@ which keep separate queues (see [Playing](#playing)).
   with the controls under it), **Lyrics** (the bar plus the line being sung and the next
   one) and **Turntable** (a record with the artwork as its label; the tonearm moves across
   the record as the song plays and lifts off while paused). Each layout has its own window
-  size; an open mini player switches at once and stays where it was.
+  size; an open mini player switches at once and stays where it was. Under the controls:
+  **shuffle**, **repeat**, the **heart** and the **volume** (the speaker mutes). In its top
+  strip: **Up next** (the list button) shows the next songs — on the back of the artwork
+  card and the turntable, under the controls in the other layouts (the window grows for
+  it; click a song to play it) — and the **pin** keeps the window above other windows or
+  lets it behave like an ordinary one (both are also in Settings → Appearance → Mini
+  player). When the window changes size it keeps to the screen corner it is nearest to,
+  so a mini player parked at the bottom right grows upwards and to the left.
 * **Sound effects**: the sliders button in the Now Playing header, or the source / quality
   tag in the bar (its menu), has quick submenus for the **equalizer** presets, the
   **reverb** rooms and the **sound presets**; the button is highlighted while the sound is
@@ -296,10 +312,33 @@ header or Settings → Appearance:
 Four backgrounds (blurred artwork, gradient, solid, glow) apply to the designs that don't
 bring their own colours (Immersive, Minimal and Editorial do).
 
+**Gestures**: click the artwork (or the Turntable's record) to play or pause; scroll over
+it to change the volume (the level shows over the artwork for a second). The heart pops
+when you like a song. Settings → Appearance → Now Playing also has **Open Now Playing when
+playback starts** (when you start a song with nothing playing or another one paused — not
+when you resume, or when the queue moves on) and **Click the empty space to close Now
+Playing** (a click beside the artwork, the controls and the lyrics closes it); both are off
+at first.
+
+**Spin the record** (Settings → Appearance → Now Playing; off at first) turns the record of
+the Turntable design and of the mini player's turntable while music plays, at 33⅓ rpm,
+speeding up on play and slowing down on pause. *Grooves only* turns a light reflection over
+the grooves (the label stays still); *The whole record* turns the artwork label too. It isn't
+free — the window redraws 20 times a second while it turns: about 3 % more of one CPU core on an M4
+Mac with either look — and the whole record keeps up to about 30 MB of turned artwork in
+memory while the turntable is on screen. Paused, hidden, or with Animations Reduced or Off,
+nothing turns.
+
+**Tall windows**: the Split design puts the artwork, title and controls in a row *above*
+the lyrics when the window is about as tall as it is wide, or taller. **Cover above the lyrics** (the
+design menu in the header, or Settings → Appearance → Now Playing) chooses *On tall
+windows*, *Always* or *Never*.
+
 **Visualizer** (Settings → Appearance → Player bar → *Visualizer in Now Playing*): spectrum
 **Bars** along the bottom edge, or **Ambient lights** — three soft lights in the artwork's
-colours behind the screen that brighten with the bass, the mids and the highs. Both move
-only while music plays.
+colours behind the screen that brighten with the bass, the mids and the highs. In the
+**Turntable** design the bars are a **ring around the record** (the bass at the top). They
+move only while music plays; at rest the ring is a faint, still dial.
 
 **Full screen**: the full-screen button in the header (four corners, top right) (or ⌃⌘F on macOS, F11 on Windows and Linux)
 puts the window in full screen and back; on a Mac that is native full screen, in its own
@@ -340,7 +379,12 @@ alignment and size, square / portrait / story shape and whether the cover shows,
 selection.
 
 Lyrics come from several providers (word-by-word where available). Click a line to jump
-there. Songwriter / producer credits that some providers put above the lyrics are left out,
+there. After you scroll the lyrics, they stay where you left them for 8 seconds; **Follow
+the lyrics** at the bottom brings them back to the line being sung at once. **↑ / ↓** move a
+frame over the lines and **Enter** plays from the framed one (changeable in Settings →
+Keyboard shortcuts). While the lyrics load, a still outline of lines stands in. **Glow on
+the line being sung** (Settings → Lyrics) adds a soft glow in the artwork's colour around
+the current line. Songwriter / producer credits that some providers put above the lyrics are left out,
 and songs the providers know as instrumentals show no lyrics. Translation (Google or your
 own AI endpoint) and romanization (Japanese, Korean, Chinese, Hindi, Cyrillic, …) are in
 Settings → Lyrics. A song is translated once per language and kept, so opening it again

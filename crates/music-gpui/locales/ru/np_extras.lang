@@ -1,0 +1,31 @@
+# Now Playing gestures and layout, lyrics extras, the mini player's extras, the compact player bar and podcast controls.
+
+np_extras.settings.portrait = Обложка над текстом
+np_extras.settings.portrait_note = Раздельный дизайн ставит обложку, название и кнопки в ряд над текстом песни, а не рядом с ним.
+np_extras.portrait.auto = В высоких окнах
+np_extras.portrait.always = Всегда
+np_extras.portrait.never = Никогда
+np_extras.settings.open_on_play = Открывать «Сейчас играет» при начале воспроизведения
+np_extras.settings.open_on_play_note = Когда вы включаете песню, пока ничего не играет или другая песня на паузе. Не при продолжении и не когда очередь переходит дальше сама.
+np_extras.settings.click_empty = Щелчок по пустому месту закрывает «Сейчас играет»
+np_extras.settings.click_empty_note = Щелчок рядом с обложкой, кнопками и текстом закрывает экран. Щелчок по обложке запускает или ставит на паузу, прокрутка над ней меняет громкость.
+np_extras.settings.mini_queue = Показывать «Далее» в мини-плеере
+np_extras.settings.mini_queue_note = Карточка с обложкой и проигрыватель показывают это на обороте, другие макеты увеличиваются и показывают это под кнопками.
+np_extras.settings.mini_on_top = Держать мини-плеер поверх других окон
+np_extras.mini.pin = Держать поверх других окон
+np_extras.mini.unpin = Не держать поверх других окон
+np_extras.settings.line_glow = Свечение вокруг исполняемой строки
+np_extras.settings.line_glow_note = Мягкое свечение цвета обложки (акцентного цвета темы для серой обложки) вокруг текущей строки.
+np_extras.follow = Следовать за текстом
+np_extras.skip_back = Назад на 15 секунд
+np_extras.skip_forward = Вперёд на 15 секунд
+np_extras.speed = Скорость воспроизведения
+np_extras.bar.more = Больше кнопок
+np_extras.bar.fewer = Меньше кнопок
+np_extras.shortcut.line_previous = Текст: предыдущая строка
+np_extras.shortcut.line_next = Текст: следующая строка
+np_extras.shortcut.line_play = Текст: играть с выбранной строки
+np_extras.settings.spin = Вращать пластинку
+np_extras.settings.spin_note = Вращает пластинку проигрывателей, пока играет музыка. Не бесплатно: окно перерисовывается 20 раз в секунду, это около {grooves} ядра процессора с «Только бороздки» и {record} с «Вся пластинка», которая к тому же держит в памяти до {memory} повёрнутой обложки. На паузе и с анимацией «Меньше» или «Выкл.» ничего не вращается.
+np_extras.spin.grooves = Только бороздки
+np_extras.spin.record = Вся пластинка

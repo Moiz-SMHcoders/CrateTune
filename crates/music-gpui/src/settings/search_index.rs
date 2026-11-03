@@ -829,6 +829,56 @@ pub const ENTRIES: &[Entry] = &[
         "immersive"
     ),
     entry!(
+        "appearance.now_playing.portrait",
+        Appearance,
+        "common.now_playing",
+        "np_extras.settings.portrait",
+        "np_extras.settings.portrait_note",
+        "portrait",
+        "tall",
+        "vertical",
+        "stacked",
+        "cover",
+        "layout"
+    ),
+    entry!(
+        "appearance.now_playing.spin",
+        Appearance,
+        "common.now_playing",
+        "np_extras.settings.spin",
+        -,
+        "spin",
+        "rotate",
+        "turntable",
+        "vinyl",
+        "record",
+        "disc",
+        "animation"
+    ),
+    entry!(
+        "appearance.now_playing.open_on_play",
+        Appearance,
+        "common.now_playing",
+        "np_extras.settings.open_on_play",
+        "np_extras.settings.open_on_play_note",
+        "open",
+        "automatically",
+        "start",
+        "play"
+    ),
+    entry!(
+        "appearance.now_playing.click_empty",
+        Appearance,
+        "common.now_playing",
+        "np_extras.settings.click_empty",
+        "np_extras.settings.click_empty_note",
+        "click",
+        "close",
+        "background",
+        "dismiss",
+        "gesture"
+    ),
+    entry!(
         "appearance.video",
         Appearance,
         -,
@@ -897,6 +947,29 @@ pub const ENTRIES: &[Entry] = &[
         "settings.appearance.background",
         -,
         "artwork"
+    ),
+    entry!(
+        "appearance.mini_player.queue",
+        Appearance,
+        "settings.appearance.mini_player",
+        "np_extras.settings.mini_queue",
+        "np_extras.settings.mini_queue_note",
+        "queue",
+        "next",
+        "upcoming",
+        "list"
+    ),
+    entry!(
+        "appearance.mini_player.on_top",
+        Appearance,
+        "settings.appearance.mini_player",
+        "np_extras.settings.mini_on_top",
+        -,
+        "pin",
+        "top",
+        "above",
+        "float",
+        "always"
     ),
     entry!(
         "appearance.bar.progress_style",
@@ -1486,6 +1559,18 @@ pub const ENTRIES: &[Entry] = &[
         "center",
         "centre",
         "right"
+    ),
+    entry!(
+        "lyrics.line_glow",
+        Lyrics,
+        "settings.lyrics.look",
+        "np_extras.settings.line_glow",
+        "np_extras.settings.line_glow_note",
+        "glow",
+        "highlight",
+        "current",
+        "line",
+        "shine"
     ),
     entry!(
         "lyrics.bg_vocals",

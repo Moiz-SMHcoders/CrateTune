@@ -51,6 +51,13 @@ impl RadioState {
     pub fn is_loading(&self) -> bool {
         self.task.is_some()
     }
+
+    /// Queue item `uid` was appended by autoplay (the "∞" mark; not the song
+    /// autoplay started from, nor a radio you started).
+    pub fn added_by_autoplay(&self, uid: u64) -> bool {
+        self.autoplay_done_for
+            .is_some_and(|seed| seed != uid && self.uids.contains(&uid))
+    }
 }
 
 /// An album, playlist or artist acted on without opening its page.

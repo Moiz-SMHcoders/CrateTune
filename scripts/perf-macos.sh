@@ -4,13 +4,15 @@
 # smoothly it draws. Needs internet (Home feed, one song played muted) and a display
 # that is awake; nothing touches your real settings, keychain or library.
 #   scripts/perf-macos.sh [--binary PATH] [--settings settings.json] [--report out.md]
-#                         [--no-checks] [--keep] [--video]
+#                         [--no-checks] [--keep] [--video] [--extras]
 # Builds `target/release/music-gpui` first unless --binary is given (e.g. the app
 # bundle's Contents/MacOS/cratetune). --settings copies a settings.json into the
 # throw-away settings folder (your own look and bar styles). Exits 1 when a check fails
 # (see "Checks" at the end); --no-checks only reports. --keep keeps the sessions' logs.
 # --video adds music-video sessions (a music video played with the setting off and on:
 # Now Playing closed, open, theater mode); a build without videos runs them as plain playback.
+# --extras adds the turntables ("Spin the record" off / grooves / whole record, in Now
+# Playing and the mini player; playing, then paused) and the stacked Split design.
 # What each number means: docs/TESTING.md, "Performance".
 set -euo pipefail
 
@@ -26,6 +28,7 @@ report=""
 checks=1
 keep=0
 video=0
+extras=0
 while [ $# -gt 0 ]; do
   case $1 in
     --binary) binary=$2; shift 2 ;;
@@ -34,6 +37,7 @@ while [ $# -gt 0 ]; do
     --no-checks) checks=0; shift ;;
     --keep) keep=1; shift ;;
     --video) video=1; shift ;;
+    --extras) extras=1; shift ;;
     -h | --help) sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
   esac
@@ -186,6 +190,21 @@ if [ "$video" = 1 ]; then
   session mv-theater-art "5:@play-id=$mv,9:@open,10:@theater,46:@quit"
 fi
 
+# The turntables (`--extras`): a song played muted with "Spin the record" off, grooves
+# or the whole record, in Now Playing's Turntable design and in the mini player's
+# turntable; CPU over seconds 18-28 while playing (memory at 28 from `@mem`), then the
+# renders while paused (34-44: none once the record has slowed down).
+if [ "$extras" = 1 ]; then
+  for look in off grooves record; do
+    echo "extras: Now Playing turntable, spin $look..."
+    session "np-tt-$look" "3:@turntable-spin=$look,3:@layout=turntable,5:@search=daft punk,10:@play=0,14:@open,28:@mem,30:@toggle,33:@titlebar-status,44:@quit"
+    echo "extras: mini player turntable, spin $look..."
+    session "mini-tt-$look" "3:@turntable-spin=$look,3:@mini-skin=turntable,5:@search=daft punk,10:@play=0,12:@mini=on,28:@mem,30:@toggle,33:@titlebar-status,44:@quit"
+  done
+  echo "extras: Now Playing, Split stacked (cover above the lyrics)..."
+  session np-stacked "3:@np-portrait=always,5:@search=daft punk,10:@play=0,14:@open,30:@quit"
+fi
+
 # Fields of "A B" values, "n/a" when missing.
 f() { printf '%s\n' "$1" | awk -v i="$2" '{ v = $i } END { print (v == "" ? "n/a" : v) }'; }
 out=$(cat <<EOF
@@ -224,6 +243,27 @@ $(vrow "Music video, setting off, theater mode (artwork)" mv-theater-art)"
     [ -n "$v" ] && out="$out
 | $s: video frames | $v |"
   done
+fi
+
+if [ "$extras" = 1 ]; then
+  # `@mem`'s footprint (or resident) figure.
+  memof() { sed -n 's/.*music-gpui: mem [a-z ]*\([0-9.]*\).*/\1/p' "$1" | head -1; }
+  trow() { # label session view
+    local u r p
+    u=$(usage "$work/$2.samples" 18 28)
+    r=$(phase "$work/$2.log" open mem | rate "$3")
+    [ -n "$r" ] || r=$(phase "$work/$2.log" mini mem | rate "$3")
+    p=$(phase "$work/$2.log" titlebar-status quit | grep -c "music-gpui: $3 [0-9]* renders" || true)
+    echo "| $1 | $(f "$u" 1) % of one core, $(memof "$work/$2.log") MiB, $3 $(f "$r" 1) renders/s; paused: $p busy seconds |"
+  }
+  out="$out
+$(trow "Now Playing Turntable, spin off" np-tt-off app)
+$(trow "Now Playing Turntable, grooves" np-tt-grooves app)
+$(trow "Now Playing Turntable, whole record" np-tt-record app)
+$(trow "Mini player turntable, spin off" mini-tt-off mini)
+$(trow "Mini player turntable, grooves" mini-tt-grooves mini)
+$(trow "Mini player turntable, whole record" mini-tt-record mini)
+| Now Playing, Split stacked | $(f "$(usage "$work/np-stacked.samples" 18 29)" 1) % of one core, $(f "$(phase "$work/np-stacked.log" open quit | rate app)" 1) renders/s |"
 fi
 
 # Checks, the same as on Windows, plus an absolute draw budget: an M-series Mac draws

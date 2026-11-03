@@ -435,6 +435,24 @@ fn default_keymap_is_the_old_one() {
         for (keys, id) in page_tab_defaults(primary) {
             expected.push((combo(&keys, os), id, None));
         }
+        // New: 15 s back / forward, the arrow keys and Enter over Now Playing's lyrics.
+        expected.push((
+            combo(&format!("{primary}-shift-left"), os),
+            "seek_back",
+            None,
+        ));
+        expected.push((
+            combo(&format!("{primary}-shift-right"), os),
+            "seek_forward",
+            None,
+        ));
+        for (keys, id) in [
+            ("up", "lyrics_line_previous"),
+            ("down", "lyrics_line_next"),
+            ("enter", "lyrics_line_play"),
+        ] {
+            expected.push((combo(keys, os), id, Some(NOW_PLAYING_CONTEXT)));
+        }
         let entries = keymap(&Overrides::new(), os);
         let mut actual: Vec<(Combo, &str, Option<&str>)> = entries
             .iter()
@@ -507,6 +525,23 @@ fn gpui_bindings_match_the_old_construction() {
             (format!("{primary}--"), "zoom_out", None),
             (format!("{primary}-0"), "zoom_reset", None),
             (format!("{primary}-shift-t"), "toggle_theater", None),
+            (format!("{primary}-shift-left"), "seek_back", None),
+            (format!("{primary}-shift-right"), "seek_forward", None),
+            (
+                "up".to_owned(),
+                "lyrics_line_previous",
+                Some(NOW_PLAYING_CONTEXT),
+            ),
+            (
+                "down".to_owned(),
+                "lyrics_line_next",
+                Some(NOW_PLAYING_CONTEXT),
+            ),
+            (
+                "enter".to_owned(),
+                "lyrics_line_play",
+                Some(NOW_PLAYING_CONTEXT),
+            ),
         ])
         .chain(
             page_tab_defaults(primary)

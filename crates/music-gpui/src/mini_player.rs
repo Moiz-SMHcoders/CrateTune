@@ -7,42 +7,120 @@
 //! for its own frames only while those animate. Its position is saved in the
 //! settings file.
 //!
+//! Its title strip has "Up next" and the always-on-top pin, a row under the
+//! transport has shuffle, repeat, like and the volume (Limusic's mini player,
+//! GPL-3.0, `ui/src/lib/components/MiniPlayer.svelte`; no code copied). "Up
+//! next" is the artwork card's and turntable's flip side (after Deviload's mini
+//! player, MIT) and a list under the wider layouts, which grow for it. A size
+//! change (layout, "Up next") reopens the window anchored to the screen corner
+//! it is nearest to (Limusic's `src-tauri/src/mini.rs` `anchored`: per axis, a
+//! window in the far half of its display keeps its far edge).
+//!
 //! macOS: a floating `NSPanel` (GPUI `WindowKind::Floating`) whose
 //! `hidesOnDeactivate` is turned off, so it stays visible over other apps. Windows:
 //! a borderless window made topmost (`win::set_topmost`) with its own close button
-//! and drag strip.
+//! and drag strip. Unpinned it opens as an ordinary window (reopened at the same
+//! spot).
 
 use gpui::prelude::FluentBuilder as _;
 use gpui::{
-    AnyWindowHandle, App, AppContext as _, Bounds, Context, FocusHandle, FontWeight,
-    InteractiveElement as _, IntoElement, ParentElement as _, Render, Styled as _,
-    StyledImage as _, Subscription, TitlebarOptions, Window, WindowBounds, WindowKind,
-    WindowOptions, div, point, px, size,
+    AnyWindowHandle, App, AppContext as _, Bounds, Context, FocusHandle, FontWeight, Hsla,
+    InteractiveElement as _, IntoElement, ParentElement as _, Pixels, Point, Render,
+    StatefulInteractiveElement as _, Styled as _, StyledImage as _, Subscription, TitlebarOptions,
+    Window, WindowBounds, WindowKind, WindowOptions, div, point, px, size,
 };
 use gpui_component::{
-    ActiveTheme as _, Disableable as _, IconName, Root, Sizable as _,
+    ActiveTheme as _, Disableable as _, Icon, IconName, Root, Selectable as _, Sizable as _,
     button::{Button, ButtonVariants as _},
     h_flex, v_flex,
 };
-use music_core::{PlaybackStatus, format_duration};
+use music_core::{PlaybackStatus, Track, format_duration};
 
 use crate::actions::with_main_window;
 use crate::anim::{Frame, RenderRate, Tween};
 use crate::app::{MusicApp, read_app, update_app};
-use crate::components::artwork::{ArtworkCache, Pin, artwork_pinned};
+use crate::components::artwork::{ArtworkCache, Pin, artwork, artwork_pinned};
 use crate::components::bar_fx::{
     BackgroundArt, BackgroundFx, BackgroundGeometry, BackgroundLook, TrackFx,
 };
 use crate::components::progress::{ProgressTrack, TrackEvent, TrackLook, TrackParams};
-use crate::icons::AppIcon;
+use crate::icons::{AppIcon, Lucide};
+use crate::queue::Repeat;
 use crate::settings::WindowGeometry;
 use crate::settings::bar_prefs::ProgressStyle;
 use crate::settings::prefs::MiniPlayerSkin;
+
+/// The row of shuffle, repeat, like and the volume under the transport.
+const TOOLS_ROW: f32 = 30.;
+/// "Up next" under the bar, compact and lyrics layouts (they grow for it).
+const QUEUE_LIST: f32 = 236.;
+/// One "Up next" row.
+const QUEUE_ROW: f32 = 40.;
+
+/// The window's content size for `skin` with or without "Up next".
+pub fn window_size(skin: MiniPlayerSkin, queue: bool) -> (f32, f32) {
+    let (w, h) = skin.size();
+    let list = if queue && grows_for_queue(skin) {
+        QUEUE_LIST
+    } else {
+        0.
+    };
+    (w, h + TOOLS_ROW + list)
+}
+
+/// Layouts that show "Up next" under themselves (the others on their flip side).
+fn grows_for_queue(skin: MiniPlayerSkin) -> bool {
+    matches!(
+        skin,
+        MiniPlayerSkin::Bar | MiniPlayerSkin::Compact | MiniPlayerSkin::Lyrics
+    )
+}
+
+/// The top-left corner for a window that was at `old` and is now `new` big,
+/// so that it keeps to the edges of `display` it is nearest to: per axis, a
+/// window whose centre is in the far half keeps its far edge (Limusic's
+/// `anchored`); shrinking and growing back returns it to the same spot.
+pub fn anchored(
+    old: Bounds<Pixels>,
+    new: gpui::Size<Pixels>,
+    display: Bounds<Pixels>,
+) -> Point<Pixels> {
+    let axis = |p: Pixels, old: Pixels, new: Pixels, start: Pixels, len: Pixels| {
+        if p * 2. + old > start * 2. + len {
+            p + old - new
+        } else {
+            p
+        }
+    };
+    point(
+        axis(
+            old.origin.x,
+            old.size.width,
+            new.width,
+            display.origin.x,
+            display.size.width,
+        ),
+        axis(
+            old.origin.y,
+            old.size.height,
+            new.height,
+            display.origin.y,
+            display.size.height,
+        ),
+    )
+}
 
 pub struct MiniPlayer {
     focus: FocusHandle,
     /// The layout this window was opened with (another one reopens it).
     skin: MiniPlayerSkin,
+    /// "Up next" and the pin as the window was opened (a size or window kind
+    /// change reopens it).
+    queue: bool,
+    on_top: bool,
+    volume: TrackFx,
+    /// The turntable layout's turning record.
+    spin: crate::turntable::Spin,
     /// Turntable: 0 = needle on the record, 1 = arm lifted beside it.
     arm: Tween<f32>,
     progress: TrackFx,
@@ -67,10 +145,15 @@ impl MusicApp {
             return;
         }
         let geometry = self.settings.read(cx).settings().mini_player;
-        let skin = self.settings.read(cx).settings().now_playing.mini_skin;
+        let np = self.settings.read(cx).settings().now_playing;
+        let look = Opened {
+            skin: np.mini_skin,
+            queue: np.mini_queue,
+            on_top: np.mini_on_top,
+        };
         // Opening a window builds its view, which reads the app: do it after this update.
         cx.defer(move |cx| {
-            let handle = open(geometry, skin, cx);
+            let handle = open(geometry, look, cx);
             update_app(cx, |app, cx| {
                 app.mini = handle;
                 cx.notify();
@@ -79,15 +162,41 @@ impl MusicApp {
     }
 }
 
-fn open(
-    geometry: Option<WindowGeometry>,
+/// What a mini player window is opened with.
+#[derive(Clone, Copy)]
+struct Opened {
     skin: MiniPlayerSkin,
-    cx: &mut App,
-) -> Option<AnyWindowHandle> {
-    let (width, height) = skin.size();
+    queue: bool,
+    on_top: bool,
+}
+
+fn open(geometry: Option<WindowGeometry>, look: Opened, cx: &mut App) -> Option<AnyWindowHandle> {
+    let Opened {
+        skin,
+        queue,
+        on_top,
+    } = look;
+    let (width, height) = window_size(skin, queue);
     let size = size(px(width), px(height));
     let bounds = geometry
-        .map(|g| Bounds::new(point(px(g.x), px(g.y)), size))
+        .map(|g| {
+            // Where it was, at its new size: kept to the nearest screen corner.
+            let old = Bounds::new(
+                point(px(g.x), px(g.y)),
+                gpui::size(px(g.width), px(g.height)),
+            );
+            let display = cx
+                .displays()
+                .iter()
+                .map(|d| d.bounds())
+                .find(|d| d.contains(&old.center()))
+                .or_else(|| cx.primary_display().map(|d| d.bounds()));
+            let origin = match display {
+                Some(display) if g.width > 0. && g.height > 0. => anchored(old, size, display),
+                _ => old.origin,
+            };
+            Bounds::new(origin, size)
+        })
         .filter(|b| crate::on_screen(b, cx))
         .unwrap_or_else(|| {
             // Default: bottom-right of the primary display.
@@ -110,7 +219,12 @@ fn open(
             appears_transparent: true,
             traffic_light_position: Some(point(px(10.), px(9.))),
         }),
-        kind: WindowKind::Floating,
+        // Unpinned: an ordinary window.
+        kind: if on_top {
+            WindowKind::Floating
+        } else {
+            WindowKind::Normal
+        },
         is_resizable: false,
         is_minimizable: false,
         focus: true,
@@ -121,10 +235,10 @@ fn open(
         .open_window(options, |window, cx| {
             keep_visible_when_inactive(window);
             #[cfg(target_os = "windows")]
-            if let Some(hwnd) = crate::services::hwnd(window) {
+            if on_top && let Some(hwnd) = crate::services::hwnd(window) {
                 crate::win::set_topmost(hwnd.get());
             }
-            let view = cx.new(|cx| MiniPlayer::new(skin, window, cx));
+            let view = cx.new(|cx| MiniPlayer::new(look, window, cx));
             cx.new(|cx| Root::new(view, window, cx))
         })
         .map_err(|e| eprintln!("music-gpui: mini player: {e}"))
@@ -133,7 +247,7 @@ fn open(
 }
 
 impl MiniPlayer {
-    fn new(skin: MiniPlayerSkin, window: &mut Window, cx: &mut Context<Self>) -> Self {
+    fn new(look: Opened, window: &mut Window, cx: &mut Context<Self>) -> Self {
         let mut subscriptions = vec![
             cx.observe(&ArtworkCache::global(cx), |_, _, cx| cx.notify()),
             cx.observe_window_bounds(window, |_, window, cx| {
@@ -158,7 +272,11 @@ impl MiniPlayer {
             read_app(cx, |app, _| app.playback.status == PlaybackStatus::Playing).unwrap_or(false);
         Self {
             focus: cx.focus_handle(),
-            skin,
+            skin: look.skin,
+            queue: look.queue,
+            on_top: look.on_top,
+            volume: TrackFx::default(),
+            spin: Default::default(),
             arm: Tween::new(if playing { 0. } else { 1. }),
             progress: TrackFx::default(),
             background: BackgroundFx::default(),
@@ -175,7 +293,32 @@ impl Render for MiniPlayer {
         let now = frame.now;
         let info = read_app(cx, |app, cx| {
             let bar = app.settings.read(cx).settings().player_bar;
-            let skin = app.settings.read(cx).settings().now_playing.mini_skin;
+            let np = app.settings.read(cx).settings().now_playing;
+            let skin = np.mini_skin;
+            let extras = Extras {
+                volume: app.volume,
+                shuffle: app.queue.shuffle(),
+                repeat: app.queue.repeat(),
+                liked: app
+                    .playback
+                    .track
+                    .as_ref()
+                    .is_some_and(|t| crate::store::is_liked(&t.video_id)),
+                queue: np.mini_queue,
+                on_top: np.mini_on_top,
+                upcoming: if np.mini_queue {
+                    app.queue
+                        .upcoming()
+                        .iter()
+                        .take(12)
+                        .map(|i| (i.uid, i.track.clone(), app.added_by_autoplay(i.uid)))
+                        .collect()
+                } else {
+                    Vec::new()
+                },
+                more: app.queue.upcoming().len(),
+                spin: np.turntable_spin,
+            };
             let hires_art = app
                 .current_video_id()
                 .and_then(|id| match app.hires.get(id) {
@@ -215,19 +358,25 @@ impl Render for MiniPlayer {
                     skin,
                     lyric,
                 ),
+                extras,
             )
         });
         let Some((
             (track, status, position, duration, has_next, has_engine, backdrop),
             (bar, hires_art, scrub, waveform, skin, lyric),
+            extras,
         )) = info
         else {
             return div().size_full().into_any_element();
         };
-        if skin != self.skin {
-            // Another layout needs another window size (and title bar spot):
-            // open the mini player again where it is.
+        let resized = extras.queue != self.queue && (grows_for_queue(skin) || skin != self.skin);
+        if skin != self.skin || extras.on_top != self.on_top || resized {
+            // Another layout (or "Up next" under it) needs another window size and
+            // title bar spot, unpinned another kind of window: open the mini
+            // player again where it is.
             self.skin = skin;
+            self.queue = extras.queue;
+            self.on_top = extras.on_top;
             cx.defer(|cx| {
                 update_app(cx, |app, cx| {
                     app.toggle_mini_player(cx);
@@ -235,6 +384,7 @@ impl Render for MiniPlayer {
                 });
             });
         }
+        self.queue = extras.queue;
         let art_size = if skin == MiniPlayerSkin::Card {
             544
         } else {
@@ -446,6 +596,20 @@ impl Render for MiniPlayer {
                 .child(total_label.clone())
         };
         let track_el = track_el.into_any_element();
+        let flip = extras.queue && !grows_for_queue(skin);
+        let tools = self.tools_row(
+            &mut frame,
+            &extras,
+            track.as_ref(),
+            (fg, muted, accent, track_bg),
+            cx,
+        );
+        let below = (extras.queue && grows_for_queue(skin)).then(|| {
+            div()
+                .px_3()
+                .pt_1()
+                .child(queue_list(&extras, QUEUE_LIST - 8., muted, cx))
+        });
         let body = match skin {
             MiniPlayerSkin::Bar => h_flex()
                 .px_3()
@@ -473,8 +637,15 @@ impl Render for MiniPlayer {
                 .pt_1()
                 .gap_2()
                 .items_center()
-                .child(art(176., 12., cx))
-                .child(div().w_full().child(titles(true, None)))
+                // "Up next" is the card's flip side.
+                .map(|this| {
+                    if flip {
+                        this.child(queue_list(&extras, 224., muted, cx))
+                    } else {
+                        this.child(art(176., 12., cx))
+                            .child(div().w_full().child(titles(true, None)))
+                    }
+                })
                 .child(times_with(track_el))
                 .child(parts.transport(None, cx))
                 .into_any_element(),
@@ -529,17 +700,43 @@ impl Render for MiniPlayer {
                 self.arm.animate_to(rest, crate::turntable::LIFT, now);
                 let lift = frame.get(&self.arm);
                 let angle = crate::turntable::arm_angle(frac, lift);
+                // "Spin the record" (`turntable.rs`): only while the deck shows.
+                let look = if flip {
+                    crate::turntable::SpinLook::Off
+                } else {
+                    extras.spin
+                };
+                self.spin.step(
+                    &mut frame,
+                    playing
+                        && look != crate::turntable::SpinLook::Off
+                        && crate::effects::ambient_motion(),
+                );
+                let label_px =
+                    (196. * crate::turntable::LABEL_SHARE * window.scale_factor()).round() as u32;
+                let art = track
+                    .as_ref()
+                    .zip(hires_image.clone())
+                    .map(|(t, art)| (t.video_id.as_str(), art));
+                let spin = self.spin.deck_spin(look, art, label_px, cx);
                 v_flex()
                     .px_4()
                     .gap_2()
                     .items_center()
-                    .child(crate::turntable::deck(
-                        px(196.),
-                        hires_image.clone(),
-                        angle,
-                        &crate::turntable::DeckLook::default(),
-                    ))
-                    .child(div().w_full().child(titles(true, None)))
+                    .map(|this| {
+                        if flip {
+                            this.child(queue_list(&extras, 244., muted, cx))
+                        } else {
+                            this.child(crate::turntable::deck(
+                                px(196.),
+                                hires_image.clone(),
+                                angle,
+                                &crate::turntable::DeckLook::default(),
+                                &spin,
+                            ))
+                            .child(div().w_full().child(titles(true, None)))
+                        }
+                    })
                     .child(times_with(track_el))
                     .child(parts.transport(None, cx))
                     .into_any_element()
@@ -590,8 +787,10 @@ impl Render for MiniPlayer {
                 )
             })
             .children(layers)
-            .child(title_strip(cx))
+            .child(title_strip(extras.queue, extras.on_top, cx))
             .child(body)
+            .child(tools)
+            .children(below)
             .children(compact_line)
             // The wheel changes the volume, as over the bar's volume control.
             .on_scroll(|event, _, cx| {
@@ -607,6 +806,252 @@ impl Render for MiniPlayer {
             })
             .into_any_element()
     }
+}
+
+/// What the title strip, the tools row and "Up next" show.
+struct Extras {
+    volume: f32,
+    shuffle: bool,
+    repeat: Repeat,
+    liked: bool,
+    queue: bool,
+    on_top: bool,
+    /// "Up next" (when shown): queue item, track, added by autoplay.
+    upcoming: Vec<(u64, Track, bool)>,
+    /// All upcoming items.
+    more: usize,
+    /// "Spin the record".
+    spin: crate::turntable::SpinLook,
+}
+
+impl MiniPlayer {
+    /// Shuffle, repeat, like, and the volume (mute button and slider).
+    fn tools_row(
+        &mut self,
+        frame: &mut Frame,
+        extras: &Extras,
+        track: Option<&Track>,
+        (fg, muted, accent, rail): (Hsla, Hsla, Hsla, Hsla),
+        cx: &mut Context<Self>,
+    ) -> gpui::AnyElement {
+        let style = crate::components::player_bar::bar_button_style(cx);
+        let toggle = |id: &'static str, icon: Lucide, on: bool| {
+            Button::new(id)
+                .custom(style)
+                .xsmall()
+                .icon(if on {
+                    Icon::new(icon).text_color(accent)
+                } else {
+                    Icon::new(icon)
+                })
+                .selected(on)
+        };
+        let liked = extras.liked;
+        let volume = extras.volume;
+        let vol_frame =
+            self.volume
+                .step(frame, ProgressStyle::Standard, false, false, || None, 0.7);
+        let slider = ProgressTrack::new(
+            "mini-volume",
+            TrackParams {
+                style: ProgressStyle::Standard,
+                frac: volume,
+                hover: None,
+                reveal: vol_frame.reveal.max(0.35),
+                amplitude: 0.,
+                phase: 0.,
+                spectrum: None,
+                peak_caps: false,
+                waveform: None,
+                wave_fade: 0.,
+                enabled: true,
+                look: TrackLook {
+                    played: accent,
+                    rail,
+                    thumb: fg,
+                    ghost: accent.opacity(0.45),
+                },
+                height: px(14.),
+                scale: 0.7,
+            },
+            self.volume.input.clone(),
+        )
+        .bounds_into(self.volume.bounds.clone())
+        .on_event(std::rc::Rc::new(|event, _, cx| match event {
+            TrackEvent::Press(f) | TrackEvent::Drag(f) | TrackEvent::Release(f) => {
+                with_main_window(cx, |app, window, cx| {
+                    app.set_volume((f * 100.).round() / 100., window, cx)
+                });
+            }
+            TrackEvent::Hover(_) | TrackEvent::Scroll(_) => {}
+        }));
+        let like_track = track.cloned();
+        h_flex()
+            .h(px(TOOLS_ROW))
+            .px_3()
+            .gap_1()
+            .items_center()
+            .text_color(muted)
+            .child(
+                toggle("mini-shuffle", Lucide::Shuffle, extras.shuffle)
+                    .tooltip(if extras.shuffle {
+                        t!("player.tooltip.shuffle_on")
+                    } else {
+                        t!("player.tooltip.shuffle_off")
+                    })
+                    .on_click(|_, _, cx| {
+                        update_app(cx, |app, cx| app.toggle_shuffle(cx));
+                    }),
+            )
+            .child(
+                toggle(
+                    "mini-repeat",
+                    if extras.repeat == Repeat::One {
+                        Lucide::Repeat1
+                    } else {
+                        Lucide::Repeat
+                    },
+                    extras.repeat != Repeat::Off,
+                )
+                .tooltip(match extras.repeat {
+                    Repeat::Off => t!("player.tooltip.repeat_off"),
+                    Repeat::All => t!("player.tooltip.repeat_all"),
+                    Repeat::One => t!("player.tooltip.repeat_one"),
+                })
+                .on_click(|_, _, cx| {
+                    update_app(cx, |app, cx| app.cycle_repeat(cx));
+                }),
+            )
+            .child(
+                Button::new("mini-like")
+                    .custom(style)
+                    .xsmall()
+                    .icon(if liked {
+                        Icon::new(AppIcon::HeartFilled).text_color(accent)
+                    } else {
+                        Icon::new(Lucide::Heart)
+                    })
+                    .tooltip(if liked {
+                        t!("common.remove_from_liked")
+                    } else {
+                        t!("common.like")
+                    })
+                    .disabled(like_track.is_none())
+                    .on_click(move |_, _, cx| {
+                        if let Some(track) = like_track.clone() {
+                            with_main_window(cx, |app, window, cx| {
+                                app.toggle_like(track, window, cx)
+                            });
+                        }
+                    }),
+            )
+            .child(div().flex_1())
+            .child(
+                Button::new("mini-mute")
+                    .custom(style)
+                    .xsmall()
+                    .icon(if volume <= 0. {
+                        AppIcon::Muted
+                    } else if volume < 0.5 {
+                        AppIcon::VolumeLow
+                    } else {
+                        AppIcon::Volume
+                    })
+                    .tooltip(if volume <= 0. {
+                        t!("bar.tooltip.unmute")
+                    } else {
+                        t!("bar.tooltip.mute")
+                    })
+                    .on_click(|_, _, cx| {
+                        with_main_window(cx, |app, window, cx| app.mute_toggle(window, cx));
+                    }),
+            )
+            .child(div().w(px(88.)).h(px(14.)).flex_none().child(slider))
+            .into_any_element()
+    }
+}
+
+/// "Up next": the next songs (click one to play it), "∞" on those autoplay
+/// added, `height` px tall.
+fn queue_list(
+    extras: &Extras,
+    height: f32,
+    muted: Hsla,
+    cx: &mut Context<MiniPlayer>,
+) -> gpui::AnyElement {
+    let fits = ((height - 24.) / QUEUE_ROW).floor().max(1.) as usize;
+    let shown = extras.upcoming.iter().take(fits);
+    let hover = cx.theme().list_hover;
+    let rows: Vec<gpui::AnyElement> = shown
+        .enumerate()
+        .map(|(i, (uid, track, autoplay))| {
+            let uid = *uid;
+            h_flex()
+                .id(("mini-queue", i))
+                .w_full()
+                .h(px(QUEUE_ROW))
+                .flex_none()
+                .px_1()
+                .gap_2()
+                .rounded(px(6.))
+                .cursor_pointer()
+                .hover(move |s| s.bg(hover))
+                .on_click(move |_, _, cx| {
+                    update_app(cx, |app, cx| app.queue_jump(uid, cx));
+                })
+                .child(artwork(track.artwork_url(120), px(30.), px(4.), cx))
+                .child(
+                    v_flex()
+                        .flex_1()
+                        .min_w_0()
+                        .child(
+                            div()
+                                .text_xs()
+                                .font_weight(FontWeight::SEMIBOLD)
+                                .truncate()
+                                .child(track.title.clone()),
+                        )
+                        .child(
+                            div()
+                                .text_xs()
+                                .text_color(muted)
+                                .truncate()
+                                .child(track.artists.clone()),
+                        ),
+                )
+                .when(*autoplay, |this| {
+                    this.child(crate::player_extras::autoplay_mark(muted))
+                })
+                .into_any_element()
+        })
+        .collect();
+    let hidden = extras.more.saturating_sub(rows.len());
+    v_flex()
+        .w_full()
+        .h(px(height))
+        .flex_none()
+        .overflow_hidden()
+        .child(
+            h_flex()
+                .h(px(22.))
+                .px_1()
+                .text_xs()
+                .font_weight(FontWeight::SEMIBOLD)
+                .text_color(muted)
+                .child(div().flex_1().child(t!("np.queue.title")))
+                .when(hidden > 0, |this| this.child(tp!("np.queue.more", hidden))),
+        )
+        .when(rows.is_empty(), |this| {
+            this.child(
+                div()
+                    .px_1()
+                    .text_xs()
+                    .text_color(muted)
+                    .child(t!("np.queue.empty")),
+            )
+        })
+        .children(rows)
+        .into_any_element()
 }
 
 /// What the transport buttons need.
@@ -664,10 +1109,57 @@ impl Parts {
     }
 }
 
-/// The top strip: the expand button on the right. On macOS the strip is the
-/// (transparent) title bar with the close button at its left; elsewhere the window
-/// has no title bar, so the strip draws a close button and is the drag area.
-fn title_strip(cx: &App) -> gpui::AnyElement {
+/// The top strip: "Up next", the pin and the expand button on the right. On
+/// macOS the strip is the (transparent) title bar with the close button at its
+/// left; elsewhere the window has no title bar, so the strip draws a close
+/// button and is the drag area.
+fn title_strip(queue: bool, on_top: bool, cx: &App) -> gpui::AnyElement {
+    let style = crate::components::player_bar::bar_button_style(cx);
+    let accent = crate::theme::AppColors::get(cx).accent;
+    let lit = |icon: Lucide, on: bool| {
+        if on {
+            Icon::new(icon).text_color(accent)
+        } else {
+            Icon::new(icon)
+        }
+    };
+    let buttons = h_flex()
+        .gap_0p5()
+        .child(
+            Button::new("mini-queue-toggle")
+                .custom(style)
+                .xsmall()
+                .icon(lit(Lucide::ListMusic, queue))
+                .selected(queue)
+                .tooltip(t!("np.up_next"))
+                .on_click(move |_, _, cx| {
+                    update_app(cx, |app, cx| {
+                        app.settings
+                            .update(cx, |p, cx| p.set_mini_queue(!queue, cx))
+                    });
+                }),
+        )
+        .child(
+            Button::new("mini-pin")
+                .custom(style)
+                .xsmall()
+                .icon(lit(
+                    if on_top { Lucide::Pin } else { Lucide::PinOff },
+                    on_top,
+                ))
+                .selected(on_top)
+                .tooltip(if on_top {
+                    t!("np_extras.mini.unpin")
+                } else {
+                    t!("np_extras.mini.pin")
+                })
+                .on_click(move |_, _, cx| {
+                    update_app(cx, |app, cx| {
+                        app.settings
+                            .update(cx, |p, cx| p.set_mini_on_top(!on_top, cx))
+                    });
+                }),
+        );
     let expand = Button::new("mini-expand")
         .custom(crate::components::player_bar::bar_button_style(cx))
         .xsmall()
@@ -683,6 +1175,7 @@ fn title_strip(cx: &App) -> gpui::AnyElement {
             .pl(px(72.))
             .pr_1()
             .justify_end()
+            .child(buttons)
             .child(expand)
             .into_any_element();
     }
@@ -713,6 +1206,7 @@ fn title_strip(cx: &App) -> gpui::AnyElement {
                     })
                 }),
         )
+        .child(buttons)
         .child(expand)
         .into_any_element()
 }

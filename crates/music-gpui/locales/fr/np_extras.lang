@@ -1,0 +1,31 @@
+# Now Playing gestures and layout, lyrics extras, the mini player's extras, the compact player bar and podcast controls.
+
+np_extras.settings.portrait = Pochette au-dessus des paroles
+np_extras.settings.portrait_note = La disposition partagée place la pochette, le titre et les commandes sur une rangée au-dessus des paroles plutôt qu'à côté.
+np_extras.portrait.auto = Sur les fenêtres hautes
+np_extras.portrait.always = Toujours
+np_extras.portrait.never = Jamais
+np_extras.settings.open_on_play = Ouvrir « En cours de lecture » au début de la lecture
+np_extras.settings.open_on_play_note = Quand vous lancez un titre alors que rien ne joue ou qu'un autre est en pause. Pas à la reprise, ni quand la file passe d'elle-même au suivant.
+np_extras.settings.click_empty = Cliquer dans le vide ferme « En cours de lecture »
+np_extras.settings.click_empty_note = Un clic à côté de la pochette, des commandes et des paroles le ferme. Un clic sur la pochette lance ou met en pause ; la faire défiler change le volume.
+np_extras.settings.mini_queue = Afficher « À suivre » dans le mini-lecteur
+np_extras.settings.mini_queue_note = La carte pochette et la platine l'affichent au verso ; les autres dispositions s'agrandissent pour l'afficher sous les commandes.
+np_extras.settings.mini_on_top = Garder le mini-lecteur au-dessus des autres fenêtres
+np_extras.mini.pin = Garder au-dessus des autres fenêtres
+np_extras.mini.unpin = Ne plus garder au-dessus des autres fenêtres
+np_extras.settings.line_glow = Halo sur la ligne chantée
+np_extras.settings.line_glow_note = Un halo doux de la couleur de la pochette (la couleur d'accent du thème pour une pochette grise) autour de la ligne en cours.
+np_extras.follow = Suivre les paroles
+np_extras.skip_back = Reculer de 15 secondes
+np_extras.skip_forward = Avancer de 15 secondes
+np_extras.speed = Vitesse de lecture
+np_extras.bar.more = Plus de commandes
+np_extras.bar.fewer = Moins de commandes
+np_extras.shortcut.line_previous = Paroles : ligne précédente
+np_extras.shortcut.line_next = Paroles : ligne suivante
+np_extras.shortcut.line_play = Paroles : lire depuis la ligne choisie
+np_extras.settings.spin = Faire tourner le disque
+np_extras.settings.spin_note = Fait tourner le disque des platines pendant la lecture. Pas gratuit : la fenêtre est redessinée 20 fois par seconde, environ {grooves} d'un cœur de processeur avec « Sillons seulement » et {record} avec « Tout le disque », qui garde aussi jusqu'à {memory} de pochette tournée en mémoire. Rien ne tourne en pause ou avec les animations réduites ou désactivées.
+np_extras.spin.grooves = Sillons seulement
+np_extras.spin.record = Tout le disque

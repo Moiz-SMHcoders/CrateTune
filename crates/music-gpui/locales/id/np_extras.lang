@@ -1,0 +1,31 @@
+# Now Playing gestures and layout, lyrics extras, the mini player's extras, the compact player bar and podcast controls.
+
+np_extras.settings.portrait = Sampul di atas lirik
+np_extras.settings.portrait_note = Desain terbagi menaruh artwork, judul, dan kontrol dalam satu baris di atas lirik, bukan di sampingnya.
+np_extras.portrait.auto = Di jendela tinggi
+np_extras.portrait.always = Selalu
+np_extras.portrait.never = Tidak pernah
+np_extras.settings.open_on_play = Buka Sedang Diputar saat pemutaran dimulai
+np_extras.settings.open_on_play_note = Saat kamu memulai lagu ketika tidak ada yang diputar atau lagu lain dijeda. Tidak saat melanjutkan, atau saat antrean berlanjut sendiri.
+np_extras.settings.click_empty = Klik ruang kosong untuk menutup Sedang Diputar
+np_extras.settings.click_empty_note = Klik di samping artwork, kontrol, dan lirik akan menutupnya. Klik artwork untuk putar atau jeda; gulir di atasnya untuk mengubah volume.
+np_extras.settings.mini_queue = Tampilkan "Berikutnya" di pemutar mini
+np_extras.settings.mini_queue_note = Kartu artwork dan turntable menampilkannya di sisi baliknya; tata letak lain membesar untuk menampilkannya di bawah kontrol.
+np_extras.settings.mini_on_top = Jaga pemutar mini di atas jendela lain
+np_extras.mini.pin = Jaga di atas jendela lain
+np_extras.mini.unpin = Berhenti menjaga di atas jendela lain
+np_extras.settings.line_glow = Cahaya pada baris yang dinyanyikan
+np_extras.settings.line_glow_note = Cahaya lembut dengan warna artwork (warna aksen tema untuk artwork abu-abu) di sekitar baris saat ini.
+np_extras.follow = Ikuti lirik
+np_extras.skip_back = Mundur 15 detik
+np_extras.skip_forward = Maju 15 detik
+np_extras.speed = Kecepatan pemutaran
+np_extras.bar.more = Kontrol lainnya
+np_extras.bar.fewer = Lebih sedikit kontrol
+np_extras.shortcut.line_previous = Lirik: baris sebelumnya
+np_extras.shortcut.line_next = Lirik: baris berikutnya
+np_extras.shortcut.line_play = Lirik: putar dari baris yang dipilih
+np_extras.settings.spin = Putar piringan
+np_extras.settings.spin_note = Memutar piringan turntable saat musik diputar. Tidak gratis: jendela digambar ulang 20 kali per detik, sekitar {grooves} dari satu inti CPU dengan "Alur saja" dan {record} dengan "Seluruh piringan", yang juga menyimpan hingga {memory} artwork yang diputar di memori. Tidak ada yang berputar saat dijeda atau saat Animasi Dikurangi atau Mati.
+np_extras.spin.grooves = Alur saja
+np_extras.spin.record = Seluruh piringan

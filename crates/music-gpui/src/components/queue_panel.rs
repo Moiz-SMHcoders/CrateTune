@@ -374,6 +374,10 @@ impl MusicApp {
             Kind::Current | Kind::Preview => {}
             Kind::Upcoming { uid, first, last } => {
                 let title: SharedString = track.title.clone().into();
+                // "∞": autoplay added it (`player_extras.rs`).
+                if self.added_by_autoplay(uid) {
+                    row = row.child(crate::player_extras::autoplay_mark(muted));
+                }
                 row = row
                     .on_click(cx.listener(move |this, _, _, cx| this.queue_jump(uid, cx)))
                     .on_drag(DraggedItem { uid, title }, |item, _, _, cx| {

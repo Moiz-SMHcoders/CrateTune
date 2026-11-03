@@ -234,6 +234,22 @@ writing into the themes folder; (7) fonts from files through DirectWrite / fontc
 (only CoreText was used). Details: [README: Light mode and
 layout](../README.md#light-mode-and-layout-round). · Size: small · Priority: medium
 
+**U26. Player UI round (`feat/np-mini-plus`) on Windows, Linux and with real input**
+Checked on macOS with scripts, synthetic events and offscreen screenshots: (1) the mini
+player's pin on Windows (topmost on / off by reopening) and Linux (GPUI's floating window
+kind under X11 / Wayland compositors), and the corner anchoring there (Wayland ignores
+positions; Windows' and X11's frame offsets untested); (2) the gestures with a real mouse
+and trackpad (artwork click / wheel, the empty-space click beside every design, the heart's
+pop), and the arrow keys with a real keyboard while menus or the lyrics card are open; (3)
+"Open Now Playing when playback starts" with Cast, Music Together and media keys starting
+playback; (4) the "∞" after a restart (queue item ids are per session, the marks go) and with
+shuffle; (5) the compact bar on Windows / Linux title-bar setups and at zoom levels; (6) the
+ring and the spinning record on a 120 Hz display, on Intel Macs and integrated GPUs
+(cost measured on an M4 only), and the turned labels' sharpness at 3× scale; (7) podcast
+episodes from real searches (the bar's skips were shown with an id played as an episode).
+Details: [README: Player UI round](../README.md#player-ui-round-mini-player-gestures-podcasts-spinning-record).
+· Size: small · Priority: medium
+
 **U22. Music videos against real accounts and long sessions**
 Songs show their music video only through the pairs YouTube Music sends signed in
 (`next`'s `counterpart` rows). That path is tested on a hand-built response shaped like the
@@ -559,26 +575,8 @@ was built is listed there. Left out, with the reason:
     interpolation now). · Size: small · Priority: low
 * *Mini player skins that need shaped or transparent windows or constant motion*: Zuno's
   Classic capsule (grows on hover, clicks pass through), Cassette (turning spools), Y2K
-  (gel shape, LCD meter); a spinning picture disc (Deviload; GPUI cannot rotate images and the
-  disc would redraw ~30 times a second while playing). · Size: medium · Priority: low
-* *Up next / queue inside the mini player* (Deviload's flip side, Limusic's right column) and
-  *shuffle, repeat, like, a volume slider and an always-on-top pin toggle* in it. · Size: small
-  · Priority: low
-* *Mini player anchored to its screen corner when its size changes* (Limusic): it keeps its
-  top-left corner today. · Size: small · Priority: low
-* *Click the artwork to play / pause, scroll over it for the volume, a "pop" when liking*
-  (Limusic), *click the empty space to close Now Playing, open Now Playing on play*. ·
-  Size: small · Priority: low
-* *15-second skips and a speed button for podcasts in the bar* (Limusic), *an "∞" mark on
-  songs added by autoplay*. · Size: small · Priority: low
-* *Portrait-window layout for Now Playing* (refryt: cover above the lyrics on tall windows)
-  and *a compact player bar on narrow windows* (refryt, Zuno's compact / expanded bar). ·
-  Size: medium · Priority: low
-* *Lyrics niceties*: a "follow the current line" button after scrolling away (Deviload),
-  arrow-key focus over lines (Zuno), a skeleton while loading (refryt), a glow tinted by the
-  theme (Deviload). · Size: small · Priority: low
-* *A ring of bars around the record* (Zuno's site) for the Turntable design. · Size: small ·
-  Priority: low
+  (gel shape, LCD meter). (Deviload's spinning picture disc is built: "Spin the record",
+  README: Player UI round.) · Size: medium · Priority: low
 * *Not ours / won't do*: theater mode, auto-hiding controls, cinema, the ambient light around
   music videos and the song / video switch (the music-video work); a translucent blurred
   window (refryt; the look-themes work); a slow drift of the lyrics backdrop and an app-wide

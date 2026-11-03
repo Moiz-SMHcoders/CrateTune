@@ -5,6 +5,13 @@
 //! the toolbar's source label with its "sources tried" menu (switch to another
 //! source's lyrics) and the per-track timing nudge.
 //!
+//! After scrolling away a "Follow the lyrics" button brings the list back to
+//! the line being sung (Deviload, MIT); ↑ / ↓ move a keyboard focus over the
+//! lines and Enter plays from the focused one (Zuno, Apache-2.0); an optional
+//! glow in the artwork's colour lights the line being sung (Deviload); a still
+//! outline of lines stands in while the lyrics load (refryt, GPL-3.0). None of
+//! them asks for frames of its own.
+//!
 //! It is drawn at display rate while words are swept, so it is built to be cheap
 //! per frame:
 //!
@@ -50,8 +57,9 @@ const LINE_DIM: Spec = Spec::ms(500, ease_out_cubic);
 const SCROLL: Spec = Spec::ms(460, ease_in_out_cubic);
 /// Extra delay per line below the focused one: the list "ripples" into place.
 const SCROLL_STAGGER: Duration = Duration::from_millis(30);
-/// Wheel scrolling pauses auto-follow for this long.
-pub const MANUAL_SCROLL_HOLD: Duration = Duration::from_secs(3);
+/// Wheel scrolling or the arrow keys pause auto-follow for this long (the
+/// "Follow the lyrics" button returns at once; Deviload holds 8 s too).
+pub const MANUAL_SCROLL_HOLD: Duration = Duration::from_secs(8);
 /// Where the focused lyric line's center sits, as a fraction of the pane height.
 const FOCUS_ANCHOR: f32 = 0.36;
 /// Alpha of the not-yet-sung part of the active line.
@@ -167,6 +175,8 @@ pub struct LyricsList {
     scroll_y: Pixels,
     max_scroll: Pixels,
     pub manual_until: Option<Instant>,
+    /// The line the arrow keys moved to (Enter plays from it).
+    pub key_line: Option<usize>,
     hovered: Option<usize>,
     rows: Vec<Option<RowGeom>>,
     /// Content y of each row's top (valid for rows with a geometry), and the end.
@@ -192,6 +202,7 @@ impl LyricsList {
             scroll_y: px(0.),
             max_scroll: px(0.),
             manual_until: None,
+            key_line: None,
             hovered: None,
             rows: Vec::new(),
             tops: Vec::new(),
@@ -316,6 +327,11 @@ impl MusicApp {
         let now = frame.now;
         let running = self.clock.is_running();
         let speed = self.playback.speed.max(0.1);
+        // The line glow's colour: the artwork's vivid one, else the theme's accent.
+        let tint = display.line_glow.then(|| {
+            let vivid = frame.get(&self.np.colors[2]);
+            line_glow_color(vivid, crate::theme::AppColors::get(cx).accent)
+        });
         let when = move |target: Duration| now + target.saturating_sub(position).div_f32(speed);
         let list = &mut self.np.list;
         let lines = &lyrics.lines;
@@ -326,6 +342,7 @@ impl MusicApp {
             list.focus_line = None;
             list.applied_scroll = None;
             list.hovered = None;
+            list.key_line = None;
             list.set_selecting(false, None);
         }
         let pane = list.bounds.get();
@@ -447,6 +464,7 @@ impl MusicApp {
         let target = list.tops[focus] + focus_height * 0.5 - pane.size.height * FOCUS_ANCHOR;
         if !manual {
             let from = if list.manual_until.take().is_some() {
+                list.key_line = None;
                 Some(list.scroll_y) // returning from a manual scroll
             } else if list.focus_line != Some(focus) {
                 list.applied_scroll
@@ -505,7 +523,7 @@ impl MusicApp {
         let lift = px(size * look.lift);
         let base_align = display.align;
         let margin = px(size * 2.);
-        let (selecting, hovered) = (list.selecting, list.hovered);
+        let (selecting, hovered, key_line) = (list.selecting, list.hovered, list.key_line);
         let mut children: Vec<AnyElement> = Vec::with_capacity(24);
         children.push(recorder.into_any_element());
         for (i, line) in lines.iter().enumerate() {
@@ -571,10 +589,16 @@ impl MusicApp {
             let lit = ink(dim + (1. - dim) * act);
             // A white glow lights the line up; a dark one would only smudge
             // light mode's dark text.
-            let glow = look
-                .glow
-                .filter(|_| !crate::theme::is_light())
-                .map(|a| ink(a * act));
+            let glow = match tint {
+                Some(tint) => Some(Hsla {
+                    a: tint.a * act,
+                    ..tint
+                }),
+                None => look
+                    .glow
+                    .filter(|_| !crate::theme::is_light())
+                    .map(|a| ink(a * act)),
+            };
             let karaoke = |text: SharedString,
                            word_starts: Arc<[usize]>,
                            fill: Fill,
@@ -601,6 +625,7 @@ impl MusicApp {
                 sweep: look.sweep,
                 feather: look.feather,
                 glow,
+                wide_glow: tint.is_some(),
             };
             let mut row = v_flex()
                 .absolute()
@@ -615,6 +640,10 @@ impl MusicApp {
                         .bg(ink(0.1))
                         .border_1()
                         .border_color(ink(0.25))
+                })
+                // The arrow keys' focus.
+                .when(key_line == Some(i) && !selected, |this| {
+                    this.rounded(px(12.)).border_2().border_color(ink(0.55))
                 })
                 .child(karaoke(
                     info.text.clone(),
@@ -670,6 +699,10 @@ impl MusicApp {
                 )));
             }
             children.push(row.into_any_element());
+        }
+        // Scrolled away (wheel or arrow keys): a button back to the line being sung.
+        if manual && !selecting {
+            children.push(follow_button(cx));
         }
 
         div()
@@ -730,6 +763,154 @@ impl MusicApp {
             _ => None,
         }
     }
+}
+
+impl MusicApp {
+    /// ↑ / ↓ in Now Playing (`lyrics_line_previous` / `_next`): moves the keyboard
+    /// focus over the synced lines, starting beside the line being sung, and
+    /// glides it into view; auto-follow waits as after a wheel scroll.
+    pub fn lyrics_line_step(&mut self, step: i32, cx: &mut Context<Self>) {
+        if !self.np.open || !self.np.lyrics_pane || self.np.list.selecting {
+            return;
+        }
+        let Some(track) = &self.playback.track else {
+            return;
+        };
+        let list = &mut self.np.list;
+        let count = list.rows.len();
+        if count == 0 || list.lines_for.as_deref() != Some(track.video_id.as_str()) {
+            return;
+        }
+        let to = match (list.key_line, list.focus_line) {
+            (Some(at), _) | (None, Some(at)) => {
+                (at as i64 + i64::from(step)).clamp(0, count as i64 - 1) as usize
+            }
+            (None, None) => 0,
+        };
+        list.key_line = Some(to);
+        let now = Instant::now();
+        list.manual_until = Some(now + MANUAL_SCROLL_HOLD);
+        // Where auto-follow would put that line, with the same glide.
+        if let (Some(geom), Some(top)) = (list.rows[to], list.tops.get(to).copied()) {
+            let pane = list.bounds.get().size.height;
+            let target = top + geom.height * 0.5 - pane * FOCUS_ANCHOR;
+            let delta = target - list.scroll_y;
+            for anim in &mut list.anims {
+                let current = anim.shift.value(now);
+                anim.shift
+                    .animate_from(current + delta, px(0.), SCROLL, now);
+            }
+            list.scroll_y = target;
+        }
+        cx.notify();
+    }
+
+    /// Enter in Now Playing (`lyrics_line_play`): plays from the focused line.
+    pub fn lyrics_line_play(&mut self, cx: &mut Context<Self>) {
+        if !self.np.open {
+            return;
+        }
+        let Some(line) = self.np.list.key_line.take() else {
+            return;
+        };
+        if let Some(start) = self.synced_line_start(line) {
+            let at = self
+                .playback
+                .track
+                .as_ref()
+                .map_or(start, |t| self.lyrics.playback_position(&t.video_id, start));
+            // Seeking also ends the manual hold: the list follows again.
+            self.seek_to(at, cx);
+        }
+        cx.notify();
+    }
+}
+
+/// "Follow the lyrics": back to the line being sung after scrolling away.
+fn follow_button(cx: &mut Context<MusicApp>) -> AnyElement {
+    let paper = crate::theme::paper(1.);
+    h_flex()
+        .absolute()
+        .left_0()
+        .right_0()
+        .bottom(px(20.))
+        .justify_center()
+        .child(
+            h_flex()
+                .id("np-lyrics-follow")
+                // Its clicks aren't seeks on the line under it.
+                .occlude()
+                .gap_1p5()
+                .px_3()
+                .py_1p5()
+                .rounded_full()
+                .bg(ink(0.9))
+                .shadow_lg()
+                .text_sm()
+                .font_weight(FontWeight::SEMIBOLD)
+                .text_color(paper)
+                .cursor_pointer()
+                .hover(|s| s.bg(ink(0.78)))
+                .child(
+                    gpui::svg()
+                        .size(px(15.))
+                        .path(gpui_component::IconNamed::path(
+                            crate::icons::Lucide::LocateFixed,
+                        ))
+                        .text_color(paper),
+                )
+                .child(t!("np_extras.follow"))
+                .on_click(cx.listener(|this, _, _, cx| {
+                    this.np.list.manual_until = None;
+                    this.np.list.key_line = None;
+                    cx.notify();
+                })),
+        )
+        .into_any_element()
+}
+
+/// The line glow's colour from the artwork's vivid colour (`fallback`, the
+/// theme's accent, for grey artwork): light on the dark washes, deeper and
+/// fainter on light mode's pale ones.
+pub(crate) fn line_glow_color(vivid: Hsla, fallback: Hsla) -> Hsla {
+    let base = if vivid.s < 0.12 { fallback } else { vivid };
+    let s = base.s.clamp(0.35, 0.85);
+    if crate::theme::is_light() {
+        hsla(base.h, s, 0.46, 0.3)
+    } else {
+        hsla(base.h, s, 0.68, 0.5)
+    }
+}
+
+/// A still outline of lyric lines while they load (after refryt's lyrics
+/// placeholder: eight widths, fading down the list; no shimmer).
+pub(crate) fn skeleton(display: LyricsDisplay) -> AnyElement {
+    const WIDTHS: [f32; 8] = [0.88, 0.64, 0.80, 0.52, 0.84, 0.60, 0.74, 0.56];
+    let size = display.text_size;
+    let row = size * display.line_spacing + 2. * size * 0.26;
+    let bar = size * 0.52;
+    v_flex()
+        .id("lyrics-skeleton")
+        .size_full()
+        .overflow_hidden()
+        .px(px(ROW_PAD_X))
+        .pt(px(48.))
+        .children((0..16).map(|i| {
+            let fade = (1. - 0.09 * i as f32).max(0.15);
+            let line = div()
+                .w(gpui::relative(WIDTHS[i % WIDTHS.len()]))
+                .h(px(bar))
+                .rounded(px(bar * 0.35))
+                .bg(ink(0.11 * fade));
+            let row = h_flex().w_full().h(px(row)).flex_none();
+            match display.align {
+                TextAlign::Left => row.justify_start(),
+                TextAlign::Center => row.justify_center(),
+                TextAlign::Right => row.justify_end(),
+            }
+            .child(line)
+        }))
+        .into_any_element()
 }
 
 // ---- source label, "sources tried" menu, timing nudge -----------------------

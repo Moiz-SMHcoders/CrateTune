@@ -700,6 +700,9 @@ pub struct LyricsConfig {
     pub animation: LyricsAnimation,
     /// Background vocals under their line, duet singers on alternating sides.
     pub show_background_vocals: bool,
+    /// A soft glow in the artwork's (or the theme's) colour around the line
+    /// being sung (after Deviload).
+    pub line_glow: bool,
 }
 
 impl Default for LyricsConfig {
@@ -727,6 +730,7 @@ impl Default for LyricsConfig {
             align: TextAlign::Left,
             animation: LyricsAnimation::Karaoke,
             show_background_vocals: true,
+            line_glow: false,
         }
     }
 }
@@ -741,6 +745,7 @@ pub struct LyricsDisplay {
     pub show_background_vocals: bool,
     pub translate: bool,
     pub romanize: RomanizeConfig,
+    pub line_glow: bool,
 }
 
 impl LyricsConfig {
@@ -753,6 +758,7 @@ impl LyricsConfig {
             show_background_vocals: self.show_background_vocals,
             translate: self.translate,
             romanize: self.romanize,
+            line_glow: self.line_glow,
         }
     }
 
@@ -1015,7 +1021,53 @@ impl MiniPlayerSkin {
     }
 }
 
+/// When the split design puts the cover above the lyrics (after refryt's
+/// stacked full-screen player): on windows taller than wide, always, never.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum PortraitLayout {
+    #[default]
+    Auto,
+    Always,
+    Never,
+}
+
+impl PortraitLayout {
+    pub const ALL: [Self; 3] = [Self::Auto, Self::Always, Self::Never];
+
+    pub fn title(self) -> &'static str {
+        match self {
+            Self::Auto => t!("np_extras.portrait.auto"),
+            Self::Always => t!("np_extras.portrait.always"),
+            Self::Never => t!("np_extras.portrait.never"),
+        }
+    }
+
+    pub fn key(self) -> &'static str {
+        match self {
+            Self::Auto => "auto",
+            Self::Always => "always",
+            Self::Never => "never",
+        }
+    }
+
+    pub fn parse(s: &str) -> Option<Self> {
+        Self::ALL.into_iter().find(|p| p.key() == s)
+    }
+
+    /// Stacked for a Now Playing area of `width` × `height` (automatic: about
+    /// as tall as wide or taller — a laptop screen's tallest narrow window,
+    /// 860 × ~870 pt, counts).
+    pub fn stacked(self, width: f32, height: f32) -> bool {
+        match self {
+            Self::Auto => height >= width * 0.9,
+            Self::Always => true,
+            Self::Never => false,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct NowPlayingConfig {
     #[serde(deserialize_with = "lenient")]
@@ -1029,6 +1081,38 @@ pub struct NowPlayingConfig {
     pub mini_skin: MiniPlayerSkin,
     /// "Full screen when Now Playing opens" (off by default; `np_fullscreen.rs`).
     pub fullscreen: bool,
+    /// Open Now Playing when playback starts (`player_extras.rs`).
+    pub open_on_play: bool,
+    /// A click on Now Playing's empty space closes it (`np_gestures.rs`).
+    pub click_empty_closes: bool,
+    /// The split design's cover above the lyrics.
+    #[serde(deserialize_with = "lenient")]
+    pub portrait: PortraitLayout,
+    /// The mini player shows "Up next" (its flip side, or a list under it).
+    pub mini_queue: bool,
+    /// The mini player stays above other windows.
+    pub mini_on_top: bool,
+    /// The turntables' record turns while playing (`turntable.rs`).
+    #[serde(deserialize_with = "lenient")]
+    pub turntable_spin: crate::turntable::SpinLook,
+}
+
+impl Default for NowPlayingConfig {
+    fn default() -> Self {
+        Self {
+            layout: NowPlayingLayout::default(),
+            background: NowPlayingBackground::default(),
+            mini_player: MiniPlayerStyle::default(),
+            mini_skin: MiniPlayerSkin::default(),
+            fullscreen: false,
+            open_on_play: false,
+            click_empty_closes: false,
+            portrait: PortraitLayout::default(),
+            mini_queue: false,
+            mini_on_top: true,
+            turntable_spin: crate::turntable::SpinLook::Off,
+        }
+    }
 }
 
 // ---- Discord activity ---------------------------------------------------------------

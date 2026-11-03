@@ -35,7 +35,8 @@ use crate::anim::Frame;
 use crate::app::MusicApp;
 use crate::components::artwork::artwork;
 use crate::icons::{AppIcon, Lucide};
-use crate::now_playing::{ink, like_icon_button, shade};
+use crate::now_playing::{ink, shade};
+use crate::np_extras::Keep as _;
 use crate::queue::{Repeat, Source};
 use crate::settings::prefs::NowPlayingLayout;
 
@@ -188,6 +189,7 @@ impl MusicApp {
         let width = (viewport.width - px(112.)).min(px(820.));
         let source = crate::module_service::source_label(self.playback.source.as_ref())
             .filter(|_| track.is_some());
+        let keep = self.np.gestures.empty_close;
         v_flex()
             .flex_1()
             .min_h_0()
@@ -197,6 +199,7 @@ impl MusicApp {
             .child(
                 v_flex()
                     .w(width)
+                    .np_keep(keep)
                     .gap_3()
                     .when_some(source, |this, source| {
                         this.child(
@@ -233,7 +236,9 @@ impl MusicApp {
                                             .child(artists),
                                     ),
                             )
-                            .children(track.map(|t| like_icon_button("np-like", t, px(40.), cx))),
+                            .children(
+                                track.map(|t| self.np_like("np-like", t, px(40.), frame, cx)),
+                            ),
                     )
                     .when_some(lyric, |this, line| {
                         this.child(
@@ -370,6 +375,7 @@ impl MusicApp {
         let format = crate::module_service::source_label(self.playback.source.as_ref())
             .filter(|_| track.is_some());
         let shuffle = self.queue.shuffle();
+        let keep = self.np.gestures.empty_close;
         v_flex()
             .flex_1()
             .min_h_0()
@@ -379,6 +385,7 @@ impl MusicApp {
             .child(
                 v_flex()
                     .w(side + px(48.))
+                    .np_keep(keep)
                     .p(px(24.))
                     .gap_4()
                     .rounded(px(28.))
@@ -404,7 +411,7 @@ impl MusicApp {
                                     .child(album.unwrap_or_else(|| t!("np.your_queue").into())),
                             ),
                     )
-                    .child(self.artwork_shaped(track, side, Some(px(10.)), cx))
+                    .child(self.artwork_shaped(track, side, Some(px(10.)), frame, cx))
                     .child(
                         h_flex()
                             .w_full()
@@ -433,7 +440,7 @@ impl MusicApp {
                                 .on_click(cx.listener(|this, _, _, cx| this.toggle_shuffle(cx))),
                             )
                             .children(track.map(|t| {
-                                like_icon_button("np-like", t, px(36.), cx).bg(ink(0.14))
+                                self.np_like("np-like", t, px(36.), frame, cx).bg(ink(0.14))
                             })),
                     )
                     .child(
@@ -527,7 +534,7 @@ impl MusicApp {
                 .hover(|s| s.bg(ink(0.12)))
                 .child(label)
         };
-        let _ = frame;
+        let keep = self.np.gestures.empty_close;
         v_flex()
             .flex_1()
             .min_h_0()
@@ -538,6 +545,7 @@ impl MusicApp {
             .child(
                 h_flex()
                     .w_full()
+                    .np_keep(keep)
                     .items_end()
                     .gap_6()
                     .child(
@@ -583,6 +591,7 @@ impl MusicApp {
             )
             .child(
                 h_flex()
+                    .np_keep(keep)
                     .gap_2()
                     .child(
                         text_button("np-min-prev", t!("tray.previous"))
@@ -607,7 +616,7 @@ impl MusicApp {
                             .on_click(cx.listener(|this, _, _, cx| this.next_track(cx))),
                     )
                     .child(div().flex_1())
-                    .children(track.map(|t| like_icon_button("np-like", t, px(36.), cx))),
+                    .children(track.map(|t| self.np_like("np-like", t, px(36.), frame, cx))),
             )
             .into_any_element()
     }
@@ -654,6 +663,7 @@ impl MusicApp {
                 .hover(|s| s.bg(ink(0.08)))
                 .child(svg().size(side * 0.42).path(icon).text_color(cream(0.95)))
         };
+        let keep = self.np.gestures.empty_close;
         h_flex()
             .flex_1()
             .min_h_0()
@@ -668,11 +678,13 @@ impl MusicApp {
                     .rounded_full()
                     .border_1()
                     .border_color(Hsla { a: 0.5, ..accent })
-                    .child(self.artwork_shaped(track, side, None, cx)),
+                    .np_keep(keep)
+                    .child(self.artwork_shaped(track, side, None, frame, cx)),
             )
             .child(
                 v_flex()
                     .w(column)
+                    .np_keep(keep)
                     .gap_5()
                     .child(
                         div()
@@ -787,7 +799,7 @@ impl MusicApp {
                         h_flex()
                             .gap_2()
                             .children(track.map(|t| {
-                                like_icon_button("np-like", t, px(40.), cx)
+                                self.np_like("np-like", t, px(40.), frame, cx)
                                     .border_1()
                                     .border_color(Hsla { a: 0.6, ..accent })
                             }))
@@ -828,12 +840,15 @@ impl MusicApp {
         let side = (viewport.height * 0.44)
             .min((viewport.width - px(176.)) * 0.4)
             .clamp(px(140.), px(380.));
-        let upcoming: Vec<(u64, Track, Source)> = self
+        let upcoming: Vec<(u64, Track, Source, bool)> = self
             .queue
             .upcoming()
             .iter()
             .take(8)
-            .map(|item| (item.uid, item.track.clone(), item.source))
+            .map(|item| {
+                let autoplay = self.added_by_autoplay(item.uid);
+                (item.uid, item.track.clone(), item.source, autoplay)
+            })
             .collect();
         let more = self.queue.upcoming().len().saturating_sub(upcoming.len());
         // Your queued songs and the rest get a heading each once you queued something.
@@ -860,7 +875,7 @@ impl MusicApp {
         let rows = upcoming
             .into_iter()
             .enumerate()
-            .flat_map(|(i, (uid, t, source))| {
+            .flat_map(|(i, (uid, t, source, autoplay))| {
                 let head = (split && previous != Some(source))
                     .then(|| match source {
                         Source::User => Some(t!("np.queue.next_in_queue").to_owned()),
@@ -907,6 +922,9 @@ impl MusicApp {
                                     .child(t.artists.clone()),
                             ),
                     )
+                    .when(autoplay, |this| {
+                        this.child(crate::player_extras::autoplay_mark(ink(0.5)))
+                    })
                     .when_some(t.duration_secs, |this, d| {
                         this.child(
                             div()
@@ -921,11 +939,13 @@ impl MusicApp {
                     .collect::<Vec<_>>()
             });
         let rows: Vec<AnyElement> = rows.collect();
+        let keep = self.np.gestures.empty_close;
         let queue = v_flex()
             .flex_1()
             .min_w_0()
             .max_w(px(480.))
             .h_full()
+            .np_keep(keep)
             .py(px(24.))
             .justify_center()
             .gap_1()
@@ -972,9 +992,10 @@ impl MusicApp {
                     .w(side)
                     .flex_none()
                     .h_full()
+                    .np_keep(keep)
                     .justify_center()
                     .gap_4()
-                    .child(self.artwork_shaped(track, side, Some(px(28.)), cx))
+                    .child(self.artwork_shaped(track, side, Some(px(28.)), frame, cx))
                     .child(
                         h_flex()
                             .w_full()
@@ -992,7 +1013,9 @@ impl MusicApp {
                                     )
                                     .child(div().text_color(ink(0.65)).truncate().child(artists)),
                             )
-                            .children(track.map(|t| like_icon_button("np-like", t, px(36.), cx))),
+                            .children(
+                                track.map(|t| self.np_like("np-like", t, px(36.), frame, cx)),
+                            ),
                     )
                     .child(
                         v_flex()
@@ -1013,6 +1036,7 @@ impl MusicApp {
         track: Option<&Track>,
         position: Duration,
         viewport: gpui::Size<Pixels>,
+        scale: f32,
         frame: &mut Frame,
         cx: &mut Context<Self>,
     ) -> AnyElement {
@@ -1020,6 +1044,20 @@ impl MusicApp {
             .min(viewport.width * 0.42)
             .clamp(px(200.), px(560.));
         let playing = self.playback.status == PlaybackStatus::Playing;
+        // "Spin the record" (`turntable.rs`): turns while playing, ≤ 20 fps.
+        let look = self.settings.read(cx).settings().now_playing.turntable_spin;
+        self.np.spin.step(
+            frame,
+            playing && look != crate::turntable::SpinLook::Off && crate::effects::ambient_motion(),
+        );
+        let hires = track.and_then(|t| match self.hires.get(&t.video_id) {
+            Some(crate::now_playing::HiRes::Ready { art, .. }) => {
+                Some((t.video_id.as_str(), art.clone()))
+            }
+            _ => None,
+        });
+        let label_px = (side.as_f32() * crate::turntable::LABEL_SHARE * scale).round() as u32;
+        let spin = self.np.spin.deck_spin(look, hires, label_px, cx);
         self.np.arm.animate_to(
             if playing { 0. } else { 1. },
             crate::turntable::LIFT,
@@ -1030,7 +1068,24 @@ impl MusicApp {
         self.wake_per_pixel(side * 0.2, frame);
         let angle = crate::turntable::arm_angle(self.played(position), lift);
         let art = self.art_image(track, cx);
-        let deck = crate::turntable::deck(side, art, angle, &crate::turntable::DeckLook::default());
+        let deck = crate::turntable::deck(
+            side,
+            art,
+            angle,
+            &crate::turntable::DeckLook::default(),
+            &spin,
+        );
+        // Where the deck lands (the visualizer's ring of bars goes around its
+        // record), and the artwork's gestures on it.
+        let bounds = self.np.deck_bounds.clone();
+        let deck = deck.child(
+            gpui::canvas(move |b, _, _| bounds.set(b), |_, _, _, _| {})
+                .absolute()
+                .size_full(),
+        );
+        let pill = self.np_volume_pill(frame);
+        let keep = self.np.gestures.empty_close;
+        let deck = self.artwork_gestures(deck, pill, cx).np_keep(keep);
         let (title, artists) = Self::titles(track);
         let lyric = self
             .lyric_snippet(track, position, frame)
@@ -1049,6 +1104,7 @@ impl MusicApp {
             .child(
                 v_flex()
                     .w(column)
+                    .np_keep(keep)
                     .gap_3()
                     .child(
                         div()

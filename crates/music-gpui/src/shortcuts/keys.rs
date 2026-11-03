@@ -249,8 +249,11 @@ impl Combo {
         }
         // Without ⌘ / Ctrl the key reaches text fields: letters, digits, space,
         // editing and cursor keys (⌥ types characters on a Mac: ⌥E, ⌥L = @ …).
+        // Not an action bound only in Now Playing, which has no text field.
         let typing_mods = !self.ctrl && !self.platform && (!self.alt || os == Os::Mac);
-        if typing_mods && is_typing_key(key) {
+        let outside_text =
+            super::find(action).is_some_and(|a| a.context == Some(super::NOW_PLAYING_CONTEXT));
+        if typing_mods && is_typing_key(key) && !outside_text {
             return Some(Reserved::Typing);
         }
         if self.primary(os) && !self.alt && !self.function {

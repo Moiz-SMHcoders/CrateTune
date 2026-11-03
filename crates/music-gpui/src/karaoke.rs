@@ -65,8 +65,10 @@ pub struct KaraokeLine {
     pub sweep: bool,
     /// Sweep edge width as a fraction of the font size.
     pub feather: f32,
-    /// Halo painted behind sung glyphs (Glow / Apple styles).
+    /// Halo painted behind sung glyphs (Glow / Apple styles, the line glow).
     pub glow: Option<Hsla>,
+    /// A wider halo in eight directions (the tinted line glow) instead of four.
+    pub wide_glow: bool,
 }
 
 struct Glyph {
@@ -340,7 +342,23 @@ impl KaraokeLine {
                     a: glow.a * p.min(1.0),
                     ..glow
                 };
-                for (dx, dy) in [(1., 0.), (-1., 0.), (0., 1.), (0., -1.)] {
+                const FOUR: [(f32, f32); 4] = [(1., 0.), (-1., 0.), (0., 1.), (0., -1.)];
+                const EIGHT: [(f32, f32); 8] = [
+                    (1., 0.),
+                    (-1., 0.),
+                    (0., 1.),
+                    (0., -1.),
+                    (0.7, 0.7),
+                    (-0.7, 0.7),
+                    (0.7, -0.7),
+                    (-0.7, -0.7),
+                ];
+                let (directions, halo): (&[(f32, f32)], Pixels) = if self.wide_glow {
+                    (&EIGHT, halo * 1.7)
+                } else {
+                    (&FOUR, halo)
+                };
+                for &(dx, dy) in directions {
                     let at = point(origin.x + halo * dx, origin.y + halo * dy);
                     window
                         .paint_glyph(at, g.font_id, g.id, paint_size, color)

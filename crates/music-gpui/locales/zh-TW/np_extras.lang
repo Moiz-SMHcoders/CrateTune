@@ -1,0 +1,31 @@
+# Now Playing gestures and layout, lyrics extras, the mini player's extras, the compact player bar and podcast controls.
+
+np_extras.settings.portrait = 封面在歌詞上方
+np_extras.settings.portrait_note = 分欄設計把封面、標題和控制按鈕排成一列，放在歌詞上方而不是旁邊。
+np_extras.portrait.auto = 視窗較高時
+np_extras.portrait.always = 一律
+np_extras.portrait.never = 永不
+np_extras.settings.open_on_play = 開始播放時開啟「正在播放」
+np_extras.settings.open_on_play_note = 在沒有播放內容或另一首歌已暫停時開始播放歌曲。繼續播放或佇列自動換到下一首時不會開啟。
+np_extras.settings.click_empty = 點按空白處關閉「正在播放」
+np_extras.settings.click_empty_note = 點按封面、控制按鈕和歌詞以外的地方即可關閉。點按封面可播放或暫停；在封面上捲動可調整音量。
+np_extras.settings.mini_queue = 在迷你播放器中顯示「接下來播放」
+np_extras.settings.mini_queue_note = 封面卡片和唱盤版面在背面顯示；其他版面會變大，在控制按鈕下方顯示。
+np_extras.settings.mini_on_top = 讓迷你播放器保持在其他視窗之上
+np_extras.mini.pin = 保持在其他視窗之上
+np_extras.mini.unpin = 不再保持在其他視窗之上
+np_extras.settings.line_glow = 正在唱的那行發光
+np_extras.settings.line_glow_note = 在目前這行周圍加上封面顏色（封面為灰色時用主題強調色）的柔和光暈。
+np_extras.follow = 跟著歌詞
+np_extras.skip_back = 倒轉 15 秒
+np_extras.skip_forward = 快轉 15 秒
+np_extras.speed = 播放速度
+np_extras.bar.more = 更多控制按鈕
+np_extras.bar.fewer = 更少控制按鈕
+np_extras.shortcut.line_previous = 歌詞：上一行
+np_extras.shortcut.line_next = 歌詞：下一行
+np_extras.shortcut.line_play = 歌詞：從選取的行開始播放
+np_extras.settings.spin = 讓唱片轉動
+np_extras.settings.spin_note = 播放音樂時讓唱盤上的唱片轉動。會有負擔：視窗每秒重繪 20 次，「僅紋路」約佔一個 CPU 核心的 {grooves}，「整張唱片」約 {record}，後者還會在記憶體中保留最多 {memory} 的旋轉封面。暫停時或動畫設為「減少」或「關閉」時不會轉動。
+np_extras.spin.grooves = 僅紋路
+np_extras.spin.record = 整張唱片

@@ -67,6 +67,11 @@ gpui::actions!(
         PageTab7,
         PageTab8,
         PageTabLast,
+        SeekBack,
+        SeekForward,
+        LyricsLinePrevious,
+        LyricsLineNext,
+        LyricsLinePlay,
     ]
 );
 
@@ -82,6 +87,17 @@ pub fn init(overrides: &crate::shortcuts::Overrides, cx: &mut App) {
     on::<VolumeDown>(cx, |app, window, cx| {
         app.step_volume(-VOLUME_STEP, window, cx)
     });
+    // 15 seconds back / forward (the podcast skips; `player_extras.rs`).
+    on::<SeekBack>(cx, |app, _, cx| {
+        app.seek_by(-crate::player_extras::SKIP_SECS, cx)
+    });
+    on::<SeekForward>(cx, |app, _, cx| {
+        app.seek_by(crate::player_extras::SKIP_SECS, cx)
+    });
+    // ↑ / ↓ / Enter over Now Playing's lyrics (`np_lyrics.rs`).
+    on::<LyricsLinePrevious>(cx, |app, _, cx| app.lyrics_line_step(-1, cx));
+    on::<LyricsLineNext>(cx, |app, _, cx| app.lyrics_line_step(1, cx));
+    on::<LyricsLinePlay>(cx, |app, _, cx| app.lyrics_line_play(cx));
     on::<ToggleShuffle>(cx, |app, _, cx| app.toggle_shuffle(cx));
     on::<CycleRepeat>(cx, |app, _, cx| app.cycle_repeat(cx));
     on::<FocusSearch>(cx, |app, window, cx| {
