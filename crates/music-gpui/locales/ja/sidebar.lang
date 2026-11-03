@@ -1,0 +1,29 @@
+# Sidebar items and playlists (ja).
+
+sidebar.items.title = サイドバーの項目
+sidebar.items.note = 表示する項目にチェックを入れ、行をドラッグするか矢印で順番を変えます。設定は常に一番下です。
+sidebar.items.reset = リセット
+sidebar.items.heading = {name}（見出し）
+sidebar.playlists.heading = プレイリスト
+sidebar.playlists.title = サイドバーのプレイリスト
+sidebar.playlists.note = YouTube Music のように、サイドバーの項目の下にプレイリストを表示します。右クリックで再生や上部への固定ができます。
+sidebar.playlists.sources = 表示
+sidebar.playlists.sources_note = YouTube Music のプレイリストはログイン中に表示されます（ライブラリの同期で届きます）。
+sidebar.playlists.youtube = YouTube Music
+sidebar.playlists.local = {app} で作成
+sidebar.playlists.sort = 並び順
+sidebar.playlists.sort_note = 固定したプレイリストが先頭に来ます。サイドバーでプレイリストをドラッグすると独自の順番にできます。
+sidebar.playlists.sort.recent = 最近
+sidebar.playlists.sort.name = A–Z
+sidebar.playlists.sort.custom = カスタム
+sidebar.playlists.limit = 「すべて表示」までの数
+sidebar.playlists.limit_all = すべて
+sidebar.playlists.artwork = カバー
+sidebar.playlists.artwork_note = アートワークキャッシュの小さなカバー。オフにすると頭文字を表示します。
+sidebar.playlists.pinned_count.other = {count}件のプレイリストを固定中
+sidebar.playlists.unpin_all = すべて固定解除
+sidebar.playlists.show_all = すべて表示（{count}）
+sidebar.playlists.show_less = 表示を減らす
+sidebar.playlists.in_library = ライブラリのすべてのプレイリスト
+sidebar.playlists.pin = サイドバーに固定
+sidebar.playlists.unpin = サイドバーから固定解除

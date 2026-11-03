@@ -97,6 +97,9 @@ pub struct Settings {
     /// Motion & effects: animations, page transitions, hover, artwork look
     /// (`look_prefs.rs`).
     pub effects: super::look_prefs::EffectsConfig,
+    /// The sidebar's entries and playlists section (Appearance → Layout;
+    /// `sidebar_prefs.rs`). In settings exports, not in profiles.
+    pub sidebar: super::sidebar_prefs::SidebarConfig,
     /// Keyboard shortcuts the user changed: action id → combination (`""` = none);
     /// see `shortcuts.rs`. In settings exports, not in profiles.
     pub shortcuts: crate::shortcuts::Overrides,
@@ -145,6 +148,7 @@ impl Default for Settings {
             custom_theme: Default::default(),
             app_look: Default::default(),
             effects: Default::default(),
+            sidebar: Default::default(),
             shortcuts: Default::default(),
             updates: Default::default(),
             logs: Default::default(),
@@ -664,6 +668,7 @@ impl Settings {
         self.custom_theme.normalize();
         self.app_look.normalize();
         self.effects.normalize();
+        self.sidebar.normalize();
     }
 
     pub fn from_json(text: &str) -> serde_json::Result<Self> {

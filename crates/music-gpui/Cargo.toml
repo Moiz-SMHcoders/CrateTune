@@ -68,6 +68,8 @@ default-features = false
 # always-on-top style, the system "animate controls" setting.
 windows = { version = "0.62", features = [
     "Win32_Foundation",
+    # Windows 11's acrylic system backdrop (Appearance → Window, `glass.rs`).
+    "Win32_Graphics_Dwm",
     "Win32_Graphics_Gdi",
     "Win32_Security",
     # DPAPI: the cookie key of Chromium browsers ("Sign in from your browser").

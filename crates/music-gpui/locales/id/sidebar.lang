@@ -1,0 +1,29 @@
+# Sidebar items and playlists (id).
+
+sidebar.items.title = Item bilah samping
+sidebar.items.note = Centang item yang ingin ditampilkan; seret baris atau gunakan panah untuk mengubah urutan. Setelan selalu tetap di bawah.
+sidebar.items.reset = Atur ulang
+sidebar.items.heading = {name} (judul)
+sidebar.playlists.heading = Playlist
+sidebar.playlists.title = Playlist di bilah samping
+sidebar.playlists.note = Playlist Anda di bawah item bilah samping, seperti di YouTube Music. Klik kanan salah satunya untuk memutar atau menyematkannya di atas.
+sidebar.playlists.sources = Tampilkan
+sidebar.playlists.sources_note = Playlist YouTube Music muncul selama Anda masuk (playlist datang bersama sinkronisasi koleksi).
+sidebar.playlists.youtube = YouTube Music
+sidebar.playlists.local = Dibuat di {app}
+sidebar.playlists.sort = Urutan
+sidebar.playlists.sort_note = Playlist yang disematkan muncul lebih dulu. Seret playlist di bilah samping untuk membuat urutan sendiri.
+sidebar.playlists.sort.recent = Terbaru
+sidebar.playlists.sort.name = A–Z
+sidebar.playlists.sort.custom = Kustom
+sidebar.playlists.limit = Sebelum "Tampilkan semua"
+sidebar.playlists.limit_all = Semua
+sidebar.playlists.artwork = Sampul
+sidebar.playlists.artwork_note = Sampul kecil dari cache artwork; tanpa sampul, setiap playlist menampilkan huruf awalnya.
+sidebar.playlists.pinned_count.other = {count} playlist disematkan
+sidebar.playlists.unpin_all = Lepas semua sematan
+sidebar.playlists.show_all = Tampilkan semua ({count})
+sidebar.playlists.show_less = Tampilkan lebih sedikit
+sidebar.playlists.in_library = Semua playlist di Koleksi
+sidebar.playlists.pin = Sematkan ke bilah samping
+sidebar.playlists.unpin = Lepas dari bilah samping

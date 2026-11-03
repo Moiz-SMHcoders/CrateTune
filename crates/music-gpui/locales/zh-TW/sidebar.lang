@@ -1,0 +1,29 @@
+# Sidebar items and playlists (zh-TW).
+
+sidebar.items.title = 側邊欄項目
+sidebar.items.note = 勾選要顯示的項目；拖曳一列或使用箭頭調整順序。設定永遠在最下方。
+sidebar.items.reset = 重設
+sidebar.items.heading = {name}（標題）
+sidebar.playlists.heading = 播放清單
+sidebar.playlists.title = 側邊欄中的播放清單
+sidebar.playlists.note = 像 YouTube Music 一樣，在側邊欄項目下方顯示你的播放清單。按右鍵即可播放或釘選到最上方。
+sidebar.playlists.sources = 顯示
+sidebar.playlists.sources_note = 登入後會顯示 YouTube Music 播放清單（隨媒體庫同步而來）。
+sidebar.playlists.youtube = YouTube Music
+sidebar.playlists.local = 在 {app} 中建立
+sidebar.playlists.sort = 排序
+sidebar.playlists.sort_note = 已釘選的播放清單排在最前。在側邊欄中拖曳播放清單即可使用自訂順序。
+sidebar.playlists.sort.recent = 最近
+sidebar.playlists.sort.name = A–Z
+sidebar.playlists.sort.custom = 自訂
+sidebar.playlists.limit = 「顯示全部」前的數量
+sidebar.playlists.limit_all = 全部
+sidebar.playlists.artwork = 封面
+sidebar.playlists.artwork_note = 來自封面快取的小封面；關閉後每個播放清單顯示首字。
+sidebar.playlists.pinned_count.other = 已釘選 {count} 個播放清單
+sidebar.playlists.unpin_all = 全部取消釘選
+sidebar.playlists.show_all = 顯示全部（{count}）
+sidebar.playlists.show_less = 顯示較少
+sidebar.playlists.in_library = 媒體庫中的所有播放清單
+sidebar.playlists.pin = 釘選到側邊欄
+sidebar.playlists.unpin = 從側邊欄取消釘選

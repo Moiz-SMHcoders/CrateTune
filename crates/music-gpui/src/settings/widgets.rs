@@ -94,6 +94,28 @@ pub fn row_at(
     row(label, description, control, cx).anchor(id)
 }
 
+/// A label + description with a wide control (a row of choices) under them, so it
+/// wraps instead of squeezing the text in a narrow settings column; with a scroll anchor.
+pub fn stack_at(
+    id: &'static str,
+    label: impl Into<SharedString>,
+    description: Option<&'static str>,
+    control: impl IntoElement,
+    cx: &App,
+) -> gpui::Div {
+    v_flex()
+        .gap_1p5()
+        .child(div().text_sm().child(label.into()))
+        .children(description.map(|d| {
+            div()
+                .text_xs()
+                .text_color(cx.theme().muted_foreground)
+                .child(d)
+        }))
+        .child(control)
+        .anchor(id)
+}
+
 /// [`field`] with a scroll anchor.
 pub fn field_at(
     id: &'static str,

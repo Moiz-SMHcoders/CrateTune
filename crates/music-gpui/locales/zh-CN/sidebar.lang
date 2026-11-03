@@ -1,0 +1,29 @@
+# Sidebar items and playlists (zh-CN).
+
+sidebar.items.title = 侧边栏项目
+sidebar.items.note = 勾选要显示的项目；拖动一行或使用箭头调整顺序。设置始终位于底部。
+sidebar.items.reset = 重置
+sidebar.items.heading = {name}（标题）
+sidebar.playlists.heading = 播放列表
+sidebar.playlists.title = 侧边栏中的播放列表
+sidebar.playlists.note = 像 YouTube Music 一样，在侧边栏项目下方显示你的播放列表。右键点击可播放或置顶。
+sidebar.playlists.sources = 显示
+sidebar.playlists.sources_note = 登录后会显示 YouTube Music 播放列表（随媒体库同步而来）。
+sidebar.playlists.youtube = YouTube Music
+sidebar.playlists.local = 在 {app} 中创建
+sidebar.playlists.sort = 排序
+sidebar.playlists.sort_note = 已置顶的播放列表排在最前。在侧边栏中拖动播放列表即可使用自定义顺序。
+sidebar.playlists.sort.recent = 最近
+sidebar.playlists.sort.name = A–Z
+sidebar.playlists.sort.custom = 自定义
+sidebar.playlists.limit = “显示全部”前的数量
+sidebar.playlists.limit_all = 全部
+sidebar.playlists.artwork = 封面
+sidebar.playlists.artwork_note = 来自封面缓存的小封面；关闭后每个播放列表显示首字母。
+sidebar.playlists.pinned_count.other = 已置顶 {count} 个播放列表
+sidebar.playlists.unpin_all = 全部取消置顶
+sidebar.playlists.show_all = 显示全部（{count}）
+sidebar.playlists.show_less = 收起
+sidebar.playlists.in_library = 媒体库中的所有播放列表
+sidebar.playlists.pin = 置顶到侧边栏
+sidebar.playlists.unpin = 从侧边栏取消置顶

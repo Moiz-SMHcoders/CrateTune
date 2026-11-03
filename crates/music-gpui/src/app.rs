@@ -1037,20 +1037,16 @@ impl Render for MusicApp {
         // skip building the shell underneath, so per-frame lyric renders stay cheap.
         let covered = reveal >= 1. || theater;
         self.sync_window_background(window, cx);
-        let translucent = self.translucent_sidebar(cx);
-        let see_through = self.window_see_through(cx).filter(|_| !covered);
+        // Over a window material (or the translucent sidebar's blur) every surface
+        // paints its own colour (`glass.rs`); the content area gets a layer below.
+        let glass = self.glass(cx).filter(|_| !covered);
         let mut root = div()
             .id("music-app")
             .key_context("MusicApp")
             .track_focus(&self.focus)
             .relative()
             .size_full()
-            // With the translucent sidebar the window itself is see-through
-            // (blurred); everything but the sidebar paints its own background.
-            // A see-through window paints its background at the readable opacity.
-            .when(!translucent || covered, |this| {
-                this.bg(cx.theme().background.opacity(see_through.unwrap_or(1.)))
-            })
+            .when(glass.is_none(), |this| this.bg(cx.theme().background))
             .text_color(cx.theme().foreground)
             // Motion & effects → Line along the window's edge.
             .when(
@@ -1133,17 +1129,32 @@ impl Render for MusicApp {
             } else {
                 bar.into_any_element()
             };
-            // With the translucent sidebar the top bar is see-through like the
-            // sidebar: the opaque base and the backdrop start below it.
-            let under_bar = if translucent { bar_h } else { px(0.) };
-            let base = translucent.then(|| {
+            // See-through: the top bar, sidebar and queue panel paint their own
+            // colour; the content's layer and the backdrop fill the rest (following
+            // the sidebar while it slides).
+            let under_bar = if glass.is_some() { bar_h } else { px(0.) };
+            let (left, right) = match glass {
+                Some(_) => {
+                    let column = self
+                        .panels_column()
+                        .map_or_else(|| self.sidebar_width(cx), |t| frame.get(t));
+                    let queue = if self.queue_open {
+                        self.queue_width(cx)
+                    } else {
+                        0.
+                    };
+                    (column, queue)
+                }
+                None => (0., 0.),
+            };
+            let base = glass.map(|g| {
                 div()
                     .absolute()
                     .top(under_bar)
                     .bottom_0()
-                    .right_0()
-                    .left(px(self.sidebar_width(cx)))
-                    .bg(cx.theme().background)
+                    .left(px(left))
+                    .right(px(right))
+                    .bg(g.content)
             });
             root = root.child(
                 v_flex()
@@ -1161,12 +1172,8 @@ impl Render for MusicApp {
                                     .absolute()
                                     .top(under_bar)
                                     .bottom_0()
-                                    .right_0()
-                                    .left(px(if translucent {
-                                        self.sidebar_width(cx)
-                                    } else {
-                                        0.
-                                    }))
+                                    .left(px(left))
+                                    .right(px(right))
                                     .child(b)
                             }))
                             .child(

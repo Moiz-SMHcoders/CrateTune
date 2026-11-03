@@ -1,0 +1,30 @@
+# Sidebar items and playlists (it).
+
+sidebar.items.title = Voci della barra laterale
+sidebar.items.note = Spunta le voci da mostrare; trascina una riga o usa le frecce per cambiare l’ordine. Impostazioni resta sempre in fondo.
+sidebar.items.reset = Ripristina
+sidebar.items.heading = {name} (intestazione)
+sidebar.playlists.heading = Playlist
+sidebar.playlists.title = Playlist nella barra laterale
+sidebar.playlists.note = Le tue playlist sotto le voci della barra laterale, come su YouTube Music. Fai clic destro su una per riprodurla o fissarla in alto.
+sidebar.playlists.sources = Mostra
+sidebar.playlists.sources_note = Le playlist di YouTube Music compaiono mentre hai eseguito l’accesso (arrivano con la sincronizzazione della libreria).
+sidebar.playlists.youtube = YouTube Music
+sidebar.playlists.local = Create in {app}
+sidebar.playlists.sort = Ordine
+sidebar.playlists.sort_note = Le playlist fissate vengono per prime. Trascina una playlist nella barra laterale per metterle nel tuo ordine.
+sidebar.playlists.sort.recent = Recenti
+sidebar.playlists.sort.name = A–Z
+sidebar.playlists.sort.custom = Personalizzato
+sidebar.playlists.limit = Prima di «Mostra tutto»
+sidebar.playlists.limit_all = Tutte
+sidebar.playlists.artwork = Copertine
+sidebar.playlists.artwork_note = Piccole copertine dalla cache delle immagini; senza, ogni playlist mostra la sua iniziale.
+sidebar.playlists.pinned_count.one = {count} playlist fissata
+sidebar.playlists.pinned_count.other = {count} playlist fissate
+sidebar.playlists.unpin_all = Sblocca tutte
+sidebar.playlists.show_all = Mostra tutto ({count})
+sidebar.playlists.show_less = Mostra meno
+sidebar.playlists.in_library = Tutte le playlist in Libreria
+sidebar.playlists.pin = Fissa nella barra laterale
+sidebar.playlists.unpin = Rimuovi dalla barra laterale

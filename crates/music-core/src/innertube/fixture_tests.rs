@@ -468,6 +468,26 @@ fn account_menu_and_channels() {
     );
 }
 
+/// The library's playlists of the offline signed-in fixtures (`fixtures.rs`).
+#[test]
+fn library_playlists_fixture() {
+    let page = account::parse_library(&fixture("authed/library_playlists"));
+    let playlists: Vec<&PlaylistSummary> = page
+        .items
+        .iter()
+        .filter_map(|i| match i {
+            Item::Playlist(p) => Some(p),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(playlists.len(), 14);
+    assert_eq!(playlists[0].playlist_id, "LM");
+    assert_eq!(playlists[1].playlist_id, "PLfixRoadTrip01");
+    assert_eq!(playlists[1].title, "Road Trip Classics");
+    assert!(playlists.iter().all(|p| p.thumbnail_url.is_some()));
+    assert!(page.continuation.is_none());
+}
+
 #[test]
 fn library_pages() {
     let songs = account::parse_library(&fixture("authed/library_songs"));

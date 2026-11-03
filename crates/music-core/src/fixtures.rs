@@ -13,8 +13,15 @@
 //! | `browse` `MPREb…` / `UC…` / `VL…` | `album.json` / `artist.json` / `playlist.json` |
 //! | `search` | `search_summary.json` |
 //! | `next` | `next.json` |
+//! | signed in: `account/account_menu` / `accounts_list` | `authed/account_menu.json` / `authed/accounts_list.json` |
+//! | signed in: `browse` `VLLM`, library tabs, `FEmusic_history` | `authed/liked_songs.json`, `authed/library_*.json`, `authed/history.json` |
 //!
-//! Anything else fails with "no fixture". The feed's shelves get [`SHELF_ITEMS`] cards
+//! Anything else fails with "no fixture". Signing in with any cookie that has a
+//! `SAPISID` (`@cookie=SAPISID=fixture`) then works offline too: the account is
+//! the fixture's, and a sync fills the library with its songs, albums, artists
+//! and 13 playlists (each with `playlist.json`'s songs), for screenshots of the
+//! signed-in UI (the sidebar's playlists). Library continuations other than the
+//! songs' end the list. The feed's shelves get [`SHELF_ITEMS`] cards
 //! each (the recorded ones repeated), and `MUSIC_FIXTURE_PAGES=N` sets how many feed
 //! pages follow the first one (default [`DEFAULT_PAGES`]): a Home as heavy as the real
 //! one, with many shelves and a long scroll. The pages share their artwork (~60 images)
@@ -87,9 +94,22 @@ static SERVED: AtomicUsize = AtomicUsize::new(0);
 /// The file answering `endpoint` with request `body`, if there is one.
 fn file_for(endpoint: &str, body: &Value) -> Option<&'static str> {
     let browse_id = body.get("browseId").and_then(Value::as_str).unwrap_or("");
+    let token = body.get("continuation").and_then(Value::as_str);
     Some(match endpoint {
-        "browse" if body.get("continuation").is_some() => "home_continuation.json",
+        "browse" if token == Some(LIBRARY_SONGS_PAGE_2) => "authed/library_songs_continuation.json",
+        "browse" if token.is_some() => "home_continuation.json",
+        "account/account_menu" => "authed/account_menu.json",
+        "account/accounts_list" => "authed/accounts_list.json",
         "browse" => match browse_id {
+            "VLLM" => "authed/liked_songs.json",
+            "FEmusic_liked_videos" => "authed/library_songs.json",
+            "FEmusic_liked_albums" => "authed/library_albums.json",
+            "FEmusic_library_corpus_track_artists" | "FEmusic_library_corpus_artists" => {
+                "authed/library_artists.json"
+            }
+            "FEmusic_liked_playlists" => "authed/library_playlists.json",
+            "FEmusic_library_non_music_audio_list" => "authed/library_podcasts.json",
+            "FEmusic_history" => "authed/history.json",
             "FEmusic_home" => "home.json",
             "FEmusic_explore" => "explore.json",
             "FEmusic_charts" => "charts.json",
@@ -105,6 +125,9 @@ fn file_for(endpoint: &str, body: &Value) -> Option<&'static str> {
         _ => return None,
     })
 }
+
+/// The second page of `authed/library_songs.json` (its only continuation served).
+const LIBRARY_SONGS_PAGE_2: &str = "LIB_SONGS_PAGE_2";
 
 /// Removes every `continuations` list (the feed's "more" token) from `value`.
 fn drop_continuations(value: &mut Value) {
@@ -176,6 +199,14 @@ fn retag(value: &mut Value, suffix: &str, art: bool) {
 
 /// Answers an InnerTube request from the fixture directory.
 pub(crate) fn innertube(dir: &Path, endpoint: &str, body: &Value) -> Result<Value> {
+    // A signed-in library tab's next page (other than the songs'): none, the list ends.
+    if body
+        .get("continuation")
+        .and_then(Value::as_str)
+        .is_some_and(|t| t.starts_with("LIB_") && t != LIBRARY_SONGS_PAGE_2)
+    {
+        return Ok(Value::Object(Default::default()));
+    }
     let Some(name) = file_for(endpoint, body) else {
         return Err(Error::Parse(format!(
             "{endpoint}: no fixture (MUSIC_FIXTURES)"
@@ -214,6 +245,21 @@ mod tests {
         assert_eq!(browse("MPREb_x"), Some("album.json"));
         assert_eq!(browse("UCabc"), Some("artist.json"));
         assert_eq!(browse("FEmusic_library_landing"), None);
+        // Signed in.
+        assert_eq!(browse("VLLM"), Some("authed/liked_songs.json"));
+        assert_eq!(browse("VLPLx"), Some("playlist.json"));
+        assert_eq!(
+            browse("FEmusic_liked_playlists"),
+            Some("authed/library_playlists.json")
+        );
+        assert_eq!(
+            file_for("account/account_menu", &json!({})),
+            Some("authed/account_menu.json")
+        );
+        assert_eq!(
+            file_for("browse", &json!({ "continuation": LIBRARY_SONGS_PAGE_2 })),
+            Some("authed/library_songs_continuation.json")
+        );
         assert_eq!(
             file_for("browse", &json!({ "continuation": "tok" })),
             Some("home_continuation.json")
@@ -248,6 +294,28 @@ mod tests {
         let mut other = json!({ "url": "https://i.ytimg.com/vi/x/hq.jpg" });
         retag(&mut other, "-p2", true);
         assert_eq!(other["url"], "https://i.ytimg.com/vi/x/hq.jpg#-p2");
+    }
+
+    #[test]
+    fn library_continuations_end() {
+        let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/innertube");
+        let more = innertube(
+            &dir,
+            "browse",
+            &json!({ "continuation": "LIB_ALBUMS_PAGE_2" }),
+        );
+        assert_eq!(more.unwrap(), json!({}));
+        let songs = innertube(
+            &dir,
+            "browse",
+            &json!({ "continuation": LIBRARY_SONGS_PAGE_2 }),
+        );
+        assert!(
+            songs
+                .unwrap()
+                .to_string()
+                .contains("musicResponsiveListItemRenderer")
+        );
     }
 
     #[test]

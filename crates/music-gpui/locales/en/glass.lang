@@ -1,0 +1,56 @@
+# Translucency per surface, tint, blur strength and materials (Appearance → Window,
+# under Window background; src/settings/glass_ui.rs, glass_prefs.rs).
+
+# Window background choices added in this round (macOS / Windows 11).
+window.material.vibrant = Vibrant
+window.material.acrylic = Acrylic
+
+# One-click looks (they turn on the blurred window background).
+glass.presets = Presets
+glass.presets_note = Turn on the blurred background with matching opacities, tint and blur.
+glass.preset.subtle = Subtle
+glass.preset.glass = Glass
+glass.preset.frosted = Frosted
+
+# macOS: how strongly the desktop behind the window is blurred.
+glass.blur = Blur strength
+glass.blur_note = System is macOS's own window blur; the others ask the window server for a lighter or stronger one.
+glass.blur.system = System
+glass.blur.light = Light
+glass.blur.medium = Medium
+glass.blur.strong = Strong
+
+# macOS: the vibrancy material of "Vibrant".
+glass.vibrancy = Material
+glass.vibrancy_note = macOS's own glass, with the desktop's colours; it follows the app's light or dark mode.
+glass.vibrancy.sidebar = Sidebar
+glass.vibrancy.window = Window
+glass.vibrancy.menu = Menu
+glass.vibrancy.popover = Popover
+glass.vibrancy.hud = HUD
+glass.vibrancy.full_screen = Full screen
+
+# How much of the background each part of the window lets through.
+glass.surfaces = Surfaces
+glass.surfaces_note = Auto keeps the sidebar, top bar and queue a little more solid than the window, and the player bar solid.
+glass.surface.sidebar = Sidebar
+glass.surface.top_bar = Top bar
+glass.surface.player_bar = Player bar
+glass.surface.queue = Queue
+glass.auto = Auto
+glass.solid = Solid
+# {surfaces}: a list of glass.raised_item.
+glass.raised = Raised so text stays readable on any desktop: {surfaces}.
+glass.raised_item = {surface} {percent} %
+
+# A colour mixed into the translucent surfaces.
+glass.tint = Tint
+glass.tint_note = Mixed into every translucent surface; the opacity is raised again if text would get hard to read.
+glass.tint_strength = Tint strength
+glass.tint.off = None
+glass.tint.accent = Accent
+glass.tint.frost = Frost
+glass.tint.smoke = Smoke
+glass.tint.ice = Ice
+glass.tint.rose = Rose
+glass.tint.amber = Amber

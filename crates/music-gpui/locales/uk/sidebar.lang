@@ -1,0 +1,32 @@
+# Sidebar items and playlists (uk).
+
+sidebar.items.title = Пункти бічної панелі
+sidebar.items.note = Позначте пункти, які треба показувати; перетягніть рядок або скористайтеся стрілками, щоб змінити порядок. Налаштування завжди залишаються внизу.
+sidebar.items.reset = Скинути
+sidebar.items.heading = {name} (заголовок)
+sidebar.playlists.heading = Плейлисти
+sidebar.playlists.title = Плейлисти на бічній панелі
+sidebar.playlists.note = Ваші плейлисти під пунктами бічної панелі, як у YouTube Music. Клацніть правою кнопкою, щоб відтворити плейлист або закріпити його вгорі.
+sidebar.playlists.sources = Показувати
+sidebar.playlists.sources_note = Плейлисти YouTube Music видно, поки ви ввійшли в акаунт (вони надходять із синхронізацією медіатеки).
+sidebar.playlists.youtube = YouTube Music
+sidebar.playlists.local = Створені в {app}
+sidebar.playlists.sort = Порядок
+sidebar.playlists.sort_note = Закріплені плейлисти йдуть першими. Перетягніть плейлист на бічній панелі, щоб задати власний порядок.
+sidebar.playlists.sort.recent = Нещодавні
+sidebar.playlists.sort.name = А–Я
+sidebar.playlists.sort.custom = Власний
+sidebar.playlists.limit = До «Показати всі»
+sidebar.playlists.limit_all = Усі
+sidebar.playlists.artwork = Обкладинки
+sidebar.playlists.artwork_note = Маленькі обкладинки з кешу обкладинок; без них кожен плейлист показує першу літеру.
+sidebar.playlists.pinned_count.one = {count} плейлист закріплено
+sidebar.playlists.pinned_count.few = {count} плейлисти закріплено
+sidebar.playlists.pinned_count.many = {count} плейлистів закріплено
+sidebar.playlists.pinned_count.other = {count} плейлиста закріплено
+sidebar.playlists.unpin_all = Відкріпити всі
+sidebar.playlists.show_all = Показати всі ({count})
+sidebar.playlists.show_less = Показати менше
+sidebar.playlists.in_library = Усі плейлисти в медіатеці
+sidebar.playlists.pin = Закріпити на бічній панелі
+sidebar.playlists.unpin = Відкріпити з бічної панелі

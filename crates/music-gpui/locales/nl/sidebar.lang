@@ -1,0 +1,30 @@
+# Sidebar items and playlists (nl).
+
+sidebar.items.title = Onderdelen van de zijbalk
+sidebar.items.note = Vink de onderdelen aan die je wilt zien; sleep een rij of gebruik de pijlen om de volgorde te wijzigen. Instellingen blijft altijd onderaan.
+sidebar.items.reset = Herstellen
+sidebar.items.heading = {name} (kop)
+sidebar.playlists.heading = Playlists
+sidebar.playlists.title = Playlists in de zijbalk
+sidebar.playlists.note = Je playlists onder de onderdelen van de zijbalk, zoals in YouTube Music. Klik met rechts op een playlist om hem af te spelen of bovenaan vast te zetten.
+sidebar.playlists.sources = Tonen
+sidebar.playlists.sources_note = YouTube Music-playlists verschijnen zolang je bent ingelogd (ze komen mee met de synchronisatie van de bibliotheek).
+sidebar.playlists.youtube = YouTube Music
+sidebar.playlists.local = Gemaakt in {app}
+sidebar.playlists.sort = Volgorde
+sidebar.playlists.sort_note = Vastgezette playlists komen eerst. Sleep een playlist in de zijbalk om ze in je eigen volgorde te zetten.
+sidebar.playlists.sort.recent = Recent
+sidebar.playlists.sort.name = A–Z
+sidebar.playlists.sort.custom = Eigen
+sidebar.playlists.limit = Voor ‘Alles tonen’
+sidebar.playlists.limit_all = Alle
+sidebar.playlists.artwork = Hoezen
+sidebar.playlists.artwork_note = Kleine hoezen uit de artwork-cache; zonder hoezen toont elke playlist zijn beginletter.
+sidebar.playlists.pinned_count.one = {count} playlist vastgezet
+sidebar.playlists.pinned_count.other = {count} playlists vastgezet
+sidebar.playlists.unpin_all = Alles losmaken
+sidebar.playlists.show_all = Alles tonen ({count})
+sidebar.playlists.show_less = Minder tonen
+sidebar.playlists.in_library = Alle playlists in Bibliotheek
+sidebar.playlists.pin = Vastzetten in zijbalk
+sidebar.playlists.unpin = Losmaken uit zijbalk

@@ -97,7 +97,7 @@ impl MusicApp {
         &mut self,
         cx: &mut Context<Self>,
     ) -> impl IntoElement + use<> {
-        let bg = self.chrome_bg(cx);
+        let bg = self.chrome_bg(crate::settings::glass_prefs::Surface::Queue, cx);
         let theme = cx.theme();
         let (border, muted) = (theme.border, theme.muted_foreground);
         let shuffle = self.queue.shuffle();

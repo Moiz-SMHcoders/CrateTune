@@ -77,3 +77,17 @@ The starter theme files (`themes/*.toml`) use the published colour palettes of *
 and **Dracula** (<https://github.com/dracula/dracula-theme> at
 `b361e717c85fdc0cdc2e7a0adae392613b3d2117`, MIT): hex values only, mapped to our tokens,
 with secondary text lightened where needed to reach 3:1.
+
+## refryt and Zuno (sidebar and translucency round)
+
+Written for this project after **refryt** (<https://github.com/gridoe/refryt> at
+`e9685b0b49ff2fd094d60abc565a57494963755d`, © gridoe, GPL-3.0-or-later) and **Zuno**
+(<https://github.com/noFAYZ/zuno> at `1fa9a9669e4a526ebe53c0275153feda0c4fcefa`,
+Apache-2.0). No file was copied; the rules below were re-implemented in Rust.
+
+| music-gpui file | Upstream file(s) | What was adapted |
+|---|---|---|
+| `src/components/sidebar_playlists.rs` | refryt `crates/refryt/src/ui/sidebar.rs` (`playlists`, `rail_list`, `rail_row_compact`: the library's playlists under the nav with a "+" for a new one, covers only with a tooltip in the rail, a drag to reorder, the playlist page's menu on right-click); Zuno `src/ui/components/Sidebar.tsx` (the library rail in collapsed / expanded / hover modes) | GPUI rows of one fixed height in the rail and the full sidebar; the library database as the source (YouTube mirrors while signed in, local playlists, Liked songs); pins; "Show all" with a cap instead of a nested scroll area. |
+| `src/settings/sidebar_prefs.rs` (`arrange`, `SidebarPlaylists::drag`) | Zuno `src/ui/components/sidebarLibrary.ts` (`sortLibraryEntries`: Recent / Name / Custom, Liked pinned first in the computed orders but not in the custom one, stable ties, numeric and accent-insensitive names; `canReorderLibrary`) | A drag switches to the custom order (instead of being refused in the others); pins of our own come before every order. |
+| `src/glass.rs` (`NativeMaterial::BlurRadius`) | refryt `crates/refryt/src/blur.rs` (macOS: `CGSSetWindowBackgroundBlurRadius` on the window number, radius 30; Windows: `DWMSBT_TRANSIENTWINDOW`) | Light / Medium / Strong radii (8 / 24 / 60) next to GPUI's own blur view; Windows 11's acrylic as a background of its own after GPUI's Mica. |
+| `src/glass.rs` (`resolve`) | refryt `crates/refryt/src/theme.rs` (`Palette::with_opacity`: surfaces solved so each composites to its own level over the window) | Per-surface opacities painted straight over the desktop, each raised by our readable floor, with a tint. |
