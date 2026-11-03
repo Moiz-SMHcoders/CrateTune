@@ -5,7 +5,7 @@
 //! backdrop or the desktop, and the poll hook that re-checks the OS's reduce-motion setting
 //! and re-applies the artwork tint when playback pauses or resumes.
 
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use gpui::{App, Context, Entity, Hsla, Window};
 use music_core::PlaybackStatus;
@@ -21,8 +21,8 @@ use crate::theme::ThemeChoice;
 const PAGE_IN: Spec = Spec::ms(180, ease_out_cubic);
 /// How far a new page slides up, px (full motion only).
 pub const PAGE_SLIDE: f32 = 10.;
-/// The OS's reduce-motion setting is re-read every this many polls (~4 s).
-const OS_CHECK_POLLS: u32 = 16;
+/// The OS's reduce-motion setting is re-read this often (from the poll).
+const OS_CHECK_EVERY: Duration = Duration::from_secs(4);
 
 pub struct LookState {
     pub backdrop: Option<Entity<AppBackdrop>>,
@@ -34,7 +34,7 @@ pub struct LookState {
     /// The app icon shown (choice, the custom image's generation).
     pub icon: Option<(crate::app_icon::AppIconChoice, u32)>,
     last_playing: bool,
-    polls: u32,
+    os_checked: Option<Instant>,
 }
 
 impl Default for LookState {
@@ -45,7 +45,7 @@ impl Default for LookState {
             background: None,
             icon: None,
             last_playing: false,
-            polls: 0,
+            os_checked: None,
         }
     }
 }
@@ -81,8 +81,12 @@ impl MusicApp {
             // The artwork tint dims while paused (a no-op when nothing changes).
             self.apply_theme(cx);
         }
-        self.look.polls = self.look.polls.wrapping_add(1);
-        if self.look.polls % OS_CHECK_POLLS == 1 {
+        if self
+            .look
+            .os_checked
+            .is_none_or(|at| at.elapsed() >= OS_CHECK_EVERY)
+        {
+            self.look.os_checked = Some(Instant::now());
             if crate::effects::poll_os_reduce_motion() {
                 let effects = self.settings.read(cx).settings().effects;
                 if crate::effects::sync(&effects, cx) {

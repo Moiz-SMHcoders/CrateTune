@@ -77,6 +77,7 @@ mod play_report;
 mod playback;
 mod playlist_cover;
 mod playlist_ops;
+mod poll;
 mod qr;
 mod queue;
 mod queue_tabs;

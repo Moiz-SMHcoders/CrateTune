@@ -41,7 +41,7 @@ use super::bar_fx::{BackgroundArt, BackgroundFx, BackgroundGeometry, BackgroundL
 use super::progress::{ProgressTrack, TrackEvent, TrackLook, TrackParams};
 use crate::anim::{Frame, RenderRate, Spec, Tween, ease_out_cubic};
 use crate::app::{MusicApp, app_entity, read_app, update_app};
-use crate::components::artwork::ArtworkCache;
+use crate::components::artwork::{ArtworkCache, Pin};
 use crate::icons::{AppIcon, Lucide};
 use crate::now_playing::HiRes;
 use crate::queue::Repeat;
@@ -903,7 +903,10 @@ impl MusicApp {
         let image = track
             .as_ref()
             .and_then(|t| t.artwork_url(120))
-            .and_then(|url| ArtworkCache::global(cx).update(cx, |cache, cx| cache.get(&url, cx)));
+            .and_then(|url| {
+                ArtworkCache::global(cx)
+                    .update(cx, |cache, cx| cache.get_pinned(Pin::Bar, &url, cx))
+            });
         let message = self.bar_message(cx);
         let theme = cx.theme();
         let (title, artists): (SharedString, SharedString) = match &track {

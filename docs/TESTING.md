@@ -514,8 +514,9 @@ frames, the scrolling, bar and Now Playing rates do.
 
 ### 6.3 Frame-time check (offline; CI)
 
-`scripts/perf-frames.sh` needs no network and runs in CI as the steps **perf: frame-time**
-and **perf: frame-time, artwork past the cache budget** of every job (on Linux under Xvfb,
+`scripts/perf-frames.sh` needs no network and runs in CI as the steps **perf: frame-time**,
+**perf: frame-time, artwork past the cache budget** and **…, artwork past the budget
+arriving late** of every job (on Linux under Xvfb,
 drawn by Mesa's software Vulkan, lavapipe: the runners have no display or GPU). It opens
 Home with `MUSIC_FIXTURES` pointing at the recorded InnerTube responses
 (`crates/music-core/tests/fixtures/innertube`): Home, then the recorded continuation 20
@@ -523,7 +524,11 @@ times (each page with its own ids), every shelf filled to 12 distinct cards (as 
 real shelf), generated artwork (~60 different images, within the artwork memory budget; as
 large as the app asks for, like YouTube's image servers answer), and an HTTP agent that
 can't reach the network. `--page-art` (`MUSIC_FIXTURE_ART=page`) gives every feed page its
-own artwork instead (~700 images, past the budget, like a long session on a real feed). It times full window draws (`@bench`: build, layout and paint, not presenting)
+own artwork instead (~700 images, past the budget, like a long session on a real feed);
+`--art-ms 150` (`MUSIC_FIXTURE_ART_MS`) makes every image arrive 150 ms late, as over a
+network, so the scroll outruns the downloads (those that went off screen before their turn
+are skipped). Thumbnails from `i.ytimg.com` (videos, playlists) come at the sizes those
+servers send (`hq720.jpg` 1280 × 720, `studio_square_thumbnail.jpg` 544 px, …). It times full window draws (`@bench`: build, layout and paint, not presenting)
 near the top (one screen down, while the feed is still short), scrolls to the end of the
 feed (~60 shelves) and times them again:
 
@@ -531,6 +536,7 @@ feed (~60 shelves) and times them again:
 scripts/perf-frames.sh                         # builds release first
 scripts/perf-frames.sh --binary target/release/music-gpui --keep
 scripts/perf-frames.sh --page-art              # every page its own artwork
+scripts/perf-frames.sh --page-art --art-ms 150 # … arriving 150 ms late
 MUSIC_NO_CULL=1 scripts/perf-frames.sh         # without culling: must FAIL
 xvfb-run -a -s "-screen 0 1920x1080x24" scripts/perf-frames.sh   # Linux without a desktop
 ```
@@ -538,7 +544,7 @@ xvfb-run -a -s "-screen 0 1920x1080x24" scripts/perf-frames.sh   # Linux without
 After each bench the app prints its memory (`@mem`): footprint on macOS (what Activity
 Monitor shows), private bytes and working set on Windows (Task Manager's Memory column),
 resident set, its peak (`VmHWM`) and the anonymous part on Linux, plus the artwork cache's
-decoded size. The step summary shows them next to the draw times. Memory isn't checked (it
+decoded size and the artwork downloads done and skipped. The step summary shows them next to the draw times. Memory isn't checked (it
 depends on the runner's GPU: the macOS VM and Windows' software renderer count textures
 differently), it is there to compare runs and platforms.
 

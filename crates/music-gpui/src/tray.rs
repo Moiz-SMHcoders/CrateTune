@@ -2,8 +2,8 @@
 //! whose menu shows the current track and offers play/pause, next, previous, the
 //! mini player, the main window and quit. Built on `tray-icon` (an `NSStatusItem`,
 //! a `Shell_NotifyIcon` icon), which needs no event loop of its own: GPUI's
-//! `NSApplication` / message loop delivers its clicks, and the menu events are
-//! drained by the app's 250 ms poll. On Windows the icon is the app logo, the menu
+//! `NSApplication` / message loop delivers its clicks, which are queued here and
+//! wake the app's poll (`poll.rs`), which handles them. On Windows the icon is the app logo, the menu
 //! opens with a right click and a left click shows the main window.
 //!
 //! Linux: not built (it would need GTK / appindicator), so [`Tray::new`] returns
@@ -29,6 +29,44 @@ mod imp {
 
     use super::TrayCommand;
 
+    /// Clicks on the menu (and, on Windows, a left click on the icon), queued by
+    /// tray-icon's handlers until the poll takes them.
+    static CLICKS: std::sync::Mutex<Vec<Click>> = std::sync::Mutex::new(Vec::new());
+
+    enum Click {
+        Menu(MenuId),
+        #[cfg(target_os = "windows")]
+        Icon,
+    }
+
+    fn clicked(click: Click) {
+        CLICKS.lock().unwrap_or_else(|e| e.into_inner()).push(click);
+        // The poll may be waiting at its idle pace.
+        crate::poll::wake();
+    }
+
+    /// Routes tray-icon's events to [`CLICKS`] (instead of its channels, which
+    /// nothing would read until the next poll).
+    fn install_handlers() {
+        MenuEvent::set_event_handler(Some(|event: MenuEvent| clicked(Click::Menu(event.id))));
+        #[cfg(target_os = "windows")]
+        {
+            use tray_icon::{MouseButton, MouseButtonState, TrayIconEvent};
+            TrayIconEvent::set_event_handler(Some(|event: TrayIconEvent| {
+                if matches!(
+                    event,
+                    TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    }
+                ) {
+                    clicked(Click::Icon);
+                }
+            }));
+        }
+    }
+
     pub struct Tray {
         _icon: TrayIcon,
         now_playing: MenuItem,
@@ -42,6 +80,7 @@ mod imp {
 
     impl Tray {
         pub fn new() -> Option<Self> {
+            install_handlers();
             let now_playing = MenuItem::new(t!("common.not_playing"), false, None);
             let play = MenuItem::new(t!("common.play"), true, None);
             let label = |f: fn() -> String| (MenuItem::new(f(), true, None), f);
@@ -117,34 +156,19 @@ mod imp {
 
         /// Menu clicks since the last call (and, on Windows, a left click on the icon).
         pub fn take_commands(&self) -> Vec<TrayCommand> {
-            #[cfg_attr(not(target_os = "windows"), allow(unused_mut))]
-            let mut commands: Vec<TrayCommand> = MenuEvent::receiver()
-                .try_iter()
-                .filter_map(|event| {
-                    self.items
+            let clicks = std::mem::take(&mut *CLICKS.lock().unwrap_or_else(|e| e.into_inner()));
+            clicks
+                .into_iter()
+                .filter_map(|click| match click {
+                    Click::Menu(id) => self
+                        .items
                         .iter()
-                        .find(|(id, _)| *id == event.id)
-                        .map(|(_, command)| *command)
+                        .find(|(item, _)| *item == id)
+                        .map(|(_, command)| *command),
+                    #[cfg(target_os = "windows")]
+                    Click::Icon => Some(TrayCommand::ShowWindow),
                 })
-                .collect();
-            #[cfg(target_os = "windows")]
-            {
-                use tray_icon::{MouseButton, MouseButtonState, TrayIconEvent};
-                let clicked = TrayIconEvent::receiver().try_iter().any(|event| {
-                    matches!(
-                        event,
-                        TrayIconEvent::Click {
-                            button: MouseButton::Left,
-                            button_state: MouseButtonState::Up,
-                            ..
-                        }
-                    )
-                });
-                if clicked {
-                    commands.push(TrayCommand::ShowWindow);
-                }
-            }
-            commands
+                .collect()
         }
 
         /// Reflects the current track / play state (only touches AppKit on change).

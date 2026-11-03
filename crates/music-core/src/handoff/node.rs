@@ -3,7 +3,7 @@
 //!
 //! The app talks to it through [`HandoffNode`]: commands go in over a channel and
 //! [`Event`]s come back on another, read with [`HandoffNode::poll_events`] (the app
-//! does that from its existing poll; nothing here wakes the UI). What this device is
+//! does that from its existing poll, which [`set_event_hook`] wakes). What this device is
 //! playing is mirrored into the node ([`HandoffNode::set_snapshot`]) so requests from
 //! paired devices are answered without the UI thread.
 //!
@@ -226,6 +226,14 @@ pub fn now_unix_ms() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map_or(0, |d| d.as_millis() as u64)
+}
+
+static EVENT_HOOK: std::sync::OnceLock<fn()> = std::sync::OnceLock::new();
+
+/// Called (on the node's thread) after every [`Event`], e.g. to wake whatever
+/// reads [`HandoffNode::poll_events`]. Set once; later calls are ignored.
+pub fn set_event_hook(hook: fn()) {
+    let _ = EVENT_HOOK.set(hook);
 }
 
 /// The running node; dropping it closes the endpoint.
@@ -460,6 +468,9 @@ struct Ctx {
 impl Ctx {
     fn emit(&self, event: Event) {
         let _ = self.events.send(event);
+        if let Some(hook) = EVENT_HOOK.get() {
+            hook();
+        }
     }
 
     fn me(&self) -> PeerInfo {

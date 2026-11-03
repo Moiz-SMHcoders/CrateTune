@@ -10,13 +10,16 @@
 #     the viewport aren't built, `components/cull.rs`); runner speed cancels out;
 #   * either p50 is above MAX_MS (25): a ceiling for gross slowdowns (docs/TESTING.md 6.3).
 # It also logs the process's memory after each bench (`@mem`: footprint on macOS,
-# private bytes on Windows, resident set on Linux) and the artwork cache's size.
+# private bytes on Windows, resident set on Linux), the artwork cache's size and the
+# artwork downloads done and skipped (gone off screen before their turn).
 #
 #   scripts/perf-frames.sh [--binary PATH] [--max-ms MS] [--ratio R] [--gap MS]
-#                          [--attempts N] [--page-art] [--keep]
+#                          [--attempts N] [--page-art] [--art-ms MS] [--keep]
 #
 # --page-art gives every feed page its own artwork (~700 images, more than the artwork
 # memory budget holds; `MUSIC_FIXTURE_ART=page`), as a long session on a real feed has.
+# --art-ms makes every image arrive MS ms late (`MUSIC_FIXTURE_ART_MS`), as over a
+# network: the fast scroll then outruns the downloads.
 #
 # Builds `target/release/music-gpui` first unless --binary is given. Needs a desktop
 # session (a window is opened; draws are timed without presenting). Settings go to a
@@ -33,6 +36,7 @@ ratio=1.5
 keep=0
 attempts=3
 page_art=0
+art_ms=""
 while [ $# -gt 0 ]; do
   case $1 in
     --binary) binary=$2; shift 2 ;;
@@ -41,8 +45,9 @@ while [ $# -gt 0 ]; do
     --gap) gap=$2; shift 2 ;;
     --attempts) attempts=$2; shift 2 ;;
     --page-art) page_art=1; shift ;;
+    --art-ms) art_ms=$2; shift 2 ;;
     --keep) keep=1; shift ;;
-    -h | --help) sed -n '2,25p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h | --help) sed -n '2,28p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
   esac
 done
@@ -94,6 +99,7 @@ run() { # n
   (
     export MUSIC_CONFIG_DIR MUSIC_FIXTURES
     [ "$page_art" = 1 ] && export MUSIC_FIXTURE_ART=page
+    [ -n "$art_ms" ] && export MUSIC_FIXTURE_ART_MS=$art_ms
     MUSIC_CONFIG_DIR=$(native "$work/config")
     MUSIC_FIXTURES=$(native "$root/crates/music-core/tests/fixtures/innertube")
     MUSIC_SECRET_STORE=file MUSIC_VOLUME=0.0 MUSIC_TRAY=0 MUSIC_ON_TOP=1 \
@@ -129,6 +135,7 @@ evaluate() { # n
   [ -n "${MUSIC_NO_CULL:-}" ] && [ "${MUSIC_NO_CULL}" != 0 ] && cull="OFF (MUSIC_NO_CULL)"
   art=shared
   [ "$page_art" = 1 ] && art="per page"
+  [ -n "$art_ms" ] && art="$art, $art_ms ms late"
   awk -v top="$top" -v deep="$deep" -v pages="$pages" -v ratio="$ratio" \
     -v max="$max_ms" -v cull="$cull" -v loaded="$loaded" -v n="$1" -v mem="$mem" \
     -v art="$art" '

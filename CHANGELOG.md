@@ -5,6 +5,22 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+* **Video thumbnails and local cover art take far less memory.** Video and playlist
+  thumbnails (which YouTube only serves at fixed sizes, up to 1280 × 720) and your local
+  files' cover art are now decoded at the size they are shown: a music video in a list row
+  takes 64 KB instead of 3.5 MB, a 1400 px local cover 36 KB instead of 7.5 MB. A
+  library page of local songs with large covers peaked at ~400 MB before, ~200 MB now.
+* **Fewer wake-ups while idle.** With nothing playing, the app checks the player every 2 s
+  instead of four times a second (also in the background). Media keys, the menu-bar item,
+  a paired device's hand-off and anything you do in the window are still handled at once;
+  while something plays, loads, downloads, a sleep timer runs or a Music Together session
+  is on, nothing changes.
+* **Scrolling fast over a slow connection** no longer downloads (and decodes) the artwork
+  that already went off screen before its turn: the end of a long Home is filled sooner,
+  with about a third of the downloads.
+
 ## [0.3.3] — 2026-11-01
 
 ### Changed

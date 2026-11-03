@@ -36,7 +36,7 @@ use music_core::{PlaybackStatus, Track, format_duration};
 use crate::anim::{Frame, Spec, Tween, ease_in_out_cubic, ease_out_cubic};
 use crate::app::{MusicApp, update_app};
 use crate::backdrop::Palette;
-use crate::components::artwork::ArtworkCache;
+use crate::components::artwork::{ArtworkCache, Pin};
 use crate::icons::{AppIcon, Lucide};
 use crate::lyrics::{LyricsState, PreparedLyrics};
 use crate::np_lyrics::{LyricsList, MAX_SELECTED};
@@ -953,7 +953,8 @@ impl MusicApp {
             Some(HiRes::Ready { art, .. }) => Some(art.clone()),
             _ => {
                 let url = t.artwork_url(120)?;
-                ArtworkCache::global(cx).update(cx, |cache, cx| cache.get(&url, cx))
+                ArtworkCache::global(cx)
+                    .update(cx, |cache, cx| cache.get_pinned(Pin::NowPlaying, &url, cx))
             }
         })
     }
