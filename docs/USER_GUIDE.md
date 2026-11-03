@@ -266,6 +266,15 @@ when you resume, or when the queue moves on) and **Click the empty space to clos
 Playing** (a click beside the artwork, the controls and the lyrics closes it); both are off
 at first.
 
+**Spin the record** (Settings → Appearance → Now Playing; off at first) turns the record of
+the Turntable design and of the mini player's turntable while music plays, at 33⅓ rpm,
+speeding up on play and slowing down on pause. *Grooves only* turns a light reflection over
+the grooves (the label stays still); *The whole record* turns the artwork label too. It isn't
+free — the window redraws 20 times a second while it turns: about 3 % more of one CPU core on an M4
+Mac with either look — and the whole record keeps up to about 30 MB of turned artwork in
+memory while the turntable is on screen. Paused, hidden, or with Animations Reduced or Off,
+nothing turns.
+
 **Tall windows**: the Split design puts the artwork, title and controls in a row *above*
 the lyrics when the window is about as tall as it is wide, or taller. **Cover above the lyrics** (the
 design menu in the header, or Settings → Appearance → Now Playing) chooses *On tall

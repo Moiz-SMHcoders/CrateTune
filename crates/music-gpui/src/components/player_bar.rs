@@ -154,7 +154,7 @@ pub fn bar_layout_with(
     let side = (width * 0.27).clamp(200., 380.);
     let center = (width - 4. * PAD - 2. * side).max(0.);
     let step = ICON_BUTTON + 4.;
-    let fixed = 1 + usize::from(items.queue) + usize::from(items.now_playing) + usize::from(narrow);
+    let fixed = 1 + usize::from(items.queue) + usize::from(items.now_playing);
     let mut free = side - fixed as f32 * step;
     // An active Cast session and an armed sleep timer always show (their labels clip).
     if casting {
@@ -1340,7 +1340,13 @@ impl MusicApp {
                     .min_w_0()
                     .gap_1()
                     .overflow_hidden()
-                    .children(chips.into_iter().map(chip_slot)),
+                    .children(chips.into_iter().map(chip_slot))
+                    // A narrow window's full bar: "Fewer controls", at the flank's end
+                    // (the right zone's room stays the items'; `bar_compact.rs`).
+                    .when(layout.more && !layout.compact, |this| {
+                        this.child(div().flex_1())
+                            .child(bar_compact::more_button(false, cx))
+                    }),
             )
             .into_any_element()
     }
@@ -1455,8 +1461,8 @@ impl MusicApp {
                 )
             })
             // A narrow window: collapse / expand the bar (`bar_compact.rs`).
-            .when(layout.more, |this| {
-                this.child(bar_compact::more_button(layout.compact, cx))
+            .when(layout.more && layout.compact, |this| {
+                this.child(bar_compact::more_button(true, cx))
             })
             .into_any_element()
     }

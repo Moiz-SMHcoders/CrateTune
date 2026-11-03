@@ -306,17 +306,16 @@ impl Render for MiniPlayer {
                     .is_some_and(|t| crate::store::is_liked(&t.video_id)),
                 queue: np.mini_queue,
                 on_top: np.mini_on_top,
-                upcoming: np
-                    .mini_queue
-                    .then(|| {
-                        app.queue
-                            .upcoming()
-                            .iter()
-                            .take(12)
-                            .map(|i| (i.uid, i.track.clone(), app.added_by_autoplay(i.uid)))
-                            .collect()
-                    })
-                    .unwrap_or_default(),
+                upcoming: if np.mini_queue {
+                    app.queue
+                        .upcoming()
+                        .iter()
+                        .take(12)
+                        .map(|i| (i.uid, i.track.clone(), app.added_by_autoplay(i.uid)))
+                        .collect()
+                } else {
+                    Vec::new()
+                },
                 more: app.queue.upcoming().len(),
                 spin: np.turntable_spin,
             };

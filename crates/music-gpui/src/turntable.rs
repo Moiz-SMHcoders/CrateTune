@@ -82,10 +82,11 @@ impl SpinLook {
 /// The label's side as a share of the deck's (record 0.86 × label 0.42).
 pub const LABEL_SHARE: f32 = 0.86 * 0.42;
 
-/// Measured cost of "Spin the record" (README: Player UI round), for its
-/// description: CPU while playing with grooves only / the whole record, and the
-/// most memory the whole record's frames take.
-const SPIN_COST: (&str, &str, &str) = ("3 %", "4 %", "15 MB"); // i18n-ignore
+/// Measured cost of "Spin the record" (README: Player UI round; M4, release),
+/// for its description: CPU added while playing with grooves only / the whole
+/// record (≈ 1.6 → 4.2–4.7 % of a core), and the most memory the whole record's
+/// frames take (36 × 320² × 4 bytes, and as much again in the sprite atlas).
+const SPIN_COST: (&str, &str, &str) = ("3 %", "3 %", "30 MB"); // i18n-ignore
 
 /// "Spin the record"'s description with the measured cost.
 pub fn spin_cost_note() -> String {

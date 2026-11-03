@@ -3787,6 +3787,123 @@ P8), DXVA on Windows (not used), 60 fps-only videos, URL expiry during a video l
 its URL (~6 h), TV / web clients serving a video (visionOS served every one), theater mode
 with a physical pointer, a second display or full screen.
 
+### Player UI round: mini player, gestures, podcasts, spinning record
+
+| ![Mini player: Up next under the bar, ∞ on autoplay songs](docs/screenshots/m11-mini-bar-queue.png) | ![Mini player: Up next on the artwork card's flip side](docs/screenshots/m11-mini-card-flip.png) |
+|---|---|
+| ![Mini player turntable: tools row, grooves turning](docs/screenshots/m11-mini-turntable-tools.png) | ![Turntable design: ring of bars, the whole record turning](docs/screenshots/m11-np-turntable-ring-spin.png) |
+| ![Scroll over the artwork: the volume pill](docs/screenshots/m11-np-volume-pill.png) | ![Lyrics: arrow-key focus and Follow the lyrics](docs/screenshots/m11-np-lyrics-follow.png) |
+| ![Lyrics: glow on the line being sung](docs/screenshots/m11-np-line-glow.png) | ![Lyrics loading: the still outline](docs/screenshots/m11-np-lyrics-skeleton.png) |
+| ![Split design stacked: cover above the lyrics](docs/screenshots/m11-np-stacked.png) | ![Podcast episode: 15-second skips and speed](docs/screenshots/m11-bar-episode.png) |
+| ![Narrow window: the compact bar](docs/screenshots/m11-bar-compact.png) | ![Narrow window: More controls](docs/screenshots/m11-bar-expanded.png) |
+
+BACKLOG M11's player items, after Limusic (GPL-3.0), Zuno (Apache-2.0), refryt (GPL-3.0) and
+Deviload (MIT); sources per file in `crates/music-gpui/THIRD_PARTY.md`. Nothing here asks for
+frames at rest; every animation follows Animations (Reduced / Off).
+
+* **Mini player** (`mini_player.rs`): a row under the transport with **shuffle, repeat, the
+  heart and the volume** (mute button + slider); in the top strip **Up next** and the **pin**.
+  Up next is the artwork card's and turntable's flip side (the same window), and a list under
+  the bar, compact and lyrics layouts, whose windows grow by 236 pt for it (rows click to
+  play, "∞" on autoplay songs). The pin keeps it above other windows (macOS: a floating
+  `NSPanel`; Windows: topmost) or opens it as an ordinary window. **Anchored to its corner**:
+  any size change (layout, Up next) reopens the window where its nearest screen corner stays
+  put — per axis, a window whose centre is in the far half of its display keeps its far edge
+  (Limusic's `anchored`; unit-tested). Settings: `now_playing.mini_queue`, `mini_on_top`
+  (default on).
+* **Now Playing gestures** (`np_extras.rs`): a click on the artwork (the Turntable's record)
+  plays / pauses; the wheel over it changes the volume (4 % a notch) with a pill showing the
+  level for a second (the cached regions' key carries it, so they redraw only then); the heart
+  **pops** after a like (a 340 ms one-shot tween, 1 → 1.32 → 1; capped at 150 ms with
+  Reduced, none with Off). **Click the empty space to close** (opt-in): a layer under the
+  content closes Now Playing; the header, artwork and titles, controls, lyrics and queue
+  `occlude` it (Limusic's `data-np-keep`). **Open Now Playing when playback starts**
+  (opt-in, `player_extras.rs`): from nothing playing, another song paused, or a queue that
+  ended over 2 s ago — not on a resume or when the queue moves on (unit-tested).
+* **Podcasts** (`player_extras.rs`, `components/bar_compact.rs`): an episode gets **−15 s /
+  +15 s** beside play (icons drawn for this) and a **speed** menu (0.5–2×, the app's speed) in
+  shuffle's place; the skips come before the toggles when the bar is tight. `seek_back` /
+  `seek_forward` (⇧⌘← / ⇧⌘→, Ctrl+Shift+← / → elsewhere; editable) jump 15 s in any song.
+  **"∞"** marks queue items autoplay appended (the queue panel, the With queue design, the mini
+  player's Up next): radio items after the seed of an autoplay run (`RadioState`); a radio you
+  start yourself has none.
+* **Cover above the lyrics** (`np_extras.rs`): the Split design stacks the artwork, titles,
+  progress and transport in a row above the lyrics when Now Playing is about as tall as wide or
+  taller (`height ≥ 0.9 × width`; 860 × ~870 on a laptop counts), or always / never
+  (`now_playing.portrait`, also in the design menu).
+* **Compact bar** (`components/bar_compact.rs`): under 1000 pt the bar collapses (after
+  refryt): the song takes the room, previous / play / next sit beside queue, Now Playing,
+  mute (an armed sleep timer and a Cast session stay) and **⋯ More controls**; the progress is
+  a line along the top (time on hover). More controls shows the full bar (what fits, as
+  before) until *Fewer controls* (this session).
+* **Lyrics** (`np_lyrics.rs`): after a wheel scroll the list now waits **8 s** (was 3 s,
+  Deviload's hold) with a **Follow the lyrics** pill that returns at once; **↑ / ↓** move a
+  focus frame over the lines and **Enter** plays from it (`lyrics_line_previous` / `_next` /
+  `_play`, bound in the `NowPlaying` context only — no text field there, so plain keys are
+  allowed — and editable); a **still outline** of 16 lines while lyrics load (refryt's widths,
+  no shimmer); **Glow on the line being sung** (opt-in, `lyrics.line_glow`): eight offset glyph
+  copies in the artwork's vivid colour (the accent for grey artwork), lighter in light mode.
+* **Ring of bars** (`components/np_visualizer.rs`): with the Now Playing visualizer on (bars),
+  the Turntable design draws the 16-band spectrum as 32 bars around the record, mirrored with
+  the bass at the top, opacity 0.22 + level × 0.78 (Zuno's site), as GPUI paths (one per
+  opacity step) behind the deck; ~20 fps while playing, a still dial once the levels fall.
+* **Spin the record** (`turntable.rs`, `now_playing.turntable_spin`: off / grooves / record;
+  off by default): 33⅓ rpm while playing, eased over 1.1 s on play / pause, a frame every 50 ms
+  at most. *Grooves only* turns an SVG reflection over the grooves (GPUI rotates SVGs at paint
+  time: one sprite); *The whole record* also turns the label: the 544 px artwork is
+  pre-rendered once per track on a worker thread into 36 round labels 10° apart at the size
+  drawn (≤ 320 px; 36 × 320² × 4 B = 14.7 MB, ~0.1 s for the mini player's 142 px, ~0.4 s for
+  320 px), swapped as it turns. Frames go when the track or size changes, the design or mini
+  layout changes, Now Playing closes or the look is turned off (and are dropped from the
+  windows' atlases). Nothing turns while paused, hidden, or with Animations Reduced / Off.
+* Scripts (`player_extras_script.rs`): `@np-open-on-play`, `@np-click-empty`,
+  `@np-portrait=auto|always|never`, `@lyrics-glow`, `@turntable-spin=off|grooves|record`,
+  `@mini-queue`, `@mini-pin`, `@seek-by=SECS`, `@lyrics-line=up|down|play`,
+  `@bar-compact=on|off`, `@play-episode=ID[:TITLE]`, `@extras-status`. Settings search finds
+  every new row; all strings in the 18 languages (`np_extras.lang`).
+  `scripts/smoke-pages.sh` now also opens Now Playing in every design (stacked split, the ring)
+  and the mini player with Up next; `scripts/perf-macos.sh --extras` measures the turntables.
+
+**Measured** (release builds, M4 MacBook Air, 60 Hz; this branch and main at `80df7c9`;
+offline fixtures and the demo clock, `MUSIC_ON_TOP=1`, CPU over seconds 14–26 while playing,
+two interleaved runs; footprint from `@mem` — it varies by ±40 MB between runs here, so the
+frames' cost is from their size; the machine ran other agents' builds, load average 45–100):
+
+| Session | main | branch |
+|---|---|---|
+| Idle on Home, 60–85 s after launch | 0.4 %, no renders | 0.3 %, no renders |
+| Now Playing Turntable, spin off | 0.1 / 1.3 %, 5 renders/s | 1.6 / 1.8 %, 5 renders/s |
+| … grooves only | — | 4.2 / 4.2 %, 18–19 renders/s |
+| … the whole record | — | 4.6 / 2.8 %, 19 renders/s, footprint +28–31 MB over grooves |
+| Mini player turntable, spin off | 1.4 / 1.3 %, mini 1 render/s | 1.6 / 1.6 %, mini 1 render/s |
+| … grooves only | — | 4.2 / 4.7 %, mini 16–17 renders/s |
+| … the whole record | — | 4.2 / 4.5 %, mini 16 renders/s (frames 2.9 MB) |
+| Now Playing Split (demo clock) | 2.3 / 2.2 %, 9–10 renders/s | 2.1 / 2.2 %, 9 renders/s |
+| Now Playing Split stacked (cover above the lyrics) | — | 2.2 / 1.2 %, 10 renders/s |
+| Turntable with the visualizer: ring of bars (live song, muted) | — | 4.1 / 4.2 %, 18 renders/s |
+| Big artwork with the visualizer strip (live song, muted) | 7.7 / 5.8 %, 22–23 renders/s | 12.2 / 4.9 %, 60 / 24 renders/s (the first run's stream took long to load: the bar's spinner) |
+| Mini player bar (main) / bar with Up next (branch) | 1.3 / 1.2 %, mini 1 render/s | 1.6 / 1.9 %, mini 1–2 renders/s |
+
+Live songs make CPU figures noisy (resolving the stream runs JavaScript for several seconds:
+one live "whole record" run read 19–52 % while it did, and a `sample` of that session a few
+seconds later found the main thread busy 4 % of the time), so the spin's cost is from the demo
+clock. After a pause the spinning record slows down within one second of renders and then nothing
+renders (every session above: 0–1 busy second in the 8 s after the pause). The spin's cost is
+the window redrawing ~19 times a second (the turned frame itself is one image); the whole
+record adds memory, not CPU. That is why both looks are opt-in and the setting says so.
+
+**Verified** (macOS, `MUSIC_SECRET_STORE=file`, temporary `MUSIC_CONFIG_DIR`, `MUSIC_VOLUME=0.0`):
+the screenshots above (`screenshot` build; live songs muted for the lyrics, glow, ring and
+volume pill — scrolled with `@wheel` over the artwork, 0 → 12 %; fixtures and the demo clock
+for the rest; narrow windows by floating the window in the tiling window manager); `@extras-status`
+for the arrow keys (focus line 2, Enter cleared it and seeked), the 8 s hold (released at 10 s),
+"Open Now Playing when playback starts" (opened on the first play and on another song after a
+pause, not on resume or *next*), autoplay marks (5 of 5 radio songs after an episode), the
+compact / expanded bar; every design and the mini player's layouts, Up next and pin rendering
+without a panic; unit tests: anchoring, `OnPlay`, stacked threshold, compact / episode
+layouts, speed labels, label frames (a half-red, half-blue art turned a quarter and half turn),
+the spin's ease and stop. **Not verified**: BACKLOG U25.
+
 ### Performance round 3: memory, artwork, CPU
 
 Measured first, changed only what helped (BACKLOG F1–F3). Base = `main` at `4f0972f` plus

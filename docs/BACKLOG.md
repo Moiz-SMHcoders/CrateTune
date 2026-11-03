@@ -220,6 +220,22 @@ writing into the themes folder; (7) fonts from files through DirectWrite / fontc
 (only CoreText was used). Details: [README: Light mode and
 layout](../README.md#light-mode-and-layout-round). · Size: small · Priority: medium
 
+**U25. Player UI round (`feat/np-mini-plus`) on Windows, Linux and with real input**
+Checked on macOS with scripts, synthetic events and offscreen screenshots: (1) the mini
+player's pin on Windows (topmost on / off by reopening) and Linux (GPUI's floating window
+kind under X11 / Wayland compositors), and the corner anchoring there (Wayland ignores
+positions; Windows' and X11's frame offsets untested); (2) the gestures with a real mouse
+and trackpad (artwork click / wheel, the empty-space click beside every design, the heart's
+pop), and the arrow keys with a real keyboard while menus or the lyrics card are open; (3)
+"Open Now Playing when playback starts" with Cast, Music Together and media keys starting
+playback; (4) the "∞" after a restart (queue item ids are per session, the marks go) and with
+shuffle; (5) the compact bar on Windows / Linux title-bar setups and at zoom levels; (6) the
+ring and the spinning record on a 120 Hz display, on Intel Macs and integrated GPUs
+(cost measured on an M4 only), and the turned labels' sharpness at 3× scale; (7) podcast
+episodes from real searches (the bar's skips were shown with an id played as an episode).
+Details: [README: Player UI round](../README.md#player-ui-round-mini-player-gestures-podcasts-spinning-record).
+· Size: small · Priority: medium
+
 **U22. Music videos against real accounts and long sessions**
 Songs show their music video only through the pairs YouTube Music sends signed in
 (`next`'s `counterpart` rows). That path is tested on a hand-built response shaped like the
