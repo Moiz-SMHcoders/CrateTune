@@ -414,7 +414,7 @@ impl Convolver {
 
     /// Frames from an input sample to the end of its tail (latency + impulse).
     pub(crate) fn tail_frames(&self) -> usize {
-        self.frames + 2 * self.block
+        self.frames + 2 * self.latency()
     }
 
     /// One input sample in, one stereo output frame out ([`Self::latency`] frames late).
