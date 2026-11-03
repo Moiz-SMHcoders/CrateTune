@@ -55,3 +55,9 @@ home.continue.elsewhere = {artist} · played on another device
 home.continue.at = {artist} · played on another device, stopped at {position}
 home.continue.resume = Resume
 home.continue.dismiss = Dismiss
+# macOS only: the keychain refused the saved sign-in (after an update the app may be
+# asked again; "Always Allow" is macOS's own button label).
+account.keychain_failed.title = Your sign-in couldn't be read from the Keychain
+account.keychain_failed.detail = macOS asked whether {app} may use its saved sign-in, and access wasn't allowed (or the prompt was closed). Your account is kept. Choose Try again, then Always Allow.
+account.keychain_failed.retry = Try again
+account.keychain_failed.toast = Couldn't read your YouTube sign-in from the Keychain. Settings → Account → Try again.
