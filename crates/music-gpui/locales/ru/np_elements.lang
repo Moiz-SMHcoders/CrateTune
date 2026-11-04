@@ -22,6 +22,7 @@ np_elements.item.sound = Меню звука
 np_elements.item.cast = Трансляция и устройства
 np_elements.item.visualizer = Визуализатор
 np_elements.item.close = Кнопка закрытия
+np_elements.item.song_menu = Меню трека (⋯)
 np_elements.customize = Настроить этот вид…
 np_elements.customize_title = Настроить: {design}
 np_elements.customize_note = Изменения применяются сразу и сохраняются для каждого дизайна.

@@ -22,6 +22,7 @@ np_elements.item.sound = Menu âm thanh
 np_elements.item.cast = Truyền và thiết bị
 np_elements.item.visualizer = Trình hiển thị âm thanh
 np_elements.item.close = Nút đóng
+np_elements.item.song_menu = Menu bài hát (⋯)
 np_elements.customize = Tùy chỉnh chế độ xem này…
 np_elements.customize_title = Tùy chỉnh {design}
 np_elements.customize_note = Thay đổi áp dụng ngay và được lưu theo từng thiết kế.

@@ -4456,13 +4456,14 @@ Immersive's label and Card's format chip), `like`, `dislike`, `shuffle`, `repeat
 `add_to_playlist`, `download`, and in Now Playing's header `lyrics` and `queue` (new
 buttons: the lyrics-first or With queue design until Now Playing closes or the button is
 pressed again), `sleep_timer`, `sound`, `cast` (Cast and, once a device is paired, the
-devices button), `close`; `visualizer` (when "Visualizer in Now Playing" is on). Play /
+devices button), `close`, `song_menu` (the ⋯ song menu: go to artist / album, queue,
+playlists); `visualizer` (when "Visualizer in Now Playing" is on). Play /
 pause, the title and the artwork are always there; so are the design menu (where Customize
 lives), video, theater, full screen and settings in the header, and the mini player's pin.
 
 | View | Default (= what it showed before) | Can be added |
 |---|---|---|
-| Header, every design | close, quality tag, sleep timer, sound, visualizer | Cast & devices |
+| Header, every design | close, quality tag, sleep timer, sound, ⋯ song menu, visualizer | Cast & devices |
 | Split (also stacked) | artist, dislike, like, seek bar, times, previous / next, up next | shuffle, repeat, add to playlist, download, volume, playing from, queue button |
 | Big artwork | artist, seek bar, times, previous / next, lyric line | like, dislike, shuffle, repeat, add, download, volume, playing from, up next, lyrics / queue buttons |
 | Lyrics first | artist, seek bar, times, previous / next | like, dislike, shuffle, repeat, add, download, volume, queue button |
@@ -4480,12 +4481,15 @@ Immersive and Turntable; "Up next" not in With queue or the lyrics strip); the l
 only where there is no lyrics pane, the queue button everywhere but With queue.
 
 **Defaults = today's look.** `ElementView::defaults` is tested against a table read off the
-render code at 41f669f (`defaults_are_todays_look`), and the render functions draw each part
+render code at 2ebf437 (`defaults_are_todays_look`), and the render functions draw each part
 only when its element is on, so an untouched design takes the same branches as before.
 Checked by pixels: every design (and the stacked split) paused at 0:41 and every mini
-player layout, at 1280 × 800 and 860 × 540, rendered offscreen by main and by this branch:
-identical except the seconds label, one artwork's anti-aliased edge (its pause spring) and a
-hover highlight under the pointer (a few hundred pixels to 3 k, all accounted for).
+player layout, at 1280 × 800 and 860 × 540, rendered offscreen by main (41f669f, and again
+after merging main at 2ebf437) and by this branch: identical except the Card's artwork edge
+(its pause spring, ~3 k pixels), a hover highlight under the pointer, a pixel column of
+Minimal's fill and a few pixels of the tonearm (the frame a second later), and at 1280 × 800
+against 2ebf437 the outermost pixel ring of the blurred backdrop (sampling at the image's
+edge; the area inside it is identical).
 
 **Layout rule per design** (`np_custom.rs`): a button the design has a spot for goes there
 — the heart and thumbs down beside the title in Split, Card, With queue and Turntable (and

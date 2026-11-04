@@ -22,6 +22,7 @@ np_elements.item.sound = 사운드 메뉴
 np_elements.item.cast = 전송 및 기기
 np_elements.item.visualizer = 비주얼라이저
 np_elements.item.close = 닫기 버튼
+np_elements.item.song_menu = 곡 메뉴 (⋯)
 np_elements.customize = 이 보기 사용자화…
 np_elements.customize_title = {design} 사용자화
 np_elements.customize_note = 변경 사항은 즉시 적용되며 디자인별로 저장됩니다.

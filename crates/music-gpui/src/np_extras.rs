@@ -324,11 +324,9 @@ impl MusicApp {
                                     )
                                     .when(el.has(E::Artist), |this| {
                                         this.child(
-                                            div()
-                                                .text_color(ink(0.65))
-                                                .min_w_0()
-                                                .truncate()
-                                                .child(Self::artist_links("np-stacked-artists", track)),
+                                            div().text_color(ink(0.65)).min_w_0().truncate().child(
+                                                Self::artist_links("np-stacked-artists", track),
+                                            ),
                                         )
                                     }),
                             )

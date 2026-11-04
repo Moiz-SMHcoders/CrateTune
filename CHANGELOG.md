@@ -24,7 +24,7 @@ versions follow [SemVer](https://semver.org/).
   switches for the elements that make sense there — like, dislike, shuffle, repeat,
   previous / next, seek bar, times, volume, add to playlist, download, artist & album,
   "Playing from", the source / quality tag, the current lyric line, "Up next", and in Now
-  Playing's header the close button, sleep timer, sound menu, Cast and devices and new
+  Playing's header the close button, sleep timer, sound menu, the ⋯ song menu, Cast and devices and new
   lyrics / queue buttons; the visualizer can be left out per design. So the Turntable can
   have a heart now. Untouched designs look exactly as before. Change them from **Customize
   this view…** in Now Playing's design menu (a panel with a switch per element and *Reset

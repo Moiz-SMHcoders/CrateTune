@@ -22,6 +22,7 @@ np_elements.item.sound = 聲音選單
 np_elements.item.cast = 投放和裝置
 np_elements.item.visualizer = 視覺化效果
 np_elements.item.close = 關閉按鈕
+np_elements.item.song_menu = 歌曲選單 (⋯)
 np_elements.customize = 自訂此檢視…
 np_elements.customize_title = 自訂{design}
 np_elements.customize_note = 變更會立即生效，並依設計分別儲存。

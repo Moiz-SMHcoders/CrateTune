@@ -59,11 +59,13 @@ pub enum NpElement {
     /// Header: the close button (Esc still closes); mini player: close / back to
     /// the main window.
     Close,
+    /// Header: the ⋯ song menu (go to artist / album, queue, playlists, …).
+    SongMenu,
 }
 
 impl NpElement {
     /// Settings order.
-    pub const ALL: [Self; 22] = [
+    pub const ALL: [Self; 23] = [
         Self::Artist,
         Self::Source,
         Self::Quality,
@@ -86,6 +88,7 @@ impl NpElement {
         Self::Cast,
         Self::Visualizer,
         Self::Close,
+        Self::SongMenu,
     ];
 
     const fn bit(self) -> u32 {
@@ -118,6 +121,7 @@ impl NpElement {
             Self::Cast => "cast",
             Self::Visualizer => "visualizer",
             Self::Close => "close",
+            Self::SongMenu => "song_menu",
         }
     }
 
@@ -151,6 +155,7 @@ impl NpElement {
             Self::Cast => t!("np_elements.item.cast"),
             Self::Visualizer => t!("np_elements.item.visualizer"),
             Self::Close => t!("np_elements.item.close"),
+            Self::SongMenu => t!("np_elements.item.song_menu"),
         }
     }
 }
@@ -233,7 +238,8 @@ pub enum ElementView {
 use NpElement as E;
 
 /// In the header of every design, on by default.
-const HEADER: Elements = Elements::of(&[E::Close, E::Quality, E::SleepTimer, E::Sound]);
+const HEADER: Elements =
+    Elements::of(&[E::Close, E::Quality, E::SleepTimer, E::Sound, E::SongMenu]);
 /// Header extras every design offers (off by default).
 const HEADER_EXTRA: Elements = Elements::of(&[E::Cast]);
 /// Buttons every design can add (off by default unless it had them).
@@ -537,11 +543,19 @@ mod tests {
 
     /// What each design drew before the switches, read off its render code
     /// (`now_playing.rs`, `np_designs.rs`, `np_extras.rs`, `mini_player.rs` at
-    /// 41f669f): the defaults must be exactly this.
+    /// 2ebf437): the defaults must be exactly this.
     fn todays_look(view: ElementView) -> Elements {
-        // Every design's header: close, the source tag, sleep timer, sound menu;
-        // the visualizer when "Visualizer in Now Playing" is on.
-        let header = set(&[E::Close, E::Quality, E::SleepTimer, E::Sound, E::Visualizer]);
+        // Every design's header: close, the source tag, sleep timer, sound menu,
+        // the ⋯ song menu (2ebf437); the visualizer when "Visualizer in Now
+        // Playing" is on.
+        let header = set(&[
+            E::Close,
+            E::Quality,
+            E::SleepTimer,
+            E::Sound,
+            E::SongMenu,
+            E::Visualizer,
+        ]);
         let own = match view {
             // `render_player_column` / `render_stacked_top`: title, artists,
             // dislike + like, `progress_view` (bar + times), `transport_view`,
@@ -678,7 +692,14 @@ mod tests {
                     assert!(!offered.has(E::UpNext) || !matches!(layout, L::Queue | L::Lyrics));
                 }
                 ElementView::Mini(skin) => {
-                    for e in [E::Lyrics, E::Queue, E::Cast, E::Sound, E::Visualizer] {
+                    for e in [
+                        E::Lyrics,
+                        E::Queue,
+                        E::Cast,
+                        E::Sound,
+                        E::Visualizer,
+                        E::SongMenu,
+                    ] {
                         assert!(!offered.has(e), "{skin:?} {e:?}");
                     }
                     assert_eq!(offered.has(E::Times), skin != MiniPlayerSkin::Compact);

@@ -22,6 +22,7 @@ np_elements.item.sound = Menu suara
 np_elements.item.cast = Cast dan perangkat
 np_elements.item.visualizer = Visualisasi
 np_elements.item.close = Tombol tutup
+np_elements.item.song_menu = Menu lagu (⋯)
 np_elements.customize = Sesuaikan tampilan ini…
 np_elements.customize_title = Sesuaikan {design}
 np_elements.customize_note = Perubahan langsung berlaku dan disimpan per desain.

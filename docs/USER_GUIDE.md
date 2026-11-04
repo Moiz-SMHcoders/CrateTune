@@ -325,7 +325,7 @@ Playing's header) → **Customize this view…**. A panel lists what that design
 with a switch: the artist & album line, "Playing from", the source / quality tag, like,
 dislike, shuffle, repeat, previous / next, the seek bar, the times, the volume, the current
 lyric line, "Up next", add to playlist, download, and in the header the close button, the
-sleep timer, the sound menu, Cast and devices, a **lyrics** button and a **queue** button
+sleep timer, the sound menu, the **⋯** song menu, Cast and devices, a **lyrics** button and a **queue** button
 (they show the lyrics or the queue in Now Playing until you close it or press them again),
 and the visualizer (when it's on in Settings → Appearance → Player bar). Each design only
 lists what fits it and remembers its own choice — a heart on the Turntable doesn't put one on

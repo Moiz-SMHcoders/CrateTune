@@ -22,6 +22,7 @@ np_elements.item.sound = Ses menüsü
 np_elements.item.cast = Yayınla ve cihazlar
 np_elements.item.visualizer = Görselleştirici
 np_elements.item.close = Kapat düğmesi
+np_elements.item.song_menu = Şarkı menüsü (⋯)
 np_elements.customize = Bu görünümü özelleştir…
 np_elements.customize_title = {design} özelleştir
 np_elements.customize_note = Değişiklikler hemen uygulanır ve her tasarım için ayrı saklanır.

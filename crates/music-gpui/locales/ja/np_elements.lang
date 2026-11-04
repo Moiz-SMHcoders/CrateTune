@@ -22,6 +22,7 @@ np_elements.item.sound = サウンドメニュー
 np_elements.item.cast = キャストとデバイス
 np_elements.item.visualizer = ビジュアライザー
 np_elements.item.close = 閉じるボタン
+np_elements.item.song_menu = 曲のメニュー (⋯)
 np_elements.customize = この表示をカスタマイズ…
 np_elements.customize_title = {design} をカスタマイズ
 np_elements.customize_note = 変更はすぐに反映され、デザインごとに保存されます。

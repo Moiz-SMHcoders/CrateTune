@@ -33,6 +33,8 @@ np_elements.item.cast = Cast and devices
 np_elements.item.visualizer = Visualizer
 # Now Playing: the close button in the header; mini player: close and "back to the main window".
 np_elements.item.close = Close button
+# The ⋯ button in Now Playing's header (go to artist / album, add to queue, …).
+np_elements.item.song_menu = Song menu (⋯)
 
 # ---- Customize panel and menus
 # Item of Now Playing's design menu.

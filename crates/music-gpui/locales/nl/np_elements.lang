@@ -22,6 +22,7 @@ np_elements.item.sound = Geluidsmenu
 np_elements.item.cast = Casten en apparaten
 np_elements.item.visualizer = Visualisatie
 np_elements.item.close = Sluitknop
+np_elements.item.song_menu = Nummermenu (⋯)
 np_elements.customize = Deze weergave aanpassen…
 np_elements.customize_title = {design} aanpassen
 np_elements.customize_note = Wijzigingen gelden meteen en worden per ontwerp bewaard.

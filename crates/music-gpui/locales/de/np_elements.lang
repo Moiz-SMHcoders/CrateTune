@@ -22,6 +22,7 @@ np_elements.item.sound = Klangmenü
 np_elements.item.cast = Übertragen und Geräte
 np_elements.item.visualizer = Visualisierung
 np_elements.item.close = Schließen-Taste
+np_elements.item.song_menu = Songmenü (⋯)
 np_elements.customize = Diese Ansicht anpassen…
 np_elements.customize_title = {design} anpassen
 np_elements.customize_note = Änderungen wirken sofort und gelten je Design.

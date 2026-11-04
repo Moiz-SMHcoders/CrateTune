@@ -22,6 +22,7 @@ np_elements.item.sound = 声音菜单
 np_elements.item.cast = 投放和设备
 np_elements.item.visualizer = 可视化效果
 np_elements.item.close = 关闭按钮
+np_elements.item.song_menu = 歌曲菜单 (⋯)
 np_elements.customize = 自定义此视图…
 np_elements.customize_title = 自定义{design}
 np_elements.customize_note = 更改立即生效，并按设计分别保存。

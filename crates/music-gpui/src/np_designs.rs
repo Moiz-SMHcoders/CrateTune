@@ -204,18 +204,12 @@ impl MusicApp {
         frame: &mut Frame,
         cx: &mut Context<Self>,
     ) -> AnyElement {
-<<<<<<< HEAD
-        let (title, artists) = Self::titles(track);
+        let (title, _) = Self::titles(track);
         let el = self.np.elements;
         let lyric = el
             .has(E::LyricLine)
             .then(|| self.lyric_snippet(track, position, frame))
             .flatten()
-=======
-        let (title, _) = Self::titles(track);
-        let lyric = self
-            .lyric_snippet(track, position, frame)
->>>>>>> origin/main
             .and_then(|(now, _)| now)
             .filter(|l| !l.trim().is_empty());
         let width = (viewport.width - px(112.)).min(px(820.));
@@ -273,29 +267,19 @@ impl MusicApp {
                                             .line_clamp(2)
                                             .child(title),
                                     )
-<<<<<<< HEAD
                                     .when(el.has(E::Artist), |this| {
                                         this.child(
                                             div()
                                                 .text_size(px(19.))
                                                 .text_color(ink(0.7))
                                                 .truncate()
-                                                .child(artists),
+                                                .child(Self::artist_links(
+                                                    "np-design-artists-1",
+                                                    track,
+                                                )),
                                         )
                                     })
                                     .map(|titles| crate::np_custom::probe(titles, "np.title")),
-=======
-                                    .child(
-                                        div()
-                                            .text_size(px(19.))
-                                            .text_color(ink(0.7))
-                                            .truncate()
-                                            .child(Self::artist_links(
-                                                "np-design-artists-1",
-                                                track,
-                                            )),
-                                    ),
->>>>>>> origin/main
                             )
                             .children(extras)
                             .children(
@@ -442,15 +426,9 @@ impl MusicApp {
         frame: &mut Frame,
         cx: &mut Context<Self>,
     ) -> AnyElement {
-<<<<<<< HEAD
-        let (title, artists) = Self::titles(track);
+        let (title, _) = Self::titles(track);
         let el = self.np.elements;
         let today = (viewport.height - px(56. + 64. + 270.))
-=======
-        let (title, _) = Self::titles(track);
-        // The card's art fills its width; leave room for ~250 px of controls.
-        let side = (viewport.height - px(56. + 64. + 270.))
->>>>>>> origin/main
             .min(px(440.))
             .max(px(180.));
         // What the card holds besides the art (heights of its rows), for a
@@ -559,19 +537,11 @@ impl MusicApp {
                                             .truncate()
                                             .child(title),
                                     )
-<<<<<<< HEAD
                                     .when(el.has(E::Artist), |this| {
-                                        this.child(
-                                            div().text_color(ink(0.65)).truncate().child(artists),
-                                        )
-                                    }),
-=======
-                                    .child(
-                                        div().text_color(ink(0.65)).truncate().child(
+                                        this.child(div().text_color(ink(0.65)).truncate().child(
                                             Self::artist_links("np-design-artists-2", track),
-                                        ),
-                                    ),
->>>>>>> origin/main
+                                        ))
+                                    }),
                             )
                             .when(el.has(E::Shuffle), |this| {
                                 this.child(
@@ -756,26 +726,16 @@ impl MusicApp {
                                     .line_clamp(3)
                                     .child(title),
                             )
-<<<<<<< HEAD
                             .when(el.has(E::Artist), |this| {
                                 this.child(
                                     div()
                                         .text_size(px(22.))
                                         .text_color(ink(0.7))
                                         .truncate()
-                                        .child(artists),
+                                        .child(Self::artist_links("np-design-artists-3", track)),
                                 )
                             })
                             .map(|titles| crate::np_custom::probe(titles, "np.title")),
-=======
-                            .child(
-                                div()
-                                    .text_size(px(22.))
-                                    .text_color(ink(0.7))
-                                    .truncate()
-                                    .child(Self::artist_links("np-design-artists-3", track)),
-                            ),
->>>>>>> origin/main
                     )
                     .when(el.has(E::Times), |this| {
                         this.child(
@@ -962,7 +922,6 @@ impl MusicApp {
                                     .line_clamp(2)
                                     .child(title),
                             )
-<<<<<<< HEAD
                             .when(el.has(E::Artist), |this| {
                                 this.child(
                                     div()
@@ -970,24 +929,14 @@ impl MusicApp {
                                         .font_weight(FontWeight::SEMIBOLD)
                                         .text_color(cream(0.7))
                                         .truncate()
-                                        .child(artists.to_uppercase()),
+                                        .child(Self::artist_links_as(
+                                            "np-editorial-artists",
+                                            track,
+                                            LinkLook::main().hover(cream(1.)).upper(),
+                                        )),
                                 )
                             })
                             .map(|titles| crate::np_custom::probe(titles, "np.title")),
-=======
-                            .child(
-                                div()
-                                    .text_sm()
-                                    .font_weight(FontWeight::SEMIBOLD)
-                                    .text_color(cream(0.7))
-                                    .truncate()
-                                    .child(Self::artist_links_as(
-                                        "np-editorial-artists",
-                                        track,
-                                        LinkLook::main().hover(cream(1.)).upper(),
-                                    )),
-                            ),
->>>>>>> origin/main
                     )
                     // Bento row 1: the big PLAY / PAUSE pill and "next".
                     .child(
@@ -1129,14 +1078,10 @@ impl MusicApp {
         frame: &mut Frame,
         cx: &mut Context<Self>,
     ) -> AnyElement {
-<<<<<<< HEAD
-        let (title, artists) = Self::titles(track);
+        let (title, _) = Self::titles(track);
         let el = self.np.elements;
         // Title row, progress, transport and gaps: ~200 px under the artwork.
         let added = self.np_added_height(TITLE_NATIVE, 16.);
-=======
-        let (title, _) = Self::titles(track);
->>>>>>> origin/main
         let side = (viewport.height * 0.44)
             .min((viewport.width - px(176.)) * 0.4)
             .clamp(px(140.), px(380.));
@@ -1334,19 +1279,11 @@ impl MusicApp {
                                             .truncate()
                                             .child(title),
                                     )
-<<<<<<< HEAD
                                     .when(el.has(E::Artist), |this| {
-                                        this.child(
-                                            div().text_color(ink(0.65)).truncate().child(artists),
-                                        )
-                                    }),
-=======
-                                    .child(
-                                        div().text_color(ink(0.65)).truncate().child(
+                                        this.child(div().text_color(ink(0.65)).truncate().child(
                                             Self::artist_links("np-design-artists-4", track),
-                                        ),
-                                    ),
->>>>>>> origin/main
+                                        ))
+                                    }),
                             )
                             .children(self.np_title_buttons(track, px(36.), frame, cx)),
                         "np.title",
@@ -1422,18 +1359,12 @@ impl MusicApp {
         let pill = self.np_volume_pill(frame);
         let keep = self.np.gestures.empty_close;
         let deck = self.artwork_gestures(deck, pill, cx).np_keep(keep);
-<<<<<<< HEAD
-        let (title, artists) = Self::titles(track);
+        let (title, _) = Self::titles(track);
         let el = self.np.elements;
         let lyric = el
             .has(E::LyricLine)
             .then(|| self.lyric_snippet(track, position, frame))
             .flatten()
-=======
-        let (title, _) = Self::titles(track);
-        let lyric = self
-            .lyric_snippet(track, position, frame)
->>>>>>> origin/main
             .and_then(|(now, _)| now)
             .filter(|l| !l.trim().is_empty());
         let column = (viewport.width - side - px(160.)).clamp(px(240.), px(520.));
@@ -1471,7 +1402,6 @@ impl MusicApp {
                     .w(column)
                     .np_keep(keep)
                     .gap_3()
-<<<<<<< HEAD
                     .children(source)
                     .child(crate::np_custom::probe(
                         if buttons.is_empty() {
@@ -1491,7 +1421,7 @@ impl MusicApp {
                                 .text_lg()
                                 .text_color(ink(0.65))
                                 .truncate()
-                                .child(artists),
+                                .child(Self::artist_links("np-design-artists-5", track)),
                         )
                     })
                     .when(el.has(E::LyricLine), |this| {
@@ -1512,34 +1442,6 @@ impl MusicApp {
                     .when(el.has(E::Times), |this| {
                         this.child(self.times_row(position, ink(0.6)))
                     })
-=======
-                    .child(
-                        div()
-                            .text_3xl()
-                            .when_some(crate::theme::heading_font(), |this, f| this.font_family(f))
-                            .font_weight(FontWeight::BOLD)
-                            .line_clamp(2)
-                            .child(title),
-                    )
-                    .child(
-                        div()
-                            .text_lg()
-                            .text_color(ink(0.65))
-                            .truncate()
-                            .child(Self::artist_links("np-design-artists-5", track)),
-                    )
-                    .child(
-                        div()
-                            .min_h(px(56.))
-                            .text_xl()
-                            .font_weight(FontWeight::SEMIBOLD)
-                            .text_color(ink(0.88))
-                            .line_clamp(2)
-                            .children(lyric),
-                    )
-                    .child(self.progress_bar(position, px(4.), ink(0.2), fill, cx))
-                    .child(self.times_row(position, ink(0.6)))
->>>>>>> origin/main
                     .child(
                         h_flex()
                             .justify_start()

@@ -22,6 +22,7 @@ np_elements.item.sound = साउंड मेन्यू
 np_elements.item.cast = कास्ट और डिवाइस
 np_elements.item.visualizer = विज़ुअलाइज़र
 np_elements.item.close = बंद करें बटन
+np_elements.item.song_menu = गाने का मेन्यू (⋯)
 np_elements.customize = यह दृश्य अनुकूलित करें…
 np_elements.customize_title = {design} अनुकूलित करें
 np_elements.customize_note = बदलाव तुरंत लागू होते हैं और हर डिज़ाइन के लिए अलग रहते हैं।
