@@ -615,7 +615,7 @@ pub fn quick_picks(
 ) -> HRow {
     const ROWS: usize = 4;
     let theme = cx.theme();
-    let (hover, muted) = (theme.list_hover, theme.muted_foreground);
+    let (hover, muted, fg) = (theme.list_hover, theme.muted_foreground, theme.foreground);
     let accent = crate::theme::AppColors::get(cx).accent;
     let columns = tracks.len().div_ceil(ROWS);
     let row = |i: usize, cx: &App| {
@@ -663,10 +663,15 @@ pub fn quick_picks(
                     )
                     .child(
                         div()
+                            .min_w_0()
                             .truncate()
                             .text_xs()
                             .text_color(muted)
-                            .child(track.artists.clone()),
+                            .child(super::entity_links::artist_line(
+                                "qp",
+                                track,
+                                super::entity_links::LinkLook::main().hover(fg),
+                            )),
                     ),
             )
             .context_menu(move |m, _, _| track_menu(m, &menu_track, menu_list.clone()))

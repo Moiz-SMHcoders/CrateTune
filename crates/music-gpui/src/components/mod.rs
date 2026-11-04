@@ -12,6 +12,7 @@
 //! * [`sidebar`], [`player_bar`], [`queue_panel`] – the shell's fixed parts;
 //!   [`progress`] draws the progress / volume tracks (every bar style), [`bar_fx`]
 //!   animates them and the bar's play / pause background.
+//! * [`entity_links`] – clickable artist / album names and the "Go to" menu entries.
 //! * [`like::like_button`] – the heart; [`playlist_dialog`] – "Add to playlist".
 //! * [`cull::Sections`] – skips building page sections far outside the viewport.
 
@@ -25,6 +26,7 @@ pub mod card;
 pub mod cull;
 pub mod dislike;
 pub mod download_header;
+pub mod entity_links;
 pub mod hrow;
 pub mod items;
 pub mod like;

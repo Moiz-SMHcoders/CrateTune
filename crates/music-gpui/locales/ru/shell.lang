@@ -77,6 +77,8 @@ track.tooltip.more = Ещё
 track.explicit_badge = E
 track.menu.go_to_podcast = Перейти к подкасту
 track.menu.go_to_named_artist = Перейти: {artist}
+track.menu.artist_not_found = Не удалось найти страницу: {artist}
+track.menu.album_not_found = Не удалось найти альбом этой песни
 
 # ---- Item cards
 items.load_failed = Не удалось загрузить страницу

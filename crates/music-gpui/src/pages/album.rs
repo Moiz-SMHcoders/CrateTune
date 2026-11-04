@@ -12,16 +12,17 @@ use gpui::{
     AnyElement, AppContext as _, Context, IntoElement, ParentElement as _, Render, ScrollHandle,
     Styled as _, Task, Window,
 };
-use gpui_component::v_flex;
+use gpui_component::{ActiveTheme as _, v_flex};
 use music_core::Track;
 use music_core::innertube::AlbumPage as AlbumData;
 
 use super::{PageView, is_playing};
 use crate::app::{MusicApp, update_app};
 use crate::browse::{Load, PageCache, fetch, on_view};
+use crate::components::entity_links::{self, LinkLook};
 use crate::components::items::{
-    Hero, ShelfModel, ShelfStyle, action_button, artist_links, hero, load_state, more_footer,
-    shelf_view, sized_art,
+    Hero, ShelfModel, ShelfStyle, action_button, hero, load_state, more_footer, shelf_view,
+    sized_art,
 };
 use crate::components::track_row::TrackRow;
 use crate::components::{empty_state, page_scroll, page_title};
@@ -210,7 +211,24 @@ impl AlbumPage {
             Some(year) => format!("{kind} · {year}"),
             None => kind,
         };
-        let mut lines = vec![artist_links("album", &album.artists, cx)];
+        // Each artist links to their page; one without an id is looked up by name.
+        let byline = Track {
+            video_id: format!("album:{}", album.browse_id),
+            artists: album
+                .artists
+                .iter()
+                .map(|a| a.name.as_str())
+                .collect::<Vec<_>>()
+                .join(", "),
+            artist_refs: album.artists.clone(),
+            ..Track::default()
+        };
+        let fg = cx.theme().foreground;
+        let mut lines = vec![
+            entity_links::artist_line("album", &byline, LinkLook::main().hover(fg))
+                .flex_wrap()
+                .into_any_element(),
+        ];
         lines.extend(
             data.page
                 .track_count_text

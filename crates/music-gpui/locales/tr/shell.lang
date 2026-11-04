@@ -71,6 +71,8 @@ track.tooltip.more = Diğer
 track.explicit_badge = E
 track.menu.go_to_podcast = Podcast'e git
 track.menu.go_to_named_artist = Sanatçıya git: {artist}
+track.menu.artist_not_found = {artist} sayfası bulunamadı
+track.menu.album_not_found = Bu şarkının albümü bulunamadı
 
 # ---- Item cards, rows, shelves
 items.load_failed = Bu sayfa yüklenemedi

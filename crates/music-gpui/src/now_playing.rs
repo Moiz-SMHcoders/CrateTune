@@ -37,6 +37,7 @@ use crate::anim::{Frame, Spec, Tween, ease_in_out_cubic, ease_out_cubic};
 use crate::app::{MusicApp, update_app};
 use crate::backdrop::Palette;
 use crate::components::artwork::{ArtworkCache, Pin};
+use crate::components::entity_links::{self, LinkLook};
 use crate::icons::{AppIcon, Lucide};
 use crate::lyrics::{LyricsState, PreparedLyrics};
 use crate::np_extras::Keep as _;
@@ -117,6 +118,8 @@ struct HeaderSnap {
     queue_view: bool,
     /// `@np-bounds` (the probe redraws the header too).
     probe: u32,
+    /// The song the ⋯ menu is for (go to artist / album, …).
+    track: Option<Track>,
 }
 
 #[derive(Clone, PartialEq)]
@@ -736,6 +739,7 @@ impl MusicApp {
                 NpElement::Cast,
                 NpElement::Lyrics,
                 NpElement::Queue,
+                NpElement::SongMenu,
             ])),
             cast: elements.has(NpElement::Cast).then(|| self.cast_snap()),
             devices: elements
@@ -745,6 +749,7 @@ impl MusicApp {
             lyrics_view: self.np.lyrics_view,
             queue_view: self.np.queue_view,
             probe: self.np.probe_gen,
+            track: state.track.clone(),
         }
     }
 
@@ -1005,6 +1010,25 @@ impl MusicApp {
                 ),
                 "np.header-end",
             ))
+            // The song menu: go to artist / album, queue, playlists, …
+            .when_some(
+                s.track.clone().filter(|_| el.has(NpElement::SongMenu)),
+                |this, track| {
+                    this.child(crate::np_custom::probe(
+                        div().flex_none().child(
+                            Button::new("np-more")
+                                .ghost()
+                                .rounded(px(999.))
+                                .icon(IconName::Ellipsis)
+                                .tooltip(t!("track.tooltip.more"))
+                                .dropdown_menu(move |menu, _, _| {
+                                    crate::components::track_row::track_menu(menu, &track, None)
+                                }),
+                        ),
+                        "np.header-more",
+                    ))
+                },
+            )
             .into_any_element()
     }
 
@@ -1508,6 +1532,18 @@ impl MusicApp {
             .map(|row| crate::np_custom::probe(row, "np.up-next"))
     }
 
+    /// The artists as links to their pages (`entity_links.rs`); empty without a track.
+    pub(crate) fn artist_links(id: &str, track: Option<&Track>) -> AnyElement {
+        Self::artist_links_as(id, track, LinkLook::main().hover(ink(0.95)))
+    }
+
+    pub(crate) fn artist_links_as(id: &str, track: Option<&Track>, look: LinkLook) -> AnyElement {
+        match track {
+            Some(t) => entity_links::artist_line(id, t, look).into_any_element(),
+            None => div().into_any_element(),
+        }
+    }
+
     pub(crate) fn titles(track: Option<&Track>) -> (SharedString, SharedString) {
         match track {
             Some(t) => (t.title.clone().into(), t.artists.clone().into()),
@@ -1586,7 +1622,7 @@ impl MusicApp {
     ) -> impl IntoElement + use<> {
         let side = Self::player_column_side(viewport);
         let art = self.player_art_side(viewport);
-        let (title, artists) = Self::titles(track);
+        let (title, _) = Self::titles(track);
         let el = self.np.elements;
         let source = el
             .has(NpElement::Source)
@@ -1624,7 +1660,13 @@ impl MusicApp {
                                     .child(title),
                             )
                             .when(el.has(NpElement::Artist), |this| {
-                                this.child(div().text_color(ink(0.65)).truncate().child(artists))
+                                this.child(
+                                    div()
+                                        .text_color(ink(0.65))
+                                        .min_w_0()
+                                        .truncate()
+                                        .child(Self::artist_links("np-split-artists", track)),
+                                )
                             }),
                     )
                     // Dislike, then like (library + YouTube Music when signed in).
@@ -1676,7 +1718,7 @@ impl MusicApp {
             .min(viewport.width * 0.6)
             .clamp(px(140.), px(520.));
         let side = self.np_fit_art(today, viewport.height - px(56. + lines) - added);
-        let (title, artists) = Self::titles(track);
+        let (title, _) = Self::titles(track);
         // The line being sung (or the last one) and the next, as plain text.
         let current = el
             .has(NpElement::LyricLine)
@@ -1725,7 +1767,13 @@ impl MusicApp {
                             .child(title),
                     )
                     .when(el.has(NpElement::Artist), |this| {
-                        this.child(div().text_color(ink(0.65)).truncate().child(artists))
+                        this.child(
+                            div()
+                                .max_w_full()
+                                .text_color(ink(0.65))
+                                .truncate()
+                                .child(Self::artist_links("np-centered-artists", track)),
+                        )
                     })
                     .map(|titles| crate::np_custom::probe(titles, "np.title")),
             )
@@ -1805,7 +1853,7 @@ impl MusicApp {
         frame: &mut Frame,
         cx: &mut Context<Self>,
     ) -> impl IntoElement + use<> {
-        let (title, artists) = Self::titles(track);
+        let (title, _) = Self::titles(track);
         let el = self.np.elements;
         // Added buttons go after the transport, in what the row leaves beside a
         // 160 px progress line: padding, artwork, titles, transport, gaps.
@@ -1839,7 +1887,7 @@ impl MusicApp {
                                 .text_sm()
                                 .text_color(ink(0.65))
                                 .truncate()
-                                .child(artists),
+                                .child(Self::artist_links("np-lyrics-artists", track)),
                         )
                     }),
                 "np.title",

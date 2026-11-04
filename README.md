@@ -4384,6 +4384,59 @@ without a panic; unit tests: anchoring, `OnPlay`, stacked threshold, compact / e
 layouts, speed labels, label frames (a half-red, half-blue art turned a quarter and half turn),
 the spin's ease and stop. **Not verified**: BACKLOG U26.
 
+### Artist and album links
+
+| ![An artist link in the player bar](docs/screenshots/player-bar-artist-link.png) | ![Now Playing's song menu](docs/screenshots/now-playing-song-menu.png) |
+|---|---|
+
+* **Where** (`components/entity_links.rs`, `artist_line`): the player bar, every Now
+  Playing design (and its queue design's rows), theater mode, the mini player (its
+  layouts and "Up next"), the queue panel, song rows everywhere (`TrackRow`: search,
+  history, library, playlists, albums, downloads, stats; the album name too while the
+  *Album* column is on), quick picks and an album page's artists. "A, B & C" is drawn as
+  one link per artist (`music_core::innertube::artist_segments` maps the artist refs onto
+  the display string; a row without refs splits it at ", " / " & " / " feat. "), with
+  the separators as plain text; links underline on hover. A click goes through
+  `navigate_click_with` (page tabs: ⌘ / Ctrl opens a background tab, ⌘⇧ / Ctrl+Shift a
+  shown one) and closes Now Playing like any navigation; in the mini player it is
+  deferred until that window's event is over and navigates (and raises) the main window.
+  Local files link to the library's artist page (`LA:` id). Rows and the bar's info stop
+  the click from also playing / opening Now Playing.
+* **Menus** (`entity_links::menu_items`, also inside the shared song menu): *Go to
+  artist* (one entry per artist, "Go to NAME" when there are several, *Go to podcast*
+  for an `MPSP…` show) and *Go to album* (not for episodes). They're in song rows, the
+  queue panel, Now Playing's new **⋯** header button and its queue design's rows, the
+  player bar's song info (right-click; the rest of the bar keeps the "customize" menu)
+  and the mini player (right-click; links only). An entry is enabled when it has an id,
+  or can still be looked up (`menu_links`): once a lookup found nothing, it greys out.
+* **Missing ids** (`music_core::innertube::links`, `InnerTube::resolve_links`): looked
+  up only when a name or entry without one is clicked, on a worker thread. First a
+  `next` request for the video alone (its row has the artists' channels and, for a song,
+  the album; if YouTube answers with another id, the selected row counts only with the
+  same title), then for each artist still missing (up to 4) an artist search whose top
+  result must have the same name (case, spacing and " - Topic" ignored), and for an album
+  with a name but no id an album search ("album artist"; same title, same artist). The
+  names dim meanwhile; the page opens when the answer comes (or a toast says it wasn't
+  found). Answers are cached per video id for the session (failures retried after 30 s),
+  which is what every surface draws from — nothing reads the app entity while rendering —
+  and written into the queue's copies (saved with it) and the library's copy of the song
+  (`upsert_track`, only when the library has it), so history and library rows have them
+  next time.
+* **Script actions** (`links_script.rs`): `@play-bare=N` plays search result N without
+  its ids, `@go-artist[=N]` / `@go-album` act as the bar's links, `@links-status` prints
+  the playing song's links and the shown page. `scripts/smoke-pages.sh` opens an artist
+  and an album page that way (ids looked up through the fixtures: `next_song.json` for
+  `khnokW3Mw24`, the Artists / Albums search filters answer `search_artists.json` /
+  `search_albums.json`).
+* **Checked** (macOS, offline fixtures, `@click`): a real click on a bar artist without an
+  id looked it up and opened the page; Now Playing's ⋯ → *Go to Daft Punk* opened it and
+  closed Now Playing; the smoke script's lookups (above). The mini player's links and menu
+  were only built, not clicked (scripts can't click into the mini window); see BACKLOG U27.
+* **Tests:** `links.rs` (segments, the split, merging, applying), `fixture_tests.rs`
+  (`next` rows, the search picks, `resolve_links` against a fake server: requests made,
+  local files never asking, all-failed is an error), `entity_links.rs` (menu entries'
+  enabled states, the cache filling links, id → page).
+
 ### Now Playing and mini player elements
 
 | ![Customize this view: the Turntable design's switches](docs/screenshots/npel-customize-turntable.png) | ![Turntable with a heart, shuffle, repeat and volume added](docs/screenshots/npel-turntable-like.png) |

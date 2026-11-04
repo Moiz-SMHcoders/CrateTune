@@ -277,7 +277,7 @@ impl MusicApp {
         let added = self.np_added_height(crate::now_playing::SPLIT_NATIVE, 12.);
         let (side, height) = stacked_sizes(viewport, added);
         let column = (viewport.width - side - px(120.)).clamp(px(220.), px(440.));
-        let (title, artists) = Self::titles(track);
+        let (title, _) = Self::titles(track);
         let keep = self.np.gestures.empty_close;
         let el = self.np.elements;
         let source = el
@@ -324,7 +324,11 @@ impl MusicApp {
                                     )
                                     .when(el.has(E::Artist), |this| {
                                         this.child(
-                                            div().text_color(ink(0.65)).truncate().child(artists),
+                                            div()
+                                                .text_color(ink(0.65))
+                                                .min_w_0()
+                                                .truncate()
+                                                .child(Self::artist_links("np-stacked-artists", track)),
                                         )
                                     }),
                             )

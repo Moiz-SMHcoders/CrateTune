@@ -47,6 +47,7 @@ use super::progress::{ProgressTrack, TrackEvent, TrackLook, TrackParams};
 use crate::anim::{Frame, RenderRate, Spec, Tween, ease_out_cubic};
 use crate::app::{MusicApp, app_entity, read_app, update_app};
 use crate::components::artwork::{ArtworkCache, Pin};
+use crate::components::entity_links::{self, LinkLook};
 use crate::icons::{AppIcon, Lucide};
 use crate::now_playing::HiRes;
 use crate::queue::Repeat;
@@ -1091,6 +1092,7 @@ impl MusicApp {
             });
         let hover = theme.list_hover;
         let has_track = track.is_some();
+        let menu_track = track.clone();
         h_flex()
             .size_full()
             .gap_1()
@@ -1121,15 +1123,29 @@ impl MusicApp {
                             )
                             .child(
                                 div()
+                                    .min_w_0()
                                     .truncate()
                                     .text_sm()
                                     .text_color(theme.muted_foreground)
-                                    .child(artists),
+                                    // Each artist links to their page (`entity_links.rs`).
+                                    .map(|this| match &track {
+                                        Some(t) => this.child(entity_links::artist_line(
+                                            "bar",
+                                            t,
+                                            LinkLook::main().hover(theme.foreground),
+                                        )),
+                                        None => this.child(artists),
+                                    }),
                             )
                             .when_some(message, |this, (text, color)| {
                                 this.child(div().truncate().text_xs().text_color(color).child(text))
                             }),
-                    ),
+                    )
+                    // The song menu (go to artist / album, …) over the track info.
+                    .context_menu(move |menu, _, _| match &menu_track {
+                        Some(t) => crate::components::track_row::track_menu(menu, t, None),
+                        None => menu,
+                    }),
             )
             .children(track.as_ref().filter(|_| like).map(|t| {
                 crate::components::like::like_button("bar-like", t, None, cx)

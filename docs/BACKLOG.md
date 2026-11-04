@@ -323,7 +323,19 @@ wasn't captured, by policy) and the **Vibrant** materials in light and dark mode
 older macOS (13–15) too; (5) the drag-and-drop of sidebar entries and playlists with a
 trackpad (the scripts and the up / down buttons were used). · Size: small · Priority: medium
 
-**U27. Per-view elements (`feat/np-elements`) with real input and on Windows / Linux**
+**U27. Artist and album links (`feat/entity-links`) against the real service**
+The id lookup (`InnerTube::resolve_links`) was checked against recorded responses, a fake
+server and the offline fixtures; one live `next` request (anonymous, `hl=en`) was recorded
+for `next_song.json`. Not yet: (1) how often radio / history rows really lack ids and how
+often `next` fills them (signed in and anonymous; other languages, where the search
+fallback's name match may fail on localized names); (2) songs whose `next` answer has no
+album (singles, "official audio" videos) and albums whose search top result is a
+deluxe / remastered edition (refused unless the title matches exactly); (3) the mini
+player's links and right-click menu clicked at all (scripts can't click into the mini
+window), and on Windows (topmost window) and Linux (focus moving to the main window);
+(4) ⌘-click from the mini player opening a background tab. · Size: small · Priority: medium
+
+**U28. Per-view elements (`feat/np-elements`) with real input and on Windows / Linux**
 Checked on macOS with offline fixtures, the demo clock, unit tests, scripted switches
 (`@np-elements`, `@mini-elements`), the layout probe (`@np-bounds`: every design with all its
 elements at 860 × 540 and the five mini player layouts, no part overlapping or leaving the
@@ -605,6 +617,23 @@ was built is listed there. Left out, with the reason:
   wash that pulses with the audio (continuous frames); a gapless switch (always gapless
   without a crossfade); volume above 100 % (clips); a phone remote with a QR code and a
   sidebar "now playing" flip card (Deviload; outside Now Playing).
+
+**M13. Next round, picked from the competitor audit (2026-11-04)**
+Compared with YouTube Music, Spotify, Apple Music and ArchiveTune; chosen to build next:
+* *Copy link / Share* for songs, albums, playlists and artists (YouTube Music URLs). · Size:
+  small · Priority: high
+* *Open pasted or dropped YouTube / YouTube Music links* (search box, window drop; the
+  `youtube_video_id` parser exists, only import uses it). · Size: small · Priority: high
+* *"Already in this playlist" warning* on Add to playlist. · Size: small · Priority: medium
+* *Smart playlists*: rules over the local library (most played, recently added, liked and
+  not played lately…), updated live. · Size: medium · Priority: medium
+* *Song credits and a song-details dialog* (writers, producers, label where InnerTube has
+  them; format, bitrate, source). · Size: small · Priority: medium
+* *Smart downloads and an explicit offline mode* (keep recent likes / favourites
+  downloaded; browse only what is on disk). · Size: small–medium · Priority: medium
+Also in the audit, not picked yet: a `cratetune://` URL scheme, system notifications on
+track change, global hotkeys, launch at login, a playlist privacy / description dialog,
+podcast resume markers, playlist folders, AI prompt playlists, keyboard focus for track rows.
 
 ## 5. Performance ideas
 

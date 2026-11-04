@@ -180,6 +180,14 @@ which keep separate queues (see [Playing](#playing)).
   to mute; scroll over it or the slider to change the volume). In a narrow window the
   less important buttons hide first. Messages such as "Loading…" or a skipped song
   appear under the artist.
+* **Artist and album names are links**: click an artist in the player bar, Now Playing,
+  the mini player, the queue or any song row (or the album name in a row) to open their
+  page; ⌘-click (Ctrl+click on Windows and Linux) opens it in a background tab. With
+  several artists, each name is its own link. Right-click the song in the player bar, a
+  queue row or the mini player — or use **⋯** at the top of Now Playing — for **Go to
+  artist** (one entry per artist) and **Go to album**. Some songs (radio, history) come
+  without the page's address: the name dims for a moment while the app looks it up, then
+  the page opens; if nothing is found, a message says so.
 * **Narrow windows** (under 1000 points wide): the bar collapses — the song gets the
   room, previous / play / next sit beside the queue, Now Playing and mute buttons, and the
   progress is a thin line along the bar's top (hover it for the time, click or drag to

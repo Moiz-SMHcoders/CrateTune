@@ -68,6 +68,8 @@ track.tooltip.more = 더보기
 track.explicit_badge = E
 track.menu.go_to_podcast = 팟캐스트로 이동
 track.menu.go_to_named_artist = {artist}(으)로 이동
+track.menu.artist_not_found = {artist} 페이지를 찾을 수 없습니다
+track.menu.album_not_found = 이 곡의 앨범을 찾을 수 없습니다
 
 # ---- Item cards, rows, shelves
 items.load_failed = 페이지를 로드할 수 없음

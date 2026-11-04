@@ -608,6 +608,18 @@ impl MusicApp {
     /// a new background tab (⌘⇧ / Ctrl+Shift: shown), else here.
     pub fn navigate_click(&mut self, route: Route, window: &mut Window, cx: &mut Context<Self>) {
         let modifiers = window.modifiers();
+        self.navigate_click_with(route, modifiers, window, cx);
+    }
+
+    /// [`Self::navigate_click`] with the keys held at the click (one in another window,
+    /// or one whose page opens later).
+    pub fn navigate_click_with(
+        &mut self,
+        route: Route,
+        modifiers: gpui::Modifiers,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         if shown() && modifiers.secondary(cx) {
             self.open_in_new_tab(route, modifiers.shift, window, cx);
         } else {
