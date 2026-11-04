@@ -38,6 +38,8 @@ pub struct RegionKey {
     pub width: i32,
     pub height: i32,
     pub extra: u64,
+    /// The elements shown and the state of the added ones (`np_custom.rs`).
+    pub elements: u64,
 }
 
 pub struct Region {

@@ -1,0 +1,37 @@
+# Now Playing / mini player elements (see locales/en/np_elements.lang).
+
+np_elements.item.like = Подобається
+np_elements.item.dislike = Не подобається
+np_elements.item.quality_tag = Джерело та якість
+np_elements.item.shuffle = Перемішування
+np_elements.item.repeat = Повтор
+np_elements.item.add_to_playlist = Додати в плейлист
+np_elements.item.sleep_timer = Таймер сну
+np_elements.item.up_next = Далі
+np_elements.item.artist_album = Виконавець і альбом
+np_elements.item.source_line = Грає з
+np_elements.item.previous_next = Назад / далі
+np_elements.item.seek_bar = Смуга перемотування
+np_elements.item.times = Час
+np_elements.item.volume = Гучність
+np_elements.item.lyric_line = Поточний рядок тексту
+np_elements.item.download = Завантажити
+np_elements.item.lyrics = Кнопка тексту
+np_elements.item.queue = Кнопка черги
+np_elements.item.sound = Меню звуку
+np_elements.item.cast = Трансляція та пристрої
+np_elements.item.visualizer = Візуалізатор
+np_elements.item.close = Кнопка закриття
+np_elements.customize = Налаштувати цей вигляд…
+np_elements.customize_title = Налаштувати: {design}
+np_elements.customize_note = Зміни діють одразу й зберігаються для кожного дизайну.
+np_elements.reset = Скинути до типових
+np_elements.more = Ще
+np_elements.downloaded = Завантажено
+np_elements.downloading = Завантажується…
+np_elements.mini_view = Мініплеєр · {layout}
+np_elements.menu.title = Показувати в цьому вигляді
+np_elements.menu.settings = Налаштувати в налаштуваннях…
+np_elements.settings.title = Елементи
+np_elements.settings.np_note = Виберіть дизайн і що в ньому показувати. Додані кнопки стають поруч із назвою, якщо є місце, інакше в ряд під елементами керування; що не вміщується, іде в меню «Ще». Типово кожен дизайн має звичний вигляд.
+np_elements.settings.mini_note = Виберіть вигляд і що в ньому показувати. Ті самі перемикачі є в меню за правим клацанням на мініплеєрі.

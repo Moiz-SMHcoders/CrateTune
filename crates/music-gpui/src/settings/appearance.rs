@@ -442,6 +442,8 @@ pub(super) fn render(
 
     let language = super::language::language_row(panel, window, cx);
     let player_bar = super::bar_ui::render(panel, cx);
+    let np_elements = super::np_elements_ui::render_np(panel, cx);
+    let mini_elements = super::np_elements_ui::render_mini(panel, cx);
     v_flex()
         .gap_5()
         .child(super::profiles_ui::render(panel, window, cx))
@@ -532,6 +534,7 @@ pub(super) fn render(
                     click_empty,
                     cx,
                 ))
+                .child(np_elements)
                 .child(note(t!("settings.appearance.np_note"), cx)),
         )
         .children(super::video_ui::render(panel, cx))
@@ -568,7 +571,8 @@ pub(super) fn render(
                 None,
                 mini_on_top,
                 cx,
-            )),
+            ))
+            .child(mini_elements),
         )
         .child(player_bar)
         .into_any_element()

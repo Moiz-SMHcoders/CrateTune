@@ -82,6 +82,7 @@
 //! | `@video=on\|off`, `@video-session=on\|off`, `@video-quality=360p\|480p\|720p`, `@video-status` | music videos: the setting (saved), Now Playing's video / artwork button (this session), the quality cap (saved), print the lookup, stream and player counters (`video.rs`) |
 //! | `@theater[=on\|off]`, `@theater-move`, `@theater-status` | theater mode: open / close (no argument toggles), a pointer movement (the controls show), print its state (`theater.rs`) |
 //! | `@titlebar-status`, `@app-menu`, `@account-menu`, `@titlebar-account=NAME\|off`, `@system-title-bar[=off]` | custom top bar: print mode / controls / window state / part positions; click the ⋯ or account button (prints the account menu's items); a fake signed-in account in the bar (debug / screenshot builds); "Use the system title bar" (saved, next launch; `titlebar.rs`) |
+//! | `@np-elements=DESIGN:like=on;shuffle=off\|all\|none\|default`, `@np-elements-reset=DESIGN\|all`, `@mini-elements=LAYOUT:…`, `@mini-elements-reset=LAYOUT\|all`, `@np-elements-status`, `@np-customize[=off]`, `@mini-menu`, `@np-bounds` | per-view elements of Now Playing's designs and the mini player's layouts (saved; `;` between changes), print them, the "Customize this view" panel, the mini player's right-click menu, check what is on screen for overlaps (`np_elements_script.rs`) |
 //! | `@hide` | hide the app (as ⌘H; measuring it in the background) |
 //! | `@quit` | quit |
 //!
@@ -1153,6 +1154,7 @@ impl MusicApp {
                     && !self.titlebar_script_action(other, arg, window, cx)
                     && !self.page_tabs_script_action(other, arg, window, cx)
                     && !self.appearance_script_action(other, arg, window, cx)
+                    && !self.elements_script_action(other, arg, window, cx)
                 {
                     eprintln!("music-gpui: unknown script action @{other}");
                 }

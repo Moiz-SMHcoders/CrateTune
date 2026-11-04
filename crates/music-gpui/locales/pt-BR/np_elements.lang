@@ -1,0 +1,37 @@
+# Now Playing / mini player elements (see locales/en/np_elements.lang).
+
+np_elements.item.like = Curtir
+np_elements.item.dislike = Não curtir
+np_elements.item.quality_tag = Origem e qualidade
+np_elements.item.shuffle = Aleatório
+np_elements.item.repeat = Repetir
+np_elements.item.add_to_playlist = Adicionar à playlist
+np_elements.item.sleep_timer = Timer de suspensão
+np_elements.item.up_next = A seguir
+np_elements.item.artist_album = Artista e álbum
+np_elements.item.source_line = Tocando de
+np_elements.item.previous_next = Anterior / próxima
+np_elements.item.seek_bar = Barra de progresso
+np_elements.item.times = Tempos
+np_elements.item.volume = Volume
+np_elements.item.lyric_line = Linha atual da letra
+np_elements.item.download = Baixar
+np_elements.item.lyrics = Botão de letra
+np_elements.item.queue = Botão de fila
+np_elements.item.sound = Menu de som
+np_elements.item.cast = Transmitir e dispositivos
+np_elements.item.visualizer = Visualizador
+np_elements.item.close = Botão de fechar
+np_elements.customize = Personalizar esta visualização…
+np_elements.customize_title = Personalizar {design}
+np_elements.customize_note = As mudanças valem na hora e ficam salvas por design.
+np_elements.reset = Restaurar padrão
+np_elements.more = Mais
+np_elements.downloaded = Baixada
+np_elements.downloading = Baixando…
+np_elements.mini_view = Miniplayer · {layout}
+np_elements.menu.title = Mostrar neste layout
+np_elements.menu.settings = Personalizar nas Configurações…
+np_elements.settings.title = Elementos
+np_elements.settings.np_note = Escolha um design e o que ele mostra. Botões adicionados ficam ao lado do título quando há espaço, senão numa fileira abaixo dos controles; o que não couber vai para o menu Mais. O padrão é a aparência normal de cada design.
+np_elements.settings.mini_note = Escolha um layout e o que ele mostra. Clique com o botão direito no miniplayer para os mesmos interruptores.

@@ -1,0 +1,37 @@
+# Now Playing / mini player elements (see locales/en/np_elements.lang).
+
+np_elements.item.like = पसंद करें
+np_elements.item.dislike = नापसंद करें
+np_elements.item.quality_tag = स्रोत और क्वालिटी
+np_elements.item.shuffle = शफ़ल
+np_elements.item.repeat = दोहराएँ
+np_elements.item.add_to_playlist = प्लेलिस्ट में जोड़ें
+np_elements.item.sleep_timer = स्लीप टाइमर
+np_elements.item.up_next = आगे है
+np_elements.item.artist_album = कलाकार और एल्बम
+np_elements.item.source_line = यहाँ से चल रहा है
+np_elements.item.previous_next = पिछला / अगला
+np_elements.item.seek_bar = सीक बार
+np_elements.item.times = समय
+np_elements.item.volume = वॉल्यूम
+np_elements.item.lyric_line = मौजूदा बोल पंक्ति
+np_elements.item.download = डाउनलोड
+np_elements.item.lyrics = बोल बटन
+np_elements.item.queue = कतार बटन
+np_elements.item.sound = साउंड मेन्यू
+np_elements.item.cast = कास्ट और डिवाइस
+np_elements.item.visualizer = विज़ुअलाइज़र
+np_elements.item.close = बंद करें बटन
+np_elements.customize = यह दृश्य अनुकूलित करें…
+np_elements.customize_title = {design} अनुकूलित करें
+np_elements.customize_note = बदलाव तुरंत लागू होते हैं और हर डिज़ाइन के लिए अलग रहते हैं।
+np_elements.reset = डिफ़ॉल्ट पर रीसेट करें
+np_elements.more = और
+np_elements.downloaded = डाउनलोड हो गया
+np_elements.downloading = डाउनलोड हो रहा है…
+np_elements.mini_view = मिनी प्लेयर · {layout}
+np_elements.menu.title = इस लेआउट में दिखाएँ
+np_elements.menu.settings = सेटिंग्स में अनुकूलित करें…
+np_elements.settings.title = तत्व
+np_elements.settings.np_note = डिज़ाइन चुनें और तय करें कि वह क्या दिखाए। जोड़े गए बटन जगह होने पर शीर्षक के पास, नहीं तो नियंत्रणों के नीचे एक पंक्ति में आते हैं; जो न समाए वह 'और' मेन्यू में जाता है। डिफ़ॉल्ट हर डिज़ाइन का सामान्य रूप है।
+np_elements.settings.mini_note = लेआउट चुनें और तय करें कि वह क्या दिखाए। वही स्विच मिनी प्लेयर पर राइट-क्लिक करके भी मिलते हैं।

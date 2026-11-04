@@ -1,0 +1,37 @@
+# Now Playing / mini player elements (see locales/en/np_elements.lang).
+
+np_elements.item.like = 高評価
+np_elements.item.dislike = 低評価
+np_elements.item.quality_tag = ソースと音質
+np_elements.item.shuffle = シャッフル
+np_elements.item.repeat = リピート
+np_elements.item.add_to_playlist = プレイリストに追加
+np_elements.item.sleep_timer = スリープタイマー
+np_elements.item.up_next = 次の曲
+np_elements.item.artist_album = アーティストとアルバム
+np_elements.item.source_line = 再生元
+np_elements.item.previous_next = 前へ / 次へ
+np_elements.item.seek_bar = シークバー
+np_elements.item.times = 時間
+np_elements.item.volume = 音量
+np_elements.item.lyric_line = 再生中の歌詞の行
+np_elements.item.download = ダウンロード
+np_elements.item.lyrics = 歌詞ボタン
+np_elements.item.queue = キューボタン
+np_elements.item.sound = サウンドメニュー
+np_elements.item.cast = キャストとデバイス
+np_elements.item.visualizer = ビジュアライザー
+np_elements.item.close = 閉じるボタン
+np_elements.customize = この表示をカスタマイズ…
+np_elements.customize_title = {design} をカスタマイズ
+np_elements.customize_note = 変更はすぐに反映され、デザインごとに保存されます。
+np_elements.reset = デフォルトに戻す
+np_elements.more = その他
+np_elements.downloaded = ダウンロード済み
+np_elements.downloading = ダウンロード中…
+np_elements.mini_view = ミニプレーヤー · {layout}
+np_elements.menu.title = このレイアウトに表示
+np_elements.menu.settings = 設定でカスタマイズ…
+np_elements.settings.title = 要素
+np_elements.settings.np_note = デザインを選び、表示する要素を選びます。追加したボタンは、余裕があればタイトルの横に、なければ操作ボタンの下の 1 行に並びます。入りきらないものは「その他」メニューに入ります。デフォルトは各デザインの通常の見た目です。
+np_elements.settings.mini_note = レイアウトを選び、表示する要素を選びます。ミニプレーヤーを右クリックしても同じ切り替えができます。

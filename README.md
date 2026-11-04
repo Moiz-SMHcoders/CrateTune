@@ -4384,6 +4384,123 @@ without a panic; unit tests: anchoring, `OnPlay`, stacked threshold, compact / e
 layouts, speed labels, label frames (a half-red, half-blue art turned a quarter and half turn),
 the spin's ease and stop. **Not verified**: BACKLOG U26.
 
+### Now Playing and mini player elements
+
+| ![Customize this view: the Turntable design's switches](docs/screenshots/npel-customize-turntable.png) | ![Turntable with a heart, shuffle, repeat and volume added](docs/screenshots/npel-turntable-like.png) |
+|---|---|
+| ![Mini player card, customized: no shuffle / repeat, thumbs down and download added](docs/screenshots/npel-mini-card.png) | ![Settings → Appearance → Now Playing → Elements](docs/screenshots/npel-settings.png) |
+
+"There should be an option to toggle stuff in each of the Now Playing views, like a like
+button in the Turntable view." Every Now Playing design and every mini player layout now
+has its own set of **elements** to show or hide (`settings/np_elements.rs`), following the
+player bar's item switches (`settings/bar_items.rs`).
+
+**Elements** (`NpElement`, key in `settings.json` / scripts): `artist_album` (one element
+for the artist and album line, so the clickable names of `feat/entity-links` stay one
+switch), `source_line` ("PLAYING FROM …"), `quality_tag` (the header's source tag; also
+Immersive's label and Card's format chip), `like`, `dislike`, `shuffle`, `repeat`,
+`previous_next`, `seek_bar`, `times`, `volume`, `lyric_line`, `up_next`,
+`add_to_playlist`, `download`, and in Now Playing's header `lyrics` and `queue` (new
+buttons: the lyrics-first or With queue design until Now Playing closes or the button is
+pressed again), `sleep_timer`, `sound`, `cast` (Cast and, once a device is paired, the
+devices button), `close`; `visualizer` (when "Visualizer in Now Playing" is on). Play /
+pause, the title and the artwork are always there; so are the design menu (where Customize
+lives), video, theater, full screen and settings in the header, and the mini player's pin.
+
+| View | Default (= what it showed before) | Can be added |
+|---|---|---|
+| Header, every design | close, quality tag, sleep timer, sound, visualizer | Cast & devices |
+| Split (also stacked) | artist, dislike, like, seek bar, times, previous / next, up next | shuffle, repeat, add to playlist, download, volume, playing from, queue button |
+| Big artwork | artist, seek bar, times, previous / next, lyric line | like, dislike, shuffle, repeat, add, download, volume, playing from, up next, lyrics / queue buttons |
+| Lyrics first | artist, seek bar, times, previous / next | like, dislike, shuffle, repeat, add, download, volume, queue button |
+| Immersive | quality label, artist, like, lyric line, seek bar, times, shuffle, previous / next, repeat | dislike, add, download, volume, playing from, up next, lyrics / queue buttons |
+| Card | playing from, artist, shuffle, like, seek bar, times + format, previous / next, volume | dislike, repeat, add, download, up next, lyrics / queue buttons |
+| Minimal | artist, seek bar (the window's fill), times, previous / next, like | dislike, shuffle, repeat, add, download, volume, playing from, lyrics / queue buttons |
+| Editorial | playing from (its album header), artist, previous / next, seek bar, times, like, shuffle, repeat | dislike, add, download, volume, up next, lyrics / queue buttons |
+| With queue | artist, like, seek bar, times, previous / next | dislike, shuffle, repeat, add, download, volume, playing from, lyrics button |
+| Turntable | artist, lyric line, seek bar, times, previous / next | like, dislike, shuffle, repeat, add, download, volume, playing from, up next, lyrics / queue buttons |
+| Mini: bar, card, lyrics, turntable | artist, seek bar, times, previous / next, shuffle, repeat, like, volume, up next, close / main window | dislike, add to playlist, download |
+| Mini: compact | the same without times (its progress is the hairline) | the same |
+
+Lines only exist where the design has a spot for them (the sung line in Big artwork,
+Immersive and Turntable; "Up next" not in With queue or the lyrics strip); the lyrics button
+only where there is no lyrics pane, the queue button everywhere but With queue.
+
+**Defaults = today's look.** `ElementView::defaults` is tested against a table read off the
+render code at 41f669f (`defaults_are_todays_look`), and the render functions draw each part
+only when its element is on, so an untouched design takes the same branches as before.
+Checked by pixels: every design (and the stacked split) paused at 0:41 and every mini
+player layout, at 1280 × 800 and 860 × 540, rendered offscreen by main and by this branch:
+identical except the seconds label, one artwork's anti-aliased edge (its pause spring) and a
+hover highlight under the pointer (a few hundred pixels to 3 k, all accounted for).
+
+**Layout rule per design** (`np_custom.rs`): a button the design has a spot for goes there
+— the heart and thumbs down beside the title in Split, Card, With queue and Turntable (and
+before the heart in Immersive and Minimal), Card's shuffle beside the title, Immersive's
+shuffle / repeat at the ends of its transport (a hidden one leaves its room, so the
+transport stays centred), Editorial's toggles row. The other added buttons line up in **one
+extras row**, in the order like, dislike, shuffle, repeat, add to playlist, download, volume
+(mute + slider): under the transport in Split, stacked Split, Big artwork, Card, With queue
+and Turntable; after the transport in the lyrics strip (in what it leaves beside a 160 pt
+progress line); between the titles and the heart in Immersive; before the heart in
+Minimal's button row; after the toggles in Editorial. The row never wraps: what doesn't
+fit its width goes into a **⋯ More** menu at its end (`fit`, tested from 60 to 720 pt).
+"Playing from" goes above the title, "Up next" under the extras row. A customized design on
+a short window lets its **artwork give way** (down to 40 pt; the column keeps its width) and
+Card also tightens its spacing, so nothing overlaps or leaves the window; untouched designs
+keep their usual sizes (several overflowed slightly at 860 × 540 before and still do with
+defaults — see BACKLOG B3). The mini player's buttons go in its tools row (after shuffle,
+repeat, like; the rest into ⋯), and with the whole tools row hidden its window is 30 pt
+shorter (it reopens in place, as for a layout change).
+
+**Where to change it**: Now Playing's design menu → **Customize this view…** opens a panel
+under the header with a switch per element of the design picked and *Reset to default*
+(Esc, × or a click beside it closes it); the mini player's new **right-click menu** has a
+check item per element, *Reset to default* and *Customize in Settings…*; Settings →
+Appearance → Now Playing → **Elements** and Mini player → **Elements** have a design /
+layout picker (the one in use first) and check boxes. Changes apply at once. Saved per view
+as changes from its defaults only (`now_playing.elements.turntable.like = true`;
+`now_playing.mini_elements.card`), so older files load as defaults and unknown keys are
+dropped; part of profiles and the settings export (tested). Settings search finds both rows
+("elements", "customize", "heart", …). 18 locales.
+
+**Cost**: hidden elements aren't built (no element, no listener; the lyric line's wake-ups
+only run with it shown; a hidden visualizer drops its view and analyzer); nothing animates
+continuously. Cached regions (split column, stacked top, lyrics strip) also key on the
+elements and the state of the added buttons, so they redraw when shuffle or the volume
+change only when those are shown. **Measured** (`MUSIC_TIMINGS=1`, main window renders / s while playing on the demo clock at
+1280 × 800, `MUSIC_ON_TOP=1`, ~10 s per design after 2 s settling; release builds with
+`screenshot`; other builds ran on the machine meanwhile):
+
+| Design | main (41f669f) | this branch, defaults | this branch, every element on |
+|---|---|---|---|
+| Split | 13.4 | 13.8 | 13.3 |
+| Big artwork | 9.8 | 9.3 | 9.6 |
+| Lyrics first | 14.2 | 13.8 | 13.8 |
+| Immersive | 9.3 | 9.6 | 9.4 |
+| Card | 12.9 | 12.2 | 12.7 |
+| Minimal | 14.6 | 14.4 | 14.6 |
+| Editorial | 9.8 | 9.4 | 9.4 |
+| With queue | 9.5 | 9.4 | 9.3 |
+| Turntable | 9.0 | 9.6 | 9.5 |
+
+Within run-to-run noise (±0.7) everywhere: no new frames, with defaults or with everything
+shown.
+
+**Verified**: `@np-bounds` (a probe: the parts of the design on screen record their bounds
+while it is on) with every element of every design on at 860 × 540 (the smallest window)
+and of every mini player layout: no part overlaps another or leaves its area (the header's
+56 pt, the design under it, the mini window); `scripts/smoke-pages.sh` runs this for all
+designs (all on, then like / seek bar / times / volume off), the customize panel and the
+mini player's menu, and fails on any problem or panic. Unit tests for the defaults, offers,
+persistence, the extras row's fit and the probe.
+
+**Script actions** (`np_elements_script.rs`): `@np-elements=DESIGN:like=on;shuffle=off`
+(`;` between changes because `,` separates script items; also `all`, `none`, `default`;
+`current` for the design in use), `@np-elements-reset=DESIGN|all`,
+`@mini-elements=LAYOUT:…`, `@mini-elements-reset=LAYOUT|all`, `@np-elements-status`,
+`@np-customize[=off]`, `@mini-menu`, `@np-bounds`.
+
 ### Performance round 3: memory, artwork, CPU
 
 Measured first, changed only what helped (BACKLOG F1–F3). Base = `main` at `4f0972f` plus

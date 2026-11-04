@@ -42,12 +42,18 @@ use crate::lyrics::{LyricsState, PreparedLyrics};
 use crate::np_extras::Keep as _;
 use crate::np_lyrics::{LyricsList, MAX_SELECTED};
 use crate::np_region::{self, RegionKey};
+use crate::settings::np_elements::{ElementView, Elements, NpElement};
 use crate::settings::prefs::{
     LyricsDisplay, NowPlayingBackground, NowPlayingLayout, PortraitLayout, TextAlign,
 };
 use crate::snapshot::{self, Snapshot};
 use crate::theme::AppColors;
 use crate::util::off_thread;
+
+/// What the split design (side by side and stacked) has spots of its own for:
+/// the heart and thumbs down beside the title, "Up next" under the transport.
+pub(crate) const SPLIT_NATIVE: Elements =
+    Elements::of(&[NpElement::Like, NpElement::Dislike, NpElement::UpNext]);
 
 /// Hi-res artwork + blurred backdrop entries kept (most recent tracks).
 const HIRES_KEEP: usize = 8;
@@ -101,6 +107,16 @@ struct HeaderSnap {
     theater_tip: SharedString,
     /// The sound menu (lit while an effect is on).
     sound: crate::components::sound_menu::SoundSnap,
+    /// What the design shows in the header (`np_elements.rs`), and the state of
+    /// the buttons that are only there when added.
+    elements: Elements,
+    cast: Option<crate::integrations::cast::CastSnap>,
+    /// Paired devices: the Devices button and whether its popover is open.
+    devices: Option<bool>,
+    lyrics_view: bool,
+    queue_view: bool,
+    /// `@np-bounds` (the probe redraws the header too).
+    probe: u32,
 }
 
 #[derive(Clone, PartialEq)]
@@ -167,6 +183,17 @@ pub struct NowPlaying {
     pub(crate) on_play: crate::player_extras::OnPlay,
     /// The Turntable design's turning record (`turntable.rs`).
     pub(crate) spin: crate::turntable::Spin,
+    /// What the design on screen shows (`settings/np_elements.rs`; taken each render).
+    pub(crate) elements: crate::settings::np_elements::Elements,
+    /// Opened from the header's queue button: the With queue design until Now
+    /// Playing closes (as `lyrics_view` for the lyrics).
+    pub(crate) queue_view: bool,
+    /// The "Customize this view" panel is open (`np_custom.rs`).
+    pub(crate) customize: bool,
+    /// Bumped by `@np-bounds` so cached regions redraw with the probe.
+    pub(crate) probe_gen: u32,
+    /// The design on screen doesn't show its defaults (its artwork may give way).
+    pub(crate) customized: bool,
 }
 
 impl NowPlaying {
@@ -203,6 +230,11 @@ impl NowPlaying {
             lyrics_pane: false,
             on_play: Default::default(),
             spin: Default::default(),
+            elements: Default::default(),
+            queue_view: false,
+            customize: false,
+            probe_gen: 0,
+            customized: false,
         }
     }
 }
@@ -243,6 +275,8 @@ impl MusicApp {
         self.np.open = false;
         self.np.spin.release(cx);
         self.np.lyrics_view = false;
+        self.np.queue_view = false;
+        self.np.customize = false;
         self.np.reveal.animate_to(0., CLOSE, Instant::now());
         window.focus(&self.focus, cx);
         self.fullscreen_on_np_close(window, cx);
@@ -424,6 +458,7 @@ impl MusicApp {
         };
         self.np.gestures.empty_close = config.click_empty_closes;
         let keep = config.click_empty_closes;
+        let chosen = config.layout;
         if self.np.lyrics_view
             && !matches!(
                 config.layout,
@@ -431,7 +466,14 @@ impl MusicApp {
             )
         {
             config.layout = NowPlayingLayout::Lyrics;
+        } else if self.np.queue_view {
+            config.layout = NowPlayingLayout::Queue;
         }
+        // The design on screen's elements; the header keeps the picked design's,
+        // so its lyrics / queue button stays to go back.
+        self.np.elements = config.shown(ElementView::Np(config.layout));
+        self.np.customized = self.np.elements != ElementView::Np(config.layout).defaults();
+        let header_elements = config.shown(ElementView::Np(chosen));
 
         // Designs with colours of their own cover the background: keep it cheap
         // (it still cross-fades the palette they use).
@@ -445,7 +487,7 @@ impl MusicApp {
         let design_backdrop =
             self.design_backdrop(config.layout, track.as_ref(), position, viewport, frame, cx);
         let fullscreen = self.fullscreen_target(window);
-        let header_state = self.header_snap(config, fullscreen, cx);
+        let header_state = self.header_snap(config, header_elements, fullscreen, cx);
         let header = snapshot::sync(
             &mut self.np.header,
             header_state,
@@ -546,10 +588,11 @@ impl MusicApp {
                 let strip = np_region::sync(
                     &mut self.np.strip,
                     key,
-                    |app, frame, _, cx| {
+                    |app, frame, window, cx| {
                         let track = app.playback.track.clone();
                         let position = app.clock.position(frame.now);
-                        app.render_strip(track.as_ref(), position, frame, cx)
+                        let width = app.np_viewport(window).width;
+                        app.render_strip(track.as_ref(), position, width, frame, cx)
                             .into_any_element()
                     },
                     frame,
@@ -640,6 +683,7 @@ impl MusicApp {
             .children(empty)
             .child(v_flex().absolute().inset_0().child(header).child(body))
             .children(viz_over)
+            .children(self.render_np_customize(ElementView::Np(chosen), viewport, cx))
             .into_any_element()
     }
 
@@ -648,6 +692,7 @@ impl MusicApp {
     fn header_snap(
         &self,
         config: crate::settings::prefs::NowPlayingConfig,
+        elements: Elements,
         fullscreen: bool,
         cx: &App,
     ) -> HeaderSnap {
@@ -683,31 +728,53 @@ impl MusicApp {
             video: self.video_available(cx).then_some(!self.video.session_off),
             theater_tip: theater_tip.into(),
             sound: crate::components::sound_menu::SoundSnap::new(self.settings.read(cx).settings()),
+            elements: elements.and(Elements::of(&[
+                NpElement::Close,
+                NpElement::Quality,
+                NpElement::SleepTimer,
+                NpElement::Sound,
+                NpElement::Cast,
+                NpElement::Lyrics,
+                NpElement::Queue,
+            ])),
+            cast: elements.has(NpElement::Cast).then(|| self.cast_snap()),
+            devices: elements
+                .has(NpElement::Cast)
+                .then(|| self.devices_button_state(cx))
+                .flatten(),
+            lyrics_view: self.np.lyrics_view,
+            queue_view: self.np.queue_view,
+            probe: self.np.probe_gen,
         }
     }
 
-    fn header_view(s: &HeaderSnap, _: &mut Window, _: &mut App) -> AnyElement {
+    fn header_view(s: &HeaderSnap, _: &mut Window, cx: &mut App) -> AnyElement {
         let (layout, background, portrait) = (s.layout, s.background, s.portrait);
         let custom = s.sleep_custom;
         let armed = s.sleep.is_some();
         let sound = s.sound.clone();
+        let el = s.elements;
         h_flex()
             .size_full()
             .px_5()
             .gap_2()
-            .child(
-                Button::new("np-close")
-                    .ghost()
-                    .rounded(px(999.))
-                    .icon(IconName::ChevronDown)
-                    .tooltip(t!("np.close_tooltip"))
-                    .on_click(|_, window, cx| {
-                        update_app(cx, |app, cx| app.close_now_playing(window, cx));
-                    }),
-            )
+            .when(el.has(NpElement::Close), |this| {
+                this.child(
+                    Button::new("np-close")
+                        .ghost()
+                        .rounded(px(999.))
+                        .icon(IconName::ChevronDown)
+                        .tooltip(t!("np.close_tooltip"))
+                        .on_click(|_, window, cx| {
+                            update_app(cx, |app, cx| app.close_now_playing(window, cx));
+                        }),
+                )
+            })
             .child(
                 div()
                     .flex_1()
+                    .min_w_0()
+                    .truncate()
                     .text_xs()
                     .font_weight(FontWeight::SEMIBOLD)
                     .text_color(ink(0.6))
@@ -744,33 +811,88 @@ impl MusicApp {
                         .child(t!("np.preview")),
                 )
             })
-            .when_some(s.source.clone(), |this, label| {
-                this.child(Tag::secondary().small().rounded_full().child(label))
+            .when_some(
+                s.source.clone().filter(|_| el.has(NpElement::Quality)),
+                |this, label| this.child(Tag::secondary().small().rounded_full().child(label)),
+            )
+            .when(el.has(NpElement::Lyrics), |this| {
+                let on = s.lyrics_view;
+                this.child(
+                    Button::new("np-lyrics-view")
+                        .ghost()
+                        .rounded(px(999.))
+                        .icon(Lucide::MicVocal)
+                        .selected(on)
+                        .tooltip(t!("bar.tooltip.lyrics"))
+                        .on_click(|_, _, cx| {
+                            update_app(cx, |app, cx| app.np_toggle_view(false, cx));
+                        }),
+                )
             })
-            .child(
-                Button::new("np-sleep")
-                    .ghost()
-                    .small()
-                    .rounded(px(999.))
-                    .icon(Lucide::Moon)
-                    .selected(armed)
-                    .when_some(s.sleep.clone(), |b, label| b.label(label))
-                    .tooltip(t!("np.sleep_tooltip"))
-                    .dropdown_menu(move |menu, _, _| {
-                        MusicApp::sleep_timer_menu(menu, armed, custom)
-                    }),
-            )
-            .child(
-                Button::new("np-sound")
-                    .ghost()
-                    .rounded(px(999.))
-                    .icon(Lucide::SlidersHorizontal)
-                    .selected(sound.active())
-                    .tooltip(t!("sound_menu.tooltip"))
-                    .dropdown_menu(move |menu, window, cx| {
-                        crate::components::sound_menu::sound_menu(menu, sound.clone(), window, cx)
-                    }),
-            )
+            .when(el.has(NpElement::Queue), |this| {
+                let on = s.queue_view;
+                this.child(
+                    Button::new("np-queue-view")
+                        .ghost()
+                        .rounded(px(999.))
+                        .icon(Lucide::ListMusic)
+                        .selected(on)
+                        .tooltip(t!("player.tooltip.queue"))
+                        .on_click(|_, _, cx| {
+                            update_app(cx, |app, cx| app.np_toggle_view(true, cx));
+                        }),
+                )
+            })
+            .when_some(s.cast.clone(), |this, cast| {
+                this.child(
+                    div()
+                        .flex_shrink(1.)
+                        .min_w(px(28.))
+                        .max_w(px(160.))
+                        .overflow_hidden()
+                        .child(crate::integrations::cast::cast_button(cast, true)),
+                )
+            })
+            .when_some(s.devices, |this, open| {
+                this.child(crate::integrations::devices::devices_popover(
+                    open,
+                    gpui::Anchor::TopRight,
+                    cx,
+                ))
+            })
+            .when(el.has(NpElement::SleepTimer), |this| {
+                this.child(
+                    Button::new("np-sleep")
+                        .ghost()
+                        .small()
+                        .rounded(px(999.))
+                        .icon(Lucide::Moon)
+                        .selected(armed)
+                        .when_some(s.sleep.clone(), |b, label| b.label(label))
+                        .tooltip(t!("np.sleep_tooltip"))
+                        .dropdown_menu(move |menu, _, _| {
+                            MusicApp::sleep_timer_menu(menu, armed, custom)
+                        }),
+                )
+            })
+            .when(el.has(NpElement::Sound), |this| {
+                this.child(
+                    Button::new("np-sound")
+                        .ghost()
+                        .rounded(px(999.))
+                        .icon(Lucide::SlidersHorizontal)
+                        .selected(sound.active())
+                        .tooltip(t!("sound_menu.tooltip"))
+                        .dropdown_menu(move |menu, window, cx| {
+                            crate::components::sound_menu::sound_menu(
+                                menu,
+                                sound.clone(),
+                                window,
+                                cx,
+                            )
+                        }),
+                )
+            })
             .child(
                 Button::new("np-layout")
                     .ghost()
@@ -778,7 +900,14 @@ impl MusicApp {
                     .icon(Lucide::LayoutTemplate)
                     .tooltip(t!("np.layout_tooltip"))
                     .dropdown_menu(move |mut menu, _, _| {
-                        menu = menu.label(t!("np.menu.design"));
+                        menu = menu
+                            .item(PopupMenuItem::new(t!("np_elements.customize")).on_click(
+                                |_, _, cx| {
+                                    update_app(cx, |app, cx| app.set_np_customize(true, cx));
+                                },
+                            ))
+                            .separator()
+                            .label(t!("np.menu.design"));
                         for l in NowPlayingLayout::ALL {
                             menu = menu.item(
                                 PopupMenuItem::new(l.title()).checked(l == layout).on_click(
@@ -863,16 +992,19 @@ impl MusicApp {
                         update_app(cx, |app, cx| app.toggle_fullscreen(window, cx));
                     }),
             )
-            .child(
-                Button::new("np-settings")
-                    .ghost()
-                    .rounded(px(999.))
-                    .icon(IconName::Settings)
-                    .tooltip(t!("common.settings"))
-                    .on_click(|_, window, cx| {
-                        update_app(cx, |app, cx| app.open_settings(None, window, cx));
-                    }),
-            )
+            .child(crate::np_custom::probe(
+                div().flex_none().child(
+                    Button::new("np-settings")
+                        .ghost()
+                        .rounded(px(999.))
+                        .icon(IconName::Settings)
+                        .tooltip(t!("common.settings"))
+                        .on_click(|_, window, cx| {
+                            update_app(cx, |app, cx| app.open_settings(None, window, cx));
+                        }),
+                ),
+                "np.header-end",
+            ))
             .into_any_element()
     }
 
@@ -1118,15 +1250,40 @@ impl MusicApp {
         self.artwork_gestures(slot, pill, cx)
     }
 
-    /// Progress bar (click to seek) and elapsed / remaining time.
-    pub(crate) fn progress_view(&self, position: Duration, cx: &mut Context<Self>) -> Div {
+    /// Progress bar (click to seek) and elapsed / remaining time, as far as the
+    /// design shows them.
+    pub(crate) fn progress_view(&self, position: Duration, cx: &mut Context<Self>) -> Option<Div> {
         let fill = AppColors::get(cx).np_progress;
-        let bar = self.progress_bar(position, px(4.), ink(0.22), fill, cx);
-        v_flex()
-            .w_full()
-            .gap_1()
-            .child(bar)
-            .child(self.times_row(position, ink(0.6)))
+        self.progress_parts(position, px(4.), ink(0.22), fill, ink(0.6), cx)
+    }
+
+    /// [`Self::progress_bar`] above [`Self::times_row`], each if the design shows
+    /// it; `None` without either.
+    pub(crate) fn progress_parts(
+        &self,
+        position: Duration,
+        thickness: Pixels,
+        rail: Hsla,
+        fill: Hsla,
+        times: Hsla,
+        cx: &mut Context<Self>,
+    ) -> Option<Div> {
+        let (bar, labels) = (
+            self.np_shows(NpElement::SeekBar),
+            self.np_shows(NpElement::Times),
+        );
+        (bar || labels).then(|| {
+            crate::np_custom::probe(
+                v_flex()
+                    .w_full()
+                    .gap_1()
+                    .when(bar, |this| {
+                        this.child(self.progress_bar(position, thickness, rail, fill, cx))
+                    })
+                    .when(labels, |this| this.child(self.times_row(position, times))),
+                "np.progress",
+            )
+        })
     }
 
     /// Played fraction of the current track at `position`.
@@ -1214,10 +1371,23 @@ impl MusicApp {
             )
     }
 
-    /// Previous / play-pause / next; `scale` 1 = the full-size buttons.
+    /// Previous / play-pause / next (as far as the design shows them); `scale` 1
+    /// = the full-size buttons.
     pub(crate) fn transport_view(
         &mut self,
         scale: f32,
+        frame: &mut Frame,
+        cx: &mut Context<Self>,
+    ) -> Div {
+        let skips = self.np_shows(NpElement::Skip);
+        crate::np_custom::probe(self.transport_with(scale, skips, frame, cx), "np.transport")
+    }
+
+    /// [`Self::transport_view`], with previous / next or without.
+    pub(crate) fn transport_with(
+        &mut self,
+        scale: f32,
+        skips: bool,
         frame: &mut Frame,
         cx: &mut Context<Self>,
     ) -> Div {
@@ -1291,40 +1461,51 @@ impl MusicApp {
         h_flex()
             .justify_center()
             .gap(px(28. * scale))
-            .child(
-                skip("np-prev", AppIcon::Previous, has_track).when(has_track, |this| {
-                    this.on_click(cx.listener(|this, _, _, cx| this.previous_track(cx)))
-                }),
-            )
+            .when(skips, |this| {
+                this.child(
+                    skip("np-prev", AppIcon::Previous, has_track).when(has_track, |this| {
+                        this.on_click(cx.listener(|this, _, _, cx| this.previous_track(cx)))
+                    }),
+                )
+            })
             .child(play_button)
-            .child(
-                skip("np-next", AppIcon::Next, has_next).when(has_next, |this| {
-                    this.on_click(cx.listener(|this, _, _, cx| this.next_track(cx)))
-                }),
-            )
+            .when(skips, |this| {
+                this.child(
+                    skip("np-next", AppIcon::Next, has_next).when(has_next, |this| {
+                        this.on_click(cx.listener(|this, _, _, cx| this.next_track(cx)))
+                    }),
+                )
+            })
     }
 
+    /// "Up next: title · artists", when the design shows it.
     pub(crate) fn up_next_view(&self) -> Option<Div> {
-        self.queue.peek_next().map(|next| {
-            h_flex()
-                .w_full()
-                .justify_center()
-                .gap_1()
-                .text_sm()
-                .child(
-                    div()
-                        .flex_none()
-                        .text_color(ink(0.45))
-                        .child(t!("np.up_next")),
-                )
-                .child(
-                    div()
-                        .min_w_0()
-                        .truncate()
-                        .text_color(ink(0.7))
-                        .child(format!("{} · {}", next.title, next.artists)),
-                )
-        })
+        if !self.np_shows(NpElement::UpNext) {
+            return None;
+        }
+        self.queue
+            .peek_next()
+            .map(|next| {
+                h_flex()
+                    .w_full()
+                    .justify_center()
+                    .gap_1()
+                    .text_sm()
+                    .child(
+                        div()
+                            .flex_none()
+                            .text_color(ink(0.45))
+                            .child(t!("np.up_next")),
+                    )
+                    .child(
+                        div()
+                            .min_w_0()
+                            .truncate()
+                            .text_color(ink(0.7))
+                            .child(format!("{} · {}", next.title, next.artists)),
+                    )
+            })
+            .map(|row| crate::np_custom::probe(row, "np.up-next"))
     }
 
     pub(crate) fn titles(track: Option<&Track>) -> (SharedString, SharedString) {
@@ -1341,6 +1522,17 @@ impl MusicApp {
         (viewport.height * 0.46)
             .min(half_width * 0.9)
             .clamp(px(120.), px(400.))
+    }
+
+    /// The split column's artwork: the column's width, unless what was added to
+    /// a customized column needs the height (title on two lines, progress,
+    /// transport, "Up next" and the gaps take ~300 px under it).
+    fn player_art_side(&self, viewport: gpui::Size<Pixels>) -> Pixels {
+        let added = self.np_added_height(SPLIT_NATIVE, 16.);
+        self.np_fit_art(
+            Self::player_column_side(viewport),
+            viewport.height - px(56. + 300.) - added,
+        )
     }
 
     /// What the player column / strip region shows (see `np_region.rs`).
@@ -1379,6 +1571,7 @@ impl MusicApp {
                 | (self.video.generation & 0xffff) << 40
                 // The volume pill over the artwork (`np_extras.rs`).
                 | u64::from(self.np_volume_pill_key()) << 56,
+            elements: self.np_elements_key(),
         }
     }
 
@@ -1392,14 +1585,27 @@ impl MusicApp {
         cx: &mut Context<Self>,
     ) -> impl IntoElement + use<> {
         let side = Self::player_column_side(viewport);
+        let art = self.player_art_side(viewport);
         let (title, artists) = Self::titles(track);
+        let el = self.np.elements;
+        let source = el
+            .has(NpElement::Source)
+            .then(|| self.np_source_line(track, ink(0.55)));
+        let extras = self.np_extras(self.np_extra_items(SPLIT_NATIVE), side, px(36.), frame, cx);
         v_flex()
             .w(side)
             .h_full()
             .flex_none()
             .justify_center()
             .gap_4()
-            .child(self.artwork_view(track, side, frame, cx))
+            .child(crate::np_custom::probe(
+                h_flex()
+                    .w_full()
+                    .justify_center()
+                    .child(self.artwork_view(track, art, frame, cx)),
+                "np.art",
+            ))
+            .children(source)
             .child(
                 h_flex()
                     .w_full()
@@ -1417,23 +1623,35 @@ impl MusicApp {
                                     .line_clamp(2)
                                     .child(title),
                             )
-                            .child(div().text_color(ink(0.65)).truncate().child(artists)),
+                            .when(el.has(NpElement::Artist), |this| {
+                                this.child(div().text_color(ink(0.65)).truncate().child(artists))
+                            }),
                     )
                     // Dislike, then like (library + YouTube Music when signed in).
-                    .children(track.filter(|t| !t.is_local()).map(|t| {
-                        crate::components::dislike::dislike_icon_button(
-                            "np-dislike",
-                            t,
-                            px(36.),
-                            ink(0.8),
-                            ink(0.12),
-                            cx,
-                        )
-                    }))
-                    .children(track.map(|t| self.np_like("np-like", t, px(36.), frame, cx))),
+                    .children(
+                        track
+                            .filter(|t| !t.is_local() && el.has(NpElement::Dislike))
+                            .map(|t| {
+                                crate::components::dislike::dislike_icon_button(
+                                    "np-dislike",
+                                    t,
+                                    px(36.),
+                                    ink(0.8),
+                                    ink(0.12),
+                                    cx,
+                                )
+                            }),
+                    )
+                    .children(
+                        track
+                            .filter(|_| el.has(NpElement::Like))
+                            .map(|t| self.np_like("np-like", t, px(36.), frame, cx)),
+                    )
+                    .map(|row| crate::np_custom::probe(row, "np.title")),
             )
-            .child(self.progress_view(position, cx))
+            .children(self.progress_view(position, cx))
             .child(self.transport_view(1., frame, cx))
+            .children(extras.map(|row| h_flex().w_full().justify_center().child(row)))
             .children(self.up_next_view())
     }
 
@@ -1446,14 +1664,38 @@ impl MusicApp {
         frame: &mut Frame,
         cx: &mut Context<Self>,
     ) -> impl IntoElement + use<> {
-        let side = (viewport.height * 0.5)
+        let el = self.np.elements;
+        let added = self.np_added_height(Elements::NONE, 16.);
+        // Titles, progress, transport, the sung line and the gaps: ~340 px.
+        let lines = if el.has(NpElement::LyricLine) {
+            356.
+        } else {
+            268.
+        };
+        let today = (viewport.height * 0.5)
             .min(viewport.width * 0.6)
             .clamp(px(140.), px(520.));
+        let side = self.np_fit_art(today, viewport.height - px(56. + lines) - added);
         let (title, artists) = Self::titles(track);
         // The line being sung (or the last one) and the next, as plain text.
-        let current = self.lyric_snippet(track, position, frame);
-        let width = (side * 1.15).min(viewport.width - px(64.));
+        let current = el
+            .has(NpElement::LyricLine)
+            .then(|| self.lyric_snippet(track, position, frame))
+            .flatten();
+        // The lines keep their width when the art gives way.
+        let width = (today * 1.15).min(viewport.width - px(64.));
         let keep = self.np.gestures.empty_close;
+        let source = el
+            .has(NpElement::Source)
+            .then(|| self.np_source_line(track, ink(0.55)).np_keep(keep));
+        let extras = self.np_extras(
+            self.np_extra_items(Elements::NONE),
+            width,
+            px(36.),
+            frame,
+            cx,
+        );
+        let up_next = self.up_next_view().map(|row| row.w(width).np_keep(keep));
         v_flex()
             .flex_1()
             .min_h_0()
@@ -1461,7 +1703,11 @@ impl MusicApp {
             .justify_center()
             .gap_4()
             .pb_6()
-            .child(self.artwork_view(track, side, frame, cx).np_keep(keep))
+            .child(crate::np_custom::probe(
+                self.artwork_view(track, side, frame, cx).np_keep(keep),
+                "np.art",
+            ))
+            .children(source)
             .child(
                 v_flex()
                     .w(width)
@@ -1478,17 +1724,20 @@ impl MusicApp {
                             .truncate()
                             .child(title),
                     )
-                    .child(div().text_color(ink(0.65)).truncate().child(artists)),
+                    .when(el.has(NpElement::Artist), |this| {
+                        this.child(div().text_color(ink(0.65)).truncate().child(artists))
+                    })
+                    .map(|titles| crate::np_custom::probe(titles, "np.title")),
             )
-            .child(
-                div()
-                    .w(width)
-                    .np_keep(keep)
-                    .child(self.progress_view(position, cx)),
+            .children(
+                self.progress_view(position, cx)
+                    .map(|progress| div().w(width).np_keep(keep).child(progress)),
             )
             .child(self.transport_view(1., frame, cx).np_keep(keep))
+            .children(extras.map(|row| row.np_keep(keep)))
+            .children(up_next)
             .when_some(current, |this, (now, next)| {
-                this.child(
+                this.child(crate::np_custom::probe(
                     v_flex()
                         .w(width)
                         .np_keep(keep)
@@ -1514,7 +1763,8 @@ impl MusicApp {
                                     .child(next),
                             )
                         }),
-                )
+                    "np.lyric",
+                ))
             })
     }
 
@@ -1551,37 +1801,57 @@ impl MusicApp {
         &mut self,
         track: Option<&Track>,
         position: Duration,
+        width: Pixels,
         frame: &mut Frame,
         cx: &mut Context<Self>,
     ) -> impl IntoElement + use<> {
         let (title, artists) = Self::titles(track);
+        let el = self.np.elements;
+        // Added buttons go after the transport, in what the row leaves beside a
+        // 160 px progress line: padding, artwork, titles, transport, gaps.
+        let transport = if el.has(NpElement::Skip) { 165. } else { 51. };
+        let width = width - px(96. + 72. + 220. + transport + 20. * 4. + 160.);
+        let extras = self.np_extras(
+            self.np_extra_items(Elements::NONE),
+            width,
+            px(36.),
+            frame,
+            cx,
+        );
         h_flex()
             .h(px(104.))
             .flex_none()
             .px(px(48.))
             .gap_5()
-            .child(self.artwork_view(track, px(72.), frame, cx))
-            .child(
+            .child(crate::np_custom::probe(
+                self.artwork_view(track, px(72.), frame, cx),
+                "np.art",
+            ))
+            .child(crate::np_custom::probe(
                 v_flex()
                     .w(px(220.))
                     .flex_none()
                     .gap_0p5()
                     .child(div().font_weight(FontWeight::BOLD).truncate().child(title))
-                    .child(
-                        div()
-                            .text_sm()
-                            .text_color(ink(0.65))
-                            .truncate()
-                            .child(artists),
-                    ),
-            )
+                    .when(el.has(NpElement::Artist), |this| {
+                        this.child(
+                            div()
+                                .text_sm()
+                                .text_color(ink(0.65))
+                                .truncate()
+                                .child(artists),
+                        )
+                    }),
+                "np.title",
+            ))
             .child(
                 div()
                     .flex_1()
                     .min_w_0()
-                    .child(self.progress_view(position, cx)),
+                    .children(self.progress_view(position, cx)),
             )
             .child(self.transport_view(0.75, frame, cx))
+            .children(extras)
     }
 
     #[allow(clippy::too_many_arguments)]

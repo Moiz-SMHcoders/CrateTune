@@ -1,0 +1,37 @@
+# Now Playing / mini player elements (see locales/en/np_elements.lang).
+
+np_elements.item.like = J'aime
+np_elements.item.dislike = Je n'aime pas
+np_elements.item.quality_tag = Source et qualité
+np_elements.item.shuffle = Aléatoire
+np_elements.item.repeat = Répéter
+np_elements.item.add_to_playlist = Ajouter à une playlist
+np_elements.item.sleep_timer = Minuteur de veille
+np_elements.item.up_next = À suivre
+np_elements.item.artist_album = Artiste et album
+np_elements.item.source_line = Lecture depuis
+np_elements.item.previous_next = Précédent / suivant
+np_elements.item.seek_bar = Barre de progression
+np_elements.item.times = Durées
+np_elements.item.volume = Volume
+np_elements.item.lyric_line = Ligne de paroles en cours
+np_elements.item.download = Télécharger
+np_elements.item.lyrics = Bouton paroles
+np_elements.item.queue = Bouton file d'attente
+np_elements.item.sound = Menu du son
+np_elements.item.cast = Caster et appareils
+np_elements.item.visualizer = Visualiseur
+np_elements.item.close = Bouton fermer
+np_elements.customize = Personnaliser cette vue…
+np_elements.customize_title = Personnaliser {design}
+np_elements.customize_note = Les changements s'appliquent aussitôt et sont gardés par design.
+np_elements.reset = Rétablir les valeurs par défaut
+np_elements.more = Plus
+np_elements.downloaded = Téléchargé
+np_elements.downloading = Téléchargement…
+np_elements.mini_view = Mini-lecteur · {layout}
+np_elements.menu.title = Afficher dans cette disposition
+np_elements.menu.settings = Personnaliser dans les réglages…
+np_elements.settings.title = Éléments
+np_elements.settings.np_note = Choisissez un design et ce qu'il affiche. Les boutons ajoutés se placent à côté du titre si le design a la place, sinon sur une rangée sous les commandes ; ce qui ne tient pas va dans le menu Plus. Par défaut, chaque design garde son aspect habituel.
+np_elements.settings.mini_note = Choisissez une disposition et ce qu'elle affiche. Un clic droit sur le mini-lecteur offre les mêmes interrupteurs.

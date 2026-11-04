@@ -1,0 +1,37 @@
+# Now Playing / mini player elements (see locales/en/np_elements.lang).
+
+np_elements.item.like = 喜歡
+np_elements.item.dislike = 不喜歡
+np_elements.item.quality_tag = 來源與品質
+np_elements.item.shuffle = 隨機播放
+np_elements.item.repeat = 重複播放
+np_elements.item.add_to_playlist = 加入播放清單
+np_elements.item.sleep_timer = 睡眠計時器
+np_elements.item.up_next = 即將播放
+np_elements.item.artist_album = 藝人和專輯
+np_elements.item.source_line = 播放來源
+np_elements.item.previous_next = 上一首 / 下一首
+np_elements.item.seek_bar = 進度列
+np_elements.item.times = 時間
+np_elements.item.volume = 音量
+np_elements.item.lyric_line = 目前歌詞行
+np_elements.item.download = 下載
+np_elements.item.lyrics = 歌詞按鈕
+np_elements.item.queue = 佇列按鈕
+np_elements.item.sound = 聲音選單
+np_elements.item.cast = 投放和裝置
+np_elements.item.visualizer = 視覺化效果
+np_elements.item.close = 關閉按鈕
+np_elements.customize = 自訂此檢視…
+np_elements.customize_title = 自訂{design}
+np_elements.customize_note = 變更會立即生效，並依設計分別儲存。
+np_elements.reset = 恢復預設
+np_elements.more = 更多
+np_elements.downloaded = 已下載
+np_elements.downloading = 正在下載…
+np_elements.mini_view = 迷你播放器 · {layout}
+np_elements.menu.title = 在此版面中顯示
+np_elements.menu.settings = 在設定中自訂…
+np_elements.settings.title = 元素
+np_elements.settings.np_note = 選擇一種設計以及它顯示的內容。新增的按鈕在有空間時放在標題旁，否則排在控制項下方的一列；放不下的會進入「更多」選單。預設是每種設計平常的樣子。
+np_elements.settings.mini_note = 選擇一種版面以及它顯示的內容。在迷你播放器上按右鍵也有相同的開關。

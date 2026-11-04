@@ -1,0 +1,37 @@
+# Now Playing / mini player elements (see locales/en/np_elements.lang).
+
+np_elements.item.like = Suka
+np_elements.item.dislike = Tidak suka
+np_elements.item.quality_tag = Sumber dan kualitas
+np_elements.item.shuffle = Acak
+np_elements.item.repeat = Ulangi
+np_elements.item.add_to_playlist = Tambah ke playlist
+np_elements.item.sleep_timer = Pengatur waktu tidur
+np_elements.item.up_next = Berikutnya
+np_elements.item.artist_album = Artis & album
+np_elements.item.source_line = Diputar dari
+np_elements.item.previous_next = Sebelumnya / berikutnya
+np_elements.item.seek_bar = Bilah posisi
+np_elements.item.times = Waktu
+np_elements.item.volume = Volume
+np_elements.item.lyric_line = Baris lirik saat ini
+np_elements.item.download = Unduh
+np_elements.item.lyrics = Tombol lirik
+np_elements.item.queue = Tombol antrean
+np_elements.item.sound = Menu suara
+np_elements.item.cast = Cast dan perangkat
+np_elements.item.visualizer = Visualisasi
+np_elements.item.close = Tombol tutup
+np_elements.customize = Sesuaikan tampilan ini…
+np_elements.customize_title = Sesuaikan {design}
+np_elements.customize_note = Perubahan langsung berlaku dan disimpan per desain.
+np_elements.reset = Setel ulang ke bawaan
+np_elements.more = Lainnya
+np_elements.downloaded = Sudah diunduh
+np_elements.downloading = Mengunduh…
+np_elements.mini_view = Pemutar mini · {layout}
+np_elements.menu.title = Tampilkan di tata letak ini
+np_elements.menu.settings = Sesuaikan di Pengaturan…
+np_elements.settings.title = Elemen
+np_elements.settings.np_note = Pilih desain dan apa yang ditampilkannya. Tombol tambahan diletakkan di samping judul jika desain punya ruang, jika tidak dalam satu baris di bawah kontrol; yang tidak muat masuk ke menu Lainnya. Bawaannya adalah tampilan biasa tiap desain.
+np_elements.settings.mini_note = Pilih tata letak dan apa yang ditampilkannya. Klik kanan pemutar mini untuk sakelar yang sama.

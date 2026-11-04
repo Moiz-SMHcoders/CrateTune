@@ -5,6 +5,25 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+* **Choose what each Now Playing design and mini player layout shows.** Every design
+  (Split and its stacked arrangement, Big artwork, Lyrics first, Immersive, Card,
+  Minimal, Editorial, With queue, Turntable) and every mini player layout has its own
+  switches for the elements that make sense there — like, dislike, shuffle, repeat,
+  previous / next, seek bar, times, volume, add to playlist, download, artist & album,
+  "Playing from", the source / quality tag, the current lyric line, "Up next", and in Now
+  Playing's header the close button, sleep timer, sound menu, Cast and devices and new
+  lyrics / queue buttons; the visualizer can be left out per design. So the Turntable can
+  have a heart now. Untouched designs look exactly as before. Change them from **Customize
+  this view…** in Now Playing's design menu (a panel with a switch per element and *Reset
+  to default*), the mini player's new right-click menu, or Settings → Appearance → Now
+  Playing / Mini player → **Elements** (with a design / layout picker). Changes apply at
+  once, are kept per design, and travel with profiles and the settings export. Added
+  buttons sit beside the title where the design has room, else in one row under the
+  controls; what doesn't fit goes into a **More** (⋯) menu, and on short windows the
+  artwork gives way so nothing overlaps or leaves the window.
+
 ## [0.3.4] — 2026-11-04
 
 ### Fixed

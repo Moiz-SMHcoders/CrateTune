@@ -312,6 +312,26 @@ header or Settings → Appearance:
 Four backgrounds (blurred artwork, gradient, solid, glow) apply to the designs that don't
 bring their own colours (Immersive, Minimal and Editorial do).
 
+**Choose what each design shows**: open the design menu (the layout button in Now
+Playing's header) → **Customize this view…**. A panel lists what that design can show, each
+with a switch: the artist & album line, "Playing from", the source / quality tag, like,
+dislike, shuffle, repeat, previous / next, the seek bar, the times, the volume, the current
+lyric line, "Up next", add to playlist, download, and in the header the close button, the
+sleep timer, the sound menu, Cast and devices, a **lyrics** button and a **queue** button
+(they show the lyrics or the queue in Now Playing until you close it or press them again),
+and the visualizer (when it's on in Settings → Appearance → Player bar). Each design only
+lists what fits it and remembers its own choice — a heart on the Turntable doesn't put one on
+Big artwork. Changes show at once; **Reset to default** brings back the design's usual look,
+which is what every design shows until you change it. Added buttons sit beside the title
+where the design has room for them, otherwise in one row under the controls; when the row
+runs out of room the rest go into a **⋯** menu at its end, and on a short window the artwork
+gets smaller so nothing overlaps. The same switches are in Settings → Appearance → Now
+Playing → **Elements** (pick the design first). For the mini player, right-click it (or
+Settings → Appearance → Mini player → **Elements**): each layout can show or hide the
+artist, the seek bar, the times, previous / next, shuffle, repeat, like, the volume, "Up
+next", the close / main-window buttons, and add dislike, add to playlist and download; with
+nothing left in the row under the controls, the window gets shorter.
+
 **Gestures**: click the artwork (or the Turntable's record) to play or pause; scroll over
 it to change the volume (the level shows over the artwork for a second). The heart pops
 when you like a song. Settings → Appearance → Now Playing also has **Open Now Playing when

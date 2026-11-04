@@ -31,6 +31,7 @@ use crate::app::MusicApp;
 use crate::icons::AppIcon;
 use crate::now_playing::{LYRICS_WIDE_MAX_WIDTH, ink, like_icon_button};
 use crate::np_region;
+use crate::settings::np_elements::NpElement as E;
 use crate::settings::prefs::LyricsDisplay;
 
 /// The heart's pop after a like.
@@ -220,7 +221,8 @@ impl MusicApp {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> AnyElement {
-        let (side, height) = stacked_sizes(viewport);
+        let added = self.np_added_height(crate::now_playing::SPLIT_NATIVE, 12.);
+        let (side, height) = stacked_sizes(viewport, added);
         let keep = self.np.gestures.empty_close;
         let key = self.region_key(track, position, viewport, side);
         let top = np_region::sync(
@@ -272,22 +274,38 @@ impl MusicApp {
         frame: &mut Frame,
         cx: &mut Context<Self>,
     ) -> AnyElement {
-        let (side, height) = stacked_sizes(viewport);
+        let added = self.np_added_height(crate::now_playing::SPLIT_NATIVE, 12.);
+        let (side, height) = stacked_sizes(viewport, added);
         let column = (viewport.width - side - px(120.)).clamp(px(220.), px(440.));
         let (title, artists) = Self::titles(track);
         let keep = self.np.gestures.empty_close;
+        let el = self.np.elements;
+        let source = el
+            .has(crate::settings::np_elements::NpElement::Source)
+            .then(|| self.np_source_line(track, ink(0.55)));
+        let extras = self.np_extras(
+            self.np_extra_items(crate::now_playing::SPLIT_NATIVE),
+            column,
+            px(36.),
+            frame,
+            cx,
+        );
         h_flex()
             .size_full()
             .h(height)
             .justify_center()
             .items_center()
             .gap(px(32.))
-            .child(self.artwork_view(track, side, frame, cx).np_keep(keep))
+            .child(crate::np_custom::probe(
+                self.artwork_view(track, side, frame, cx).np_keep(keep),
+                "np.art",
+            ))
             .child(
                 v_flex()
                     .w(column)
                     .flex_none()
                     .gap_3()
+                    .children(source)
                     .child(
                         h_flex()
                             .w_full()
@@ -304,24 +322,34 @@ impl MusicApp {
                                             .line_clamp(2)
                                             .child(title),
                                     )
-                                    .child(div().text_color(ink(0.65)).truncate().child(artists)),
+                                    .when(el.has(E::Artist), |this| {
+                                        this.child(
+                                            div().text_color(ink(0.65)).truncate().child(artists),
+                                        )
+                                    }),
                             )
-                            .children(track.filter(|t| !t.is_local()).map(|t| {
-                                crate::components::dislike::dislike_icon_button(
-                                    "np-dislike",
-                                    t,
-                                    px(36.),
-                                    ink(0.8),
-                                    ink(0.12),
-                                    cx,
-                                )
-                            }))
+                            .children(track.filter(|t| !t.is_local() && el.has(E::Dislike)).map(
+                                |t| {
+                                    crate::components::dislike::dislike_icon_button(
+                                        "np-dislike",
+                                        t,
+                                        px(36.),
+                                        ink(0.8),
+                                        ink(0.12),
+                                        cx,
+                                    )
+                                },
+                            ))
                             .children(
-                                track.map(|t| self.np_like("np-like", t, px(36.), frame, cx)),
-                            ),
+                                track
+                                    .filter(|_| el.has(E::Like))
+                                    .map(|t| self.np_like("np-like", t, px(36.), frame, cx)),
+                            )
+                            .map(|row| crate::np_custom::probe(row, "np.title")),
                     )
-                    .child(self.progress_view(position, cx))
+                    .children(self.progress_view(position, cx))
                     .child(self.transport_view(0.85, frame, cx))
+                    .children(extras)
                     .children(self.up_next_view())
                     .np_keep(keep),
             )
@@ -329,13 +357,14 @@ impl MusicApp {
     }
 }
 
-/// The stacked design's artwork side and row height for a Now Playing area.
-pub(crate) fn stacked_sizes(viewport: gpui::Size<Pixels>) -> (Pixels, Pixels) {
+/// The stacked design's artwork side and row height for a Now Playing area;
+/// `added`: the height of what was added to the column (`np_custom.rs`).
+pub(crate) fn stacked_sizes(viewport: gpui::Size<Pixels>, added: Pixels) -> (Pixels, Pixels) {
     let side = (viewport.height * 0.3)
         .min(viewport.width * 0.4)
         .clamp(px(120.), px(340.));
     // The column beside it (titles, progress, transport, up next) needs ~230 px.
-    (side, side.max(px(236.)))
+    (side, side.max(px(236.) + added))
 }
 
 #[cfg(test)]
@@ -351,7 +380,7 @@ mod tests {
         assert!(!PortraitLayout::Auto.stacked(1000., 700.));
         assert!(PortraitLayout::Always.stacked(1280., 712.));
         assert!(!PortraitLayout::Never.stacked(860., 1100.));
-        let (side, height) = stacked_sizes(gpui::size(px(860.), px(1044.)));
+        let (side, height) = stacked_sizes(gpui::size(px(860.), px(1044.)), px(0.));
         assert!(side <= px(340.) && side >= px(120.) && height >= side);
         // Leaves at least half the area to the lyrics.
         assert!(height < px(1044.) * 0.5);

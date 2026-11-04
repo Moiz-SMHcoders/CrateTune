@@ -925,40 +925,49 @@ impl MusicApp {
 
     /// The bar's Devices button (once a device is paired).
     pub(crate) fn devices_button(&mut self, cx: &mut Context<Self>) -> Option<AnyElement> {
+        let open = self.devices_button_state(cx)?;
+        Some(devices_popover(open, Anchor::BottomRight, cx))
+    }
+
+    /// `Some(menu open)` once a device is paired (the Devices button shows).
+    pub(crate) fn devices_button_state(&self, cx: &App) -> Option<bool> {
         if self.devices_prefs(cx).paired.is_empty() {
             return None;
         }
-        let open = self.integrations.devices.menu_open;
-        let style = crate::components::player_bar::bar_button_style(cx);
-        let accent = crate::theme::AppColors::get(cx).accent;
-        let trigger = Button::new("devices-toggle")
-            .custom(style)
-            .with_size(gpui_component::Size::Medium)
-            .icon(if open {
-                Icon::new(Lucide::MonitorSmartphone).text_color(accent)
-            } else {
-                Icon::new(Lucide::MonitorSmartphone)
-            })
-            .tooltip(t!("devices.tooltip"));
-        Some(
-            Popover::new("devices-popover")
-                .anchor(Anchor::BottomRight)
-                .open(open)
-                .on_open_change(|open, _, cx| {
-                    let open = *open;
-                    update_app(cx, |app, cx| {
-                        app.integrations.devices.menu_open = open;
-                        if open {
-                            app.devices_refresh(cx);
-                        }
-                        cx.notify();
-                    });
-                })
-                .trigger(trigger)
-                .content(|_, _, cx| devices_menu(cx))
-                .into_any_element(),
-        )
+        Some(self.integrations.devices.menu_open)
     }
+}
+
+/// The Devices button and its popover (the player bar, Now Playing's header);
+/// `anchor`: the trigger's corner the popover keeps to.
+pub(crate) fn devices_popover(open: bool, anchor: Anchor, cx: &App) -> AnyElement {
+    let style = crate::components::player_bar::bar_button_style(cx);
+    let accent = crate::theme::AppColors::get(cx).accent;
+    let trigger = Button::new("devices-toggle")
+        .custom(style)
+        .with_size(gpui_component::Size::Medium)
+        .icon(if open {
+            Icon::new(Lucide::MonitorSmartphone).text_color(accent)
+        } else {
+            Icon::new(Lucide::MonitorSmartphone)
+        })
+        .tooltip(t!("devices.tooltip"));
+    Popover::new("devices-popover")
+        .anchor(anchor)
+        .open(open)
+        .on_open_change(|open, _, cx| {
+            let open = *open;
+            update_app(cx, |app, cx| {
+                app.integrations.devices.menu_open = open;
+                if open {
+                    app.devices_refresh(cx);
+                }
+                cx.notify();
+            });
+        })
+        .trigger(trigger)
+        .content(|_, _, cx| devices_menu(cx))
+        .into_any_element()
 }
 
 /// The Devices popover: each paired device with what it plays, "Continue here" and
