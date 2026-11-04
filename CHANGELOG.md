@@ -5,6 +5,8 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.5] — 2026-11-05
+
 ### Added
 
 * **Artist and album names are links wherever a song is shown**: the player bar, every
