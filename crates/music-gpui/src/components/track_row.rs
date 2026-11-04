@@ -26,7 +26,6 @@ use music_core::{Track, format_duration};
 use super::artwork::artwork;
 use crate::app::update_app;
 use crate::icons::Lucide;
-use crate::router::Route;
 use crate::selection::{self, Click, Outcome};
 use crate::theme::AppColors;
 
@@ -114,10 +113,14 @@ impl RenderOnce for TrackRow {
         let theme = cx.theme();
         let accent = AppColors::get(cx);
         let columns = crate::effects::columns();
-        let subtitle = match &track.album {
-            Some(album) if columns.album => format!("{} · {album}", track.artists),
-            _ => track.artists.clone(),
-        };
+        // Artists and album as links (`entity_links.rs`).
+        let subtitle = super::entity_links::artist_line(
+            "row",
+            &track,
+            super::entity_links::LinkLook::main()
+                .hover(theme.foreground)
+                .with_album(columns.album),
+        );
         let added = self.meta.filter(|_| columns.added).map(|m| {
             m.added_ms
                 .map(|ms| crate::i18n::format::iso_date(&crate::util::local_date(ms)))
@@ -215,7 +218,7 @@ impl RenderOnce for TrackRow {
                             )
                             .when(track.explicit, |this| this.child(explicit_badge(cx))),
                     )
-                    .child(div().truncate().text_sm().text_color(muted).child(subtitle)),
+                    .child(div().min_w_0().text_sm().text_color(muted).child(subtitle)),
             )
             // Hover actions (always laid out, shown on hover so rows don't jump).
             .child(
@@ -402,52 +405,9 @@ pub fn track_menu(menu: PopupMenu, track: &Track, list: ListContext) -> PopupMen
                 }),
             )
         });
-    let mut menu = download_item(menu, track).separator();
-
-    // One "Go to artist" entry per artist with a channel id (disabled without any).
-    let artists: Vec<_> = track
-        .artist_refs
-        .iter()
-        .filter_map(|a| Some((a.id.clone()?, a.name.clone())))
-        .collect();
-    if artists.is_empty() {
-        menu = menu.item(item(t!("common.go_to_artist"), Lucide::MicVocal).disabled(true));
-    }
-    let single = artists.len() == 1;
-    for (id, name) in artists {
-        // Episodes name their show (`MPSP…`) where songs name an artist.
-        let podcast = id.starts_with("MPSP");
-        let label = match (podcast, single) {
-            (true, _) => t!("track.menu.go_to_podcast").to_owned(),
-            (false, true) => t!("common.go_to_artist").to_owned(),
-            (false, false) => t!("track.menu.go_to_named_artist", artist = name),
-        };
-        menu = menu.item(
-            item(&label, Lucide::MicVocal).on_click(move |_, window, cx| {
-                let (id, name) = (id.clone(), name.clone());
-                let route = if podcast {
-                    Route::Podcast { id, name }
-                } else {
-                    Route::Artist { id, name }
-                };
-                update_app(cx, |app, cx| app.navigate_click(route, window, cx));
-            }),
-        );
-    }
-    let album = track.album_id.clone().map(|id| {
-        let name = track.album.clone();
-        (id, name.unwrap_or_else(|| t!("common.album").into()))
-    });
-    let menu = menu.item(
-        item(t!("common.go_to_album"), Lucide::Disc3)
-            .disabled(album.is_none())
-            .on_click(move |_, window, cx| {
-                if let Some((id, name)) = album.clone() {
-                    let route = Route::Album { id, name };
-                    update_app(cx, |app, cx| app.navigate_click(route, window, cx));
-                }
-            }),
-    );
+    let menu = download_item(menu, track).separator();
+    // "Go to artist" per artist and "Go to album" (ids looked up when missing).
+    let menu = super::entity_links::menu_items(menu, track, super::entity_links::Origin::Main);
     // Local files can't be pinned (their page is the library's).
     if track.is_local() {
         return menu;

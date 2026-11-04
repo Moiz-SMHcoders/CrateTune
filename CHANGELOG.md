@@ -5,6 +5,29 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+* **Artist and album names are links wherever a song is shown**: the player bar, every
+  Now Playing design, theater mode, the mini player (its layouts and "Up next"), the queue
+  panel and Now Playing's queue, song rows (search, history, library, playlists, albums;
+  the album name too when the Album column is on), quick picks and an album page's
+  artists. Each artist of "A, B & C" is its own link (underlined on hover); ⌘-click /
+  Ctrl+click opens the page in a background tab, and a click in Now Playing or the mini
+  player shows the page in the main window.
+* **Song menus in more places**: right-click the player bar's song info, a row of Now
+  Playing's queue design, or the mini player; Now Playing's header has a **⋯** button.
+  They list **Go to artist** (one entry per artist, *Go to podcast* for an episode's show)
+  and **Go to album**.
+
+### Fixed
+
+* **"Go to artist" was greyed out for many songs** (radio, the queue, history, library
+  rows), which come without the artist's channel id. A click on such a name or entry now
+  looks the ids up (the song's own `next` answer, else a search for the artist / album
+  whose top result has to match the name; the names dim meanwhile) and opens the page. The
+  answer is kept for the session and written back to the queue and the library's copy of
+  the song.
+
 ## [0.3.4] — 2026-11-04
 
 ### Fixed

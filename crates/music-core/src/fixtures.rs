@@ -11,8 +11,8 @@
 //! | `browse` continuation | `home_continuation.json`, [`pages`] times; the last one without a continuation, so the feed ends |
 //! | `browse` `FEmusic_explore` / `_charts` / `_moods_and_genres` / `_new_releases_albums` | `explore.json` / `charts.json` / `moods.json` / `new_releases.json` |
 //! | `browse` `MPREb…` / `UC…` / `VL…` | `album.json` / `artist.json` / `playlist.json` |
-//! | `search` | `search_summary.json` |
-//! | `next` | `next.json` |
+//! | `search` | `search_summary.json`; the Artists / Albums filters `search_artists.json` / `search_albums.json` |
+//! | `next` | `next.json`; video `khnokW3Mw24` alone `next_song.json` |
 //! | signed in: `account/account_menu` / `accounts_list` | `authed/account_menu.json` / `authed/accounts_list.json` |
 //! | signed in: `browse` `VLLM`, library tabs, `FEmusic_history` | `authed/liked_songs.json`, `authed/library_*.json`, `authed/history.json` |
 //!
@@ -34,6 +34,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 use serde_json::Value;
 
+use crate::innertube::SearchFilter;
 use crate::{Error, Result};
 
 /// Feed pages after the first one (3 shelves each in the bundled fixture).
@@ -120,7 +121,18 @@ fn file_for(endpoint: &str, body: &Value) -> Option<&'static str> {
             id if id.starts_with("VL") => "playlist.json",
             _ => return None,
         },
-        "search" => "search_summary.json",
+        "search" => match body.get("params").and_then(Value::as_str) {
+            Some(p) if p == SearchFilter::Artists.params() => "search_artists.json",
+            Some(p) if p == SearchFilter::Albums.params() => "search_albums.json",
+            _ => "search_summary.json",
+        },
+        // A song's own `next` (artist and album links), as `InnerTube::resolve_links` asks.
+        "next"
+            if body.get("videoId").and_then(Value::as_str) == Some("khnokW3Mw24")
+                && body.get("playlistId").is_none() =>
+        {
+            "next_song.json"
+        }
         "next" => "next.json",
         _ => return None,
     })

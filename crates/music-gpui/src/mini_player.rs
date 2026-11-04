@@ -32,7 +32,9 @@ use gpui::{
 use gpui_component::{
     ActiveTheme as _, Disableable as _, Icon, IconName, Root, Selectable as _, Sizable as _,
     button::{Button, ButtonVariants as _},
-    h_flex, v_flex,
+    h_flex,
+    menu::ContextMenuExt as _,
+    v_flex,
 };
 use music_core::{PlaybackStatus, Track, format_duration};
 
@@ -43,6 +45,7 @@ use crate::components::artwork::{ArtworkCache, Pin, artwork, artwork_pinned};
 use crate::components::bar_fx::{
     BackgroundArt, BackgroundFx, BackgroundGeometry, BackgroundLook, TrackFx,
 };
+use crate::components::entity_links::{self, LinkLook, Origin};
 use crate::components::progress::{ProgressTrack, TrackEvent, TrackLook, TrackParams};
 use crate::icons::{AppIcon, Lucide};
 use crate::queue::Repeat;
@@ -542,6 +545,7 @@ impl Render for MiniPlayer {
                 }
             }
         }));
+        let menu_track = track.clone();
         let (title, artists) = match &track {
             Some(t) => (t.title.clone(), t.artists.clone()),
             None => (
@@ -581,7 +585,16 @@ impl Render for MiniPlayer {
                         .truncate()
                         .text_sm()
                         .text_color(muted)
-                        .child(artists.clone()),
+                        // Each artist links to their page in the main window.
+                        .child(match &track {
+                            Some(t) => entity_links::artist_line(
+                                "mini-artists",
+                                t,
+                                LinkLook::main().mini().hover(fg),
+                            )
+                            .into_any_element(),
+                            None => artists.clone().into_any_element(),
+                        }),
                 )
         };
         let times_with = |track_el: gpui::AnyElement| {
@@ -804,6 +817,11 @@ impl Render for MiniPlayer {
                     app.set_volume((target * 100.).round() / 100., window, cx);
                 });
             })
+            // Go to the artist / album (in the main window).
+            .context_menu(move |menu, _, _| match &menu_track {
+                Some(t) => entity_links::menu_items(menu, t, Origin::Mini),
+                None => menu,
+            })
             .into_any_element()
     }
 }
@@ -1015,8 +1033,13 @@ fn queue_list(
                             div()
                                 .text_xs()
                                 .text_color(muted)
+                                .min_w_0()
                                 .truncate()
-                                .child(track.artists.clone()),
+                                .child(entity_links::artist_line(
+                                    "mini-queue-artists",
+                                    track,
+                                    LinkLook::main().mini(),
+                                )),
                         ),
                 )
                 .when(*autoplay, |this| {

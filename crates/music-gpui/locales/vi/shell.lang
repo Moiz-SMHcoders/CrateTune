@@ -66,6 +66,8 @@ track.tooltip.more = Thêm
 track.explicit_badge = E
 track.menu.go_to_podcast = Đến podcast
 track.menu.go_to_named_artist = Đến {artist}
+track.menu.artist_not_found = Không tìm thấy trang của {artist}
+track.menu.album_not_found = Không tìm thấy album của bài hát này
 
 # ---- Item cards, rows, shelves
 items.load_failed = Không thể tải trang này

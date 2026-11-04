@@ -66,6 +66,8 @@ track.tooltip.more = Lainnya
 track.explicit_badge = E
 track.menu.go_to_podcast = Buka podcast
 track.menu.go_to_named_artist = Buka {artist}
+track.menu.artist_not_found = Halaman {artist} tidak ditemukan
+track.menu.album_not_found = Album lagu ini tidak ditemukan
 
 # ---- Item cards, rows, shelves
 items.load_failed = Tidak dapat memuat halaman ini

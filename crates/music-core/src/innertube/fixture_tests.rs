@@ -1117,3 +1117,151 @@ fn counterpart_from_a_fake_server() {
     assert_eq!(c.of, "vidSeed0001");
     assert!(it.counterpart("sVx1mJDeUjY").unwrap().is_none());
 }
+
+/// `next` for one video names its artists with their channels and, for a song, the
+/// album (`resolve_links`' first request).
+#[test]
+fn links_from_a_next_response() {
+    use super::links::links_from_queue;
+    use crate::EntityRef;
+    let linked = |name: &str, id: &str| EntityRef {
+        name: name.into(),
+        id: Some(id.into()),
+    };
+    // A song with two linked artists and its album.
+    let q = pages::watch_queue(&fixture("next_song")).unwrap();
+    let links = links_from_queue(&q, "khnokW3Mw24", "Get Lucky").unwrap();
+    assert_eq!(
+        links.artists,
+        [
+            linked("Daft Punk", "UCRr1xG_2WIDs18a6cIiCxeA"),
+            linked("Julian Casablancas", "UCWhpbdGLnR8XtXLr0yl2nYA"),
+        ]
+    );
+    assert_eq!(
+        links.album,
+        Some(linked("Random Access Memories", "MPREb_K8qWMWVqXGi"))
+    );
+    // A music video: the artist, no album.
+    let q = pages::watch_queue(&fixture("next")).unwrap();
+    let links = links_from_queue(&q, "sVx1mJDeUjY", "").unwrap();
+    assert_eq!(
+        links.artists,
+        [linked("Mr.Kitty", "UCrajKr9NDZs-_1simGxgtmQ")]
+    );
+    assert_eq!(links.album, None);
+    // Another id answered: only the selected row with the same title counts.
+    assert!(links_from_queue(&q, "elsewhere0", "After Dark").is_some());
+    assert!(links_from_queue(&q, "elsewhere0", "Get Lucky").is_none());
+}
+
+/// The search fallback takes the top result only when its name matches.
+#[test]
+fn links_from_search_results() {
+    use super::{pick_album, pick_artist};
+    let artists = pages::search_results(&fixture("search_artists")).items;
+    let top = pick_artist(&artists, "daft punk").unwrap();
+    assert_eq!(top.name, "Daft Punk");
+    assert!(top.id.as_deref().is_some_and(|id| id.starts_with("UC")));
+    // The Weeknd is a result, but not the top one.
+    assert_eq!(pick_artist(&artists, "The Weeknd"), None);
+    assert_eq!(pick_artist(&artists, "Daft Punk feat. Pharrell"), None);
+
+    let albums = pages::search_results(&fixture("search_albums")).items;
+    let Some(Item::Album(first)) = albums.first() else {
+        panic!("{albums:?}")
+    };
+    let found = pick_album(&albums, &first.title, Some("Daft Punk")).unwrap();
+    assert_eq!(found.id.as_deref(), Some(first.browse_id.as_str()));
+    assert_eq!(
+        pick_album(&albums, &first.title, Some("Someone Else")),
+        None
+    );
+    assert_eq!(pick_album(&albums, "Another Album", None), None);
+}
+
+/// `InnerTube::resolve_links`: `next` first, searches for what it didn't say.
+#[test]
+fn resolve_links_from_a_fake_server() {
+    use crate::testutil::{Reply, TestServer};
+    let seen = std::sync::Arc::new(std::sync::Mutex::new(Vec::<String>::new()));
+    let log = seen.clone();
+    let server = TestServer::start_http(move |req| {
+        let body: Value = serde_json::from_slice(&req.body).unwrap();
+        let endpoint = req.path.trim_start_matches("/youtubei/v1/");
+        let endpoint = endpoint.split('?').next().unwrap_or("").to_owned();
+        let name = match (endpoint.as_str(), body["params"].as_str()) {
+            ("next", _) if body["videoId"] == "khnokW3Mw24" => "next_song",
+            ("next", _) => "next",
+            ("search", Some(p)) if p == SearchFilter::Artists.params() => "search_artists",
+            ("search", Some(p)) if p == SearchFilter::Albums.params() => "search_albums",
+            _ => return Reply::Status(404),
+        };
+        log.lock().unwrap().push(name.to_owned());
+        Reply::Full {
+            status: 200,
+            headers: vec!["Content-Type: application/json".into()],
+            body: serde_json::to_vec(&fixture(name)).unwrap(),
+        }
+    });
+    let it = super::InnerTube::default().with_api_base(&server.base);
+
+    // A queue row without ids: `next` says everything, no search.
+    let bare = Track {
+        video_id: "khnokW3Mw24".into(),
+        title: "Get Lucky".into(),
+        artists: "Daft Punk & Julian Casablancas".into(),
+        ..Track::default()
+    };
+    let links = it.resolve_links(&bare).unwrap();
+    assert!(!links.missing_artist(), "{links:?}");
+    assert_eq!(
+        links.album.and_then(|a| a.id).as_deref(),
+        Some("MPREb_K8qWMWVqXGi")
+    );
+    assert_eq!(*seen.lock().unwrap(), ["next_song"]);
+
+    // `next` answers about another video: the artist and album searches.
+    seen.lock().unwrap().clear();
+    let albums = pages::search_results(&fixture("search_albums")).items;
+    let Some(Item::Album(first)) = albums.first() else {
+        panic!()
+    };
+    let history_row = Track {
+        video_id: "unknown0001".into(),
+        title: "Some Song".into(),
+        artists: "Daft Punk".into(),
+        album: Some(first.title.clone()),
+        ..Track::default()
+    };
+    let links = it.resolve_links(&history_row).unwrap();
+    assert_eq!(
+        *seen.lock().unwrap(),
+        ["next", "search_artists", "search_albums"]
+    );
+    assert!(
+        links.artists[0]
+            .id
+            .as_deref()
+            .is_some_and(|id| id.starts_with("UC"))
+    );
+    assert_eq!(
+        links.album.and_then(|a| a.id),
+        Some(first.browse_id.clone())
+    );
+
+    // Local files never ask.
+    seen.lock().unwrap().clear();
+    let local = Track {
+        video_id: "local:abc".into(),
+        artists: "Me".into(),
+        local_path: Some("/tmp/x.mp3".into()),
+        ..Track::default()
+    };
+    assert_eq!(it.resolve_links(&local).unwrap().artists[0].id, None);
+    assert!(seen.lock().unwrap().is_empty());
+
+    // Nothing answers: an error (so the app can try again later).
+    let dead = super::InnerTube::default().with_api_base("http://127.0.0.1:9");
+    assert!(dead.resolve_links(&history_row).is_err());
+}

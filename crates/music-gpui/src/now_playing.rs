@@ -37,6 +37,7 @@ use crate::anim::{Frame, Spec, Tween, ease_in_out_cubic, ease_out_cubic};
 use crate::app::{MusicApp, update_app};
 use crate::backdrop::Palette;
 use crate::components::artwork::{ArtworkCache, Pin};
+use crate::components::entity_links::{self, LinkLook};
 use crate::icons::{AppIcon, Lucide};
 use crate::lyrics::{LyricsState, PreparedLyrics};
 use crate::np_extras::Keep as _;
@@ -101,6 +102,8 @@ struct HeaderSnap {
     theater_tip: SharedString,
     /// The sound menu (lit while an effect is on).
     sound: crate::components::sound_menu::SoundSnap,
+    /// The song the ⋯ menu is for (go to artist / album, …).
+    track: Option<Track>,
 }
 
 #[derive(Clone, PartialEq)]
@@ -683,6 +686,7 @@ impl MusicApp {
             video: self.video_available(cx).then_some(!self.video.session_off),
             theater_tip: theater_tip.into(),
             sound: crate::components::sound_menu::SoundSnap::new(self.settings.read(cx).settings()),
+            track: state.track.clone(),
         }
     }
 
@@ -873,6 +877,19 @@ impl MusicApp {
                         update_app(cx, |app, cx| app.open_settings(None, window, cx));
                     }),
             )
+            // The song menu: go to artist / album, queue, playlists, …
+            .when_some(s.track.clone(), |this, track| {
+                this.child(
+                    Button::new("np-more")
+                        .ghost()
+                        .rounded(px(999.))
+                        .icon(IconName::Ellipsis)
+                        .tooltip(t!("track.tooltip.more"))
+                        .dropdown_menu(move |menu, _, _| {
+                            crate::components::track_row::track_menu(menu, &track, None)
+                        }),
+                )
+            })
             .into_any_element()
     }
 
@@ -1327,6 +1344,18 @@ impl MusicApp {
         })
     }
 
+    /// The artists as links to their pages (`entity_links.rs`); empty without a track.
+    pub(crate) fn artist_links(id: &str, track: Option<&Track>) -> AnyElement {
+        Self::artist_links_as(id, track, LinkLook::main().hover(ink(0.95)))
+    }
+
+    pub(crate) fn artist_links_as(id: &str, track: Option<&Track>, look: LinkLook) -> AnyElement {
+        match track {
+            Some(t) => entity_links::artist_line(id, t, look).into_any_element(),
+            None => div().into_any_element(),
+        }
+    }
+
     pub(crate) fn titles(track: Option<&Track>) -> (SharedString, SharedString) {
         match track {
             Some(t) => (t.title.clone().into(), t.artists.clone().into()),
@@ -1392,7 +1421,7 @@ impl MusicApp {
         cx: &mut Context<Self>,
     ) -> impl IntoElement + use<> {
         let side = Self::player_column_side(viewport);
-        let (title, artists) = Self::titles(track);
+        let (title, _) = Self::titles(track);
         v_flex()
             .w(side)
             .h_full()
@@ -1417,7 +1446,13 @@ impl MusicApp {
                                     .line_clamp(2)
                                     .child(title),
                             )
-                            .child(div().text_color(ink(0.65)).truncate().child(artists)),
+                            .child(
+                                div()
+                                    .text_color(ink(0.65))
+                                    .min_w_0()
+                                    .truncate()
+                                    .child(Self::artist_links("np-split-artists", track)),
+                            ),
                     )
                     // Dislike, then like (library + YouTube Music when signed in).
                     .children(track.filter(|t| !t.is_local()).map(|t| {
@@ -1449,7 +1484,7 @@ impl MusicApp {
         let side = (viewport.height * 0.5)
             .min(viewport.width * 0.6)
             .clamp(px(140.), px(520.));
-        let (title, artists) = Self::titles(track);
+        let (title, _) = Self::titles(track);
         // The line being sung (or the last one) and the next, as plain text.
         let current = self.lyric_snippet(track, position, frame);
         let width = (side * 1.15).min(viewport.width - px(64.));
@@ -1478,7 +1513,13 @@ impl MusicApp {
                             .truncate()
                             .child(title),
                     )
-                    .child(div().text_color(ink(0.65)).truncate().child(artists)),
+                    .child(
+                        div()
+                            .max_w_full()
+                            .text_color(ink(0.65))
+                            .truncate()
+                            .child(Self::artist_links("np-centered-artists", track)),
+                    ),
             )
             .child(
                 div()
@@ -1554,7 +1595,7 @@ impl MusicApp {
         frame: &mut Frame,
         cx: &mut Context<Self>,
     ) -> impl IntoElement + use<> {
-        let (title, artists) = Self::titles(track);
+        let (title, _) = Self::titles(track);
         h_flex()
             .h(px(104.))
             .flex_none()
@@ -1572,7 +1613,7 @@ impl MusicApp {
                             .text_sm()
                             .text_color(ink(0.65))
                             .truncate()
-                            .child(artists),
+                            .child(Self::artist_links("np-lyrics-artists", track)),
                     ),
             )
             .child(

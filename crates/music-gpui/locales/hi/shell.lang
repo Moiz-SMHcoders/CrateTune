@@ -71,6 +71,8 @@ track.tooltip.more = और
 track.explicit_badge = E
 track.menu.go_to_podcast = पॉडकास्ट पर जाएँ
 track.menu.go_to_named_artist = {artist} पर जाएँ
+track.menu.artist_not_found = {artist} का पेज नहीं मिला
+track.menu.album_not_found = इस गाने का एल्बम नहीं मिला
 
 # ---- Item cards, rows, shelves
 items.load_failed = यह पेज लोड नहीं हो सका

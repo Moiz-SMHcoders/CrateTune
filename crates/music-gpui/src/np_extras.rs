@@ -274,7 +274,7 @@ impl MusicApp {
     ) -> AnyElement {
         let (side, height) = stacked_sizes(viewport);
         let column = (viewport.width - side - px(120.)).clamp(px(220.), px(440.));
-        let (title, artists) = Self::titles(track);
+        let (title, _) = Self::titles(track);
         let keep = self.np.gestures.empty_close;
         h_flex()
             .size_full()
@@ -304,7 +304,13 @@ impl MusicApp {
                                             .line_clamp(2)
                                             .child(title),
                                     )
-                                    .child(div().text_color(ink(0.65)).truncate().child(artists)),
+                                    .child(
+                                        div()
+                                            .text_color(ink(0.65))
+                                            .min_w_0()
+                                            .truncate()
+                                            .child(Self::artist_links("np-stacked-artists", track)),
+                                    ),
                             )
                             .children(track.filter(|t| !t.is_local()).map(|t| {
                                 crate::components::dislike::dislike_icon_button(

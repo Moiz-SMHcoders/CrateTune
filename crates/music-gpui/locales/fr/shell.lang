@@ -71,6 +71,8 @@ track.tooltip.more = Plus
 track.explicit_badge = E
 track.menu.go_to_podcast = Accéder au podcast
 track.menu.go_to_named_artist = Accéder à {artist}
+track.menu.artist_not_found = Page introuvable pour {artist}
+track.menu.album_not_found = Album de ce titre introuvable
 
 # ---- Item cards, rows, shelves
 items.load_failed = Impossible de charger cette page

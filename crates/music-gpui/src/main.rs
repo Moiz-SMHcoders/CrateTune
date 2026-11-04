@@ -57,6 +57,7 @@ mod identity;
 mod integrations;
 mod karaoke;
 mod library_script;
+mod links_script;
 mod login_webview;
 mod logo;
 mod logs;

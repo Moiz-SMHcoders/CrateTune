@@ -363,10 +363,15 @@ impl MusicApp {
                     )
                     .child(
                         div()
+                            .min_w_0()
                             .truncate()
                             .text_xs()
                             .text_color(muted)
-                            .child(track.artists.clone()),
+                            .child(super::entity_links::artist_line(
+                                "queue",
+                                track,
+                                super::entity_links::LinkLook::main().hover(theme.foreground),
+                            )),
                     ),
             );
 
