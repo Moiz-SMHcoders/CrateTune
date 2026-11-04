@@ -321,7 +321,8 @@ often `next` fills them (signed in and anonymous; other languages, where the sea
 fallback's name match may fail on localized names); (2) songs whose `next` answer has no
 album (singles, "official audio" videos) and albums whose search top result is a
 deluxe / remastered edition (refused unless the title matches exactly); (3) the mini
-player's links on Windows (topmost window) and Linux (focus moving to the main window);
+player's links and right-click menu clicked at all (scripts can't click into the mini
+window), and on Windows (topmost window) and Linux (focus moving to the main window);
 (4) ⌘-click from the mini player opening a background tab. · Size: small · Priority: medium
 
 ## 3. Platform & distribution

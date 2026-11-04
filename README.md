@@ -4428,6 +4428,10 @@ the spin's ease and stop. **Not verified**: BACKLOG U26.
   and an album page that way (ids looked up through the fixtures: `next_song.json` for
   `khnokW3Mw24`, the Artists / Albums search filters answer `search_artists.json` /
   `search_albums.json`).
+* **Checked** (macOS, offline fixtures, `@click`): a real click on a bar artist without an
+  id looked it up and opened the page; Now Playing's ⋯ → *Go to Daft Punk* opened it and
+  closed Now Playing; the smoke script's lookups (above). The mini player's links and menu
+  were only built, not clicked (scripts can't click into the mini window); see BACKLOG U27.
 * **Tests:** `links.rs` (segments, the split, merging, applying), `fixture_tests.rs`
   (`next` rows, the search picks, `resolve_links` against a fake server: requests made,
   local files never asking, all-failed is an error), `entity_links.rs` (menu entries'
