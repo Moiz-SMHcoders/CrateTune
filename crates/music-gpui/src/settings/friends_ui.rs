@@ -78,7 +78,7 @@ impl FriendsUi {
                 |_: &mut SettingsPanel, input, event: &InputEvent, cx| {
                     if matches!(event, InputEvent::PressEnter { .. }) {
                         let value = input.read(cx).value().to_string();
-                        cx.defer(move |cx| create_group(value, cx));
+                        cx.defer(move |cx| create_group_later(value, cx));
                     }
                 },
             ),
@@ -107,12 +107,20 @@ impl FriendsUi {
     }
 }
 
-/// "Create a group" (the new group's name).
-fn create_group(name: String, cx: &mut gpui::App) {
-    if let Some(window) = cx.active_window() {
-        let _ = window.update(cx, |_, window, cx| {
-            update_app(cx, |app, cx| app.friends_create_group(&name, window, cx));
-        });
+/// "Create a group" from the button: the click already runs in the window, so this
+/// must not update the window again (GPUI refuses that, and the click did nothing).
+fn create_group(name: &str, window: &mut Window, cx: &mut gpui::App) {
+    update_app(cx, |app, cx| app.friends_create_group(name, window, cx));
+}
+
+/// "Create a group" from Enter in the name field: deferred out of the panel's update,
+/// so the window is free to update here.
+fn create_group_later(name: String, cx: &mut gpui::App) {
+    let Some(window) = crate::app::app_entity(cx).and_then(|a| a.read(cx).main_window) else {
+        return;
+    };
+    if let Err(e) = window.update(cx, |_, window, cx| create_group(&name, window, cx)) {
+        eprintln!("music-gpui: friends: creating a group: {e}");
     }
 }
 
@@ -437,9 +445,9 @@ pub(super) fn render(
                         .small()
                         .primary()
                         .label(t!("settings.friends.create_button"))
-                        .on_click(move |_, _, cx| {
+                        .on_click(move |_, window, cx| {
                             let name = group_input.read(cx).value().to_string();
-                            create_group(name, cx);
+                            create_group(&name, window, cx);
                         }),
                 ),
         )

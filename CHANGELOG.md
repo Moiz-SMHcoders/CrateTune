@@ -5,6 +5,13 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.4] — 2026-11-04
+
+### Fixed
+
+* **Settings → Friends → Create did nothing.** The button updated the app window from
+  inside that window's own click, which GPUI refuses; the error was ignored. It now uses
+  the click's window (Enter in the name field already worked).
 ## [0.3.3] — 2026-11-03
 
 The biggest release so far: page tabs, sidebar playlists and glass looks, a sound round

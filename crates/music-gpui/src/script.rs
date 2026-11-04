@@ -13,6 +13,7 @@
 //! |---|---|
 //! | `@key=cmd-right` | synthetic key press through GPUI's normal key dispatch (bindings → actions) |
 //! | `@click=X;Y`, `@rclick=X;Y`, `@move=X;Y`, `@mouse-back`, `@mouse-forward` | synthetic mouse events at window coordinates (hit-testing, hover, context menus, nav buttons) |
+//! | `@type=TEXT` | types TEXT into the focused field |
 //! | `@toggle`, `@close` | dispatch the Space / Esc actions |
 //! | `@open` | open Now Playing |
 //! | `@play=N` | play search result N (0-based) with the results as queue |
@@ -347,6 +348,20 @@ fn input_event(name: &str, arg: Option<&str>, window: &mut Window, cx: &mut App)
                     window.dispatch_keystroke(keystroke, cx);
                 }
                 Err(e) => eprintln!("music-gpui: bad keystroke {source:?}: {e}"),
+            }
+        }
+        // Types TEXT into the focused field, one character at a time (as typing does).
+        "type" => {
+            for ch in arg.unwrap_or("").chars() {
+                let typed = ch.to_string();
+                window.dispatch_keystroke(
+                    Keystroke {
+                        modifiers: Default::default(),
+                        key: typed.to_lowercase(),
+                        key_char: Some(typed),
+                    },
+                    cx,
+                );
             }
         }
         "click" => click(MouseButton::Left, window, cx),
