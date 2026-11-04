@@ -584,6 +584,23 @@ was built is listed there. Left out, with the reason:
   without a crossfade); volume above 100 % (clips); a phone remote with a QR code and a
   sidebar "now playing" flip card (Deviload; outside Now Playing).
 
+**M13. Next round, picked from the competitor audit (2026-11-04)**
+Compared with YouTube Music, Spotify, Apple Music and ArchiveTune; chosen to build next:
+* *Copy link / Share* for songs, albums, playlists and artists (YouTube Music URLs). · Size:
+  small · Priority: high
+* *Open pasted or dropped YouTube / YouTube Music links* (search box, window drop; the
+  `youtube_video_id` parser exists, only import uses it). · Size: small · Priority: high
+* *"Already in this playlist" warning* on Add to playlist. · Size: small · Priority: medium
+* *Smart playlists*: rules over the local library (most played, recently added, liked and
+  not played lately…), updated live. · Size: medium · Priority: medium
+* *Song credits and a song-details dialog* (writers, producers, label where InnerTube has
+  them; format, bitrate, source). · Size: small · Priority: medium
+* *Smart downloads and an explicit offline mode* (keep recent likes / favourites
+  downloaded; browse only what is on disk). · Size: small–medium · Priority: medium
+Also in the audit, not picked yet: a `cratetune://` URL scheme, system notifications on
+track change, global hotkeys, launch at login, a playlist privacy / description dialog,
+podcast resume markers, playlist folders, AI prompt playlists, keyboard focus for track rows.
+
 ## 5. Performance ideas
 
 **F1. What is left of the footprint: window drawables and the decoded copies**
