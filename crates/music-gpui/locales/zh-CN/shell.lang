@@ -68,6 +68,8 @@ track.tooltip.more = 更多
 track.explicit_badge = E
 track.menu.go_to_podcast = 前往播客
 track.menu.go_to_named_artist = 前往 {artist}
+track.menu.artist_not_found = 找不到 {artist} 的页面
+track.menu.album_not_found = 找不到这首歌的专辑
 
 # ---- Item cards, rows, shelves
 items.load_failed = 无法加载此页面

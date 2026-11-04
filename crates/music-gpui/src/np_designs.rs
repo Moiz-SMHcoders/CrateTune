@@ -28,12 +28,15 @@ use gpui::{
     StyledImage as _, div, hsla, img, linear_color_stop, linear_gradient,
     prelude::FluentBuilder as _, px, relative, svg,
 };
-use gpui_component::{IconName, IconNamed as _, h_flex, slider::Slider, v_flex};
+use gpui_component::{
+    IconName, IconNamed as _, h_flex, menu::ContextMenuExt as _, slider::Slider, v_flex,
+};
 use music_core::{PlaybackStatus, Track, format_duration};
 
 use crate::anim::Frame;
 use crate::app::MusicApp;
 use crate::components::artwork::artwork;
+use crate::components::entity_links::{self, LinkLook};
 use crate::icons::{AppIcon, Lucide};
 use crate::now_playing::{ink, shade};
 use crate::np_extras::Keep as _;
@@ -181,7 +184,7 @@ impl MusicApp {
         frame: &mut Frame,
         cx: &mut Context<Self>,
     ) -> AnyElement {
-        let (title, artists) = Self::titles(track);
+        let (title, _) = Self::titles(track);
         let lyric = self
             .lyric_snippet(track, position, frame)
             .and_then(|(now, _)| now)
@@ -233,7 +236,10 @@ impl MusicApp {
                                             .text_size(px(19.))
                                             .text_color(ink(0.7))
                                             .truncate()
-                                            .child(artists),
+                                            .child(Self::artist_links(
+                                                "np-design-artists-1",
+                                                track,
+                                            )),
                                     ),
                             )
                             .children(
@@ -364,7 +370,7 @@ impl MusicApp {
         frame: &mut Frame,
         cx: &mut Context<Self>,
     ) -> AnyElement {
-        let (title, artists) = Self::titles(track);
+        let (title, _) = Self::titles(track);
         // The card's art fills its width; leave room for ~250 px of controls.
         let side = (viewport.height - px(56. + 64. + 270.))
             .min(px(440.))
@@ -427,7 +433,11 @@ impl MusicApp {
                                             .truncate()
                                             .child(title),
                                     )
-                                    .child(div().text_color(ink(0.65)).truncate().child(artists)),
+                                    .child(
+                                        div().text_color(ink(0.65)).truncate().child(
+                                            Self::artist_links("np-design-artists-2", track),
+                                        ),
+                                    ),
                             )
                             .child(
                                 round_button(
@@ -515,7 +525,7 @@ impl MusicApp {
         frame: &mut Frame,
         cx: &mut Context<Self>,
     ) -> AnyElement {
-        let (title, artists) = Self::titles(track);
+        let (title, _) = Self::titles(track);
         let title_size = (viewport.width.as_f32() / 14.).clamp(40., 88.);
         let time_size = (viewport.width.as_f32() / 11.).clamp(56., 120.);
         let total = self.playback.duration.unwrap_or_default();
@@ -566,7 +576,7 @@ impl MusicApp {
                                     .text_size(px(22.))
                                     .text_color(ink(0.7))
                                     .truncate()
-                                    .child(artists),
+                                    .child(Self::artist_links("np-design-artists-3", track)),
                             ),
                     )
                     .child(
@@ -630,7 +640,7 @@ impl MusicApp {
         frame: &mut Frame,
         cx: &mut Context<Self>,
     ) -> AnyElement {
-        let (title, artists) = Self::titles(track);
+        let (title, _) = Self::titles(track);
         let [_, _, vivid] = self.design_colors(frame);
         let accent_l = if crate::theme::is_light() { 0.36 } else { 0.74 };
         let accent = hsla(vivid.h, (vivid.s * 0.9).clamp(0.25, 0.7), accent_l, 1.);
@@ -716,7 +726,11 @@ impl MusicApp {
                                     .font_weight(FontWeight::SEMIBOLD)
                                     .text_color(cream(0.7))
                                     .truncate()
-                                    .child(artists.to_uppercase()),
+                                    .child(Self::artist_links_as(
+                                        "np-editorial-artists",
+                                        track,
+                                        LinkLook::main().hover(cream(1.)).upper(),
+                                    )),
                             ),
                     )
                     // Bento row 1: the big PLAY / PAUSE pill and "next".
@@ -836,7 +850,7 @@ impl MusicApp {
         frame: &mut Frame,
         cx: &mut Context<Self>,
     ) -> AnyElement {
-        let (title, artists) = Self::titles(track);
+        let (title, _) = Self::titles(track);
         let side = (viewport.height * 0.44)
             .min((viewport.width - px(176.)) * 0.4)
             .clamp(px(140.), px(380.));
@@ -885,6 +899,7 @@ impl MusicApp {
                     .map(heading);
                 previous = Some(source);
                 let art = artwork(t.artwork_url(120), px(44.), px(6.), cx);
+                let menu_track = t.clone();
                 let row = h_flex()
                     .id(("np-queue", i))
                     .w_full()
@@ -918,8 +933,13 @@ impl MusicApp {
                                 div()
                                     .text_xs()
                                     .text_color(ink(0.6))
+                                    .min_w_0()
                                     .truncate()
-                                    .child(t.artists.clone()),
+                                    .child(entity_links::artist_line(
+                                        "np-queue-artists",
+                                        &t,
+                                        LinkLook::main().hover(ink(0.95)),
+                                    )),
                             ),
                     )
                     .when(autoplay, |this| {
@@ -932,6 +952,10 @@ impl MusicApp {
                                 .text_color(ink(0.5))
                                 .child(format_duration(u64::from(d))),
                         )
+                    })
+                    // The song menu (go to artist / album, …), as in the queue panel.
+                    .context_menu(move |menu, _, _| {
+                        crate::components::track_row::track_menu(menu, &menu_track, None)
                     })
                     .into_any_element();
                 head.into_iter()
@@ -1011,7 +1035,11 @@ impl MusicApp {
                                             .truncate()
                                             .child(title),
                                     )
-                                    .child(div().text_color(ink(0.65)).truncate().child(artists)),
+                                    .child(
+                                        div().text_color(ink(0.65)).truncate().child(
+                                            Self::artist_links("np-design-artists-4", track),
+                                        ),
+                                    ),
                             )
                             .children(
                                 track.map(|t| self.np_like("np-like", t, px(36.), frame, cx)),
@@ -1086,7 +1114,7 @@ impl MusicApp {
         let pill = self.np_volume_pill(frame);
         let keep = self.np.gestures.empty_close;
         let deck = self.artwork_gestures(deck, pill, cx).np_keep(keep);
-        let (title, artists) = Self::titles(track);
+        let (title, _) = Self::titles(track);
         let lyric = self
             .lyric_snippet(track, position, frame)
             .and_then(|(now, _)| now)
@@ -1119,7 +1147,7 @@ impl MusicApp {
                             .text_lg()
                             .text_color(ink(0.65))
                             .truncate()
-                            .child(artists),
+                            .child(Self::artist_links("np-design-artists-5", track)),
                     )
                     .child(
                         div()

@@ -313,6 +313,18 @@ wasn't captured, by policy) and the **Vibrant** materials in light and dark mode
 older macOS (13–15) too; (5) the drag-and-drop of sidebar entries and playlists with a
 trackpad (the scripts and the up / down buttons were used). · Size: small · Priority: medium
 
+**U27. Artist and album links (`feat/entity-links`) against the real service**
+The id lookup (`InnerTube::resolve_links`) was checked against recorded responses, a fake
+server and the offline fixtures; one live `next` request (anonymous, `hl=en`) was recorded
+for `next_song.json`. Not yet: (1) how often radio / history rows really lack ids and how
+often `next` fills them (signed in and anonymous; other languages, where the search
+fallback's name match may fail on localized names); (2) songs whose `next` answer has no
+album (singles, "official audio" videos) and albums whose search top result is a
+deluxe / remastered edition (refused unless the title matches exactly); (3) the mini
+player's links and right-click menu clicked at all (scripts can't click into the mini
+window), and on Windows (topmost window) and Linux (focus moving to the main window);
+(4) ⌘-click from the mini player opening a background tab. · Size: small · Priority: medium
+
 ## 3. Platform & distribution
 
 **P1. Builds are unsigned**

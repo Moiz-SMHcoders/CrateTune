@@ -238,7 +238,7 @@ impl MusicApp {
                     .child(line)
             }));
 
-        let (title, artists) = Self::titles(track.as_ref());
+        let (title, _) = Self::titles(track.as_ref());
         let video_toggle = self.video_available(cx).then(|| {
             let showing = !self.video.session_off;
             Button::new("theater-video")
@@ -303,7 +303,7 @@ impl MusicApp {
                             .text_sm()
                             .text_color(ink(0.7))
                             .truncate()
-                            .child(artists),
+                            .child(Self::artist_links("theater-artists", track.as_ref())),
                     ),
             )
             .children(video_toggle);

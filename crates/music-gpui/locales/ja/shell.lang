@@ -68,6 +68,8 @@ track.tooltip.more = その他
 track.explicit_badge = E
 track.menu.go_to_podcast = ポッドキャストへ移動
 track.menu.go_to_named_artist = {artist}へ移動
+track.menu.artist_not_found = {artist}のページが見つかりません
+track.menu.album_not_found = この曲のアルバムが見つかりません
 
 # ---- Item cards, rows, shelves
 items.load_failed = このページを読み込めませんでした

@@ -183,6 +183,19 @@ impl Queue {
         }
     }
 
+    /// Changes every copy of `video_id` (queued, in the unshuffled order, played), e.g.
+    /// with artist / album ids found later.
+    pub fn update_track(&mut self, video_id: &str, mut f: impl FnMut(&mut Track)) {
+        let items = self.items.iter_mut().chain(self.unshuffled.iter_mut());
+        for track in items
+            .map(|i| &mut i.track)
+            .chain(self.history.iter_mut())
+            .filter(|t| t.video_id == video_id)
+        {
+            f(track);
+        }
+    }
+
     // ---- reading ---------------------------------------------------------------
 
     pub fn current(&self) -> Option<&Track> {

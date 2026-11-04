@@ -27,6 +27,7 @@ mod client;
 mod cookies;
 #[cfg(test)]
 mod fixture_tests;
+mod links;
 mod models;
 pub(crate) mod pages;
 mod parse;
@@ -41,6 +42,9 @@ pub use account::{
 };
 pub(crate) use auth::authorization_for;
 pub use auth::{Auth, login_key, sapisid_hash};
+pub use links::{
+    ArtistSegment, TrackLinks, artist_segments, pick_album, pick_artist, same_name, split_artists,
+};
 pub use models::*;
 pub use playback_report::{
     PlaybackTracking, WatchState, Watchtime, new_cpn, parse_playback_tracking, playback_ping_url,

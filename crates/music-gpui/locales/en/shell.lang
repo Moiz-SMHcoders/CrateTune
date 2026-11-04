@@ -131,6 +131,9 @@ track.explicit_badge = E
 track.menu.go_to_podcast = Go to podcast
 # One entry per artist when a song has several; {artist} is the artist's name.
 track.menu.go_to_named_artist = Go to {artist}
+# Toasts when a song's artist / album page can't be found (looked up on demand).
+track.menu.artist_not_found = Couldn't find a page for {artist}
+track.menu.album_not_found = Couldn't find this song's album
 
 # ---- Item cards, rows, shelves (shared by every page)
 # Empty-state title when a page fails to load (the technical error is shown below it).

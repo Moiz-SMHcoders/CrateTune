@@ -77,6 +77,8 @@ track.tooltip.more = Більше
 track.explicit_badge = E
 track.menu.go_to_podcast = До подкасту
 track.menu.go_to_named_artist = До виконавця: {artist}
+track.menu.artist_not_found = Не вдалося знайти сторінку: {artist}
+track.menu.album_not_found = Не вдалося знайти альбом цієї пісні
 
 # ---- Item cards, rows, shelves
 items.load_failed = Не вдалося завантажити сторінку

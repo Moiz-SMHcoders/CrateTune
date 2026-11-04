@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Opens every Settings section and the main pages once, offline (`MUSIC_FIXTURES`),
 # then a few page tabs (opened, switched by script and by their keys, moved, closed),
-# and fails if the app panics or doesn't quit cleanly. Catches crashes that only
+# Now Playing's designs, the mini player and artist / album links (ids looked up), and
+# fails if the app panics, doesn't quit cleanly or a link opens the wrong page. Catches crashes that only
 # happen while a page renders (e.g. reading an entity that is being updated), which
 # unit tests don't draw.
 #
@@ -17,7 +18,7 @@ binary=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --binary) binary=$2; shift 2 ;;
-    -h | --help) sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h | --help) sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
   esac
 done
@@ -72,6 +73,16 @@ script="$script$t:@np-portrait=always,$t:@layout=split,"; t=$((t + 2))
 script="$script$t:@close,$t:@mini-queue=on,$t:@mini=on,"; t=$((t + 3))
 script="$script$t:@mini-skin=card,"; t=$((t + 3))
 script="$script$t:@mini=off,"; t=$((t + 1))
+# Artist / album links (`components/entity_links.rs`), as the player bar's: a song without
+# ids looks them up (the fixtures' `next_song.json`), then a search result without them
+# (the artist search), each page opened and checked by `@links-status` below.
+script="$script$t:@play-bare=khnokW3Mw24:Get Lucky:Daft Punk & Julian Casablancas,"; t=$((t + 2))
+script="$script$t:@go-artist=1,"; t=$((t + 3))
+script="$script$t:@links-status,$t:@go-album,"; t=$((t + 3))
+script="$script$t:@links-status,$t:@nav=search:daft%20punk,"; t=$((t + 3))
+script="$script$t:@play-bare=0,"; t=$((t + 2))
+script="$script$t:@go-artist=0,"; t=$((t + 3))
+script="$script$t:@links-status,"; t=$((t + 1))
 script="$script$t:@quit"
 limit=$((t + 60))
 
@@ -112,6 +123,13 @@ elif ! tail -1 <<<"$(grep 'music-gpui: page tabs:' "$work/app.log")" | grep -q '
   echo "FAIL: the keys didn't pass on with one tab" >&2
   status=1
 fi
+# The three link pages, in order: Julian Casablancas, Random Access Memories, Daft Punk.
+links=$(grep 'music-gpui: links:' "$work/app.log" | sed 's/.* route=//' | cut -d'|' -f1 | tr '\n' ' ')
+if [ "$status" = 0 ] && [ "$links" != "artist:UCWhpbdGLnR8XtXLr0yl2nYA album:MPREb_K8qWMWVqXGi artist:UCRr1xG_2WIDs18a6cIiCxeA " ]; then
+  echo "FAIL: the artist / album links opened: $links" >&2
+  status=1
+fi
 grep 'music-gpui: page tabs:' "$work/app.log" || true
+grep 'music-gpui: links:' "$work/app.log" || true
 echo "smoke: $navs pages opened, exit status $status"
 exit "$status"
