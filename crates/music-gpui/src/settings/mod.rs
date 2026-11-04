@@ -42,6 +42,8 @@ mod look_ui;
 mod lyrics;
 pub mod modules;
 mod network;
+pub mod np_elements;
+mod np_elements_ui;
 pub mod onboarding;
 mod page_tabs_ui;
 pub mod panel;

@@ -1,0 +1,59 @@
+# Now Playing / mini player elements: which buttons, lines and tags each Now
+# Playing design and each mini player layout shows (Now Playing's design menu →
+# "Customize this view", the mini player's right-click menu, Settings →
+# Appearance → Now Playing / Mini player → Elements).
+
+# ---- Element names (switches, check boxes and menu items; keep short)
+np_elements.item.artist_album = Artist & album
+# The small "PLAYING FROM <album>" line.
+np_elements.item.source_line = Playing from
+# The tag that says where the audio comes from, e.g. "YouTube · AAC 128 kbps".
+np_elements.item.quality_tag = Source and quality
+np_elements.item.like = Like
+np_elements.item.dislike = Dislike
+np_elements.item.shuffle = Shuffle
+np_elements.item.repeat = Repeat
+np_elements.item.previous_next = Previous / next
+np_elements.item.seek_bar = Seek bar
+np_elements.item.times = Times
+np_elements.item.volume = Volume
+# The line of the lyrics being sung, shown as plain text.
+np_elements.item.lyric_line = Current lyric line
+np_elements.item.up_next = Up next
+np_elements.item.add_to_playlist = Add to playlist
+np_elements.item.download = Download
+# A header button that shows the lyrics in Now Playing.
+np_elements.item.lyrics = Lyrics button
+# A header button that shows the queue in Now Playing.
+np_elements.item.queue = Queue button
+np_elements.item.sleep_timer = Sleep timer
+# The sound effects menu.
+np_elements.item.sound = Sound menu
+np_elements.item.cast = Cast and devices
+np_elements.item.visualizer = Visualizer
+# Now Playing: the close button in the header; mini player: close and "back to the main window".
+np_elements.item.close = Close button
+# The ⋯ button in Now Playing's header (go to artist / album, add to queue, …).
+np_elements.item.song_menu = Song menu (⋯)
+
+# ---- Customize panel and menus
+# Item of Now Playing's design menu.
+np_elements.customize = Customize this view…
+# Panel title; {design} is a design name, e.g. "Turntable".
+np_elements.customize_title = Customize {design}
+np_elements.customize_note = Changes apply at once and are kept per design.
+np_elements.reset = Reset to default
+# The ⋯ button that holds the buttons that don't fit.
+np_elements.more = More
+np_elements.downloaded = Downloaded
+np_elements.downloading = Downloading…
+# A mini player layout in a list of views; {layout} is e.g. "Card".
+np_elements.mini_view = Mini player · {layout}
+# Heading of the mini player's right-click menu.
+np_elements.menu.title = Show in this layout
+np_elements.menu.settings = Customize in Settings…
+
+# ---- Settings → Appearance
+np_elements.settings.title = Elements
+np_elements.settings.np_note = Pick a design and choose what it shows. Added buttons go beside the title where the design has room, else in one row under the controls; what doesn't fit goes into a More menu. Defaults are each design's usual look.
+np_elements.settings.mini_note = Pick a layout and choose what it shows. Right-click the mini player for the same switches.

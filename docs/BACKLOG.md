@@ -18,6 +18,16 @@ Last reviewed: 2026-10-31, against `main` at `bdb3625`.
 (see `crates/music-net`). Listen Together and the relay moved to `music_net::TimedTcp`; Cast
 should too. · Size: small · Priority: medium
 
+**B3. Three Now Playing designs don't fit the smallest window with their defaults**
+At 860 × 540 (Now Playing 860 × 488) `@np-bounds` finds, with each design's default elements
+and before any change: Split's artwork reaching ~28 pt into the header and "Up next" ~20 pt
+below the window; Big artwork's artwork under the header and its transport cut off at the
+bottom; Card reaching under the header and its volume row below the window (the With queue
+list also runs past the bottom; it isn't probed). The per-view elements leave untouched
+designs exactly as they were (`feat/np-elements`); a customized design already lets its
+artwork give way (`MusicApp::np_fit_art`) — the same could apply to the defaults, at the cost
+of changing how they look on short windows. · Size: small · Priority: low
+
 ## 2. Unverified / needs real-world testing
 
 The code below works in unit tests, fixtures, scripts or fake servers, but nobody has run it
@@ -324,6 +334,18 @@ deluxe / remastered edition (refused unless the title matches exactly); (3) the 
 player's links and right-click menu clicked at all (scripts can't click into the mini
 window), and on Windows (topmost window) and Linux (focus moving to the main window);
 (4) ⌘-click from the mini player opening a background tab. · Size: small · Priority: medium
+
+**U28. Per-view elements (`feat/np-elements`) with real input and on Windows / Linux**
+Checked on macOS with offline fixtures, the demo clock, unit tests, scripted switches
+(`@np-elements`, `@mini-elements`), the layout probe (`@np-bounds`: every design with all its
+elements at 860 × 540 and the five mini player layouts, no part overlapping or leaving the
+window) and offscreen renders. Not yet: (1) a real pointer on the customize panel's
+switches, the ⋯ "More" menus and the mini player's right-click menu (the scripts click
+through GPUI's dispatch); (2) the mini player's right-click menu and its window reopening
+when the tools row goes away, on Windows and Linux (CI only runs the smoke script there);
+(3) the header with Cast and devices while really casting / with a paired device (long
+"Casting to …" labels clip at 160 pt); (4) the 17 translations of the new strings, written
+without native-speaker review. · Size: small · Priority: low
 
 ## 3. Platform & distribution
 

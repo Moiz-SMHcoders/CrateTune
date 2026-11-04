@@ -73,6 +73,9 @@ pub(super) struct PrefsUi {
     /// [`SettingsPanel::stream_status_poll`]).
     pub stream_poll: Option<gpui::Task<()>>,
     pub stream_seen: u64,
+    /// Now Playing / mini player → Elements: the design and layout picked
+    /// (`None`: the one in use; `np_elements_ui.rs`).
+    pub elements_pick: (Option<NowPlayingLayout>, Option<MiniPlayerSkin>),
 }
 
 fn slider_value(event: &SliderEvent) -> f32 {
@@ -242,6 +245,7 @@ impl PrefsUi {
             scrobble_delay: slider(30., 600., 10., r.max_delay_secs as f32, cx),
             stream_poll: None,
             stream_seen: 0,
+            elements_pick: (None, None),
         };
 
         let mut subs = Vec::new();
@@ -728,7 +732,7 @@ impl SettingsPanel {
 
     // ---- Now Playing / mini player -------------------------------------------------------
 
-    fn update_now_playing(
+    pub(super) fn update_now_playing(
         &mut self,
         cx: &mut Context<Self>,
         f: impl FnOnce(&mut super::prefs::NowPlayingConfig),

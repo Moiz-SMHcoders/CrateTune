@@ -333,7 +333,7 @@ impl MusicApp {
                 h_flex()
                     .w_full()
                     .justify_center()
-                    .child(self.transport_view(0.85, frame, cx)),
+                    .child(self.transport_with(0.85, true, frame, cx)),
             );
 
         div()

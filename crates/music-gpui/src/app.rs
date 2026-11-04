@@ -701,7 +701,8 @@ impl MusicApp {
 
     /// Esc (menus and popovers handle it first): close a dialog, else leave
     /// theater mode, else drop a song selection, else end a lyrics
-    /// card selection, else leave the full screen entered from Now Playing's button
+    /// card selection, else close Now Playing's customize panel, else leave the full
+    /// screen entered from Now Playing's button
     /// (`np_fullscreen.rs`), else Now Playing, else the queue panel, else go back.
     pub fn escape(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         if window.has_active_dialog(cx) {
@@ -715,6 +716,9 @@ impl MusicApp {
         } else if self.np.open && self.np.list.selecting {
             // Picking lines for a lyrics card.
             self.set_lyrics_selecting(false, cx);
+        } else if self.np.open && self.np.customize {
+            // The "Customize this view" panel (`np_custom.rs`).
+            self.set_np_customize(false, cx);
         } else if self.np.open && self.fullscreen_escape(window, cx) {
             // Left the full screen the Now Playing button entered; Esc again closes.
         } else if self.np.open {

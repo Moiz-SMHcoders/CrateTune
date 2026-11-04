@@ -879,6 +879,26 @@ pub const ENTRIES: &[Entry] = &[
         "gesture"
     ),
     entry!(
+        "appearance.now_playing.elements",
+        Appearance,
+        "common.now_playing",
+        "np_elements.settings.title",
+        "np_elements.settings.np_note",
+        "elements",
+        "customize",
+        "buttons",
+        "show",
+        "hide",
+        "like",
+        "heart",
+        "shuffle",
+        "repeat",
+        "volume",
+        "turntable",
+        "design",
+        "toggle"
+    ),
+    entry!(
         "appearance.video",
         Appearance,
         -,
@@ -970,6 +990,22 @@ pub const ENTRIES: &[Entry] = &[
         "above",
         "float",
         "always"
+    ),
+    entry!(
+        "appearance.mini_player.elements",
+        Appearance,
+        "settings.appearance.mini_player",
+        "np_elements.settings.title",
+        "np_elements.settings.mini_note",
+        "elements",
+        "customize",
+        "buttons",
+        "show",
+        "hide",
+        "like",
+        "volume",
+        "layout",
+        "toggle"
     ),
     entry!(
         "appearance.bar.progress_style",

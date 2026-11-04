@@ -1095,6 +1095,10 @@ pub struct NowPlayingConfig {
     /// The turntables' record turns while playing (`turntable.rs`).
     #[serde(deserialize_with = "lenient")]
     pub turntable_spin: crate::turntable::SpinLook,
+    /// What each design shows (changes from its defaults; `np_elements.rs`).
+    pub elements: super::np_elements::NpElementsConfig,
+    /// What each mini player layout shows.
+    pub mini_elements: super::np_elements::MiniElementsConfig,
 }
 
 impl Default for NowPlayingConfig {
@@ -1111,6 +1115,8 @@ impl Default for NowPlayingConfig {
             mini_queue: false,
             mini_on_top: true,
             turntable_spin: crate::turntable::SpinLook::Off,
+            elements: Default::default(),
+            mini_elements: Default::default(),
         }
     }
 }

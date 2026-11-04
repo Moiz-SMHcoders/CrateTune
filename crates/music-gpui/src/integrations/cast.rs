@@ -498,65 +498,98 @@ impl MusicApp {
 
     /// Player bar: the Cast button (device menu) or "Casting to …".
     pub(super) fn cast_chip(&mut self, _cx: &mut Context<Self>) -> Option<AnyElement> {
-        let casting = self.cast_device().map(|d| d.name.clone());
+        Some(cast_button(self.cast_snap(), false))
+    }
+
+    /// What the Cast button shows (Now Playing's header keeps it in its snapshot).
+    pub(crate) fn cast_snap(&self) -> CastSnap {
         let state = &self.integrations.cast;
-        let devices = state.devices.clone();
-        let scanning = state.scanning;
-        let connecting = state.connecting.clone();
-        let label = match (&casting, &connecting) {
-            (Some(name), _) => Some(t!("cast.casting_to", device = name)),
-            (None, Some(name)) => Some(t!("cast.connecting_to", device = name)),
-            _ => None,
-        };
-        let current = casting.clone();
-        let button = Button::new("cast")
-            .ghost()
-            .small()
-            .icon(Lucide::Cast)
-            .selected(casting.is_some())
-            .when_label(label)
-            .tooltip(t!("cast.tooltip"))
-            .dropdown_menu(move |mut menu, window, cx| {
-                update_app(cx, |app, cx| app.cast_scan_if_stale(window, cx));
-                menu = menu.label(t!("cast.menu.title"));
-                if devices.is_empty() {
-                    menu = menu.item(
-                        PopupMenuItem::new(if scanning {
-                            t!("cast.menu.searching")
-                        } else {
-                            t!("cast.menu.none_found")
-                        })
-                        .disabled(true),
-                    );
-                }
-                for device in &devices {
-                    let is_current = current.as_deref() == Some(device.name.as_str());
-                    let label = match &device.model {
-                        Some(model) => format!("{} · {model}", device.name),
-                        None => device.name.clone(),
-                    };
-                    let device = device.clone();
-                    menu = menu.item(PopupMenuItem::new(label).checked(is_current).on_click(
-                        move |_, window, cx| {
-                            let device = device.clone();
-                            update_app(cx, |app, cx| app.cast_to(device, window, cx));
+        CastSnap {
+            casting: self.cast_device().map(|d| d.name.clone()),
+            devices: state.devices.clone(),
+            scanning: state.scanning,
+            connecting: state.connecting.clone(),
+        }
+    }
+}
+
+/// The Cast button's state.
+#[derive(Clone, PartialEq)]
+pub(crate) struct CastSnap {
+    casting: Option<String>,
+    devices: Vec<CastDevice>,
+    scanning: bool,
+    connecting: Option<String>,
+}
+
+/// The Cast button with its device menu (the player bar; Now Playing's header,
+/// `round`).
+pub(crate) fn cast_button(snap: CastSnap, round: bool) -> AnyElement {
+    let CastSnap {
+        casting,
+        devices,
+        scanning,
+        connecting,
+    } = snap;
+    let label = match (&casting, &connecting) {
+        (Some(name), _) => Some(t!("cast.casting_to", device = name)),
+        (None, Some(name)) => Some(t!("cast.connecting_to", device = name)),
+        _ => None,
+    };
+    let current = casting.clone();
+    let button = Button::new("cast").ghost().small();
+    let button = if round {
+        button.rounded(gpui::px(999.))
+    } else {
+        button
+    };
+    button
+        .icon(Lucide::Cast)
+        .selected(casting.is_some())
+        .when_label(label)
+        .tooltip(t!("cast.tooltip"))
+        .dropdown_menu(move |mut menu, window, cx| {
+            update_app(cx, |app, cx| app.cast_scan_if_stale(window, cx));
+            menu = menu.label(t!("cast.menu.title"));
+            if devices.is_empty() {
+                menu = menu.item(
+                    PopupMenuItem::new(if scanning {
+                        t!("cast.menu.searching")
+                    } else {
+                        t!("cast.menu.none_found")
+                    })
+                    .disabled(true),
+                );
+            }
+            for device in &devices {
+                let is_current = current.as_deref() == Some(device.name.as_str());
+                let label = match &device.model {
+                    Some(model) => format!("{} · {model}", device.name),
+                    None => device.name.clone(),
+                };
+                let device = device.clone();
+                menu = menu.item(PopupMenuItem::new(label).checked(is_current).on_click(
+                    move |_, window, cx| {
+                        let device = device.clone();
+                        update_app(cx, |app, cx| app.cast_to(device, window, cx));
+                    },
+                ));
+            }
+            menu =
+                menu.separator()
+                    .item(PopupMenuItem::new(t!("cast.menu.search_again")).on_click(
+                        |_, window, cx| {
+                            update_app(cx, |app, cx| app.cast_scan(window, cx));
                         },
                     ));
-                }
-                menu = menu.separator().item(
-                    PopupMenuItem::new(t!("cast.menu.search_again")).on_click(|_, window, cx| {
-                        update_app(cx, |app, cx| app.cast_scan(window, cx));
-                    }),
-                );
-                if current.is_some() {
-                    menu = menu.item(PopupMenuItem::new(t!("cast.stop")).on_click(|_, _, cx| {
-                        update_app(cx, |app, cx| app.cast_stop(true, cx));
-                    }));
-                }
-                menu
-            });
-        Some(button.into_any_element())
-    }
+            if current.is_some() {
+                menu = menu.item(PopupMenuItem::new(t!("cast.stop")).on_click(|_, _, cx| {
+                    update_app(cx, |app, cx| app.cast_stop(true, cx));
+                }));
+            }
+            menu
+        })
+        .into_any_element()
 }
 
 trait WhenLabel {
