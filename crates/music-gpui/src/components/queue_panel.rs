@@ -444,8 +444,8 @@ impl MusicApp {
                             }),
                     );
                 }
-                let locked = self.queue_lock();
-                let editable = locked.is_none();
+                // Moving and removing this song (a guest: its own, or by the mode).
+                let editable = self.song_lock(uid).is_none();
                 // Playing a slot is playback control (a guest with control may).
                 if self.transport_lock().is_none() || editable {
                     row = row.on_click(cx.listener(move |this, _, _, cx| this.queue_jump(uid, cx)));
@@ -507,9 +507,39 @@ impl MusicApp {
                     .on_click(cx.listener(move |this, _, _, cx| this.play_now(again.clone(), cx)));
             }
         }
-        row.context_menu(move |menu, _, _| track_menu(menu, &menu_track, None))
-            .into_any_element()
+        // Upcoming songs: "Remove from queue" first (through the session in one).
+        let removable = match kind {
+            Kind::Upcoming { uid, .. } => Some((uid, self.song_lock(uid).is_none())),
+            _ => None,
+        };
+        row.context_menu(move |menu, _, _| match removable {
+            Some((uid, allowed)) => queue_item_menu(menu, &menu_track, uid, allowed),
+            None => track_menu(menu, &menu_track, None),
+        })
+        .into_any_element()
     }
+}
+
+/// The song menu of an upcoming queue item: "Remove from queue" (disabled for a
+/// Music Together guest that may not), then the usual song menu. The queue panel and
+/// Now Playing's queue design use it.
+pub(crate) fn queue_item_menu(
+    menu: gpui_component::menu::PopupMenu,
+    track: &Track,
+    uid: u64,
+    allowed: bool,
+) -> gpui_component::menu::PopupMenu {
+    let menu = menu
+        .item(
+            PopupMenuItem::new(t!("queue.menu.remove"))
+                .icon(Lucide::ListX)
+                .disabled(!allowed)
+                .on_click(move |_, _, cx| {
+                    update_app(cx, |app, cx| app.queue_remove(uid, cx));
+                }),
+        )
+        .separator();
+    track_menu(menu, track, None)
 }
 
 // ---- queue tabs ---------------------------------------------------------------------

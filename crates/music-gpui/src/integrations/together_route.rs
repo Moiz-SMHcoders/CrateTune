@@ -25,7 +25,7 @@ use std::time::{Duration, Instant};
 use gpui::{Context, Window};
 use music_core::Track;
 use music_core::innertube::WatchTarget;
-use music_core::together::session::{Stamp, permissions};
+use music_core::together::session::{self as rules, Stamp, permissions};
 use music_core::together::{
     AddTrackMode, ClearPart, ControlAction, IntentMeta, NoteKind, Participant, QueueOp, RoomState,
     SessionMode, TogetherTrack, is_shareable_id,
@@ -132,12 +132,13 @@ fn shareable(tracks: &[Track]) -> Vec<TogetherTrack> {
 }
 
 /// The decision for `intent` (`room`: the guest's last room state; `pending`:
-/// waiting for approval).
+/// waiting for approval; `me`: this guest's owner key, which marks its own songs).
 pub fn route(
     intent: &Intent,
     standing: Standing,
     room: Option<&RoomState>,
     pending: bool,
+    me: Option<&str>,
 ) -> Routed {
     match standing {
         Standing::Alone | Standing::Host => return Routed::Local,
@@ -159,6 +160,20 @@ pub fn route(
     };
     let queue = |op: QueueOp| {
         if p.edit_queue {
+            Routed::Queue(op)
+        } else {
+            Routed::Blocked(Block::NoQueue)
+        }
+    };
+    // Removing or moving one song: any with full queue rights, the guest's own with
+    // the right for those. Only songs the room names by slot: a host without our
+    // queue edits (ArchiveTune) gives none.
+    let song = |uid: u64, op: QueueOp| {
+        let Some(track) = room.and_then(|r| r.queue.iter().find(|t| t.uid == Some(uid))) else {
+            return Routed::Blocked(Block::NoQueue);
+        };
+        let owned = me.is_some() && track.added_by_key.as_deref() == me;
+        if rules::may_edit_song(&settings, owned) {
             Routed::Queue(op)
         } else {
             Routed::Blocked(Block::NoQueue)
@@ -257,17 +272,23 @@ pub fn route(
             }
             suggest(std::slice::from_ref(track), AddTrackMode::PlayNext)
         }
-        Intent::RadioTarget { target, label } => queue(QueueOp::RadioTarget {
-            video_id: target.video_id.clone(),
-            playlist_id: target.playlist_id.clone(),
-            params: target.params.clone(),
-            label: label.clone(),
-        }),
-        Intent::Remove(uid) => queue(QueueOp::Remove { uid: *uid }),
-        Intent::Move { uid, to_uid } => queue(QueueOp::Move {
-            uid: *uid,
-            to_uid: *to_uid,
-        }),
+        Intent::RadioTarget { target, label } if p.start_lists => {
+            Routed::Queue(QueueOp::RadioTarget {
+                video_id: target.video_id.clone(),
+                playlist_id: target.playlist_id.clone(),
+                params: target.params.clone(),
+                label: label.clone(),
+            })
+        }
+        Intent::RadioTarget { .. } => Routed::Blocked(Block::NoQueue),
+        Intent::Remove(uid) => song(*uid, QueueOp::Remove { uid: *uid }),
+        Intent::Move { uid, to_uid } => song(
+            *uid,
+            QueueOp::Move {
+                uid: *uid,
+                to_uid: *to_uid,
+            },
+        ),
         Intent::Clear(part) => queue(QueueOp::Clear { part: *part }),
         Intent::QueueTab => Routed::Blocked(Block::QueueTabs),
     }
@@ -334,11 +355,12 @@ impl MusicApp {
                 false
             }
             Standing::Guest => {
-                let (room, pending) = match &self.integrations.together.role {
-                    Role::Guest(g) => (g.room.clone(), g.pending),
-                    _ => (None, false),
+                let (room, pending, me) = match &self.integrations.together.role {
+                    Role::Guest(g) => (g.room.clone(), g.pending, g.owner_key.clone()),
+                    _ => (None, false, String::new()),
                 };
-                let routed = route(&intent, standing, room.as_ref(), pending);
+                let me = (!me.is_empty()).then_some(me.as_str());
+                let routed = route(&intent, standing, room.as_ref(), pending, me);
                 self.together_send(intent, routed, room.as_ref(), cx);
                 true
             }
@@ -369,9 +391,20 @@ impl MusicApp {
                 | Intent::Radio(_)
                 | Intent::RadioTarget { .. }
         ) {
-            host.context_by = Some(me.name.clone());
+            host.context_by = Some((me.name.clone(), host.owner_key.clone()));
         }
+        // A removed song is named in the note ("Ana removed “Song”").
+        let removed = match intent {
+            Intent::Remove(uid) => self
+                .queue
+                .upcoming()
+                .iter()
+                .find(|i| i.uid == *uid)
+                .map(|i| i.track.title.clone()),
+            _ => None,
+        };
         if let Some((kind, count, title)) = note_for(intent, playing) {
+            let title = title.or(removed);
             self.together_note(&me, kind, count, title, cx);
         }
     }
@@ -528,6 +561,20 @@ impl MusicApp {
         (!p.edit_queue).then(|| self.together_block_text(Block::NoQueue))
     }
 
+    /// Why this person can't remove or move the song in slot `uid` now (a guest
+    /// outside its rights: not its own song, or no song edits in this mode), or `None`.
+    pub(crate) fn song_lock(&self, uid: u64) -> Option<String> {
+        let together = &self.integrations.together;
+        let Role::Guest(guest) = &together.role else {
+            return None;
+        };
+        if guest.pending {
+            return Some(self.together_block_text(Block::Waiting));
+        }
+        (!together.may_edit_song(uid).unwrap_or(true))
+            .then(|| self.together_block_text(Block::NoQueue))
+    }
+
     // ---- the host applies the guests' requests ------------------------------------
 
     /// Host: a guest's playback request, if the sequencer admits it.
@@ -638,13 +685,30 @@ impl MusicApp {
         cx: &mut Context<Self>,
     ) {
         let on = rules_playing(&self.queue);
+        let who = self.together_who(participant);
         let Role::Hosting(host) = &mut self.integrations.together.role else {
             return;
         };
         if !host.sequencer.admit_queue(&op, &on) {
             return;
         }
-        let name = participant.name.clone();
+        // Removing or moving a song: anyone's with full queue rights, else only the
+        // guest's own (the server let it through as far as it could tell).
+        if let QueueOp::Remove { uid } | QueueOp::Move { uid, .. } = &op {
+            let owned =
+                !who.1.is_empty() && host.added_by.get(uid).is_some_and(|(_, key)| *key == who.1);
+            if !rules::may_edit_song(&host.room, owned) {
+                host.server.refuse(&participant.id, "edit the queue");
+                return;
+            }
+        }
+        let title_of = |uid: u64| {
+            self.queue
+                .upcoming()
+                .iter()
+                .find(|i| i.uid == uid)
+                .map(|i| i.track.title.clone())
+        };
         let (note, title) = match &op {
             QueueOp::Jump { uid } => (
                 NoteKind::Started,
@@ -654,7 +718,7 @@ impl MusicApp {
                     .find(|i| i.uid == *uid)
                     .map(|i| i.track.title.clone()),
             ),
-            QueueOp::Remove { .. } => (NoteKind::Removed, None),
+            QueueOp::Remove { uid } => (NoteKind::Removed, title_of(*uid)),
             QueueOp::Move { .. } => (NoteKind::Moved, None),
             QueueOp::Clear { .. } => (NoteKind::Cleared, None),
             QueueOp::PlayList {
@@ -689,7 +753,7 @@ impl MusicApp {
                 context_name,
                 shuffle,
             } => {
-                self.together_set_context_by(&name);
+                self.together_set_context_by(&who);
                 let tracks: Vec<Track> = tracks.iter().map(TogetherTrack::to_track).collect();
                 if shuffle && !self.queue.shuffle() {
                     self.set_shuffle_local(true, cx);
@@ -698,11 +762,11 @@ impl MusicApp {
                 self.play_list_in_local(Rc::new(tracks), index, context, cx);
             }
             QueueOp::PlayNow { track } => {
-                self.together_set_context_by(&name);
+                self.together_set_context_by(&who);
                 self.play_now_local(track.to_track(), cx);
             }
             QueueOp::Radio { track } => {
-                self.together_set_context_by(&name);
+                self.together_set_context_by(&who);
                 self.start_radio_local(track.to_track(), window, cx);
             }
             QueueOp::RadioTarget {
@@ -711,7 +775,7 @@ impl MusicApp {
                 params,
                 label,
             } => {
-                self.together_set_context_by(&name);
+                self.together_set_context_by(&who);
                 let target = WatchTarget {
                     video_id,
                     playlist_id,
@@ -721,13 +785,13 @@ impl MusicApp {
                 self.start_radio_target_local(target, &label, window, cx);
             }
         }
-        self.together_claim_new(&before, &name);
+        self.together_claim_new(&before, &who);
         self.together_note(participant, note, 1, title, cx);
     }
 
-    fn together_set_context_by(&mut self, name: &str) {
+    fn together_set_context_by(&mut self, who: &super::together::Who) {
         if let Role::Hosting(host) = &mut self.integrations.together.role {
-            host.context_by = Some(name.to_owned());
+            host.context_by = Some(who.clone());
         }
     }
 }
@@ -783,6 +847,7 @@ mod tests {
     #[test]
     fn control_routing_per_mode() {
         let g = Standing::Guest;
+        let r = |intent: &Intent, room: &RoomState| route(intent, g, Some(room), false, None);
         let friends = room(SessionMode::Friends, false, true);
         let host_locked = room(SessionMode::Host, false, true);
         let host_open = room(SessionMode::Host, true, false);
@@ -790,29 +855,32 @@ mod tests {
 
         // Not in a session, or hosting: always here.
         for standing in [Standing::Alone, Standing::Host] {
-            assert_eq!(route(&Intent::Next, standing, None, false), Routed::Local);
             assert_eq!(
-                route(&Intent::Remove(1), standing, Some(&friends), false),
+                route(&Intent::Next, standing, None, false, None),
+                Routed::Local
+            );
+            assert_eq!(
+                route(&Intent::Remove(1), standing, Some(&friends), false, None),
                 Routed::Local
             );
         }
         // Play / pause is an intent from what the room does, not a toggle.
         assert_eq!(
-            route(&Intent::Toggle, g, Some(&friends), false),
+            r(&Intent::Toggle, &friends),
             Routed::Control(ControlAction::Pause)
         );
         assert_eq!(
-            route(&Intent::Toggle, g, Some(&host_open), false),
+            r(&Intent::Toggle, &host_open),
             Routed::Control(ControlAction::Play)
         );
         // Transport: Friends and Host-with-control send; locked Host and DJ block.
-        for (r, ok) in [
+        for (room, ok) in [
             (&friends, true),
             (&host_open, true),
             (&host_locked, false),
             (&dj, false),
         ] {
-            let got = route(&Intent::Seek(Duration::from_secs(30)), g, Some(r), false);
+            let got = r(&Intent::Seek(Duration::from_secs(30)), room);
             if ok {
                 assert_eq!(
                     got,
@@ -825,44 +893,29 @@ mod tests {
             }
         }
         assert_eq!(
-            route(&Intent::Repeat(Repeat::All), g, Some(&host_open), false),
+            r(&Intent::Repeat(Repeat::All), &host_open),
             Routed::Control(ControlAction::SetRepeatMode { repeat_mode: 2 })
         );
-        // Queue edits: only Friends.
-        assert_eq!(
-            route(&Intent::Remove(11), g, Some(&friends), false),
-            Routed::Queue(QueueOp::Remove { uid: 11 })
-        );
-        assert_eq!(
-            route(
-                &Intent::Move {
-                    uid: 11,
-                    to_uid: 10
-                },
-                g,
-                Some(&host_open),
-                false
-            ),
-            Routed::Blocked(Block::NoQueue)
-        );
-        assert_eq!(
-            route(&Intent::Clear(ClearPart::All), g, Some(&dj), false),
-            Routed::Blocked(Block::NoQueue)
-        );
+        // Clearing: Friends, and Host with control.
+        let clear = Intent::Clear(ClearPart::All);
+        assert!(matches!(r(&clear, &friends), Routed::Queue(_)));
+        assert!(matches!(r(&clear, &host_open), Routed::Queue(_)));
+        assert_eq!(r(&clear, &host_locked), Routed::Blocked(Block::NoQueue));
+        assert_eq!(r(&clear, &dj), Routed::Blocked(Block::NoQueue));
         // Playing a queue slot: a queue edit with Friends, by position with control.
         assert_eq!(
-            route(&Intent::Jump(11), g, Some(&friends), false),
+            r(&Intent::Jump(11), &friends),
             Routed::Queue(QueueOp::Jump { uid: 11 })
         );
         assert_eq!(
-            route(&Intent::Jump(11), g, Some(&host_open), false),
+            r(&Intent::Jump(11), &host_open),
             Routed::Control(ControlAction::SeekToIndex {
                 index: 1,
                 position_ms: 0
             })
         );
         assert_eq!(
-            route(&Intent::Jump(11), g, Some(&host_locked), false),
+            r(&Intent::Jump(11), &host_locked),
             Routed::Blocked(Block::NoControl)
         );
         // "Play" on an album: everyone's with Friends, a suggestion elsewhere.
@@ -877,7 +930,7 @@ mod tests {
             index,
             context_name,
             ..
-        }) = route(&list, g, Some(&friends), false)
+        }) = r(&list, &friends)
         else {
             panic!()
         };
@@ -885,8 +938,7 @@ mod tests {
             (tracks.len(), index, context_name.as_deref()),
             (2, 1, Some("Album"))
         );
-        let Routed::Suggest(tracks, AddTrackMode::PlayNext) = route(&list, g, Some(&dj), false)
-        else {
+        let Routed::Suggest(tracks, AddTrackMode::PlayNext) = r(&list, &dj) else {
             panic!()
         };
         assert_eq!(tracks[0].id, "ddddddddddd");
@@ -895,26 +947,13 @@ mod tests {
             tracks: vec![track("eeeeeeeeeee")],
             mode: AddTrackMode::AddToQueue,
         };
+        assert!(matches!(r(&add, &host_locked), Routed::Suggest(..)));
         assert!(matches!(
-            route(&add, g, Some(&host_locked), false),
-            Routed::Suggest(..)
-        ));
-        assert!(matches!(
-            route(
-                &Intent::PlayNow(track("eeeeeeeeeee")),
-                g,
-                Some(&friends),
-                false
-            ),
+            r(&Intent::PlayNow(track("eeeeeeeeeee")), &friends),
             Routed::Queue(QueueOp::PlayNow { .. })
         ));
         assert!(matches!(
-            route(
-                &Intent::Radio(track("eeeeeeeeeee")),
-                g,
-                Some(&host_locked),
-                false
-            ),
+            r(&Intent::Radio(track("eeeeeeeeeee")), &host_locked),
             Routed::Suggest(_, AddTrackMode::PlayNext)
         ));
         // Local files can't travel; a host that takes no songs says so.
@@ -922,24 +961,18 @@ mod tests {
             tracks: vec![track("local:1")],
             mode: AddTrackMode::PlayNext,
         };
-        assert_eq!(
-            route(&local, g, Some(&friends), false),
-            Routed::Blocked(Block::NotShareable)
-        );
+        assert_eq!(r(&local, &friends), Routed::Blocked(Block::NotShareable));
         let mut closed = host_locked.clone();
         closed.settings.allow_guests_to_add_tracks = false;
-        assert_eq!(
-            route(&add, g, Some(&closed), false),
-            Routed::Blocked(Block::NoSuggestions)
-        );
+        assert_eq!(r(&add, &closed), Routed::Blocked(Block::NoSuggestions));
         // Waiting to be let in: nothing goes out.
         assert_eq!(
-            route(&Intent::Next, g, Some(&friends), true),
+            route(&Intent::Next, g, Some(&friends), true, None),
             Routed::Blocked(Block::Waiting)
         );
         // Queue tabs never swap the session's queue for a guest.
         assert_eq!(
-            route(&Intent::QueueTab, g, Some(&friends), false),
+            r(&Intent::QueueTab, &friends),
             Routed::Blocked(Block::QueueTabs)
         );
         // ArchiveTune host (no mode on the wire = Host), control allowed: plays by
@@ -947,13 +980,65 @@ mod tests {
         let mut archive = host_open.clone();
         archive.queue.iter_mut().for_each(|t| t.uid = None);
         assert_eq!(
-            route(&Intent::Jump(11), g, Some(&archive), false),
+            r(&Intent::Jump(11), &archive),
             Routed::Blocked(Block::NoQueue)
         );
         assert_eq!(
-            route(&Intent::Remove(11), g, Some(&archive), false),
+            r(&Intent::Remove(11), &archive),
             Routed::Blocked(Block::NoQueue)
         );
+    }
+
+    /// "Remove from queue" and reordering, per mode: anyone's song with Friends (and
+    /// in Host mode with control), one's own in DJ mode and in Host mode while guests
+    /// add songs, nothing in a Host session that takes no songs.
+    #[test]
+    fn removing_and_moving_songs_per_mode() {
+        let g = Standing::Guest;
+        let mine = Some("me-key");
+        let mut rooms = [
+            room(SessionMode::Friends, false, true),
+            room(SessionMode::Host, false, true),
+            room(SessionMode::Host, true, true),
+            room(SessionMode::Dj, false, true),
+        ];
+        // Slot 11 is this guest's, slot 10 someone else's.
+        for r in &mut rooms {
+            r.queue[1].added_by_key = Some("me-key".into());
+            r.queue[0].added_by_key = Some("ann-key".into());
+        }
+        let [friends, host_adds, host_control, dj] = &rooms;
+        let mut host_closed = host_adds.clone();
+        host_closed.settings.allow_guests_to_add_tracks = false;
+        let remove =
+            |uid: u64, room: &RoomState| route(&Intent::Remove(uid), g, Some(room), false, mine);
+        let moved = |uid: u64, room: &RoomState| {
+            route(
+                &Intent::Move { uid, to_uid: 10 },
+                g,
+                Some(room),
+                false,
+                mine,
+            )
+        };
+        let yes = |got: Routed| matches!(got, Routed::Queue(_));
+        // (room, own song, someone else's)
+        for (room, own, theirs) in [
+            (friends, true, true),
+            (host_control, true, true),
+            (host_adds, true, false),
+            (dj, true, false),
+            (&host_closed, false, false),
+        ] {
+            assert_eq!(yes(remove(11, room)), own, "{:?}", room.settings);
+            assert_eq!(yes(moved(11, room)), own, "{:?}", room.settings);
+            assert_eq!(yes(remove(10, room)), theirs, "{:?}", room.settings);
+            assert_eq!(yes(moved(10, room)), theirs, "{:?}", room.settings);
+        }
+        // Without knowing who it is, nothing counts as its own.
+        assert!(!yes(route(&Intent::Remove(11), g, Some(dj), false, None)));
+        // A slot the room doesn't know: nothing to send.
+        assert!(!yes(remove(99, friends)));
     }
 
     #[test]

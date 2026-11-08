@@ -36,8 +36,12 @@ pub struct Permissions {
     pub add: bool,
     /// Songs go straight in (no approval).
     pub add_directly: bool,
-    /// Remove, reorder and clear queued songs; start a list or a radio for everyone.
+    /// Remove and reorder any song, clear the queue's parts.
     pub edit_queue: bool,
+    /// Remove and reorder the songs this person queued.
+    pub edit_own: bool,
+    /// Start a list, a song or a radio for everyone (replacing what comes next).
+    pub start_lists: bool,
     /// Switch the session's mode.
     pub switch_mode: bool,
     /// Remove people.
@@ -46,6 +50,11 @@ pub struct Permissions {
 
 /// What a participant may do in a room with `settings` (`host`: the device the
 /// session runs on, which may do everything).
+///
+/// Queue edits: in a Friends session anyone changes anything; in a DJ session each
+/// person removes and reorders the songs they queued (the host everything); in a Host
+/// session guests may too while "Guests can add songs" is on, and change anything
+/// while "Guests can control playback" is on.
 pub fn permissions(settings: &RoomSettings, host: bool) -> Permissions {
     if host {
         return Permissions {
@@ -53,30 +62,66 @@ pub fn permissions(settings: &RoomSettings, host: bool) -> Permissions {
             add: true,
             add_directly: true,
             edit_queue: true,
+            edit_own: true,
+            start_lists: true,
             switch_mode: true,
             moderate: true,
         };
     }
     let friends = settings.mode == SessionMode::Friends;
+    let edit_queue = match settings.mode {
+        SessionMode::Friends => true,
+        SessionMode::Host => settings.allow_guests_to_control_playback,
+        SessionMode::Dj => false,
+    };
+    let edit_own = edit_queue
+        || match settings.mode {
+            SessionMode::Friends | SessionMode::Dj => true,
+            SessionMode::Host => settings.allow_guests_to_add_tracks,
+        };
     Permissions {
         control: settings.allow_guests_to_control_playback,
         add: settings.allow_guests_to_add_tracks,
         add_directly: settings.allow_guests_to_add_tracks
             && !settings.require_approval_for_suggestions,
-        edit_queue: friends,
+        edit_queue,
+        edit_own,
+        start_lists: friends,
         switch_mode: friends,
         moderate: friends,
     }
 }
 
-/// Whether a guest may make a queue edit (`op`) in a room with `settings`: a jump is
-/// playback control, every other edit needs a Friends session.
+/// Whether a guest may remove or move one song: any with full queue rights, its own
+/// (`owned`: it queued the song) with [`Permissions::edit_own`].
+pub fn may_edit_song(settings: &RoomSettings, owned: bool) -> bool {
+    let p = permissions(settings, false);
+    p.edit_queue || (owned && p.edit_own)
+}
+
+/// Whether a guest may make a queue edit (`op`) in a room with `settings`, as far as
+/// the server can tell: a jump is playback control; removing or moving a song needs
+/// the right for it (whether the song is the guest's own the host app checks, see
+/// [`may_edit_song`]); clearing needs full queue rights; starting something for
+/// everyone needs a Friends session.
 pub fn queue_op_allowed(op: &QueueOp, settings: &RoomSettings) -> bool {
     let p = permissions(settings, false);
     match op {
-        QueueOp::Jump { .. } => p.control || p.edit_queue,
-        _ => p.edit_queue,
+        QueueOp::Jump { .. } => p.control || p.start_lists,
+        QueueOp::Remove { .. } | QueueOp::Move { .. } => p.edit_own,
+        QueueOp::Clear { .. } => p.edit_queue,
+        QueueOp::PlayList { .. }
+        | QueueOp::PlayNow { .. }
+        | QueueOp::Radio { .. }
+        | QueueOp::RadioTarget { .. } => p.start_lists,
     }
+}
+
+/// Who queued a song, as the room says it ([`super::TogetherTrack::added_by_key`]): a
+/// short hash of the queuer's client id, the same on every device (the id itself,
+/// which bans go by, never leaves the server).
+pub fn owner_key(client_id: &str) -> String {
+    super::relay::sha256_hex(&format!("cratetune-together-owner/{client_id}"))[..16].to_owned()
 }
 
 /// The song playing on the device that sequences the session, as the [`Sequencer`]
@@ -240,6 +285,68 @@ pub fn successor_join(successor: &Successor, join: &JoinInfo) -> Option<JoinInfo
 /// How long a guest tries to reach each successor before the next one (or itself)
 /// takes over.
 pub const FAILOVER_WAIT: Duration = Duration::from_secs(6);
+
+/// How long a dropped link is retried before the session gives up on it (a host's
+/// relay connection, a guest's connection to its host): Wi-Fi power saving, a laptop
+/// waking up, a proxy restarting all drop connections that come back within this.
+pub const RECONNECT_GRACE: Duration = Duration::from_secs(60);
+/// In a Friends session the others hand over sooner: the device it ran on gets this
+/// long to come back (its relay link), the others wait a moment more before the first
+/// in line takes over (see [`failover`]).
+pub const LEADER_GRACE: Duration = Duration::from_secs(4);
+pub const FRIENDS_RECONNECT_WAIT: Duration = Duration::from_secs(6);
+
+/// Waits between reconnect attempts: doubling from `first` up to `max`, until
+/// `grace` has passed since the link dropped.
+#[derive(Debug, Clone)]
+pub struct Backoff {
+    next: Duration,
+    max: Duration,
+    deadline: Instant,
+    attempts: u32,
+}
+
+impl Backoff {
+    pub fn new(first: Duration, max: Duration, grace: Duration, now: Instant) -> Self {
+        Self {
+            next: first,
+            max,
+            deadline: now + grace,
+            attempts: 0,
+        }
+    }
+
+    /// The usual one: ½ s, 1 s, 2 s, 4 s, then every 5 s for [`RECONNECT_GRACE`].
+    pub fn reconnect(now: Instant) -> Self {
+        Self::new(
+            Duration::from_millis(500),
+            Duration::from_secs(5),
+            RECONNECT_GRACE,
+            now,
+        )
+    }
+
+    /// How long to wait before the next attempt at `now`, or `None` once the grace is
+    /// over (never past its end: the last wait is cut short to it).
+    pub fn next_delay(&mut self, now: Instant) -> Option<Duration> {
+        let left = self.deadline.checked_duration_since(now)?;
+        if left.is_zero() {
+            return None;
+        }
+        let delay = self.next.min(left);
+        self.next = (self.next * 2).min(self.max);
+        self.attempts += 1;
+        Some(delay)
+    }
+
+    pub fn attempts(&self) -> u32 {
+        self.attempts
+    }
+
+    pub fn deadline(&self) -> Instant {
+        self.deadline
+    }
+}
 
 /// At most `burst` events, then one every `every` (a token bucket): reactions per
 /// person, activity notes on screen.
@@ -535,30 +642,59 @@ mod tests {
         // Host mode: as the host set it (here: suggestions yes, control no).
         let p = permissions(&host, false);
         assert!(p.add && p.add_directly && !p.control && !p.edit_queue && !p.switch_mode);
+        assert!(p.edit_own && !p.start_lists);
         // Friends: everything, straight in, whatever the host's own settings said.
         let p = permissions(&friends, false);
         assert!(
             p.control && p.add && p.add_directly && p.edit_queue && p.switch_mode && p.moderate
         );
         assert!(friends.allow_guests_to_control_playback && friends.allow_guests_to_add_tracks);
-        // DJ: add (with approval when asked for), never control.
+        // DJ: add (with approval when asked for), never control; own songs only.
         let p = permissions(&dj, false);
-        assert!(p.add && !p.add_directly && !p.control && !p.edit_queue);
+        assert!(p.add && !p.add_directly && !p.control && !p.edit_queue && p.edit_own);
         // The host may do everything in every mode.
         for s in [host, friends, dj] {
             assert!(permissions(&s, true).edit_queue);
         }
-        // Queue edits: a jump is playback control; the rest needs Friends.
+        // Queue edits per mode. Friends: anything.
         let jump = QueueOp::Jump { uid: 1 };
         let remove = QueueOp::Remove { uid: 1 };
-        assert!(queue_op_allowed(&jump, &friends) && queue_op_allowed(&remove, &friends));
-        assert!(!queue_op_allowed(&jump, &host) && !queue_op_allowed(&remove, &host));
+        let clear = QueueOp::Clear {
+            part: crate::together::ClearPart::Queued,
+        };
+        let list = QueueOp::PlayNow {
+            track: Default::default(),
+        };
+        for op in [&jump, &remove, &clear, &list] {
+            assert!(queue_op_allowed(op, &friends), "{op:?}");
+        }
+        assert!(may_edit_song(&friends, false));
+        // Host mode, guests add songs: their own songs only (the server lets the
+        // request through, the host app checks the song is theirs); no clearing.
+        assert!(!queue_op_allowed(&jump, &host) && queue_op_allowed(&remove, &host));
+        assert!(!queue_op_allowed(&clear, &host) && !queue_op_allowed(&list, &host));
+        assert!(may_edit_song(&host, true) && !may_edit_song(&host, false));
+        // Host mode, no songs from guests: nothing.
+        let closed = RoomSettings {
+            allow_guests_to_add_tracks: false,
+            ..host
+        };
+        assert!(!queue_op_allowed(&remove, &closed) && !may_edit_song(&closed, true));
+        // Host mode, guests control playback: anything in the queue (not lists).
         let controlled = RoomSettings {
             allow_guests_to_control_playback: true,
             ..host
         };
-        assert!(queue_op_allowed(&jump, &controlled) && !queue_op_allowed(&remove, &controlled));
-        assert!(!queue_op_allowed(&remove, &dj));
+        assert!(queue_op_allowed(&jump, &controlled) && queue_op_allowed(&clear, &controlled));
+        assert!(may_edit_song(&controlled, false) && !queue_op_allowed(&list, &controlled));
+        // DJ: each person their own songs (the host everything).
+        assert!(queue_op_allowed(&remove, &dj) && !queue_op_allowed(&clear, &dj));
+        assert!(may_edit_song(&dj, true) && !may_edit_song(&dj, false));
+        // The owner key: stable, short, not the id.
+        assert_eq!(owner_key("abc"), owner_key("abc"));
+        assert_ne!(owner_key("abc"), owner_key("abd"));
+        assert_eq!(owner_key("abc").len(), 16);
+        assert!(!owner_key("abc").contains("abc"));
     }
 
     #[test]
@@ -602,6 +738,57 @@ mod tests {
         let mut lonely = roster.clone();
         lonely[0].host = None;
         assert_eq!(failover(&lonely[..2], "cat", &lan), Failover::TakeOver);
+    }
+
+    #[test]
+    fn reconnects_back_off_within_the_grace() {
+        let t0 = Instant::now();
+        let mut b = Backoff::reconnect(t0);
+        let mut at = t0;
+        let mut waits = Vec::new();
+        while let Some(d) = b.next_delay(at) {
+            waits.push(d.as_millis() as u64);
+            at += d;
+        }
+        // ½ s, 1 s, 2 s, 4 s, then 5 s steps, ending exactly at the grace.
+        assert_eq!(&waits[..5], &[500, 1_000, 2_000, 4_000, 5_000]);
+        assert!(waits[4..waits.len() - 1].iter().all(|&w| w == 5_000));
+        assert_eq!(
+            waits.iter().sum::<u64>(),
+            RECONNECT_GRACE.as_millis() as u64
+        );
+        assert_eq!(b.attempts() as usize, waits.len());
+        // Past the deadline: give up.
+        assert_eq!(
+            b.next_delay(t0 + RECONNECT_GRACE + Duration::from_millis(1)),
+            None
+        );
+        // A short grace (a Friends session's device) cuts the waits short.
+        let mut short = Backoff::new(
+            Duration::from_millis(500),
+            Duration::from_secs(5),
+            LEADER_GRACE,
+            t0,
+        );
+        let total: Duration = std::iter::from_fn(|| {
+            let d = short.next_delay(t0 + Duration::from_millis(0))?;
+            Some(d)
+        })
+        .take(3)
+        .sum();
+        assert!(total <= LEADER_GRACE * 3);
+        let mut s = Backoff::new(
+            Duration::from_secs(1),
+            Duration::from_secs(8),
+            Duration::from_secs(3),
+            t0,
+        );
+        assert_eq!(s.next_delay(t0), Some(Duration::from_secs(1)));
+        assert_eq!(
+            s.next_delay(t0 + Duration::from_secs(1)),
+            Some(Duration::from_secs(2))
+        );
+        assert_eq!(s.next_delay(t0 + Duration::from_secs(3)), None);
     }
 
     #[test]

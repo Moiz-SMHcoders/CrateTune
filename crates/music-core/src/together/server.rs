@@ -39,7 +39,7 @@ const GUEST_TIMEOUT: Duration = Duration::from_secs(20);
 const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(5);
 /// How long the guest asked to take over has to answer.
 const TRANSFER_TIMEOUT: Duration = Duration::from_secs(15);
-const RELAY_TIMEOUT: Duration = Duration::from_secs(8);
+pub(super) const RELAY_TIMEOUT: Duration = Duration::from_secs(8);
 /// Suggestions one guest may have waiting for approval; more are turned down.
 pub const MAX_PENDING_PER_GUEST: usize = 20;
 
@@ -118,7 +118,14 @@ pub enum ServerEvent {
         participant: Option<Participant>,
         reason: String,
     },
-    /// The session can't go on (a relayed session lost its relay).
+    /// A relayed session's link to the relay dropped; it is being claimed again (for
+    /// [`TogetherServer::set_relay_grace`]). [`ServerEvent::RelayRestored`] or
+    /// [`ServerEvent::Stopped`] follows.
+    RelayLost {
+        reason: String,
+    },
+    RelayRestored,
+    /// The session can't go on (a relayed session lost its relay for good).
     Stopped {
         reason: String,
     },
@@ -182,7 +189,7 @@ pub(super) struct Inner {
     banned: Mutex<HashSet<String>>,
     trusted: Mutex<HashSet<String>>,
     /// Relayed sessions: (relay URL, room secret).
-    relay: Option<(String, String)>,
+    pub(super) relay: Option<(String, String)>,
     transfer: Mutex<Option<PendingTransfer>>,
     /// Suggestions waiting for the host, oldest first.
     suggestions: Mutex<Vec<Suggestion>>,
@@ -195,6 +202,8 @@ pub(super) struct Inner {
     pub(super) stop_reason: Mutex<String>,
     /// Stopping without a word ([`TogetherServer::abandon`]).
     pub(super) abandoned: AtomicBool,
+    /// How long a dropped relay link is retried.
+    pub(super) relay_grace: Mutex<Duration>,
 }
 
 fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
@@ -242,6 +251,14 @@ impl Inner {
 
     fn elapsed_ms(&self) -> u64 {
         self.epoch.elapsed().as_millis() as u64
+    }
+
+    pub(super) fn session_id(&self) -> &str {
+        &self.session_id
+    }
+
+    pub(super) fn session_key(&self) -> &str {
+        &self.session_key
     }
 
     fn with_client<T>(&self, id: &str, f: impl FnOnce(&mut Client) -> T) -> Option<T> {
@@ -368,6 +385,13 @@ impl TogetherServer {
             secret,
             timeout,
         )
+    }
+
+    /// How long a dropped relay link is claimed again before the session ends
+    /// ([`super::session::RECONNECT_GRACE`]; a Friends session's device takes less, so
+    /// the others take over sooner).
+    pub fn set_relay_grace(&self, grace: Duration) {
+        *lock(&self.inner.relay_grace) = grace;
     }
 
     /// The relay this session runs through (normalized `ws(s)://` URL).
@@ -546,6 +570,7 @@ impl TogetherServer {
                     return None;
                 }
                 c.pending = false;
+                lock(&self.inner.trusted).insert(c.client_id.clone());
                 let _ = c.outbox.send(Outgoing::Text(decision));
                 Some(c.participant())
             });
@@ -634,7 +659,18 @@ impl TogetherServer {
         if self.inner.shutdown.swap(true, Ordering::SeqCst) {
             return;
         }
+        // Over for real: this app's guests are told before the goodbye (which a relay
+        // that lost its host sends too).
+        let ended = (reason == SESSION_ENDED).then(|| {
+            Message::SessionEnded {
+                session_id: self.inner.session_id.clone(),
+            }
+            .encode()
+        });
         for client in lock(&self.inner.clients).drain(..) {
+            if let (Some(text), true) = (&ended, client.ours) {
+                let _ = client.outbox.send(Outgoing::Text(text.clone()));
+            }
             let _ = client.outbox.send(Outgoing::Close(reason.into()));
         }
         if let Some(handle) = self.accept.take() {
@@ -668,6 +704,25 @@ impl TogetherServer {
                 port: c.standby.as_ref().map(|(_, p)| *p),
             })
             .collect()
+    }
+
+    /// A guest's [`super::session::owner_key`] (from its client id), `None` if gone.
+    pub fn owner_key(&self, participant_id: &str) -> Option<String> {
+        self.inner
+            .with_client(participant_id, |c| super::session::owner_key(&c.client_id))
+    }
+
+    /// Tells a guest the host app turned its request down (`what`: "edit the queue"…).
+    pub fn refuse(&self, participant_id: &str, what: &str) {
+        let message = Message::ServerError {
+            session_id: Some(self.inner.session_id.clone()),
+            message: format!("The host doesn't allow guests to {what}"),
+            code: Some("not_allowed".into()),
+        }
+        .encode();
+        self.inner.with_client(participant_id, |c| {
+            let _ = c.outbox.send(Outgoing::Text(message));
+        });
     }
 
     /// Whether a guest is this app (understands modes, queue edits, notes, reactions).
@@ -791,6 +846,7 @@ impl Inner {
             roster_dirty: AtomicBool::new(false),
             stop_reason: Mutex::new(SESSION_ENDED.into()),
             abandoned: AtomicBool::new(false),
+            relay_grace: Mutex::new(super::session::RECONNECT_GRACE),
         });
         (inner, rx)
     }
@@ -917,6 +973,10 @@ fn serve_link_from<L: Link>(mut conn: L, hello: Recv, inner: &Inner) -> Result<(
         reactions: RateLimit::reactions(),
     };
     let participant = client.participant();
+    if !pending {
+        // Let in once: back in without approval after a dropped link.
+        lock(&inner.trusted).insert(client.client_id.clone());
+    }
     lock(&inner.clients).push(client);
     inner.roster_dirty.store(true, Ordering::Relaxed);
     conn.send(&Message::ServerWelcome {
@@ -926,6 +986,10 @@ fn serve_link_from<L: Link>(mut conn: L, hello: Recv, inner: &Inner) -> Result<(
         role: Role::Guest,
         is_pending: pending,
         settings,
+        features: super::messages::FEATURES
+            .iter()
+            .map(|f| (*f).to_owned())
+            .collect(),
     });
     inner.emit(if pending {
         ServerEvent::JoinRequested(participant.clone())

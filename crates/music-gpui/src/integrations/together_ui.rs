@@ -129,7 +129,10 @@ pub fn note_text(who: &str, kind: NoteKind, count: u32, title: Option<&str>) -> 
         NoteKind::Skipped => tp!("together.note.skipped", count, name = who),
         NoteKind::WentBack => t!("together.note.went_back", name = who),
         NoteKind::Added => tp!("together.note.added", count, name = who),
-        NoteKind::Removed => tp!("together.note.removed", count, name = who),
+        NoteKind::Removed => match title.filter(|t| !t.is_empty() && count == 1) {
+            Some(title) => t!("together.note.removed_song", name = who, title = title),
+            None => tp!("together.note.removed", count, name = who),
+        },
         NoteKind::Moved => t!("together.note.moved", name = who),
         NoteKind::Cleared => t!("together.note.cleared", name = who),
         NoteKind::Started => match title.filter(|t| !t.is_empty()) {
@@ -149,6 +152,9 @@ pub fn permission_line(app: &MusicApp) -> String {
     let together = &app.integrations.together;
     let host = together.host_name().unwrap_or_default();
     let mode = together.mode().unwrap_or_default();
+    if together.reconnecting() {
+        return t!("together.can.reconnecting").into();
+    }
     match &together.role {
         Role::Recovering(_) => t!("together.can.reconnecting").into(),
         Role::Joining(_) => t!("together.can.joining").into(),
@@ -225,6 +231,7 @@ impl MusicApp {
             Role::Joining(_) => Some(t!("together.chip.joining")),
             Role::Recovering(_) => Some(t!("together.chip.reconnecting")),
             Role::Guest(g) if g.pending => Some(t!("together.chip.waiting")),
+            _ if together.reconnecting() => Some(t!("together.chip.reconnecting")),
             _ => None,
         };
         let people: Vec<Participant> = together

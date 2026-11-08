@@ -623,6 +623,13 @@ impl MusicApp {
             window.focus(&self.focus, cx);
         }
         self.poll_tray(window, cx);
+        // "Keep the computer awake while playing" (and in a Listen together session).
+        let keep = music_core::keep_awake::wanted(
+            self.settings.read(cx).settings().playback.keep_awake,
+            self.playback.status == PlaybackStatus::Playing,
+            self.integrations.together.in_session(),
+        );
+        self.services.keep_awake(keep);
         self.open_np_on_play(window, cx);
         self.poll_spectrum();
         self.poll_waveform(cx);

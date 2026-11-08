@@ -53,6 +53,8 @@ pub struct Services {
     /// In a Music Together session: every media-key event goes to the app (which
     /// sends it to the session) instead of straight to the player.
     to_app: Arc<AtomicBool>,
+    /// "Keep the computer awake while playing" (made on first use).
+    keep_awake: Option<music_core::keep_awake::KeepAwake>,
 }
 
 impl Default for Services {
@@ -70,6 +72,7 @@ impl Default for Services {
             discord_status: DiscordStatus::Idle,
             real_audio: false,
             to_app: Arc::new(AtomicBool::new(false)),
+            keep_awake: None,
         }
     }
 }
@@ -128,6 +131,27 @@ impl Services {
     /// through the app (and so to the session) instead of straight to the player.
     pub fn route_media_to_app(&self, on: bool) {
         self.to_app.store(on, Ordering::Relaxed);
+    }
+
+    /// Keeps the computer from idle sleep while `wanted` (asks the system only when it
+    /// changes; call from the UI thread, with every poll).
+    pub fn keep_awake(&mut self, wanted: bool) {
+        if !wanted && self.keep_awake.is_none() {
+            return;
+        }
+        self.keep_awake
+            .get_or_insert_with(|| {
+                music_core::keep_awake::KeepAwake::new(
+                    crate::identity::APP_NAME,
+                    "Playing music", // i18n-ignore
+                )
+            })
+            .set(wanted);
+    }
+
+    /// Whether the computer is kept awake now.
+    pub fn keeping_awake(&self) -> bool {
+        self.keep_awake.as_ref().is_some_and(|k| k.held())
     }
 
     /// Media-key events since the last call.

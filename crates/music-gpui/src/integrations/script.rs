@@ -28,6 +28,7 @@
 //! | `@together-panel=on\|off`, `@together-mode-picker` | the listeners chip's panel; its mode picker |
 //! | `@together-confirm-mode=MODE` | the mode switch's confirmation dialog |
 //! | `@together-notes=on\|off`, `@together-auto-join=on\|off` | "Activity notes"; "Join automatically when a friend starts" |
+//! | `@keep-awake=on\|off` | "Keep the computer awake while playing" (`@together-status` prints whether it holds) |
 //! | `@media=play\|pause\|toggle\|next\|prev\|seek:SECS` | an OS media-key / now-playing event |
 //! | `@together-status` | print role, mode, rights, room code, participants (who queued what), room and clock |
 //! | `@import-file=PATH`, `@spotify-playlist=URL`, `@spotify-liked` | start an import |
@@ -381,6 +382,7 @@ impl MusicApp {
             "together-notes" => {
                 panel.update(cx, |p, cx| p.set_together(|t| t.activity_notes = on, cx))
             }
+            "keep-awake" => panel.update(cx, |p, cx| p.set_keep_awake(on, cx)),
             "together-auto-join" => {
                 panel.update(cx, |p, cx| p.set_together(|t| t.auto_join = on, cx))
             }
@@ -672,12 +674,14 @@ impl MusicApp {
         };
         eprintln!("music-gpui: together {role}; error {:?}", t.error);
         eprintln!(
-            "music-gpui: together   mode {:?} rights {:?} transport_lock {:?} queue_lock {:?} group {:?}",
+            "music-gpui: together   mode {:?} rights {:?} transport_lock {:?} queue_lock {:?} group {:?} reconnecting {} keep_awake {}",
             t.mode(),
             t.permissions(),
             self.transport_lock(),
             self.queue_lock(),
-            t.group()
+            t.group(),
+            t.reconnecting(),
+            self.services.keeping_awake()
         );
         for p in t.participants() {
             eprintln!(

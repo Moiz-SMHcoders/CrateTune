@@ -279,3 +279,8 @@ together.queue.started_by = started by {name}
 # session's panel while in one.
 together.queue.listen = Listen to this queue together…
 together.chip.tooltip_short = Listening together
+# Log: a link of the session dropped and is being restored ({reason}: the network's
+# words, English).
+together.log.relay_lost = Connection dropped ({reason}); reconnecting…
+# Activity note: someone removed a song ({title}: the song).
+together.note.removed_song = {name} removed “{title}”

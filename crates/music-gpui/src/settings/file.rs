@@ -362,12 +362,25 @@ impl AppearanceConfig {
     }
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct PlaybackConfig {
     pub shuffle: bool,
     #[serde(deserialize_with = "lenient")]
     pub repeat: Repeat,
+    /// "Keep the computer awake while playing" (and during a Listen together
+    /// session): no idle sleep, so the music and the session's links go on.
+    pub keep_awake: bool,
+}
+
+impl Default for PlaybackConfig {
+    fn default() -> Self {
+        Self {
+            shuffle: false,
+            repeat: Repeat::default(),
+            keep_awake: true,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

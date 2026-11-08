@@ -104,6 +104,12 @@ pub(super) fn render(
         SettingsPanel::set_auto_skip,
         cx,
     );
+    let keep_awake = switch(
+        "settings-keep-awake",
+        panel.settings.playback.keep_awake,
+        SettingsPanel::set_keep_awake,
+        cx,
+    );
     let player_fixes = switch(
         "settings-player-fixes",
         a.player_fixes,
@@ -349,6 +355,13 @@ pub(super) fn render(
                     t!("settings.playback.auto_skip"),
                     Some(t!("settings.playback.auto_skip_desc")),
                     auto_skip,
+                    cx,
+                ))
+                .child(row_at(
+                    "playback.keep_awake",
+                    t!("settings.playback.keep_awake"),
+                    Some(t!("settings.playback.keep_awake_desc")),
+                    keep_awake,
                     cx,
                 )),
         )

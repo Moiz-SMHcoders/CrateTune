@@ -678,7 +678,9 @@ mod tests {
         drop(hana);
     }
 
-    /// This app's guest (our additions), with a LAN standby address.
+    /// This app's guest (our additions), with a LAN standby address; a dropped link
+    /// ends here at once (these tests are about what comes after; the reconnect has
+    /// its own in `relay_e2e.rs`).
     fn ours(
         server: &TogetherServer,
         key: &str,
@@ -687,11 +689,14 @@ mod tests {
     ) -> TogetherClient {
         TogetherClient::connect_with(
             &join(server, key),
-            ClientOptions::ours(
-                name,
-                &format!("{name}-client"),
-                standby.map(|p| ("127.0.0.1".to_owned(), p)),
-            ),
+            ClientOptions {
+                reconnect_for: None,
+                ..ClientOptions::ours(
+                    name,
+                    &format!("{name}-client"),
+                    standby.map(|p| ("127.0.0.1".to_owned(), p)),
+                )
+            },
         )
         .unwrap()
     }
@@ -1115,8 +1120,15 @@ mod tests {
             });
             seen.clear();
         };
-        // Host mode, no control: no queue edits, no jumps, no mode switch, no skips.
-        assert!(bob.request_queue(QueueOp::Remove { uid: 1 }, None));
+        // Host mode, no control: no clearing, no jumps, no mode switch, no skips; a
+        // song of their own may be removed (adds are on: the host app checks it is
+        // theirs, by the owner key of the guest's client id).
+        assert!(bob.request_queue(
+            QueueOp::Clear {
+                part: ClearPart::All
+            },
+            None
+        ));
         refused(&bob, &mut seen);
         assert!(bob.request_queue(QueueOp::Jump { uid: 1 }, None));
         refused(&bob, &mut seen);
@@ -1124,17 +1136,56 @@ mod tests {
         refused(&bob, &mut seen);
         assert!(bob.request_control(ControlAction::SkipNext));
         refused(&bob, &mut seen);
-        // With control: a jump (playback) but still no queue edits.
+        assert!(bob.request_queue(QueueOp::Remove { uid: 1 }, None));
+        let (op, who) = wait_server(&server, |e| match e {
+            ServerEvent::Queue {
+                op, participant, ..
+            } => Some((op, participant)),
+            _ => None,
+        });
+        assert_eq!(op, QueueOp::Remove { uid: 1 });
+        assert_eq!(
+            server.owner_key(&who.id),
+            Some(session::owner_key("Bob-client"))
+        );
+        // The host app turns down a song that isn't Bob's: he hears it.
+        server.refuse(&who.id, "edit the queue");
+        refused(&bob, &mut seen);
+        // No songs from guests: not even their own.
+        server.update_settings(RoomSettings {
+            allow_guests_to_add_tracks: false,
+            ..server.settings()
+        });
+        assert!(bob.request_queue(QueueOp::Move { uid: 1, to_uid: 2 }, None));
+        refused(&bob, &mut seen);
+        // With control: a jump (playback) and any queue edit, but no lists for all.
         server.update_settings(RoomSettings {
             allow_guests_to_control_playback: true,
             ..server.settings()
         });
         assert!(bob.request_queue(QueueOp::Jump { uid: 7 }, None));
-        let op = wait_server(&server, |e| match e {
-            ServerEvent::Queue { op, .. } => Some(op),
-            _ => None,
+        assert!(bob.request_queue(
+            QueueOp::Clear {
+                part: ClearPart::Queued
+            },
+            None
+        ));
+        let mut ops = Vec::new();
+        wait_for(|| {
+            ops.extend(server.poll_events().into_iter().filter_map(|e| match e {
+                ServerEvent::Queue { op, .. } => Some(op),
+                _ => None,
+            }));
+            (ops.len() >= 2).then_some(())
         });
-        assert_eq!(op, QueueOp::Jump { uid: 7 });
+        assert_eq!(ops[0], QueueOp::Jump { uid: 7 });
+        assert!(bob.request_queue(
+            QueueOp::PlayNow {
+                track: track("eeeeeeeeeee")
+            },
+            None
+        ));
+        refused(&bob, &mut seen);
         // DJ: songs yes (approval when asked for), control no.
         server.update_settings(SessionMode::Dj.apply(server.settings()));
         assert!(bob.request_control(ControlAction::Play));
@@ -1143,6 +1194,18 @@ mod tests {
         wait_server(&server, |e| {
             matches!(e, ServerEvent::AddTrack { .. }).then_some(())
         });
+        // DJ: his own songs (checked by the host app), never a clear.
+        assert!(bob.request_queue(QueueOp::Remove { uid: 4 }, None));
+        wait_server(&server, |e| {
+            matches!(e, ServerEvent::Queue { .. }).then_some(())
+        });
+        assert!(bob.request_queue(
+            QueueOp::Clear {
+                part: ClearPart::List
+            },
+            None
+        ));
+        refused(&bob, &mut seen);
         // Friends: everything; the mode is on the wire for this app, and an older guest
         // sees "may control, may add".
         server.update_settings(SessionMode::Friends.apply(server.settings()));

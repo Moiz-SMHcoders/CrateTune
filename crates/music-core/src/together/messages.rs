@@ -26,6 +26,10 @@ pub struct TogetherTrack {
     /// Ours: the name of who put it in the queue (or started the list it is part of).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub added_by: Option<String>,
+    /// Ours: who that is, as [`super::session::owner_key`] (a short hash of their
+    /// client id): whose song it is when they want to remove or move it.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub added_by_key: Option<String>,
     /// Ours: queued with "Play next" / "Add to queue" ("Next in queue"), not part of
     /// the list that was started.
     #[serde(skip_serializing_if = "is_false")]
@@ -63,6 +67,7 @@ impl TogetherTrack {
         Self {
             uid: None,
             added_by: None,
+            added_by_key: None,
             queued: false,
             ..self.clone()
         }
@@ -451,6 +456,10 @@ pub enum Message {
         role: Role,
         is_pending: bool,
         settings: RoomSettings,
+        /// Ours: what the host can do beyond the protocol (as the hello's `features`);
+        /// this app's host also says when it ends the session ([`Message::SessionEnded`]).
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        features: Vec<String>,
     },
     ServerError {
         session_id: Option<String>,
@@ -626,6 +635,12 @@ pub enum Message {
         emoji: String,
         #[serde(default)]
         track_id: Option<String>,
+    },
+    /// Host → this app's guests, right before it closes their connections: the session
+    /// is over (not a dropped link). A relay that lost a host closes its guests with the
+    /// same words, so without this a guest of this app's host reconnects instead.
+    SessionEnded {
+        session_id: String,
     },
     /// Host → guests: someone did something ("Ana skipped", "Sam added 3 songs").
     SessionNote {

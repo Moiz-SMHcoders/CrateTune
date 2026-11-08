@@ -20,6 +20,7 @@ use super::messages::{
     TogetherTrack,
 };
 use super::server::HOST_LEFT;
+use super::session::Backoff;
 use super::sync::{ClockSnapshot, TogetherClock};
 use crate::{Error, Result};
 
@@ -32,6 +33,8 @@ const PING_INTERVAL: Duration = Duration::from_secs(3);
 const HOST_TIMEOUT: Duration = Duration::from_secs(15);
 /// How long to keep trying to reach a new host after a transfer.
 const RECONNECT_FOR: Duration = Duration::from_secs(15);
+/// Between attempts at a new host (it may still be starting).
+const TRANSFER_RETRY: Duration = Duration::from_millis(300);
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ClientEvent {
@@ -105,7 +108,14 @@ pub enum ClientEvent {
         name: Option<String>,
         join: JoinInfo,
     },
-    /// Connected (and said hello) to the new host after [`ClientEvent::HostChanged`].
+    /// The link to the host dropped (`reason`); reconnecting for a while
+    /// ([`ClientOptions::reconnect_for`]). [`ClientEvent::Reconnected`] or, after the
+    /// grace, [`ClientEvent::Disconnected`] follows.
+    Reconnecting {
+        reason: String,
+    },
+    /// Connected (and said hello) again: to the new host after
+    /// [`ClientEvent::HostChanged`], or to the same one after [`ClientEvent::Reconnecting`].
     Reconnected,
 }
 
@@ -139,6 +149,9 @@ pub struct ClientOptions {
     pub features: Vec<String>,
     /// Where it would listen on the LAN if it took a Friends session over.
     pub standby: Option<(String, u16)>,
+    /// A dropped link (not an ended session) is retried this long (with backoff,
+    /// same client id: no new approval) before the session counts as over.
+    pub reconnect_for: Option<Duration>,
 }
 
 impl ClientOptions {
@@ -149,6 +162,7 @@ impl ClientOptions {
             client_id: client_id.to_owned(),
             features: FEATURES.iter().map(|f| (*f).to_owned()).collect(),
             standby,
+            reconnect_for: Some(super::session::RECONNECT_GRACE),
         }
     }
 
@@ -411,230 +425,313 @@ fn run(
     let mut fast_pings_from = 0u64;
     let mut pings: HashMap<u64, u64> = HashMap::new();
     let mut last_heard = Instant::now();
-    let reason = loop {
-        if shared.shutdown.load(Ordering::Relaxed) {
-            conn.close("Disconnect");
-            break None;
-        }
-        let mut leave = false;
-        while let Ok(out) = outbox.try_recv() {
-            match out {
-                Outgoing::Message(m) => {
-                    conn.send(&m);
-                }
-                Outgoing::Leave => {
-                    leave = true;
-                    break;
+    // This app's host (it says so in the welcome), and whether it said the session
+    // ended (else a "Session ended" from a relay means it lost the host).
+    let mut host_ours = false;
+    let mut ended_by_host = false;
+    let reason = 'session: loop {
+        let reason = loop {
+            if shared.shutdown.load(Ordering::Relaxed) {
+                conn.close("Disconnect");
+                break None;
+            }
+            let mut leave = false;
+            while let Ok(out) = outbox.try_recv() {
+                match out {
+                    Outgoing::Message(m) => {
+                        conn.send(&m);
+                    }
+                    Outgoing::Leave => {
+                        leave = true;
+                        break;
+                    }
                 }
             }
-        }
-        if leave {
-            if let Some(pid) = lock(&shared.participant_id).clone() {
-                conn.send(&Message::ClientLeave {
+            if leave {
+                if let Some(pid) = lock(&shared.participant_id).clone() {
+                    conn.send(&Message::ClientLeave {
+                        session_id: session_id.to_owned(),
+                        participant_id: pid,
+                    });
+                }
+                conn.close("Left");
+                break Some("Left the session".to_owned());
+            }
+            if Instant::now() >= next_ping {
+                ping_id += 1;
+                let now = elapsed();
+                pings.insert(ping_id, now);
+                pings.retain(|&id, _| id + 20 > ping_id);
+                conn.send(&Message::HeartbeatPing {
                     session_id: session_id.to_owned(),
-                    participant_id: pid,
+                    ping_id,
+                    client_elapsed_realtime_ms: now,
                 });
+                next_ping = Instant::now()
+                    + if ping_id < fast_pings_from + FAST_PINGS {
+                        FAST_PING_INTERVAL
+                    } else {
+                        PING_INTERVAL
+                    };
             }
-            conn.close("Left");
-            break Some("Left the session".to_owned());
-        }
-        if Instant::now() >= next_ping {
-            ping_id += 1;
-            let now = elapsed();
-            pings.insert(ping_id, now);
-            pings.retain(|&id, _| id + 20 > ping_id);
-            conn.send(&Message::HeartbeatPing {
-                session_id: session_id.to_owned(),
-                ping_id,
-                client_elapsed_realtime_ms: now,
-            });
-            next_ping = Instant::now()
-                + if ping_id < fast_pings_from + FAST_PINGS {
-                    FAST_PING_INTERVAL
-                } else {
-                    PING_INTERVAL
-                };
-        }
-        match conn.recv() {
-            Recv::Message(message) => {
-                last_heard = Instant::now();
-                match message {
-                    Message::ServerWelcome {
-                        session_id: sid,
-                        participant_id,
-                        is_pending,
-                        settings,
-                        ..
-                    } if sid == session_id => {
-                        *lock(&shared.participant_id) = Some(participant_id.clone());
-                        member_hello(&mut conn, session_id, &participant_id, identity);
-                        emit(ClientEvent::Welcome {
+            match conn.recv() {
+                Recv::Message(message) => {
+                    last_heard = Instant::now();
+                    match message {
+                        Message::ServerWelcome {
+                            session_id: sid,
                             participant_id,
-                            pending: is_pending,
+                            is_pending,
                             settings,
-                        });
-                    }
-                    Message::RoomState { state } if state.session_id == session_id => {
-                        let key = RoomKey::of(&state);
-                        if last_room.as_ref() == Some(&key) {
-                            let _ = events.send(ClientEvent::RoomState(state));
-                        } else {
-                            last_room = Some(key);
-                            emit(ClientEvent::RoomState(state));
+                            features,
+                            ..
+                        } if sid == session_id => {
+                            host_ours = features.iter().any(|f| f == FEATURE_SESSION);
+                            *lock(&shared.participant_id) = Some(participant_id.clone());
+                            member_hello(&mut conn, session_id, &participant_id, identity);
+                            emit(ClientEvent::Welcome {
+                                participant_id,
+                                pending: is_pending,
+                                settings,
+                            });
                         }
-                    }
-                    Message::SessionRoster {
-                        session_id: sid,
-                        successors,
-                        trusted_client_ids,
-                        banned_client_ids,
-                        relay_secret,
-                    } if sid == session_id => emit(ClientEvent::Roster {
-                        successors,
-                        trusted_client_ids,
-                        banned_client_ids,
-                        relay_secret,
-                    }),
-                    Message::Reaction {
-                        session_id: sid,
-                        participant_id,
-                        participant_name,
-                        emoji,
-                        track_id,
-                    } if sid == session_id => emit(ClientEvent::Reaction {
-                        participant_id,
-                        name: participant_name.unwrap_or_default(),
-                        emoji,
-                        track_id,
-                    }),
-                    Message::SessionNote {
-                        session_id: sid,
-                        participant_id,
-                        participant_name,
-                        note,
-                        count,
-                        title,
-                    } if sid == session_id => emit(ClientEvent::Note {
-                        participant_id,
-                        name: participant_name,
-                        note,
-                        count,
-                        title,
-                    }),
-                    Message::JoinDecision { approved, .. } => {
-                        emit(ClientEvent::JoinDecision { approved });
-                    }
-                    Message::SuggestionStatus {
-                        track_id,
-                        state,
-                        reason,
-                        ..
-                    } => emit(ClientEvent::SuggestionStatus {
-                        track_id,
-                        state,
-                        reason,
-                    }),
-                    Message::HeartbeatPong {
-                        ping_id,
-                        server_elapsed_realtime_ms,
-                        ..
-                    } => {
-                        if let Some(sent) = pings.remove(&ping_id) {
-                            lock(&shared.clock).on_pong(
-                                sent,
-                                elapsed(),
-                                server_elapsed_realtime_ms,
-                            );
+                        Message::SessionEnded { session_id: sid } if sid == session_id => {
+                            ended_by_host = true;
                         }
-                    }
-                    Message::ServerError { message, code, .. } => {
-                        emit(ClientEvent::ServerError { message, code });
-                    }
-                    // Only ever sent to the guest concerned.
-                    Message::Kick { reason, .. } => emit(ClientEvent::Kicked {
-                        reason: reason.unwrap_or_else(|| "Removed by the host".into()),
-                        banned: false,
-                    }),
-                    Message::Ban { reason, .. } => emit(ClientEvent::Kicked {
-                        reason: reason.unwrap_or_else(|| "Banned by the host".into()),
-                        banned: true,
-                    }),
-                    Message::HostTransfer {
-                        state,
-                        trusted_client_ids,
-                        banned_client_ids,
-                        relay_secret,
-                        ..
-                    } => emit(ClientEvent::HostOffer {
-                        state: state.map(|s| *s),
-                        trusted_client_ids,
-                        banned_client_ids,
-                        relay_secret,
-                    }),
-                    Message::HostTransferred {
-                        participant_id,
-                        participant_name,
-                        host,
-                        port,
-                        ..
-                    } => {
-                        if lock(&shared.participant_id).as_deref() == Some(participant_id.as_str())
-                        {
-                            // This app is the new host; it drops this client.
-                            continue;
+                        Message::RoomState { state } if state.session_id == session_id => {
+                            let key = RoomKey::of(&state);
+                            if last_room.as_ref() == Some(&key) {
+                                let _ = events.send(ClientEvent::RoomState(state));
+                            } else {
+                                last_room = Some(key);
+                                emit(ClientEvent::RoomState(state));
+                            }
                         }
-                        let old = lock(&shared.join).clone();
-                        let join = match (host, port) {
-                            (Some(host), Some(port)) if !host.is_empty() && port > 0 => JoinInfo {
-                                host,
-                                port,
-                                url: None,
-                                ..old
-                            },
-                            // Same relay: it routes the new connection to the new host.
-                            _ if old.is_relay() => old,
-                            _ => continue,
-                        };
-                        emit(ClientEvent::HostChanged {
+                        Message::SessionRoster {
+                            session_id: sid,
+                            successors,
+                            trusted_client_ids,
+                            banned_client_ids,
+                            relay_secret,
+                        } if sid == session_id => emit(ClientEvent::Roster {
+                            successors,
+                            trusted_client_ids,
+                            banned_client_ids,
+                            relay_secret,
+                        }),
+                        Message::Reaction {
+                            session_id: sid,
+                            participant_id,
+                            participant_name,
+                            emoji,
+                            track_id,
+                        } if sid == session_id => emit(ClientEvent::Reaction {
+                            participant_id,
+                            name: participant_name.unwrap_or_default(),
+                            emoji,
+                            track_id,
+                        }),
+                        Message::SessionNote {
+                            session_id: sid,
+                            participant_id,
+                            participant_name,
+                            note,
+                            count,
+                            title,
+                        } if sid == session_id => emit(ClientEvent::Note {
+                            participant_id,
                             name: participant_name,
-                            join: join.clone(),
-                        });
-                        conn.close("Host moved");
-                        *lock(&shared.participant_id) = None;
-                        match reconnect(&join, identity, shared, &emit) {
-                            Some(mut new) => {
-                                if let Some(pid) = lock(&shared.participant_id).clone() {
-                                    member_hello(&mut new, session_id, &pid, identity);
-                                }
-                                conn = new;
-                                *lock(&shared.join) = join;
-                                *lock(&shared.clock) = TogetherClock::default();
-                                pings.clear();
-                                fast_pings_from = ping_id;
-                                next_ping = Instant::now();
-                                last_heard = Instant::now();
-                                emit(ClientEvent::Reconnected);
-                            }
-                            None if shared.shutdown.load(Ordering::Relaxed) => break None,
-                            None => {
-                                lost = true;
-                                break Some("Couldn't reach the new host".to_owned());
+                            note,
+                            count,
+                            title,
+                        }),
+                        Message::JoinDecision { approved, .. } => {
+                            emit(ClientEvent::JoinDecision { approved });
+                        }
+                        Message::SuggestionStatus {
+                            track_id,
+                            state,
+                            reason,
+                            ..
+                        } => emit(ClientEvent::SuggestionStatus {
+                            track_id,
+                            state,
+                            reason,
+                        }),
+                        Message::HeartbeatPong {
+                            ping_id,
+                            server_elapsed_realtime_ms,
+                            ..
+                        } => {
+                            if let Some(sent) = pings.remove(&ping_id) {
+                                lock(&shared.clock).on_pong(
+                                    sent,
+                                    elapsed(),
+                                    server_elapsed_realtime_ms,
+                                );
                             }
                         }
+                        Message::ServerError { message, code, .. } => {
+                            emit(ClientEvent::ServerError { message, code });
+                        }
+                        // Only ever sent to the guest concerned.
+                        Message::Kick { reason, .. } => emit(ClientEvent::Kicked {
+                            reason: reason.unwrap_or_else(|| "Removed by the host".into()),
+                            banned: false,
+                        }),
+                        Message::Ban { reason, .. } => emit(ClientEvent::Kicked {
+                            reason: reason.unwrap_or_else(|| "Banned by the host".into()),
+                            banned: true,
+                        }),
+                        Message::HostTransfer {
+                            state,
+                            trusted_client_ids,
+                            banned_client_ids,
+                            relay_secret,
+                            ..
+                        } => emit(ClientEvent::HostOffer {
+                            state: state.map(|s| *s),
+                            trusted_client_ids,
+                            banned_client_ids,
+                            relay_secret,
+                        }),
+                        Message::HostTransferred {
+                            participant_id,
+                            participant_name,
+                            host,
+                            port,
+                            ..
+                        } => {
+                            if lock(&shared.participant_id).as_deref()
+                                == Some(participant_id.as_str())
+                            {
+                                // This app is the new host; it drops this client.
+                                continue;
+                            }
+                            let old = lock(&shared.join).clone();
+                            let join = match (host, port) {
+                                (Some(host), Some(port)) if !host.is_empty() && port > 0 => {
+                                    JoinInfo {
+                                        host,
+                                        port,
+                                        url: None,
+                                        ..old
+                                    }
+                                }
+                                // Same relay: it routes the new connection to the new host.
+                                _ if old.is_relay() => old,
+                                _ => continue,
+                            };
+                            emit(ClientEvent::HostChanged {
+                                name: participant_name,
+                                join: join.clone(),
+                            });
+                            conn.close("Host moved");
+                            *lock(&shared.participant_id) = None;
+                            let retry = Backoff::new(
+                                TRANSFER_RETRY,
+                                TRANSFER_RETRY,
+                                RECONNECT_FOR,
+                                Instant::now(),
+                            );
+                            match reconnect(&join, identity, shared, &emit, retry) {
+                                Some(mut new) => {
+                                    if let Some(pid) = lock(&shared.participant_id).clone() {
+                                        member_hello(&mut new, session_id, &pid, identity);
+                                    }
+                                    conn = new;
+                                    *lock(&shared.join) = join;
+                                    *lock(&shared.clock) = TogetherClock::default();
+                                    pings.clear();
+                                    fast_pings_from = ping_id;
+                                    next_ping = Instant::now();
+                                    last_heard = Instant::now();
+                                    emit(ClientEvent::Reconnected);
+                                }
+                                None if shared.shutdown.load(Ordering::Relaxed) => break None,
+                                None => {
+                                    lost = true;
+                                    break Some("Couldn't reach the new host".to_owned());
+                                }
+                            }
+                        }
+                        _ => {}
                     }
-                    _ => {}
+                }
+                Recv::Idle => {
+                    if last_heard.elapsed() > HOST_TIMEOUT {
+                        conn.close("Timed out");
+                        lost = true;
+                        break Some("The host stopped responding".into());
+                    }
+                }
+                Recv::Closed(reason) => {
+                    // This app's host says when it ends a session; a bare "Session
+                    // ended" then is a relay that lost it.
+                    let relay_lost = host_ours
+                        && !ended_by_host
+                        && reason.as_deref() == Some(super::server::SESSION_ENDED);
+                    lost = relay_lost || reason.as_deref().is_none_or(is_lost);
+                    break reason.or_else(|| Some("Disconnected".into()));
                 }
             }
-            Recv::Idle => {
-                if last_heard.elapsed() > HOST_TIMEOUT {
-                    conn.close("Timed out");
-                    lost = true;
-                    break Some("The host stopped responding".into());
+        };
+        // A dropped link: retried for the grace (same client id, so no new approval)
+        // while the app keeps playing; the session ends only after that.
+        let join = lock(&shared.join).clone();
+        log::warn!(
+            "together: link to {} dropped ({}; lost: {lost}); {}",
+            join.ws_url(),
+            reason.as_deref().unwrap_or("-"),
+            conn.diagnostics()
+        );
+        // A host that quit a Friends session said so: no point in waiting for it.
+        let quit = reason.as_deref() == Some(HOST_LEFT);
+        let Some(grace) = identity.reconnect_for.filter(|_| lost && !quit) else {
+            break 'session reason;
+        };
+        if shared.shutdown.load(Ordering::Relaxed) {
+            break 'session None;
+        }
+        emit(ClientEvent::Reconnecting {
+            reason: reason.clone().unwrap_or_default(),
+        });
+        *lock(&shared.participant_id) = None;
+        let started = Instant::now();
+        let backoff = Backoff::new(
+            Duration::from_millis(500),
+            Duration::from_secs(5),
+            grace,
+            started,
+        );
+        match reconnect(&join, identity, shared, &emit, backoff) {
+            Some(mut new) => {
+                log::info!(
+                    "together: reconnected to {} after {:.1} s",
+                    join.ws_url(),
+                    started.elapsed().as_secs_f64()
+                );
+                if let Some(pid) = lock(&shared.participant_id).clone() {
+                    member_hello(&mut new, session_id, &pid, identity);
                 }
+                conn = new;
+                *lock(&shared.clock) = TogetherClock::default();
+                pings.clear();
+                fast_pings_from = ping_id;
+                next_ping = Instant::now();
+                last_heard = Instant::now();
+                lost = false;
+                ended_by_host = false;
+                emit(ClientEvent::Reconnected);
             }
-            Recv::Closed(reason) => {
-                lost = reason.as_deref().is_none_or(is_lost);
-                break reason.or_else(|| Some("Disconnected".into()));
+            None if shared.shutdown.load(Ordering::Relaxed) => break 'session None,
+            None => {
+                log::warn!(
+                    "together: gave up on {} after {:.0} s",
+                    join.ws_url(),
+                    started.elapsed().as_secs_f64()
+                );
+                break 'session reason;
             }
         }
     };
@@ -710,9 +807,9 @@ fn reconnect(
     identity: &Identity,
     shared: &Shared,
     emit: &dyn Fn(ClientEvent),
+    mut backoff: Backoff,
 ) -> Option<Conn> {
-    let deadline = Instant::now() + RECONNECT_FOR;
-    while Instant::now() < deadline && !shared.shutdown.load(Ordering::Relaxed) {
+    while Instant::now() < backoff.deadline() && !shared.shutdown.load(Ordering::Relaxed) {
         match open(join, identity) {
             Ok(mut conn) => {
                 let wait_until = Instant::now() + CONNECT_TIMEOUT;
@@ -746,7 +843,14 @@ fn reconnect(
             }
             Err(e) => log::debug!("together: reconnecting to {}: {e}", join.ws_url()),
         }
-        std::thread::sleep(Duration::from_millis(300));
+        let Some(wait) = backoff.next_delay(Instant::now()) else {
+            break;
+        };
+        // In short steps, so dropping the client doesn't wait out the backoff.
+        let until = Instant::now() + wait;
+        while Instant::now() < until && !shared.shutdown.load(Ordering::Relaxed) {
+            std::thread::sleep(Duration::from_millis(50).min(until - Instant::now()));
+        }
     }
     None
 }

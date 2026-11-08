@@ -41,6 +41,8 @@ const REACTIONS_SHOWN: usize = 6;
 pub const REACTION_SHOW: Duration = Duration::from_millis(2_600);
 /// After a session moved here, the people reconnecting this soon get no "joined" note.
 const REJOIN_QUIET: Duration = Duration::from_secs(30);
+/// Someone whose link dropped gets a "left" note only if not back within this.
+const LEFT_QUIET: Duration = Duration::from_secs(10);
 
 pub struct HostSession {
     pub server: TogetherServer,
@@ -61,9 +63,11 @@ pub struct HostSession {
     /// Puts everyone's requests in one order (doubled skips, the newest seek).
     pub(super) sequencer: Sequencer,
     /// Queue slot → who put it there (or started the list it belongs to).
-    pub added_by: HashMap<u64, String>,
+    pub added_by: HashMap<u64, Who>,
     /// Who started the list after the queued songs (its refills are theirs too).
-    pub(super) context_by: Option<String>,
+    pub(super) context_by: Option<Who>,
+    /// This host as a queuer ([`rules::owner_key`] of its client id).
+    pub(super) owner_key: String,
     /// The friend group this session is for: only its members got the link (no
     /// room code, no link to copy).
     pub group: Option<String>,
@@ -73,6 +77,12 @@ pub struct HostSession {
     /// Taken over: the people who were in the room reconnect now; no "joined" notes
     /// for them (until this moment).
     rejoining: (HashSet<String>, Option<Instant>),
+    /// The relay link dropped at this moment; it is being claimed again (the chip
+    /// says "Reconnecting…").
+    pub relay_lost: Option<Instant>,
+    /// People whose link dropped: a "left" note only if they aren't back soon (a
+    /// dropped link, not a goodbye, usually comes right back).
+    left_pending: Vec<(Participant, Instant)>,
 }
 
 impl HostSession {
@@ -89,9 +99,12 @@ impl HostSession {
             sequencer: Sequencer::default(),
             added_by: HashMap::new(),
             context_by: None,
+            owner_key: String::new(),
             group: None,
             leaving: None,
             rejoining: (HashSet::new(), None),
+            relay_lost: None,
+            left_pending: Vec::new(),
         }
     }
 
@@ -105,6 +118,10 @@ impl HostSession {
         format!("{}&mode={}", self.link(), self.room.mode.key())
     }
 }
+
+/// Who queued a song: their name and their [`rules::owner_key`] (whose song it is
+/// when they want to remove or move it).
+pub type Who = (String, String);
 
 /// How long hosting or joining waits for the relay (and for `relay.txt`).
 const RELAY_TIMEOUT: Duration = Duration::from_secs(4);
@@ -340,6 +357,11 @@ pub struct GuestSession {
     pub group: Option<String>,
     /// Told the person which mode the session is in (once, at the first room state).
     greeted: bool,
+    /// This guest as a queuer ([`rules::owner_key`] of its client id).
+    pub owner_key: String,
+    /// The link to the host dropped at this moment; reconnecting (the music goes on
+    /// here meanwhile).
+    pub reconnecting: Option<Instant>,
 }
 
 impl GuestSession {
@@ -357,6 +379,8 @@ impl GuestSession {
             roster: None,
             group,
             greeted: false,
+            owner_key: String::new(),
+            reconnecting: None,
         }
     }
 
@@ -496,6 +520,16 @@ impl TogetherState {
         }
     }
 
+    /// A link dropped and is being restored (the chip says "Reconnecting…").
+    pub fn reconnecting(&self) -> bool {
+        match &self.role {
+            Role::Hosting(host) => host.relay_lost.is_some(),
+            Role::Guest(guest) => guest.reconnecting.is_some(),
+            Role::Recovering(_) => true,
+            _ => false,
+        }
+    }
+
     /// In a session (hosting, or admitted as a guest), not just connecting.
     pub fn in_session(&self) -> bool {
         matches!(
@@ -565,7 +599,7 @@ impl TogetherState {
     /// Who queued the song in slot `uid` (sessions only).
     pub fn added_by(&self, uid: u64) -> Option<&str> {
         match &self.role {
-            Role::Hosting(host) => host.added_by.get(&uid).map(String::as_str),
+            Role::Hosting(host) => host.added_by.get(&uid).map(|(name, _)| name.as_str()),
             Role::Guest(guest) => guest
                 .room
                 .as_ref()?
@@ -574,6 +608,29 @@ impl TogetherState {
                 .find(|t| t.uid == Some(uid))?
                 .added_by
                 .as_deref(),
+            _ => None,
+        }
+    }
+
+    /// Whether this person may remove or move the song in slot `uid` (`None`: not in a
+    /// session): the host always; a guest by the room's rules, its own songs by the
+    /// owner key ([`rules::may_edit_song`]).
+    pub fn may_edit_song(&self, uid: u64) -> Option<bool> {
+        match &self.role {
+            Role::Hosting(_) | Role::Recovering(_) => Some(true),
+            Role::Guest(guest) if guest.pending => Some(false),
+            Role::Guest(guest) => {
+                let Some(room) = &guest.room else {
+                    return Some(false);
+                };
+                let owned = room
+                    .queue
+                    .iter()
+                    .find(|t| t.uid == Some(uid))
+                    .and_then(|t| t.added_by_key.as_deref())
+                    .is_some_and(|k| k == guest.owner_key);
+                Some(rules::may_edit_song(&room.settings, owned))
+            }
             _ => None,
         }
     }
@@ -810,8 +867,10 @@ impl MusicApp {
 
     fn together_start_hosting(&mut self, mut host: HostSession, cx: &mut Context<Self>) {
         let name = self.settings.read(cx).settings().together.name();
+        let client_id = self.together_client_id(cx);
+        host.owner_key = rules::owner_key(&client_id);
         // What is already in the queue is the host's.
-        host.context_by = Some(name);
+        host.context_by = Some((name, host.owner_key.clone()));
         let together = &mut self.integrations.together;
         together.error = None;
         together.notes.clear();
@@ -870,7 +929,10 @@ impl MusicApp {
             TogetherTrack::from_track(&item.track).map(|mut t| {
                 t.uid = Some(item.uid);
                 t.queued = item.source == Source::User;
-                t.added_by = added.and_then(|a| a.get(&item.uid).cloned());
+                if let Some((name, key)) = added.and_then(|a| a.get(&item.uid)) {
+                    t.added_by = Some(name.clone());
+                    t.added_by_key = Some(key.clone());
+                }
                 t
             })
         };
@@ -928,13 +990,11 @@ impl MusicApp {
             .collect();
         let live: HashSet<u64> = items.iter().map(|(uid, _)| *uid).collect();
         host.added_by.retain(|uid, _| live.contains(uid));
+        let me: Who = (host_name.to_owned(), host.owner_key.clone());
         for (uid, source) in items {
             host.added_by.entry(uid).or_insert_with(|| match source {
-                Source::User => host_name.to_owned(),
-                Source::Context => host
-                    .context_by
-                    .clone()
-                    .unwrap_or_else(|| host_name.to_owned()),
+                Source::User => me.clone(),
+                Source::Context => host.context_by.clone().unwrap_or_else(|| me.clone()),
             });
         }
     }
@@ -950,6 +1010,14 @@ impl MusicApp {
         if host.server.settings() != host.room {
             host.server.update_settings(host.room);
         }
+        // A Friends session's device gets its relay link back quickly or the others
+        // take over (see `music_core::together::session`).
+        host.server
+            .set_relay_grace(if host.room.mode == SessionMode::Friends {
+                rules::LEADER_GRACE
+            } else {
+                rules::RECONNECT_GRACE
+            });
         host.server.set_host_name(&name);
         let due = match &host.last {
             None => true,
@@ -1047,10 +1115,13 @@ impl MusicApp {
                 ServerEvent::Joined(p) => {
                     // Someone who was in the room before it moved here: back, not new.
                     let back = match &mut self.integrations.together.role {
-                        Role::Hosting(h)
-                            if h.rejoining.1.is_some_and(|at| at.elapsed() < REJOIN_QUIET) =>
-                        {
-                            h.rejoining.0.remove(&p.name)
+                        Role::Hosting(h) => {
+                            let moved = h.rejoining.1.is_some_and(|at| at.elapsed() < REJOIN_QUIET)
+                                && h.rejoining.0.remove(&p.name);
+                            // Back from a dropped link (its "left" note wasn't shown).
+                            let before = h.left_pending.len();
+                            h.left_pending.retain(|(q, _)| q.name != p.name);
+                            moved || h.left_pending.len() != before
                         }
                         _ => false,
                     };
@@ -1072,7 +1143,17 @@ impl MusicApp {
                         reason = reason
                     ));
                     if !participant.is_pending {
-                        self.together_note(&participant, NoteKind::Left, 1, None, cx);
+                        // A goodbye shows now; a dropped link only if it stays dropped.
+                        let dropped = !matches!(
+                            reason.as_str(),
+                            "Left" | "Not approved" | "Banned" | "Removed by the host"
+                        );
+                        match &mut self.integrations.together.role {
+                            Role::Hosting(h) if dropped => {
+                                h.left_pending.push((participant, Instant::now()));
+                            }
+                            _ => self.together_note(&participant, NoteKind::Left, 1, None, cx),
+                        }
                     }
                     self.together_session_changed(cx);
                 }
@@ -1204,8 +1285,56 @@ impl MusicApp {
                     self.integrations.together.log(line.clone());
                     notify(window, cx, line);
                 }
+                ServerEvent::RelayLost { reason } => {
+                    if let Role::Hosting(h) = &mut self.integrations.together.role {
+                        h.relay_lost = Some(Instant::now());
+                    }
+                    self.integrations
+                        .together
+                        .log(t!("together.log.relay_lost", reason = reason));
+                    self.together_session_changed(cx);
+                }
+                ServerEvent::RelayRestored => {
+                    if let Role::Hosting(h) = &mut self.integrations.together.role {
+                        let away = h.relay_lost.take().map(|at| at.elapsed());
+                        // The people coming back now were here: no "joined" for them.
+                        h.rejoining = (
+                            h.left_pending.iter().map(|(p, _)| p.name.clone()).collect(),
+                            Some(Instant::now()),
+                        );
+                        h.left_pending.clear();
+                        if let Some(away) = away {
+                            log::info!(
+                                "together: relay link back after {:.1} s",
+                                away.as_secs_f64()
+                            );
+                        }
+                    }
+                    self.integrations
+                        .together
+                        .log(t!("together.log.reconnected").into());
+                    self.together_session_changed(cx);
+                }
                 ServerEvent::Stopped { reason } => {
+                    // A Friends session's device that couldn't get its relay link back:
+                    // the others have carried the session on; this device rejoins it.
+                    let rejoin = match &self.integrations.together.role {
+                        Role::Hosting(h)
+                            if h.room.mode == SessionMode::Friends && h.join.is_relay() =>
+                        {
+                            Some((h.join.clone(), h.group.clone()))
+                        }
+                        _ => None,
+                    };
                     self.together_stop(cx);
+                    if let Some((join, group)) = rejoin {
+                        self.integrations
+                            .together
+                            .log(t!("together.log.reconnecting").into());
+                        let shown = join.host.clone();
+                        self.together_connect(shown, None, group, move || Ok(join), window, cx);
+                        return;
+                    }
                     self.integrations.together.error =
                         Some(t!("together.error.session_ended", reason = reason));
                     notify(window, cx, t!("together.toast.ended", reason = reason));
@@ -1217,6 +1346,20 @@ impl MusicApp {
                     }
                 }
             }
+        }
+        // "Left" notes for links that stayed dropped (not while the relay link is).
+        let gone: Vec<Participant> = match &mut self.integrations.together.role {
+            Role::Hosting(h) if h.relay_lost.is_none() => {
+                let (gone, kept) = std::mem::take(&mut h.left_pending)
+                    .into_iter()
+                    .partition(|(_, at)| at.elapsed() >= LEFT_QUIET);
+                h.left_pending = kept;
+                gone.into_iter().map(|(p, _)| p).collect()
+            }
+            _ => Vec::new(),
+        };
+        for p in gone {
+            self.together_note(&p, NoteKind::Left, 1, None, cx);
         }
         self.host_pending_seek(cx);
         self.together_broadcast(force, cx);
@@ -1265,7 +1408,8 @@ impl MusicApp {
             AddTrackMode::PlayNext => self.queue_play_next_local(tracks, window, cx),
             AddTrackMode::AddToQueue => self.queue_add_local(tracks, window, cx),
         }
-        self.together_claim_new(&before, &participant.name);
+        let who = self.together_who(participant);
+        self.together_claim_new(&before, &who);
         self.together_note(participant, NoteKind::Added, count, None, cx);
     }
 
@@ -1279,14 +1423,25 @@ impl MusicApp {
             .collect()
     }
 
-    /// Names the slots that weren't in `before` as `name`'s.
-    pub(super) fn together_claim_new(&mut self, before: &HashSet<u64>, name: &str) {
+    /// Names the slots that weren't in `before` as `who`'s.
+    pub(super) fn together_claim_new(&mut self, before: &HashSet<u64>, who: &Who) {
         let now = self.queue_uids();
         if let Role::Hosting(host) = &mut self.integrations.together.role {
             for uid in now.difference(before) {
-                host.added_by.insert(*uid, name.to_owned());
+                host.added_by.insert(*uid, who.clone());
             }
         }
+    }
+
+    /// Hosting: a participant as a queuer (name and owner key; the host itself for
+    /// its own participant).
+    pub(super) fn together_who(&self, participant: &Participant) -> Who {
+        let key = match &self.integrations.together.role {
+            Role::Hosting(host) if participant.id == HOST_ID => host.owner_key.clone(),
+            Role::Hosting(host) => host.server.owner_key(&participant.id).unwrap_or_default(),
+            _ => String::new(),
+        };
+        (participant.name.clone(), key)
     }
 
     pub fn together_approve(
@@ -1643,7 +1798,9 @@ impl MusicApp {
         .detach();
     }
 
-    fn together_start_guest(&mut self, guest: GuestSession, cx: &mut Context<Self>) {
+    fn together_start_guest(&mut self, mut guest: GuestSession, cx: &mut Context<Self>) {
+        let client_id = self.together_client_id(cx);
+        guest.owner_key = rules::owner_key(&client_id);
         // The host decides the order; local shuffle would reorder it.
         self.queue.set_shuffle(false);
         let together = &mut self.integrations.together;
@@ -1787,7 +1944,8 @@ impl MusicApp {
             }
             for t in &state.queue {
                 if let (Some(uid), Some(by)) = (t.uid, &t.added_by) {
-                    added_by.insert(uid, by.clone());
+                    let key = t.added_by_key.clone().unwrap_or_default();
+                    added_by.insert(uid, (by.clone(), key));
                 }
             }
         }
@@ -2061,7 +2219,17 @@ impl MusicApp {
                         lines.push(line);
                     }
                 }
-                ClientEvent::Reconnected => quiet.push(t!("together.log.reconnected").to_owned()),
+                ClientEvent::Reconnecting { reason } => {
+                    guest.reconnecting = Some(Instant::now());
+                    guest.sync.reset();
+                    quiet.push(t!("together.log.relay_lost", reason = reason));
+                    changed = true;
+                }
+                ClientEvent::Reconnected => {
+                    guest.reconnecting = None;
+                    changed = true;
+                    quiet.push(t!("together.log.reconnected").to_owned())
+                }
                 ClientEvent::Roster {
                     successors,
                     trusted_client_ids,
@@ -2129,6 +2297,25 @@ impl MusicApp {
         }
         if changed {
             self.together_session_changed(cx);
+        }
+        // A Friends session's device that doesn't come back soon: the first in line
+        // takes over (or this guest follows it) instead of waiting out the grace.
+        let stalled = match &self.integrations.together.role {
+            Role::Guest(g) => g.reconnecting.is_some_and(|at| {
+                at.elapsed() >= rules::FRIENDS_RECONNECT_WAIT
+                    && g.room
+                        .as_ref()
+                        .is_some_and(|r| r.settings.mode == SessionMode::Friends)
+                    && g.roster.as_ref().is_some_and(|r| !r.successors.is_empty())
+            }),
+            _ => false,
+        };
+        if stalled && self.together_failover(window, cx) {
+            return;
+        }
+        // Reconnecting: the music goes on here as it was; following resumes after.
+        if matches!(&self.integrations.together.role, Role::Guest(g) if g.reconnecting.is_some()) {
+            return;
         }
         self.guest_follow(state, cx);
     }

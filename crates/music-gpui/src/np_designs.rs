@@ -1149,8 +1149,12 @@ impl MusicApp {
                 previous = Some(source);
                 let art = artwork(t.artwork_url(120), px(44.), px(6.), cx);
                 let menu_track = t.clone();
+                // Removing it (a Music Together guest: when the session lets it).
+                let removable = self.song_lock(uid).is_none();
+                let group = SharedString::from(format!("np-queue-row-{i}"));
                 let row = h_flex()
                     .id(("np-queue", i))
+                    .group(group.clone())
                     .w_full()
                     .gap_3()
                     .p_2()
@@ -1202,9 +1206,43 @@ impl MusicApp {
                                 .child(format_duration(u64::from(d))),
                         )
                     })
+                    .when(removable, |this| {
+                        this.child(
+                            div()
+                                .id(("np-queue-remove", i))
+                                .flex_none()
+                                .size(px(24.))
+                                .rounded_full()
+                                .flex()
+                                .items_center()
+                                .justify_center()
+                                .opacity(0.)
+                                .group_hover(group.clone(), |s| s.opacity(1.))
+                                .hover(|s| s.bg(ink(0.14)))
+                                .child(
+                                    svg()
+                                        .size(px(14.))
+                                        .path(Lucide::X.path())
+                                        .text_color(ink(0.8)),
+                                )
+                                .tooltip(|window, cx| {
+                                    gpui_component::tooltip::Tooltip::new(t!("queue.menu.remove"))
+                                        .build(window, cx)
+                                })
+                                .on_click(cx.listener(move |this, _, _, cx| {
+                                    cx.stop_propagation();
+                                    this.queue_remove(uid, cx)
+                                })),
+                        )
+                    })
                     // The song menu (go to artist / album, …), as in the queue panel.
                     .context_menu(move |menu, _, _| {
-                        crate::components::track_row::track_menu(menu, &menu_track, None)
+                        crate::components::queue_panel::queue_item_menu(
+                            menu,
+                            &menu_track,
+                            uid,
+                            removable,
+                        )
                     })
                     .into_any_element();
                 head.into_iter()

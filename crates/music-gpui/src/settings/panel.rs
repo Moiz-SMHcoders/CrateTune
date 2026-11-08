@@ -856,6 +856,13 @@ impl SettingsPanel {
         }
     }
 
+    pub fn set_keep_awake(&mut self, on: bool, cx: &mut Context<Self>) {
+        if self.settings.playback.keep_awake != on {
+            self.settings.playback.keep_awake = on;
+            self.changed(false, cx);
+        }
+    }
+
     pub fn set_window_geometry(&mut self, geometry: WindowGeometry, cx: &mut Context<Self>) {
         if self.settings.window != Some(geometry) && geometry.is_sane() {
             self.settings.window = Some(geometry);

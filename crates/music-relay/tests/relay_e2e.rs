@@ -511,12 +511,13 @@ fn a_friends_session_through_the_relay_outlives_its_device() {
     )
     .unwrap();
     let join = JoinInfo::via_relay(&url, sid.clone(), key.clone()).unwrap();
+    // A dropped link ends at once here (the reconnect is the next test's).
     let guest = |name: &str| {
-        TogetherClient::connect_with(
-            &join,
-            ClientOptions::ours(name, &format!("{name}-client"), None),
-        )
-        .unwrap()
+        let options = ClientOptions {
+            reconnect_for: None,
+            ..ClientOptions::ours(name, &format!("{name}-client"), None)
+        };
+        TogetherClient::connect_with(&join, options).unwrap()
     };
     let bob = guest("Bob");
     let cat = guest("Cat");
@@ -631,4 +632,199 @@ fn a_friends_session_through_the_relay_outlives_its_device() {
     assert_eq!(reason.as_deref(), Some("Host left"));
     drop(bob);
     drop(cat);
+}
+
+/// A TCP pass-through to the relay whose live connections the test can cut (as Wi-Fi
+/// power saving or a proxy restarting would: no close frame, the sockets just die).
+struct Cutter {
+    addr: std::net::SocketAddr,
+    live: std::sync::Arc<std::sync::Mutex<Vec<TcpStream>>>,
+}
+
+impl Cutter {
+    fn start(to: std::net::SocketAddr) -> Self {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let addr = listener.local_addr().unwrap();
+        let live = std::sync::Arc::new(std::sync::Mutex::new(Vec::<TcpStream>::new()));
+        let kept = live.clone();
+        std::thread::spawn(move || {
+            for inbound in listener.incoming().flatten() {
+                let Ok(outbound) = TcpStream::connect(to) else {
+                    continue;
+                };
+                let mut sockets = kept.lock().unwrap();
+                sockets.push(inbound.try_clone().unwrap());
+                sockets.push(outbound.try_clone().unwrap());
+                drop(sockets);
+                for (mut from, mut to) in [
+                    (inbound.try_clone().unwrap(), outbound.try_clone().unwrap()),
+                    (outbound, inbound),
+                ] {
+                    std::thread::spawn(move || {
+                        let _ = std::io::copy(&mut from, &mut to);
+                        let _ = to.shutdown(std::net::Shutdown::Both);
+                    });
+                }
+            }
+        });
+        Self { addr, live }
+    }
+
+    /// Kills every connection through it (new ones still go through).
+    fn cut(&self) {
+        for s in self.live.lock().unwrap().drain(..) {
+            let _ = s.shutdown(std::net::Shutdown::Both);
+        }
+    }
+}
+
+/// The host's link to the relay dies mid-session (cut at the TCP level, no close
+/// frame): the host claims the room again with its secret, the guests reconnect on
+/// their own (same client ids: no new approval) and the room comes back with the same
+/// people and the same queue; nobody hears "session ended".
+#[test]
+fn a_dropped_host_link_comes_back_with_its_guests() {
+    use music_core::together::ClientOptions;
+
+    let relay = Relay::start(Config {
+        listen: "127.0.0.1:0".parse().unwrap(),
+        ..Config::default()
+    })
+    .unwrap();
+    let cutter = Cutter::start(relay.addr());
+    let (sid, key) = (new_id(), new_id());
+    let room = RoomSettings {
+        require_host_approval_to_join: true,
+        ..RoomSettings::default()
+    };
+    // The host reaches the relay through the cutter; the guests straight.
+    let host = TogetherServer::start_relay(
+        &format!("ws://{}", cutter.addr),
+        sid.clone(),
+        key.clone(),
+        "Hana".into(),
+        room,
+        HostOptions::default(),
+    )
+    .unwrap();
+    let join = JoinInfo::via_relay(&format!("ws://{}", relay.addr()), sid, key).unwrap();
+    let guest = |name: &str| {
+        TogetherClient::connect_with(
+            &join,
+            ClientOptions::ours(name, &format!("{name}-client"), None),
+        )
+        .unwrap()
+    };
+    let ann = guest("Ann");
+    let bob = guest("Bob");
+    let mut admitted = 0;
+    wait_for(|| {
+        for e in host.poll_events() {
+            if let ServerEvent::JoinRequested(p) = e {
+                host.approve(&p.id, true);
+                admitted += 1;
+            }
+        }
+        (admitted == 2).then_some(())
+    });
+    wait_for(|| ann.participant_id());
+    wait_for(|| bob.participant_id());
+    let state = RoomState {
+        queue: vec![track("aaaaaaaaaaa"), track("bbbbbbbbbbb")],
+        current_index: 1,
+        is_playing: true,
+        position_ms: 61_000,
+        ..RoomState::default()
+    };
+    host.broadcast_room_state(state.clone());
+
+    cutter.cut();
+    // The host notices and claims the room again; the guests reconnect meanwhile.
+    let mut host_events = Vec::new();
+    wait_for(|| {
+        host_events.extend(host.poll_events());
+        host_events
+            .iter()
+            .any(|e| matches!(e, ServerEvent::RelayRestored))
+            .then_some(())
+    });
+    assert!(
+        host_events
+            .iter()
+            .any(|e| matches!(e, ServerEvent::RelayLost { .. })),
+        "{host_events:?}"
+    );
+    let (mut ann_seen, mut bob_seen) = (Vec::new(), Vec::new());
+    for (client, seen) in [(&ann, &mut ann_seen), (&bob, &mut bob_seen)] {
+        wait_for(|| {
+            seen.extend(client.poll_events());
+            seen.iter()
+                .any(|e| matches!(e, ClientEvent::Reconnected))
+                .then_some(())
+        });
+        assert!(
+            seen.iter()
+                .any(|e| matches!(e, ClientEvent::Reconnecting { .. })),
+            "{seen:?}"
+        );
+    }
+    // Both back, let straight in (approval is on, but they were let in before).
+    wait_for(|| {
+        host_events.extend(host.poll_events());
+        let back = host_events
+            .iter()
+            .filter(|e| matches!(e, ServerEvent::Joined(_)))
+            .count();
+        assert!(
+            !host_events
+                .iter()
+                .any(|e| matches!(e, ServerEvent::JoinRequested(_))),
+            "{host_events:?}"
+        );
+        (back >= 2).then_some(())
+    });
+    assert_eq!(host.participants().len(), 3);
+    // The room goes on: the guests get the queue and the position again.
+    host.broadcast_room_state(state.clone());
+    for (client, seen) in [(&ann, &mut ann_seen), (&bob, &mut bob_seen)] {
+        let got = wait_for(|| {
+            seen.extend(client.poll_events());
+            seen.iter().rev().find_map(|e| match e {
+                ClientEvent::RoomState(s) if s.queue == state.queue => Some(s.clone()),
+                _ => None,
+            })
+        });
+        assert!(got.is_playing && got.position_ms >= 61_000);
+        // Nobody heard the session end.
+        assert!(
+            !seen
+                .iter()
+                .any(|e| matches!(e, ClientEvent::Disconnected { .. })),
+            "{seen:?}"
+        );
+    }
+    assert!(
+        !host_events
+            .iter()
+            .any(|e| matches!(e, ServerEvent::Stopped { .. })),
+        "{host_events:?}"
+    );
+    // A real end still ends it at once (not a reconnect): the host says so.
+    drop(host);
+    for (client, seen) in [(&ann, &mut ann_seen), (&bob, &mut bob_seen)] {
+        let lost = wait_for(|| {
+            seen.extend(client.poll_events());
+            seen.iter().find_map(|e| match e {
+                ClientEvent::Disconnected { lost, .. } => Some(*lost),
+                _ => None,
+            })
+        });
+        assert!(!lost);
+        assert_eq!(
+            seen.iter()
+                .filter(|e| matches!(e, ClientEvent::Reconnecting { .. }))
+                .count(),
+            1
+        );
+    }
 }

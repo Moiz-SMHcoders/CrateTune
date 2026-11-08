@@ -68,6 +68,7 @@ pub mod friends;
 pub mod handoff;
 pub mod http;
 pub mod innertube;
+pub mod keep_awake;
 pub mod library;
 pub mod local_files;
 pub mod lyrics;

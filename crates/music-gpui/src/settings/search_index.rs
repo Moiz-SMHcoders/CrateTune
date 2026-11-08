@@ -1242,6 +1242,18 @@ pub const ENTRIES: &[Entry] = &[
         "gap"
     ),
     entry!(
+        "playback.keep_awake",
+        Playback,
+        "settings.playback.audio",
+        "settings.playback.keep_awake",
+        "settings.playback.keep_awake_desc",
+        "sleep",
+        "awake",
+        "idle",
+        "power",
+        "together"
+    ),
+    entry!(
         "playback.auto_skip",
         Playback,
         "settings.playback.audio",

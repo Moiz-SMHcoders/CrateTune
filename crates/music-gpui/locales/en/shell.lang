@@ -87,6 +87,8 @@ queue.empty.hint = Add songs with “Play next” or “Add to queue”.
 queue.tooltip.clear_up_next = Clear up next
 queue.tooltip.close = Close (Esc)
 queue.tooltip.move_up = Move up
+# Menu item of an upcoming song (queue panel, Now Playing's queue).
+queue.menu.remove = Remove from queue
 queue.tooltip.move_down = Move down
 # Songs you queued yourself ("Play next" / "Add to queue"); they play before the
 # rest. {count} is how many.
