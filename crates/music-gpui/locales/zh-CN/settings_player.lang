@@ -203,3 +203,5 @@ prefs.mini_skin.card = 封面卡片
 prefs.mini_skin.lyrics = 歌词
 prefs.mini_skin.turntable = 唱片机
 prefs.layout.turntable = 唱片机
+settings.playback.keep_awake = 播放时阻止电脑睡眠
+settings.playback.keep_awake_desc = 播放音乐或进行“一起听”会话时，电脑不会自动进入睡眠（屏幕仍可能关闭）。睡眠会断开网络，会话也会随之中断。

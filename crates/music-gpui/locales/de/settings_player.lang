@@ -204,3 +204,5 @@ prefs.mini_skin.card = Cover-Karte
 prefs.mini_skin.lyrics = Songtext
 prefs.mini_skin.turntable = Plattenspieler
 prefs.layout.turntable = Plattenspieler
+settings.playback.keep_awake = Computer während der Wiedergabe wach halten
+settings.playback.keep_awake_desc = Solange Musik läuft oder eine „Gemeinsam hören“-Sitzung aktiv ist, wechselt der Computer nicht von selbst in den Ruhezustand (der Bildschirm kann sich trotzdem ausschalten). Im Ruhezustand bricht das Netzwerk ab und damit auch die Sitzung.

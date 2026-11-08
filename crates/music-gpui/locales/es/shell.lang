@@ -64,6 +64,7 @@ queue.empty.hint = Añade canciones con “Reproducir a continuación” o “A�
 queue.tooltip.clear_up_next = Borrar lo siguiente
 queue.tooltip.close = Cerrar (Esc)
 queue.tooltip.move_up = Subir
+queue.menu.remove = Quitar de la cola
 queue.tooltip.move_down = Bajar
 
 # ---- Song rows and the song context menu

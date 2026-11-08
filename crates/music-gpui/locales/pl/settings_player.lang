@@ -206,3 +206,5 @@ prefs.mini_skin.card = Karta okładki
 prefs.mini_skin.lyrics = Tekst
 prefs.mini_skin.turntable = Gramofon
 prefs.layout.turntable = Gramofon
+settings.playback.keep_awake = Nie usypiaj komputera podczas odtwarzania
+settings.playback.keep_awake_desc = Gdy gra muzyka lub trwa sesja „Słuchaj razem”, komputer nie przechodzi sam w stan uśpienia (ekran nadal może się wyłączyć). Uśpienie odcina sieć, a wraz z nią sesję.

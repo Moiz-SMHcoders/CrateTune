@@ -204,3 +204,5 @@ prefs.mini_skin.card = आर्टवर्क कार्ड
 prefs.mini_skin.lyrics = गीत
 prefs.mini_skin.turntable = टर्नटेबल
 prefs.layout.turntable = टर्नटेबल
+settings.playback.keep_awake = चलाते समय कंप्यूटर को जगाए रखें
+settings.playback.keep_awake_desc = जब संगीत चल रहा हो या “साथ में सुनें” सेशन चल रहा हो, तब कंप्यूटर अपने आप स्लीप में नहीं जाता (स्क्रीन फिर भी बंद हो सकती है)। स्लीप से नेटवर्क कट जाता है, और उसके साथ सेशन भी।

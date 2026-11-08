@@ -59,6 +59,7 @@ queue.empty.hint = Thêm bài hát bằng “Phát tiếp theo” hoặc “Thê
 queue.tooltip.clear_up_next = Xóa phần tiếp theo
 queue.tooltip.close = Đóng (Esc)
 queue.tooltip.move_up = Chuyển lên
+queue.menu.remove = Xóa khỏi danh sách chờ
 queue.tooltip.move_down = Chuyển xuống
 
 # ---- Song rows and the song context menu

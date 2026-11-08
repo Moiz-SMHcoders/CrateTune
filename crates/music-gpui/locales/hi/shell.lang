@@ -64,6 +64,7 @@ queue.empty.hint = “अगला चलाएँ” या “कतार म
 queue.tooltip.clear_up_next = आगे वाले गाने साफ़ करें
 queue.tooltip.close = बंद करें (Esc)
 queue.tooltip.move_up = ऊपर ले जाएँ
+queue.menu.remove = कतार से हटाएँ
 queue.tooltip.move_down = नीचे ले जाएँ
 
 # ---- Song rows and the song context menu

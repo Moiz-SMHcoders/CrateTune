@@ -1146,7 +1146,7 @@ impl MusicApp {
                         // A goodbye shows now; a dropped link only if it stays dropped.
                         let dropped = !matches!(
                             reason.as_str(),
-                            "Left" | "Not approved" | "Banned" | "Removed by the host"
+                            "Left" | "Not approved" | "Banned" | "Removed by the host" // i18n-ignore
                         );
                         match &mut self.integrations.together.role {
                             Role::Hosting(h) if dropped => {
@@ -1305,7 +1305,7 @@ impl MusicApp {
                         h.left_pending.clear();
                         if let Some(away) = away {
                             log::info!(
-                                "together: relay link back after {:.1} s",
+                                "together: relay link back after {:.1} s", // i18n-ignore
                                 away.as_secs_f64()
                             );
                         }

@@ -64,6 +64,7 @@ queue.empty.hint = “Sonra çal” veya “Sıraya ekle” ile şarkı ekleyin.
 queue.tooltip.clear_up_next = Sıradakileri temizle
 queue.tooltip.close = Kapat (Esc)
 queue.tooltip.move_up = Yukarı taşı
+queue.menu.remove = Sıradan kaldır
 queue.tooltip.move_down = Aşağı taşı
 
 # ---- Song rows and the song context menu

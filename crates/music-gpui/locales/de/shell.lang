@@ -64,6 +64,7 @@ queue.empty.hint = Füg Songs mit „Als Nächstes abspielen“ oder „Zur Wart
 queue.tooltip.clear_up_next = „Als Nächstes“ leeren
 queue.tooltip.close = Schließen (Esc)
 queue.tooltip.move_up = Nach oben
+queue.menu.remove = Aus der Warteschlange entfernen
 queue.tooltip.move_down = Nach unten
 
 # ---- Song rows and the song context menu

@@ -70,6 +70,7 @@ queue.empty.hint = Додавайте пісні через «Відтворит
 queue.tooltip.clear_up_next = Очистити «Далі»
 queue.tooltip.close = Закрити (Esc)
 queue.tooltip.move_up = Вище
+queue.menu.remove = Прибрати з черги
 queue.tooltip.move_down = Нижче
 
 # ---- Song rows and the song context menu

@@ -698,7 +698,7 @@ impl MusicApp {
             let owned =
                 !who.1.is_empty() && host.added_by.get(uid).is_some_and(|(_, key)| *key == who.1);
             if !rules::may_edit_song(&host.room, owned) {
-                host.server.refuse(&participant.id, "edit the queue");
+                host.server.refuse(&participant.id, "edit the queue"); // i18n-ignore
                 return;
             }
         }

@@ -204,3 +204,5 @@ prefs.mini_skin.card = Scheda copertina
 prefs.mini_skin.lyrics = Testo
 prefs.mini_skin.turntable = Giradischi
 prefs.layout.turntable = Giradischi
+settings.playback.keep_awake = Tieni il computer attivo durante la riproduzione
+settings.playback.keep_awake_desc = Mentre suona la musica o è attiva una sessione di Ascolta insieme, il computer non entra in sospensione da solo (lo schermo può comunque spegnersi). La sospensione interrompe la rete e, con essa, la sessione.

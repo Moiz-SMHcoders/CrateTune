@@ -61,6 +61,7 @@ queue.empty.hint = ‘다음에 재생’ 또는 ‘대기열에 추가’로 �
 queue.tooltip.clear_up_next = 다음 트랙 지우기
 queue.tooltip.close = 닫기(Esc)
 queue.tooltip.move_up = 위로 이동
+queue.menu.remove = 대기열에서 삭제
 queue.tooltip.move_down = 아래로 이동
 
 # ---- Song rows and the song context menu

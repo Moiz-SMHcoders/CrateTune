@@ -61,6 +61,7 @@ queue.empty.hint = 「次に再生」または「キューに追加」で曲を�
 queue.tooltip.clear_up_next = 次の曲をクリア
 queue.tooltip.close = 閉じる（Esc）
 queue.tooltip.move_up = 上へ移動
+queue.menu.remove = キューから削除
 queue.tooltip.move_down = 下へ移動
 
 # ---- Song rows and the song context menu

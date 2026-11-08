@@ -204,3 +204,5 @@ prefs.mini_skin.card = Hoeskaart
 prefs.mini_skin.lyrics = Songtekst
 prefs.mini_skin.turntable = Draaitafel
 prefs.layout.turntable = Draaitafel
+settings.playback.keep_awake = Computer wakker houden tijdens afspelen
+settings.playback.keep_awake_desc = Zolang er muziek speelt of een Samen luisteren-sessie loopt, gaat de computer niet vanzelf in sluimerstand (het scherm mogelijk wel). Sluimerstand verbreekt het netwerk, en daarmee de sessie.

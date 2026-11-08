@@ -61,6 +61,7 @@ queue.empty.hint = 使用「下一首播放」或「加入佇列」來加入歌�
 queue.tooltip.clear_up_next = 清除即將播放
 queue.tooltip.close = 關閉（Esc）
 queue.tooltip.move_up = 上移
+queue.menu.remove = 從佇列中移除
 queue.tooltip.move_down = 下移
 
 # ---- Song rows and the song context menu

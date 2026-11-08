@@ -203,3 +203,5 @@ prefs.mini_skin.card = 아트워크 카드
 prefs.mini_skin.lyrics = 가사
 prefs.mini_skin.turntable = 턴테이블
 prefs.layout.turntable = 턴테이블
+settings.playback.keep_awake = 재생 중 컴퓨터 잠자기 방지
+settings.playback.keep_awake_desc = 음악이 재생 중이거나 함께 듣기 세션이 진행 중일 때는 컴퓨터가 저절로 잠자기 상태로 전환되지 않습니다(화면은 꺼질 수 있음). 잠자기 상태가 되면 네트워크가 끊기고 세션도 함께 끊깁니다.

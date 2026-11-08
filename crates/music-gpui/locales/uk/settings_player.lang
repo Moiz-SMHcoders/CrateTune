@@ -206,3 +206,5 @@ prefs.mini_skin.card = Картка з обкладинкою
 prefs.mini_skin.lyrics = Текст
 prefs.mini_skin.turntable = Програвач
 prefs.layout.turntable = Програвач
+settings.playback.keep_awake = Не давати комп'ютеру засинати під час відтворення
+settings.playback.keep_awake_desc = Поки грає музика або триває сеанс «Слухати разом», комп'ютер не переходить у режим сну сам (екран при цьому може згаснути). Сон вимикає мережу, а разом із нею й сеанс.

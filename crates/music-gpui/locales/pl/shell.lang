@@ -70,6 +70,7 @@ queue.empty.hint = Dodawaj utwory przez „Odtwórz jako następny” lub „Dod
 queue.tooltip.clear_up_next = Wyczyść następne
 queue.tooltip.close = Zamknij (Esc)
 queue.tooltip.move_up = Przenieś wyżej
+queue.menu.remove = Usuń z kolejki
 queue.tooltip.move_down = Przenieś niżej
 
 # ---- Song rows and the song context menu
