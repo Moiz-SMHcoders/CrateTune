@@ -347,6 +347,31 @@ when the tools row goes away, on Windows and Linux (CI only runs the smoke scrip
 "Casting to …" labels clip at 160 pt); (4) the 17 translations of the new strings, written
 without native-speaker review. · Size: small · Priority: low
 
+**U29. Listen together modes, native controls and lasting sessions (`feat/together-friends`) on real machines**
+Checked on one Mac: unit and localhost tests (intents, doubled skips, newest seek, modes and
+their permissions, queue edits per mode, hand-over and fail-over with three members, a late
+joiner's position, an older protocol guest, reactions' rate limit, a host's relay link cut at
+the TCP level coming back with its guests), three app instances (demo clock, fixtures,
+muted, LAN) in Friends and DJ sessions with scripted controls, media-key events, a leave
+(hand-over) and a `kill -9` (fail-over), and offscreen renders. Not yet: (1) two or three
+real machines, guests on another network, the relay behind TLS with the new reconnect, a
+real Wi-Fi drop or sleep / wake; (2) the OS media controls with real hardware keys (the
+routing was driven by `@media` events) and the disabled-button tooltips with a real pointer;
+(3) the keep-awake on Windows (`SetThreadExecutionState`) and Linux (`systemd-inhibit
+--what=idle`, only where it exists), and whether macOS shows the assertion in `pmset -g
+assertions` with a signed build; (4) an ArchiveTune phone as a guest of a Friends session
+(it should control and add songs, and skip `session_*` messages) and following a hand-over
+on the LAN; (5) the friend-group flow (invite with Join, auto-join, live sessions,
+`listen_ended`) between two machines with real iroh connectivity; (6) the relay change
+(guests of a dropped host hear "Host connection lost") once deployed (until then the app's
+own `session_ended` tells a relay's goodbye from a real end); (7) system notifications for a
+friend's session (macOS `UNUserNotification` needs a bundled, signed app and the user's
+permission; Windows toasts need an AppUserModelID shortcut; Linux could use
+`org.freedesktop.Notifications` over D-Bus): in-app notifications only for now; (8) "Continue
+on my other device" while staying in a session (hand-off and the session's identity would
+need to move together); (9) the new strings in 17 languages, written without native-speaker
+review. · Size: medium · Priority: high
+
 ## 3. Platform & distribution
 
 **P1. Builds are unsigned**

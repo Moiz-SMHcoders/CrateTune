@@ -1446,7 +1446,9 @@ descriptor / catalog installs and updates, secrets, downloads).
   previous / play / next on the page are requests (when the host allows). Kicks, bans,
   declined joins, a host that ends the session or goes silent for 15 s end the guest's
   session with a message. Across networks: a self-hosted relay and **Make host** (host
-  transfer), see the next section.
+  transfer), see the next section. (Since then: modes, the guest's own controls instead of
+  the page's buttons, reconnecting instead of ending: see [Listen together
+  round](#listen-together-round-modes-your-own-controls-friend-groups-lasting-sessions).)
 * **Import & export** (sidebar): *Choose a file…* (Exportify CSV of a Spotify playlist,
   M3U / M3U8, or our own CSV / JSON), or — after connecting Spotify — a playlist link, one
   of *Show my playlists*, or *Liked songs*. The job reads the source, then matches every
@@ -1803,8 +1805,9 @@ Settings → **Friends**, the friends card on the Listen together page):
   local files. The app mirrors it into the node when the song or play / pause changes; the
   node pushes it to the members' devices after 1.5 s (no polling). Received activity is kept
   in memory only (the feed on the Listen together page).
-* **Listen together** per group hosts a Music Together session through its relay and sends
-  the link to the group's members; they get a notification and a **Join** button.
+* **Listen together** per group joins the group's running session or starts one only the
+  group can join, in the group's mode; members get a notification with **Join** (see
+  [Listen together round](#listen-together-round-modes-your-own-controls-friend-groups-lasting-sessions)).
 * **Script actions**: `@device-sync=on|off`, `@device-sync-category=CAT:on|off`,
   `@device-sync-now`, `@device-sync-status`,
   `@friends=on|off`, `@friends-share=on|off`, `@friends-private=on|off`,
@@ -1837,6 +1840,151 @@ Settings → **Friends**, the friends card on the Listen together page):
   rounds follow changes, hellos follow what is shared. Memory (RSS, same session): 151 MB for
   an instance with nothing on, 160–165 MB for the two paired instances with sync and friends
   on, which includes the hand-off node itself.
+
+### Listen together round: modes, your own controls, friend groups, lasting sessions
+
+| ![Start listening together: mode, who can join, connection](docs/screenshots/together-start-sheet.png) | ![A Friends session: the listeners chip, the shared queue with who added what](docs/screenshots/together-friends-session.png) |
+|---|---|
+| ![The session panel with the mode picker](docs/screenshots/together-mode-switch.png) | ![Reactions over the player bar](docs/screenshots/together-reaction.png) |
+| ![A Host-mode guest: the transport disabled, saying why](docs/screenshots/together-guest-controls.png) | ![A guest of a Friends session: the same controls drive the session](docs/screenshots/together-guest-friends.png) |
+
+**Modes** (`music_core::together::SessionMode`, on the wire as `RoomSettings.mode`, only when
+not Host). *Host* is the old behaviour (guests follow, suggest songs, control playback if the
+host allows it). *Friends*: everyone controls playback and the queue, equally. *DJ*: everyone
+adds songs (with approval if "Suggestions need my approval"), the host controls playback.
+`SessionMode::apply` sets the `allow_guests_*` an ArchiveTune guest acts on (Friends: control
+and add, no approval; DJ: add, no control), so ArchiveTune guests join a Friends session as
+guests that may control. `session::permissions` is the single source of who may do what;
+the server enforces it per request, the guest's UI greys out what it can't do.
+
+* **Starting.** "Start listening together" is a sheet (mode with one line each, who can join
+  — anyone with the link / code, or one friend group — and the connection); the mode is
+  remembered (`together.last_mode`; a group's in `friends.group_modes`, Friends by default).
+  Code rooms default to Host, friend groups to Friends. Entry points: the page, the queue
+  panel's people button, the ▾ next to a group's button. The mode is a badge on the page
+  and in the session panel, the icon on the listeners chip, and a notification when joining;
+  the host (or anyone in Friends mode) switches it with a confirmation. A Friends guest who
+  picks Host or DJ becomes the host (a host transfer carrying the new mode).
+* **Your own controls** (`integrations/together_route.rs`). Every control surface ends in a
+  handful of `MusicApp` methods (`toggle_playback`, `set_playing`, `next_track`,
+  `previous_track`, `seek_to`, `set_shuffle`, `set_repeat`, `play_list[_in]`, `play_now`,
+  `queue_play_next`, `queue_add`, `queue_jump`, `queue_remove`, `queue_move_to`,
+  `queue_nudge`, `queue_clear[_part]`, `start_radio[_target]`, `play_tracks[_in]`, queue
+  tabs); each asks `together_route(Intent)` first; their `*_local` twins are what the session
+  itself uses. Surfaces covered that way: the player bar, media keys and the OS's now-playing
+  controls (in a session `Services::route_media_to_app` sends play / pause / seek to the app
+  instead of straight to the player), the mini player, every Now Playing design and its
+  elements, lyrics click-to-seek, keyboard shortcuts, the menu-bar / tray items, the queue
+  panel (play, remove, reorder by drag and buttons, clear a part), song and collection menus,
+  scripts. `route()` (unit-tested per mode) decides: here (not in a session, or hosting),
+  a control request, a queue edit (Friends), a suggestion, or blocked (with a reason). Intents,
+  not toggles: play / pause are explicit from the room's state; a skip carries the song (and
+  slot) it skips, a seek its target, each with the sender's estimate of the host's clock
+  (`IntentMeta`, an extra field of `control_request` that ArchiveTune ignores); the host's
+  `Sequencer` drops a skip of a song that is already gone (two people skip once) and any
+  seek / play / pause older than the last applied. Play / pause and seeks also apply on the
+  guest at once (the sync holds its corrections 1.5 s). Not allowed: disabled buttons with the
+  reason as tooltip (player bar, mini player, Now Playing's shared transports, queue panel);
+  keys, menus and scripts show the reason at most once per 20 s per kind. Volume, mute,
+  EQ / sound and lyrics never go through the session.
+* **Shared queue.** The room's tracks carry their slot (`uid`), the part ("Next in queue" or
+  the list) and who queued them (`addedBy`, `addedByKey` = a short hash of the queuer's client
+  id); guests mirror the host's queue with the same slots (`Queue::mirror`), so their queue
+  panel shows the same parts, context heading ("· started by Ana") and an initial per queued
+  song (name on hover). "Next in queue" is one list in the order songs were added, not one
+  per person: it is the order that will really play, and anyone who may reorder can make it
+  fair by hand. Queue edits (`queue_request`, ours only): Friends anyone; DJ the host and each
+  person for their own songs; Host the host, guests their own songs while they may add songs,
+  anything while they may control playback (`session::may_edit_song`; the server passes a
+  remove / move through when it could be the guest's own, the host app checks the owner key).
+  Starting a list / song / radio for everyone needs Friends; elsewhere a clicked song is
+  suggested to play next.
+* **Presence.** The listeners chip (mode icon, up to three stacked initials, the count; a
+  spinner and "Reconnecting…" / "Joining…" while that is so) opens the session panel (mode
+  and picker, what you may do, who is here, reactions, invite / copy code, open the page,
+  leave). Activity notes (`SessionNote`, sent by the host for what it applies) go through
+  `NoteFeed`: the same person doing the same thing within 5 s is one note ("Sam added 3
+  songs"), at most one new note per 1.5 s, each shown 4 s, only the newest three wait
+  (setting *Activity notes*). "Left" notes wait 10 s (a dropped link usually comes back) and
+  people back from a hand-over or a drop get no "joined". Reactions (six names, drawn as
+  Lucide icons in fixed colours) go to the host, are rate-limited per person (4 at once,
+  then one per 1.5 s) and passed on with the name to this app's other guests; shown 2.6 s,
+  rising with `with_animation` (frames only while they move; Reduced: a 150 ms fade; Off:
+  static), the page cached meanwhile.
+* **Friends sessions outlive their device** (`session.rs`). One device still sequences
+  everything (no conflicts to merge), invisibly: no host tag, "Make host" or "End session".
+  It sends this app's guests a `session_roster`: successors in join order, each one's LAN
+  standby address (its configured port), the trusted / banned lists and a relayed room's
+  secret. **Leave** hands the session to the first successor (the existing host transfer;
+  the next one if it refuses or doesn't answer in 15 s); the new device mirrors the room with
+  its slots and owners, keeps its own playback (it was in step, so nothing jumps) and the
+  others reconnect. If the device vanishes (quit: `stop_with("Host left")`; crash or network:
+  the connection drops), every guest takes its place by the roster (`session::failover`): the
+  first takes over at its standby address or by claiming the relay room with the secret, the
+  others reconnect to it (each tries the ones before it for 6 s, then takes over itself).
+  The session ends only when the last person leaves (or only ArchiveTune guests remain).
+* **Dropped links** (the relay log's "host left (Connection lost)" after ~45 min on Windows):
+  the host's relay connection reclaims its room with the secret, with backoff (½ s doubling
+  to 5 s) for 60 s (4 s for a Friends session's device, whose guests hand over after 6 s);
+  guests reconnect with the same backoff and client id (anyone let in once is trusted: no new
+  approval) and keep playing meanwhile ("Reconnecting…"). This app's host sends
+  `session_ended` before it really ends a session, so a relay's own "Session ended" for a
+  host it lost is taken as a drop. Every drop is logged with the URL, the error and its kind,
+  how long the link was up and when it last received a frame. *Keep the computer awake while
+  playing* (`music_core::keep_awake`: IOKit `PreventUserIdleSystemSleep`,
+  `SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED)`, `systemd-inhibit
+  --what=idle`; on by default) holds while playing or in a session.
+* **Friend groups.** "Listen together" on a group joins the group's running session (or, from
+  the device running it, invites again) or starts one in the group's mode with no room code;
+  the link (with `&mode=`) goes to the members' devices over the friends network; a member
+  device that turns up later is told again (at most once a minute). Members get an in-app
+  notification with **Join**, or join on their own (*Join automatically when a friend
+  starts*, off by default). A new `listen_ended` message (older versions answer
+  "unsupported") clears the session from the members' list when it ends; a session that moved
+  (hand-over) is announced from its new device and recognized by its session id. System
+  notifications are left for later (BACKLOG U29).
+* **ArchiveTune compatibility.** Additions are optional fields (`mode`, `uid`, `addedBy`,
+  `addedByKey`, `queued`, `contextName`, `features`, `intent`) or new message types
+  (`member_hello`, `session_roster`, `queue_request`, `mode_request`, `kick_request`,
+  `reaction`, `session_note`, `session_ended`) that ArchiveTune's decoder skips
+  (`ignoreUnknownKeys`, `runCatching`); the new types only go to guests that sent
+  `features` in their hello. ArchiveTune has no remove / reorder request to reuse.
+  `together_route` never sends queue edits to a host without slots in its room (ArchiveTune);
+  a slot is played there by position (`seek_to_index`).
+* **Script actions**: `@together-start=MODE[:GROUP]`, `@together-sheet[=GROUP]`,
+  `@together-mode=MODE`, `@together-confirm-mode=MODE`, `@together-react=EMOJI`,
+  `@together-panel=on|off`, `@together-mode-picker`, `@together-notes=on|off`,
+  `@together-auto-join=on|off`, `@together-network=relay|direct`, `@together-link=FILE`,
+  `@keep-awake=on|off`, `@media=play|pause|toggle|next|prev|seek:SECS` (an OS media event);
+  `@together-control` / `@together-suggest` now go through the same methods as the buttons;
+  `@together-status` prints the mode, rights, locks, who queued each song, the note shown,
+  reactions, reconnecting and keep-awake.
+* **Checked** (8 Nov 2026, one Mac): `together::session` (doubled skips, newest seek and
+  play / pause, permissions and queue edits per mode, the fail-over order, reactions' rate
+  limit, notes merging, the reconnect backoff), `together::tests` on localhost with the relay
+  off (a Friends hand-over with three members mid-song keeping queue, slots, owners, position
+  and playing; a fail-over after the device vanishes; doubled skips and seeks over the wire
+  with an unstamped older guest that still controls; the server's per-mode refusals; reactions
+  and notes reaching only this app's guests; a late joiner's position within 120 ms),
+  `messages` (wire shapes, an older peer's messages still decode), `relay_e2e.rs` (a Friends
+  session through the relay outliving its device; the host's relay link cut at the TCP level
+  coming back with the same guests, no "session ended"), `integrations::together_route`
+  (routing per mode and surface intent, removals per mode), `keep_awake` (holds only while
+  wanted, asks only on changes). Three app instances (LAN, demo clock, fixtures, muted): a
+  Friends session where two guests pressed Next together (one skip), Ann left (Bob took over
+  at 37 s on both, Cat followed, queue and owners intact), Bob's media-key pause reached Cat
+  as a note; the same with `kill -9` of Ann's app (Bob took over on his standby port within a
+  second, Cat followed); a DJ session where the guest removed his own song and couldn't remove
+  the host's or skip. CPU (three instances, demo clock, `ps` over 30 s): a Friends session
+  paused 0.3 / 0.2 / 0.2 %, playing 0.4 / 0.2 / 0.2 %; no session idle 0.3 / 0.4 / 0.4 %,
+  each playing alone 0.9 / 0.9 / 1.0 %. No timers run without a session; in one, the poll is
+  woken by the session's events instead of waiting for its next tick, and a guest wakes the
+  app only when a room state changed. Not checked: BACKLOG U29.
+* **Relay change** (to deploy): guests still bound to a host whose connection dropped are
+  closed with "Host connection lost" (a host's own "Host left" passes through) instead of
+  "Session ended". Older apps end their session on it, as they did on "Session ended"; this
+  app reconnects or hands over. Until it is deployed, this app tells the relay's goodbye from
+  a real end by the host's `session_ended`.
 
 ### Relay server (`music-relay`)
 

@@ -5,6 +5,73 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+* **Listen together has modes.** **Friends**: everyone plays, pauses, skips, seeks and
+  edits the queue, as equals. **Host**: you control playback, the others listen along
+  and suggest songs (as before). **DJ**: everyone adds songs, you control playback
+  (with "Suggestions need my approval" if you like). Pick one in the new **Start
+  listening together** sheet (one line each, your last choice remembered), together
+  with **who can join** (anyone with the link or code, or only one of your friend
+  groups) and the connection. The mode shows everywhere (a badge on the page and in the
+  session panel, an icon on the listeners chip) and can be switched while listening, by
+  the host or by anyone in a Friends session, after a confirmation. Joining tells you
+  the mode.
+* **Your own controls drive the session.** When the session lets you control playback
+  (Friends mode, or a host that allows it), the player bar, media keys and the OS's
+  now-playing controls (Control Center, MPRIS, SMTC), the mini player, every Now
+  Playing design, keyboard shortcuts, the menu-bar / tray items, the queue panel, song
+  menus ("Play now", "Play next", "Add to queue", "Play album / playlist / radio") and
+  scripts all act on the session. Play / pause go out as intents, a skip names the song
+  it skips (two people skipping together skip once), the newest seek wins. When you may
+  not, the buttons are disabled with the reason as their tooltip (keys and menus show
+  it once in a while, not on every press). Volume, sound and lyrics stay yours.
+* **A shared queue.** Each queued song shows who added it (an initial, the name on
+  hover); "Next in queue" is one list for everyone, in the order songs were added.
+  **Remove from queue** and reordering go through the session: anyone in Friends mode,
+  the host plus each person for the songs they added in DJ mode (and in Host mode while
+  guests may add songs; anything when guests may control playback). Who removed what
+  shows in the activity notes.
+* **Presence and reactions.** A listeners chip on the player bar (stacked initials, the
+  count, the mode) opens a session panel: the mode and what you may do, who is
+  listening, reactions, invite, leave. Quiet **activity notes** ("Ana skipped", "Sam
+  added 3 songs") merge and never stack up (Settings → Music Together → *Activity
+  notes*). **Reactions** (six) float up over the bar for a moment for everyone,
+  rate-limited, and follow Animations (Reduced: a short fade; Off: no motion).
+* **Friend groups listen together in one click.** "Listen together" on a group joins the
+  group's running session, or starts one in the group's mode (Friends unless you pick
+  another in Settings → Friends or with the ▾ next to the button) that only the group
+  can join. Members get a notification with **Join**, or join on their own with *Join
+  automatically when a friend starts*; the Together page lists each group's live
+  sessions.
+* **Sessions last.** A Friends session goes on when the device it runs on leaves: it is
+  handed to the next person (no break in the music), and if that device vanishes (quit,
+  crash, network gone) the others carry the session on by themselves; it ends only when
+  the last person leaves. Any session survives a dropped link: the host claims its relay
+  room again and guests reconnect for up to a minute ("Reconnecting…"), at the same
+  position and without being asked to approve again.
+* **Keep the computer awake while playing** (Settings → Playback, on by default): no
+  idle sleep while music plays or a Listen together session runs (the screen may still
+  turn off).
+* The queue panel has a **Listen together** button (start one with this queue, or open
+  the session's panel).
+
+### Changed
+
+* The **Listen together page** was reorganized: start (the sheet asks how) and join (one
+  field for a room code or a link) side by side; in a session, the mode and what you
+  may do, the invite (code and link, or "only this group"), the room settings the mode
+  leaves open, the shared queue with who added what, people, reactions and activity.
+  "Ask the host" buttons are gone: your own controls do it.
+
+### Fixed
+
+* A guest's play / pause from media keys or Control Center no longer fought the session
+  (the player was paused locally and the room put it back).
+* Sessions over the internet that dropped after 45 minutes on a flaky link (the host's
+  connection to the relay died at the network level and the relay closed the guests)
+  now reconnect instead of ending; the drop is logged with its cause.
+
 ## [0.3.6] — 2026-11-08
 
 ### Fixed

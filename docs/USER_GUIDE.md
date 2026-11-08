@@ -664,7 +664,7 @@ Sections:
 | Account | YouTube Music sign-in, channels, sync |
 | Scrobbling & Discord | Last.fm, ListenBrainz, scrobble rules, Discord Rich Presence |
 | SponsorBlock | skip non-music sections and other segments |
-| Music Together | your name, how to host (over the internet / same network), port, guest permissions, relay server, relay privacy |
+| Music Together | your name, keep playing when you leave, activity notes, join friends' sessions automatically, the mode for new sessions, how to host (over the internet / same network), port, guest permissions, relay server, relay privacy |
 | Spotify import | your Spotify app's Client ID for importing playlists |
 | AI content filter | endpoint, model, key, categories to hide |
 | Chromecast | devices, stop casting, direct fetch |
@@ -1024,41 +1024,111 @@ of this app and the packaging tool.
 
 ## Listen together
 
-Play the same music in sync with others (sidebar → **Listen together**).
+Hear the same music at the same moment as your friends, in the next room or on the other
+side of the world (sidebar → **Listen together**).
 
-* **Host a session**: choose **Over the internet (relay)** (the default) or **Same network
-  only (direct)**, then **Start session**.
-  * Over the internet, the session runs through a relay server, so people on any network can
-    join. You get a **room code** in big letters (like `ABCD-EFGH`) with **Copy code**, and a link.
-    Tell people the code, or send them the link.
-  * If the relay can't be reached within a few seconds, the session starts on your network
-    instead, and the page says "Relay unreachable, guests must be on the same network".
-  * Same network only: guests connect straight to your computer (allow incoming connections if
-    the firewall asks). You get a link, no code.
-* Guests type the code under **Join with code** (capitals, spaces and dashes don't matter) and
-  press **Join**, or paste the link under it. Their player follows yours; "Play next" /
-  "Add to queue" become suggestions to the host, and, if you allow it, they can play,
-  pause, seek and skip.
-* **Suggestions need my approval** (room settings on the page, or Settings → Music
-  Together): guests' songs then wait in **Suggestions waiting** until you press
-  **Approve** (it goes into your queue as they asked: next, or at the end) or **Reject**.
-  Guests see their songs under **Your suggestions**: *Waiting for the host*, then *Added*
-  or *Turned down*. Off, suggestions go straight into your queue as before.
-* In the people list you can let people in (with approval on), remove or ban them, or
-  **Make host**: that guest takes over the session with your queue and position, and
-  everyone, including you, follows them from then on.
-* **The relay.** By default the app uses the project's relay (`wss://relay.smhcoders.click`;
-  the address can move without an app update). To use your own, run the small `music-relay`
-  program (see the README, "Relay server") and enter its address in Settings → Music Together →
+### Start a session
+
+Press **Start listening together…** (on the Listen together page, the queue panel's
+people button, or ▾ next to a friend group's button). The sheet asks three things:
+
+* **Who controls the music**
+  * **Friends**: everyone plays, pauses, skips and edits the queue, as equals.
+  * **Host**: you control playback; the others listen along and suggest songs.
+  * **DJ**: everyone adds songs; you control playback.
+
+  Your last choice is remembered (Settings → Music Together → *Mode for new sessions*).
+* **Who can join**: anyone with the link or code, or only one of your friend groups (then
+  there is no code and no link to copy: the group's members get an invitation).
+* **Connection**: *Over the internet* (through a relay, people on any network can join; you
+  get a room code like `ABCD-EFGH`) or *Same network only* (people connect straight to your
+  computer; allow incoming connections if the firewall asks). If the relay can't be reached,
+  the session starts on your network and says so.
+
+Then **Start**. Share the **room code** (big letters, **Copy code**) or the **link**.
+
+### Join a session
+
+Type the room code or paste the link under **Join a session** and press **Join** (capitals,
+spaces and dashes don't matter). A notification tells you the session's mode. If the host
+approves guests, you wait until they let you in.
+
+### Listening together
+
+* **Your own controls work.** If the session lets you control playback (Friends mode, or a
+  host who allows it), the player bar, media keys and Control Center / your desktop's media
+  controls, the mini player, Now Playing, keyboard shortcuts, the menu bar icon, the queue
+  panel and every song menu (*Play now*, *Play next*, *Add to queue*, *Play album*, *Start
+  radio*) act for everyone. Two people pressing Next at the same moment skip one song;
+  the latest seek wins.
+* **When you can't**, the buttons are greyed out and their tooltip says why ("Hana
+  controls playback in this session"). In Host and DJ sessions, *Play next* / *Add to
+  queue* (and clicking a song) suggest the song to the host instead.
+* **Your volume, sound settings and lyrics stay yours**, as does your queue of tabs.
+* **The listeners chip** on the player bar shows who is listening (initials, the count and
+  the mode's icon) and quiet notes like "Ana skipped" or "Sam added 3 songs" (turn them
+  off in Settings → Music Together → *Activity notes*). Click it for the **session panel**:
+  the mode (and **Change mode**), what you may do, who is here, **reactions**, the invite
+  and **Leave**.
+* **Reactions** (♥, fire, haha, rock on, party, star) float up over the player bar for
+  everyone for a couple of seconds.
+* **The shared queue** shows who added each song (an initial; the name when you point at
+  it) and who started the list after it. *Remove from queue* (right-click a song, or ×)
+  and dragging songs: anyone in Friends mode; in DJ mode the host, and everyone for the
+  songs they added; in Host mode the host, and guests for their own songs while guests may
+  add songs (all songs if guests may control playback).
+* **Changing the mode**: the host (or anyone in a Friends session) picks another mode in
+  the session panel or on the page and confirms. Someone in a Friends session who picks
+  Host or DJ becomes the host.
+* **Room settings** on the page (the host): approve new guests; in Host mode also
+  *Guests can add songs* and *Guests can control playback*; in Host and DJ modes
+  *Suggestions need my approval* (guests' songs then wait under **Suggestions waiting**
+  for **Approve** / **Reject**; guests see *Waiting for the host*, *Added* or *Turned
+  down*).
+* **People**: the host can let people in, remove or ban them, or **Make host** (that guest
+  takes over with your queue and position; everyone follows). In a Friends session anyone
+  can remove someone.
+
+### Leaving, and sessions that last
+
+* **Leave** (or **End session** for the host of a Host or DJ session, which ends it for
+  everyone). **Keep playing here when I leave** (Settings → Music Together, on by default):
+  the music carries on here with the session's queue from where it was; turn it off to
+  stop instead.
+* **A Friends session doesn't depend on who started it.** When the person whose computer
+  runs it leaves, it moves to someone else's without a break in the music; if that
+  computer is switched off or loses its network, the others carry on by themselves. It
+  ends when the last person leaves.
+* **Dropped connections come back.** If the network blips (Wi-Fi going to sleep, a laptop
+  lid, a proxy), the chip says **Reconnecting…** while the music keeps playing; everyone
+  comes back to the same session, at the same place, without being approved again. Only
+  after a minute without a connection does the session end.
+* **Keep the computer awake while playing** (Settings → Playback, on by default) keeps your
+  computer from falling asleep while music plays or a session runs, which would drop it.
+
+### Friend groups
+
+With friend groups (see [Friend groups](#friend-groups)), **Listen together: Friday** on the
+Listen together page joins the group's session if one is running, or starts one in the
+group's mode (Friends unless you change it in Settings → Friends or with ▾) that only the
+group can join. Members get a notification with **Join** (or join on their own with
+Settings → Music Together → *Join automatically when a friend starts*), and the page lists
+each group's live sessions.
+
+### The relay and privacy
+
+* By default the app uses the project's relay (`wss://relay.smhcoders.click`; the address
+  can move without an app update). To use your own, run the small `music-relay` program
+  (see the README, "Relay server") and enter its address in Settings → Music Together →
   *Relay server*. Codes only work with the relay that made them.
-* **Privacy.** Through the relay, song titles, artists and the names of the people in the
-  session pass via the relay server. It stores nothing and never sees your account. Same
-  network sessions don't use it. Codes stop working when the session ends; if you want to be
-  sure who joins, turn on approval in the room settings.
-* **Keep playing here when I leave** (Settings → Music Together, on by default): when you
-  leave a session you joined, or the host ends it (say ArchiveTune on your phone), the music
-  carries on here with the session's queue, from where the session was, with its repeat
-  mode. Turn it off to have playback stop instead.
+* Through the relay, the songs (titles, artists, video ids), the queue with who added each
+  song, everyone's names, reactions and activity notes pass via the relay server. It stores
+  nothing and never sees your account. Same-network sessions don't use it. Codes stop
+  working when the session ends; to be sure who joins, turn on approval in the room
+  settings, or start the session for a friend group only.
+* People with another app that speaks the same protocol (ArchiveTune) can join as guests:
+  they follow and, if allowed, control playback and suggest songs, but they see no modes,
+  notes or reactions and can't take a Friends session over.
 
 ## Continue on another device
 
@@ -1128,9 +1198,9 @@ until you switch it on.
 * **The feed** is on the **Listen together** page: each friend with the song they are playing
   ("Playing now", or "Paused · 5 min ago"). It fills as friends play something while both apps
   are open; nothing is kept once you quit.
-* **Listen together: Friday** (a button per group on that page) starts a session through the
-  relay and invites the group: they get a notification and a **Join** button on their Listen
-  together page.
+* **Listen together: Friday** (a button per group on that page) joins the group's session or
+  starts one only the group can join, in the group's mode (see [Listen
+  together](#friend-groups-1)): they get a notification with **Join**.
 * **Your recovery phrase** (Settings → Friends → *Show recovery phrase*): 11 groups of
   characters that move your friend identity to a new computer (*Restore from a recovery
   phrase*). Then ask a friend (or your old computer) for an invitation to each group; you come
@@ -1262,7 +1332,7 @@ Builds signed with a Developer ID keep the same identity, and neither prompt com
   songs on the pages you open to the service you configured, and nothing while it is off.
 * A **relay server** forwards your Listen together sessions over the internet (the default
   way to host; the project's relay unless you set your own): song titles, artists, names in the
-  session, the session key and room code. Same-network sessions don't use it. To find the relay,
+  session, who added which song, reactions and activity notes, the session key and room code. Same-network sessions don't use it. To find the relay,
   the app reads one line (`packaging/relay.txt`) from the project's GitHub repository, at most
   every 6 hours, when you host or join with a code.
 * **Continue on another device**, once a device is paired: the app announces itself on your

@@ -19,6 +19,8 @@ use crate::{Error, Result};
 /// Read timeout of the poll loop (how long a quiet `recv` blocks).
 pub(super) const POLL: Duration = Duration::from_millis(40);
 
+// One at a time, straight from the socket to its handler: the size doesn't matter.
+#[allow(clippy::large_enum_variant)]
 pub(super) enum Recv {
     Message(Message),
     /// Nothing arrived within [`POLL`] (or a non-text / undecodable frame).

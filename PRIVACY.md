@@ -161,6 +161,21 @@ GitHub's privacy statement applies:
   Change it in Settings → Music Together before hosting if you'd rather not share it.
 * **Same network only:** guests connect straight to the host's computer (TCP port 42117).
   Nothing leaves your network.
+* **What a session shares with the others** (through the relay, or on your network), beyond the
+  songs and playback: the session's **mode**; for each song in the queue, the **name of who
+  added it** and a short **hash** of that person's app id (so the session knows whose song it
+  is when they remove it; the id itself, which bans use, never leaves the host); **reactions**
+  (which one, from whom, on which song); **activity notes** ("Ana skipped", "Sam added 3
+  songs", "Ana removed “Song”"). In a **Friends** session the computer it runs on also sends
+  the other members of this app the list of who would take over, each one's local network
+  address and port (same-network sessions) and the relay room's secret, so that the session
+  can move to one of them; nothing of this goes to people with another app (ArchiveTune).
+  Nothing is stored once the session ends.
+* **Friend groups' sessions:** "Listen together" on a group sends the session's link (with its
+  mode) to the group's members through the friend groups' encrypted connections (below), and
+  tells them when it ends. A group's session gets no room code.
+* **Keep the computer awake while playing** (on by default) asks your operating system not to
+  sleep while music plays or a session runs; nothing is sent anywhere.
 
 ### Your other devices (device hand-off)
 

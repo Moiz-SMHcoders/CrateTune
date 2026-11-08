@@ -96,6 +96,8 @@ pub enum Block {
     NotShareable,
     /// The session's queue can't be swapped for a queue tab.
     QueueTabs,
+    /// The link to the host dropped and is being restored.
+    Reconnecting,
 }
 
 /// What to do with an intent.
@@ -355,10 +357,20 @@ impl MusicApp {
                 false
             }
             Standing::Guest => {
-                let (room, pending, me) = match &self.integrations.together.role {
-                    Role::Guest(g) => (g.room.clone(), g.pending, g.owner_key.clone()),
-                    _ => (None, false, String::new()),
+                let (room, pending, me, reconnecting) = match &self.integrations.together.role {
+                    Role::Guest(g) => (
+                        g.room.clone(),
+                        g.pending,
+                        g.owner_key.clone(),
+                        g.reconnecting.is_some(),
+                    ),
+                    _ => (None, false, String::new(), false),
                 };
+                if reconnecting {
+                    // Nothing would reach the host now; the music goes on as it was.
+                    self.together_hint(Block::Reconnecting, &intent);
+                    return true;
+                }
                 let me = (!me.is_empty()).then_some(me.as_str());
                 let routed = route(&intent, standing, room.as_ref(), pending, me);
                 self.together_send(intent, routed, room.as_ref(), cx);
@@ -531,6 +543,7 @@ impl MusicApp {
             Block::Waiting => t!("together.hint.waiting", name = host),
             Block::NotShareable => t!("together.toast.only_youtube_music").into(),
             Block::QueueTabs => t!("queue.tabs.toast_guest").into(),
+            Block::Reconnecting => t!("together.can.reconnecting").into(),
         }
     }
 
@@ -543,6 +556,9 @@ impl MusicApp {
         };
         if guest.pending {
             return Some(self.together_block_text(Block::Waiting));
+        }
+        if guest.reconnecting.is_some() {
+            return Some(self.together_block_text(Block::Reconnecting));
         }
         let p = together.permissions()?;
         (!p.control).then(|| self.together_block_text(Block::NoControl))
