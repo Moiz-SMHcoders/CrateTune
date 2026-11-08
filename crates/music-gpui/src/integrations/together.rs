@@ -39,6 +39,8 @@ const LOG_LINES: usize = 40;
 const REACTIONS_SHOWN: usize = 6;
 /// How long a reaction stays up.
 pub const REACTION_SHOW: Duration = Duration::from_millis(2_600);
+/// After a session moved here, the people reconnecting this soon get no "joined" note.
+const REJOIN_QUIET: Duration = Duration::from_secs(30);
 
 pub struct HostSession {
     pub server: TogetherServer,
@@ -68,6 +70,9 @@ pub struct HostSession {
     /// Leaving a Friends session: the successors (participant ids) still to try,
     /// one at a time; the session goes on with the first that takes over.
     pub leaving: Option<VecDeque<String>>,
+    /// Taken over: the people who were in the room reconnect now; no "joined" notes
+    /// for them (until this moment).
+    rejoining: (HashSet<String>, Option<Instant>),
 }
 
 impl HostSession {
@@ -86,6 +91,7 @@ impl HostSession {
             context_by: None,
             group: None,
             leaving: None,
+            rejoining: (HashSet::new(), None),
         }
     }
 
@@ -630,6 +636,15 @@ impl MusicApp {
         matches!(self.integrations.together.role, Role::Guest(_))
     }
 
+    /// Shuffle as the buttons show it: a guest's queue is the room's order already
+    /// (local shuffle stays off), so it shows the room's.
+    pub(crate) fn shuffle_shown(&self) -> bool {
+        match &self.integrations.together.role {
+            Role::Guest(guest) => guest.room.as_ref().is_some_and(|r| r.shuffle_enabled),
+            _ => self.queue.shuffle(),
+        }
+    }
+
     // ---- hosting ---------------------------------------------------------------------
 
     /// Starts a session with `options`; `on_ready` gets the join link and the room
@@ -1030,10 +1045,21 @@ impl MusicApp {
                         .log(t!("together.log.wants_to_join", name = p.name));
                 }
                 ServerEvent::Joined(p) => {
-                    self.integrations
-                        .together
-                        .log(t!("together.log.joined", name = p.name));
-                    self.together_note(&p, NoteKind::Joined, 1, None, cx);
+                    // Someone who was in the room before it moved here: back, not new.
+                    let back = match &mut self.integrations.together.role {
+                        Role::Hosting(h)
+                            if h.rejoining.1.is_some_and(|at| at.elapsed() < REJOIN_QUIET) =>
+                        {
+                            h.rejoining.0.remove(&p.name)
+                        }
+                        _ => false,
+                    };
+                    if !back {
+                        self.integrations
+                            .together
+                            .log(t!("together.log.joined", name = p.name));
+                        self.together_note(&p, NoteKind::Joined, 1, None, cx);
+                    }
                     self.together_session_changed(cx);
                 }
                 ServerEvent::Left {
@@ -1770,6 +1796,13 @@ impl MusicApp {
         host.code = code;
         host.group = group;
         host.added_by = added_by;
+        host.rejoining = (
+            room.iter()
+                .flat_map(|r| &r.participants)
+                .map(|p| p.name.clone())
+                .collect(),
+            Some(Instant::now()),
+        );
         self.together_start_hosting(host, cx);
     }
 
@@ -1837,9 +1870,11 @@ impl MusicApp {
         match role {
             Role::Hosting(mut host) => {
                 host.server.stop();
-                self.integrations
-                    .together
-                    .log(t!("together.log.ended").into());
+                if host.transferring.is_none() {
+                    self.integrations
+                        .together
+                        .log(t!("together.log.ended").into());
+                }
                 // Handed over: the session goes on elsewhere (and is announced there).
                 self.friends_session_over(host.transferring.is_some());
             }
@@ -2014,9 +2049,10 @@ impl MusicApp {
                     guest.pending_seek = None;
                     guest.sync.reset();
                     // Nobody hosts a Friends session: no need to say who keeps time.
-                    let line = match name {
-                        Some(name) => t!("together.log.host_changed", name = name),
-                        None => t!("together.log.host_changed_unknown").to_owned(),
+                    let line = match (name, friends) {
+                        (Some(name), true) => t!("together.log.session_moved", name = name),
+                        (Some(name), false) => t!("together.log.host_changed", name = name),
+                        (None, _) => t!("together.log.host_changed_unknown").to_owned(),
                     };
                     if friends {
                         quiet.push(line);
@@ -2178,6 +2214,7 @@ impl MusicApp {
                         let mut guest = GuestSession::new(client, join, recovery.group);
                         guest.room = Some(recovery.room);
                         guest.roster = Some(recovery.roster);
+                        guest.greeted = true;
                         this.together_start_guest(guest, cx);
                     }
                     Err((Ok(server), code)) => {
@@ -2340,6 +2377,15 @@ impl MusicApp {
         };
         let clock = guest.client.clock();
         let now = guest.client.elapsed_ms();
+        // The room's repeat shows (and ends the queue) here too.
+        if self.queue.repeat() != repeat_of(room.repeat_mode) {
+            self.queue.set_repeat(repeat_of(room.repeat_mode));
+            self.next_sent = None;
+            cx.notify();
+        }
+        let Role::Guest(guest) = &mut self.integrations.together.role else {
+            return;
+        };
         let Some(mut plan) = guest.sync.plan(&local, &room, Some(clock), now) else {
             return;
         };

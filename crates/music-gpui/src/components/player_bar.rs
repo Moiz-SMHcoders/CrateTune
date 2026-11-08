@@ -1210,7 +1210,7 @@ impl MusicApp {
         let (track, restored) = self.bar_track();
         let state = &self.playback;
         let has_next = self.queue.has_next();
-        let (shuffle, repeat) = (self.queue.shuffle(), self.queue.repeat());
+        let (shuffle, repeat) = (self.shuffle_shown(), self.queue.repeat());
         let is_playing = state.status == PlaybackStatus::Playing;
         let can_toggle = self.engine.is_some()
             && (restored

@@ -321,7 +321,7 @@ impl MusicApp {
         let playing = self.playback.status == PlaybackStatus::Playing;
         let has_track = self.playback.track.is_some();
         let has_next = self.queue.has_next();
-        let (shuffle, repeat) = (self.queue.shuffle(), self.queue.repeat());
+        let (shuffle, repeat) = (self.shuffle_shown(), self.queue.repeat());
         let _ = frame;
         // A Music Together guest without control: dimmed, each saying why.
         let lock = self.transport_lock().map(SharedString::from);
@@ -484,7 +484,7 @@ impl MusicApp {
             .filter(|a| !a.is_empty());
         let format = crate::module_service::source_label(self.playback.source.as_ref())
             .filter(|_| track.is_some() && el.has(E::Quality));
-        let shuffle = self.queue.shuffle();
+        let shuffle = self.shuffle_shown();
         let keep = self.np.gestures.empty_close;
         let extras = self.np_extras(self.np_extra_items(CARD_NATIVE), inner, px(36.), frame, cx);
         let up_next = self.up_next_view();
@@ -849,7 +849,7 @@ impl MusicApp {
         let busy =
             self.playback.status == PlaybackStatus::Loading || (playing && self.playback.buffering);
         let has_next = self.queue.has_next();
-        let (shuffle, repeat) = (self.queue.shuffle(), self.queue.repeat());
+        let (shuffle, repeat) = (self.shuffle_shown(), self.queue.repeat());
         let album = track
             .and_then(|t| t.album.clone())
             .filter(|a| !a.is_empty());

@@ -105,7 +105,7 @@ impl MusicApp {
         let bg = self.chrome_bg(crate::settings::glass_prefs::Surface::Queue, cx);
         let theme = cx.theme();
         let (border, muted) = (theme.border, theme.muted_foreground);
-        let shuffle = self.queue.shuffle();
+        let shuffle = self.shuffle_shown();
         let repeat = self.queue.repeat();
 
         let current = self.queue.current().cloned();
@@ -165,12 +165,15 @@ impl MusicApp {
                     context.len(),
                 );
                 let clear = (!context.is_empty() && !mine.is_empty()).then_some(Source::Context);
-                // Who started the list, in a session ("Next from Album · Ana").
+                // Who started the list, in a session, when it wasn't this person
+                // ("Next from Album · 7 · started by Ana").
+                let me = self.settings.read(cx).settings().together.name();
                 let label = match context
                     .first()
                     .and_then(|(uid, _)| self.integrations.together.added_by(*uid))
+                    .filter(|by| *by != me)
                 {
-                    Some(by) => format!("{label} · {by}"),
+                    Some(by) => format!("{label} · {}", t!("together.queue.started_by", name = by)),
                     None => label,
                 };
                 list = list.child(self.section_header("q-clear-context", label, clear, cx));
@@ -277,6 +280,27 @@ impl MusicApp {
                             .disabled(count == 0 || !live || edit_lock.is_some())
                             .when_some(edit_lock.clone(), |b, tip| b.tooltip(tip))
                             .on_click(cx.listener(|this, _, _, cx| this.queue_clear(cx))),
+                    )
+                    // Discoverable from here: share this queue (or the session's panel).
+                    .child(
+                        Button::new("queue-together")
+                            .ghost()
+                            .small()
+                            .icon(Lucide::Users)
+                            .selected(self.integrations.together.in_session())
+                            .tooltip(if self.integrations.together.in_session() {
+                                t!("together.chip.tooltip_short")
+                            } else {
+                                t!("together.queue.listen")
+                            })
+                            .on_click(cx.listener(|this, _, window, cx| {
+                                if this.integrations.together.in_session() {
+                                    this.integrations.together.panel_open = true;
+                                    cx.notify();
+                                } else {
+                                    this.together_open_start_sheet(None, window, cx);
+                                }
+                            })),
                     )
                     .child(
                         Button::new("queue-close")

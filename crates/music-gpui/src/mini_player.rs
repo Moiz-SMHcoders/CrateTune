@@ -334,7 +334,7 @@ impl Render for MiniPlayer {
             let extras = Extras {
                 lock: app.transport_lock().map(gpui::SharedString::from),
                 volume: app.volume,
-                shuffle: app.queue.shuffle(),
+                shuffle: app.shuffle_shown(),
                 repeat: app.queue.repeat(),
                 liked: app
                     .playback

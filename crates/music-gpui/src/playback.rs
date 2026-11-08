@@ -283,7 +283,7 @@ impl MusicApp {
     }
 
     pub fn toggle_shuffle(&mut self, cx: &mut Context<Self>) {
-        self.set_shuffle(!self.queue.shuffle(), cx);
+        self.set_shuffle(!self.shuffle_shown(), cx);
     }
 
     pub fn set_repeat(&mut self, repeat: Repeat, cx: &mut Context<Self>) {

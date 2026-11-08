@@ -271,7 +271,7 @@ impl MusicApp {
         let shown = self.np.elements;
         let mut key = u64::from(shown.bits());
         if shown.has(NpElement::Shuffle) {
-            key |= u64::from(self.queue.shuffle()) << 22;
+            key |= u64::from(self.shuffle_shown()) << 22;
         }
         if shown.has(NpElement::Repeat) {
             key |= (self.queue.repeat() as u64 & 3) << 23;
@@ -346,7 +346,7 @@ impl MusicApp {
         frame: &mut Frame,
         cx: &mut Context<Self>,
     ) -> AnyElement {
-        let (shuffle, repeat) = (self.queue.shuffle(), self.queue.repeat());
+        let (shuffle, repeat) = (self.shuffle_shown(), self.queue.repeat());
         match (e, track) {
             (NpElement::Like, Some(t)) => self
                 .np_like("np-like", t, side, frame, cx)
@@ -513,7 +513,7 @@ impl MusicApp {
             .as_ref()
             .is_some_and(|t| crate::store::is_disliked(&t.video_id));
         let (shuffle, repeat, muted) =
-            (self.queue.shuffle(), self.queue.repeat(), self.volume <= 0.);
+            (self.shuffle_shown(), self.queue.repeat(), self.volume <= 0.);
         div()
             .size(side)
             .flex_none()

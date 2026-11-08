@@ -66,7 +66,7 @@ pub fn reaction_icon(emoji: &str) -> Lucide {
     }
 }
 
-fn reaction_label(emoji: &str) -> &'static str {
+pub fn reaction_label(emoji: &str) -> &'static str {
     match emoji {
         "heart" => t!("together.react.heart"),
         "fire" => t!("together.react.fire"),
@@ -78,7 +78,7 @@ fn reaction_label(emoji: &str) -> &'static str {
 }
 
 /// A reaction's colour (the same on every device, readable in light and dark).
-fn reaction_color(emoji: &str) -> Hsla {
+pub fn reaction_color(emoji: &str) -> Hsla {
     match emoji {
         "heart" => hsla(350. / 360., 0.75, 0.55, 1.),
         "fire" => hsla(22. / 360., 0.9, 0.52, 1.),

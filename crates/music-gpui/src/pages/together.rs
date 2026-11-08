@@ -33,7 +33,9 @@ use crate::icons::Lucide;
 use crate::integrations::together::{
     Role, SentState, SentSuggestion, mode_name, relay_hint, relay_host_name,
 };
-use crate::integrations::together_ui::{avatar, mode_icon, permission_line, reaction_icon};
+use crate::integrations::together_ui::{
+    avatar, mode_icon, permission_line, reaction_color, reaction_icon, reaction_label,
+};
 use crate::router::Route;
 use crate::settings::SectionId;
 
@@ -539,7 +541,12 @@ fn session_card(view: &View, cx: &gpui::App) -> AnyElement {
                 Button::new(SharedString::from(format!("tg-react-{emoji}")))
                     .ghost()
                     .small()
-                    .icon(Icon::new(reaction_icon(emoji)).size(px(18.)))
+                    .icon(
+                        Icon::new(reaction_icon(emoji))
+                            .size(px(18.))
+                            .text_color(reaction_color(emoji)),
+                    )
+                    .tooltip(reaction_label(emoji))
                     .disabled(view.now.is_none())
                     .on_click(move |_, _, cx| {
                         update_app(cx, |app, cx| app.together_react(emoji, cx));

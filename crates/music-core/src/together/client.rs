@@ -109,6 +109,8 @@ pub enum ClientEvent {
     Reconnected,
 }
 
+// One at a time through a channel (never stored in bulk): the size doesn't matter.
+#[allow(clippy::large_enum_variant)]
 enum Outgoing {
     Message(Message),
     Leave,
@@ -310,7 +312,7 @@ impl TogetherClient {
         self.send(|participant_id| Message::QueueRequest {
             session_id,
             participant_id,
-            op,
+            op: Box::new(op),
             intent,
         })
     }

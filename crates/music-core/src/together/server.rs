@@ -1041,7 +1041,7 @@ fn handle(
             if queue_op_allowed(&op, &settings) {
                 inner.emit(ServerEvent::Queue {
                     participant,
-                    op,
+                    op: *op,
                     intent,
                 });
             } else {

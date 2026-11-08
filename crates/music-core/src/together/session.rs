@@ -546,7 +546,7 @@ mod tests {
         assert!(p.add && !p.add_directly && !p.control && !p.edit_queue);
         // The host may do everything in every mode.
         for s in [host, friends, dj] {
-            assert_eq!(permissions(&s, true).edit_queue, true);
+            assert!(permissions(&s, true).edit_queue);
         }
         // Queue edits: a jump is playback control; the rest needs Friends.
         let jump = QueueOp::Jump { uid: 1 };

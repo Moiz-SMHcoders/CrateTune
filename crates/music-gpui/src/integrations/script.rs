@@ -21,6 +21,8 @@
 //! | `@together-control=play\|pause\|next\|prev\|seek:SECS` | as the player bar / media keys would (routed to the session) |
 //! | `@together-start=MODE[:GROUP]` | start a session in `host`, `friends` or `dj` mode (as the start sheet; a friend group by name or id) |
 //! | `@together-sheet[=GROUP]` | open the "Start listening together" sheet |
+//! | `@together-network=relay\|direct` | how sessions are hosted (Settings → Music Together → Host sessions) |
+//! | `@together-link=FILE` | write the running session's join link to FILE (hosting) |
 //! | `@together-mode=MODE` | switch the session's mode (the host; anyone in Friends mode) |
 //! | `@together-react=EMOJI` | react to the current song (`heart`, `fire`, `laugh`, `rock`, `party`, `star`) |
 //! | `@together-panel=on\|off`, `@together-mode-picker` | the listeners chip's panel; its mode picker |
@@ -351,6 +353,22 @@ impl MusicApp {
                 }
             }
             "together-react" => self.together_react(arg.unwrap_or("heart"), cx),
+            "together-network" => {
+                let mode = if arg == Some("direct") {
+                    super::config::HostMode::Direct
+                } else {
+                    super::config::HostMode::Relay
+                };
+                panel.update(cx, |p, cx| p.set_together(|t| t.host_mode = mode, cx));
+            }
+            "together-link" => match (&self.integrations.together.role, arg) {
+                (Role::Hosting(host), Some(path)) => {
+                    if let Err(e) = std::fs::write(path, host.link()) {
+                        eprintln!("music-gpui: writing {path}: {e}");
+                    }
+                }
+                _ => eprintln!("music-gpui: no session hosted here (or no file)"),
+            },
             "together-panel" => {
                 self.integrations.together.panel_open = on;
                 cx.notify();

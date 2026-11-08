@@ -598,7 +598,7 @@ pub enum Message {
     QueueRequest {
         session_id: String,
         participant_id: String,
-        op: QueueOp,
+        op: Box<QueueOp>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         intent: Option<IntentMeta>,
     },
@@ -889,7 +889,7 @@ mod tests {
             Message::QueueRequest {
                 session_id: "s".into(),
                 participant_id: "p".into(),
-                op: QueueOp::Move { uid: 4, to_uid: 2 },
+                op: Box::new(QueueOp::Move { uid: 4, to_uid: 2 }),
                 intent: None,
             },
             Message::ModeRequest {
