@@ -57,6 +57,11 @@ pub enum RelayFrame {
     RelayOpen { conn: u64 },
     /// A text frame from / for guest `conn`.
     RelayData { conn: u64, data: String },
+    /// Host → relay: "still here" while nothing else is sent. The relay drops a host
+    /// it hasn't heard from in a minute; a host with no guests (waiting for the first
+    /// one, or after the last left) sends nothing else. Relays without this variant
+    /// count any text frame as a sign of life and ignore what they can't parse.
+    RelayKeepalive,
     /// Guest `conn` is gone (relay → host) / close it (host → relay).
     RelayClose {
         conn: u64,
@@ -190,12 +195,17 @@ pub(super) fn register(
     }
 }
 
+/// How long the host's relay connection may stay silent before a
+/// [`RelayFrame::RelayKeepalive`] (the relay's idle timeout is 60 s).
+pub const KEEPALIVE: Duration = Duration::from_secs(20);
+
 /// The relay connection's thread: spawns a guest loop per virtual connection and
 /// moves frames between them and the relay.
-pub(super) fn run(mut conn: Conn, inner: Arc<Inner>) {
+pub(super) fn run(mut conn: Conn, inner: Arc<Inner>, keepalive: Duration) {
     let (out_tx, out_rx) = channel::<RelayOut>();
     let mut links: HashMap<u64, Sender<LinkIn>> = HashMap::new();
     let mut shutdown_at: Option<Instant> = None;
+    let mut last_sent = Instant::now();
     loop {
         while let Ok(out) = out_rx.try_recv() {
             let frame = match out {
@@ -209,6 +219,11 @@ pub(super) fn run(mut conn: Conn, inner: Arc<Inner>) {
                 }
             };
             conn.send_text(frame.encode());
+            last_sent = Instant::now();
+        }
+        if last_sent.elapsed() >= keepalive {
+            conn.send_text(RelayFrame::RelayKeepalive.encode());
+            last_sent = Instant::now();
         }
         if inner.abandoned.load(Ordering::Relaxed) {
             return; // dropped without a word (tests of the fail-over)

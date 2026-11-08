@@ -131,6 +131,39 @@ fn mirrors_the_player_fixes() {
     let _ = std::fs::remove_dir_all(dir);
 }
 
+/// A host waiting for its first guest sends nothing but keepalives; before they
+/// existed the relay dropped such a room after its idle timeout ("timed out"), so a
+/// friend joining a minute later found no session.
+#[test]
+fn an_idle_host_stays_registered() {
+    let relay = Relay::start(Config {
+        listen: "127.0.0.1:0".parse().unwrap(),
+        idle_timeout: Duration::from_secs(1),
+        ..Config::default()
+    })
+    .unwrap();
+    let url = format!("ws://{}", relay.addr());
+    let (sid, key) = (new_id(), new_id());
+    let host = TogetherServer::start_relay(
+        &url,
+        sid.clone(),
+        key.clone(),
+        "Hana".into(),
+        RoomSettings::default(),
+        HostOptions {
+            relay_keepalive: Some(Duration::from_millis(250)),
+            ..HostOptions::default()
+        },
+    )
+    .unwrap();
+    std::thread::sleep(Duration::from_millis(2500));
+    assert_eq!(relay.stats().rooms, 1, "the idle room is still there");
+    let join = JoinInfo::via_relay(&url, sid, key).unwrap();
+    let guest = TogetherClient::connect(&join, "Ann", "ann-client").unwrap();
+    wait_for(|| guest.participant_id());
+    drop(host);
+}
+
 #[test]
 fn relay_host_two_guests_and_a_transfer() {
     let relay = Relay::start(Config {
@@ -274,6 +307,7 @@ fn relay_host_two_guests_and_a_transfer() {
             trusted_client_ids: trusted,
             banned_client_ids: banned,
             relay_secret: secret,
+            relay_keepalive: None,
         },
     )
     .unwrap();
@@ -554,6 +588,7 @@ fn a_friends_session_through_the_relay_outlives_its_device() {
             trusted_client_ids: trusted,
             banned_client_ids: banned,
             relay_secret: secret,
+            relay_keepalive: None,
         },
     )
     .unwrap();

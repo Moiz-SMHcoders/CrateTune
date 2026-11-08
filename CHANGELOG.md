@@ -5,6 +5,16 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.6] — 2026-11-08
+
+### Fixed
+
+* **Listen together sessions over the internet no longer time out while waiting.** The
+  relay drops a host it hasn't heard from in 60 s, and a host with no guests (waiting for
+  the first friend, or after the last one left) sent nothing, so the room vanished about a
+  minute after it was opened ("timed out" in the relay's log; a friend's link or code then
+  led nowhere). Hosts now send a small keepalive after 20 s of silence. Works with the
+  relay as deployed; no server update needed.
 ## [0.3.5] — 2026-11-05
 
 ### Added

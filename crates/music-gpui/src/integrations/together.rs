@@ -2035,6 +2035,7 @@ impl MusicApp {
                             trusted_client_ids,
                             banned_client_ids,
                             relay_secret,
+                            relay_keepalive: None,
                         },
                     ))
                 }
@@ -2174,6 +2175,7 @@ impl MusicApp {
             trusted_client_ids: roster.trusted.clone(),
             banned_client_ids: roster.banned.clone(),
             relay_secret: roster.relay_secret.clone(),
+            relay_keepalive: None,
         };
         let settings = room.settings;
         cx.spawn_in(window, async move |this, cx| {
