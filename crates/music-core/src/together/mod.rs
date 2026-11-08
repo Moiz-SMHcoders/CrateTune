@@ -570,6 +570,7 @@ mod tests {
                 trusted_client_ids: trusted,
                 banned_client_ids: banned,
                 relay_secret: None,
+                relay_keepalive: None,
             },
         )
         .unwrap();

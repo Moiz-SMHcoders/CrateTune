@@ -1328,6 +1328,7 @@ impl MusicApp {
                             trusted_client_ids,
                             banned_client_ids,
                             relay_secret,
+                            relay_keepalive: None,
                         },
                     ))
                 }

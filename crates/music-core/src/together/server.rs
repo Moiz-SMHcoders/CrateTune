@@ -47,6 +47,9 @@ pub struct HostOptions {
     /// Relayed sessions: the room's secret on the relay (a new host claims the room
     /// with it). Generated when `None`.
     pub relay_secret: Option<String>,
+    /// Relayed sessions: how long the host's connection may stay silent before it
+    /// sends a keepalive ([`super::relay::KEEPALIVE`] when `None`; tests set less).
+    pub relay_keepalive: Option<std::time::Duration>,
 }
 
 /// What guests did, for the host app to act on (drained with [`TogetherServer::poll_events`]).
@@ -267,6 +270,7 @@ impl TogetherServer {
         let url = super::link::relay_url(relay_url)
             .ok_or_else(|| Error::Parse(format!("not a relay address: {relay_url}")))?;
         let secret = options.relay_secret.clone().unwrap_or_else(super::new_id);
+        let keepalive = options.relay_keepalive.unwrap_or(super::relay::KEEPALIVE);
         let conn = super::relay::register(&url, &session_id, &session_key, &secret, RELAY_TIMEOUT)?;
         let (inner, rx) = Inner::new(
             session_id,
@@ -279,7 +283,7 @@ impl TogetherServer {
         let relay_inner = inner.clone();
         let thread = std::thread::Builder::new()
             .name("together-relay".into())
-            .spawn(move || super::relay::run(conn, relay_inner))
+            .spawn(move || super::relay::run(conn, relay_inner, keepalive))
             .map_err(Error::Io)?;
         Ok(Self {
             inner,

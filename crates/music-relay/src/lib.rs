@@ -153,6 +153,9 @@ enum Frame {
         #[serde(default)]
         reason: Option<String>,
     },
+    /// Host → relay while it has nothing else to send (no guests): keeps the room
+    /// from timing out. Any text frame counts as a sign of life.
+    RelayKeepalive,
 }
 
 impl Frame {
