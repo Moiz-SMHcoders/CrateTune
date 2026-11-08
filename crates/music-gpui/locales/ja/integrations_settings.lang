@@ -145,3 +145,11 @@ settings.cast.note = キャストすると、同じネットワーク上の Chro
 
 # ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
 settings.together.approve_suggestions_desc = ゲストの曲は、承認または拒否するまで「一緒に聴く」ページで待機します。
+
+# ---- Music Together: session modes, activity notes, joining friends' sessions
+settings.together.default_mode = 新しいセッションのモード
+settings.together.default_mode_desc = 「一緒に聴き始める」で最初に選ばれるモードです（そこで変更できます）。フレンドグループにはそれぞれ独自の設定があり、変更しない限りフレンドモードです。
+settings.together.activity_notes = アクティビティメモ
+settings.together.activity_notes_desc = プレーヤーバーの参加者の横に控えめに表示されるメモ：「Ana がスキップしました」「Sam が3曲追加しました」。
+settings.together.auto_join = フレンドが開始したら自動的に参加
+settings.together.auto_join_desc = すでにセッションに参加中でない限り、フレンドグループのセッションに確認なしで参加します。

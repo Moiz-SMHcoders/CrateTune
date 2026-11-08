@@ -148,3 +148,11 @@ settings.cast.note = कास्टिंग इस नेटवर्क प�
 
 # ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
 settings.together.approve_suggestions_desc = मेहमानों के गाने “साथ में सुनें” पेज पर तब तक रुके रहते हैं जब तक आप उन्हें मंज़ूर या अस्वीकार नहीं करते।
+
+# ---- Music Together: session modes, activity notes, joining friends' sessions
+settings.together.default_mode = नए सेशन का मोड
+settings.together.default_mode_desc = “साथ में सुनना शुरू करें” में पहले से चुना मोड (आप उसे वहाँ बदल सकते हैं)। दोस्तों के ग्रुप का अपना मोड होता है, बदले जाने तक “दोस्त”।
+settings.together.activity_notes = गतिविधि नोट
+settings.together.activity_notes_desc = प्लेयर बार में सुनने वालों के पास छोटे-छोटे नोट: “Ana ने छोड़ा”, “Sam ने 3 गाने जोड़े”।
+settings.together.auto_join = दोस्त के शुरू करने पर अपने-आप जुड़ें
+settings.together.auto_join_desc = दोस्तों के ग्रुप के सेशन से बिना पूछे जुड़ जाते हैं, जब तक आप पहले से किसी सेशन में न हों।

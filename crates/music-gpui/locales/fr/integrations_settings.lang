@@ -148,3 +148,11 @@ settings.cast.note = La diffusion lit la file d'attente sur un Chromecast, un Go
 
 # ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
 settings.together.approve_suggestions_desc = Les titres des invités attendent sur la page Écouter ensemble jusqu'à ce que vous les acceptiez ou refusiez.
+
+# ---- Music Together: session modes, activity notes, joining friends' sessions
+settings.together.default_mode = Mode des nouvelles sessions
+settings.together.default_mode_desc = Le mode que « Lancer une écoute partagée » sélectionne d'abord (vous pourrez le changer à ce moment-là). Les groupes d'amis ont le leur, Amis par défaut.
+settings.together.activity_notes = Notes d'activité
+settings.together.activity_notes_desc = Notes discrètes à côté des auditeurs dans la barre de lecture : « Ana a passé un titre », « Sam a ajouté 3 titres ».
+settings.together.auto_join = Rejoindre automatiquement quand un ami lance une session
+settings.together.auto_join_desc = La session d'un groupe d'amis est rejointe sans confirmation, sauf si vous êtes déjà dans une session.

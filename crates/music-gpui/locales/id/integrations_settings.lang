@@ -143,3 +143,11 @@ settings.cast.note = Transmisi memutar antrean di Chromecast, Google TV, atau sp
 
 # ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
 settings.together.approve_suggestions_desc = Lagu dari tamu menunggu di halaman Dengar bersama sampai Anda menyetujui atau menolaknya.
+
+# ---- Music Together: session modes, activity notes, joining friends' sessions
+settings.together.default_mode = Mode untuk sesi baru
+settings.together.default_mode_desc = Pilihan awal di “Mulai dengar bersama” (bisa diubah di sana). Grup teman punya mode sendiri, yaitu Teman kecuali diubah.
+settings.together.activity_notes = Catatan aktivitas
+settings.together.activity_notes_desc = Catatan kecil di samping pendengar di bilah pemutar: “Ana melewati”, “Sam menambahkan 3 lagu”.
+settings.together.auto_join = Gabung otomatis saat teman memulai
+settings.together.auto_join_desc = Sesi grup teman langsung digabung tanpa bertanya, kecuali Anda sudah berada dalam sesi.

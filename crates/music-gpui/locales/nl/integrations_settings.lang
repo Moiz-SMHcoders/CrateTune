@@ -148,3 +148,11 @@ settings.cast.note = Casten speelt de wachtrij af op een Chromecast, Google TV o
 
 # ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
 settings.together.approve_suggestions_desc = Nummers van gasten wachten op de pagina Samen luisteren tot je ze goedkeurt of afwijst.
+
+# ---- Music Together: session modes, activity notes, joining friends' sessions
+settings.together.default_mode = Modus voor nieuwe sessies
+settings.together.default_mode_desc = Wat ‘Samen luisteren starten’ eerst kiest (je kunt het daar wijzigen). Vriendengroepen hebben hun eigen modus, standaard Vrienden.
+settings.together.activity_notes = Activiteitsnotities
+settings.together.activity_notes_desc = Rustige notities naast de luisteraars in de spelerbalk: ‘Ana sloeg over’, ‘Sam voegde 3 nummers toe’.
+settings.together.auto_join = Automatisch deelnemen als een vriend begint
+settings.together.auto_join_desc = Je neemt zonder te vragen deel aan de sessie van een vriendengroep, tenzij je al in een sessie zit.

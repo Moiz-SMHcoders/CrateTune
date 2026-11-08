@@ -143,3 +143,11 @@ settings.cast.note = Truyền sẽ phát danh sách chờ trên Chromecast, Goog
 
 # ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
 settings.together.approve_suggestions_desc = Bài hát của khách sẽ chờ ở trang Nghe cùng nhau cho đến khi bạn duyệt hoặc từ chối.
+
+# ---- Music Together: session modes, activity notes, joining friends' sessions
+settings.together.default_mode = Chế độ cho phiên mới
+settings.together.default_mode_desc = Chế độ được chọn sẵn trong “Bắt đầu nghe cùng nhau” (bạn có thể đổi ở đó). Nhóm bạn bè có chế độ riêng, mặc định là Bạn bè nếu chưa đổi.
+settings.together.activity_notes = Ghi chú hoạt động
+settings.together.activity_notes_desc = Ghi chú nhỏ cạnh những người nghe trên thanh trình phát: “Ana đã bỏ qua”, “Sam đã thêm 3 bài”.
+settings.together.auto_join = Tự động tham gia khi bạn bè bắt đầu
+settings.together.auto_join_desc = Tự động tham gia phiên của nhóm bạn bè mà không hỏi, trừ khi bạn đang ở trong một phiên.
