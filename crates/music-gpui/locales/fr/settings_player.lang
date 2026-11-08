@@ -204,3 +204,5 @@ prefs.mini_skin.card = Carte pochette
 prefs.mini_skin.lyrics = Paroles
 prefs.mini_skin.turntable = Platine vinyle
 prefs.layout.turntable = Platine vinyle
+settings.playback.keep_awake = Empêcher la mise en veille de l'ordinateur pendant la lecture
+settings.playback.keep_awake_desc = Tant que de la musique joue ou qu'une session Écouter ensemble est en cours, l'ordinateur ne se met pas en veille de lui-même (l'écran peut toujours s'éteindre). La veille coupe le réseau, et la session avec.

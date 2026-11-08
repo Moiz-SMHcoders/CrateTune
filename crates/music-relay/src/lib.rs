@@ -785,7 +785,7 @@ fn serve_host(
     }
     drop(rooms);
     let goodbye = if current {
-        "Session ended"
+        host_goodbye(&reason)
     } else {
         "Host moved"
     };
@@ -797,6 +797,19 @@ fn serve_host(
         if let HostIn::Open { guest, .. } = msg {
             let _ = guest.send(GuestIn::Close(goodbye.into()));
         }
+    }
+}
+
+/// What guests still bound to a host that went hear: its own goodbye when it closed
+/// the connection ("Session ended", or "Host left" when its guests carry the session
+/// on), else "Host connection lost" (it vanished; the app's guests may take the
+/// session over). Never "Session ended" for a host that just dropped off.
+fn host_goodbye(reason: &str) -> &'static str {
+    match reason {
+        "Host left" => "Host left",
+        "Connection lost" | "timed out" => "Host connection lost",
+        "Relay shutting down" => "Relay shutting down",
+        _ => "Session ended",
     }
 }
 
@@ -1114,6 +1127,18 @@ mod tests {
             next_conn: AtomicUsize::new(1),
             shutdown: AtomicBool::new(false),
         }
+    }
+
+    #[test]
+    fn guests_hear_why_their_host_went() {
+        // A host that closed the session: over. One that quit a Friends session: its
+        // guests carry it on. One that vanished: never "Session ended" (the app's
+        // guests may take the session over).
+        assert_eq!(host_goodbye("Session ended"), "Session ended");
+        assert_eq!(host_goodbye("disconnected"), "Session ended");
+        assert_eq!(host_goodbye("Host left"), "Host left");
+        assert_eq!(host_goodbye("Connection lost"), "Host connection lost");
+        assert_eq!(host_goodbye("timed out"), "Host connection lost");
     }
 
     #[test]

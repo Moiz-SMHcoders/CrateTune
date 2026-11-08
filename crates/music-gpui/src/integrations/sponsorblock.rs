@@ -140,7 +140,7 @@ impl MusicApp {
             }
             SkipMode::Auto => {
                 self.integrations.sponsorblock.last_skip = Some((segment, Instant::now()));
-                self.seek_to(target, cx);
+                self.seek_local(target, cx);
                 if prefs.notify {
                     notify(
                         window,

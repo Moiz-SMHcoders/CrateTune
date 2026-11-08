@@ -64,6 +64,7 @@ queue.empty.hint = Voeg nummers toe met ‘Hierna afspelen’ of ‘Toevoegen aa
 queue.tooltip.clear_up_next = Hierna wissen
 queue.tooltip.close = Sluiten (Esc)
 queue.tooltip.move_up = Omhoog
+queue.menu.remove = Verwijderen uit wachtrij
 queue.tooltip.move_down = Omlaag
 
 # ---- Song rows and the song context menu

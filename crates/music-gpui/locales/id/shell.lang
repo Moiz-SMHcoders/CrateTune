@@ -59,6 +59,7 @@ queue.empty.hint = Tambahkan lagu dengan “Putar berikutnya” atau “Tambah k
 queue.tooltip.clear_up_next = Bersihkan berikutnya
 queue.tooltip.close = Tutup (Esc)
 queue.tooltip.move_up = Pindah ke atas
+queue.menu.remove = Hapus dari antrean
 queue.tooltip.move_down = Pindah ke bawah
 
 # ---- Song rows and the song context menu

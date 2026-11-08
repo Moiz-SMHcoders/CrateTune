@@ -616,10 +616,58 @@ pub(super) fn render_together(
                         cx,
                     ),
                     cx,
+                ))
+                .child(row_at(
+                    "together.activity_notes",
+                    t!("settings.together.activity_notes"),
+                    Some(t!("settings.together.activity_notes_desc")),
+                    switch(
+                        "together-activity-notes",
+                        t.activity_notes,
+                        |p, on, cx| p.set_together(|t| t.activity_notes = on, cx),
+                        cx,
+                    ),
+                    cx,
+                ))
+                .child(row_at(
+                    "together.auto_join",
+                    t!("settings.together.auto_join"),
+                    Some(t!("settings.together.auto_join_desc")),
+                    switch(
+                        "together-auto-join",
+                        t.auto_join,
+                        |p, on, cx| p.set_together(|t| t.auto_join = on, cx),
+                        cx,
+                    ),
+                    cx,
                 )),
         )
         .child(
             group_at("together.hosting", t!("settings.together.hosting"), cx)
+                .child(row_at(
+                    "together.default_mode",
+                    t!("settings.together.default_mode"),
+                    Some(t!("settings.together.default_mode_desc")),
+                    h_flex().gap_1().flex_wrap().children(
+                        music_core::together::SessionMode::ALL.map(|mode| {
+                            let selected = t.last_mode == mode;
+                            Button::new(SharedString::from(format!(
+                                "together-default-{}",
+                                mode.key()
+                            )))
+                            .small()
+                            .map(|b| if selected { b.primary() } else { b.outline() })
+                            .selected(selected)
+                            .icon(crate::integrations::together_ui::mode_icon(mode))
+                            .label(crate::integrations::together::mode_name(mode))
+                            .tooltip(crate::integrations::together_ui::mode_description(mode))
+                            .on_click(cx.listener(
+                                move |p, _, _, cx| p.set_together(|t| t.last_mode = mode, cx),
+                            ))
+                        }),
+                    ),
+                    cx,
+                ))
                 .child(row_at(
                     "together.host_mode",
                     t!("settings.together.host_mode"),

@@ -6,7 +6,10 @@
 # happen while a page renders (e.g. reading an entity that is being updated), which
 # unit tests don't draw. Also switches every Now Playing design's and mini player
 # layout's elements on and off at the smallest window and fails if parts overlap or
-# leave the window.
+# leave the window. Then a Listen together session on this computer (no relay): the
+# "Start listening together" sheet, a Friends session with the listeners chip, its
+# panel and mode picker, a reaction, the mode switch's confirmation and every mode, the
+# page and the shared queue in session, and leaving; fails unless each mode was reached.
 #
 #   scripts/smoke-pages.sh [--binary PATH]
 #
@@ -105,6 +108,25 @@ script="$script$t:@links-status,$t:@nav=search:daft%20punk,"; t=$((t + 3))
 script="$script$t:@play-bare=0,"; t=$((t + 2))
 script="$script$t:@go-artist=0,"; t=$((t + 3))
 script="$script$t:@links-status,"; t=$((t + 1))
+# Listen together (`integrations/together_ui.rs`, `pages/together.rs`): the sheet, then a
+# session on this computer in each mode (chip, panel, picker, reaction, confirmation,
+# page, queue panel with who queued what), the sheet once more over a session, leaving.
+script="$script$t:@together-network=direct,$t:@together-sheet,"; t=$((t + 2))
+script="$script$t:@close,$t:@nav=search:daft%20punk,"; t=$((t + 2))
+script="$script$t:@play=0,"; t=$((t + 2))
+script="$script$t:@together-start=friends,"; t=$((t + 2))
+script="$script$t:@together-panel=on,"; t=$((t + 1))
+script="$script$t:@together-mode-picker=on,"; t=$((t + 1))
+script="$script$t:@together-react=heart,$t:@together-react=party,"; t=$((t + 1))
+script="$script$t:@together-panel=off,$t:@enqueue=1,$t:@queue=on,"; t=$((t + 2))
+script="$script$t:@nav=together,"; t=$((t + 2))
+script="$script$t:@together-status,$t:@together-confirm-mode=dj,"; t=$((t + 2))
+script="$script$t:@close,$t:@together-mode=dj,"; t=$((t + 2))
+script="$script$t:@together-status,$t:@together-mode=host,"; t=$((t + 2))
+script="$script$t:@together-status,$t:@together-panel=on,"; t=$((t + 2))
+script="$script$t:@together-panel=off,$t:@together-sheet,"; t=$((t + 2))
+script="$script$t:@close,$t:@queue=off,$t:@together-leave,"; t=$((t + 2))
+script="$script$t:@together-status,$t:@nav=together,"; t=$((t + 2))
 script="$script$t:@quit"
 limit=$((t + 60))
 
@@ -154,6 +176,15 @@ elif ! tail -1 <<<"$(grep 'music-gpui: page tabs:' "$work/app.log")" | grep -q '
   echo "FAIL: the keys didn't pass on with one tab" >&2
   status=1
 fi
+# Listen together: every mode reached, then idle again.
+modes=$(grep -o 'together   mode Some([A-Za-z]*)' "$work/app.log" | sed 's/.*Some(//; s/)//' | tr '\n' ' ')
+if [ "$status" = 0 ] && [ "$modes" != "Friends Dj Host " ]; then
+  echo "FAIL: Listen together modes reached: '$modes' (expected Friends Dj Host)" >&2
+  status=1
+elif [ "$status" = 0 ] && ! grep -q 'music-gpui: together idle' "$work/app.log"; then
+  echo "FAIL: the Listen together session didn't end" >&2
+  status=1
+fi
 # The three link pages, in order: Julian Casablancas, Random Access Memories, Daft Punk.
 links=$(grep 'music-gpui: links:' "$work/app.log" | sed 's/.* route=//' | cut -d'|' -f1 | tr '\n' ' ')
 if [ "$status" = 0 ] && [ "$links" != "artist:UCWhpbdGLnR8XtXLr0yl2nYA album:MPREb_K8qWMWVqXGi artist:UCRr1xG_2WIDs18a6cIiCxeA " ]; then
@@ -163,5 +194,6 @@ fi
 grep 'music-gpui: page tabs:' "$work/app.log" || true
 grep -E 'bounds ' "$work/app.log" || true
 grep 'music-gpui: links:' "$work/app.log" || true
+grep -E 'together (hosting|idle)|together   mode' "$work/app.log" || true
 echo "smoke: $navs pages opened, exit status $status"
 exit "$status"

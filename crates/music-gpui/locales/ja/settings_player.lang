@@ -203,3 +203,5 @@ prefs.mini_skin.card = アートワークカード
 prefs.mini_skin.lyrics = 歌詞
 prefs.mini_skin.turntable = ターンテーブル
 prefs.layout.turntable = ターンテーブル
+settings.playback.keep_awake = 再生中はコンピュータをスリープさせない
+settings.playback.keep_awake_desc = 音楽の再生中や「一緒に聴く」セッションの実行中は、コンピュータが自動でスリープしません（画面はオフになる場合があります）。スリープするとネットワークが切断され、セッションも切断されます。

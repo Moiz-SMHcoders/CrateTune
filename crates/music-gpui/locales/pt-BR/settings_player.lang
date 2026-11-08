@@ -205,3 +205,5 @@ prefs.mini_skin.card = Cartão da capa
 prefs.mini_skin.lyrics = Letra
 prefs.mini_skin.turntable = Toca-discos
 prefs.layout.turntable = Toca-discos
+settings.playback.keep_awake = Manter o computador ativo durante a reprodução
+settings.playback.keep_awake_desc = Enquanto uma música toca ou uma sessão do Ouvir juntos está em andamento, o computador não entra em repouso sozinho (a tela ainda pode apagar). O repouso derruba a rede e, junto com ela, a sessão.

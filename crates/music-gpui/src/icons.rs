@@ -118,6 +118,13 @@ gpui_kit_assets::icon_assets!(
         CircleStop,
         // page tabs
         SquarePlus,
+        // Listen together: modes, reactions
+        Crown,
+        Users,
+        FaceGrinning,
+        HandMetal,
+        PartyPopper,
+        Star,
     ]
 );
 

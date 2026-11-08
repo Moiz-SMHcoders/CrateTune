@@ -145,3 +145,11 @@ settings.cast.note = 投放会在此网络中的 Chromecast、Google TV 或 Nest
 
 # ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
 settings.together.approve_suggestions_desc = 访客的歌曲会在“一起听”页面等待，直到你批准或拒绝。
+
+# ---- Music Together: session modes, activity notes, joining friends' sessions
+settings.together.default_mode = 新会话的模式
+settings.together.default_mode_desc = “开始一起听”中首先选中的模式（可在那里更改）。好友群组有各自的设置，未更改时为好友模式。
+settings.together.activity_notes = 动态提示
+settings.together.activity_notes_desc = 在播放栏的听众旁边低调显示的提示：“Ana 跳过了”“Sam 添加了 3 首歌”。
+settings.together.auto_join = 好友开始时自动加入
+settings.together.auto_join_desc = 除非你已在某个会话中，否则会直接加入好友群组的会话，无需询问。

@@ -261,3 +261,5 @@ prefs.mini_skin.turntable = Turntable
 
 # ---- Now Playing design added later: a record player (artwork as the label, a tonearm that follows the song).
 prefs.layout.turntable = Turntable
+settings.playback.keep_awake = Keep the computer awake while playing
+settings.playback.keep_awake_desc = While music plays or a Listen together session runs, the computer doesn't go to sleep on its own (the screen still may). Sleep drops the network, and a session with it.

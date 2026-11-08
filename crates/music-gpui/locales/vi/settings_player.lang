@@ -201,3 +201,5 @@ prefs.mini_skin.card = Thẻ ảnh bìa
 prefs.mini_skin.lyrics = Lời bài hát
 prefs.mini_skin.turntable = Máy quay đĩa
 prefs.layout.turntable = Máy quay đĩa
+settings.playback.keep_awake = Giữ máy tính không ngủ khi đang phát
+settings.playback.keep_awake_desc = Khi đang phát nhạc hoặc có phiên Nghe cùng nhau, máy tính sẽ không tự chuyển sang chế độ ngủ (màn hình vẫn có thể tắt). Chế độ ngủ sẽ ngắt mạng, kéo theo cả phiên.

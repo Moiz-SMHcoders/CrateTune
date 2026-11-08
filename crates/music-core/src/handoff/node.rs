@@ -216,6 +216,12 @@ pub enum Event {
         group: String,
         link: String,
     },
+    /// Friends: that session is over (or the member left it).
+    ListenEnded {
+        member: String,
+        group: String,
+        link: String,
+    },
     /// Friends: joined a group with an invitation.
     Joined(Group),
     JoinFailed(PairError),
@@ -592,6 +598,16 @@ impl HandoffNode {
         self.send(Command::Friends(FriendsCommand::ListenTogether {
             group: group.to_owned(),
             link: link.to_owned(),
+            ended: false,
+        }));
+    }
+
+    /// Tells a group's members that session is over (or this member left it).
+    pub fn listen_ended(&self, group: &str, link: &str) {
+        self.send(Command::Friends(FriendsCommand::ListenTogether {
+            group: group.to_owned(),
+            link: link.to_owned(),
+            ended: true,
         }));
     }
 

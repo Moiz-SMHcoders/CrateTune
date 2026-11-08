@@ -205,3 +205,5 @@ prefs.mini_skin.card = Tarjeta de portada
 prefs.mini_skin.lyrics = Letra
 prefs.mini_skin.turntable = Tocadiscos
 prefs.layout.turntable = Tocadiscos
+settings.playback.keep_awake = Mantener el equipo activo durante la reproducción
+settings.playback.keep_awake_desc = Mientras suena música o hay una sesión de Escuchar juntos en curso, el equipo no entra en reposo por sí solo (la pantalla sí puede apagarse). El reposo corta la red y, con ella, la sesión.

@@ -148,3 +148,11 @@ settings.cast.note = Beim Übertragen wird die Warteschlange auf einem Chromecas
 
 # ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
 settings.together.approve_suggestions_desc = Songs von Gästen warten auf der Seite „Gemeinsam hören“, bis du sie annimmst oder ablehnst.
+
+# ---- Music Together: session modes, activity notes, joining friends' sessions
+settings.together.default_mode = Modus für neue Sitzungen
+settings.together.default_mode_desc = Was „Gemeinsam hören starten“ zuerst auswählt (du kannst es dort ändern). Freundesgruppen haben einen eigenen, standardmäßig Freunde.
+settings.together.activity_notes = Aktivitätshinweise
+settings.together.activity_notes_desc = Dezente Hinweise neben den Zuhörenden in der Player-Leiste: „Ana hat übersprungen“, „Sam hat 3 Songs hinzugefügt“.
+settings.together.auto_join = Automatisch beitreten, wenn ein Freund startet
+settings.together.auto_join_desc = Du trittst der Sitzung einer Freundesgruppe ohne Nachfrage bei, außer du bist schon in einer.

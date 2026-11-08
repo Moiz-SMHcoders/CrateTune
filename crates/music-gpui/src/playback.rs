@@ -15,6 +15,7 @@ use music_core::media_controls::MediaControlEvent;
 use music_core::{PlaybackState, PlaybackStatus, SleepTimer, Track, format_duration};
 
 use crate::app::{MusicApp, notify, update_app};
+use crate::integrations::together_route::Intent;
 use crate::now_playing::HiRes;
 use crate::queue::{Ended, Previous, QueueContext, Repeat, Source};
 use crate::router::Route;
@@ -26,6 +27,10 @@ pub const VOLUME_STEP: f32 = 0.05;
 
 impl MusicApp {
     // ---- starting playback ----------------------------------------------------
+
+    // Every user-facing method below asks `together_route` first: in a Music
+    // Together session the intent may go to the host instead (`together_route.rs`).
+    // The `*_local` variants act on this player only (the session's own use).
 
     /// Plays `list[index]` with the whole list as the queue's context (named after
     /// the page it was started from); your queued songs stay ahead of it.
@@ -42,6 +47,35 @@ impl MusicApp {
         context: Option<QueueContext>,
         cx: &mut Context<Self>,
     ) {
+        let intent = Intent::PlayList {
+            tracks: (*list).clone(),
+            index,
+            context: context.as_ref().map(|c| c.name.clone()),
+            shuffle: false,
+        };
+        if self.together_route(intent, cx) {
+            return;
+        }
+        self.play_list_in_local(list, index, context, cx);
+    }
+
+    pub(crate) fn play_list_local(
+        &mut self,
+        list: Rc<Vec<Track>>,
+        index: usize,
+        cx: &mut Context<Self>,
+    ) {
+        let context = self.page_context();
+        self.play_list_in_local(list, index, context, cx);
+    }
+
+    pub(crate) fn play_list_in_local(
+        &mut self,
+        list: Rc<Vec<Track>>,
+        index: usize,
+        context: Option<QueueContext>,
+        cx: &mut Context<Self>,
+    ) {
         let tracks = Rc::try_unwrap(list).unwrap_or_else(|rc| (*rc).clone());
         if let Some(track) = self.queue.play_context(tracks, index, context) {
             self.play(track, cx);
@@ -50,7 +84,7 @@ impl MusicApp {
 
     /// What a list started from the current page is called in the queue ("Next from
     /// <album>"): the page's title.
-    fn page_context(&self) -> Option<QueueContext> {
+    pub(crate) fn page_context(&self) -> Option<QueueContext> {
         match self.router.route() {
             Route::Settings { .. } | Route::Together | Route::Import => None,
             route => Some(QueueContext::list(route.title())),
@@ -59,6 +93,13 @@ impl MusicApp {
 
     /// Plays `track` right away, keeping the rest of the queue after it.
     pub fn play_now(&mut self, track: Track, cx: &mut Context<Self>) {
+        if self.together_route(Intent::PlayNow(track.clone()), cx) {
+            return;
+        }
+        self.play_now_local(track, cx);
+    }
+
+    pub(crate) fn play_now_local(&mut self, track: Track, cx: &mut Context<Self>) {
         let track = self.queue.play_now(track);
         self.play(track, cx);
     }
@@ -70,9 +111,22 @@ impl MusicApp {
         cx: &mut Context<Self>,
     ) {
         let mode = music_core::together::AddTrackMode::PlayNext;
-        if self.together_intercept_enqueue(&tracks, mode, window, cx) {
-            return; // a Together guest suggests to the host instead
+        let intent = Intent::Enqueue {
+            tracks: tracks.clone(),
+            mode,
+        };
+        if self.together_route(intent, cx) {
+            return; // a Together guest asks the host instead
         }
+        self.queue_play_next_local(tracks, window, cx);
+    }
+
+    pub(crate) fn queue_play_next_local(
+        &mut self,
+        tracks: Vec<Track>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         let message = enqueue_message(true, &tracks);
         match self.queue.play_next(tracks) {
             Some(track) => self.play(track, cx),
@@ -83,9 +137,22 @@ impl MusicApp {
 
     pub fn queue_add(&mut self, tracks: Vec<Track>, window: &mut Window, cx: &mut Context<Self>) {
         let mode = music_core::together::AddTrackMode::AddToQueue;
-        if self.together_intercept_enqueue(&tracks, mode, window, cx) {
+        let intent = Intent::Enqueue {
+            tracks: tracks.clone(),
+            mode,
+        };
+        if self.together_route(intent, cx) {
             return;
         }
+        self.queue_add_local(tracks, window, cx);
+    }
+
+    pub(crate) fn queue_add_local(
+        &mut self,
+        tracks: Vec<Track>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         let message = enqueue_message(false, &tracks);
         match self.queue.add(tracks) {
             Some(track) => self.play(track, cx),
@@ -95,6 +162,13 @@ impl MusicApp {
     }
 
     pub fn queue_jump(&mut self, uid: u64, cx: &mut Context<Self>) {
+        if self.together_route(Intent::Jump(uid), cx) {
+            return;
+        }
+        self.queue_jump_local(uid, cx);
+    }
+
+    pub(crate) fn queue_jump_local(&mut self, uid: u64, cx: &mut Context<Self>) {
         let already = self.queue.current_item().map(|i| i.uid) == Some(uid);
         if let Some(track) = self.queue.jump(uid) {
             if already && self.current_video_id() == Some(track.video_id.as_str()) {
@@ -107,30 +181,86 @@ impl MusicApp {
     }
 
     pub fn queue_remove(&mut self, uid: u64, cx: &mut Context<Self>) {
+        if self.together_route(Intent::Remove(uid), cx) {
+            return;
+        }
+        self.queue_remove_local(uid, cx);
+    }
+
+    pub(crate) fn queue_remove_local(&mut self, uid: u64, cx: &mut Context<Self>) {
         if self.queue.remove(uid) {
             cx.notify();
         }
     }
 
     pub fn queue_nudge(&mut self, uid: u64, delta: isize, cx: &mut Context<Self>) {
+        // In a session: a move to the neighbour's slot (the host's slots are ours).
+        let upcoming = self.queue.upcoming();
+        let target = upcoming
+            .iter()
+            .position(|i| i.uid == uid)
+            .and_then(|at| at.checked_add_signed(delta))
+            .and_then(|to| upcoming.get(to))
+            .map(|i| i.uid);
+        match target {
+            Some(to_uid) => {
+                if self.together_route(Intent::Move { uid, to_uid }, cx) {
+                    return;
+                }
+            }
+            None if self.together_is_guest() => return,
+            None => {}
+        }
         if self.queue.nudge(uid, delta) {
             cx.notify();
         }
     }
 
     pub fn queue_move_to(&mut self, uid: u64, target: u64, cx: &mut Context<Self>) {
+        if self.together_route(
+            Intent::Move {
+                uid,
+                to_uid: target,
+            },
+            cx,
+        ) {
+            return;
+        }
+        self.queue_move_to_local(uid, target, cx);
+    }
+
+    pub(crate) fn queue_move_to_local(&mut self, uid: u64, target: u64, cx: &mut Context<Self>) {
         if self.queue.move_to(uid, target) {
             cx.notify();
         }
     }
 
     pub fn queue_clear(&mut self, cx: &mut Context<Self>) {
+        let part = music_core::together::ClearPart::All;
+        if self.together_route(Intent::Clear(part), cx) {
+            return;
+        }
+        self.queue_clear_local(cx);
+    }
+
+    pub(crate) fn queue_clear_local(&mut self, cx: &mut Context<Self>) {
         self.queue.clear();
         cx.notify();
     }
 
     /// Clears "Next in queue" or "Next from …" only.
     pub fn queue_clear_part(&mut self, source: Source, cx: &mut Context<Self>) {
+        let part = match source {
+            Source::User => music_core::together::ClearPart::Queued,
+            Source::Context => music_core::together::ClearPart::List,
+        };
+        if self.together_route(Intent::Clear(part), cx) {
+            return;
+        }
+        self.queue_clear_part_local(source, cx);
+    }
+
+    pub(crate) fn queue_clear_part_local(&mut self, source: Source, cx: &mut Context<Self>) {
         if self.queue.clear_part(source) {
             if source == Source::Context {
                 // The radio's refills would bring the context back.
@@ -141,15 +271,29 @@ impl MusicApp {
     }
 
     pub fn set_shuffle(&mut self, on: bool, cx: &mut Context<Self>) {
+        if self.together_route(Intent::Shuffle(on), cx) {
+            return;
+        }
+        self.set_shuffle_local(on, cx);
+    }
+
+    pub(crate) fn set_shuffle_local(&mut self, on: bool, cx: &mut Context<Self>) {
         self.queue.set_shuffle(on);
         self.save_modes(cx);
     }
 
     pub fn toggle_shuffle(&mut self, cx: &mut Context<Self>) {
-        self.set_shuffle(!self.queue.shuffle(), cx);
+        self.set_shuffle(!self.shuffle_shown(), cx);
     }
 
     pub fn set_repeat(&mut self, repeat: Repeat, cx: &mut Context<Self>) {
+        if self.together_route(Intent::Repeat(repeat), cx) {
+            return;
+        }
+        self.set_repeat_local(repeat, cx);
+    }
+
+    pub(crate) fn set_repeat_local(&mut self, repeat: Repeat, cx: &mut Context<Self>) {
         self.queue.set_repeat(repeat);
         self.save_modes(cx);
     }
@@ -169,6 +313,13 @@ impl MusicApp {
     // ---- transport -------------------------------------------------------------
 
     pub fn next_track(&mut self, cx: &mut Context<Self>) {
+        if self.together_route(Intent::Next, cx) {
+            return;
+        }
+        self.next_track_local(cx);
+    }
+
+    pub(crate) fn next_track_local(&mut self, cx: &mut Context<Self>) {
         if let Some(track) = self.queue.advance() {
             self.play(track, cx);
         }
@@ -176,6 +327,13 @@ impl MusicApp {
 
     /// Restarts the track past 3 s, else plays the previous one.
     pub fn previous_track(&mut self, cx: &mut Context<Self>) {
+        if self.together_route(Intent::Previous, cx) {
+            return;
+        }
+        self.previous_track_local(cx);
+    }
+
+    pub(crate) fn previous_track_local(&mut self, cx: &mut Context<Self>) {
         if self.playback.track.is_none() {
             return;
         }
@@ -357,6 +515,24 @@ impl MusicApp {
     }
 
     pub fn toggle_playback(&mut self, cx: &mut Context<Self>) {
+        if self.together_route(Intent::Toggle, cx) {
+            return;
+        }
+        self.toggle_playback_local(cx);
+    }
+
+    /// An explicit play (`true`) or pause (media keys' Play / Pause, scripts).
+    pub fn set_playing(&mut self, play: bool, cx: &mut Context<Self>) {
+        let intent = if play { Intent::Play } else { Intent::Pause };
+        if self.together_route(intent, cx) {
+            return;
+        }
+        if play != (self.playback.status == PlaybackStatus::Playing) {
+            self.toggle_playback_local(cx);
+        }
+    }
+
+    pub(crate) fn toggle_playback_local(&mut self, cx: &mut Context<Self>) {
         // Last session's queue: start it where it was left.
         if self.start_restored(cx) {
             return;
@@ -447,6 +623,13 @@ impl MusicApp {
             window.focus(&self.focus, cx);
         }
         self.poll_tray(window, cx);
+        // "Keep the computer awake while playing" (and in a Listen together session).
+        let keep = music_core::keep_awake::wanted(
+            self.settings.read(cx).settings().playback.keep_awake,
+            self.playback.status == PlaybackStatus::Playing,
+            self.integrations.together.in_session(),
+        );
+        self.services.keep_awake(keep);
         self.open_np_on_play(window, cx);
         self.poll_spectrum();
         self.poll_waveform(cx);
@@ -562,24 +745,31 @@ impl MusicApp {
         }
     }
 
+    /// [`Self::on_media_event`] for scripts (`@media=…`).
+    pub(crate) fn media_event(
+        &mut self,
+        event: MediaControlEvent,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.on_media_event(event, window, cx);
+    }
+
     /// OS media keys / Control Center. With real audio only next/previous get
-    /// here (`MediaControls::for_player` routes the rest to the `Player`).
+    /// here (`MediaControls::for_player` routes the rest to the `Player`), except in
+    /// a Music Together session, where everything comes here to reach the session.
     fn on_media_event(
         &mut self,
         event: MediaControlEvent,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        let playing = self.playback.status == PlaybackStatus::Playing;
         match event {
             MediaControlEvent::Next => self.next_track(cx),
             MediaControlEvent::Previous => self.previous_track(cx),
             MediaControlEvent::Toggle => self.toggle_playback(cx),
-            MediaControlEvent::Play if !playing => self.toggle_playback(cx),
-            MediaControlEvent::Pause | MediaControlEvent::Stop if playing => {
-                self.toggle_playback(cx)
-            }
-            MediaControlEvent::Play | MediaControlEvent::Pause | MediaControlEvent::Stop => {}
+            MediaControlEvent::Play => self.set_playing(true, cx),
+            MediaControlEvent::Pause | MediaControlEvent::Stop => self.set_playing(false, cx),
             MediaControlEvent::SeekTo(position) => self.seek_to(position, cx),
             MediaControlEvent::SeekBy(secs) => {
                 let now = self.clock.position(Instant::now()).as_secs_f64();

@@ -148,3 +148,11 @@ settings.cast.note = Yayınlama, sırayı bu ağdaki bir Chromecast, Google TV v
 
 # ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
 settings.together.approve_suggestions_desc = Misafirlerin şarkıları siz onaylayana ya da reddedene kadar Birlikte dinle sayfasında bekler.
+
+# ---- Music Together: session modes, activity notes, joining friends' sessions
+settings.together.default_mode = Yeni oturumların modu
+settings.together.default_mode_desc = “Birlikte dinlemeye başla” ilk olarak bunu seçer (orada değiştirebilirsiniz). Arkadaş gruplarının kendi modu vardır; değiştirilmedikçe Arkadaşlar.
+settings.together.activity_notes = Etkinlik notları
+settings.together.activity_notes_desc = Oynatıcı çubuğunda dinleyicilerin yanında sade notlar: “Ana atladı”, “Sam 3 şarkı ekledi”.
+settings.together.auto_join = Bir arkadaş başlatınca otomatik katıl
+settings.together.auto_join_desc = Zaten bir oturumda değilseniz arkadaş grubunuzun oturumuna sorulmadan katılırsınız.

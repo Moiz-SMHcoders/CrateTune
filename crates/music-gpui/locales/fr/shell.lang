@@ -64,6 +64,7 @@ queue.empty.hint = Ajoutez des titres avec « Lire ensuite » ou « Ajouter �
 queue.tooltip.clear_up_next = Effacer « À suivre »
 queue.tooltip.close = Fermer (Échap)
 queue.tooltip.move_up = Monter
+queue.menu.remove = Retirer de la file d'attente
 queue.tooltip.move_down = Descendre
 
 # ---- Song rows and the song context menu

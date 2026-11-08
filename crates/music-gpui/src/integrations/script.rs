@@ -17,9 +17,20 @@
 //! | `@together-approve`, `@together-deny` | decide on every pending guest |
 //! | `@together-kick=NAME`, `@together-ban=NAME` | remove a guest |
 //! | `@together-allow=add\|control\|approval:on\|off` | room settings |
-//! | `@together-suggest=N` | as a guest: suggest search result N (play next) |
-//! | `@together-control=play\|pause\|next\|prev\|seek:SECS` | as a guest: ask the host |
-//! | `@together-status` | print role, room code, participants, room and clock |
+//! | `@together-suggest=N` | queue search result N to play next (a guest: through the session, as "Play next" would) |
+//! | `@together-control=play\|pause\|next\|prev\|seek:SECS` | as the player bar / media keys would (routed to the session) |
+//! | `@together-start=MODE[:GROUP]` | start a session in `host`, `friends` or `dj` mode (as the start sheet; a friend group by name or id) |
+//! | `@together-sheet[=GROUP]` | open the "Start listening together" sheet |
+//! | `@together-network=relay\|direct` | how sessions are hosted (Settings → Music Together → Host sessions) |
+//! | `@together-link=FILE` | write the running session's join link to FILE (hosting) |
+//! | `@together-mode=MODE` | switch the session's mode (the host; anyone in Friends mode) |
+//! | `@together-react=EMOJI` | react to the current song (`heart`, `fire`, `laugh`, `rock`, `party`, `star`) |
+//! | `@together-panel=on\|off`, `@together-mode-picker` | the listeners chip's panel; its mode picker |
+//! | `@together-confirm-mode=MODE` | the mode switch's confirmation dialog |
+//! | `@together-notes=on\|off`, `@together-auto-join=on\|off` | "Activity notes"; "Join automatically when a friend starts" |
+//! | `@keep-awake=on\|off` | "Keep the computer awake while playing" (`@together-status` prints whether it holds) |
+//! | `@media=play\|pause\|toggle\|next\|prev\|seek:SECS` | an OS media-key / now-playing event |
+//! | `@together-status` | print role, mode, rights, room code, participants (who queued what), room and clock |
 //! | `@import-file=PATH`, `@spotify-playlist=URL`, `@spotify-liked` | start an import |
 //! | `@import-accept=N`, `@import-save[=NAME]`, `@import-cancel`, `@import-status` | the import job |
 //! | `@spotify-playlists`, `@spotify-connect` | Spotify account |
@@ -50,7 +61,7 @@ use music_core::ai_filter::AiCategory;
 use music_core::library::PlaylistSort;
 use music_core::playlist_import::{Format, Resolution};
 use music_core::sponsorblock::Category;
-use music_core::together::{AddTrackMode, ControlAction};
+use music_core::together::SessionMode;
 
 use super::config::SkipMode;
 use super::import::{ImportSource, Phase};
@@ -265,37 +276,115 @@ impl MusicApp {
             "together-suggest" => {
                 let ix = arg.and_then(|a| a.parse::<usize>().ok()).unwrap_or(0);
                 match self.last_results.get(ix).cloned() {
-                    Some(track) => {
-                        if !self.together_intercept_enqueue(
-                            &[track],
-                            AddTrackMode::PlayNext,
-                            window,
-                            cx,
-                        ) {
-                            eprintln!("music-gpui: not a guest in a session");
-                        }
-                    }
+                    Some(track) => self.queue_play_next(vec![track], window, cx),
                     None => eprintln!("music-gpui: no search result {ix}"),
                 }
             }
-            "together-control" => {
-                let arg = arg.unwrap_or("");
-                let action = match arg {
-                    "play" => Some(ControlAction::Play),
-                    "pause" => Some(ControlAction::Pause),
-                    "next" => Some(ControlAction::SkipNext),
-                    "prev" => Some(ControlAction::SkipPrevious),
+            // As the player bar would: through `together_route` in a session.
+            "together-control" => match arg.unwrap_or("") {
+                "play" => self.set_playing(true, cx),
+                "pause" => self.set_playing(false, cx),
+                "toggle" => self.toggle_playback(cx),
+                "next" => self.next_track(cx),
+                "prev" => self.previous_track(cx),
+                other => match other
+                    .strip_prefix("seek:")
+                    .and_then(|s| s.parse::<f64>().ok())
+                {
+                    Some(secs) => {
+                        self.seek_to(std::time::Duration::from_secs_f64(secs.max(0.)), cx)
+                    }
+                    None => eprintln!("music-gpui: unknown control {other:?}"),
+                },
+            },
+            // As an OS media key / Control Center / MPRIS / SMTC event would.
+            "media" => {
+                use music_core::media_controls::MediaControlEvent;
+                let event = match arg.unwrap_or("") {
+                    "play" => Some(MediaControlEvent::Play),
+                    "pause" => Some(MediaControlEvent::Pause),
+                    "toggle" => Some(MediaControlEvent::Toggle),
+                    "next" => Some(MediaControlEvent::Next),
+                    "prev" => Some(MediaControlEvent::Previous),
                     other => other
                         .strip_prefix("seek:")
                         .and_then(|s| s.parse::<f64>().ok())
-                        .map(|s| ControlAction::SeekTo {
-                            position_ms: (s.max(0.) * 1000.) as u64,
+                        .map(|s| {
+                            MediaControlEvent::SeekTo(std::time::Duration::from_secs_f64(s.max(0.)))
                         }),
                 };
-                match action {
-                    Some(action) => self.together_request(action, window, cx),
-                    None => eprintln!("music-gpui: unknown control {arg:?}"),
+                match event {
+                    Some(event) => self.media_event(event, window, cx),
+                    None => eprintln!("music-gpui: unknown media event {arg:?}"),
                 }
+            }
+            "together-start" | "together-sheet" => {
+                let raw = arg.unwrap_or("");
+                let (mode, group) = if name == "together-sheet" {
+                    ("", raw)
+                } else {
+                    raw.split_once(':').unwrap_or((raw, ""))
+                };
+                let group = (!group.is_empty())
+                    .then(|| {
+                        let groups = &self.settings.read(cx).settings().friends.groups;
+                        groups
+                            .iter()
+                            .find(|g| g.id() == group || g.name() == group)
+                            .map(|g| g.id().to_owned())
+                    })
+                    .flatten();
+                if name == "together-sheet" {
+                    self.together_open_start_sheet(group, window, cx);
+                } else {
+                    let prefs = self.settings.read(cx).settings().together.clone();
+                    let options = super::together::StartOptions {
+                        mode: SessionMode::parse(mode).unwrap_or(prefs.last_mode),
+                        group,
+                        network: prefs.host_mode,
+                    };
+                    self.together_start_with_choice(options, window, cx);
+                }
+            }
+            "together-mode" | "together-confirm-mode" => {
+                match SessionMode::parse(arg.unwrap_or("")) {
+                    Some(mode) if name == "together-mode" => self.together_set_mode(mode, cx),
+                    Some(mode) => self.together_confirm_mode(mode, window, cx),
+                    None => eprintln!("music-gpui: unknown mode {arg:?}"),
+                }
+            }
+            "together-react" => self.together_react(arg.unwrap_or("heart"), cx),
+            "together-network" => {
+                let mode = if arg == Some("direct") {
+                    super::config::HostMode::Direct
+                } else {
+                    super::config::HostMode::Relay
+                };
+                panel.update(cx, |p, cx| p.set_together(|t| t.host_mode = mode, cx));
+            }
+            "together-link" => match (&self.integrations.together.role, arg) {
+                (Role::Hosting(host), Some(path)) => {
+                    if let Err(e) = std::fs::write(path, host.link()) {
+                        eprintln!("music-gpui: writing {path}: {e}");
+                    }
+                }
+                _ => eprintln!("music-gpui: no session hosted here (or no file)"),
+            },
+            "together-panel" => {
+                self.integrations.together.panel_open = on;
+                cx.notify();
+            }
+            "together-mode-picker" => {
+                self.integrations.together.panel_open = true;
+                self.integrations.together.mode_picker = on;
+                cx.notify();
+            }
+            "together-notes" => {
+                panel.update(cx, |p, cx| p.set_together(|t| t.activity_notes = on, cx))
+            }
+            "keep-awake" => panel.update(cx, |p, cx| p.set_keep_awake(on, cx)),
+            "together-auto-join" => {
+                panel.update(cx, |p, cx| p.set_together(|t| t.auto_join = on, cx))
             }
             "together-status" => self.print_together_status(),
             "together-keep-playing" => {
@@ -567,20 +656,58 @@ impl MusicApp {
                 h.notice
             ),
             Role::Guest(g) => format!(
-                "guest of {}:{} relay={:?} pending={} clock={:?}",
+                "guest of {}:{} relay={:?} pending={} clock={:?} roster={:?}",
                 g.join.host,
                 g.join.port,
                 g.join.url,
                 g.pending,
-                g.client.clock()
+                g.client.clock(),
+                g.roster.as_ref().map(|r| r
+                    .successors
+                    .iter()
+                    .map(|s| s.name.as_str())
+                    .collect::<Vec<_>>())
             ),
+            Role::Recovering(r) => {
+                format!("recovering {} for {:?}", r.join.host, r.since.elapsed())
+            }
         };
         eprintln!("music-gpui: together {role}; error {:?}", t.error);
+        eprintln!(
+            "music-gpui: together   mode {:?} rights {:?} transport_lock {:?} queue_lock {:?} group {:?} reconnecting {} keep_awake {}",
+            t.mode(),
+            t.permissions(),
+            self.transport_lock(),
+            self.queue_lock(),
+            t.group(),
+            t.reconnecting(),
+            self.services.keeping_awake()
+        );
         for p in t.participants() {
             eprintln!(
                 "music-gpui: together   participant {} host={} pending={}",
                 p.name, p.is_host, p.is_pending
             );
+        }
+        for item in self
+            .queue
+            .current_item()
+            .into_iter()
+            .chain(self.queue.upcoming())
+        {
+            eprintln!(
+                "music-gpui: together   queue {} {:?} {:?} by {:?}",
+                item.uid,
+                item.source,
+                item.track.title,
+                t.added_by(item.uid)
+            );
+        }
+        if let Some(note) = &t.note_shown {
+            eprintln!("music-gpui: together   note {note:?}");
+        }
+        for r in &t.reactions {
+            eprintln!("music-gpui: together   reaction {} from {}", r.emoji, r.who);
         }
         if let Role::Guest(g) = &t.role
             && let Some(room) = &g.room

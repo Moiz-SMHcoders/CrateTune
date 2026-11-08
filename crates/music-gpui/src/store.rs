@@ -1404,7 +1404,7 @@ impl MusicApp {
             .duration
             .is_none_or(|d| position + Duration::from_secs(5) < d);
         if position > Duration::from_secs(3) && fits {
-            self.seek_to(position, cx);
+            self.seek_local(position, cx);
         }
     }
 

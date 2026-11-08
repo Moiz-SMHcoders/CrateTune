@@ -6,7 +6,7 @@ use music_core::ai_filter::{AiCategory, AiFilterConfig};
 use music_core::handoff::PairedDevice;
 use music_core::sponsorblock::{Category, DEFAULT_API_URL, SponsorBlockConfig};
 use music_core::sync::Category as SyncCategory;
-use music_core::together::{DEFAULT_PORT, RoomSettings};
+use music_core::together::{DEFAULT_PORT, RoomSettings, SessionMode};
 use serde::{Deserialize, Serialize};
 
 /// What happens when playback enters a segment.
@@ -87,6 +87,14 @@ pub struct TogetherPrefs {
     /// "Keep playing here when I leave": a guest that leaves (or whose session ends)
     /// carries on with the room's queue from the room's position instead of stopping.
     pub keep_playing: bool,
+    /// The mode last chosen in "Start listening together" (sessions with a code or
+    /// link; friend groups have their own, `FriendsPrefs::group_modes`).
+    pub last_mode: SessionMode,
+    /// "Activity notes": "Ana skipped", "Sam added 3 songs" by the listeners chip.
+    pub activity_notes: bool,
+    /// "Join automatically when a friend starts": a friend group's session is joined
+    /// without asking (when nothing else is going on here).
+    pub auto_join: bool,
 }
 
 impl Default for TogetherPrefs {
@@ -103,6 +111,9 @@ impl Default for TogetherPrefs {
             relay_url: String::new(),
             host_mode: HostMode::default(),
             keep_playing: true,
+            last_mode: SessionMode::Host,
+            activity_notes: true,
+            auto_join: false,
         }
     }
 }
@@ -114,7 +125,13 @@ impl TogetherPrefs {
             allow_guests_to_control_playback: self.allow_guests_to_control_playback,
             require_host_approval_to_join: self.require_host_approval,
             require_approval_for_suggestions: self.approve_suggestions,
+            mode: SessionMode::Host,
         }
+    }
+
+    /// The room settings of a session started in `mode` (see [`SessionMode::apply`]).
+    pub fn room_for(&self, mode: SessionMode) -> RoomSettings {
+        mode.apply(self.room())
     }
 
     pub fn name(&self) -> String {
@@ -405,6 +422,9 @@ pub struct FriendsPrefs {
     pub groups: Vec<music_core::friends::Group>,
     /// Where friends' devices were reachable last.
     pub hints: Vec<FriendHint>,
+    /// Group id → the mode its "Listen together" sessions start in (Friends when
+    /// not set). Kept on this device.
+    pub group_modes: std::collections::BTreeMap<String, SessionMode>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -418,6 +438,14 @@ pub struct FriendHint {
 impl FriendsPrefs {
     /// Hints kept (oldest dropped).
     pub const MAX_HINTS: usize = 128;
+
+    /// The mode a group's sessions start in.
+    pub fn group_mode(&self, group: &str) -> SessionMode {
+        self.group_modes
+            .get(group)
+            .copied()
+            .unwrap_or(SessionMode::Friends)
+    }
 
     /// The display name (`device`: this device's name, when none is set).
     pub fn display_name(&self, device: &str) -> String {

@@ -199,7 +199,7 @@ impl MusicApp {
             .duration
             .is_none_or(|d| at + Duration::from_secs(5) < d);
         if fits {
-            self.seek_to(at, cx);
+            self.seek_local(at, cx);
         }
     }
 }

@@ -1242,6 +1242,18 @@ pub const ENTRIES: &[Entry] = &[
         "gap"
     ),
     entry!(
+        "playback.keep_awake",
+        Playback,
+        "settings.playback.audio",
+        "settings.playback.keep_awake",
+        "settings.playback.keep_awake_desc",
+        "sleep",
+        "awake",
+        "idle",
+        "power",
+        "together"
+    ),
+    entry!(
         "playback.auto_skip",
         Playback,
         "settings.playback.audio",
@@ -2337,6 +2349,44 @@ pub const ENTRIES: &[Entry] = &[
         "phone",
         "handoff"
     ),
+    entry!(
+        "together.default_mode",
+        Together,
+        "settings.together.hosting",
+        "settings.together.default_mode",
+        "settings.together.default_mode_desc",
+        "together",
+        "mode",
+        "friends",
+        "host",
+        "dj",
+        "everyone",
+        "control"
+    ),
+    entry!(
+        "together.activity_notes",
+        Together,
+        "settings.together.you",
+        "settings.together.activity_notes",
+        "settings.together.activity_notes_desc",
+        "together",
+        "notes",
+        "notifications",
+        "activity",
+        "skipped"
+    ),
+    entry!(
+        "together.auto_join",
+        Together,
+        "settings.together.you",
+        "settings.together.auto_join",
+        "settings.together.auto_join_desc",
+        "together",
+        "friends",
+        "join",
+        "automatic",
+        "group"
+    ),
     // ---- Devices (device hand-off)
     entry!(
         "devices.name",
@@ -2532,6 +2582,19 @@ pub const ENTRIES: &[Entry] = &[
         "members",
         "invite",
         "leave"
+    ),
+    entry!(
+        "friends.group_mode",
+        Friends,
+        "settings.friends.groups",
+        "settings.friends.group_mode",
+        -,
+        "friends",
+        "group",
+        "together",
+        "mode",
+        "dj",
+        "host"
     ),
     entry!(
         "friends.create",

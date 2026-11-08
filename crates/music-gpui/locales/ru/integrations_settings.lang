@@ -154,3 +154,11 @@ settings.cast.note = Трансляция воспроизводит очере�
 
 # ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
 settings.together.approve_suggestions_desc = Треки гостей ждут на странице «Слушать вместе», пока вы их не одобрите или не отклоните.
+
+# ---- Music Together: session modes, activity notes, joining friends' sessions
+settings.together.default_mode = Режим новых сеансов
+settings.together.default_mode_desc = Что сначала выбрано в окне «Начать совместное прослушивание» (там его можно сменить). У групп друзей свой режим — «Друзья», если его не меняли.
+settings.together.activity_notes = Заметки о действиях
+settings.together.activity_notes_desc = Ненавязчивые заметки рядом со слушателями в панели плеера: «Аня пропускает трек», «Сэм добавляет 3 трека».
+settings.together.auto_join = Автоматически присоединяться, когда друг запускает сеанс
+settings.together.auto_join_desc = К сеансу группы друзей вы присоединяетесь без вопросов, если ещё не участвуете в другом.

@@ -149,3 +149,11 @@ settings.cast.note = La transmisión reproduce la cola en un Chromecast, Google 
 
 # ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
 settings.together.approve_suggestions_desc = Las canciones de los invitados esperan en la página Escuchar juntos hasta que las apruebes o rechaces.
+
+# ---- Music Together: session modes, activity notes, joining friends' sessions
+settings.together.default_mode = Modo para sesiones nuevas
+settings.together.default_mode_desc = Lo que “Empezar a escuchar juntos” elige primero (puedes cambiarlo ahí). Los grupos de amigos tienen el suyo: Amigos, salvo que lo cambies.
+settings.together.activity_notes = Notas de actividad
+settings.together.activity_notes_desc = Notas discretas junto a los oyentes en la barra del reproductor: “Ana saltó una canción”, “Sam añadió 3 canciones”.
+settings.together.auto_join = Unirse automáticamente cuando un amigo empiece
+settings.together.auto_join_desc = Te unes a la sesión de un grupo de amigos sin que se te pregunte, salvo que ya estés en una.

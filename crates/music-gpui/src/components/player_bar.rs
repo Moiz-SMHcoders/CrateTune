@@ -63,6 +63,8 @@ const ICON_BUTTON: f32 = 32.;
 /// Transport row: previous / next and play.
 const SKIP_BUTTON: f32 = 36.;
 const PLAY_BUTTON: f32 = 40.;
+/// Room for the Listen together chip in a collapsed bar (initials and a count).
+const TOGETHER_CHIP: f32 = 150.;
 const TRANSPORT_WIDTH: f32 = 2. * ICON_BUTTON + 2. * SKIP_BUTTON + PLAY_BUTTON + 4. * 8.;
 /// Width of the time labels beside the progress track.
 const TIME_WIDTH: f32 = 46.;
@@ -415,6 +417,8 @@ struct BarState {
     waveform: Option<std::sync::Arc<music_core::Waveform>>,
     /// A podcast episode (skips and speed).
     episode: bool,
+    /// In a Listen together session (its chip keeps a place in a collapsed bar).
+    together: bool,
 }
 
 impl Render for PlayerBar {
@@ -469,12 +473,16 @@ impl Render for PlayerBar {
                     .and_then(|id| app.waveform.ready_for(id).cloned()),
                 track_id,
                 episode: app.playing_episode(),
+                together: !matches!(
+                    app.integrations.together.role,
+                    crate::integrations::together::Role::Idle
+                ),
             }
         }) else {
             return div().into_any_element();
         };
         let width = f32::from(window.viewport_size().width);
-        let layout = bar_layout_with(
+        let mut layout = bar_layout_with(
             width,
             state.casting,
             state.sleep_armed,
@@ -482,6 +490,9 @@ impl Render for PlayerBar {
             state.config.items,
             bar_compact::options(state.episode),
         );
+        if layout.compact && state.together && state.config.items.together {
+            layout.center += TOGETHER_CHIP;
+        }
         let live = self.is_live();
         let mut config = state.config;
         if layout.compact {
@@ -1020,14 +1031,26 @@ impl MusicApp {
         let mut items = self.settings.read(cx).bar_items();
         // The Devices button only once a device is paired.
         items.devices &= !self.settings.read(cx).settings().devices.paired.is_empty();
-        bar_layout_with(
+        let mut layout = bar_layout_with(
             f32::from(window.viewport_size().width),
             self.cast_device().is_some(),
             self.playback.sleep_timer.is_some(),
             true,
             items,
             bar_compact::options(self.playing_episode()),
-        )
+        );
+        // A collapsed bar keeps the Listen together chip (its room comes out of the
+        // track's side): who is listening stays in sight however narrow the window.
+        if layout.compact
+            && items.together
+            && !matches!(
+                self.integrations.together.role,
+                crate::integrations::together::Role::Idle
+            )
+        {
+            layout.center += TOGETHER_CHIP;
+        }
+        layout
     }
 
     /// The track the bar shows: the playing one, or last session's restored one.
@@ -1206,11 +1229,11 @@ impl MusicApp {
     ) -> AnyElement {
         let layout = self.bar_layout_now(window, cx);
         let items = self.settings.read(cx).bar_items();
-        let chips = self.integration_chips(items, cx);
+        let chips = self.integration_chips(items, layout.compact, cx);
         let (track, restored) = self.bar_track();
         let state = &self.playback;
         let has_next = self.queue.has_next();
-        let (shuffle, repeat) = (self.queue.shuffle(), self.queue.repeat());
+        let (shuffle, repeat) = (self.shuffle_shown(), self.queue.repeat());
         let is_playing = state.status == PlaybackStatus::Playing;
         let can_toggle = self.engine.is_some()
             && (restored
@@ -1236,12 +1259,17 @@ impl MusicApp {
             let icon = Icon::new(icon);
             if on { icon.text_color(accent) } else { icon }
         };
+        // A Music Together guest without control: the transport is disabled, and says why.
+        let lock = self.transport_lock().map(SharedString::from);
         h_flex()
             .size_full()
             .gap_2()
             .child(
                 h_flex()
-                    .flex_1()
+                    // The collapsed bar has no room for tags: what room its centre
+                    // has (the Listen together chip's) goes to the chips after it.
+                    .when(!layout.compact, |this| this.flex_1())
+                    .when(layout.compact, |this| this.w_0())
                     .min_w_0()
                     .justify_end()
                     .gap_1()
@@ -1272,6 +1300,8 @@ impl MusicApp {
                         } else {
                             t!("player.tooltip.shuffle_off")
                         })
+                        .disabled(lock.is_some())
+                        .when_some(lock.clone(), |b, tip| b.tooltip(tip))
                         .on_click(cx.listener(|this, _, _, cx| this.toggle_shuffle(cx))),
                 )
             })
@@ -1288,7 +1318,8 @@ impl MusicApp {
                     .rounded(px(999.))
                     .icon(AppIcon::Previous)
                     .tooltip(t!("player.tooltip.previous"))
-                    .disabled(track.is_none())
+                    .disabled(track.is_none() || lock.is_some())
+                    .when_some(lock.clone(), |b, tip| b.tooltip(tip))
                     .on_click(cx.listener(|this, _, _, cx| this.previous_track(cx))),
             )
             .when(layout.skips, |this| {
@@ -1312,7 +1343,8 @@ impl MusicApp {
                         t!("bar.tooltip.play")
                     })
                     .loading(loading)
-                    .disabled(!can_toggle)
+                    .disabled(!can_toggle || lock.is_some())
+                    .when_some(lock.clone(), |b, tip| b.tooltip(tip))
                     .on_click(cx.listener(Self::toggle_pause)),
             )
             .when(layout.skips, |this| {
@@ -1327,7 +1359,8 @@ impl MusicApp {
                     .rounded(px(999.))
                     .icon(AppIcon::Next)
                     .tooltip(t!("player.tooltip.next"))
-                    .disabled(!has_next)
+                    .disabled(!has_next || lock.is_some())
+                    .when_some(lock.clone(), |b, tip| b.tooltip(tip))
                     .on_click(cx.listener(|this, _, _, cx| this.next_track(cx))),
             )
             .when(layout.repeat, |this| {
@@ -1350,6 +1383,8 @@ impl MusicApp {
                             Repeat::All => t!("player.tooltip.repeat_all"),
                             Repeat::One => t!("player.tooltip.repeat_one"),
                         })
+                        .disabled(lock.is_some())
+                        .when_some(lock.clone(), |b, tip| b.tooltip(tip))
                         .on_click(cx.listener(|this, _, _, cx| this.cycle_repeat(cx))),
                 )
             })

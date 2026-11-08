@@ -19,6 +19,8 @@ use crate::{Error, Result};
 /// Read timeout of the poll loop (how long a quiet `recv` blocks).
 pub(super) const POLL: Duration = Duration::from_millis(40);
 
+// One at a time, straight from the socket to its handler: the size doesn't matter.
+#[allow(clippy::large_enum_variant)]
 pub(super) enum Recv {
     Message(Message),
     /// Nothing arrived within [`POLL`] (or a non-text / undecodable frame).
@@ -89,11 +91,34 @@ impl Write for Stream {
 pub(super) struct Conn {
     ws: WebSocket<Stream>,
     closed: bool,
+    /// For the log when it drops: when it opened, when a frame last came in, and the
+    /// error that ended it.
+    opened: std::time::Instant,
+    last_frame: std::time::Instant,
+    last_error: Option<String>,
 }
 
 impl Conn {
     pub(super) fn new(ws: WebSocket<Stream>) -> Self {
-        Self { ws, closed: false }
+        let now = std::time::Instant::now();
+        Self {
+            ws,
+            closed: false,
+            opened: now,
+            last_frame: now,
+            last_error: None,
+        }
+    }
+
+    /// "open 2869 s, last frame 0.4 s ago, error: …" (for the log when it drops: the
+    /// error's kind tells a reset by the network from a timeout or a closed socket).
+    pub(super) fn diagnostics(&self) -> String {
+        format!(
+            "open {:.0} s, last frame {:.1} s ago, error: {}",
+            self.opened.elapsed().as_secs_f64(),
+            self.last_frame.elapsed().as_secs_f64(),
+            self.last_error.as_deref().unwrap_or("none (a close frame)")
+        )
     }
 
     /// Opens a WebSocket to `url` (`ws://` or `wss://`), blocking up to `timeout`
@@ -158,7 +183,11 @@ impl Conn {
         if self.closed {
             return RecvText::Closed(None);
         }
-        match self.ws.read() {
+        let read = self.ws.read();
+        if read.is_ok() {
+            self.last_frame = std::time::Instant::now();
+        }
+        match read {
             Ok(WsMessage::Text(text)) => RecvText::Text(text.as_str().to_owned()),
             Ok(WsMessage::Close(frame)) => {
                 self.closed = true;
@@ -177,6 +206,10 @@ impl Conn {
             }
             Err(e) => {
                 self.closed = true;
+                self.last_error = Some(match &e {
+                    tungstenite::Error::Io(io) => format!("{e} (io {:?})", io.kind()),
+                    other => format!("{other} ({other:?})"),
+                });
                 RecvText::Closed(match e {
                     tungstenite::Error::ConnectionClosed | tungstenite::Error::AlreadyClosed => {
                         None

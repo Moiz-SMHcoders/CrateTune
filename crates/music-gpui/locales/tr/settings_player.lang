@@ -204,3 +204,5 @@ prefs.mini_skin.card = Kapak kartı
 prefs.mini_skin.lyrics = Şarkı sözleri
 prefs.mini_skin.turntable = Pikap
 prefs.layout.turntable = Pikap
+settings.playback.keep_awake = Çalarken bilgisayarı uyanık tut
+settings.playback.keep_awake_desc = Müzik çalarken veya bir Birlikte dinle oturumu sürerken bilgisayar kendiliğinden uyku moduna geçmez (ekran yine de kapanabilir). Uyku modu ağ bağlantısını keser, onunla birlikte oturumu da.

@@ -1,6 +1,11 @@
 //! Right-side queue panel (bar button / ⌥⌘Q): now playing, up next (reorder by
 //! drag and drop or the up/down buttons, remove, click to play), and the
 //! session's history (click to play again). Header: shuffle, repeat, clear.
+//!
+//! In a Music Together session it is the shared queue: each queued song shows who
+//! put it there, and what this person may not change (a guest outside Friends mode)
+//! is disabled with the reason as its tooltip; what they may change goes to the
+//! session (`integrations/together_route.rs`).
 
 use gpui::{
     AnyElement, AppContext as _, Context, Entity, Focusable as _, FontWeight,
@@ -100,7 +105,7 @@ impl MusicApp {
         let bg = self.chrome_bg(crate::settings::glass_prefs::Surface::Queue, cx);
         let theme = cx.theme();
         let (border, muted) = (theme.border, theme.muted_foreground);
-        let shuffle = self.queue.shuffle();
+        let shuffle = self.shuffle_shown();
         let repeat = self.queue.repeat();
 
         let current = self.queue.current().cloned();
@@ -111,6 +116,8 @@ impl MusicApp {
         let context = rows(self.queue.context_upcoming());
         let history: Vec<Track> = self.queue.history().take(HISTORY_SHOWN).cloned().collect();
         let count = mine.len() + context.len();
+        // A Music Together guest: what it can't change, and why.
+        let (edit_lock, play_lock) = (self.queue_lock(), self.transport_lock());
 
         let mut list = v_flex().pb_4();
         if let Some(preview) = self.queue_tabs.preview(self.queue_tabs.viewed) {
@@ -158,6 +165,17 @@ impl MusicApp {
                     context.len(),
                 );
                 let clear = (!context.is_empty() && !mine.is_empty()).then_some(Source::Context);
+                // Who started the list, in a session, when it wasn't this person
+                // ("Next from Album · 7 · started by Ana").
+                let me = self.settings.read(cx).settings().together.name();
+                let label = match context
+                    .first()
+                    .and_then(|(uid, _)| self.integrations.together.added_by(*uid))
+                    .filter(|by| *by != me)
+                {
+                    Some(by) => format!("{label} · {}", t!("together.queue.started_by", name = by)),
+                    None => label,
+                };
                 list = list.child(self.section_header("q-clear-context", label, clear, cx));
             }
             if count == 0 {
@@ -230,6 +248,8 @@ impl MusicApp {
                             } else {
                                 t!("player.tooltip.shuffle_off")
                             })
+                            .disabled(play_lock.is_some())
+                            .when_some(play_lock.clone(), |b, tip| b.tooltip(tip))
                             .on_click(cx.listener(|this, _, _, cx| this.toggle_shuffle(cx))),
                     )
                     .child(
@@ -247,6 +267,8 @@ impl MusicApp {
                                 Repeat::All => t!("player.tooltip.repeat_all"),
                                 Repeat::One => t!("player.tooltip.repeat_one"),
                             })
+                            .disabled(play_lock.is_some())
+                            .when_some(play_lock.clone(), |b, tip| b.tooltip(tip))
                             .on_click(cx.listener(|this, _, _, cx| this.cycle_repeat(cx))),
                     )
                     .child(
@@ -255,8 +277,30 @@ impl MusicApp {
                             .small()
                             .icon(Lucide::ListX)
                             .tooltip(t!("queue.tooltip.clear_up_next"))
-                            .disabled(count == 0 || !live)
+                            .disabled(count == 0 || !live || edit_lock.is_some())
+                            .when_some(edit_lock.clone(), |b, tip| b.tooltip(tip))
                             .on_click(cx.listener(|this, _, _, cx| this.queue_clear(cx))),
+                    )
+                    // Discoverable from here: share this queue (or the session's panel).
+                    .child(
+                        Button::new("queue-together")
+                            .ghost()
+                            .small()
+                            .icon(Lucide::Users)
+                            .selected(self.integrations.together.in_session())
+                            .tooltip(if self.integrations.together.in_session() {
+                                t!("together.chip.tooltip_short")
+                            } else {
+                                t!("together.queue.listen")
+                            })
+                            .on_click(cx.listener(|this, _, window, cx| {
+                                if this.integrations.together.in_session() {
+                                    this.integrations.together.panel_open = true;
+                                    cx.notify();
+                                } else {
+                                    this.together_open_start_sheet(None, window, cx);
+                                }
+                            })),
                     )
                     .child(
                         Button::new("queue-close")
@@ -295,6 +339,8 @@ impl MusicApp {
         cx: &mut Context<Self>,
     ) -> AnyElement {
         let muted = cx.theme().muted_foreground;
+        // A guest that can't edit the shared queue has nothing to clear.
+        let clear = clear.filter(|_| self.queue_lock().is_none());
         h_flex()
             .pr_2()
             .child(div().flex_1().min_w_0().child(section_label(text, muted)))
@@ -383,20 +429,44 @@ impl MusicApp {
                 if self.added_by_autoplay(uid) {
                     row = row.child(crate::player_extras::autoplay_mark(muted));
                 }
-                row = row
-                    .on_click(cx.listener(move |this, _, _, cx| this.queue_jump(uid, cx)))
-                    .on_drag(DraggedItem { uid, title }, |item, _, _, cx| {
-                        cx.new(|_| item.clone())
-                    })
-                    .drag_over::<DraggedItem>(move |style, _, _, _| style.bg(drop_bg))
-                    .on_drop(cx.listener(move |this, item: &DraggedItem, _, cx| {
-                        this.queue_move_to(item.uid, uid, cx)
-                    }))
-                    .child(
+                // In a Music Together session: who queued it (queued songs; a list's
+                // starter shows in its heading), and what this person may change.
+                let queued = self.queue.user_upcoming().iter().any(|i| i.uid == uid);
+                if queued && let Some(by) = self.integrations.together.added_by(uid) {
+                    let tip = SharedString::from(t!("together.queue.added_by", name = by));
+                    row = row.child(
+                        div()
+                            .id(SharedString::from(format!("{id}-by")))
+                            .flex_none()
+                            .child(crate::integrations::together_ui::avatar(by, 18., None))
+                            .tooltip(move |window, cx| {
+                                gpui_component::tooltip::Tooltip::new(tip.clone()).build(window, cx)
+                            }),
+                    );
+                }
+                // Moving and removing this song (a guest: its own, or by the mode).
+                let editable = self.song_lock(uid).is_none();
+                // Playing a slot is playback control (a guest with control may).
+                if self.transport_lock().is_none() || editable {
+                    row = row.on_click(cx.listener(move |this, _, _, cx| this.queue_jump(uid, cx)));
+                }
+                if editable {
+                    row = row
+                        .on_drag(DraggedItem { uid, title }, |item, _, _, cx| {
+                            cx.new(|_| item.clone())
+                        })
+                        .drag_over::<DraggedItem>(move |style, _, _, _| style.bg(drop_bg))
+                        .on_drop(cx.listener(move |this, item: &DraggedItem, _, cx| {
+                            this.queue_move_to(item.uid, uid, cx)
+                        }));
+                }
+                row =
+                    row.child(
                         h_flex()
                             .flex_none()
                             .opacity(0.)
                             .group_hover(group, |s| s.opacity(1.))
+                            .when(!editable, |this| this.invisible())
                             .child(
                                 Button::new("up")
                                     .ghost()
@@ -437,9 +507,39 @@ impl MusicApp {
                     .on_click(cx.listener(move |this, _, _, cx| this.play_now(again.clone(), cx)));
             }
         }
-        row.context_menu(move |menu, _, _| track_menu(menu, &menu_track, None))
-            .into_any_element()
+        // Upcoming songs: "Remove from queue" first (through the session in one).
+        let removable = match kind {
+            Kind::Upcoming { uid, .. } => Some((uid, self.song_lock(uid).is_none())),
+            _ => None,
+        };
+        row.context_menu(move |menu, _, _| match removable {
+            Some((uid, allowed)) => queue_item_menu(menu, &menu_track, uid, allowed),
+            None => track_menu(menu, &menu_track, None),
+        })
+        .into_any_element()
     }
+}
+
+/// The song menu of an upcoming queue item: "Remove from queue" (disabled for a
+/// Music Together guest that may not), then the usual song menu. The queue panel and
+/// Now Playing's queue design use it.
+pub(crate) fn queue_item_menu(
+    menu: gpui_component::menu::PopupMenu,
+    track: &Track,
+    uid: u64,
+    allowed: bool,
+) -> gpui_component::menu::PopupMenu {
+    let menu = menu
+        .item(
+            PopupMenuItem::new(t!("queue.menu.remove"))
+                .icon(Lucide::ListX)
+                .disabled(!allowed)
+                .on_click(move |_, _, cx| {
+                    update_app(cx, |app, cx| app.queue_remove(uid, cx));
+                }),
+        )
+        .separator();
+    track_menu(menu, track, None)
 }
 
 // ---- queue tabs ---------------------------------------------------------------------
@@ -606,8 +706,7 @@ impl MusicApp {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        if self.together_is_guest() {
-            notify(window, cx, t!("queue.tabs.toast_guest"));
+        if self.together_route(crate::integrations::together_route::Intent::QueueTab, cx) {
             return;
         }
         let live = self.saved_queue();

@@ -21,18 +21,25 @@ use music_net::TimedTcp;
 use super::conn::{Conn, Link, POLL, Recv, Stream};
 use super::link::JoinInfo;
 use super::messages::{
-    AddTrackMode, ControlAction, Message, PROTOCOL_VERSION, Participant, Role, RoomSettings,
-    RoomState, SuggestionState, TogetherTrack, queue_hash,
+    AddTrackMode, ControlAction, FEATURE_SESSION, IntentMeta, Message, NoteKind, PROTOCOL_VERSION,
+    Participant, QueueOp, REACTIONS, Role, RoomSettings, RoomState, SessionMode, Successor,
+    SuggestionState, TogetherTrack, queue_hash,
 };
+use super::session::{RateLimit, permissions, queue_op_allowed};
 use crate::{Error, Result};
 
 pub const HOST_ID: &str = "host";
+/// Why guests are disconnected when the host goes without ending the session (it
+/// quit in a Friends session): this app's guests then take it over (see
+/// [`super::session`]); "Session ended" means it is over.
+pub const HOST_LEFT: &str = "Host left";
+pub const SESSION_ENDED: &str = "Session ended";
 /// A guest that sent nothing (not even a heartbeat) for this long is dropped.
 const GUEST_TIMEOUT: Duration = Duration::from_secs(20);
 const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(5);
 /// How long the guest asked to take over has to answer.
 const TRANSFER_TIMEOUT: Duration = Duration::from_secs(15);
-const RELAY_TIMEOUT: Duration = Duration::from_secs(8);
+pub(super) const RELAY_TIMEOUT: Duration = Duration::from_secs(8);
 /// Suggestions one guest may have waiting for approval; more are turned down.
 pub const MAX_PENDING_PER_GUEST: usize = 20;
 
@@ -66,6 +73,31 @@ pub enum ServerEvent {
     Control {
         participant: Participant,
         action: ControlAction,
+        /// What the guest saw when it asked (this app's guests).
+        intent: Option<IntentMeta>,
+    },
+    /// A queue edit, already checked against the room settings.
+    Queue {
+        participant: Participant,
+        op: QueueOp,
+        intent: Option<IntentMeta>,
+    },
+    /// A guest asks to switch the session's mode (allowed: a Friends session).
+    ModeRequest {
+        participant: Participant,
+        mode: SessionMode,
+    },
+    /// A guest asks to remove someone (allowed: a Friends session).
+    KickRequest {
+        participant: Participant,
+        target_id: String,
+        ban: bool,
+    },
+    /// A guest reacted (already passed on to the others).
+    Reaction {
+        participant: Participant,
+        emoji: String,
+        track_id: Option<String>,
     },
     AddTrack {
         participant: Participant,
@@ -86,7 +118,14 @@ pub enum ServerEvent {
         participant: Option<Participant>,
         reason: String,
     },
-    /// The session can't go on (a relayed session lost its relay).
+    /// A relayed session's link to the relay dropped; it is being claimed again (for
+    /// [`TogetherServer::set_relay_grace`]). [`ServerEvent::RelayRestored`] or
+    /// [`ServerEvent::Stopped`] follows.
+    RelayLost {
+        reason: String,
+    },
+    RelayRestored,
+    /// The session can't go on (a relayed session lost its relay for good).
     Stopped {
         reason: String,
     },
@@ -120,6 +159,11 @@ struct Client {
     name: String,
     pending: bool,
     outbox: Sender<Outgoing>,
+    /// This app (understands our additions, can take a Friends session over).
+    ours: bool,
+    /// Where it would listen on the LAN if it took the session over.
+    standby: Option<(String, u16)>,
+    reactions: RateLimit,
 }
 
 impl Client {
@@ -145,12 +189,21 @@ pub(super) struct Inner {
     banned: Mutex<HashSet<String>>,
     trusted: Mutex<HashSet<String>>,
     /// Relayed sessions: (relay URL, room secret).
-    relay: Option<(String, String)>,
+    pub(super) relay: Option<(String, String)>,
     transfer: Mutex<Option<PendingTransfer>>,
     /// Suggestions waiting for the host, oldest first.
     suggestions: Mutex<Vec<Suggestion>>,
     events: Mutex<Sender<ServerEvent>>,
     pub(super) shutdown: AtomicBool,
+    /// Who is in the session changed: this app's guests get a new roster.
+    roster_dirty: AtomicBool,
+    /// The goodbye of [`TogetherServer::stop_with`] (a relayed session closes the
+    /// relay connection with it too).
+    pub(super) stop_reason: Mutex<String>,
+    /// Stopping without a word ([`TogetherServer::abandon`]).
+    pub(super) abandoned: AtomicBool,
+    /// How long a dropped relay link is retried.
+    pub(super) relay_grace: Mutex<Duration>,
 }
 
 fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
@@ -160,6 +213,18 @@ fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
 impl Inner {
     pub(super) fn emit(&self, event: ServerEvent) {
         let _ = lock(&self.events).send(event);
+        super::wake();
+    }
+
+    /// Sends `message` to every admitted guest of this app (others skip what they don't
+    /// know, but there's no reason to send it to them), except `except`.
+    fn send_ours(&self, message: &Message, except: Option<&str>) {
+        let text = message.encode();
+        for client in lock(&self.clients).iter() {
+            if client.ours && !client.pending && Some(client.participant_id.as_str()) != except {
+                let _ = client.outbox.send(Outgoing::Text(text.clone()));
+            }
+        }
     }
 
     /// Tells a guest what became of its suggestion (skipped by peers that don't know
@@ -188,6 +253,14 @@ impl Inner {
         self.epoch.elapsed().as_millis() as u64
     }
 
+    pub(super) fn session_id(&self) -> &str {
+        &self.session_id
+    }
+
+    pub(super) fn session_key(&self) -> &str {
+        &self.session_key
+    }
+
     fn with_client<T>(&self, id: &str, f: impl FnOnce(&mut Client) -> T) -> Option<T> {
         lock(&self.clients)
             .iter_mut()
@@ -198,6 +271,7 @@ impl Inner {
     fn remove(&self, id: &str) -> Option<Client> {
         let mut clients = lock(&self.clients);
         let ix = clients.iter().position(|c| c.participant_id == id)?;
+        self.roster_dirty.store(true, Ordering::Relaxed);
         Some(clients.remove(ix))
     }
 }
@@ -313,6 +387,13 @@ impl TogetherServer {
         )
     }
 
+    /// How long a dropped relay link is claimed again before the session ends
+    /// ([`super::session::RECONNECT_GRACE`]; a Friends session's device takes less, so
+    /// the others take over sooner).
+    pub fn set_relay_grace(&self, grace: Duration) {
+        *lock(&self.inner.relay_grace) = grace;
+    }
+
     /// The relay this session runs through (normalized `ws(s)://` URL).
     pub fn relay_url(&self) -> Option<&str> {
         self.inner.relay.as_ref().map(|(url, _)| url.as_str())
@@ -341,7 +422,11 @@ impl TogetherServer {
     }
 
     pub fn update_settings(&self, settings: RoomSettings) {
-        *lock(&self.inner.settings) = settings;
+        let mut current = lock(&self.inner.settings);
+        if current.mode != settings.mode {
+            self.inner.roster_dirty.store(true, Ordering::Relaxed);
+        }
+        *current = settings;
     }
 
     pub fn set_host_name(&self, name: &str) {
@@ -457,6 +542,7 @@ impl TogetherServer {
             let text = if client.pending { &redacted } else { &full };
             let _ = client.outbox.send(Outgoing::Text(text.clone()));
         }
+        self.send_roster_if_changed();
         state
     }
 
@@ -484,10 +570,12 @@ impl TogetherServer {
                     return None;
                 }
                 c.pending = false;
+                lock(&self.inner.trusted).insert(c.client_id.clone());
                 let _ = c.outbox.send(Outgoing::Text(decision));
                 Some(c.participant())
             });
             if let Some(Some(p)) = joined {
+                self.inner.roster_dirty.store(true, Ordering::Relaxed);
                 self.inner.emit(ServerEvent::Joined(p));
             }
         } else if let Some(client) = self.inner.remove(participant_id) {
@@ -561,15 +649,173 @@ impl TogetherServer {
 
     /// Ends the session: tells every guest and closes the listener.
     pub fn stop(&mut self) {
+        self.stop_with(SESSION_ENDED);
+    }
+
+    /// Stops with `reason` as the guests' goodbye: [`SESSION_ENDED`] ends the session
+    /// for everyone, [`HOST_LEFT`] lets this app's guests carry a Friends session on.
+    pub fn stop_with(&mut self, reason: &str) {
+        *lock(&self.inner.stop_reason) = reason.to_owned();
         if self.inner.shutdown.swap(true, Ordering::SeqCst) {
             return;
         }
+        // Over for real: this app's guests are told before the goodbye (which a relay
+        // that lost its host sends too).
+        let ended = (reason == SESSION_ENDED).then(|| {
+            Message::SessionEnded {
+                session_id: self.inner.session_id.clone(),
+            }
+            .encode()
+        });
         for client in lock(&self.inner.clients).drain(..) {
-            let _ = client.outbox.send(Outgoing::Close("Session ended".into()));
+            if let (Some(text), true) = (&ended, client.ours) {
+                let _ = client.outbox.send(Outgoing::Text(text.clone()));
+            }
+            let _ = client.outbox.send(Outgoing::Close(reason.into()));
         }
         if let Some(handle) = self.accept.take() {
             let _ = handle.join();
         }
+    }
+
+    /// Vanishes as a crashed host would: the connections drop without a goodbye
+    /// (guests see the connection lost). For tests of the fail-over.
+    #[doc(hidden)]
+    pub fn abandon(mut self) {
+        self.inner.abandoned.store(true, Ordering::SeqCst);
+        self.inner.shutdown.store(true, Ordering::SeqCst);
+        lock(&self.inner.clients).clear();
+        if let Some(handle) = self.accept.take() {
+            let _ = handle.join();
+        }
+    }
+
+    /// This app's admitted guests that could take the session over, in join order,
+    /// with where each would listen.
+    pub fn successors(&self) -> Vec<Successor> {
+        lock(&self.inner.clients)
+            .iter()
+            .filter(|c| c.ours && !c.pending)
+            .map(|c| Successor {
+                participant_id: c.participant_id.clone(),
+                client_id: c.client_id.clone(),
+                name: c.name.clone(),
+                host: c.standby.as_ref().map(|(h, _)| h.clone()),
+                port: c.standby.as_ref().map(|(_, p)| *p),
+            })
+            .collect()
+    }
+
+    /// A guest's [`super::session::owner_key`] (from its client id), `None` if gone.
+    pub fn owner_key(&self, participant_id: &str) -> Option<String> {
+        self.inner
+            .with_client(participant_id, |c| super::session::owner_key(&c.client_id))
+    }
+
+    /// Tells a guest the host app turned its request down (`what`: "edit the queue"…).
+    pub fn refuse(&self, participant_id: &str, what: &str) {
+        let message = Message::ServerError {
+            session_id: Some(self.inner.session_id.clone()),
+            message: format!("The host doesn't allow guests to {what}"),
+            code: Some("not_allowed".into()),
+        }
+        .encode();
+        self.inner.with_client(participant_id, |c| {
+            let _ = c.outbox.send(Outgoing::Text(message));
+        });
+    }
+
+    /// Whether a guest is this app (understands modes, queue edits, notes, reactions).
+    pub fn is_ours(&self, participant_id: &str) -> bool {
+        self.inner
+            .with_client(participant_id, |c| c.ours)
+            .unwrap_or(false)
+    }
+
+    /// The host's own reaction, to every guest of this app.
+    pub fn broadcast_reaction(&self, emoji: &str, track_id: Option<&str>) {
+        let name = lock(&self.inner.host_name).clone();
+        self.inner.send_ours(
+            &Message::Reaction {
+                session_id: self.inner.session_id.clone(),
+                participant_id: HOST_ID.into(),
+                participant_name: Some(name),
+                emoji: emoji.to_owned(),
+                track_id: track_id.map(str::to_owned),
+            },
+            None,
+        );
+    }
+
+    /// An activity note to every guest of this app ("Ana skipped").
+    pub fn broadcast_note(
+        &self,
+        participant: &Participant,
+        note: NoteKind,
+        count: u32,
+        title: Option<String>,
+    ) {
+        self.inner.send_ours(
+            &Message::SessionNote {
+                session_id: self.inner.session_id.clone(),
+                participant_id: participant.id.clone(),
+                participant_name: participant.name.clone(),
+                note,
+                count,
+                title,
+            },
+            None,
+        );
+    }
+
+    /// The host as a participant (for notes about what it did itself).
+    pub fn host_participant(&self) -> Participant {
+        Participant {
+            id: HOST_ID.into(),
+            name: lock(&self.inner.host_name).clone(),
+            is_host: true,
+            is_pending: false,
+            is_connected: true,
+        }
+    }
+
+    /// Sends this app's guests the roster (who takes over, the guest lists and a
+    /// relayed session's secret) if who is in the session changed: in a Friends
+    /// session; in any other an empty one (nobody takes over, it ends with the host).
+    fn send_roster_if_changed(&self) {
+        if !self.inner.roster_dirty.swap(false, Ordering::Relaxed) {
+            return;
+        }
+        let friends = self.settings().mode == SessionMode::Friends;
+        let (successors, trusted, banned, secret) = if friends {
+            let mut trusted: Vec<String> = lock(&self.inner.trusted).iter().cloned().collect();
+            trusted.extend(
+                lock(&self.inner.clients)
+                    .iter()
+                    .filter(|c| !c.pending)
+                    .map(|c| c.client_id.clone()),
+            );
+            trusted.sort();
+            trusted.dedup();
+            (
+                self.successors(),
+                trusted,
+                lock(&self.inner.banned).iter().cloned().collect(),
+                self.inner.relay.as_ref().map(|(_, s)| s.clone()),
+            )
+        } else {
+            Default::default()
+        };
+        self.inner.send_ours(
+            &Message::SessionRoster {
+                session_id: self.inner.session_id.clone(),
+                successors,
+                trusted_client_ids: trusted,
+                banned_client_ids: banned,
+                relay_secret: secret,
+            },
+            None,
+        );
     }
 }
 
@@ -597,6 +843,10 @@ impl Inner {
             suggestions: Mutex::new(Vec::new()),
             events: Mutex::new(tx),
             shutdown: AtomicBool::new(false),
+            roster_dirty: AtomicBool::new(false),
+            stop_reason: Mutex::new(SESSION_ENDED.into()),
+            abandoned: AtomicBool::new(false),
+            relay_grace: Mutex::new(super::session::RECONNECT_GRACE),
         });
         (inner, rx)
     }
@@ -672,6 +922,7 @@ fn serve_link_from<L: Link>(mut conn: L, hello: Recv, inner: &Inner) -> Result<(
         session_key,
         client_id,
         display_name,
+        features,
     } = hello
     else {
         unreachable!()
@@ -717,9 +968,17 @@ fn serve_link_from<L: Link>(mut conn: L, hello: Recv, inner: &Inner) -> Result<(
         },
         pending,
         outbox: tx,
+        ours: features.iter().any(|f| f == FEATURE_SESSION),
+        standby: None,
+        reactions: RateLimit::reactions(),
     };
     let participant = client.participant();
+    if !pending {
+        // Let in once: back in without approval after a dropped link.
+        lock(&inner.trusted).insert(client.client_id.clone());
+    }
     lock(&inner.clients).push(client);
+    inner.roster_dirty.store(true, Ordering::Relaxed);
     conn.send(&Message::ServerWelcome {
         protocol_version: PROTOCOL_VERSION,
         session_id: inner.session_id.clone(),
@@ -727,6 +986,10 @@ fn serve_link_from<L: Link>(mut conn: L, hello: Recv, inner: &Inner) -> Result<(
         role: Role::Guest,
         is_pending: pending,
         settings,
+        features: super::messages::FEATURES
+            .iter()
+            .map(|f| (*f).to_owned())
+            .collect(),
     });
     inner.emit(if pending {
         ServerEvent::JoinRequested(participant.clone())
@@ -754,7 +1017,9 @@ fn serve_link_from<L: Link>(mut conn: L, hello: Recv, inner: &Inner) -> Result<(
             return Ok(());
         }
         if inner.shutdown.load(Ordering::Relaxed) {
-            conn.close("Session ended");
+            if !inner.abandoned.load(Ordering::Relaxed) {
+                conn.close(SESSION_ENDED);
+            }
             return Ok(());
         }
         match conn.recv() {
@@ -774,6 +1039,7 @@ fn serve_link_from<L: Link>(mut conn: L, hello: Recv, inner: &Inner) -> Result<(
         }
     };
     if let Some(client) = inner.remove(&participant_id) {
+        inner.roster_dirty.store(true, Ordering::Relaxed);
         let participant = client.participant();
         let mut transfer = lock(&inner.transfer);
         if transfer
@@ -828,14 +1094,84 @@ fn handle(
                 server_elapsed_realtime_ms: inner.elapsed_ms(),
             });
         }
-        Message::ControlRequest { action, .. } if !pending => {
+        Message::ControlRequest { action, intent, .. } if !pending => {
             if settings.allow_guests_to_control_playback {
                 inner.emit(ServerEvent::Control {
                     participant,
                     action,
+                    intent,
                 });
             } else {
                 denied(conn, "control playback");
+            }
+        }
+        Message::QueueRequest { op, intent, .. } if !pending => {
+            if queue_op_allowed(&op, &settings) {
+                inner.emit(ServerEvent::Queue {
+                    participant,
+                    op: *op,
+                    intent,
+                });
+            } else {
+                denied(conn, "edit the queue");
+            }
+        }
+        Message::ModeRequest { mode, .. } if !pending => {
+            if permissions(&settings, false).switch_mode {
+                inner.emit(ServerEvent::ModeRequest { participant, mode });
+            } else {
+                denied(conn, "change the mode");
+            }
+        }
+        Message::KickRequest { target_id, ban, .. } if !pending => {
+            if permissions(&settings, false).moderate && target_id != participant_id {
+                inner.emit(ServerEvent::KickRequest {
+                    participant,
+                    target_id,
+                    ban,
+                });
+            } else {
+                denied(conn, "remove people");
+            }
+        }
+        Message::MemberHello {
+            standby_host,
+            standby_port,
+            ..
+        } => {
+            let standby = standby_host
+                .filter(|h| !h.is_empty() && h.len() <= 255)
+                .zip(standby_port.filter(|&p| p > 0));
+            inner.with_client(participant_id, |c| {
+                c.ours = true;
+                c.standby = standby;
+            });
+            inner.roster_dirty.store(true, Ordering::Relaxed);
+        }
+        Message::Reaction {
+            emoji, track_id, ..
+        } if !pending => {
+            let allowed = REACTIONS.contains(&emoji.as_str())
+                && inner
+                    .with_client(participant_id, |c| c.reactions.allow(Instant::now()))
+                    .unwrap_or(false);
+            if allowed {
+                let track_id: Option<String> = track_id.map(|t| t.chars().take(32).collect());
+                inner.send_ours(
+                    &Message::Reaction {
+                        session_id: inner.session_id.clone(),
+                        participant_id: participant_id.to_owned(),
+                        participant_name: Some(participant.name.clone()),
+                        emoji: emoji.clone(),
+                        track_id: track_id.clone(),
+                    },
+                    Some(participant_id),
+                );
+                inner.emit(ServerEvent::Reaction {
+                    participant,
+                    emoji,
+                    track_id,
+                });
             }
         }
         Message::AddTrackRequest { track, mode, .. } if !pending => {
@@ -949,6 +1285,7 @@ mod tests {
     }
 
     #[derive(Debug)]
+    #[allow(clippy::large_enum_variant)]
     enum Sent {
         Text(Message),
         Close(String),
@@ -1006,6 +1343,7 @@ mod tests {
                 session_key: "key".into(),
                 client_id: "client".into(),
                 display_name: "Ann".into(),
+                features: Vec::new(),
             }))
             .unwrap();
         // Welcomed, and blocked in `recv` with the outbox behind it.

@@ -225,11 +225,21 @@ pub(super) fn run(mut conn: Conn, inner: Arc<Inner>, keepalive: Duration) {
             conn.send_text(RelayFrame::RelayKeepalive.encode());
             last_sent = Instant::now();
         }
+        if inner.abandoned.load(Ordering::Relaxed) {
+            return; // dropped without a word (tests of the fail-over)
+        }
         if inner.shutdown.load(Ordering::Relaxed) {
             // Let the guest loops send their goodbyes, then hang up.
             let at = *shutdown_at.get_or_insert_with(Instant::now);
             if links.is_empty() || at.elapsed() > Duration::from_millis(400) {
-                conn.close("Session ended");
+                // "Session ended", or "Host left" (a Friends session goes on): the
+                // relay passes it on to guests still bound to this host.
+                let reason = inner
+                    .stop_reason
+                    .lock()
+                    .map(|r| r.clone())
+                    .unwrap_or_else(|e| e.into_inner().clone());
+                conn.close(&reason);
                 return;
             }
         }
@@ -273,16 +283,76 @@ pub(super) fn run(mut conn: Conn, inner: Arc<Inner>, keepalive: Duration) {
                 for (_, tx) in links.drain() {
                     let _ = tx.send(LinkIn::Closed(Some("Relay connection lost".into())));
                 }
-                if !inner.shutdown.load(Ordering::Relaxed) {
-                    inner.emit(ServerEvent::Stopped {
-                        reason: format!(
-                            "Lost the connection to the relay{}",
-                            reason.map(|r| format!(" ({r})")).unwrap_or_default()
-                        ),
-                    });
+                if inner.shutdown.load(Ordering::Relaxed) {
+                    return;
                 }
-                return;
+                // The link dropped (Wi-Fi power saving, sleep, a proxy): claim the room
+                // again with its secret for a while (the guests reconnect meanwhile);
+                // the session ends only after that.
+                let (url, secret) = inner.relay.clone().unwrap_or_default();
+                let why = reason.unwrap_or_else(|| "closed".into());
+                log::warn!(
+                    "together: relay link to {url} dropped ({why}); {}",
+                    conn.diagnostics()
+                );
+                inner.emit(ServerEvent::RelayLost {
+                    reason: why.clone(),
+                });
+                match reclaim(&inner, &url, &secret) {
+                    Some(new) => {
+                        conn = new;
+                        last_sent = Instant::now();
+                        inner.emit(ServerEvent::RelayRestored);
+                    }
+                    None if inner.shutdown.load(Ordering::Relaxed) => return,
+                    None => {
+                        inner.emit(ServerEvent::Stopped {
+                            reason: format!("Lost the connection to the relay ({why})"),
+                        });
+                        return;
+                    }
+                }
             }
+        }
+    }
+}
+
+/// Registers the room again after its link dropped, with backoff for the server's
+/// grace ([`super::TogetherServer::set_relay_grace`]). `None`: gave up (or stopped).
+fn reclaim(inner: &Inner, url: &str, secret: &str) -> Option<Conn> {
+    let started = Instant::now();
+    let grace = *inner.relay_grace.lock().unwrap_or_else(|e| e.into_inner());
+    let mut backoff = super::session::Backoff::new(
+        Duration::from_millis(500),
+        Duration::from_secs(5),
+        grace,
+        started,
+    );
+    loop {
+        if inner.shutdown.load(Ordering::Relaxed) {
+            return None;
+        }
+        match register(
+            url,
+            inner.session_id(),
+            inner.session_key(),
+            secret,
+            super::server::RELAY_TIMEOUT,
+        ) {
+            Ok(conn) => {
+                log::info!(
+                    "together: relay link to {url} back after {:.1} s ({} tries)",
+                    started.elapsed().as_secs_f64(),
+                    backoff.attempts() + 1
+                );
+                return Some(conn);
+            }
+            Err(e) => log::debug!("together: reclaiming the room at {url}: {e}"),
+        }
+        let wait = backoff.next_delay(Instant::now())?;
+        let until = Instant::now() + wait;
+        while Instant::now() < until && !inner.shutdown.load(Ordering::Relaxed) {
+            std::thread::sleep(Duration::from_millis(50).min(until - Instant::now()));
         }
     }
 }

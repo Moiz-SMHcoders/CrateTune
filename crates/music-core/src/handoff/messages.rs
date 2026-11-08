@@ -167,6 +167,12 @@ pub enum Message {
         group: String,
         link: String,
     },
+    /// The session of a [`Message::ListenTogether`] is over (or the sender left it) →
+    /// [`Message::Ok`]. Older versions answer `error` / unsupported, which is fine.
+    ListenEnded {
+        group: String,
+        link: String,
+    },
 
     // ---- invitations (`INVITE_ALPN`: `pair_start`, `pair_challenge`, `pair_confirm`
     // with the invitation code, then these)
@@ -316,6 +322,7 @@ const KNOWN_TYPES: &[&str] = &[
     "sync_batch",
     "friend_hello",
     "listen_together",
+    "listen_ended",
     "invite_group",
     "invite_join",
     "invite_done",
@@ -337,6 +344,7 @@ mod tests {
             artists: vec!["Artist".into()],
             duration_sec: 200,
             thumbnail_url: None,
+            ..TogetherTrack::default()
         }
     }
 
@@ -407,6 +415,10 @@ mod tests {
                 }),
             },
             Message::ListenTogether {
+                group: "g".into(),
+                link: "music-together://x".into(),
+            },
+            Message::ListenEnded {
                 group: "g".into(),
                 link: "music-together://x".into(),
             },

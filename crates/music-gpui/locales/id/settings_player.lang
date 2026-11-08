@@ -201,3 +201,5 @@ prefs.mini_skin.card = Kartu sampul
 prefs.mini_skin.lyrics = Lirik
 prefs.mini_skin.turntable = Piringan hitam
 prefs.layout.turntable = Piringan hitam
+settings.playback.keep_awake = Jaga komputer tetap aktif saat memutar
+settings.playback.keep_awake_desc = Selama musik diputar atau sesi Dengar bersama berjalan, komputer tidak akan tidur dengan sendirinya (layar tetap bisa mati). Mode tidur memutus jaringan, dan sesi ikut terputus.

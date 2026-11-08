@@ -61,6 +61,7 @@ queue.empty.hint = 使用“下一首播放”或“添加到队列”来添加�
 queue.tooltip.clear_up_next = 清空即将播放
 queue.tooltip.close = 关闭（Esc）
 queue.tooltip.move_up = 上移
+queue.menu.remove = 从队列中移除
 queue.tooltip.move_down = 下移
 
 # ---- Song rows and the song context menu

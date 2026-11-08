@@ -7,8 +7,13 @@
 //! runs (with groups, or an invitation shown / being entered), the app mirrors what
 //! plays into it when the song or play / pause changes (it goes out to the members'
 //! devices then, not on a timer), and the feed is what arrived this run, in memory
-//! only. "Listen together" starts a Music Together session through the relay and
-//! sends its link to the group's members, who see a Join button.
+//! only. "Listen together" on a group joins the group's session if a friend runs one,
+//! else starts one (in the group's mode, Friends unless changed; only the group gets
+//! the link, no room code) and sends its link to the members' devices: they get a
+//! notification with Join (or join by themselves, "Join automatically when a friend
+//! starts"), and the Together page lists the live sessions per group. When the session
+//! ends its starter says so; a session that moves to another device (a Friends
+//! session's hand-over) is announced again from there.
 
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
@@ -18,9 +23,11 @@ use music_core::friends::{Activity, Group, Identity};
 use music_core::handoff::{FriendsSetup, PairError, PairInput, PairingOffer, now_unix_ms};
 use music_core::{PlaybackState, PlaybackStatus};
 
-use super::config::{FriendHint, FriendsPrefs};
+use music_core::together::{JoinRequest, SessionMode};
+
+use super::config::{FriendHint, FriendsPrefs, HostMode};
 use super::devices::PairStatus;
-use super::together::Role;
+use super::together::{Role, StartOptions};
 use crate::app::{MusicApp, notify};
 
 /// A started session's link is sent to the group if hosting starts within this long.
@@ -29,6 +36,9 @@ const LISTEN_WINDOW: Duration = Duration::from_secs(30);
 const LEAVE_LINGER: Duration = Duration::from_secs(5);
 /// "Listen together" invitations kept.
 const MAX_INVITES: usize = 8;
+/// A member whose device turned up hears about the group's running session again,
+/// at most this often.
+const REANNOUNCE_EVERY: Duration = Duration::from_secs(60);
 
 /// A friend's "listen together" invitation.
 #[derive(Debug, Clone, PartialEq)]
@@ -37,6 +47,44 @@ pub struct ListenInvite {
     pub group: String,
     pub link: String,
     pub at_ms: u64,
+    /// The session's mode, when the link says it.
+    pub mode: Option<SessionMode>,
+    /// The session's id (the same session announced again from another device has it).
+    pub session: Option<String>,
+}
+
+impl ListenInvite {
+    pub fn new(member: String, group: String, link: String, at_ms: u64) -> Self {
+        let mode = link
+            .split(['?', '&'])
+            .find_map(|p| p.strip_prefix("mode="))
+            .and_then(SessionMode::parse);
+        let session = match JoinRequest::parse(&link) {
+            Some(JoinRequest::Direct(join)) => Some(join.session_id),
+            _ => None,
+        };
+        Self {
+            member,
+            group,
+            link,
+            at_ms,
+            mode,
+            session,
+        }
+    }
+}
+
+/// A friend group's running session, as the Together page lists it.
+#[derive(Debug, Clone, PartialEq)]
+pub struct GroupSession {
+    pub group: String,
+    pub group_name: String,
+    /// Who announced it (the member's name).
+    pub starter: String,
+    pub link: String,
+    pub mode: SessionMode,
+    /// This device is in it.
+    pub here: bool,
 }
 
 /// One line of the feed.
@@ -56,11 +104,11 @@ pub struct FeedRow {
 pub struct FriendsPanel {
     pub enabled: bool,
     pub sharing: bool,
-    /// Id, name, members.
-    pub groups: Vec<(String, String, usize)>,
+    /// Id, name, members, the mode its sessions start in.
+    pub groups: Vec<(String, String, usize, SessionMode)>,
     pub feed: Vec<FeedRow>,
-    /// Newest first: the invitation, who sent it, the group's name.
-    pub invites: Vec<(ListenInvite, String, String)>,
+    /// Running sessions of the groups, newest first.
+    pub sessions: Vec<GroupSession>,
 }
 
 #[derive(Default)]
@@ -85,6 +133,11 @@ pub struct FriendsState {
     mirrored: Option<(Option<(String, bool)>, u64)>,
     /// "Listen together" asked for this group; its link goes out once hosting.
     pending_listen: Option<(String, Instant)>,
+    /// The group session this device announced (group, link): "ended" goes out when
+    /// it ends here.
+    announced: Option<(String, String)>,
+    /// When each member last heard about the running session again.
+    reannounced: HashMap<String, Instant>,
     /// Groups being left, with the "left" record (kept in the node a moment for it
     /// to go out).
     leaving: Vec<Group>,
@@ -391,19 +444,58 @@ impl MusicApp {
         self.integrations.friends.activity.remove(&member);
     }
 
-    /// "Listen together": host a Music Together session through the relay; its link
-    /// goes to the group's members once it is up.
+    /// "Listen together" on a group: joins the group's running session (a friend's,
+    /// or this device's own: invites the members again), else starts one in the
+    /// group's mode, only for the group.
     pub fn friends_listen_together(
         &mut self,
         group: &str,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        self.integrations.friends.pending_listen = Some((group.to_owned(), Instant::now()));
-        // Already hosting: the group is invited to that session (on the next poll).
-        if !matches!(self.integrations.together.role, Role::Hosting(_)) {
-            self.together_host_relay(window, cx, |_, _| {});
+        if self.integrations.together.group() == Some(group)
+            && self.integrations.together.in_session()
+        {
+            if let Role::Hosting(host) = &self.integrations.together.role
+                && let Some(node) = self.integrations.devices.node()
+            {
+                node.listen_together(group, &host.friends_link());
+                notify(window, cx, t!("friends.toast.listen_sent"));
+            }
+            return;
         }
+        let running = self
+            .integrations
+            .friends
+            .invites
+            .iter()
+            .rev()
+            .find(|i| i.group == group)
+            .map(|i| i.link.clone());
+        if let Some(link) = running {
+            self.friends_join_session(&link, window, cx);
+            return;
+        }
+        let mode = self.friends_prefs(cx).group_mode(group);
+        let options = StartOptions {
+            mode,
+            group: Some(group.to_owned()),
+            // Friends may be anywhere: through the relay (the LAN when unreachable).
+            network: HostMode::Relay,
+        };
+        self.friends_start_session(group, options, window, cx);
+    }
+
+    /// Starts a session for a group (its link goes to the members once it is up).
+    pub(crate) fn friends_start_session(
+        &mut self,
+        group: &str,
+        options: StartOptions,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.integrations.friends.pending_listen = Some((group.to_owned(), Instant::now()));
+        self.together_start(options, window, cx, |_, _| {});
         notify(window, cx, t!("friends.toast.listen_sent"));
     }
 
@@ -411,32 +503,65 @@ impl MusicApp {
     pub(crate) fn friends_panel(&self, cx: &App) -> FriendsPanel {
         let prefs = self.friends_prefs(cx);
         let state = &self.integrations.friends;
-        let invites = state
+        let here_group = self
+            .integrations
+            .together
+            .in_session()
+            .then(|| self.integrations.together.group())
+            .flatten();
+        let mut sessions: Vec<GroupSession> = state
             .invites
             .iter()
             .rev()
-            .map(|i| {
-                let group = prefs.groups.iter().find(|g| g.id() == i.group);
-                (
-                    i.clone(),
-                    group
-                        .and_then(|g| g.record(&i.member))
+            .filter_map(|i| {
+                let group = prefs.groups.iter().find(|g| g.id() == i.group)?;
+                Some(GroupSession {
+                    group: i.group.clone(),
+                    group_name: group.name().to_owned(),
+                    starter: group
+                        .record(&i.member)
                         .map(|m| m.name.clone())
                         .unwrap_or_default(),
-                    group.map(|g| g.name().to_owned()).unwrap_or_default(),
-                )
+                    link: i.link.clone(),
+                    mode: i.mode.unwrap_or(SessionMode::Friends),
+                    here: here_group == Some(i.group.as_str()),
+                })
             })
             .collect();
+        // This device's own group session (it announced it).
+        if let (Some(group), Role::Hosting(host)) = (here_group, &self.integrations.together.role)
+            && !sessions.iter().any(|s| s.group == group)
+            && let Some(g) = prefs.groups.iter().find(|g| g.id() == group)
+        {
+            sessions.insert(
+                0,
+                GroupSession {
+                    group: group.to_owned(),
+                    group_name: g.name().to_owned(),
+                    starter: String::new(),
+                    link: host.link(),
+                    mode: host.room.mode,
+                    here: true,
+                },
+            );
+        }
         FriendsPanel {
             enabled: prefs.enabled,
             sharing: prefs.share && !state.private_session,
             groups: prefs
                 .groups
                 .iter()
-                .map(|g| (g.id().to_owned(), g.name().to_owned(), g.current().len()))
+                .map(|g| {
+                    (
+                        g.id().to_owned(),
+                        g.name().to_owned(),
+                        g.current().len(),
+                        prefs.group_mode(g.id()),
+                    )
+                })
                 .collect(),
             feed: self.friends_feed(cx),
-            invites,
+            sessions,
         }
     }
 
@@ -447,9 +572,14 @@ impl MusicApp {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        let link = link.to_owned();
-        self.integrations.friends.invites.retain(|i| i.link != link);
-        self.together_join(&link, window, cx);
+        let group = self
+            .integrations
+            .friends
+            .invites
+            .iter()
+            .find(|i| i.link == link)
+            .map(|i| i.group.clone());
+        self.together_join_for(link, group, window, cx);
     }
 
     pub fn friends_set_private(&mut self, on: bool, cx: &mut Context<Self>) {
@@ -538,12 +668,37 @@ impl MusicApp {
             if since.elapsed() > LISTEN_WINDOW {
                 self.integrations.friends.pending_listen = None;
             } else if let Role::Hosting(host) = &self.integrations.together.role {
-                let link = host.link();
+                let link = host.friends_link();
                 if let Some(node) = self.integrations.devices.node() {
                     node.listen_together(&group, &link);
                 }
                 self.integrations.friends.pending_listen = None;
+                self.integrations.friends.announced = Some((group, link));
             }
+        }
+        // A group session that runs here now (taken over): announced from here.
+        if let Role::Hosting(host) = &self.integrations.together.role
+            && let Some(group) = &host.group
+            && self.integrations.friends.announced.as_ref().map(|(_, l)| l)
+                != Some(&host.friends_link())
+            && self.integrations.friends.pending_listen.is_none()
+        {
+            self.integrations.friends.pending_listen = Some((group.clone(), Instant::now()));
+        }
+    }
+
+    /// The group session this device announced is over here (`went_on`: it moved to
+    /// another device, which announces it): tell the members unless it went on.
+    pub(crate) fn friends_session_over(&mut self, went_on: bool) {
+        let Some((group, link)) = self.integrations.friends.announced.take() else {
+            return;
+        };
+        self.integrations.friends.reannounced.clear();
+        if went_on {
+            return;
+        }
+        if let Some(node) = self.integrations.devices.node() {
+            node.listen_ended(&group, &link);
         }
     }
 
@@ -596,7 +751,33 @@ impl MusicApp {
         }
     }
 
-    pub(crate) fn friends_activity(&mut self, member: String, activity: Option<Activity>) {
+    pub(crate) fn friends_activity(
+        &mut self,
+        member: String,
+        activity: Option<Activity>,
+        cx: &mut Context<Self>,
+    ) {
+        // A member's device turned up while this device runs the group's session:
+        // it hears about it (again).
+        if let Some((group, link)) = self.integrations.friends.announced.clone()
+            && self
+                .friends_prefs(cx)
+                .groups
+                .iter()
+                .any(|g| g.id() == group && g.is_member(&member))
+        {
+            let state = &mut self.integrations.friends;
+            let due = state
+                .reannounced
+                .get(&member)
+                .is_none_or(|at| at.elapsed() > REANNOUNCE_EVERY);
+            if due {
+                state.reannounced.insert(member.clone(), Instant::now());
+                if let Some(node) = self.integrations.devices.node() {
+                    node.listen_together(&group, &link);
+                }
+            }
+        }
         self.integrations
             .friends
             .activity
@@ -617,19 +798,93 @@ impl MusicApp {
             .unwrap_or_default();
         let group_name = group.map(|g| g.name().to_owned()).unwrap_or_default();
         let invites = &mut self.integrations.friends.invites;
-        invites.retain(|i| !(i.member == invite.member && i.group == invite.group));
+        // Heard before (announced again): no second notification.
+        let known = invites.iter().any(|i| i.link == invite.link);
+        // The same session from another device (a hand-over), or this member's older one.
+        invites.retain(|i| {
+            !(i.member == invite.member && i.group == invite.group)
+                && (invite.session.is_none() || i.session != invite.session)
+        });
+        let link = invite.link.clone();
+        let group_id = invite.group.clone();
         invites.push(invite);
         let extra = invites.len().saturating_sub(MAX_INVITES);
         invites.drain(..extra);
-        notify(
-            window,
-            cx,
+        cx.notify();
+        if known {
+            return;
+        }
+        // Already in it (this device was told too): nothing to do.
+        if self.integrations.together.group() == Some(group_id.as_str())
+            && self.integrations.together.in_session()
+        {
+            return;
+        }
+        let together = self.settings.read(cx).settings().together.clone();
+        if together.auto_join && matches!(self.integrations.together.role, Role::Idle) {
+            notify(
+                window,
+                cx,
+                t!(
+                    "friends.toast.auto_joining",
+                    name = name,
+                    group = group_name
+                ),
+            );
+            self.together_join_for(&link, Some(group_id), window, cx);
+            return;
+        }
+        self.friends_invite_note(
             t!(
                 "friends.toast.listen_invite",
                 name = name,
                 group = group_name
             ),
+            link,
+            window,
+            cx,
         );
+    }
+
+    /// The in-app notification for a friend's session, with Join.
+    fn friends_invite_note(
+        &mut self,
+        message: String,
+        link: String,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        use gpui_component::{Sizable as _, WindowExt as _};
+        let note = gpui_component::notification::Notification::new()
+            .message(message)
+            .action(move |_, _, _| {
+                let link = link.clone();
+                gpui_component::button::Button::new("friends-join-note")
+                    .small()
+                    .label(t!("friends.panel.join"))
+                    .on_click(move |_, window, cx| {
+                        let link = link.clone();
+                        crate::app::update_app(cx, |app, cx| {
+                            app.friends_join_session(&link, window, cx)
+                        });
+                    })
+            });
+        window.push_notification(note, cx);
+    }
+
+    /// A friend's session for a group is over (or they left it).
+    pub(crate) fn friends_listen_ended(
+        &mut self,
+        member: &str,
+        group: &str,
+        link: &str,
+        cx: &mut Context<Self>,
+    ) {
+        let session = ListenInvite::new(member.into(), group.into(), link.into(), 0).session;
+        self.integrations.friends.invites.retain(|i| {
+            !(i.group == group && (i.link == link || (session.is_some() && i.session == session)))
+        });
+        cx.notify();
     }
 
     pub(crate) fn friends_joined(

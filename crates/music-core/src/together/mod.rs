@@ -17,6 +17,13 @@
 //! ban, and hand the session to a guest ([`TogetherServer::transfer_host`]: the
 //! guest starts its own server with the room's state, everyone reconnects to it).
 //!
+//! On top of the protocol (ours; ArchiveTune peers skip what they don't know, see
+//! [`messages`]): session modes ([`SessionMode`]: Host, Friends where everyone
+//! controls, DJ where everyone adds), stamped requests so doubled skips collapse and
+//! the newest seek wins, queue edits by guests, shared-queue attribution, reactions,
+//! activity notes, and Friends sessions that outlive the device they run on
+//! ([`session`]).
+//!
 //! Everything is blocking std threads + `tungstenite`; no async runtime.
 
 mod client;
@@ -26,21 +33,43 @@ pub mod messages;
 pub mod online;
 pub mod relay;
 mod server;
+pub mod session;
 pub mod sync;
 
-pub use client::{ClientEvent, TogetherClient};
+use std::sync::OnceLock;
+
+pub use client::{ClientEvent, ClientOptions, TogetherClient};
 pub use link::{JoinInfo, JoinRequest, local_ip, relay_url};
 pub use messages::{
-    AddTrackMode, ControlAction, Message, PROTOCOL_VERSION, Participant, Role, RoomSettings,
-    RoomState, SuggestionState, TogetherTrack, queue_hash,
+    AddTrackMode, ClearPart, ControlAction, IntentMeta, Message, NoteKind, PROTOCOL_VERSION,
+    Participant, QueueOp, REACTIONS, Role, RoomSettings, RoomState, SessionMode, Successor,
+    SuggestionState, TogetherTrack, queue_hash,
 };
 pub use online::{CodeError, RelaySource, display_code, normalize_code};
-pub use server::{HOST_ID, HostOptions, ServerEvent, Suggestion, TogetherServer};
+pub use server::{
+    HOST_ID, HOST_LEFT, HostOptions, SESSION_ENDED, ServerEvent, Suggestion, TogetherServer,
+};
+pub use session::{Failover, NoteFeed, Permissions, Playing, RateLimit, Sequencer, Stamp};
 pub use sync::{
     ClockSnapshot, GuestSync, LeavePlan, LocalPlayback, SyncPlan, TogetherClock, leave_plan,
 };
 
 pub const DEFAULT_PORT: u16 = 42117;
+
+static EVENT_HOOK: OnceLock<fn()> = OnceLock::new();
+
+/// Called (on a session thread) whenever a server or client has a new event, e.g. to
+/// wake whatever polls them, so a guest's skip is applied (and its room state
+/// followed) without waiting for the next poll. Set once; later calls are ignored.
+pub fn set_event_hook(hook: fn()) {
+    let _ = EVENT_HOOK.set(hook);
+}
+
+fn wake() {
+    if let Some(hook) = EVENT_HOOK.get() {
+        hook();
+    }
+}
 
 /// A random id / key (URL-safe, 22 characters).
 pub fn new_id() -> String {
@@ -58,6 +87,7 @@ mod tests {
     use std::time::{Duration, Instant};
 
     use super::*;
+    use crate::together::session;
 
     #[track_caller]
     fn wait_for<T>(mut f: impl FnMut() -> Option<T>) -> T {
@@ -80,6 +110,7 @@ mod tests {
             artists: vec!["Artist".into()],
             duration_sec: 200,
             thumbnail_url: None,
+            ..TogetherTrack::default()
         }
     }
 
@@ -106,6 +137,7 @@ mod tests {
                 allow_guests_to_control_playback: false,
                 require_host_approval_to_join: false,
                 require_approval_for_suggestions: false,
+                mode: SessionMode::Host,
             },
         )
         .unwrap();
@@ -229,7 +261,7 @@ mod tests {
         wait_for(|| {
             bob.poll_events().into_iter().find_map(|e| match e {
                 ClientEvent::Kicked { banned: true, .. } => Some(()),
-                ClientEvent::Disconnected { reason } => {
+                ClientEvent::Disconnected { reason, .. } => {
                     panic!("disconnected without the ban: {reason:?}")
                 }
                 _ => None,
@@ -264,7 +296,7 @@ mod tests {
         server.stop();
         let reason = wait_for(|| {
             carol.poll_events().into_iter().find_map(|e| match e {
-                ClientEvent::Disconnected { reason } => Some(reason),
+                ClientEvent::Disconnected { reason, .. } => Some(reason),
                 _ => None,
             })
         });
@@ -644,5 +676,671 @@ mod tests {
             )
         });
         drop(hana);
+    }
+
+    /// This app's guest (our additions), with a LAN standby address; a dropped link
+    /// ends here at once (these tests are about what comes after; the reconnect has
+    /// its own in `relay_e2e.rs`).
+    fn ours(
+        server: &TogetherServer,
+        key: &str,
+        name: &str,
+        standby: Option<u16>,
+    ) -> TogetherClient {
+        TogetherClient::connect_with(
+            &join(server, key),
+            ClientOptions {
+                reconnect_for: None,
+                ..ClientOptions::ours(
+                    name,
+                    &format!("{name}-client"),
+                    standby.map(|p| ("127.0.0.1".to_owned(), p)),
+                )
+            },
+        )
+        .unwrap()
+    }
+
+    fn free_port() -> u16 {
+        std::net::TcpListener::bind("127.0.0.1:0")
+            .unwrap()
+            .local_addr()
+            .unwrap()
+            .port()
+    }
+
+    /// Every event `client` has, until `f` finds what it wants (keeping the rest).
+    #[track_caller]
+    fn wait_event<T>(
+        client: &TogetherClient,
+        seen: &mut Vec<ClientEvent>,
+        mut f: impl FnMut(&ClientEvent) -> Option<T>,
+    ) -> T {
+        wait_for(|| {
+            seen.extend(client.poll_events());
+            seen.iter().find_map(&mut f)
+        })
+    }
+
+    #[track_caller]
+    fn wait_server<T>(server: &TogetherServer, mut f: impl FnMut(ServerEvent) -> Option<T>) -> T {
+        wait_for(|| server.poll_events().into_iter().find_map(&mut f))
+    }
+
+    fn friends_room() -> RoomSettings {
+        SessionMode::Friends.apply(RoomSettings {
+            require_host_approval_to_join: true,
+            ..RoomSettings::default()
+        })
+    }
+
+    /// The room as the device a Friends session runs on has it mid-song.
+    fn mid_song() -> RoomState {
+        let mut queue = vec![
+            track("aaaaaaaaaaa"),
+            track("bbbbbbbbbbb"),
+            track("ccccccccccc"),
+        ];
+        for (i, t) in queue.iter_mut().enumerate() {
+            t.uid = Some(10 + i as u64);
+        }
+        queue[2].queued = true;
+        queue[2].added_by = Some("Cat".into());
+        RoomState {
+            queue,
+            current_index: 1,
+            is_playing: true,
+            position_ms: 61_000,
+            repeat_mode: 2,
+            context_name: Some("Album".into()),
+            ..RoomState::default()
+        }
+    }
+
+    /// Ann's device runs a Friends session with Bob and Cat (both this app); Ann admits
+    /// them, and both hear the roster: Bob, then Cat.
+    fn friends_session(
+        standby: bool,
+    ) -> (
+        TogetherServer,
+        TogetherClient,
+        TogetherClient,
+        Vec<ClientEvent>,
+        Vec<ClientEvent>,
+    ) {
+        let server =
+            TogetherServer::start(0, new_id(), new_id(), "Ann".into(), friends_room()).unwrap();
+        let key = server.session_key().to_owned();
+        let bob = ours(&server, &key, "Bob", standby.then(free_port));
+        let p = wait_server(&server, |e| match e {
+            ServerEvent::JoinRequested(p) => Some(p),
+            _ => None,
+        });
+        server.approve(&p.id, true);
+        let cat = ours(&server, &key, "Cat", standby.then(free_port));
+        let p = wait_server(&server, |e| match e {
+            ServerEvent::JoinRequested(p) => Some(p),
+            _ => None,
+        });
+        server.approve(&p.id, true);
+        let (mut bob_seen, mut cat_seen) = (Vec::new(), Vec::new());
+        // The roster goes out with the room states (once both said hello).
+        let roster_of = |seen: &mut Vec<ClientEvent>, client: &TogetherClient| loop {
+            server.broadcast_room_state(mid_song());
+            std::thread::sleep(Duration::from_millis(30));
+            seen.extend(client.poll_events());
+            let found = seen.iter().rev().find_map(|e| match e {
+                ClientEvent::Roster { successors, .. } if successors.len() == 2 => {
+                    Some(successors.clone())
+                }
+                _ => None,
+            });
+            if let Some(found) = found {
+                break found;
+            }
+        };
+        let roster = roster_of(&mut bob_seen, &bob);
+        assert_eq!(
+            roster.iter().map(|s| s.name.as_str()).collect::<Vec<_>>(),
+            ["Bob", "Cat"]
+        );
+        assert_eq!(roster[0].client_id, "Bob-client");
+        assert_eq!(roster[0].host.is_some(), standby);
+        roster_of(&mut cat_seen, &cat);
+        (server, bob, cat, bob_seen, cat_seen)
+    }
+
+    /// Friends mode: Ann leaves mid-song; the session goes on with Bob (the first in
+    /// line): Cat reconnects to him, and the queue (slots, who queued what), the track,
+    /// the position and playing / paused survive; Ann's device just leaves.
+    #[test]
+    fn a_friends_session_is_handed_over_when_its_device_leaves() {
+        let (mut ann, bob, cat, mut bob_seen, mut cat_seen) = friends_session(false);
+        let successors = ann.successors();
+        let state = mid_song();
+        assert!(ann.transfer_host(&successors[0].participant_id, state, None));
+        let (offered, trusted, banned) = wait_event(&bob, &mut bob_seen, |e| match e {
+            ClientEvent::HostOffer {
+                state,
+                trusted_client_ids,
+                banned_client_ids,
+                ..
+            } => Some((
+                state.clone().unwrap(),
+                trusted_client_ids.clone(),
+                banned_client_ids.clone(),
+            )),
+            _ => None,
+        });
+        assert_eq!(offered.settings.mode, SessionMode::Friends);
+        let new = TogetherServer::start_with(
+            0,
+            ann.session_id().into(),
+            ann.session_key().into(),
+            "Bob".into(),
+            offered.settings,
+            HostOptions {
+                trusted_client_ids: trusted,
+                banned_client_ids: banned,
+                relay_secret: None,
+                relay_keepalive: None,
+            },
+        )
+        .unwrap();
+        assert!(bob.answer_host_offer(Ok(Some(("127.0.0.1".into(), new.port())))));
+        // Ann's device learns it went on, and stops (it doesn't rejoin).
+        wait_server(&ann, |e| match e {
+            ServerEvent::HostTransferred { participant, .. } => Some(participant),
+            ServerEvent::TransferFailed { reason, .. } => panic!("{reason}"),
+            _ => None,
+        });
+        ann.stop();
+        bob.leave();
+        // Cat follows on her own, straight in (trusted although approval is on).
+        wait_event(&cat, &mut cat_seen, |e| {
+            matches!(e, ClientEvent::Reconnected).then_some(())
+        });
+        let joined = wait_server(&new, |e| match e {
+            ServerEvent::Joined(p) => Some(p),
+            ServerEvent::JoinRequested(p) => panic!("{} should be trusted", p.name),
+            _ => None,
+        });
+        assert_eq!(joined.name, "Cat");
+        // Bob's device sends the room as it was handed over (its player was in step).
+        let sent = new.broadcast_room_state(offered.clone());
+        cat_seen.clear();
+        let got = wait_event(&cat, &mut cat_seen, |e| match e {
+            ClientEvent::RoomState(s)
+                if s.sent_at_elapsed_realtime_ms == sent.sent_at_elapsed_realtime_ms =>
+            {
+                Some(s.clone())
+            }
+            _ => None,
+        });
+        assert_eq!(got.queue, mid_song().queue);
+        assert_eq!(got.queue[2].added_by.as_deref(), Some("Cat"));
+        assert_eq!(got.queue[2].uid, Some(12));
+        assert_eq!(
+            (got.current_index, got.is_playing, got.repeat_mode),
+            (1, true, 2)
+        );
+        assert!(got.position_ms >= 61_000, "{}", got.position_ms);
+        assert_eq!(got.context_name.as_deref(), Some("Album"));
+        assert_eq!(got.settings.mode, SessionMode::Friends);
+        // Nobody else to hand it to: an empty roster for Cat (Bob runs it; Cat is
+        // the only guest, so she is the only successor).
+        let roster = wait_event(&cat, &mut cat_seen, |e| match e {
+            ClientEvent::Roster { successors, .. } => Some(successors.clone()),
+            _ => None,
+        });
+        assert_eq!(
+            roster.iter().map(|s| s.name.as_str()).collect::<Vec<_>>(),
+            ["Cat"]
+        );
+    }
+
+    /// Friends mode: Ann's device vanishes mid-song (no goodbye). Bob (first in the
+    /// roster) takes over at his standby address with the room as he last had it; Cat
+    /// finds him by the roster and is let straight in; the room goes on as it was.
+    #[test]
+    fn a_friends_session_fails_over_when_its_device_vanishes() {
+        let (ann, bob, cat, mut bob_seen, mut cat_seen) = friends_session(true);
+        let roster = |seen: &[ClientEvent]| {
+            seen.iter()
+                .rev()
+                .find_map(|e| match e {
+                    ClientEvent::Roster {
+                        successors,
+                        trusted_client_ids,
+                        banned_client_ids,
+                        relay_secret,
+                    } => Some((
+                        successors.clone(),
+                        trusted_client_ids.clone(),
+                        banned_client_ids.clone(),
+                        relay_secret.clone(),
+                    )),
+                    _ => None,
+                })
+                .unwrap()
+        };
+        let (successors, trusted, banned, secret) = roster(&bob_seen);
+        let last = |seen: &[ClientEvent]| {
+            seen.iter()
+                .rev()
+                .find_map(|e| match e {
+                    ClientEvent::RoomState(s) => Some(s.clone()),
+                    _ => None,
+                })
+                .unwrap()
+        };
+        let bob_room = last(&bob_seen);
+        let session = join(&ann, ann.session_key());
+        ann.abandon();
+        // Both hear the device is gone (not that the session ended).
+        for (client, seen) in [(&bob, &mut bob_seen), (&cat, &mut cat_seen)] {
+            let lost = wait_event(client, seen, |e| match e {
+                ClientEvent::Disconnected { lost, .. } => Some(*lost),
+                _ => None,
+            });
+            assert!(lost, "the session should be carried on");
+        }
+        // Bob is first in line: he takes over where he said he would.
+        assert_eq!(
+            session::failover(&successors, "Bob-client", &session),
+            Failover::TakeOver
+        );
+        let port = successors[0].port.unwrap();
+        let new = TogetherServer::start_with(
+            port,
+            session.session_id.clone(),
+            session.session_key.clone(),
+            "Bob".into(),
+            bob_room.settings,
+            HostOptions {
+                trusted_client_ids: trusted,
+                banned_client_ids: banned,
+                relay_secret: secret,
+                relay_keepalive: None,
+            },
+        )
+        .unwrap();
+        // Cat follows the roster to Bob.
+        let Failover::Follow(candidates) =
+            session::failover(&roster(&cat_seen).0, "Cat-client", &session)
+        else {
+            panic!("Cat should follow Bob")
+        };
+        assert_eq!(candidates[0].port, port);
+        let cat2 = TogetherClient::connect_with(
+            &candidates[0],
+            ClientOptions::ours("Cat", "Cat-client", None),
+        )
+        .unwrap();
+        let joined = wait_server(&new, |e| match e {
+            ServerEvent::Joined(p) => Some(p),
+            ServerEvent::JoinRequested(p) => panic!("{} should be trusted", p.name),
+            _ => None,
+        });
+        assert_eq!(joined.name, "Cat");
+        // The room goes on from where it was: the position extrapolated by Bob's clock.
+        let clock = bob.clock();
+        let at = sync::target_position_ms(&bob_room, Some(clock), bob.elapsed_ms());
+        assert!(at >= 61_000);
+        new.broadcast_room_state(RoomState {
+            position_ms: at,
+            ..bob_room.clone()
+        });
+        let mut seen = Vec::new();
+        let got = wait_event(&cat2, &mut seen, |e| match e {
+            ClientEvent::RoomState(s) => Some(s.clone()),
+            _ => None,
+        });
+        assert_eq!(got.queue, mid_song().queue);
+        assert!(got.is_playing && got.current_index == 1);
+        assert!(got.position_ms >= 61_000);
+        drop((bob, cat));
+    }
+
+    /// Doubled requests over the wire: Bob and Cat both skip song "b" and both seek
+    /// it; the host's sequencer skips once and keeps the newest seek. A plain protocol
+    /// guest (as ArchiveTune's) in the same room still controls (no stamps).
+    #[test]
+    fn simultaneous_skips_collapse_and_the_newest_seek_wins() {
+        let (ann, bob, cat, _, _) = friends_session(false);
+        let plain = TogetherClient::connect(&join(&ann, ann.session_key()), "Dee", "dee").unwrap();
+        let p = wait_server(&ann, |e| match e {
+            ServerEvent::JoinRequested(p) => Some(p),
+            _ => None,
+        });
+        ann.approve(&p.id, true);
+        wait_for(|| plain.participant_id());
+        // Not in the roster: an old guest can't take over.
+        assert!(ann.successors().iter().all(|s| s.name != "Dee"));
+        let b_meta = bob.intent(Some("bbbbbbbbbbb".into()), Some(11));
+        let c_meta = cat.intent(Some("bbbbbbbbbbb".into()), Some(11));
+        assert!(bob.request_control_with(ControlAction::SkipNext, Some(b_meta)));
+        assert!(cat.request_control_with(ControlAction::SkipNext, Some(c_meta)));
+        let seek_old = IntentMeta {
+            at_ms: 100,
+            ..bob.intent(Some("ccccccccccc".into()), None)
+        };
+        let seek_new = IntentMeta {
+            at_ms: 200,
+            ..cat.intent(Some("ccccccccccc".into()), None)
+        };
+        let mut events = Vec::new();
+        wait_for(|| {
+            events.extend(ann.poll_events().into_iter().filter_map(|e| match e {
+                ServerEvent::Control {
+                    action,
+                    intent,
+                    participant,
+                } => Some((participant.name, action, intent)),
+                _ => None,
+            }));
+            (events.len() >= 2).then_some(())
+        });
+        // The host plays "b"; the first skip moves it on to "c", the second is dropped.
+        let mut seq = Sequencer::default();
+        let mut playing = Playing {
+            track_id: Some("bbbbbbbbbbb".into()),
+            uid: Some(11),
+        };
+        let mut skips = 0;
+        for (_, action, intent) in &events {
+            if seq.admit(action, intent.as_ref(), &playing, ann.elapsed_ms()) {
+                skips += 1;
+                playing = Playing {
+                    track_id: Some("ccccccccccc".into()),
+                    uid: Some(12),
+                };
+            }
+        }
+        assert_eq!(skips, 1, "{events:?}");
+        // Cat's seek (asked later) arrives first; Bob's older one after it is dropped.
+        assert!(cat.request_control_with(
+            ControlAction::SeekTo {
+                position_ms: 90_000
+            },
+            Some(seek_new)
+        ));
+        let first = wait_server(&ann, |e| match e {
+            ServerEvent::Control { action, intent, .. } => Some((action, intent)),
+            _ => None,
+        });
+        assert!(bob.request_control_with(
+            ControlAction::SeekTo {
+                position_ms: 30_000
+            },
+            Some(seek_old)
+        ));
+        let second = wait_server(&ann, |e| match e {
+            ServerEvent::Control { action, intent, .. } => Some((action, intent)),
+            _ => None,
+        });
+        assert!(seq.admit(&first.0, first.1.as_ref(), &playing, ann.elapsed_ms()));
+        assert!(!seq.admit(&second.0, second.1.as_ref(), &playing, ann.elapsed_ms()));
+        // The plain guest controls without stamps (allowed by the Friends room).
+        assert!(plain.request_control(ControlAction::Pause));
+        let (action, intent) = wait_server(&ann, |e| match e {
+            ServerEvent::Control {
+                action,
+                intent,
+                participant,
+            } if participant.name == "Dee" => Some((action, intent)),
+            _ => None,
+        });
+        assert_eq!((action, intent), (ControlAction::Pause, None));
+    }
+
+    /// Who may do what, enforced by the server per mode: queue edits and mode switches
+    /// only in a Friends session (a jump also with playback control); switching the
+    /// mode changes it for everyone, and older guests see the `allow_guests_*` it implies.
+    #[test]
+    fn modes_decide_what_guests_may_do() {
+        let server = TogetherServer::start(
+            0,
+            new_id(),
+            new_id(),
+            "Ann".into(),
+            SessionMode::Host.apply(RoomSettings::default()),
+        )
+        .unwrap();
+        let key = server.session_key().to_owned();
+        let bob = ours(&server, &key, "Bob", None);
+        let plain = TogetherClient::connect(&join(&server, &key), "Dee", "dee").unwrap();
+        wait_for(|| bob.participant_id());
+        wait_for(|| plain.participant_id());
+        let mut seen = Vec::new();
+        let refused = |client: &TogetherClient, seen: &mut Vec<ClientEvent>| {
+            wait_event(client, seen, |e| match e {
+                ClientEvent::ServerError { code: Some(c), .. } if c == "not_allowed" => Some(()),
+                _ => None,
+            });
+            seen.clear();
+        };
+        // Host mode, no control: no clearing, no jumps, no mode switch, no skips; a
+        // song of their own may be removed (adds are on: the host app checks it is
+        // theirs, by the owner key of the guest's client id).
+        assert!(bob.request_queue(
+            QueueOp::Clear {
+                part: ClearPart::All
+            },
+            None
+        ));
+        refused(&bob, &mut seen);
+        assert!(bob.request_queue(QueueOp::Jump { uid: 1 }, None));
+        refused(&bob, &mut seen);
+        assert!(bob.request_mode(SessionMode::Friends));
+        refused(&bob, &mut seen);
+        assert!(bob.request_control(ControlAction::SkipNext));
+        refused(&bob, &mut seen);
+        assert!(bob.request_queue(QueueOp::Remove { uid: 1 }, None));
+        let (op, who) = wait_server(&server, |e| match e {
+            ServerEvent::Queue {
+                op, participant, ..
+            } => Some((op, participant)),
+            _ => None,
+        });
+        assert_eq!(op, QueueOp::Remove { uid: 1 });
+        assert_eq!(
+            server.owner_key(&who.id),
+            Some(session::owner_key("Bob-client"))
+        );
+        // The host app turns down a song that isn't Bob's: he hears it.
+        server.refuse(&who.id, "edit the queue");
+        refused(&bob, &mut seen);
+        // No songs from guests: not even their own.
+        server.update_settings(RoomSettings {
+            allow_guests_to_add_tracks: false,
+            ..server.settings()
+        });
+        assert!(bob.request_queue(QueueOp::Move { uid: 1, to_uid: 2 }, None));
+        refused(&bob, &mut seen);
+        // With control: a jump (playback) and any queue edit, but no lists for all.
+        server.update_settings(RoomSettings {
+            allow_guests_to_control_playback: true,
+            ..server.settings()
+        });
+        assert!(bob.request_queue(QueueOp::Jump { uid: 7 }, None));
+        assert!(bob.request_queue(
+            QueueOp::Clear {
+                part: ClearPart::Queued
+            },
+            None
+        ));
+        let mut ops = Vec::new();
+        wait_for(|| {
+            ops.extend(server.poll_events().into_iter().filter_map(|e| match e {
+                ServerEvent::Queue { op, .. } => Some(op),
+                _ => None,
+            }));
+            (ops.len() >= 2).then_some(())
+        });
+        assert_eq!(ops[0], QueueOp::Jump { uid: 7 });
+        assert!(bob.request_queue(
+            QueueOp::PlayNow {
+                track: track("eeeeeeeeeee")
+            },
+            None
+        ));
+        refused(&bob, &mut seen);
+        // DJ: songs yes (approval when asked for), control no.
+        server.update_settings(SessionMode::Dj.apply(server.settings()));
+        assert!(bob.request_control(ControlAction::Play));
+        refused(&bob, &mut seen);
+        assert!(bob.request_add_track(track("ddddddddddd"), AddTrackMode::AddToQueue));
+        wait_server(&server, |e| {
+            matches!(e, ServerEvent::AddTrack { .. }).then_some(())
+        });
+        // DJ: his own songs (checked by the host app), never a clear.
+        assert!(bob.request_queue(QueueOp::Remove { uid: 4 }, None));
+        wait_server(&server, |e| {
+            matches!(e, ServerEvent::Queue { .. }).then_some(())
+        });
+        assert!(bob.request_queue(
+            QueueOp::Clear {
+                part: ClearPart::List
+            },
+            None
+        ));
+        refused(&bob, &mut seen);
+        // Friends: everything; the mode is on the wire for this app, and an older guest
+        // sees "may control, may add".
+        server.update_settings(SessionMode::Friends.apply(server.settings()));
+        server.broadcast_room_state(mid_song());
+        let room = wait_event(&plain, &mut seen, |e| match e {
+            ClientEvent::RoomState(s) => Some(s.clone()),
+            _ => None,
+        });
+        assert!(
+            room.settings.allow_guests_to_control_playback
+                && room.settings.allow_guests_to_add_tracks
+        );
+        assert_eq!(room.settings.mode, SessionMode::Friends);
+        seen.clear();
+        assert!(bob.request_queue(
+            QueueOp::Move {
+                uid: 12,
+                to_uid: 10
+            },
+            None
+        ));
+        assert!(bob.request_mode(SessionMode::Dj));
+        assert!(bob.request_kick("someone", false));
+        let mut got = Vec::new();
+        wait_for(|| {
+            got.extend(server.poll_events().into_iter().filter_map(|e| match e {
+                ServerEvent::Queue { op, .. } => Some(format!("{op:?}")),
+                ServerEvent::ModeRequest { mode, .. } => Some(format!("{mode:?}")),
+                ServerEvent::KickRequest { target_id, .. } => Some(target_id),
+                _ => None,
+            }));
+            (got.len() >= 3).then_some(())
+        });
+        assert_eq!(got, ["Move { uid: 12, to_uid: 10 }", "Dj", "someone"]);
+    }
+
+    /// Reactions: rate-limited per person on the host, passed on with the name to this
+    /// app's other guests (never back to the sender, never to older guests); notes
+    /// reach this app's guests.
+    #[test]
+    fn reactions_and_notes_reach_the_others_within_limits() {
+        let (ann, bob, cat, _, _) = friends_session(false);
+        let plain = TogetherClient::connect(&join(&ann, ann.session_key()), "Dee", "dee").unwrap();
+        let p = wait_server(&ann, |e| match e {
+            ServerEvent::JoinRequested(p) => Some(p),
+            _ => None,
+        });
+        ann.approve(&p.id, true);
+        wait_for(|| plain.participant_id());
+        for _ in 0..8 {
+            assert!(bob.send_reaction("fire", Some("bbbbbbbbbbb")));
+        }
+        assert!(bob.send_reaction("not-a-reaction", None));
+        // The host shows four (the burst), and so does Cat.
+        let mut host_got = 0;
+        let mut cat_got = Vec::new();
+        let deadline = Instant::now() + Duration::from_secs(2);
+        while Instant::now() < deadline {
+            host_got += ann
+                .poll_events()
+                .into_iter()
+                .filter(|e| matches!(e, ServerEvent::Reaction { .. }))
+                .count();
+            cat_got.extend(cat.poll_events().into_iter().filter_map(|e| match e {
+                ClientEvent::Reaction { name, emoji, .. } => Some((name, emoji)),
+                _ => None,
+            }));
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        assert_eq!(host_got, 4);
+        assert_eq!(cat_got.len(), 4);
+        assert_eq!(cat_got[0], ("Bob".to_owned(), "fire".to_owned()));
+        assert!(
+            bob.poll_events()
+                .iter()
+                .all(|e| !matches!(e, ClientEvent::Reaction { .. }))
+        );
+        // The host's own reaction and a note reach Bob and Cat, not the older guest.
+        ann.broadcast_reaction("heart", None);
+        ann.broadcast_note(&ann.host_participant(), NoteKind::Skipped, 1, None);
+        let mut seen = Vec::new();
+        let note = wait_event(&cat, &mut seen, |e| match e {
+            ClientEvent::Note { name, note, .. } => Some((name.clone(), *note)),
+            _ => None,
+        });
+        assert_eq!(note, ("Ann".to_owned(), NoteKind::Skipped));
+        assert!(
+            seen.iter()
+                .any(|e| matches!(e, ClientEvent::Reaction { emoji, .. } if emoji == "heart"))
+        );
+        std::thread::sleep(Duration::from_millis(200));
+        assert!(plain.poll_events().iter().all(|e| !matches!(
+            e,
+            ClientEvent::Reaction { .. } | ClientEvent::Note { .. } | ClientEvent::Roster { .. }
+        )));
+    }
+
+    /// A late joiner lands where the room is now: the host stamps its position, the
+    /// guest's clock converges, and the target is the position plus the state's age.
+    #[test]
+    fn a_late_joiner_lands_at_the_rooms_position() {
+        let server =
+            TogetherServer::start(0, new_id(), new_id(), "Ann".into(), RoomSettings::default())
+                .unwrap();
+        let key = server.session_key().to_owned();
+        // The host has been playing since "start" (position = time since).
+        let start = Instant::now();
+        let position = || 40_000 + start.elapsed().as_millis() as u64;
+        std::thread::sleep(Duration::from_millis(600));
+        let late = ours(&server, &key, "Late", None);
+        wait_for(|| late.participant_id());
+        let mut room = None;
+        let mut seen = Vec::new();
+        wait_for(|| {
+            server.broadcast_room_state(RoomState {
+                position_ms: position(),
+                ..mid_song()
+            });
+            std::thread::sleep(Duration::from_millis(50));
+            seen.extend(late.poll_events());
+            room = seen.iter().rev().find_map(|e| match e {
+                ClientEvent::RoomState(s) => Some(s.clone()),
+                _ => None,
+            });
+            (room.is_some() && late.clock().samples >= 3).then_some(())
+        });
+        // A moment later (the state ages), the guest aims at the host's position now.
+        std::thread::sleep(Duration::from_millis(300));
+        let target = sync::target_position_ms(
+            room.as_ref().unwrap(),
+            Some(late.clock()),
+            late.elapsed_ms(),
+        );
+        let now = position();
+        assert!(target.abs_diff(now) < 120, "target {target} vs host {now}");
+        assert!(target >= 40_600);
     }
 }

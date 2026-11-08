@@ -154,3 +154,11 @@ settings.cast.note = Przesyłanie odtwarza kolejkę na urządzeniu Chromecast, G
 
 # ---- Queue sections & tabs, multi-select, logs, Together suggestions, devices
 settings.together.approve_suggestions_desc = Utwory gości czekają na stronie „Słuchaj razem”, aż je zatwierdzisz lub odrzucisz.
+
+# ---- Music Together: session modes, activity notes, joining friends' sessions
+settings.together.default_mode = Tryb nowych sesji
+settings.together.default_mode_desc = Tryb, który „Zacznij słuchać razem” wybiera na początku (można go tam zmienić). Grupy znajomych mają własny, domyślnie Znajomi.
+settings.together.activity_notes = Notatki o aktywności
+settings.together.activity_notes_desc = Dyskretne notatki obok słuchaczy na pasku odtwarzacza: „Ana pomija utwór”, „Sam dodaje 3 utwory”.
+settings.together.auto_join = Dołączaj automatycznie, gdy znajomy zaczyna
+settings.together.auto_join_desc = Do sesji grupy znajomych dołączasz bez pytania, chyba że już jesteś w jakiejś sesji.

@@ -64,6 +64,7 @@ queue.empty.hint = Adicione músicas com “Tocar a seguir” ou “Adicionar à
 queue.tooltip.clear_up_next = Limpar a seguir
 queue.tooltip.close = Fechar (Esc)
 queue.tooltip.move_up = Mover para cima
+queue.menu.remove = Remover da fila
 queue.tooltip.move_down = Mover para baixo
 
 # ---- Song rows and the song context menu
