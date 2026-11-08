@@ -369,7 +369,8 @@ pub(super) fn render(
                             ),
                     ),
             )
-            .child(members);
+            .child(members)
+            .child(group_mode_row(gx, &gid, prefs.group_mode(&gid), cx));
         if let Some(offer) = shown {
             let link = offer.link.to_invite_link();
             let copy = link.clone();
@@ -593,4 +594,47 @@ pub(super) fn render(
         .child(groups)
         .child(recovery)
         .into_any_element()
+}
+
+/// A group's "Listen together" mode (what its sessions start in; kept on this device).
+fn group_mode_row(
+    gx: usize,
+    group: &str,
+    current: music_core::together::SessionMode,
+    cx: &mut gpui::Context<SettingsPanel>,
+) -> impl gpui::IntoElement {
+    use music_core::together::SessionMode;
+    let mut buttons = h_flex().gap_1().flex_wrap();
+    for (mx, mode) in SessionMode::ALL.into_iter().enumerate() {
+        let selected = mode == current;
+        let group = group.to_owned();
+        buttons = buttons.child(
+            Button::new(("friends-group-mode", gx * 10 + mx))
+                .xsmall()
+                .map(|b| if selected { b.primary() } else { b.outline() })
+                .icon(crate::integrations::together_ui::mode_icon(mode))
+                .label(crate::integrations::together::mode_name(mode))
+                .tooltip(crate::integrations::together_ui::mode_description(mode))
+                .on_click(cx.listener(move |p, _, _, cx| {
+                    let group = group.clone();
+                    p.set_friends_prefs(
+                        |f| {
+                            f.group_modes.insert(group, mode);
+                        },
+                        cx,
+                    );
+                })),
+        );
+    }
+    h_flex()
+        .gap_2()
+        .flex_wrap()
+        .anchor("friends.group_mode")
+        .child(
+            div()
+                .text_xs()
+                .text_color(cx.theme().muted_foreground)
+                .child(t!("settings.friends.group_mode")),
+        )
+        .child(buttons)
 }

@@ -1,32 +1,44 @@
 //! Music Together in the app: hosting on the LAN or through a relay (server +
 //! room-state broadcast from the queue and the player, guests' requests applied to
-//! the local player), joining (following the host's room state with `GuestSync`;
-//! "Play next" / "Add to queue" become suggestions to the host), and handing the
-//! host role to a guest (the guest starts its own server with the room's state,
-//! everyone reconnects to it, the old host rejoins as a guest).
+//! the local player), joining (following the host's room state with `GuestSync`),
+//! and handing the host role to a guest (the guest starts its own server with the
+//! room's state, everyone reconnects to it, the old host rejoins as a guest).
+//!
+//! On top of that (`music_core::together::session`): the session's mode (Host,
+//! Friends, DJ: [`SessionMode`]), which decides who may control playback and edit the
+//! queue; what anyone does on any control surface reaching the session as an intent
+//! (`together_route.rs`); who queued each song (attribution); activity notes and
+//! reactions (`together_ui.rs` draws them); and Friends sessions that go on when the
+//! device they run on leaves (a planned hand-over to the next of this app's guests,
+//! or, when it vanishes, a fail-over by the roster it sent).
 
-use std::collections::VecDeque;
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::PathBuf;
 use std::sync::Mutex;
 use std::time::{Duration, Instant, SystemTime};
 
-use gpui::{AnyElement, Context, IntoElement as _, ParentElement as _, Window};
-use gpui_component::{Sizable as _, tag::Tag};
+use gpui::{Context, Window};
 use music_core::together::online::{self, RelaySource};
+use music_core::together::session::{self as rules, FAILOVER_WAIT, Permissions, permissions};
 use music_core::together::{
-    AddTrackMode, ClientEvent, CodeError, ControlAction, GuestSync, HostOptions, JoinInfo,
-    JoinRequest, LeavePlan, LocalPlayback, Participant, RoomSettings, RoomState, ServerEvent,
-    SuggestionState, TogetherClient, TogetherServer, TogetherTrack, display_code, is_shareable_id,
-    leave_plan, local_ip, new_id, normalize_code, sync, sync::BROADCAST_INTERVAL_MS,
+    AddTrackMode, ClientEvent, ClientOptions, CodeError, Failover, GuestSync, HOST_ID, HOST_LEFT,
+    HostOptions, JoinInfo, JoinRequest, LeavePlan, LocalPlayback, NoteFeed, NoteKind, Participant,
+    RateLimit, RoomSettings, RoomState, Sequencer, ServerEvent, SessionMode, Successor,
+    SuggestionState, TogetherClient, TogetherServer, TogetherTrack, display_code, leave_plan,
+    local_ip, new_id, normalize_code, sync, sync::BROADCAST_INTERVAL_MS,
 };
 use music_core::{PlaybackState, PlaybackStatus, Track};
 
 use super::config::HostMode;
 use crate::app::{MusicApp, notify};
-use crate::queue::Repeat;
+use crate::queue::{QueueContext, Repeat, Source};
 use crate::util::off_thread;
 
 const LOG_LINES: usize = 40;
+/// Reactions on screen at once (older ones go first).
+const REACTIONS_SHOWN: usize = 6;
+/// How long a reaction stays up.
+pub const REACTION_SHOW: Duration = Duration::from_millis(2_600);
 
 pub struct HostSession {
     pub server: TogetherServer,
@@ -41,10 +53,25 @@ pub struct HostSession {
     pub code: Option<String>,
     /// Why the session isn't what was asked for (the relay was unreachable).
     pub notice: Option<String>,
+    /// This session's room settings, mode included (Settings → Music Together holds
+    /// the defaults for new sessions; a session taken over keeps the room's).
+    pub room: RoomSettings,
+    /// Puts everyone's requests in one order (doubled skips, the newest seek).
+    pub(super) sequencer: Sequencer,
+    /// Queue slot → who put it there (or started the list it belongs to).
+    pub added_by: HashMap<u64, String>,
+    /// Who started the list after the queued songs (its refills are theirs too).
+    pub(super) context_by: Option<String>,
+    /// The friend group this session is for: only its members got the link (no
+    /// room code, no link to copy).
+    pub group: Option<String>,
+    /// Leaving a Friends session: the successors (participant ids) still to try,
+    /// one at a time; the session goes on with the first that takes over.
+    pub leaving: Option<VecDeque<String>>,
 }
 
 impl HostSession {
-    fn new(server: TogetherServer, join: JoinInfo) -> Self {
+    fn new(server: TogetherServer, join: JoinInfo, room: RoomSettings) -> Self {
         Self {
             server,
             join,
@@ -53,12 +80,23 @@ impl HostSession {
             pending_seek: None,
             code: None,
             notice: None,
+            room,
+            sequencer: Sequencer::default(),
+            added_by: HashMap::new(),
+            context_by: None,
+            group: None,
+            leaving: None,
         }
     }
 
     /// The join link to share (with the room code, when there is one).
     pub fn link(&self) -> String {
         self.join.to_link_with_code(self.code.as_deref())
+    }
+
+    /// The link sent to friends (the mode rides along; older versions ignore it).
+    pub fn friends_link(&self) -> String {
+        format!("{}&mode={}", self.link(), self.room.mode.key())
     }
 }
 
@@ -180,22 +218,37 @@ pub(crate) struct Hosted {
 
 /// Starts a session: through the relay when `relay_setting` is `Some` (the
 /// user's relay setting, see [`relay_for`]) and it answers within a few seconds,
-/// else (or on any relay failure) on the LAN at `port`. Blocking.
+/// else (or on any relay failure) on the LAN at `port`. `code`: ask the relay for a
+/// room code (not for a friend group's session). Blocking.
 pub(crate) fn host_blocking(
     relay_setting: Option<&str>,
     port: u16,
     name: String,
     room: RoomSettings,
+    code: bool,
 ) -> music_core::Result<Hosted> {
     let mut fallback = None;
     if let Some(setting) = relay_setting {
-        match host_relayed(setting, name.clone(), room) {
+        match host_relayed(setting, name.clone(), room, code) {
             Ok(hosted) => return Ok(hosted),
             Err(failure) => fallback = Some(failure),
         }
     }
     let (session_id, session_key) = (new_id(), new_id());
-    let server = TogetherServer::start(port, session_id.clone(), session_key.clone(), name, room)?;
+    let server = TogetherServer::start(
+        port,
+        session_id.clone(),
+        session_key.clone(),
+        name.clone(),
+        room,
+    )
+    .or_else(|e| {
+        // The port is taken (another session on this computer): any free one.
+        if port == 0 {
+            return Err(e);
+        }
+        TogetherServer::start(0, session_id.clone(), session_key.clone(), name, room).map_err(|_| e)
+    })?;
     let join = lan_join(&server, session_id, session_key);
     Ok(Hosted {
         server,
@@ -206,7 +259,12 @@ pub(crate) fn host_blocking(
     })
 }
 
-fn host_relayed(setting: &str, name: String, room: RoomSettings) -> Result<Hosted, RelayFailure> {
+fn host_relayed(
+    setting: &str,
+    name: String,
+    room: RoomSettings,
+    code: bool,
+) -> Result<Hosted, RelayFailure> {
     let Some((relay, _)) = relay_for(setting) else {
         return Err(RelayFailure {
             relay: String::new(),
@@ -230,9 +288,13 @@ fn host_relayed(setting: &str, name: String, room: RoomSettings) -> Result<Hoste
         HostOptions::default(),
     )
     .map_err(|e| fail(e.to_string()))?;
-    let (code, code_error) = match server.register_code(CODE_TIMEOUT) {
-        Ok(code) => (Some(code), None),
-        Err(e) => (None, Some(e)),
+    let (code, code_error) = if code {
+        match server.register_code(CODE_TIMEOUT) {
+            Ok(code) => (Some(code), None),
+            Err(e) => (None, Some(e)),
+        }
+    } else {
+        (None, None)
     };
     Ok(Hosted {
         server,
@@ -241,6 +303,15 @@ fn host_relayed(setting: &str, name: String, room: RoomSettings) -> Result<Hoste
         code_error,
         fallback: None,
     })
+}
+
+/// Who takes a Friends session over, as the host last said ([`ClientEvent::Roster`]).
+#[derive(Debug, Clone, Default)]
+pub struct Roster {
+    pub successors: Vec<Successor>,
+    pub trusted: Vec<String>,
+    pub banned: Vec<String>,
+    pub relay_secret: Option<String>,
 }
 
 pub struct GuestSession {
@@ -255,10 +326,41 @@ pub struct GuestSession {
     pub taking_over: bool,
     /// Songs this guest suggested and what became of them, newest last.
     pub suggestions: VecDeque<SentSuggestion>,
+    /// This guest's participant id (from the welcome).
+    pub me: Option<String>,
+    /// Who carries a Friends session on if the host goes.
+    pub roster: Option<Roster>,
+    /// The friend group this session is for (joined from a friend's invitation).
+    pub group: Option<String>,
+    /// Told the person which mode the session is in (once, at the first room state).
+    greeted: bool,
 }
 
-/// Suggestions a guest keeps track of.
-const SUGGESTIONS_SHOWN: usize = 12;
+impl GuestSession {
+    fn new(client: TogetherClient, join: JoinInfo, group: Option<String>) -> Self {
+        Self {
+            client,
+            join,
+            pending: false,
+            room: None,
+            sync: GuestSync::default(),
+            pending_seek: None,
+            taking_over: false,
+            suggestions: VecDeque::new(),
+            me: None,
+            roster: None,
+            group,
+            greeted: false,
+        }
+    }
+
+    /// Holds the room's corrections back a moment after this guest acted on its own
+    /// player (a play / pause or seek it also asked the host for).
+    pub(super) fn hold_sync(&mut self) {
+        let now = self.client.elapsed_ms();
+        self.sync.hold(now);
+    }
+}
 
 /// A song a guest suggested.
 #[derive(Clone, Debug, PartialEq)]
@@ -298,6 +400,17 @@ impl SentState {
     }
 }
 
+/// A Friends session whose device went away: this guest reconnects to the next one
+/// in line, or takes it over (see `music_core::together::session::failover`).
+pub struct Recovery {
+    /// The room as it last was (queue, track, settings).
+    pub room: RoomState,
+    pub roster: Roster,
+    pub join: JoinInfo,
+    pub group: Option<String>,
+    pub since: Instant,
+}
+
 #[derive(Default)]
 pub enum Role {
     #[default]
@@ -306,6 +419,29 @@ pub enum Role {
     /// Connecting to a host, or registering with a relay (the address shown).
     Joining(String),
     Guest(Box<GuestSession>),
+    /// Carrying a Friends session on after its device went (playback goes on here).
+    Recovering(Box<Recovery>),
+}
+
+/// A reaction on screen.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ShownReaction {
+    /// Unique per run (the animation's element id).
+    pub id: u64,
+    pub who: String,
+    /// One of `music_core::together::REACTIONS`.
+    pub emoji: String,
+    pub at: Instant,
+}
+
+/// How a session starts ("Start listening together", a friend group's "Listen
+/// together", scripts).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StartOptions {
+    pub mode: SessionMode,
+    /// Only this friend group's members get the link.
+    pub group: Option<String>,
+    pub network: HostMode,
 }
 
 #[derive(Default)]
@@ -314,10 +450,27 @@ pub struct TogetherState {
     pub error: Option<String>,
     /// Recent events (joins, suggestions, …), newest last.
     pub log: VecDeque<String>,
+    /// Quiet activity notes for the listeners chip.
+    pub notes: NoteFeed,
+    /// The note last drawn (to redraw when the feed moves on).
+    pub(super) note_shown: Option<(String, NoteKind, u32, Option<String>)>,
+    pub reactions: VecDeque<ShownReaction>,
+    pub(super) reaction_ids: u64,
+    /// This person's own reactions (rate-limited before they go out).
+    pub(super) my_reactions: Option<RateLimit>,
+    /// A "you can't do that here" hint waiting for the poll (which has the window),
+    /// and when each kind was last shown (at most one per kind per while).
+    pub(super) pending_hint: Option<(super::together_route::Block, String)>,
+    pub(super) hints_shown: HashMap<super::together_route::Block, Instant>,
+    /// Toasts from places without the window (the poll shows them).
+    pub(super) toasts: Vec<String>,
+    /// The listeners chip's session panel is open (and its mode picker).
+    pub panel_open: bool,
+    pub mode_picker: bool,
 }
 
 impl TogetherState {
-    fn log(&mut self, line: String) {
+    pub(super) fn log(&mut self, line: String) {
         self.log.push_back(line);
         while self.log.len() > LOG_LINES {
             self.log.pop_front();
@@ -332,17 +485,144 @@ impl TogetherState {
                 .as_ref()
                 .map(|r| r.participants.clone())
                 .unwrap_or_default(),
+            Role::Recovering(r) => r.room.participants.clone(),
             _ => Vec::new(),
+        }
+    }
+
+    /// In a session (hosting, or admitted as a guest), not just connecting.
+    pub fn in_session(&self) -> bool {
+        matches!(
+            self.role,
+            Role::Hosting(_) | Role::Guest(_) | Role::Recovering(_)
+        )
+    }
+
+    /// The session's room settings, as this side knows them.
+    pub fn room_settings(&self) -> Option<RoomSettings> {
+        match &self.role {
+            Role::Hosting(host) => Some(host.room),
+            Role::Guest(guest) => guest.room.as_ref().map(|r| r.settings),
+            Role::Recovering(r) => Some(r.room.settings),
+            _ => None,
+        }
+    }
+
+    pub fn mode(&self) -> Option<SessionMode> {
+        self.room_settings().map(|s| s.mode)
+    }
+
+    /// What this person may do in the session (`None`: not in one).
+    pub fn permissions(&self) -> Option<Permissions> {
+        match &self.role {
+            Role::Hosting(_) | Role::Recovering(_) => {
+                self.room_settings().map(|s| permissions(&s, true))
+            }
+            Role::Guest(guest) if guest.pending => Some(Permissions::default()),
+            Role::Guest(guest) => Some(
+                guest
+                    .room
+                    .as_ref()
+                    .map_or_else(Permissions::default, |r| permissions(&r.settings, false)),
+            ),
+            _ => None,
+        }
+    }
+
+    /// The host's name (the one who controls a Host or DJ session).
+    pub fn host_name(&self) -> Option<String> {
+        self.participants()
+            .into_iter()
+            .find(|p| p.is_host)
+            .map(|p| p.name)
+    }
+
+    /// The friend group the session is for.
+    pub fn group(&self) -> Option<&str> {
+        match &self.role {
+            Role::Hosting(host) => host.group.as_deref(),
+            Role::Guest(guest) => guest.group.as_deref(),
+            Role::Recovering(r) => r.group.as_deref(),
+            _ => None,
+        }
+    }
+
+    /// This side's own participant id (`host` when hosting).
+    pub fn me(&self) -> Option<String> {
+        match &self.role {
+            Role::Hosting(_) => Some(HOST_ID.into()),
+            Role::Guest(guest) => guest.me.clone(),
+            _ => None,
+        }
+    }
+
+    /// Who queued the song in slot `uid` (sessions only).
+    pub fn added_by(&self, uid: u64) -> Option<&str> {
+        match &self.role {
+            Role::Hosting(host) => host.added_by.get(&uid).map(String::as_str),
+            Role::Guest(guest) => guest
+                .room
+                .as_ref()?
+                .queue
+                .iter()
+                .find(|t| t.uid == Some(uid))?
+                .added_by
+                .as_deref(),
+            _ => None,
+        }
+    }
+
+    /// A reaction to show (someone else's, or this person's own).
+    pub(super) fn show_reaction(&mut self, who: String, emoji: String) {
+        self.reaction_ids += 1;
+        self.reactions.push_back(ShownReaction {
+            id: self.reaction_ids,
+            who,
+            emoji,
+            at: Instant::now(),
+        });
+        while self.reactions.len() > REACTIONS_SHOWN {
+            self.reactions.pop_front();
         }
     }
 }
 
-fn repeat_code(repeat: Repeat) -> u8 {
+pub(super) fn repeat_code(repeat: Repeat) -> u8 {
     match repeat {
         Repeat::Off => 0,
         Repeat::One => 1,
         Repeat::All => 2,
     }
+}
+
+pub(super) fn repeat_of(code: u8) -> Repeat {
+    match code {
+        1 => Repeat::One,
+        2 => Repeat::All,
+        _ => Repeat::Off,
+    }
+}
+
+/// The room's queue as the local queue's items: slots, parts and the track.
+fn mirror_items(room: &RoomState) -> Vec<(Option<u64>, Track, Source)> {
+    room.queue
+        .iter()
+        .map(|t| {
+            let source = if t.queued {
+                Source::User
+            } else {
+                Source::Context
+            };
+            (t.uid, t.to_track(), source)
+        })
+        .collect()
+}
+
+fn mirror_context(room: &RoomState) -> Option<QueueContext> {
+    room.context_name.as_ref().map(|name| QueueContext {
+        name: name.clone(),
+        radio: room.context_radio,
+    })
 }
 
 impl MusicApp {
@@ -352,23 +632,48 @@ impl MusicApp {
 
     // ---- hosting ---------------------------------------------------------------------
 
-    /// "Host a session" as the settings say: through the relay (falling back to
-    /// the LAN when it can't be reached) or straight on the LAN.
-    pub fn together_host_session(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        match self.settings.read(cx).settings().together.host_mode {
-            HostMode::Relay => self.together_host_relay(window, cx, |_, _| {}),
+    /// Starts a session with `options`; `on_ready` gets the join link and the room
+    /// code once it is up.
+    pub fn together_start(
+        &mut self,
+        options: StartOptions,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+        on_ready: impl FnOnce(&str, Option<&str>) + 'static,
+    ) {
+        match options.network {
+            HostMode::Relay => self.together_host_relay_with(options, window, cx, on_ready),
             HostMode::Direct => {
-                self.together_host(window, cx);
+                if let Some(link) = self.together_host_with(options, window, cx) {
+                    let code = None;
+                    on_ready(&link, code);
+                }
             }
         }
     }
 
     /// Starts a session on the LAN, on the configured port. Returns the join link.
     pub fn together_host(&mut self, window: &mut Window, cx: &mut Context<Self>) -> Option<String> {
-        self.together_leave(cx);
+        let mode = self.settings.read(cx).settings().together.last_mode;
+        let options = StartOptions {
+            mode,
+            group: None,
+            network: HostMode::Direct,
+        };
+        self.together_host_with(options, window, cx)
+    }
+
+    fn together_host_with(
+        &mut self,
+        options: StartOptions,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Option<String> {
+        self.together_stop(cx);
         let prefs = self.settings.read(cx).settings().together.clone();
-        let hosted = host_blocking(None, prefs.port, prefs.name(), prefs.room());
-        self.together_hosted(hosted, prefs.port, window, cx)
+        let room = prefs.room_for(options.mode);
+        let hosted = host_blocking(None, prefs.port, prefs.name(), room, false);
+        self.together_hosted(hosted, prefs.port, room, options.group, window, cx)
     }
 
     /// Starts a session through the relay (the user's, else `relay.txt`'s, else the
@@ -381,8 +686,24 @@ impl MusicApp {
         cx: &mut Context<Self>,
         on_ready: impl FnOnce(&str, Option<&str>) + 'static,
     ) {
+        let mode = self.settings.read(cx).settings().together.last_mode;
+        let options = StartOptions {
+            mode,
+            group: None,
+            network: HostMode::Relay,
+        };
+        self.together_host_relay_with(options, window, cx, on_ready);
+    }
+
+    fn together_host_relay_with(
+        &mut self,
+        options: StartOptions,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+        on_ready: impl FnOnce(&str, Option<&str>) + 'static,
+    ) {
         let prefs = self.settings.read(cx).settings().together.clone();
-        self.together_leave(cx);
+        self.together_stop(cx);
         let shown = relay_hint(&prefs.relay_url)
             .as_deref()
             .and_then(relay_host_name)
@@ -391,15 +712,14 @@ impl MusicApp {
         together.error = None;
         together.role = Role::Joining(shown);
         cx.notify();
+        let room = prefs.room_for(options.mode);
+        let group = options.group;
+        // A friend group's session has no room code: only the members get the link.
+        let code = group.is_none();
         cx.spawn_in(window, async move |this, cx| {
             let port = prefs.port;
             let hosted = off_thread(move || {
-                host_blocking(
-                    Some(&prefs.relay_url),
-                    prefs.port,
-                    prefs.name(),
-                    prefs.room(),
-                )
+                host_blocking(Some(&prefs.relay_url), prefs.port, prefs.name(), room, code)
             })
             .await;
             this.update_in(cx, |this, window, cx| {
@@ -407,7 +727,7 @@ impl MusicApp {
                     return; // cancelled meanwhile (dropping the server ends it)
                 }
                 this.integrations.together.role = Role::Idle;
-                if let Some(link) = this.together_hosted(hosted, port, window, cx) {
+                if let Some(link) = this.together_hosted(hosted, port, room, group, window, cx) {
                     let code = match &this.integrations.together.role {
                         Role::Hosting(host) => host.code.clone(),
                         _ => None,
@@ -425,6 +745,8 @@ impl MusicApp {
         &mut self,
         hosted: music_core::Result<Hosted>,
         port: u16,
+        room: RoomSettings,
+        group: Option<String>,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Option<String> {
@@ -448,8 +770,9 @@ impl MusicApp {
         if let Some(e) = &hosted.code_error {
             together.log(t!("together.log.no_code", error = e));
         }
-        let mut host = HostSession::new(hosted.server, hosted.join);
+        let mut host = HostSession::new(hosted.server, hosted.join, room);
         host.code = hosted.code;
+        host.group = group;
         let link = host.link();
         if host.join.is_relay() {
             together.log(t!("together.log.started_relay", relay = host.join.host));
@@ -466,25 +789,26 @@ impl MusicApp {
                 notify(window, cx, t!("together.toast.started"));
             }
         }
-        self.together_start_hosting(host, window, cx);
+        self.together_start_hosting(host, cx);
         Some(link)
     }
 
-    fn together_start_hosting(
-        &mut self,
-        host: HostSession,
-        _window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
+    fn together_start_hosting(&mut self, mut host: HostSession, cx: &mut Context<Self>) {
+        let name = self.settings.read(cx).settings().together.name();
+        // What is already in the queue is the host's.
+        host.context_by = Some(name);
         let together = &mut self.integrations.together;
         together.error = None;
+        together.notes.clear();
+        together.note_shown = None;
         together.role = Role::Hosting(Box::new(host));
         self.together_broadcast(true, cx);
+        self.together_session_changed(cx);
         cx.notify();
     }
 
     /// This app's id towards hosts (made on first use, saved).
-    fn together_client_id(&mut self, cx: &mut Context<Self>) -> String {
+    pub(super) fn together_client_id(&mut self, cx: &mut Context<Self>) -> String {
         self.settings.update(cx, |panel, cx| {
             let mut id = panel.settings().together.client_id.clone();
             if id.is_empty() {
@@ -521,17 +845,25 @@ impl MusicApp {
         cx.notify();
     }
 
+    /// The room's queue (current track first) with slots, parts and who queued each.
     fn room_track_list(&self) -> (Vec<TogetherTrack>, bool) {
-        let current = self.queue.current().and_then(TogetherTrack::from_track);
+        let added = match &self.integrations.together.role {
+            Role::Hosting(host) => Some(&host.added_by),
+            _ => None,
+        };
+        let make = |item: &crate::queue::QueueItem| {
+            TogetherTrack::from_track(&item.track).map(|mut t| {
+                t.uid = Some(item.uid);
+                t.queued = item.source == Source::User;
+                t.added_by = added.and_then(|a| a.get(&item.uid).cloned());
+                t
+            })
+        };
+        let current = self.queue.current_item().and_then(make);
         let current_ok = current.is_some();
         let tracks: Vec<TogetherTrack> = current
             .into_iter()
-            .chain(
-                self.queue
-                    .upcoming()
-                    .iter()
-                    .filter_map(|i| TogetherTrack::from_track(&i.track)),
-            )
+            .chain(self.queue.upcoming().iter().filter_map(make))
             .collect();
         (tracks, current_ok)
     }
@@ -551,6 +883,7 @@ impl MusicApp {
         } else {
             Duration::ZERO
         };
+        let context = self.queue.context();
         RoomState {
             queue: if current_ok { queue } else { Vec::new() },
             current_index: 0,
@@ -558,21 +891,51 @@ impl MusicApp {
             position_ms: position.as_millis() as u64,
             repeat_mode: repeat_code(self.queue.repeat()),
             shuffle_enabled: self.queue.shuffle(),
+            context_name: context.map(|c| c.name.clone()).filter(|n| !n.is_empty()),
+            context_radio: context.is_some_and(|c| c.radio),
             ..RoomState::default()
+        }
+    }
+
+    /// Gives songs that came into the queue without a name (the host's own adds, a
+    /// radio's refills) theirs: queued songs are the host's, the rest belongs to
+    /// whoever started the list. Forgets slots that left the queue.
+    fn together_attribute(&mut self, host_name: &str) {
+        let Role::Hosting(host) = &mut self.integrations.together.role else {
+            return;
+        };
+        let items: Vec<(u64, Source)> = self
+            .queue
+            .current_item()
+            .into_iter()
+            .chain(self.queue.upcoming())
+            .map(|i| (i.uid, i.source))
+            .collect();
+        let live: HashSet<u64> = items.iter().map(|(uid, _)| *uid).collect();
+        host.added_by.retain(|uid, _| live.contains(uid));
+        for (uid, source) in items {
+            host.added_by.entry(uid).or_insert_with(|| match source {
+                Source::User => host_name.to_owned(),
+                Source::Context => host
+                    .context_by
+                    .clone()
+                    .unwrap_or_else(|| host_name.to_owned()),
+            });
         }
     }
 
     /// Sends the room state if it changed (or `force`, or every 500 ms).
     pub(crate) fn together_broadcast(&mut self, force: bool, cx: &mut Context<Self>) {
+        let name = self.settings.read(cx).settings().together.name();
+        self.together_attribute(&name);
         let state = self.host_room_state();
-        let settings = self.settings.read(cx).settings().together.clone();
         let Role::Hosting(host) = &mut self.integrations.together.role else {
             return;
         };
-        if host.server.settings() != settings.room() {
-            host.server.update_settings(settings.room());
+        if host.server.settings() != host.room {
+            host.server.update_settings(host.room);
         }
-        host.server.set_host_name(&settings.name());
+        host.server.set_host_name(&name);
         let due = match &host.last {
             None => true,
             Some((last, at)) => {
@@ -580,6 +943,8 @@ impl MusicApp {
                     || last.is_playing != state.is_playing
                     || last.repeat_mode != state.repeat_mode
                     || last.shuffle_enabled != state.shuffle_enabled
+                    || last.settings != host.room
+                    || last.context_name != state.context_name
                     || last.position_ms.abs_diff(state.position_ms)
                         > at.elapsed().as_millis() as u64 + 1_000;
                 changed || at.elapsed() >= Duration::from_millis(BROADCAST_INTERVAL_MS)
@@ -591,57 +956,62 @@ impl MusicApp {
         }
     }
 
-    fn apply_control(&mut self, action: ControlAction, cx: &mut Context<Self>) {
-        let playing = self.playback.status == PlaybackStatus::Playing;
-        match action {
-            ControlAction::Play if !playing => self.toggle_playback(cx),
-            ControlAction::Pause if playing => self.toggle_playback(cx),
-            ControlAction::Play | ControlAction::Pause => {}
-            ControlAction::SeekTo { position_ms } => {
-                self.seek_to(Duration::from_millis(position_ms), cx)
-            }
-            ControlAction::SkipNext => self.next_track(cx),
-            ControlAction::SkipPrevious => self.previous_track(cx),
-            ControlAction::SeekToIndex { index, position_ms } => {
-                // The room's queue is the current track followed by the upcoming ones.
-                let (queue, _) = self.room_track_list();
-                if let Some(track) = queue.get(index) {
-                    let id = track.id.clone();
-                    self.jump_to_video(&id, position_ms, cx);
-                }
-            }
-            ControlAction::SeekToTrack {
-                track_id,
-                position_ms,
-            } => self.jump_to_video(&track_id, position_ms, cx),
-            ControlAction::SetRepeatMode { repeat_mode } => {
-                let repeat = match repeat_mode {
-                    1 => Repeat::One,
-                    2 => Repeat::All,
-                    _ => Repeat::Off,
-                };
-                self.set_repeat(repeat, cx);
-            }
-            ControlAction::SetShuffleEnabled { shuffle_enabled } => {
-                self.set_shuffle(shuffle_enabled, cx)
-            }
+    /// Host: changes this session's room settings (the page's switches; also kept
+    /// as the defaults for new Host-mode sessions).
+    pub fn together_set_room(&mut self, f: impl FnOnce(&mut RoomSettings), cx: &mut Context<Self>) {
+        let Role::Hosting(host) = &mut self.integrations.together.role else {
+            return;
+        };
+        let mut room = host.room;
+        f(&mut room);
+        // The mode decides what it decides (Friends: everyone controls, …).
+        host.room = room.mode.apply(room);
+        let room = host.room;
+        if room.mode == SessionMode::Host {
+            self.settings.update(cx, |panel, cx| {
+                panel.set_together(
+                    |t| {
+                        t.allow_guests_to_add_tracks = room.allow_guests_to_add_tracks;
+                        t.allow_guests_to_control_playback = room.allow_guests_to_control_playback;
+                        t.require_host_approval = room.require_host_approval_to_join;
+                        t.approve_suggestions = room.require_approval_for_suggestions;
+                    },
+                    cx,
+                )
+            });
+        } else {
+            self.settings.update(cx, |panel, cx| {
+                panel.set_together(
+                    |t| t.require_host_approval = room.require_host_approval_to_join,
+                    cx,
+                )
+            });
         }
+        self.together_broadcast(true, cx);
+        cx.notify();
     }
 
-    fn jump_to_video(&mut self, id: &str, position_ms: u64, cx: &mut Context<Self>) {
-        if self.queue.is_current(id) {
-            self.seek_to(Duration::from_millis(position_ms), cx);
+    /// An activity note: shown here (unless it is about this person, or notes are
+    /// off) and, when hosting, sent to this app's guests.
+    pub(super) fn together_note(
+        &mut self,
+        who: &Participant,
+        kind: NoteKind,
+        count: u32,
+        title: Option<String>,
+        cx: &mut Context<Self>,
+    ) {
+        if let Role::Hosting(host) = &self.integrations.together.role {
+            host.server.broadcast_note(who, kind, count, title.clone());
+        }
+        let mine = self.integrations.together.me().as_deref() == Some(who.id.as_str());
+        if mine || !self.settings.read(cx).settings().together.activity_notes {
             return;
         }
-        let uid = self
-            .queue
-            .upcoming()
-            .iter()
-            .find(|i| i.track.video_id == id)
-            .map(|i| i.uid);
-        if let Some(uid) = uid {
-            self.queue_jump(uid, cx);
-        }
+        self.integrations
+            .together
+            .notes
+            .push(&who.name, kind, count, title, Instant::now());
     }
 
     fn poll_host(&mut self, window: &mut Window, cx: &mut Context<Self>) {
@@ -654,19 +1024,17 @@ impl MusicApp {
             force = true;
             match event {
                 ServerEvent::JoinRequested(p) => {
-                    notify(
-                        window,
-                        cx,
-                        t!("together.toast.wants_to_join", name = p.name),
-                    );
+                    self.together_join_request_toast(&p, window, cx);
                     self.integrations
                         .together
                         .log(t!("together.log.wants_to_join", name = p.name));
                 }
                 ServerEvent::Joined(p) => {
-                    let line = t!("together.log.joined", name = p.name);
-                    notify(window, cx, line.clone());
-                    self.integrations.together.log(line);
+                    self.integrations
+                        .together
+                        .log(t!("together.log.joined", name = p.name));
+                    self.together_note(&p, NoteKind::Joined, 1, None, cx);
+                    self.together_session_changed(cx);
                 }
                 ServerEvent::Left {
                     participant,
@@ -677,15 +1045,24 @@ impl MusicApp {
                         name = participant.name,
                         reason = reason
                     ));
+                    if !participant.is_pending {
+                        self.together_note(&participant, NoteKind::Left, 1, None, cx);
+                    }
+                    self.together_session_changed(cx);
                 }
                 ServerEvent::Control {
                     participant,
                     action,
+                    intent,
                 } => {
-                    self.integrations
-                        .together
-                        .log(format!("{}: {action:?}", participant.name));
-                    self.apply_control(action, cx);
+                    self.together_apply_control(&participant, action, intent, cx);
+                }
+                ServerEvent::Queue {
+                    participant,
+                    op,
+                    intent,
+                } => {
+                    self.together_apply_queue_op(&participant, op, intent, window, cx);
                 }
                 ServerEvent::AddTrack {
                     participant,
@@ -697,13 +1074,8 @@ impl MusicApp {
                         name = participant.name,
                         title = track.title
                     );
-                    self.integrations.together.log(line.clone());
-                    let tracks = vec![track.to_track()];
-                    match mode {
-                        AddTrackMode::PlayNext => self.queue_play_next(tracks, window, cx),
-                        AddTrackMode::AddToQueue => self.queue_add(tracks, window, cx),
-                    }
-                    notify(window, cx, line);
+                    self.integrations.together.log(line);
+                    self.together_add_from(&participant, vec![track.bare()], mode, window, cx);
                 }
                 ServerEvent::SuggestionPending(suggestion) => {
                     let line = t!(
@@ -715,22 +1087,83 @@ impl MusicApp {
                     notify(window, cx, line);
                     cx.notify();
                 }
+                ServerEvent::ModeRequest { participant, mode } => {
+                    self.together_mode_requested(&participant, mode, cx);
+                }
+                ServerEvent::KickRequest {
+                    participant,
+                    target_id,
+                    ban,
+                } => {
+                    if target_id != HOST_ID {
+                        let line = t!(
+                            "together.log.removed_by",
+                            name = participant.name,
+                            target = self
+                                .integrations
+                                .together
+                                .participants()
+                                .into_iter()
+                                .find(|p| p.id == target_id)
+                                .map(|p| p.name)
+                                .unwrap_or_default()
+                        );
+                        self.integrations.together.log(line);
+                        if let Role::Hosting(host) = &self.integrations.together.role {
+                            host.server.kick(&target_id, None, ban);
+                        }
+                    }
+                }
+                ServerEvent::Reaction {
+                    participant, emoji, ..
+                } => {
+                    self.integrations
+                        .together
+                        .show_reaction(participant.name, emoji);
+                }
                 ServerEvent::HostTransferred { participant, join } => {
+                    let leaving = matches!(
+                        &self.integrations.together.role,
+                        Role::Hosting(h) if h.leaving.is_some()
+                    );
+                    if leaving {
+                        // Left a Friends session: it goes on with them; this device
+                        // carries on (or stops) on its own.
+                        self.integrations
+                            .together
+                            .log(t!("together.log.left_goes_on", name = participant.name));
+                        self.together_stop(cx);
+                        if !self.settings.read(cx).settings().together.keep_playing
+                            && self.playback.status == PlaybackStatus::Playing
+                        {
+                            self.toggle_playback_local(cx);
+                        }
+                        notify(window, cx, t!("together.toast.left_goes_on"));
+                        return;
+                    }
                     let line = t!("together.log.new_host", name = participant.name);
                     self.integrations.together.log(line.clone());
                     notify(window, cx, line);
                     // End this server (guests are reconnecting) and follow as a guest.
-                    self.together_leave(cx);
+                    let group = self.integrations.together.group().map(str::to_owned);
+                    self.together_stop(cx);
                     let shown = join.host.clone();
-                    self.together_connect(shown, None, move || Ok(join), window, cx);
+                    self.together_connect(shown, None, group, move || Ok(join), window, cx);
                     return;
                 }
                 ServerEvent::TransferFailed {
                     participant,
                     reason,
                 } => {
+                    let mut leaving = false;
                     if let Role::Hosting(host) = &mut self.integrations.together.role {
                         host.transferring = None;
+                        leaving = host.leaving.is_some();
+                    }
+                    if leaving {
+                        // Leaving: the next in line.
+                        self.together_hand_over_next(cx);
+                        continue;
                     }
                     let line = match participant {
                         Some(p) => {
@@ -746,7 +1179,7 @@ impl MusicApp {
                     notify(window, cx, line);
                 }
                 ServerEvent::Stopped { reason } => {
-                    self.together_leave(cx);
+                    self.together_stop(cx);
                     self.integrations.together.error =
                         Some(t!("together.error.session_ended", reason = reason));
                     notify(window, cx, t!("together.toast.ended", reason = reason));
@@ -763,6 +1196,70 @@ impl MusicApp {
         self.together_broadcast(force, cx);
         if force {
             cx.notify();
+        }
+    }
+
+    /// "X wants to join": a notification with Let in (only for the host).
+    fn together_join_request_toast(
+        &mut self,
+        p: &Participant,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        use gpui_component::{Sizable as _, WindowExt as _};
+        let id = p.id.clone();
+        let note = gpui_component::notification::Notification::new()
+            .message(t!("together.toast.wants_to_join", name = p.name))
+            .action(move |_, _, _| {
+                let id = id.clone();
+                gpui_component::button::Button::new("together-let-in")
+                    .small()
+                    .label(t!("together.people.let_in"))
+                    .on_click(move |_, _, cx| {
+                        let id = id.clone();
+                        crate::app::update_app(cx, |app, cx| app.together_approve(&id, true, cx));
+                    })
+            });
+        window.push_notification(note, cx);
+    }
+
+    /// Host: queues songs a guest asked for (approved or straight in), named theirs.
+    pub(super) fn together_add_from(
+        &mut self,
+        participant: &Participant,
+        tracks: Vec<TogetherTrack>,
+        mode: AddTrackMode,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let count = tracks.len() as u32;
+        let tracks: Vec<Track> = tracks.iter().map(TogetherTrack::to_track).collect();
+        let before = self.queue_uids();
+        match mode {
+            AddTrackMode::PlayNext => self.queue_play_next_local(tracks, window, cx),
+            AddTrackMode::AddToQueue => self.queue_add_local(tracks, window, cx),
+        }
+        self.together_claim_new(&before, &participant.name);
+        self.together_note(participant, NoteKind::Added, count, None, cx);
+    }
+
+    /// Every slot in the queue now (current and upcoming).
+    pub(super) fn queue_uids(&self) -> HashSet<u64> {
+        self.queue
+            .current_item()
+            .into_iter()
+            .chain(self.queue.upcoming())
+            .map(|i| i.uid)
+            .collect()
+    }
+
+    /// Names the slots that weren't in `before` as `name`'s.
+    pub(super) fn together_claim_new(&mut self, before: &HashSet<u64>, name: &str) {
+        let now = self.queue_uids();
+        if let Role::Hosting(host) = &mut self.integrations.together.role {
+            for uid in now.difference(before) {
+                host.added_by.insert(*uid, name.to_owned());
+            }
         }
     }
 
@@ -809,11 +1306,13 @@ impl MusicApp {
         };
         self.integrations.together.log(line);
         if approved {
-            let tracks = vec![suggestion.track.to_track()];
-            match suggestion.mode {
-                AddTrackMode::PlayNext => self.queue_play_next(tracks, window, cx),
-                AddTrackMode::AddToQueue => self.queue_add(tracks, window, cx),
-            }
+            self.together_add_from(
+                &suggestion.participant,
+                vec![suggestion.track.bare()],
+                suggestion.mode,
+                window,
+                cx,
+            );
         }
         cx.notify();
     }
@@ -826,9 +1325,14 @@ impl MusicApp {
         }
     }
 
+    /// Removes someone: the host directly; a guest in a Friends session asks the host.
     pub fn together_kick(&mut self, participant_id: &str, ban: bool, cx: &mut Context<Self>) {
-        if let Role::Hosting(host) = &self.integrations.together.role {
-            host.server.kick(participant_id, None, ban);
+        match &self.integrations.together.role {
+            Role::Hosting(host) => host.server.kick(participant_id, None, ban),
+            Role::Guest(guest) => {
+                guest.client.request_kick(participant_id, ban);
+            }
+            _ => {}
         }
         self.together_broadcast(true, cx);
         cx.notify();
@@ -848,10 +1352,103 @@ impl MusicApp {
             && !self.playback.buffering
         {
             host.pending_seek = None;
-            self.seek_to(Duration::from_millis(ms), cx);
+            self.seek_local(Duration::from_millis(ms), cx);
         } else if current.is_some_and(|c| c != id) {
             host.pending_seek = None; // moved on meanwhile
         }
+    }
+
+    // ---- modes ------------------------------------------------------------------------
+
+    /// Switches the session's mode: the host directly; a guest of a Friends session
+    /// asks the host (switching to Host or DJ makes that guest the host).
+    pub fn together_set_mode(&mut self, mode: SessionMode, cx: &mut Context<Self>) {
+        match &self.integrations.together.role {
+            Role::Hosting(host) if host.room.mode != mode => {
+                let me = host.server.host_participant();
+                self.together_set_room(|r| r.mode = mode, cx);
+                self.integrations
+                    .together
+                    .log(t!("together.log.mode_now", mode = mode_name(mode)));
+                self.together_note(&me, NoteKind::Mode, 1, Some(mode.key().into()), cx);
+                self.together_session_changed(cx);
+            }
+            Role::Guest(guest) => {
+                guest.client.request_mode(mode);
+            }
+            _ => {}
+        }
+        cx.notify();
+    }
+
+    /// Host: a guest of a Friends session asked for another mode. Back to Friends (or
+    /// staying in it): switched here; Host or DJ: that guest becomes the host, in that
+    /// mode (the hand-over carries the room with the new mode).
+    fn together_mode_requested(
+        &mut self,
+        participant: &Participant,
+        mode: SessionMode,
+        cx: &mut Context<Self>,
+    ) {
+        let Role::Hosting(host) = &self.integrations.together.role else {
+            return;
+        };
+        if host.room.mode != SessionMode::Friends {
+            return;
+        }
+        if mode == SessionMode::Friends {
+            return;
+        }
+        let mut state = self.host_room_state();
+        state.settings = mode.apply(host.room);
+        let own = self.together_client_id(cx);
+        let Role::Hosting(host) = &mut self.integrations.together.role else {
+            return;
+        };
+        // Stamped with the new mode on the way out.
+        host.server.update_settings(mode.apply(host.room));
+        let ok = host
+            .server
+            .transfer_host(&participant.id, state, Some(&own));
+        if ok {
+            host.transferring = Some(participant.name.clone());
+            self.integrations.together.log(t!(
+                "together.log.mode_by",
+                name = participant.name,
+                mode = mode_name(mode)
+            ));
+        } else if let Role::Hosting(host) = &mut self.integrations.together.role {
+            host.server.update_settings(host.room);
+        }
+        cx.notify();
+    }
+
+    // ---- reactions --------------------------------------------------------------------
+
+    /// Reacts to the current song (shown to everyone for a moment).
+    pub fn together_react(&mut self, emoji: &str, cx: &mut Context<Self>) {
+        if !music_core::together::REACTIONS.contains(&emoji) {
+            return;
+        }
+        let together = &mut self.integrations.together;
+        if !together.in_session()
+            || !together
+                .my_reactions
+                .get_or_insert_with(RateLimit::reactions)
+                .allow(Instant::now())
+        {
+            return;
+        }
+        let track = self.queue.current().map(|t| t.video_id.clone());
+        match &together.role {
+            Role::Hosting(host) => host.server.broadcast_reaction(emoji, track.as_deref()),
+            Role::Guest(guest) => {
+                guest.client.send_reaction(emoji, track.as_deref());
+            }
+            _ => return,
+        }
+        together.show_reaction(t!("together.you").into(), emoji.to_owned());
+        cx.notify();
     }
 
     // ---- joining ----------------------------------------------------------------------
@@ -859,10 +1456,28 @@ impl MusicApp {
     /// Connects to a host: a link, `ws(s)://` URL or `host|port|sid|key`, or a
     /// room code (bare, or in a `music-together://join?code=…` link).
     pub fn together_join(&mut self, link: &str, window: &mut Window, cx: &mut Context<Self>) {
+        self.together_join_for(link, None, window, cx);
+    }
+
+    /// [`Self::together_join`] for a friend group's session.
+    pub(crate) fn together_join_for(
+        &mut self,
+        link: &str,
+        group: Option<String>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         match JoinRequest::parse(link) {
             Some(JoinRequest::Direct(join)) => {
                 let shown = join.host.clone();
-                self.together_connect(shown, Some(link.trim()), move || Ok(join), window, cx);
+                self.together_connect(
+                    shown,
+                    Some(link.trim()),
+                    group,
+                    move || Ok(join),
+                    window,
+                    cx,
+                );
             }
             Some(JoinRequest::Code { relay, code }) => {
                 self.together_join_code_at(relay, &code, Some(link.trim()), window, cx);
@@ -900,6 +1515,7 @@ impl MusicApp {
         self.together_connect(
             shown,
             link,
+            None,
             move || {
                 let relay = relay
                     .or_else(|| relay_for(&setting).map(|(url, _)| url))
@@ -912,6 +1528,17 @@ impl MusicApp {
         );
     }
 
+    /// How this app introduces itself to a host: our additions, and where it would
+    /// take a Friends session on this network over (the configured port).
+    fn together_identity(&mut self, join: &JoinInfo, cx: &mut Context<Self>) -> ClientOptions {
+        let client_id = self.together_client_id(cx);
+        let prefs = self.settings.read(cx).settings().together.clone();
+        let standby = (!join.is_relay())
+            .then(|| local_ip().map(|ip| (ip.to_string(), prefs.port)))
+            .flatten();
+        ClientOptions::ours(&prefs.name(), &client_id, standby)
+    }
+
     /// Finds the session with `resolve` and joins it (both off the UI thread);
     /// `shown` names it meanwhile, `link` (what the user typed) pre-fills the
     /// field next time.
@@ -919,51 +1546,44 @@ impl MusicApp {
         &mut self,
         shown: String,
         link: Option<&str>,
+        group: Option<String>,
         resolve: impl FnOnce() -> Result<JoinInfo, JoinError> + Send + 'static,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        self.together_leave(cx);
-        let client_id = self.together_client_id(cx);
-        let name = self.settings.update(cx, |panel, cx| {
-            if let Some(raw) = link.map(str::to_owned) {
-                panel.set_together(|t| t.last_join = raw, cx);
-            }
-            panel.settings().together.name()
-        });
+        self.together_stop(cx);
+        if let Some(raw) = link.map(str::to_owned) {
+            self.settings.update(cx, |panel, cx| {
+                panel.set_together(|t| t.last_join = raw, cx)
+            });
+        }
+        // The address isn't known before resolving: the standby port goes with any.
+        let identity = self.together_identity(&JoinInfo::default(), cx);
         self.integrations.together.error = None;
         self.integrations.together.role = Role::Joining(shown);
         cx.notify();
         cx.spawn_in(window, async move |this, cx| {
             let result = off_thread(move || {
                 let join = resolve()?;
-                let client = TogetherClient::connect(&join, &name, &client_id)
+                let mut identity = identity;
+                if join.is_relay() {
+                    identity.standby = None;
+                }
+                let client = TogetherClient::connect_with(&join, identity)
                     .map_err(|e| JoinError::Connect(e.to_string()))?;
                 Ok::<_, JoinError>((client, join))
             })
             .await;
-            this.update_in(cx, |this, window, cx| {
+            this.update_in(cx, |this, _, cx| {
                 if !matches!(this.integrations.together.role, Role::Joining(_)) {
                     return; // cancelled meanwhile
                 }
                 match result {
                     Ok((client, join)) => {
-                        // The host decides the order; local shuffle would reorder it.
-                        this.queue.set_shuffle(false);
                         this.integrations
                             .together
                             .log(t!("together.log.connected", host = join.host));
-                        this.integrations.together.role = Role::Guest(Box::new(GuestSession {
-                            client,
-                            join,
-                            pending: false,
-                            room: None,
-                            sync: GuestSync::default(),
-                            pending_seek: None,
-                            taking_over: false,
-                            suggestions: VecDeque::new(),
-                        }));
-                        notify(window, cx, t!("together.toast.joined"));
+                        this.together_start_guest(GuestSession::new(client, join, group), cx);
                     }
                     Err(e) => {
                         this.integrations.together.role = Role::Idle;
@@ -975,6 +1595,16 @@ impl MusicApp {
             .ok();
         })
         .detach();
+    }
+
+    fn together_start_guest(&mut self, guest: GuestSession, cx: &mut Context<Self>) {
+        // The host decides the order; local shuffle would reorder it.
+        self.queue.set_shuffle(false);
+        let together = &mut self.integrations.together;
+        together.notes.clear();
+        together.note_shown = None;
+        together.role = Role::Guest(Box::new(guest));
+        self.together_session_changed(cx);
     }
 
     /// Guest: the host handed the session to us. Starts a server (LAN, or the same
@@ -1008,49 +1638,22 @@ impl MusicApp {
         cx.notify();
         cx.spawn_in(window, async move |this, cx| {
             let target = join.clone();
-            let (result, code) = off_thread(move || {
-                let result = match &target.url {
-                    Some(url) => TogetherServer::start_relay(
-                        url,
-                        target.session_id.clone(),
-                        target.session_key.clone(),
-                        name,
-                        room,
-                        options,
-                    ),
-                    None => TogetherServer::start_with(
-                        port,
-                        target.session_id.clone(),
-                        target.session_key.clone(),
-                        name,
-                        room,
-                        options,
-                    ),
-                };
-                // The room keeps its code on the relay; ask for it.
-                let code = match (&result, target.is_relay()) {
-                    (Ok(server), true) => server.register_code(CODE_TIMEOUT).ok(),
-                    _ => None,
-                };
-                (result, code)
-            })
-            .await;
+            let (result, code) =
+                off_thread(move || start_server_for(&target, name, room, options, port)).await;
             this.update_in(cx, |this, window, cx| {
-                this.together_took_over(result, code, join, state, room, window, cx);
+                this.together_took_over(result, code, join, state, window, cx);
             })
             .ok();
         })
         .detach();
     }
 
-    #[allow(clippy::too_many_arguments)]
     fn together_took_over(
         &mut self,
         result: music_core::Result<TogetherServer>,
         code: Option<String>,
         join: JoinInfo,
         state: Option<RoomState>,
-        room: RoomSettings,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
@@ -1075,76 +1678,141 @@ impl MusicApp {
         };
         let answer = (!new_join.is_relay()).then(|| (new_join.host.clone(), new_join.port));
         guest.client.answer_host_offer(Ok(answer));
-        let clock = guest.client.clock();
-        let now = guest.client.elapsed_ms();
         let Role::Guest(guest) = std::mem::take(&mut self.integrations.together.role) else {
             unreachable!()
         };
         // The answer goes out before the goodbye (same queue).
         let client = guest.client;
         std::thread::spawn(move || client.leave());
-
-        // The room as it was handed over: settings, repeat, queue, track, position.
-        self.settings.update(cx, |panel, cx| {
-            panel.set_together(
-                |t| {
-                    t.allow_guests_to_add_tracks = room.allow_guests_to_add_tracks;
-                    t.allow_guests_to_control_playback = room.allow_guests_to_control_playback;
-                    t.require_host_approval = room.require_host_approval_to_join;
-                    t.approve_suggestions = room.require_approval_for_suggestions;
-                },
-                cx,
-            )
-        });
-        let mut pending_seek = None;
-        if let Some(state) = state.or(guest.room)
-            && let Some(current) = state.current().cloned()
-        {
-            self.set_repeat(
-                match state.repeat_mode {
-                    1 => Repeat::One,
-                    2 => Repeat::All,
-                    _ => Repeat::Off,
-                },
-                cx,
-            );
-            let target = sync::target_position_ms(&state, Some(clock), now);
-            let tracks: Vec<Track> = state.queue.iter().map(TogetherTrack::to_track).collect();
-            let index = state.current_index.min(tracks.len().saturating_sub(1));
-            if self.queue.is_current(&current.id) {
-                let _ = self.queue.replace(tracks, index);
-                self.next_sent = None;
-                let position = self.clock.position(Instant::now()).as_millis() as u64;
-                if sync::should_seek_for_drift(position, target, state.is_playing) {
-                    self.seek_to(Duration::from_millis(target), cx);
-                }
-            } else if let Some(track) = self.queue.replace(tracks, index) {
-                pending_seek = (target > 1_500).then(|| (track.video_id.clone(), target));
-                self.play(track, cx);
-            }
-            let playing = self.playback.status == PlaybackStatus::Playing;
-            if state.is_playing != playing
-                && pending_seek.is_none()
-                && let Some(engine) = &mut self.engine
-            {
-                engine.toggle_pause();
-                self.refresh_soon(cx);
-            }
+        let room = state.or(guest.room);
+        self.together_become_host(server, new_join, room, code, guest.group, cx);
+        let mode = self.integrations.together.mode().unwrap_or_default();
+        if mode == SessionMode::Friends {
+            // Nobody hosts a Friends session; this device just keeps time now.
+            self.integrations
+                .together
+                .log(t!("together.log.you_keep_time").into());
+        } else {
+            self.integrations
+                .together
+                .log(t!("together.log.you_are_host").into());
+            notify(window, cx, t!("together.toast.you_are_host"));
         }
-        let shuffle = self.settings.read(cx).settings().playback.shuffle;
-        self.queue.set_shuffle(shuffle);
-        let mut host = HostSession::new(server, new_join);
-        host.pending_seek = pending_seek;
-        host.code = code;
-        self.integrations
-            .together
-            .log(t!("together.log.you_are_host").into());
-        self.together_start_hosting(host, window, cx);
-        notify(window, cx, t!("together.toast.you_are_host"));
     }
 
-    /// Leaves / ends the session.
+    /// Becomes the session's device with `server`: the room as it was (queue with its
+    /// slots and who queued what, track, position, repeat, settings). This player was
+    /// following the room, so the track normally keeps playing untouched.
+    fn together_become_host(
+        &mut self,
+        server: TogetherServer,
+        join: JoinInfo,
+        room: Option<RoomState>,
+        code: Option<String>,
+        group: Option<String>,
+        cx: &mut Context<Self>,
+    ) {
+        let prefs = self.settings.read(cx).settings().together.clone();
+        let settings = room.as_ref().map_or_else(|| prefs.room(), |r| r.settings);
+        let mut pending_seek = None;
+        let mut added_by = HashMap::new();
+        if let Some(state) = &room
+            && let Some(current) = state.current().cloned()
+        {
+            self.queue.set_repeat(repeat_of(state.repeat_mode));
+            let position = self.clock.position(Instant::now()).as_millis() as u64;
+            let index = state.current_index.min(state.queue.len().saturating_sub(1));
+            let on_track = self.queue.is_current(&current.id);
+            if let Some(track) =
+                self.queue
+                    .mirror(mirror_items(state), index, mirror_context(state))
+            {
+                self.next_sent = None;
+                if !on_track {
+                    // Not following yet (joined a moment ago): start the room's track.
+                    let target = state.position_ms;
+                    pending_seek = (target > 1_500).then(|| (track.video_id.clone(), target));
+                    self.play(track, cx);
+                } else if !state.is_playing
+                    && sync::should_seek_for_drift(position, state.position_ms, false)
+                {
+                    self.seek_local(Duration::from_millis(state.position_ms), cx);
+                }
+            }
+            for t in &state.queue {
+                if let (Some(uid), Some(by)) = (t.uid, &t.added_by) {
+                    added_by.insert(uid, by.clone());
+                }
+            }
+        }
+        let mut host = HostSession::new(server, join, settings);
+        host.pending_seek = pending_seek;
+        host.code = code;
+        host.group = group;
+        host.added_by = added_by;
+        self.together_start_hosting(host, cx);
+    }
+
+    // ---- leaving ----------------------------------------------------------------------
+
+    /// "Leave" / "End session". A Friends session goes on without this device: it is
+    /// handed to the next of this app's guests (the session ends only with the last
+    /// one); any other session ends (as the host) or is left (as a guest).
     pub fn together_leave(&mut self, cx: &mut Context<Self>) {
+        let successors: VecDeque<String> = match &self.integrations.together.role {
+            Role::Hosting(host)
+                if host.room.mode == SessionMode::Friends && host.leaving.is_none() =>
+            {
+                host.server
+                    .successors()
+                    .into_iter()
+                    .map(|s| s.participant_id)
+                    .collect()
+            }
+            _ => VecDeque::new(),
+        };
+        if successors.is_empty() {
+            self.together_stop(cx);
+            return;
+        }
+        if let Role::Hosting(host) = &mut self.integrations.together.role {
+            host.leaving = Some(successors);
+        }
+        self.integrations
+            .together
+            .log(t!("together.log.leaving").into());
+        self.together_hand_over_next(cx);
+    }
+
+    /// Leaving a Friends session: offers it to the next successor (or ends it when
+    /// none is left).
+    fn together_hand_over_next(&mut self, cx: &mut Context<Self>) {
+        let state = self.host_room_state();
+        loop {
+            let Role::Hosting(host) = &mut self.integrations.together.role else {
+                return;
+            };
+            let Some(next) = host.leaving.as_mut().and_then(VecDeque::pop_front) else {
+                // Nobody took it: it ends.
+                self.together_stop(cx);
+                return;
+            };
+            let name = host
+                .server
+                .participants()
+                .into_iter()
+                .find(|p| p.id == next)
+                .map(|p| p.name);
+            if host.server.transfer_host(&next, state.clone(), None) {
+                host.transferring = name;
+                cx.notify();
+                return;
+            }
+        }
+    }
+
+    /// Ends the session here at once (as the host: for everyone; as a guest: leaves).
+    pub fn together_stop(&mut self, cx: &mut Context<Self>) {
         let role = std::mem::take(&mut self.integrations.together.role);
         match role {
             Role::Hosting(mut host) => {
@@ -1152,6 +1820,8 @@ impl MusicApp {
                 self.integrations
                     .together
                     .log(t!("together.log.ended").into());
+                // Handed over: the session goes on elsewhere (and is announced there).
+                self.friends_session_over(host.transferring.is_some());
             }
             Role::Guest(guest) => {
                 let keep = self.settings.read(cx).settings().together.keep_playing;
@@ -1177,81 +1847,40 @@ impl MusicApp {
                     self.together_keep_playing(plan, &room, &local, cx);
                 }
             }
+            Role::Recovering(_) => {
+                self.integrations
+                    .together
+                    .log(t!("together.log.left_session").into());
+            }
             Role::Joining(_) | Role::Idle => {}
         }
+        let together = &mut self.integrations.together;
+        together.notes.clear();
+        together.note_shown = None;
+        together.reactions.clear();
+        together.panel_open = false;
+        self.together_session_changed(cx);
         cx.notify();
     }
 
-    /// Guest: "Play next" / "Add to queue" go to the host instead. Returns whether
-    /// the tracks were handled here.
-    pub(crate) fn together_intercept_enqueue(
-        &mut self,
-        tracks: &[Track],
-        mode: AddTrackMode,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) -> bool {
-        let Role::Guest(guest) = &self.integrations.together.role else {
-            return false;
-        };
-        let allowed = guest
-            .room
-            .as_ref()
-            .is_none_or(|r| r.settings.allow_guests_to_add_tracks);
-        if !allowed {
-            notify(window, cx, t!("together.toast.no_suggestions"));
-            return true;
-        }
-        let mut sent = 0;
-        let mut records = Vec::new();
-        for track in tracks.iter().filter(|t| is_shareable_id(&t.video_id)) {
-            if let Some(t) = TogetherTrack::from_track(track)
-                && guest.client.request_add_track(t.clone(), mode)
-            {
-                sent += 1;
-                records.push(SentSuggestion {
-                    track: t,
-                    state: SentState::Sent,
-                });
+    /// The app quits: a Friends session goes on with this app's guests (they take it
+    /// over); any other session ends.
+    pub(crate) fn together_quit(&mut self) {
+        match std::mem::take(&mut self.integrations.together.role) {
+            Role::Hosting(mut host) => {
+                let goes_on =
+                    host.room.mode == SessionMode::Friends && !host.server.successors().is_empty();
+                let reason = if goes_on {
+                    HOST_LEFT
+                } else {
+                    music_core::together::SESSION_ENDED
+                };
+                host.server.stop_with(reason);
+                self.friends_session_over(goes_on);
             }
+            Role::Guest(guest) => guest.client.leave(),
+            _ => {}
         }
-        if let Role::Guest(guest) = &mut self.integrations.together.role {
-            guest.suggestions.extend(records);
-            while guest.suggestions.len() > SUGGESTIONS_SHOWN {
-                guest.suggestions.pop_front();
-            }
-        }
-        notify(
-            window,
-            cx,
-            match sent {
-                0 => t!("together.toast.only_youtube_music").to_owned(),
-                1 => t!("together.toast.suggested_title", title = tracks[0].title),
-                n => tp!("together.toast.suggested", n),
-            },
-        );
-        true
-    }
-
-    /// Guest: asks the host to play / pause / skip / seek (if the room allows it).
-    pub fn together_request(
-        &mut self,
-        action: ControlAction,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
-        let Role::Guest(guest) = &self.integrations.together.role else {
-            return;
-        };
-        if guest
-            .room
-            .as_ref()
-            .is_some_and(|r| !r.settings.allow_guests_to_control_playback)
-        {
-            notify(window, cx, t!("together.toast.no_control"));
-            return;
-        }
-        guest.client.request_control(action);
     }
 
     fn poll_guest(&mut self, state: &PlaybackState, window: &mut Window, cx: &mut Context<Self>) {
@@ -1260,16 +1889,26 @@ impl MusicApp {
         };
         let mut lines = Vec::new();
         let mut ended: Option<String> = None;
+        let mut lost = false;
         let mut latest: Option<RoomState> = None;
         let mut offer = None;
         let mut quiet = Vec::new();
+        let mut notes = Vec::new();
+        let mut reactions = Vec::new();
+        let mut changed = false;
         for event in guest.client.poll_events() {
             match event {
-                ClientEvent::Welcome { pending, .. } => {
+                ClientEvent::Welcome {
+                    pending,
+                    participant_id,
+                    ..
+                } => {
                     guest.pending = pending;
+                    guest.me = Some(participant_id);
                     if pending {
                         lines.push(t!("together.status.waiting_approval").to_owned());
                     }
+                    changed = true;
                 }
                 ClientEvent::JoinDecision { approved } => {
                     guest.pending = !approved;
@@ -1278,8 +1917,14 @@ impl MusicApp {
                     } else {
                         t!("together.status.declined").into()
                     });
+                    changed = true;
                 }
-                ClientEvent::RoomState(room) => latest = Some(room),
+                ClientEvent::RoomState(room) => {
+                    if guest.room.as_ref().map(|r| r.settings) != Some(room.settings) {
+                        changed = true;
+                    }
+                    latest = Some(room)
+                }
                 ClientEvent::SuggestionStatus {
                     track_id,
                     state,
@@ -1308,10 +1953,17 @@ impl MusicApp {
                     {
                         ended = Some(message.clone());
                     }
-                    lines.push(message);
+                    // "Not allowed" answers are this app's own doing (the route
+                    // checked first); a stale permission shows as the hint instead.
+                    if code.as_deref() == Some("not_allowed") {
+                        quiet.push(message);
+                    } else {
+                        lines.push(message);
+                    }
                 }
                 ClientEvent::Kicked { reason, .. } => ended = Some(reason),
-                ClientEvent::Disconnected { reason } => {
+                ClientEvent::Disconnected { reason, lost: gone } => {
+                    lost = gone;
                     ended = ended
                         .or(reason)
                         .or_else(|| Some(t!("together.status.disconnected").into()))
@@ -1333,19 +1985,58 @@ impl MusicApp {
                 }
                 ClientEvent::HostChanged { name, join } => {
                     // A new host means a new clock: start over.
+                    let friends = guest
+                        .room
+                        .as_ref()
+                        .is_some_and(|r| r.settings.mode == SessionMode::Friends);
                     guest.join = join;
                     guest.room = None;
                     guest.pending_seek = None;
                     guest.sync.reset();
-                    lines.push(match name {
+                    // Nobody hosts a Friends session: no need to say who keeps time.
+                    let line = match name {
                         Some(name) => t!("together.log.host_changed", name = name),
                         None => t!("together.log.host_changed_unknown").to_owned(),
-                    });
+                    };
+                    if friends {
+                        quiet.push(line);
+                    } else {
+                        lines.push(line);
+                    }
                 }
                 ClientEvent::Reconnected => quiet.push(t!("together.log.reconnected").to_owned()),
+                ClientEvent::Roster {
+                    successors,
+                    trusted_client_ids,
+                    banned_client_ids,
+                    relay_secret,
+                } => {
+                    guest.roster = Some(Roster {
+                        successors,
+                        trusted: trusted_client_ids,
+                        banned: banned_client_ids,
+                        relay_secret,
+                    });
+                }
+                ClientEvent::Reaction { name, emoji, .. } => reactions.push((name, emoji)),
+                ClientEvent::Note {
+                    participant_id,
+                    name,
+                    note,
+                    count,
+                    title,
+                } => notes.push((participant_id, name, note, count, title)),
             }
         }
         if let Some(room) = latest {
+            // Joining shows the mode (what this person may do follows from it).
+            if !guest.greeted && !guest.pending {
+                guest.greeted = true;
+                lines.push(t!(
+                    "together.toast.joined_mode",
+                    mode = mode_name(room.settings.mode)
+                ));
+            }
             guest.room = Some(room);
         }
         for line in lines {
@@ -1355,17 +2046,151 @@ impl MusicApp {
         for line in quiet {
             self.integrations.together.log(line);
         }
+        for (name, emoji) in reactions {
+            self.integrations.together.show_reaction(name, emoji);
+        }
+        for (id, name, note, count, title) in notes {
+            let who = Participant {
+                id,
+                name,
+                ..Participant::default()
+            };
+            self.together_note(&who, note, count, title, cx);
+        }
         if let Some((state, options)) = offer {
             self.together_take_over(state, options, window, cx);
         }
         if let Some(reason) = ended {
+            if lost && self.together_failover(window, cx) {
+                return;
+            }
             self.integrations.together.error =
                 Some(t!("together.error.session_ended", reason = reason));
-            self.together_leave(cx);
+            self.together_stop(cx);
             notify(window, cx, t!("together.toast.ended", reason = reason));
             return;
         }
+        if changed {
+            self.together_session_changed(cx);
+        }
         self.guest_follow(state, cx);
+    }
+
+    /// The Friends session's device is gone: carry the session on by the roster (this
+    /// guest takes over, or reconnects to the one before it in line). Returns whether
+    /// it does (else the session is over here).
+    fn together_failover(&mut self, window: &mut Window, cx: &mut Context<Self>) -> bool {
+        let client_id = self.together_client_id(cx);
+        let Role::Guest(guest) = &self.integrations.together.role else {
+            return false;
+        };
+        let (Some(room), Some(roster)) = (guest.room.clone(), guest.roster.clone()) else {
+            return false;
+        };
+        if room.settings.mode != SessionMode::Friends || roster.successors.is_empty() {
+            return false;
+        }
+        let plan = rules::failover(&roster.successors, &client_id, &guest.join);
+        if plan == Failover::End {
+            return false;
+        }
+        let join = guest.join.clone();
+        let group = guest.group.clone();
+        let Role::Guest(guest) = std::mem::take(&mut self.integrations.together.role) else {
+            unreachable!()
+        };
+        drop(guest.client);
+        self.integrations
+            .together
+            .log(t!("together.log.reconnecting").into());
+        self.integrations.together.role = Role::Recovering(Box::new(Recovery {
+            room: room.clone(),
+            roster: roster.clone(),
+            join: join.clone(),
+            group,
+            since: Instant::now(),
+        }));
+        self.together_session_changed(cx);
+        cx.notify();
+        let prefs = self.settings.read(cx).settings().together.clone();
+        let identity = self.together_identity(&join, cx);
+        let options = HostOptions {
+            trusted_client_ids: roster.trusted.clone(),
+            banned_client_ids: roster.banned.clone(),
+            relay_secret: roster.relay_secret.clone(),
+        };
+        let settings = room.settings;
+        cx.spawn_in(window, async move |this, cx| {
+            let outcome = off_thread(move || {
+                if let Failover::Follow(candidates) = plan {
+                    for candidate in candidates {
+                        let deadline = Instant::now() + FAILOVER_WAIT;
+                        while Instant::now() < deadline {
+                            if let Ok(client) =
+                                TogetherClient::connect_with(&candidate, identity.clone())
+                            {
+                                return Ok((client, candidate));
+                            }
+                            std::thread::sleep(Duration::from_millis(400));
+                        }
+                    }
+                }
+                Err(start_server_for(
+                    &join,
+                    prefs.name(),
+                    settings,
+                    options,
+                    prefs.port,
+                ))
+            })
+            .await;
+            this.update_in(cx, |this, window, cx| {
+                let Role::Recovering(recovery) =
+                    std::mem::take(&mut this.integrations.together.role)
+                else {
+                    return; // left meanwhile
+                };
+                match outcome {
+                    Ok((client, join)) => {
+                        this.integrations
+                            .together
+                            .log(t!("together.log.reconnected").into());
+                        let mut guest = GuestSession::new(client, join, recovery.group);
+                        guest.room = Some(recovery.room);
+                        guest.roster = Some(recovery.roster);
+                        this.together_start_guest(guest, cx);
+                    }
+                    Err((Ok(server), code)) => {
+                        let join = if recovery.join.is_relay() {
+                            recovery.join
+                        } else {
+                            lan_join(&server, recovery.join.session_id, recovery.join.session_key)
+                        };
+                        this.together_become_host(
+                            server,
+                            join,
+                            Some(recovery.room),
+                            code,
+                            recovery.group,
+                            cx,
+                        );
+                        this.integrations
+                            .together
+                            .log(t!("together.log.you_keep_time").into());
+                    }
+                    Err((Err(e), _)) => {
+                        this.integrations.together.error =
+                            Some(t!("together.error.session_ended", reason = e));
+                        notify(window, cx, t!("together.toast.ended", reason = e));
+                        this.together_session_changed(cx);
+                    }
+                }
+                cx.notify();
+            })
+            .ok();
+        })
+        .detach();
+        true
     }
 
     /// The local player as the sync sees it.
@@ -1386,6 +2211,25 @@ impl MusicApp {
         }
     }
 
+    /// Whether the local queue differs from the room's (slots, parts and context too,
+    /// so moves and "Next in queue" show as the host has them).
+    fn mirror_differs(&self, room: &RoomState) -> bool {
+        let local: Vec<(u64, &str, bool)> = self
+            .queue
+            .current_item()
+            .into_iter()
+            .chain(self.queue.upcoming())
+            .map(|i| (i.uid, i.track.video_id.as_str(), i.source == Source::User))
+            .collect();
+        if local.len() != room.queue.len() {
+            return true;
+        }
+        let slots = local.iter().zip(&room.queue).any(|((uid, id, queued), t)| {
+            *id != t.id || *queued != t.queued || t.uid.is_some_and(|u| u != *uid)
+        });
+        slots || self.queue.context().map(|c| c.name.as_str()) != room.context_name.as_deref()
+    }
+
     /// "Keep playing here when I leave" (or, with the setting off, stop): applies
     /// the [`LeavePlan`] for the room the guest had.
     fn together_keep_playing(
@@ -1399,7 +2243,7 @@ impl MusicApp {
             LeavePlan::Nothing => {}
             LeavePlan::Pause => {
                 if self.playback.status == PlaybackStatus::Playing {
-                    self.toggle_playback(cx);
+                    self.toggle_playback_local(cx);
                 }
             }
             LeavePlan::Continue {
@@ -1410,11 +2254,7 @@ impl MusicApp {
                 repeat_mode,
             } => {
                 // The room's repeat mode for this queue (not saved as a preference).
-                self.queue.set_repeat(match repeat_mode {
-                    1 => Repeat::One,
-                    2 => Repeat::All,
-                    _ => Repeat::Off,
-                });
+                self.queue.set_repeat(repeat_of(repeat_mode));
                 let tracks: Vec<Track> = room.queue.iter().map(TogetherTrack::to_track).collect();
                 if let Some(index) = play_index {
                     let Some(track) = self.queue.replace(tracks, index) else {
@@ -1427,7 +2267,7 @@ impl MusicApp {
                     } else {
                         // Paused: ready where the room was; Play starts it there.
                         if local.playing {
-                            self.toggle_playback(cx);
+                            self.toggle_playback_local(cx);
                         }
                         self.store.resume_at = Some((
                             track.video_id,
@@ -1443,7 +2283,7 @@ impl MusicApp {
                     self.next_sent = None;
                 }
                 if let Some(ms) = seek_ms {
-                    self.seek_to(Duration::from_millis(ms), cx);
+                    self.seek_local(Duration::from_millis(ms), cx);
                 }
                 if playing != local.playing
                     && let Some(engine) = &mut self.engine
@@ -1472,7 +2312,7 @@ impl MusicApp {
             && !local.loading
         {
             guest.pending_seek = None;
-            self.seek_to(Duration::from_millis(ms), cx);
+            self.seek_local(Duration::from_millis(ms), cx);
             return;
         }
         let Some(room) = guest.room.clone() else {
@@ -1480,9 +2320,10 @@ impl MusicApp {
         };
         let clock = guest.client.clock();
         let now = guest.client.elapsed_ms();
-        let Some(plan) = guest.sync.plan(&local, &room, Some(clock), now) else {
+        let Some(mut plan) = guest.sync.plan(&local, &room, Some(clock), now) else {
             return;
         };
+        plan.replace_queue = plan.replace_queue || self.mirror_differs(&room);
         if plan.is_empty() {
             return;
         }
@@ -1492,9 +2333,12 @@ impl MusicApp {
                 local.current_id, local.position_ms, clock.offset_ms, clock.rtt_ms
             );
         }
-        let tracks: Vec<Track> = room.queue.iter().map(TogetherTrack::to_track).collect();
-        if let Some(index) = plan.play_index {
-            if let Some(track) = self.queue.replace(tracks, index) {
+        let index = room.current_index.min(room.queue.len().saturating_sub(1));
+        if plan.play_index.is_some() {
+            if let Some(track) =
+                self.queue
+                    .mirror(mirror_items(&room), index, mirror_context(&room))
+            {
                 if let Role::Guest(guest) = &mut self.integrations.together.role {
                     guest.pending_seek = plan.seek_ms.map(|ms| (track.video_id.clone(), ms));
                 }
@@ -1505,12 +2349,14 @@ impl MusicApp {
         }
         if plan.replace_queue {
             // Same track keeps playing; only what follows changes.
-            let index = room.current_index.min(tracks.len().saturating_sub(1));
-            let _ = self.queue.replace(tracks, index);
+            let _ = self
+                .queue
+                .mirror(mirror_items(&room), index, mirror_context(&room));
+            self.queue.set_repeat(repeat_of(room.repeat_mode));
             self.next_sent = None;
         }
         if let Some(ms) = plan.seek_ms {
-            self.seek_to(Duration::from_millis(ms), cx);
+            self.seek_local(Duration::from_millis(ms), cx);
         }
         if let Some(play) = plan.set_playing
             && play != local.playing
@@ -1531,33 +2377,75 @@ impl MusicApp {
         match self.integrations.together.role {
             Role::Hosting(_) => self.poll_host(window, cx),
             Role::Guest(_) => self.poll_guest(state, window, cx),
-            Role::Idle | Role::Joining(_) => {}
+            Role::Idle | Role::Joining(_) | Role::Recovering(_) => {}
         }
+        self.together_poll_ui(window, cx);
     }
 
-    pub(super) fn together_chip(&mut self, _cx: &mut Context<Self>) -> Option<AnyElement> {
-        let label = match &self.integrations.together.role {
-            Role::Hosting(host) => {
-                let n = host.server.participants().len().saturating_sub(1);
-                if host.join.is_relay() {
-                    tp!("together.chip.hosting_relay", n)
-                } else {
-                    tp!("together.chip.hosting", n)
-                }
-            }
-            Role::Guest(guest) if guest.pending => t!("together.chip.waiting").into(),
-            Role::Guest(_) => t!("together.chip.following").into(),
-            Role::Joining(_) => t!("together.chip.joining").into(),
-            Role::Idle => return None,
-        };
-        Some(
-            Tag::info()
-                .small()
-                .rounded_full()
-                .child(label)
-                .into_any_element(),
-        )
+    /// Who is in the session, its mode or this person's rights changed: the media
+    /// controls' routing follows, and the bar redraws.
+    pub(super) fn together_session_changed(&mut self, cx: &mut Context<Self>) {
+        let routed = self.integrations.together.in_session();
+        self.services.route_media_to_app(routed);
+        cx.notify();
     }
+}
+
+/// The name of a mode, as the interface says it.
+pub fn mode_name(mode: SessionMode) -> &'static str {
+    match mode {
+        SessionMode::Host => t!("together.mode.host"),
+        SessionMode::Friends => t!("together.mode.friends"),
+        SessionMode::Dj => t!("together.mode.dj"),
+    }
+}
+
+/// Starts this app's server for a session that moves here (a hand-over or a
+/// fail-over): the same relay (claiming the room with its secret) or the LAN at
+/// `port` (any free port if that is taken). Also asks the relay for the room's code.
+/// Blocking.
+fn start_server_for(
+    join: &JoinInfo,
+    name: String,
+    room: RoomSettings,
+    options: HostOptions,
+    port: u16,
+) -> (music_core::Result<TogetherServer>, Option<String>) {
+    let result = match &join.url {
+        Some(url) => TogetherServer::start_relay(
+            url,
+            join.session_id.clone(),
+            join.session_key.clone(),
+            name,
+            room,
+            options,
+        ),
+        None => TogetherServer::start_with(
+            port,
+            join.session_id.clone(),
+            join.session_key.clone(),
+            name.clone(),
+            room,
+            options.clone(),
+        )
+        .or_else(|_| {
+            TogetherServer::start_with(
+                0,
+                join.session_id.clone(),
+                join.session_key.clone(),
+                name,
+                room,
+                options,
+            )
+        }),
+    };
+    // The room keeps its code on the relay; ask for it (a friend group's session has
+    // none and gets none).
+    let code = match (&result, join.is_relay()) {
+        (Ok(server), true) => server.register_code(CODE_TIMEOUT).ok(),
+        _ => None,
+    };
+    (result, code)
 }
 
 /// The LAN join info of a server started on this machine.
@@ -1583,8 +2471,6 @@ mod tests {
             .port()
     }
 
-    /// The relay can't be reached: within a few seconds the session runs on the
-    /// LAN instead, and says why.
     #[test]
     fn a_guest_follows_its_suggestions() {
         let mut state = SentState::Sent;
@@ -1601,12 +2487,20 @@ mod tests {
         assert_eq!(state, SentState::Approved);
     }
 
+    /// The relay can't be reached: within a few seconds the session runs on the
+    /// LAN instead, and says why.
     #[test]
     fn falls_back_to_the_lan_when_the_relay_is_unreachable() {
         let relay = format!("ws://127.0.0.1:{}", closed_port());
         let start = Instant::now();
-        let hosted = host_blocking(Some(&relay), 0, "Hana".into(), RoomSettings::default())
-            .expect("the LAN session starts");
+        let hosted = host_blocking(
+            Some(&relay),
+            0,
+            "Hana".into(),
+            RoomSettings::default(),
+            true,
+        )
+        .expect("the LAN session starts");
         assert!(
             start.elapsed() < Duration::from_secs(8),
             "{:?}",
@@ -1622,7 +2516,7 @@ mod tests {
 
     #[test]
     fn direct_hosting_never_tries_the_relay() {
-        let hosted = host_blocking(None, 0, "Hana".into(), RoomSettings::default()).unwrap();
+        let hosted = host_blocking(None, 0, "Hana".into(), RoomSettings::default(), true).unwrap();
         assert!(!hosted.join.is_relay() && hosted.fallback.is_none());
         assert!(
             hosted
@@ -1630,6 +2524,42 @@ mod tests {
                 .to_link()
                 .starts_with("music-together://join?host=")
         );
+        // The port taken (another session on this computer): any free one instead.
+        let taken = hosted.server.port();
+        let second =
+            host_blocking(None, taken, "Ann".into(), RoomSettings::default(), true).unwrap();
+        assert!(second.server.port() > 0 && second.server.port() != taken);
+    }
+
+    #[test]
+    fn the_room_mirrors_into_the_local_queue() {
+        let room = RoomState {
+            queue: vec![
+                TogetherTrack {
+                    id: "aaaaaaaaaaa".into(),
+                    uid: Some(5),
+                    ..TogetherTrack::default()
+                },
+                TogetherTrack {
+                    id: "bbbbbbbbbbb".into(),
+                    uid: Some(9),
+                    queued: true,
+                    added_by: Some("Ana".into()),
+                    ..TogetherTrack::default()
+                },
+            ],
+            context_name: Some("Album".into()),
+            context_radio: true,
+            ..RoomState::default()
+        };
+        let items = mirror_items(&room);
+        assert_eq!(items[1].0, Some(9));
+        assert_eq!(items[1].2, Source::User);
+        assert_eq!(items[0].2, Source::Context);
+        let context = mirror_context(&room).unwrap();
+        assert!(context.radio && context.name == "Album");
+        assert_eq!(repeat_of(repeat_code(Repeat::All)), Repeat::All);
+        assert_eq!(repeat_of(7), Repeat::Off);
     }
 
     #[test]

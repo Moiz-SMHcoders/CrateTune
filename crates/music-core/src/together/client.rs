@@ -15,9 +15,11 @@ use std::time::{Duration, Instant};
 use super::conn::{Conn, Link, POLL, Recv};
 use super::link::JoinInfo;
 use super::messages::{
-    AddTrackMode, ControlAction, Message, PROTOCOL_VERSION, RoomSettings, RoomState,
-    SuggestionState, TogetherTrack,
+    AddTrackMode, ControlAction, FEATURE_SESSION, FEATURES, IntentMeta, Message, NoteKind,
+    PROTOCOL_VERSION, QueueOp, RoomSettings, RoomState, SessionMode, Successor, SuggestionState,
+    TogetherTrack,
 };
+use super::server::HOST_LEFT;
 use super::sync::{ClockSnapshot, TogetherClock};
 use crate::{Error, Result};
 
@@ -61,6 +63,32 @@ pub enum ClientEvent {
     },
     Disconnected {
         reason: Option<String>,
+        /// The host is gone without ending the session (the connection dropped, it
+        /// stopped answering, or it quit a Friends session): a roster's successors may
+        /// carry the session on ([`super::session::failover`]).
+        lost: bool,
+    },
+    /// Who takes a Friends session over (empty: nobody, it ends with the host).
+    Roster {
+        successors: Vec<Successor>,
+        trusted_client_ids: Vec<String>,
+        banned_client_ids: Vec<String>,
+        relay_secret: Option<String>,
+    },
+    /// Someone else reacted to the current song.
+    Reaction {
+        participant_id: String,
+        name: String,
+        emoji: String,
+        track_id: Option<String>,
+    },
+    /// Someone did something ("Ana skipped").
+    Note {
+        participant_id: String,
+        name: String,
+        note: NoteKind,
+        count: u32,
+        title: Option<String>,
     },
     /// The host wants this guest to take over the session. Start a server with
     /// these (same session id + key; [`super::HostOptions`] from the lists and
@@ -100,10 +128,34 @@ fn lock<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
 }
 
 /// Who this client is, for the hello (again after a host transfer).
-struct Identity {
-    display_name: String,
-    client_id: String,
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct ClientOptions {
+    pub display_name: String,
+    pub client_id: String,
+    /// What it says it can do beyond the protocol (see [`FEATURES`]); empty: a plain
+    /// protocol guest, as an ArchiveTune one.
+    pub features: Vec<String>,
+    /// Where it would listen on the LAN if it took a Friends session over.
+    pub standby: Option<(String, u16)>,
 }
+
+impl ClientOptions {
+    /// This app's guest (with our additions).
+    pub fn ours(display_name: &str, client_id: &str, standby: Option<(String, u16)>) -> Self {
+        Self {
+            display_name: display_name.to_owned(),
+            client_id: client_id.to_owned(),
+            features: FEATURES.iter().map(|f| (*f).to_owned()).collect(),
+            standby,
+        }
+    }
+
+    fn ours_enabled(&self) -> bool {
+        self.features.iter().any(|f| f == FEATURE_SESSION)
+    }
+}
+
+type Identity = ClientOptions;
 
 /// Connects and says hello.
 fn open(join: &JoinInfo, identity: &Identity) -> Result<Conn> {
@@ -114,6 +166,7 @@ fn open(join: &JoinInfo, identity: &Identity) -> Result<Conn> {
         session_key: join.session_key.clone(),
         client_id: identity.client_id.clone(),
         display_name: identity.display_name.trim().to_owned(),
+        features: identity.features.clone(),
     };
     if !conn.send(&hello) {
         return Err(Error::Parse("connection closed during hello".into()));
@@ -132,12 +185,22 @@ pub struct TogetherClient {
 }
 
 impl TogetherClient {
-    /// Connects and says hello. Blocking (up to a few seconds); call off the UI thread.
+    /// Connects and says hello as a plain protocol guest (no additions; as an
+    /// ArchiveTune guest would). Blocking (up to a few seconds); call off the UI thread.
     pub fn connect(join: &JoinInfo, display_name: &str, client_id: &str) -> Result<Self> {
-        let identity = Identity {
-            display_name: display_name.to_owned(),
-            client_id: client_id.to_owned(),
-        };
+        Self::connect_with(
+            join,
+            ClientOptions {
+                display_name: display_name.to_owned(),
+                client_id: client_id.to_owned(),
+                ..ClientOptions::default()
+            },
+        )
+    }
+
+    /// Connects and says hello with `identity` (this app: [`ClientOptions::ours`]).
+    /// Blocking (up to a few seconds); call off the UI thread.
+    pub fn connect_with(join: &JoinInfo, identity: ClientOptions) -> Result<Self> {
         let conn = open(join, &identity)?;
         let shared = Arc::new(Shared {
             epoch: Instant::now(),
@@ -227,12 +290,72 @@ impl TogetherClient {
     }
 
     pub fn request_control(&self, action: ControlAction) -> bool {
+        self.request_control_with(action, None)
+    }
+
+    /// A control request stamped with what this guest saw (see [`IntentMeta`]).
+    pub fn request_control_with(&self, action: ControlAction, intent: Option<IntentMeta>) -> bool {
         let session_id = self.session_id.clone();
         self.send(|participant_id| Message::ControlRequest {
             session_id,
             participant_id,
             action,
+            intent,
         })
+    }
+
+    /// A queue edit (hosts of this app, in a Friends session).
+    pub fn request_queue(&self, op: QueueOp, intent: Option<IntentMeta>) -> bool {
+        let session_id = self.session_id.clone();
+        self.send(|participant_id| Message::QueueRequest {
+            session_id,
+            participant_id,
+            op,
+            intent,
+        })
+    }
+
+    pub fn request_mode(&self, mode: SessionMode) -> bool {
+        let session_id = self.session_id.clone();
+        self.send(|participant_id| Message::ModeRequest {
+            session_id,
+            participant_id,
+            mode,
+        })
+    }
+
+    pub fn request_kick(&self, target_id: &str, ban: bool) -> bool {
+        let session_id = self.session_id.clone();
+        let target_id = target_id.to_owned();
+        self.send(|participant_id| Message::KickRequest {
+            session_id,
+            participant_id,
+            target_id,
+            ban,
+        })
+    }
+
+    pub fn send_reaction(&self, emoji: &str, track_id: Option<&str>) -> bool {
+        let session_id = self.session_id.clone();
+        let (emoji, track_id) = (emoji.to_owned(), track_id.map(str::to_owned));
+        self.send(|participant_id| Message::Reaction {
+            session_id,
+            participant_id,
+            participant_name: None,
+            emoji,
+            track_id,
+        })
+    }
+
+    /// An [`IntentMeta`] for a request about `track_id` / `uid` asked now (the host's
+    /// clock as this guest estimates it).
+    pub fn intent(&self, track_id: Option<String>, uid: Option<u64>) -> IntentMeta {
+        let clock = self.clock();
+        IntentMeta {
+            track_id,
+            uid,
+            at_ms: (self.elapsed_ms() as i64 + clock.offset_ms).max(0) as u64,
+        }
     }
 
     pub fn request_add_track(&self, track: TogetherTrack, mode: AddTrackMode) -> bool {
@@ -274,7 +397,12 @@ fn run(
     let elapsed = || shared.epoch.elapsed().as_millis() as u64;
     let emit = |e: ClientEvent| {
         let _ = events.send(e);
+        super::wake();
     };
+    // Room states repeat twice a second; only a change is worth waking the app for
+    // (its own poll follows the position).
+    let mut last_room: Option<RoomKey> = None;
+    let mut lost = false;
     let mut next_ping = Instant::now();
     let mut ping_id = 0u64;
     // Fast pings again after reconnecting (a new host has a new clock).
@@ -337,6 +465,7 @@ fn run(
                         ..
                     } if sid == session_id => {
                         *lock(&shared.participant_id) = Some(participant_id.clone());
+                        member_hello(&mut conn, session_id, &participant_id, identity);
                         emit(ClientEvent::Welcome {
                             participant_id,
                             pending: is_pending,
@@ -344,8 +473,52 @@ fn run(
                         });
                     }
                     Message::RoomState { state } if state.session_id == session_id => {
-                        emit(ClientEvent::RoomState(state));
+                        let key = RoomKey::of(&state);
+                        if last_room.as_ref() == Some(&key) {
+                            let _ = events.send(ClientEvent::RoomState(state));
+                        } else {
+                            last_room = Some(key);
+                            emit(ClientEvent::RoomState(state));
+                        }
                     }
+                    Message::SessionRoster {
+                        session_id: sid,
+                        successors,
+                        trusted_client_ids,
+                        banned_client_ids,
+                        relay_secret,
+                    } if sid == session_id => emit(ClientEvent::Roster {
+                        successors,
+                        trusted_client_ids,
+                        banned_client_ids,
+                        relay_secret,
+                    }),
+                    Message::Reaction {
+                        session_id: sid,
+                        participant_id,
+                        participant_name,
+                        emoji,
+                        track_id,
+                    } if sid == session_id => emit(ClientEvent::Reaction {
+                        participant_id,
+                        name: participant_name.unwrap_or_default(),
+                        emoji,
+                        track_id,
+                    }),
+                    Message::SessionNote {
+                        session_id: sid,
+                        participant_id,
+                        participant_name,
+                        note,
+                        count,
+                        title,
+                    } if sid == session_id => emit(ClientEvent::Note {
+                        participant_id,
+                        name: participant_name,
+                        note,
+                        count,
+                        title,
+                    }),
                     Message::JoinDecision { approved, .. } => {
                         emit(ClientEvent::JoinDecision { approved });
                     }
@@ -427,7 +600,10 @@ fn run(
                         conn.close("Host moved");
                         *lock(&shared.participant_id) = None;
                         match reconnect(&join, identity, shared, &emit) {
-                            Some(new) => {
+                            Some(mut new) => {
+                                if let Some(pid) = lock(&shared.participant_id).clone() {
+                                    member_hello(&mut new, session_id, &pid, identity);
+                                }
                                 conn = new;
                                 *lock(&shared.join) = join;
                                 *lock(&shared.clock) = TogetherClock::default();
@@ -438,7 +614,10 @@ fn run(
                                 emit(ClientEvent::Reconnected);
                             }
                             None if shared.shutdown.load(Ordering::Relaxed) => break None,
-                            None => break Some("Couldn't reach the new host".to_owned()),
+                            None => {
+                                lost = true;
+                                break Some("Couldn't reach the new host".to_owned());
+                            }
                         }
                     }
                     _ => {}
@@ -447,13 +626,78 @@ fn run(
             Recv::Idle => {
                 if last_heard.elapsed() > HOST_TIMEOUT {
                     conn.close("Timed out");
+                    lost = true;
                     break Some("The host stopped responding".into());
                 }
             }
-            Recv::Closed(reason) => break reason.or_else(|| Some("Disconnected".into())),
+            Recv::Closed(reason) => {
+                lost = reason.as_deref().is_none_or(is_lost);
+                break reason.or_else(|| Some("Disconnected".into()));
+            }
         }
     };
-    emit(ClientEvent::Disconnected { reason });
+    emit(ClientEvent::Disconnected { reason, lost });
+}
+
+/// What of a room state is worth waking the app for when it changes.
+#[derive(PartialEq)]
+struct RoomKey {
+    queue_hash: String,
+    current_index: usize,
+    is_playing: bool,
+    repeat_mode: u8,
+    shuffle_enabled: bool,
+    settings: RoomSettings,
+    participants: Vec<(String, bool)>,
+    /// Coarse: a seek moves it out of its 2-second bucket relative to the stamp.
+    position_bucket: i64,
+}
+
+impl RoomKey {
+    fn of(state: &RoomState) -> Self {
+        let drift = state.position_ms as i64 - state.sent_at_elapsed_realtime_ms as i64;
+        Self {
+            queue_hash: state.queue_hash.clone(),
+            current_index: state.current_index,
+            is_playing: state.is_playing,
+            repeat_mode: state.repeat_mode,
+            shuffle_enabled: state.shuffle_enabled,
+            settings: state.settings,
+            participants: state
+                .participants
+                .iter()
+                .map(|p| (p.id.clone(), p.is_pending))
+                .collect(),
+            // Playing, position and stamp advance together; paused, the position stays.
+            position_bucket: if state.is_playing {
+                drift.div_euclid(2_000)
+            } else {
+                (state.position_ms / 2_000) as i64
+            },
+        }
+    }
+}
+
+/// A goodbye that means the host is gone, not that the session ended: the connection
+/// dropped, the relay lost the host, or the host quit a Friends session.
+fn is_lost(reason: &str) -> bool {
+    matches!(
+        reason,
+        "Connection lost" | "Relay connection lost" | "Host connection lost"
+    ) || reason == HOST_LEFT
+}
+
+/// This app's guest tells the host where it would take a Friends session over.
+fn member_hello(conn: &mut Conn, session_id: &str, participant_id: &str, identity: &Identity) {
+    if !identity.ours_enabled() {
+        return;
+    }
+    conn.send(&Message::MemberHello {
+        session_id: session_id.to_owned(),
+        participant_id: participant_id.to_owned(),
+        standby_host: identity.standby.as_ref().map(|(h, _)| h.clone()),
+        standby_port: identity.standby.as_ref().map(|(_, p)| *p),
+    });
 }
 
 /// Tries to reach a new host for [`RECONNECT_FOR`] (it may still be starting, a

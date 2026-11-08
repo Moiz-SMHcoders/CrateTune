@@ -511,7 +511,7 @@ impl MusicApp {
         };
         // Joining a Music Together session's queue would fight the host.
         if self.together_is_guest() {
-            self.together_leave(cx);
+            self.together_stop(cx);
         }
         let tracks: Vec<Track> = snapshot.queue.iter().map(TogetherTrack::to_track).collect();
         let index = snapshot.current_index.min(tracks.len().saturating_sub(1));
@@ -522,9 +522,9 @@ impl MusicApp {
         if self.queue.is_current(&current.id) && self.playback.track.is_some() {
             let _ = self.queue.replace(tracks, index);
             self.next_sent = None;
-            self.seek_to(Duration::from_millis(target), cx);
+            self.seek_local(Duration::from_millis(target), cx);
             if self.playback.status != PlaybackStatus::Playing {
-                self.toggle_playback(cx);
+                self.toggle_playback_local(cx);
             }
         } else if let Some(track) = self.queue.replace(tracks, index) {
             self.store.resume_at = None;
@@ -539,7 +539,7 @@ impl MusicApp {
 
     fn devices_pause_here(&mut self, cx: &mut Context<Self>) {
         if self.playback.status == PlaybackStatus::Playing {
-            self.toggle_playback(cx);
+            self.toggle_playback_local(cx);
         }
     }
 
@@ -592,7 +592,7 @@ impl MusicApp {
                 .duration
                 .is_none_or(|d| Duration::from_millis(ms) + Duration::from_secs(3) < d);
             if fits {
-                self.seek_to(Duration::from_millis(ms), cx);
+                self.seek_local(Duration::from_millis(ms), cx);
             }
         } else if current.is_some_and(|c| c != id) {
             self.integrations.devices.pending_seek = None;
@@ -773,21 +773,23 @@ impl MusicApp {
             Event::Synced { id, applied } => self.sync_on_synced(id, applied, window, cx),
             Event::SyncFailed { id, error } => self.sync_on_failed(id, error),
             Event::GroupsChanged(groups) => self.friends_groups_changed(groups, window, cx),
-            Event::FriendActivity { member, activity } => self.friends_activity(member, activity),
+            Event::FriendActivity { member, activity } => {
+                self.friends_activity(member, activity, cx)
+            }
             Event::ListenInvite {
                 member,
                 group,
                 link,
             } => self.friends_listen_invite(
-                super::friends::ListenInvite {
-                    member,
-                    group,
-                    link,
-                    at_ms: now_unix_ms(),
-                },
+                super::friends::ListenInvite::new(member, group, link, now_unix_ms()),
                 window,
                 cx,
             ),
+            Event::ListenEnded {
+                member,
+                group,
+                link,
+            } => self.friends_listen_ended(&member, &group, &link, cx),
             Event::Joined(group) => self.friends_joined(group, window, cx),
             Event::JoinFailed(e) => self.friends_join_failed(e, cx),
             Event::InviteEnded { joined } => self.friends_invite_ended(joined, window, cx),

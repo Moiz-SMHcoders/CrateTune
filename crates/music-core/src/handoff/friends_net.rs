@@ -135,9 +135,11 @@ pub(crate) enum FriendsCommand {
     Push,
     Advertise(bool),
     Join(PairInput),
+    /// A session's link to the group (`ended`: it is over).
     ListenTogether {
         group: String,
         link: String,
+        ended: bool,
     },
 }
 
@@ -238,16 +240,18 @@ pub(super) fn handle(ctx: &Arc<Ctx>, command: FriendsCommand) {
                 }
             });
         }
-        FriendsCommand::ListenTogether { group, link } => {
+        FriendsCommand::ListenTogether { group, link, ended } => {
             let devices = match lock(&ctx.shared.friends).as_ref() {
                 Some(f) => f.devices(Some(&group)),
                 None => return,
             };
             for device in devices {
                 let ctx = ctx.clone();
-                let msg = Message::ListenTogether {
-                    group: group.clone(),
-                    link: link.clone(),
+                let (group, link) = (group.clone(), link.clone());
+                let msg = if ended {
+                    Message::ListenEnded { group, link }
+                } else {
+                    Message::ListenTogether { group, link }
                 };
                 tokio::spawn(async move {
                     if let Err(e) = request(&ctx, device, &msg).await {
@@ -422,9 +426,16 @@ async fn answer(ctx: &Ctx, id: EndpointId, mut send: SendStream, mut recv: RecvS
                     Message::error(code::NOT_MEMBER, "")
                 }
             }
-            Message::ListenTogether { group, link } => {
+            Message::ListenTogether {
+                ref group,
+                ref link,
+            }
+            | Message::ListenEnded {
+                ref group,
+                ref link,
+            } => {
                 let member = lock(&ctx.shared.friends).as_ref().and_then(|f| {
-                    let g = f.setup.groups.iter().find(|g| g.id() == group)?;
+                    let g = f.setup.groups.iter().find(|g| g.id() == *group)?;
                     g.is_member(&f.setup.identity.id())
                         .then(|| g.member_of_device(&id.to_string()))
                         .flatten()
@@ -432,10 +443,19 @@ async fn answer(ctx: &Ctx, id: EndpointId, mut send: SendStream, mut recv: RecvS
                 });
                 match member {
                     Some(member) => {
-                        ctx.emit(Event::ListenInvite {
-                            member,
-                            group,
-                            link: link.chars().take(2048).collect(),
+                        let (group, link) = (group.clone(), link.chars().take(2048).collect());
+                        ctx.emit(if matches!(frame.msg, Message::ListenEnded { .. }) {
+                            Event::ListenEnded {
+                                member,
+                                group,
+                                link,
+                            }
+                        } else {
+                            Event::ListenInvite {
+                                member,
+                                group,
+                                link,
+                            }
                         });
                         Message::Ok
                     }

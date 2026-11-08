@@ -332,6 +332,7 @@ impl Render for MiniPlayer {
             let elements = np.shown(ElementView::Mini(skin));
             let queue = queue_shown(np.mini_queue, elements);
             let extras = Extras {
+                lock: app.transport_lock().map(gpui::SharedString::from),
                 volume: app.volume,
                 shuffle: app.queue.shuffle(),
                 repeat: app.queue.repeat(),
@@ -598,6 +599,7 @@ impl Render for MiniPlayer {
             has_track: track.is_some(),
             has_next,
             skips: el.has(NpElement::Skip),
+            lock: extras.lock.clone(),
         };
         let shown_label = format_duration(shown as u64);
         let total_label = if total.is_zero() {
@@ -892,6 +894,8 @@ impl Render for MiniPlayer {
 
 /// What the title strip, the tools row and "Up next" show.
 struct Extras {
+    /// In a Music Together session without control: why (the buttons' tooltip).
+    lock: Option<gpui::SharedString>,
     volume: f32,
     shuffle: bool,
     repeat: Repeat,
@@ -977,6 +981,8 @@ impl MiniPlayer {
                     } else {
                         t!("player.tooltip.shuffle_off")
                     })
+                    .disabled(extras.lock.is_some())
+                    .when_some(extras.lock.clone(), |b, tip| b.tooltip(tip))
                     .on_click(|_, _, cx| {
                         update_app(cx, |app, cx| app.toggle_shuffle(cx));
                     })
@@ -995,6 +1001,8 @@ impl MiniPlayer {
                     Repeat::All => t!("player.tooltip.repeat_all"),
                     Repeat::One => t!("player.tooltip.repeat_one"),
                 })
+                .disabled(extras.lock.is_some())
+                .when_some(extras.lock.clone(), |b, tip| b.tooltip(tip))
                 .on_click(|_, _, cx| {
                     update_app(cx, |app, cx| app.cycle_repeat(cx));
                 })
@@ -1377,6 +1385,8 @@ struct Parts {
     has_next: bool,
     /// Previous / next are shown.
     skips: bool,
+    /// A Music Together guest without control: disabled, with why.
+    lock: Option<gpui::SharedString>,
 }
 
 impl Parts {
@@ -1391,7 +1401,8 @@ impl Parts {
                         .custom(crate::components::player_bar::bar_button_style(cx))
                         .small()
                         .icon(AppIcon::Previous)
-                        .disabled(!self.has_track)
+                        .disabled(!self.has_track || self.lock.is_some())
+                        .when_some(self.lock.clone(), |b, tip| b.tooltip(tip))
                         .on_click(|_, _, cx| {
                             update_app(cx, |app, cx| app.previous_track(cx));
                         }),
@@ -1407,7 +1418,8 @@ impl Parts {
                         IconName::Play
                     })
                     .loading(self.loading)
-                    .disabled(!self.can_toggle)
+                    .disabled(!self.can_toggle || self.lock.is_some())
+                    .when_some(self.lock.clone(), |b, tip| b.tooltip(tip))
                     .on_click(|_, _, cx| {
                         update_app(cx, |app, cx| app.toggle_playback(cx));
                     }),
@@ -1418,7 +1430,8 @@ impl Parts {
                         .custom(crate::components::player_bar::bar_button_style(cx))
                         .small()
                         .icon(AppIcon::Next)
-                        .disabled(!self.has_next)
+                        .disabled(!self.has_next || self.lock.is_some())
+                        .when_some(self.lock.clone(), |b, tip| b.tooltip(tip))
                         .on_click(|_, _, cx| {
                             update_app(cx, |app, cx| app.next_track(cx));
                         }),

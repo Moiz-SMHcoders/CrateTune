@@ -24,6 +24,9 @@ const MAX_REMOTE_AGE_MS: i64 = 5_000;
 const PLAYING_SEEK_THRESHOLD_MS: u64 = 700;
 const PAUSED_SEEK_THRESHOLD_MS: u64 = 150;
 const ECHO_SUPPRESSION_MS: u64 = 700;
+/// After a guest acted on its own player: long enough for the host's answer to come
+/// back over a relay.
+const HOLD_MS: u64 = 1_500;
 /// Don't bother seeking into the first moment of a freshly loaded track.
 const MIN_LOAD_SEEK_MS: u64 = 1_500;
 
@@ -142,6 +145,12 @@ pub struct GuestSync {
 impl GuestSync {
     pub fn reset(&mut self) {
         *self = Self::default();
+    }
+
+    /// The guest changed its own player a moment ago (`now_ms`, e.g. a pause it also
+    /// asked the host for): no corrections until the host's answer can have arrived.
+    pub fn hold(&mut self, now_ms: u64) {
+        self.suppress_until = self.suppress_until.max(now_ms + HOLD_MS);
     }
 
     /// `None` if `remote` is older than one already applied.

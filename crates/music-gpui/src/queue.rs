@@ -346,6 +346,41 @@ impl Queue {
         self.current().cloned()
     }
 
+    /// Becomes a copy of another device's queue (a Music Together room): its items
+    /// with their slots (`uid`s, so a guest's edits name the host's slots), parts and
+    /// context, `index` current; shuffle off (the order is already the room's). A slot
+    /// of `None` gets a new local one. Returns the current track.
+    pub fn mirror(
+        &mut self,
+        items: Vec<(Option<u64>, Track, Source)>,
+        index: usize,
+        context: Option<QueueContext>,
+    ) -> Option<Track> {
+        if index >= items.len() {
+            return None;
+        }
+        let changed = self.current_item().map(|i| i.uid) != items[index].0
+            || self.current().map(|t| &t.video_id) != Some(&items[index].1.video_id);
+        if changed && let Some(old) = self.current().cloned() {
+            self.record(old);
+        }
+        let max = items.iter().filter_map(|(uid, ..)| *uid).max().unwrap_or(0);
+        self.next_uid = self.next_uid.max(max + 1);
+        let items: Vec<QueueItem> = items
+            .into_iter()
+            .map(|(uid, track, source)| match uid {
+                Some(uid) => QueueItem { uid, track, source },
+                None => self.item(track, source),
+            })
+            .collect();
+        self.shuffle = false;
+        self.unshuffled.clear();
+        self.items = items;
+        self.index = Some(index);
+        self.context = context;
+        self.current().cloned()
+    }
+
     /// Starts playing `tracks[index]` with `tracks` as the context (a click in a list,
     /// an album's Play): like [`Self::replace`], but your pending "Next in queue" items
     /// stay and play right after it.
@@ -827,6 +862,37 @@ mod tests {
 
     fn current(q: &Queue) -> &str {
         q.current().map_or("", |t| t.video_id.as_str())
+    }
+
+    #[test]
+    fn a_guest_mirrors_the_hosts_slots_and_parts() {
+        let mut q = Queue::with_seed(3);
+        q.set_shuffle(true);
+        let room = vec![
+            (Some(40), track("a"), Source::Context),
+            (Some(41), track("b"), Source::User),
+            (Some(42), track("c"), Source::Context),
+        ];
+        let started = q.mirror(room, 0, Some(QueueContext::list("Album")));
+        assert_eq!(id(started), Some("a".into()));
+        // The host's slots, its "Next in queue" part and context; no local shuffle.
+        assert_eq!(uid(&q, "b"), 41);
+        assert_eq!(q.user_upcoming().len(), 1);
+        assert_eq!(q.context().map(|c| c.name.as_str()), Some("Album"));
+        assert!(!q.shuffle());
+        // New local slots never collide with the host's.
+        q.add(vec![track("d")]);
+        assert!(uid(&q, "d") > 42);
+        // The room moved on: the old current is history, slots without a uid get one.
+        let room = vec![
+            (Some(42), track("c"), Source::Context),
+            (None, track("e"), Source::User),
+        ];
+        q.mirror(room, 0, None);
+        assert_eq!(current(&q), "c");
+        assert_eq!(q.history().next().map(|t| t.video_id.as_str()), Some("a"));
+        assert!(uid(&q, "e") > 42);
+        assert_eq!(q.mirror(Vec::new(), 0, None), None);
     }
 
     fn uid(q: &Queue, id: &str) -> u64 {

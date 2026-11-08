@@ -18,6 +18,8 @@ pub mod import;
 mod script;
 mod sponsorblock;
 pub mod together;
+pub mod together_route;
+pub mod together_ui;
 
 use gpui::{AnyElement, Context, Window};
 use music_core::PlaybackState;

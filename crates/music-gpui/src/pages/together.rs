@@ -1,9 +1,10 @@
-//! Listen together (Music Together on the LAN or through a relay): host (over the
-//! internet or on this network) or join a session (with a room code or a link),
-//! the room code and join link, participants (approve / remove / make host), room
-//! settings, the room's queue and requests to the host.
+//! Listen together (Music Together on the LAN or through a relay). Idle: "Start
+//! listening together" (the sheet that asks how: mode, who can join, connection) and
+//! "Join a session" (one field for a room code or a link), and the friends card
+//! (friend groups' live sessions). In a session: the mode and what you may do, the
+//! invite (room code and link, or "only this group"), the room's settings, people,
+//! the shared queue with who queued what, reactions, suggestions and the activity.
 
-use std::rc::Rc;
 use std::time::Duration;
 
 use gpui::{
@@ -12,7 +13,7 @@ use gpui::{
     prelude::FluentBuilder as _, px,
 };
 use gpui_component::{
-    ActiveTheme as _, Disableable as _, IconName, Selectable as _, Sizable as _,
+    ActiveTheme as _, Disableable as _, Icon, IconName, Sizable as _,
     button::{Button, ButtonVariants as _},
     h_flex,
     input::{Input, InputState},
@@ -21,25 +22,24 @@ use gpui_component::{
     tag::Tag,
     v_flex,
 };
-use music_core::Track;
 use music_core::together::{
-    ControlAction, Participant, RoomState, Suggestion, TogetherTrack, display_code,
+    Participant, REACTIONS, RoomSettings, SessionMode, Suggestion, display_code,
 };
 
 use super::PageView;
 use crate::app::{MusicApp, read_app, update_app};
-use crate::components::track_row::TrackRow;
 use crate::components::{page_scroll, page_title, section_header};
 use crate::icons::Lucide;
-use crate::integrations::config::HostMode;
-use crate::integrations::together::{Role, SentState, SentSuggestion, relay_hint, relay_host_name};
+use crate::integrations::together::{
+    Role, SentState, SentSuggestion, mode_name, relay_hint, relay_host_name,
+};
+use crate::integrations::together_ui::{avatar, mode_icon, permission_line, reaction_icon};
 use crate::router::Route;
 use crate::settings::SectionId;
 
 pub struct TogetherPage {
     scroll: ScrollHandle,
-    link: Entity<InputState>,
-    code: Entity<InputState>,
+    join: Entity<InputState>,
     _tick: Task<()>,
 }
 
@@ -48,10 +48,8 @@ impl TogetherPage {
     pub fn build(last: String, window: &mut Window, cx: &mut Context<MusicApp>) -> PageView {
         let scroll = ScrollHandle::new();
         let page = cx.new(|cx: &mut Context<Self>| {
-            let link = cx.new(|cx| InputState::new(window, cx).default_value(last));
-            crate::i18n::track_placeholder(&link, k!("together.join.placeholder"), window, cx);
-            let code = cx.new(|cx| InputState::new(window, cx));
-            crate::i18n::track_placeholder(&code, k!("together.join.code_placeholder"), window, cx);
+            let join = cx.new(|cx| InputState::new(window, cx).default_value(last));
+            crate::i18n::track_placeholder(&join, k!("together.join.any_placeholder"), window, cx);
             let executor = cx.background_executor().clone();
             // Participants / room change on the app's poll; refresh twice a second.
             let tick = cx.spawn(async move |this, cx| {
@@ -64,8 +62,7 @@ impl TogetherPage {
             });
             Self {
                 scroll: scroll.clone(),
-                link,
-                code,
+                join,
                 _tick: tick,
             }
         });
@@ -73,15 +70,44 @@ impl TogetherPage {
     }
 }
 
-/// What the hosting card shows.
+/// What the page shows, read from the app before drawing.
 #[derive(Default)]
-struct Hosting {
+struct View {
+    /// 0 idle, 1 joining / reconnecting, 2 in a session.
+    state: u8,
+    joining: String,
+    hosting: bool,
+    mode: SessionMode,
+    room: RoomSettings,
+    host_name: String,
+    line: String,
+    pending: bool,
+    can_switch: bool,
+    can_remove: bool,
+    invite: Option<Invite>,
+    group: Option<(String, String)>,
+    transferring: Option<String>,
+    leaving: bool,
+    people: Vec<Participant>,
+    me: Option<String>,
+    /// Up next: title, artists, who queued it, queued (not the list).
+    queue: Vec<(String, String, Option<String>, bool)>,
+    now: Option<(String, String)>,
+    context: Option<String>,
+    waiting: Vec<Suggestion>,
+    sent: Vec<SentSuggestion>,
+    clock: Option<(i64, u64)>,
+    log: Vec<String>,
+    error: Option<String>,
+}
+
+#[derive(Default, Clone)]
+struct Invite {
     link: String,
     compact: String,
     host: String,
     port: u16,
     relayed: bool,
-    transferring: Option<String>,
     code: Option<String>,
     notice: Option<String>,
 }
@@ -103,705 +129,815 @@ fn muted(text: impl Into<SharedString>, cx: &gpui::App) -> gpui::Div {
         .child(text.into())
 }
 
-fn participant_row(
-    p: &Participant,
-    hosting: bool,
-    transferring: bool,
-    ix: usize,
-    cx: &gpui::App,
-) -> AnyElement {
-    let id = p.id.clone();
-    let mut row = h_flex()
-        .gap_3()
-        .py_1()
-        .child(
-            div()
-                .size(px(30.))
-                .flex_none()
-                .rounded_full()
-                .bg(cx.theme().accent)
-                .flex()
-                .items_center()
-                .justify_center()
-                .text_sm()
-                .font_weight(FontWeight::SEMIBOLD)
-                .child(
-                    p.name
-                        .chars()
-                        .next()
-                        .unwrap_or('?')
-                        .to_uppercase()
-                        .to_string(),
-                ),
-        )
-        .child(div().flex_1().min_w_0().truncate().child(p.name.clone()));
-    if p.is_host {
-        row = row.child(Tag::primary().small().child(t!("together.tag.host")));
-    }
-    if p.is_pending {
-        row = row.child(Tag::warning().small().child(t!("together.tag.waiting")));
-    }
-    if hosting && !p.is_host {
-        if p.is_pending {
-            let (a, d) = (id.clone(), id.clone());
-            row = row
-                .child(
-                    Button::new(("tg-approve", ix))
-                        .xsmall()
-                        .primary()
-                        .label(t!("together.people.let_in"))
-                        .on_click(move |_, _, cx| {
-                            update_app(cx, |app, cx| app.together_approve(&a, true, cx));
-                        }),
-                )
-                .child(
-                    Button::new(("tg-deny", ix))
-                        .xsmall()
-                        .ghost()
-                        .label(t!("together.people.decline"))
-                        .on_click(move |_, _, cx| {
-                            update_app(cx, |app, cx| app.together_approve(&d, false, cx));
-                        }),
-                );
-        } else {
-            let (k, b, t) = (id.clone(), id.clone(), id);
-            row = row
-                .child(
-                    Button::new(("tg-make-host", ix))
-                        .xsmall()
-                        .ghost()
-                        .label(t!("together.people.make_host"))
-                        .tooltip(t!("together.people.make_host_tooltip"))
-                        .disabled(transferring)
-                        .on_click(move |_, _, cx| {
-                            update_app(cx, |app, cx| app.together_transfer(&t, cx));
-                        }),
-                )
-                .child(
-                    Button::new(("tg-kick", ix))
-                        .xsmall()
-                        .ghost()
-                        .label(t!("together.people.remove"))
-                        .on_click(move |_, _, cx| {
-                            update_app(cx, |app, cx| app.together_kick(&k, false, cx));
-                        }),
-                )
-                .child(
-                    Button::new(("tg-ban", ix))
-                        .xsmall()
-                        .ghost()
-                        .label(t!("together.people.ban"))
-                        .on_click(move |_, _, cx| {
-                            update_app(cx, |app, cx| app.together_kick(&b, true, cx));
-                        }),
-                );
-        }
-    }
-    row.into_any_element()
+fn title(text: impl Into<SharedString>) -> gpui::Div {
+    div()
+        .text_lg()
+        .font_weight(FontWeight::SEMIBOLD)
+        .child(text.into())
 }
 
-fn room_queue(room: &RoomState, cx: &gpui::App) -> AnyElement {
-    let tracks: Rc<Vec<Track>> = Rc::new(room.queue.iter().map(TogetherTrack::to_track).collect());
-    let rows: Vec<AnyElement> = (0..tracks.len().min(50))
-        .map(|ix| {
-            TrackRow::new("tg-room", tracks.clone(), ix)
-                .active(ix == room.current_index)
-                .into_any_element()
+fn read_view(app: &MusicApp, cx: &gpui::App) -> View {
+    let t = &app.integrations.together;
+    let mut view = View {
+        error: t.error.clone(),
+        log: t.log.iter().rev().take(10).cloned().collect(),
+        ..View::default()
+    };
+    match &t.role {
+        Role::Idle => return view,
+        Role::Joining(host) => {
+            view.state = 1;
+            view.joining = t!("together.connecting", host = host);
+            return view;
+        }
+        Role::Recovering(_) => {
+            view.state = 1;
+            view.joining = t!("together.can.reconnecting").into();
+            return view;
+        }
+        _ => view.state = 2,
+    }
+    let p = t.permissions().unwrap_or_default();
+    view.hosting = matches!(t.role, Role::Hosting(_));
+    view.mode = t.mode().unwrap_or_default();
+    view.room = t.room_settings().unwrap_or_default();
+    view.host_name = t.host_name().unwrap_or_default();
+    view.line = permission_line(app);
+    view.can_switch = p.switch_mode;
+    view.can_remove = p.moderate;
+    view.people = t.participants();
+    view.me = t.me();
+    view.waiting = app.together_suggestions();
+    view.group = t.group().and_then(|g| {
+        let groups = &app.settings.read(cx).settings().friends.groups;
+        groups
+            .iter()
+            .find(|x| x.id() == g)
+            .map(|x| (g.to_owned(), x.name().to_owned()))
+    });
+    match &t.role {
+        Role::Hosting(h) => {
+            view.invite = Some(Invite {
+                link: h.link(),
+                compact: h.join.to_compact(),
+                host: h.join.host.clone(),
+                port: h.join.port,
+                relayed: h.join.is_relay(),
+                code: h.code.clone(),
+                notice: h.notice.clone(),
+            });
+            view.transferring = h.transferring.clone();
+            view.leaving = h.leaving.is_some();
+        }
+        Role::Guest(g) => {
+            view.pending = g.pending || g.taking_over;
+            view.sent = g.suggestions.iter().rev().cloned().collect();
+            view.clock = Some((g.client.clock().offset_ms, g.client.clock().rtt_ms));
+        }
+        _ => {}
+    }
+    view.now = app
+        .queue
+        .current()
+        .map(|t| (t.title.clone(), t.artists.clone()));
+    view.context = app
+        .queue
+        .context()
+        .map(|c| c.name.clone())
+        .filter(|n| !n.is_empty());
+    view.queue = app
+        .queue
+        .upcoming()
+        .iter()
+        .take(40)
+        .map(|i| {
+            (
+                i.track.title.clone(),
+                i.track.artists.clone(),
+                t.added_by(i.uid).map(str::to_owned),
+                i.source == crate::queue::Source::User,
+            )
         })
         .collect();
-    v_flex()
-        .gap_2()
-        .child(section_header(
-            t!("together.queue.title"),
-            Some(tp!("common.songs", room.queue.len()).into()),
-            None,
-            cx,
-        ))
-        .child(v_flex().children(rows))
-        .into_any_element()
+    view
 }
 
 impl Render for TogetherPage {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let data = read_app(cx, |app, cx| {
-            let t = &app.integrations.together;
-            let prefs = app.settings.read(cx).settings().together.clone();
-            let role = match &t.role {
-                Role::Idle => 0,
-                Role::Joining(_) => 1,
-                Role::Hosting(_) => 2,
-                Role::Guest(_) => 3,
-            };
-            let link = match &t.role {
-                Role::Hosting(h) => Some(Hosting {
-                    link: h.link(),
-                    compact: h.join.to_compact(),
-                    host: h.join.host.clone(),
-                    port: h.join.port,
-                    relayed: h.join.is_relay(),
-                    transferring: h.transferring.clone(),
-                    code: h.code.clone(),
-                    notice: h.notice.clone(),
-                }),
-                _ => None,
-            };
-            let guest = match &t.role {
-                Role::Guest(g) => Some((
-                    g.join.host.clone(),
-                    g.pending || g.taking_over,
-                    g.room.clone(),
-                    g.client.clock(),
-                )),
-                Role::Joining(host) => Some((host.clone(), false, None, Default::default())),
-                _ => None,
-            };
-            // Host: suggestions waiting for approval; guest: what it suggested.
-            let waiting = app.together_suggestions();
-            let sent: Vec<SentSuggestion> = match &t.role {
-                Role::Guest(g) => g.suggestions.iter().rev().cloned().collect(),
-                _ => Vec::new(),
-            };
             (
-                (role, link, guest, t.participants()),
-                t.error.clone(),
-                t.log.iter().rev().take(12).cloned().collect::<Vec<_>>(),
-                prefs,
-                (waiting, sent),
+                read_view(app, cx),
+                app.settings.read(cx).settings().together.clone(),
                 app.friends_panel(cx),
             )
         });
-        let Some(((role, link, guest, participants), error, log, prefs, (waiting, sent), friends)) =
-            data
-        else {
+        let Some((view, prefs, friends)) = data else {
             return div().into_any_element();
         };
-        let theme = cx.theme();
-        let danger = theme.danger;
+        let danger = cx.theme().danger;
         let mut content = v_flex().gap_6().child(page_title(
             t!("nav.together"),
             Some(t!("together.page.subtitle").into()),
             cx,
         ));
-        if let Some(e) = &error {
+        if let Some(e) = &view.error {
             content = content.child(div().text_sm().text_color(danger).child(e.clone()));
         }
-        content = content.child(super::friends_panel::render(friends, cx));
-
-        match role {
-            // ---- idle: host or join
+        match view.state {
             0 => {
-                let link_input = self.link.clone();
-                let code_input = self.code.clone();
-                let mode = prefs.host_mode;
-                let relay_name = relay_hint(&prefs.relay_url)
-                    .as_deref()
-                    .and_then(relay_host_name)
-                    .unwrap_or_default();
-                let mode_button = |id: &'static str, label: &'static str, m: HostMode| {
-                    let selected = mode == m;
-                    Button::new(id)
-                        .small()
-                        .map(|b| if selected { b.primary() } else { b.outline() })
-                        .selected(selected)
-                        .label(label)
-                        .on_click(move |_, _, cx| {
-                            update_app(cx, |app, cx| {
-                                app.settings.update(cx, |panel, cx| {
-                                    panel.set_together(|t| t.host_mode = m, cx)
-                                });
-                            });
-                        })
-                };
-                let host = card(cx)
-                    .flex_1()
-                    .min_w(px(300.))
-                    .child(
-                        div()
-                            .text_lg()
-                            .font_weight(FontWeight::SEMIBOLD)
-                            .child(t!("together.host.title")),
-                    )
-                    .child(muted(host_summary(&prefs), cx))
-                    .child(
-                        h_flex()
-                            .gap_1()
-                            .flex_wrap()
-                            .child(mode_button(
-                                "tg-mode-relay",
-                                t!("together.host.mode_relay"),
-                                HostMode::Relay,
-                            ))
-                            .child(mode_button(
-                                "tg-mode-direct",
-                                t!("together.host.mode_direct"),
-                                HostMode::Direct,
-                            )),
-                    )
-                    .child(muted(
-                        match mode {
-                            HostMode::Relay => {
-                                t!("together.host.mode_relay_note", relay = relay_name)
-                            }
-                            HostMode::Direct => t!("together.host.mode_direct_note").to_owned(),
-                        },
-                        cx,
-                    ))
-                    .child(
-                        h_flex()
-                            .gap_2()
-                            .flex_wrap()
-                            .child(
-                                Button::new("tg-host")
-                                    .primary()
-                                    .icon(match mode {
-                                        HostMode::Relay => Lucide::Globe,
-                                        HostMode::Direct => Lucide::UsersRound,
-                                    })
-                                    .label(t!("together.host.start"))
-                                    .on_click(|_, window, cx| {
-                                        update_app(cx, |app, cx| {
-                                            app.together_host_session(window, cx)
-                                        });
-                                    }),
-                            )
-                            .child(
-                                Button::new("tg-settings")
-                                    .ghost()
-                                    .label(t!("together.host.settings"))
-                                    .on_click(|_, window, cx| {
-                                        update_app(cx, |app, cx| {
-                                            app.navigate(
-                                                Route::Settings {
-                                                    section: SectionId::Together,
-                                                },
-                                                window,
-                                                cx,
-                                            )
-                                        });
-                                    }),
-                            ),
-                    );
-                let join = card(cx)
-                    .flex_1()
-                    .min_w(px(300.))
-                    .child(
-                        div()
-                            .text_lg()
-                            .font_weight(FontWeight::SEMIBOLD)
-                            .child(t!("together.join.title")),
-                    )
-                    .child(
-                        div()
-                            .font_weight(FontWeight::SEMIBOLD)
-                            .child(t!("together.join.code_title")),
-                    )
-                    .child(muted(t!("together.join.code_hint"), cx))
-                    .child(
-                        h_flex()
-                            .gap_2()
-                            .child(div().flex_1().min_w_0().child(Input::new(&self.code)))
-                            .child(
-                                Button::new("tg-join-code")
-                                    .primary()
-                                    .label(t!("together.join.button"))
-                                    .on_click(move |_, window, cx| {
-                                        let code = code_input.read(cx).value().to_string();
-                                        update_app(cx, |app, cx| {
-                                            app.together_join_code(&code, window, cx)
-                                        });
-                                    }),
-                            ),
-                    )
-                    .child(
-                        div()
-                            .pt_2()
-                            .font_weight(FontWeight::SEMIBOLD)
-                            .child(t!("together.join.link_title")),
-                    )
-                    .child(muted(t!("together.join.hint"), cx))
-                    .child(
-                        h_flex()
-                            .gap_2()
-                            .child(div().flex_1().min_w_0().child(Input::new(&self.link)))
-                            .child(
-                                Button::new("tg-join")
-                                    .outline()
-                                    .label(t!("together.join.button"))
-                                    .on_click(move |_, window, cx| {
-                                        let link = link_input.read(cx).value().to_string();
-                                        update_app(cx, |app, cx| {
-                                            app.together_join(&link, window, cx)
-                                        });
-                                    }),
-                            ),
-                    );
-                content = content.child(
-                    h_flex()
-                        .gap_4()
-                        .flex_wrap()
-                        .items_start()
-                        .child(host)
-                        .child(join),
-                );
+                content = content.child(self.idle_cards(&prefs, cx));
+                content = content.child(super::friends_panel::render(friends, cx));
             }
-            // ---- joining
             1 => {
-                let host = guest.as_ref().map(|g| g.0.clone()).unwrap_or_default();
                 content = content.child(
                     card(cx)
                         .child(
                             h_flex()
                                 .gap_3()
                                 .child(Spinner::new())
-                                .child(t!("together.connecting", host = host)),
+                                .child(SharedString::from(view.joining.clone())),
                         )
                         .child(
-                            Button::new("tg-cancel")
-                                .small()
-                                .ghost()
-                                .label(t!("common.cancel"))
-                                .on_click(|_, _, cx| {
-                                    update_app(cx, |app, cx| app.together_leave(cx));
-                                }),
-                        ),
-                );
-            }
-            // ---- hosting
-            2 => {
-                let Hosting {
-                    link,
-                    compact,
-                    host,
-                    port,
-                    relayed,
-                    transferring,
-                    code,
-                    notice,
-                } = link.unwrap_or_default();
-                let (copy_link, copy_compact) = (link.clone(), compact.clone());
-                let guests = participants.iter().filter(|p| !p.is_host).count();
-                let warning = theme.warning;
-                let has_code = code.is_some();
-                let code_block = code.map(|code| {
-                    let shown = display_code(&code);
-                    let copy = shown.clone();
-                    v_flex()
-                        .gap_1()
-                        .child(muted(t!("together.hosting.code_label"), cx))
-                        .child(
-                            h_flex()
-                                .gap_3()
-                                .flex_wrap()
-                                .child(div().text_3xl().font_weight(FontWeight::BOLD).child(shown))
-                                .child(
-                                    Button::new("tg-copy-room-code")
-                                        .small()
-                                        .outline()
-                                        .label(t!("together.hosting.copy_code"))
-                                        .on_click(move |_, window, cx| {
-                                            cx.write_to_clipboard(ClipboardItem::new_string(
-                                                copy.clone(),
-                                            ));
-                                            crate::app::notify(
-                                                window,
-                                                cx,
-                                                t!("together.hosting.code_copied"),
-                                            );
-                                        }),
-                                ),
-                        )
-                        .child(muted(t!("together.hosting.code_hint"), cx))
-                });
-                content = content.child(
-                    card(cx)
-                        .child(
-                            h_flex()
-                                .justify_between()
-                                .child(
-                                    div()
-                                        .text_lg()
-                                        .font_weight(FontWeight::SEMIBOLD)
-                                        .child(tp!("together.hosting.title", guests)),
-                                )
-                                .child(
-                                    Button::new("tg-end")
-                                        .small()
-                                        .danger()
-                                        .label(t!("together.hosting.end"))
-                                        .on_click(|_, _, cx| {
-                                            update_app(cx, |app, cx| app.together_leave(cx));
-                                        }),
-                                ),
-                        )
-                        .children(notice.map(|notice| {
-                            div()
-                                .text_sm()
-                                .font_weight(FontWeight::SEMIBOLD)
-                                .text_color(warning)
-                                .child(notice)
-                        }))
-                        .children(code_block)
-                        .child(muted(
-                            if relayed {
-                                t!("together.hosting.share_relay", host = host)
-                            } else {
-                                t!("together.hosting.share_lan", host = host, port = port)
-                            },
-                            cx,
-                        ))
-                        .children(transferring.map(|name| {
-                            h_flex()
-                                .gap_2()
-                                .child(Spinner::new().small())
-                                .child(muted(t!("together.log.handing_over", name = name), cx))
-                        }))
-                        .child(
-                            h_flex()
-                                .gap_2()
-                                .child(
-                                    div()
-                                        .flex_1()
-                                        .min_w_0()
-                                        .p_2()
-                                        .rounded(crate::theme::radius(6.))
-                                        .bg(theme.background)
-                                        .text_sm()
-                                        .truncate()
-                                        .child(link),
-                                )
-                                .child(
-                                    Button::new("tg-copy")
-                                        .small()
-                                        .outline()
-                                        .label(t!("together.hosting.copy_link"))
-                                        .on_click(move |_, window, cx| {
-                                            cx.write_to_clipboard(ClipboardItem::new_string(
-                                                copy_link.clone(),
-                                            ));
-                                            crate::app::notify(
-                                                window,
-                                                cx,
-                                                t!("together.hosting.link_copied"),
-                                            );
-                                        }),
-                                )
-                                .when(!has_code, |row| {
-                                    row.child(
-                                        Button::new("tg-copy-compact")
-                                            .small()
-                                            .ghost()
-                                            .label(t!("together.hosting.copy_code"))
-                                            .tooltip(if relayed {
-                                                t!("together.hosting.copy_code_tooltip_relay")
-                                            } else {
-                                                t!("together.hosting.copy_code_tooltip")
-                                            })
-                                            .on_click(move |_, _, cx| {
-                                                cx.write_to_clipboard(ClipboardItem::new_string(
-                                                    copy_compact.clone(),
-                                                ));
-                                            }),
-                                    )
-                                }),
-                        )
-                        .when(relayed, |card| {
-                            card.child(muted(t!("together.hosting.relay_privacy"), cx))
-                        })
-                        .child(
-                            h_flex()
-                                .gap_6()
-                                .flex_wrap()
-                                .child(setting_switch(
-                                    "tg-allow-add",
-                                    t!("together.room.allow_add"),
-                                    prefs.allow_guests_to_add_tracks,
-                                    |t, on| t.allow_guests_to_add_tracks = on,
-                                ))
-                                .child(setting_switch(
-                                    "tg-allow-control",
-                                    t!("together.room.allow_control"),
-                                    prefs.allow_guests_to_control_playback,
-                                    |t, on| t.allow_guests_to_control_playback = on,
-                                ))
-                                .child(setting_switch(
-                                    "tg-approval",
-                                    t!("together.room.approve"),
-                                    prefs.require_host_approval,
-                                    |t, on| t.require_host_approval = on,
-                                ))
-                                .child(setting_switch(
-                                    "tg-approve-suggestions",
-                                    t!("together.room.approve_suggestions"),
-                                    prefs.approve_suggestions,
-                                    |t, on| t.approve_suggestions = on,
-                                )),
-                        ),
-                );
-                if !waiting.is_empty() {
-                    content = content.child(suggestions_card(&waiting, cx));
-                }
-            }
-            // ---- guest
-            _ => {
-                let (host, pending, room, clock) = guest.unwrap_or_default();
-                let can_control = room
-                    .as_ref()
-                    .is_some_and(|r| r.settings.allow_guests_to_control_playback);
-                let can_add = room
-                    .as_ref()
-                    .is_none_or(|r| r.settings.allow_guests_to_add_tracks);
-                let playing = room.as_ref().is_some_and(|r| r.is_playing);
-                let host_name = participants
-                    .iter()
-                    .find(|p| p.is_host)
-                    .map_or(host.clone(), |p| p.name.clone());
-                let control =
-                    |id: &'static str, icon: Lucide, tip: &'static str, action: ControlAction| {
-                        Button::new(id)
-                            .small()
-                            .ghost()
-                            .icon(icon)
-                            .tooltip(tip)
-                            .disabled(!can_control)
-                            .on_click(move |_, window, cx| {
-                                let action = action.clone();
-                                update_app(cx, |app, cx| app.together_request(action, window, cx));
-                            })
-                    };
-                let now = room.as_ref().and_then(|r| r.current().cloned());
-                let mut session = card(cx).child(
-                    h_flex()
-                        .justify_between()
-                        .child(
-                            div()
-                                .text_lg()
-                                .font_weight(FontWeight::SEMIBOLD)
-                                .child(t!("together.guest.listening_with", name = host_name)),
-                        )
-                        .child(
-                            Button::new("tg-leave")
-                                .small()
-                                .outline()
-                                .label(t!("together.guest.leave"))
-                                .on_click(|_, _, cx| {
-                                    update_app(cx, |app, cx| app.together_leave(cx));
-                                }),
-                        ),
-                );
-                if pending {
-                    session = session.child(
-                        h_flex()
-                            .gap_2()
-                            .child(Spinner::new().small())
-                            .child(muted(t!("together.status.waiting_approval"), cx)),
-                    );
-                } else {
-                    session = session
-                        .child(match &now {
-                            Some(t) => v_flex()
-                                .child(
-                                    div()
-                                        .font_weight(FontWeight::SEMIBOLD)
-                                        .child(t.title.clone()),
-                                )
-                                .child(muted(t.artists.join(", "), cx)),
-                            None => v_flex().child(muted(t!("together.guest.nothing_playing"), cx)),
-                        })
-                        .child(
-                            h_flex()
-                                .gap_1()
-                                .flex_wrap()
-                                .child(control(
-                                    "tg-prev",
-                                    Lucide::SkipBack,
-                                    t!("together.guest.ask_previous"),
-                                    ControlAction::SkipPrevious,
-                                ))
-                                .child(control(
-                                    "tg-toggle",
-                                    if playing { Lucide::Pause } else { Lucide::Play },
-                                    t!("together.guest.ask_play_pause"),
-                                    if playing {
-                                        ControlAction::Pause
-                                    } else {
-                                        ControlAction::Play
-                                    },
-                                ))
-                                .child(control(
-                                    "tg-next",
-                                    Lucide::SkipForward,
-                                    t!("together.guest.ask_next"),
-                                    ControlAction::SkipNext,
-                                ))
-                                .child(muted(
-                                    if can_control {
-                                        t!("together.guest.can_control")
-                                    } else {
-                                        t!("together.guest.host_controls")
-                                    },
-                                    cx,
-                                )),
-                        )
-                        .child(muted(
-                            if can_add {
-                                t!("together.guest.suggest_hint")
-                            } else {
-                                t!("together.guest.no_suggestions")
-                            },
-                            cx,
-                        ))
-                        .child(muted(
-                            t!(
-                                "together.guest.clock",
-                                offset = clock.offset_ms,
-                                rtt = clock.rtt_ms
+                            h_flex().child(
+                                Button::new("tg-cancel")
+                                    .small()
+                                    .ghost()
+                                    .label(t!("common.cancel"))
+                                    .on_click(|_, _, cx| {
+                                        update_app(cx, |app, cx| app.together_stop(cx));
+                                    }),
                             ),
-                            cx,
-                        ));
+                        ),
+                );
+            }
+            _ => {
+                content = content.child(session_card(&view, cx));
+                if view.hosting {
+                    content = content.child(invite_card(&view, cx));
+                    content = content.child(room_card(&view, cx));
+                    if !view.waiting.is_empty() {
+                        content = content.child(suggestions_card(&view.waiting, cx));
+                    }
                 }
-                content = content.child(session);
-                if !sent.is_empty() {
-                    content = content.child(sent_card(&sent, cx));
+                if !view.sent.is_empty() && view.mode != SessionMode::Friends {
+                    content = content.child(sent_card(&view.sent, cx));
                 }
-                if let Some(room) = room.filter(|r| !r.queue.is_empty()) {
-                    content = content.child(room_queue(&room, cx));
+                if !view.pending {
+                    content = content.child(queue_section(&view, cx));
+                }
+                content = content.child(people_section(&view, cx));
+                if view.group.is_some() || !friends.sessions.is_empty() {
+                    content = content.child(super::friends_panel::render(friends, cx));
                 }
             }
         }
-
-        if !participants.is_empty() {
-            let hosting = role == 2;
-            let transferring = read_app(cx, |app, _| {
-                matches!(&app.integrations.together.role, Role::Hosting(h) if h.transferring.is_some())
-            })
-            .unwrap_or(false);
-            content = content.child(
-                v_flex()
-                    .gap_2()
-                    .child(section_header(
-                        tp!("together.people.title", participants.len()),
-                        None,
-                        None,
-                        cx,
-                    ))
-                    .children(
-                        participants
-                            .iter()
-                            .enumerate()
-                            .map(|(ix, p)| participant_row(p, hosting, transferring, ix, cx)),
-                    ),
-            );
-        }
-        if !log.is_empty() {
+        if !view.log.is_empty() {
             content = content.child(
                 v_flex()
                     .gap_1()
                     .child(section_header(t!("together.activity"), None, None, cx))
-                    .children(log.into_iter().map(|line| muted(line, cx))),
+                    .children(view.log.iter().map(|line| muted(line.clone(), cx))),
+            );
+        }
+        if let Some((offset, rtt)) = view.clock {
+            content = content.child(
+                div()
+                    .text_xs()
+                    .text_color(cx.theme().muted_foreground)
+                    .child(SharedString::from(t!(
+                        "together.guest.clock",
+                        offset = offset,
+                        rtt = rtt
+                    ))),
             );
         }
         page_scroll("together-page", &self.scroll, content).into_any_element()
     }
+}
+
+impl TogetherPage {
+    /// Idle: start (the sheet asks how) and join (a code or a link).
+    fn idle_cards(
+        &self,
+        prefs: &crate::integrations::config::TogetherPrefs,
+        cx: &mut Context<Self>,
+    ) -> AnyElement {
+        let accent = crate::theme::AppColors::get(cx).accent;
+        let relay_name = relay_hint(&prefs.relay_url)
+            .as_deref()
+            .and_then(relay_host_name)
+            .unwrap_or_default();
+        let network = match prefs.host_mode {
+            crate::integrations::config::HostMode::Relay => {
+                t!("together.host.mode_relay_note", relay = relay_name)
+            }
+            crate::integrations::config::HostMode::Direct => {
+                t!("together.host.mode_direct_note").to_owned()
+            }
+        };
+        let start = card(cx)
+            .flex_1()
+            .min_w(px(300.))
+            .child(
+                h_flex()
+                    .gap_2()
+                    .child(Icon::new(Lucide::Radio).size(px(20.)).text_color(accent))
+                    .child(title(t!("together.start.card_title"))),
+            )
+            .child(muted(t!("together.start.card_text"), cx))
+            .child(v_flex().gap_1().children(SessionMode::ALL.map(|mode| {
+                h_flex()
+                    .gap_2()
+                    .child(Icon::new(mode_icon(mode)).size(px(14.)).text_color(accent))
+                    .child(
+                        div()
+                            .text_sm()
+                            .font_weight(FontWeight::MEDIUM)
+                            .child(mode_name(mode)),
+                    )
+                    .child(muted(
+                        crate::integrations::together_ui::mode_description(mode),
+                        cx,
+                    ))
+            })))
+            .child(
+                h_flex()
+                    .gap_2()
+                    .flex_wrap()
+                    .child(
+                        Button::new("tg-host")
+                            .primary()
+                            .icon(Lucide::Radio)
+                            .label(t!("together.start.open"))
+                            .on_click(|_, window, cx| {
+                                update_app(cx, |app, cx| {
+                                    app.together_open_start_sheet(None, window, cx)
+                                });
+                            }),
+                    )
+                    .child(
+                        Button::new("tg-settings")
+                            .ghost()
+                            .label(t!("together.host.settings"))
+                            .on_click(|_, window, cx| {
+                                update_app(cx, |app, cx| {
+                                    app.navigate(
+                                        Route::Settings {
+                                            section: SectionId::Together,
+                                        },
+                                        window,
+                                        cx,
+                                    )
+                                });
+                            }),
+                    ),
+            )
+            .child(
+                div()
+                    .text_xs()
+                    .text_color(cx.theme().muted_foreground)
+                    .child(SharedString::from(network)),
+            );
+        let join_input = self.join.clone();
+        let join = card(cx)
+            .flex_1()
+            .min_w(px(300.))
+            .child(title(t!("together.join.title")))
+            .child(muted(t!("together.join.any_hint"), cx))
+            .child(
+                h_flex()
+                    .gap_2()
+                    .child(div().flex_1().min_w_0().child(Input::new(&self.join)))
+                    .child(
+                        Button::new("tg-join")
+                            .primary()
+                            .label(t!("together.join.button"))
+                            .on_click(move |_, window, cx| {
+                                let raw = join_input.read(cx).value().to_string();
+                                update_app(cx, |app, cx| app.together_join(&raw, window, cx));
+                            }),
+                    ),
+            );
+        h_flex()
+            .gap_4()
+            .flex_wrap()
+            .items_start()
+            .child(start)
+            .child(join)
+            .into_any_element()
+    }
+}
+
+/// The mode, what you may do, and leave / end.
+fn session_card(view: &View, cx: &gpui::App) -> AnyElement {
+    let accent = crate::theme::AppColors::get(cx).accent;
+    let friends = view.mode == SessionMode::Friends;
+    let heading = match (view.mode, view.hosting) {
+        (SessionMode::Friends, _) => t!("together.session.friends").to_owned(),
+        (SessionMode::Host, true) => t!("together.session.hosting").to_owned(),
+        (SessionMode::Dj, true) => t!("together.session.dj_you").to_owned(),
+        (SessionMode::Host, false) => {
+            t!("together.guest.listening_with", name = view.host_name)
+        }
+        (SessionMode::Dj, false) => t!("together.session.dj", name = view.host_name),
+    };
+    let badge = h_flex()
+        .gap_1p5()
+        .px_2()
+        .py_0p5()
+        .rounded_full()
+        .bg(accent.opacity(0.15))
+        .child(
+            Icon::new(mode_icon(view.mode))
+                .size(px(14.))
+                .text_color(accent),
+        )
+        .child(
+            div()
+                .text_sm()
+                .font_weight(FontWeight::SEMIBOLD)
+                .text_color(accent)
+                .child(SharedString::from(t!(
+                    "together.mode.badge",
+                    mode = mode_name(view.mode)
+                ))),
+        );
+    let ends = view.hosting && !friends;
+    let leave = Button::new("tg-end")
+        .small()
+        .when(ends, |b| b.danger())
+        .when(!ends, |b| b.outline())
+        .icon(Lucide::LogOut)
+        .label(if ends {
+            t!("together.hosting.end")
+        } else {
+            t!("together.guest.leave")
+        })
+        .loading(view.leaving)
+        .disabled(view.leaving)
+        .on_click(|_, _, cx| {
+            update_app(cx, |app, cx| app.together_leave(cx));
+        });
+    let mut switch = h_flex().gap_1().flex_wrap();
+    if view.can_switch {
+        for mode in SessionMode::ALL {
+            let selected = mode == view.mode;
+            switch = switch.child(
+                Button::new(SharedString::from(format!("tg-mode-{}", mode.key())))
+                    .small()
+                    .map(|b| if selected { b.primary() } else { b.outline() })
+                    .icon(mode_icon(mode))
+                    .label(mode_name(mode))
+                    .on_click(move |_, window, cx| {
+                        if !selected {
+                            update_app(cx, |app, cx| app.together_confirm_mode(mode, window, cx));
+                        }
+                    }),
+            );
+        }
+    }
+    let native = if view.can_control_hint() {
+        t!("together.session.native_hint").to_owned()
+    } else {
+        t!("together.session.native_hint_locked", name = view.host_name)
+    };
+    let mut card = card(cx)
+        .child(
+            h_flex()
+                .gap_3()
+                .justify_between()
+                .child(
+                    v_flex()
+                        .gap_1()
+                        .min_w_0()
+                        .child(badge)
+                        .child(title(heading)),
+                )
+                .child(leave),
+        )
+        .child(muted(view.line.clone(), cx));
+    if view.pending {
+        card = card.child(
+            h_flex()
+                .gap_2()
+                .child(Spinner::new().small())
+                .child(muted(t!("together.status.waiting_approval"), cx)),
+        );
+    } else {
+        card = card
+            .when_some(view.now.clone(), |card, (song, artists)| {
+                card.child(
+                    v_flex()
+                        .child(div().font_weight(FontWeight::SEMIBOLD).child(song))
+                        .child(muted(artists, cx)),
+                )
+            })
+            .when(view.now.is_none(), |card| {
+                card.child(muted(t!("together.guest.nothing_playing"), cx))
+            })
+            .child(h_flex().gap_1().children(REACTIONS.iter().map(|emoji| {
+                Button::new(SharedString::from(format!("tg-react-{emoji}")))
+                    .ghost()
+                    .small()
+                    .icon(Icon::new(reaction_icon(emoji)).size(px(18.)))
+                    .disabled(view.now.is_none())
+                    .on_click(move |_, _, cx| {
+                        update_app(cx, |app, cx| app.together_react(emoji, cx));
+                    })
+            })))
+            .child(muted(native, cx));
+    }
+    if view.can_switch {
+        card = card.child(
+            v_flex()
+                .gap_1p5()
+                .child(
+                    div()
+                        .text_xs()
+                        .font_weight(FontWeight::SEMIBOLD)
+                        .text_color(cx.theme().muted_foreground)
+                        .child(t!("together.panel.change_mode")),
+                )
+                .child(switch),
+        );
+    }
+    if let Some(name) = &view.transferring {
+        card = card.child(
+            h_flex()
+                .gap_2()
+                .child(Spinner::new().small())
+                .child(muted(t!("together.log.handing_over", name = name), cx)),
+        );
+    }
+    card.into_any_element()
+}
+
+impl View {
+    /// This person's buttons and keys act on the session (not just follow it).
+    fn can_control_hint(&self) -> bool {
+        self.hosting
+            || self.mode == SessionMode::Friends
+            || (self.mode == SessionMode::Host && self.room.allow_guests_to_control_playback)
+    }
+}
+
+/// Host: the room code and link (or "only this group").
+fn invite_card(view: &View, cx: &gpui::App) -> AnyElement {
+    let Some(invite) = view.invite.clone() else {
+        return div().into_any_element();
+    };
+    let theme = cx.theme();
+    let mut card = card(cx).child(title(t!("together.invite.title")));
+    if let Some(notice) = &invite.notice {
+        card = card.child(
+            div()
+                .text_sm()
+                .font_weight(FontWeight::SEMIBOLD)
+                .text_color(theme.warning)
+                .child(notice.clone()),
+        );
+    }
+    if let Some((group, name)) = view.group.clone() {
+        return card
+            .child(muted(t!("together.invite.group_only", group = name), cx))
+            .child(
+                h_flex().child(
+                    Button::new("tg-invite-group")
+                        .small()
+                        .outline()
+                        .icon(Lucide::UsersRound)
+                        .label(t!("together.invite.again"))
+                        .on_click(move |_, window, cx| {
+                            let group = group.clone();
+                            update_app(cx, |app, cx| {
+                                app.friends_listen_together(&group, window, cx)
+                            });
+                        }),
+                ),
+            )
+            .into_any_element();
+    }
+    let Invite {
+        link,
+        compact,
+        host,
+        port,
+        relayed,
+        code,
+        ..
+    } = invite;
+    let has_code = code.is_some();
+    if let Some(code) = code {
+        let shown = display_code(&code);
+        let copy = shown.clone();
+        card = card.child(
+            v_flex()
+                .gap_1()
+                .child(muted(t!("together.hosting.code_label"), cx))
+                .child(
+                    h_flex()
+                        .gap_3()
+                        .flex_wrap()
+                        .child(div().text_3xl().font_weight(FontWeight::BOLD).child(shown))
+                        .child(
+                            Button::new("tg-copy-room-code")
+                                .small()
+                                .outline()
+                                .icon(Lucide::Copy)
+                                .label(t!("together.hosting.copy_code"))
+                                .on_click(move |_, window, cx| {
+                                    cx.write_to_clipboard(ClipboardItem::new_string(copy.clone()));
+                                    crate::app::notify(
+                                        window,
+                                        cx,
+                                        t!("together.hosting.code_copied"),
+                                    );
+                                }),
+                        ),
+                )
+                .child(muted(t!("together.hosting.code_hint"), cx)),
+        );
+    }
+    let (copy_link, copy_compact) = (link.clone(), compact);
+    card.child(muted(
+        if relayed {
+            t!("together.hosting.share_relay", host = host)
+        } else {
+            t!("together.hosting.share_lan", host = host, port = port)
+        },
+        cx,
+    ))
+    .child(
+        h_flex()
+            .gap_2()
+            .child(
+                div()
+                    .flex_1()
+                    .min_w_0()
+                    .p_2()
+                    .rounded(crate::theme::radius(6.))
+                    .bg(theme.background)
+                    .text_sm()
+                    .truncate()
+                    .child(link),
+            )
+            .child(
+                Button::new("tg-copy")
+                    .small()
+                    .outline()
+                    .icon(Lucide::Link)
+                    .label(t!("together.hosting.copy_link"))
+                    .on_click(move |_, window, cx| {
+                        cx.write_to_clipboard(ClipboardItem::new_string(copy_link.clone()));
+                        crate::app::notify(window, cx, t!("together.hosting.link_copied"));
+                    }),
+            )
+            .when(!has_code, |row| {
+                row.child(
+                    Button::new("tg-copy-compact")
+                        .small()
+                        .ghost()
+                        .label(t!("together.hosting.copy_code"))
+                        .tooltip(if relayed {
+                            t!("together.hosting.copy_code_tooltip_relay")
+                        } else {
+                            t!("together.hosting.copy_code_tooltip")
+                        })
+                        .on_click(move |_, _, cx| {
+                            cx.write_to_clipboard(ClipboardItem::new_string(copy_compact.clone()));
+                        }),
+                )
+            }),
+    )
+    .when(relayed, |card| {
+        card.child(muted(t!("together.hosting.relay_privacy"), cx))
+    })
+    .into_any_element()
+}
+
+/// Host: the session's settings (only those the mode leaves open).
+fn room_card(view: &View, cx: &gpui::App) -> AnyElement {
+    let room = view.room;
+    let switch =
+        |id: &'static str, label: &'static str, on: bool, set: fn(&mut RoomSettings, bool)| {
+            Switch::new(id)
+                .checked(on)
+                .label(label)
+                .on_click(move |checked: &bool, _, cx| {
+                    let on = *checked;
+                    update_app(cx, |app, cx| app.together_set_room(|r| set(r, on), cx));
+                })
+        };
+    let mut switches = h_flex().gap_6().flex_wrap();
+    if view.mode == SessionMode::Host {
+        switches = switches
+            .child(switch(
+                "tg-allow-add",
+                t!("together.room.allow_add"),
+                room.allow_guests_to_add_tracks,
+                |r, on| r.allow_guests_to_add_tracks = on,
+            ))
+            .child(switch(
+                "tg-allow-control",
+                t!("together.room.allow_control"),
+                room.allow_guests_to_control_playback,
+                |r, on| r.allow_guests_to_control_playback = on,
+            ));
+    }
+    switches = switches.child(switch(
+        "tg-approval",
+        t!("together.room.approve"),
+        room.require_host_approval_to_join,
+        |r, on| r.require_host_approval_to_join = on,
+    ));
+    if view.mode != SessionMode::Friends {
+        switches = switches.child(switch(
+            "tg-approve-suggestions",
+            t!("together.room.approve_suggestions"),
+            room.require_approval_for_suggestions,
+            |r, on| r.require_approval_for_suggestions = on,
+        ));
+    }
+    let note = match view.mode {
+        SessionMode::Friends => Some(t!("together.room.friends_note")),
+        SessionMode::Dj => Some(t!("together.room.dj_note")),
+        SessionMode::Host => None,
+    };
+    card(cx)
+        .child(title(t!("together.room.title")))
+        .children(note.map(|n| muted(n, cx)))
+        .child(switches)
+        .into_any_element()
+}
+
+/// The shared queue: up next, with who queued each song.
+fn queue_section(view: &View, cx: &gpui::App) -> AnyElement {
+    let muted_color = cx.theme().muted_foreground;
+    let mut rows = v_flex().gap_1();
+    if view.queue.is_empty() {
+        rows = rows.child(muted(t!("together.queue.empty"), cx));
+    }
+    for (title_text, artists, by, queued) in &view.queue {
+        rows = rows.child(
+            h_flex()
+                .gap_3()
+                .py_1()
+                .child(
+                    v_flex()
+                        .flex_1()
+                        .min_w_0()
+                        .child(div().text_sm().truncate().child(title_text.clone()))
+                        .child(
+                            div()
+                                .text_xs()
+                                .text_color(muted_color)
+                                .truncate()
+                                .child(artists.clone()),
+                        ),
+                )
+                .when_some(by.clone().filter(|_| *queued), |row, by| {
+                    row.child(
+                        h_flex()
+                            .gap_1p5()
+                            .flex_none()
+                            .child(avatar(&by, 20., None))
+                            .child(div().text_xs().text_color(muted_color).child(
+                                SharedString::from(t!("together.queue.added_by", name = by)),
+                            )),
+                    )
+                }),
+        );
+    }
+    v_flex()
+        .gap_2()
+        .child(section_header(
+            tp!("together.queue.up_next", view.queue.len()),
+            view.context.clone().map(SharedString::from),
+            None,
+            cx,
+        ))
+        .child(rows)
+        .into_any_element()
+}
+
+/// Who is in the session, with what the host (or anyone, with Friends) can do.
+fn people_section(view: &View, cx: &gpui::App) -> AnyElement {
+    let friends = view.mode == SessionMode::Friends;
+    let busy = view.transferring.is_some();
+    let rows = view.people.iter().enumerate().map(|(ix, p)| {
+        let mine = view.me.as_deref() == Some(p.id.as_str());
+        let id = p.id.clone();
+        let mut row = h_flex()
+            .gap_3()
+            .py_1()
+            .child(avatar(&p.name, 30., None))
+            .child(
+                div()
+                    .flex_1()
+                    .min_w_0()
+                    .truncate()
+                    .child(SharedString::from(if mine {
+                        t!("together.panel.you_suffix", name = p.name)
+                    } else {
+                        p.name.clone()
+                    })),
+            );
+        if p.is_host && !friends {
+            row = row.child(
+                Tag::primary()
+                    .small()
+                    .child(if view.mode == SessionMode::Dj {
+                        t!("together.tag.dj")
+                    } else {
+                        t!("together.tag.host")
+                    }),
+            );
+        }
+        if p.is_pending {
+            row = row.child(Tag::warning().small().child(t!("together.tag.waiting")));
+        }
+        if view.hosting && !p.is_host {
+            if p.is_pending {
+                let (a, d) = (id.clone(), id.clone());
+                row = row
+                    .child(
+                        Button::new(("tg-approve", ix))
+                            .xsmall()
+                            .primary()
+                            .label(t!("together.people.let_in"))
+                            .on_click(move |_, _, cx| {
+                                update_app(cx, |app, cx| app.together_approve(&a, true, cx));
+                            }),
+                    )
+                    .child(
+                        Button::new(("tg-deny", ix))
+                            .xsmall()
+                            .ghost()
+                            .label(t!("together.people.decline"))
+                            .on_click(move |_, _, cx| {
+                                update_app(cx, |app, cx| app.together_approve(&d, false, cx));
+                            }),
+                    );
+            } else {
+                let (k, b, t) = (id.clone(), id.clone(), id.clone());
+                // Nobody hosts a Friends session: no "Make host" there.
+                if !friends {
+                    row = row.child(
+                        Button::new(("tg-make-host", ix))
+                            .xsmall()
+                            .ghost()
+                            .label(t!("together.people.make_host"))
+                            .tooltip(t!("together.people.make_host_tooltip"))
+                            .disabled(busy)
+                            .on_click(move |_, _, cx| {
+                                update_app(cx, |app, cx| app.together_transfer(&t, cx));
+                            }),
+                    );
+                }
+                row = row
+                    .child(
+                        Button::new(("tg-kick", ix))
+                            .xsmall()
+                            .ghost()
+                            .label(t!("together.people.remove"))
+                            .on_click(move |_, _, cx| {
+                                update_app(cx, |app, cx| app.together_kick(&k, false, cx));
+                            }),
+                    )
+                    .child(
+                        Button::new(("tg-ban", ix))
+                            .xsmall()
+                            .ghost()
+                            .label(t!("together.people.ban"))
+                            .on_click(move |_, _, cx| {
+                                update_app(cx, |app, cx| app.together_kick(&b, true, cx));
+                            }),
+                    );
+            }
+        } else if view.can_remove && !mine && !p.is_host && !p.is_pending {
+            let k = id.clone();
+            row = row.child(
+                Button::new(("tg-kick", ix))
+                    .xsmall()
+                    .ghost()
+                    .label(t!("together.people.remove"))
+                    .on_click(move |_, _, cx| {
+                        update_app(cx, |app, cx| app.together_kick(&k, false, cx));
+                    }),
+            );
+        }
+        row.into_any_element()
+    });
+    v_flex()
+        .gap_2()
+        .child(section_header(
+            tp!("together.people.title", view.people.len()),
+            None,
+            None,
+            cx,
+        ))
+        .children(rows)
+        .into_any_element()
 }
 
 /// Host: guests' suggestions waiting for Approve / Reject.
@@ -811,6 +947,7 @@ fn suggestions_card(waiting: &[Suggestion], cx: &gpui::App) -> AnyElement {
         h_flex()
             .gap_3()
             .py_1()
+            .child(avatar(&s.participant.name, 24., None))
             .child(
                 v_flex()
                     .flex_1()
@@ -858,12 +995,7 @@ fn suggestions_card(waiting: &[Suggestion], cx: &gpui::App) -> AnyElement {
             )
     });
     card(cx)
-        .child(
-            div()
-                .text_lg()
-                .font_weight(FontWeight::SEMIBOLD)
-                .child(tp!("together.suggestions.title", waiting.len())),
-        )
+        .child(title(tp!("together.suggestions.title", waiting.len())))
         .child(muted(t!("together.suggestions.hint"), cx))
         .children(rows)
         .into_any_element()
@@ -904,54 +1036,4 @@ fn sent_card(sent: &[SentSuggestion], cx: &gpui::App) -> AnyElement {
         )
         .children(rows)
         .into_any_element()
-}
-
-/// "Others follow what you play, as … on port …. Guests can … You approve each guest."
-fn host_summary(prefs: &crate::integrations::config::TogetherPrefs) -> String {
-    let guests = match (
-        prefs.allow_guests_to_add_tracks,
-        prefs.allow_guests_to_control_playback,
-    ) {
-        (true, true) => t!("together.host.guests_add_and_control"),
-        (true, false) => t!("together.host.guests_add_only"),
-        (false, true) => t!("together.host.guests_control_only"),
-        (false, false) => t!("together.host.guests_neither"),
-    };
-    let approval = if prefs.require_host_approval {
-        t!("together.host.approval")
-    } else {
-        ""
-    };
-    let intro = t!(
-        "together.host.intro",
-        name = prefs.name(),
-        port = prefs.port
-    );
-    t!(
-        "together.host.summary",
-        intro = intro,
-        guests = guests,
-        approval = approval
-    )
-    .trim_end()
-    .to_owned()
-}
-
-fn setting_switch(
-    id: &'static str,
-    label: &'static str,
-    on: bool,
-    set: fn(&mut crate::integrations::config::TogetherPrefs, bool),
-) -> impl IntoElement {
-    Switch::new(id)
-        .checked(on)
-        .label(label)
-        .on_click(move |checked: &bool, _, cx| {
-            let on = *checked;
-            update_app(cx, |app, cx| {
-                app.settings
-                    .update(cx, |panel, cx| panel.set_together(|t| set(t, on), cx));
-                app.together_broadcast(true, cx);
-            });
-        })
 }

@@ -37,6 +37,7 @@ fn track(id: &str) -> TogetherTrack {
         artists: vec!["Artist".into()],
         duration_sec: 200,
         thumbnail_url: None,
+        ..TogetherTrack::default()
     }
 }
 
@@ -319,7 +320,7 @@ fn relay_host_two_guests_and_a_transfer() {
     for guest in [&bob, &hana] {
         let reason = wait_for(|| {
             guest.poll_events().into_iter().find_map(|e| match e {
-                ClientEvent::Disconnected { reason } => Some(reason),
+                ClientEvent::Disconnected { reason, .. } => Some(reason),
                 _ => None,
             })
         });

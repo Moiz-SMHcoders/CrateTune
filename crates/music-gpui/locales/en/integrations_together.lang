@@ -176,3 +176,138 @@ together.guest.no_suggestions = The host doesn't take suggestions.
 # Sync diagnostics: {offset} / {rtt} in milliseconds.
 together.guest.clock = Clock offset {offset} ms · round trip {rtt} ms
 together.activity = Activity
+
+# ---- Session modes (Host, Friends, DJ): names, one-line descriptions, badge
+together.mode.host = Host
+together.mode.friends = Friends
+together.mode.dj = DJ
+together.mode.friends_desc = Everyone plays, pauses, skips and edits the queue.
+together.mode.host_desc = You control playback; the others listen along and suggest songs.
+together.mode.dj_desc = Everyone adds songs; you control playback.
+# {mode}: a mode's name above.
+together.mode.badge = {mode} mode
+# Tag next to the person who controls a DJ session (keep short).
+together.tag.dj = DJ
+# What this person may do in the session ({name}: the host's display name).
+together.can.friends = Everyone can play, pause, skip and change the queue.
+together.can.host_you = You control playback. The others listen along and can suggest songs.
+together.can.dj_you = Everyone adds songs; you control playback.
+together.can.host_guest_control = {name} hosts. You can control playback and suggest songs.
+together.can.host_guest = {name} controls playback. You can suggest songs.
+together.can.host_guest_listen = {name} controls playback and the queue.
+together.can.dj_guest = Everyone adds songs; {name} controls playback.
+together.can.dj_guest_approval = Your songs wait for {name}'s approval; {name} controls playback.
+together.can.waiting = Waiting for {name} to let you in.
+together.can.joining = Connecting…
+together.can.reconnecting = Reconnecting… The music keeps playing here.
+# Shown on surfaces that can't act right now (a disabled button's tooltip, or one
+# notification for keys and menus). {name}: the host's display name.
+together.hint.no_control = {name} controls playback in this session
+together.hint.no_control_dj = DJ mode: {name} controls playback. You can add songs.
+together.hint.no_queue = {name} manages the queue in this session
+together.hint.no_suggestions = {name} isn't taking songs in this session
+together.hint.waiting = Waiting for {name} to let you in
+
+# ---- Listeners chip in the player bar and its panel (keep short)
+together.chip.reconnecting = Reconnecting…
+# Tooltip of the chip. {mode}: a mode's name.
+together.chip.tooltip = Listening together · {mode} mode
+together.panel.change_mode = Change mode
+together.panel.listening.one = {count} listening
+together.panel.listening.other = {count} listening
+# {name}: the user's own display name.
+together.panel.you_suffix = {name} (you)
+together.panel.copy_link = Copy invite link
+# {code}: the room code, like ABCD-EFGH.
+together.panel.copy_code = Copy code {code}
+together.panel.open_page = Open Listen together
+together.panel.leave = Leave
+together.panel.end = End session
+# {group}: a friend group's name.
+together.panel.group_only = Only {group} can join
+together.react.title = React
+# Tooltips of the reaction buttons.
+together.react.heart = Love it
+together.react.fire = Fire
+together.react.laugh = Haha
+together.react.rock = Rock on
+together.react.party = Party
+together.react.star = Star
+# Who reacted, for the user's own reactions.
+together.you = You
+
+# ---- Activity notes ({name}: who did it; quiet lines by the listeners chip)
+together.note.joined = {name} joined
+together.note.left = {name} left
+together.note.played = {name} pressed play
+together.note.paused = {name} paused
+together.note.skipped.one = {name} skipped
+together.note.skipped.other = {name} skipped {count} songs
+together.note.went_back = {name} went back
+together.note.added.one = {name} added a song
+together.note.added.other = {name} added {count} songs
+together.note.removed.one = {name} removed a song
+together.note.removed.other = {name} removed {count} songs
+together.note.moved = {name} reordered the queue
+together.note.cleared = {name} cleared the queue
+# {title}: an album, playlist or song.
+together.note.started = {name} started {title}
+together.note.started_plain = {name} started something new
+together.note.mode = {name} switched to {mode} mode
+together.note.unknown = {name} changed something
+
+# ---- "Start listening together" sheet
+together.start.title = Start listening together
+together.start.mode = Who controls the music
+together.start.who = Who can join
+together.start.anyone = Anyone with the link or code
+together.start.group = Only {group}
+together.start.group_note = Members get a notification with a Join button.
+together.start.network = Connection
+together.start.button = Start
+# Switching a running session's mode (confirmation).
+together.switch.title = Switch to {mode} mode?
+together.switch.friends = Everyone will be able to play, pause, skip and edit the queue.
+together.switch.host_you = Only you will control playback. The others can suggest songs.
+together.switch.dj_you = Everyone can add songs; only you will control playback.
+together.switch.host_guest = You'll become the host: only you will control playback.
+together.switch.dj_guest = You'll become the DJ: everyone adds songs, you control playback.
+together.switch.confirm = Switch
+
+# ---- Session lifecycle (log lines and notifications)
+together.log.leaving = Leaving: handing the session to the next person…
+together.log.left_goes_on = You left; the session goes on with {name}
+together.toast.left_goes_on = You left. The session goes on without you.
+together.log.you_keep_time = The session now runs on this device
+together.log.reconnecting = The device the session ran on is gone; reconnecting…
+together.log.mode_now = Now in {mode} mode
+together.log.mode_by = {name} takes over in {mode} mode
+together.log.removed_by = {name} removed {target}
+together.toast.suggested_to = Suggested “{title}” to {name}
+together.toast.suggested_many_to.one = Suggested {count} song to {name}
+together.toast.suggested_many_to.other = Suggested {count} songs to {name}
+
+# ---- Listen together page (sessions)
+together.start.card_title = Start listening together
+together.start.card_text = Choose who controls the music, then share a code or invite a friend group.
+together.start.open = Start listening together…
+together.join.any_hint = Enter the room code or paste the link you got.
+together.join.any_placeholder = ABCD-EFGH or a link
+together.session.friends = Listening together
+together.session.hosting = You're hosting
+together.session.dj_you = You're the DJ
+together.session.dj = {name} is the DJ
+together.session.native_hint = Your play, pause and skip buttons, media keys and shortcuts control the session. Volume and sound stay yours.
+together.session.native_hint_locked = Your player follows {name}. Volume and sound stay yours.
+together.invite.title = Invite
+together.invite.group_only = Only {group} can join. Its members got an invitation.
+together.invite.again = Invite again
+together.queue.up_next.one = Up next · {count} song
+together.queue.up_next.other = Up next · {count} songs
+together.queue.added_by = Added by {name}
+together.queue.empty = Nothing up next.
+together.room.title = Room settings
+together.room.friends_note = Friends mode: everyone controls playback and the queue; songs go straight in.
+together.room.dj_note = DJ mode: everyone adds songs; only you control playback.
+# Notification when a guest's first room state arrives. {mode}: a mode's name.
+together.toast.joined_mode = Joined the session · {mode} mode

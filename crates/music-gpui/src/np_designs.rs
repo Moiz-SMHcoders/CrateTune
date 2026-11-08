@@ -323,9 +323,21 @@ impl MusicApp {
         let has_next = self.queue.has_next();
         let (shuffle, repeat) = (self.queue.shuffle(), self.queue.repeat());
         let _ = frame;
+        // A Music Together guest without control: dimmed, each saying why.
+        let lock = self.transport_lock().map(SharedString::from);
         let icon_button = |id: &'static str, icon: SharedString, side: Pixels, alpha: f32| {
+            let alpha = if lock.is_some() {
+                alpha.min(0.35)
+            } else {
+                alpha
+            };
             div()
                 .id(id)
+                .when_some(lock.clone(), |this, tip| {
+                    this.tooltip(move |window, cx| {
+                        gpui_component::tooltip::Tooltip::new(tip.clone()).build(window, cx)
+                    })
+                })
                 .size(side + px(16.))
                 .flex_none()
                 .rounded_full()

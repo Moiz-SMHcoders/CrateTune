@@ -17,6 +17,13 @@
 //! ban, and hand the session to a guest ([`TogetherServer::transfer_host`]: the
 //! guest starts its own server with the room's state, everyone reconnects to it).
 //!
+//! On top of the protocol (ours; ArchiveTune peers skip what they don't know, see
+//! [`messages`]): session modes ([`SessionMode`]: Host, Friends where everyone
+//! controls, DJ where everyone adds), stamped requests so doubled skips collapse and
+//! the newest seek wins, queue edits by guests, shared-queue attribution, reactions,
+//! activity notes, and Friends sessions that outlive the device they run on
+//! ([`session`]).
+//!
 //! Everything is blocking std threads + `tungstenite`; no async runtime.
 
 mod client;
@@ -26,21 +33,43 @@ pub mod messages;
 pub mod online;
 pub mod relay;
 mod server;
+pub mod session;
 pub mod sync;
 
-pub use client::{ClientEvent, TogetherClient};
+use std::sync::OnceLock;
+
+pub use client::{ClientEvent, ClientOptions, TogetherClient};
 pub use link::{JoinInfo, JoinRequest, local_ip, relay_url};
 pub use messages::{
-    AddTrackMode, ControlAction, Message, PROTOCOL_VERSION, Participant, Role, RoomSettings,
-    RoomState, SuggestionState, TogetherTrack, queue_hash,
+    AddTrackMode, ClearPart, ControlAction, IntentMeta, Message, NoteKind, PROTOCOL_VERSION,
+    Participant, QueueOp, REACTIONS, Role, RoomSettings, RoomState, SessionMode, Successor,
+    SuggestionState, TogetherTrack, queue_hash,
 };
 pub use online::{CodeError, RelaySource, display_code, normalize_code};
-pub use server::{HOST_ID, HostOptions, ServerEvent, Suggestion, TogetherServer};
+pub use server::{
+    HOST_ID, HOST_LEFT, HostOptions, SESSION_ENDED, ServerEvent, Suggestion, TogetherServer,
+};
+pub use session::{Failover, NoteFeed, Permissions, Playing, RateLimit, Sequencer, Stamp};
 pub use sync::{
     ClockSnapshot, GuestSync, LeavePlan, LocalPlayback, SyncPlan, TogetherClock, leave_plan,
 };
 
 pub const DEFAULT_PORT: u16 = 42117;
+
+static EVENT_HOOK: OnceLock<fn()> = OnceLock::new();
+
+/// Called (on a session thread) whenever a server or client has a new event, e.g. to
+/// wake whatever polls them, so a guest's skip is applied (and its room state
+/// followed) without waiting for the next poll. Set once; later calls are ignored.
+pub fn set_event_hook(hook: fn()) {
+    let _ = EVENT_HOOK.set(hook);
+}
+
+fn wake() {
+    if let Some(hook) = EVENT_HOOK.get() {
+        hook();
+    }
+}
 
 /// A random id / key (URL-safe, 22 characters).
 pub fn new_id() -> String {
@@ -80,6 +109,7 @@ mod tests {
             artists: vec!["Artist".into()],
             duration_sec: 200,
             thumbnail_url: None,
+            ..TogetherTrack::default()
         }
     }
 
@@ -106,6 +136,7 @@ mod tests {
                 allow_guests_to_control_playback: false,
                 require_host_approval_to_join: false,
                 require_approval_for_suggestions: false,
+                mode: SessionMode::Host,
             },
         )
         .unwrap();
@@ -229,7 +260,7 @@ mod tests {
         wait_for(|| {
             bob.poll_events().into_iter().find_map(|e| match e {
                 ClientEvent::Kicked { banned: true, .. } => Some(()),
-                ClientEvent::Disconnected { reason } => {
+                ClientEvent::Disconnected { reason, .. } => {
                     panic!("disconnected without the ban: {reason:?}")
                 }
                 _ => None,
@@ -264,7 +295,7 @@ mod tests {
         server.stop();
         let reason = wait_for(|| {
             carol.poll_events().into_iter().find_map(|e| match e {
-                ClientEvent::Disconnected { reason } => Some(reason),
+                ClientEvent::Disconnected { reason, .. } => Some(reason),
                 _ => None,
             })
         });

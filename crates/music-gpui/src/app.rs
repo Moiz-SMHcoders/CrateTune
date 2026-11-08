@@ -253,6 +253,8 @@ impl MusicApp {
                 }
             }),
             cx.on_app_quit(|this, cx| {
+                // A Friends session goes on with the others; any other one ends.
+                this.together_quit();
                 // A rotated YouTube cookie not saved yet (throttled) goes in now.
                 this.persist_session_cookie(true, cx);
                 this.flush_listening();
@@ -1108,7 +1110,8 @@ impl Render for MusicApp {
             // So is the app-wide backdrop (and then the bar too).
             let bar_live = self.bar_is_live(cx);
             let backdrop_live = self.backdrop_is_live(cx);
-            let cached = bar_live || backdrop_live;
+            // Reactions rising over the bar redraw the window every frame for a moment.
+            let cached = bar_live || backdrop_live || self.together_reactions_live();
             let shell = crate::components::player_bar::region(
                 &mut self.shell,
                 Self::render_shell,
@@ -1205,6 +1208,10 @@ impl Render for MusicApp {
             root = root.child(self.render_theater(&mut frame, window, cx));
         } else if reveal > 0. {
             root = root.child(self.render_now_playing_screen(reveal, &mut frame, window, cx));
+        }
+        // Music Together reactions float over the bar (or over Now Playing).
+        if !theater && let Some(reactions) = self.render_reactions(covered || reveal > 0., cx) {
+            root = root.child(reactions);
         }
         if let Some(onboarding) = &self.onboarding {
             // Below the top bar, so the window controls stay reachable.

@@ -125,6 +125,7 @@ mod tests {
             artists: vec!["Artist".into()],
             duration_sec: 200,
             thumbnail_url: None,
+            ..TogetherTrack::default()
         }
     }
 

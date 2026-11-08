@@ -5,6 +5,8 @@
 //! only owns them, rebuilds them when settings change, and collects what the
 //! settings panel shows (scrobble errors, Discord connection state).
 
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{Receiver, Sender, channel};
 
 use music_core::PlaybackState;
@@ -48,6 +50,9 @@ pub struct Services {
     discord_status: DiscordStatus,
     /// Scrobbling and Discord stay off with the demo clock (nothing is really playing).
     real_audio: bool,
+    /// In a Music Together session: every media-key event goes to the app (which
+    /// sends it to the session) instead of straight to the player.
+    to_app: Arc<AtomicBool>,
 }
 
 impl Default for Services {
@@ -64,6 +69,7 @@ impl Default for Services {
             discord: None,
             discord_status: DiscordStatus::Idle,
             real_audio: false,
+            to_app: Arc::new(AtomicBool::new(false)),
         }
     }
 }
@@ -94,9 +100,18 @@ impl Services {
             // As `MediaControls::for_player`, and the poll picks up what the
             // player did at once (it may be waiting at its idle pace).
             Engine::Audio(player) => {
+                let to_app = self.to_app.clone();
+                let tx = self.events_tx.clone();
                 let handle = player_handler(player.clone(), forward);
                 MediaControls::new(config, move |event| {
-                    handle(event);
+                    // Volume stays with the player (it is local in a session too).
+                    if to_app.load(Ordering::Relaxed)
+                        && !matches!(event, MediaControlEvent::SetVolume(_))
+                    {
+                        let _ = tx.send(event);
+                    } else {
+                        handle(event);
+                    }
                     crate::poll::wake();
                 })
             }
@@ -107,6 +122,12 @@ impl Services {
             Err(e) => eprintln!("music-gpui: {e}"),
         }
         self.real_audio = !engine.is_demo();
+    }
+
+    /// `true` while in a Music Together session: play / pause / seek from the OS go
+    /// through the app (and so to the session) instead of straight to the player.
+    pub fn route_media_to_app(&self, on: bool) {
+        self.to_app.store(on, Ordering::Relaxed);
     }
 
     /// Media-key events since the last call.

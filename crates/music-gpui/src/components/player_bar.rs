@@ -1236,6 +1236,8 @@ impl MusicApp {
             let icon = Icon::new(icon);
             if on { icon.text_color(accent) } else { icon }
         };
+        // A Music Together guest without control: the transport is disabled, and says why.
+        let lock = self.transport_lock().map(SharedString::from);
         h_flex()
             .size_full()
             .gap_2()
@@ -1272,6 +1274,8 @@ impl MusicApp {
                         } else {
                             t!("player.tooltip.shuffle_off")
                         })
+                        .disabled(lock.is_some())
+                        .when_some(lock.clone(), |b, tip| b.tooltip(tip))
                         .on_click(cx.listener(|this, _, _, cx| this.toggle_shuffle(cx))),
                 )
             })
@@ -1288,7 +1292,8 @@ impl MusicApp {
                     .rounded(px(999.))
                     .icon(AppIcon::Previous)
                     .tooltip(t!("player.tooltip.previous"))
-                    .disabled(track.is_none())
+                    .disabled(track.is_none() || lock.is_some())
+                    .when_some(lock.clone(), |b, tip| b.tooltip(tip))
                     .on_click(cx.listener(|this, _, _, cx| this.previous_track(cx))),
             )
             .when(layout.skips, |this| {
@@ -1312,7 +1317,8 @@ impl MusicApp {
                         t!("bar.tooltip.play")
                     })
                     .loading(loading)
-                    .disabled(!can_toggle)
+                    .disabled(!can_toggle || lock.is_some())
+                    .when_some(lock.clone(), |b, tip| b.tooltip(tip))
                     .on_click(cx.listener(Self::toggle_pause)),
             )
             .when(layout.skips, |this| {
@@ -1327,7 +1333,8 @@ impl MusicApp {
                     .rounded(px(999.))
                     .icon(AppIcon::Next)
                     .tooltip(t!("player.tooltip.next"))
-                    .disabled(!has_next)
+                    .disabled(!has_next || lock.is_some())
+                    .when_some(lock.clone(), |b, tip| b.tooltip(tip))
                     .on_click(cx.listener(|this, _, _, cx| this.next_track(cx))),
             )
             .when(layout.repeat, |this| {
@@ -1350,6 +1357,8 @@ impl MusicApp {
                             Repeat::All => t!("player.tooltip.repeat_all"),
                             Repeat::One => t!("player.tooltip.repeat_one"),
                         })
+                        .disabled(lock.is_some())
+                        .when_some(lock.clone(), |b, tip| b.tooltip(tip))
                         .on_click(cx.listener(|this, _, _, cx| this.cycle_repeat(cx))),
                 )
             })

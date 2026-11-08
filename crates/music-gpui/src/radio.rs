@@ -156,12 +156,25 @@ impl MusicApp {
 
     /// Plays `track` and queues its radio mix after it.
     pub fn start_radio(&mut self, track: Track, window: &mut Window, cx: &mut Context<Self>) {
+        let intent = crate::integrations::together_route::Intent::Radio(track.clone());
+        if self.together_route(intent, cx) {
+            return;
+        }
+        self.start_radio_local(track, window, cx);
+    }
+
+    pub(crate) fn start_radio_local(
+        &mut self,
+        track: Track,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         if self.current_video_id() == Some(track.video_id.as_str()) {
             // Keep the song playing; only the context after it changes (your queued
             // songs stay, as when a new list starts).
             self.queue.clear_part(crate::queue::Source::Context);
         } else {
-            self.play_list(Rc::new(vec![track.clone()]), 0, cx);
+            self.play_list_local(Rc::new(vec![track.clone()]), 0, cx);
         }
         let uid = self.queue.current_item().map(|i| i.uid);
         let context = QueueContext::radio(track.title.clone());
@@ -185,6 +198,23 @@ impl MusicApp {
 
     /// Replaces the queue with the radio mix of `target` (artist / playlist / album radio).
     pub fn start_radio_target(
+        &mut self,
+        target: WatchTarget,
+        label: &str,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let intent = crate::integrations::together_route::Intent::RadioTarget {
+            target: target.clone(),
+            label: label.to_owned(),
+        };
+        if self.together_route(intent, cx) {
+            return;
+        }
+        self.start_radio_target_local(target, label, window, cx);
+    }
+
+    pub(crate) fn start_radio_target_local(
         &mut self,
         target: WatchTarget,
         label: &str,
@@ -412,10 +442,36 @@ impl MusicApp {
         if tracks.is_empty() {
             return;
         }
+        // One intent for the session (a shuffled play is one request, not two).
+        use crate::integrations::together_route::Intent;
+        let intent = match action {
+            CollectionAction::Play | CollectionAction::Radio | CollectionAction::Shuffle => {
+                Intent::PlayList {
+                    tracks: tracks.clone(),
+                    index: 0,
+                    context: context
+                        .as_ref()
+                        .map(|c| c.name.clone())
+                        .or_else(|| self.page_context().map(|c| c.name)),
+                    shuffle: action == CollectionAction::Shuffle,
+                }
+            }
+            CollectionAction::PlayNext => Intent::Enqueue {
+                tracks: tracks.clone(),
+                mode: music_core::together::AddTrackMode::PlayNext,
+            },
+            CollectionAction::AddToQueue => Intent::Enqueue {
+                tracks: tracks.clone(),
+                mode: music_core::together::AddTrackMode::AddToQueue,
+            },
+        };
+        if self.together_route(intent, cx) {
+            return;
+        }
         let play = |this: &mut Self, tracks: Vec<Track>, start: usize, cx: &mut Context<Self>| {
             match context {
-                Some(context) => this.play_list_in(Rc::new(tracks), start, Some(context), cx),
-                None => this.play_list(Rc::new(tracks), start, cx),
+                Some(context) => this.play_list_in_local(Rc::new(tracks), start, Some(context), cx),
+                None => this.play_list_local(Rc::new(tracks), start, cx),
             }
         };
         match action {
@@ -423,12 +479,12 @@ impl MusicApp {
             CollectionAction::Shuffle => {
                 let start = random_index(tracks.len());
                 if !self.queue.shuffle() {
-                    self.set_shuffle(true, cx);
+                    self.set_shuffle_local(true, cx);
                 }
                 play(self, tracks, start, cx);
             }
-            CollectionAction::PlayNext => self.queue_play_next(tracks, window, cx),
-            CollectionAction::AddToQueue => self.queue_add(tracks, window, cx),
+            CollectionAction::PlayNext => self.queue_play_next_local(tracks, window, cx),
+            CollectionAction::AddToQueue => self.queue_add_local(tracks, window, cx),
         }
         cx.notify();
     }

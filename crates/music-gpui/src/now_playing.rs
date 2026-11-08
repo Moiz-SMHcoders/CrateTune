@@ -322,6 +322,15 @@ impl MusicApp {
     }
 
     pub fn seek_to(&mut self, position: Duration, cx: &mut Context<Self>) {
+        let intent = crate::integrations::together_route::Intent::Seek(position);
+        if self.together_route(intent, cx) {
+            return;
+        }
+        self.seek_local(position, cx);
+    }
+
+    /// A seek on this player only (a Music Together session's own use).
+    pub(crate) fn seek_local(&mut self, position: Duration, cx: &mut Context<Self>) {
         let Some(engine) = &mut self.engine else {
             return;
         };
@@ -1432,7 +1441,10 @@ impl MusicApp {
                 .text_color(crate::theme::paper(shown))
                 .with_transformation(Transformation::scale(size(s, s)).with_rotation(radians(turn)))
         };
+        // A Music Together guest without control: dimmed, and the row says why.
+        let lock = self.transport_lock().map(SharedString::from);
         let can_toggle = self.engine.is_some()
+            && lock.is_none()
             && matches!(
                 status,
                 PlaybackStatus::Playing | PlaybackStatus::Paused | PlaybackStatus::Ended
@@ -1480,14 +1492,21 @@ impl MusicApp {
                         .text_color(ink(if enabled { 0.92 } else { 0.35 })),
                 )
         };
-        let has_track = self.playback.track.is_some();
-        let has_next = self.queue.has_next();
+        let has_track = self.playback.track.is_some() && lock.is_none();
+        let has_next = self.queue.has_next() && lock.is_none();
+        let tip = |this: gpui::Stateful<Div>| match lock.clone() {
+            Some(tip) => this.tooltip(move |window, cx| {
+                gpui_component::tooltip::Tooltip::new(tip.clone()).build(window, cx)
+            }),
+            None => this,
+        };
+        let play_button = tip(play_button);
         h_flex()
             .justify_center()
             .gap(px(28. * scale))
             .when(skips, |this| {
                 this.child(
-                    skip("np-prev", AppIcon::Previous, has_track).when(has_track, |this| {
+                    tip(skip("np-prev", AppIcon::Previous, has_track)).when(has_track, |this| {
                         this.on_click(cx.listener(|this, _, _, cx| this.previous_track(cx)))
                     }),
                 )
@@ -1495,7 +1514,7 @@ impl MusicApp {
             .child(play_button)
             .when(skips, |this| {
                 this.child(
-                    skip("np-next", AppIcon::Next, has_next).when(has_next, |this| {
+                    tip(skip("np-next", AppIcon::Next, has_next)).when(has_next, |this| {
                         this.on_click(cx.listener(|this, _, _, cx| this.next_track(cx)))
                     }),
                 )

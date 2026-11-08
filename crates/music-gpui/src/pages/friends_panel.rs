@@ -1,6 +1,7 @@
-//! The Together page's friends card: what your friends are listening to, "Listen
-//! together" per group, and the sessions friends invited you to
-//! (`integrations/friends.rs`). Drawn from data the page reads from the app.
+//! The Together page's friends card: the groups' live sessions (Join, or "You're in
+//! it"), what your friends are listening to, and "Listen together" per group with the
+//! mode its sessions start in (`integrations/friends.rs`). Drawn from data the page
+//! reads from the app.
 
 use gpui::{
     AnyElement, App, FontWeight, IntoElement as _, ParentElement as _, SharedString, Styled as _,
@@ -16,6 +17,8 @@ use music_core::handoff::now_unix_ms;
 use crate::app::update_app;
 use crate::icons::Lucide;
 use crate::integrations::friends::{FeedRow, FriendsPanel};
+use crate::integrations::together::mode_name;
+use crate::integrations::together_ui::mode_icon;
 use crate::router::Route;
 use crate::settings::SectionId;
 
@@ -81,10 +84,20 @@ pub fn render(data: FriendsPanel, cx: &App) -> AnyElement {
             .into_any_element();
     }
 
-    // Sessions friends started.
+    // The groups' live sessions.
+    let accent = crate::theme::AppColors::get(cx).accent;
     let mut invites = v_flex().gap_2();
-    for (ix, (invite, name, group)) in data.invites.into_iter().enumerate() {
-        let link = invite.link.clone();
+    for (ix, session) in data.sessions.into_iter().enumerate() {
+        let link = session.link.clone();
+        let who = if session.here {
+            t!("friends.panel.session_here", group = session.group_name)
+        } else {
+            t!(
+                "friends.panel.invite",
+                name = session.starter,
+                group = session.group_name
+            )
+        };
         invites = invites.child(
             h_flex()
                 .gap_3()
@@ -92,21 +105,41 @@ pub fn render(data: FriendsPanel, cx: &App) -> AnyElement {
                 .p_2()
                 .rounded(crate::theme::radius(8.))
                 .bg(cx.theme().secondary)
-                .child(div().text_sm().truncate().child(SharedString::from(t!(
-                    "friends.panel.invite",
-                    name = name,
-                    group = group
-                ))))
                 .child(
-                    Button::new(("friends-join-session", ix))
-                        .small()
-                        .primary()
-                        .label(t!("friends.panel.join"))
-                        .on_click(move |_, window, cx| {
-                            let link = link.clone();
-                            update_app(cx, |app, cx| app.friends_join_session(&link, window, cx));
-                        }),
-                ),
+                    h_flex()
+                        .gap_2()
+                        .min_w_0()
+                        .child(
+                            Icon::new(mode_icon(session.mode))
+                                .size(px(14.))
+                                .text_color(accent),
+                        )
+                        .child(
+                            v_flex()
+                                .min_w_0()
+                                .child(div().text_sm().truncate().child(SharedString::from(who)))
+                                .child(div().text_xs().text_color(muted).child(
+                                    SharedString::from(t!(
+                                        "together.mode.badge",
+                                        mode = mode_name(session.mode)
+                                    )),
+                                )),
+                        ),
+                )
+                .when(!session.here, |row| {
+                    row.child(
+                        Button::new(("friends-join-session", ix))
+                            .small()
+                            .primary()
+                            .label(t!("friends.panel.join"))
+                            .on_click(move |_, window, cx| {
+                                let link = link.clone();
+                                update_app(cx, |app, cx| {
+                                    app.friends_join_session(&link, window, cx)
+                                });
+                            }),
+                    )
+                }),
         );
     }
 
@@ -191,19 +224,37 @@ pub fn render(data: FriendsPanel, cx: &App) -> AnyElement {
         );
     }
 
-    // "Listen together" per group.
+    // "Listen together" per group (in the group's mode; ▾ picks another first).
     let mut groups = h_flex().gap_2().flex_wrap();
-    for (ix, (id, name, _)) in data.groups.into_iter().enumerate() {
+    for (ix, (id, name, _, mode)) in data.groups.into_iter().enumerate() {
+        let sheet = id.clone();
         groups = groups.child(
-            Button::new(("friends-listen", ix))
-                .small()
-                .outline()
-                .icon(Lucide::Radio)
-                .label(t!("friends.panel.listen", group = name))
-                .on_click(move |_, window, cx| {
-                    let id = id.clone();
-                    update_app(cx, |app, cx| app.friends_listen_together(&id, window, cx));
-                }),
+            h_flex()
+                .child(
+                    Button::new(("friends-listen", ix))
+                        .small()
+                        .outline()
+                        .icon(mode_icon(mode))
+                        .label(t!("friends.panel.listen", group = name))
+                        .tooltip(t!("friends.panel.listen_mode", mode = mode_name(mode)))
+                        .on_click(move |_, window, cx| {
+                            let id = id.clone();
+                            update_app(cx, |app, cx| app.friends_listen_together(&id, window, cx));
+                        }),
+                )
+                .child(
+                    Button::new(("friends-listen-how", ix))
+                        .small()
+                        .ghost()
+                        .icon(gpui_component::IconName::ChevronDown)
+                        .tooltip(t!("friends.panel.listen_how"))
+                        .on_click(move |_, window, cx| {
+                            let id = sheet.clone();
+                            update_app(cx, |app, cx| {
+                                app.together_open_start_sheet(Some(id), window, cx)
+                            });
+                        }),
+                ),
         );
     }
 

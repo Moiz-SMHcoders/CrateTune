@@ -19,6 +19,17 @@ pub struct TogetherTrack {
     /// -1 = unknown.
     pub duration_sec: i64,
     pub thumbnail_url: Option<String>,
+    /// Ours (in a room state): the host's queue slot, which tells duplicates apart and
+    /// names the song in a guest's queue edits. Peers without it ignore it.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub uid: Option<u64>,
+    /// Ours: the name of who put it in the queue (or started the list it is part of).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub added_by: Option<String>,
+    /// Ours: queued with "Play next" / "Add to queue" ("Next in queue"), not part of
+    /// the list that was started.
+    #[serde(skip_serializing_if = "is_false")]
+    pub queued: bool,
 }
 
 impl TogetherTrack {
@@ -42,7 +53,19 @@ impl TogetherTrack {
             },
             duration_sec: track.duration_secs.map_or(-1, i64::from),
             thumbnail_url: track.thumbnail_url.clone(),
+            ..Self::default()
         })
+    }
+
+    /// The song without the room's bookkeeping (slot, who added it): what a guest
+    /// sends when it asks for a song.
+    pub fn bare(&self) -> Self {
+        Self {
+            uid: None,
+            added_by: None,
+            queued: false,
+            ..self.clone()
+        }
     }
 
     pub fn to_track(&self) -> Track {
@@ -87,6 +110,73 @@ impl Default for Participant {
     }
 }
 
+/// Who controls what in a session (ours). ArchiveTune peers don't know it: they see
+/// the `allow_guests_*` settings the mode implies ([`SessionMode::apply`]), so in a
+/// Friends session they join as guests that may control playback and add songs.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SessionMode {
+    /// One person (the host) owns the queue and playback; the others listen along,
+    /// suggest songs and, if the host allows it, control playback.
+    #[default]
+    Host,
+    /// Everyone is equal: anyone plays, pauses, skips, seeks and edits the queue.
+    Friends,
+    /// Everyone adds songs (with the host's approval, if asked for); the host controls
+    /// playback.
+    Dj,
+}
+
+impl SessionMode {
+    pub const ALL: [SessionMode; 3] = [SessionMode::Friends, SessionMode::Host, SessionMode::Dj];
+
+    pub fn is_host(&self) -> bool {
+        *self == SessionMode::Host
+    }
+
+    pub fn key(self) -> &'static str {
+        match self {
+            SessionMode::Host => "host",
+            SessionMode::Friends => "friends",
+            SessionMode::Dj => "dj",
+        }
+    }
+
+    pub fn parse(s: &str) -> Option<Self> {
+        match s.trim().to_ascii_lowercase().as_str() {
+            "host" => Some(SessionMode::Host),
+            "friends" | "friend" => Some(SessionMode::Friends),
+            "dj" => Some(SessionMode::Dj),
+            _ => None,
+        }
+    }
+
+    /// The room settings of this mode, from the host's own choices (`settings`):
+    /// Friends lets guests control and add without approval, DJ lets them add but not
+    /// control, Host keeps the choices as they are.
+    pub fn apply(self, settings: RoomSettings) -> RoomSettings {
+        match self {
+            SessionMode::Host => RoomSettings {
+                mode: SessionMode::Host,
+                ..settings
+            },
+            SessionMode::Friends => RoomSettings {
+                allow_guests_to_add_tracks: true,
+                allow_guests_to_control_playback: true,
+                require_approval_for_suggestions: false,
+                mode: SessionMode::Friends,
+                ..settings
+            },
+            SessionMode::Dj => RoomSettings {
+                allow_guests_to_add_tracks: true,
+                allow_guests_to_control_playback: false,
+                mode: SessionMode::Dj,
+                ..settings
+            },
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct RoomSettings {
@@ -98,6 +188,10 @@ pub struct RoomSettings {
     /// treat suggestions as before.
     #[serde(skip_serializing_if = "is_false")]
     pub require_approval_for_suggestions: bool,
+    /// Ours, only sent when not [`SessionMode::Host`] (peers without it ignore it and
+    /// go by the `allow_guests_*` settings, which the mode sets).
+    #[serde(skip_serializing_if = "SessionMode::is_host")]
+    pub mode: SessionMode,
 }
 
 fn is_false(b: &bool) -> bool {
@@ -111,6 +205,7 @@ impl Default for RoomSettings {
             allow_guests_to_control_playback: false,
             require_host_approval_to_join: false,
             require_approval_for_suggestions: false,
+            mode: SessionMode::Host,
         }
     }
 }
@@ -134,6 +229,12 @@ pub struct RoomState {
     pub shuffle_enabled: bool,
     /// Host (server) clock when stamped, ms; see [`super::clock`].
     pub sent_at_elapsed_realtime_ms: u64,
+    /// Ours: what the list after the queued songs is ("Next from <name>"), and whether
+    /// it is a radio mix.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub context_name: Option<String>,
+    #[serde(skip_serializing_if = "is_false")]
+    pub context_radio: bool,
 }
 
 impl RoomState {
@@ -177,6 +278,120 @@ pub enum SuggestionState {
     /// In the queue.
     Approved,
     Rejected,
+}
+
+/// Ours, sent with a request (ArchiveTune peers ignore it): what the sender saw when
+/// it asked, so the host can drop requests that are stale or doubled: two people
+/// skipping the same song skip it once, and the newest seek or play / pause wins
+/// ([`super::session::Sequencer`]).
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct IntentMeta {
+    /// The current song (video id) as the sender saw it.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub track_id: Option<String>,
+    /// Its queue slot on the host, when the sender knew it.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub uid: Option<u64>,
+    /// When the sender asked, on the host's clock as the sender estimates it (ms).
+    pub at_ms: u64,
+}
+
+/// Which upcoming songs a [`QueueOp::Clear`] drops.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ClearPart {
+    /// "Next in queue": the songs people queued.
+    Queued,
+    /// The rest of the list that was started ("Next from …").
+    List,
+    All,
+}
+
+/// A queue edit a guest asks for (ours: only in a Friends session; ArchiveTune peers
+/// neither send nor understand it). Songs are named by their slot ([`TogetherTrack::uid`]).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "op", rename_all = "snake_case", rename_all_fields = "camelCase")]
+pub enum QueueOp {
+    /// Play this slot now.
+    Jump {
+        uid: u64,
+    },
+    Remove {
+        uid: u64,
+    },
+    /// Move the slot to where `to_uid` is (drag and drop).
+    Move {
+        uid: u64,
+        to_uid: u64,
+    },
+    Clear {
+        part: ClearPart,
+    },
+    /// Start a list (an album, a playlist, the results a song was clicked in) at
+    /// `index`; the queued songs stay ahead of the rest of it.
+    PlayList {
+        tracks: Vec<TogetherTrack>,
+        index: usize,
+        #[serde(default)]
+        context_name: Option<String>,
+        #[serde(default)]
+        shuffle: bool,
+    },
+    /// Play this song now, keeping the rest of the queue after it.
+    PlayNow {
+        track: TogetherTrack,
+    },
+    /// A song's radio mix (the song plays, its mix follows).
+    Radio {
+        track: TogetherTrack,
+    },
+    /// The radio mix of an artist / album / playlist (the host fetches it).
+    RadioTarget {
+        #[serde(default)]
+        video_id: Option<String>,
+        #[serde(default)]
+        playlist_id: Option<String>,
+        #[serde(default)]
+        params: Option<String>,
+        label: String,
+    },
+}
+
+/// What a [`Message::SessionNote`] says someone did.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum NoteKind {
+    Joined,
+    Left,
+    Played,
+    Paused,
+    Skipped,
+    WentBack,
+    /// `count` songs queued.
+    Added,
+    Removed,
+    Moved,
+    Cleared,
+    /// Started a list (`title`: its name) or a song (`title`: the song).
+    Started,
+    /// Changed the session's mode (`title`: the mode's key).
+    Mode,
+    /// A kind a newer version sends.
+    #[serde(other)]
+    Other,
+}
+
+/// Who could take a Friends session over, in order ([`Message::SessionRoster`]).
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct Successor {
+    pub participant_id: String,
+    pub client_id: String,
+    pub name: String,
+    /// Where it would listen on the LAN (none for a relayed session).
+    pub host: Option<String>,
+    pub port: Option<u16>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -224,6 +439,10 @@ pub enum Message {
         session_key: String,
         client_id: String,
         display_name: String,
+        /// Ours: what this client can do beyond the protocol ([`FEATURES`]); ArchiveTune
+        /// hosts ignore it, ArchiveTune guests send none.
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        features: Vec<String>,
     },
     ServerWelcome {
         protocol_version: u32,
@@ -246,6 +465,8 @@ pub enum Message {
         session_id: String,
         participant_id: String,
         action: ControlAction,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        intent: Option<IntentMeta>,
     },
     AddTrackRequest {
         session_id: String,
@@ -345,7 +566,88 @@ pub enum Message {
         #[serde(default)]
         port: Option<u16>,
     },
+    // ---- Ours. A peer that doesn't know a type can't decode it and skips it (both
+    // ours and ArchiveTune's), so none of these needs a version bump; they only go to
+    // guests that said they are this app (`features` in the hello).
+    /// Guest → host, after the welcome: where it would listen on the LAN if it took
+    /// the session over.
+    MemberHello {
+        session_id: String,
+        participant_id: String,
+        #[serde(default)]
+        standby_host: Option<String>,
+        #[serde(default)]
+        standby_port: Option<u16>,
+    },
+    /// Host → this app's guests, in a Friends session (again when anything in it
+    /// changes): who takes over if the host goes, in order, and what they need for it
+    /// (the guests that may rejoin without approval, the banned ones, a relayed
+    /// session's secret).
+    SessionRoster {
+        session_id: String,
+        #[serde(default)]
+        successors: Vec<Successor>,
+        #[serde(default)]
+        trusted_client_ids: Vec<String>,
+        #[serde(default)]
+        banned_client_ids: Vec<String>,
+        #[serde(default)]
+        relay_secret: Option<String>,
+    },
+    /// Guest → host: a queue edit (Friends sessions; a jump also with playback control).
+    QueueRequest {
+        session_id: String,
+        participant_id: String,
+        op: QueueOp,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        intent: Option<IntentMeta>,
+    },
+    /// Guest → host: switch the session's mode (Friends sessions).
+    ModeRequest {
+        session_id: String,
+        participant_id: String,
+        mode: SessionMode,
+    },
+    /// Guest → host: remove someone (Friends sessions, where everyone may).
+    KickRequest {
+        session_id: String,
+        participant_id: String,
+        target_id: String,
+        #[serde(default)]
+        ban: bool,
+    },
+    /// A reaction to the current song: guest → host (rate-limited there), host → the
+    /// others (with the name).
+    Reaction {
+        session_id: String,
+        participant_id: String,
+        #[serde(default)]
+        participant_name: Option<String>,
+        emoji: String,
+        #[serde(default)]
+        track_id: Option<String>,
+    },
+    /// Host → guests: someone did something ("Ana skipped", "Sam added 3 songs").
+    SessionNote {
+        session_id: String,
+        participant_id: String,
+        participant_name: String,
+        note: NoteKind,
+        #[serde(default)]
+        count: u32,
+        #[serde(default)]
+        title: Option<String>,
+    },
 }
+
+/// What this app's client says it can do (`features` in the hello).
+pub const FEATURES: &[&str] = &[FEATURE_SESSION];
+/// Understands this app's additions (modes, queue edits, notes, reactions) and can
+/// take a Friends session over.
+pub const FEATURE_SESSION: &str = "cratetune-session-1";
+
+/// The reactions a session knows (by name: each side draws them its own way).
+pub const REACTIONS: &[&str] = &["heart", "fire", "laugh", "rock", "party", "star"];
 
 impl Message {
     pub fn encode(&self) -> String {
@@ -369,6 +671,7 @@ mod tests {
             session_key: "k".into(),
             client_id: "c".into(),
             display_name: "Ann".into(),
+            features: Vec::new(),
         };
         assert_eq!(
             hello.encode(),
@@ -378,6 +681,7 @@ mod tests {
             session_id: "s".into(),
             participant_id: "p".into(),
             action: ControlAction::SeekTo { position_ms: 1500 },
+            intent: None,
         };
         assert_eq!(
             control.encode(),
@@ -392,6 +696,7 @@ mod tests {
                 artists: vec!["A".into()],
                 duration_sec: 213,
                 thumbnail_url: None,
+                ..TogetherTrack::default()
             },
             mode: AddTrackMode::PlayNext,
         };

@@ -58,8 +58,11 @@ impl Pace {
         if WAKER.set(tx).is_err() {
             eprintln!("music-gpui: a second poll pace; wakes go to the first"); // i18n-ignore
         }
-        // A paired device's request (hand-off, pairing) is handled by the poll.
+        // A paired device's request (hand-off, pairing) is handled by the poll, and
+        // so is what a Music Together session hears (a guest's skip, the host's
+        // room state): at once, not at the next tick.
         music_core::handoff::node::set_event_hook(wake);
+        music_core::together::set_event_hook(wake);
         Self {
             wakes,
             active_until: Instant::now() + ACTIVE_FOR,
@@ -86,7 +89,12 @@ impl Pace {
         }
         self.idle = idle;
         if !idle {
-            executor.timer(POLL_INTERVAL).await;
+            // A wake ends the wait early (it only comes from outside: media keys,
+            // the menu bar, a paired device, a Music Together session).
+            let timer = executor.timer(POLL_INTERVAL);
+            let woken = self.wakes.next();
+            futures_util::pin_mut!(woken);
+            futures_util::future::select(timer, woken).await;
             return;
         }
         let timer = executor.timer(IDLE_POLL);

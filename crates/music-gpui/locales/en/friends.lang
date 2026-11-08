@@ -65,7 +65,7 @@ friends.join.bad_code = That isn't an invitation code. A code has 8 letters and 
 friends.toast.not_ready = Friends aren't ready yet. Try again in a moment.
 friends.toast.created = Group “{group}” created. Invite your friends with a code.
 friends.toast.removed = You were removed from “{group}”.
-friends.toast.listen_invite = {name} invites you to listen together ({group}). Open Listen together to join.
+friends.toast.listen_invite = {name} started listening together with {group}
 friends.toast.listen_sent = Starting a session; your group gets an invitation once it is up.
 friends.toast.joined = You joined “{group}”
 friends.toast.member_joined = {name} joined “{group}”
@@ -90,6 +90,16 @@ friends.panel.join = Join
 friends.panel.no_friends = No friends yet: create a group in Settings → Friends and invite them.
 # A button per group: hosts a session and invites the group.
 friends.panel.listen = Listen together: {group}
+# Tooltip of the button above. {mode}: a session mode's name (Friends, Host, DJ).
+friends.panel.listen_mode = Starts in {mode} mode, or joins the group's session if one is running
+# Tooltip of the small ▾ button next to it.
+friends.panel.listen_how = Choose the mode first…
+# A group's session this device is in.
+friends.panel.session_here = You're listening together with {group}
+# "Join automatically when a friend starts" joined a session.
+friends.toast.auto_joining = Joining {name}'s session with {group}…
 friends.panel.sharing = Your friends see what you play.
 friends.panel.not_sharing = You aren't sharing what you play.
 friends.panel.manage = Groups…
+# Label before a group's mode buttons (Friends, Host, DJ) in Settings → Friends.
+settings.friends.group_mode = Listen together in
