@@ -5,6 +5,14 @@ versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.7] — 2026-11-08
+
+Listen together, reworked: Friends, Host and DJ modes; your own player controls, media
+keys and queue actions drive the shared session; a shared queue anyone allowed can edit
+(including removing songs), with who added what; listeners, activity notes and reactions;
+sessions that survive a dropped connection or the host leaving; and the computer stays
+awake while playing.
+
 ### Added
 
 * **Listen together has modes.** **Friends**: everyone plays, pauses, skips, seeks and
