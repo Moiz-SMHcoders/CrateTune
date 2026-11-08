@@ -187,6 +187,11 @@ pub(super) struct Inner {
     pub(super) shutdown: AtomicBool,
     /// Who is in the session changed: this app's guests get a new roster.
     roster_dirty: AtomicBool,
+    /// The goodbye of [`TogetherServer::stop_with`] (a relayed session closes the
+    /// relay connection with it too).
+    pub(super) stop_reason: Mutex<String>,
+    /// Stopping without a word ([`TogetherServer::abandon`]).
+    pub(super) abandoned: AtomicBool,
 }
 
 fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
@@ -621,12 +626,25 @@ impl TogetherServer {
     /// Stops with `reason` as the guests' goodbye: [`SESSION_ENDED`] ends the session
     /// for everyone, [`HOST_LEFT`] lets this app's guests carry a Friends session on.
     pub fn stop_with(&mut self, reason: &str) {
+        *lock(&self.inner.stop_reason) = reason.to_owned();
         if self.inner.shutdown.swap(true, Ordering::SeqCst) {
             return;
         }
         for client in lock(&self.inner.clients).drain(..) {
             let _ = client.outbox.send(Outgoing::Close(reason.into()));
         }
+        if let Some(handle) = self.accept.take() {
+            let _ = handle.join();
+        }
+    }
+
+    /// Vanishes as a crashed host would: the connections drop without a goodbye
+    /// (guests see the connection lost). For tests of the fail-over.
+    #[doc(hidden)]
+    pub fn abandon(mut self) {
+        self.inner.abandoned.store(true, Ordering::SeqCst);
+        self.inner.shutdown.store(true, Ordering::SeqCst);
+        lock(&self.inner.clients).clear();
         if let Some(handle) = self.accept.take() {
             let _ = handle.join();
         }
@@ -767,6 +785,8 @@ impl Inner {
             events: Mutex::new(tx),
             shutdown: AtomicBool::new(false),
             roster_dirty: AtomicBool::new(false),
+            stop_reason: Mutex::new(SESSION_ENDED.into()),
+            abandoned: AtomicBool::new(false),
         });
         (inner, rx)
     }
@@ -929,7 +949,9 @@ fn serve_link_from<L: Link>(mut conn: L, hello: Recv, inner: &Inner) -> Result<(
             return Ok(());
         }
         if inner.shutdown.load(Ordering::Relaxed) {
-            conn.close("Session ended");
+            if !inner.abandoned.load(Ordering::Relaxed) {
+                conn.close(SESSION_ENDED);
+            }
             return Ok(());
         }
         match conn.recv() {

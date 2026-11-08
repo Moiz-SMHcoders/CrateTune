@@ -446,3 +446,154 @@ fn room_codes_keep_the_host_key_and_are_rate_limited() {
     assert_eq!(create(&key, &secret).0, 403);
     drop(ann);
 }
+
+/// A Friends session through the relay outlives its device: the host vanishes (and,
+/// in a second round, quits with "Host left"); its guests hear the session go on, not
+/// end; the first in the roster claims the room with its secret, the other reconnects
+/// to the same relay URL and lands with the new device, straight in.
+#[test]
+fn a_friends_session_through_the_relay_outlives_its_device() {
+    use music_core::together::session::{Failover, failover};
+    use music_core::together::{ClientOptions, SessionMode};
+
+    let relay = Relay::start(Config {
+        listen: "127.0.0.1:0".parse().unwrap(),
+        ..Config::default()
+    })
+    .unwrap();
+    let url = format!("ws://{}", relay.addr());
+    let (sid, key) = (new_id(), new_id());
+    let room = SessionMode::Friends.apply(RoomSettings {
+        require_host_approval_to_join: true,
+        ..RoomSettings::default()
+    });
+    let host = TogetherServer::start_relay(
+        &url,
+        sid.clone(),
+        key.clone(),
+        "Ann".into(),
+        room,
+        HostOptions::default(),
+    )
+    .unwrap();
+    let join = JoinInfo::via_relay(&url, sid.clone(), key.clone()).unwrap();
+    let guest = |name: &str| {
+        TogetherClient::connect_with(
+            &join,
+            ClientOptions::ours(name, &format!("{name}-client"), None),
+        )
+        .unwrap()
+    };
+    let bob = guest("Bob");
+    let cat = guest("Cat");
+    let mut admitted = 0;
+    wait_for(|| {
+        for e in host.poll_events() {
+            if let ServerEvent::JoinRequested(p) = e {
+                host.approve(&p.id, true);
+                admitted += 1;
+            }
+        }
+        (admitted == 2).then_some(())
+    });
+    wait_for(|| bob.participant_id());
+    wait_for(|| cat.participant_id());
+    let state = RoomState {
+        queue: vec![track("aaaaaaaaaaa"), track("bbbbbbbbbbb")],
+        current_index: 1,
+        is_playing: true,
+        position_ms: 30_000,
+        ..RoomState::default()
+    };
+    // Both hear the roster (with the room's secret, so either could claim it).
+    let roster_of = |client: &TogetherClient| {
+        wait_for(|| {
+            host.broadcast_room_state(state.clone());
+            std::thread::sleep(Duration::from_millis(30));
+            client.poll_events().into_iter().find_map(|e| match e {
+                ClientEvent::Roster {
+                    successors,
+                    trusted_client_ids,
+                    banned_client_ids,
+                    relay_secret,
+                } if successors.len() == 2 => Some((
+                    successors,
+                    trusted_client_ids,
+                    banned_client_ids,
+                    relay_secret,
+                )),
+                _ => None,
+            })
+        })
+    };
+    let (successors, trusted, banned, secret) = roster_of(&bob);
+    let cat_roster = roster_of(&cat).0;
+    assert!(secret.is_some());
+    host.abandon();
+    // Through the relay too: the device is gone, the session isn't over.
+    for client in [&bob, &cat] {
+        let (reason, lost) = wait_for(|| {
+            client.poll_events().into_iter().find_map(|e| match e {
+                ClientEvent::Disconnected { reason, lost } => Some((reason, lost)),
+                _ => None,
+            })
+        });
+        assert!(lost, "{reason:?}");
+    }
+    assert_eq!(
+        failover(&successors, "Bob-client", &join),
+        Failover::TakeOver
+    );
+    let new = TogetherServer::start_relay(
+        &url,
+        sid.clone(),
+        key.clone(),
+        "Bob".into(),
+        room,
+        HostOptions {
+            trusted_client_ids: trusted,
+            banned_client_ids: banned,
+            relay_secret: secret,
+        },
+    )
+    .unwrap();
+    let Failover::Follow(candidates) = failover(&cat_roster, "Cat-client", &join) else {
+        panic!("Cat follows Bob")
+    };
+    assert_eq!(candidates, vec![join.clone()]);
+    let cat2 = TogetherClient::connect_with(
+        &candidates[0],
+        ClientOptions::ours("Cat", "Cat-client", None),
+    )
+    .unwrap();
+    let joined = wait_for(|| {
+        new.poll_events().into_iter().find_map(|e| match e {
+            ServerEvent::Joined(p) => Some(p),
+            ServerEvent::JoinRequested(p) => panic!("{} should be trusted", p.name),
+            _ => None,
+        })
+    });
+    assert_eq!(joined.name, "Cat");
+    new.broadcast_room_state(state.clone());
+    let got = wait_for(|| {
+        cat2.poll_events().into_iter().find_map(|e| match e {
+            ClientEvent::RoomState(s) => Some(s),
+            _ => None,
+        })
+    });
+    assert_eq!(got.queue, state.queue);
+    assert_eq!(got.settings.mode, SessionMode::Friends);
+    // Quitting a Friends session (not ending it): its guests hear "Host left".
+    let mut new = new;
+    new.stop_with(music_core::together::HOST_LEFT);
+    let (reason, lost) = wait_for(|| {
+        cat2.poll_events().into_iter().find_map(|e| match e {
+            ClientEvent::Disconnected { reason, lost } => Some((reason, lost)),
+            _ => None,
+        })
+    });
+    assert!(lost, "{reason:?}");
+    assert_eq!(reason.as_deref(), Some("Host left"));
+    drop(bob);
+    drop(cat);
+}

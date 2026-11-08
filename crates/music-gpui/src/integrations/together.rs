@@ -1366,7 +1366,27 @@ impl MusicApp {
         match &self.integrations.together.role {
             Role::Hosting(host) if host.room.mode != mode => {
                 let me = host.server.host_participant();
-                self.together_set_room(|r| r.mode = mode, cx);
+                let current = host.room;
+                // Leaving Friends mode, the host's own defaults come back (Friends
+                // opened everything up); who needs approval to join stays.
+                let prefs = self.settings.read(cx).settings().together.clone();
+                let next = match mode {
+                    SessionMode::Friends => current,
+                    SessionMode::Host => RoomSettings {
+                        require_host_approval_to_join: current.require_host_approval_to_join,
+                        ..prefs.room()
+                    },
+                    SessionMode::Dj => RoomSettings {
+                        require_approval_for_suggestions: prefs.approve_suggestions,
+                        ..current
+                    },
+                };
+                self.together_set_room(
+                    |r| {
+                        *r = RoomSettings { mode, ..next };
+                    },
+                    cx,
+                );
                 self.integrations
                     .together
                     .log(t!("together.log.mode_now", mode = mode_name(mode)));

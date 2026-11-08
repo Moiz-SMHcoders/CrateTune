@@ -210,11 +210,21 @@ pub(super) fn run(mut conn: Conn, inner: Arc<Inner>) {
             };
             conn.send_text(frame.encode());
         }
+        if inner.abandoned.load(Ordering::Relaxed) {
+            return; // dropped without a word (tests of the fail-over)
+        }
         if inner.shutdown.load(Ordering::Relaxed) {
             // Let the guest loops send their goodbyes, then hang up.
             let at = *shutdown_at.get_or_insert_with(Instant::now);
             if links.is_empty() || at.elapsed() > Duration::from_millis(400) {
-                conn.close("Session ended");
+                // "Session ended", or "Host left" (a Friends session goes on): the
+                // relay passes it on to guests still bound to this host.
+                let reason = inner
+                    .stop_reason
+                    .lock()
+                    .map(|r| r.clone())
+                    .unwrap_or_else(|e| e.into_inner().clone());
+                conn.close(&reason);
                 return;
             }
         }

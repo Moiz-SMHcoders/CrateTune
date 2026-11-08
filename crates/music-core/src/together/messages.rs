@@ -802,4 +802,140 @@ mod tests {
         b.pop();
         assert_eq!(queue_hash(&a), queue_hash(&b));
     }
+
+    /// Our additions stay out of ArchiveTune's way: optional fields only on the wire
+    /// when set (and ignored by peers that don't know them: ArchiveTune decodes with
+    /// `ignoreUnknownKeys`), new message types skipped by peers that can't decode
+    /// them (ArchiveTune wraps every decode in `runCatching`).
+    #[test]
+    fn session_additions_are_graceful_for_older_peers() {
+        // A Friends room: the mode on the wire, plus the allow_* an older guest acts on.
+        let room = SessionMode::Friends.apply(RoomSettings::default());
+        let json = serde_json::to_string(&room).unwrap();
+        assert!(json.contains(r#""mode":"friends""#), "{json}");
+        assert!(
+            json.contains(r#""allowGuestsToControlPlayback":true"#),
+            "{json}"
+        );
+        // Host mode isn't written at all (exactly the old shape).
+        let host = serde_json::to_string(&RoomSettings::default()).unwrap();
+        assert!(!host.contains("mode"), "{host}");
+        // A track's slot / attribution / part: only when set; a bare one is unchanged.
+        let bare = TogetherTrack {
+            id: "dQw4w9WgXcQ".into(),
+            title: "T".into(),
+            ..TogetherTrack::default()
+        };
+        let json = serde_json::to_string(&bare).unwrap();
+        assert!(
+            !json.contains("uid") && !json.contains("addedBy") && !json.contains("queued"),
+            "{json}"
+        );
+        let full = TogetherTrack {
+            uid: Some(7),
+            added_by: Some("Ana".into()),
+            queued: true,
+            ..bare.clone()
+        };
+        let json = serde_json::to_string(&full).unwrap();
+        assert!(
+            json.contains(r#""uid":7"#)
+                && json.contains(r#""addedBy":"Ana""#)
+                && json.contains(r#""queued":true"#),
+            "{json}"
+        );
+        assert_eq!(full.bare(), bare);
+        // A hello with features; an ArchiveTune hello (none) still decodes.
+        let hello = Message::ClientHello {
+            protocol_version: 1,
+            session_id: "s".into(),
+            session_key: "k".into(),
+            client_id: "c".into(),
+            display_name: "Ann".into(),
+            features: FEATURES.iter().map(|f| (*f).to_owned()).collect(),
+        };
+        assert!(
+            hello
+                .encode()
+                .contains(r#""features":["cratetune-session-1"]"#)
+        );
+        assert!(matches!(
+            Message::decode(r#"{"type":"client_hello","protocolVersion":1,"sessionId":"s","sessionKey":"k","clientId":"c","displayName":"A"}"#),
+            Some(Message::ClientHello { features, .. }) if features.is_empty()
+        ));
+        // A stamped control request; ArchiveTune's unstamped one still decodes.
+        let control = Message::ControlRequest {
+            session_id: "s".into(),
+            participant_id: "p".into(),
+            action: ControlAction::SkipNext,
+            intent: Some(IntentMeta {
+                track_id: Some("dQw4w9WgXcQ".into()),
+                uid: Some(3),
+                at_ms: 1234,
+            }),
+        };
+        assert_eq!(
+            control.encode(),
+            r#"{"type":"control_request","sessionId":"s","participantId":"p","action":{"type":"skip_next"},"intent":{"trackId":"dQw4w9WgXcQ","uid":3,"atMs":1234}}"#
+        );
+        assert!(matches!(
+            Message::decode(
+                r#"{"type":"control_request","sessionId":"s","participantId":"p","action":{"type":"skip_next"}}"#
+            ),
+            Some(Message::ControlRequest { intent: None, .. })
+        ));
+        // The new messages round-trip; an unknown note kind (a newer version) too.
+        let messages = [
+            Message::QueueRequest {
+                session_id: "s".into(),
+                participant_id: "p".into(),
+                op: QueueOp::Move { uid: 4, to_uid: 2 },
+                intent: None,
+            },
+            Message::ModeRequest {
+                session_id: "s".into(),
+                participant_id: "p".into(),
+                mode: SessionMode::Dj,
+            },
+            Message::Reaction {
+                session_id: "s".into(),
+                participant_id: "p".into(),
+                participant_name: Some("Ana".into()),
+                emoji: "fire".into(),
+                track_id: None,
+            },
+            Message::SessionRoster {
+                session_id: "s".into(),
+                successors: vec![Successor {
+                    participant_id: "p".into(),
+                    client_id: "c".into(),
+                    name: "Bob".into(),
+                    host: Some("10.0.0.2".into()),
+                    port: Some(42117),
+                }],
+                trusted_client_ids: vec!["c".into()],
+                banned_client_ids: Vec::new(),
+                relay_secret: None,
+            },
+        ];
+        for m in messages {
+            assert_eq!(Message::decode(&m.encode()), Some(m));
+        }
+        let op = serde_json::to_string(&QueueOp::Clear {
+            part: ClearPart::Queued,
+        })
+        .unwrap();
+        assert_eq!(op, r#"{"op":"clear","part":"queued"}"#);
+        assert!(matches!(
+            Message::decode(
+                r#"{"type":"session_note","sessionId":"s","participantId":"p","participantName":"A","note":"juggled"}"#
+            ),
+            Some(Message::SessionNote {
+                note: NoteKind::Other,
+                ..
+            })
+        ));
+        assert_eq!(SessionMode::parse(" DJ "), Some(SessionMode::Dj));
+        assert_eq!(SessionMode::parse("party"), None);
+    }
 }
