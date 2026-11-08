@@ -34,7 +34,8 @@ versions follow [SemVer](https://semver.org/).
   shows in the activity notes.
 * **Presence and reactions.** A listeners chip on the player bar (stacked initials, the
   count, the mode) opens a session panel: the mode and what you may do, who is
-  listening, reactions, invite, leave. Quiet **activity notes** ("Ana skipped", "Sam
+  listening, reactions, invite, leave. A narrow window's collapsed bar keeps the chip
+  (its tags give way; a note shows in place of the faces while it lasts). Quiet **activity notes** ("Ana skipped", "Sam
   added 3 songs") merge and never stack up (Settings → Music Together → *Activity
   notes*). **Reactions** (six) float up over the bar for a moment for everyone,
   rate-limited, and follow Animations (Reduced: a short fade; Off: no motion).

@@ -55,9 +55,11 @@ impl MusicApp {
 
     /// Extra chips for the player bar's transport row (SponsorBlock "Skip",
     /// Together), each unless hidden in the bar's items.
+    /// `compact`: the collapsed bar.
     pub(crate) fn integration_chips(
         &mut self,
         items: crate::settings::bar_items::BarItems,
+        compact: bool,
         cx: &mut Context<Self>,
     ) -> Vec<AnyElement> {
         let mut chips = Vec::new();
@@ -65,7 +67,7 @@ impl MusicApp {
             chips.extend(self.sponsorblock_chip(cx));
         }
         if items.together {
-            chips.extend(self.together_chip(cx));
+            chips.extend(self.together_chip(compact, cx));
         }
         chips
     }

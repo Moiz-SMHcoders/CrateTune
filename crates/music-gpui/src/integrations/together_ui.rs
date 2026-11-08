@@ -220,7 +220,13 @@ impl MusicApp {
 
     /// The listeners chip in the player bar (with its session panel), in a session or
     /// while joining.
-    pub(super) fn together_chip(&mut self, cx: &mut Context<Self>) -> Option<AnyElement> {
+    /// `compact`: the collapsed bar (little room): a note shows instead of the
+    /// mode and faces while it lasts.
+    pub(super) fn together_chip(
+        &mut self,
+        compact: bool,
+        cx: &mut Context<Self>,
+    ) -> Option<AnyElement> {
         let together = &self.integrations.together;
         let theme = cx.theme();
         let (muted, border, ring) = (theme.muted_foreground, theme.border, theme.background);
@@ -243,12 +249,26 @@ impl MusicApp {
             .note_shown
             .as_ref()
             .map(|(who, kind, count, title)| note_text(who, *kind, *count, title.as_deref()));
-        let mut content = h_flex().gap_1p5().items_center().h(px(26.)).px_2();
+        let mut content = h_flex()
+            .gap_1p5()
+            .items_center()
+            .h(px(24.))
+            .px(px(if compact { 6. } else { 8. }));
         match busy {
             Some(label) => {
                 content = content
                     .child(Spinner::new().small())
                     .child(div().text_xs().text_color(muted).child(label));
+            }
+            // The collapsed bar: the note alone while it lasts (faces come back).
+            None if compact && note.is_some() => {
+                content = content.child(
+                    div()
+                        .max_w(px(112.))
+                        .truncate()
+                        .text_xs()
+                        .child(SharedString::from(note.unwrap_or_default())),
+                );
             }
             None => {
                 content = content.child(
@@ -290,6 +310,8 @@ impl MusicApp {
             .child(content);
         let trigger = Button::new("together-chip-button")
             .ghost()
+            .small()
+            .compact()
             .rounded(px(999.))
             .tooltip(tooltip)
             .child(trigger);
